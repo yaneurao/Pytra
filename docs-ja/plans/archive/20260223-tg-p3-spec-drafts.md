@@ -3,8 +3,8 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P3-SD-01`
-- `docs-ja/todo.md` の `ID: P3-SD-02`
+- `docs-ja/todo/index.md` の `ID: P3-SD-01`
+- `docs-ja/todo/index.md` の `ID: P3-SD-02`
 
 背景:
 - `spec-make.md` と `spec-template.md` は一時的にリポジトリ直下へ置かれていたが、仕様書群としては `docs-ja/spec/` 配下で管理するのが一貫する。

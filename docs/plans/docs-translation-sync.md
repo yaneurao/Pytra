@@ -7,13 +7,13 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: DOCS-SYNC-01`
+- `docs-ja/todo/index.md` `ID: DOCS-SYNC-01`
 
 Background:
-- `docs-ja` is the source of truth, but the synchronization workflow for `todo-history` English translation was not standardized and tended to be operator-dependent.
+- `docs-ja` is the source of truth, but the synchronization workflow for `todo/archive` English translation was not standardized and tended to be operator-dependent.
 
 Objective:
-- Define a repeatable routine to synchronize `docs-ja/todo-history/YYYYMMDD.md` to `docs/todo-history/YYYYMMDD.md`.
+- Define a repeatable routine to synchronize `docs-ja/todo/archive/YYYYMMDD.md` to `docs/todo/archive/YYYYMMDD.md`.
 
 In scope:
 - Documenting the sync workflow
@@ -26,18 +26,18 @@ Out of scope:
 Acceptance criteria:
 - The daily sync flow can be reproduced from the documented steps.
 - Differences between `docs-ja` and `docs` are easy to inspect.
-- Date-file set parity between `docs-ja/todo-history` and `docs/todo-history` can be checked automatically.
+- Date-file set parity between `docs-ja/todo/archive` and `docs/todo/archive` can be checked automatically.
 
 Operational steps:
-1. Run `python3 tools/sync_todo_history_translation.py` to create missing `docs/todo-history/YYYYMMDD.md` mirror files.
+1. Run `python3 tools/sync_todo_history_translation.py` to create missing `docs/todo/archive/YYYYMMDD.md` mirror files.
 2. Translate generated `pending` files into English and update `<!-- translation-status: done -->`.
 3. Run `python3 tools/sync_todo_history_translation.py --check` to confirm there are no missing/extra/index gaps.
-4. Review granular diffs with `git diff -- docs-ja/todo-history docs/todo-history` and commit.
+4. Review granular diffs with `git diff -- docs-ja/todo/archive docs/todo/archive` and commit.
 
 Validation commands:
 - `python3 tools/sync_todo_history_translation.py --check`
-- `git diff -- docs-ja/todo-history docs/todo-history`
+- `git diff -- docs-ja/todo/archive docs/todo/archive`
 
 Decision log:
 - 2026-02-22: Initial draft created.
-- 2026-02-22: Added `tools/sync_todo_history_translation.py` to automate date-file stub creation and index synchronization for `docs/todo-history`.
+- 2026-02-22: Added `tools/sync_todo_history_translation.py` to automate date-file stub creation and index synchronization for `docs/todo/archive`.

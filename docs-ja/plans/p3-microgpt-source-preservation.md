@@ -3,15 +3,15 @@
 最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P3-MSP-01`
-- `docs-ja/todo.md` の `ID: P3-MSP-02`
-- `docs-ja/todo.md` の `ID: P3-MSP-03`
-- `docs-ja/todo.md` の `ID: P3-MSP-04`
-- `docs-ja/todo.md` の `ID: P3-MSP-05`
-- `docs-ja/todo.md` の `ID: P3-MSP-06`
-- `docs-ja/todo.md` の `ID: P3-MSP-07`
-- `docs-ja/todo.md` の `ID: P3-MSP-08`
-- `docs-ja/todo.md` の `ID: P3-MSP-09`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-01`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-02`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-03`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-04`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-05`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-06`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-07`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-08`
+- `docs-ja/todo/index.md` の `ID: P3-MSP-09`
 
 背景:
 - `archive/exec-extracted-20260222.log`（2026-02-23 00:03〜00:13）には、`py2cpp` 変換を通すために `microgpt-20260222.py` を段階的に書き換えた履歴が残っている。
@@ -66,7 +66,7 @@
 1. 要因 A/B/C は parser（`self_hosted`）拡張タスクへ置換する。
 2. 要因 D/E は EAST lower / emitter の型解決タスクへ置換する。
 3. 要因 F は `pytra.std` / runtime API 互換タスクへ置換する。
-4. 置換先タスク ID: `P3-MSP-04`〜`P3-MSP-09`（`docs-ja/todo.md`）。
+4. 置換先タスク ID: `P3-MSP-04`〜`P3-MSP-09`（`docs-ja/todo/index.md`）。
 
 回帰導線（P3-MSP-09）:
 1. 固定入力:

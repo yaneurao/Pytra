@@ -301,7 +301,7 @@ Before generation, collect:
 - Phase 3: retire direct-AST paths and operate EAST as the sole intermediate representation.
 
 Notes:
-- Progress tracking per phase is maintained in `docs/todo.md`.
+- Progress tracking per phase is maintained in `docs/todo/index.md`.
 - Detailed implementation split (emitter/profile/hooks) follows `docs/spec/spec-dev.md`.
 
 ## 17. Acceptance Criteria for EAST Adoption

@@ -7,8 +7,8 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P3-SD-01`
-- `docs-ja/todo.md` `ID: P3-SD-02`
+- `docs-ja/todo/index.md` `ID: P3-SD-01`
+- `docs-ja/todo/index.md` `ID: P3-SD-02`
 
 Background:
 - `spec-make.md` and `spec-template.md` were temporarily placed at repository root, but should be managed under `docs-ja/spec/` for consistency with the specification set.

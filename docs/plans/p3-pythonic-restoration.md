@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
+- `docs-ja/todo/index.md` `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
 
 Background:
 - Readability dropped because many simplified patterns were introduced to stabilize selfhost.

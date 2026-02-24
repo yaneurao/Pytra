@@ -9,8 +9,8 @@
 
 ## 1. 起動時チェック
 
-- Codex 起動時は、まず `docs-ja/spec/index.md` と `docs-ja/todo.md` を確認します。
-- `docs-ja/todo.md` の未完了（`[ ]`）項目から、現在の依頼と整合するタスクを作業対象に含めます。
+- Codex 起動時は、まず `docs-ja/spec/index.md` と `docs-ja/todo/index.md` を確認します。
+- `docs-ja/todo/index.md` の未完了（`[ ]`）項目から、現在の依頼と整合するタスクを作業対象に含めます。
 
 ## 1.1 ドキュメント言語運用ルール
 
@@ -20,18 +20,18 @@
 - `docs/`（英語版）は必要に応じて後追い翻訳で更新してよく、同期が一時的に遅れることを許容します。
 - 日本語版と英語版で記述差分がある場合は、`docs-ja/` の内容を正として判断します。
 - `docs-ja/` 直下（トップレベル）への新規ファイル追加は原則禁止とし、必要時は同一ターンでの明示指示を必須とします。
-- 例外として、`docs-ja/plans/`、`docs-ja/language/`、`docs-ja/todo-history/`、`docs-ja/spec/`、`docs-ja/news/` 配下は、運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよいものとします。
+- 例外として、`docs-ja/plans/`、`docs-ja/language/`、`docs-ja/todo/archive/`、`docs-ja/spec/`、`docs-ja/news/` 配下は、運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよいものとします。
 
 ## 2. TODO 実施ルール
 
-- `docs-ja/todo.md` は継続バックログとして扱います。
-- `docs-ja/todo.md` には未完了タスクのみを置き、セクション単位で完了（全項目 `[x]`）した内容は `docs-ja/todo-history/index.md`（索引）と `docs-ja/todo-history/YYYYMMDD.md`（本文）へ移管します。
+- `docs-ja/todo/index.md` は継続バックログとして扱います。
+- `docs-ja/todo/index.md` には未完了タスクのみを置き、セクション単位で完了（全項目 `[x]`）した内容は `docs-ja/todo/archive/index.md`（索引）と `docs-ja/todo/archive/YYYYMMDD.md`（本文）へ移管します。
 - 優先度上書きは `docs-ja/todo2.md` ではなく、チャット指示で `対象ID` / `完了条件` / `非対象` を明示して行います（テンプレート: `docs-ja/plans/instruction-template.md`）。
 - 未完了項目は優先度順に順次実施します（最小 `P<number>` を最優先、同一優先度は上から先頭）。
 - `P0` が 1 件でも未完了なら、明示上書き指示なしで `P1` 以下へ着手してはいけません。
-- `docs-ja/todo.md` の進捗メモは 1 行要約に留め、詳細な判断・検証ログは文脈ファイル（`docs-ja/plans/*.md`）の `決定ログ` へ追記します。
+- `docs-ja/todo/index.md` の進捗メモは 1 行要約に留め、詳細な判断・検証ログは文脈ファイル（`docs-ja/plans/*.md`）の `決定ログ` へ追記します。
 - 大きいタスクは文脈ファイルで `-S1` / `-S2` 形式の子タスクへ分割してよく、`tools/check_todo_priority.py` は最上位未完了 `ID` とその子 `ID` を許可します。
-- `docs-ja/todo.md` または `docs-ja/plans/*.md` に進捗ログを追加したターンでは、`python3 tools/check_todo_priority.py` を通過させます（`plans` 側は `決定ログ` の日付行のみが進捗判定対象）。
+- `docs-ja/todo/index.md` または `docs-ja/plans/*.md` に進捗ログを追加したターンでは、`python3 tools/check_todo_priority.py` を通過させます（`plans` 側は `決定ログ` の日付行のみが進捗判定対象）。
 - 割り込み等で未コミット差分が残る場合は、同一 `ID` を完了させるか差分を戻してから別 `ID` へ移ります。
 - タスク完了時はチェック状態を更新します。
 

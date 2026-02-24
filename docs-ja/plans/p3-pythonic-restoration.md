@@ -3,7 +3,7 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
+- `docs-ja/todo/index.md` の `ID: P3-PY-*`, `P3-CE-*`, `P3-RULE-*`
 
 背景:
 - selfhost 安定化のため平易化した記法が増え、可読性が低下している。

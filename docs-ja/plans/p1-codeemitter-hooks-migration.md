@@ -3,8 +3,8 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P1-CEH-01`
-- `docs-ja/todo.md` の `ID: P1-CEH-01-S1` 〜 `P1-CEH-01-S4`
+- `docs-ja/todo/index.md` の `ID: P1-CEH-01`
+- `docs-ja/todo/index.md` の `ID: P1-CEH-01-S1` 〜 `P1-CEH-01-S4`
 
 背景:
 - `py2cpp.py` 側に条件分岐が残ると、profile/hook での拡張性と多言語整合が崩れる。
@@ -55,7 +55,7 @@
 
 決定ログ:
 - 2026-02-22: 初版作成。
-- 2026-02-23: docs-ja/todo.md の P1-CEH-01 を -S1 〜 -S4 に分割したため、本 plan に同粒度の実行順を追記した。
+- 2026-02-23: docs-ja/todo/index.md の P1-CEH-01 を -S1 〜 -S4 に分割したため、本 plan に同粒度の実行順を追記した。
 - 2026-02-23: `P1-CEH-01-S1` として `py2cpp.py` の profile/hook 境界違反ケースを棚卸しし、`高/中/低` 優先で移行順を確定した。
 - 2026-02-23: `P1-CEH-01-S2` の第1段として、`CppEmitter.hook_on_emit_stmt_kind` を override し、`super().hook_on_emit_stmt_kind(...)`（dynamic hook）で未処理だった場合に `_emit_stmt_kind_fallback(...)` で C++ 既定ディスパッチする構成へ変更した。これにより `emit_stmt` 本体の kind if 連鎖を撤去し、`CodeEmitter` hook 経由へ統一した。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_emit_stmt_fallback_works_when_dynamic_hooks_disabled Py2CppFeatureTest.test_runtime_module_tail_and_namespace_support_compiler_tree`、`python3 test/unit/test_cpp_hooks.py`、`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-23: `P1-CEH-01-S3` として profile 表現力を拡張。`load_cpp_type_map(profile)` / `load_cpp_identifier_rules(profile)` を追加し、`CppEmitter.__init__` から `self.profile` を渡すよう変更した。これにより type map・識別子予約語/rename prefix の target 固有ハードコードを profile オーバーレイ可能にした。`python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_load_cpp_type_map_allows_profile_overlay Py2CppFeatureTest.test_load_cpp_identifier_rules_allows_profile_override`、`python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。

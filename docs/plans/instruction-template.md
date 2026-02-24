@@ -6,7 +6,7 @@
 
 Last updated: 2026-02-22
 
-Use this template when you need to override priorities for the current work while keeping `docs-ja/todo.md` as the source of truth.
+Use this template when you need to override priorities for the current work while keeping `docs-ja/todo/index.md` as the source of truth.
 Do not use `todo2.md`.
 
 ## Template
@@ -32,4 +32,4 @@ Priority:
 
 - Override priority through chat instructions (do not use `todo2.md`).
 - Instructions must include at least: `target IDs`, `completion conditions`, and `out of scope`.
-- Without explicit override instructions, follow the default priority order in `docs-ja/todo.md`.
+- Without explicit override instructions, follow the default priority order in `docs-ja/todo/index.md`.

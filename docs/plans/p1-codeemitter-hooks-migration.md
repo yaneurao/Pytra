@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P1-CEH-01`
+- `docs-ja/todo/index.md` `ID: P1-CEH-01`
 
 Background:
 - If conditional logic remains in `py2cpp.py`, extensibility via profile/hook and cross-language consistency degrades.

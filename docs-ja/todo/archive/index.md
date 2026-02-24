@@ -1,6 +1,6 @@
 # TODO（履歴）
 
-<a href="../../docs/todo-history/index.md">
+<a href="../../../docs/todo/archive/index.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
@@ -8,8 +8,8 @@
 
 ## 運用方針
 
-- `docs-ja/todo-history/index.md` は索引のみを保持します。
-- 完了履歴の本文は `docs-ja/todo-history/YYYYMMDD.md` に日付単位で保存します。
+- `docs-ja/todo/archive/index.md` は索引のみを保持します。
+- 完了履歴の本文は `docs-ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 - 完了した plan は `docs-ja/plans/archive/` へ移動し、この索引からリンクします。
 - `docs/` 側は `docs-ja/` を正として翻訳を同期します。
 

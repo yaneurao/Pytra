@@ -9,8 +9,8 @@ This folder stores long-term plans, design drafts, and investigation notes.
 ## Rules
 
 - `docs-ja/` is the source of truth. This `docs/` tree is the English mirror.
-- Keep planning documents under discussion in this folder; formal tracking of unfinished tasks stays in `docs-ja/todo.md`.
-- Move only concrete, actionable items into `docs-ja/todo.md`.
+- Keep planning documents under discussion in this folder; formal tracking of unfinished tasks stays in `docs-ja/todo/index.md`.
+- Move only concrete, actionable items into `docs-ja/todo/index.md`.
 - Each plan should map one-to-one with a TODO task ID (for example: `P1-COMP-01`).
 - In TODO entries, always list both the task ID and the corresponding plan file path.
 - For priority-override instructions, use `docs-ja/plans/instruction-template.md`.
@@ -23,7 +23,7 @@ This folder stores long-term plans, design drafts, and investigation notes.
 Last updated: YYYY-MM-DD
 
 Related TODO:
-- `docs-ja/todo.md` `ID: ...`
+- `docs-ja/todo/index.md` `ID: ...`
 
 Background:
 Objective:

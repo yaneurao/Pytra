@@ -138,7 +138,7 @@ python3 tools/check_py2cs_transpile.py
 
 補足:
 - `py2cs.py` は EAST ベースの変換器です（`.py/.json -> EAST -> C#`）。
-- C# 出力品質の段階改善は `docs-ja/todo.md` を参照してください。
+- C# 出力品質の段階改善は `docs-ja/todo/index.md` を参照してください。
 
 </details>
 
@@ -400,7 +400,7 @@ table = {}               # key/value 型が不明
 
 - 現状は `any` ベース実装を併用しますが、数値演算部分では `int` / `float64` / `bool` / `string` の推論を行います。
 - `bytes` / `bytearray` はランタイムで `[]byte` として扱います。
-- Go の型注釈反映を強化して `any` 退化を減らす作業は `docs-ja/todo.md` の未完了項目です。
+- Go の型注釈反映を強化して `any` 退化を減らす作業は `docs-ja/todo/index.md` の未完了項目です。
 
 </details>
 
@@ -409,7 +409,7 @@ table = {}               # key/value 型が不明
 
 - 現状は `Object` ベース実装を併用します。
 - `bytes` / `bytearray` はランタイムで `byte[]` として扱います。
-- Java の型注釈反映を強化して `Object` 退化を減らす作業は `docs-ja/todo.md` の未完了項目です。
+- Java の型注釈反映を強化して `Object` 退化を減らす作業は `docs-ja/todo/index.md` の未完了項目です。
 
 </details>
 

@@ -7,7 +7,7 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P2-ANY-01` to `P2-ANY-07`
+- `docs-ja/todo/index.md` `ID: P2-ANY-01` to `P2-ANY-07`
 
 Background:
 - Ambiguous `Any/object` boundaries reduce quality in both selfhost and generated code through excessive boxing and type collapse.

@@ -3,7 +3,7 @@
 最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P1-MQ-01` 〜 `P1-MQ-07`
+- `docs-ja/todo/index.md` の `ID: P1-MQ-01` 〜 `P1-MQ-07`
 
 背景:
 - `sample/cpp/` と比べて、`sample/rs` および他言語（`cs/js/ts/go/java/swift/kotlin`）の生成コードは可読性の劣化が目立つ。

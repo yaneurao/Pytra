@@ -3,11 +3,11 @@
 最終更新: 2026-02-24
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P0-EASTMIG-01`
-- `docs-ja/todo.md` の `ID: P0-EASTMIG-02`
-- `docs-ja/todo.md` の `ID: P0-EASTMIG-03`
-- `docs-ja/todo.md` の `ID: P0-EASTMIG-04`
-- `docs-ja/todo.md` の `ID: P0-EASTMIG-05`
+- `docs-ja/todo/index.md` の `ID: P0-EASTMIG-01`
+- `docs-ja/todo/index.md` の `ID: P0-EASTMIG-02`
+- `docs-ja/todo/index.md` の `ID: P0-EASTMIG-03`
+- `docs-ja/todo/index.md` の `ID: P0-EASTMIG-04`
+- `docs-ja/todo/index.md` の `ID: P0-EASTMIG-05`
 
 背景:
 - 現状は `EAST1/EAST2/EAST3` の責務がファイル上で見えにくく、`transpile_cli.py` に集約されている。
@@ -95,7 +95,7 @@ EAST2 互換モード縮退方針（P0-EASTMIG-05-S3）:
 決定ログ:
 - 2026-02-24: 本計画を `materials/refs/` に `plans` 形式で追加。
 - 2026-02-24: dispatch 方針は単一オプション `--object-dispatch-mode`（既定 `native`）を維持。
-- 2026-02-24: `docs-ja/plans/plan-east123-migration.md` として採用し、`docs-ja/todo.md` へ `P0-EASTMIG-*` タスク群を登録する。
+- 2026-02-24: `docs-ja/plans/plan-east123-migration.md` として採用し、`docs-ja/todo/index.md` へ `P0-EASTMIG-*` タスク群を登録する。
 - 2026-02-24: `P0-EASTMIG-02-S1` として `src/pytra/compiler/east_parts/east1.py` を追加し、`load_east1_document` の実処理を `transpile_cli.py` 互換ラッパから分離した。
 - 2026-02-24: `P0-EASTMIG-02-S2` として `src/pytra/compiler/east_parts/east2.py` を追加し、`normalize_east1_to_east2_document` を段階モジュールへ移設した（`transpile_cli.py` 側は selfhost 互換 fallback を維持）。
 - 2026-02-24: `P0-EASTMIG-02-S3` として `src/pytra/compiler/east_parts/east3.py` を追加し、`load_east3_document` と `lower_east2_to_east3` 公開委譲を段階モジュールへ集約した。

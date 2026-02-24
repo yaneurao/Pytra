@@ -7,10 +7,10 @@
 Last updated: 2026-02-22
 
 Related TODO:
-- `docs-ja/todo.md` `ID: P2-MGPT-01`
-- `docs-ja/todo.md` `ID: P2-MGPT-02`
-- `docs-ja/todo.md` `ID: P2-MGPT-03`
-- `docs-ja/todo.md` `ID: P2-MGPT-04`
+- `docs-ja/todo/index.md` `ID: P2-MGPT-01`
+- `docs-ja/todo/index.md` `ID: P2-MGPT-02`
+- `docs-ja/todo/index.md` `ID: P2-MGPT-03`
+- `docs-ja/todo/index.md` `ID: P2-MGPT-04`
 
 Background:
 - Transpiling `work/tmp/microgpt-20260222-lite.py` via `python3 src/py2cpp.py ...` currently stops because the self_hosted parser rejects arguments without type annotations.

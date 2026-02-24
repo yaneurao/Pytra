@@ -3,7 +3,7 @@
 最終更新: 2026-02-23
 
 関連 TODO:
-- `docs-ja/todo.md` の `ID: P1-CED-*`
+- `docs-ja/todo/index.md` の `ID: P1-CED-*`
 
 背景:
 - selfhost で static 束縛前提が強く、共通化時に派生実装へ到達しない経路が発生する。
