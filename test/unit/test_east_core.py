@@ -107,11 +107,15 @@ def main() -> None:
     b: bool = bool(o)
     it = iter(xs)
     first = next(it)
+    ri = reversed(xs)
+    en = enumerate(xs, 1)
+    has_any: bool = any(xs)
+    has_all: bool = all(xs)
     d: dict[str, int] = {"a": 1}
     v: int = d.get("a", 0)
     p: Path = Path("tmp")
     ok: bool = p.exists()
-    print(len(xs), t, u, p0, p1, len(ba), n, b, first, v, ok)
+    print(len(xs), t, u, p0, p1, len(ba), n, b, first, ri, en, has_any, has_all, v, ok)
 
 if __name__ == "__main__":
     main()
@@ -127,6 +131,10 @@ if __name__ == "__main__":
         self.assertIn("bytearray_ctor", runtime_calls)
         self.assertIn("py_iter_or_raise", runtime_calls)
         self.assertIn("py_next_or_stop", runtime_calls)
+        self.assertIn("py_reversed", runtime_calls)
+        self.assertIn("py_enumerate", runtime_calls)
+        self.assertIn("py_any", runtime_calls)
+        self.assertIn("py_all", runtime_calls)
         self.assertIn("py_to_bool", runtime_calls)
         self.assertIn("py_to_int64_base", runtime_calls)
         self.assertIn("list.append", runtime_calls)
