@@ -2188,6 +2188,38 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(out, "kind"), "Module")
         self.assertEqual(dict_any_get(out, "east_stage"), 1)
 
+    def test_east2_stage_helper_normalizes_stage1_to_stage2(self) -> None:
+        from src.pytra.compiler.east_parts.east2 import normalize_east1_to_east2_document as normalize_east2_stage
+
+        out = normalize_east2_stage({"kind": "Module", "east_stage": 1, "schema_version": 1, "meta": {"dispatch_mode": "native"}, "body": []})
+        self.assertEqual(dict_any_get_str(out, "kind"), "Module")
+        self.assertEqual(dict_any_get(out, "east_stage"), 2)
+
+    def test_east3_stage_loader_helper_requires_loader_callback(self) -> None:
+        from src.pytra.compiler.east_parts.east3 import load_east3_document as load_east3_stage
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            p = root / "dummy.py"
+            p.write_text("x = 1\n", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "load_east_document_fn is required"):
+                load_east3_stage(p)
+
+    def test_east3_stage_loader_helper_lowers_document(self) -> None:
+        from src.pytra.compiler.east_parts.east3 import load_east3_document as load_east3_stage
+
+        def _fake_loader(_p: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
+            _ = parser_backend
+            return {"kind": "Module", "east_stage": 2, "schema_version": 1, "meta": {"dispatch_mode": "native"}, "body": []}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            p = root / "dummy.py"
+            p.write_text("x = 1\n", encoding="utf-8")
+            out = load_east3_stage(p, load_east_document_fn=_fake_loader)
+        self.assertEqual(dict_any_get_str(out, "kind"), "Module")
+        self.assertEqual(dict_any_get(out, "east_stage"), 3)
+
     def test_load_east_document_helper_normalizes_stage1_to_stage2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

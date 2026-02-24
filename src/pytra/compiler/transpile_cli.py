@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
 from pytra.compiler.east_parts.east1 import load_east1_document as load_east1_document_stage
-from pytra.compiler.east_parts.east3_lowering import lower_east2_to_east3
+from pytra.compiler.east_parts.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
+from pytra.compiler.east_parts.east3 import load_east3_document as load_east3_document_stage
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
@@ -273,6 +274,12 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
 
 def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, object]:
     """`EAST1` ルートを `EAST2` 契約（stage=2）へ正規化する。"""
+    stage_fn_any = globals().get("normalize_east1_to_east2_document_stage")
+    if callable(stage_fn_any):
+        out_any = stage_fn_any(east_doc)
+        if isinstance(out_any, dict):
+            out_doc: dict[str, object] = out_any
+            return out_doc
     if isinstance(east_doc, dict) and dict_any_kind(east_doc) == "Module":
         stage_obj = dict_any_get(east_doc, "east_stage")
         if isinstance(stage_obj, int) and stage_obj == 1:
@@ -315,15 +322,12 @@ def load_east3_document(
     object_dispatch_mode: str = "",
 ) -> dict[str, object]:
     """入力ファイルを読み込み、最小 `EAST2 -> EAST3` lower を適用して返す。"""
-    east2 = load_east_document(input_path, parser_backend=parser_backend)
-    if isinstance(east2, dict):
-        east3 = lower_east2_to_east3(east2, object_dispatch_mode=object_dispatch_mode)
-        if isinstance(east3, dict):
-            return east3
-    raise make_user_error(
-        "input_invalid",
-        "Failed to build EAST3.",
-        ["EAST3 root must be a dict."],
+    return load_east3_document_stage(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        load_east_document_fn=load_east_document,
+        make_user_error_fn=make_user_error,
     )
 
 

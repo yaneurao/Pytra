@@ -38,10 +38,10 @@
 | EAST1 | parser 直後 IR 生成 | `src/pytra/compiler/east_parts/core.py` | `src/pytra/compiler/east_parts/core.py`（維持） |
 | EAST1 | EAST1 入口 API（`load_east1_document`） | `src/pytra/compiler/east_parts/east1.py`（`transpile_cli.py` 互換ラッパ経由） | `src/pytra/compiler/east_parts/east1.py` |
 | EAST1 | EAST1 ルート正規化（`east_stage=1` 固定） | `src/pytra/compiler/east_parts/east1.py` | `src/pytra/compiler/east_parts/east1.py` |
-| EAST2 | EAST1 -> EAST2 正規化 API（`normalize_east1_to_east2_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east2.py` |
+| EAST2 | EAST1 -> EAST2 正規化 API（`normalize_east1_to_east2_document`） | `src/pytra/compiler/east_parts/east2.py`（`transpile_cli.py` 互換ラッパ + selfhost fallback） | `src/pytra/compiler/east_parts/east2.py` |
 | EAST2 | ルート契約補助（meta/dispatch 正規化） | `src/pytra/compiler/east_parts/east_io.py` | `src/pytra/compiler/east_parts/east2.py` + `east_io.py` |
 | EAST3 | EAST2 -> EAST3 lower 本体 | `src/pytra/compiler/east_parts/east3_lowering.py` | `src/pytra/compiler/east_parts/east3_lowering.py`（維持） |
-| EAST3 | EAST3 入口 API（`load_east3_document`） | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/east_parts/east3.py` |
+| EAST3 | EAST3 入口 API（`load_east3_document`） | `src/pytra/compiler/east_parts/east3.py`（`transpile_cli.py` 互換ラッパ経由） | `src/pytra/compiler/east_parts/east3.py` |
 | Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage {2,3}` 二重運用） | `src/py2cpp.py`（`EAST3` 主経路 + `EAST2` 互換） |
 | CLI 互換 | 旧 API 互換公開 | `src/pytra/compiler/transpile_cli.py` | `src/pytra/compiler/transpile_cli.py`（互換ラッパ専任） |
 
