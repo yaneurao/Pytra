@@ -375,6 +375,8 @@
   - スコープ管理・式/文の共通 lower・テンプレート展開など、出力生成に閉じた処理のみを持つ。
   - ファイルシステム走査、import グラフ解析、プロジェクト全体依存解決は持たない。
   - `meta.dispatch_mode` は入力値を読むだけにし、mode 再決定や意味論差し替えを行わない。
+  - `CodeEmitter` は `EAST3` 以降の「構文写像専任」とし、意味論 lower（`EAST2 -> EAST3` 相当）は担当しない。
+  - 禁止事項: dispatch mode の意味適用、`type_id`/boxing/built-in の意味論決定、backend/hook 側での再解釈。
 - EAST parser（`src/pytra/compiler/east.py`）の責務:
   - 単一入力（`.py`）を字句解析/構文解析し、単一モジュール EAST を生成する。
   - `range` などの言語非依存正規化と、単一ファイル内で完結する型/symbol 補助情報の付与に専念する。
