@@ -5226,6 +5226,14 @@ class CppEmitter(CodeEmitter):
             builtin_rendered: str = self._render_builtin_call(expr_d, fn, arg_nodes, kw_nodes)
             if builtin_rendered != "":
                 return builtin_rendered
+            runtime_call_txt = self.any_dict_get_str(expr_d, "runtime_call", "")
+            builtin_name_txt = self.any_dict_get_str(expr_d, "builtin_name", "")
+            raise ValueError(
+                "unhandled BuiltinCall: runtime_call="
+                + runtime_call_txt
+                + ", builtin_name="
+                + builtin_name_txt
+            )
         name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)
         name_or_attr_txt = ""
         if isinstance(name_or_attr, str):
