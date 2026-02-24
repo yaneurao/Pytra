@@ -118,13 +118,13 @@
     - [x] [ID: P3-EAST-PY-03-S6] `_ShExprParser._tokenize` を `while i < len(text)` から `for ... enumerate` + `skip` 制御へ置換し、`while` ベースの先頭トークン走査を除去する。
     - [x] [ID: P3-EAST-PY-03-S7] `_sh_parse_stmt_block_mutable` を `while i < len(body_lines)` から `for ... enumerate` + `skip` 制御へ置換し、インデックス更新由来の複雑化を抑える。
 4. [x] [ID: P3-EAST-PY-03-S1] `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` へ戻し、`while i < len(...)` を除去する。
-5. [ ] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
+5. [x] [ID: P3-EAST-PY-04] `P3-EAST-PY-02` と `P3-EAST-PY-03` の結果を `docs-ja/plans/p3-pythonic-restoration.md` に反映し、残る非 Pythonic 記法の維持理由（selfhost 制約）を明文化する。
 
 ### `src/py2cpp.py`
 
 `P3-EAST-PY-*` を先行し、`east_parts` 側の整理完了後に着手する。
 
-1. [ ] [ID: P3-PY-01] `while i < len(xs)` + 手動インデックス更新を `for x in xs` / `for i, x in enumerate(xs)` へ戻す。
+1. [x] [ID: P3-PY-01] `while i < len(xs)` + 手動インデックス更新を `for x in xs` / `for i, x in enumerate(xs)` へ戻す。
 2. [ ] [ID: P3-PY-03] 空 dict/list 初期化後の逐次代入（`out = {}; out["k"] = v`）を、型崩れしない箇所から辞書リテラルへ戻す。
 3. [ ] [ID: P3-PY-04] 三項演算子を回避している箇所（`if ...: a=x else: a=y`）を、selfhost 側対応後に式形式へ戻す。
 4. [ ] [ID: P3-PY-05] import 解析の一時変数展開（`obj = ...; s = any_to_str(obj)`）を、型安全が確保できる箇所から簡潔化する。
@@ -134,6 +134,7 @@
 - 作業ルールは `docs-ja/plans/p3-pythonic-restoration.md` の「作業ルール」を参照。
 - [ID: P3-EAST-PY-03-S1] `core.py` の `_sh_is_identifier` と `_sh_bind_comp_target_types` を `for` / `enumerate` 化し、`code_emitter.py` の `while i < len(...)` を 3 件（`_kind_hook_suffix`, `fallback_tuple_target_names_from_repr`, `emit_tuple_assign_with_tmp`）に限定して簡潔化。
 - [ID: P3-EAST-PY-04] `core.py` の `_sh_parse_stmt_block_mutable` を `for ... enumerate` + `skip` 制御へ移行し、`while i < len(...)` 由来のインデックス更新を排除。
+- [ID: P3-PY-01] `src/py2cpp.py` から `while i < len(...)` や同等の手動インデックス更新パターンを除去済みとして `P3-PY-01` を完了扱い。
 
 ## P3: サンプル実行時間の再計測とREADME更新（低優先）
 
@@ -145,11 +146,17 @@
 
 文脈: `docs-ja/plans/p3-pytra-launcher-build.md`（`TG-P3-LAUNCHER-BUILD`）
 
-1. [ ] [ID: P3-LB-01] `spec-make` の未実装項目（`./pytra` ランチャー / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` / `--target cpp --build`）を実装し、C++ の「変換 -> Makefile 生成 -> build」導線を 1 コマンドで実行できるようにする（`P3-LB-01-S1` から `P3-LB-01-S4` 完了でクローズ）。
-2. [ ] [ID: P3-LB-01-S1] `tools/gen_makefile_from_manifest.py` を追加し、`manifest.json` から `Makefile`（`all/run/clean`）を生成できるようにする。
-3. [ ] [ID: P3-LB-01-S2] `src/pytra/cli.py` を追加し、`./pytra INPUT.py --target cpp --build` で `py2cpp --multi-file` -> Makefile 生成 -> `make` 実行までを連結できるようにする。
-4. [ ] [ID: P3-LB-01-S3] リポジトリ直下に `./pytra` ランチャーを追加し、`PYTHONPATH=src` の手動設定なしで `python3 -m pytra.cli` を起動できるようにする。
-5. [ ] [ID: P3-LB-01-S4] `tools` / CLI の unit test とドキュメント（`spec-make.md` / `spec-dev.md` / `spec-tools.md`）を同期し、未実装表記を解消する。
+1. [x] [ID: P3-LB-01] `spec-make` の未実装項目（`./pytra` ランチャー / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` / `--target cpp --build`）を実装し、C++ の「変換 -> Makefile 生成 -> build」導線を 1 コマンドで実行できるようにする（`P3-LB-01-S1` から `P3-LB-01-S4` 完了でクローズ）。
+2. [x] [ID: P3-LB-01-S1] `tools/gen_makefile_from_manifest.py` を追加し、`manifest.json` から `Makefile`（`all/run/clean`）を生成できるようにする。
+3. [x] [ID: P3-LB-01-S2] `src/pytra/cli.py` を追加し、`./pytra INPUT.py --target cpp --build` で `py2cpp --multi-file` -> Makefile 生成 -> `make` 実行までを連結できるようにする。
+4. [x] [ID: P3-LB-01-S3] リポジトリ直下に `./pytra` ランチャーを追加し、`PYTHONPATH=src` の手動設定なしで `python3 -m pytra.cli` を起動できるようにする。
+5. [x] [ID: P3-LB-01-S4] `tools` / CLI の unit test とドキュメント（`spec-make.md` / `spec-dev.md` / `spec-tools.md`）を同期し、未実装表記を解消する。
+
+進捗メモ:
+- `tools/gen_makefile_from_manifest.py` を追加し、`manifest.json` の `modules` 検証と `Makefile` 生成を実装。
+- `src/pytra/cli.py` に `--target cpp --build` の導線を追加し、`--opt -O3` 正規化を含めた起動を担保。
+- `./pytra` を追加し、`python3 -m pytra.cli` で実行可能なランチャーを追加。
+- `test/unit/test_pytra_cli.py` と docs の `spec-make.md` / `spec-dev.md` / `spec-tools.md` を更新して未実装表記を解消。
 
 ## メモ
 

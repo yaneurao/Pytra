@@ -168,7 +168,7 @@
   - オプション: `--std`（既定 `c++20`）、`--opt`（既定 `-O2`）
   - `manifest.modules` が配列でない、または有効 `source` が空の場合はエラー終了します。
   - `manifest.include_dir` が未指定の場合は `manifest` 同階層 `include/` を既定として扱います。
-- `docs-ja/spec/spec-make.md` にある `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は、2026-02-22 時点で未実装です。
+- `docs-ja/spec/spec-make.md` にある `./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は、2026-02-24 時点で実装済みです。
 
 ### py2cpp 共通化ガードルール
 

@@ -1,11 +1,12 @@
-# Makefile 生成とワンショット build 仕様（草案）
+# Makefile 生成とワンショット build 仕様
 
 この文書は、C++ 向けの build 導線を `py2cpp.py` 直呼びではなく `pytra` 共通 CLI へ集約する運用仕様を定義する。
 
-> 2026-02-22 照合メモ:
-> - `src/pytra/cli.py` と `tools/gen_makefile_from_manifest.py` は未実装です。
-> - 実装済みの採用項目（`--multi-file` の `manifest.json` 契約と `tools/build_multi_cpp.py` 導線）は `docs-ja/spec/spec-dev.md` と `docs-ja/spec/spec-tools.md` へ移管済みです。
-> - 本文の残りは将来導入案として扱います。
+## 2026-02-24 照合メモ
+
+- `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` / `./pytra` は実装済みで、`--target cpp --build` の導線を `./pytra` 経由で提供します。
+- `--multi-file` の `manifest.json` 契約と `tools/build_multi_cpp.py` 導線については仕様として継続しています（`docs-ja/spec/spec-dev.md` / `docs-ja/spec/spec-tools.md`）。
+- 本文は実装済み仕様として運用し、将来案として扱う部分は追加タスクとして分離されます。
 
 ## 1. 決定事項
 
@@ -203,6 +204,6 @@
 
 ## 13. 補足
 
-- `out/` はローカル生成物ディレクトリとして運用し、Git 管理しない。
+- `out/` はローカル生成物ディレクトリとして運用し、Git 管理しません。
 - `py2cpp.py` は backend として維持し、共通 CLI から呼び出す。
 - 将来は `pip install -e .` + console script 化を行うと `./pytra` なしでも `pytra ...` 実行に移行できる。

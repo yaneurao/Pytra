@@ -45,6 +45,8 @@
   - 目的: 原本 `materials/refs/microgpt/microgpt-20260222.py` を固定入力にし、`py2cpp` の失敗ステージ（A〜F）または成功を検査して再発を検知する。
 - `tools/build_multi_cpp.py`
   - 目的: `py2cpp.py --multi-file` が出力した `manifest.json` を読み、関連 `*.cpp` と runtime をまとめてビルドする。
+- `tools/gen_makefile_from_manifest.py`
+  - 目的: `manifest.json` を受け取り、`all`, `run`, `clean` を含む `Makefile` を生成する。
 - `tools/verify_multi_file_outputs.py`
   - 目的: `sample/py` の multi-file 出力をビルド・実行し、単一ファイル出力との実行結果一致を確認する。
 - `tools/check_transpiler_version_gate.py`

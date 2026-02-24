@@ -42,4 +42,8 @@
 4. `P3-LB-01-S4`: test と docs を同期し、回帰を固定する。  
 
 決定ログ:
-- 2026-02-24: `spec-make` のランチャー/ビルド導線が未実装のまま `todo` から外れていたため、`P3-LB-01` として低優先で再登録した。
+- 2026-02-24: spec-make のランチャー/ビルド導線が未実装のまま `todo` から外れていたため、LB タスクとして再登録した。
+- 2026-02-24: tools/gen_makefile_from_manifest.py を追加し、`manifest.json` から Makefile を生成する導線を実装。
+- 2026-02-24: src/pytra/cli.py の --target cpp --build 導線を実装。
+- 2026-02-24: ./pytra ランチャーを追加し、`python3 -m pytra.cli` で起動可能にした。
+- 2026-02-24: test/unit/test_pytra_cli.py を追加・更新し、docs-ja/spec/spec-make.md / docs-ja/spec/spec-dev.md / docs-ja/spec/spec-tools.md を実装状態へ更新。
