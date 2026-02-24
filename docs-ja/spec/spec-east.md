@@ -385,6 +385,7 @@
 3. `transpile_cli.py` は build 本体ロジックを持たず、委譲中心とする。  
 4. `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を回帰導線に含め、差分発生時は `todo` へ切り出して追跡する。  
 5. `test/unit/test_east1_build.py` と `test/unit/test_py2cpp_east1_build_bridge.py` で、`EAST1` 入口契約と `py2cpp` 委譲経路を固定する。  
+6. import graph 解析本体は `east1_build.py`（`_analyze_import_graph_impl`）を正本とし、`transpile_cli.py` の `analyze_import_graph` / `build_module_east_map` は互換公開用 thin wrapper のみを保持する。  
 
 <a id="east-migration-phases"></a>
 ## 20. 移行フェーズ（EAST3 主経路化）

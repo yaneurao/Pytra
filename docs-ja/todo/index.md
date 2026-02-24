@@ -22,19 +22,6 @@
 - `docs-ja/todo/index.md` / `docs-ja/plans/*.md` 更新時は `python3 tools/check_todo_priority.py` を実行し、差分に追加した進捗 `ID` が最上位未完了 `ID`（またはその子 `ID`）と一致することを確認する。
 - 作業中の判断は文脈ファイルの `決定ログ` へ追記する。
 
-## P0: 依存解析の `EAST1 build` 責務化（3番目優先）
-
-文脈: `docs-ja/plans/p0-dependency-analysis-east1.md`（`TG-P0-DEP-ANALYSIS-EAST1`）
-
-1. [ ] [ID: P0-DEP-EAST1-01] 依存解析（import graph）の実装責務を `EAST1 build` 層へ集約し、`py2cpp.py` / `transpile_cli.py` から分離する（`P0-DEP-EAST1-01-S1` から `P0-DEP-EAST1-01-S4` 完了でクローズ）。
-2. [x] [ID: P0-DEP-EAST1-01-S1] `P0-EAST1-BUILD-01` 完了を前提条件として明記し、依存解析タスクの着手条件を固定する。
-3. [x] [ID: P0-DEP-EAST1-01-S2] import graph helper 本体を `src/pytra/compiler/east_parts/east1_build.py` へ移し、`transpile_cli.py` 側を薄い互換委譲へ縮退する。
-4. [x] [ID: P0-DEP-EAST1-01-S3] `src/py2cpp.py` から依存解析の実装詳細参照を除去し、`east1_build` 公開 API のみを利用する。
-5. [ ] [ID: P0-DEP-EAST1-01-S4] 依存解析責務境界を `spec-east` / `spec-dev` に明記し、`check_py2cpp_transpile` / smoke で回帰ガードを固定する。
-進捗メモ: [ID: P0-DEP-EAST1-01-S1] `P0-EAST1-BUILD-01` が完了・archive 移管済みであることを前提条件として plan 側へ固定し、依存解析移管の着手条件を確定。
-進捗メモ: [ID: P0-DEP-EAST1-01-S2] `east1_build.py` に import graph 解析本体（`_analyze_import_graph_impl`）を移し、`transpile_cli` の `analyze_import_graph` / `build_module_east_map` 公開名は `east1_build` への thin wrapper に固定した。
-進捗メモ: [ID: P0-DEP-EAST1-01-S3] `py2cpp.py` の依存解析導線（`_analyze_import_graph` / `build_module_east_map`）が `East1BuildHelpers` 呼び出しへ収束し、`transpile_cli` 実装詳細への直接参照を持たない状態を確認。
-
 ## P0: `CppEmitter` 本体の `py2cpp.py` からの抽出（4番目優先）
 
 文脈: `docs-ja/plans/p0-cpp-emitter-extraction.md`（`TG-P0-CPP-EMITTER-EXTRACTION`）

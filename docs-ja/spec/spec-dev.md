@@ -183,6 +183,7 @@
 - `src/pytra/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2cpp.py` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
 - `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/pytra/compiler/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
 - `py2cpp.py` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
+- 回帰は `test/unit/test_east1_build.py`・`test/unit/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
 
 ### 3.1 import と `runtime/cpp` 対応
 
