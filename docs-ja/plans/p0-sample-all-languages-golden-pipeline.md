@@ -49,5 +49,20 @@
 - `P0-SAMPLE-GOLDEN-ALL-01-S7`: `go/java/swift/kotlin` 18件の transpile/run/compare 完全一致
 - `P0-SAMPLE-GOLDEN-ALL-01-S8`: 全言語集約結果を `readme-ja.md` / `readme.md` のサンプル実行状況とリンクへ反映
 
+`P0-SAMPLE-GOLDEN-ALL-01-S1` 確定内容（2026-02-25）:
+- 検証対象サンプル: `sample/py` の `01_mandelbrot` 〜 `18_mini_language_interpreter`（18件固定）。
+- 検証対象言語: `cpp, rs, cs, js, ts, go, java, swift, kotlin`（9言語固定）。
+- 比較ルール:
+  - stdout は `normalize_stdout_for_compare`（`elapsed*`/`time_sec` 行除外）で正規化して比較する。
+  - 生成 artifact は `sample/golden/manifest.json` の `suffix` / `size` / `sha256` で比較する。
+  - baseline source hash（`source_sha256`）が不一致なら stale 扱いで `--refresh-golden` を要求する。
+- 再現手順（共通）:
+  - スコープ確認: `ls sample/py/*.py | sort`
+  - parity 実行（任意言語集合）:
+    `python3 tools/runtime_parity_check.py --case-root sample --targets cpp,rs,cs,js,ts,go,java,swift,kotlin 01_mandelbrot ... 18_mini_language_interpreter`
+  - golden 照合（C++ baseline）:
+    `python3 tools/verify_sample_outputs.py --manifest sample/golden/manifest.json`
+
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S1` として検証対象（18サンプル/9言語）と比較ルール（stdout 正規化 + artifact hash/size + source hash）および再現コマンドを固定した。
