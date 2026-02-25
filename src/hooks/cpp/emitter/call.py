@@ -43,26 +43,33 @@ class CppCallEmitter:
         """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
         raw = raw_name
         imported_module = ""
-        if raw != "" and not self.is_declared(raw):
+        has_import_context = raw != "" and not self.is_declared(raw)
+        if has_import_context:
             resolved = self._resolve_imported_symbol(raw)
             imported_module = self.any_dict_get_str(resolved, "module", "")
-            raw = self.any_dict_get_str(resolved, "name", "") or raw
-        if raw == "" or imported_module == "":
+            if imported_module != "":
+                raw = self.any_dict_get_str(resolved, "name", "") or raw
+        has_import_target = raw != "" and imported_module != ""
+        if not has_import_target:
             return None, raw
         mapped_runtime_txt = self._resolve_runtime_call_for_imported_symbol(imported_module, raw) or ""
-        if (
-            mapped_runtime_txt
+        route_runtime_call = (
+            mapped_runtime_txt != ""
             and mapped_runtime_txt not in {"perf_counter", "Path"}
             and looks_like_runtime_function_name(mapped_runtime_txt)
-        ):
+        )
+        if route_runtime_call:
             call_args = self.merge_call_args(args, kw)
             if self._contains_text(mapped_runtime_txt, "::"):
                 call_args = self._coerce_args_for_module_function(imported_module, raw, call_args, arg_nodes)
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
-        target_ns = self.module_namespace_map.get(imported_module, "")
-        if target_ns != "":
+        has_namespace_map = imported_module in self.module_namespace_map
+        target_ns = ""
+        if has_namespace_map:
+            target_ns = self.module_namespace_map[imported_module]
+        if has_namespace_map and target_ns != "":
             namespaced = self._render_namespaced_module_call(
                 imported_module,
                 target_ns,

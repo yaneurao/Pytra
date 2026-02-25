@@ -3804,12 +3804,29 @@ class CppEmitter(
             return out
         return []
 
+    def _type_id_name_call_kind(self, raw_name: str) -> str:
+        raw = self._trim_ws(self.any_to_str(raw_name))
+        if raw == "isinstance":
+            return "legacy_isinstance"
+        if raw == "issubclass":
+            return "legacy_issubclass"
+        if raw in {"py_isinstance", "py_tid_isinstance"}:
+            return "runtime_isinstance"
+        if raw in {"py_issubclass", "py_tid_issubclass"}:
+            return "runtime_issubclass"
+        if raw in {"py_is_subtype", "py_tid_is_subtype"}:
+            return "runtime_is_subtype"
+        if raw in {"py_runtime_type_id", "py_tid_runtime_type_id"}:
+            return "runtime_type_id"
+        return ""
+
     def _build_type_id_expr_from_call_name(
         self,
         raw_name: str,
         arg_nodes: list[Any],
     ) -> dict[str, Any] | None:
-        if raw_name == "isinstance":
+        kind = self._type_id_name_call_kind(raw_name)
+        if kind == "legacy_isinstance":
             if len(arg_nodes) != 2:
                 return self._const_false_expr_node()
             value_node = arg_nodes[0]
@@ -3831,7 +3848,7 @@ class CppEmitter(
             if len(checks) == 1:
                 return checks[0]
             return self._boolop_or_expr_node(checks)
-        if raw_name == "issubclass":
+        if kind == "legacy_issubclass":
             if len(arg_nodes) != 2:
                 return self._const_false_expr_node()
             actual_type_node = arg_nodes[0]
@@ -3853,7 +3870,7 @@ class CppEmitter(
             if len(checks) == 1:
                 return checks[0]
             return self._boolop_or_expr_node(checks)
-        if raw_name == "py_isinstance" or raw_name == "py_tid_isinstance":
+        if kind == "runtime_isinstance":
             if len(arg_nodes) != 2:
                 return self._const_false_expr_node()
             return {
@@ -3864,7 +3881,7 @@ class CppEmitter(
                 "borrow_kind": "value",
                 "casts": [],
             }
-        if raw_name == "py_issubclass" or raw_name == "py_tid_issubclass":
+        if kind == "runtime_issubclass":
             if len(arg_nodes) != 2:
                 return self._const_false_expr_node()
             return {
@@ -3875,7 +3892,7 @@ class CppEmitter(
                 "borrow_kind": "value",
                 "casts": [],
             }
-        if raw_name == "py_is_subtype" or raw_name == "py_tid_is_subtype":
+        if kind == "runtime_is_subtype":
             if len(arg_nodes) != 2:
                 return self._const_false_expr_node()
             return {
@@ -3886,7 +3903,7 @@ class CppEmitter(
                 "borrow_kind": "value",
                 "casts": [],
             }
-        if raw_name == "py_runtime_type_id" or raw_name == "py_tid_runtime_type_id":
+        if kind == "runtime_type_id":
             if len(arg_nodes) != 1:
                 return None
             return {
@@ -4021,10 +4038,8 @@ class CppEmitter(
 
     def _allows_legacy_type_id_name_call(self, raw_name: str) -> bool:
         """未 lower の type_id Name-call を許容するか判定する。"""
-        if raw_name not in {"isinstance", "issubclass"}:
-            return True
-        # py2cpp は EAST3 専用経路のため、type_id 系 Name-call は常に lower 済みを要求する。
-        return False
+        kind = self._type_id_name_call_kind(raw_name)
+        return kind not in {"legacy_isinstance", "legacy_issubclass"}
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""
@@ -4066,6 +4081,7 @@ class CppEmitter(
         fn_kind = self._node_kind_from_dict(fn)
         if fn_kind == "Name":
             raw = dict_any_get_str(fn, "id")
+            name_call_kind = self._type_id_name_call_kind(raw)
             imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
             if imported_rendered is not None:
                 return imported_rendered
@@ -4083,11 +4099,12 @@ class CppEmitter(
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
-            if not self._allows_legacy_type_id_name_call(raw):
+            if name_call_kind != "" and not self._allows_legacy_type_id_name_call(raw):
                 raise ValueError("type_id call must be lowered to EAST3 node: " + raw)
-            type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
-            if type_id_expr is not None:
-                return self.render_expr(type_id_expr)
+            if name_call_kind != "":
+                type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
+                if type_id_expr is not None:
+                    return self.render_expr(type_id_expr)
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
             attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes)
@@ -5142,15 +5159,17 @@ class CppEmitter(
                 arg0 = self._render_repr_expr(fn_args[0])
                 arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
                 return f"py_len({arg0})"
-            if fn_name == "isinstance" and len(fn_args) == 2:
-                if not self._allows_legacy_type_id_name_call("isinstance"):
-                    raise ValueError("type_id call must be lowered to EAST3 node: isinstance")
-                arg0 = self._render_repr_expr(fn_args[0])
-                arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
-                ty = self._trim_ws(fn_args[1])
-                type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": ty})
-                if type_id_expr != "":
-                    return f"py_isinstance({arg0}, {type_id_expr})"
+            legacy_call_kind = self._type_id_name_call_kind(fn_name)
+            if legacy_call_kind in {"legacy_isinstance", "legacy_issubclass"}:
+                if not self._allows_legacy_type_id_name_call(fn_name):
+                    raise ValueError("type_id call must be lowered to EAST3 node: " + fn_name)
+                if legacy_call_kind == "legacy_isinstance" and len(fn_args) == 2:
+                    arg0 = self._render_repr_expr(fn_args[0])
+                    arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
+                    ty = self._trim_ws(fn_args[1])
+                    type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": ty})
+                    if type_id_expr != "":
+                        return f"py_isinstance({arg0}, {type_id_expr})"
 
         if t.endswith("]"):
             p: int64 = t.find("[")
