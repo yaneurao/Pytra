@@ -86,9 +86,14 @@
   - `SUMMARY cases=18 pass=18 fail=0 targets=rs`
   - `python3 test/unit/test_py2rs_smoke.py`（`Ran 22 tests ... OK`）
 
-`P0-SAMPLE-GOLDEN-ALL-01-S5` 着手状況（2026-02-25）:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` 実行時、18件すべて `toolchain_missing` になり C# parity は未着手のまま。
-- 実行環境で `mcs`/`mono` が解決できないことを `which mcs` / `which mono` で確認した。toolchain 導入後に compile/run 差分修正へ移る。
+`P0-SAMPLE-GOLDEN-ALL-01-S5` 確定内容（2026-02-25）:
+- C# toolchain（`mcs`/`mono`）導入後、`src/hooks/cs/emitter/cs_emitter.py` の import/runtime 解決、`ListComp`/`RangeExpr`/slice/tuple assign、`bytearray/bytes`・`max/min`・`perf_counter` lower、`main -> __pytra_main`、dataclass 風 constructor 生成、`in/not in` 比較など sample で必要な lower を修正した。
+- `src/runtime/cs/pytra/built_in/math.cs` を追加し、`math.sin/cos/sqrt/exp/floor/pi` など sample 依存 API を補完した。あわせて `py_runtime.cs` の `py_set/py_append` を型変換対応へ拡張し、`pathlib.cs` の `string?` を `mcs` 互換へ修正した。
+- 検証結果:
+  - `python3 test/unit/test_py2cs_smoke.py`（13件 pass）
+  - `python3 test/unit/test_runtime_parity_check_cli.py`（4件 pass）
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout`
+  - `SUMMARY cases=18 pass=18 fail=0 targets=cs`
 
 `P0-SAMPLE-GOLDEN-ALL-01-S6` 確定内容（2026-02-25）:
 - `src/hooks/js/emitter/js_emitter.py` の import/path 解決を `./pytra/*` shim 経路へ統一し、`List`/`ListComp`/`RangeExpr`/negative index/tuple unpack assign/`in` 判定/`max`/`min`/`bytearray`/`bytes`/`str.isdigit`/`str.isalpha` など sample で必要な lower を補強した。
@@ -112,5 +117,6 @@
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S4` の着手時点で実行環境に `rustc` が存在せず、`runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout` は `toolchain_missing: 18` のみを返した。Rust toolchain 導入後に compile/run 差分修正へ進む。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S4` として Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）と `test/unit/test_py2rs_smoke.py` 22件 pass を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S5` の初回検証として `runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` を実行し、`toolchain_missing: 18`（`mcs`/`mono` 未導入）を確認した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S5` として C# emitter/runtime と parity 実行スクリプトを修正し、`runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S6` として JS emitter/runtime shim 経路を改修し、`runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）と `test_py2{js,ts}_smoke.py` pass を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` の初回検証として `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、`toolchain_missing: 72`（`go/javac/java/kotlinc/swiftc` 未導入）を確認した。
