@@ -3,6 +3,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from hooks.cpp.emitter.call import CppCallEmitter
 from hooks.cpp.emitter.expr import CppExpressionEmitter
 from hooks.cpp.emitter.stmt import CppStatementEmitter
 from hooks.cpp.profile import (
@@ -25,7 +26,7 @@ def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:
             continue
         globals()[key] = value
 
-class CppEmitter(CppStatementEmitter, CppExpressionEmitter, CodeEmitter):
+class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CodeEmitter):
     def __init__(
         self,
         east_doc: dict[str, Any],
@@ -469,34 +470,6 @@ class CppEmitter(CppStatementEmitter, CppExpressionEmitter, CodeEmitter):
                         a = f"make_object({a})"
             out.append(a)
         return out
-
-    def _lookup_module_attr_runtime_call(self, module_name: str, attr: str) -> str:
-        """`module.attr` から runtime_call 名を引く（pytra.* は短縮名フォールバックしない）。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
-        owner_keys: list[str] = [module_name_norm]
-        short_name = self._last_dotted_name(module_name_norm)
-        # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
-        if short_name != module_name_norm and not module_name_norm.startswith("pytra."):
-            owner_keys.append(short_name)
-        for owner_key in owner_keys:
-            if owner_key in self.module_attr_call_map:
-                owner_map = self.module_attr_call_map[owner_key]
-                if attr in owner_map:
-                    mapped = owner_map[attr]
-                    if mapped:
-                        return mapped
-        return ""
-
-    def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
-        """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
-        mapped = self._lookup_module_attr_runtime_call(module_name_norm, symbol_name)
-        if mapped:
-            return mapped
-        ns = self._module_name_to_cpp_namespace(module_name_norm)
-        if ns:
-            return f"{ns}::{symbol_name}"
-        return None
 
     def _is_module_definition_stmt(self, stmt: dict[str, Any]) -> bool:
         """トップレベルで namespace 直下に置ける定義文かを返す。"""
@@ -3714,34 +3687,6 @@ class CppEmitter(CppStatementEmitter, CppExpressionEmitter, CodeEmitter):
             return f"py_dict_get_default({owner_expr}, {key_expr}, {boxed_default})"
         return f"py_dict_get_default({owner_expr}, {key_expr}, {default_expr})"
 
-    def _render_builtin_static_cast_call(
-        self,
-        expr: dict[str, Any],
-        arg_nodes: list[Any],
-    ) -> str | None:
-        """BuiltinCall の `runtime_call=static_cast` 分岐を描画する。"""
-        if len(arg_nodes) == 1:
-            arg_expr = self.render_expr(arg_nodes[0])
-            target = self.cpp_type(expr.get("resolved_type"))
-            arg_t = self.get_expr_type(arg_nodes[0])
-            numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-            if target == "int64" and arg_t == "str":
-                return f"py_to_int64({arg_expr})"
-            if target in {"float64", "float32"} and arg_t == "str":
-                return f"py_to_float64({arg_expr})"
-            if target == "int64" and arg_t in numeric_t:
-                return f"int64({arg_expr})"
-            if target == "int64" and self.is_any_like_type(arg_t):
-                return f"py_to_int64({arg_expr})"
-            if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
-                return f"py_to_float64({arg_expr})"
-            if target == "bool" and self.is_any_like_type(arg_t):
-                return f"py_to_bool({arg_expr})"
-            if target == "int64":
-                return f"py_to_int64({arg_expr})"
-            return f"static_cast<{target}>({arg_expr})"
-        return None
-
     def _render_collection_constructor_call(
         self,
         raw: str,
@@ -4199,47 +4144,6 @@ class CppEmitter(CppStatementEmitter, CppExpressionEmitter, CodeEmitter):
         if len(args) == 2 and "step" in kw and "start" not in kw and "stop" not in kw:
             return f"py_range({args[0]}, {args[1]}, {kw['step']})"
         return None
-
-    def _resolve_or_render_imported_symbol_name_call(
-        self,
-        raw_name: str,
-        args: list[str],
-        kw: dict[str, str],
-        arg_nodes: list[Any],
-    ) -> tuple[str | None, str]:
-        """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
-        raw = raw_name
-        imported_module = ""
-        if raw != "" and not self.is_declared(raw):
-            resolved = self._resolve_imported_symbol(raw)
-            imported_module = dict_str_get(resolved, "module", "")
-            raw = dict_str_get(resolved, "name", "") or raw
-        if raw == "" or imported_module == "":
-            return None, raw
-        mapped_runtime_txt = self._resolve_runtime_call_for_imported_symbol(imported_module, raw) or ""
-        if (
-            mapped_runtime_txt
-            and mapped_runtime_txt not in {"perf_counter", "Path"}
-            and looks_like_runtime_function_name(mapped_runtime_txt)
-        ):
-            call_args = self.merge_call_args(args, kw)
-            if self._contains_text(mapped_runtime_txt, "::"):
-                call_args = self._coerce_args_for_module_function(imported_module, raw, call_args, arg_nodes)
-            if raw.startswith("py_assert_"):
-                call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
-            return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
-        target_ns = self.module_namespace_map.get(self._normalize_runtime_module_name(imported_module), "")
-        if target_ns != "":
-            namespaced = self._render_namespaced_module_call(
-                imported_module,
-                target_ns,
-                raw,
-                args,
-                arg_nodes,
-            )
-            if namespaced is not None:
-                return namespaced, raw
-        return None, raw
 
     def _render_call_name_or_attr(
         self,
