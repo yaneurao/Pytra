@@ -48,7 +48,7 @@
 
 ### タスク（S1〜S8, 小粒度）
 
-1. [ ] [ID: P1-CPP-EMIT-01] `CppEmitter` の責務分類を確定し、`expression/render/statement/runtime_call/cast/control_flow/misc` の移管対象を固定する。
+1. [x] [ID: P1-CPP-EMIT-01] `CppEmitter` の責務分類を確定し、`expression/render/statement/runtime_call/cast/control_flow/misc` の移管対象を固定する。
 2. [x] [ID: P1-CPP-EMIT-01-S1] `CppEmitter` の expression rendering のヘルパ群を `src/hooks/cpp/emitter/expr.py` 相当へ移譲し、呼び出し元を最小差分で切り替える。
 3. [x] [ID: P1-CPP-EMIT-01-S2] statement rendering のうち `For`/`While`/`If`/`Try` 系を `src/hooks/cpp/emitter/stmt.py` 側に移譲する。
 4. [x] [ID: P1-CPP-EMIT-01-S3] cast / runtime-call / import の分岐を専用ヘルパへ整理し、重複分岐を削減する。
