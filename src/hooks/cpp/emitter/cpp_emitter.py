@@ -8,6 +8,7 @@ from hooks.cpp.emitter.operator import CppBinaryOperatorEmitter
 from hooks.cpp.emitter.expr import CppExpressionEmitter
 from hooks.cpp.emitter.stmt import CppStatementEmitter
 from hooks.cpp.emitter.tmp import CppTemporaryEmitter
+from hooks.cpp.emitter.trivia import CppTriviaEmitter
 from hooks.cpp.profile import (
     AUG_BIN,
     AUG_OPS,
@@ -32,6 +33,7 @@ class CppEmitter(
     CppStatementEmitter,
     CppExpressionEmitter,
     CppBinaryOperatorEmitter,
+    CppTriviaEmitter,
     CppTemporaryEmitter,
     CodeEmitter,
 ):
@@ -1424,7 +1426,7 @@ class CppEmitter(
 
     def _emit_stmt_kind_fallback(self, kind: str, stmt: dict[str, Any]) -> bool:
         """`on_emit_stmt_kind` 未処理時の C++ 既定ディスパッチ。"""
-        self.emit_leading_comments(stmt)
+        self.render_trivia(stmt)
         if kind == "Expr":
             self._emit_expr_stmt(stmt)
         elif kind == "Return":
@@ -1485,7 +1487,7 @@ class CppEmitter(
         kind = self._node_kind_from_dict(stmt)
         if self.hook_on_emit_stmt_kind(kind, stmt):
             return
-        self.emit_leading_comments(stmt)
+        self.render_trivia(stmt)
         self.emit(f"/* unsupported stmt kind: {kind} */")
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
@@ -4013,22 +4015,6 @@ class CppEmitter(
             return True
         # py2cpp は EAST3 専用経路のため、type_id 系 Name-call は常に lower 済みを要求する。
         return False
-
-    def emit_leading_comments(self, stmt: dict[str, Any]) -> None:
-        """self_hosted parser 由来の trivia は directive のみ反映する。"""
-        if "leading_trivia" not in stmt:
-            return
-        trivia = self.any_to_dict_list(stmt.get("leading_trivia"))
-        if len(trivia) == 0:
-            return
-        if not self._is_self_hosted_parser_doc():
-            self._emit_trivia_items(trivia)
-            return
-        for item in trivia:
-            if self.any_dict_get_str(item, "kind", "") != "comment":
-                continue
-            txt = self.any_dict_get_str(item, "text", "")
-            self._handle_comment_trivia_directive(txt)
 
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""

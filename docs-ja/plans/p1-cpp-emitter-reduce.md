@@ -102,3 +102,8 @@ C++ CodeEmitter の体積増加は「責務混入」と「経路の重複」が�
   - 実施内容: `CppEmitter` の `cast`/`object receiver` 周辺ロジックを `src/hooks/cpp/emitter/operator.py` の `CppBinaryOperatorEmitter` に切り分け。
   - 分離内容: `_render_binop_expr` / `_render_binop_dunder_call` / `_render_binop_operator` を再整理し、`expr` 表層整形、`dunder` 呼び出し、`op` 分岐の責務を 1 ハンドラ群に集約。
   - 補足: `cpp_emitter.py` は新規ヘルパーモジュールを継承する構成へ変更し、`BIN_OPS` の責務移譲先を明確化。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S7]
+  - 実施内容: `render_trivia` の責務を `src/hooks/cpp/emitter/trivia.py` の `CppTriviaEmitter` へ切り出し。
+  - 実装内容: `CppEmitter` から trivia/コメント/ディレクティブ周辺の `emit_leading_comments` 実装を移譲し、`render_trivia` を経由して呼び出すように統一。
+  - 補足: `emit_leading_comments` 本体は `CppTriviaEmitter` 側で再実装し、self-hosted 時の directive only 処理を維持。
