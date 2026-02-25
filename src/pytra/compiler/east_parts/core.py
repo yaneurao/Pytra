@@ -2894,64 +2894,73 @@ class _ShExprParser:
         first = self._parse_ifexp()
         if not (self._cur()["k"] == "NAME" and self._cur()["v"] == "for"):
             return first
-        self._eat("NAME")
-        target = self._parse_comp_target()
-        in_tok = self._eat("NAME")
-        if in_tok["v"] != "in":
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message="expected 'in' in generator expression",
-                source_span=self._node_span(in_tok["s"], in_tok["e"]),
-                hint="Use `for x in iterable` form.",
-            )
-        iter_expr = self._parse_or()
-        ifs: list[dict[str, Any]] = []
-        while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
-            self._eat("NAME")
-            ifs.append(self._parse_or())
 
+        snapshots: dict[str, str] = {}
+        generators: list[dict[str, Any]] = []
         first_norm = first
-        ifs_norm: list[dict[str, Any]] = list(ifs)
-        tgt_ty = self._iter_item_type(iter_expr)
-        if tgt_ty != "unknown":
-            snapshots: dict[str, str] = {}
-            self._collect_and_bind_comp_target_types(target, tgt_ty, snapshots)
-            try:
-                first_repr = first.get("repr")
-                first_col = int(first.get("source_span", {}).get("col", self.col_base))
-                if isinstance(first_repr, str) and first_repr != "":
-                    first_norm = _sh_parse_expr(
-                        first_repr,
-                        line_no=self.line_no,
-                        col_base=first_col,
-                        name_types=self.name_types,
-                        fn_return_types=self.fn_return_types,
-                        class_method_return_types=self.class_method_return_types,
-                        class_base=self.class_base,
-                    )
-                ifs_norm = []
-                for cond in ifs:
-                    cond_repr = cond.get("repr")
-                    cond_col = int(cond.get("source_span", {}).get("col", self.col_base))
-                    if isinstance(cond_repr, str) and cond_repr != "":
-                        ifs_norm.append(
-                            _sh_parse_expr(
-                                cond_repr,
-                                line_no=self.line_no,
-                                col_base=cond_col,
-                                name_types=self.name_types,
-                                fn_return_types=self.fn_return_types,
-                                class_method_return_types=self.class_method_return_types,
-                                class_base=self.class_base,
-                            )
-                        )
-                    else:
-                        ifs_norm.append(cond)
-            finally:
-                self._restore_comp_target_types(snapshots)
+        end_node: Any = first
 
+        def _reparse_expr(expr_node: dict[str, Any]) -> dict[str, Any]:
+            expr_repr = expr_node.get("repr")
+            if not isinstance(expr_repr, str) or expr_repr == "":
+                return expr_node
+            return _sh_parse_expr(
+                expr_repr,
+                line_no=self.line_no,
+                col_base=int(expr_node.get("source_span", {}).get("col", self.col_base)),
+                name_types=self.name_types,
+                fn_return_types=self.fn_return_types,
+                class_method_return_types=self.class_method_return_types,
+                class_base=self.class_base,
+            )
+
+        while self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
+            self._eat("NAME")
+            target = self._parse_comp_target()
+            in_tok = self._eat("NAME")
+            if in_tok["v"] != "in":
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message="expected 'in' in generator expression",
+                    source_span=self._node_span(in_tok["s"], in_tok["e"]),
+                    hint="Use `for x in iterable` form.",
+                )
+            iter_expr = self._parse_or()
+            if not isinstance(iter_expr, dict):
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message="unsupported iterator expression in generator argument",
+                    source_span=self._node_span(
+                        int(iter_expr["source_span"]["col"]) if isinstance(iter_expr, dict) else self.col_base,
+                        int(iter_expr["source_span"]["end_col"]) if isinstance(iter_expr, dict) else self.col_base + 1,
+                    ),
+                    hint="Use a resolvable iterable expression.",
+                )
+
+            conds: list[dict[str, Any]] = []
+            while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
+                self._eat("NAME")
+                conds.append(self._parse_or())
+            conds_norm: list[dict[str, Any]] = list(conds)
+
+            tgt_ty = self._iter_item_type(iter_expr)
+            if tgt_ty != "unknown":
+                self._collect_and_bind_comp_target_types(target, tgt_ty, snapshots)
+                if len(generators) == 0:
+                    first_norm = _reparse_expr(first)
+                conds_norm = [_reparse_expr(cond) if isinstance(cond, dict) else cond for cond in conds]
+
+            if len(conds_norm) > 0:
+                end_node = conds_norm[-1]
+            else:
+                end_node = iter_expr
+
+            generators.append({"target": target, "iter": iter_expr, "ifs": conds_norm, "is_async": False})
+
+        self._restore_comp_target_types(snapshots)
         s = int(first["source_span"]["col"]) - self.col_base
-        end_node = ifs_norm[-1] if len(ifs_norm) > 0 else iter_expr
+        if not isinstance(end_node, dict):
+            return first
         e = int(end_node["source_span"]["end_col"]) - self.col_base
         return {
             "kind": "ListComp",
@@ -2961,7 +2970,7 @@ class _ShExprParser:
             "casts": [],
             "repr": self._src_slice(s, e),
             "elt": first_norm,
-            "generators": [{"target": target, "iter": iter_expr, "ifs": ifs_norm, "is_async": False}],
+            "generators": generators,
             "lowered_kind": "GeneratorArg",
         }
 
@@ -3722,6 +3731,8 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         inner_arg = re.strip_group(m_any_all, 2)
         if _sh_split_top_keyword(inner_arg, "for") > 0 and _sh_split_top_keyword(inner_arg, "in") > 0:
             lc = _sh_parse_expr_lowered(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
+            lowered_kind = "BuiltinCall" if fn_name in {"any", "all"} else None
+            runtime_call = "py_any" if fn_name == "any" else ("py_all" if fn_name == "all" else "")
             return {
                 "kind": "Call",
                 "source_span": _sh_span(ln_no, col, col + len(raw)),
@@ -3740,6 +3751,9 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                 },
                 "args": [lc],
                 "keywords": [],
+                "lowered_kind": lowered_kind,
+                "builtin_name": fn_name if lowered_kind is not None else None,
+                "runtime_call": runtime_call if lowered_kind is not None else None,
             }
 
     # Normalize single generator-argument calls into list-comp argument form.
