@@ -71,3 +71,20 @@
 1. [x] [ID: P1-CPP-EMIT-NOMI-01] `src/hooks/cpp/emitter/cpp_emitter.py` の多重継承を廃止し、単一継承 + 明示的委譲へ切り替える。
 2. [x] [ID: P1-CPP-EMIT-NOMI-01-S1] `cpp_emitter.py` の状態管理を維持しつつ、`CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` のメソッドを `CppEmitter` へデリゲーション注入し、単一継承化を実現する。
 3. [x] [ID: P1-CPP-EMIT-NOMI-01-S2] `CppEmitter` 単一継承移行中の `isinstance()`/型チェック関連の条件分岐を簡素化し、分岐経路を明示フラグ化する。
+
+## P1: C++ runtime 変換ヘルパのテンプレ化（中優先）
+
+文脈: `docs-ja/plans/p1-cpp-py_to-template.md`（`P1-CPP-PYTO-01`）
+
+1. [ ] [ID: P1-CPP-PYTO-01] `py_to_int64 / py_to_float64 / py_to_bool` を中核に、型パラメータ化された `py_to<T>()` API を追加し、`object`/`std::any` の変換経路を破綻なく吸収しつつ呼び出しを統一する。
+2. [ ] [ID: P1-CPP-PYTO-01-S1] `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `template <class T, ...> static inline T py_to(T)` 系を導入し、既存 `py_to_*` API は後方互換ラッパとして残す。
+3. [ ] [ID: P1-CPP-PYTO-01-S2] `src/hooks/cpp/emitter/cpp_emitter.py` と `src/hooks/cpp/emitter/expr.py` の `py_to_int64(...)` 直接呼び出しを新 API 準拠へ段階移行する（`expr` の cast、runtime 呼び出し系で挙動差分がないことを確認）。
+4. [ ] [ID: P1-CPP-PYTO-01-S3] `py_to_int64(object/any)` の例外・既定値挙動を検証し、`sample` や回帰テストで再生成差分が許容範囲かを確認して `readme-ja.md` の該当方針へ反映する。
+
+## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
+
+文脈: `docs-ja/plans/p2-cpp-virtual-selfhost-dispatch.md`（`P2-CPP-SELFHOST-VIRTUAL-01`）
+
+1. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01] `virtual/override` ベースの selfhost クラス呼び出し経路へ縮退できる箇所を洗い出し、`type_id` 分岐を低優先で簡素化する。
+2. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1] selfhost 生成 C++ の class method 呼び出しを分類し、`override` 対象に沿った dispatch 置換計画を確定する。
+3. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S2] `test/unit` / `sample` / `selfhost` 再生成を回帰基準に `virtual` 経由化を段階実施し、差分を固定する。
