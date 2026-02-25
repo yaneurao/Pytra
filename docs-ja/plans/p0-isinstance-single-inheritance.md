@@ -31,10 +31,10 @@
 - `P0-ISINSTANCE-01-S5`: 仕様整合ログを `docs-ja/spec/spec-type_id.md` へ反映し、必要なら `spec-boxing` / `spec-linker` の交差条件追記。
 
 現状棚卸し（2026-02-25）:
-- `C++`: emitter lower は `py_isinstance` / `py_is_subtype` / `py_issubclass` 呼び出しを利用しているが、`type_id` 実体（`src/pytra/built_in/type_id.py`）はまだ基底グラフ走査。
-- `JS/TS`: `isinstance` は `pyIsInstance` に lower 済み。runtime は `pyTypeId` + 基底グラフ（`Map<typeId, bases[]>`）で判定しており、区間判定への置換が未実施。
-- `Rust`: emitter が `resolved_type` と `class_base_map` を直接参照して `isinstance` を式展開しており、runtime API 経由の判定に未統一。
-- `C#`: emitter が `is` 判定へ直接 lower しており、`type_id` runtime API への統一が未実施。
+- `C++`: emitter lower は `py_isinstance` / `py_is_subtype` / `py_issubclass` 呼び出しへ統一済み。`src/pytra/built_in/type_id.py` は `order/min/max` 区間判定へ移行済み。
+- `JS/TS`: `isinstance` は `pyIsInstance` に lower 済み。runtime は `pyTypeId` + `pyIsSubtype`（`order/min/max`）で区間判定済み。
+- `Rust`: emitter は `py_isinstance(&x, <type_id>)` lower へ移行し、出力コードに `PyTypeInfo(order/min/max)`・`py_is_subtype`・`py_isinstance` helper を埋め込む方式へ変更済み。
+- `C#`: emitter/runtime とも `py_isinstance` / `py_runtime_type_id` / `py_is_subtype` 経路へ統一済み。
 - `self_hosted parser`: 複数基底クラス（`class C(A, B):`）は従来 generic な parse 失敗だったため、今回 `multiple inheritance is not supported` の明示エラーへ変更。
 
 決定ログ:
@@ -42,3 +42,4 @@
 - 2026-02-25: `P0-ISINSTANCE-01` `self_hosted` パーサで複数基底クラスを明示エラー化し、`isinstance` lower の棚卸し結果（C++/JS/TS/RS/CS）を記録した。
 - 2026-02-25: `P0-ISINSTANCE-01` `src/pytra/built_in/type_id.py` と JS/TS runtime の `py_is_subtype` を区間判定（order/min/max）へ切替え、sibling 系の誤包含を防ぐ回帰テストを追加した。
 - 2026-02-25: `P0-ISINSTANCE-01` C# emitter の `isinstance` lower を `Pytra.CsModule.py_runtime.py_isinstance` 呼び出しへ統一し、runtime に `PYTRA_TID_*` / `py_runtime_type_id` / `py_is_subtype` / `py_isinstance` を追加した。
+- 2026-02-25: `P0-ISINSTANCE-01` Rust emitter を `py_isinstance` runtime API lower へ更新し、`type_id` 範囲テーブル（`PyTypeInfo`）を出力する helper 群を追加した。`test/unit/test_py2rs_smoke.py`（22件）、`tools/check_py2rs_transpile.py`（`checked=130 ok=130 fail=0 skipped=6`）、`tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）、`tools/check_py2cs_transpile.py`（`checked=130 ok=130 fail=0 skipped=6`）を確認。`tools/check_py2js_transpile.py` / `tools/check_py2ts_transpile.py` は `east3-contract` 既存失敗を回避して `--skip-east3-contract-tests` で `checked=130 ok=130 fail=0 skipped=6` を確認した。

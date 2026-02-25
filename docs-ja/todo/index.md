@@ -35,14 +35,15 @@
 文脈: `docs-ja/plans/p0-isinstance-single-inheritance.md`（`P0-ISINSTANCE-01`）
 
 1. [ ] [ID: P0-ISINSTANCE-01] 単一継承前提の `type_id_min/type_id_max` で `isinstance` を統一し、全対象言語で文字列名比較・多重継承推論・ハイブリッド分岐を排除する。
-2. [ ] [ID: P0-ISINSTANCE-01-S1] C++/JS/TS/RS/CS の `isinstance` lower を `py_isinstance`/`py_is_subtype` 系 API に置換する。
-3. [ ] [ID: P0-ISINSTANCE-01-S2] 多重継承を要求する入力（複数基底）を compile-time で検出し、明示エラーへ統一する。
-4. [ ] [ID: P0-ISINSTANCE-01-S3] runtime 側 `type_id` 範囲テーブルを検証し、`expected.min <= actual <= expected.max` 判定の観測不変性を回帰テスト化する。
+2. [x] [ID: P0-ISINSTANCE-01-S1] C++/JS/TS/RS/CS の `isinstance` lower を `py_isinstance`/`py_is_subtype` 系 API に置換する。
+3. [x] [ID: P0-ISINSTANCE-01-S2] 多重継承を要求する入力（複数基底）を compile-time で検出し、明示エラーへ統一する。
+4. [x] [ID: P0-ISINSTANCE-01-S3] runtime 側 `type_id` 範囲テーブルを検証し、`expected.min <= actual <= expected.max` 判定の観測不変性を回帰テスト化する。
 5. [ ] [ID: P0-ISINSTANCE-01-S4] 既存 `isinstance` テストを更新・追加し、`tools/check_*_transpile.py` と `test/unit` の回帰条件を全言語で再固定化する。
 6. [ ] [ID: P0-ISINSTANCE-01-S5] `docs-ja/spec/spec-type_id.md`（必要なら `docs-ja/spec/spec-linker.md`）への最終整合を確認したうえで、関連タスクの完了条件を反映する。
 - `P0-ISINSTANCE-01`: `self_hosted` パーサで複数基底クラスを明示エラー化し、C++/JS/TS/RS/CS の `isinstance` lower/runtime 棚卸し結果を `docs-ja/plans/p0-isinstance-single-inheritance.md` へ記録した。
 - `P0-ISINSTANCE-01`: `src/pytra/built_in/type_id.py` と JS/TS runtime を `type_id` 範囲テーブル（order/min/max）判定へ移行し、`test_pytra_built_in_type_id.py` と `test_js_ts_runtime_dispatch.py` へ sibling 非包含の回帰を追加した。
 - `P0-ISINSTANCE-01`: C# emitter の `isinstance` lower を `py_isinstance` API 呼び出しへ統一し、`runtime/cs` に `PYTRA_TID_*` / `py_runtime_type_id` / `py_is_subtype` / `py_isinstance` を追加、`test_py2cs_smoke.py` で回帰固定した。
+- `P0-ISINSTANCE-01`: Rust emitter を `py_isinstance(&x, <type_id>)` lower + `type_id` 範囲テーブル出力へ移行し、`test_py2rs_smoke.py`（22件）/`tools/check_py2rs_transpile.py`（`checked=130 ok=130`）と `tools/check_py2{cpp,cs,js,ts}_transpile.py`（JS/TS は `--skip-east3-contract-tests` で `checked=130 ok=130`）で回帰を確認した。
 
 ## P0: サンプル全言語のゴールデン一致パイプライン（最優先）
 
