@@ -100,6 +100,10 @@
   - `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout`
   - `SUMMARY cases=18 pass=18 fail=0 targets=js,ts`
 
+`P0-SAMPLE-GOLDEN-ALL-01-S7` 着手状況（2026-02-25）:
+- `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` 実行時、18件すべてで `toolchain_missing`（合計72件）となり未着手のまま。
+- 実行環境で `go` / `javac` / `java` / `kotlinc` / `.chain/swift/usr/bin/swiftc` が解決できないことを `which` / `ls` で確認した。toolchain 導入後に compile/run 差分修正へ移る。
+
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S1` として検証対象（18サンプル/9言語）と比較ルール（stdout 正規化 + artifact hash/size + source hash）および再現コマンドを固定した。
@@ -109,3 +113,4 @@
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S4` として Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）と `test/unit/test_py2rs_smoke.py` 22件 pass を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S5` の初回検証として `runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` を実行し、`toolchain_missing: 18`（`mcs`/`mono` 未導入）を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S6` として JS emitter/runtime shim 経路を改修し、`runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）と `test_py2{js,ts}_smoke.py` pass を確認した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` の初回検証として `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、`toolchain_missing: 72`（`go/javac/java/kotlinc/swiftc` 未導入）を確認した。

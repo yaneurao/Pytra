@@ -66,6 +66,7 @@
 - `P0-SAMPLE-GOLDEN-ALL-01-S4`: Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=rs` を確認した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S5`: `runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` は `toolchain_missing: 18`（`mcs`/`mono` 未導入）となり、環境ブロッカーを確認した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S6`: JS emitter の import/runtime shim・list/listcomp/range/compare/builtin lower を修正し、`runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=js,ts` を確認した。
+- `P0-SAMPLE-GOLDEN-ALL-01-S7`: `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` は `toolchain_missing: 72` となり、`go/javac/java/kotlinc/swiftc` 未導入の環境ブロッカーを確認した。
 
 ## P1: CppEmitter の pylib 互換名正規化除去（中優先）
 
