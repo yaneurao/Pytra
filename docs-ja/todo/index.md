@@ -54,7 +54,7 @@
 1. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01] `sample/py` の 18 件を `cpp/rs/cs/js/ts/go/java/swift/kotlin` 全言語でコンパイル→実行→`sample/golden/manifest.json` との一致まで到達する（失敗カテゴリ別に順次修正する）。
 2. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S1] 検証対象の固定化（サンプル18件・言語9件・比較ルール）を行い、再現可能な共通実行手順を文書化する。
 3. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S2] runtime parity 実行フローを全言語対応に整備し、`tools/runtime_parity_check.py` の到達条件（toolchain、入出力、失敗分類）を実運用で安定化する。
-4. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S3] C++ 18件の compile/run/compare を完全一致状態へ戻す。
+4. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S3] C++ 18件の compile/run/compare を完全一致状態へ戻す。
 5. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S4] Rust 18件を compile/run/compare 完全一致へ。
 6. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S5] C# 18件を compile/run/compare 完全一致へ。
 7. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S6] JS/TS 18件を transpile/run/compare 完全一致へ。
@@ -62,6 +62,7 @@
 9. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S8] 全言語最終結果を `readme-ja.md` / `readme.md` のサンプル実行結果へ反映し、`golden` 差分が発生しない運用を維持する。
 - `P0-SAMPLE-GOLDEN-ALL-01-S1`: 検証スコープ（`sample/py` 18件・9言語）と比較ルール（stdout 正規化/artefact hash-size/source hash）、再現コマンド（`runtime_parity_check.py` / `verify_sample_outputs.py`）を文脈ファイルへ固定した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S2`: `runtime_parity_check.py` に `--all-samples`/`--summary-json` と失敗カテゴリ集計を追加し、`test_runtime_parity_check_cli.py` + `test_image_runtime_parity.py` で CLI 解決規約と C++ 到達性を回帰固定した。
+- `P0-SAMPLE-GOLDEN-ALL-01-S3`: C++ emitter の module namespace/include 解決（`math/time` と `pytra.runtime -> pytra.utils`）と runtime tuple boxing/type_id 初期化順序を修正し、`runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout` で 18/18 pass を固定した。
 
 ## P1: CppEmitter の pylib 互換名正規化除去（中優先）
 
