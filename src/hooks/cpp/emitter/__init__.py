@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-from hooks.cpp.emitter.cpp_emitter import CppEmitter, install_py2cpp_runtime_symbols
+from hooks.cpp.emitter.cpp_emitter import (
+    CppEmitter,
+    emit_cpp_from_east,
+    install_py2cpp_runtime_symbols,
+)
 from hooks.cpp.profile import load_cpp_profile
 from pytra.std.typing import Any
 
 __all__ = [
     "CppEmitter",
+    "emit_cpp_from_east",
     "install_py2cpp_runtime_symbols",
     "load_cpp_profile",
     "transpile_to_cpp",

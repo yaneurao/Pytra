@@ -107,3 +107,8 @@ C++ CodeEmitter の体積増加は「責務混入」と「経路の重複」が�
   - 実施内容: `render_trivia` の責務を `src/hooks/cpp/emitter/trivia.py` の `CppTriviaEmitter` へ切り出し。
   - 実装内容: `CppEmitter` から trivia/コメント/ディレクティブ周辺の `emit_leading_comments` 実装を移譲し、`render_trivia` を経由して呼び出すように統一。
   - 補足: `emit_leading_comments` 本体は `CppTriviaEmitter` 側で再実装し、self-hosted 時の directive only 処理を維持。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S8]
+  - 実施内容: `py2cpp.py` の `_transpile_to_cpp_with_map` から `CppEmitter` 直呼び出しを排除し、`hooks.cpp.emitter.emit_cpp_from_east` への委譲へ変更。
+  - 実装内容: `src/hooks/cpp/emitter/cpp_emitter.py` に `emit_cpp_from_east(...)` を追加し、`src/hooks/cpp/emitter/__init__.py` で公開。
+  - 補足: `py2cpp.py` 側は CLI 引数整備と配線・再エクスポートに寄せ、`CppEmitter` の生成ロジックを直接持たないようにした。

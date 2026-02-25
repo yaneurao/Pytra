@@ -300,7 +300,10 @@ def cpp_char_lit(ch: str) -> str:
     return "'" + str(ch) + "'"
 
 
-from hooks.cpp.emitter import CppEmitter, install_py2cpp_runtime_symbols
+from hooks.cpp.emitter import (
+    install_py2cpp_runtime_symbols,
+    emit_cpp_from_east,
+)
 install_py2cpp_runtime_symbols(globals())
 
 
@@ -335,9 +338,9 @@ def _transpile_to_cpp_with_map(
     opt_level: str = "2",
     top_namespace: str = "",
     emit_main: bool = True,
-    ) -> str:
+) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
-    return CppEmitter(
+    return emit_cpp_from_east(
         east_module,
         module_namespace_map,
         negative_index_mode,
@@ -350,7 +353,7 @@ def _transpile_to_cpp_with_map(
         opt_level,
         top_namespace,
         emit_main,
-    ).transpile()
+    )
 
 
 def transpile_to_cpp(

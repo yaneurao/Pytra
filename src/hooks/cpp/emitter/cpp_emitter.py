@@ -21,6 +21,37 @@ from hooks.cpp.profile import (
 )
 
 
+def emit_cpp_from_east(
+    east_module: dict[str, Any],
+    module_namespace_map: dict[str, str],
+    negative_index_mode: str = "const_only",
+    bounds_check_mode: str = "off",
+    floor_div_mode: str = "native",
+    mod_mode: str = "native",
+    int_width: str = "64",
+    str_index_mode: str = "native",
+    str_slice_mode: str = "byte",
+    opt_level: str = "2",
+    top_namespace: str = "",
+    emit_main: bool = True,
+) -> str:
+    """Emit C++ text from EAST module via CppEmitter (public bridge)."""
+    return CppEmitter(
+        east_module,
+        module_namespace_map,
+        negative_index_mode,
+        bounds_check_mode,
+        floor_div_mode,
+        mod_mode,
+        int_width,
+        str_index_mode,
+        str_slice_mode,
+        opt_level,
+        top_namespace,
+        emit_main,
+    ).transpile()
+
+
 def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:
     """Inject py2cpp globals required by `CppEmitter` dynamic globals."""
     for key, value in globals_snapshot.items():
