@@ -3311,7 +3311,7 @@ class _ShExprParser:
                 # list comprehension: [elt for x in iter if cond]
                 if self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
                     self._eat("NAME")
-                    tgt_tok = self._eat("NAME")
+                    target = self._parse_comp_target()
                     in_tok = self._eat("NAME")
                     if in_tok["v"] != "in":
                         raise _make_east_build_error(
@@ -3329,10 +3329,21 @@ class _ShExprParser:
                         and iter_expr.get("func", {}).get("id") == "range"
                     ):
                         rargs = list(iter_expr.get("args", []))
+                        range_target_span = self._node_span(self.col_base, self.col_base)
+                        if isinstance(target, dict):
+                            target_span_obj = target.get("source_span")
+                            if isinstance(target_span_obj, dict):
+                                ts = target_span_obj.get("col")
+                                te = target_span_obj.get("end_col")
+                            else:
+                                ts = None
+                                te = None
+                            if isinstance(ts, int) and isinstance(te, int):
+                                range_target_span = self._node_span(ts, te)
                         if len(rargs) == 1:
                             start_node = {
                                 "kind": "Constant",
-                                "source_span": self._node_span(tgt_tok["s"], tgt_tok["s"]),
+                                "source_span": range_target_span,
                                 "resolved_type": "int64",
                                 "borrow_kind": "value",
                                 "casts": [],
@@ -3342,7 +3353,7 @@ class _ShExprParser:
                             stop_node = rargs[0]
                             step_node = {
                                 "kind": "Constant",
-                                "source_span": self._node_span(tgt_tok["s"], tgt_tok["s"]),
+                                "source_span": range_target_span,
                                 "resolved_type": "int64",
                                 "borrow_kind": "value",
                                 "casts": [],
@@ -3354,7 +3365,7 @@ class _ShExprParser:
                             stop_node = rargs[1]
                             step_node = {
                                 "kind": "Constant",
-                                "source_span": self._node_span(tgt_tok["s"], tgt_tok["s"]),
+                                "source_span": range_target_span,
                                 "resolved_type": "int64",
                                 "borrow_kind": "value",
                                 "casts": [],
@@ -3393,13 +3404,12 @@ class _ShExprParser:
                         self._eat("NAME")
                         ifs.append(self._parse_or())
                     r = self._eat("]")
-                    tgt_name = str(tgt_tok["v"])
                     tgt_ty = self._iter_item_type(iter_expr)
                     first_norm = first
                     ifs_norm = ifs
                     if tgt_ty != "unknown":
-                        old_t = self.name_types.get(tgt_name, "")
-                        self.name_types[tgt_name] = tgt_ty
+                        snaps: dict[str, str] = {}
+                        self._collect_and_bind_comp_target_types(target, tgt_ty, snaps)
                         first_repr = first.get("repr")
                         first_col = int(first.get("source_span", {}).get("col", self.col_base))
                         if isinstance(first_repr, str) and first_repr != "":
@@ -3430,10 +3440,7 @@ class _ShExprParser:
                                 )
                             else:
                                 ifs_norm.append(cond)
-                        if old_t == "":
-                            self.name_types.pop(tgt_name, None)
-                        else:
-                            self.name_types[tgt_name] = old_t
+                        self._restore_comp_target_types(snaps)
                     return {
                         "kind": "ListComp",
                         "source_span": self._node_span(l["s"], r["e"]),
@@ -3444,15 +3451,7 @@ class _ShExprParser:
                         "elt": first_norm,
                         "generators": [
                             {
-                                "target": {
-                                    "kind": "Name",
-                                    "source_span": self._node_span(tgt_tok["s"], tgt_tok["e"]),
-                                    "resolved_type": tgt_ty,
-                                    "borrow_kind": "value",
-                                    "casts": [],
-                                    "repr": tgt_name,
-                                    "id": tgt_name,
-                                },
+                                "target": target,
                                 "iter": iter_expr,
                                 "ifs": ifs_norm,
                             }

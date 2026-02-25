@@ -41,5 +41,8 @@
 - 2026-02-25: P3-MISC-01-S005 対象の `test/misc/05_sales_report.py` は `py2cpp.py test/misc/05_sales_report.py /tmp/05_sales_report.cpp` で成功。
   `core.py` の `for` ループで `Name` ターゲットへ `resolved_type` を反映し、`str` 組み込みメソッド
   (`strip`/`split`/`splitlines` 等) の簡易戻り型推論を追加した。
+- 2026-02-25: P3-MISC-01-S006 対象の `test/misc/06_ascii_chart.py` は `py2cpp.py test/misc/06_ascii_chart.py /tmp/06_ascii_chart.cpp` で成功。
+  `core.py` の self-hosted 式パーサで list comprehension のターゲット解析を `Name` 固定から
+  `_parse_comp_target()` を経由する形へ変更し、`for curr, prev in zip(...)` の tuple target を許容した。
 
 ### 分解
