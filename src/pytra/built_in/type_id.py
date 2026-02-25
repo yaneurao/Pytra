@@ -184,30 +184,19 @@ def _ensure_builtins() -> None:
     _recompute_type_ranges()
 
 
-def _normalize_base_type_ids(base_type_ids: list[int]) -> list[int]:
+def _normalize_base_type_id(base_type_id: int) -> int:
     _ensure_builtins()
-    out: list[int] = []
-    i = 0
-    while i < len(base_type_ids):
-        tid = base_type_ids[i]
-        if isinstance(tid, int):
-            if not _contains_int(out, tid):
-                out.append(tid)
-        i += 1
-    if len(out) == 0:
-        out.append(_tid_object())
-    if len(out) > 1:
-        raise ValueError("multiple inheritance is not supported")
-    if out[0] not in _TYPE_BASE:
-        raise ValueError("unknown base type_id: " + str(out[0]))
-    return out
+    if not isinstance(base_type_id, int):
+        raise ValueError("base type_id must be int")
+    if base_type_id not in _TYPE_BASE:
+        raise ValueError("unknown base type_id: " + str(base_type_id))
+    return base_type_id
 
 
-def py_tid_register_class_type(base_type_ids: list[int]) -> int:
-    """Allocate and register a new user class type_id."""
+def py_tid_register_class_type(base_type_id: int = _tid_object()) -> int:
+    """Allocate and register a new user class type_id (single inheritance only)."""
     _ensure_builtins()
-    bases = _normalize_base_type_ids(base_type_ids)
-    base_tid = bases[0]
+    base_tid = _normalize_base_type_id(base_type_id)
 
     tid = _TYPE_STATE["next_user_type_id"]
     while tid in _TYPE_BASE:

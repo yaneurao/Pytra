@@ -21,17 +21,17 @@ class PytraBuiltInTypeIdTest(unittest.TestCase):
         self.assertFalse(tid.py_tid_is_subtype(tid._tid_int(), tid._tid_bool()))
 
     def test_register_class_type_and_subtype_chain(self) -> None:
-        base = tid.py_tid_register_class_type([tid._tid_object()])
-        child = tid.py_tid_register_class_type([base])
+        base = tid.py_tid_register_class_type(tid._tid_object())
+        child = tid.py_tid_register_class_type(base)
         self.assertTrue(tid.py_tid_is_subtype(child, base))
         self.assertTrue(tid.py_tid_is_subtype(child, tid._tid_object()))
         self.assertFalse(tid.py_tid_is_subtype(base, child))
 
     def test_range_order_keeps_sibling_subtrees_disjoint(self) -> None:
-        left = tid.py_tid_register_class_type([tid._tid_object()])
-        right = tid.py_tid_register_class_type([tid._tid_object()])
-        left_child = tid.py_tid_register_class_type([left])
-        right_child = tid.py_tid_register_class_type([right])
+        left = tid.py_tid_register_class_type(tid._tid_object())
+        right = tid.py_tid_register_class_type(tid._tid_object())
+        left_child = tid.py_tid_register_class_type(left)
+        right_child = tid.py_tid_register_class_type(right)
 
         self.assertTrue(tid.py_tid_is_subtype(left_child, left))
         self.assertTrue(tid.py_tid_is_subtype(right_child, right))
@@ -56,8 +56,8 @@ class PytraBuiltInTypeIdTest(unittest.TestCase):
         self.assertEqual(tid.py_tid_runtime_type_id({1}), tid._tid_set())
 
     def test_runtime_type_id_and_isinstance_for_user_class(self) -> None:
-        base = tid.py_tid_register_class_type([tid._tid_object()])
-        child = tid.py_tid_register_class_type([base])
+        base = tid.py_tid_register_class_type(tid._tid_object())
+        child = tid.py_tid_register_class_type(base)
 
         class ChildObj:
             PYTRA_TYPE_ID = child

@@ -210,32 +210,19 @@ void _ensure_builtins() {
     _recompute_type_ranges();
 }
 
-list<int64> _normalize_base_type_ids(const list<int64>& base_type_ids) {
+int64 _normalize_base_type_id(int64 base_type_id) {
     _ensure_builtins();
-    list<int64> out = list<int64>{};
-    int64 i = 0;
-    while (i < py_len(base_type_ids)) {
-        int64 tid = base_type_ids[i];
-        if (py_isinstance(tid, PYTRA_TID_INT)) {
-            if (!(_contains_int(out, tid)))
-                out.append(int64(tid));
-        }
-        i++;
-    }
-    if (py_len(out) == 0)
-        out.append(int64(_tid_object()));
-    if (py_len(out) > 1)
-        throw ValueError("multiple inheritance is not supported");
-    if (!py_contains(_TYPE_BASE, out[0]))
-        throw ValueError("unknown base type_id: " + ::std::to_string(out[0]));
-    return out;
+    if (!(py_isinstance(base_type_id, PYTRA_TID_INT)))
+        throw ValueError("base type_id must be int");
+    if (!py_contains(_TYPE_BASE, base_type_id))
+        throw ValueError("unknown base type_id: " + ::std::to_string(base_type_id));
+    return base_type_id;
 }
 
-int64 py_tid_register_class_type(const list<int64>& base_type_ids) {
-    /* Allocate and register a new user class type_id. */
+int64 py_tid_register_class_type(int64 base_type_id) {
+    /* Allocate and register a new user class type_id (single inheritance only). */
     _ensure_builtins();
-    list<int64> bases = _normalize_base_type_ids(base_type_ids);
-    int64 base_tid = bases[0];
+    int64 base_tid = _normalize_base_type_id(base_type_id);
     
     auto tid = py_dict_get(_TYPE_STATE, "next_user_type_id");
     while (py_contains(_TYPE_BASE, tid)) {

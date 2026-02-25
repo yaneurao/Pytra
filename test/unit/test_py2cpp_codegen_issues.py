@@ -795,8 +795,8 @@ def f(x: object) -> bool:
 
         self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type", cpp)
         self.assertIn("this->set_type_id(PYTRA_TYPE_ID);", cpp)
-        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});", cpp)
-        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{Base::PYTRA_TYPE_ID});", cpp)
+        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);", cpp)
+        self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(Base::PYTRA_TYPE_ID);", cpp)
         self.assertIn("return (py_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_isinstance(x, Child::PYTRA_TYPE_ID));", cpp)
         self.assertIn("virtual bool py_isinstance_of(uint32 expected_type_id) const override {", cpp)
         self.assertIn("if (expected_type_id == PYTRA_TID_OBJECT) return true;", cpp)

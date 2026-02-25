@@ -2296,12 +2296,19 @@ static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(b
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/pytra/built_in/type_id.h"
 
+static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJECT) {
+    return static_cast<uint32>(py_tid_register_class_type(static_cast<int64>(base_type_id)));
+}
+
+// Backward-compatible overload for pre-migration generated sources.
 static inline uint32 py_register_class_type(const list<uint32>& bases) {
-    list<int64> bases_i64 = list<int64>{};
-    for (uint32 b : bases) {
-        bases_i64.append(static_cast<int64>(b));
+    if (py_len(bases) == 0) {
+        return py_register_class_type(PYTRA_TID_OBJECT);
     }
-    return static_cast<uint32>(py_tid_register_class_type(bases_i64));
+    if (py_len(bases) == 1) {
+        return py_register_class_type(bases[0]);
+    }
+    throw ValueError("multiple inheritance is not supported");
 }
 
 static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
