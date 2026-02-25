@@ -31,13 +31,36 @@ _SH_STR_PREFIX_CHARS = {"r", "R", "b", "B", "u", "U", "f", "F"}
 _SH_FN_RETURNS: dict[str, str] = {}
 _SH_CLASS_METHOD_RETURNS: dict[str, dict[str, str]] = {}
 _SH_CLASS_BASE: dict[str, str | None] = {}
+_SH_TYPE_ALIASES: dict[str, str] = {
+    "List": "list",
+    "Dict": "dict",
+    "Tuple": "tuple",
+    "Set": "set",
+}
 _SH_EMPTY_SPAN: dict[str, Any] = {}
+
+
+def _sh_default_type_aliases() -> dict[str, str]:
+    """型解決用の初期別名テーブルを作成する。"""
+    return {
+        "List": "list",
+        "Dict": "dict",
+        "Tuple": "tuple",
+        "Set": "set",
+        "Any": "Any",
+        "None": "None",
+        "str": "str",
+        "int": "int64",
+        "float": "float64",
+        "bool": "bool",
+    }
 
 
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
     class_base: dict[str, str | None],
+    type_aliases: dict[str, str] | None = None,
 ) -> None:
     """式解析で使う関数戻り値/クラス情報のコンテキストを更新する。"""
     _SH_FN_RETURNS.clear()
@@ -46,6 +69,65 @@ def _sh_set_parse_context(
     _SH_CLASS_METHOD_RETURNS.update(class_method_returns)
     _SH_CLASS_BASE.clear()
     _SH_CLASS_BASE.update(class_base)
+    _SH_TYPE_ALIASES.clear()
+    if type_aliases is None:
+        _SH_TYPE_ALIASES.update(_sh_default_type_aliases())
+    else:
+        _SH_TYPE_ALIASES.update(type_aliases)
+
+
+def _sh_is_type_expr_text(txt: str) -> bool:
+    """型注釈として妥当そうな文字列かを軽量判定する。"""
+    raw: str = txt.strip()
+    if raw == "":
+        return False
+    for ch in raw:
+        if ch.isspace():
+            continue
+        if ch.isalnum() or ch in {"[", "]", ",", "|", ":", ".", "_"}:
+            continue
+        return False
+    return True
+
+
+def _sh_typing_alias_to_type_name(sym: str) -> str:
+    """`from typing` で import される代表的シンボルを EAST 型名へ正規化する。"""
+    key = sym.strip()
+    mapping = {
+        "List": "list",
+        "Dict": "dict",
+        "Tuple": "tuple",
+        "Set": "set",
+        "Any": "Any",
+        "None": "None",
+        "bool": "bool",
+        "float": "float64",
+        "int": "int64",
+        "str": "str",
+        "bytes": "bytes",
+        "bytearray": "bytearray",
+    }
+    return mapping.get(key, "")
+
+
+def _sh_register_type_alias(type_aliases: dict[str, str], alias_name: str, rhs_txt: str) -> None:
+    """型っぽい代入式からトップレベルの型エイリアス定義を登録する。"""
+    name = alias_name.strip()
+    rhs = rhs_txt.strip()
+    if not _sh_is_identifier(name):
+        return
+    if rhs == "":
+        return
+    if not _sh_is_type_expr_text(rhs):
+        return
+    normalized = _sh_typing_alias_to_type_name(rhs)
+    ann_type = _sh_ann_to_type(rhs, type_aliases=type_aliases)
+    if normalized != "":
+        type_aliases[name] = normalized
+    elif ann_type == "Any":
+        type_aliases[name] = ann_type
+    elif ann_type != "unknown" and ann_type != rhs:
+        type_aliases[name] = ann_type
 
 
 class EastBuildError(Exception):
@@ -92,8 +174,9 @@ def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
     return {"lineno": line, "col": col, "end_lineno": line, "end_col": end_col}
 
 
-def _sh_ann_to_type(ann: str) -> str:
+def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> str:
     """型注釈文字列を EAST 正規型へ変換する。"""
+    aliases: dict[str, str] = type_aliases if type_aliases is not None else _SH_TYPE_ALIASES
     mapping = {
         "int": "int64",
         "float": "float64",
@@ -103,16 +186,21 @@ def _sh_ann_to_type(ann: str) -> str:
         "None": "None",
         "bytes": "bytes",
         "bytearray": "bytearray",
+        "Any": "Any",
     }
     txt: str = ann.strip()
     if len(txt) >= 2 and ((txt[0] == "'" and txt[-1] == "'") or (txt[0] == '"' and txt[-1] == '"')):
         txt = txt[1:-1].strip()
     if txt in mapping:
         return mapping[txt]
+    if txt in aliases:
+        return aliases[txt]
     lb = txt.find("[")
     if lb <= 0 or not txt.endswith("]"):
         return txt
     head: str = txt[:lb].strip()
+    if head in aliases:
+        head = aliases[head]
     if not _sh_is_identifier(head):
         return txt
     inner: str = txt[lb + 1 : -1].strip()
@@ -303,7 +391,8 @@ def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
                     right = raw[i + len(op) :].strip()
                     if left == "" or right == "":
                         return None
-                    if not _sh_is_dotted_identifier(left):
+                    # allow Name / Attribute / Subscript lvalues, e.g. "a[i] += 1"
+                    if left.count("=") > 0:
                         return None
                     return left, op, right
     return None
@@ -774,6 +863,47 @@ def _sh_split_top_plus(text: str) -> list[str]:
     return out
 
 
+def _sh_extract_adjacent_string_parts(
+    text: str,
+    line_no: int,
+    col_base: int,
+    name_types: dict[str, str],
+) -> list[tuple[str, int]] | None:
+    """トップレベルで `STR STR ...` のみで構成される式を、文字列トークン分割して返す。
+
+    タプルを構成する `("a", "b")` のようなケースは除外し、括弧付きでも
+    外側が1組の `()` で全体を包む形式に対応する。
+    """
+    parser = _ShExprParser(
+        text,
+        line_no,
+        col_base,
+        dict(name_types),
+        _SH_FN_RETURNS,
+        _SH_CLASS_METHOD_RETURNS,
+        _SH_CLASS_BASE,
+    )
+    toks = parser._tokenize(text)
+    if len(toks) <= 1:
+        return None
+    if toks[-1].get("k") != "EOF":
+        return None
+    end = len(toks) - 1
+    start = 0
+    if end > 1 and toks[0].get("k") == "(" and toks[end - 1].get("k") == ")":
+        start = 1
+        end -= 1
+    inner = toks[start:end]
+    if len(inner) == 0:
+        return None
+    for tok in inner:
+        if tok.get("k") != "STR":
+            return None
+    if len(inner) < 2:
+        return None
+    return [(str(tok.get("v", "")), int(tok.get("s", 0)) + col_base) for tok in inner]
+
+
 def _sh_find_top_char(text: str, needle: str) -> int:
     """文字列/括弧深度を考慮してトップレベルの1文字を探す（未検出なら -1）。"""
     depth = 0
@@ -919,10 +1049,22 @@ def _sh_collect_indented_block(
 ) -> tuple[list[tuple[int, str]], int]:
     """指定インデント配下のブロック行を収集する。"""
     out: list[tuple[int, str]] = []
+
+    depth = 0
+    mode = ""
+    if 0 <= start - 1 < len(body_lines):
+        prev_txt = body_lines[start - 1][1]
+        depth, mode = _sh_scan_logical_line_state(prev_txt, 0, "")
+
     j = start
     while j < len(body_lines):
         n_no, n_ln = body_lines[j]
         if n_ln.strip() == "":
+            if mode in {"'''", '"""'} or depth > 0:
+                out.append((n_no, n_ln))
+                depth, mode = _sh_scan_logical_line_state(n_ln, depth, mode)
+                j += 1
+                continue
             t = j + 1
             while t < len(body_lines) and body_lines[t][1].strip() == "":
                 t += 1
@@ -939,9 +1081,10 @@ def _sh_collect_indented_block(
             j += 1
             continue
         n_indent = len(n_ln) - len(n_ln.lstrip(" "))
-        if n_indent <= parent_indent:
+        if n_indent <= parent_indent and not (mode in {"'''", '"""'} or depth > 0):
             break
         out.append((n_no, n_ln))
+        depth, mode = _sh_scan_logical_line_state(n_ln, depth, mode)
         j += 1
     return out, j
 
@@ -2137,11 +2280,39 @@ class _ShExprParser:
             return "uint8"
         return "unknown"
 
+    def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
+        """動的値から `list[dict]` を安全に取り出す。"""
+        out: list[dict[str, Any]] = []
+        if not isinstance(raw, list):
+            return out
+        for item in raw:
+            if isinstance(item, dict):
+                out.append(item)
+        return out
+
+    def _node_kind_from_dict(self, node_dict: dict[str, Any]) -> str:
+        """dict 化されたノードから kind を安全に文字列取得する。"""
+        if not isinstance(node_dict, dict):
+            return ""
+        kind = node_dict.get("kind")
+        if isinstance(kind, str):
+            return kind.strip()
+        if kind is None:
+            return ""
+        txt = str(kind).strip()
+        return txt if txt != "" else ""
+
     def _iter_item_type(self, iter_expr: dict[str, Any] | None) -> str:
         """for 反復対象の要素型を推論する。"""
         if not isinstance(iter_expr, dict):
             return "unknown"
         t = str(iter_expr.get("resolved_type", "unknown"))
+        if t.startswith("List[") and t.endswith("]"):
+            t = "list[" + t[5:-1] + "]"
+        if t.startswith("Set[") and t.endswith("]"):
+            t = "set[" + t[4:-1] + "]"
+        if t.startswith("Dict[") and t.endswith("]"):
+            t = "dict[" + t[5:-1] + "]"
         if t == "range":
             return "int64"
         if t.startswith("list[") and t.endswith("]"):
@@ -2369,6 +2540,14 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "enumerate"
                     payload["runtime_call"] = "py_enumerate"
+                    elem_t = "unknown"
+                    if len(args) >= 1 and isinstance(args[0], dict):
+                        elem_t = self._iter_item_type(args[0])
+                    payload["iterable_trait"] = "yes" if elem_t != "unknown" else "unknown"
+                    payload["iter_protocol"] = "static_range"
+                    payload["iter_element_type"] = elem_t
+                    call_ret = f"list[tuple[int64, {elem_t}]]"
+                    payload["resolved_type"] = call_ret
                 elif fn_name == "any":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "any"
@@ -2511,7 +2690,7 @@ class _ShExprParser:
                     self._eat(":")
                     up = None
                     if self._cur()["k"] != "]":
-                        up = self._parse_addsub()
+                        up = self._parse_ifexp()
                     rtok = self._eat("]")
                     s = int(node["source_span"]["col"]) - self.col_base
                     e = rtok["e"]
@@ -2529,12 +2708,12 @@ class _ShExprParser:
                         "upper": up,
                     }
                     continue
-                first = self._parse_addsub()
+                first = self._parse_ifexp()
                 if self._cur()["k"] == ":":
                     self._eat(":")
                     up = None
                     if self._cur()["k"] != "]":
-                        up = self._parse_addsub()
+                        up = self._parse_ifexp()
                     rtok = self._eat("]")
                     s = int(node["source_span"]["col"]) - self.col_base
                     e = rtok["e"]
@@ -2644,6 +2823,51 @@ class _ShExprParser:
             hint="Use name or tuple target in generator expression.",
         )
 
+    def _collect_and_bind_comp_target_types(
+        self,
+        target_expr: dict[str, Any],
+        value_type: str,
+        snapshots: dict[str, str],
+    ) -> None:
+        """内包ターゲットの各 Name へ一時的に型を設定する。"""
+        kind = self._node_kind_from_dict(target_expr)
+        if kind == "Name":
+            nm = str(target_expr.get("id", "")).strip()
+            if nm == "":
+                return
+            if nm not in snapshots:
+                snapshots[nm] = str(self.name_types.get(nm, ""))
+            target_expr["resolved_type"] = value_type
+            self.name_types[nm] = value_type
+            return
+
+        if kind != "Tuple":
+            return
+
+        target_elements = self._dict_stmt_list(target_expr.get("elements"))
+        elem_types: list[str] = []
+        if isinstance(value_type, str) and value_type.startswith("tuple[") and value_type.endswith("]"):
+            inner = value_type[6:-1].strip()
+            if inner != "":
+                elem_types = [p.strip() for p in _sh_split_top_commas(inner)]
+        for idx, elem in enumerate(target_elements):
+            if not isinstance(elem, dict):
+                continue
+            et = value_type
+            if idx < len(elem_types):
+                et0 = elem_types[idx]
+                if et0 != "":
+                    et = et0
+            self._collect_and_bind_comp_target_types(elem, et, snapshots)
+
+    def _restore_comp_target_types(self, snapshots: dict[str, str]) -> None:
+        """内包ターゲット一時型束縛を復元する。"""
+        for nm, old_t in snapshots.items():
+            if old_t == "":
+                self.name_types.pop(nm, None)
+            else:
+                self.name_types[nm] = old_t
+
     def _parse_call_arg_expr(self) -> dict[str, Any]:
         """呼び出し引数式を解析し、必要なら generator 引数へ lower する。"""
         first = self._parse_ifexp()
@@ -2659,23 +2883,64 @@ class _ShExprParser:
                 source_span=self._node_span(in_tok["s"], in_tok["e"]),
                 hint="Use `for x in iterable` form.",
             )
-        iter_expr = self._parse_ifexp()
+        iter_expr = self._parse_or()
         ifs: list[dict[str, Any]] = []
         while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
             self._eat("NAME")
-            ifs.append(self._parse_ifexp())
+            ifs.append(self._parse_or())
+
+        first_norm = first
+        ifs_norm: list[dict[str, Any]] = list(ifs)
+        tgt_ty = self._iter_item_type(iter_expr)
+        if tgt_ty != "unknown":
+            snapshots: dict[str, str] = {}
+            self._collect_and_bind_comp_target_types(target, tgt_ty, snapshots)
+            try:
+                first_repr = first.get("repr")
+                first_col = int(first.get("source_span", {}).get("col", self.col_base))
+                if isinstance(first_repr, str) and first_repr != "":
+                    first_norm = _sh_parse_expr(
+                        first_repr,
+                        line_no=self.line_no,
+                        col_base=first_col,
+                        name_types=self.name_types,
+                        fn_return_types=self.fn_return_types,
+                        class_method_return_types=self.class_method_return_types,
+                        class_base=self.class_base,
+                    )
+                ifs_norm = []
+                for cond in ifs:
+                    cond_repr = cond.get("repr")
+                    cond_col = int(cond.get("source_span", {}).get("col", self.col_base))
+                    if isinstance(cond_repr, str) and cond_repr != "":
+                        ifs_norm.append(
+                            _sh_parse_expr(
+                                cond_repr,
+                                line_no=self.line_no,
+                                col_base=cond_col,
+                                name_types=self.name_types,
+                                fn_return_types=self.fn_return_types,
+                                class_method_return_types=self.class_method_return_types,
+                                class_base=self.class_base,
+                            )
+                        )
+                    else:
+                        ifs_norm.append(cond)
+            finally:
+                self._restore_comp_target_types(snapshots)
+
         s = int(first["source_span"]["col"]) - self.col_base
-        end_node = ifs[-1] if len(ifs) > 0 else iter_expr
+        end_node = ifs_norm[-1] if len(ifs_norm) > 0 else iter_expr
         e = int(end_node["source_span"]["end_col"]) - self.col_base
         return {
             "kind": "ListComp",
             "source_span": self._node_span(s, e),
-            "resolved_type": f"list[{first.get('resolved_type', 'unknown')}]",
+            "resolved_type": f"list[{first_norm.get('resolved_type', 'unknown')}]",
             "borrow_kind": "value",
             "casts": [],
             "repr": self._src_slice(s, e),
-            "elt": first,
-            "generators": [{"target": target, "iter": iter_expr, "ifs": ifs, "is_async": False}],
+            "elt": first_norm,
+            "generators": [{"target": target, "iter": iter_expr, "ifs": ifs_norm, "is_async": False}],
             "lowered_kind": "GeneratorArg",
         }
 
@@ -2784,7 +3049,38 @@ class _ShExprParser:
                 "value": float(tok["v"]),
             }
         if tok["k"] == "STR":
-            self._eat("STR")
+            str_parts: list[dict[str, Any]] = [self._eat("STR")]
+            while self._cur()["k"] == "STR":
+                str_parts.append(self._eat("STR"))
+            if len(str_parts) > 1:
+                str_nodes = [
+                    _sh_parse_expr(
+                        part["v"],
+                        line_no=self.line_no,
+                        col_base=self.col_base + int(part["s"]),
+                        name_types=self.name_types,
+                        fn_return_types=self.fn_return_types,
+                        class_method_return_types=self.class_method_return_types,
+                        class_base=self.class_base,
+                    )
+                    for part in str_parts
+                ]
+                node = str_nodes[0]
+                for str_rhs in str_nodes[1:]:
+                    node = {
+                        "kind": "BinOp",
+                        "source_span": self._node_span(str_parts[0]["s"], str_parts[-1]["e"]),
+                        "resolved_type": "str",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": self._src_slice(str_parts[0]["s"], str_parts[-1]["e"]),
+                        "left": node,
+                        "op": "Add",
+                        "right": str_rhs,
+                    }
+                return node
+
+            tok = str_parts[0]
             raw: str = tok["v"]
             # Support prefixed literals (f/r/b/u/rf/fr...) in expression parser.
             p = 0
@@ -2944,11 +3240,11 @@ class _ShExprParser:
                         source_span=self._node_span(in_tok["s"], in_tok["e"]),
                         hint="Use `(expr for x in iterable)` syntax.",
                     )
-                iter_expr = self._parse_ifexp()
+                iter_expr = self._parse_or()
                 ifs: list[dict[str, Any]] = []
                 while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
                     self._eat("NAME")
-                    ifs.append(self._parse_ifexp())
+                    ifs.append(self._parse_or())
                 r = self._eat(")")
                 end_node = ifs[-1] if len(ifs) > 0 else iter_expr
                 s = l["s"]
@@ -3003,7 +3299,7 @@ class _ShExprParser:
                             source_span=self._node_span(in_tok["s"], in_tok["e"]),
                             hint="Use `[x for x in iterable]` syntax.",
                         )
-                    iter_expr = self._parse_ifexp()
+                    iter_expr = self._parse_or()
                     if (
                         isinstance(iter_expr, dict)
                         and iter_expr.get("kind") == "Call"
@@ -3074,7 +3370,7 @@ class _ShExprParser:
                     ifs: list[dict[str, Any]] = []
                     while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
                         self._eat("NAME")
-                        ifs.append(self._parse_ifexp())
+                        ifs.append(self._parse_or())
                     r = self._eat("]")
                     tgt_name = str(tgt_tok["v"])
                     tgt_ty = self._iter_item_type(iter_expr)
@@ -3188,6 +3484,96 @@ class _ShExprParser:
                 vals: list[dict[str, Any]] = []
                 self._eat(":")
                 vals.append(self._parse_ifexp())
+                first_key = keys[0]
+                first_val = vals[0]
+                if self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
+                    self._eat("NAME")
+                    target = self._parse_comp_target()
+                    in_tok = self._eat("NAME")
+                    if in_tok["v"] != "in":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message="expected 'in' in dict comprehension",
+                            source_span=self._node_span(in_tok["s"], in_tok["e"]),
+                            hint="Use `for x in iterable` form.",
+                        )
+                    iter_expr = self._parse_or()
+                    ifs: list[dict[str, Any]] = []
+                    while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
+                        self._eat("NAME")
+                        ifs.append(self._parse_or())
+
+                    key_node = first_key
+                    val_node = first_val
+                    ifs_norm: list[dict[str, Any]] = list(ifs)
+                    iter_ty = self._iter_item_type(iter_expr)
+                    if iter_ty != "unknown":
+                        snapshots: dict[str, str] = {}
+                        self._collect_and_bind_comp_target_types(target, iter_ty, snapshots)
+                        try:
+                            key_repr = first_key.get("repr")
+                            val_repr = first_val.get("repr")
+                            if isinstance(key_repr, str) and key_repr != "":
+                                key_node = _sh_parse_expr(
+                                    key_repr,
+                                    line_no=self.line_no,
+                                    col_base=int(first_key.get("source_span", {}).get("col", self.col_base)),
+                                    name_types=self.name_types,
+                                    fn_return_types=self.fn_return_types,
+                                    class_method_return_types=self.class_method_return_types,
+                                    class_base=self.class_base,
+                                )
+                            if isinstance(val_repr, str) and val_repr != "":
+                                val_node = _sh_parse_expr(
+                                    val_repr,
+                                    line_no=self.line_no,
+                                    col_base=int(first_val.get("source_span", {}).get("col", self.col_base)),
+                                    name_types=self.name_types,
+                                    fn_return_types=self.fn_return_types,
+                                    class_method_return_types=self.class_method_return_types,
+                                    class_base=self.class_base,
+                                )
+                            ifs_norm = []
+                            for cond in ifs:
+                                cond_repr = cond.get("repr")
+                                cond_col = int(cond.get("source_span", {}).get("col", self.col_base))
+                                if isinstance(cond_repr, str) and cond_repr != "":
+                                    ifs_norm.append(
+                                        _sh_parse_expr(
+                                            cond_repr,
+                                            line_no=self.line_no,
+                                            col_base=cond_col,
+                                            name_types=self.name_types,
+                                            fn_return_types=self.fn_return_types,
+                                            class_method_return_types=self.class_method_return_types,
+                                            class_base=self.class_base,
+                                        )
+                                    )
+                                else:
+                                    ifs_norm.append(cond)
+                        finally:
+                            self._restore_comp_target_types(snapshots)
+                    end_node = ifs_norm[-1] if len(ifs_norm) > 0 else iter_expr
+                    end_col = int(end_node.get("source_span", {}).get("end_col", self.col_base))
+                    r = self._eat("}")
+                    return {
+                        "kind": "DictComp",
+                        "source_span": self._node_span(l["s"], end_col - self.col_base),
+                        "resolved_type": f"dict[{key_node.get('resolved_type', 'unknown')},{val_node.get('resolved_type', 'unknown')}]",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": self._src_slice(l["s"], end_col - self.col_base),
+                        "key": key_node,
+                        "value": val_node,
+                        "generators": [
+                            {
+                                "target": target,
+                                "iter": iter_expr,
+                                "ifs": ifs_norm,
+                                "is_async": False,
+                            }
+                        ],
+                    }
                 while self._cur()["k"] == ",":
                     self._eat(",")
                     if self._cur()["k"] == "}":
@@ -3377,6 +3763,35 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
     top_comma_parts = _sh_split_top_commas(txt)
     is_single_top_expr = len(top_comma_parts) == 1
 
+    adjacent_strings = _sh_extract_adjacent_string_parts(txt, ln_no, col, name_types)
+    if adjacent_strings is not None and len(adjacent_strings) >= 2:
+        nodes = [
+            _sh_parse_expr(
+                part,
+                line_no=ln_no,
+                col_base=part_col,
+                name_types=name_types,
+                fn_return_types=_SH_FN_RETURNS,
+                class_method_return_types=_SH_CLASS_METHOD_RETURNS,
+                class_base=_SH_CLASS_BASE,
+            )
+            for part, part_col in adjacent_strings
+        ]
+        node = nodes[0]
+        for rhs in nodes[1:]:
+            node = {
+                "kind": "BinOp",
+                "source_span": _sh_span(ln_no, col, col + len(raw)),
+                "resolved_type": "str",
+                "borrow_kind": "value",
+                "casts": [],
+                "repr": txt,
+                "left": node,
+                "op": "Add",
+                "right": rhs,
+            }
+        return node
+
     plus_parts = _sh_split_top_plus(txt)
     if len(plus_parts) >= 2 and any(p.startswith("f\"") or p.startswith("f'") for p in plus_parts):
         nodes = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in plus_parts]
@@ -3558,6 +3973,50 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
 
     # list-comp support: [expr for target in iter if cond] + chained for-clauses
     if txt.startswith("[") and txt.endswith("]") and is_single_top_expr:
+        first_closing = -1
+        depth = 0
+        in_str3: str | None = None
+        esc3 = False
+        for i, ch in enumerate(txt):
+            if in_str3 is not None:
+                if esc3:
+                    esc3 = False
+                    continue
+                if ch == "\\":
+                    esc3 = True
+                elif ch == in_str3:
+                    in_str3 = None
+                continue
+            if ch in {"'", '"'}:
+                in_str3 = ch
+                continue
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                if depth == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"invalid bracket nesting in self_hosted parser: {txt}",
+                        source_span=_sh_span(ln_no, col, col + len(raw)),
+                        hint="Check list/tuple bracket balance.",
+                    )
+                depth -= 1
+                if depth == 0:
+                    first_closing = i
+                    break
+        if first_closing != len(txt) - 1:
+            # Delegate to full parser when this is not a standalone list expression
+            # (e.g. list-comprehension result with trailing slice/index).
+            return _sh_parse_expr(
+                txt,
+                line_no=ln_no,
+                col_base=col,
+                name_types=name_types,
+                fn_return_types=_SH_FN_RETURNS,
+                class_method_return_types=_SH_CLASS_METHOD_RETURNS,
+                class_base=_SH_CLASS_BASE,
+            )
+
         inner = txt[1:-1].strip()
         p_for = _sh_split_top_keyword(inner, "for")
         if p_for > 0:
@@ -3566,180 +4025,180 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             generators: list[dict[str, Any]] = []
             comp_types: dict[str, str] = dict(name_types)
             while True:
-                p_in = _sh_split_top_keyword(rest, "in")
-                if p_in <= 0:
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message=f"invalid list comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `[elem for item in iterable]` form.",
-                    )
-                tgt_txt = rest[:p_in].strip()
-                iter_and_suffix_txt = rest[p_in + 2 :].strip()
-                if tgt_txt == "" or iter_and_suffix_txt == "":
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message=f"invalid list comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `[elem for item in iterable]` form.",
-                    )
-                p_next_for = _sh_split_top_keyword(iter_and_suffix_txt, "for")
-                p_next_if = _sh_split_top_keyword(iter_and_suffix_txt, "if")
-                next_pos = -1
-                if p_next_for >= 0 and (p_next_if < 0 or p_next_for < p_next_if):
-                    next_pos = p_next_for
-                elif p_next_if >= 0:
-                    next_pos = p_next_if
-                iter_txt = iter_and_suffix_txt
-                suffix_txt = ""
-                if next_pos >= 0:
-                    iter_txt = iter_and_suffix_txt[:next_pos].strip()
-                    suffix_txt = iter_and_suffix_txt[next_pos:].strip()
-                if iter_txt == "":
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message=f"invalid list comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `[elem for item in iterable]` form.",
-                    )
-
-                target_node = _sh_parse_expr_lowered(
-                    tgt_txt,
-                    ln_no=ln_no,
-                    col=col + txt.find(tgt_txt),
-                    name_types=dict(comp_types),
-                )
-                iter_node = _sh_parse_expr_lowered(
-                    iter_txt,
-                    ln_no=ln_no,
-                    col=col + txt.find(iter_txt),
-                    name_types=dict(comp_types),
-                )
-                if (
-                    isinstance(iter_node, dict)
-                    and iter_node.get("kind") == "Call"
-                    and isinstance(iter_node.get("func"), dict)
-                    and iter_node.get("func", {}).get("kind") == "Name"
-                    and iter_node.get("func", {}).get("id") == "range"
-                ):
-                    rargs = list(iter_node.get("args", []))
-                    if len(rargs) == 1:
-                        start_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "0",
-                            "value": 0,
-                        }
-                        stop_node = rargs[0]
-                        step_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "1",
-                            "value": 1,
-                        }
-                    elif len(rargs) == 2:
-                        start_node = rargs[0]
-                        stop_node = rargs[1]
-                        step_node = {
-                            "kind": "Constant",
-                            "source_span": _sh_span(ln_no, col, col),
-                            "resolved_type": "int64",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": "1",
-                            "value": 1,
-                        }
-                    else:
-                        start_node = rargs[0]
-                        stop_node = rargs[1]
-                        step_node = rargs[2]
-                    step_const_obj: Any = None
-                    if isinstance(step_node, dict):
-                        step_const_obj = step_node.get("value")
-                    step_const: int | None = None
-                    if isinstance(step_const_obj, int):
-                        step_const = int(step_const_obj)
-                    mode = "dynamic"
-                    if step_const == 1:
-                        mode = "ascending"
-                    elif step_const == -1:
-                        mode = "descending"
-                    iter_node = {
-                        "kind": "RangeExpr",
-                        "source_span": iter_node.get("source_span"),
-                        "resolved_type": "range",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": iter_node.get("repr", "range(...)"),
-                        "start": start_node,
-                        "stop": stop_node,
-                        "step": step_node,
-                        "range_mode": mode,
-                    }
-
-                comp_types = _sh_bind_comp_target_types(dict(comp_types), target_node, iter_node)
-                if_nodes: list[dict[str, Any]] = []
-                while suffix_txt.startswith("if "):
-                    cond_tail = suffix_txt[3:].strip()
-                    p_cond_for = _sh_split_top_keyword(cond_tail, "for")
-                    p_cond_if = _sh_split_top_keyword(cond_tail, "if")
-                    split_pos = -1
-                    if p_cond_for >= 0 and (p_cond_if < 0 or p_cond_for < p_cond_if):
-                        split_pos = p_cond_for
-                    elif p_cond_if >= 0:
-                        split_pos = p_cond_if
-                    cond_txt = cond_tail
-                    suffix_txt = ""
-                    if split_pos >= 0:
-                        cond_txt = cond_tail[:split_pos].strip()
-                        suffix_txt = cond_tail[split_pos:].strip()
-                    if cond_txt == "":
+                    p_in = _sh_split_top_keyword(rest, "in")
+                    if p_in <= 0:
                         raise _make_east_build_error(
                             kind="unsupported_syntax",
-                            message=f"invalid list comprehension condition in self_hosted parser: {txt}",
+                            message=f"invalid list comprehension in self_hosted parser: {txt}",
                             source_span=_sh_span(ln_no, col, col + len(raw)),
-                            hint="Use `[elem for item in iterable if cond]` form.",
+                            hint="Use `[elem for item in iterable]` form.",
                         )
-                    if_nodes.append(
-                        _sh_parse_expr_lowered(
-                            cond_txt,
-                            ln_no=ln_no,
-                            col=col + txt.find(cond_txt),
-                            name_types=dict(comp_types),
+                    tgt_txt = rest[:p_in].strip()
+                    iter_and_suffix_txt = rest[p_in + 2 :].strip()
+                    if tgt_txt == "" or iter_and_suffix_txt == "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"invalid list comprehension in self_hosted parser: {txt}",
+                            source_span=_sh_span(ln_no, col, col + len(raw)),
+                            hint="Use `[elem for item in iterable]` form.",
                         )
-                    )
+                    p_next_for = _sh_split_top_keyword(iter_and_suffix_txt, "for")
+                    p_next_if = _sh_split_top_keyword(iter_and_suffix_txt, "if")
+                    next_pos = -1
+                    if p_next_for >= 0 and (p_next_if < 0 or p_next_for < p_next_if):
+                        next_pos = p_next_for
+                    elif p_next_if >= 0:
+                        next_pos = p_next_if
+                    iter_txt = iter_and_suffix_txt
+                    suffix_txt = ""
+                    if next_pos >= 0:
+                        iter_txt = iter_and_suffix_txt[:next_pos].strip()
+                        suffix_txt = iter_and_suffix_txt[next_pos:].strip()
+                    if iter_txt == "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"invalid list comprehension in self_hosted parser: {txt}",
+                            source_span=_sh_span(ln_no, col, col + len(raw)),
+                            hint="Use `[elem for item in iterable]` form.",
+                        )
 
-                generators.append(
-                    {
-                        "target": target_node,
-                        "iter": iter_node,
-                        "ifs": if_nodes,
-                        "is_async": False,
-                    }
-                )
-                if suffix_txt == "":
-                    break
-                if not suffix_txt.startswith("for "):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message=f"invalid list comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `[elem for item in iterable for item2 in iterable2]` form.",
+                    target_node = _sh_parse_expr_lowered(
+                        tgt_txt,
+                        ln_no=ln_no,
+                        col=col + txt.find(tgt_txt),
+                        name_types=dict(comp_types),
                     )
-                rest = suffix_txt[4:].strip()
-                if rest == "":
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message=f"invalid list comprehension in self_hosted parser: {txt}",
-                        source_span=_sh_span(ln_no, col, col + len(raw)),
-                        hint="Use `[elem for item in iterable for item2 in iterable2]` form.",
+                    iter_node = _sh_parse_expr_lowered(
+                        iter_txt,
+                        ln_no=ln_no,
+                        col=col + txt.find(iter_txt),
+                        name_types=dict(comp_types),
                     )
+                    if (
+                        isinstance(iter_node, dict)
+                        and iter_node.get("kind") == "Call"
+                        and isinstance(iter_node.get("func"), dict)
+                        and iter_node.get("func", {}).get("kind") == "Name"
+                        and iter_node.get("func", {}).get("id") == "range"
+                    ):
+                        rargs = list(iter_node.get("args", []))
+                        if len(rargs) == 1:
+                            start_node = {
+                                "kind": "Constant",
+                                "source_span": _sh_span(ln_no, col, col),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": "0",
+                                "value": 0,
+                            }
+                            stop_node = rargs[0]
+                            step_node = {
+                                "kind": "Constant",
+                                "source_span": _sh_span(ln_no, col, col),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": "1",
+                                "value": 1,
+                            }
+                        elif len(rargs) == 2:
+                            start_node = rargs[0]
+                            stop_node = rargs[1]
+                            step_node = {
+                                "kind": "Constant",
+                                "source_span": _sh_span(ln_no, col, col),
+                                "resolved_type": "int64",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": "1",
+                                "value": 1,
+                            }
+                        else:
+                            start_node = rargs[0]
+                            stop_node = rargs[1]
+                            step_node = rargs[2]
+                        step_const_obj: Any = None
+                        if isinstance(step_node, dict):
+                            step_const_obj = step_node.get("value")
+                        step_const: int | None = None
+                        if isinstance(step_const_obj, int):
+                            step_const = int(step_const_obj)
+                        mode = "dynamic"
+                        if step_const == 1:
+                            mode = "ascending"
+                        elif step_const == -1:
+                            mode = "descending"
+                        iter_node = {
+                            "kind": "RangeExpr",
+                            "source_span": iter_node.get("source_span"),
+                            "resolved_type": "range",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": iter_node.get("repr", "range(...)"),
+                            "start": start_node,
+                            "stop": stop_node,
+                            "step": step_node,
+                            "range_mode": mode,
+                        }
+
+                    comp_types = _sh_bind_comp_target_types(dict(comp_types), target_node, iter_node)
+                    if_nodes: list[dict[str, Any]] = []
+                    while suffix_txt.startswith("if "):
+                        cond_tail = suffix_txt[3:].strip()
+                        p_cond_for = _sh_split_top_keyword(cond_tail, "for")
+                        p_cond_if = _sh_split_top_keyword(cond_tail, "if")
+                        split_pos = -1
+                        if p_cond_for >= 0 and (p_cond_if < 0 or p_cond_for < p_cond_if):
+                            split_pos = p_cond_for
+                        elif p_cond_if >= 0:
+                            split_pos = p_cond_if
+                        cond_txt = cond_tail
+                        suffix_txt = ""
+                        if split_pos >= 0:
+                            cond_txt = cond_tail[:split_pos].strip()
+                            suffix_txt = cond_tail[split_pos:].strip()
+                        if cond_txt == "":
+                            raise _make_east_build_error(
+                                kind="unsupported_syntax",
+                                message=f"invalid list comprehension condition in self_hosted parser: {txt}",
+                                source_span=_sh_span(ln_no, col, col + len(raw)),
+                                hint="Use `[elem for item in iterable if cond]` form.",
+                            )
+                        if_nodes.append(
+                            _sh_parse_expr_lowered(
+                                cond_txt,
+                                ln_no=ln_no,
+                                col=col + txt.find(cond_txt),
+                                name_types=dict(comp_types),
+                            )
+                        )
+
+                    generators.append(
+                        {
+                            "target": target_node,
+                            "iter": iter_node,
+                            "ifs": if_nodes,
+                            "is_async": False,
+                        }
+                    )
+                    if suffix_txt == "":
+                        break
+                    if not suffix_txt.startswith("for "):
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"invalid list comprehension in self_hosted parser: {txt}",
+                            source_span=_sh_span(ln_no, col, col + len(raw)),
+                            hint="Use `[elem for item in iterable for item2 in iterable2]` form.",
+                        )
+                    rest = suffix_txt[4:].strip()
+                    if rest == "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"invalid list comprehension in self_hosted parser: {txt}",
+                            source_span=_sh_span(ln_no, col, col + len(raw)),
+                            hint="Use `[elem for item in iterable for item2 in iterable2]` form.",
+                        )
 
             elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
             elem_t = str(elt_node.get("resolved_type", "unknown"))
@@ -3837,6 +4296,32 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
 
 def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
     """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
+    def _maybe_bind_self_field(
+        target_expr: dict[str, Any] | None,
+        value_type: str | None,
+        *,
+        explicit: str | None = None,
+    ) -> None:
+        """`self.xxx` への代入時、self フィールドの型推論を更新する。"""
+        if not isinstance(target_expr, dict):
+            return
+        if target_expr.get("kind") != "Attribute":
+            return
+        owner = target_expr.get("value")
+        if not isinstance(owner, dict):
+            return
+        if owner.get("kind") != "Name" or owner.get("id") != "self":
+            return
+        field_name = str(target_expr.get("attr", "")).strip()
+        if field_name == "":
+            return
+        candidate = value_type or ""
+        if candidate != "":
+            name_types[field_name] = candidate
+            return
+        if isinstance(explicit, str) and explicit.strip() != "":
+            name_types[field_name] = explicit.strip()
+
     body_lines, merged_line_end = _sh_merge_logical_lines(body_lines)
 
     stmts: list[dict[str, Any]] = []
@@ -4106,14 +4591,23 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         if nm != "":
                             target_names.append(nm)
             if len(tuple_target_elem_types) > 0 and isinstance(target_expr, dict) and target_expr.get("kind") == "Tuple":
+                target_expr["resolved_type"] = f"tuple[{','.join([t.strip() if t.strip() != '' else 'unknown' for t in tuple_target_elem_types])}]"
                 for idx, nm in enumerate(target_names):
                     if idx < len(tuple_target_elem_types):
                         et = tuple_target_elem_types[idx].strip()
                         if et == "":
                             et = "unknown"
                         name_types[nm] = et
+                        try:
+                            elem_nodes[idx]["resolved_type"] = et
+                        except Exception:
+                            pass
                     else:
                         name_types[nm] = "unknown"
+                        try:
+                            elem_nodes[idx]["resolved_type"] = "unknown"
+                        except Exception:
+                            pass
             elif t_ty != "unknown":
                 for nm in target_names:
                     name_types[nm] = t_ty
@@ -4558,6 +5052,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             ann = _sh_ann_to_type(ann_txt)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+            _maybe_bind_self_field(target_expr, None, explicit=ann)
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 name_types[str(target_expr.get("id", ""))] = ann
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
@@ -4582,6 +5077,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
+            _maybe_bind_self_field(target_expr, None, explicit=ann)
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 name_types[str(target_expr.get("id", ""))] = ann
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
@@ -4729,6 +5225,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             decl_type = val_expr.get("resolved_type", "unknown")
+            _maybe_bind_self_field(target_expr, str(decl_type) if isinstance(decl_type, str) else "")
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 nm = str(target_expr.get("id", ""))
                 if nm != "":
@@ -4781,6 +5278,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     class_method_return_types: dict[str, dict[str, str]] = {}
     class_base: dict[str, str | None] = {}
     fn_returns: dict[str, str] = {}
+    type_aliases: dict[str, str] = _sh_default_type_aliases()
 
     cur_cls: str | None = None
     cur_cls_indent = 0
@@ -4791,6 +5289,32 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         indent = len(ln) - len(ln.lstrip(" "))
         if cur_cls is not None and indent <= cur_cls_indent and not s.startswith("#"):
             cur_cls = None
+        if cur_cls is None and indent == 0:
+            m_import_from = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
+            if m_import_from is not None:
+                mod_txt = re.strip_group(m_import_from, 1)
+                names_txt = re.strip_group(m_import_from, 2)
+                if mod_txt == "typing":
+                    raw_parts: list[str] = []
+                    for p in names_txt.split(","):
+                        p2: str = p.strip()
+                        if p2 != "":
+                            raw_parts.append(p2)
+                    for part in raw_parts:
+                        parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                        if parsed_alias is None:
+                            continue
+                        sym_txt, as_name = parsed_alias
+                        alias_name = as_name if as_name != "" else sym_txt
+                        target = _sh_typing_alias_to_type_name(sym_txt)
+                        if target != "":
+                            type_aliases[alias_name] = target
+                continue
+            asg_pre = _sh_split_top_level_assign(s)
+            if asg_pre is not None:
+                pre_left, pre_right = asg_pre
+                _sh_register_type_alias(type_aliases, pre_left, pre_right)
+                continue
         cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
             cur_cls_name, cur_base = cls_hdr
@@ -4818,7 +5342,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             methods[str(sig["name"])] = str(sig["ret"])
             class_method_return_types[cur_cls_name] = methods
 
-    _sh_set_parse_context(fn_returns, class_method_return_types, class_base)
+    _sh_set_parse_context(fn_returns, class_method_return_types, class_base, type_aliases)
 
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
@@ -4870,17 +5394,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 is_main_guard = True
         if is_main_guard:
             block: list[tuple[int, str]] = []
-            j = i + 1
-            while j <= len(lines):
-                bl = lines[j - 1]
-                if bl.strip() == "":
-                    block.append((j, bl))
-                    j += 1
-                    continue
-                if not bl.startswith(" "):
-                    break
-                block.append((j, bl))
-                j += 1
+            if i < len(top_lines):
+                block, block_end_idx = _sh_collect_indented_block(top_lines, i, 0)
+                j = block_end_idx + 1
             main_name_types: dict[str, str] = {}
             main_stmts = _sh_parse_stmt_block(block, name_types=main_name_types, scope_label="__main__")
             i = j
@@ -4902,16 +5418,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 block = [(i, "    " + inline_fn_stmt)]
                 j = i + 1
             else:
-                while j <= len(lines):
-                    bl = lines[j - 1]
-                    if bl.strip() == "":
-                        block.append((j, bl))
-                        j += 1
-                        continue
-                    if not bl.startswith(" "):
-                        break
-                    block.append((j, bl))
-                    j += 1
+                block, block_end_idx = _sh_collect_indented_block(top_lines, j - 1, 0)
+                j = block_end_idx + 1
                 if len(block) == 0:
                     raise _make_east_build_error(
                         kind="unsupported_syntax",

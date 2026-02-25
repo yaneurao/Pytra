@@ -36,5 +36,7 @@
 - 2026-02-25: P3-MISC-01-S003 の失敗は `statistics` import の missing_module と `object receiver` 制約で発生しており、`is_known_non_user_import` に
   `statistics` を追加、加えて `CppEmitter.validate_call_receiver_or_raise` で `Class` 固有メソッドの属性名解決を先行許可する形へ調整した後、
   `py2cpp.py test/misc/03_gradebook.py /tmp/03_gradebook.cpp` を成功させた。
+- 2026-02-25: P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc/04_maze_solver.py /tmp/04_maze_solver.cpp` に成功し、
+  `For` タプルターゲットの `resolved_type` 反映と `enumerate` の要素型推論補正を導入した。
 
 ### 分解
