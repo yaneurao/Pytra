@@ -296,10 +296,24 @@ class CppStatementEmitter:
                 else:
                     self.emit(f"{self._cpp_type_text(decl_t)} {nm} = ::std::get<{i}>({src});")
 
-    def _emit_target_unpack_runtime(self, target: dict[str, Any], src_obj: str) -> None:
+    def _emit_target_unpack_runtime(self, target: dict[str, Any], src_obj: str, iter_expr: dict[str, Any]) -> None:
         """runtime iterable プロトコル用のタプル unpack（`py_at` ベース）。"""
         if self._node_kind_from_dict(target) != "Tuple":
             return
+        elem_types: list[str] = []
+        target_t = self.any_dict_get_str(target, "resolved_type", "")
+        if target_t.startswith("tuple[") and target_t.endswith("]"):
+            elem_types = self.split_generic(target_t[6:-1])
+        if len(elem_types) == 0 and len(iter_expr) > 0:
+            iter_t = self.any_dict_get_str(iter_expr, "resolved_type", "")
+            if iter_t.startswith("list[") and iter_t.endswith("]"):
+                inner = iter_t[5:-1]
+                if inner.startswith("tuple[") and inner.endswith("]"):
+                    elem_types = self.split_generic(inner[6:-1])
+            elif iter_t.startswith("set[") and iter_t.endswith("]"):
+                inner = iter_t[4:-1]
+                if inner.startswith("tuple[") and inner.endswith("]"):
+                    elem_types = self.split_generic(inner[6:-1])
         elems = self.any_to_list(target.get("elements"))
         for i, e in enumerate(elems):
             e_node = self.any_to_dict_or_empty(e)
@@ -307,7 +321,8 @@ class CppStatementEmitter:
                 continue
             nm = self.render_expr(e)
             rhs = f"py_at({src_obj}, {i})"
-            decl_t = self.normalize_type_name(self.get_expr_type(e))
+            elem_decl_t = self.normalize_type_name(elem_types[i]) if i < len(elem_types) else ""
+            decl_t = elem_decl_t if elem_decl_t != "" else self.normalize_type_name(self.get_expr_type(e))
             if self._can_runtime_cast_target(decl_t):
                 rhs = self.render_expr(
                     self._build_unbox_expr_node(
@@ -385,7 +400,7 @@ class CppStatementEmitter:
 
         self._emit_for_body_open(hdr, target_names, omit_braces)
         if unpack_tuple:
-            self._emit_target_unpack_runtime(target, iter_tmp)
+            self._emit_target_unpack_runtime(target, iter_tmp, iter_expr)
         else:
             self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
         self._emit_for_body_stmts(body_stmts, omit_braces)
