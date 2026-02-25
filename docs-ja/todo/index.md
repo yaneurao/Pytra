@@ -64,6 +64,7 @@
 - `P0-SAMPLE-GOLDEN-ALL-01-S2`: `runtime_parity_check.py` に `--all-samples`/`--summary-json` と失敗カテゴリ集計を追加し、`test_runtime_parity_check_cli.py` + `test_image_runtime_parity.py` で CLI 解決規約と C++ 到達性を回帰固定した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S3`: C++ emitter の module namespace/include 解決（`math/time` と `pytra.runtime -> pytra.utils`）と runtime tuple boxing/type_id 初期化順序を修正し、`runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout` で 18/18 pass を固定した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S4`: Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=rs` を確認した。
+- `P0-SAMPLE-GOLDEN-ALL-01-S5`: `runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` は `toolchain_missing: 18`（`mcs`/`mono` 未導入）となり、環境ブロッカーを確認した。
 
 ## P1: CppEmitter の pylib 互換名正規化除去（中優先）
 
