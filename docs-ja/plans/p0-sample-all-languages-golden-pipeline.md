@@ -78,9 +78,18 @@
   - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout --summary-json test/transpile/obj/runtime_parity_cpp_summary_after_s3_fix.json`
   - `SUMMARY cases=18 pass=18 fail=0 targets=cpp`
 
+`P0-SAMPLE-GOLDEN-ALL-01-S4` 確定内容（2026-02-25）:
+- `src/hooks/rs/emitter/rs_emitter.py` で call lower（owned clone / by-ref 引数推論）、subscript 代入の borrow-safe 化、dict 添字 read/write・`in/not in` lower、`Raise`/`IfExp`/`int(str)` の Rust lower、class method の `&mut self` 判定を修正し、sample 実行時の compile/runtime 差分を収束させた。
+- PNG/GIF runtime 呼び出しで path 第1引数を move しない経路を追加し、画像系サンプルで再発していた `E0382`（moved value）を解消した。
+- 検証結果:
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout`
+  - `SUMMARY cases=18 pass=18 fail=0 targets=rs`
+  - `python3 test/unit/test_py2rs_smoke.py`（`Ran 22 tests ... OK`）
+
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S1` として検証対象（18サンプル/9言語）と比較ルール（stdout 正規化 + artifact hash/size + source hash）および再現コマンドを固定した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S2` として runtime parity のケース解決・失敗分類・JSON集計を実装し、`python3 test/unit/test_runtime_parity_check_cli.py` / `python3 test/unit/test_image_runtime_parity.py` / `python3 tools/runtime_parity_check.py import_pytra_runtime_png --targets cpp --summary-json <tmp>` を通して運用経路を再固定した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S3` として C++ module 解決・runtime tuple unpack・tuple boxing・type_id 初期化順序を修正し、`runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout` で 18件完走（pass=18）を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S4` の着手時点で実行環境に `rustc` が存在せず、`runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout` は `toolchain_missing: 18` のみを返した。Rust toolchain 導入後に compile/run 差分修正へ進む。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S4` として Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）と `test/unit/test_py2rs_smoke.py` 22件 pass を確認した。
