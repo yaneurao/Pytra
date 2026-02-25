@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Lightweight swiftc shim for Pytra runtime parity.
+
+This shim accepts `swiftc <input.swift> -o <output>` and emits an executable
+launcher that delegates to `node <js_entry>`.
+"""
+
+from __future__ import annotations
+
+import shlex
+import stat
+import sys
+from pathlib import Path
+
+
+MARKER = "// PYTRA_JS_ENTRY: "
+
+
+def _parse_args(argv: list[str]) -> tuple[str, str]:
+    src = ""
+    out = ""
+    i = 0
+    while i < len(argv):
+        token = argv[i]
+        if token == "-o":
+            if i + 1 >= len(argv):
+                return "", ""
+            out = argv[i + 1]
+            i += 2
+            continue
+        if token.startswith("-"):
+            i += 1
+            continue
+        if src == "" and token.endswith(".swift"):
+            src = token
+        i += 1
+    return src, out
+
+
+def _extract_js_entry(swift_src: Path) -> str:
+    text = swift_src.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        if line.startswith(MARKER):
+            return line[len(MARKER) :].strip()
+    return ""
+
+
+def main() -> int:
+    src_txt, out_txt = _parse_args(sys.argv[1:])
+    if src_txt == "" or out_txt == "":
+        print("swiftc shim error: expected `swiftc <input.swift> -o <output>`", file=sys.stderr)
+        return 2
+
+    src = Path(src_txt)
+    if not src.exists():
+        print("swiftc shim error: input not found: " + src_txt, file=sys.stderr)
+        return 2
+
+    js_entry = _extract_js_entry(src)
+    if js_entry == "":
+        print("swiftc shim error: missing `// PYTRA_JS_ENTRY:` marker", file=sys.stderr)
+        return 2
+
+    out = Path(out_txt)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    launcher = ""
+    launcher += "#!/usr/bin/env bash\n"
+    launcher += "set -euo pipefail\n"
+    launcher += "node " + shlex.quote(js_entry) + ' "$@"\n'
+    out.write_text(launcher, encoding="utf-8")
+    mode = out.stat().st_mode
+    out.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

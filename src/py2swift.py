@@ -6,7 +6,9 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from hooks.swift.emitter.swift_emitter import load_swift_profile, transpile_to_swift
+from hooks.js.emitter.js_emitter import transpile_to_js
 from pytra.compiler.east_parts.east3_legacy_compat import normalize_east3_to_legacy
+from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document, load_east_document_compat
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -56,6 +58,14 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _sidecar_js_path(output_path: Path) -> Path:
+    """Swift 出力に対応する sidecar JS のパスを返す。"""
+    out = str(output_path)
+    if out.endswith(".swift"):
+        return Path(out[:-6] + ".js")
+    return Path(out + ".js")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Swift transpiler")
@@ -91,9 +101,13 @@ def main() -> int:
         east_stage=east_stage,
         object_dispatch_mode=object_dispatch_mode,
     )
-    swift_src = transpile_to_swift(east)
+    js_output_path = _sidecar_js_path(output_path)
+    js_src = transpile_to_js(east)
+    swift_src = transpile_to_swift(east, js_entry_path=str(js_output_path))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(swift_src, encoding="utf-8")
+    js_output_path.write_text(js_src, encoding="utf-8")
+    write_js_runtime_shims(js_output_path.parent)
     return 0
 
 
