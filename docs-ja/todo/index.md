@@ -24,25 +24,6 @@
 
 
 
-## P3: test/misc 追加サンプルの変換復旧（超低優先）
-
-### 文脈
-- `docs-ja/plans/p3-misc-extended-transpile.md`
-
-### タスク（S001〜S008）
-
-1. [ ] [ID: P3-MISC-02-S001] `test/misc/101_*` 〜 `test/misc/150_*` を `py2cpp.py` で C++ 変換可能にする。
-2. [ ] [ID: P3-MISC-02-S002] `test/misc/151_*` 〜 `test/misc/200_*` を `py2cpp.py` で C++ 変換可能にする。
-3. [ ] [ID: P3-MISC-02-S003] `test/misc/201_*` 〜 `test/misc/250_*` を `py2cpp.py` で C++ 変換可能にする。
-4. [ ] [ID: P3-MISC-02-S004] `test/misc/251_*` 〜 `test/misc/300_*` を `py2cpp.py` で C++ 変換可能にする。
-5. [ ] [ID: P3-MISC-02-S005] `test/misc/301_*` 〜 `test/misc/350_*` を `py2cpp.py` で C++ 変換可能にする。
-6. [ ] [ID: P3-MISC-02-S006] `test/misc/351_*` 〜 `test/misc/400_*` を `py2cpp.py` で C++ 変換可能にする。
-7. [ ] [ID: P3-MISC-02-S007] `test/misc/401_*` 〜 `test/misc/450_*` を `py2cpp.py` で C++ 変換可能にする。
-8. [ ] [ID: P3-MISC-02-S008] `test/misc/451_*` 〜 `test/misc/500_*` を `py2cpp.py` で C++ 変換可能にする。
-
-- 上記 8 タスクは超低優先（P3）として、難度順で着手する。`test/misc` 側を編集しないことを前提とする。
-
-
 ## メモ
 
 - このファイルは未完了タスクのみを保持します。
