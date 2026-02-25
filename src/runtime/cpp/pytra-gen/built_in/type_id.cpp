@@ -107,7 +107,7 @@ list<int64> _sorted_ints(const list<int64>& items) {
 
 void _register_type_node(int64 type_id, int64 base_type_id) {
     if (!(_contains_int(_TYPE_IDS, type_id)))
-        py_append(_TYPE_IDS, make_object(type_id));
+        _TYPE_IDS.append(type_id);
     _TYPE_BASE[type_id] = base_type_id;
     if (!py_contains(_TYPE_CHILDREN, type_id))
         _TYPE_CHILDREN[type_id] = _make_int_list_0();
@@ -115,15 +115,15 @@ void _register_type_node(int64 type_id, int64 base_type_id) {
         return;
     if (!py_contains(_TYPE_CHILDREN, base_type_id))
         _TYPE_CHILDREN[base_type_id] = _make_int_list_0();
-    auto children = py_at(_TYPE_CHILDREN, py_to_int64(base_type_id));
+    auto& children = _TYPE_CHILDREN[base_type_id];
     if (!(_contains_int(children, type_id)))
-        py_append(children, make_object(type_id));
+        children.append(type_id);
 }
 
 list<int64> _sorted_child_type_ids(int64 type_id) {
     list<int64> children = _make_int_list_0();
     if (py_contains(_TYPE_CHILDREN, type_id))
-        children = list<int64>(py_at(_TYPE_CHILDREN, py_to_int64(type_id)));
+        children = _TYPE_CHILDREN[type_id];
     return _sorted_ints(children);
 }
 
@@ -134,7 +134,7 @@ list<int64> _collect_root_type_ids() {
         auto tid = py_at(_TYPE_IDS, py_to_int64(i));
         int64 base_tid = -1;
         if (py_contains(_TYPE_BASE, tid))
-            base_tid = int64(py_to_int64(py_at(_TYPE_BASE, py_to_int64(tid))));
+            base_tid = _TYPE_BASE[tid];
         if ((base_tid < 0) || (!py_contains(_TYPE_BASE, base_tid)))
             roots.append(int64(tid));
         i++;
@@ -234,11 +234,7 @@ int64 py_tid_register_class_type(const list<int64>& base_type_ids) {
 }
 
 int64 _try_runtime_tagged_type_id(const object& value) {
-    auto tagged = getattr(value, "PYTRA_TYPE_ID", ::std::nullopt);
-    if (py_isinstance(tagged, PYTRA_TID_INT)) {
-        if (py_contains(_TYPE_BASE, tagged))
-            return tagged;
-    }
+    (void)value;
     return -1;
 }
 
@@ -274,18 +270,18 @@ bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
         return false;
     if (!py_contains(_TYPE_ORDER, expected_type_id))
         return false;
-    auto actual_order = py_at(_TYPE_ORDER, py_to_int64(actual_type_id));
-    auto expected_min = py_at(_TYPE_MIN, py_to_int64(expected_type_id));
-    auto expected_max = py_at(_TYPE_MAX, py_to_int64(expected_type_id));
+    auto actual_order = _TYPE_ORDER[actual_type_id];
+    auto expected_min = _TYPE_MIN[expected_type_id];
+    auto expected_max = _TYPE_MAX[expected_type_id];
     return (expected_min <= actual_order) && (actual_order <= expected_max);
 }
 
 bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id) {
-    return py_is_subtype(actual_type_id, expected_type_id);
+    return py_tid_is_subtype(actual_type_id, expected_type_id);
 }
 
 bool py_tid_isinstance(const object& value, int64 expected_type_id) {
-    return py_is_subtype(py_runtime_type_id(value), expected_type_id);
+    return py_tid_is_subtype(py_tid_runtime_type_id(value), expected_type_id);
 }
 
 void _py_reset_type_registry_for_test() {
