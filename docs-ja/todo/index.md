@@ -86,5 +86,15 @@
 文脈: `docs-ja/plans/p2-cpp-virtual-selfhost-dispatch.md`（`P2-CPP-SELFHOST-VIRTUAL-01`）
 
 1. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01] `virtual/override` ベースの selfhost クラス呼び出し経路へ縮退できる箇所を洗い出し、`type_id` 分岐を低優先で簡素化する。
-2. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1] selfhost 生成 C++ の class method 呼び出しを分類し、`override` 対象に沿った dispatch 置換計画を確定する。
-3. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S2] `test/unit` / `sample` / `selfhost` 再生成を回帰基準に `virtual` 経由化を段階実施し、差分を固定する。
+2. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-01] `rg` と AST で、`sample`/`selfhost` の class method 生成に含まれる `type_id` ベース分岐を抽出する。
+3. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-02] 抽出結果を「基底クラス呼び出し」「再帰呼び出し」「ユーティリティ呼び出し」に分類し、非対象を明文化する。
+4. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-03] `virtual` 置換候補を安全性（既存テスト影響）順で優先順位付けし、実施順を確定する。
+5. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S2-01] `py2cpp.py` 側 emit を切り出しして、`virtual` へ寄せる対象経路と fallback 経路を分離する。
+6. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S2-02] `CppEmitter` の class method 呼び出し描画で、`virtual`/`override` 有無に応じた分岐を明示化する。
+7. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S2-03] 置換できない `type_id` 分岐は理由付きで残し、非対象リストへ接続する。
+8. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S3-01] `sample` の 2〜3 件から `type_id` 分岐を `virtual` 呼び出しに移行する。
+9. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S3-02] 移行対象を段階的に拡大し、selfhost 再変換（`sample`/`test`）の成功率を評価する。
+10. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S3-03] 移行不能ケースは判定ロジックで固定し、次回に回す明細を更新する。
+11. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S4-01] `test/unit` と `sample` 再生成の回帰ケースを追加・更新して diff を固定する。
+12. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S4-02] `tools/check_selfhost_cpp_diff.py` と `tools/verify_selfhost_end_to_end.py` を再実行し、回帰条件が満たされることを確認する。
+13. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S4-03] `docs-ja/spec/spec-dev.md`（必要なら `spec-type_id`）へ簡潔に反映する。
