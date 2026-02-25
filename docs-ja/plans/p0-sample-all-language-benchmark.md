@@ -32,3 +32,12 @@
 - 2026-02-25: `P0-SAMPLE-BENCH-02-S1` `tools/runtime_parity_check.py` を `--case-root sample` / `--ignore-unstable-stdout` 対応に拡張し、`sample/py` を `case_root` として参照できるようにした。`python3 tools/runtime_parity_check.py --case-root sample --ignore-unstable-stdout --targets cpp 01_mandelbrot` がPASS。
 - 2026-02-25: `tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only` を再実行し、`sample/golden/manifest.json` を 18 件すべて更新（Python実行時基準 + ゴールデンアーティファクト hash/サイズ含む）。
 - 2026-02-25: `tools/verify_sample_outputs.py --refresh-golden` 実行時、`OK: 13` `NG: 5` (`06`,`12`,`14`,`16` の artifact hash mismatch、`18` の C++ compile fail)。この時点でベースライン再更新は完了、NG 5件は後続タスクで分解対応が必要。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S1] `01_mandelbrot` を `--targets cpp,rs,cs,js,ts,go,java,swift,kotlin` で再実行。
+  - `cpp`: PASS。
+  - `rs`: import 解決エラー（`crate::time` / `crate::pytra`）、`bytearray` 未実装、整数と浮動小数点の混在による型エラー多数、`Vec<u8>` への変換不一致。
+  - `cs`: `List` 型の `using` 未挿入。
+  - `js`, `ts`: `time.js`/`utils/assertions` を解決できず実行不通。
+  - `go`: `public` など C# 系構文混入により `package` 宣言以前で parse 失敗。
+  - `java`: 出力文字列が空（`Main.main` が未実装か TODO で終了の疑い）。
+  - `kotlin`: 同様の C#/Java 構文混入により `public static`、`long`、`System.*` を Kotlin として解釈できず大量コンパイルエラー。
+  - `swift`: `swiftc` 未検出で skip。
