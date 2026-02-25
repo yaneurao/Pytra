@@ -48,5 +48,8 @@
   異常なく変換できたため、当該タスクを完了扱いにした。
 - 2026-02-25: P3-MISC-01-S008 対象の `test/misc/08_bank_account.py` は `py2cpp.py test/misc/08_bank_account.py /tmp/08_bank_account.cpp` で成功。
   追加のコード修正なしで完了。
+- 2026-02-25: P3-MISC-01-S009 対象の `test/misc/09_weather_simulator.py` は
+  `py2cpp.py test/misc/09_weather_simulator.py /tmp/09_weather_simulator.cpp` で成功。
+  追加の回避策は不要で完了。
 
 ### 分解
