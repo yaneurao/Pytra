@@ -59,13 +59,29 @@ def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:
             continue
         globals()[key] = value
 
+
+def _attach_cpp_emitter_helper_methods(target_cls: type[CodeEmitter]) -> None:
+    """Attach helper handlers directly to CppEmitter to keep single inheritance."""
+    helper_classes = (
+        CppCallEmitter,
+        CppStatementEmitter,
+        CppExpressionEmitter,
+        CppBinaryOperatorEmitter,
+        CppTriviaEmitter,
+        CppTemporaryEmitter,
+    )
+    for helper_cls in helper_classes:
+        for attr_name, attr_value in helper_cls.__dict__.items():
+            if attr_name.startswith("__"):
+                continue
+            if not callable(attr_value):
+                continue
+            if hasattr(target_cls, attr_name):
+                continue
+            setattr(target_cls, attr_name, attr_value)
+
+
 class CppEmitter(
-    CppCallEmitter,
-    CppStatementEmitter,
-    CppExpressionEmitter,
-    CppBinaryOperatorEmitter,
-    CppTriviaEmitter,
-    CppTemporaryEmitter,
     CodeEmitter,
 ):
     def __init__(
@@ -6441,3 +6457,6 @@ class CppEmitter(
                     return f"rc<{owner_ns}::{leaf}>"
                 return owner_ns + "::" + leaf
         return east_type
+
+
+_attach_cpp_emitter_helper_methods(CppEmitter)
