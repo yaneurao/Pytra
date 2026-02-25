@@ -34,7 +34,7 @@
 
 文脈: `docs-ja/plans/p0-isinstance-single-inheritance.md`（`P0-ISINSTANCE-01`）
 
-1. [ ] [ID: P0-ISINSTANCE-01] 単一継承前提の `type_id_min/type_id_max` で `isinstance` を統一し、全対象言語で文字列名比較・多重継承推論・ハイブリッド分岐を排除する。
+1. [x] [ID: P0-ISINSTANCE-01] 単一継承前提の `type_id_min/type_id_max` で `isinstance` を統一し、全対象言語で文字列名比較・多重継承推論・ハイブリッド分岐を排除する。
 2. [x] [ID: P0-ISINSTANCE-01-S1] C++/JS/TS/RS/CS の `isinstance` lower を `py_isinstance`/`py_is_subtype` 系 API に置換する。
 3. [x] [ID: P0-ISINSTANCE-01-S2] 多重継承を要求する入力（複数基底）を compile-time で検出し、明示エラーへ統一する。
 4. [x] [ID: P0-ISINSTANCE-01-S3] runtime 側 `type_id` 範囲テーブルを検証し、`expected.min <= actual <= expected.max` 判定の観測不変性を回帰テスト化する。
