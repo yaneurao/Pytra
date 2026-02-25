@@ -83,3 +83,8 @@ C++ CodeEmitter の体積増加は「責務混入」と「経路の重複」が�
   - 実施内容: `src/hooks/cpp/emitter/stmt.py` を新規編集し、`CppEmitter` の statement 系（`If` / `While` / `Try` / `For`）ヘルパを `CppStatementEmitter` へ移譲。
   - 呼び出し変更: `CppEmitter` を `CppStatementEmitter, CppExpressionEmitter, CodeEmitter` へ拡張し、移譲対象メソッドを `src/hooks/cpp/emitter/cpp_emitter.py` から除去。
   - 補足: `for` 系は既存動作を維持するため、`_emit_for_body_*`、`emit_for_range`、`emit_for_each`、runtime iterable 出力系を一括で移譲。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S3]
+  - 実施内容: `src/hooks/cpp/emitter/call.py` を新規作成し、`cast / runtime-call / import` の責務を `CppCallEmitter` に分離（`_lookup_module_attr_runtime_call`, `_resolve_runtime_call_for_imported_symbol`, `_resolve_or_render_imported_symbol_name_call`, `_render_builtin_static_cast_call`）。
+  - 呼び出し変更: `CppEmitter` を `CppCallEmitter` を含む多重継承へ更新し、上記メソッドを `cpp_emitter.py` から除去。
+  - 補足: cast/呼び出し分岐の重複参照箇所を整理し、後続で RuntimeCall 系分岐の追加拡張を集中可能にした。
