@@ -51,5 +51,8 @@
 - 2026-02-25: P3-MISC-01-S009 対象の `test/misc/09_weather_simulator.py` は
   `py2cpp.py test/misc/09_weather_simulator.py /tmp/09_weather_simulator.cpp` で成功。
   追加の回避策は不要で完了。
+- 2026-02-25: P3-MISC-01-S010 対象の `test/misc/100_pipeline_flow.py` は
+  `py2cpp.py test/misc/100_pipeline_flow.py /tmp/100_pipeline_flow.cpp` で成功。
+  追加の変換修正を要さず完了。
 
 ### 分解
