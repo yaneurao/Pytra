@@ -15,11 +15,11 @@ class CppExpressionEmitter:
             return rendered_expr
         norm_t = self.normalize_type_name(to_type_text)
         if norm_t in {"float32", "float64"}:
-            return f"py_to_float64({rendered_expr})"
+            return f"py_to<float64>({rendered_expr})"
         if norm_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-            return f"{norm_t}(py_to_int64({rendered_expr}))"
+            return f"{norm_t}(py_to<int64>({rendered_expr}))"
         if norm_t == "bool":
-            return f"py_to_bool({rendered_expr})"
+            return f"py_to<bool>({rendered_expr})"
         if norm_t == "str":
             return f"py_to_string({rendered_expr})"
         cast_cpp = self._cpp_type_text(norm_t)

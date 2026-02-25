@@ -1462,9 +1462,9 @@ class CppEmitter(
         value_t = self.get_expr_type(stmt.get("value"))
         if self.is_any_like_type(value_t):
             if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-                val = f"py_to_int64({val})"
+                val = f"py_to<int64>({val})"
             elif target_t in {"float32", "float64"}:
-                val = f"static_cast<float64>(py_to_int64({val}))"
+                val = f"static_cast<float64>(py_to<int64>({val}))"
         op_name = str(stmt.get("op"))
         op_txt = str(AUG_OPS.get(op_name, ""))
         if op_txt != "":
@@ -2057,7 +2057,7 @@ class CppEmitter(
             return f"{val}[{idx}]"
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
-                idx = f"py_to_int64({idx})"
+                idx = f"py_to<int64>({idx})"
             return self._render_sequence_index(val, idx, node.get("slice"))
         return f"{val}[{idx}]"
 
@@ -3668,18 +3668,18 @@ class CppEmitter(
             return f"dict_get_str({owner_expr}, {key_expr}, {default_expr})"
         if objectish_owner and out_t in int_out_types:
             cast_t = self._cpp_type_text(out_t)
-            return f"static_cast<{cast_t}>(dict_get_int({owner_expr}, {key_expr}, py_to_int64({default_expr})))"
+            return f"static_cast<{cast_t}>(dict_get_int({owner_expr}, {key_expr}, py_to<int64>({default_expr})))"
         if objectish_owner and out_t in float_out_types:
             cast_t = self._cpp_type_text(out_t)
-            return f"static_cast<{cast_t}>(dict_get_float({owner_expr}, {key_expr}, py_to_float64({default_expr})))"
+            return f"static_cast<{cast_t}>(dict_get_float({owner_expr}, {key_expr}, py_to<float64>({default_expr})))"
         if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
             return f"dict_get_bool({owner_expr}, {key_expr}, {default_expr})"
         if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":
             return f"dict_get_str({owner_expr}, {key_expr}, {default_expr})"
         if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
-            return f"dict_get_int({owner_expr}, {key_expr}, py_to_int64({default_expr}))"
+            return f"dict_get_int({owner_expr}, {key_expr}, py_to<int64>({default_expr}))"
         if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
-            return f"dict_get_float({owner_expr}, {key_expr}, py_to_float64({default_expr}))"
+            return f"dict_get_float({owner_expr}, {key_expr}, py_to<float64>({default_expr}))"
         if objectish_owner and out_t in {"", "unknown"} and default_t.startswith("list["):
             return f"dict_get_list({owner_expr}, {key_expr}, {default_expr})"
         if objectish_owner and out_t.startswith("list["):
@@ -4418,7 +4418,7 @@ class CppEmitter(
         if len(arg_nodes_list) >= 1:
             arg0_node = arg_nodes_list[0]
         if "bytearray" in owner_types:
-            a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+            a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
             return f"{owner_expr}.append({a0})"
         list_owner_t = ""
         for t in owner_types:
@@ -4428,7 +4428,7 @@ class CppEmitter(
         if list_owner_t != "":
             inner_t: str = list_owner_t[5:-1].strip()
             if inner_t == "uint8":
-                a0 = f"static_cast<uint8>(py_to_int64({a0}))"
+                a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
             elif self.is_any_like_type(inner_t):
                 if not self.is_boxed_object_expr(a0):
                     arg0_node_d = self.any_to_dict_or_empty(arg0_node)
@@ -4540,11 +4540,11 @@ class CppEmitter(
             ctx_safe = ctx.replace("\\", "\\\\").replace('"', '\\"')
             return f'obj_to_rc_or_raise<{ref_inner}>({expr_txt}, "{ctx_safe}")'
         if t_norm in {"float32", "float64"}:
-            return f"py_to_float64({expr_txt})"
+            return f"py_to<float64>({expr_txt})"
         if t_norm in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-            return f"{t_norm}(py_to_int64({expr_txt}))"
+            return f"{t_norm}(py_to<int64>({expr_txt}))"
         if t_norm == "bool":
-            return f"py_to_bool({expr_txt})"
+            return f"py_to<bool>({expr_txt})"
         if t_norm == "str":
             return f"py_to_string({expr_txt})"
         if t_norm.startswith("list[") or t_norm.startswith("dict[") or t_norm.startswith("set["):
@@ -5455,11 +5455,11 @@ class CppEmitter(
         if val_ty in {"", "unknown"} or self.is_any_like_type(val_ty):
             if idx_is_str_key:
                 return f"py_dict_get({val}, {idx})"
-            return f"py_at({val}, py_to_int64({idx}))"
+            return f"py_at({val}, py_to<int64>({idx}))"
         if val_ty.startswith("tuple[") and val_ty.endswith("]"):
             parts = self.split_generic(val_ty[6:-1])
             if idx_const is None:
-                return f"py_at({val}, py_to_int64({idx}))"
+                return f"py_at({val}, py_to<int64>({idx}))"
             n_parts = len(parts)
             idx_norm = int(idx_const)
             if idx_norm < 0:
@@ -5471,7 +5471,7 @@ class CppEmitter(
             idx_t0 = self.get_expr_type(sl)
             idx_t = idx_t0 if isinstance(idx_t0, str) else ""
             if self.is_any_like_type(idx_t):
-                idx = f"py_to_int64({idx})"
+                idx = f"py_to<int64>({idx})"
             return self._render_sequence_index(val, idx, sl)
         return f"{val}[{idx}]"
 
@@ -5676,7 +5676,7 @@ class CppEmitter(
             body = self._strip_outer_parens(self._trim_ws(rep_txt))
         if body == "":
             return "false"
-        return f"py_to_bool({body})"
+        return f"py_to<bool>({body})"
 
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""
@@ -5740,7 +5740,7 @@ class CppEmitter(
             return self._render_unbox_target_cast(value_expr, target_t, "east3_cast_or_raise")
         if kind == "ObjBool":
             value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_to_bool({value_expr})"
+            return f"py_to<bool>({value_expr})"
         if kind == "ObjLen":
             value_expr = self.render_expr(expr_d.get("value"))
             return f"py_len({value_expr})"
@@ -5900,11 +5900,11 @@ class CppEmitter(
             if not has_start:
                 return f"{fn_name}({owner_expr}, {needle_expr})"
             start_expr = self.render_expr(expr_d.get("start"))
-            start_cast = f"py_to_int64({start_expr})"
+            start_cast = f"py_to<int64>({start_expr})"
             end_expr = f"py_len({owner_expr})"
             if self.any_dict_has(expr_d, "end"):
                 end_raw = self.render_expr(expr_d.get("end"))
-                end_expr = f"py_to_int64({end_raw})"
+                end_expr = f"py_to<int64>({end_raw})"
             sliced = f"py_slice({owner_expr}, {start_cast}, {end_expr})"
             return f"{fn_name}({sliced}, {needle_expr})"
         if kind == "StrFindOp":
@@ -5988,7 +5988,7 @@ class CppEmitter(
                     for arg_node in arg_nodes:
                         int_base_args.append(self.render_expr(arg_node))
                 if len(int_base_args) >= 2:
-                    return f"py_to_int64_base({int_base_args[0]}, py_to_int64({int_base_args[1]}))"
+                    return f"py_to_int64_base({int_base_args[0]}, py_to<int64>({int_base_args[1]}))"
                 return ""
             if op == "static_cast":
                 if not self.any_dict_has(expr_d, "value"):
@@ -6017,7 +6017,7 @@ class CppEmitter(
                     for arg_node in arg_nodes:
                         enumerate_args.append(self.render_expr(arg_node))
                 if len(enumerate_args) >= 2:
-                    return f"py_enumerate({enumerate_args[0]}, py_to_int64({enumerate_args[1]}))"
+                    return f"py_enumerate({enumerate_args[0]}, py_to<int64>({enumerate_args[1]}))"
                 if len(enumerate_args) == 1:
                     return f"py_enumerate({enumerate_args[0]})"
                 return ""
