@@ -49,6 +49,8 @@ class CSharpEmitter(CodeEmitter):
         self.current_class_name: str = ""
         self.in_method_scope: bool = False
         self.needs_enumerate_helper: bool = False
+        self.current_return_east_type: str = ""
+        self.top_function_names: set[str] = set()
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
@@ -69,7 +71,29 @@ class CSharpEmitter(CodeEmitter):
         """Python 形式モジュール名を C# namespace 文字列へ変換する。"""
         if module_id == "":
             return ""
+        if module_id in {"math", "time", "dataclasses"}:
+            return ""
+        if module_id.startswith("pytra."):
+            return "Pytra.CsModule"
         return module_id
+
+    def _module_alias_target(self, module_id: str, export_name: str, binding_kind: str) -> str:
+        """既知モジュール import を C# alias 先へ解決する。"""
+        if binding_kind == "module":
+            if module_id == "math":
+                return "Pytra.CsModule.math"
+            if module_id == "time":
+                return "Pytra.CsModule.time"
+            if module_id in {"pytra.runtime", "pytra.utils"}:
+                return "Pytra.CsModule"
+            return ""
+        if binding_kind == "symbol":
+            if module_id in {"pytra.runtime", "pytra.utils"} and export_name == "png":
+                return "Pytra.CsModule.png_helper"
+            if module_id in {"pytra.runtime", "pytra.utils"} and export_name == "gif":
+                return "Pytra.CsModule.gif_helper"
+            return ""
+        return ""
 
     def _walk_node_names(self, node: Any, out: set[str]) -> None:
         """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
@@ -116,6 +140,11 @@ class CSharpEmitter(CodeEmitter):
             seen.add(line)
             out.append(line)
 
+        _add("using System;")
+        _add("using System.Collections.Generic;")
+        _add("using System.Linq;")
+        _add("using Pytra.CsModule;")
+
         bindings = self.any_to_dict_list(meta.get("import_bindings"))
         if len(bindings) > 0:
             i = 0
@@ -129,6 +158,14 @@ class CSharpEmitter(CodeEmitter):
                     i += 1
                     continue
                 if module_id == "browser" or module_id.startswith("browser."):
+                    i += 1
+                    continue
+                alias_target = self._module_alias_target(module_id, export_name, binding_kind)
+                if alias_target != "" and local_name != "" and local_name in used_names:
+                    _add("using " + self._safe_name(local_name) + " = " + alias_target + ";")
+                    i += 1
+                    continue
+                if binding_kind == "symbol" and module_id in {"time", "dataclasses"}:
                     i += 1
                     continue
                 ns = self._module_id_to_cs_namespace(module_id)
@@ -148,8 +185,9 @@ class CSharpEmitter(CodeEmitter):
                     else:
                         _add("using " + ns + ";")
                 elif binding_kind == "symbol" and export_name != "":
-                    if local_name != "" and local_name != export_name and local_name in used_names:
-                        _add("using " + self._safe_name(local_name) + " = " + ns + "." + export_name + ";")
+                    if local_name != "" and local_name in used_names:
+                        if local_name != export_name:
+                            _add("using " + self._safe_name(local_name) + " = " + ns + "." + export_name + ";")
                 i += 1
             return out
 
@@ -158,14 +196,25 @@ class CSharpEmitter(CodeEmitter):
             if kind == "Import":
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     module_id = self.any_to_str(ent.get("name"))
+                    asname = self.any_to_str(ent.get("asname"))
                     if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
                         continue
                     if module_id == "browser" or module_id.startswith("browser."):
                         continue
+                    alias_target = self._module_alias_target(module_id, "", "module")
+                    if alias_target != "":
+                        if asname != "":
+                            if asname not in used_names:
+                                continue
+                            _add("using " + self._safe_name(asname) + " = " + alias_target + ";")
+                        else:
+                            leaf_alias = self._last_dotted_name(module_id)
+                            if leaf_alias in used_names:
+                                _add("using " + self._safe_name(leaf_alias) + " = " + alias_target + ";")
+                        continue
                     ns = self._module_id_to_cs_namespace(module_id)
                     if ns == "":
                         continue
-                    asname = self.any_to_str(ent.get("asname"))
                     if asname != "":
                         if asname not in used_names:
                             continue
@@ -189,6 +238,12 @@ class CSharpEmitter(CodeEmitter):
                     asname = self.any_to_str(ent.get("asname"))
                     if sym == "" or sym == "*":
                         continue
+                    alias_target = self._module_alias_target(module_id, sym, "symbol")
+                    if alias_target != "":
+                        alias_name = asname if asname != "" else sym
+                        if alias_name in used_names:
+                            _add("using " + self._safe_name(alias_name) + " = " + alias_target + ";")
+                        continue
                     if asname != "" and asname != sym:
                         if asname not in used_names:
                             continue
@@ -200,7 +255,7 @@ class CSharpEmitter(CodeEmitter):
     def _cs_type(self, east_type: str) -> str:
         """EAST 型名を C# 型名へ変換する。"""
         t = self.normalize_type_name(east_type)
-        if t == "":
+        if t == "" or t == "unknown":
             return "object"
         if t in self.type_map:
             mapped = self.type_map[t]
@@ -241,13 +296,12 @@ class CSharpEmitter(CodeEmitter):
             return "void"
         return t
 
-    def _typed_list_literal(self, expr_d: dict[str, Any]) -> str:
-        """List リテラルを C# 式へ描画する。"""
-        list_t = self.get_expr_type(expr_d)
-        elem_t = "object"
-        if list_t.startswith("list[") and list_t.endswith("]"):
-            elem_t = self._cs_type(list_t[5:-1].strip())
+    def _render_list_literal_with_elem_type(self, expr_d: dict[str, Any], elem_t: str) -> str:
+        if elem_t == "" or elem_t == "unknown":
+            elem_t = "object"
         elts = self.any_to_list(expr_d.get("elts"))
+        if len(elts) == 0:
+            elts = self.any_to_list(expr_d.get("elements"))
         if len(elts) == 0:
             return "new System.Collections.Generic.List<" + elem_t + ">()"
         rendered: list[str] = []
@@ -255,17 +309,19 @@ class CSharpEmitter(CodeEmitter):
             rendered.append(self.render_expr(elt))
         return "new System.Collections.Generic.List<" + elem_t + "> { " + ", ".join(rendered) + " }"
 
-    def _typed_dict_literal(self, expr_d: dict[str, Any]) -> str:
-        """Dict リテラルを C# 式へ描画する。"""
-        dict_t = self.get_expr_type(expr_d)
-        key_t = "object"
-        val_t = "object"
-        if dict_t.startswith("dict[") and dict_t.endswith("]"):
-            parts = self.split_generic(dict_t[5:-1].strip())
-            if len(parts) == 2:
-                key_t = self._cs_type(parts[0])
-                val_t = self._cs_type(parts[1])
+    def _typed_list_literal(self, expr_d: dict[str, Any]) -> str:
+        """List リテラルを C# 式へ描画する。"""
+        list_t = self.get_expr_type(expr_d)
+        elem_t = "object"
+        if list_t.startswith("list[") and list_t.endswith("]"):
+            elem_t = self._cs_type(list_t[5:-1].strip())
+        return self._render_list_literal_with_elem_type(expr_d, elem_t)
 
+    def _render_dict_literal_with_types(self, expr_d: dict[str, Any], key_t: str, val_t: str) -> str:
+        if key_t == "" or key_t == "unknown":
+            key_t = "object"
+        if val_t == "" or val_t == "unknown":
+            val_t = "object"
         pairs: list[str] = []
         entries = self.any_to_list(expr_d.get("entries"))
         if len(entries) > 0:
@@ -283,10 +339,205 @@ class CSharpEmitter(CodeEmitter):
             while i < len(keys) and i < len(vals):
                 pairs.append("{ " + self.render_expr(keys[i]) + ", " + self.render_expr(vals[i]) + " }")
                 i += 1
-
         if len(pairs) == 0:
             return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
         return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + "> { " + ", ".join(pairs) + " }"
+
+    def _typed_dict_literal(self, expr_d: dict[str, Any]) -> str:
+        """Dict リテラルを C# 式へ描画する。"""
+        dict_t = self.get_expr_type(expr_d)
+        key_t = "object"
+        val_t = "object"
+        if dict_t.startswith("dict[") and dict_t.endswith("]"):
+            parts = self.split_generic(dict_t[5:-1].strip())
+            if len(parts) == 2:
+                key_t = self._cs_type(parts[0])
+                val_t = self._cs_type(parts[1])
+        return self._render_dict_literal_with_types(expr_d, key_t, val_t)
+
+    def _render_expr_with_type_hint(self, value_obj: Any, east_type_hint: str) -> str:
+        """型ヒント付きで式を描画し、空 list/dict の要素型を補う。"""
+        node = self.any_to_dict_or_empty(value_obj)
+        kind = self.any_dict_get_str(node, "kind", "")
+        hint = self.normalize_type_name(east_type_hint)
+        if kind == "List" and hint.startswith("list[") and hint.endswith("]"):
+            elem_t = self._cs_type(hint[5:-1].strip())
+            return self._render_list_literal_with_elem_type(node, elem_t)
+        if kind == "Dict" and hint.startswith("dict[") and hint.endswith("]"):
+            parts = self.split_generic(hint[5:-1].strip())
+            if len(parts) == 2:
+                return self._render_dict_literal_with_types(node, self._cs_type(parts[0]), self._cs_type(parts[1]))
+        if kind == "ListComp" and hint.startswith("list[") and hint.endswith("]"):
+            return self._render_list_comp_expr(node, forced_out_type=hint[5:-1].strip())
+        return self.render_expr(value_obj)
+
+    def _render_list_repeat(self, list_node: dict[str, Any], list_expr: str, count_expr: str) -> str:
+        """Python の list 乗算（`[x] * n`）を C# 式へ lower する。"""
+        list_t = self.get_expr_type(list_node)
+        elem_t = "object"
+        if list_t.startswith("list[") and list_t.endswith("]"):
+            elem_t = self._cs_type(list_t[5:-1].strip())
+        if elem_t == "" or elem_t == "unknown":
+            elem_t = "object"
+        base_name = self.next_tmp("__base")
+        count_name = self.next_tmp("__n")
+        out_name = self.next_tmp("__out")
+        idx_name = self.next_tmp("__i")
+        return (
+            "(new System.Func<System.Collections.Generic.List<"
+            + elem_t
+            + ">>(() => { var "
+            + base_name
+            + " = "
+            + list_expr
+            + "; long "
+            + count_name
+            + " = System.Convert.ToInt64("
+            + count_expr
+            + "); if ("
+            + count_name
+            + " < 0) { "
+            + count_name
+            + " = 0; } var "
+            + out_name
+            + " = new System.Collections.Generic.List<"
+            + elem_t
+            + ">(); for (long "
+            + idx_name
+            + " = 0; "
+            + idx_name
+            + " < "
+            + count_name
+            + "; "
+            + idx_name
+            + " += 1) { "
+            + out_name
+            + ".AddRange("
+            + base_name
+            + "); } return "
+            + out_name
+            + "; }))()"
+        )
+
+    def _render_range_expr(self, expr_d: dict[str, Any]) -> str:
+        """RangeExpr を C# `List<long>` 生成式へ lower する。"""
+        start = self.render_expr(expr_d.get("start"))
+        stop = self.render_expr(expr_d.get("stop"))
+        step = self.render_expr(expr_d.get("step"))
+        out_name = self.next_tmp("__out")
+        start_name = self.next_tmp("__start")
+        stop_name = self.next_tmp("__stop")
+        step_name = self.next_tmp("__step")
+        idx_name = self.next_tmp("__i")
+        return (
+            "(new System.Func<System.Collections.Generic.List<long>>(() => { var "
+            + out_name
+            + " = new System.Collections.Generic.List<long>(); "
+            + "long "
+            + start_name
+            + " = System.Convert.ToInt64("
+            + start
+            + "); long "
+            + stop_name
+            + " = System.Convert.ToInt64("
+            + stop
+            + "); long "
+            + step_name
+            + " = System.Convert.ToInt64("
+            + step
+            + "); if ("
+            + step_name
+            + " == 0) { return "
+            + out_name
+            + "; } "
+            + "if ("
+            + step_name
+            + " > 0) { for (long "
+            + idx_name
+            + " = "
+            + start_name
+            + "; "
+            + idx_name
+            + " < "
+            + stop_name
+            + "; "
+            + idx_name
+            + " += "
+            + step_name
+            + ") { "
+            + out_name
+            + ".Add("
+            + idx_name
+            + "); } } "
+            + "else { for (long "
+            + idx_name
+            + " = "
+            + start_name
+            + "; "
+            + idx_name
+            + " > "
+            + stop_name
+            + "; "
+            + idx_name
+            + " += "
+            + step_name
+            + ") { "
+            + out_name
+            + ".Add("
+            + idx_name
+            + "); } } return "
+            + out_name
+            + "; }))()"
+        )
+
+    def _render_comp_target(self, target_node: dict[str, Any]) -> str:
+        kind = self.any_dict_get_str(target_node, "kind", "")
+        if kind == "Name":
+            raw = self.any_dict_get_str(target_node, "id", "_")
+            if raw == "_":
+                return self.next_tmp("__it")
+            return self._safe_name(raw)
+        return "_"
+
+    def _render_list_comp_expr(self, expr_d: dict[str, Any], forced_out_type: str = "") -> str:
+        """ListComp を C# `List<T>` 構築式へ lower する。"""
+        generators = self.any_to_list(expr_d.get("generators"))
+        if len(generators) == 0:
+            return "new System.Collections.Generic.List<object>()"
+
+        out_t = "object"
+        if forced_out_type != "":
+            out_t = self._cs_type(forced_out_type)
+        else:
+            list_t = self.get_expr_type(expr_d)
+            if list_t.startswith("list[") and list_t.endswith("]"):
+                out_t = self._cs_type(list_t[5:-1].strip())
+        if out_t == "" or out_t == "unknown":
+            out_t = "object"
+
+        elt_expr = self.render_expr(expr_d.get("elt"))
+        out_name = self.next_tmp("__out")
+        parts: list[str] = []
+        parts.append("(new System.Func<System.Collections.Generic.List<" + out_t + ">>(() => {")
+        parts.append("var " + out_name + " = new System.Collections.Generic.List<" + out_t + ">();")
+
+        depth = 0
+        for gen in generators:
+            gen_d = self.any_to_dict_or_empty(gen)
+            target_txt = self._render_comp_target(self.any_to_dict_or_empty(gen_d.get("target")))
+            iter_expr = self.render_expr(gen_d.get("iter"))
+            parts.append("foreach (var " + target_txt + " in " + iter_expr + ") {")
+            depth += 1
+            for cond_node in self.any_to_list(gen_d.get("ifs")):
+                parts.append("if (!(" + self.render_cond(cond_node) + ")) { continue; }")
+
+        parts.append(out_name + ".Add(" + elt_expr + ");")
+        while depth > 0:
+            parts.append("}")
+            depth -= 1
+        parts.append("return " + out_name + ";")
+        parts.append("}))()")
+        return " ".join(parts)
 
     def _collect_class_base_map(self, body: list[dict[str, Any]]) -> dict[str, str]:
         """ClassDef から `child -> base` の継承表を抽出する。"""
@@ -348,6 +599,11 @@ class CSharpEmitter(CodeEmitter):
                 class_stmts.append(stmt)
                 continue
             top_level_stmts.append(stmt)
+        self.top_function_names = set()
+        for fn in function_stmts:
+            fn_name = self.any_to_str(fn.get("name"))
+            if fn_name != "":
+                self.top_function_names.add(fn_name)
 
         for cls in class_stmts:
             self.emit_leading_comments(cls)
@@ -423,9 +679,11 @@ class CSharpEmitter(CodeEmitter):
         )
 
         field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
+        instance_fields: set[str] = set()
         for field_name, field_t_obj in field_types.items():
             if not isinstance(field_name, str):
                 continue
+            instance_fields.add(field_name)
             field_t = self._cs_type(self.any_to_str(field_t_obj))
             self.emit("public " + field_t + " " + self._safe_name(field_name) + ";")
 
@@ -433,10 +691,22 @@ class CSharpEmitter(CodeEmitter):
         for member in members:
             kind = self.any_dict_get_str(member, "kind", "")
             if kind == "AnnAssign":
+                target = self.any_to_dict_or_empty(member.get("target"))
+                target_name = self.any_dict_get_str(target, "id", "")
+                if target_name in instance_fields:
+                    continue
                 line = self._render_class_static_annassign(member)
                 if line != "":
                     self.emit(line)
             elif kind == "Assign":
+                target = self.any_to_dict_or_empty(member.get("target"))
+                if len(target) == 0:
+                    targets = self._dict_stmt_list(member.get("targets"))
+                    if len(targets) > 0:
+                        target = targets[0]
+                target_name = self.any_dict_get_str(target, "id", "")
+                if target_name in instance_fields:
+                    continue
                 line = self._render_class_static_assign(member)
                 if line != "":
                     self.emit(line)
@@ -450,6 +720,27 @@ class CSharpEmitter(CodeEmitter):
         if init_fn is not None:
             self.emit("")
             self._emit_function(init_fn, in_class=class_name_raw)
+        elif len(field_types) > 0:
+            args: list[str] = []
+            for field_name, field_t_obj in field_types.items():
+                if not isinstance(field_name, str):
+                    continue
+                field_cs_t = self._cs_type(self.any_to_str(field_t_obj))
+                if field_cs_t == "":
+                    field_cs_t = "object"
+                safe_name = self._safe_name(field_name)
+                args.append(field_cs_t + " " + safe_name)
+            self.emit("")
+            self.emit("public " + class_name + "(" + ", ".join(args) + ")")
+            self.emit("{")
+            self.indent += 1
+            for field_name, _ in field_types.items():
+                if not isinstance(field_name, str):
+                    continue
+                safe_name = self._safe_name(field_name)
+                self.emit("this." + safe_name + " = " + safe_name + ";")
+            self.indent -= 1
+            self.emit("}")
         elif len(field_types) == 0:
             self.emit("")
             self.emit("public " + class_name + "()")
@@ -515,6 +806,7 @@ class CSharpEmitter(CodeEmitter):
         """FunctionDef を C# メソッドとして出力する。"""
         prev_declared = dict(self.declared_var_types)
         prev_method_scope = self.in_method_scope
+        prev_return_type = self.current_return_east_type
         self.in_method_scope = in_class is not None
 
         fn_name_raw = self.any_to_str(fn.get("name"))
@@ -543,9 +835,11 @@ class CSharpEmitter(CodeEmitter):
 
         if is_constructor:
             class_name = self._safe_name(in_class if in_class is not None else "")
+            self.current_return_east_type = "None"
             self.emit("public " + class_name + "(" + ", ".join(args) + ")")
         else:
             ret_east = self.normalize_type_name(self.any_to_str(fn.get("return_type")))
+            self.current_return_east_type = ret_east
             ret_cs = self._cs_type(ret_east)
             if ret_cs == "":
                 ret_cs = "void"
@@ -559,6 +853,7 @@ class CSharpEmitter(CodeEmitter):
 
         self.declared_var_types = prev_declared
         self.in_method_scope = prev_method_scope
+        self.current_return_east_type = prev_return_type
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノードを C# へ出力する。"""
@@ -579,6 +874,18 @@ class CSharpEmitter(CodeEmitter):
             self.emit(self.syntax_text("continue_stmt", "continue;"))
             return
         if kind == "Expr":
+            expr_d = self.any_to_dict_or_empty(stmt.get("value"))
+            if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+                expr_name = self.any_dict_get_str(expr_d, "id", "")
+                if expr_name == "break":
+                    self.emit(self.syntax_text("break_stmt", "break;"))
+                    return
+                if expr_name == "continue":
+                    self.emit(self.syntax_text("continue_stmt", "continue;"))
+                    return
+                if expr_name == "pass":
+                    self.emit(self.syntax_text("pass_stmt", "// pass"))
+                    return
             expr_txt = self.render_expr(stmt.get("value"))
             self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
             return
@@ -586,7 +893,7 @@ class CSharpEmitter(CodeEmitter):
             if stmt.get("value") is None:
                 self.emit(self.syntax_text("return_void", "return;"))
             else:
-                value = self.render_expr(stmt.get("value"))
+                value = self._render_expr_with_type_hint(stmt.get("value"), self.current_return_east_type)
                 self.emit(self.syntax_line("return_value", "return {value};", {"value": value}))
             return
         if kind == "Raise":
@@ -669,6 +976,8 @@ class CSharpEmitter(CodeEmitter):
         target_name = self.any_dict_get_str(target_node, "id", "_i")
         target = self._safe_name(target_name)
         target_type = self._cs_type(self.any_to_str(stmt.get("target_type")))
+        if target_type == "" or target_type == "object":
+            target_type = "long"
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
@@ -677,11 +986,11 @@ class CSharpEmitter(CodeEmitter):
         if range_mode == "descending":
             cond = target + " > " + stop
         body = self._dict_stmt_list(stmt.get("body"))
-        self.emit_scoped_block(
-            "for (" + target_type + " " + target + " = " + start + "; " + cond + "; " + target + " += " + step + ") {",
-            body,
-            {target_name},
-        )
+        if not self.is_declared(target_name):
+            self.declare_in_current_scope(target_name)
+            self.declared_var_types[target_name] = self.normalize_type_name(self.any_to_str(stmt.get("target_type")))
+            self.emit(target_type + " " + target + " = " + start + ";")
+        self.emit_scoped_block("for (" + target + " = " + start + "; " + cond + "; " + target + " += " + step + ") {", body, set())
 
     def _iter_is_dict_items(self, iter_node: Any) -> bool:
         """反復対象が `dict.items()` か判定する。"""
@@ -753,30 +1062,30 @@ class CSharpEmitter(CodeEmitter):
         if t_east == "":
             t_east = self.get_expr_type(stmt.get("value"))
         t_cs = self._cs_type(t_east)
+        use_var_decl = t_cs.startswith("(")
         value_obj = stmt.get("value")
         if self.should_declare_name_binding(stmt, name_raw, True):
             self.declare_in_current_scope(name_raw)
             self.declared_var_types[name_raw] = self.normalize_type_name(t_east)
             if value_obj is None:
-                if t_cs == "" or t_cs == "object":
+                if use_var_decl or t_cs == "" or t_cs == "object":
                     self.emit("object " + name + ";")
                 else:
                     self.emit(t_cs + " " + name + ";")
             else:
-                value = self.render_expr(value_obj)
-                if t_cs == "" or t_cs == "object":
+                value = self._render_expr_with_type_hint(value_obj, t_east)
+                if use_var_decl or t_cs == "" or t_cs == "object":
                     self.emit("var " + name + " = " + value + ";")
                 else:
                     self.emit(t_cs + " " + name + " = " + value + ";")
             return
 
         if value_obj is not None:
-            self.emit(name + " = " + self.render_expr(value_obj) + ";")
+            self.emit(name + " = " + self._render_expr_with_type_hint(value_obj, self.declared_var_types.get(name_raw, t_east)) + ";")
 
     def _emit_assign(self, stmt: dict[str, Any]) -> None:
         target = self.primary_assign_target(stmt)
         value_obj = stmt.get("value")
-        value = self.render_expr(value_obj)
         target_kind = self.any_dict_get_str(target, "kind", "")
 
         if target_kind == "Name":
@@ -788,25 +1097,64 @@ class CSharpEmitter(CodeEmitter):
                 if t_east != "":
                     self.declared_var_types[name_raw] = t_east
                 t_cs = self._cs_type(t_east)
-                if t_cs == "" or t_cs == "object":
+                value = self._render_expr_with_type_hint(value_obj, t_east)
+                if t_cs.startswith("(") or t_cs == "" or t_cs == "object":
                     self.emit("var " + name + " = " + value + ";")
                 else:
                     self.emit(t_cs + " " + name + " = " + value + ";")
                 return
+            value = self.render_expr(value_obj)
             self.emit(name + " = " + value + ";")
             return
 
-        if self.emit_tuple_assign_with_tmp(
-            target,
-            value,
-            tmp_prefix="__tmp",
-            tmp_decl_template="var {tmp} = {value};",
-            item_expr_template="{tmp}.Item{index}",
-            assign_template="{target} = {item};",
-            index_offset=1,
-        ):
+        if target_kind == "Tuple":
+            items = self.tuple_elements(target)
+            if len(items) == 0:
+                return
+            value = self.render_expr(value_obj)
+            tmp_name = self.next_tmp("__tmp")
+            self.emit("var " + tmp_name + " = " + value + ";")
+            i = 0
+            while i < len(items):
+                item_node = self.any_to_dict_or_empty(items[i])
+                item_kind = self.any_dict_get_str(item_node, "kind", "")
+                item_expr = tmp_name + ".Item" + str(i + 1)
+                if item_kind == "Name":
+                    raw = self.any_dict_get_str(item_node, "id", "")
+                    if raw != "":
+                        safe = self._safe_name(raw)
+                        if not self.is_declared(raw):
+                            self.declare_in_current_scope(raw)
+                            self.emit("var " + safe + " = " + item_expr + ";")
+                        else:
+                            self.emit(safe + " = " + item_expr + ";")
+                elif item_kind == "Subscript":
+                    owner_node = self.any_to_dict_or_empty(item_node.get("value"))
+                    owner_type = self.get_expr_type(owner_node)
+                    owner_expr = self.render_expr(owner_node)
+                    idx_expr = self.render_expr(item_node.get("slice"))
+                    if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
+                        self.emit("Pytra.CsModule.py_runtime.py_set(" + owner_expr + ", " + idx_expr + ", " + item_expr + ");")
+                    elif owner_type.startswith("dict["):
+                        self.emit(owner_expr + "[" + idx_expr + "] = " + item_expr + ";")
+                    else:
+                        self.emit(owner_expr + "[System.Convert.ToInt32(" + idx_expr + ")] = " + item_expr + ";")
+                else:
+                    self.emit(self.render_expr(item_node) + " = " + item_expr + ";")
+                i += 1
             return
 
+        if target_kind == "Subscript":
+            owner_node = self.any_to_dict_or_empty(target.get("value"))
+            owner_type = self.get_expr_type(owner_node)
+            if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
+                owner = self.render_expr(owner_node)
+                idx = self.render_expr(target.get("slice"))
+                value = self.render_expr(value_obj)
+                self.emit("Pytra.CsModule.py_runtime.py_set(" + owner + ", " + idx + ", " + value + ");")
+                return
+
+        value = self.render_expr(value_obj)
         self.emit(self.render_expr(target) + " = " + value + ";")
 
     def _emit_augassign(self, stmt: dict[str, Any]) -> None:
@@ -814,28 +1162,44 @@ class CSharpEmitter(CodeEmitter):
         self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
 
     def _render_compare(self, expr: dict[str, Any]) -> str:
-        left = self.render_expr(expr.get("left"))
+        left_node = self.any_to_dict_or_empty(expr.get("left"))
+        left = self.render_expr(left_node)
         ops = self.any_to_str_list(expr.get("ops"))
         comps = self.any_to_list(expr.get("comparators"))
-        right_exprs: list[str] = []
         pair_count = len(ops)
         if len(comps) < pair_count:
             pair_count = len(comps)
+        if pair_count == 0:
+            return "false"
+
+        terms: list[str] = []
+        cur_left = left
         i = 0
         while i < pair_count:
-            right_exprs.append(self.render_expr(comps[i]))
+            op = ops[i]
+            right_node = self.any_to_dict_or_empty(comps[i])
+            right = self.render_expr(right_node)
+            right_t = self.get_expr_type(right_node)
+            term = ""
+            if op == "In" or op == "NotIn":
+                if right_t.startswith("dict["):
+                    term = "(" + right + ").ContainsKey(" + cur_left + ")"
+                elif right_t.startswith("list[") or right_t.startswith("set[") or right_t in {"bytes", "bytearray", "str"}:
+                    term = "(" + right + ").Contains(" + cur_left + ")"
+                else:
+                    term = "(" + right + ").Contains(" + cur_left + ")"
+                if op == "NotIn":
+                    term = "!(" + term + ")"
+            else:
+                mapped = self.cmp_ops.get(op, "==")
+                term = cur_left + " " + mapped + " " + right
+            terms.append(term)
+            cur_left = right
             i += 1
-        return self.render_compare_chain_from_rendered(
-            left,
-            ops,
-            right_exprs,
-            self.cmp_ops,
-            empty_literal="false",
-            in_pattern="{right}.Contains({left})",
-            not_in_pattern="!{right}.Contains({left})",
-            wrap_terms=False,
-            wrap_whole=False,
-        )
+
+        if len(terms) == 1:
+            return terms[0]
+        return " && ".join(terms)
 
     def _render_len_call(self, arg_expr: str, arg_node: Any) -> str:
         """len(x) を C# 式へ変換する。"""
@@ -845,6 +1209,21 @@ class CSharpEmitter(CodeEmitter):
         if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t in {"bytes", "bytearray"}:
             return "(" + arg_expr + ").Count"
         return "(" + arg_expr + ").Count()"
+
+    def _render_ifexp_expr(self, expr: dict[str, Any]) -> str:
+        """IfExp（三項演算）で test を Python truthy 条件へ寄せる。"""
+        body = self.render_expr(expr.get("body"))
+        orelse = self.render_expr(expr.get("orelse"))
+        casts = self._dict_stmt_list(expr.get("casts"))
+        for c in casts:
+            on = self.any_to_str(c.get("on"))
+            to_t = self.any_to_str(c.get("to"))
+            if on == "body":
+                body = self.apply_cast(body, to_t)
+            elif on == "orelse":
+                orelse = self.apply_cast(orelse, to_t)
+        test_expr = self.render_cond(expr.get("test"))
+        return self.render_ifexp_common(test_expr, body, orelse)
 
     def _type_id_expr_for_name(self, type_name: str) -> str:
         t = self.normalize_type_name(type_name)
@@ -917,10 +1296,14 @@ class CSharpEmitter(CodeEmitter):
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを C# 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
+        if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
+            fn_name = "__pytra_main"
         if fn_name_raw in self.class_names:
-            return "new " + fn_name_raw + "(" + ", ".join(rendered_args) + ")"
+            return "new " + self._safe_name(fn_name_raw) + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "isinstance":
             return self._render_isinstance_call(rendered_args, arg_nodes)
+        if fn_name_raw == "perf_counter":
+            return "Pytra.CsModule.time.perf_counter()"
         if fn_name_raw == "print":
             if len(rendered_args) == 0:
                 return "System.Console.WriteLine()"
@@ -932,15 +1315,43 @@ class CSharpEmitter(CodeEmitter):
         if fn_name_raw == "str" and len(rendered_args) == 1:
             return "System.Convert.ToString(" + rendered_args[0] + ")"
         if fn_name_raw == "int" and len(rendered_args) == 1:
-            return "System.Convert.ToInt64(" + rendered_args[0] + ")"
+            return "Pytra.CsModule.py_runtime.py_int(" + rendered_args[0] + ")"
         if fn_name_raw == "float" and len(rendered_args) == 1:
             return "System.Convert.ToDouble(" + rendered_args[0] + ")"
         if fn_name_raw == "bool" and len(rendered_args) == 1:
-            return "System.Convert.ToBoolean(" + rendered_args[0] + ")"
-        if fn_name_raw == "Exception":
+            return "Pytra.CsModule.py_runtime.py_bool(" + rendered_args[0] + ")"
+        if fn_name_raw == "max" and len(rendered_args) >= 1:
+            out_expr = rendered_args[0]
+            i = 1
+            while i < len(rendered_args):
+                out_expr = "System.Math.Max(" + out_expr + ", " + rendered_args[i] + ")"
+                i += 1
+            return out_expr
+        if fn_name_raw == "min" and len(rendered_args) >= 1:
+            out_expr = rendered_args[0]
+            i = 1
+            while i < len(rendered_args):
+                out_expr = "System.Math.Min(" + out_expr + ", " + rendered_args[i] + ")"
+                i += 1
+            return out_expr
+        if fn_name_raw == "bytearray":
+            if len(rendered_args) == 0:
+                return "new System.Collections.Generic.List<byte>()"
+            return "Pytra.CsModule.py_runtime.py_bytearray(" + rendered_args[0] + ")"
+        if fn_name_raw == "bytes":
+            if len(rendered_args) == 0:
+                return "new System.Collections.Generic.List<byte>()"
+            return "Pytra.CsModule.py_runtime.py_bytes(" + rendered_args[0] + ")"
+        if fn_name_raw in {"Exception", "RuntimeError", "ValueError", "TypeError", "KeyError", "IndexError"}:
             if len(rendered_args) >= 1:
                 return "new System.Exception(" + rendered_args[0] + ")"
-            return "new System.Exception(\"Exception\")"
+            return "new System.Exception(" + self.quote_string_literal(fn_name_raw) + ")"
+        if fn_name_raw == "save_gif":
+            return "Pytra.CsModule.gif_helper.save_gif(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw == "grayscale_palette":
+            return "Pytra.CsModule.gif_helper.grayscale_palette(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw == "write_rgb_png":
+            return "Pytra.CsModule.png_helper.write_rgb_png(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "enumerate":
             self.needs_enumerate_helper = True
             if len(rendered_args) == 1:
@@ -951,20 +1362,41 @@ class CSharpEmitter(CodeEmitter):
 
     def _render_attr_call(self, owner_node: dict[str, Any], attr_raw: str, rendered_args: list[str]) -> str:
         """属性呼び出しを C# 式へ変換する。"""
+        owner_kind = self.any_dict_get_str(owner_node, "kind", "")
+        owner_name = ""
+        if owner_kind == "Name":
+            owner_name = self.any_dict_get_str(owner_node, "id", "")
+        if owner_name == "math":
+            return "Pytra.CsModule.math." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+        if owner_name == "png":
+            return "Pytra.CsModule.png_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+        if owner_name == "gif":
+            return "Pytra.CsModule.gif_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+        if owner_name == "time":
+            return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+
         owner_expr = self.render_expr(owner_node)
         owner_type = self.get_expr_type(owner_node)
 
         if owner_type == "str":
             if attr_raw == "join" and len(rendered_args) == 1:
                 return "string.Join(" + owner_expr + ", " + rendered_args[0] + ")"
+            if attr_raw == "isdigit" and len(rendered_args) == 0:
+                return "Pytra.CsModule.py_runtime.py_isdigit(" + owner_expr + ")"
+            if attr_raw == "isalpha" and len(rendered_args) == 0:
+                return "Pytra.CsModule.py_runtime.py_isalpha(" + owner_expr + ")"
 
         if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
             if attr_raw == "append" and len(rendered_args) == 1:
+                if owner_type in {"bytes", "bytearray"}:
+                    return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"
                 return owner_expr + ".Add(" + rendered_args[0] + ")"
             if attr_raw == "clear" and len(rendered_args) == 0:
                 return owner_expr + ".Clear()"
             if attr_raw == "pop" and len(rendered_args) == 0:
-                return owner_expr + "[" + owner_expr + ".Count - 1]"
+                return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"
+            if attr_raw == "pop" and len(rendered_args) >= 1:
+                return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"
 
         if owner_type.startswith("dict["):
             if attr_raw == "get":
@@ -1028,6 +1460,8 @@ class CSharpEmitter(CodeEmitter):
             name = self.any_dict_get_str(expr_d, "id", "_")
             if name == "self" and self.in_method_scope:
                 return "this"
+            if name == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
+                return "__pytra_main"
             return self._safe_name(name)
 
         if kind == "Constant":
@@ -1039,9 +1473,19 @@ class CSharpEmitter(CodeEmitter):
         if kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_kind = self.any_dict_get_str(owner_node, "kind", "")
-            if owner_kind == "Name" and self.any_dict_get_str(owner_node, "id", "") == "self" and self.in_method_scope:
-                return "this." + self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
-            return self.render_expr(owner_node) + "." + self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
+            owner_name = self.any_dict_get_str(owner_node, "id", "")
+            attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
+            if owner_kind == "Name" and owner_name == "self" and self.in_method_scope:
+                return "this." + attr
+            if owner_kind == "Name" and owner_name == "math":
+                return "Pytra.CsModule.math." + attr
+            if owner_kind == "Name" and owner_name == "png":
+                return "Pytra.CsModule.png_helper." + attr
+            if owner_kind == "Name" and owner_name == "gif":
+                return "Pytra.CsModule.gif_helper." + attr
+            if owner_kind == "Name" and owner_name == "time":
+                return "Pytra.CsModule.time." + attr
+            return self.render_expr(owner_node) + "." + attr
 
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")
@@ -1065,11 +1509,18 @@ class CSharpEmitter(CodeEmitter):
             right_node = self.any_to_dict_or_empty(expr_d.get("right"))
             left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, op, is_right=False)
             right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, op, is_right=True)
+            left_kind = self.any_dict_get_str(left_node, "kind", "")
+            right_kind = self.any_dict_get_str(right_node, "kind", "")
             custom = self.hook_on_render_binop(expr_d, left, right)
             if custom != "":
                 return custom
             if op == "FloorDiv":
                 return "System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(" + left + ") / System.Convert.ToDouble(" + right + ")))"
+            if op == "Mult":
+                if left_kind == "List" and right_kind != "List":
+                    return self._render_list_repeat(left_node, left, right)
+                if right_kind == "List" and left_kind != "List":
+                    return self._render_list_repeat(right_node, right, left)
             mapped = self.bin_ops.get(op, "+")
             return left + " " + mapped + " " + right
 
@@ -1085,8 +1536,8 @@ class CSharpEmitter(CodeEmitter):
                 and_token="&&",
                 or_token="||",
                 empty_literal="false",
-                wrap_each=False,
-                wrap_whole=False,
+                wrap_each=True,
+                wrap_whole=True,
             )
 
         if kind == "Call":
@@ -1097,6 +1548,12 @@ class CSharpEmitter(CodeEmitter):
 
         if kind == "IfExp":
             return self._render_ifexp_expr(expr_d)
+
+        if kind == "RangeExpr":
+            return self._render_range_expr(expr_d)
+
+        if kind == "ListComp":
+            return self._render_list_comp_expr(expr_d)
 
         if kind == "List":
             return self._typed_list_literal(expr_d)
@@ -1114,8 +1571,29 @@ class CSharpEmitter(CodeEmitter):
             return self._typed_dict_literal(expr_d)
 
         if kind == "Subscript":
-            owner = self.render_expr(expr_d.get("value"))
-            idx = self.render_expr(expr_d.get("slice"))
+            owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
+            owner = self.render_expr(owner_node)
+            owner_t = self.get_expr_type(owner_node)
+            slice_node = self.any_to_dict_or_empty(expr_d.get("slice"))
+            slice_kind = self.any_dict_get_str(slice_node, "kind", "")
+            if slice_kind == "Slice":
+                lower_node = slice_node.get("lower")
+                upper_node = slice_node.get("upper")
+                has_lower = lower_node is not None and len(self.any_to_dict_or_empty(lower_node)) > 0
+                has_upper = upper_node is not None and len(self.any_to_dict_or_empty(upper_node)) > 0
+                lower_expr = "null"
+                upper_expr = "null"
+                if has_lower:
+                    lower_expr = "System.Convert.ToInt64(" + self.render_expr(lower_node) + ")"
+                if has_upper:
+                    upper_expr = "System.Convert.ToInt64(" + self.render_expr(upper_node) + ")"
+                if owner_t.startswith("list[") or owner_t in {"bytes", "bytearray", "str"}:
+                    return "Pytra.CsModule.py_runtime.py_slice(" + owner + ", " + lower_expr + ", " + upper_expr + ")"
+            idx = self.render_expr(slice_node)
+            if owner_t.startswith("list[") or owner_t in {"bytes", "bytearray", "str"}:
+                return "Pytra.CsModule.py_runtime.py_get(" + owner + ", " + idx + ")"
+            if owner_t.startswith("dict["):
+                return owner + "[" + idx + "]"
             return owner + "[System.Convert.ToInt32(" + idx + ")]"
 
         if kind == "Lambda":

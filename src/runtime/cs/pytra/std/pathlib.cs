@@ -20,7 +20,7 @@ namespace Pytra.CsModule
 
         public py_path parent()
         {
-            string? dir = Path.GetDirectoryName(_value);
+            string dir = Path.GetDirectoryName(_value);
             return new py_path(dir ?? string.Empty);
         }
 

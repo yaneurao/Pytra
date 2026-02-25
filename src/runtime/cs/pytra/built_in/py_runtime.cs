@@ -434,12 +434,7 @@ namespace Pytra.CsModule
         public static void py_set<T>(List<T> source, object indexLike, object value)
         {
             int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Count);
-            if (typeof(T) == typeof(byte))
-            {
-                source[idx] = (T)(object)Convert.ToByte(value);
-                return;
-            }
-            source[idx] = (T)value;
+            source[idx] = py_convert_value<T>(value);
         }
 
         public static void py_set<K, V>(Dictionary<K, V> source, K key, V value)
@@ -449,13 +444,29 @@ namespace Pytra.CsModule
 
         public static void py_append<T>(List<T> source, object value)
         {
-            if (typeof(T) == typeof(byte))
+            source.Add(py_convert_value<T>(value));
+        }
+
+        private static T py_convert_value<T>(object value)
+        {
+            if (value is T same)
             {
-                byte b = Convert.ToByte(value);
-                source.Add((T)(object)b);
-                return;
+                return same;
             }
-            source.Add((T)value);
+            Type target = typeof(T);
+            try
+            {
+                if (target == typeof(string))
+                {
+                    return (T)(object)Convert.ToString(value, CultureInfo.InvariantCulture);
+                }
+                object converted = Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+                return (T)converted;
+            }
+            catch
+            {
+                return (T)value;
+            }
         }
 
         public static T py_pop<T>(List<T> source)

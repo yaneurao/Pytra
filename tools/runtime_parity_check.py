@@ -150,9 +150,10 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
             name="cs",
             transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} -o test/transpile/cs/{case_stem}.cs",
             run_cmd=(
-                f"mcs -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
+                f"mcs -warn:0 -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
                 "src/runtime/cs/pytra/built_in/py_runtime.cs "
                 "src/runtime/cs/pytra/built_in/time.cs "
+                "src/runtime/cs/pytra/built_in/math.cs "
                 "src/runtime/cs/pytra/utils/png_helper.cs "
                 "src/runtime/cs/pytra/utils/gif_helper.cs "
                 "src/runtime/cs/pytra/std/pathlib.cs "

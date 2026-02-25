@@ -183,11 +183,12 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
     runtime_files = [
         ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "py_runtime.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "time.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "math.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "png_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
     ]
-    compile_cmd = ["mcs", "-out:" + str(out_exe), str(stage1_out)]
+    compile_cmd = ["mcs", "-warn:0", "-out:" + str(out_exe), str(stage1_out)]
     for runtime_file in runtime_files:
         compile_cmd.append(str(runtime_file))
     ok_build, msg_build = _run(compile_cmd)

@@ -197,11 +197,12 @@ def _cs_compile(src_cs: Path, out_exe: Path) -> tuple[bool, str]:
     runtime_files = [
         ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "py_runtime.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "time.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "math.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "png_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
     ]
-    compile_cmd = ["mcs", "-out:" + str(out_exe), str(src_cs)]
+    compile_cmd = ["mcs", "-warn:0", "-out:" + str(out_exe), str(src_cs)]
     for runtime_file in runtime_files:
         compile_cmd.append(str(runtime_file))
     return _run(compile_cmd)
