@@ -44,5 +44,5 @@
 文脈: `docs-ja/plans/p1-cpp-emitter-no-multiple-inheritance.md`（`P1-CPP-EMIT-NOMI-01`）
 
 1. [ ] [ID: P1-CPP-EMIT-NOMI-01] `src/hooks/cpp/emitter/cpp_emitter.py` の多重継承を廃止し、単一継承 + 明示的委譲へ切り替える。
-2. [ ] [ID: P1-CPP-EMIT-NOMI-01-S1] `cpp_emitter.py` の状態管理を維持しつつ、`CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` の呼び出しをデリゲーション移行する設計を確定する。
+2. [x] [ID: P1-CPP-EMIT-NOMI-01-S1] `cpp_emitter.py` の状態管理を維持しつつ、`CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` のメソッドを `CppEmitter` へデリゲーション注入し、単一継承化を実現する。
 3. [ ] [ID: P1-CPP-EMIT-NOMI-01-S2] `CppEmitter` 単一継承移行中の `isinstance()`/型チェック関連の条件分岐を簡素化し、分岐経路を明示フラグ化する。
