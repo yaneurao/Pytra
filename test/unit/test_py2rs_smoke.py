@@ -185,7 +185,7 @@ def g(a: int, b: int) -> int:
         rendered = emitter.render_expr({"kind": "Name", "id": "x"})
         self.assertEqual(rendered, "specific_name_hook()")
 
-    def test_isinstance_lowering_for_any_uses_pyany_matches(self) -> None:
+    def test_isinstance_lowering_for_any_uses_type_id_runtime_api(self) -> None:
         src = """
 from pytra.std.typing import Any
 
@@ -201,9 +201,10 @@ def is_dict(x: Any) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertNotIn("isinstance(", rust)
-        self.assertIn("matches!(x, PyAny::Int(_))", rust)
-        self.assertIn("matches!(x, PyAny::Dict(_))", rust)
+        self.assertNotIn("return isinstance(", rust)
+        self.assertIn("py_isinstance(&x, PYTRA_TID_INT)", rust)
+        self.assertIn("py_isinstance(&x, PYTRA_TID_DICT)", rust)
+        self.assertIn("fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {", rust)
 
     def test_isinstance_lowering_for_static_builtin_type(self) -> None:
         src = """
@@ -219,11 +220,9 @@ def is_float(x: int) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertNotIn("isinstance(", rust)
-        int_fn = rust[rust.index("fn is_int(") : rust.index("fn is_float(")]
-        float_fn = rust[rust.index("fn is_float(") :]
-        self.assertIn("return true;", int_fn)
-        self.assertIn("return false;", float_fn)
+        self.assertNotIn("return isinstance(", rust)
+        self.assertIn("return py_isinstance(&x, PYTRA_TID_INT);", rust)
+        self.assertIn("return py_isinstance(&x, PYTRA_TID_FLOAT);", rust)
 
     def test_isinstance_lowering_for_class_inheritance(self) -> None:
         src = """
@@ -247,11 +246,38 @@ def is_child(x: A) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertNotIn("isinstance(", rust)
-        base_fn = rust[rust.index("fn is_base(") : rust.index("fn is_child(")]
-        child_fn = rust[rust.index("fn is_child(") :]
-        self.assertIn("return true;", base_fn)
-        self.assertIn("return false;", child_fn)
+        self.assertNotIn("return isinstance(", rust)
+        self.assertIn("const PYTRA_TYPE_ID: i64 = 1000;", rust)
+        self.assertIn("const PYTRA_TYPE_ID: i64 = 1001;", rust)
+        self.assertIn("impl PyRuntimeTypeId for A {", rust)
+        self.assertIn("impl PyRuntimeTypeId for B {", rust)
+        self.assertIn("return py_isinstance(&x, A::PYTRA_TYPE_ID);", rust)
+        self.assertIn("return py_isinstance(&x, B::PYTRA_TYPE_ID);", rust)
+        self.assertIn("1000 => Some(PyTypeInfo { order: 9, min: 9, max: 10 }),", rust)
+        self.assertIn("1001 => Some(PyTypeInfo { order: 10, min: 10, max: 10 }),", rust)
+
+    def test_isinstance_sibling_classes_emit_non_overlapping_type_ranges(self) -> None:
+        src = """
+class A:
+    def __init__(self) -> None:
+        pass
+
+class B:
+    def __init__(self) -> None:
+        pass
+
+def is_a(x: B) -> bool:
+    return isinstance(x, A)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "isinstance_sibling_class.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertIn("return py_isinstance(&x, A::PYTRA_TYPE_ID);", rust)
+        self.assertIn("1000 => Some(PyTypeInfo { order: 9, min: 9, max: 9 }),", rust)
+        self.assertIn("1001 => Some(PyTypeInfo { order: 10, min: 10, max: 10 }),", rust)
 
     def test_isinstance_lowering_for_object_type(self) -> None:
         src = """
@@ -269,13 +295,10 @@ def from_any(x: Any) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertNotIn("isinstance(", rust)
-        static_fn = rust[rust.index("fn from_static(") : rust.index("fn from_any(")]
-        any_fn = rust[rust.index("fn from_any(") :]
-        self.assertIn("return true;", static_fn)
-        self.assertIn("return true;", any_fn)
+        self.assertNotIn("return isinstance(", rust)
+        self.assertIn("return py_isinstance(&x, PYTRA_TID_OBJECT);", rust)
 
-    def test_isinstance_tuple_lowering_for_any_uses_or_of_matches(self) -> None:
+    def test_isinstance_tuple_lowering_for_any_uses_or_of_type_id_checks(self) -> None:
         src = """
 from pytra.std.typing import Any
 
@@ -288,12 +311,12 @@ def f(x: Any) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertNotIn("isinstance(", rust)
-        self.assertIn("matches!(x, PyAny::Int(_))", rust)
-        self.assertIn("matches!(x, PyAny::Dict(_))", rust)
+        self.assertNotIn("return isinstance(", rust)
+        self.assertIn("py_isinstance(&x, PYTRA_TID_INT)", rust)
+        self.assertIn("py_isinstance(&x, PYTRA_TID_DICT)", rust)
         self.assertIn("||", rust)
 
-    def test_isinstance_set_lowering_for_any_uses_pyany_set_match(self) -> None:
+    def test_isinstance_set_lowering_for_any_uses_type_id_runtime_api(self) -> None:
         src = """
 from pytra.std.typing import Any
 
@@ -306,8 +329,8 @@ def f(x: Any) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertNotIn("isinstance(", rust)
-        self.assertIn("matches!(x, PyAny::Set(_))", rust)
+        self.assertNotIn("return isinstance(", rust)
+        self.assertIn("py_isinstance(&x, PYTRA_TID_SET)", rust)
 
 
 if __name__ == "__main__":

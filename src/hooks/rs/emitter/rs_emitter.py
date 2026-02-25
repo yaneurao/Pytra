@@ -47,8 +47,11 @@ class RustEmitter(CodeEmitter):
         self.class_names: set[str] = set()
         self.class_base_map: dict[str, str] = {}
         self.class_field_types: dict[str, dict[str, str]] = {}
+        self.class_type_id_map: dict[str, int] = {}
+        self.type_info_map: dict[int, tuple[int, int, int]] = {}
         self.declared_var_types: dict[str, str] = {}
         self.uses_pyany: bool = False
+        self.uses_isinstance_runtime: bool = False
         self.current_fn_write_counts: dict[str, int] = {}
         self.current_fn_mutating_call_counts: dict[str, int] = {}
 
@@ -290,6 +293,353 @@ class RustEmitter(CodeEmitter):
             if self._contains_text(t, "Any") or self._contains_text(t, "object"):
                 return True
         return False
+
+    def _doc_mentions_isinstance(self, node: Any) -> bool:
+        """EAST 全体に `isinstance(...)` 呼び出しが含まれるかを判定する。"""
+        if isinstance(node, dict):
+            if self.any_dict_get_str(node, "kind", "") == "Call":
+                fn = self.any_to_dict_or_empty(node.get("func"))
+                if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
+                    return True
+            for _k, v in node.items():
+                if self._doc_mentions_isinstance(v):
+                    return True
+            return False
+        if isinstance(node, list):
+            for item in node:
+                if self._doc_mentions_isinstance(item):
+                    return True
+            return False
+        return False
+
+    def _builtin_type_id_expr(self, type_name: str) -> str:
+        """型名を Rust runtime の `PYTRA_TID_*` 定数式へ変換する。"""
+        t = self.normalize_type_name(type_name)
+        if t == "None":
+            return "PYTRA_TID_NONE"
+        if t == "bool":
+            return "PYTRA_TID_BOOL"
+        if t == "int" or self._is_int_type(t):
+            return "PYTRA_TID_INT"
+        if t == "float" or self._is_float_type(t):
+            return "PYTRA_TID_FLOAT"
+        if t == "str":
+            return "PYTRA_TID_STR"
+        if t == "bytes" or t == "bytearray" or t.startswith("list[") or t == "list":
+            return "PYTRA_TID_LIST"
+        if t.startswith("dict[") or t == "dict":
+            return "PYTRA_TID_DICT"
+        if t.startswith("set[") or t == "set":
+            return "PYTRA_TID_SET"
+        if t == "object":
+            return "PYTRA_TID_OBJECT"
+        if t in self.class_names:
+            return self._safe_name(t) + "::PYTRA_TYPE_ID"
+        return ""
+
+    def _base_type_id_for_name(self, base_name: str) -> int:
+        """基底型名を type_id へ変換する（未知は object）。"""
+        expr = self._builtin_type_id_expr(base_name)
+        if expr == "PYTRA_TID_NONE":
+            return 0
+        if expr == "PYTRA_TID_BOOL":
+            return 1
+        if expr == "PYTRA_TID_INT":
+            return 2
+        if expr == "PYTRA_TID_FLOAT":
+            return 3
+        if expr == "PYTRA_TID_STR":
+            return 4
+        if expr == "PYTRA_TID_LIST":
+            return 5
+        if expr == "PYTRA_TID_DICT":
+            return 6
+        if expr == "PYTRA_TID_SET":
+            return 7
+        if expr == "PYTRA_TID_OBJECT":
+            return 8
+        normalized = self.normalize_type_name(base_name)
+        if normalized in self.class_type_id_map:
+            return self.class_type_id_map[normalized]
+        return 8
+
+    def _prepare_type_id_table(self) -> None:
+        """Rust 出力に埋め込む `type_id` 範囲テーブルを計算する。"""
+        self.class_type_id_map = {}
+        self.type_info_map = {}
+
+        type_ids: list[int] = []
+        type_base: dict[int, int] = {}
+        type_children: dict[int, list[int]] = {}
+
+        def _register(tid: int, base_tid: int) -> None:
+            if tid not in type_ids:
+                type_ids.append(tid)
+            prev_base = type_base.get(tid, -1)
+            if prev_base >= 0 and prev_base in type_children:
+                prev_children = type_children[prev_base]
+                if tid in prev_children:
+                    prev_children.remove(tid)
+            type_base[tid] = base_tid
+            if tid not in type_children:
+                type_children[tid] = []
+            if base_tid < 0:
+                return
+            if base_tid not in type_children:
+                type_children[base_tid] = []
+            children = type_children[base_tid]
+            if tid not in children:
+                children.append(tid)
+
+        # built-in hierarchy: object <- {int(bool), float, str, list, dict, set}
+        _register(0, -1)
+        _register(8, -1)
+        _register(2, 8)
+        _register(1, 2)
+        _register(3, 8)
+        _register(4, 8)
+        _register(5, 8)
+        _register(6, 8)
+        _register(7, 8)
+
+        next_user_tid = 1000
+        for class_name in sorted(self.class_names):
+            while next_user_tid in type_base:
+                next_user_tid += 1
+            self.class_type_id_map[class_name] = next_user_tid
+            next_user_tid += 1
+
+        for class_name in sorted(self.class_names):
+            tid = self.class_type_id_map[class_name]
+            base_name = self.normalize_type_name(self.class_base_map.get(class_name, ""))
+            if base_name == "":
+                base_name = "object"
+            _register(tid, self._base_type_id_for_name(base_name))
+
+        def _sorted_ints(items: list[int]) -> list[int]:
+            out = list(items)
+            out.sort()
+            return out
+
+        def _collect_roots() -> list[int]:
+            roots: list[int] = []
+            for tid in type_ids:
+                base_tid = type_base.get(tid, -1)
+                if base_tid < 0 or base_tid not in type_base:
+                    roots.append(tid)
+            return _sorted_ints(roots)
+
+        type_order: dict[int, int] = {}
+        type_min: dict[int, int] = {}
+        type_max: dict[int, int] = {}
+
+        def _assign_dfs(tid: int, next_order: int) -> int:
+            type_order[tid] = next_order
+            type_min[tid] = next_order
+            cur = next_order + 1
+            for child_tid in _sorted_ints(type_children.get(tid, [])):
+                cur = _assign_dfs(child_tid, cur)
+            type_max[tid] = cur - 1
+            return cur
+
+        next_order = 0
+        for root_tid in _collect_roots():
+            next_order = _assign_dfs(root_tid, next_order)
+        for tid in _sorted_ints(type_ids):
+            if tid not in type_order:
+                next_order = _assign_dfs(tid, next_order)
+
+        for tid in _sorted_ints(type_ids):
+            self.type_info_map[tid] = (
+                type_order[tid],
+                type_min[tid],
+                type_max[tid],
+            )
+
+    def _emit_isinstance_runtime_helpers(self) -> None:
+        """`isinstance` 用 `type_id` runtime helper を出力する。"""
+        self.emit("const PYTRA_TID_NONE: i64 = 0;")
+        self.emit("const PYTRA_TID_BOOL: i64 = 1;")
+        self.emit("const PYTRA_TID_INT: i64 = 2;")
+        self.emit("const PYTRA_TID_FLOAT: i64 = 3;")
+        self.emit("const PYTRA_TID_STR: i64 = 4;")
+        self.emit("const PYTRA_TID_LIST: i64 = 5;")
+        self.emit("const PYTRA_TID_DICT: i64 = 6;")
+        self.emit("const PYTRA_TID_SET: i64 = 7;")
+        self.emit("const PYTRA_TID_OBJECT: i64 = 8;")
+        self.emit("")
+        self.emit("#[derive(Clone, Copy)]")
+        self.emit("struct PyTypeInfo {")
+        self.indent += 1
+        self.emit("order: i64,")
+        self.emit("min: i64,")
+        self.emit("max: i64,")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_type_info(type_id: i64) -> Option<PyTypeInfo> {")
+        self.indent += 1
+        self.emit("match type_id {")
+        self.indent += 1
+        for tid in sorted(self.type_info_map.keys()):
+            order, min_id, max_id = self.type_info_map[tid]
+            self.emit(
+                f"{tid} => Some(PyTypeInfo {{ order: {order}, min: {min_id}, max: {max_id} }}),"
+            )
+        self.emit("_ => None,")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("trait PyRuntimeTypeId {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl PyRuntimeTypeId for bool {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_BOOL")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl PyRuntimeTypeId for i64 {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_INT")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl PyRuntimeTypeId for f64 {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_FLOAT")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl PyRuntimeTypeId for String {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_STR")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl<T> PyRuntimeTypeId for Vec<T> {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_LIST")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl<K: Ord, V> PyRuntimeTypeId for ::std::collections::BTreeMap<K, V> {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_DICT")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl<T: Ord> PyRuntimeTypeId for ::std::collections::BTreeSet<T> {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("PYTRA_TID_SET")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("impl<T: PyRuntimeTypeId> PyRuntimeTypeId for Option<T> {")
+        self.indent += 1
+        self.emit("fn py_runtime_type_id(&self) -> i64 {")
+        self.indent += 1
+        self.emit("match self {")
+        self.indent += 1
+        self.emit("Some(v) => v.py_runtime_type_id(),")
+        self.emit("None => PYTRA_TID_NONE,")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        if self.uses_pyany:
+            self.emit("")
+            self.emit("impl PyRuntimeTypeId for PyAny {")
+            self.indent += 1
+            self.emit("fn py_runtime_type_id(&self) -> i64 {")
+            self.indent += 1
+            self.emit("match self {")
+            self.indent += 1
+            self.emit("PyAny::Int(_) => PYTRA_TID_INT,")
+            self.emit("PyAny::Float(_) => PYTRA_TID_FLOAT,")
+            self.emit("PyAny::Bool(_) => PYTRA_TID_BOOL,")
+            self.emit("PyAny::Str(_) => PYTRA_TID_STR,")
+            self.emit("PyAny::List(_) => PYTRA_TID_LIST,")
+            self.emit("PyAny::Dict(_) => PYTRA_TID_DICT,")
+            self.emit("PyAny::Set(_) => PYTRA_TID_SET,")
+            self.emit("PyAny::None => PYTRA_TID_NONE,")
+            self.indent -= 1
+            self.emit("}")
+            self.indent -= 1
+            self.emit("}")
+            self.indent -= 1
+            self.emit("}")
+        self.emit("")
+        self.emit("fn py_runtime_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {")
+        self.indent += 1
+        self.emit("value.py_runtime_type_id()")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {")
+        self.indent += 1
+        self.emit("let actual = match py_type_info(actual_type_id) {")
+        self.indent += 1
+        self.emit("Some(info) => info,")
+        self.emit("None => return false,")
+        self.indent -= 1
+        self.emit("};")
+        self.emit("let expected = match py_type_info(expected_type_id) {")
+        self.indent += 1
+        self.emit("Some(info) => info,")
+        self.emit("None => return false,")
+        self.indent -= 1
+        self.emit("};")
+        self.emit("expected.min <= actual.order && actual.order <= expected.max")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {")
+        self.indent += 1
+        self.emit("py_is_subtype(actual_type_id, expected_type_id)")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {")
+        self.indent += 1
+        self.emit("py_is_subtype(py_runtime_type_id(value), expected_type_id)")
+        self.indent -= 1
+        self.emit("}")
 
     def _is_any_type(self, east_type: str) -> bool:
         t = self.normalize_type_name(east_type)
@@ -632,21 +982,13 @@ class RustEmitter(CodeEmitter):
         self.scope_stack = [set()]
         self.declared_var_types = {}
         self.uses_pyany = self._doc_mentions_any(self.doc)
+        self.uses_isinstance_runtime = self._doc_mentions_isinstance(self.doc)
+        self.class_type_id_map = {}
+        self.type_info_map = {}
 
         module = self.doc
         body = self._dict_stmt_list(module.get("body"))
         meta = self.any_to_dict_or_empty(module.get("meta"))
-        self.load_import_bindings_from_meta(meta)
-        self.emit_module_leading_trivia()
-        use_lines = self._collect_use_lines(body, meta)
-        for line in use_lines:
-            self.emit(line)
-        if len(use_lines) > 0:
-            self.emit("")
-        if self.uses_pyany:
-            self._emit_pyany_runtime()
-            self.emit("")
-
         self.class_names = set()
         self.class_base_map = self._collect_class_base_map(body)
         self.function_return_types = {}
@@ -661,6 +1003,21 @@ class RustEmitter(CodeEmitter):
                 ret_type = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
                 if fn_name != "":
                     self.function_return_types[fn_name] = ret_type
+
+        self.load_import_bindings_from_meta(meta)
+        self.emit_module_leading_trivia()
+        use_lines = self._collect_use_lines(body, meta)
+        for line in use_lines:
+            self.emit(line)
+        if len(use_lines) > 0:
+            self.emit("")
+        if self.uses_pyany:
+            self._emit_pyany_runtime()
+            self.emit("")
+        if self.uses_isinstance_runtime:
+            self._prepare_type_id_table()
+            self._emit_isinstance_runtime_helpers()
+            self.emit("")
 
         top_level_stmts: list[dict[str, Any]] = []
         for stmt in body:
@@ -691,7 +1048,8 @@ class RustEmitter(CodeEmitter):
 
     def _emit_class(self, stmt: dict[str, Any]) -> None:
         """ClassDef を最小構成の `struct + impl` として出力する。"""
-        class_name = self._safe_name(self.any_to_str(stmt.get("name")))
+        class_name_raw = self.any_to_str(stmt.get("name"))
+        class_name = self._safe_name(class_name_raw)
         field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
         norm_field_types: dict[str, str] = {}
         for key, val in field_types.items():
@@ -712,6 +1070,9 @@ class RustEmitter(CodeEmitter):
 
         self.emit(f"impl {class_name} {{")
         self.indent += 1
+        if class_name_raw in self.class_type_id_map:
+            self.emit(f"const PYTRA_TYPE_ID: i64 = {self.class_type_id_map[class_name_raw]};")
+            self.emit("")
         self._emit_constructor(class_name, stmt, norm_field_types)
         members = self._dict_stmt_list(stmt.get("body"))
         for member in members:
@@ -724,6 +1085,17 @@ class RustEmitter(CodeEmitter):
             self._emit_function(member, in_class=class_name)
         self.indent -= 1
         self.emit("}")
+        if self.uses_isinstance_runtime and class_name_raw in self.class_type_id_map:
+            self.emit("")
+            self.emit(f"impl PyRuntimeTypeId for {class_name} {{")
+            self.indent += 1
+            self.emit("fn py_runtime_type_id(&self) -> i64 {")
+            self.indent += 1
+            self.emit(f"{class_name}::PYTRA_TYPE_ID")
+            self.indent -= 1
+            self.emit("}")
+            self.indent -= 1
+            self.emit("}")
 
     def _emit_constructor(self, class_name: str, cls: dict[str, Any], field_types: dict[str, str]) -> None:
         """`__init__` から `new` を生成する。"""
@@ -1234,63 +1606,14 @@ class RustEmitter(CodeEmitter):
 
     def _render_isinstance_type_check(self, value_expr: str, value_node: Any, type_name: str) -> str:
         """`isinstance(x, T)` の `T` を Rust 式へ lower する。"""
-        expected = self.normalize_type_name(type_name)
-        if expected == "object":
-            return "true"
-        actual = self.normalize_type_name(self.get_expr_type(value_node))
-        if actual == "":
+        expected_tid = self._builtin_type_id_expr(type_name)
+        if expected_tid == "":
             return "false"
-
-        expected_is_bool = expected == "bool"
-        expected_is_int = self._is_int_type(expected)
-        expected_is_float = self._is_float_type(expected)
-        expected_is_str = expected == "str"
-        expected_is_list = expected.startswith("list[") or expected == "list"
-        expected_is_dict = expected.startswith("dict[") or expected == "dict"
-        expected_is_set = expected.startswith("set[") or expected == "set"
-
+        actual = self.normalize_type_name(self.get_expr_type(value_node))
         if self._is_any_type(actual):
             self.uses_pyany = True
-            if expected_is_bool:
-                return "matches!(" + value_expr + ", PyAny::Bool(_))"
-            if expected_is_int:
-                return "matches!(" + value_expr + ", PyAny::Int(_))"
-            if expected_is_float:
-                return "matches!(" + value_expr + ", PyAny::Float(_))"
-            if expected_is_str:
-                return "matches!(" + value_expr + ", PyAny::Str(_))"
-            if expected_is_list:
-                return "matches!(" + value_expr + ", PyAny::List(_))"
-            if expected_is_dict:
-                return "matches!(" + value_expr + ", PyAny::Dict(_))"
-            if expected_is_set:
-                return "matches!(" + value_expr + ", PyAny::Set(_))"
-            return "false"
-
-        actual_parts = self.split_union(actual)
-        if len(actual_parts) == 0:
-            actual_parts = [actual]
-        for part_raw in actual_parts:
-            part = self.normalize_type_name(part_raw)
-            if part == "" or part == "None":
-                continue
-            if expected_is_bool and part == "bool":
-                return "true"
-            if expected_is_int and self._is_int_type(part):
-                return "true"
-            if expected_is_float and self._is_float_type(part):
-                return "true"
-            if expected_is_str and part == "str":
-                return "true"
-            if expected_is_list and (part.startswith("list[") or part == "bytes" or part == "bytearray"):
-                return "true"
-            if expected_is_dict and part.startswith("dict["):
-                return "true"
-            if expected_is_set and part.startswith("set["):
-                return "true"
-            if expected in self.class_names and part in self.class_names and self._is_class_subtype(part, expected):
-                return "true"
-        return "false"
+        self.uses_isinstance_runtime = True
+        return "py_isinstance(&" + value_expr + ", " + expected_tid + ")"
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを Rust へ lower する。"""
