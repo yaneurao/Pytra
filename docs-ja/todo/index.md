@@ -50,7 +50,7 @@
 
 1. [ ] [ID: P1-CPP-EMIT-01] `CppEmitter` の責務分類を確定し、`expression/render/statement/runtime_call/cast/control_flow/misc` の移管対象を固定する。
 2. [x] [ID: P1-CPP-EMIT-01-S1] `CppEmitter` の expression rendering のヘルパ群を `src/hooks/cpp/emitter/expr.py` 相当へ移譲し、呼び出し元を最小差分で切り替える。
-3. [ ] [ID: P1-CPP-EMIT-01-S2] statement rendering のうち `For`/`While`/`If`/`Try` 系を `src/hooks/cpp/emitter/stmt.py` 側に移譲する。
+3. [x] [ID: P1-CPP-EMIT-01-S2] statement rendering のうち `For`/`While`/`If`/`Try` 系を `src/hooks/cpp/emitter/stmt.py` 側に移譲する。
 4. [ ] [ID: P1-CPP-EMIT-01-S3] cast / runtime-call / import の分岐を専用ヘルパへ整理し、重複分岐を削減する。
 5. [ ] [ID: P1-CPP-EMIT-01-S4] `temp` 名生成（`__tmp`）と一時変数生存域管理を 1 モジュールへ集約し、同名ロジックの重複を除去する。
 6. [ ] [ID: P1-CPP-EMIT-01-S5] `fallback_tuple_target_names_from_repr` 系の変換ロジックを共通処理に集約し、`code_emitter` 側互換を壊さずに移管する。
