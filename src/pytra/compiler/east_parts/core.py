@@ -1304,8 +1304,8 @@ def _sh_parse_except_clause(header_text: str) -> tuple[str, str | None] | None:
     return ex_type_txt.strip(), ex_name_txt.strip()
 
 
-def _sh_parse_class_header(ln: str) -> tuple[str, str] | None:
-    """`class Name:` / `class Name(Base):` を簡易解析する。"""
+def _sh_parse_class_header_base_list(ln: str) -> tuple[str, list[str]] | None:
+    """`class Name(...):` から class 名と基底リスト（0..n）を抽出する。"""
     s = ln.strip()
     if not s.startswith("class ") or not s.endswith(":"):
         return None
@@ -1316,16 +1316,31 @@ def _sh_parse_class_header(ln: str) -> tuple[str, str] | None:
     if lp < 0:
         if not _sh_is_identifier(head):
             return None
-        return head, ""
+        return head, []
     rp = head.rfind(")")
     if rp < 0 or rp < lp:
         return None
     if head[rp + 1 :].strip() != "":
         return None
     cls_name = head[:lp].strip()
-    base_name = head[lp + 1 : rp].strip()
     if not _sh_is_identifier(cls_name):
         return None
+    base_expr = head[lp + 1 : rp].strip()
+    bases = _sh_split_top_commas(base_expr)
+    return cls_name, bases
+
+
+def _sh_parse_class_header(ln: str) -> tuple[str, str] | None:
+    """`class Name:` / `class Name(Base):` を簡易解析する。"""
+    parsed = _sh_parse_class_header_base_list(ln)
+    if parsed is None:
+        return None
+    cls_name, bases = parsed
+    if len(bases) == 0:
+        return cls_name, ""
+    if len(bases) != 1:
+        return None
+    base_name = bases[0]
     if not _sh_is_identifier(base_name):
         return None
     return cls_name, base_name
@@ -5351,6 +5366,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 pre_left, pre_right = asg_pre
                 _sh_register_type_alias(type_aliases, pre_left, pre_right)
                 continue
+        cls_hdr_info = _sh_parse_class_header_base_list(s)
+        if cls_hdr_info is not None:
+            cls_name_info, bases_info = cls_hdr_info
+            if len(bases_info) > 1:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"multiple inheritance is not supported: class '{cls_name_info}'",
+                    source_span=_sh_span(ln_no, 0, len(ln)),
+                    hint="Use single inheritance (`class Child(Base):`) or composition.",
+                )
         cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
             cur_cls_name, cur_base = cls_hdr
@@ -5669,6 +5694,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
 
+        cls_hdr_info = _sh_parse_class_header_base_list(s)
+        if cls_hdr_info is not None:
+            cls_name_info, bases_info = cls_hdr_info
+            if len(bases_info) > 1:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"multiple inheritance is not supported: class '{cls_name_info}'",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint="Use single inheritance (`class Child(Base):`) or composition.",
+                )
         cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
             cls_name, base = cls_hdr

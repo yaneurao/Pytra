@@ -40,6 +40,7 @@
 4. [ ] [ID: P0-ISINSTANCE-01-S3] runtime 側 `type_id` 範囲テーブルを検証し、`expected.min <= actual <= expected.max` 判定の観測不変性を回帰テスト化する。
 5. [ ] [ID: P0-ISINSTANCE-01-S4] 既存 `isinstance` テストを更新・追加し、`tools/check_*_transpile.py` と `test/unit` の回帰条件を全言語で再固定化する。
 6. [ ] [ID: P0-ISINSTANCE-01-S5] `docs-ja/spec/spec-type_id.md`（必要なら `docs-ja/spec/spec-linker.md`）への最終整合を確認したうえで、関連タスクの完了条件を反映する。
+- `P0-ISINSTANCE-01`: `self_hosted` パーサで複数基底クラスを明示エラー化し、C++/JS/TS/RS/CS の `isinstance` lower/runtime 棚卸し結果を `docs-ja/plans/p0-isinstance-single-inheritance.md` へ記録した。
 
 ## P0: サンプル全言語のゴールデン一致パイプライン（最優先）
 

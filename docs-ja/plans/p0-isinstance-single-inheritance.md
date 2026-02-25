@@ -30,5 +30,13 @@
 - `P0-ISINSTANCE-01-S4`: テスト再整理（`test/unit/*isinstance*`）と `check_todo` との対応。
 - `P0-ISINSTANCE-01-S5`: 仕様整合ログを `docs-ja/spec/spec-type_id.md` へ反映し、必要なら `spec-boxing` / `spec-linker` の交差条件追記。
 
+現状棚卸し（2026-02-25）:
+- `C++`: emitter lower は `py_isinstance` / `py_is_subtype` / `py_issubclass` 呼び出しを利用しているが、`type_id` 実体（`src/pytra/built_in/type_id.py`）はまだ基底グラフ走査。
+- `JS/TS`: `isinstance` は `pyIsInstance` に lower 済み。runtime は `pyTypeId` + 基底グラフ（`Map<typeId, bases[]>`）で判定しており、区間判定への置換が未実施。
+- `Rust`: emitter が `resolved_type` と `class_base_map` を直接参照して `isinstance` を式展開しており、runtime API 経由の判定に未統一。
+- `C#`: emitter が `is` 判定へ直接 lower しており、`type_id` runtime API への統一が未実施。
+- `self_hosted parser`: 複数基底クラス（`class C(A, B):`）は従来 generic な parse 失敗だったため、今回 `multiple inheritance is not supported` の明示エラーへ変更。
+
 決定ログ:
 - 2026-02-25: `type_id` を単一継承区間判定へ変更したため、実装側の最優先タスクを追加。`isinstance` 以外の runtime 判定と混在しない実装方針を採用。
+- 2026-02-25: `P0-ISINSTANCE-01` `self_hosted` パーサで複数基底クラスを明示エラー化し、`isinstance` lower の棚卸し結果（C++/JS/TS/RS/CS）を記録した。

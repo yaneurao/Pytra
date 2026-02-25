@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -86,6 +87,27 @@ class SelfHostedSignatureTest(unittest.TestCase):
         self.assertEqual(payload.get("ok"), False)
         err = payload.get("error", {})
         self.assertEqual(err.get("kind"), "unsupported_syntax")
+
+    def test_reject_multiple_inheritance_with_explicit_error(self) -> None:
+        src = """class A:
+    pass
+
+class B:
+    pass
+
+class C(A, B):
+    pass
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "ng_multiple_inheritance.py"
+            case.write_text(src, encoding="utf-8")
+            rc, payload = self._run_east(case)
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), False)
+        err = payload.get("error", {})
+        self.assertEqual(err.get("kind"), "unsupported_syntax")
+        self.assertIn("multiple inheritance is not supported", str(err.get("message", "")))
+        self.assertIn("Use single inheritance", str(err.get("hint", "")))
 
     def test_accept_untyped_parameter(self) -> None:
         rc, payload = self._run_east(SIG_DIR / "ok_untyped_param.py")
