@@ -51,10 +51,23 @@
 文脈: `docs-ja/plans/p3-east3-only-emitters.md`（`P3-EAST3-ONLY-01`）
 
 1. [ ] [ID: P3-EAST3-ONLY-01] 非C++ 8ターゲット（`rs/cs/js/ts/go/java/swift/kotlin`）を `EAST3` 直結に統一し、`EAST2` 互換経路（`--east-stage 2` / `load_east_document_compat` / `east3_legacy_compat`）を撤去する。
-2. [ ] [ID: P3-EAST3-ONLY-01-S1] 仕様/CLI 契約を `EAST3` のみに更新し、`--east-stage 2` の互換警告テストを廃止して非対応エラー基準へ移行する。
-3. [ ] [ID: P3-EAST3-ONLY-01-S2] `js_emitter` を `EAST3` ノード直処理へ移行し、`js/ts/go/java/swift/kotlin` で `east3_legacy_compat` 非依存の生成経路を成立させる。
-4. [ ] [ID: P3-EAST3-ONLY-01-S3] `rs_emitter` の `EAST3` 直処理を実装し、legacy 形状依存（`For/ForRange` 前提など）を撤去する。
-5. [ ] [ID: P3-EAST3-ONLY-01-S4] `cs_emitter` の `EAST3` 直処理を実装し、legacy 形状依存を撤去する。
-6. [ ] [ID: P3-EAST3-ONLY-01-S5] 8本 CLI から `load_east_document_compat` / `normalize_east3_to_legacy` 依存を削除し、`east3_legacy_compat.py` を削除する。
-7. [ ] [ID: P3-EAST3-ONLY-01-S6] ドキュメント/仕様（`docs-ja/plans/plan-east123-migration.md` ほか）から `stage=2 互換` 前提を撤去して `EAST3 only` を明記する。
-8. [ ] [ID: P3-EAST3-ONLY-01-S7] 回帰検証（`test_py2*_smoke`, `check_py2*_transpile`, `runtime_parity_check --case-root sample --all-samples`）を通し、8ターゲットのゴールデン整合を維持する。
+2. [ ] [ID: P3-EAST3-ONLY-01-S1-01] 8本 CLI の `--east-stage 2` 入力を非対応エラーへ統一し、互換警告文言依存テストをエラー期待へ更新する。
+3. [ ] [ID: P3-EAST3-ONLY-01-S1-02] 8本 CLI から `load_east_document_compat` の import/call を撤去し、`load_east3_document` 単一路線へ固定する。
+4. [ ] [ID: P3-EAST3-ONLY-01-S2-01] `js_emitter` で `ForCore(iter_plan=StaticRangeForPlan/RuntimeIterForPlan)` を直接処理する。
+5. [ ] [ID: P3-EAST3-ONLY-01-S2-02] `js_emitter` で `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId` を直接処理する。
+6. [ ] [ID: P3-EAST3-ONLY-01-S2-03] `js_emitter` で `IsInstance/IsSubtype/IsSubclass` を直接処理する。
+7. [ ] [ID: P3-EAST3-ONLY-01-S2-04] `js_emitter` で `Box/Unbox` の legacy 前提を撤去し、EAST3 ノードを直接受理する。
+8. [ ] [ID: P3-EAST3-ONLY-01-S2-05] JS/TS smoke + `check_py2{js,ts}_transpile.py` を通し、`js_emitter` 直処理化の回帰を固定する。
+9. [ ] [ID: P3-EAST3-ONLY-01-S2-06] Go/Java/Swift/Kotlin sidecar bridge 経路（`py2{go,java,swift,kotlin}`）で `check_py2*_transpile.py` + smoke を通し、JS直処理化の波及回帰を固定する。
+10. [ ] [ID: P3-EAST3-ONLY-01-S3-01] `rs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
+11. [ ] [ID: P3-EAST3-ONLY-01-S3-02] `rs_emitter` の `Obj*` / `Is*` / `Box/Unbox` 直接処理を実装する。
+12. [ ] [ID: P3-EAST3-ONLY-01-S3-03] Rust smoke + `check_py2rs_transpile.py` で回帰を固定する。
+13. [ ] [ID: P3-EAST3-ONLY-01-S4-01] `cs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
+14. [ ] [ID: P3-EAST3-ONLY-01-S4-02] `cs_emitter` の `Obj*` / `Is*` / `Box/Unbox` 直接処理を実装する。
+15. [ ] [ID: P3-EAST3-ONLY-01-S4-03] C# smoke + `check_py2cs_transpile.py` で回帰を固定する。
+16. [ ] [ID: P3-EAST3-ONLY-01-S5-01] 8本 CLI から `normalize_east3_to_legacy` 呼び出しを撤去する。
+17. [ ] [ID: P3-EAST3-ONLY-01-S5-02] `src/pytra/compiler/east_parts/east3_legacy_compat.py` を削除し、参照ゼロを `rg` で確認する。
+18. [ ] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
+19. [ ] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
+20. [ ] [ID: P3-EAST3-ONLY-01-S7-01] 非C++ 8本の smoke/check（`test_py2*` + `check_py2*`）を全通しする。
+21. [ ] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
