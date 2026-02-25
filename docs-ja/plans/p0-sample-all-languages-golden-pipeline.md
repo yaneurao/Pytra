@@ -69,7 +69,17 @@
 - C++ parity 到達性の blocker だった `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` の生成不整合（typed dict/list での `py_at`/`py_append`、未定義 `getattr`、誤関数名参照）を修正し、`import_pytra_runtime_png` の parity 実行を green 化した。
 - 回帰として `test/unit/test_runtime_parity_check_cli.py` を追加し、ケース解決規約と `toolchain_missing` 分類記録を固定した。
 
+`P0-SAMPLE-GOLDEN-ALL-01-S3` 確定内容（2026-02-25）:
+- `src/hooks/cpp/emitter/cpp_emitter.py` で module 解決を補強し、`import math` / `from time import perf_counter` の bare stdlib 経路を `pytra::std::*` へ、`pytra.runtime.*` を `pytra::utils::*` へ正規化した（namespace と include の双方）。
+- `src/hooks/cpp/emitter/stmt.py` の runtime tuple unpack を `target/iter` の型情報（`tuple[int64, str]` 等）で unbox するよう修正し、`enumerate(...)` 展開で `object` のまま残る不整合を解消した。
+- `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `make_object(tuple)` を追加し、`py_dyn_range(py_enumerate(...))` で要素 tuple を index 可能な object へ boxing できるようにした。
+- `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` の registry 状態を関数内 static へ移し、クラス `PYTRA_TYPE_ID` の静的初期化時に発生していた初期化順序依存（2クラス以上で `Killed`）を解消した。
+- 検証結果:
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout --summary-json test/transpile/obj/runtime_parity_cpp_summary_after_s3_fix.json`
+  - `SUMMARY cases=18 pass=18 fail=0 targets=cpp`
+
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S1` として検証対象（18サンプル/9言語）と比較ルール（stdout 正規化 + artifact hash/size + source hash）および再現コマンドを固定した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S2` として runtime parity のケース解決・失敗分類・JSON集計を実装し、`python3 test/unit/test_runtime_parity_check_cli.py` / `python3 test/unit/test_image_runtime_parity.py` / `python3 tools/runtime_parity_check.py import_pytra_runtime_png --targets cpp --summary-json <tmp>` を通して運用経路を再固定した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S3` として C++ module 解決・runtime tuple unpack・tuple boxing・type_id 初期化順序を修正し、`runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout` で 18件完走（pass=18）を確認した。
