@@ -66,7 +66,7 @@
 - `P0-SAMPLE-GOLDEN-ALL-01-S4`: Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=rs` を確認した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S5`: C# emitter/runtime（import解決、listcomp/range、bytes/tuple/slice lower、dataclass ctor、math/time/pathlib runtime）を修正し、`runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=cs` を確認した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S6`: JS emitter の import/runtime shim・list/listcomp/range/compare/builtin lower を修正し、`runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=js,ts` を確認した。
-- `P0-SAMPLE-GOLDEN-ALL-01-S7`: `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` は `toolchain_missing: 72` となり、`go/javac/java/kotlinc/swiftc` 未導入の環境ブロッカーを確認した。
+- `P0-SAMPLE-GOLDEN-ALL-01-S7`: `go/javac/java/kotlinc` 導入後の `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` は `run_failed: 36`（go/kotlin 生成物が C# 体裁）、`output_mismatch: 18`（java preview stub）、`toolchain_missing: 18`（swiftc 未導入）で未完了。
 
 ## P1: CppEmitter の pylib 互換名正規化除去（中優先）
 
