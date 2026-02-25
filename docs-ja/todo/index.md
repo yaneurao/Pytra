@@ -80,7 +80,7 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 4. [x] [ID: P3-MISC-01-S004] `test/misc/04_maze_solver.py` を `py2cpp.py` で C++ 変換可能にする。
 5. [x] [ID: P3-MISC-01-S005] `test/misc/05_sales_report.py` を `py2cpp.py` で C++ 変換可能にする。
 6. [x] [ID: P3-MISC-01-S006] `test/misc/06_ascii_chart.py` を `py2cpp.py` で C++ 変換可能にする。
-7. [ ] [ID: P3-MISC-01-S007] `test/misc/07_task_scheduler.py` を `py2cpp.py` で C++ 変換可能にする。
+7. [x] [ID: P3-MISC-01-S007] `test/misc/07_task_scheduler.py` を `py2cpp.py` で C++ 変換可能にする。
 8. [ ] [ID: P3-MISC-01-S008] `test/misc/08_bank_account.py` を `py2cpp.py` で C++ 変換可能にする。
 9. [ ] [ID: P3-MISC-01-S009] `test/misc/09_weather_simulator.py` を `py2cpp.py` で C++ 変換可能にする。
 10. [ ] [ID: P3-MISC-01-S010] `test/misc/100_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
@@ -180,6 +180,7 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 - 進捗メモ:
   - [ID: P3-MISC-01-S005] `test/misc/05_sales_report.py` を `py2cpp.py` で変換成功（出力 `/tmp/05_sales_report.cpp` 生成確認）。
   - [ID: P3-MISC-01-S006] `test/misc/06_ascii_chart.py` を `py2cpp.py` で変換成功（出力 `/tmp/06_ascii_chart.cpp` 生成確認）。
+  - [ID: P3-MISC-01-S007] `test/misc/07_task_scheduler.py` を `py2cpp.py` で変換成功（出力 `/tmp/07_task_scheduler.cpp` 生成確認）。
 
 
 ## メモ
