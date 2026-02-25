@@ -41,5 +41,6 @@
 
 ## 受け入れログ
 
-- [ ] 実施中: `pylib.*` 互換名正規化除去タスク
+- [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S1` 実施。`cpp_emitter.py` と `call.py` のすべての `_normalize_runtime_module_name` 呼び出しを廃止し、`pylib.*` 互換正規化を経路から除外した。
 
+- [ ] 実施中: `pylib.*` 互換名正規化除去タスク（S2, S3）
