@@ -46,5 +46,7 @@
   `_parse_comp_target()` を経由する形へ変更し、`for curr, prev in zip(...)` の tuple target を許容した。
 - 2026-02-25: P3-MISC-01-S007 対象の `test/misc/07_task_scheduler.py` は `py2cpp.py test/misc/07_task_scheduler.py /tmp/07_task_scheduler.cpp` で成功。
   異常なく変換できたため、当該タスクを完了扱いにした。
+- 2026-02-25: P3-MISC-01-S008 対象の `test/misc/08_bank_account.py` は `py2cpp.py test/misc/08_bank_account.py /tmp/08_bank_account.cpp` で成功。
+  追加のコード修正なしで完了。
 
 ### 分解
