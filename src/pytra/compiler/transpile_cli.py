@@ -1677,7 +1677,12 @@ def is_known_non_user_import(
     runtime_utils_source_root: Path,
 ) -> bool:
     """import graph でユーザーファイル解決不要とみなす import か判定する。"""
-    if module_name == "__future__" or module_name == "os" or module_name == "glob":
+    if (
+        module_name == "__future__"
+        or module_name == "os"
+        or module_name == "glob"
+        or module_name == "collections"
+    ):
         return True
     rel = module_name.replace(".", "/")
     std_root_txt = str(runtime_std_source_root)

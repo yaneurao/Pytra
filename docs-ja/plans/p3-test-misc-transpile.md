@@ -30,5 +30,8 @@
 - 2026-02-25: `P3-MISC-01-S002` を対象 ID として、`01_prime_reporter.py` の属性アクセス失敗を回避。
   `CppEmitter._render_attribute_expr` で `class_field_owner_unique` / `class_method_owner_unique` により所有クラスが確定できる場合は
   `object` 系受け手例外をスキップし、`py2cpp.py test/misc/01_prime_reporter.py /tmp/01_prime_reporter.cpp` を成功させた。
+- 2026-02-25: P3-MISC-01-S002 の失敗は `collections` の import_graph 未解決による missing_module だったため、
+  `is_known_non_user_import` に `collections` を追加。`py2cpp.py test/misc/02_text_analyzer.py /tmp/02_text_analyzer.cpp` が成功し、以後
+  `docs-ja/todo/index.md` の該当チェックを完了済みに更新。
 
 ### 分解
