@@ -45,6 +45,7 @@ class CSharpEmitter(CodeEmitter):
             self.rename_prefix = "py_"
         self.declared_var_types: dict[str, str] = {}
         self.class_names: set[str] = set()
+        self.class_base_map: dict[str, str] = {}
         self.current_class_name: str = ""
         self.in_method_scope: bool = False
         self.needs_enumerate_helper: bool = False
@@ -287,6 +288,20 @@ class CSharpEmitter(CodeEmitter):
             return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
         return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + "> { " + ", ".join(pairs) + " }"
 
+    def _collect_class_base_map(self, body: list[dict[str, Any]]) -> dict[str, str]:
+        """ClassDef から `child -> base` の継承表を抽出する。"""
+        out: dict[str, str] = {}
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") != "ClassDef":
+                continue
+            child = self.any_to_str(stmt.get("name"))
+            if child == "":
+                continue
+            base = self.normalize_type_name(self.any_to_str(stmt.get("base")))
+            if base != "":
+                out[child] = base
+        return out
+
     def transpile(self) -> str:
         """モジュール全体を C# ソースへ変換する。"""
         self.lines = []
@@ -310,11 +325,13 @@ class CSharpEmitter(CodeEmitter):
             self.emit("")
 
         self.class_names = set()
+        self.class_base_map = {}
         for stmt in body:
             if self.any_dict_get_str(stmt, "kind", "") == "ClassDef":
                 name = self.any_to_str(stmt.get("name"))
                 if name != "":
                     self.class_names.add(name)
+        self.class_base_map = self._collect_class_base_map(body)
 
         top_level_stmts: list[dict[str, Any]] = []
         function_stmts: list[dict[str, Any]] = []
@@ -393,6 +410,17 @@ class CSharpEmitter(CodeEmitter):
         self.emit("public class " + class_name)
         self.emit("{")
         self.indent += 1
+
+        base_name = self.class_base_map.get(class_name_raw, "")
+        base_type_id_expr = self._type_id_expr_for_name(base_name)
+        if base_type_id_expr == "":
+            base_type_id_expr = "Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT"
+        self.emit(
+            "public static readonly long PYTRA_TYPE_ID = "
+            + "Pytra.CsModule.py_runtime.py_register_class_type("
+            + base_type_id_expr
+            + ");"
+        )
 
         field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
         for field_name, field_t_obj in field_types.items():
@@ -818,22 +846,46 @@ class CSharpEmitter(CodeEmitter):
             return "(" + arg_expr + ").Count"
         return "(" + arg_expr + ").Count()"
 
-    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
-        """`isinstance(x, T)` の `T` を C# 型判定式へ変換する。"""
+    def _type_id_expr_for_name(self, type_name: str) -> str:
+        t = self.normalize_type_name(type_name)
         builtin_map = {
-            "bool": "bool",
-            "int": "long",
-            "float": "double",
-            "str": "string",
-            "list": "System.Collections.IList",
-            "dict": "System.Collections.IDictionary",
-            "set": "System.Collections.ISet",
-            "object": "object",
+            "bool": "Pytra.CsModule.py_runtime.PYTRA_TID_BOOL",
+            "int": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "int8": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "uint8": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "int16": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "uint16": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "int32": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "uint32": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "int64": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "uint64": "Pytra.CsModule.py_runtime.PYTRA_TID_INT",
+            "float": "Pytra.CsModule.py_runtime.PYTRA_TID_FLOAT",
+            "float32": "Pytra.CsModule.py_runtime.PYTRA_TID_FLOAT",
+            "float64": "Pytra.CsModule.py_runtime.PYTRA_TID_FLOAT",
+            "str": "Pytra.CsModule.py_runtime.PYTRA_TID_STR",
+            "list": "Pytra.CsModule.py_runtime.PYTRA_TID_LIST",
+            "dict": "Pytra.CsModule.py_runtime.PYTRA_TID_DICT",
+            "set": "Pytra.CsModule.py_runtime.PYTRA_TID_SET",
+            "object": "Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT",
+            "None": "Pytra.CsModule.py_runtime.PYTRA_TID_NONE",
         }
-        if type_name in builtin_map:
-            return "(" + value_expr + " is " + builtin_map[type_name] + ")"
-        if type_name in self.class_names:
-            return "(" + value_expr + " is " + self._safe_name(type_name) + ")"
+        if t.startswith("list[") or t == "bytes" or t == "bytearray":
+            return "Pytra.CsModule.py_runtime.PYTRA_TID_LIST"
+        if t.startswith("dict["):
+            return "Pytra.CsModule.py_runtime.PYTRA_TID_DICT"
+        if t.startswith("set["):
+            return "Pytra.CsModule.py_runtime.PYTRA_TID_SET"
+        if t in builtin_map:
+            return builtin_map[t]
+        if t in self.class_names:
+            return self._safe_name(t) + ".PYTRA_TYPE_ID"
+        return ""
+
+    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
+        """`isinstance(x, T)` の `T` を C# runtime API 判定式へ変換する。"""
+        expected_type_id = self._type_id_expr_for_name(type_name)
+        if expected_type_id != "":
+            return "Pytra.CsModule.py_runtime.py_isinstance(" + value_expr + ", " + expected_type_id + ")"
         return ""
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:

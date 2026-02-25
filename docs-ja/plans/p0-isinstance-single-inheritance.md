@@ -41,3 +41,4 @@
 - 2026-02-25: `type_id` を単一継承区間判定へ変更したため、実装側の最優先タスクを追加。`isinstance` 以外の runtime 判定と混在しない実装方針を採用。
 - 2026-02-25: `P0-ISINSTANCE-01` `self_hosted` パーサで複数基底クラスを明示エラー化し、`isinstance` lower の棚卸し結果（C++/JS/TS/RS/CS）を記録した。
 - 2026-02-25: `P0-ISINSTANCE-01` `src/pytra/built_in/type_id.py` と JS/TS runtime の `py_is_subtype` を区間判定（order/min/max）へ切替え、sibling 系の誤包含を防ぐ回帰テストを追加した。
+- 2026-02-25: `P0-ISINSTANCE-01` C# emitter の `isinstance` lower を `Pytra.CsModule.py_runtime.py_isinstance` 呼び出しへ統一し、runtime に `PYTRA_TID_*` / `py_runtime_type_id` / `py_is_subtype` / `py_isinstance` を追加した。

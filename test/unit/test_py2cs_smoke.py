@@ -109,9 +109,9 @@ class Py2CsSmokeTest(unittest.TestCase):
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("(x is long)", cs)
-        self.assertIn("(x is string)", cs)
-        self.assertNotIn("isinstance(", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_STR)", cs)
+        self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_user_class_lowers_to_is_operator(self) -> None:
         src = """class Base:
@@ -129,8 +129,8 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("(x is Base)", cs)
-        self.assertNotIn("isinstance(", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Base.PYTRA_TYPE_ID)", cs)
+        self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_object_lowers_to_object_is_check(self) -> None:
         src = """def f(x: int) -> bool:
@@ -142,8 +142,8 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("(x is object)", cs)
-        self.assertNotIn("isinstance(", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT)", cs)
+        self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_tuple_lowers_to_or_of_is_checks(self) -> None:
         src = """class Base:
@@ -158,11 +158,11 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("(x is long)", cs)
-        self.assertIn("(x is Base)", cs)
-        self.assertIn("(x is System.Collections.IDictionary)", cs)
-        self.assertIn("(x is object)", cs)
-        self.assertNotIn("isinstance(", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Base.PYTRA_TYPE_ID)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_DICT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT)", cs)
+        self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_set_lowers_to_iset_check(self) -> None:
         src = """def f(x: object) -> bool:
@@ -174,8 +174,8 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("(x is System.Collections.ISet)", cs)
-        self.assertNotIn("isinstance(", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_SET)", cs)
+        self.assertNotIn("return isinstance(", cs)
 
     def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
         emitter = CSharpEmitter({"kind": "Module", "body": [], "meta": {}})
