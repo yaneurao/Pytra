@@ -161,6 +161,8 @@
 - target 固有最適化を入れても、観測可能な判定結果は API 契約に一致させる。
 - `type_id` 判定 lower は原則 `EAST3` で命令化し、backend はその命令を runtime API へ写像するだけにする。
 - backend（例: C++ emitter）で `type_id` 判定ロジックを直接文字列生成する経路は、移行期間の互換層を除き禁止する。
+- `meta.east_stage=3` では未 lower の `isinstance` / `issubclass` / builtin call を backend で受理しない（fail-fast）。
+- 互換層（`east_stage=2` かつ `parser_backend=self_hosted`）は段階移行のためにのみ許可し、最終的な判定経路は同一 runtime API（`py_isinstance` / `py_is_subtype`）へ収束させる。
 
 EAST3 連携規約:
 - `meta.dispatch_mode`（`native | type_id`）はルートスキーマから受け取り、backend/hook で再決定しない。
