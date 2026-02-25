@@ -91,9 +91,10 @@
 文脈: `docs-ja/plans/p1-cpp-py_to-template.md`（`P1-CPP-PYTO-01`）
 
 1. [ ] [ID: P1-CPP-PYTO-01] `py_to_int64 / py_to_float64 / py_to_bool` を中核に、型パラメータ化された `py_to<T>()` API を追加し、`object`/`std::any` の変換経路を破綻なく吸収しつつ呼び出しを統一する。
-2. [ ] [ID: P1-CPP-PYTO-01-S1] `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `template <class T, ...> static inline T py_to(T)` 系を導入し、既存 `py_to_*` API は後方互換ラッパとして残す。
+2. [x] [ID: P1-CPP-PYTO-01-S1] `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `template <class T, ...> static inline T py_to(T)` 系を導入し、既存 `py_to_*` API は後方互換ラッパとして残す。
 3. [ ] [ID: P1-CPP-PYTO-01-S2] `src/hooks/cpp/emitter/cpp_emitter.py` と `src/hooks/cpp/emitter/expr.py` の `py_to_int64(...)` 直接呼び出しを新 API 準拠へ段階移行する（`expr` の cast、runtime 呼び出し系で挙動差分がないことを確認）。
 4. [ ] [ID: P1-CPP-PYTO-01-S3] `py_to_int64(object/any)` の例外・既定値挙動を検証し、`sample` や回帰テストで再生成差分が許容範囲かを確認して `readme-ja.md` の該当方針へ反映する。
+- `P1-CPP-PYTO-01-S1`: `py_runtime.h` に `py_to<T>`（`object`/`std::any`/値型）テンプレートを追加し、`py_to_int64`/`py_to_float64`/`py_to_bool` の主要ラッパ経路を新 API 呼び出しへ寄せた。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 

@@ -43,6 +43,14 @@
 補足:
 - 仕様上は `pytra-core` 側 API を起点に設計し、`pytra/built_in` 側は現行の参照経路を壊さない範囲で追従する前提で進める。
 
+`P1-CPP-PYTO-01-S1` 確定内容（2026-02-25）:
+- `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `py_to<T>` テンプレート（`object`/`std::any`/値型）を追加し、`int64`/`float64`/`bool`/`str`/`object` の主要変換先を一元化した。
+- 既存 API（`py_to_int64`/`py_to_float64`/`py_to_bool`）は互換ラッパとして残し、算術型・`object` 経路の呼び出しは `py_to<T>` を通す形へ寄せた。
+- 検証:
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
+
 決定ログ:
 - [2026-02-25] [ID: P1-CPP-PYTO-01]
   - 追加: `py_to<T>` 方向への段階統合タスクを TODO 化し、互換ラッパ維持前提で進める方針を決定。
+- 2026-02-25: `P1-CPP-PYTO-01-S1` として `py_runtime.h` に `py_to<T>` テンプレートを導入し、`py_to_int64`/`py_to_float64`/`py_to_bool` の主要経路を後方互換ラッパ化した。
