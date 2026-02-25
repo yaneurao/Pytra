@@ -93,3 +93,12 @@ C++ CodeEmitter の体積増加は「責務混入」と「経路の重複」が�
   - 実施内容: `src/hooks/cpp/emitter/tmp.py` を新規追加し、`CppEmitter` 共通の一時変数名生成責務を `CppTemporaryEmitter` へ集約。
   - 集約対象: `__finally`, `__it`, `__itobj`, `__tuple`, `__yield_values` の命名をヘルパ経由に統一し、`stmt.py` / `cpp_emitter.py` の直接 `next_tmp` 呼び出しを削減。
   - 補足: 一時変数の `scope` での生存域セットを明示的に再利用する `scope_names_with_tmp` を追加し、for 直下の scope 設定で利用する基盤を導入。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S5]
+  - 実施内容: `CodeEmitter` に `fallback_tuple_target_names_from_stmt(...)` を追加し、`target.repr` と `stmt.repr` 両対応のフォールバック復元を共通化。
+  - 補足: C++ 側の `emit_assign` からインライン復元ロジックを除去し、共通 API を呼び出すだけに変更。`fallback_tuple_target_names_from_repr` 本体はそのまま維持し互換性を保つ。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S6]
+  - 実施内容: `CppEmitter` の `cast`/`object receiver` 周辺ロジックを `src/hooks/cpp/emitter/operator.py` の `CppBinaryOperatorEmitter` に切り分け。
+  - 分離内容: `_render_binop_expr` / `_render_binop_dunder_call` / `_render_binop_operator` を再整理し、`expr` 表層整形、`dunder` 呼び出し、`op` 分岐の責務を 1 ハンドラ群に集約。
+  - 補足: `cpp_emitter.py` は新規ヘルパーモジュールを継承する構成へ変更し、`BIN_OPS` の責務移譲先を明確化。

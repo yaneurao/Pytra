@@ -1041,6 +1041,13 @@ class CodeEmitterTest(unittest.TestCase):
             ["a", "_b2"],
         )
         self.assertEqual(
+            em.fallback_tuple_target_names_from_stmt(
+                {"kind": "Tuple", "repr": "a, 1x"},
+                {"kind": "Assign", "repr": "(a, b,1x)=c"},
+            ),
+            ["a", "b"],
+        )
+        self.assertEqual(
             em.target_bound_names(
                 {
                     "kind": "Tuple",
