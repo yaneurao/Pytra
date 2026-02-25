@@ -2695,11 +2695,7 @@ class CppEmitter(
             self.emit(f"inline static uint32 PYTRA_TYPE_ID = py_register_class_type({base_type_id_expr});")
 
             self.emit("virtual bool py_isinstance_of(uint32 expected_type_id) const override {")
-            self.emit("    if (expected_type_id == PYTRA_TID_OBJECT) return true;")
-            self.emit("    if (expected_type_id == PYTRA_TYPE_ID) return true;")
-            if base_is_gc:
-                self.emit(f"    if ({base}::py_isinstance_of(expected_type_id)) return true;")
-            self.emit("    return false;")
+            self.emit("    return expected_type_id == PYTRA_TYPE_ID;")
             self.emit("}")
 
         if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:

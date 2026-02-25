@@ -799,9 +799,9 @@ def f(x: object) -> bool:
         self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(Base::PYTRA_TYPE_ID);", cpp)
         self.assertIn("return (py_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_isinstance(x, Child::PYTRA_TYPE_ID));", cpp)
         self.assertIn("virtual bool py_isinstance_of(uint32 expected_type_id) const override {", cpp)
-        self.assertIn("if (expected_type_id == PYTRA_TID_OBJECT) return true;", cpp)
-        self.assertIn("if (expected_type_id == PYTRA_TYPE_ID) return true;", cpp)
-        self.assertIn("if (Base::py_isinstance_of(expected_type_id)) return true;", cpp)
+        self.assertIn("return expected_type_id == PYTRA_TYPE_ID;", cpp)
+        self.assertNotIn("if (expected_type_id == PYTRA_TID_OBJECT) return true;", cpp)
+        self.assertNotIn("if (Base::py_isinstance_of(expected_type_id)) return true;", cpp)
 
     def test_inheritance_methods_are_emitted_as_virtual_with_override(self) -> None:
         src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\n    def base_only(self, x: int) -> int:\n        return x\n"""
