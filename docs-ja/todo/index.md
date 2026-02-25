@@ -103,7 +103,7 @@
 文脈: `docs-ja/plans/p2-cpp-virtual-selfhost-dispatch.md`（`P2-CPP-SELFHOST-VIRTUAL-01`）
 
 1. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01] `virtual/override` ベースの selfhost クラス呼び出し経路へ縮退できる箇所を洗い出し、`type_id` 分岐を低優先で簡素化する。
-2. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-01] `rg` と AST で、`sample`/`selfhost` の class method 生成に含まれる `type_id` ベース分岐を抽出する。
+2. [x] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-01] `rg` と AST で、`sample`/`selfhost` の class method 生成に含まれる `type_id` ベース分岐を抽出する。
 3. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-02] 抽出結果を「基底クラス呼び出し」「再帰呼び出し」「ユーティリティ呼び出し」に分類し、非対象を明文化する。
 4. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S1-03] `virtual` 置換候補を安全性（既存テスト影響）順で優先順位付けし、実施順を確定する。
 5. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S2-01] `py2cpp.py` 側 emit を切り出しして、`virtual` へ寄せる対象経路と fallback 経路を分離する。
@@ -118,3 +118,4 @@
 14. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S5-01] `test/unit` へ `Base`/`Child` の `virtual/override` 呼び出しケース（`Base.f` 明示呼び出し、`super().f`、`virtual` 期待差分）を追加し、`type_id` 分岐除去を固定する。
 15. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S5-02] `sample` 再変換で `type_id` 分岐が残る境界 (`staticmethod`/`class` method/`object` receiver) を明文化した回帰ケースを追加する。
 16. [ ] [ID: P2-CPP-SELFHOST-VIRTUAL-01-S5-03] `tools/verify_selfhost_end_to_end.py` を使う selfhost 回帰（最低2ケース）に virtual 化前後の差分検証を追加し、再変換可能性を固定する。
+- `P2-CPP-SELFHOST-VIRTUAL-01-S1-01`: `sample/cpp` + `src/runtime/cpp/pytra-gen/{compiler,std,utils}` を `rg`/簡易 AST 走査し、class method 生成由来の `type_id` 条件分岐（`if/switch`）は 0 件、残存 `type_id` 分岐は `pytra-gen/built_in/type_id.cpp` の registry 管理のみと確認した。
