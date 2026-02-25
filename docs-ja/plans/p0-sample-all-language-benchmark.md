@@ -50,3 +50,30 @@
   - `java`: 出力文字列が空（`Main.main` 未到達）。
   - `kotlin`: `using math;`、`public static`、`double`、`List<byte>` など C# 記法混入。
   - `swift`: `swiftc` 未検出で skip。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `03_julia_set` を `--targets cpp,rs,cs,js,ts,go,java,swift,kotlin` で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::time` / `crate::pytra` 未解決、`bytearray` 未実装、`py_break` 未定義、整数と浮動小数点の型不一致、多数の `i64`→`f64` 変換不足。
+  - `cs`: `List` import/type 未解決（`System.Collections.Generic` 相当）。
+  - `js`, `ts`: `time.js` 相対 import 不在。
+  - `go`: `public` など C# 構文混入で parse エラー。
+  - `java`: 出力が空（`Main` 系の未実装疑い）。
+  - `kotlin`: `public static` / `long` / `List<byte>` 等 C#/Java 記法混入で大量コンパイルエラー。
+  - `swift`: toolchain 不在で SKIP。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `04_orbit_trap_julia` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::time` / `crate::pytra` 未解決、`bytearray`・`py_break` 未実装、`i64` と `f64` の型演算混在、`u8` 代入時の変換不足、`String` の文字列型不一致。
+  - `cs`: `List` import/type 未解決（`System.Collections.Generic` 相当）。
+  - `js`, `ts`: `time.js` / `math.js` import 解決失敗。
+  - `go`: `public` が混入し `package` 宣言以前で parse エラー。
+  - `java`: 出力不一致（期待文字列が空）。
+  - `kotlin`: `public static` / `long` / `System.*` / `List<byte>` の言語混在により構文全面で失敗。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `05_mandelbrot_zoom` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `mut`/`_` の未使用、`crate::time` / `crate::pytra.runtime.gif` の未解決、`bytearray`・`bytes` 未実装、`py_break` 未定義、`i64` と `f64` の混在演算、`usize` 混入、型変換不足。
+  - `cs`: `List` import/type 未解決。
+  - `js`, `ts`: `time.js` import 解決失敗。
+  - `go`: `public` 構文混入で parse エラー。
+  - `java`: 出力不一致（期待出力が空）。
+  - `kotlin`: C#/Java 記法混在（`public static`、`long`、`List<byte>`、`System.Convert`）のため大量コンパイルエラー。
+  - `swift`: SKIP（toolchain 不在）。
