@@ -38,5 +38,8 @@
   `py2cpp.py test/misc/03_gradebook.py /tmp/03_gradebook.cpp` を成功させた。
 - 2026-02-25: P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc/04_maze_solver.py /tmp/04_maze_solver.cpp` に成功し、
   `For` タプルターゲットの `resolved_type` 反映と `enumerate` の要素型推論補正を導入した。
+- 2026-02-25: P3-MISC-01-S005 対象の `test/misc/05_sales_report.py` は `py2cpp.py test/misc/05_sales_report.py /tmp/05_sales_report.cpp` で成功。
+  `core.py` の `for` ループで `Name` ターゲットへ `resolved_type` を反映し、`str` 組み込みメソッド
+  (`strip`/`split`/`splitlines` 等) の簡易戻り型推論を追加した。
 
 ### 分解

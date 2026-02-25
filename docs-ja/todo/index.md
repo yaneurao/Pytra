@@ -78,7 +78,7 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 2. [x] [ID: P3-MISC-01-S002] `test/misc/02_text_analyzer.py` を `py2cpp.py` で C++ 変換可能にする。
 3. [x] [ID: P3-MISC-01-S003] `test/misc/03_gradebook.py` を `py2cpp.py` で C++ 変換可能にする。
 4. [x] [ID: P3-MISC-01-S004] `test/misc/04_maze_solver.py` を `py2cpp.py` で C++ 変換可能にする。
-5. [ ] [ID: P3-MISC-01-S005] `test/misc/05_sales_report.py` を `py2cpp.py` で C++ 変換可能にする。
+5. [x] [ID: P3-MISC-01-S005] `test/misc/05_sales_report.py` を `py2cpp.py` で C++ 変換可能にする。
 6. [ ] [ID: P3-MISC-01-S006] `test/misc/06_ascii_chart.py` を `py2cpp.py` で C++ 変換可能にする。
 7. [ ] [ID: P3-MISC-01-S007] `test/misc/07_task_scheduler.py` を `py2cpp.py` で C++ 変換可能にする。
 8. [ ] [ID: P3-MISC-01-S008] `test/misc/08_bank_account.py` を `py2cpp.py` で C++ 変換可能にする。
@@ -176,6 +176,9 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 100. [ ] [ID: P3-MISC-01-S100] `test/misc/99_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
 
 - 上記 100 タスクは超低優先（P3）として、時間の許容があるものから順次着手する。
+
+- 進捗メモ:
+  - [ID: P3-MISC-01-S005] `test/misc/05_sales_report.py` を `py2cpp.py` で変換成功（出力 `/tmp/05_sales_report.cpp` 生成確認）。
 
 
 ## メモ

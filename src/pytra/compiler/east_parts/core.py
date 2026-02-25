@@ -2222,6 +2222,22 @@ class _ShExprParser:
             cur = next_cur_obj
         return "unknown"
 
+    def _lookup_builtin_method_return(self, cls_name: str, method: str) -> str:
+        """既知の組み込み型メソッドの戻り型を補助的に解決する。"""
+        methods: dict[str, str] = {}
+        if cls_name == "str":
+            methods = {
+                "strip": "str",
+                "lstrip": "str",
+                "rstrip": "str",
+                "upper": "str",
+                "lower": "str",
+                "capitalize": "str",
+                "split": "list[str]",
+                "splitlines": "list[str]",
+            }
+        return methods.get(method, "unknown")
+
     def _split_generic_types(self, s: str) -> list[str]:
         """ジェネリック型引数をトップレベルカンマで分割する。"""
         out: list[str] = []
@@ -2444,10 +2460,15 @@ class _ShExprParser:
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
                     owner = node.get("value")
                     attr = str(node.get("attr", ""))
-                    if isinstance(owner, dict) and owner.get("kind") == "Name":
-                        owner_t = self.name_types.get(str(owner.get("id", "")), "unknown")
+                    owner_t = "unknown"
+                    if isinstance(owner, dict):
+                        owner_t = str(owner.get("resolved_type", "unknown"))
+                        if owner_t == "" or owner_t == "unknown":
+                            owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)
                         if owner_t != "unknown":
                             call_ret = self._lookup_method_return(owner_t, attr)
+                            if call_ret == "unknown":
+                                call_ret = self._lookup_builtin_method_return(owner_t, attr)
                         if owner_t == "Path":
                             if attr in {"read_text", "name", "stem"}:
                                 call_ret = "str"
@@ -4611,6 +4632,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             elif t_ty != "unknown":
                 for nm in target_names:
                     name_types[nm] = t_ty
+                if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
+                    target_expr["resolved_type"] = t_ty
             if (
                 isinstance(target_expr, dict)
                 and target_expr.get("kind") == "Name"
