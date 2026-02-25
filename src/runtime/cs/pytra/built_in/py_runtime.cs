@@ -2,12 +2,334 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 
 namespace Pytra.CsModule
 {
     // Python の print 相当を提供する最小ランタイム。
     public static class py_runtime
     {
+        public const long PYTRA_TID_NONE = 0;
+        public const long PYTRA_TID_BOOL = 1;
+        public const long PYTRA_TID_INT = 2;
+        public const long PYTRA_TID_FLOAT = 3;
+        public const long PYTRA_TID_STR = 4;
+        public const long PYTRA_TID_LIST = 5;
+        public const long PYTRA_TID_DICT = 6;
+        public const long PYTRA_TID_SET = 7;
+        public const long PYTRA_TID_OBJECT = 8;
+        private const long PYTRA_USER_TYPE_ID_BASE = 1000;
+
+        private static long _pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
+        private static readonly List<long> _pyTypeIds = new List<long>();
+        private static readonly Dictionary<long, long> _pyTypeBase = new Dictionary<long, long>();
+        private static readonly Dictionary<long, List<long>> _pyTypeChildren = new Dictionary<long, List<long>>();
+        private static readonly Dictionary<long, long> _pyTypeOrder = new Dictionary<long, long>();
+        private static readonly Dictionary<long, long> _pyTypeMin = new Dictionary<long, long>();
+        private static readonly Dictionary<long, long> _pyTypeMax = new Dictionary<long, long>();
+
+        static py_runtime()
+        {
+            EnsureBuiltinTypeTable();
+        }
+
+        private static bool ContainsLong(List<long> items, long value)
+        {
+            int i = 0;
+            while (i < items.Count)
+            {
+                if (items[i] == value)
+                {
+                    return true;
+                }
+                i += 1;
+            }
+            return false;
+        }
+
+        private static void RemoveLong(List<long> items, long value)
+        {
+            int i = 0;
+            while (i < items.Count)
+            {
+                if (items[i] == value)
+                {
+                    items.RemoveAt(i);
+                    return;
+                }
+                i += 1;
+            }
+        }
+
+        private static List<long> SortedCopy(List<long> items)
+        {
+            List<long> outv = new List<long>(items);
+            outv.Sort();
+            return outv;
+        }
+
+        private static void RegisterTypeNode(long typeId, long baseTypeId)
+        {
+            if (!ContainsLong(_pyTypeIds, typeId))
+            {
+                _pyTypeIds.Add(typeId);
+            }
+
+            long prevBase;
+            if (_pyTypeBase.TryGetValue(typeId, out prevBase) && prevBase >= 0)
+            {
+                List<long> prevChildren;
+                if (_pyTypeChildren.TryGetValue(prevBase, out prevChildren))
+                {
+                    RemoveLong(prevChildren, typeId);
+                }
+            }
+
+            _pyTypeBase[typeId] = baseTypeId;
+            if (!_pyTypeChildren.ContainsKey(typeId))
+            {
+                _pyTypeChildren[typeId] = new List<long>();
+            }
+            if (baseTypeId < 0)
+            {
+                return;
+            }
+            if (!_pyTypeChildren.ContainsKey(baseTypeId))
+            {
+                _pyTypeChildren[baseTypeId] = new List<long>();
+            }
+            List<long> children = _pyTypeChildren[baseTypeId];
+            if (!ContainsLong(children, typeId))
+            {
+                children.Add(typeId);
+            }
+        }
+
+        private static List<long> SortedChildTypeIds(long typeId)
+        {
+            List<long> children;
+            if (!_pyTypeChildren.TryGetValue(typeId, out children))
+            {
+                return new List<long>();
+            }
+            return SortedCopy(children);
+        }
+
+        private static List<long> CollectRootTypeIds()
+        {
+            List<long> roots = new List<long>();
+            int i = 0;
+            while (i < _pyTypeIds.Count)
+            {
+                long typeId = _pyTypeIds[i];
+                long baseTypeId;
+                if (!_pyTypeBase.TryGetValue(typeId, out baseTypeId) || baseTypeId < 0 || !_pyTypeBase.ContainsKey(baseTypeId))
+                {
+                    roots.Add(typeId);
+                }
+                i += 1;
+            }
+            roots.Sort();
+            return roots;
+        }
+
+        private static long AssignTypeRangesDfs(long typeId, long nextOrder)
+        {
+            _pyTypeOrder[typeId] = nextOrder;
+            _pyTypeMin[typeId] = nextOrder;
+            long cur = nextOrder + 1;
+            List<long> children = SortedChildTypeIds(typeId);
+            int i = 0;
+            while (i < children.Count)
+            {
+                cur = AssignTypeRangesDfs(children[i], cur);
+                i += 1;
+            }
+            _pyTypeMax[typeId] = cur - 1;
+            return cur;
+        }
+
+        private static void RecomputeTypeRanges()
+        {
+            _pyTypeOrder.Clear();
+            _pyTypeMin.Clear();
+            _pyTypeMax.Clear();
+
+            long nextOrder = 0;
+            List<long> roots = CollectRootTypeIds();
+            int i = 0;
+            while (i < roots.Count)
+            {
+                nextOrder = AssignTypeRangesDfs(roots[i], nextOrder);
+                i += 1;
+            }
+
+            List<long> allIds = SortedCopy(_pyTypeIds);
+            i = 0;
+            while (i < allIds.Count)
+            {
+                long typeId = allIds[i];
+                if (!_pyTypeOrder.ContainsKey(typeId))
+                {
+                    nextOrder = AssignTypeRangesDfs(typeId, nextOrder);
+                }
+                i += 1;
+            }
+        }
+
+        private static void EnsureBuiltinTypeTable()
+        {
+            if (_pyTypeIds.Count > 0)
+            {
+                return;
+            }
+            RegisterTypeNode(PYTRA_TID_NONE, -1);
+            RegisterTypeNode(PYTRA_TID_OBJECT, -1);
+            RegisterTypeNode(PYTRA_TID_INT, PYTRA_TID_OBJECT);
+            RegisterTypeNode(PYTRA_TID_BOOL, PYTRA_TID_INT);
+            RegisterTypeNode(PYTRA_TID_FLOAT, PYTRA_TID_OBJECT);
+            RegisterTypeNode(PYTRA_TID_STR, PYTRA_TID_OBJECT);
+            RegisterTypeNode(PYTRA_TID_LIST, PYTRA_TID_OBJECT);
+            RegisterTypeNode(PYTRA_TID_DICT, PYTRA_TID_OBJECT);
+            RegisterTypeNode(PYTRA_TID_SET, PYTRA_TID_OBJECT);
+            RecomputeTypeRanges();
+        }
+
+        private static long NormalizeBaseTypeId(long baseTypeId)
+        {
+            long baseTid = baseTypeId;
+            if (baseTid < 0)
+            {
+                baseTid = PYTRA_TID_OBJECT;
+            }
+            if (!_pyTypeBase.ContainsKey(baseTid))
+            {
+                throw new ArgumentException("unknown base type_id");
+            }
+            return baseTid;
+        }
+
+        public static long py_register_type(long typeId, long baseTypeId)
+        {
+            EnsureBuiltinTypeTable();
+            RegisterTypeNode(typeId, NormalizeBaseTypeId(baseTypeId));
+            RecomputeTypeRanges();
+            return typeId;
+        }
+
+        public static long py_register_class_type(long baseTypeId = PYTRA_TID_OBJECT)
+        {
+            EnsureBuiltinTypeTable();
+            while (_pyTypeBase.ContainsKey(_pyNextTypeId))
+            {
+                _pyNextTypeId += 1;
+            }
+            long outv = _pyNextTypeId;
+            _pyNextTypeId += 1;
+            return py_register_type(outv, baseTypeId);
+        }
+
+        private static bool IsSetLike(object value)
+        {
+            Type t = value.GetType();
+            Type[] interfaces = t.GetInterfaces();
+            int i = 0;
+            while (i < interfaces.Length)
+            {
+                Type iface = interfaces[i];
+                if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(ISet<>))
+                {
+                    return true;
+                }
+                i += 1;
+            }
+            return false;
+        }
+
+        public static long py_runtime_type_id(object value)
+        {
+            EnsureBuiltinTypeTable();
+            if (value == null)
+            {
+                return PYTRA_TID_NONE;
+            }
+            if (value is bool)
+            {
+                return PYTRA_TID_BOOL;
+            }
+            if (value is sbyte || value is byte || value is short || value is ushort || value is int || value is uint || value is long || value is ulong)
+            {
+                return PYTRA_TID_INT;
+            }
+            if (value is float || value is double || value is decimal)
+            {
+                return PYTRA_TID_FLOAT;
+            }
+            if (value is string)
+            {
+                return PYTRA_TID_STR;
+            }
+            if (value is IDictionary)
+            {
+                return PYTRA_TID_DICT;
+            }
+            if (IsSetLike(value))
+            {
+                return PYTRA_TID_SET;
+            }
+            if (value is IList)
+            {
+                return PYTRA_TID_LIST;
+            }
+
+            Type t = value.GetType();
+            FieldInfo field = t.GetField("PYTRA_TYPE_ID", BindingFlags.Public | BindingFlags.Static);
+            if (field != null)
+            {
+                object raw = field.GetValue(null);
+                if (raw is long taggedLong && _pyTypeBase.ContainsKey(taggedLong))
+                {
+                    return taggedLong;
+                }
+                if (raw is int taggedInt && _pyTypeBase.ContainsKey(taggedInt))
+                {
+                    return taggedInt;
+                }
+            }
+            return PYTRA_TID_OBJECT;
+        }
+
+        public static bool py_is_subtype(long actualTypeId, long expectedTypeId)
+        {
+            EnsureBuiltinTypeTable();
+            long actualOrder;
+            if (!_pyTypeOrder.TryGetValue(actualTypeId, out actualOrder))
+            {
+                return false;
+            }
+            long expectedMin;
+            long expectedMax;
+            if (!_pyTypeMin.TryGetValue(expectedTypeId, out expectedMin))
+            {
+                return false;
+            }
+            if (!_pyTypeMax.TryGetValue(expectedTypeId, out expectedMax))
+            {
+                return false;
+            }
+            return expectedMin <= actualOrder && actualOrder <= expectedMax;
+        }
+
+        public static bool py_issubclass(long actualTypeId, long expectedTypeId)
+        {
+            return py_is_subtype(actualTypeId, expectedTypeId);
+        }
+
+        public static bool py_isinstance(object value, long expectedTypeId)
+        {
+            return py_is_subtype(py_runtime_type_id(value), expectedTypeId);
+        }
+
         private static int NormalizeSliceIndex(long index, int length)
         {
             long v = index;

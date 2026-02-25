@@ -42,6 +42,7 @@
 6. [ ] [ID: P0-ISINSTANCE-01-S5] `docs-ja/spec/spec-type_id.md`（必要なら `docs-ja/spec/spec-linker.md`）への最終整合を確認したうえで、関連タスクの完了条件を反映する。
 - `P0-ISINSTANCE-01`: `self_hosted` パーサで複数基底クラスを明示エラー化し、C++/JS/TS/RS/CS の `isinstance` lower/runtime 棚卸し結果を `docs-ja/plans/p0-isinstance-single-inheritance.md` へ記録した。
 - `P0-ISINSTANCE-01`: `src/pytra/built_in/type_id.py` と JS/TS runtime を `type_id` 範囲テーブル（order/min/max）判定へ移行し、`test_pytra_built_in_type_id.py` と `test_js_ts_runtime_dispatch.py` へ sibling 非包含の回帰を追加した。
+- `P0-ISINSTANCE-01`: C# emitter の `isinstance` lower を `py_isinstance` API 呼び出しへ統一し、`runtime/cs` に `PYTRA_TID_*` / `py_runtime_type_id` / `py_is_subtype` / `py_isinstance` を追加、`test_py2cs_smoke.py` で回帰固定した。
 
 ## P0: サンプル全言語のゴールデン一致パイプライン（最優先）
 
