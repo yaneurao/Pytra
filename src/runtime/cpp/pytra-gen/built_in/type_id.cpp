@@ -7,13 +7,28 @@
 
 #include "pytra/std/typing.h"
 
-list<int64> _TYPE_IDS;
-dict<int64, int64> _TYPE_BASE;
-dict<int64, list<int64>> _TYPE_CHILDREN;
-dict<int64, int64> _TYPE_ORDER;
-dict<int64, int64> _TYPE_MIN;
-dict<int64, int64> _TYPE_MAX;
-dict<str, int64> _TYPE_STATE;
+struct TypeRegistryState {
+    list<int64> type_ids = list<int64>{};
+    dict<int64, int64> type_base = dict<int64, int64>{};
+    dict<int64, list<int64>> type_children = dict<int64, list<int64>>{};
+    dict<int64, int64> type_order = dict<int64, int64>{};
+    dict<int64, int64> type_min = dict<int64, int64>{};
+    dict<int64, int64> type_max = dict<int64, int64>{};
+    dict<str, int64> type_state = dict<str, int64>{};
+};
+
+static inline TypeRegistryState& _type_registry_state() {
+    static TypeRegistryState state{};
+    return state;
+}
+
+#define _TYPE_IDS (_type_registry_state().type_ids)
+#define _TYPE_BASE (_type_registry_state().type_base)
+#define _TYPE_CHILDREN (_type_registry_state().type_children)
+#define _TYPE_ORDER (_type_registry_state().type_order)
+#define _TYPE_MIN (_type_registry_state().type_min)
+#define _TYPE_MAX (_type_registry_state().type_max)
+#define _TYPE_STATE (_type_registry_state().type_state)
 
 
 int64 _tid_none() {
@@ -295,18 +310,4 @@ void _py_reset_type_registry_for_test() {
     _TYPE_STATE.clear();
     _TYPE_STATE["next_user_type_id"] = _tid_user_base();
     _ensure_builtins();
-}
-
-static void __pytra_module_init() {
-    static bool __initialized = false;
-    if (__initialized) return;
-    __initialized = true;
-    /* Pure-Python source-of-truth for single-inheritance type_id range semantics. */
-    list<int64> _TYPE_IDS = list<int64>{};
-    dict<int64, int64> _TYPE_BASE = dict<int64, int64>{};
-    dict<int64, list<int64>> _TYPE_CHILDREN = dict<int64, list<int64>>{};
-    dict<int64, int64> _TYPE_ORDER = dict<int64, int64>{};
-    dict<int64, int64> _TYPE_MIN = dict<int64, int64>{};
-    dict<int64, int64> _TYPE_MAX = dict<int64, int64>{};
-    dict<str, int64> _TYPE_STATE = dict<str, int64>{};
 }

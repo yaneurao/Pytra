@@ -483,6 +483,18 @@ static inline object make_object(const set<T>& values) {
     return object_new<PySetObj>(::std::move(out));
 }
 
+template <class... Ts>
+static inline object make_object(const ::std::tuple<Ts...>& values) {
+    list<object> out{};
+    out.reserve(sizeof...(Ts));
+    ::std::apply(
+        [&](const auto&... elems) {
+            (out.append(make_object(elems)), ...);
+        },
+        values);
+    return object_new<PyListObj>(::std::move(out));
+}
+
 template <class T>
 struct _py_is_optional : ::std::false_type {};
 
