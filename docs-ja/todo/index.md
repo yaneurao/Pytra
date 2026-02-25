@@ -57,7 +57,7 @@
 7. [x] [ID: P1-CPP-EMIT-01-S6] `cast`/`object receiver` 周辺の分岐を 1 ハンドラに寄せ、`emit_binary_op` 系の条件分岐重複を 1/3 以下に抑える。
 8. [x] [ID: P1-CPP-EMIT-01-S7] `render_trivia` とコメント/ディレクティブ処理を切り出し、`docs-ja/plans/p1-codeemitter-dispatch-redesign.md` との責務整合を確認する。
 9. [x] [ID: P1-CPP-EMIT-01-S8] `py2cpp.py` から CppEmitter 本体ロジック参照をなくし、CLI/配線だけに絞る。
-10. [ ] [ID: P1-CPP-EMIT-01-S9] 上位 API 互換を保ったまま `check_py2cpp_transpile` / `test_py2cpp_smoke` を回して回帰検証を固定する。
+10. [x] [ID: P1-CPP-EMIT-01-S9] 上位 API 互換を保ったまま `check_py2cpp_transpile` / `test_py2cpp_smoke` を回して回帰検証を固定する。
 
 ### 対応方針
 - 1 つの `S*` は原則 1〜3 関数単位で着手し、1 タスクあたり 1 コミット以内で完了可能な粒度にする。

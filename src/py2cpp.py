@@ -301,6 +301,7 @@ def cpp_char_lit(ch: str) -> str:
 
 
 from hooks.cpp.emitter import (
+    CppEmitter,
     install_py2cpp_runtime_symbols,
     emit_cpp_from_east,
 )

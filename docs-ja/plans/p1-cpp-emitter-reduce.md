@@ -112,3 +112,8 @@ C++ CodeEmitter の体積増加は「責務混入」と「経路の重複」が�
   - 実施内容: `py2cpp.py` の `_transpile_to_cpp_with_map` から `CppEmitter` 直呼び出しを排除し、`hooks.cpp.emitter.emit_cpp_from_east` への委譲へ変更。
   - 実装内容: `src/hooks/cpp/emitter/cpp_emitter.py` に `emit_cpp_from_east(...)` を追加し、`src/hooks/cpp/emitter/__init__.py` で公開。
   - 補足: `py2cpp.py` 側は CLI 引数整備と配線・再エクスポートに寄せ、`CppEmitter` の生成ロジックを直接持たないようにした。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S9]
+  - 実施内容: `check_py2cpp_transpile` / `test_py2cpp_smoke` を最新コードで通し、回帰結果を検証完了として確定。
+  - 実行結果: `checked=150 ok=150 fail=0 skipped=6` / `Ran 3 tests in 1.298s`（`OK`）。
+  - 補足: `PY2CPP` は self-host 連携を崩さない形で `CppEmitter` 実体委譲の前提（`from hooks.cpp.emitter import CppEmitter`）を維持。
