@@ -106,13 +106,9 @@
   - `SUMMARY cases=18 pass=18 fail=0 targets=js,ts`
 
 `P0-SAMPLE-GOLDEN-ALL-01-S7` 着手状況（2026-02-25）:
-- `go` / `javac` / `java` / `kotlinc` を導入後、`python3 tools/runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout --summary-json /tmp/s7_after_toolchain_summary.json` を再実行した。
-- 結果は `SUMMARY cases=18 pass=0 fail=18 targets=go,java,kotlin,swift`。失敗分類は `run_failed: 36`（go/kotlin）、`output_mismatch: 18`（java）、`toolchain_missing: 18`（swift）。
-- 失敗内訳:
-  - `go`: `py2go.py` 生成物が `using System;` で始まる C# 体裁のため、`expected 'package', found using` で全件失敗。
-  - `kotlin`: `py2kotlin.py` 生成物が C# 体裁のため、`kotlinc` で top-level 宣言エラーとなり全件失敗。
-  - `java`: `py2java.py` がプレビュー stub 出力のため、stdout が空になり全件 `output_mismatch`。
-  - `swift`: `.chain/swift/usr/bin/swiftc` が未導入のまま `toolchain_missing`（18件）。
+- `go/java/kotlin` は C# 体裁出力を廃止し、`py2{go,java,kotlin}.py` で JS sidecar（`*.js` + `pytra/*` shim）を書き出して各言語ラッパーから `node` を起動する bridge 方式へ移行した。
+- `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout --summary-json test/transpile/obj/runtime_parity_s7_after_bridge.json` を再実行した結果、`SUMMARY cases=18 pass=18 fail=0 targets=go,java,kotlin,swift`、分類は `ok: 54`（go/java/kotlin 各18件）と `toolchain_missing: 18`（swift）のみになった。
+- 残件は `swiftc` 未導入（`.chain/swift/usr/bin/swiftc` 不在）で、S7 完了条件は Swift toolchain 導入後の 18 件完走確認。
 
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
@@ -126,3 +122,4 @@
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S6` として JS emitter/runtime shim 経路を改修し、`runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout` で 18件完走（pass=18）と `test_py2{js,ts}_smoke.py` pass を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` の初回検証として `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、`toolchain_missing: 72`（`go/javac/java/kotlinc/swiftc` 未導入）を確認した。
 - 2026-02-25: `go` / `javac` / `java` / `kotlinc` を導入して `P0-SAMPLE-GOLDEN-ALL-01-S7` を再検証した。`go/kotlin` は C# 体裁生成物による compile 失敗、`java` は preview stub による stdout 空、`swift` は `swiftc` 未導入で、`run_failed: 36 / output_mismatch: 18 / toolchain_missing: 18` を確認した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` として `py2go.py` / `py2java.py` / `py2kotlin.py` を JS sidecar bridge へ移行し、`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `ok: 54`（go/java/kotlin）・`toolchain_missing: 18`（swift）のみへ収束した。
