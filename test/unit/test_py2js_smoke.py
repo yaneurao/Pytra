@@ -68,6 +68,31 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertNotIn("import { document", js)
         self.assertNotIn("browser/widgets/dialog", js)
 
+    def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn('from "./pytra/std/time.js"', js)
+
+    def test_cli_generates_pytra_runtime_shims(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        with tempfile.TemporaryDirectory() as td:
+            out_js = Path(td) / "import_time_from.js"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2js.py", str(fixture), "-o", str(out_js)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
+            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
+
     def test_cli_smoke_generates_js_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
@@ -140,7 +165,7 @@ def f(x: object) -> bool:
             east = load_east(src_py, parser_backend="self_hosted")
             js = transpile_to_js(east)
 
-        self.assertIn("const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');", js)
+        self.assertIn('import { PYTRA_TYPE_ID, PY_TYPE_NUMBER, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } from "./pytra/py_runtime.js";', js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([Base.PYTRA_TYPE_ID]);", js)
         self.assertIn("this[PYTRA_TYPE_ID] = Base.PYTRA_TYPE_ID;", js)

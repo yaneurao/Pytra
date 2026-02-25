@@ -7,6 +7,7 @@ from pytra.std.typing import Any
 
 from hooks.js.emitter.js_emitter import load_js_profile, transpile_to_js
 from pytra.compiler.east_parts.east3_legacy_compat import normalize_east3_to_legacy
+from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document, load_east_document_compat
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -94,6 +95,7 @@ def main() -> int:
     js_src = transpile_to_js(east)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(js_src, encoding="utf-8")
+    write_js_runtime_shims(output_path.parent)
     return 0
 
 

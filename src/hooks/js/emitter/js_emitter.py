@@ -49,6 +49,7 @@ class JsEmitter(CodeEmitter):
         self.in_method_scope: bool = False
         self.browser_symbol_aliases: dict[str, str] = {}
         self.browser_module_aliases: dict[str, str] = {}
+        self.top_function_names: set[str] = set()
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
@@ -61,6 +62,22 @@ class JsEmitter(CodeEmitter):
         """Python 形式モジュール名を JS import パスへ変換する。"""
         if module_id == "":
             return ""
+        runtime_map = {
+            "math": "./pytra/std/math.js",
+            "time": "./pytra/std/time.js",
+            "pathlib": "./pytra/std/pathlib.js",
+            "pytra.std.math": "./pytra/std/math.js",
+            "pytra.std.time": "./pytra/std/time.js",
+            "pytra.std.pathlib": "./pytra/std/pathlib.js",
+            "pytra.runtime": "./pytra/runtime.js",
+            "pytra.runtime.png": "./pytra/runtime/png.js",
+            "pytra.runtime.gif": "./pytra/runtime/gif.js",
+            "pytra.utils": "./pytra/utils.js",
+            "pytra.utils.png": "./pytra/utils/png.js",
+            "pytra.utils.gif": "./pytra/utils/gif.js",
+        }
+        if module_id in runtime_map:
+            return runtime_map[module_id]
         return "./" + module_id.replace(".", "/") + ".js"
 
     def _walk_node_names(self, node: Any, out: set[str]) -> None:
@@ -297,17 +314,23 @@ class JsEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
+        self.top_function_names = set()
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
+                fn_name = self.any_to_str(stmt.get("name"))
+                if fn_name != "":
+                    self.top_function_names.add(fn_name)
         used_names = self._collect_used_names(body, main_guard_body)
         runtime_symbols = self._collect_runtime_symbols(body, main_guard_body)
+        runtime_import_line = ""
         if len(runtime_symbols) > 0:
-            self.emit("const __pytra_root = process.cwd();")
-            self.emit("const py_runtime = require(__pytra_root + '/src/runtime/js/pytra/py_runtime.js');")
-            self.emit("const { " + ", ".join(runtime_symbols) + " } = py_runtime;")
-            self.emit("")
+            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal("./pytra/py_runtime.js") + ";"
         import_lines = self._collect_import_statements(body, meta, used_names)
+        if runtime_import_line != "":
+            self.emit(runtime_import_line)
         for line in import_lines:
             self.emit(line)
-        if len(import_lines) > 0:
+        if runtime_import_line != "" or len(import_lines) > 0:
             self.emit("")
 
         self.class_names = set()
@@ -356,6 +379,15 @@ class JsEmitter(CodeEmitter):
         self.emit("static PYTRA_TYPE_ID = pyRegisterClassType([" + base_type_id + "]);")
         self.emit("")
 
+        field_names: list[str] = []
+        for member in members:
+            if self.any_dict_get_str(member, "kind", "") == "AnnAssign":
+                target = self.any_to_dict_or_empty(member.get("target"))
+                if self.any_dict_get_str(target, "kind", "") == "Name":
+                    nm = self.any_dict_get_str(target, "id", "")
+                    if nm != "":
+                        field_names.append(nm)
+
         emitted_ctor = False
         for member in members:
             if self.any_dict_get_str(member, "kind", "") == "FunctionDef" and self.any_to_str(member.get("name")) == "__init__":
@@ -363,8 +395,14 @@ class JsEmitter(CodeEmitter):
                 emitted_ctor = True
                 break
         if not emitted_ctor:
-            self.emit("constructor() {")
+            ctor_args: list[str] = []
+            for field_name in field_names:
+                ctor_args.append(self._safe_name(field_name))
+            self.emit("constructor(" + ", ".join(ctor_args) + ") {")
             self.emit("this[PYTRA_TYPE_ID] = " + class_name + ".PYTRA_TYPE_ID;")
+            for field_name in field_names:
+                safe = self._safe_name(field_name)
+                self.emit("this." + safe + " = " + safe + ";")
             self.emit("}")
 
         for member in members:
@@ -429,6 +467,18 @@ class JsEmitter(CodeEmitter):
             self.emit(self.syntax_text("continue_stmt", "continue;"))
             return
         if kind == "Expr":
+            expr_d = self.any_to_dict_or_empty(stmt.get("value"))
+            if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+                expr_name = self.any_dict_get_str(expr_d, "id", "")
+                if expr_name == "break":
+                    self.emit(self.syntax_text("break_stmt", "break;"))
+                    return
+                if expr_name == "continue":
+                    self.emit(self.syntax_text("continue_stmt", "continue;"))
+                    return
+                if expr_name == "pass":
+                    self.emit(self.syntax_text("pass_stmt", "// pass"))
+                    return
             expr_txt = self.render_expr(stmt.get("value"))
             self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
             return
@@ -524,6 +574,8 @@ class JsEmitter(CodeEmitter):
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
+        start_tmp = self.next_tmp("__start")
+        self.emit("const " + start_tmp + " = " + start + ";")
         range_mode = self.any_to_str(stmt.get("range_mode"))
         cond = target + " < " + stop
         inc = target + " += " + step
@@ -532,7 +584,7 @@ class JsEmitter(CodeEmitter):
         body = self._dict_stmt_list(stmt.get("body"))
         scope = set()
         scope.add(target_name)
-        self.emit_scoped_block("for (let " + target + " = " + start + "; " + cond + "; " + inc + ") {", body, scope)
+        self.emit_scoped_block("for (let " + target + " = " + start_tmp + "; " + cond + "; " + inc + ") {", body, scope)
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
@@ -601,15 +653,30 @@ class JsEmitter(CodeEmitter):
             else:
                 self.emit(name + " = " + value + ";")
             return
-        if self.emit_tuple_assign_with_tmp(
-            target,
-            value,
-            tmp_prefix="__tmp",
-            tmp_decl_template="const {tmp} = {value};",
-            item_expr_template="{tmp}[{index}]",
-            assign_template="{target} = {item};",
-            index_offset=0,
-        ):
+        if target_kind == "Tuple":
+            items = self.tuple_elements(target)
+            if len(items) == 0:
+                return
+            tmp_name = self.next_tmp("__tmp")
+            self.emit("const " + tmp_name + " = " + value + ";")
+            i = 0
+            while i < len(items):
+                item_node = self.any_to_dict_or_empty(items[i])
+                item_expr = tmp_name + "[" + str(i) + "]"
+                item_kind = self.any_dict_get_str(item_node, "kind", "")
+                if item_kind == "Name":
+                    raw = self.any_dict_get_str(item_node, "id", "")
+                    if raw != "":
+                        safe = self._safe_name(raw)
+                        if not self.is_declared(raw):
+                            self.declare_in_current_scope(raw)
+                            self.emit("let " + safe + " = " + item_expr + ";")
+                        else:
+                            self.emit(safe + " = " + item_expr + ";")
+                    i += 1
+                    continue
+                self.emit(self.render_expr(item_node) + " = " + item_expr + ";")
+                i += 1
             return
         self.emit(self.render_expr(target) + " = " + value + ";")
 
@@ -618,7 +685,8 @@ class JsEmitter(CodeEmitter):
         self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
 
     def _render_compare(self, expr: dict[str, Any]) -> str:
-        left = self.render_expr(expr.get("left"))
+        left_node = self.any_to_dict_or_empty(expr.get("left"))
+        left = self.render_expr(left_node)
         ops = self.any_to_str_list(expr.get("ops"))
         comps = self.any_to_list(expr.get("comparators"))
         right_exprs: list[str] = []
@@ -629,15 +697,35 @@ class JsEmitter(CodeEmitter):
         while i < pair_count:
             right_exprs.append(self.render_expr(comps[i]))
             i += 1
-        return self.render_compare_chain_from_rendered(
-            left,
-            ops,
-            right_exprs,
-            self.cmp_ops,
-            empty_literal="false",
-            wrap_terms=False,
-            wrap_whole=False,
-        )
+        if pair_count == 0:
+            return "false"
+        terms: list[str] = []
+        cur_left = left
+        j = 0
+        while j < pair_count:
+            op = ops[j]
+            right = right_exprs[j]
+            right_node = self.any_to_dict_or_empty(comps[j])
+            right_t = self.get_expr_type(right_node)
+            term = ""
+            if op == "In" or op == "NotIn":
+                if right_t.startswith("dict["):
+                    term = "Object.prototype.hasOwnProperty.call(" + right + ", " + cur_left + ")"
+                elif right_t.startswith("list[") or right_t in {"bytes", "bytearray", "str"}:
+                    term = "(" + right + ").includes(" + cur_left + ")"
+                else:
+                    term = "(" + cur_left + " in " + right + ")"
+                if op == "NotIn":
+                    term = "!(" + term + ")"
+            else:
+                mapped = self.cmp_ops.get(op, "==")
+                term = cur_left + " " + mapped + " " + right
+            terms.append(term)
+            cur_left = right
+            j += 1
+        if len(terms) == 1:
+            return terms[0]
+        return " && ".join(terms)
 
     def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
         """`isinstance(x, T)` の `T` を JS runtime API 判定式へ変換する。"""
@@ -683,9 +771,73 @@ class JsEmitter(CodeEmitter):
                 return " || ".join(checks)
         return "false"
 
+    def _render_list_repeat(self, base_expr: str, count_expr: str) -> str:
+        """Python の list 乗算（`[x] * n`）を JS 式へ lower する。"""
+        return (
+            "(() => { const __base = (" + base_expr + "); const __n = Math.max(0, Math.trunc(Number(" + count_expr + "))); "
+            "let __out = []; for (let __i = 0; __i < __n; __i += 1) { for (const __v of __base) { __out.push(__v); } } return __out; })()"
+        )
+
+    def _render_range_expr(self, expr_d: dict[str, Any]) -> str:
+        """RangeExpr を JavaScript 配列式へ lower する。"""
+        start = self.render_expr(expr_d.get("start"))
+        stop = self.render_expr(expr_d.get("stop"))
+        step = self.render_expr(expr_d.get("step"))
+        return (
+            "(() => { const __out = []; const __start = " + start + "; const __stop = " + stop + "; const __step = " + step + "; "
+            "if (__step === 0) { return __out; } "
+            "if (__step > 0) { for (let __i = __start; __i < __stop; __i += __step) { __out.push(__i); } } "
+            "else { for (let __i = __start; __i > __stop; __i += __step) { __out.push(__i); } } "
+            "return __out; })()"
+        )
+
+    def _render_comp_target(self, target_node: dict[str, Any]) -> str:
+        """comprehension target を JS `for..of` で使える形へ変換する。"""
+        kind = self.any_dict_get_str(target_node, "kind", "")
+        if kind == "Name":
+            return self._safe_name(self.any_dict_get_str(target_node, "id", "_"))
+        if kind == "Tuple":
+            parts: list[str] = []
+            for item in self.tuple_elements(target_node):
+                item_d = self.any_to_dict_or_empty(item)
+                if self.any_dict_get_str(item_d, "kind", "") == "Name":
+                    parts.append(self._safe_name(self.any_dict_get_str(item_d, "id", "_")))
+                else:
+                    parts.append("_")
+            return "[" + ", ".join(parts) + "]"
+        return "_"
+
+    def _render_list_comp_expr(self, expr_d: dict[str, Any]) -> str:
+        """ListComp を JavaScript 配列構築式へ lower する。"""
+        generators = self.any_to_list(expr_d.get("generators"))
+        if len(generators) == 0:
+            return "[]"
+        elt_expr = self.render_expr(expr_d.get("elt"))
+        lines: list[str] = []
+        lines.append("(() => {")
+        lines.append("let __out = [];")
+        depth = 0
+        for gen in generators:
+            gen_d = self.any_to_dict_or_empty(gen)
+            target_txt = self._render_comp_target(self.any_to_dict_or_empty(gen_d.get("target")))
+            iter_expr = self.render_expr(gen_d.get("iter"))
+            lines.append("for (const " + target_txt + " of " + iter_expr + ") {")
+            depth += 1
+            for cond_node in self.any_to_list(gen_d.get("ifs")):
+                lines.append("if (!(" + self.render_cond(cond_node) + ")) { continue; }")
+        lines.append("__out.push(" + elt_expr + ");")
+        while depth > 0:
+            lines.append("}")
+            depth -= 1
+        lines.append("return __out;")
+        lines.append("})()")
+        return " ".join(lines)
+
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
+        if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
+            fn_name = "__pytra_main"
         if fn_name_raw == "isinstance":
             return self._render_isinstance_call(rendered_args, arg_nodes)
         if fn_name_raw == "print":
@@ -700,10 +852,24 @@ class JsEmitter(CodeEmitter):
             return "Number(" + rendered_args[0] + ")"
         if fn_name_raw == "bool" and len(rendered_args) == 1:
             return "Boolean(" + rendered_args[0] + ")"
-        if fn_name_raw == "Exception":
+        if fn_name_raw == "max" and len(rendered_args) >= 1:
+            expr_txt = rendered_args[0]
+            i = 1
+            while i < len(rendered_args):
+                expr_txt = "Math.max(" + expr_txt + ", " + rendered_args[i] + ")"
+                i += 1
+            return expr_txt
+        if fn_name_raw == "min" and len(rendered_args) >= 1:
+            expr_txt = rendered_args[0]
+            i = 1
+            while i < len(rendered_args):
+                expr_txt = "Math.min(" + expr_txt + ", " + rendered_args[i] + ")"
+                i += 1
+            return expr_txt
+        if fn_name_raw in {"Exception", "RuntimeError", "ValueError", "TypeError", "KeyError", "IndexError"}:
             if len(rendered_args) >= 1:
                 return "new Error(" + rendered_args[0] + ")"
-            return "new Error(\"Exception\")"
+            return "new Error(" + self.quote_string_literal(fn_name_raw) + ")"
         if fn_name_raw in self.class_names:
             return "new " + fn_name_raw + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "enumerate" and len(rendered_args) == 1:
@@ -713,6 +879,19 @@ class JsEmitter(CodeEmitter):
             arg0 = rendered_args[0]
             arg1 = rendered_args[1]
             return arg0 + ".map((__v, __i) => [__i + (" + arg1 + "), __v])"
+        if fn_name_raw == "bytearray":
+            if len(rendered_args) == 0:
+                return "[]"
+            if len(rendered_args) == 1:
+                arg0 = rendered_args[0]
+                arg0_expr = "(" + arg0 + ")"
+                return "(typeof " + arg0_expr + " === \"number\" ? new Array(Math.max(0, Math.trunc(Number(" + arg0_expr + ")))).fill(0) : (Array.isArray(" + arg0_expr + ") ? " + arg0_expr + ".slice() : Array.from(" + arg0_expr + ")))"
+            return "[]"
+        if fn_name_raw == "bytes":
+            if len(rendered_args) == 0:
+                return "[]"
+            arg0_expr = "(" + rendered_args[0] + ")"
+            return "(Array.isArray(" + arg0_expr + ") ? " + arg0_expr + ".slice() : Array.from(" + arg0_expr + "))"
         _ = arg_nodes
         return fn_name + "(" + ", ".join(rendered_args) + ")"
 
@@ -730,6 +909,12 @@ class JsEmitter(CodeEmitter):
                 return owner_expr + ".pop()"
             if attr_raw == "pop" and len(rendered_args) >= 1:
                 return owner_expr + ".splice(" + rendered_args[0] + ", 1)[0]"
+
+        if owner_type == "str":
+            if attr_raw == "isdigit" and len(rendered_args) == 0:
+                return "((typeof " + owner_expr + " === \"string\") && (" + owner_expr + ").length > 0 && (/^[0-9]+$/.test(" + owner_expr + ")))"
+            if attr_raw == "isalpha" and len(rendered_args) == 0:
+                return "((typeof " + owner_expr + " === \"string\") && (" + owner_expr + ").length > 0 && (/^[A-Za-z]+$/.test(" + owner_expr + ")))"
 
         if owner_type.startswith("dict["):
             if attr_raw == "get":
@@ -798,6 +983,8 @@ class JsEmitter(CodeEmitter):
             name = self.any_dict_get_str(expr_d, "id", "_")
             if name in self.browser_symbol_aliases:
                 return self.browser_symbol_aliases[name]
+            if name == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
+                return "__pytra_main"
             if name == "self" and self.in_method_scope:
                 return "this"
             return self._safe_name(name)
@@ -833,11 +1020,18 @@ class JsEmitter(CodeEmitter):
             right_node = self.any_to_dict_or_empty(expr_d.get("right"))
             left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, op, is_right=False)
             right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, op, is_right=True)
+            left_kind = self.any_dict_get_str(left_node, "kind", "")
+            right_kind = self.any_dict_get_str(right_node, "kind", "")
             custom = self.hook_on_render_binop(expr_d, left, right)
             if custom != "":
                 return custom
             if op == "FloorDiv":
                 return "Math.floor(" + left + " / " + right + ")"
+            if op == "Mult":
+                if left_kind == "List" and right_kind != "List":
+                    return self._render_list_repeat(left, right)
+                if right_kind == "List" and left_kind != "List":
+                    return self._render_list_repeat(right, left)
             mapped = self.bin_ops.get(op, "+")
             return left + " " + mapped + " " + right
         if kind == "Compare":
@@ -861,8 +1055,14 @@ class JsEmitter(CodeEmitter):
             return self._render_call(expr_d)
         if kind == "IfExp":
             return self._render_ifexp_expr(expr_d)
+        if kind == "RangeExpr":
+            return self._render_range_expr(expr_d)
+        if kind == "ListComp":
+            return self._render_list_comp_expr(expr_d)
         if kind == "List":
             elts = self.any_to_list(expr_d.get("elts"))
+            if len(elts) == 0:
+                elts = self.any_to_list(expr_d.get("elements"))
             rendered: list[str] = []
             for elt in elts:
                 rendered.append(self.render_expr(elt))
@@ -892,7 +1092,9 @@ class JsEmitter(CodeEmitter):
                 i += 1
             return "({" + ", ".join(parts) + "})"
         if kind == "Subscript":
-            owner = self.render_expr(expr_d.get("value"))
+            owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
+            owner = self.render_expr(owner_node)
+            owner_t = self.get_expr_type(owner_node)
             idx_node = self.any_to_dict_or_empty(expr_d.get("slice"))
             idx_kind = self.any_dict_get_str(idx_node, "kind", "")
             if idx_kind == "Slice":
@@ -919,6 +1121,8 @@ class JsEmitter(CodeEmitter):
                     return owner + ".slice(0, " + self.render_expr(upper_node) + ")"
                 return owner + ".slice()"
             idx = self.render_expr(idx_node)
+            if self.is_indexable_sequence_type(owner_t):
+                return owner + "[(((" + idx + ") < 0) ? ((" + owner + ").length + (" + idx + ")) : (" + idx + "))]"
             return owner + "[" + idx + "]"
         if kind == "Lambda":
             args_obj = self.any_to_dict_or_empty(expr_d.get("args"))

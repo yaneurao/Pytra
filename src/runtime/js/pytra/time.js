@@ -5,4 +5,4 @@ function perfCounter() {
   return Number(process.hrtime.bigint()) / 1_000_000_000;
 }
 
-module.exports = { perfCounter };
+module.exports = { perfCounter, perf_counter: perfCounter };

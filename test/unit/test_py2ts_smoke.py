@@ -60,6 +60,31 @@ class Py2TsSmokeTest(unittest.TestCase):
         self.assertEqual(loaded.get("kind"), "Module")
         self.assertEqual(loaded.get("east_stage"), 2)
 
+    def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ts = transpile_to_typescript(east)
+        self.assertIn('from "./pytra/std/time.js"', ts)
+
+    def test_cli_generates_pytra_runtime_shims(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        with tempfile.TemporaryDirectory() as td:
+            out_ts = Path(td) / "import_time_from.ts"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2ts.py", str(fixture), "-o", str(out_ts)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
+            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
+
     def test_cli_smoke_generates_ts_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
