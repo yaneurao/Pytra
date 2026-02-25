@@ -27,6 +27,14 @@
 - 簡易 AST（`if (...)` / `switch (...)` の条件抽出）で `sample/cpp` と `src/runtime/cpp/pytra-gen/{compiler,std,utils}` を走査し、`type_id` 条件を含む class method 生成由来分岐は 0 件だった。
 - `type_id` 条件分岐の残存は `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` の registry 管理・型順序管理ロジックに限定され、今回タスク対象の class method dispatch 分岐は既に消失している。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S1-02` 確定内容（2026-02-25）:
+- S1-01 の抽出結果を以下 3 区分へ分類した。
+  - 基底クラス呼び出し: 0 件（`type_id` 条件分岐なし）
+  - 再帰呼び出し: 0 件（`type_id` 条件分岐なし）
+  - 共通ユーティリティ呼び出し: 0 件（dispatch 用 `type_id` 条件分岐なし）
+- 非対象として残す項目:
+  - `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` の `type_id` registry/state 管理分岐（型登録順序・包含関係管理）。これは class method dispatch 分岐ではないため本タスク対象外。
+
 ### S2: emit 側の置換準備
 
 4. `P2-CPP-SELFHOST-VIRTUAL-01-S2-01`: `src/hooks/cpp/emitter` 内の `render` / `call` 系で、仮想呼び出しへ寄せる候補パスを 1 つずつ分解（まず `PyObj` メソッド類、次にユーザー定義 class method）。
@@ -55,3 +63,4 @@
 
 - [2026-02-25] `virtual` が override 済み基底メソッドのみ付与される方向へ変更済み。上記タスクの起点として `selfhost` 側の簡略化余地を低優先で追加。
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-01` として `sample/cpp` と `selfhost` 生成領域（`pytra-gen/compiler,std,utils`）の `type_id` 条件分岐を抽出し、class method dispatch 由来の `if/switch` は 0 件、残存は `pytra-gen/built_in/type_id.cpp` の registry 管理のみと確定した。
+- 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-02` として抽出結果を 3 区分へ分類したが、dispatch 用 `type_id` 分岐は 0 件だった。非対象は `pytra-gen/built_in/type_id.cpp` の registry 管理分岐のみに整理した。
