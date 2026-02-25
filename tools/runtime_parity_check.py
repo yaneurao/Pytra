@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shlex
 import shutil
@@ -24,6 +25,14 @@ class Target:
     transpile_cmd: str
     run_cmd: str
     needs: tuple[str, ...]
+
+
+@dataclass
+class CheckRecord:
+    case_stem: str
+    target: str
+    category: str
+    detail: str
 
 
 def normalize(text: str) -> str:
@@ -80,6 +89,30 @@ def find_case_path(case_stem: str, case_root: str) -> Path | None:
     if not matches:
         return None
     return matches[0]
+
+
+def collect_sample_case_stems() -> list[str]:
+    out: list[str] = []
+    for p in sorted(SAMPLE_ROOT.glob("*.py")):
+        stem = p.stem
+        if stem == "__init__":
+            continue
+        out.append(stem)
+    return out
+
+
+def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool) -> tuple[list[str], str]:
+    if all_samples:
+        if case_root != "sample":
+            return [], "--all-samples requires --case-root sample"
+        if len(cases) > 0:
+            return [], "--all-samples cannot be combined with positional cases"
+        return collect_sample_case_stems(), ""
+    if len(cases) > 0:
+        return cases, ""
+    if case_root == "sample":
+        return collect_sample_case_stems(), ""
+    return ["math_extended", "pathlib_extended"], ""
 
 
 def runtime_cpp_sources_shell() -> str:
@@ -178,10 +211,17 @@ def check_case(
     *,
     case_root: str,
     ignore_stdout: bool,
+    records: list[CheckRecord] | None = None,
 ) -> int:
+    def _record(target: str, category: str, detail: str) -> None:
+        if records is None:
+            return
+        records.append(CheckRecord(case_stem=case_stem, target=target, category=category, detail=detail))
+
     case_path = find_case_path(case_stem, case_root)
     if case_path is None:
         print(f"[ERROR] missing case: {case_stem}")
+        _record("-", "case_missing", "missing case")
         return 1
     with tempfile.TemporaryDirectory() as tmpdir:
         work = Path(tmpdir)
@@ -197,6 +237,7 @@ def check_case(
         if py.returncode != 0:
             print(f"[ERROR] python:{case_stem} failed")
             print(py.stderr.strip())
+            _record("python", "python_failed", py.stderr.strip())
             return 1
         expected = _normalize_output_for_compare(py.stdout) if ignore_stdout else py.stdout
 
@@ -206,20 +247,26 @@ def check_case(
                 continue
             if not can_run(target):
                 print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
+                _record(target.name, "toolchain_missing", "missing toolchain")
                 continue
 
             tr = run_shell(target.transpile_cmd, cwd=work)
             if tr.returncode != 0:
-                mismatches.append(f"{case_stem}:{target.name}: transpile failed: {tr.stderr.strip()}")
+                msg = tr.stderr.strip()
+                mismatches.append(f"{case_stem}:{target.name}: transpile failed: {msg}")
+                _record(target.name, "transpile_failed", msg)
                 continue
 
             rr = run_shell(target.run_cmd, cwd=work)
             if rr.returncode != 0:
-                mismatches.append(f"{case_stem}:{target.name}: run failed: {rr.stderr.strip()}")
+                msg = rr.stderr.strip()
+                mismatches.append(f"{case_stem}:{target.name}: run failed: {msg}")
+                _record(target.name, "run_failed", msg)
                 continue
 
             actual = _normalize_output_for_compare(rr.stdout) if ignore_stdout else rr.stdout
             if actual != expected:
+                _record(target.name, "output_mismatch", "stdout mismatch")
                 mismatches.append(
                     f"{case_stem}:{target.name}: output mismatch\n"
                     f"  expected: {expected!r}\n"
@@ -227,6 +274,7 @@ def check_case(
                 )
             else:
                 print(f"[OK] {case_stem}:{target.name}")
+                _record(target.name, "ok", "")
 
     if mismatches:
         print("\n[FAIL] mismatches")
@@ -243,7 +291,7 @@ def main() -> int:
     parser.add_argument(
         "cases",
         nargs="*",
-        default=["math_extended", "pathlib_extended"],
+        default=[],
         help="case stems (case names without .py).",
     )
     parser.add_argument(
@@ -262,6 +310,16 @@ def main() -> int:
         default="cpp",
         help="comma separated targets (default: cpp)",
     )
+    parser.add_argument(
+        "--all-samples",
+        action="store_true",
+        help="run all cases under sample/py (requires --case-root sample)",
+    )
+    parser.add_argument(
+        "--summary-json",
+        default="",
+        help="optional path to write machine-readable summary json",
+    )
     args = parser.parse_args()
 
     enabled_targets: set[str] = set()
@@ -273,16 +331,68 @@ def main() -> int:
         print("[ERROR] --targets must include at least one target")
         return 1
 
+    stems, err = resolve_case_stems(args.cases, args.case_root, args.all_samples)
+    if err != "":
+        print(f"[ERROR] {err}")
+        return 2
+    if len(stems) == 0:
+        print("[ERROR] no cases resolved")
+        return 2
+
     exit_code = 0
-    for stem in args.cases:
+    pass_cases = 0
+    fail_cases = 0
+    records: list[CheckRecord] = []
+    for stem in stems:
         code = check_case(
             stem,
             enabled_targets,
             case_root=args.case_root,
             ignore_stdout=args.ignore_unstable_stdout,
+            records=records,
         )
         if code != 0:
             exit_code = code
+            fail_cases += 1
+        else:
+            pass_cases += 1
+
+    category_counts: dict[str, int] = {}
+    for rec in records:
+        category_counts[rec.category] = category_counts.get(rec.category, 0) + 1
+
+    print(
+        "SUMMARY "
+        + f"cases={len(stems)} pass={pass_cases} fail={fail_cases} "
+        + f"targets={','.join(sorted(enabled_targets))}"
+    )
+    if len(category_counts) > 0:
+        print("SUMMARY_CATEGORIES")
+        for category in sorted(category_counts.keys()):
+            print(f"- {category}: {category_counts[category]}")
+
+    if args.summary_json != "":
+        summary_obj = {
+            "case_root": args.case_root,
+            "targets": sorted(enabled_targets),
+            "cases": stems,
+            "case_total": len(stems),
+            "case_pass": pass_cases,
+            "case_fail": fail_cases,
+            "category_counts": category_counts,
+            "records": [
+                {
+                    "case": rec.case_stem,
+                    "target": rec.target,
+                    "category": rec.category,
+                    "detail": rec.detail,
+                }
+                for rec in records
+            ],
+        }
+        out_path = Path(args.summary_json)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(summary_obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return exit_code
 
 
