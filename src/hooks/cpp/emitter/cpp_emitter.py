@@ -1162,6 +1162,17 @@ class CppEmitter(
         _ = east_target_t
         return ""
 
+    def _expr_node_has_payload(self, node: Any) -> bool:
+        """式ノードとして有効な実体を持つとき true を返す。"""
+        node_d = self.any_to_dict_or_empty(node)
+        if len(node_d) == 0:
+            return False
+        return self._node_kind_from_dict(node_d) != ""
+
+    def _expr_is_none_marker(self, expr_txt: str) -> bool:
+        """`/* none */` を示す式文字列か判定する。"""
+        return expr_txt.strip() == "/* none */"
+
     def _merge_decl_types_for_branch_join(self, left_t: str, right_t: str) -> str:
         """if/else 合流時の宣言型候補をマージする。"""
         l = self.normalize_type_name(left_t)
@@ -2526,11 +2537,14 @@ class CppEmitter(
                             if not isinstance(cur_t, str) or cur_t == "" or cur_t == "unknown":
                                 self.current_class_fields[fname] = ann
                         if is_dataclass:
-                            instance_field_defaults[fname] = self.render_expr(s.get("value")) if s.get("value") is not None else instance_field_defaults.get(fname, "")
+                            if self._expr_node_has_payload(s.get("value")):
+                                instance_field_defaults[fname] = self.render_expr(s.get("value"))
+                            else:
+                                instance_field_defaults.pop(fname, None)
                         else:
                             # クラス直下 `AnnAssign` は、値ありのみ static 扱い。
                             # 値なしはインスタンスフィールド宣言（型ヒント）として扱う。
-                            if s.get("value") is not None:
+                            if self._expr_node_has_payload(s.get("value")):
                                 static_field_types[fname] = ann
                                 if fname not in static_field_order:
                                     static_field_order.append(fname)
@@ -2547,7 +2561,7 @@ class CppEmitter(
                         static_field_types[fname] = ann
                         if fname not in static_field_order:
                             static_field_order.append(fname)
-                        if s.get("value") is not None:
+                        if self._expr_node_has_payload(s.get("value")):
                             static_field_defaults[fname] = self.render_expr(s.get("value"))
                         consumed_assign_fields.add(fname)
         self.current_class_static_fields.clear()
@@ -2617,7 +2631,9 @@ class CppEmitter(
             for fname, fty in instance_fields_ordered:
                 p = f"{self._cpp_type_text(fty)} {fname}"
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
-                    p += f" = {instance_field_defaults[fname]}"
+                    default_expr = instance_field_defaults[fname]
+                    if not self._expr_is_none_marker(default_expr):
+                        p += f" = {default_expr}"
                 params.append(p)
             self.emit(f"{name}({join_str_list(', ', params)}) {{")
             self.indent += 1
@@ -2636,7 +2652,7 @@ class CppEmitter(
                 target = self.render_expr(s.get("target"))
                 if self.is_plain_name_expr(s.get("target")) and target in self.current_class_fields:
                     pass
-                elif s.get("value") is None:
+                elif not self._expr_node_has_payload(s.get("value")):
                     self.emit(f"{t} {target};")
                 else:
                     self.emit(f"{t} {target} = {self.render_expr(s.get('value'))};")
