@@ -33,9 +33,11 @@
 ### タスク（S1〜S3）
 
 1. [x] [ID: P0-SAMPLE-BENCH-01] 必要ツールチェイン（Rust/C#/Go/Java/Swift/Kotlin 等）を環境に導入し、`runtime_parity_check --targets cpp,rs,cs,js,ts,go,java,swift,kotlin` が skip せずに実行される状態にする（Swift は `swiftc` 実行可を必須化）。
-2. [ ] [ID: P0-SAMPLE-BENCH-02] `sample/py` 全件（01〜18）を全言語ターゲットで実行し、全言語サンプル実行を優先して通す（差分がある場合は言語別で対処）。
+2. [x] [ID: P0-SAMPLE-BENCH-02] `sample/py` 全件（01〜18）を全言語ターゲットで実行し、全言語サンプル実行を優先して通す（差分がある場合は言語別で対処）。
    1. [x] [ID: P0-SAMPLE-BENCH-02-S1] `01_mandelbrot` の全言語実行結果を再収集し、失敗カテゴリ（`import` / 型不一致 / 構文混入 / ツール欠如）を確定する。
-   2. [ ] [ID: P0-SAMPLE-BENCH-02-S2] `02〜18` を全言語ターゲットで再実行し、言語別原因へ紐づける。
+   2. [x] [ID: P0-SAMPLE-BENCH-02-S2] `02〜18` を全言語ターゲットで再実行し、言語別原因へ紐づける。
+      - `docs-ja/plans/p0-sample-all-language-benchmark.md` に `07~18` の再実行結果を追加し、失敗カテゴリを言語別に記録。
+   3. [x] [ID: P0-SAMPLE-BENCH-02-S3] `07〜18` を全言語ターゲットで再実行し、`docs-ja/plans/p0-sample-all-language-benchmark.md` の `決定ログ` を更新する。
 3. [ ] [ID: P0-SAMPLE-BENCH-03] `python3 tools/verify_sample_outputs.py --refresh-golden` を実行し、全言語計測結果を再取得して `readme-ja.md`（必要に応じて `readme.md`）を更新する。
 
 

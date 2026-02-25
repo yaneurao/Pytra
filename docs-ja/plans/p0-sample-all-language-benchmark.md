@@ -78,20 +78,119 @@
   - `kotlin`: C#/Java 記法混在（`public static`、`long`、`List<byte>`、`System.Convert`）のため大量コンパイルエラー。
   - `swift`: SKIP（toolchain 不在）。
 - 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `06_julia_parameter_sweep` を同条件で再実行。
--  `cpp`: PASS。
--  `rs`: `crate::math` / `crate::time` / `crate::pytra.runtime.gif` の unresolved import、`bytearray`・`bytes` 未実装、`py_break` 未定義、`i64` と `f64` 混在演算、`usize` 混在、`i64+usize` 等のインデックス演算不一致が残存。
--  `cs`: `using math` と `List` の型解決欠如。
--  `js`, `ts`: `math.js` import 解決失敗（`time.js` 系と同様）。
--  `go`: `using`/C# 系記法混入で parse エラー。
--  `java`: 出力不一致（期待文字列が空）。
--  `kotlin`: `using math;` を含む C#/Java 混在構文で大規模なパース/型エラー。
--  `swift`: SKIP（toolchain 不在）。
+  - `cpp`: PASS。
+  - `rs`: `crate::math` / `crate::time` / `crate::pytra.runtime.gif` の unresolved import、`bytearray`・`bytes` 未実装、`py_break` 未定義、`i64` と `f64` 混在演算、`usize` 混在、`i64+usize` 等のインデックス演算不一致が残存。
+  - `cs`: `using math` と `List` の型解決欠如。
+  - `js`, `ts`: `math.js` import 解決失敗（`time.js` 系と同様）。
+  - `go`: `using`/C# 系記法混入で parse エラー。
+  - `java`: 出力不一致（期待文字列が空）。
+  - `kotlin`: `using math;` を含む C#/Java 混在構文で大規模なパース/型エラー。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `07_game_of_life_loop` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `for` 式残存と三項演算子混在で構文/型不一致。
+  - `cs`: list 初期化・二次元配列扱いで `[` パースエラー。
+  - `js`, `ts`: `range` を含む list comprehension が Python 形式のまま残存。
+  - `go`: `public` 記法混入で `package` 宣言以前に到達せず。
+  - `java`: 出力不一致（期待文字列が空）。
+  - `kotlin`: `using`/`public static`/`System.*` の混在で大量エラー。
+  - `swift`: SKIP（toolchain 不在）。
 - 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `08_langtons_ant` を同条件で再実行。
--  `cpp`: PASS。
--  `rs`: Rust の基本変換ミスが新規で顕在化（`? :` の三項を `bool` に混在、`for ... in range` 構文が `[[... ] for _ in range(...)]` のまま残る等）、加えて `crate::pytra.runtime.gif` / `crate::time` unresolved import、`bytearray`・`bytes` 未実装。
--  `cs`: list 初期化/2D 構文で parse エラー。
--  `js`, `ts`: `[0] * w for _ in range(h)` 系で `for`/`range` が Python 構文のまま残り parse/変換失敗。
--  `go`: `public` 記法混入で parse エラー。
--  `java`: 出力不一致（期待文字列が空）。
--  `kotlin`: `using math` と C#/Java/CS 仕様混在で広範な構文エラー。
--  `swift`: SKIP（toolchain 不在）。
+  - `cpp`: PASS。
+  - `rs`: Rust の基本変換ミスが新規で顕在化（`? :` の三項を `bool` に混在、`for ... in range` 構文が `[[... ] for _ in range(...)]` のまま残る等）、加えて `crate::pytra.runtime.gif` / `crate::time` unresolved import、`bytearray`・`bytes` 未実装。
+  - `cs`: list 初期化/2D 構文で parse エラー。
+  - `js`, `ts`: `[0] * w for _ in range(h)` 系で `for`/`range` が Python 構文のまま残り parse/変換失敗。
+  - `go`: `public` 記法混入で parse エラー。
+  - `java`: 出力不一致（期待文字列が空）。
+  - `kotlin`: `using math` と C#/Java/CS 仕様混在で広範な構文エラー。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `09_fire_simulation` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `[[... ] * w for _ in range(h)]` の Python 形式 `for` が残存。
+  - `cs`: 二次元配列初期化の `[` による構文エラー。
+  - `js`, `ts`: list 反復構文が未変換。
+  - `go`: `public` 記法混入で `package` 宣言以前に失敗。
+  - `java`: 出力不一致（期待文字列が空）。
+  - `kotlin`: C#/Java 記法混在と `long` / `System.*` 系の解決不全。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `10_plasma_effect` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::math` unresolved import、`i64/f64` 混在。
+  - `cs`: `math` モジュール/`List` の import 欠如で型解決不能。
+  - `js`, `ts`: `math.js` / `time.js` 相対 import 解決失敗。
+  - `go`: `using`/`public` 混在で `package` 宣言前エラー。
+  - `java`: 出力不一致（期待値ミスマッチ）。
+  - `kotlin`: `using` と C# 由来型(`long`,`double`)混入で型解決不能。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `11_lissajous_particles` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::math` unresolved import、型混在で再発。
+  - `cs`: `math` import 欠如。
+  - `js`, `ts`: `math.js` / `time.js` の import 解決失敗。
+  - `go`: `using`/`public` 混在で `package` 前段で parse 失敗。
+  - `java`: 出力不一致（期待文字列が空）。
+  - `kotlin`: `using` と `public static` まみれで構文・型崩れ。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `12_sort_visualizer` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::pytra` unresolved import (`utils::gif::grayscale_palette`)。
+  - `cs`: スコープ衝突で `y` の再宣言エラー。
+  - `js`, `ts`: `math.js` / `time.js` の import 解決失敗。
+  - `go`: `public` 記法混入で `package` 宣言以前で parse エラー。
+  - `java`: 出力不一致。
+  - `kotlin`: `System.*`/`long`/`byte` 型参照を含む混在コードで多数 unresolved reference。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `13_maze_generation_steps` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: Python 3項演算子が C++ 側へ残存（`?` 由来）。
+  - `cs`: `[` に起因する初期化構文エラー。
+  - `js`, `ts`: Python 構文の内包表記が未変換。
+  - `go`: `public` 記法混入で `package` 宣言以前に到達不可。
+  - `java`: 出力不一致。
+  - `kotlin`: `public static`/`for`/型混在を含む混在言語エラー。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `14_raymarching_light_cycle` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::math` unresolved import。
+  - `cs`: `math` import 欠如による型解決不能。
+  - `js`, `ts`: `math.js` / `time.js` import 不在で実行不能。
+  - `go`: `using`/`public` 混在で `package` 宣言以前で parse 失敗。
+  - `java`: 出力不一致。
+  - `kotlin`: C#/Java 記法混入（`using`、`double`、`List<byte>`）。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `15_wave_interference_loop` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::math` unresolved import。
+  - `cs`: `math` import 欠如。
+  - `js`, `ts`: import 解決失敗（`math.js` / `time.js`）。
+  - `go`: `using`/`public` 混在で parse 停止。
+  - `java`: 出力不一致。
+  - `kotlin`: `using` と C# 由来記法混在。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `16_glass_sculpture_chaos` を同条件で再実行。
+  - `cpp`: PASS。
+  - `rs`: Python 形式の三項/インデックス式が残存（`?` 系）。
+  - `cs`: `using math`・`List` import の型解決欠如。
+  - `js`, `ts`: `math.js` / `time.js` import 解決失敗。
+  - `go`: `using`/`public` 混在で parse 失敗。
+  - `java`: 出力不一致。
+  - `kotlin`: CS 記法混在に加え未対応演算子で失敗。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `17_monte_carlo_pi` を同条件で再実行。
+  - `cpp`: PASS（参考として再試験済み）。
+  - `rs`: `crate::time` unresolved import と `py_break` 系未整合。
+  - `cs`: `perf_counter` 未定義。
+  - `js`, `ts`: `time.js` 相対 import 解決失敗。
+  - `go`: `public` 記法混入で parse 失敗。
+  - `java`: 出力不一致。
+  - `kotlin`: `long`/`double` 混在など C# 系記法が未除去。
+  - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `18_mini_language_interpreter` を同条件で再実行。
+  - `cpp`: `pytra::gc::PyObj` 系の `isdigit`/`isalpha` 実装差異でコンパイル失敗。
+  - `rs`: `as` を含む式で構文エラー、型定義/変換崩れが多数。
+  - `cs`: `Token` の重複型定義衝突。
+  - `js`, `ts`: `time.js` / `string` / `unknown` 系未変換で import 解決失敗。
+  - `go`: `public` 記法混入で `package` 宣言以前で parse エラー。
+  - `java`: 出力不一致（期待と相違）。
+  - `kotlin`: C#/Java 混在記法が大量残存し、Kotlin 構文としては大量コンパイルエラー。
+  - `swift`: SKIP（toolchain 不在）。
