@@ -23,7 +23,7 @@ Pytraの特徴
 
 - Pythonから各言語への変換器
   - C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin に変換可能。
-  - 元のソースコードに極めて近い形で出力
+  - 元のソースコードに極めて近い形で変換しての出力
 
 - C++で書くのと同等のコードをPythonで書けることが目標
   - intはデフォルトで 64-bit 符号付き整数
