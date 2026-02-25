@@ -121,3 +121,16 @@
 - `P2-CPP-SELFHOST-VIRTUAL-01-S1-01`: `sample/cpp` + `src/runtime/cpp/pytra-gen/{compiler,std,utils}` を `rg`/簡易 AST 走査し、class method 生成由来の `type_id` 条件分岐（`if/switch`）は 0 件、残存 `type_id` 分岐は `pytra-gen/built_in/type_id.cpp` の registry 管理のみと確認した。
 - `P2-CPP-SELFHOST-VIRTUAL-01-S1-02`: S1-01 の抽出結果を分類し、`基底クラス呼び出し=0` / `再帰呼び出し=0` / `ユーティリティ呼び出し=0`、非対象は `pytra-gen/built_in/type_id.cpp` の `type_id` registry 管理（dispatch ではない）に限定されると整理した。
 - `P2-CPP-SELFHOST-VIRTUAL-01-S1-03`: S1 の分類結果が全カテゴリ 0 件だったため、`virtual` 置換候補の優先順は「対象なし」で確定し、以降は非対象理由の固定化（S2-03）と回帰ドキュメント整備を優先する。
+
+## P3: 非C++ emitter の EAST3 直結化と EAST2 互換撤去（低優先）
+
+文脈: `docs-ja/plans/p3-east3-only-emitters.md`（`P3-EAST3-ONLY-01`）
+
+1. [ ] [ID: P3-EAST3-ONLY-01] 非C++ 8ターゲット（`rs/cs/js/ts/go/java/swift/kotlin`）を `EAST3` 直結に統一し、`EAST2` 互換経路（`--east-stage 2` / `load_east_document_compat` / `east3_legacy_compat`）を撤去する。
+2. [ ] [ID: P3-EAST3-ONLY-01-S1] 仕様/CLI 契約を `EAST3` のみに更新し、`--east-stage 2` の互換警告テストを廃止して非対応エラー基準へ移行する。
+3. [ ] [ID: P3-EAST3-ONLY-01-S2] `js_emitter` を `EAST3` ノード直処理へ移行し、`js/ts/go/java/swift/kotlin` で `east3_legacy_compat` 非依存の生成経路を成立させる。
+4. [ ] [ID: P3-EAST3-ONLY-01-S3] `rs_emitter` の `EAST3` 直処理を実装し、legacy 形状依存（`For/ForRange` 前提など）を撤去する。
+5. [ ] [ID: P3-EAST3-ONLY-01-S4] `cs_emitter` の `EAST3` 直処理を実装し、legacy 形状依存を撤去する。
+6. [ ] [ID: P3-EAST3-ONLY-01-S5] 8本 CLI から `load_east_document_compat` / `normalize_east3_to_legacy` 依存を削除し、`east3_legacy_compat.py` を削除する。
+7. [ ] [ID: P3-EAST3-ONLY-01-S6] ドキュメント/仕様（`docs-ja/plans/plan-east123-migration.md` ほか）から `stage=2 互換` 前提を撤去して `EAST3 only` を明記する。
+8. [ ] [ID: P3-EAST3-ONLY-01-S7] 回帰検証（`test_py2*_smoke`, `check_py2*_transpile`, `runtime_parity_check --case-root sample --all-samples`）を通し、8ターゲットのゴールデン整合を維持する。
