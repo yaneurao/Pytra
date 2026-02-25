@@ -73,7 +73,7 @@
 
 ### タスク（S001〜S100）
 
-1. [ ] [ID: P3-MISC-01-S001] `test/misc/01_prime_reporter.py` を `py2cpp.py` で C++ 変換可能にする。
+1. [x] [ID: P3-MISC-01-S001] `test/misc/01_prime_reporter.py` を `py2cpp.py` で C++ 変換可能にする。
 2. [ ] [ID: P3-MISC-01-S002] `test/misc/02_text_analyzer.py` を `py2cpp.py` で C++ 変換可能にする。
 3. [ ] [ID: P3-MISC-01-S003] `test/misc/03_gradebook.py` を `py2cpp.py` で C++ 変換可能にする。
 4. [ ] [ID: P3-MISC-01-S004] `test/misc/04_maze_solver.py` を `py2cpp.py` で C++ 変換可能にする。

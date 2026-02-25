@@ -27,6 +27,8 @@
 - 個別変換が難しい場合は、`難易度保留` としてログに理由を残し、容易なものから後回しで再挑戦する。
 
 決定ログ:
-- 追記用
+- 2026-02-25: `P3-MISC-01-S002` を対象 ID として、`01_prime_reporter.py` の属性アクセス失敗を回避。
+  `CppEmitter._render_attribute_expr` で `class_field_owner_unique` / `class_method_owner_unique` により所有クラスが確定できる場合は
+  `object` 系受け手例外をスキップし、`py2cpp.py test/misc/01_prime_reporter.py /tmp/01_prime_reporter.cpp` を成功させた。
 
 ### 分解
