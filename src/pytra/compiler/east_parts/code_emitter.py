@@ -1152,6 +1152,27 @@ class CodeEmitter:
                 out.append(nm)
         return out
 
+    def fallback_tuple_target_names_from_stmt(
+        self,
+        target: dict[str, Any],
+        stmt: dict[str, Any],
+    ) -> list[str]:
+        """`target` と `stmt` の `repr` を使ってタプル代入名の復元を試みる。"""
+        fallback_names = self.fallback_tuple_target_names_from_repr(target)
+        if len(fallback_names) > 0:
+            return fallback_names
+        stmt_repr = self.any_dict_get_str(stmt, "repr", "")
+        if stmt_repr == "":
+            return fallback_names
+        eq_pos = stmt_repr.find("=")
+        lhs_txt = stmt_repr
+        if eq_pos >= 0:
+            lhs_txt = stmt_repr[:eq_pos]
+        if lhs_txt == "":
+            return fallback_names
+        pseudo_target = {"repr": lhs_txt}
+        return self.fallback_tuple_target_names_from_repr(pseudo_target)
+
     def target_bound_names(self, target: dict[str, Any]) -> set[str]:
         """for ターゲットが束縛する識別子名を収集する。"""
         names: set[str] = set()

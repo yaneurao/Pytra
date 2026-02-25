@@ -4,13 +4,13 @@ from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from hooks.cpp.emitter.call import CppCallEmitter
+from hooks.cpp.emitter.operator import CppBinaryOperatorEmitter
 from hooks.cpp.emitter.expr import CppExpressionEmitter
 from hooks.cpp.emitter.stmt import CppStatementEmitter
 from hooks.cpp.emitter.tmp import CppTemporaryEmitter
 from hooks.cpp.profile import (
     AUG_BIN,
     AUG_OPS,
-    BIN_OPS,
     CMP_OPS,
     load_cpp_hooks,
     load_cpp_identifier_rules,
@@ -27,7 +27,14 @@ def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:
             continue
         globals()[key] = value
 
-class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CppTemporaryEmitter, CodeEmitter):
+class CppEmitter(
+    CppCallEmitter,
+    CppStatementEmitter,
+    CppExpressionEmitter,
+    CppBinaryOperatorEmitter,
+    CppTemporaryEmitter,
+    CodeEmitter,
+):
     def __init__(
         self,
         east_doc: dict[str, Any],
@@ -1767,16 +1774,7 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CppT
         if self._node_kind_from_dict(target) == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
             if len(lhs_elems) == 0:
-                fallback_names = self.fallback_tuple_target_names_from_repr(target)
-                if len(fallback_names) == 0:
-                    stmt_repr = self.any_dict_get_str(stmt, "repr", "")
-                    if stmt_repr != "":
-                        eq_pos = stmt_repr.find("=")
-                        lhs_txt = stmt_repr
-                        if eq_pos >= 0:
-                            lhs_txt = stmt_repr[:eq_pos]
-                        pseudo_target: dict[str, Any] = {"repr": lhs_txt}
-                        fallback_names = self.fallback_tuple_target_names_from_repr(pseudo_target)
+                fallback_names = self.fallback_tuple_target_names_from_stmt(target, stmt)
                 if len(fallback_names) > 0:
                     recovered: list[Any] = []
                     for nm in fallback_names:
@@ -2647,94 +2645,6 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CppT
         self.current_class_static_fields = prev_static_fields
         self.indent -= 1
         self.emit_class_close()
-
-    def _render_binop_expr(self, expr: dict[str, Any]) -> str:
-        """BinOp ノードを C++ 式へ変換する。"""
-        if expr.get("left") is None or expr.get("right") is None:
-            rep = self.any_to_str(expr.get("repr"))
-            if rep != "":
-                return rep
-        left_expr = self.any_to_dict_or_empty(expr.get("left"))
-        right_expr = self.any_to_dict_or_empty(expr.get("right"))
-        left = self.render_expr(expr.get("left"))
-        right = self.render_expr(expr.get("right"))
-        cast_rules = self._dict_stmt_list(expr.get("casts"))
-        for c in cast_rules:
-            on = self.any_to_str(c.get("on"))
-            to_txt = self.any_to_str(c.get("to"))
-            if on == "left":
-                left = self.apply_cast(left, to_txt)
-            elif on == "right":
-                right = self.apply_cast(right, to_txt)
-        op_name = expr.get("op")
-        op_name_str = str(op_name)
-        dunder_by_binop: dict[str, str] = {
-            "Add": "__add__",
-            "Sub": "__sub__",
-            "Mult": "__mul__",
-            "Div": "__truediv__",
-            "Pow": "__pow__",
-        }
-        dunder_name = dunder_by_binop.get(op_name_str, "")
-        if dunder_name != "":
-            left_t0 = self.get_expr_type(expr.get("left"))
-            left_t = left_t0 if isinstance(left_t0, str) else ""
-            left_t_norm = self.normalize_type_name(left_t)
-            method_sig = self._class_method_sig(left_t, dunder_name)
-            if left_t_norm not in {"", "unknown", "Any", "object"} and len(method_sig) > 0:
-                call_args = self._coerce_args_for_class_method(left_t, dunder_name, [right], [expr.get("right")])
-                owner = f"({left})"
-                if left_t_norm in self.ref_classes and not left.strip().startswith("*"):
-                    return f"{owner}->{dunder_name}({join_str_list(', ', call_args)})"
-                return f"{owner}.{dunder_name}({join_str_list(', ', call_args)})"
-        left = self._wrap_for_binop_operand(left, left_expr, op_name_str, False)
-        right = self._wrap_for_binop_operand(right, right_expr, op_name_str, True)
-        hook_binop_raw = self.hook_on_render_binop(expr, left, right)
-        hook_binop_txt = ""
-        if isinstance(hook_binop_raw, str):
-            hook_binop_txt = str(hook_binop_raw)
-        if hook_binop_txt != "":
-            return hook_binop_txt
-        if op_name == "Div":
-            # Prefer direct C++ division when float is involved (or EAST already injected casts).
-            # Keep py_div fallback for int/int Python semantics.
-            lt0 = self.get_expr_type(expr.get("left"))
-            rt0 = self.get_expr_type(expr.get("right"))
-            lt = lt0 if isinstance(lt0, str) else ""
-            rt = rt0 if isinstance(rt0, str) else ""
-            if lt == "Path" and rt in {"str", "Path"}:
-                return f"{left} / {right}"
-            if len(cast_rules) > 0 or lt in {"float32", "float64"} or rt in {"float32", "float64"}:
-                return f"{left} / {right}"
-            return f"py_div({left}, {right})"
-        if op_name == "Pow":
-            return f"::std::pow(py_to_float64({left}), py_to_float64({right}))"
-        if op_name == "FloorDiv":
-            if self.floor_div_mode == "python":
-                return f"py_floordiv({left}, {right})"
-            return f"{left} / {right}"
-        if op_name == "Mod":
-            if self.mod_mode == "python":
-                return f"py_mod({left}, {right})"
-            return f"{left} % {right}"
-        if op_name == "Mult":
-            lt0 = self.get_expr_type(expr.get("left"))
-            rt0 = self.get_expr_type(expr.get("right"))
-            lt = lt0 if isinstance(lt0, str) else ""
-            rt = rt0 if isinstance(rt0, str) else ""
-            if lt.startswith("list[") and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({left}, {right})"
-            if rt.startswith("list[") and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({right}, {left})"
-            if lt == "str" and rt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({left}, {right})"
-            if rt == "str" and lt in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({right}, {left})"
-        op = "+"
-        op_txt = str(BIN_OPS.get(op_name_str, ""))
-        if op_txt != "":
-            op = op_txt
-        return f"{left} {op} {right}"
 
     def _render_builtin_call(
         self,
