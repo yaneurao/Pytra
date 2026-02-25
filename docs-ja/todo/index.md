@@ -35,7 +35,7 @@
 文脈: `docs-ja/plans/p1-cpp-emitter-remove-pylib-compat.md`（`P1-CPP-EMIT-NORM-01`）
 
 1. [ ] [ID: P1-CPP-EMIT-NORM-01] `src/hooks/cpp/emitter/cpp_emitter.py` の `_normalize_runtime_module_name` を削除し、`pylib.*` 互換名を前提としない runtime module 解決へ切り替える（`P1-CPP-EMIT-NORM-01-S1` 〜 `S3` の完了でクローズ）。
-2. [ ] [ID: P1-CPP-EMIT-NORM-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py` と `src/hooks/cpp/emitter/call.py` の該当呼び出しを洗い出し、`module_name` 正規化なしでの解決パスへ置換する。
+2. [x] [ID: P1-CPP-EMIT-NORM-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py` と `src/hooks/cpp/emitter/call.py` の該当呼び出しを洗い出し、`module_name` 正規化なしでの解決パスへ置換する。
 3. [ ] [ID: P1-CPP-EMIT-NORM-01-S2] `src/pytra/compiler/east_parts/code_emitter.py` の同名的な正規化利用有無を確認し、必要なら `pylib` 前提経路を削減する。
 4. [ ] [ID: P1-CPP-EMIT-NORM-01-S3] 回帰テスト/ドキュメントを整備し、`pylib.*` 互換を求めるケースが存在しないことを明文化する（`docs-ja/spec/spec-dev.md` 追記含む）。
 

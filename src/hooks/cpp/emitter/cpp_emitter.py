@@ -241,46 +241,9 @@ class CppEmitter(
                     return self.normalize_type_name(tuple_parts[0])
         return ""
 
-    def _normalize_runtime_module_name(self, module_name: str) -> str:
-        """旧 `pylib.*` 名を `pytra.*` 名へ正規化する。"""
-        if module_name.startswith("pytra.std."):
-            return module_name
-        if module_name == "pytra.std":
-            return "pytra.std"
-        if module_name.startswith("pytra.utils."):
-            return module_name
-        if module_name == "pytra.utils":
-            return "pytra.utils"
-        if module_name.startswith("pytra.compiler."):
-            return module_name
-        if module_name == "pytra.compiler":
-            return "pytra.compiler"
-        if module_name.startswith("pytra.built_in."):
-            return module_name
-        if module_name == "pytra.built_in":
-            return "pytra.built_in"
-        if module_name.startswith("pytra.runtime."):
-            # 旧互換: runtime 名は utils 名へ正規化する。
-            return "pytra.utils." + module_name[14:]
-        if module_name == "pytra.runtime":
-            return "pytra.utils"
-        if module_name.startswith("pylib.tra."):
-            return "pytra.utils." + module_name[10:]
-        if module_name == "pylib.tra":
-            return "pytra.utils"
-        if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name):
-            return "pytra.std." + module_name
-        if python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name):
-            return "pytra.utils." + module_name
-        if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name):
-            return "pytra.compiler." + module_name
-        if python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, module_name):
-            return "pytra.built_in." + module_name
-        return module_name
-
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
+        module_name_norm = module_name
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
@@ -301,7 +264,7 @@ class CppEmitter(
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
         """Python import モジュール名を C++ namespace へ解決する。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
+        module_name_norm = module_name
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if tail != "":
@@ -367,7 +330,7 @@ class CppEmitter(
         bindings = dict_any_get_dict_list(meta, "import_bindings")
         if len(bindings) > 0:
             for item in bindings:
-                mod_name = self._normalize_runtime_module_name(dict_any_get_str(item, "module_id"))
+                mod_name = dict_any_get_str(item, "module_id")
                 append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
                 if dict_any_get_str(item, "binding_kind") == "symbol":
                     append_unique_non_empty(
@@ -384,7 +347,7 @@ class CppEmitter(
                         includes, seen, self._module_name_to_cpp_include(dict_any_get_str(ent, "name"))
                     )
             elif kind == "ImportFrom":
-                mod_name = self._normalize_runtime_module_name(dict_any_get_str(stmt, "module"))
+                mod_name = dict_any_get_str(stmt, "module")
                 append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     append_unique_non_empty(
@@ -405,7 +368,7 @@ class CppEmitter(
 
     def _module_source_path_for_name(self, module_name: str) -> Path:
         """`pytra.*` モジュール名から runtime source `.py` パスを返す（未解決時は空 Path）。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
+        module_name_norm = module_name
         if module_name_norm.startswith("pytra.std."):
             tail: str = str(module_name_norm[10:].replace(".", "/"))
             std_root_txt: str = str(RUNTIME_STD_SOURCE_ROOT)
@@ -434,7 +397,7 @@ class CppEmitter(
 
     def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数型列を返す（不明時は空 list）。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
+        module_name_norm = module_name
         cached = self._module_fn_arg_type_cache.get(module_name_norm)
         if isinstance(cached, dict):
             sig = cached.get(fn_name)
@@ -4147,7 +4110,7 @@ class CppEmitter(
         if isinstance(hook_rendered, str) and hook_rendered != "":
             return hook_rendered
         merged_args = self.merge_call_args(args, kw)
-        owner_mod_norm = self._normalize_runtime_module_name(owner_mod)
+        owner_mod_norm = owner_mod
         if owner_mod_norm in self.module_namespace_map:
             mapped = self._render_call_module_method_with_namespace(
                 owner_mod,
@@ -4279,7 +4242,7 @@ class CppEmitter(
         owner_rendered = self.render_expr(owner_obj)
         call_ctx = self.resolve_call_attribute_context(owner_obj, owner_rendered, fn, self.declared_var_types)
         owner_expr = self.any_dict_get_str(call_ctx, "owner_expr", "")
-        owner_mod = self._normalize_runtime_module_name(self.any_dict_get_str(call_ctx, "owner_mod", ""))
+        owner_mod = self.any_dict_get_str(call_ctx, "owner_mod", "")
         owner_t = self.any_dict_get_str(call_ctx, "owner_type", "")
         attr = self.any_dict_get_str(call_ctx, "attr", "")
         if attr == "":
@@ -5340,9 +5303,7 @@ class CppEmitter(
         )
         if direct_self_or_class != "":
             return direct_self_or_class
-        base_module_name = self._normalize_runtime_module_name(
-            self.any_dict_get_str(base_ctx, "module", "")
-        )
+        base_module_name = self.any_dict_get_str(base_ctx, "module", "")
         if base_module_name != "":
             mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
             ns = self._module_name_to_cpp_namespace(base_module_name)
@@ -6440,7 +6401,7 @@ class CppEmitter(
             owner = east_type[:dot]
             leaf = east_type[dot + 1 :]
             if owner != "" and leaf != "":
-                mod_name = self._normalize_runtime_module_name(self._resolve_imported_module_name(owner))
+                mod_name = self._resolve_imported_module_name(owner)
                 ns = self._module_name_to_cpp_namespace(mod_name)
                 looks_like_class = leaf != "" and (leaf[0] >= "A" and leaf[0] <= "Z")
                 if ns != "":

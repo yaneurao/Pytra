@@ -9,11 +9,10 @@ class CppCallEmitter:
 
     def _lookup_module_attr_runtime_call(self, module_name: str, attr: str) -> str:
         """`module.attr` から runtime_call 名を引く（pytra.* は短縮名フォールバックしない）。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
-        owner_keys: list[str] = [module_name_norm]
-        short_name = self._last_dotted_name(module_name_norm)
+        owner_keys: list[str] = [module_name]
+        short_name = self._last_dotted_name(module_name)
         # `pytra.*` は正規モジュール名で解決し、短縮名への暗黙フォールバックは使わない。
-        if short_name != module_name_norm and not module_name_norm.startswith("pytra."):
+        if short_name != module_name and not module_name.startswith("pytra."):
             owner_keys.append(short_name)
         for owner_key in owner_keys:
             if owner_key in self.module_attr_call_map:
@@ -26,11 +25,10 @@ class CppCallEmitter:
 
     def _resolve_runtime_call_for_imported_symbol(self, module_name: str, symbol_name: str) -> str | None:
         """`from X import Y` で取り込まれた Y 呼び出しの runtime 名を返す。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
-        mapped = self._lookup_module_attr_runtime_call(module_name_norm, symbol_name)
+        mapped = self._lookup_module_attr_runtime_call(module_name, symbol_name)
         if mapped:
             return mapped
-        ns = self._module_name_to_cpp_namespace(module_name_norm)
+        ns = self._module_name_to_cpp_namespace(module_name)
         if ns:
             return f"{ns}::{symbol_name}"
         return None
@@ -63,7 +61,7 @@ class CppCallEmitter:
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
-        target_ns = self.module_namespace_map.get(self._normalize_runtime_module_name(imported_module), "")
+        target_ns = self.module_namespace_map.get(imported_module, "")
         if target_ns != "":
             namespaced = self._render_namespaced_module_call(
                 imported_module,
