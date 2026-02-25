@@ -77,3 +77,12 @@
   - `java`: 出力不一致（期待出力が空）。
   - `kotlin`: C#/Java 記法混在（`public static`、`long`、`List<byte>`、`System.Convert`）のため大量コンパイルエラー。
   - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `06_julia_parameter_sweep` を同条件で再実行。
+-  `cpp`: PASS。
+-  `rs`: `crate::math` / `crate::time` / `crate::pytra.runtime.gif` の unresolved import、`bytearray`・`bytes` 未実装、`py_break` 未定義、`i64` と `f64` 混在演算、`usize` 混在、`i64+usize` 等のインデックス演算不一致が残存。
+-  `cs`: `using math` と `List` の型解決欠如。
+-  `js`, `ts`: `math.js` import 解決失敗（`time.js` 系と同様）。
+-  `go`: `using`/C# 系記法混入で parse エラー。
+-  `java`: 出力不一致（期待文字列が空）。
+-  `kotlin`: `using math;` を含む C#/Java 混在構文で大規模なパース/型エラー。
+-  `swift`: SKIP（toolchain 不在）。
