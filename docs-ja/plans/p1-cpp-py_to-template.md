@@ -50,7 +50,16 @@
   - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
   - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
 
+`P1-CPP-PYTO-01-S2` 確定内容（2026-02-25）:
+- `src/hooks/cpp/emitter/expr.py` の cast lower を `py_to<float64>` / `py_to<int64>` / `py_to<bool>` 形式へ移行した。
+- `src/hooks/cpp/emitter/cpp_emitter.py` の `py_to_int64/py_to_float64/py_to_bool` 直呼び（dict default 取得、添字、truthy 判定、range/enumerate 引数など）を `py_to<...>` 形式へ段階置換した。
+- 検証:
+  - `python3 test/unit/test_py2cpp_smoke.py`（3件 pass）
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
+
 決定ログ:
 - [2026-02-25] [ID: P1-CPP-PYTO-01]
   - 追加: `py_to<T>` 方向への段階統合タスクを TODO 化し、互換ラッパ維持前提で進める方針を決定。
 - 2026-02-25: `P1-CPP-PYTO-01-S1` として `py_runtime.h` に `py_to<T>` テンプレートを導入し、`py_to_int64`/`py_to_float64`/`py_to_bool` の主要経路を後方互換ラッパ化した。
+- 2026-02-25: `P1-CPP-PYTO-01-S2` として `cpp_emitter.py` / `expr.py` の `py_to_*` 直呼びを `py_to<...>` へ段階移行し、C++ transpile/smoke/parity（1ケース）で挙動差分がないことを確認した。
