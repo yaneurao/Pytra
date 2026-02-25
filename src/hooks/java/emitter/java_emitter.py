@@ -1,73 +1,56 @@
-"""EAST -> Java transpiler (preview backend)."""
+"""EAST -> Java transpiler.
+
+Java 本体は Node bridge を生成し、同名 sidecar JavaScript を実行する。
+"""
 
 from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
+from hooks.js.emitter.js_emitter import load_js_profile
 
 
 def load_java_profile() -> dict[str, Any]:
     """Java backend で利用する profile を返す。"""
-    return load_cs_profile()
+    return load_js_profile()
 
 
-def _extract_preview_signature_lines(body: str) -> list[str]:
-    """C# 中間出力から preview 用の軽量シグネチャ行を抽出する。"""
-    out: list[str] = []
-    prev_blank = False
-    if body == "":
-        return out
-    lines = body.splitlines()
-    i = 0
-    while i < len(lines):
-        s = lines[i].strip()
-        i += 1
-        if s == "":
-            if len(out) > 0 and not prev_blank:
-                out.append("")
-                prev_blank = True
-            continue
-        prev_blank = False
-        if s.startswith("using "):
-            continue
-        if s.startswith("//"):
-            out.append(s)
-            continue
-        if s.startswith("public static class ") or s.startswith("public class "):
-            out.append(s)
-            continue
-        if s.startswith("public static ") or s.startswith("public "):
-            out.append(s)
-            continue
-    return out
+def _java_string_literal(text: str) -> str:
+    """Java 用の二重引用符文字列リテラルへエスケープする。"""
+    out = text.replace("\\", "\\\\")
+    out = out.replace('"', '\\"')
+    return '"' + out + '"'
 
 
-def _wrap_java_preview_body(body: str) -> str:
-    """C# ベースの中間出力を Java ソースへ埋め込む。"""
-    preview_lines = _extract_preview_signature_lines(body)
-    out = "// このファイルは EAST ベース Java プレビュー出力です。\n"
-    out += "// TODO: 専用 JavaEmitter 実装へ段階移行する。\n"
-    out += "public final class Main {\n"
-    out += "    public static void main(String[] args) {\n"
-    out += "        // C# ベース中間出力のシグネチャ要約:\n"
-    if len(preview_lines) == 0:
-        out += "        // (no symbols)\n"
-    else:
-        i = 0
-        while i < len(preview_lines):
-            line = preview_lines[i]
-            if line == "":
-                out += "        //\n"
-            else:
-                out += "        // " + line + "\n"
-            i += 1
+def transpile_to_java(
+    east_doc: dict[str, Any],
+    js_entry_path: str = "Main.js",
+    class_name: str = "Main",
+) -> str:
+    """EAST ドキュメントを Java ソースへ変換する。"""
+    _ = east_doc
+    js_path_lit = _java_string_literal(js_entry_path)
+    out = ""
+    out += "// このファイルは EAST -> JS bridge 用の Java 実行ラッパです。\n"
+    out += "import java.util.ArrayList;\n"
+    out += "import java.util.List;\n\n"
+    out += "public final class " + class_name + " {\n"
+    out += "    private " + class_name + "() {\n"
+    out += "    }\n\n"
+    out += "    public static void main(String[] args) throws Exception {\n"
+    out += "        List<String> command = new ArrayList<>();\n"
+    out += '        command.add("node");\n'
+    out += "        command.add(" + js_path_lit + ");\n"
+    out += "        for (String arg : args) {\n"
+    out += "            command.add(arg);\n"
+    out += "        }\n"
+    out += "        Process process = new ProcessBuilder(command)\n"
+    out += "            .inheritIO()\n"
+    out += "            .start();\n"
+    out += "        int code = process.waitFor();\n"
+    out += "        if (code != 0) {\n"
+    out += "            System.exit(code);\n"
+    out += "        }\n"
     out += "    }\n"
     out += "}\n"
     return out
-
-
-def transpile_to_java(east_doc: dict[str, Any]) -> str:
-    """EAST ドキュメントを Java ソース（プレビュー形式）へ変換する。"""
-    lowered = transpile_to_csharp(east_doc)
-    return _wrap_java_preview_body(lowered)

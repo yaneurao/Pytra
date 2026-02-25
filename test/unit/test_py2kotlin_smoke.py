@@ -35,13 +35,13 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_contains_preview_and_main(self) -> None:
+    def test_transpile_add_fixture_contains_node_bridge_and_main(self) -> None:
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin(east)
-        self.assertIn("Kotlin プレビュー出力", kotlin)
-        self.assertIn("fun main()", kotlin)
-        self.assertIn("add(", kotlin)
+        self.assertIn("fun main(args: Array<String>)", kotlin)
+        self.assertIn("ProcessBuilder", kotlin)
+        self.assertIn('command.add("node")', kotlin)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
@@ -51,7 +51,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             east_json.write_text(json.dumps(east), encoding="utf-8")
             loaded = load_east(east_json)
             kotlin = transpile_to_kotlin(loaded)
-        self.assertIn("fun main()", kotlin)
+        self.assertIn("fun main(args: Array<String>)", kotlin)
 
     def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
         fixture = find_fixture_case("for_range")
@@ -64,6 +64,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
             out_kotlin = Path(td) / "if_else.kt"
+            out_js = Path(td) / "if_else.js"
             env = dict(os.environ)
             py_path = str(ROOT / "src")
             old = env.get("PYTHONPATH", "")
@@ -77,8 +78,11 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue(out_kotlin.exists())
+            self.assertTrue(out_js.exists())
             txt = out_kotlin.read_text(encoding="utf-8")
-            self.assertIn("fun main()", txt)
+            self.assertIn("fun main(args: Array<String>)", txt)
+            self.assertIn("if_else.js", txt)
+            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
         fixture = find_fixture_case("if_else")
