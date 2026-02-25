@@ -145,35 +145,35 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 69. [x] [ID: P3-MISC-01-S069] `test/misc/68_route_graph.py` を `py2cpp.py` で C++ 変換可能にする.
 70. [x] [ID: P3-MISC-01-S070] `test/misc/69_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする.
 71. [x] [ID: P3-MISC-01-S071] `test/misc/70_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする.
-72. [ ] [ID: P3-MISC-01-S072] `test/misc/71_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-73. [ ] [ID: P3-MISC-01-S073] `test/misc/72_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-74. [ ] [ID: P3-MISC-01-S074] `test/misc/73_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-75. [ ] [ID: P3-MISC-01-S075] `test/misc/74_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-76. [ ] [ID: P3-MISC-01-S076] `test/misc/75_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-77. [ ] [ID: P3-MISC-01-S077] `test/misc/76_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-78. [ ] [ID: P3-MISC-01-S078] `test/misc/77_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-79. [ ] [ID: P3-MISC-01-S079] `test/misc/78_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-80. [ ] [ID: P3-MISC-01-S080] `test/misc/79_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-81. [ ] [ID: P3-MISC-01-S081] `test/misc/80_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-82. [ ] [ID: P3-MISC-01-S082] `test/misc/81_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-83. [ ] [ID: P3-MISC-01-S083] `test/misc/82_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-84. [ ] [ID: P3-MISC-01-S084] `test/misc/83_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-85. [ ] [ID: P3-MISC-01-S085] `test/misc/84_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-86. [ ] [ID: P3-MISC-01-S086] `test/misc/85_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-87. [ ] [ID: P3-MISC-01-S087] `test/misc/86_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-88. [ ] [ID: P3-MISC-01-S088] `test/misc/87_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-89. [ ] [ID: P3-MISC-01-S089] `test/misc/88_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-90. [ ] [ID: P3-MISC-01-S090] `test/misc/89_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-91. [ ] [ID: P3-MISC-01-S091] `test/misc/90_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-92. [ ] [ID: P3-MISC-01-S092] `test/misc/91_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-93. [ ] [ID: P3-MISC-01-S093] `test/misc/92_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-94. [ ] [ID: P3-MISC-01-S094] `test/misc/93_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-95. [ ] [ID: P3-MISC-01-S095] `test/misc/94_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-96. [ ] [ID: P3-MISC-01-S096] `test/misc/95_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-97. [ ] [ID: P3-MISC-01-S097] `test/misc/96_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-98. [ ] [ID: P3-MISC-01-S098] `test/misc/97_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-99. [ ] [ID: P3-MISC-01-S099] `test/misc/98_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-100. [ ] [ID: P3-MISC-01-S100] `test/misc/99_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+72. [x] [ID: P3-MISC-01-S072] `test/misc/71_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+73. [x] [ID: P3-MISC-01-S073] `test/misc/72_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+74. [x] [ID: P3-MISC-01-S074] `test/misc/73_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+75. [x] [ID: P3-MISC-01-S075] `test/misc/74_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+76. [x] [ID: P3-MISC-01-S076] `test/misc/75_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+77. [x] [ID: P3-MISC-01-S077] `test/misc/76_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+78. [x] [ID: P3-MISC-01-S078] `test/misc/77_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+79. [x] [ID: P3-MISC-01-S079] `test/misc/78_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+80. [x] [ID: P3-MISC-01-S080] `test/misc/79_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+81. [x] [ID: P3-MISC-01-S081] `test/misc/80_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+82. [x] [ID: P3-MISC-01-S082] `test/misc/81_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+83. [x] [ID: P3-MISC-01-S083] `test/misc/82_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+84. [x] [ID: P3-MISC-01-S084] `test/misc/83_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+85. [x] [ID: P3-MISC-01-S085] `test/misc/84_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+86. [x] [ID: P3-MISC-01-S086] `test/misc/85_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+87. [x] [ID: P3-MISC-01-S087] `test/misc/86_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+88. [x] [ID: P3-MISC-01-S088] `test/misc/87_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+89. [x] [ID: P3-MISC-01-S089] `test/misc/88_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+90. [x] [ID: P3-MISC-01-S090] `test/misc/89_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+91. [x] [ID: P3-MISC-01-S091] `test/misc/90_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+92. [x] [ID: P3-MISC-01-S092] `test/misc/91_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+93. [x] [ID: P3-MISC-01-S093] `test/misc/92_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+94. [x] [ID: P3-MISC-01-S094] `test/misc/93_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+95. [x] [ID: P3-MISC-01-S095] `test/misc/94_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+96. [x] [ID: P3-MISC-01-S096] `test/misc/95_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+97. [x] [ID: P3-MISC-01-S097] `test/misc/96_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+98. [x] [ID: P3-MISC-01-S098] `test/misc/97_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+99. [x] [ID: P3-MISC-01-S099] `test/misc/98_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+100. [x] [ID: P3-MISC-01-S100] `test/misc/99_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
 
 - 上記 100 タスクは超低優先（P3）として、時間の許容があるものから順次着手する。
 
@@ -245,6 +245,35 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 - [ID: P3-MISC-01-S069] `test/misc/68_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/68_route_graph.cpp` 生成確認）。
 - [ID: P3-MISC-01-S070] `test/misc/69_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/69_ledger_trace.cpp` 生成確認）。
 - [ID: P3-MISC-01-S071] `test/misc/70_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/70_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S072] `test/misc/71_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/71_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S073] `test/misc/72_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/72_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S074] `test/misc/73_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/73_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S075] `test/misc/74_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/74_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S076] `test/misc/75_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/75_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S077] `test/misc/76_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/76_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S078] `test/misc/77_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/77_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S079] `test/misc/78_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/78_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S080] `test/misc/79_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/79_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S081] `test/misc/80_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/80_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S082] `test/misc/81_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/81_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S083] `test/misc/82_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/82_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S084] `test/misc/83_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/83_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S085] `test/misc/84_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/84_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S086] `test/misc/85_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/85_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S087] `test/misc/86_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/86_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S088] `test/misc/87_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/87_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S089] `test/misc/88_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/88_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S090] `test/misc/89_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/89_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S091] `test/misc/90_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/90_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S092] `test/misc/91_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/91_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S093] `test/misc/92_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/92_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S094] `test/misc/93_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/93_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S095] `test/misc/94_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/94_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S096] `test/misc/95_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/95_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S097] `test/misc/96_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/96_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S098] `test/misc/97_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/97_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S099] `test/misc/98_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/98_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S100] `test/misc/99_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/99_ledger_trace.cpp` 生成確認）。
 
 
 ## メモ
