@@ -18,28 +18,26 @@ Pytra is a collection of transpilers that convert programs written in a subset o
 
 ## Features
 
-It supports transpilation from Python to C++/Rust/C#/JavaScript/TypeScript/Go/Java/Swift/Kotlin.
+Pytra's features
 
-Because the source language is a subset of Python, your original code can still run in a normal Python environment.  
-That means you can keep your usual development workflow (including completion and debugging), and transpile only when needed.
+- Python to multi-language transpiler
+  - Supports conversion to C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, and Kotlin.
+  - Converts code to output in a form extremely close to the original source.
 
-The transpiler itself is also implemented in Python, making it relatively easy to extend and customize.
+- Write Python code that targets C++-level output quality
+  - `int` defaults to 64-bit signed integer.
+  - No dynamic typing.
 
-In addition, the transpiler's own source code can be transpiled by this transpiler.  
-For example, you can transpile it to C++ and run that for faster transpilation throughput.  
-This **self-hosting capability** is a major advantage for reducing implementation dependencies and continuously validating the quality of the transpiler itself.
+- Simple language model
+  - Basically a subset of Python.
+  - Can be developed with existing tools such as VS Code.
+  - Drops multiple inheritance and keeps only single inheritance.
 
-This project also prioritizes readability of generated code. It aims to preserve the original source structure and intent (comments, function layout, control flow) as much as possible when converting to target languages.  
-This **output that stays very close to the original source** makes code reviews, diff inspection, and debugging easier.
+- High extensibility
+  - The transpiler core is implemented in Python, making extension and customization easy.
+  - The transpiler's own source code can be transpiled into other languages by this transpiler, enabling self-hosting.
 
-The following points are also considered practical advantages:
-
-- A single Python codebase can be deployed to multiple languages, which helps reduce spec drift and duplicate implementations.
-- It is easy to compare Python execution with target-language execution, making performance optimization (especially via C++/Rust) more straightforward.
-- Python code is first normalized into an internal intermediate representation (EAST), then transpiled per target language, which makes staged feature expansion easier.
-- It does not depend on Python's standard `ast`, enabling self-hosting (transpiling the transpiler itself).
-- The transpilation input still follows standard Python syntax, so it works well with existing tools such as VS Code.
-- When transpiling to C++, the design targets execution speed close to native code.
+We also prioritize practical operational benefits.
 
 WARNING: This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
 
