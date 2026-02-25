@@ -69,8 +69,8 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 |18 |Mini-language interpreter|2.550| - | - | - |0.372|0.412| - | - | - | - |
 
 Notes:
-- C++ could not be measured due current generation/build regression in converted code (`src/runtime/cpp/pytra-gen/compiler/east_parts/core.cpp` and generated `18_mini_language_interpreter.cpp` default-arg placeholders).
-- Rust/C#/Go/Java/Swift/Kotlin were not measured because compiler/runtime toolchains are not installed in this environment.
+- `-` means "runtime not benchmarked in this README yet" (benchmark table refresh is in progress).
+- Output parity for all 18 `sample/py` cases is confirmed across `cpp/rs/cs/js/ts/go/java/swift/kotlin` (S3-S7 verification logs via `tools/runtime_parity_check.py`).
 
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 

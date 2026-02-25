@@ -115,6 +115,10 @@
   - `SUMMARY cases=18 pass=18 fail=0 targets=go,java,kotlin,swift`
   - `SUMMARY_CATEGORIES: ok: 72`
 
+`P0-SAMPLE-GOLDEN-ALL-01-S8` 確定内容（2026-02-25）:
+- `readme-ja.md` / `readme.md` の「実行速度の比較」「Runtime Performance Comparison」注記を更新し、未計測値の意味と全9言語 parity 完走済み（S3〜S7）を明記した。
+- `sample` ゴールデン運用は既存の `tools/runtime_parity_check.py`（全言語）と `tools/verify_sample_outputs.py` を継続利用する方針を維持した。
+
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S1` として検証対象（18サンプル/9言語）と比較ルール（stdout 正規化 + artifact hash/size + source hash）および再現コマンドを固定した。
@@ -129,3 +133,4 @@
 - 2026-02-25: `go` / `javac` / `java` / `kotlinc` を導入して `P0-SAMPLE-GOLDEN-ALL-01-S7` を再検証した。`go/kotlin` は C# 体裁生成物による compile 失敗、`java` は preview stub による stdout 空、`swift` は `swiftc` 未導入で、`run_failed: 36 / output_mismatch: 18 / toolchain_missing: 18` を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` として `py2go.py` / `py2java.py` / `py2kotlin.py` を JS sidecar bridge へ移行し、`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `ok: 54`（go/java/kotlin）・`toolchain_missing: 18`（swift）のみへ収束した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` として `py2swift.py` を JS sidecar bridge へ移行し、`.chain/swift/usr/bin/swiftc` shim を導入。`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `ok: 72`（4言語×18件）を確認し S7 を完了した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S8` として `readme-ja.md` / `readme.md` の実行結果注記を更新し、全9言語 parity 完走状態（S3〜S7）を反映した。

@@ -70,8 +70,8 @@ Pythonで書かれた[サンプルコード](sample/readme-ja.md)の実行時間
 |18 |ミニ言語インタプリタ|2.550| - | - | - |0.372|0.412| - | - | - | - |
 
 注記:
-- C++ は変換後 C++ コードの既知回帰（`src/runtime/cpp/pytra-gen/compiler/east_parts/core.cpp` の比較演算と `18_mini_language_interpreter.cpp` の既定引数崩れ）により、全サンプルでビルド不能だったため未計測。
-- Rust/C#/Go/Java/Swift/Kotlin は、この環境で各言語ツールチェイン（rustc, mcs/mono, go, javac/java, swiftc, kotlinc）が未導入のため未計測。
+- 表の `-` は「この README では速度未計測」を意味します（性能表の更新は継続中）。
+- 出力整合性は `sample/py` 18件について `cpp/rs/cs/js/ts/go/java/swift/kotlin` 全言語で一致を確認済みです（`tools/runtime_parity_check.py` の S3〜S7 検証ログ）。
 
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 
