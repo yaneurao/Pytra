@@ -71,3 +71,29 @@
 19. [ ] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
 20. [ ] [ID: P3-EAST3-ONLY-01-S7-01] 非C++ 8本の smoke/check（`test_py2*` + `check_py2*`）を全通しする。
 21. [ ] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
+
+## P3: C++ emitter 肥大化の段階縮退（低優先）
+
+文脈: `docs-ja/plans/p3-cpp-emitter-slimming.md`（`P3-CPP-EMITTER-SLIM-01`）
+
+1. [ ] [ID: P3-CPP-EMITTER-SLIM-01] `cpp_emitter.py` の肥大要因（互換層/責務集中/巨大 `render_expr`）を段階分割で解消し、EAST3 単一契約へ寄せる。
+2. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S1-01] `cpp_emitter.py` の行数・メソッド数・長大メソッドを計測し、基準値を `docs-ja/plans/p3-cpp-emitter-slimming.md` に固定する。
+3. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線（golden 比較）を更新し、以後の分割作業の回帰判定点を固定する。
+4. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S2-01] `stage2/self_hosted` 前提の legacy builtin compat（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat`）を撤去する。
+5. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S2-02] `For`/`ForRange` から `ForCore` への bridge と逆写像を撤去し、`ForCore` 直接受理へ統一する。
+6. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S2-03] legacy `isinstance/issubclass` Name-call 許容経路を撤去し、type_id 系は EAST3 ノード前提へ統一する。
+7. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S3-01] import/include/namespace/module-init 生成責務を `src/hooks/cpp/emitter/` 配下の専用モジュールへ分離する。
+8. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S3-02] class emit（`virtual/override`・`PYTRA_TYPE_ID`・基底継承処理）を専用モジュールへ分離する。
+9. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S3-03] 型変換 (`_cpp_type_text`) と Any 境界補正 helper を専用モジュールへ分離する。
+10. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S3-04] built-in runtime_call（list/set/dict/str/path/special）分岐をディスパッチモジュールへ分離する。
+11. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S4-01] `render_expr` の kind 分岐を `kind -> handler` テーブル駆動へ置換する骨格を導入する。
+12. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S4-02] collection literal/comprehension 系ハンドラを `render_expr` から分離し、独立テストを追加する。
+13. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S4-03] runtime/type_id/path 系ハンドラを `render_expr` から分離し、`render_expr` をディスパッチ専任へ縮退する。
+14. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S5-01] `repr` 依存ノードを parser/lowerer 側で構造化ノードへ落とす前提を整理し、対象ノード一覧を確定する。
+15. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S5-02] `_render_repr_expr` の利用箇所を段階削減し、必要な最終 fallback 以外を除去する。
+16. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S5-03] `_render_repr_expr` を撤去（または no-op 化）し、`repr` 文字列依存経路が残らないことを `rg` で確認する。
+17. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S6-01] Rust/C++ で共通化可能な helper（条件式・cast 補助・ループ骨格）を棚卸しし、`CodeEmitter` へ移管候補を確定する。
+18. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S6-02] 共通化候補のうち 1〜2 系統を `CodeEmitter` へ移管し、C++/Rust 両 emitter の重複を削減する。
+19. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通し、分割後の回帰を固定する。
+20. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` を再実行し、selfhost 再変換可能性を確認する。
+21. [ ] [ID: P3-CPP-EMITTER-SLIM-01-S7-03] `cpp_emitter.py` の最終メトリクス（行数・`render_expr` 行数・legacy 関数残数）を更新し、完了判定を記録する。
