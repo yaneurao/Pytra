@@ -63,6 +63,13 @@
   - golden 照合（C++ baseline）:
     `python3 tools/verify_sample_outputs.py --manifest sample/golden/manifest.json`
 
+`P0-SAMPLE-GOLDEN-ALL-01-S2` 確定内容（2026-02-25）:
+- `tools/runtime_parity_check.py` のケース解決を整理し、`--case-root sample` かつ positional 未指定時は `sample/py` 18件を自動解決、`--all-samples` は `sample` 専用で positional と併用不可に統一した。
+- 実行結果を機械集計できるよう `CheckRecord`（`case/target/category/detail`）を導入し、`case_missing` / `python_failed` / `toolchain_missing` / `transpile_failed` / `run_failed` / `output_mismatch` / `ok` を `SUMMARY_CATEGORIES` と `--summary-json` へ出力するようにした。
+- C++ parity 到達性の blocker だった `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` の生成不整合（typed dict/list での `py_at`/`py_append`、未定義 `getattr`、誤関数名参照）を修正し、`import_pytra_runtime_png` の parity 実行を green 化した。
+- 回帰として `test/unit/test_runtime_parity_check_cli.py` を追加し、ケース解決規約と `toolchain_missing` 分類記録を固定した。
+
 決定ログ:
 - 2026-02-25: 新規P0として追加。全言語/全件一致までを完了条件にする方針を確定。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S1` として検証対象（18サンプル/9言語）と比較ルール（stdout 正規化 + artifact hash/size + source hash）および再現コマンドを固定した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S2` として runtime parity のケース解決・失敗分類・JSON集計を実装し、`python3 test/unit/test_runtime_parity_check_cli.py` / `python3 test/unit/test_image_runtime_parity.py` / `python3 tools/runtime_parity_check.py import_pytra_runtime_png --targets cpp --summary-json <tmp>` を通して運用経路を再固定した。
