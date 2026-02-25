@@ -1,4 +1,4 @@
-# type_id 仕様（多重継承・判定統一）
+# type_id 仕様（単一継承・区間判定）
 
 <a href="../../docs/spec/spec-type_id.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
@@ -17,7 +17,7 @@
 ## 2. 非目標
 
 - CPython の metaclass / ABC / virtual subclass の完全再現。
-- MRO の全エッジケースを初回で実装すること。
+- 多重継承（複数基底）を一般解としてサポートすること。
 - 全ターゲット同時一括移行。
 
 ## 3. 用語
@@ -25,17 +25,18 @@
 - `type_id`:
   型を一意に識別する整数 ID。実行中に不変。
 - `TypeInfo`:
-  `type_id` ごとのメタ情報（基底型、MRO、祖先集合、名前など）。
+  `type_id` ごとのメタ情報（基底型、ID 範囲、名前など）。
 - `trait_id`:
   振る舞い契約（iterable, truthy, len など）を表す識別子。継承階層とは別軸。
 
 ## 4. 基本設計
 
-### 4.1 型階層は多重継承を前提にする
+### 4.1 型階層は単一継承のみ
 
-- 各型は `bases: list[type_id]` を持つ（0 個以上）。
-- 単一継承は「`bases` の長さが 1」の特例として扱う。
-- 継承グラフは DAG でなければならない（循環は禁止）。
+- 各型は `base_type_id: int | None` を持つ（0/1 個）。
+- 複数基底を要求する定義は実行前にエラーとする。
+- 継承は木または森（forest）とみなし、循環は禁止。
+- 同一基底配下では後述の `type_id` 範囲が親子関係を完全に表現する。
 
 ### 4.2 `isinstance` と trait 判定を分離する
 
@@ -50,37 +51,48 @@
 
 ## 5. `TypeInfo` 仕様
 
-各 `type_id` に対して最低限次を持つ。
+各 `type_id` は次を持つ。
 
 - `type_id: int`
 - `name: str`（ログ/診断用途）
-- `bases: list[int]`
-- `mro: list[int]`（先頭は自分）
-- `ancestor_closure: bitset or sorted_list[int]`（自分を含む）
-- `traits: bitset or set[trait_id]`
+- `base_type_id: int | None`
+- `type_id_min: int`
+- `type_id_max: int`
+- `mro_depth: int`（ルートとの差、任意）
+- `traits: bitset | set[trait_id]`
 
 注:
-- `ancestor_closure` は `py_is_subtype` の高速判定用。
-- 小規模 runtime では `sorted_list` でもよい。将来 `bitset` へ置換可能。
+- `type_id_min` / `type_id_max` は祖先関係の O(1) 判定に使う。
+- `mro_depth` は最適化やデバッグ補助情報。
 
-## 6. MRO と検証
+## 6. 検証と割り当て
 
 ### 6.1 検証規則
 
 - 型登録時に次を検証する。
-1. `bases` に未知 `type_id` がないこと
-2. 継承循環がないこと
-3. 必要なら C3 線形化が成立すること
+1. `base_type_id` が未知 `type_id` でないこと。
+2. `base_type_id` が自己参照や循環を形成しないこと。
+3. 基底定義が単一継承制約を破っていないこと。
 
-### 6.2 MRO 生成
+### 6.2 `type_id` 範囲割り当て（linker で実施）
 
-- 既定は C3 線形化で `mro` を計算する。
-- C3 が成立しない場合は型登録エラーで停止する。
+- `type_id_min/type_id_max` は `linker`（または同等の決定的フェーズ）でのみ確定する。
+- 割り当て順序:
+  1. 依存を満たすトポロジカル順（基底->派生）。
+  2. 同位相は FQCN の辞書順で決定。
+- 割り当て手順:
+  - 未訪問のルート型から DFS を開始。
+  - `type_id_min = allocator.next()` と採番し、子型を連続して再帰採番。
+  - 子をすべて割り当てた後、親を `type_id_max =` 子末尾の ID で確定。
+- 成果:
+  - 子孫が常に `parent.type_id_min <= child_id <= parent.type_id_max` を満たす。
+  - `is_subtype` が区間比較のみで決まる。
+- 同一入力・同一オプションなら `type_id_min/max` が決定的であること。
 
-### 6.3 祖先集合生成
+### 6.3 補助的な先祖確認（任意）
 
-- `mro` または基底グラフから `ancestor_closure` を前計算する。
-- `ancestor_closure[type_id]` には自身を必ず含む。
+- 開発・デバッグ時にのみ、`base_type_id` 追跡または `ancestor_closure` を追加計算して差分監査に使ってよい。
+- 本番観測は `type_id_min/max` が真実。
 
 ## 7. Runtime API 契約
 
@@ -97,19 +109,19 @@
 規約:
 - `py_isinstance` は `obj.type_id` を取得し `py_is_subtype` を呼ぶだけにする。
 - 判定失敗は `false` を返し、例外は投げない。
-- `expected_type_id` が未知なら fail-fast（開発時）または `false`（運用時）を選べるようにする。
+- `expected_type_id` が未知なら開発時は fail-fast、運用時は `false` を返す。
 
 ## 8. 判定アルゴリズム
 
 ### 8.1 既定（推奨）
 
-- `ancestor_closure` を使う O(1) 判定。
-- 例: `return ancestor_closure[actual].contains(expected);`
+- 区間判定を採用する。
+- 例: `return expected_min <= actual_id <= expected_max;`
 
 ### 8.2 フォールバック
 
-- `mro` 線形走査（O(depth)）でもよい。
-- 実装初期はフォールバックで開始し、後で `bitset` に移行可能。
+- 開発時の検証では `base_type_id` 追跡（O(depth)）で同値性を再検証する。
+- いずれも `--object-dispatch-mode=type_id` と一致する結果を返すこと。
 
 ## 9. ディスパッチモードとの関係
 
@@ -128,8 +140,8 @@
 ### 10.1 C++
 
 - `PyObj` が `type_id` を保持する。
-- runtime に `TypeInfo` テーブルを保持する。
-- `py_is_subtype` は `ancestor_closure`（または `mro`）で判定する。
+- runtime に `type_id` 範囲テーブル（`name/min/max/traits`）を保持する。
+- `py_is_subtype` は `type_id_min/max` で O(1) 判定。
 
 ### 10.2 JS/TS
 
@@ -139,7 +151,7 @@
 
 ### 10.3 Rust
 
-- runtime で `type_id` と `TypeInfo` を持つ。
+- runtime で `type_id` と範囲判定テーブルを持つ。
 - `enum`/`trait` 実装都合に関係なく、外部契約は `py_is_subtype` で固定する。
 
 ## 11. Codegen 規約
@@ -158,19 +170,19 @@ EAST3 連携規約:
 ## 12. テスト観点
 
 1. 単一継承: `A <- B <- C` で `isinstance(C(), A)` が真。
-2. 多重継承: `class C(A, B)` で双方の祖先判定が真。
-3. 菱形継承: C3 MRO が成立し、重複祖先を正しく扱う。
-4. 非継承型: 偽判定になる。
+2. 非継承型: 偽判定になる。
+3. 多重継承コード（`class C(A, B)`）が生成時エラーになる。
+4. 範囲判定同値性: `child.type_id` が `parent.type_id_min <= child <= parent.type_id_max` を満たす。
 5. JS/TS minify 想定: 型名変更後も `type_id` 判定結果が不変。
 6. trait 分離: `iterable` 実装の有無が `isinstance` 結果に影響しない。
 
 ## 13. 段階導入
 
-1. `TypeInfo` と `py_is_subtype` を runtime へ導入。
+1. `TypeInfo`（単一継承 + 区間）を runtime へ導入。
 2. `py_isinstance` / `py_issubclass` を runtime API へ集約。
-3. `py2cpp` など各 emitter の `isinstance` lower を切替。
-4. built-in 直書き判定を削減。
-5. クロスターゲット回帰テストを固定。
+3. linker で `type_id_min/max` の決定的生成を確立。
+4. built-in 直書き判定を縮退し、`isinstance` を runtime API 経由へ一本化。
+5. クロスターゲット回帰テスト（対象言語一括）を固定。
 
 ## 14. 関連
 

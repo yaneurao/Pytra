@@ -37,7 +37,7 @@
   - [ランタイム仕様](./spec-runtime.md)
 - `Any/object` 境界の Boxing/Unboxing 契約を確認したい場合:
   - [Boxing/Unboxing 仕様](./spec-boxing.md)
-- 多重継承を含む `type_id` 判定契約（`isinstance`/`issubclass`）を確認したい場合:
+- 単一継承の `type_id` 判定契約（`isinstance`/`issubclass`）を確認したい場合:
   - [type_id 仕様](./spec-type_id.md)
 - RC ベースの GC 方針を確認したい場合:
   - [GC 仕様](./spec-gc.md)
