@@ -78,3 +78,8 @@ C++ CodeEmitter の体積増加は「責務混入」と「経路の重複」が�
   - 実施内容: `src/hooks/cpp/emitter/expr.py` を新規作成し、`CppEmitter` の式系ヘルパ（`apply_cast` / `render_to_string` / `render_expr_as_any` / `render_boolop` / `render_cond` / `_str_index_char_access` / `render_minmax`）を `CppExpressionEmitter` へ移譲。
   - 呼び出し変更: `src/hooks/cpp/emitter/cpp_emitter.py` の `CppEmitter` を `CppExpressionEmitter, CodeEmitter` の多重継承に変更し、対象メソッドを削除して委譲先に移した。
   - 補足: `_try_optimize_char_compare` / `_byte_from_str_expr` は `cpp_char_lit` 依存のため、次サブタスクで移譲判断。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-01-S2]
+  - 実施内容: `src/hooks/cpp/emitter/stmt.py` を新規編集し、`CppEmitter` の statement 系（`If` / `While` / `Try` / `For`）ヘルパを `CppStatementEmitter` へ移譲。
+  - 呼び出し変更: `CppEmitter` を `CppStatementEmitter, CppExpressionEmitter, CodeEmitter` へ拡張し、移譲対象メソッドを `src/hooks/cpp/emitter/cpp_emitter.py` から除去。
+  - 補足: `for` 系は既存動作を維持するため、`_emit_for_body_*`、`emit_for_range`、`emit_for_each`、runtime iterable 出力系を一括で移譲。
