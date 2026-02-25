@@ -115,16 +115,16 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 39. [x] [ID: P3-MISC-01-S039] `test/misc/38_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
 40. [x] [ID: P3-MISC-01-S040] `test/misc/39_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
 41. [x] [ID: P3-MISC-01-S041] `test/misc/40_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-42. [ ] [ID: P3-MISC-01-S042] `test/misc/41_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-43. [ ] [ID: P3-MISC-01-S043] `test/misc/42_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-44. [ ] [ID: P3-MISC-01-S044] `test/misc/43_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-45. [ ] [ID: P3-MISC-01-S045] `test/misc/44_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-46. [ ] [ID: P3-MISC-01-S046] `test/misc/45_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
-47. [ ] [ID: P3-MISC-01-S047] `test/misc/46_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
-48. [ ] [ID: P3-MISC-01-S048] `test/misc/47_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
-49. [ ] [ID: P3-MISC-01-S049] `test/misc/48_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
-50. [ ] [ID: P3-MISC-01-S050] `test/misc/49_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
-51. [ ] [ID: P3-MISC-01-S051] `test/misc/50_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+42. [x] [ID: P3-MISC-01-S042] `test/misc/41_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+43. [x] [ID: P3-MISC-01-S043] `test/misc/42_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+44. [x] [ID: P3-MISC-01-S044] `test/misc/43_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+45. [x] [ID: P3-MISC-01-S045] `test/misc/44_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする。
+46. [x] [ID: P3-MISC-01-S046] `test/misc/45_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする。
+47. [x] [ID: P3-MISC-01-S047] `test/misc/46_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
+48. [x] [ID: P3-MISC-01-S048] `test/misc/47_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
+49. [x] [ID: P3-MISC-01-S049] `test/misc/48_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
+50. [x] [ID: P3-MISC-01-S050] `test/misc/49_ledger_trace.py` を `py2cpp.py` で C++ 変換可能にする.
+51. [x] [ID: P3-MISC-01-S051] `test/misc/50_pipeline_flow.py` を `py2cpp.py` で C++ 変換可能にする.
 52. [ ] [ID: P3-MISC-01-S052] `test/misc/51_oceanic_timeseries.py` を `py2cpp.py` で C++ 変換可能にする。
 53. [ ] [ID: P3-MISC-01-S053] `test/misc/52_token_grammar.py` を `py2cpp.py` で C++ 変換可能にする。
 54. [ ] [ID: P3-MISC-01-S054] `test/misc/53_route_graph.py` を `py2cpp.py` で C++ 変換可能にする。
@@ -215,6 +215,16 @@ P3-MISC-01-S004 対象の `test/misc/04_maze_solver.py` は `py2cpp.py test/misc
 - [ID: P3-MISC-01-S039] `test/misc/38_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/38_route_graph.cpp` 生成確認）。
 - [ID: P3-MISC-01-S040] `test/misc/39_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/39_ledger_trace.cpp` 生成確認）。
 - [ID: P3-MISC-01-S041] `test/misc/40_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/40_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S042] `test/misc/41_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/41_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S043] `test/misc/42_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/42_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S044] `test/misc/43_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/43_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S045] `test/misc/44_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/44_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S046] `test/misc/45_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/45_pipeline_flow.cpp` 生成確認）。
+- [ID: P3-MISC-01-S047] `test/misc/46_oceanic_timeseries.py` を `py2cpp.py` で変換成功（出力 `/tmp/46_oceanic_timeseries.cpp` 生成確認）。
+- [ID: P3-MISC-01-S048] `test/misc/47_token_grammar.py` を `py2cpp.py` で変換成功（出力 `/tmp/47_token_grammar.cpp` 生成確認）。
+- [ID: P3-MISC-01-S049] `test/misc/48_route_graph.py` を `py2cpp.py` で変換成功（出力 `/tmp/48_route_graph.cpp` 生成確認）。
+- [ID: P3-MISC-01-S050] `test/misc/49_ledger_trace.py` を `py2cpp.py` で変換成功（出力 `/tmp/49_ledger_trace.cpp` 生成確認）。
+- [ID: P3-MISC-01-S051] `test/misc/50_pipeline_flow.py` を `py2cpp.py` で変換成功（出力 `/tmp/50_pipeline_flow.cpp` 生成確認）。
 
 
 ## メモ

@@ -122,5 +122,25 @@
   `py2cpp.py test/misc/39_ledger_trace.py /tmp/39_ledger_trace.cpp` で成功。
 - 2026-02-25: P3-MISC-01-S041 対象の `test/misc/40_pipeline_flow.py` は
   `py2cpp.py test/misc/40_pipeline_flow.py /tmp/40_pipeline_flow.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S042 対象の `test/misc/41_oceanic_timeseries.py` は
+  `py2cpp.py test/misc/41_oceanic_timeseries.py /tmp/41_oceanic_timeseries.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S043 対象の `test/misc/42_token_grammar.py` は
+  `py2cpp.py test/misc/42_token_grammar.py /tmp/42_token_grammar.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S044 対象の `test/misc/43_route_graph.py` は
+  `py2cpp.py test/misc/43_route_graph.py /tmp/43_route_graph.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S045 対象の `test/misc/44_ledger_trace.py` は
+  `py2cpp.py test/misc/44_ledger_trace.py /tmp/44_ledger_trace.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S046 対象の `test/misc/45_pipeline_flow.py` は
+  `py2cpp.py test/misc/45_pipeline_flow.py /tmp/45_pipeline_flow.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S047 対象の `test/misc/46_oceanic_timeseries.py` は
+  `py2cpp.py test/misc/46_oceanic_timeseries.py /tmp/46_oceanic_timeseries.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S048 対象の `test/misc/47_token_grammar.py` は
+  `py2cpp.py test/misc/47_token_grammar.py /tmp/47_token_grammar.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S049 対象の `test/misc/48_route_graph.py` は
+  `py2cpp.py test/misc/48_route_graph.py /tmp/48_route_graph.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S050 対象の `test/misc/49_ledger_trace.py` は
+  `py2cpp.py test/misc/49_ledger_trace.py /tmp/49_ledger_trace.cpp` で成功。
+- 2026-02-25: P3-MISC-01-S051 対象の `test/misc/50_pipeline_flow.py` は
+  `py2cpp.py test/misc/50_pipeline_flow.py /tmp/50_pipeline_flow.cpp` で成功。
 
 ### 分解
