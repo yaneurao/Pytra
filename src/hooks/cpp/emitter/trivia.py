@@ -4,7 +4,7 @@ from pytra.std.typing import Any
 
 
 class CppTriviaEmitter:
-    """Trivia/コメント/ディレクティブ処理を切り出すための薄い mixin。"""
+    """Trivia/コメント/ディレクティブ処理を切り出すための薄いヘルパークラス。"""
 
     def render_trivia(self, stmt: dict[str, Any]) -> None:
         """Stmt の leading trivia を出力する。"""
