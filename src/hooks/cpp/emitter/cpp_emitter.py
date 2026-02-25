@@ -6,6 +6,7 @@ from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from hooks.cpp.emitter.call import CppCallEmitter
 from hooks.cpp.emitter.expr import CppExpressionEmitter
 from hooks.cpp.emitter.stmt import CppStatementEmitter
+from hooks.cpp.emitter.tmp import CppTemporaryEmitter
 from hooks.cpp.profile import (
     AUG_BIN,
     AUG_OPS,
@@ -26,7 +27,7 @@ def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:
             continue
         globals()[key] = value
 
-class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CodeEmitter):
+class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CppTemporaryEmitter, CodeEmitter):
     def __init__(
         self,
         east_doc: dict[str, Any],
@@ -1798,7 +1799,7 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, Code
                 ):
                     self.emit(f"::std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
                     return
-            tmp = self.next_tmp("__tuple")
+            tmp = self.next_tuple_tmp_name()
             value_expr = self.render_expr(stmt.get("value"))
             tuple_elem_types: list[str] = []
             value_t = self.get_expr_type(stmt.get("value"))
@@ -2369,7 +2370,7 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, Code
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
         self.current_function_is_generator = is_generator
         self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
-        self.current_function_yield_buffer = self.next_tmp("__yield_values") if is_generator else ""
+        self.current_function_yield_buffer = self.next_yield_values_name() if is_generator else ""
         is_gc_ctor = (
             in_class
             and name == "__init__"
@@ -6159,7 +6160,7 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, Code
                     out_t = f"list<{elt_ctor}>"
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
-            iter_tmp = self.next_tmp("__it")
+            iter_tmp = self.next_for_iter_name()
             rg = self.any_to_dict_or_empty(g.get("iter"))
             if self._node_kind_from_dict(rg) == "RangeExpr":
                 start = self.render_expr(rg.get("start"))
@@ -6272,7 +6273,7 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, Code
                 out_t = expected_out_t
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
-            iter_tmp = self.next_tmp("__it")
+            iter_tmp = self.next_for_iter_name()
             if tuple_unpack:
                 lines.append(f"    for (auto {iter_tmp} : {it}) {{")
                 target_elements = self.any_to_list(g_target.get("elements"))
@@ -6334,7 +6335,7 @@ class CppEmitter(CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, Code
                 out_t = expected_out_t
             lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
             tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
-            iter_tmp = self.next_tmp("__it")
+            iter_tmp = self.next_for_iter_name()
             if tuple_unpack:
                 lines.append(f"    for (auto {iter_tmp} : {it}) {{")
                 target_elements = self.any_to_list(g_target.get("elements"))

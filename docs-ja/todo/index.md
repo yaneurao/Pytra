@@ -52,7 +52,7 @@
 2. [x] [ID: P1-CPP-EMIT-01-S1] `CppEmitter` の expression rendering のヘルパ群を `src/hooks/cpp/emitter/expr.py` 相当へ移譲し、呼び出し元を最小差分で切り替える。
 3. [x] [ID: P1-CPP-EMIT-01-S2] statement rendering のうち `For`/`While`/`If`/`Try` 系を `src/hooks/cpp/emitter/stmt.py` 側に移譲する。
 4. [x] [ID: P1-CPP-EMIT-01-S3] cast / runtime-call / import の分岐を専用ヘルパへ整理し、重複分岐を削減する。
-5. [ ] [ID: P1-CPP-EMIT-01-S4] `temp` 名生成（`__tmp`）と一時変数生存域管理を 1 モジュールへ集約し、同名ロジックの重複を除去する。
+5. [x] [ID: P1-CPP-EMIT-01-S4] `temp` 名生成（`__tmp`）と一時変数生存域管理を 1 モジュールへ集約し、同名ロジックの重複を除去する。
 6. [ ] [ID: P1-CPP-EMIT-01-S5] `fallback_tuple_target_names_from_repr` 系の変換ロジックを共通処理に集約し、`code_emitter` 側互換を壊さずに移管する。
 7. [ ] [ID: P1-CPP-EMIT-01-S6] `cast`/`object receiver` 周辺の分岐を 1 ハンドラに寄せ、`emit_binary_op` 系の条件分岐重複を 1/3 以下に抑える。
 8. [ ] [ID: P1-CPP-EMIT-01-S7] `render_trivia` とコメント/ディレクティブ処理を切り出し、`docs-ja/plans/p1-codeemitter-dispatch-redesign.md` との責務整合を確認する。

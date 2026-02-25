@@ -64,7 +64,7 @@ class CppStatementEmitter:
         if has_effective_finally:
             self.emit(self.syntax_text("scope_open", "{"))
             self.indent += 1
-            gid = self.next_tmp("__finally")
+            gid = self.next_finally_guard_name()
             self.emit(
                 self.syntax_line(
                     "scope_exit_open",
@@ -225,7 +225,8 @@ class CppStatementEmitter:
         iter_tmp = ""
         hdr = ""
         if unpack_tuple:
-            iter_tmp = self.next_tmp("__it")
+            iter_tmp = self.next_for_iter_name()
+            target_names = self.scope_names_with_tmp(target_names, iter_tmp)
             hdr = self.syntax_line(
                 "for_each_unpack_open",
                 "for (auto {iter_tmp} : {iter})",
@@ -366,7 +367,8 @@ class CppStatementEmitter:
         hdr = ""
         needs_tmp = unpack_tuple or self._node_kind_from_dict(target) != "Name" or not self.is_any_like_type(t_decl)
         if needs_tmp:
-            iter_tmp = self.next_tmp("__itobj")
+            iter_tmp = self.next_for_runtime_iter_name()
+            target_names = self.scope_names_with_tmp(target_names, iter_tmp)
             hdr = self.syntax_line(
                 "for_each_runtime_open",
                 "for (object {iter_tmp} : py_dyn_range({iter}))",
