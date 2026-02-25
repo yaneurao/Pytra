@@ -38,7 +38,7 @@
    2. [x] [ID: P0-SAMPLE-BENCH-02-S2] `02〜18` を全言語ターゲットで再実行し、言語別原因へ紐づける。
       - `docs-ja/plans/p0-sample-all-language-benchmark.md` に `07~18` の再実行結果を追加し、失敗カテゴリを言語別に記録。
    3. [x] [ID: P0-SAMPLE-BENCH-02-S3] `07〜18` を全言語ターゲットで再実行し、`docs-ja/plans/p0-sample-all-language-benchmark.md` の `決定ログ` を更新する。
-3. [ ] [ID: P0-SAMPLE-BENCH-03] `python3 tools/verify_sample_outputs.py --refresh-golden` を実行し、全言語計測結果を再取得して `readme-ja.md`（必要に応じて `readme.md`）を更新する。
+3. [x] [ID: P0-SAMPLE-BENCH-03] `python3 tools/verify_sample_outputs.py --refresh-golden` を実行し、全言語計測結果を再取得して `readme-ja.md`（必要に応じて `readme.md`）を更新する。
 
 
 ## P1: C++ Emitter Reduction

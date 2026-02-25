@@ -194,3 +194,5 @@
   - `java`: 出力不一致（期待と相違）。
   - `kotlin`: C#/Java 混在記法が大量残存し、Kotlin 構文としては大量コンパイルエラー。
   - `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: P0-SAMPLE-BENCH-03 で `python3 tools/verify_sample_outputs.py --refresh-golden` を再実行。  
+  - 18件のゴールデン更新処理は完了したが、既存の `sample/golden/manifest.json` と内容が一致し、トラック済み差分は発生しなかった（`SUMMARY` は `work` 生成後に終了）。
