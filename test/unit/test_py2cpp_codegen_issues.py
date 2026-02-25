@@ -813,8 +813,19 @@ def f(x: object) -> bool:
 
         self.assertIn("virtual int64 inc(int64 x) {", cpp)
         self.assertIn("int64 inc(int64 x) override {", cpp)
-        self.assertIn("virtual int64 base_only(int64 x) {", cpp)
+        self.assertIn("int64 base_only(int64 x) {", cpp)
         self.assertNotIn("virtual int64 inc(int64 x) override {", cpp)
+
+    def test_non_overridden_base_methods_are_not_virtual(self) -> None:
+        src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\n    def unused(self, x: int) -> int:\n        return x\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "virtual_no_override.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("virtual int64 inc(int64 x) {", cpp)
+        self.assertNotIn("virtual int64 unused(int64 x) {", cpp)
 
 
 if __name__ == "__main__":

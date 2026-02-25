@@ -122,6 +122,7 @@ class CppEmitter(
         self.current_class_fields: dict[str, str] = {}
         self.current_class_static_fields: set[str] = set()
         self.class_method_names: dict[str, set[str]] = {}
+        self.class_method_virtual: dict[str, set[str]] = {}
         self.class_method_arg_types: dict[str, dict[str, list[str]]] = {}
         self.class_method_arg_names: dict[str, dict[str, list[str]]] = {}
         self.class_base: dict[str, str] = {}
@@ -681,6 +682,18 @@ class CppEmitter(
             if len(owners) == 1:
                 for owner in owners:
                     self.class_method_owner_unique[method] = owner
+
+        self.class_method_virtual = {cls: set() for cls in self.class_method_names}
+        for derived_cls, methods in self.class_method_names.items():
+            for raw_name in methods:
+                if not isinstance(raw_name, str):
+                    continue
+                m = raw_name
+                base = self.class_base.get(derived_cls, "")
+                while base != "":
+                    if m in self.class_method_names.get(base, set()):
+                        self.class_method_virtual[base].add(m)
+                    base = self.class_base.get(base, "")
 
         self.emit_module_leading_trivia()
         header_text: str = CPP_HEADER
@@ -2378,7 +2391,7 @@ class CppEmitter(
                 if name != "__del__":
                     if self._class_has_base_method(self.current_class_name, str(name)):
                         func_suffix = " override"
-                    else:
+                    elif str(name) in self.class_method_virtual.get(self.current_class_name, set()):
                         func_prefix = "virtual "
                 self.emit(f"{func_prefix}{ret} {emitted_name}({params_txt}){func_suffix} {{")
             else:
