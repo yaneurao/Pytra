@@ -39,8 +39,12 @@ public:
         return ref_count_.load(::std::memory_order_acquire);
     }
 
-    uint32_t type_id() const noexcept {
+    virtual uint32_t py_type_id() const noexcept {
         return type_id_;
+    }
+
+    uint32_t type_id() const noexcept {
+        return py_type_id();
     }
 
     /**
@@ -98,7 +102,7 @@ public:
      * 既定では自身の type_id と一致する場合のみ true。
      */
     virtual bool py_isinstance_of(uint32_t expected_type_id) const {
-        return type_id_ == expected_type_id;
+        return py_type_id() == expected_type_id;
     }
 
 protected:

@@ -2451,14 +2451,6 @@ class CppEmitter(
         self.current_function_is_generator = is_generator
         self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
         self.current_function_yield_buffer = self.next_yield_values_name() if is_generator else ""
-        is_gc_ctor = (
-            in_class
-            and name == "__init__"
-            and self.current_class_name is not None
-            and self.current_class_name in self.ref_classes
-        )
-        if is_gc_ctor:
-            self.emit("this->set_type_id(PYTRA_TYPE_ID);")
         if docstring != "":
             self.emit_block_comment(docstring)
         if is_generator:
@@ -2694,6 +2686,9 @@ class CppEmitter(
             base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
             self.emit(f"inline static uint32 PYTRA_TYPE_ID = py_register_class_type({base_type_id_expr});")
 
+            self.emit("uint32 py_type_id() const noexcept override {")
+            self.emit("    return PYTRA_TYPE_ID;")
+            self.emit("}")
             self.emit("virtual bool py_isinstance_of(uint32 expected_type_id) const override {")
             self.emit("    return expected_type_id == PYTRA_TYPE_ID;")
             self.emit("}")
@@ -2712,8 +2707,6 @@ class CppEmitter(
             self.emit(f"{name}({join_str_list(', ', params)}) {{")
             self.indent += 1
             self.scope_stack.append(set())
-            if gc_managed:
-                self.emit("this->set_type_id(PYTRA_TYPE_ID);")
             for fname, _ in instance_fields_ordered:
                 self.emit(f"this->{fname} = {fname};")
             self.scope_stack.pop()
