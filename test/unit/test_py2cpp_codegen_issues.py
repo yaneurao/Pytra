@@ -798,6 +798,23 @@ def f(x: object) -> bool:
         self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});", cpp)
         self.assertIn("inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{Base::PYTRA_TYPE_ID});", cpp)
         self.assertIn("return (py_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_isinstance(x, Child::PYTRA_TYPE_ID));", cpp)
+        self.assertIn("virtual bool py_isinstance_of(uint32 expected_type_id) const override {", cpp)
+        self.assertIn("if (expected_type_id == PYTRA_TID_OBJECT) return true;", cpp)
+        self.assertIn("if (expected_type_id == PYTRA_TYPE_ID) return true;", cpp)
+        self.assertIn("if (Base::py_isinstance_of(expected_type_id)) return true;", cpp)
+
+    def test_inheritance_methods_are_emitted_as_virtual_with_override(self) -> None:
+        src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\n    def base_only(self, x: int) -> int:\n        return x\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "virtual_override.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("virtual int64 inc(int64 x) {", cpp)
+        self.assertIn("int64 inc(int64 x) override {", cpp)
+        self.assertIn("virtual int64 base_only(int64 x) {", cpp)
+        self.assertNotIn("virtual int64 inc(int64 x) override {", cpp)
 
 
 if __name__ == "__main__":

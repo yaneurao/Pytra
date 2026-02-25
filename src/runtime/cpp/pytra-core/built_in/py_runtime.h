@@ -2274,6 +2274,15 @@ static inline uint32 py_runtime_type_id(const T& v) {
 
 template <class T>
 static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
+    if constexpr (::std::is_same_v<T, object>) {
+        if (!value) {
+            return expected_type_id == PYTRA_TID_NONE;
+        }
+        if (value->py_isinstance_of(expected_type_id)) {
+            return true;
+        }
+        return py_is_subtype(py_runtime_type_id(value), expected_type_id);
+    }
     return py_is_subtype(py_runtime_type_id(value), expected_type_id);
 }
 

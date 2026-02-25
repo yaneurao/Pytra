@@ -2372,7 +2372,17 @@ class CppEmitter(
         else:
             param_sep = ", "
             params_txt = param_sep.join(params)
-            self.emit_function_open(ret, str(emitted_name), params_txt)
+            if self.current_class_name is not None and in_class:
+                func_prefix = ""
+                func_suffix = ""
+                if name != "__del__":
+                    if self._class_has_base_method(self.current_class_name, str(name)):
+                        func_suffix = " override"
+                    else:
+                        func_prefix = "virtual "
+                self.emit(f"{func_prefix}{ret} {emitted_name}({params_txt}){func_suffix} {{")
+            else:
+                self.emit_function_open(ret, str(emitted_name), params_txt)
         docstring = self.any_to_str(stmt.get("docstring"))
         self.indent += 1
         self.scope_stack.append(set(fn_scope))
@@ -2419,6 +2429,16 @@ class CppEmitter(
         self.scope_stack.pop()
         self.indent -= 1
         self.emit_block_close()
+
+    def _class_has_base_method(self, class_name: str, method: str) -> bool:
+        """指定クラスの継承祖先に同名メソッドが存在するか判定する。"""
+        base = self.class_base.get(class_name, "")
+        while base != "":
+            methods = self.class_method_names.get(base, set())
+            if method in methods:
+                return True
+            base = self.class_base.get(base, "")
+        return False
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
         """クラス定義ノードを C++ クラス/struct として出力する。"""
@@ -2624,6 +2644,15 @@ class CppEmitter(
         if gc_managed:
             base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
             self.emit(f"inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{{{base_type_id_expr}}});")
+
+            self.emit("virtual bool py_isinstance_of(uint32 expected_type_id) const override {")
+            self.emit("    if (expected_type_id == PYTRA_TID_OBJECT) return true;")
+            self.emit("    if (expected_type_id == PYTRA_TYPE_ID) return true;")
+            if base_is_gc:
+                self.emit(f"    if ({base}::py_isinstance_of(expected_type_id)) return true;")
+            self.emit("    return false;")
+            self.emit("}")
+
         if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:
             self.emit("")
         if (len(instance_fields_ordered) > 0 or gc_managed) and not has_init:
