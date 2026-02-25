@@ -41,3 +41,12 @@
   - `java`: 出力文字列が空（`Main.main` が未実装か TODO で終了の疑い）。
   - `kotlin`: 同様の C#/Java 構文混入により `public static`、`long`、`System.*` を Kotlin として解釈できず大量コンパイルエラー。
   - `swift`: `swiftc` 未検出で skip。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `02_raytrace_spheres` を `--targets cpp,rs,cs,js,ts,go,java,swift,kotlin` で再実行。
+  - `cpp`: PASS。
+  - `rs`: `crate::math` / `crate::time` / `crate::pytra` の import 解決エラー、`bytearray` 未実装、`i64` と `f64` の混在型エラー、`i64 -> u8` 変換不足。
+  - `cs`: `using math` や `List` の `using` が不足し、名前解決不能。
+  - `js`, `ts`: `math.js`/`time.js` 解決エラー（相対 import 出力の解決先不整合）。
+  - `go`: `using` / C# 型の混在で `package` 宣言以前に到達せず parse 失敗。
+  - `java`: 出力文字列が空（`Main.main` 未到達）。
+  - `kotlin`: `using math;`、`public static`、`double`、`List<byte>` など C# 記法混入。
+  - `swift`: `swiftc` 未検出で skip。
