@@ -14,6 +14,7 @@ PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", 
 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/pytra/built_in/gc.cpp",
+    "src/runtime/cpp/pytra/built_in/type_id.cpp",
     "src/runtime/cpp/pytra/std/pathlib.cpp",
     "src/runtime/cpp/pytra/std/time.cpp",
     "src/runtime/cpp/pytra/std/time-impl.cpp",
@@ -134,6 +135,82 @@ int main() {
             )
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertIn("runtime type_id ok", run.stdout)
+
+    def test_rc_handle_upcast_from_derived_compiles(self) -> None:
+        cpp_src = r'''
+#include "runtime/cpp/pytra-core/built_in/gc.h"
+
+#include <cassert>
+#include <iostream>
+#include <utility>
+
+class BaseObj : public pytra::gc::PyObj {
+public:
+    BaseObj() : pytra::gc::PyObj(1000) {}
+};
+
+class ChildObj : public BaseObj {
+public:
+    ChildObj() : BaseObj() {}
+};
+
+int main() {
+    using pytra::gc::RcHandle;
+
+    RcHandle<ChildObj> child = RcHandle<ChildObj>::adopt(pytra::gc::rc_new<ChildObj>());
+    RcHandle<BaseObj> base_copy = child;
+    assert(base_copy.get() != nullptr);
+
+    RcHandle<BaseObj> base_move = RcHandle<ChildObj>::adopt(pytra::gc::rc_new<ChildObj>());
+    assert(base_move.get() != nullptr);
+
+    RcHandle<BaseObj> assigned;
+    assigned = child;
+    assert(assigned.get() != nullptr);
+
+    RcHandle<ChildObj> tmp = RcHandle<ChildObj>::adopt(pytra::gc::rc_new<ChildObj>());
+    assigned = std::move(tmp);
+    assert(assigned.get() != nullptr);
+    assert(!tmp);
+
+    std::cout << "rc upcast ok" << std::endl;
+    return 0;
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src = work / "rc_upcast.cpp"
+            exe = work / "rc_upcast.out"
+            src.write_text(cpp_src, encoding="utf-8")
+
+            comp = self._run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O2",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    str(src),
+                    "src/runtime/cpp/pytra/built_in/gc.cpp",
+                    "-o",
+                    str(exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile rc upcast smoke",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+            run = self._run(
+                [str(exe)],
+                cwd=work,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run rc upcast smoke",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertIn("rc upcast ok", run.stdout)
 
 
 if __name__ == "__main__":

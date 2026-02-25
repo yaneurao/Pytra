@@ -134,6 +134,13 @@ T* rc_new(Args&&... args) {
 template <class T>
 class RcHandle {
 public:
+    template <class U>
+    using EnableUpcast = ::std::enable_if_t<
+        ::std::is_base_of_v<PyObj, U> &&
+        ::std::is_convertible_v<U*, T*> &&
+        !::std::is_same_v<U, T>,
+        int>;
+
     RcHandle() = default;
 
     explicit RcHandle(T* ptr, bool add_ref = true) : ptr_(ptr) {
@@ -163,6 +170,16 @@ public:
         other.ptr_ = nullptr;
     }
 
+    template <class U, EnableUpcast<U> = 0>
+    RcHandle(const RcHandle<U>& other) : ptr_(static_cast<T*>(other.get())) {
+        if (ptr_ != nullptr) {
+            incref(reinterpret_cast<PyObj*>(ptr_));
+        }
+    }
+
+    template <class U, EnableUpcast<U> = 0>
+    RcHandle(RcHandle<U>&& other) noexcept : ptr_(static_cast<T*>(other.release())) {}
+
     RcHandle& operator=(const RcHandle& other) {
         if (this == &other) {
             return *this;
@@ -180,6 +197,21 @@ public:
         }
         ptr_ = other.ptr_;
         other.ptr_ = nullptr;
+        return *this;
+    }
+
+    template <class U, EnableUpcast<U> = 0>
+    RcHandle& operator=(const RcHandle<U>& other) {
+        reset(static_cast<T*>(other.get()));
+        return *this;
+    }
+
+    template <class U, EnableUpcast<U> = 0>
+    RcHandle& operator=(RcHandle<U>&& other) noexcept {
+        if (ptr_ != nullptr) {
+            decref(reinterpret_cast<PyObj*>(ptr_));
+        }
+        ptr_ = static_cast<T*>(other.release());
         return *this;
     }
 
