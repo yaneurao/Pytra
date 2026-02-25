@@ -86,3 +86,12 @@
 -  `java`: 出力不一致（期待文字列が空）。
 -  `kotlin`: `using math;` を含む C#/Java 混在構文で大規模なパース/型エラー。
 -  `swift`: SKIP（toolchain 不在）。
+- 2026-02-25: [P0-SAMPLE-BENCH-02-S2] `08_langtons_ant` を同条件で再実行。
+-  `cpp`: PASS。
+-  `rs`: Rust の基本変換ミスが新規で顕在化（`? :` の三項を `bool` に混在、`for ... in range` 構文が `[[... ] for _ in range(...)]` のまま残る等）、加えて `crate::pytra.runtime.gif` / `crate::time` unresolved import、`bytearray`・`bytes` 未実装。
+-  `cs`: list 初期化/2D 構文で parse エラー。
+-  `js`, `ts`: `[0] * w for _ in range(h)` 系で `for`/`range` が Python 構文のまま残り parse/変換失敗。
+-  `go`: `public` 記法混入で parse エラー。
+-  `java`: 出力不一致（期待文字列が空）。
+-  `kotlin`: `using math` と C#/Java/CS 仕様混在で広範な構文エラー。
+-  `swift`: SKIP（toolchain 不在）。
