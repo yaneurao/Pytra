@@ -35,6 +35,12 @@
 - 非対象として残す項目:
   - `src/runtime/cpp/pytra-gen/built_in/type_id.cpp` の `type_id` registry/state 管理分岐（型登録順序・包含関係管理）。これは class method dispatch 分岐ではないため本タスク対象外。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S1-03` 確定内容（2026-02-25）:
+- S1-01/S1-02 で dispatch 用 `type_id` 分岐が 0 件だったため、`virtual` 置換候補リストは空と判定した。
+- 優先順位は以下の no-op 方針で確定:
+  - 優先1: 非対象理由の固定化（`type_id` registry 管理は対象外）を S2-03 へ接続
+  - 優先2: 実コード改変より先に回帰検証・ドキュメント整備を優先
+
 ### S2: emit 側の置換準備
 
 4. `P2-CPP-SELFHOST-VIRTUAL-01-S2-01`: `src/hooks/cpp/emitter` 内の `render` / `call` 系で、仮想呼び出しへ寄せる候補パスを 1 つずつ分解（まず `PyObj` メソッド類、次にユーザー定義 class method）。
@@ -64,3 +70,4 @@
 - [2026-02-25] `virtual` が override 済み基底メソッドのみ付与される方向へ変更済み。上記タスクの起点として `selfhost` 側の簡略化余地を低優先で追加。
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-01` として `sample/cpp` と `selfhost` 生成領域（`pytra-gen/compiler,std,utils`）の `type_id` 条件分岐を抽出し、class method dispatch 由来の `if/switch` は 0 件、残存は `pytra-gen/built_in/type_id.cpp` の registry 管理のみと確定した。
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-02` として抽出結果を 3 区分へ分類したが、dispatch 用 `type_id` 分岐は 0 件だった。非対象は `pytra-gen/built_in/type_id.cpp` の registry 管理分岐のみに整理した。
+- 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-03` として `virtual` 置換候補の優先順を策定したが、対象は 0 件（no-op）で確定した。以降は非対象理由の固定化と回帰文書化を優先する。
