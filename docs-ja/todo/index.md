@@ -30,6 +30,17 @@
 - 完了済みタスクは `docs-ja/todo/archive/index.md` 経由で履歴へ移動します。
 - `docs-ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs-ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
+## P0: isinstance 判定を type_id 区間判定へ統一（最優先）
+
+文脈: `docs-ja/plans/p0-isinstance-single-inheritance.md`（`P0-ISINSTANCE-01`）
+
+1. [ ] [ID: P0-ISINSTANCE-01] 単一継承前提の `type_id_min/type_id_max` で `isinstance` を統一し、全対象言語で文字列名比較・多重継承推論・ハイブリッド分岐を排除する。
+2. [ ] [ID: P0-ISINSTANCE-01-S1] C++/JS/TS/RS/CS の `isinstance` lower を `py_isinstance`/`py_is_subtype` 系 API に置換する。
+3. [ ] [ID: P0-ISINSTANCE-01-S2] 多重継承を要求する入力（複数基底）を compile-time で検出し、明示エラーへ統一する。
+4. [ ] [ID: P0-ISINSTANCE-01-S3] runtime 側 `type_id` 範囲テーブルを検証し、`expected.min <= actual <= expected.max` 判定の観測不変性を回帰テスト化する。
+5. [ ] [ID: P0-ISINSTANCE-01-S4] 既存 `isinstance` テストを更新・追加し、`tools/check_*_transpile.py` と `test/unit` の回帰条件を全言語で再固定化する。
+6. [ ] [ID: P0-ISINSTANCE-01-S5] `docs-ja/spec/spec-type_id.md`（必要なら `docs-ja/spec/spec-linker.md`）への最終整合を確認したうえで、関連タスクの完了条件を反映する。
+
 ## P0: サンプル全言語のゴールデン一致パイプライン（最優先）
 
 文脈: `docs-ja/plans/p0-sample-all-languages-golden-pipeline.md`（`P0-SAMPLE-GOLDEN-ALL-01`）
