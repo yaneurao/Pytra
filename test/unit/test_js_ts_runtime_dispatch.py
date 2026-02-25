@@ -59,8 +59,12 @@ assert.equal(rt.pyIsSubtype(rt.PY_TYPE_BOOL, rt.PY_TYPE_NUMBER), true);
 
 const baseType = rt.pyRegisterClassType([rt.PY_TYPE_OBJECT]);
 const childType = rt.pyRegisterClassType([baseType]);
+const siblingBase = rt.pyRegisterClassType([rt.PY_TYPE_OBJECT]);
+const siblingChild = rt.pyRegisterClassType([siblingBase]);
 const taggedChild = { [rt.PYTRA_TYPE_ID]: childType };
 assert.equal(rt.pyIsSubtype(childType, baseType), true);
+assert.equal(rt.pyIsSubtype(childType, siblingBase), false);
+assert.equal(rt.pyIsSubtype(siblingChild, baseType), false);
 assert.equal(rt.pyIsInstance(taggedChild, baseType), true);
 
 let threw = false;

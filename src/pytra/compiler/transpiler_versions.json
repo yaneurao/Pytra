@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "shared": "0.88.0",
+  "shared": "0.89.0",
   "languages": {
     "cpp": "0.278.0",
     "rs": "0.8.0",

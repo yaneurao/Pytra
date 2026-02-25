@@ -27,6 +27,24 @@ class PytraBuiltInTypeIdTest(unittest.TestCase):
         self.assertTrue(tid.py_tid_is_subtype(child, tid._tid_object()))
         self.assertFalse(tid.py_tid_is_subtype(base, child))
 
+    def test_range_order_keeps_sibling_subtrees_disjoint(self) -> None:
+        left = tid.py_tid_register_class_type([tid._tid_object()])
+        right = tid.py_tid_register_class_type([tid._tid_object()])
+        left_child = tid.py_tid_register_class_type([left])
+        right_child = tid.py_tid_register_class_type([right])
+
+        self.assertTrue(tid.py_tid_is_subtype(left_child, left))
+        self.assertTrue(tid.py_tid_is_subtype(right_child, right))
+        self.assertFalse(tid.py_tid_is_subtype(left_child, right))
+        self.assertFalse(tid.py_tid_is_subtype(right_child, left))
+
+        left_min = tid._TYPE_MIN[left]
+        left_max = tid._TYPE_MAX[left]
+        left_child_order = tid._TYPE_ORDER[left_child]
+        right_child_order = tid._TYPE_ORDER[right_child]
+        self.assertTrue(left_min <= left_child_order <= left_max)
+        self.assertFalse(left_min <= right_child_order <= left_max)
+
     def test_runtime_type_id_for_builtin_values(self) -> None:
         self.assertEqual(tid.py_tid_runtime_type_id(None), tid._tid_none())
         self.assertEqual(tid.py_tid_runtime_type_id(True), tid._tid_bool())
@@ -45,10 +63,10 @@ class PytraBuiltInTypeIdTest(unittest.TestCase):
             PYTRA_TYPE_ID = child
 
         obj = ChildObj()
-        self.assertEqual(tid.py_tid_runtime_type_id(obj), tid._tid_object())
+        self.assertEqual(tid.py_tid_runtime_type_id(obj), child)
         self.assertTrue(tid.py_tid_isinstance(obj, tid._tid_object()))
-        self.assertFalse(tid.py_tid_isinstance(obj, child))
-        self.assertFalse(tid.py_tid_isinstance(obj, base))
+        self.assertTrue(tid.py_tid_isinstance(obj, child))
+        self.assertTrue(tid.py_tid_isinstance(obj, base))
         self.assertFalse(tid.py_tid_isinstance(obj, tid._tid_dict()))
 
 

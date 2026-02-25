@@ -17,25 +17,176 @@ export const PYTRA_STR = Symbol.for("pytra.py_str");
 
 const PYTRA_USER_TYPE_ID_BASE = 1000;
 let pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
-const pyTypeBases = new Map<number, number[]>();
+const pyTypeIds: number[] = [];
+const pyTypeBase = new Map<number, number>();
+const pyTypeChildren = new Map<number, number[]>();
+const pyTypeOrder = new Map<number, number>();
+const pyTypeMin = new Map<number, number>();
+const pyTypeMax = new Map<number, number>();
 
-function initBuiltinTypeBases(): void {
-  if (pyTypeBases.size > 0) {
+function containsInt(items: number[], value: number): boolean {
+  let i = 0;
+  while (i < items.length) {
+    if (items[i] === value) {
+      return true;
+    }
+    i += 1;
+  }
+  return false;
+}
+
+function removeInt(items: number[], value: number): void {
+  let i = 0;
+  while (i < items.length) {
+    if (items[i] === value) {
+      items.splice(i, 1);
+      return;
+    }
+    i += 1;
+  }
+}
+
+function copyInts(items: number[]): number[] {
+  const out: number[] = [];
+  for (const value of items) {
+    out.push(value);
+  }
+  return out;
+}
+
+function sortedInts(items: number[]): number[] {
+  const out = copyInts(items);
+  let i = 0;
+  while (i < out.length) {
+    let j = i + 1;
+    while (j < out.length) {
+      if (out[j] < out[i]) {
+        const tmp = out[i];
+        out[i] = out[j];
+        out[j] = tmp;
+      }
+      j += 1;
+    }
+    i += 1;
+  }
+  return out;
+}
+
+function registerTypeNode(typeId: number, baseTypeId: number): void {
+  if (!containsInt(pyTypeIds, typeId)) {
+    pyTypeIds.push(typeId);
+  }
+  const prevBase = pyTypeBase.get(typeId);
+  if (typeof prevBase === "number" && prevBase >= 0) {
+    const prevChildren = pyTypeChildren.get(prevBase);
+    if (Array.isArray(prevChildren)) {
+      removeInt(prevChildren, typeId);
+    }
+  }
+  pyTypeBase.set(typeId, baseTypeId);
+  if (!pyTypeChildren.has(typeId)) {
+    pyTypeChildren.set(typeId, []);
+  }
+  if (baseTypeId < 0) {
     return;
   }
-  pyTypeBases.set(PY_TYPE_NONE, []);
-  pyTypeBases.set(PY_TYPE_BOOL, [PY_TYPE_NUMBER, PY_TYPE_OBJECT]);
-  pyTypeBases.set(PY_TYPE_NUMBER, [PY_TYPE_OBJECT]);
-  pyTypeBases.set(PY_TYPE_STRING, [PY_TYPE_OBJECT]);
-  pyTypeBases.set(PY_TYPE_ARRAY, [PY_TYPE_OBJECT]);
-  pyTypeBases.set(PY_TYPE_MAP, [PY_TYPE_OBJECT]);
-  pyTypeBases.set(PY_TYPE_SET, [PY_TYPE_OBJECT]);
-  pyTypeBases.set(PY_TYPE_OBJECT, []);
+  if (!pyTypeChildren.has(baseTypeId)) {
+    pyTypeChildren.set(baseTypeId, []);
+  }
+  const children = pyTypeChildren.get(baseTypeId);
+  if (Array.isArray(children) && !containsInt(children, typeId)) {
+    children.push(typeId);
+  }
+}
+
+function sortedChildTypeIds(typeId: number): number[] {
+  const children = pyTypeChildren.get(typeId);
+  if (!Array.isArray(children)) {
+    return [];
+  }
+  return sortedInts(children);
+}
+
+function collectRootTypeIds(): number[] {
+  const roots: number[] = [];
+  for (const typeId of pyTypeIds) {
+    const baseTypeId = pyTypeBase.get(typeId);
+    if (typeof baseTypeId !== "number" || baseTypeId < 0 || !pyTypeBase.has(baseTypeId)) {
+      roots.push(typeId);
+    }
+  }
+  return sortedInts(roots);
+}
+
+function assignTypeRangesDfs(typeId: number, nextOrder: number): number {
+  pyTypeOrder.set(typeId, nextOrder);
+  pyTypeMin.set(typeId, nextOrder);
+  let cur = nextOrder + 1;
+  const children = sortedChildTypeIds(typeId);
+  for (const childTypeId of children) {
+    cur = assignTypeRangesDfs(childTypeId, cur);
+  }
+  pyTypeMax.set(typeId, cur - 1);
+  return cur;
+}
+
+function recomputeTypeRanges(): void {
+  pyTypeOrder.clear();
+  pyTypeMin.clear();
+  pyTypeMax.clear();
+  let nextOrder = 0;
+  const roots = collectRootTypeIds();
+  for (const rootTypeId of roots) {
+    nextOrder = assignTypeRangesDfs(rootTypeId, nextOrder);
+  }
+  const allTypeIds = sortedInts(pyTypeIds);
+  for (const typeId of allTypeIds) {
+    if (!pyTypeOrder.has(typeId)) {
+      nextOrder = assignTypeRangesDfs(typeId, nextOrder);
+    }
+  }
+}
+
+function initBuiltinTypeBases(): void {
+  if (pyTypeIds.length > 0) {
+    return;
+  }
+  registerTypeNode(PY_TYPE_NONE, -1);
+  registerTypeNode(PY_TYPE_OBJECT, -1);
+  registerTypeNode(PY_TYPE_NUMBER, PY_TYPE_OBJECT);
+  registerTypeNode(PY_TYPE_BOOL, PY_TYPE_NUMBER);
+  registerTypeNode(PY_TYPE_STRING, PY_TYPE_OBJECT);
+  registerTypeNode(PY_TYPE_ARRAY, PY_TYPE_OBJECT);
+  registerTypeNode(PY_TYPE_MAP, PY_TYPE_OBJECT);
+  registerTypeNode(PY_TYPE_SET, PY_TYPE_OBJECT);
+  recomputeTypeRanges();
+}
+
+function normalizeBaseTypeId(bases: number[]): number {
+  const unique: number[] = [];
+  for (const typeId of bases) {
+    if (Number.isInteger(typeId) && !containsInt(unique, typeId)) {
+      unique.push(typeId);
+    }
+  }
+  if (unique.length === 0) {
+    return PY_TYPE_OBJECT;
+  }
+  if (unique.length > 1) {
+    throw new Error("multiple inheritance is not supported");
+  }
+  const baseTypeId = unique[0];
+  if (!pyTypeBase.has(baseTypeId)) {
+    throw new Error("unknown base type_id: " + String(baseTypeId));
+  }
+  return baseTypeId;
 }
 
 export function pyRegisterType(typeId: number, bases: number[] = []): number {
   initBuiltinTypeBases();
-  pyTypeBases.set(typeId, bases.slice());
+  const baseTypeId = normalizeBaseTypeId(bases.slice());
+  registerTypeNode(typeId, baseTypeId);
+  recomputeTypeRanges();
   return typeId;
 }
 
@@ -51,38 +202,16 @@ export function pyRegisterClassType(bases: number[] = [PY_TYPE_OBJECT]): number 
 
 export function pyIsSubtype(actualTypeId: number, expectedTypeId: number): boolean {
   initBuiltinTypeBases();
-  if (actualTypeId === expectedTypeId) {
-    return true;
-  }
-  if (!pyTypeBases.has(expectedTypeId)) {
+  const actualOrder = pyTypeOrder.get(actualTypeId);
+  if (typeof actualOrder !== "number") {
     return false;
   }
-  const visited = new Set<number>();
-  const stack: number[] = [actualTypeId];
-  while (stack.length > 0) {
-    const cur = stack.pop();
-    if (cur === undefined) {
-      continue;
-    }
-    if (cur === expectedTypeId) {
-      return true;
-    }
-    if (visited.has(cur)) {
-      continue;
-    }
-    visited.add(cur);
-    const bases = pyTypeBases.get(cur);
-    if (!Array.isArray(bases)) {
-      continue;
-    }
-    for (const b of bases) {
-      if (b === expectedTypeId) {
-        return true;
-      }
-      stack.push(b);
-    }
+  const expectedMin = pyTypeMin.get(expectedTypeId);
+  const expectedMax = pyTypeMax.get(expectedTypeId);
+  if (typeof expectedMin !== "number" || typeof expectedMax !== "number") {
+    return false;
   }
-  return false;
+  return expectedMin <= actualOrder && actualOrder <= expectedMax;
 }
 
 export function pyIsInstance(value: unknown, expectedTypeId: number): boolean {
@@ -105,6 +234,7 @@ function asTagged(value: unknown): PytraTagged | null {
 
 /** 値の type_id を返す（minify 耐性のある tag dispatch 用）。 */
 export function pyTypeId(value: unknown): number {
+  initBuiltinTypeBases();
   if (value === null || value === undefined) return PY_TYPE_NONE;
   const ty = typeof value;
   if (ty === "boolean") return PY_TYPE_BOOL;
