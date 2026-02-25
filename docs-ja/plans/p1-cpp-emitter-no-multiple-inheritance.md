@@ -33,3 +33,10 @@
   - `P1-CPP-EMIT-NOMI-01-S2`: `CppEmitter` の初期化経路の委譲移行
   - `P1-CPP-EMIT-NOMI-01-S3`: `call/expr/stmt` 系メソッド呼び出しのデリゲーション導線を切り出し
   - `P1-CPP-EMIT-NOMI-01-S4`: 既存テストの回帰と性能劣化の確認
+
+## 決定ログ
+
+- [2026-02-25] [ID: P1-CPP-EMIT-NOMI-01-S1]
+  - 実施内容: `src/hooks/cpp/emitter/cpp_emitter.py` を単一継承 (`CodeEmitter` のみ) に変更。
+  - 実装手段: `CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` の各メソッドを、クラス定義外のアタッチ処理で `CppEmitter` に委譲注入。
+  - 追加した検証: `PYTHONPATH=src python3 tools/check_py2cpp_transpile.py` で `checked=132 ok=132 fail=0 skipped=6` を確認。
