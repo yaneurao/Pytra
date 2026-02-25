@@ -43,6 +43,8 @@ WARNING: This project is still under active development and may be far from prod
 
 WARNING: Do not expect entire Python applications to be portable as-is. A realistic expectation is: if the core logic you wrote in Python transpiles well, that is a good outcome.
 
+WARNING: In the C++ runtime, `py_to_int64` / `py_to<int64>` is compatibility-first and returns `0` on non-convertible values. Use `obj_to_int64_or_raise` when strict validation is required.
+
 ## Runtime Performance Comparison
 
 Execution times for [sample programs](sample/readme.md) written in Python and their transpiled versions (unit: seconds).

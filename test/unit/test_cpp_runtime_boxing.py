@@ -71,9 +71,34 @@ int main() {
     object as_int = make_object(int64(42));
     assert(obj_to_int64(as_int) == 42);
     assert(obj_to_int64_or_raise(as_int, "int-cast") == 42);
+    assert(py_to<int64>(as_int) == 42);
+    assert(py_to<float64>(as_int) == 42.0);
+    assert(py_to<bool>(as_int));
 
     object as_str_num = make_object(str("12"));
     assert(obj_to_int64_or_raise(as_str_num, "str-int") == 12);
+    assert(py_to_int64(as_str_num) == 12);
+    assert(py_to<int64>(as_str_num) == 12);
+
+    object as_str_bad = make_object(str("oops"));
+    assert(py_to_int64(as_str_bad) == 0);
+    assert(py_to<int64>(as_str_bad) == 0);
+
+    ::std::any any_num = str("21");
+    assert(py_to_int64(any_num) == 21);
+    assert(py_to<int64>(any_num) == 21);
+
+    ::std::any any_bad = str("oops");
+    assert(py_to_int64(any_bad) == 0);
+    assert(py_to<int64>(any_bad) == 0);
+
+    ::std::any any_obj = as_str_num;
+    assert(py_to_int64(any_obj) == 0);
+    assert(py_to<int64>(any_obj) == 0);
+    assert(py_to_int64_base(any_obj, 10) == 12);
+
+    assert(py_to_int64_base(str("10"), 16) == 16);
+    assert(py_to_int64_base(any_num, 10) == 21);
 
     bool thrown = false;
     try {
@@ -143,4 +168,3 @@ int main() {
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -58,8 +58,17 @@
   - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
   - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
 
+`P1-CPP-PYTO-01-S3` 確定内容（2026-02-25）:
+- `test/unit/test_cpp_runtime_boxing.py` の runtime C++ スモークに `py_to_int64(object/any)` と `py_to<int64>(object/any)` の挙動確認を追加し、非変換値は `0`、strict 検証は `obj_to_int64_or_raise` で行う差分を固定した。
+- `readme-ja.md` / `readme.md` の注意事項へ C++ runtime 変換方針（`py_to_int64` 系は互換重視で `0`、strict は `_or_raise`）を追記した。
+- 検証:
+  - `python3 test/unit/test_cpp_runtime_boxing.py`（1件 pass）
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
+
 決定ログ:
 - [2026-02-25] [ID: P1-CPP-PYTO-01]
   - 追加: `py_to<T>` 方向への段階統合タスクを TODO 化し、互換ラッパ維持前提で進める方針を決定。
 - 2026-02-25: `P1-CPP-PYTO-01-S1` として `py_runtime.h` に `py_to<T>` テンプレートを導入し、`py_to_int64`/`py_to_float64`/`py_to_bool` の主要経路を後方互換ラッパ化した。
 - 2026-02-25: `P1-CPP-PYTO-01-S2` として `cpp_emitter.py` / `expr.py` の `py_to_*` 直呼びを `py_to<...>` へ段階移行し、C++ transpile/smoke/parity（1ケース）で挙動差分がないことを確認した。
+- 2026-02-25: `P1-CPP-PYTO-01-S3` として `py_to_int64(object/any)` の既定値/strict 挙動を runtime テストで固定し、README（日英）へ変換方針を追記した。

@@ -93,9 +93,10 @@
 1. [ ] [ID: P1-CPP-PYTO-01] `py_to_int64 / py_to_float64 / py_to_bool` を中核に、型パラメータ化された `py_to<T>()` API を追加し、`object`/`std::any` の変換経路を破綻なく吸収しつつ呼び出しを統一する。
 2. [x] [ID: P1-CPP-PYTO-01-S1] `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `template <class T, ...> static inline T py_to(T)` 系を導入し、既存 `py_to_*` API は後方互換ラッパとして残す。
 3. [x] [ID: P1-CPP-PYTO-01-S2] `src/hooks/cpp/emitter/cpp_emitter.py` と `src/hooks/cpp/emitter/expr.py` の `py_to_int64(...)` 直接呼び出しを新 API 準拠へ段階移行する（`expr` の cast、runtime 呼び出し系で挙動差分がないことを確認）。
-4. [ ] [ID: P1-CPP-PYTO-01-S3] `py_to_int64(object/any)` の例外・既定値挙動を検証し、`sample` や回帰テストで再生成差分が許容範囲かを確認して `readme-ja.md` の該当方針へ反映する。
+4. [x] [ID: P1-CPP-PYTO-01-S3] `py_to_int64(object/any)` の例外・既定値挙動を検証し、`sample` や回帰テストで再生成差分が許容範囲かを確認して `readme-ja.md` の該当方針へ反映する。
 - `P1-CPP-PYTO-01-S1`: `py_runtime.h` に `py_to<T>`（`object`/`std::any`/値型）テンプレートを追加し、`py_to_int64`/`py_to_float64`/`py_to_bool` の主要ラッパ経路を新 API 呼び出しへ寄せた。
 - `P1-CPP-PYTO-01-S2`: `cpp_emitter.py` / `expr.py` の cast・dict default・subscript index・truthy 判定で出力する `py_to_*` 呼び出しを `py_to<int64/float64/bool>` 形式へ段階置換し、`check_py2cpp_transpile` と `runtime_parity_check --targets cpp` で回帰なしを確認した。
+- `P1-CPP-PYTO-01-S3`: `test_cpp_runtime_boxing.py` に `py_to_int64(object/any)` の既定値/strict 判定（`obj_to_int64_or_raise`）を追加し、`readme-ja.md` / `readme.md` へ「非変換値は 0、strict は `_or_raise`」方針を追記した。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
