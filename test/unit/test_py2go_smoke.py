@@ -35,13 +35,13 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_contains_preview_and_package(self) -> None:
+    def test_transpile_add_fixture_contains_node_bridge_and_package(self) -> None:
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         go = transpile_to_go(east)
         self.assertIn("package main", go)
-        self.assertIn("Go プレビュー出力", go)
-        self.assertIn("add(", go)
+        self.assertIn('exec.Command("node"', go)
+        self.assertIn("program.js", go)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
@@ -64,6 +64,7 @@ class Py2GoSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
             out_go = Path(td) / "if_else.go"
+            out_js = Path(td) / "if_else.js"
             env = dict(os.environ)
             py_path = str(ROOT / "src")
             old = env.get("PYTHONPATH", "")
@@ -77,8 +78,11 @@ class Py2GoSmokeTest(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue(out_go.exists())
+            self.assertTrue(out_js.exists())
             txt = out_go.read_text(encoding="utf-8")
             self.assertIn("package main", txt)
+            self.assertIn("if_else.js", txt)
+            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
         fixture = find_fixture_case("if_else")

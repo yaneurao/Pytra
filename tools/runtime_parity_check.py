@@ -177,13 +177,13 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
             name="go",
             transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go",
             run_cmd=f"go run test/transpile/go/{case_stem}.go",
-            needs=("python", "go"),
+            needs=("python", "go", "node"),
         ),
         Target(
             name="java",
             transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java",
             run_cmd="javac test/transpile/java/Main.java && java -cp test/transpile/java Main",
-            needs=("python", "javac", "java"),
+            needs=("python", "javac", "java", "node"),
         ),
         Target(
             name="swift",
