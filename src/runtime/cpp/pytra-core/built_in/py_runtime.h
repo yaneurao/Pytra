@@ -947,6 +947,15 @@ static inline ::std::string py_bool_to_string(bool v) {
     return v ? "True" : "False";
 }
 
+template <class T>
+static inline T py_to(const object& v);
+
+template <class T>
+static inline T py_to(const ::std::any& v);
+
+template <class T, ::std::enable_if_t<!::std::is_same_v<T, object> && !::std::is_same_v<T, ::std::any>, int> = 0>
+static inline T py_to(const T& v);
+
 static inline int64 py_to_int64(const str& v) {
     return static_cast<int64>(::std::stoll(v));
 }
@@ -963,11 +972,11 @@ static inline int64 py_to_int64_base(const ::std::string& v, int64 base) {
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline int64 py_to_int64(T v) {
-    return static_cast<int64>(v);
+    return py_to<int64>(v);
 }
 
 static inline int64 py_to_int64(const object& v) {
-    return obj_to_int64(v);
+    return py_to<int64>(v);
 }
 
 static inline int64 py_to_int64_base(const object& v, int64 base) {
@@ -975,20 +984,20 @@ static inline int64 py_to_int64_base(const object& v, int64 base) {
 }
 
 static inline float64 py_to_float64(const object& v) {
-    return obj_to_float64(v);
+    return py_to<float64>(v);
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline float64 py_to_float64(T v) {
-    return static_cast<float64>(v);
+    return py_to<float64>(v);
 }
 
 static inline bool py_to_bool(const object& v) {
-    return obj_to_bool(v);
+    return py_to<bool>(v);
 }
 
 static inline bool py_to_bool(bool v) {
-    return v;
+    return py_to<bool>(v);
 }
 
 static inline int64 py_to_int64(const ::std::any& v) {
@@ -1117,6 +1126,52 @@ static inline bool py_to_bool(const ::std::any& v) {
     if (const auto* p = ::std::any_cast<::std::string>(&v)) return !p->empty();
     if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_bool(*p);
     return false;
+}
+
+template <class T, ::std::enable_if_t<!::std::is_same_v<T, object> && !::std::is_same_v<T, ::std::any>, int>>
+static inline T py_to(const T& v) {
+    return v;
+}
+
+template <class T>
+static inline T py_to(const object& v) {
+    if constexpr (::std::is_same_v<T, object>) {
+        return v;
+    } else if constexpr (::std::is_same_v<T, str>) {
+        return obj_to_str(v);
+    } else if constexpr (::std::is_same_v<T, bool>) {
+        return obj_to_bool(v);
+    } else if constexpr (::std::is_integral_v<T> && !::std::is_same_v<T, bool>) {
+        return static_cast<T>(obj_to_int64(v));
+    } else if constexpr (::std::is_floating_point_v<T>) {
+        return static_cast<T>(obj_to_float64(v));
+    } else {
+        static_assert(!::std::is_same_v<T, T>, "py_to<T>(object): unsupported target type");
+    }
+}
+
+template <class T>
+static inline T py_to(const ::std::any& v) {
+    if constexpr (::std::is_same_v<T, ::std::any>) {
+        return v;
+    } else if constexpr (::std::is_same_v<T, object>) {
+        if (const auto* p = ::std::any_cast<object>(&v)) return *p;
+        return make_object(v);
+    } else if constexpr (::std::is_same_v<T, str>) {
+        if (const auto* p = ::std::any_cast<str>(&v)) return *p;
+        if (const auto* p = ::std::any_cast<::std::string>(&v)) return str(*p);
+        if (const auto* p = ::std::any_cast<const char*>(&v)) return str(*p);
+        if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_str(*p);
+        return str(py_to_string(v));
+    } else if constexpr (::std::is_same_v<T, bool>) {
+        return py_to_bool(v);
+    } else if constexpr (::std::is_integral_v<T> && !::std::is_same_v<T, bool>) {
+        return static_cast<T>(py_to_int64(v));
+    } else if constexpr (::std::is_floating_point_v<T>) {
+        return static_cast<T>(py_to_float64(v));
+    } else {
+        static_assert(!::std::is_same_v<T, T>, "py_to<T>(any): unsupported target type");
+    }
 }
 
 // Python の print 互換（bool 表記や複数引数の空白区切りを吸収）。
