@@ -43,5 +43,6 @@
 
 - [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S1` 実施。`cpp_emitter.py` と `call.py` のすべての `_normalize_runtime_module_name` 呼び出しを廃止し、`pylib.*` 互換正規化を経路から除外した。
 - [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S2` 実施。`src/pytra/compiler/east_parts/code_emitter.py` の既定 `_normalize_runtime_module_name` は恒等実装であり、`pylib.*` 前提の変換分岐は存在せず追加変更なし。
+- [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S3` 実施。`pylib` 互換を検証対象としていた Cpp テストを除去し、`test/unit/test_py2cpp_features.py` の legacy 互換テスト `test_import_pylib_png_runtime` と `test/fixtures/imports/import_pylib_png.py` を削除。`docs-ja/spec/spec-dev.md` の既存記載（`pylib.runtime` 廃止）を明示要件として継続使用。
 
-- [ ] 実施中: `pylib.*` 互換名正規化除去タスク（S2, S3）
+- [ ] 実施中: `pylib.*` 互換名正規化除去タスク（将来の監査）

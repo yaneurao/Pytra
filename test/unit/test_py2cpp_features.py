@@ -3057,12 +3057,6 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_import_pylib_png_runtime(self) -> None:
-        out = self._compile_and_run_fixture("import_pylib_png")
-        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
-        self.assertGreater(len(lines), 0)
-        self.assertEqual(lines[-1], "True")
-
     def test_import_pytra_runtime_png_runtime(self) -> None:
         out = self._compile_and_run_fixture("import_pytra_runtime_png")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

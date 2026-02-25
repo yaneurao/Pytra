@@ -40,3 +40,8 @@
   - 実施内容: `src/hooks/cpp/emitter/cpp_emitter.py` を単一継承 (`CodeEmitter` のみ) に変更。
   - 実装手段: `CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` の各メソッドを、クラス定義外のアタッチ処理で `CppEmitter` に委譲注入。
   - 追加した検証: `PYTHONPATH=src python3 tools/check_py2cpp_transpile.py` で `checked=132 ok=132 fail=0 skipped=6` を確認。
+
+- [2026-02-25] [ID: P1-CPP-EMIT-NOMI-01-S2]
+  - 実施内容: `isinstance`/型チェック系の type-id Name-call 分岐を `_type_id_name_call_kind` で明示分類し、`_build_type_id_expr_from_call_name` / `render_call` / `_render_repr_expr` 側の分岐を簡素化。
+  - 対応内容: `isinstance/issubclass`/`py_*` 系 type_id 呼び出しを一元化フラグで判定し、未loweringケースの判定ルートとエラー生成を明確化。
+  - 追加した検証: `PYTHONPATH=src python3 tools/check_py2cpp_transpile.py` で `checked=131 ok=131 fail=0 skipped=6` を確認。

@@ -34,15 +34,15 @@
 
 文脈: `docs-ja/plans/p1-cpp-emitter-remove-pylib-compat.md`（`P1-CPP-EMIT-NORM-01`）
 
-1. [ ] [ID: P1-CPP-EMIT-NORM-01] `src/hooks/cpp/emitter/cpp_emitter.py` の `_normalize_runtime_module_name` を削除し、`pylib.*` 互換名を前提としない runtime module 解決へ切り替える（`P1-CPP-EMIT-NORM-01-S1` 〜 `S3` の完了でクローズ）。
+1. [x] [ID: P1-CPP-EMIT-NORM-01] `src/hooks/cpp/emitter/cpp_emitter.py` の `_normalize_runtime_module_name` を削除し、`pylib.*` 互換名を前提としない runtime module 解決へ切り替える（`P1-CPP-EMIT-NORM-01-S1` 〜 `S3` の完了でクローズ）。
 2. [x] [ID: P1-CPP-EMIT-NORM-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py` と `src/hooks/cpp/emitter/call.py` の該当呼び出しを洗い出し、`module_name` 正規化なしでの解決パスへ置換する。
 3. [x] [ID: P1-CPP-EMIT-NORM-01-S2] `src/pytra/compiler/east_parts/code_emitter.py` の同名的な正規化利用有無を確認し、必要なら `pylib` 前提経路を削減する。
-4. [ ] [ID: P1-CPP-EMIT-NORM-01-S3] 回帰テスト/ドキュメントを整備し、`pylib.*` 互換を求めるケースが存在しないことを明文化する（`docs-ja/spec/spec-dev.md` 追記含む）。
+4. [x] [ID: P1-CPP-EMIT-NORM-01-S3] 回帰テスト/ドキュメントを整備し、`pylib.*` 互換を求めるケースが存在しないことを明文化する（`docs-ja/spec/spec-dev.md` 追記含む）。
 
 ## P1: CppEmitter 多重継承廃止（中優先）
 
 文脈: `docs-ja/plans/p1-cpp-emitter-no-multiple-inheritance.md`（`P1-CPP-EMIT-NOMI-01`）
 
-1. [ ] [ID: P1-CPP-EMIT-NOMI-01] `src/hooks/cpp/emitter/cpp_emitter.py` の多重継承を廃止し、単一継承 + 明示的委譲へ切り替える。
+1. [x] [ID: P1-CPP-EMIT-NOMI-01] `src/hooks/cpp/emitter/cpp_emitter.py` の多重継承を廃止し、単一継承 + 明示的委譲へ切り替える。
 2. [x] [ID: P1-CPP-EMIT-NOMI-01-S1] `cpp_emitter.py` の状態管理を維持しつつ、`CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` のメソッドを `CppEmitter` へデリゲーション注入し、単一継承化を実現する。
-3. [ ] [ID: P1-CPP-EMIT-NOMI-01-S2] `CppEmitter` 単一継承移行中の `isinstance()`/型チェック関連の条件分岐を簡素化し、分岐経路を明示フラグ化する。
+3. [x] [ID: P1-CPP-EMIT-NOMI-01-S2] `CppEmitter` 単一継承移行中の `isinstance()`/型チェック関連の条件分岐を簡素化し、分岐経路を明示フラグ化する。
