@@ -58,7 +58,7 @@
 5. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S4] Rust 18件を compile/run/compare 完全一致へ。
 6. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S5] C# 18件を compile/run/compare 完全一致へ。
 7. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S6] JS/TS 18件を transpile/run/compare 完全一致へ。
-8. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S7] Go/Java/Swift/Kotlin 18件を transpile/run/compare 完全一致へ。
+8. [x] [ID: P0-SAMPLE-GOLDEN-ALL-01-S7] Go/Java/Swift/Kotlin 18件を transpile/run/compare 完全一致へ。
 9. [ ] [ID: P0-SAMPLE-GOLDEN-ALL-01-S8] 全言語最終結果を `readme-ja.md` / `readme.md` のサンプル実行結果へ反映し、`golden` 差分が発生しない運用を維持する。
 - `P0-SAMPLE-GOLDEN-ALL-01-S1`: 検証スコープ（`sample/py` 18件・9言語）と比較ルール（stdout 正規化/artefact hash-size/source hash）、再現コマンド（`runtime_parity_check.py` / `verify_sample_outputs.py`）を文脈ファイルへ固定した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S2`: `runtime_parity_check.py` に `--all-samples`/`--summary-json` と失敗カテゴリ集計を追加し、`test_runtime_parity_check_cli.py` + `test_image_runtime_parity.py` で CLI 解決規約と C++ 到達性を回帰固定した。
@@ -66,7 +66,7 @@
 - `P0-SAMPLE-GOLDEN-ALL-01-S4`: Rust emitter の call/subscript/dict/class mutability lower を修正し、`runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=rs` を確認した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S5`: C# emitter/runtime（import解決、listcomp/range、bytes/tuple/slice lower、dataclass ctor、math/time/pathlib runtime）を修正し、`runtime_parity_check.py --case-root sample --targets cs --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=cs` を確認した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S6`: JS emitter の import/runtime shim・list/listcomp/range/compare/builtin lower を修正し、`runtime_parity_check.py --case-root sample --targets js,ts --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0 targets=js,ts` を確認した。
-- `P0-SAMPLE-GOLDEN-ALL-01-S7`: `go/java/kotlin` は JS sidecar bridge 方式で `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` の `ok: 54` を確認済み（18件×3言語）。残件は `swiftc` 未導入による `toolchain_missing: 18`。
+- `P0-SAMPLE-GOLDEN-ALL-01-S7`: `go/java/swift/kotlin` を JS sidecar bridge + `swiftc` shim（`.chain/swift/usr/bin/swiftc`）へ揃え、`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `SUMMARY cases=18 pass=18 fail=0` / `ok: 72` を確認した。
 
 ## P1: CppEmitter の pylib 互換名正規化除去（中優先）
 
