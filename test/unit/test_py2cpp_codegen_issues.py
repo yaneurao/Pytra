@@ -816,6 +816,47 @@ def f(x: object) -> bool:
         self.assertIn("int64 base_only(int64 x) {", cpp)
         self.assertNotIn("virtual int64 inc(int64 x) override {", cpp)
 
+    def test_inherited_method_call_from_base_ref_is_rendered_as_virtual_member_call(self) -> None:
+        src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\ndef use_base(b: Base) -> int:\n    return b.inc(3)\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "virtual_inherited_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("int64 use_base(const rc<Base>& b) {", cpp)
+        self.assertIn("return b->inc(3);", cpp)
+        self.assertNotIn("return b.inc(3);", cpp)
+
+    def test_method_call_after_runtime_unbox_is_rendered_with_dynamic_dispatch(self) -> None:
+        src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\ndef use_obj(x: object) -> int:\n    b: Base = x\n    return b.inc(4)\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "virtual_unbox_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("rc<Base> b = obj_to_rc_or_raise<Base>(x, ", cpp)
+        self.assertIn("return b->inc(4);", cpp)
+        self.assertNotIn("return b.inc(4);", cpp)
+
+    def test_isinstance_class_and_builtin_mix_is_lowered_to_runtime_type_id_checks(self) -> None:
+        src = """class Base:\n    def __init__(self):\n        pass\n\nclass Child(Base):\n    def __init__(self):\n        super().__init__()\n\ndef f(x: object) -> bool:\n    return isinstance(x, (Base, Child, int, str, object))\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "isinstance_mixed_tuple.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("py_isinstance(x, Base::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_isinstance(x, Child::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_isinstance(x, PYTRA_TID_INT)", cpp)
+        self.assertIn("py_isinstance(x, PYTRA_TID_STR)", cpp)
+        self.assertIn("py_isinstance(x, PYTRA_TID_OBJECT)", cpp)
+        self.assertIn("return (", cpp)
+        self.assertIn(" || ", cpp)
+        self.assertNotIn("return isinstance(", cpp)
+
     def test_non_overridden_base_methods_are_not_virtual(self) -> None:
         src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\n    def unused(self, x: int) -> int:\n        return x\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n"""
         with tempfile.TemporaryDirectory() as tmpdir:
