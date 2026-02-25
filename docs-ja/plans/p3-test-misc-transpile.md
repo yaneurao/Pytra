@@ -33,5 +33,8 @@
 - 2026-02-25: P3-MISC-01-S002 の失敗は `collections` の import_graph 未解決による missing_module だったため、
   `is_known_non_user_import` に `collections` を追加。`py2cpp.py test/misc/02_text_analyzer.py /tmp/02_text_analyzer.cpp` が成功し、以後
   `docs-ja/todo/index.md` の該当チェックを完了済みに更新。
+- 2026-02-25: P3-MISC-01-S003 の失敗は `statistics` import の missing_module と `object receiver` 制約で発生しており、`is_known_non_user_import` に
+  `statistics` を追加、加えて `CppEmitter.validate_call_receiver_or_raise` で `Class` 固有メソッドの属性名解決を先行許可する形へ調整した後、
+  `py2cpp.py test/misc/03_gradebook.py /tmp/03_gradebook.cpp` を成功させた。
 
 ### 分解

@@ -1682,6 +1682,7 @@ def is_known_non_user_import(
         or module_name == "os"
         or module_name == "glob"
         or module_name == "collections"
+        or module_name == "statistics"
     ):
         return True
     rel = module_name.replace(".", "/")

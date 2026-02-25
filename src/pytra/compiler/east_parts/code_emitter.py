@@ -285,6 +285,15 @@ class CodeEmitter:
         owner_node: object = fn_node.get("value")
         owner_t = self.get_expr_type(owner_node)
         if self.is_forbidden_object_receiver_type(owner_t):
+            attr = self.attr_name(fn_node)
+            owner_cls = self.class_field_owner_unique.get(attr, "")
+            owner_m_cls = self.class_method_owner_unique.get(attr, "")
+            if (
+                owner_cls in self.ref_classes
+                or owner_m_cls in self.ref_classes
+            ):
+                return
+        if self.is_forbidden_object_receiver_type(owner_t):
             raise RuntimeError(
                 "object receiver method call is forbidden by language constraints"
             )
