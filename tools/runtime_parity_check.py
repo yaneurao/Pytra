@@ -192,7 +192,7 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
                 f"test/transpile/swift/{case_stem}.swift"
             ),
             run_cmd=f"{SWIFTC.as_posix()} test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
-            needs=("python", SWIFTC.as_posix()),
+            needs=("python", SWIFTC.as_posix(), "node"),
         ),
         Target(
             name="kotlin",
