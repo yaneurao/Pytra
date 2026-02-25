@@ -63,6 +63,7 @@
 - `P0-SAMPLE-GOLDEN-ALL-01-S1`: 検証スコープ（`sample/py` 18件・9言語）と比較ルール（stdout 正規化/artefact hash-size/source hash）、再現コマンド（`runtime_parity_check.py` / `verify_sample_outputs.py`）を文脈ファイルへ固定した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S2`: `runtime_parity_check.py` に `--all-samples`/`--summary-json` と失敗カテゴリ集計を追加し、`test_runtime_parity_check_cli.py` + `test_image_runtime_parity.py` で CLI 解決規約と C++ 到達性を回帰固定した。
 - `P0-SAMPLE-GOLDEN-ALL-01-S3`: C++ emitter の module namespace/include 解決（`math/time` と `pytra.runtime -> pytra.utils`）と runtime tuple boxing/type_id 初期化順序を修正し、`runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout` で 18/18 pass を固定した。
+- `P0-SAMPLE-GOLDEN-ALL-01-S4`: 現環境では `rustc` が未導入のため、`runtime_parity_check.py --targets rs` は 18 件すべて `toolchain_missing` で skip になることを確認した（Rust toolchain 導入が次アクション）。
 
 ## P1: CppEmitter の pylib 互換名正規化除去（中優先）
 
