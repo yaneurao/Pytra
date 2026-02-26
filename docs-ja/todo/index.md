@@ -121,7 +121,7 @@
 
 1. [ ] [ID: P0-CPP-EMITTER-SLIM-01] `cpp_emitter.py` の肥大要因（互換層/責務集中/巨大 `render_expr`）を段階分割で解消し、EAST3 単一契約へ寄せる。
 2. [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-01] `cpp_emitter.py` の行数・メソッド数・長大メソッドを計測し、基準値を `docs-ja/plans/p0-cpp-emitter-slimming.md` に固定する。
-3. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線（golden 比較）を更新し、以後の分割作業の回帰判定点を固定する。
+3. [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線（golden 比較）を更新し、以後の分割作業の回帰判定点を固定する。
 4. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-01] `stage2/self_hosted` 前提の legacy builtin compat（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat`）を撤去する。
 5. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-02] `For`/`ForRange` から `ForCore` への bridge と逆写像を撤去し、`ForCore` 直接受理へ統一する。
 6. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-03] legacy `isinstance/issubclass` Name-call 許容経路を撤去し、type_id 系は EAST3 ノード前提へ統一する。
