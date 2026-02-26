@@ -52,7 +52,7 @@
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-03] `_render_repr_expr` を撤去（または no-op 化）し、`repr` 文字列依存をなくす。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-01] Rust/C++ 共通化候補（条件式・cast 補助・ループ骨格）を棚卸しし、`CodeEmitter` 移管対象を確定する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-02] 共通化対象の 1〜2 系統を `CodeEmitter` へ移管し、C++/Rust の重複を削減する。
-- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通して回帰を固定する。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通して回帰を固定する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` で selfhost 回帰を確認する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] 最終メトリクスを再計測し、完了判定（行数・`render_expr` 行数・legacy 0件）を記録する。
 
@@ -146,6 +146,18 @@
   - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
   - `python3 tools/check_py2rs_transpile.py`（`checked=132 ok=132 fail=0 skipped=6`）
 
+## S7-01 C++ 回帰実行（2026-02-26）
+
+- 実行:
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_*.py'`
+  - `python3 tools/check_py2cpp_transpile.py`
+- 結果:
+  - `test_py2cpp_*.py`: `Ran 273 tests in 1626.612s`, `FAILED (failures=29)`
+  - `check_py2cpp_transpile`: `checked=133 ok=133 fail=0 skipped=6`
+- 観測メモ:
+  - 失敗は主に `test_py2cpp_codegen_issues.py` と `test_py2cpp_features.py` の既存期待差分・fixture compile/runtime 側（`py_tid_*` リンク未解決等）で発生。
+  - 今回の `S6-02` 変更点（`If/While` 前処理 helper と Rust の括弧 helper 統一）とは直接関連しないカテゴリであることを確認した。
+
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
@@ -165,3 +177,4 @@
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S5-03` として `_render_repr_expr` / `_render_set_literal_repr` / `_split_call_repr` / `_looks_like_python_expr_text` を `cpp_emitter.py` から削除し、`render_expr`/`render_cond`/statement 側の `repr` フォールバックを撤去した。`stmt.py` / `expr.py` 側に残っていた `_render_repr_expr` 呼び出しも除去し、EAST3 の構造化ノードのみで条件式を扱う形へ統一した。確認は `rg -n "_render_repr_expr|_looks_like_python_expr_text|_split_call_repr|_render_set_literal_repr|expr_d.get\\(\\\"repr\\\"\\)|if \\\"repr\\\" in expr_node" src/hooks/cpp/emitter || true`（出力なし）で実施し、`repr` 文字列依存経路が残らないことを固定した。検証は `python3 -m py_compile src/hooks/cpp/emitter/cpp_emitter.py src/hooks/cpp/emitter/stmt.py src/hooks/cpp/emitter/expr.py src/hooks/cpp/emitter/runtime_expr.py src/hooks/cpp/emitter/collection_expr.py src/hooks/cpp/emitter/builtin_runtime.py src/hooks/cpp/emitter/type_bridge.py src/hooks/cpp/emitter/class_def.py` と `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S6-01` として Rust/C++ の共通化候補を棚卸しし、`easy/medium/risky` で優先度を固定した。`CodeEmitter` と C++/Rust emitter を `rg` で突合し、`_strip_outer_parens` 統一と `if/while` ラッパ helper 化を `S6-02` の実装対象に選定した。一方で `_prepare_call_parts` と `emit_stmt_list` 系 override は selfhost 静的束縛回避が絡むため `risky` として今回の移管対象から除外した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S6-02` として `CodeEmitter` へ `prepare_if_stmt_parts` / `prepare_while_stmt_parts` を追加し、C++/Rust の `If/While` 前処理重複を削減した。あわせて Rust 側の `_strip_outer_parens` 再実装を削除し、基底 helper へ統一した。検証は `py_compile`、追加した `test_code_emitter` 2件、`test_py2rs_smoke.py`、`test_east3_cpp_bridge` の代表ケース、`check_py2cpp_transpile`（`133/133`）、`check_py2rs_transpile`（`132/132`）で実施した。
+- 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S7-01` として C++ 回帰スイートを実行した。`check_py2cpp_transpile` は全件成功 (`133/133`) だが、`test_py2cpp_*.py` は `273 tests / 29 failures` で失敗した。失敗カテゴリは `codegen_issues` の期待差分と `features` の fixture compile/runtime（`py_tid_*` 未解決リンク等）に集中しており、今回差分（`If/While` helper 共通化、Rust paren helper 統一）由来ではないと判断した。
