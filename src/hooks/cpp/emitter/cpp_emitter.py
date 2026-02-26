@@ -1666,18 +1666,8 @@ class CppEmitter(
             self._emit_if_stmt(stmt)
         elif kind == "While":
             self._emit_while_stmt(stmt)
-        elif kind == "ForRange":
-            forcore_stmt = self._forrange_stmt_to_forcore(stmt)
-            if len(forcore_stmt) > 0:
-                self.emit_for_core(forcore_stmt)
-            else:
-                self.emit_for_range(stmt)
-        elif kind == "For":
-            forcore_stmt = self._for_stmt_to_forcore(stmt)
-            if len(forcore_stmt) > 0:
-                self.emit_for_core(forcore_stmt)
-            else:
-                self.emit_for_each(stmt)
+        elif kind == "ForRange" or kind == "For":
+            raise ValueError("legacy loop node is unsupported in EAST3; lower to ForCore: " + kind)
         elif kind == "ForCore":
             self.emit_for_core(stmt)
         elif kind == "Raise":
@@ -2236,176 +2226,53 @@ class CppEmitter(
             return f"py_to_string({key_expr})"
         return key_expr
 
-    def _dispatch_mode_for_forcore_bridge(self) -> str:
-        """ForCore bridge で使用する dispatch mode を返す。"""
-        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
-        mode = self.any_dict_get_str(meta, "dispatch_mode", "native")
-        if mode != "native" and mode != "type_id":
-            return "native"
-        return mode
-
-    def _target_plan_from_target_expr(self, target_expr: dict[str, Any], target_type_hint: str = "") -> dict[str, Any]:
-        """既存 For/ForRange の target ノードを EAST3 `target_plan` へ変換する。"""
-        kind = self._node_kind_from_dict(target_expr)
-        target_type = self.normalize_type_name(target_type_hint)
-        if target_type == "":
-            target_type = self.normalize_type_name(self.get_expr_type(target_expr))
-        if target_type == "":
-            target_type = "unknown"
-
-        if kind == "Name":
-            target_id = self.any_dict_get_str(target_expr, "id", "")
-            if target_id == "":
-                return {}
-            return {
-                "kind": "NameTarget",
-                "id": target_id,
-                "target_type": target_type,
-            }
-        if kind == "Tuple":
-            elems = self.any_to_list(target_expr.get("elements"))
-            elem_plans: list[dict[str, Any]] = []
-            for elem_obj in elems:
-                elem_expr = self.any_to_dict_or_empty(elem_obj)
-                if len(elem_expr) == 0:
-                    continue
-                elem_hint = self.normalize_type_name(self.get_expr_type(elem_expr))
-                elem_plan = self._target_plan_from_target_expr(elem_expr, elem_hint)
-                if len(elem_plan) > 0:
-                    elem_plans.append(elem_plan)
-            return {
-                "kind": "TupleTarget",
-                "target_type": target_type,
-                "elements": elem_plans,
-            }
-        return {
-            "kind": "ExprTarget",
-            "target_type": target_type,
-            "target": target_expr,
-        }
-
-    def _forrange_stmt_to_forcore(self, stmt: dict[str, Any]) -> dict[str, Any]:
-        """既存 `ForRange` ノードを EAST3 `ForCore` へ変換する。"""
-        target_expr = self.any_to_dict_or_empty(stmt.get("target"))
-        if len(target_expr) == 0:
-            return {}
-        target_type_hint = self.any_dict_get_str(stmt, "target_type", "")
-        target_plan = self._target_plan_from_target_expr(target_expr, target_type_hint)
-        if len(target_plan) == 0:
-            return {}
-
-        step_expr = self.any_to_dict_or_empty(stmt.get("step"))
-        if len(step_expr) == 0:
-            step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
-        range_mode = self.any_dict_get_str(stmt, "range_mode", "")
-        if range_mode == "":
-            range_mode = self._range_mode_from_step_expr(step_expr)
-
-        iter_plan: dict[str, Any] = {
-            "kind": "StaticRangeForPlan",
-            "start": stmt.get("start"),
-            "stop": stmt.get("stop"),
-            "step": step_expr,
-            "range_mode": range_mode,
-        }
-        return {
-            "kind": "ForCore",
-            "iter_mode": "static_fastpath",
-            "iter_plan": iter_plan,
-            "target_plan": target_plan,
-            "body": self.any_dict_get_list(stmt, "body"),
-            "orelse": self.any_dict_get_list(stmt, "orelse"),
-        }
-
-    def _for_stmt_to_forcore(self, stmt: dict[str, Any]) -> dict[str, Any]:
-        """既存 `For` ノードのうち EAST3 へ安全移行可能な経路を `ForCore` へ変換する。"""
-        target_expr = self.any_to_dict_or_empty(stmt.get("target"))
-        iter_expr = self.any_to_dict_or_empty(stmt.get("iter"))
-        if len(target_expr) == 0 or len(iter_expr) == 0:
-            return {}
-
-        target_type_hint = self.any_dict_get_str(stmt, "target_type", "")
-        target_plan = self._target_plan_from_target_expr(target_expr, target_type_hint)
-        if len(target_plan) == 0:
-            return {}
-
-        iter_kind = self._node_kind_from_dict(iter_expr)
-        if iter_kind == "RangeExpr":
-            step_expr = self.any_to_dict_or_empty(iter_expr.get("step"))
-            if len(step_expr) == 0:
-                step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
-            iter_plan: dict[str, Any] = {
-                "kind": "StaticRangeForPlan",
-                "start": iter_expr.get("start"),
-                "stop": iter_expr.get("stop"),
-                "step": step_expr,
-                "range_mode": self.any_dict_get_str(iter_expr, "range_mode", self._range_mode_from_step_expr(step_expr)),
-            }
-            return {
-                "kind": "ForCore",
-                "iter_mode": "static_fastpath",
-                "iter_plan": iter_plan,
-                "target_plan": target_plan,
-                "body": self.any_dict_get_list(stmt, "body"),
-                "orelse": self.any_dict_get_list(stmt, "orelse"),
-            }
-
-        iter_mode = self._resolve_for_iter_mode(stmt, iter_expr)
-        if iter_mode != "runtime_protocol":
-            return {}
-        iter_plan = {
-            "kind": "RuntimeIterForPlan",
-            "iter_expr": iter_expr,
-            "dispatch_mode": self._dispatch_mode_for_forcore_bridge(),
-            "init_op": "ObjIterInit",
-            "next_op": "ObjIterNext",
-        }
-        return {
-            "kind": "ForCore",
-            "iter_mode": "runtime_protocol",
-            "iter_plan": iter_plan,
-            "target_plan": target_plan,
-            "body": self.any_dict_get_list(stmt, "body"),
-            "orelse": self.any_dict_get_list(stmt, "orelse"),
-        }
-
-    def _target_expr_from_target_plan(self, target_plan: dict[str, Any]) -> dict[str, Any]:
-        """EAST3 `target_plan` を既存 For/ForRange 互換の target ノードへ変換する。"""
+    def _forcore_target_bound_names(self, target_plan: dict[str, Any]) -> set[str]:
+        """ForCore `target_plan` から scope 登録すべき束縛名を抽出する。"""
+        out: set[str] = set()
         plan_kind = self.any_dict_get_str(target_plan, "kind", "")
-        target_type = self.any_dict_get_str(target_plan, "target_type", "unknown")
         if plan_kind == "NameTarget":
             target_id = self.any_dict_get_str(target_plan, "id", "")
             if target_id != "":
-                return {
-                    "kind": "Name",
-                    "id": target_id,
-                    "resolved_type": target_type,
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": target_id,
-                }
-            return {}
+                out.add(target_id)
+            return out
         if plan_kind == "TupleTarget":
-            elem_plans = self.any_to_list(target_plan.get("elements"))
-            elements: list[dict[str, Any]] = []
-            for elem_plan_obj in elem_plans:
-                elem_plan = self.any_to_dict_or_empty(elem_plan_obj)
-                elem_target = self._target_expr_from_target_plan(elem_plan)
-                if len(elem_target) > 0:
-                    elements.append(elem_target)
-            return {
-                "kind": "Tuple",
-                "resolved_type": target_type if target_type != "" else "unknown",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": "",
-                "elements": elements,
-            }
-        if plan_kind == "ExprTarget":
-            target_expr = self.any_to_dict_or_empty(target_plan.get("target"))
-            if len(target_expr) > 0:
-                return target_expr
-        return {}
+            for elem_obj in self.any_to_list(target_plan.get("elements")):
+                elem_plan = self.any_to_dict_or_empty(elem_obj)
+                out |= self._forcore_target_bound_names(elem_plan)
+        return out
+
+    def _emit_forcore_tuple_unpack_runtime(self, target_plan: dict[str, Any], src_obj: str) -> None:
+        """ForCore tuple target を runtime iterable でアンパックする。"""
+        elem_plans = self.any_to_list(target_plan.get("elements"))
+        for i, elem_plan_obj in enumerate(elem_plans):
+            elem_plan = self.any_to_dict_or_empty(elem_plan_obj)
+            plan_kind = self.any_dict_get_str(elem_plan, "kind", "")
+            if plan_kind == "NameTarget":
+                nm = self.any_dict_get_str(elem_plan, "id", "")
+                if nm == "":
+                    continue
+                elem_t = self.normalize_type_name(self.any_dict_get_str(elem_plan, "target_type", ""))
+                if elem_t == "":
+                    elem_t = "unknown"
+                rhs = f"py_at({src_obj}, {i})"
+                if self._can_runtime_cast_target(elem_t):
+                    rhs = self.render_expr(
+                        self._build_unbox_expr_node(
+                            self._build_py_at_expr_node(src_obj, i),
+                            elem_t,
+                            f"for_unpack:{nm}",
+                        )
+                    )
+                    self.emit(f"{self._cpp_type_text(elem_t)} {nm} = {rhs};")
+                    self.declared_var_types[nm] = elem_t
+                else:
+                    self.emit(f"auto {nm} = {rhs};")
+                    self.declared_var_types[nm] = "object"
+                continue
+            if plan_kind == "TupleTarget":
+                nested_tmp = self.next_for_runtime_iter_name()
+                self.emit(f"object {nested_tmp} = py_at({src_obj}, {i});")
+                self._emit_forcore_tuple_unpack_runtime(elem_plan, nested_tmp)
 
     def _range_mode_from_step_expr(self, step_expr: dict[str, Any]) -> str:
         """`step` 式から `range_mode`（ascending/descending/dynamic）を求める。"""
@@ -2418,40 +2285,69 @@ class CppEmitter(
         return "dynamic"
 
     def emit_for_core(self, stmt: dict[str, Any]) -> None:
-        """EAST3 `ForCore` を既存 For/ForRange 出力へ写像する。"""
+        """EAST3 `ForCore` を直接 C++ ループへ描画する。"""
         iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
         plan_kind = self.any_dict_get_str(iter_plan, "kind", "")
         target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
-        target_expr = self._target_expr_from_target_plan(target_plan)
-        if len(target_expr) == 0:
-            self.emit("/* invalid forcore target */")
-            return
-        target_type = self.any_dict_get_str(target_plan, "target_type", "unknown")
         body_stmts = self.any_dict_get_list(stmt, "body")
-        orelse_stmts = self.any_dict_get_list(stmt, "orelse")
+        _ = self.any_dict_get_list(stmt, "orelse")
+        omit_default = self._default_stmt_omit_braces("ForCore", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("ForCore", stmt, omit_default)
+        if len(body_stmts) != 1:
+            omit_braces = False
 
         if plan_kind == "StaticRangeForPlan":
+            if self.any_dict_get_str(target_plan, "kind", "") != "NameTarget":
+                self.emit("/* invalid forcore target for static range */")
+                return
+            target_id = self.any_dict_get_str(target_plan, "id", "")
+            if target_id == "":
+                self.emit("/* invalid forcore target name */")
+                return
+            target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+            if target_type in {"", "unknown"}:
+                target_type = "int64"
             start_expr = iter_plan.get("start")
             stop_expr = iter_plan.get("stop")
             step_obj = iter_plan.get("step")
             step_expr = self.any_to_dict_or_empty(step_obj)
             if len(step_expr) == 0:
                 step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
+            start_txt = self.render_expr(start_expr)
+            stop_txt = self.render_expr(stop_expr)
+            step_txt = self.render_expr(step_expr)
             range_mode_txt = self.any_dict_get_str(iter_plan, "range_mode", "")
             if range_mode_txt == "":
                 range_mode_txt = self._range_mode_from_step_expr(step_expr)
-            self.emit_for_range(
-                {
-                    "target": target_expr,
-                    "target_type": target_type if target_type != "" else "int64",
-                    "start": start_expr,
-                    "stop": stop_expr,
-                    "step": step_expr,
-                    "range_mode": range_mode_txt,
-                    "body": body_stmts,
-                    "orelse": orelse_stmts,
-                }
+            cond = (
+                f"{target_id} < {stop_txt}"
+                if range_mode_txt == "ascending"
+                else (
+                    f"{target_id} > {stop_txt}"
+                    if range_mode_txt == "descending"
+                    else f"{step_txt} > 0 ? {target_id} < {stop_txt} : {target_id} > {stop_txt}"
+                )
             )
+            inc = (
+                f"++{target_id}"
+                if self._opt_ge(2) and step_txt == "1"
+                else (f"--{target_id}" if self._opt_ge(2) and step_txt == "-1" else f"{target_id} += {step_txt}")
+            )
+            hdr = self.syntax_line(
+                "for_range_open",
+                "for ({type} {target} = {start}; {cond}; {inc})",
+                {
+                    "type": self._cpp_type_text(target_type),
+                    "target": target_id,
+                    "start": start_txt,
+                    "cond": cond,
+                    "inc": inc,
+                },
+            )
+            self.declared_var_types[target_id] = target_type
+            self._emit_for_body_open(hdr, {target_id}, omit_braces)
+            self._emit_for_body_stmts(body_stmts, omit_braces)
+            self._emit_for_body_close(omit_braces)
             return
 
         if plan_kind == "RuntimeIterForPlan":
@@ -2459,16 +2355,60 @@ class CppEmitter(
             if len(iter_expr) == 0:
                 self.emit("/* invalid forcore runtime iter_plan */")
                 return
-            self.emit_for_each(
-                {
-                    "target": target_expr,
-                    "target_type": target_type,
-                    "iter_mode": "runtime_protocol",
-                    "iter": iter_expr,
-                    "body": body_stmts,
-                    "orelse": orelse_stmts,
-                }
-            )
+            iter_txt = self.render_expr(iter_expr)
+            target_kind = self.any_dict_get_str(target_plan, "kind", "")
+            if target_kind == "NameTarget":
+                target_id = self.any_dict_get_str(target_plan, "id", "")
+                if target_id == "":
+                    self.emit("/* invalid forcore target name */")
+                    return
+                target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+                if target_type in {"", "unknown"}:
+                    target_type = "object"
+                if self.is_any_like_type(target_type):
+                    hdr = self.syntax_line(
+                        "for_each_runtime_target_open",
+                        "for (object {target} : py_dyn_range({iter}))",
+                        {"target": target_id, "iter": iter_txt},
+                    )
+                    self.declared_var_types[target_id] = "object"
+                    self._emit_for_body_open(hdr, {target_id}, omit_braces)
+                    self._emit_for_body_stmts(body_stmts, omit_braces)
+                    self._emit_for_body_close(omit_braces)
+                    return
+                iter_tmp = self.next_for_runtime_iter_name()
+                hdr = self.syntax_line(
+                    "for_each_runtime_open",
+                    "for (object {iter_tmp} : py_dyn_range({iter}))",
+                    {"iter_tmp": iter_tmp, "iter": iter_txt},
+                )
+                self._emit_for_body_open(hdr, self.scope_names_with_tmp({target_id}, iter_tmp), omit_braces)
+                rhs = self.render_expr(
+                    self._build_unbox_expr_node(
+                        self._build_name_expr_node(iter_tmp, "object"),
+                        target_type,
+                        f"for_target:{target_id}",
+                    )
+                )
+                self.emit(f"{self._cpp_type_text(target_type)} {target_id} = {rhs};")
+                self.declared_var_types[target_id] = target_type
+                self._emit_for_body_stmts(body_stmts, omit_braces)
+                self._emit_for_body_close(omit_braces)
+                return
+            if target_kind == "TupleTarget":
+                iter_tmp = self.next_for_runtime_iter_name()
+                scope_names = self.scope_names_with_tmp(self._forcore_target_bound_names(target_plan), iter_tmp)
+                hdr = self.syntax_line(
+                    "for_each_runtime_open",
+                    "for (object {iter_tmp} : py_dyn_range({iter}))",
+                    {"iter_tmp": iter_tmp, "iter": iter_txt},
+                )
+                self._emit_for_body_open(hdr, scope_names, omit_braces)
+                self._emit_forcore_tuple_unpack_runtime(target_plan, iter_tmp)
+                self._emit_for_body_stmts(body_stmts, omit_braces)
+                self._emit_for_body_close(omit_braces)
+                return
+            self.emit("/* invalid forcore runtime target */")
             return
 
         self.emit(f"/* unsupported ForCore iter_plan kind: {plan_kind} */")

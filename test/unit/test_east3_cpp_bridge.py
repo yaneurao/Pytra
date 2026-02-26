@@ -67,23 +67,28 @@ class East3CppBridgeTest(unittest.TestCase):
         text = "\n".join(emitter.lines)
         self.assertIn("py_dyn_range(xs)", text)
 
-    def test_emit_stmt_for_runtime_protocol_typed_target_uses_unbox_path(self) -> None:
+    def test_emit_stmt_forcore_runtime_protocol_typed_target_uses_unbox_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
-            "kind": "For",
-            "target": {"kind": "Name", "id": "v", "resolved_type": "int64"},
-            "target_type": "int64",
+            "kind": "ForCore",
             "iter_mode": "runtime_protocol",
-            "iter": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "v", "target_type": "int64"},
             "body": [{"kind": "Pass"}],
             "orelse": [],
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
         self.assertIn("for (object __itobj", text)
-        self.assertIn("int64 v = int64(py_to_int64(__itobj", text)
+        self.assertIn("int64 v = int64(py_to<int64>(__itobj", text)
 
-    def test_forrange_stmt_to_forcore_builds_static_range_plan(self) -> None:
+    def test_emit_stmt_rejects_legacy_forrange_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
             "kind": "ForRange",
@@ -96,15 +101,11 @@ class East3CppBridgeTest(unittest.TestCase):
             "body": [{"kind": "Pass"}],
             "orelse": [],
         }
-        out = emitter._forrange_stmt_to_forcore(stmt)
-        self.assertEqual(out.get("kind"), "ForCore")
-        self.assertEqual(out.get("iter_mode"), "static_fastpath")
-        iter_plan = out.get("iter_plan", {})
-        self.assertEqual(iter_plan.get("kind"), "StaticRangeForPlan")
-        self.assertEqual(iter_plan.get("range_mode"), "ascending")
+        with self.assertRaisesRegex(ValueError, "legacy loop node is unsupported in EAST3; lower to ForCore: ForRange"):
+            emitter.emit_stmt(stmt)
 
-    def test_for_stmt_to_forcore_builds_runtime_plan_for_runtime_protocol(self) -> None:
-        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"dispatch_mode": "type_id"}}, {})
+    def test_emit_stmt_rejects_legacy_for_node(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
             "kind": "For",
             "target": {"kind": "Name", "id": "x", "resolved_type": "object"},
@@ -114,26 +115,8 @@ class East3CppBridgeTest(unittest.TestCase):
             "body": [{"kind": "Pass"}],
             "orelse": [],
         }
-        out = emitter._for_stmt_to_forcore(stmt)
-        self.assertEqual(out.get("kind"), "ForCore")
-        self.assertEqual(out.get("iter_mode"), "runtime_protocol")
-        iter_plan = out.get("iter_plan", {})
-        self.assertEqual(iter_plan.get("kind"), "RuntimeIterForPlan")
-        self.assertEqual(iter_plan.get("dispatch_mode"), "type_id")
-
-    def test_for_stmt_to_forcore_keeps_static_for_each_on_legacy_path(self) -> None:
-        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
-        stmt = {
-            "kind": "For",
-            "target": {"kind": "Name", "id": "x", "resolved_type": "int64"},
-            "target_type": "int64",
-            "iter_mode": "static_fastpath",
-            "iter": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
-            "body": [{"kind": "Pass"}],
-            "orelse": [],
-        }
-        out = emitter._for_stmt_to_forcore(stmt)
-        self.assertEqual(out, {})
+        with self.assertRaisesRegex(ValueError, "legacy loop node is unsupported in EAST3; lower to ForCore: For"):
+            emitter.emit_stmt(stmt)
 
     def test_render_expr_supports_east3_obj_boundary_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
