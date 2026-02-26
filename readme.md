@@ -47,7 +47,7 @@ WARNING: Do not expect entire Python applications to be portable as-is. A realis
 
 Execution times for [sample programs](sample/readme.md) written in Python and their transpiled versions (unit: seconds).
 
-|No.|Workload|Python|PyPy(参考用)| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
+|No.|Workload|Python|PyPy| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
 |01 |Mandelbrot set (PNG)|18.647|1.091|0.751|0.740|0.383|0.768|0.806|0.753|0.756|0.760|0.756|
 |02 |Simple sphere ray tracer (PNG)|6.890|0.529|0.185|0.155|0.918|0.277|0.288|0.256|0.260|0.289|0.258|
