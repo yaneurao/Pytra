@@ -135,7 +135,7 @@
 14. [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-01] `repr` 依存ノードを parser/lowerer 側で構造化ノードへ落とす前提を整理し、対象ノード一覧を確定する。
 15. [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-02] `_render_repr_expr` の利用箇所を段階削減し、必要な最終 fallback 以外を除去する。
 16. [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-03] `_render_repr_expr` を撤去（または no-op 化）し、`repr` 文字列依存経路が残らないことを `rg` で確認する。
-17. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S6-01] Rust/C++ で共通化可能な helper（条件式・cast 補助・ループ骨格）を棚卸しし、`CodeEmitter` へ移管候補を確定する。
+17. [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-01] Rust/C++ で共通化可能な helper（条件式・cast 補助・ループ骨格）を棚卸しし、`CodeEmitter` へ移管候補を確定する。
 18. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S6-02] 共通化候補のうち 1〜2 系統を `CodeEmitter` へ移管し、C++/Rust 両 emitter の重複を削減する。
 19. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通し、分割後の回帰を固定する。
 20. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` を再実行し、selfhost 再変換可能性を確認する。
