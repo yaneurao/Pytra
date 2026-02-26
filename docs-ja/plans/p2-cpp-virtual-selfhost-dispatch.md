@@ -108,6 +108,14 @@
   - C++ 生成 diff 観点では新規退行なし（既知差分 2 件のみ）。
   - selfhost end-to-end は前段スクリプト（`prepare_selfhost_source.py`）の既知エラーで停止するため、成功率評価は「diff 成功 / e2e は build 前段で継続失敗」の状態を維持した。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S3-03` 確定内容（2026-02-26）:
+- 置換不能（または本タスク非対象）ケースを以下で固定した。
+  - `built_in/type_id.cpp` の registry/state 管理分岐（class method dispatch ではない）。
+  - `runtime_expr.py` の `IsInstance/IsSubtype/IsSubclass/ObjTypeId`（runtime API 呼び出しであり、virtual dispatch 置換対象外）。
+  - `BuiltinCall` lower 前提経路（`_requires_builtin_*_lowering` のガード対象）。
+- 次回持ち越し明細:
+  - `tools/prepare_selfhost_source.py` の `CodeEmitter import` 前処理失敗が解消したタイミングで、S4/S5 の selfhost 回帰固定を再実行する。
+
 ### S4: 回帰固定と仕様反映
 
 10. `P2-CPP-SELFHOST-VIRTUAL-01-S4-01`: 差分固定のため `test/unit`（selfhost 関連）と `sample` 再生成 golden 的比較を追加/更新する。
@@ -131,3 +139,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-03` として置換対象外の `type_id` 関連分岐を理由付きで固定した。`BuiltinCall` lower 前提経路・`runtime_expr.py` の type_id API 呼び出し・`built_in/type_id.cpp` registry 管理は fallback/非対象として維持し、S3 の実装対象から除外する方針を確定した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-01` として `sample/cpp` と `src/runtime/cpp/pytra-gen` を再走査したが、class method dispatch 由来の `type_id` 条件分岐は引き続き 0 件だった。残存する `type_id` 利用は `set_type_id(...)` 初期化のみであり、移行対象なしの no-op 完了として扱う。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-02` として selfhost 再変換の再評価を実施し、`check_selfhost_cpp_diff` は `mismatches=0 known_diffs=2` を維持、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`failed to remove required import lines: CodeEmitter import`）で継続失敗することを再確認した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-03` として移行不能/非対象ケースを最終固定した。`type_id` registry 管理・runtime type_id API 呼び出し・BuiltinCall lower 前提経路は virtual dispatch 置換の対象外として残し、次回は selfhost 前処理エラー解消後に S4/S5 を再開する。
