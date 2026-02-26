@@ -142,4 +142,5 @@
 21. [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] `cpp_emitter.py` の最終メトリクス（行数・`render_expr` 行数・legacy 関数残数）を更新し、完了判定を記録する。
 22. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-01] `emit_assign` / `_emit_annassign_stmt` / `_emit_augassign_stmt`（+ AugAssign 左辺 helper）を `stmt.py` へ移設し、statement 責務を縮退する。
 23. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-02] `emit_for_core` / `emit_function` など残存する長大 statement メソッドを段階移設し、`cpp_emitter.py` 行数を `<=2500` 目標へ近づける。
-24. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S8-03] `_collect_assigned_name_types` / `_collect_mutated_params_from_stmt` など解析系 helper を専用モジュールへ分離し、`cpp_emitter.py` 行数をさらに圧縮する。
+24. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-03] `_collect_assigned_name_types` / `_collect_mutated_params_from_stmt` など解析系 helper を専用モジュールへ分離し、`cpp_emitter.py` 行数をさらに圧縮する。
+25. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S8-04] `transpile` / call-attribute 系の残存長大メソッドを段階移設し、`cpp_emitter.py` 行数 `<=2500` へ収束させる。
