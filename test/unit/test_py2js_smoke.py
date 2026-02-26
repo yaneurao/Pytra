@@ -227,6 +227,38 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("pyIsSubtype(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", js)
         self.assertIn("pyIsSubtype", js)
 
+    def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Assign",
+                    "targets": [{"kind": "Name", "id": "y"}],
+                    "value": {
+                        "kind": "Box",
+                        "value": {"kind": "Constant", "value": 1},
+                        "resolved_type": "object",
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "targets": [{"kind": "Name", "id": "z"}],
+                    "value": {
+                        "kind": "Unbox",
+                        "value": {"kind": "Name", "id": "y"},
+                        "target": "int64",
+                        "resolved_type": "int64",
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        js = transpile_to_js(east)
+        self.assertIn("y = 1;", js)
+        self.assertIn("z = y;", js)
+
     def test_browser_import_symbols_are_treated_as_external(self) -> None:
         fixture = find_fixture_case("browser_external_symbols")
         east = load_east(fixture, parser_backend="self_hosted")

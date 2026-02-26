@@ -38,6 +38,7 @@
 - 2026-02-26: `S2-01` として `js_emitter` に `ForCore` 受理を追加し、`iter_plan=StaticRangeForPlan/RuntimeIterForPlan` を内部で `ForRange/For` へ変換して既存 emit 経路へ接続。`test_py2js_smoke.py` に ForCore 直受理回帰（range/runtime tuple target）を追加し、`test_py2js_smoke.py` + `test_py2ts_smoke.py` を実行して全通過を確認。
 - 2026-02-26: `S2-02` として `js_emitter` に `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId` の直接描画を実装（`pyBool/pyLen/pyStr/pyTypeId` import 収集を追加、iter/next は JS iterator 呼び出しへ lower）。`test_py2js_smoke.py` に object boundary ノード直受理回帰を追加し、`test_py2js_smoke.py` + `test_py2ts_smoke.py` を実行して全通過を確認。
 - 2026-02-26: `S2-03` として `IsInstance/IsSubtype/IsSubclass` の直接描画を追加し、`PYTRA_TID_*`/型名を JS runtime 定数へ解決する `type_id` 変換と `pyIsSubtype` import 収集を実装。`test_py2js_smoke.py` に type predicate ノード直受理回帰を追加し、`test_py2js_smoke.py` + `test_py2ts_smoke.py` を実行して全通過を確認。
+- 2026-02-26: `S2-04` として `Box/Unbox` を `render_expr` で直接受理し、値を透過する no-op lowering に統一。`test_py2js_smoke.py` に Box/Unbox 直受理回帰を追加し、`test_py2js_smoke.py` + `test_py2ts_smoke.py` を実行して全通過を確認。
 
 ## 分解
 
@@ -46,7 +47,7 @@
 - [x] [ID: P3-EAST3-ONLY-01-S2-01] `js_emitter` で `ForCore(iter_plan=StaticRangeForPlan/RuntimeIterForPlan)` を直接処理する。
 - [x] [ID: P3-EAST3-ONLY-01-S2-02] `js_emitter` で `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId` を直接処理する。
 - [x] [ID: P3-EAST3-ONLY-01-S2-03] `js_emitter` で `IsInstance/IsSubtype/IsSubclass` を直接処理する。
-- [ ] [ID: P3-EAST3-ONLY-01-S2-04] `js_emitter` で `Box/Unbox` の legacy 前提を撤去し、EAST3 ノードを直接受理する。
+- [x] [ID: P3-EAST3-ONLY-01-S2-04] `js_emitter` で `Box/Unbox` の legacy 前提を撤去し、EAST3 ノードを直接受理する。
 - [ ] [ID: P3-EAST3-ONLY-01-S2-05] JS/TS smoke + `check_py2{js,ts}_transpile.py` を通し、`js_emitter` 直処理化の回帰を固定する。
 - [ ] [ID: P3-EAST3-ONLY-01-S2-06] Go/Java/Swift/Kotlin sidecar bridge 経路（`py2{go,java,swift,kotlin}`）で `check_py2*_transpile.py` + smoke を通し、JS直処理化の波及回帰を固定する。
 - [ ] [ID: P3-EAST3-ONLY-01-S3-01] `rs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。

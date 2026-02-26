@@ -1221,6 +1221,8 @@ class JsEmitter(CodeEmitter):
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             return "pyIsSubtype(" + actual + ", " + expected + ")"
+        if kind == "Box" or kind == "Unbox":
+            return self.render_expr(expr_d.get("value"))
         if kind == "RangeExpr":
             return self._render_range_expr(expr_d)
         if kind == "ListComp":
