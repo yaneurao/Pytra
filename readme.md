@@ -4,6 +4,9 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-2563EB?style=flat-square">
 </a>
 
+Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
+
+Supported backends:
 ![Backend C++](https://img.shields.io/badge/Backend-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white)
 ![Backend Rust](https://img.shields.io/badge/Backend-Rust-000000?style=flat-square&logo=rust&logoColor=white)
 ![Backend C#](https://img.shields.io/badge/Backend-C%23-239120?style=flat-square&logo=csharp&logoColor=white)
@@ -13,8 +16,6 @@
 ![Backend Java](https://img.shields.io/badge/Backend-Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
 ![Backend Swift](https://img.shields.io/badge/Backend-Swift-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Backend Kotlin](https://img.shields.io/badge/Backend-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
-
-Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
 
 ## Latest News
 
