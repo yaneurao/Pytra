@@ -42,6 +42,7 @@ Decision log:
 - 2026-02-26: Completed `P0-EAST3-OPT-01-S2-01` by adding `NoOpCastCleanupPass` / `LiteralCastFoldPass`, updating `build_default_passes()` to the `O1` default set, and syncing pass-unit tests plus CLI trace expectations.
 - 2026-02-26: Completed `P0-EAST3-OPT-01-S2-02` by adding `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass`, canonicalizing constant `range(...)` loops to `StaticRangeForPlan`, and introducing fail-closed underscore-elision for provably unused loop vars (guarded against dynamic-name inspection calls).
 - 2026-02-26: Completed `P0-EAST3-OPT-01-S2-03` by adding `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only passes, with conservative guards for non-empty static-range preheader hoist and power-of-two float-division reciprocal rewrite.
+- 2026-02-26: Completed `P0-EAST3-OPT-01-S3-01` by expanding pass unit coverage to 21 cases, locking O2 gating, dynamic-name-resolution guards, and non-application behavior (zero-step, non-power-of-two divisors, and post-loop reads).
 
 ## Breakdown
 
@@ -50,6 +51,6 @@ Decision log:
 - [x] [ID: P0-EAST3-OPT-01-S2-01] Implement `NoOpCastCleanupPass` / `LiteralCastFoldPass` and establish the default `O1` set.
 - [x] [ID: P0-EAST3-OPT-01-S2-02] Implement `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` to reflect `for ... in range(...)` boundary decisions.
 - [x] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
-- [ ] [ID: P0-EAST3-OPT-01-S3-01] Add pass-level unit tests (input/output EAST3 diff, inapplicable guards, meaning preservation).
+- [x] [ID: P0-EAST3-OPT-01-S3-01] Add pass-level unit tests (input/output EAST3 diff, inapplicable guards, meaning preservation).
 - [ ] [ID: P0-EAST3-OPT-01-S3-02] Run `sample` regressions + parity checks and confirm compatibility under `O0`/`O1`/`O2` switching.
 - [ ] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diff back to `spec-east3-optimizer` and document operations (trace checks / issue isolation).
