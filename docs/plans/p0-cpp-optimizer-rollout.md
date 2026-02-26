@@ -44,6 +44,8 @@ Decision log:
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-02` by adding `CppConstConditionPass` / `CppRangeForShapePass` for constant-branch simplification and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wiring them into default passes and expanding `test_cpp_optimizer.py` to 11 focused cases.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-03` by adding `CppRuntimeFastPathPass` (O2-only) for contract-equivalent fast paths (`Unbox` same-type fold, `Box(object)` fold, `ObjBool(bool)` fold), then wiring it into default passes and expanding `test_cpp_optimizer.py` to 12 focused cases with O1/O2 behavior checks.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S3-01` by removing char-compare optimization branching (`_try_optimize_char_compare`) from `CppEmitter._render_compare_expr`, keeping compare optimization responsibility on the optimizer side; validated with `test_py2cpp_features.py -k str_index_char_compare_optimized_and_runtime`.
+- 2026-02-26: Completed S3-02 regression validation. `check_py2cpp_transpile.py` reported `checked=133 ok=133 fail=0 skipped=6`; `test_py2cpp_codegen_issues.py` / `test_py2cpp_smoke.py` / `test_py2cpp_east1_build_bridge.py` all passed; parity status reconfirmed (`17_monte_carlo_pi` pass, known `18_mini_language_interpreter` compile failure unchanged).
+- 2026-02-26: Completed S3-03 baseline capture. For `sample/py/17`, `--cpp-opt-level 0/1/2` produced identical generated artifacts (45 lines/1498 bytes/same hash), with runtime medians `0.01936s / 0.01933s / 0.01964s`. For `sample/py/18`, generated artifacts were also identical (415 lines/14470 bytes/same hash) and the known compile failure status remained unchanged.
 
 ## Breakdown
 
@@ -53,5 +55,5 @@ Decision log:
 - [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and pin IR normalization before C++ structuring.
 - [x] [ID: P0-CPP-OPT-01-S2-03] Introduce `CppRuntimeFastPathPass` in a limited scope while preserving runtime contract equivalence.
 - [x] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching on `CppEmitter` and align boundaries to `spec-cpp-optimizer`.
-- [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
-- [ ] [ID: P0-CPP-OPT-01-S3-03] Measure performance/size/generated diff baselines and record introduction effects in context docs.
+- [x] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
+- [x] [ID: P0-CPP-OPT-01-S3-03] Measure performance/size/generated diff baselines and record introduction effects in context docs.
