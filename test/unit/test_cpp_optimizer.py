@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import sys
 import unittest
 from pathlib import Path
@@ -23,6 +24,7 @@ from hooks.cpp.optimizer.passes.const_condition_pass import CppConstConditionPas
 from hooks.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
 from hooks.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from hooks.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
+from hooks.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
 from hooks.cpp.optimizer.trace import render_cpp_opt_trace
 
 
@@ -78,7 +80,7 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = optimize_cpp_ir(
             doc,
             opt_level="1",
-            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppConstConditionPass,-CppRangeForShapePass",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppConstConditionPass,-CppRangeForShapePass,-CppRuntimeFastPathPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -93,12 +95,15 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertFalse(bool(trace[3].get("enabled")))
         self.assertEqual(trace[4].get("name"), "CppRangeForShapePass")
         self.assertFalse(bool(trace[4].get("enabled")))
+        self.assertEqual(trace[5].get("name"), "CppRuntimeFastPathPass")
+        self.assertFalse(bool(trace[5].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
         self.assertIn("CppDeadTempPass enabled=false", trace_text)
         self.assertIn("CppNoOpCastPass enabled=false", trace_text)
         self.assertIn("CppConstConditionPass enabled=false", trace_text)
         self.assertIn("CppRangeForShapePass enabled=false", trace_text)
+        self.assertIn("CppRuntimeFastPathPass enabled=false", trace_text)
 
     def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
         doc = _module_doc()
@@ -232,6 +237,33 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertEqual(iter_plan.get("start", {}).get("value"), 0)
         self.assertEqual(iter_plan.get("stop", {}).get("value"), 5)
         self.assertEqual(iter_plan.get("step", {}).get("value"), 1)
+
+    def test_cpp_runtime_fastpath_pass_folds_unbox_same_type_at_o2(self) -> None:
+        base_doc = _module_doc()
+        base_doc["body"] = [
+            {
+                "kind": "Expr",
+                "value": {
+                    "kind": "Unbox",
+                    "target": "int64",
+                    "resolved_type": "int64",
+                    "value": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                },
+            }
+        ]
+
+        o1_doc = copy.deepcopy(base_doc)
+        optimize_cpp_ir(o1_doc, opt_level="1")
+        o1_value = o1_doc.get("body")[0].get("value")
+        self.assertEqual(o1_value.get("kind"), "Unbox")
+
+        o2_doc = copy.deepcopy(base_doc)
+        result = CppRuntimeFastPathPass().run(o2_doc, CppOptContext(opt_level=2))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        o2_value = o2_doc.get("body")[0].get("value")
+        self.assertEqual(o2_value.get("kind"), "Name")
+        self.assertEqual(o2_value.get("id"), "x")
 
     def test_emit_cpp_from_east_runs_cpp_optimizer_hook(self) -> None:
         east_doc = _module_doc()

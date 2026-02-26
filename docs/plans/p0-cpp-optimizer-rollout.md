@@ -42,6 +42,7 @@ Decision log:
 - 2026-02-26: Completed `P0-CPP-OPT-01-S1-02` by wiring `--cpp-opt-level/--cpp-opt-pass/--dump-cpp-*` in `py2cpp` across single/multi-file paths, then validating option acceptance, dump generation, and invalid-value rejection with `test_cpp_optimizer_cli.py` and `test_east3_cpp_bridge.py`.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-01` by adding `CppDeadTempPass` / `CppNoOpCastPass` for safe unused-temp elimination and no-op cast cleanup (`casts` metadata and `static_cast` nodes), registering them in the default pass set, and expanding `test_cpp_optimizer.py` to 9 focused cases.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-02` by adding `CppConstConditionPass` / `CppRangeForShapePass` for constant-branch simplification and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wiring them into default passes and expanding `test_cpp_optimizer.py` to 11 focused cases.
+- 2026-02-26: Completed `P0-CPP-OPT-01-S2-03` by adding `CppRuntimeFastPathPass` (O2-only) for contract-equivalent fast paths (`Unbox` same-type fold, `Box(object)` fold, `ObjBool(bool)` fold), then wiring it into default passes and expanding `test_cpp_optimizer.py` to 12 focused cases with O1/O2 behavior checks.
 
 ## Breakdown
 
@@ -49,7 +50,7 @@ Decision log:
 - [x] [ID: P0-CPP-OPT-01-S1-02] Add `CppOptimizer` invocation in the `py2cpp` execution path and wire `--cpp-opt-level`, `--cpp-opt-pass`, and dump options.
 - [x] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
 - [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and pin IR normalization before C++ structuring.
-- [ ] [ID: P0-CPP-OPT-01-S2-03] Introduce `CppRuntimeFastPathPass` in a limited scope while preserving runtime contract equivalence.
+- [x] [ID: P0-CPP-OPT-01-S2-03] Introduce `CppRuntimeFastPathPass` in a limited scope while preserving runtime contract equivalence.
 - [ ] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching on `CppEmitter` and align boundaries to `spec-cpp-optimizer`.
 - [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
 - [ ] [ID: P0-CPP-OPT-01-S3-03] Measure performance/size/generated diff baselines and record introduction effects in context docs.

@@ -7,6 +7,7 @@ from hooks.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
 from hooks.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from hooks.cpp.optimizer.passes.noop_pass import CppNoOpPass
 from hooks.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
+from hooks.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
 
 
 def build_default_cpp_passes() -> list[object]:
@@ -17,4 +18,5 @@ def build_default_cpp_passes() -> list[object]:
         CppNoOpCastPass(),
         CppConstConditionPass(),
         CppRangeForShapePass(),
+        CppRuntimeFastPathPass(),
     ]
