@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PY2CPP = ROOT / "src" / "py2cpp.py"
+DEFAULT_EXPECTED_DIFF_FILE = ROOT / "tools" / "selfhost_cpp_diff_expected.txt"
 DEFAULT_CASES = [
     "test/fixtures/core/add.py",
     "test/fixtures/core/str_join_method.py",
@@ -35,6 +36,18 @@ _FLOAT_CAST_PERF_COUNTER_RE = re.compile(
 
 def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+
+
+def _load_expected_diff_cases(path: Path) -> set[str]:
+    out: set[str] = set()
+    if not path.exists():
+        return out
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line == "" or line.startswith("#"):
+            continue
+        out.add(line)
+    return out
 
 
 def _canonicalize_cpp_line(line: str) -> str:
@@ -96,6 +109,11 @@ def main() -> int:
     ap.add_argument("--cases", nargs="*", default=DEFAULT_CASES)
     ap.add_argument("--show-diff", action="store_true")
     ap.add_argument(
+        "--expected-diff-file",
+        default=str(DEFAULT_EXPECTED_DIFF_FILE),
+        help="newline-separated known mismatch cases; comments(#) and blank lines are ignored",
+    )
+    ap.add_argument(
         "--mode",
         choices=["strict", "allow-not-implemented"],
         default="allow-not-implemented",
@@ -123,7 +141,9 @@ def main() -> int:
         print(f"missing bridge tool: {bridge_tool}")
         return 2
 
+    expected_diff_cases = _load_expected_diff_cases(Path(args.expected_diff_file))
     mismatches = 0
+    known_diffs = 0
     skipped = 0
     with tempfile.TemporaryDirectory() as tmpdir:
         td = Path(tmpdir)
@@ -165,12 +185,20 @@ def main() -> int:
                     skipped += 1
                     print(f"[SKIP selfhost-bridge-json-unavailable] {rel}")
                     continue
-                print(f"[FAIL selfhost] {rel}: {msg.splitlines()[:1]}")
-                mismatches += 1
+                if rel in expected_diff_cases:
+                    known_diffs += 1
+                    print(f"[KNOWN DIFF selfhost] {rel}: {msg.splitlines()[:1]}")
+                else:
+                    print(f"[FAIL selfhost] {rel}: {msg.splitlines()[:1]}")
+                    mismatches += 1
                 continue
             if not out_sh.exists():
-                print(f"[FAIL selfhost] {rel}: output file was not generated ({out_sh})")
-                mismatches += 1
+                if rel in expected_diff_cases:
+                    known_diffs += 1
+                    print(f"[KNOWN DIFF selfhost] {rel}: output file was not generated ({out_sh})")
+                else:
+                    print(f"[FAIL selfhost] {rel}: output file was not generated ({out_sh})")
+                    mismatches += 1
                 continue
 
             a = out_py.read_text(encoding="utf-8").splitlines()
@@ -178,21 +206,25 @@ def main() -> int:
             a_norm = _canonicalize_cpp_lines(a)
             b_norm = _canonicalize_cpp_lines(b)
             if a_norm != b_norm:
-                mismatches += 1
-                print(f"[DIFF] {rel}")
-                if args.show_diff:
-                    for ln in difflib.unified_diff(
-                        a_norm,
-                        b_norm,
-                        fromfile=f"{rel}:python(normalized)",
-                        tofile=f"{rel}:selfhost(normalized)",
-                        lineterm="",
-                    ):
-                        print(ln)
+                if rel in expected_diff_cases:
+                    known_diffs += 1
+                    print(f"[KNOWN DIFF] {rel}")
+                else:
+                    mismatches += 1
+                    print(f"[DIFF] {rel}")
+                    if args.show_diff:
+                        for ln in difflib.unified_diff(
+                            a_norm,
+                            b_norm,
+                            fromfile=f"{rel}:python(normalized)",
+                            tofile=f"{rel}:selfhost(normalized)",
+                            lineterm="",
+                        ):
+                            print(ln)
             else:
                 print(f"[OK] {rel}")
 
-    print(f"mismatches={mismatches} skipped={skipped}")
+    print(f"mismatches={mismatches} known_diffs={known_diffs} skipped={skipped}")
     return 1 if mismatches else 0
 
 

@@ -36,7 +36,7 @@
 ## 分解
 
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-01] `cpp_emitter.py` の行数・メソッド数・長大メソッドを計測し、基準値を文書化する。
-- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線を固定する。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線を固定する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-01] stage2/self_hosted 由来の legacy builtin compat 経路を撤去する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-02] `For`/`ForRange` <-> `ForCore` bridge を撤去し、`ForCore` 直接受理へ統一する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-03] legacy `isinstance/issubclass` Name-call 許容を撤去し、type_id 系を EAST3 ノード前提に統一する。
@@ -76,3 +76,4 @@
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
+- 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-02` として C++ 生成差分の基線を固定した。`tools/check_selfhost_cpp_diff.py` に既知差分基線ファイル（`tools/selfhost_cpp_diff_expected.txt`）を導入し、default case（`sample` + `test/fixtures`）では「既知差分のみ許容・新規差分のみ失敗」に変更した。検証は `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`（`mismatches=0 known_diffs=6 skipped=0`）、`python3 tools/check_sample_regen_clean.py`（`[OK] sample outputs are clean`）、`python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。

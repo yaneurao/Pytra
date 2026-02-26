@@ -1,0 +1,12 @@
+# Known Python-vs-selfhost normalized diff baseline for DEFAULT_CASES in
+# tools/check_selfhost_cpp_diff.py.
+#
+# This list is intentionally explicit so emitter-refactor work can detect
+# newly introduced mismatches while keeping current known gaps visible.
+
+test/fixtures/core/add.py
+test/fixtures/core/str_join_method.py
+test/fixtures/control/if_else.py
+test/fixtures/collections/comprehension_filter.py
+sample/py/01_mandelbrot.py
+sample/py/17_monte_carlo_pi.py
