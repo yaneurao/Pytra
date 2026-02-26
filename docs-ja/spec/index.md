@@ -19,6 +19,7 @@
 - EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
 - EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - C++ backend 最適化層仕様: [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- Java native backend 契約仕様: [Java Native Backend 契約仕様](./spec-java-native-backend.md)
 - EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
 - EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
 - EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
@@ -53,6 +54,8 @@
   - [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - C++ backend 後段最適化（`CppOptimizer` と `CppEmitter` の責務分離）を確認したい場合:
   - [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- Java backend の sidecar 撤去移行契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
+  - [Java Native Backend 契約仕様](./spec-java-native-backend.md)
 - EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:
   - [責務対応表](./spec-east.md#east-file-mapping)
 - `EAST1` build 入口（`east1_build.py`）の責務境界を確認したい場合:

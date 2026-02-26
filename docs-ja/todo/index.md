@@ -36,7 +36,7 @@
 文脈: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollout.md)
 
 1. [ ] [ID: P3-JAVA-NATIVE-01] Java backend を `EAST3 -> Java native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
-2. [ ] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
+2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
 3. [ ] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
 4. [ ] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
 5. [ ] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
@@ -45,6 +45,7 @@
 8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
 9. [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
 10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
+- `P3-JAVA-NATIVE-01-S1-01` `docs-ja/spec/spec-java-native-backend.md`（英訳: `docs/spec/spec-java-native-backend.md`）を追加し、入力 EAST3 契約・fail-closed・runtime 境界と preview 差分を文書化。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 

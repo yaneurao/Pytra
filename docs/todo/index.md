@@ -35,7 +35,7 @@ Last updated: 2026-02-26
 Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollout.md)
 
 1. [ ] [ID: P3-JAVA-NATIVE-01] Migrate Java backend to direct `EAST3 -> Java native emitter`, removing sidecar JS dependency from the default path.
-2. [ ] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (input EAST3 responsibilities, fail-closed behavior for unsupported nodes, runtime boundary) and clarify diffs from preview output.
+2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (input EAST3 responsibilities, fail-closed behavior for unsupported nodes, runtime boundary) and clarify diffs from preview output.
 3. [ ] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton under `src/hooks/java/emitter` and pass minimal executable path for module/function/class.
 4. [ ] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`; make native default and isolate old sidecar as compatibility mode.
 5. [ ] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native expression/statement coverage (arithmetic, conditionals, loops, function calls, basic built-ins) and pass early `sample/py` cases.
@@ -44,6 +44,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile` / unit smoke / parity with native as default and lock regression detection.
 9. [ ] [ID: P3-JAVA-NATIVE-01-S3-02] Regenerate `sample/java` and replace preview summary output with native implementation output.
 10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] Update Java descriptions in `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` from sidecar assumptions and sync operation steps.
+- `P3-JAVA-NATIVE-01-S1-01` Added `docs-ja/spec/spec-java-native-backend.md` (translation: `docs/spec/spec-java-native-backend.md`) to define input EAST3 contract, fail-closed behavior, runtime boundary, and preview-vs-native differences.
 
 ### P0: Implement common EAST3 optimizer layer (Highest)
 
