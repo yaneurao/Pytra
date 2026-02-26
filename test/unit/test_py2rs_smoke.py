@@ -79,6 +79,88 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertEqual(loaded.get("kind"), "Module")
         self.assertEqual(loaded.get("east_stage"), 2)
 
+    def test_for_core_static_range_plan_is_emitted(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Constant", "value": 0},
+                        "stop": {"kind": "Constant", "value": 3},
+                        "step": {"kind": "Constant", "value": 1},
+                        "range_mode": "ascending",
+                    },
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "print"},
+                                "args": [{"kind": "Name", "id": "i"}],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        rust = transpile_to_rust(east)
+        self.assertIn("let mut i: i64 = 0;", rust)
+        self.assertIn("while i < 3 {", rust)
+        self.assertIn("i += 1;", rust)
+
+    def test_for_core_runtime_iter_tuple_target_is_emitted(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {
+                        "kind": "TupleTarget",
+                        "elements": [
+                            {"kind": "NameTarget", "id": "k"},
+                            {"kind": "NameTarget", "id": "v"},
+                        ],
+                        "target_type": "tuple[int64,int64]",
+                    },
+                    "iter_plan": {
+                        "kind": "RuntimeIterForPlan",
+                        "iter_expr": {"kind": "Name", "id": "pairs"},
+                        "init_op": "ObjIterInit",
+                        "next_op": "ObjIterNext",
+                    },
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "print"},
+                                "args": [
+                                    {"kind": "Name", "id": "k"},
+                                    {"kind": "Name", "id": "v"},
+                                ],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        rust = transpile_to_rust(east)
+        self.assertIn("for (k, v) in pairs {", rust)
+        self.assertIn("println!(", rust)
+
     def test_cli_smoke_generates_rs_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
