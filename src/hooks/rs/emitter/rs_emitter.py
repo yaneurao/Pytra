@@ -2007,6 +2007,9 @@ class RustEmitter(CodeEmitter):
         if kind == "For":
             self._emit_for(stmt)
             return
+        if kind == "ForCore":
+            self._emit_for_core(stmt)
+            return
         if kind == "Import" or kind == "ImportFrom":
             return
 
@@ -2133,6 +2136,63 @@ class RustEmitter(CodeEmitter):
             body,
             body_scope,
         )
+
+    def _legacy_target_from_for_core_plan(self, plan_node: Any) -> dict[str, Any]:
+        """ForCore target_plan を既存 For/ForRange target 形へ変換する。"""
+        plan = self.any_to_dict_or_empty(plan_node)
+        kind = self.any_dict_get_str(plan, "kind", "")
+        if kind == "NameTarget":
+            return {"kind": "Name", "id": self.any_dict_get_str(plan, "id", "_")}
+        if kind == "TupleTarget":
+            elements = self.any_to_list(plan.get("elements"))
+            legacy_elements: list[dict[str, Any]] = []
+            for elem in elements:
+                legacy_elements.append(self._legacy_target_from_for_core_plan(elem))
+            return {"kind": "Tuple", "elements": legacy_elements}
+        if kind == "ExprTarget":
+            target_any = plan.get("target")
+            if isinstance(target_any, dict):
+                return target_any
+        return {"kind": "Name", "id": "_"}
+
+    def _emit_for_core(self, stmt: dict[str, Any]) -> None:
+        """ForCore を既存 For/ForRange emit へ内部変換して処理する。"""
+        iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
+        target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
+        plan_kind = self.any_dict_get_str(iter_plan, "kind", "")
+        target = self._legacy_target_from_for_core_plan(target_plan)
+        target_type = self.any_dict_get_str(target_plan, "target_type", "")
+        body = self._dict_stmt_list(stmt.get("body"))
+        orelse = self._dict_stmt_list(stmt.get("orelse"))
+        if plan_kind == "StaticRangeForPlan":
+            self._emit_for_range(
+                {
+                    "kind": "ForRange",
+                    "target": target,
+                    "target_type": target_type,
+                    "start": iter_plan.get("start"),
+                    "stop": iter_plan.get("stop"),
+                    "step": iter_plan.get("step"),
+                    "range_mode": self.any_dict_get_str(iter_plan, "range_mode", "ascending"),
+                    "body": body,
+                    "orelse": orelse,
+                }
+            )
+            return
+        if plan_kind == "RuntimeIterForPlan":
+            self._emit_for(
+                {
+                    "kind": "For",
+                    "target": target,
+                    "target_type": target_type,
+                    "iter_mode": "runtime_protocol",
+                    "iter": iter_plan.get("iter_expr"),
+                    "body": body,
+                    "orelse": orelse,
+                }
+            )
+            return
+        self.emit("// unsupported ForCore iter_plan: " + plan_kind)
 
     def _render_as_pyany(self, expr: Any) -> str:
         """式を `PyAny` へ昇格する。"""
