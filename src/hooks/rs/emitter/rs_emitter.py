@@ -2182,6 +2182,59 @@ class RustEmitter(CodeEmitter):
             return self._ensure_string_owned(self.render_expr(value_obj))
         return self.render_expr(value_obj)
 
+    def _infer_byte_buffer_capacity_expr(self, target_name_raw: str) -> str:
+        """`bytearray()/bytes()` 初期化向けの容量式を推定する。"""
+        name = target_name_raw.lower()
+        width_name = ""
+        height_name = ""
+        if self.is_declared("width"):
+            width_name = "width"
+        elif self.is_declared("w"):
+            width_name = "w"
+        if self.is_declared("height"):
+            height_name = "height"
+        elif self.is_declared("h"):
+            height_name = "h"
+
+        if width_name != "" and height_name != "":
+            w = self._safe_name(width_name)
+            h = self._safe_name(height_name)
+            area = "((" + w + ") * (" + h + "))"
+            if "pixel" in name:
+                return "(" + area + " * 3)"
+            if "scanline" in name:
+                return "((" + h + ") * (((" + w + ") * 3) + 1))"
+            if "frame" in name:
+                return area
+            return area
+        if "palette" in name:
+            return "(256 * 3)"
+        return ""
+
+    def _maybe_render_preallocated_byte_buffer_init(self, target_name_raw: str, target_type: str, value_obj: Any) -> str:
+        """空 `bytearray()/bytes()` 初期化で `with_capacity` を返す。"""
+        t = self.normalize_type_name(target_type)
+        if t not in {"bytearray", "bytes"}:
+            return ""
+        value_d = self.any_to_dict_or_empty(value_obj)
+        if self.any_dict_get_str(value_d, "kind", "") != "Call":
+            return ""
+        fn_d = self.any_to_dict_or_empty(value_d.get("func"))
+        if self.any_dict_get_str(fn_d, "kind", "") != "Name":
+            return ""
+        fn_name = self.any_dict_get_str(fn_d, "id", "")
+        if fn_name != "bytearray" and fn_name != "bytes":
+            return ""
+        call_args = self.any_to_list(value_d.get("args"))
+        call_kws = self.any_to_list(value_d.get("keywords"))
+        call_kw_values = self.any_to_list(value_d.get("kw_values"))
+        if len(call_args) != 0 or len(call_kws) != 0 or len(call_kw_values) != 0:
+            return ""
+        cap_expr = self._infer_byte_buffer_capacity_expr(target_name_raw)
+        if cap_expr == "":
+            return ""
+        return "Vec::<u8>::with_capacity((" + cap_expr + ") as usize)"
+
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))
         target_kind = self.any_dict_get_str(target, "kind", "")
@@ -2213,7 +2266,9 @@ class RustEmitter(CodeEmitter):
             mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=False) else ""
             self.emit(self.syntax_line("annassign_decl_noinit", "let {mut_kw}{target}: {type};", {"mut_kw": mut_kw, "target": name, "type": t}))
             return
-        value = self._render_value_for_decl_type(value_obj, t_east)
+        value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t_east, value_obj)
+        if value == "":
+            value = self._render_value_for_decl_type(value_obj, t_east)
         mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=True) else ""
         self.emit(
             self.syntax_line(
@@ -2235,6 +2290,9 @@ class RustEmitter(CodeEmitter):
                 if t != "":
                     self.declared_var_types[name_raw] = t
                 mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=True) else ""
+                prealloc_value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t, stmt.get("value"))
+                if prealloc_value != "":
+                    value = prealloc_value
                 self.emit(self.syntax_line("assign_decl_init", "let {mut_kw}{target} = {value};", {"mut_kw": mut_kw, "target": name, "value": value}))
                 return
             self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": name, "value": value}))
@@ -2944,18 +3002,24 @@ class RustEmitter(CodeEmitter):
             val = self.any_to_str(expr_d.get("value"))
             return "(" + self.quote_string_literal(val) + ").to_string()"
         if kind == "Attribute":
-            owner = self.render_expr(expr_d.get("value"))
-            owner_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), owner)
+            owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
+            owner = self.render_expr(owner_node)
+            owner_ctx = self.resolve_attribute_owner_context(owner_node, owner)
             owner_mod = self.any_dict_get_str(owner_ctx, "module", "")
             attr_raw = self.any_dict_get_str(expr_d, "attr", "")
             if owner_mod != "":
                 return owner_mod.replace(".", "::") + "::" + attr_raw
-            owner_kind = self.any_dict_get_str(self.any_to_dict_or_empty(expr_d.get("value")), "kind", "")
-            if owner_kind == "Subscript":
-                owner_trim = owner.strip()
-                if not owner_trim.endswith(".clone()"):
-                    owner = "(" + owner + ").clone()"
+            owner_kind = self.any_dict_get_str(owner_node, "kind", "")
             attr = self._safe_name(attr_raw)
+            if owner_kind == "Subscript":
+                owner_owner_t = self.normalize_type_name(self.get_expr_type(owner_node.get("value")))
+                owner_expr = owner
+                if owner_owner_t.startswith("list[") or owner_owner_t.startswith("tuple[") or owner_owner_t in {"bytes", "bytearray"}:
+                    owner_expr = self._render_subscript_lvalue(owner_node)
+                attr_t = self.normalize_type_name(self.get_expr_type(expr_d))
+                if self._is_copy_type(attr_t):
+                    return owner_expr + "." + attr
+                return "(" + owner_expr + "." + attr + ").clone()"
             return owner + "." + attr
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")
