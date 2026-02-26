@@ -16,6 +16,7 @@ This document defines the responsibilities, contracts, and rollout plan of the `
 
 - Replacing syntax/type-resolution logic before `EAST3`.
 - Replacing backend-specific final formatting responsibilities.
+- Direct lowering into backend syntax forms (for example, C++ `for (init; cond; inc)` generation).
 - Allowing semantics-changing optimizations.
 
 ## 3. Pipeline Placement
@@ -89,12 +90,25 @@ Execution rules:
 | `LoopInvariantHoistLitePass` | hoist loop-invariant expressions | move invariant denominator/computation to preheader | side-effect-free only |
 | `StrengthReductionFloatLoopPass` | reduce loop arithmetic cost | `x / C -> x * invC` | invariant floating-point divisor |
 | `DeadTempCleanupPass` | remove dead temps | drop unused temporary assignments | no side-effect references |
+| `RangeForCanonicalizationPass` | normalize `for ... in range(...)` | convert to backend-agnostic counted-loop form | only when `range` evaluation order/side effects/boundary semantics are preserved |
+| `UnusedLoopVarElisionPass` | reduce unused loop-var binding | elide binding for materially unused iteration variables | only when "unused" is proven by data flow, not by variable name |
+
+### 8.1 Responsibility Boundary for `for ... in range(...)`
+
+- The common optimizer may normalize `for ... in range(...)` into a backend-agnostic counted-loop representation.
+- `for _ in range(5)` is an optimization candidate only when actual-use analysis proves the variable is unused; identifier naming (`_`) alone is not sufficient.
+- If safety cannot be proven, skip the transform (fail-closed), including cases such as:
+  - the loop variable is read in body/`else`/after-loop scope,
+  - closure capture can observe the variable,
+  - dynamic name-introspection paths (`locals`/`globals`/`vars`/`eval`) may observe it.
+- Backend syntax materialization (for example, C++ `for (i = 0; i < n; ++i)`) belongs to `EAST3 -> <lang>` lowering / emitter, not to the common optimizer.
 
 ## 9. Language-specific Layer
 
 - Optional `east3_optimizer_<lang>.py` runs after common layer.
 - It must keep the same safety contract.
 - Use it only for target-specific codegen constraints.
+- Backend syntax materialization may be handled in this layer or in the emitter.
 
 Suggested layout:
 
