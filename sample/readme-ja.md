@@ -42,6 +42,7 @@
 ### ディレクトリ構成
 
 - [`py/`](py): 変換元 Python サンプル（現在 `01`〜`18`）
+- [`PyPy/`](PyPy): PyPy 実行用ランチャー（`py/` をそのまま実行）
 - [`cpp/`](cpp): C++ 変換結果
 - [`cs/`](cs): C# 変換結果
 - [`rs/`](rs): Rust 変換結果
@@ -58,6 +59,7 @@
 ### 計測条件（README 表の前提）
 
 - Python: `PYTHONPATH=src python3 sample/py/<file>.py`
+- PyPy: `PYTHONPATH=src pypy3 sample/PyPy/<file>.py`
 - C++: `g++ -std=c++20 -O3 -ffast-math -flto -I src ...`
 - C#: `mcs ...` + `mono ...`
 - Rust: `rustc -O ...`
