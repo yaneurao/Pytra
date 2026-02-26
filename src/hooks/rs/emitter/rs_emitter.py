@@ -43,8 +43,7 @@ fn py_isalpha(v: &str) -> bool {
 }
 
 fn py_str_at(s: &str, index: i64) -> String {
-    let chars: Vec<char> = s.chars().collect();
-    let n = chars.len() as i64;
+    let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
     let mut idx = index;
     if idx < 0 {
         idx += n;
@@ -52,12 +51,15 @@ fn py_str_at(s: &str, index: i64) -> String {
     if idx < 0 || idx >= n {
         return String::new();
     }
-    chars[idx as usize].to_string()
+    if s.is_ascii() {
+        let b = s.as_bytes()[idx as usize];
+        return (b as char).to_string();
+    }
+    s.chars().nth(idx as usize).map(|c| c.to_string()).unwrap_or_default()
 }
 
 fn py_slice_str(s: &str, start: Option<i64>, end: Option<i64>) -> String {
-    let chars: Vec<char> = s.chars().collect();
-    let n = chars.len() as i64;
+    let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
     let mut i = start.unwrap_or(0);
     let mut j = end.unwrap_or(n);
     if i < 0 {
@@ -81,7 +83,26 @@ fn py_slice_str(s: &str, start: Option<i64>, end: Option<i64>) -> String {
     if j < i {
         j = i;
     }
-    chars[(i as usize)..(j as usize)].iter().collect()
+    if s.is_ascii() {
+        return s[(i as usize)..(j as usize)].to_string();
+    }
+    let start_b = if i == 0 {
+        0
+    } else {
+        s.char_indices()
+            .nth(i as usize)
+            .map(|(b, _)| b)
+            .unwrap_or(s.len())
+    };
+    let end_b = if j == n {
+        s.len()
+    } else {
+        s.char_indices()
+            .nth(j as usize)
+            .map(|(b, _)| b)
+            .unwrap_or(s.len())
+    };
+    s[start_b..end_b].to_string()
 }
 
 fn py_grayscale_palette() -> Vec<u8> {
