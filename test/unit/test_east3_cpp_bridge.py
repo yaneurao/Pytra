@@ -242,7 +242,7 @@ class East3CppBridgeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "builtin call must define runtime_call in EAST3: bytes"):
             emitter.render_expr(call_expr)
 
-    def test_builtin_call_without_runtime_call_allowed_for_stage2_selfhost_compat(self) -> None:
+    def test_builtin_call_without_runtime_call_rejected_for_stage2_selfhost(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "2", "parser_backend": "self_hosted"}}, {})
         call_expr = {
             "kind": "Call",
@@ -254,7 +254,8 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
             "resolved_type": "bytes",
         }
-        self.assertEqual(emitter.render_expr(call_expr), "bytes{}")
+        with self.assertRaisesRegex(ValueError, "builtin call must define runtime_call in EAST3: bytes"):
+            emitter.render_expr(call_expr)
 
     def test_render_cond_for_any_routes_to_objbool(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1941,7 +1942,7 @@ class East3CppBridgeTest(unittest.TestCase):
         ):
             emitter.render_expr(plain_path_exists)
 
-    def test_plain_builtin_method_call_allows_self_hosted_parser_compat(self) -> None:
+    def test_plain_builtin_method_call_rejected_for_self_hosted_parser(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"parser_backend": "self_hosted"}}, {})
         plain_endswith = {
             "kind": "Call",
@@ -1955,7 +1956,11 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Constant", "value": ".py", "resolved_type": "str"}],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(plain_endswith), 'py_endswith(s, ".py")')
+        with self.assertRaisesRegex(
+            ValueError,
+            "builtin method call must be lowered_kind=BuiltinCall: str.endswith",
+        ):
+            emitter.render_expr(plain_endswith)
 
     def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
