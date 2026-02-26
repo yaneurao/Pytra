@@ -96,6 +96,18 @@
   - `rg -n "switch \\(.*type_id\\(" sample/cpp src/runtime/cpp/pytra-gen`
 - `sample` 側で残る `type_id` 利用は `set_type_id(PYTRA_TYPE_ID)` 初期化のみで、dispatch 分岐の置換対象は存在しなかったため no-op 完了とした。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S3-02` 確定内容（2026-02-26）:
+- `S3-01` の no-op 判定を前提に selfhost 再変換成功率を再評価した。
+  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`
+    - 結果: `mismatches=0 known_diffs=2 skipped=0`
+  - `python3 tools/verify_selfhost_end_to_end.py`
+    - 結果: `build_selfhost` 失敗（`Traceback ...`）
+  - `python3 tools/build_selfhost.py`
+    - 詳細: `RuntimeError: failed to remove required import lines: CodeEmitter import`
+- 観測:
+  - C++ 生成 diff 観点では新規退行なし（既知差分 2 件のみ）。
+  - selfhost end-to-end は前段スクリプト（`prepare_selfhost_source.py`）の既知エラーで停止するため、成功率評価は「diff 成功 / e2e は build 前段で継続失敗」の状態を維持した。
+
 ### S4: 回帰固定と仕様反映
 
 10. `P2-CPP-SELFHOST-VIRTUAL-01-S4-01`: 差分固定のため `test/unit`（selfhost 関連）と `sample` 再生成 golden 的比較を追加/更新する。
@@ -118,3 +130,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-02` として `call.py` の class method 呼び出しを mode ベース（`virtual` / `direct` / `fallback`）へ分岐明示化し、dispatch table で描画先を切り替える形へ整理した。`_collect_class_method_candidates` へ候補探索を共通化し、`test_east3_cpp_bridge` の追加2ケースと `check_py2cpp_transpile`（`133/133`）で回帰なしを確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-03` として置換対象外の `type_id` 関連分岐を理由付きで固定した。`BuiltinCall` lower 前提経路・`runtime_expr.py` の type_id API 呼び出し・`built_in/type_id.cpp` registry 管理は fallback/非対象として維持し、S3 の実装対象から除外する方針を確定した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-01` として `sample/cpp` と `src/runtime/cpp/pytra-gen` を再走査したが、class method dispatch 由来の `type_id` 条件分岐は引き続き 0 件だった。残存する `type_id` 利用は `set_type_id(...)` 初期化のみであり、移行対象なしの no-op 完了として扱う。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-02` として selfhost 再変換の再評価を実施し、`check_selfhost_cpp_diff` は `mismatches=0 known_diffs=2` を維持、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`failed to remove required import lines: CodeEmitter import`）で継続失敗することを再確認した。
