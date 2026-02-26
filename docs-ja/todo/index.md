@@ -52,7 +52,7 @@
 
 1. [ ] [ID: P0-EAST3-OPT-01] `EAST3 -> EAST3` 共通最適化層を導入し、pass manager / opt level / fail-closed 契約を実装へ反映する。
 2. [x] [ID: P0-EAST3-OPT-01-S1-01] optimizer エントリ (`east3_optimizer.py`) と pass manager 骨格（`PassContext`/`PassResult`）を追加する。
-3. [ ] [ID: P0-EAST3-OPT-01-S1-02] CLI オプション（`--east3-opt-level`, `--east3-opt-pass`, dump/trace）を実装し、`O0/O1/O2` 契約を固定する。
+3. [x] [ID: P0-EAST3-OPT-01-S1-02] CLI オプション（`--east3-opt-level`, `--east3-opt-pass`, dump/trace）を実装し、`O0/O1/O2` 契約を固定する。
 4. [ ] [ID: P0-EAST3-OPT-01-S2-01] `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`O1` 既定セットを確立する。
 5. [ ] [ID: P0-EAST3-OPT-01-S2-02] `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` を実装し、`for ... in range(...)` の責務境界を反映する。
 6. [ ] [ID: P0-EAST3-OPT-01-S2-03] `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` を `O2` 限定で導入する。
@@ -60,6 +60,7 @@
 8. [ ] [ID: P0-EAST3-OPT-01-S3-02] `sample` 回帰 + parity 検証を実行し、`O0`/`O1`/`O2` 切替時の互換を確認する。
 9. [ ] [ID: P0-EAST3-OPT-01-S3-03] 実装差分を `spec-east3-optimizer` と同期し、運用手順（トレース確認/切り分け）を文書化する。
 - `P0-EAST3-OPT-01-S1-01` `east3_optimizer.py` / `east3_opt_passes/noop_pass.py` / `test_east3_optimizer.py` を追加し、pass manager 骨格と trace 出力の最小経路を固定。
+- `P0-EAST3-OPT-01-S1-02` 共通 CLI + `py2cpp`/非C++ 8本へ optimizer オプションを配線し、`test_east3_optimizer_cli.py` と parse wrapper テストで入出力導線を固定。
 
 ### P0: C++ backend 後段最適化層（CppOptimizer）導入（最優先）
 
