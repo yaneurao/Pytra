@@ -3,8 +3,7 @@
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 
-
-
+// 09: Sample that outputs a simple fire effect as a GIF.
 
 bytes fire_palette() {
     bytearray p = bytearray{};
@@ -39,9 +38,11 @@ void run_09_fire_simulation() {
     int64 h = 260;
     int64 steps = 420;
     str out_path = "sample/out/09_fire_simulation.gif";
+    
     auto start = pytra::std::time::perf_counter();
     list<list<int64>> heat = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{0}, w)));     }     return __out; }();
     list<bytes> frames = list<bytes>{};
+    
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
             int64 val = 170 + (x * 13 + t * 17) % 86;
@@ -62,12 +63,13 @@ void run_09_fire_simulation() {
         bytearray frame = bytearray(w * h);
         for (int64 yy = 0; yy < h; ++yy) {
             int64 row_base = yy * w;
-            for (int64 xx = 0; xx < w; ++xx)
+            for (int64 xx = 0; xx < w; ++xx) {
                 frame[row_base + xx] = heat[yy][xx];
+            }
         }
-        frames.append(bytes(bytes(frame)));
+        frames.append(bytes(frame));
     }
-    pytra::utils::gif::save_gif(out_path, w, h, frames, fire_palette(), int64(py_to_int64(4)), int64(py_to_int64(0)));
+    pytra::utils::gif::save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
     auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", steps);

@@ -3,8 +3,7 @@
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 
-
-
+// 13: Sample that outputs DFS maze-generation progress as a GIF.
 
 bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
     int64 width = w * scale;
@@ -15,8 +14,9 @@ bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
             int64 v = (grid[y][x] == 0 ? 255 : 40);
             for (int64 yy = 0; yy < scale; ++yy) {
                 int64 base = (y * scale + yy) * width + x * scale;
-                for (int64 xx = 0; xx < scale; ++xx)
+                for (int64 xx = 0; xx < scale; ++xx) {
                     frame[base + xx] = v;
+                }
             }
         }
     }
@@ -24,18 +24,22 @@ bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
 }
 
 void run_13_maze_generation_steps() {
+    // Increase maze size and render resolution to ensure sufficient runtime.
     int64 cell_w = 89;
     int64 cell_h = 67;
     int64 scale = 5;
     int64 capture_every = 20;
     str out_path = "sample/out/13_maze_generation_steps.gif";
+    
     auto start = pytra::std::time::perf_counter();
     list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < cell_h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{1}, cell_w)));     }     return __out; }();
     list<::std::tuple<int64, int64>> stack = list<::std::tuple<int64, int64>>{::std::make_tuple(1, 1)};
     grid[1][1] = 0;
+    
     list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-2, 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -2)};
     list<bytes> frames = list<bytes>{};
     int64 step = 0;
+    
     while (py_len(stack) != 0) {
         auto __tuple_2 = py_at(stack, -1);
         int64 x = ::std::get<0>(__tuple_2);
@@ -76,11 +80,11 @@ void run_13_maze_generation_steps() {
             stack.append(::std::tuple<int64, int64>(::std::make_tuple(nx, ny)));
         }
         if (step % capture_every == 0)
-            frames.append(bytes(capture(grid, cell_w, cell_h, scale)));
+            frames.append(capture(grid, cell_w, cell_h, scale));
         step++;
     }
-    frames.append(bytes(capture(grid, cell_w, cell_h, scale)));
-    pytra::utils::gif::save_gif(out_path, cell_w * scale, cell_h * scale, frames, pytra::utils::gif::grayscale_palette(), int64(py_to_int64(4)), int64(py_to_int64(0)));
+    frames.append(capture(grid, cell_w, cell_h, scale));
+    pytra::utils::gif::save_gif(out_path, cell_w * scale, cell_h * scale, frames, pytra::utils::gif::grayscale_palette(), 4, 0);
     auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));

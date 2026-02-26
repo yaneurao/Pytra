@@ -1,16 +1,21 @@
 #include "runtime/cpp/pytra/built_in/py_runtime.h"
 
-
-
+#include "pytra/std/dataclasses.h"
+#include "pytra/std/time.h"
 
 struct Token : public PyObj {
     str kind;
     str text;
     int64 pos;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});
+    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
+    uint32 py_type_id() const noexcept override {
+        return PYTRA_TYPE_ID;
+    }
+    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
+        return expected_type_id == PYTRA_TYPE_ID;
+    }
     
     Token(str kind, str text, int64 pos) {
-        this->set_type_id(PYTRA_TYPE_ID);
         this->kind = kind;
         this->text = text;
         this->pos = pos;
@@ -25,10 +30,15 @@ struct ExprNode : public PyObj {
     str op;
     int64 left;
     int64 right;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});
+    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
+    uint32 py_type_id() const noexcept override {
+        return PYTRA_TYPE_ID;
+    }
+    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
+        return expected_type_id == PYTRA_TYPE_ID;
+    }
     
     ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right) {
-        this->set_type_id(PYTRA_TYPE_ID);
         this->kind = kind;
         this->value = value;
         this->name = name;
@@ -43,10 +53,15 @@ struct StmtNode : public PyObj {
     str kind;
     str name;
     int64 expr_index;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});
+    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
+    uint32 py_type_id() const noexcept override {
+        return PYTRA_TYPE_ID;
+    }
+    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
+        return expected_type_id == PYTRA_TYPE_ID;
+    }
     
     StmtNode(str kind, str name, int64 expr_index) {
-        this->set_type_id(PYTRA_TYPE_ID);
         this->kind = kind;
         this->name = name;
         this->expr_index = expr_index;
@@ -62,7 +77,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
         int64 i = 0;
         int64 n = py_len(source);
         while (i < n) {
-            str ch = source[i];
+            str ch = py_at(source, py_to<int64>(i));
             
             if (ch == " ") {
                 i++;
@@ -105,7 +120,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
             }
             if (ch.isdigit()) {
                 int64 start = i;
-                while ((i < n) && (source[i].isdigit())) {
+                while ((i < n) && (py_at(source, py_to<int64>(i)).isdigit())) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
@@ -114,7 +129,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
             }
             if ((ch.isalpha()) || (ch == "_")) {
                 int64 start = i;
-                while ((i < n) && (((source[i].isalpha()) || (source.at(i) == '_')) || (source[i].isdigit()))) {
+                while ((i < n) && (((py_at(source, py_to<int64>(i)).isalpha()) || (py_at(source, py_to<int64>(i)) == "_")) || (py_at(source, py_to<int64>(i)).isdigit()))) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
@@ -128,7 +143,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 }
                 continue;
             }
-            throw ::std::runtime_error("tokenize error at line=" + ::std::to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
+            throw ::std::runtime_error("tokenize error at line=" + py_to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
         }
         tokens.append(rc<Token>(::rc_new<Token>("NEWLINE", "", n)));
     }
@@ -140,13 +155,18 @@ struct Parser : public PyObj {
     list<rc<ExprNode>> expr_nodes;
     int64 pos;
     list<rc<Token>> tokens;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(list<uint32>{PYTRA_TID_OBJECT});
+    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
+    uint32 py_type_id() const noexcept override {
+        return PYTRA_TYPE_ID;
+    }
+    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
+        return expected_type_id == PYTRA_TYPE_ID;
+    }
     
     list<rc<ExprNode>> new_expr_nodes() {
         return list<object>{};
     }
     Parser(const list<rc<Token>>& tokens) {
-        this->set_type_id(PYTRA_TYPE_ID);
         this->tokens = tokens;
         this->pos = 0;
         this->expr_nodes = this->new_expr_nodes();
@@ -276,7 +296,7 @@ int64 eval_expr(int64 expr_index, const list<rc<ExprNode>>& expr_nodes, const di
     if (node->kind == "var") {
         if (!(py_contains(env, node->name)))
             throw ::std::runtime_error("undefined variable: " + node->name);
-        return py_dict_get(env, node->name);
+        return py_dict_get(env, py_to_string(node->name));
     }
     if (node->kind == "neg")
         return -eval_expr(node->left, expr_nodes, env);
@@ -307,13 +327,13 @@ int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_no
     for (object __itobj_2 : py_dyn_range(stmts)) {
         rc<StmtNode> stmt = obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt");
         if (stmt->kind == "let") {
-            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
+            env[py_to_string(stmt->name)] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         if (stmt->kind == "assign") {
             if (!(py_contains(env, stmt->name)))
                 throw ::std::runtime_error("assign to undefined variable: " + stmt->name);
-            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
+            env[py_to_string(stmt->name)] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         int64 value = eval_expr(stmt->expr_index, expr_nodes, env);
@@ -334,8 +354,9 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
     list<str> lines = list<str>{};
     
     // Declare initial variables.
-    for (int64 i = 0; i < var_count; ++i)
+    for (int64 i = 0; i < var_count; ++i) {
         lines.append(str("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
+    }
     // Force evaluation of many arithmetic expressions.
     for (int64 i = 0; i < loops; ++i) {
         int64 x = i % var_count;
@@ -368,12 +389,12 @@ void run_demo() {
 
 void run_benchmark() {
     list<str> source_lines = build_benchmark_source(32, 120000);
-    float64 start = py_to_float64(pytra::std::time::perf_counter());
+    float64 start = py_to<float64>(pytra::std::time::perf_counter());
     list<rc<Token>> tokens = tokenize(source_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);
     list<rc<StmtNode>> stmts = parser->parse_program();
     int64 checksum = execute(stmts, parser->expr_nodes, false);
-    float64 elapsed = py_to_float64(pytra::std::time::perf_counter() - start);
+    float64 elapsed = py_to<float64>(pytra::std::time::perf_counter() - start);
     
     py_print("token_count:", py_len(tokens));
     py_print("expr_count:", py_len(parser->expr_nodes));

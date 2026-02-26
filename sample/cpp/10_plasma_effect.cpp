@@ -4,17 +4,17 @@
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 
-
-
-
+// 10: Sample that outputs a plasma effect as a GIF.
 
 void run_10_plasma_effect() {
     int64 w = 320;
     int64 h = 240;
     int64 frames_n = 216;
     str out_path = "sample/out/10_plasma_effect.gif";
+    
     auto start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
+    
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
         for (int64 y = 0; y < h; ++y) {
@@ -22,8 +22,8 @@ void run_10_plasma_effect() {
             for (int64 x = 0; x < w; ++x) {
                 int64 dx = x - 160;
                 int64 dy = y - 120;
-                auto v = pytra::std::math::sin((py_to_float64(x) + py_to_float64(t) * 2.0) * 0.045) + pytra::std::math::sin((py_to_float64(y) - py_to_float64(t) * 1.2) * 0.05) + pytra::std::math::sin((py_to_float64(x + y) + py_to_float64(t) * 1.7) * 0.03) + pytra::std::math::sin(py_to_float64(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.07 - py_to_float64(t) * 0.18));
-                int64 c = py_to_int64((v + 4.0) * (255.0 / 8.0));
+                float64 v = pytra::std::math::sin((py_to<float64>(x) + py_to<float64>(t) * 2.0) * 0.045) + pytra::std::math::sin((py_to<float64>(y) - py_to<float64>(t) * 1.2) * 0.05) + pytra::std::math::sin((py_to<float64>(x + y) + py_to<float64>(t) * 1.7) * 0.03) + pytra::std::math::sin(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.07 - py_to<float64>(t) * 0.18);
+                int64 c = int64((v + 4.0) * (py_div(255.0, 8.0)));
                 if (c < 0)
                     c = 0;
                 if (c > 255)
@@ -31,9 +31,9 @@ void run_10_plasma_effect() {
                 frame[row_base + x] = c;
             }
         }
-        frames.append(bytes(bytes(frame)));
+        frames.append(bytes(frame));
     }
-    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), int64(py_to_int64(3)), int64(py_to_int64(0)));
+    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 3, 0);
     auto elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
