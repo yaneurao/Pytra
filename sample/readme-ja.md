@@ -72,6 +72,14 @@
 - `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` は現在 preview emitter 段階です。
 - これら4言語は最小エントリ + 中間コードコメント形式のため、実行結果比較の対象外です。
 
+### README 実行時間表の詳細
+
+- `readme-ja.md` の表の値は 2026-02-26 時点で `sample/py` 18件を現行トランスパイラ出力で再計測した実測値です（小数第3位丸め）。
+- 計測プロトコルは fresh transpile・`warmup=1`・`repeat=5`・`elapsed_sec` の中央値採用（コンパイル時間は除外）です。
+- 最新計測では `>1.5x` の乖離はありません（18件すべて `<=1.5x`）。
+- Go/Java/Swift/Kotlin は現行実装で JS sidecar bridge 経由で実行されるため、値は bridge 実行経路の計測値です。
+- 出力整合性は `sample/py` 18件について `cpp/rs/cs/js/ts/go/java/swift/kotlin` 全言語で一致確認済みです（`tools/runtime_parity_check.py` の S3〜S7 検証ログ）。
+
 ### 実行時の注意
 
 - `sample/py/` を Python のまま実行する場合は、`pylib` 解決のため `PYTHONPATH=src` を付けます。

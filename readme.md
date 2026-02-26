@@ -69,11 +69,7 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 |18 |Mini-language interpreter|2.037|0.335|0.386|0.735|0.446|0.446|0.405|0.417|0.423|0.417|
 
 Notes:
-- Values are freshly re-measured on 2026-02-26 across all 18 `sample/py` cases using current transpiler outputs (rounded to 3 decimals).
-- Protocol: fresh transpile, `warmup=1` + `repeat=5`, median of program-reported `elapsed_sec` (compile time excluded).
-- Remaining `>1.5x` gap: none (all 18 cases are within `<=1.5x` in the latest run).
-- Go/Java/Swift/Kotlin currently execute through the JS sidecar bridge, and the numbers reflect that bridge execution path.
-- Output parity for all 18 `sample/py` cases is confirmed across `cpp/rs/cs/js/ts/go/java/swift/kotlin` (S3-S7 verification logs via `tools/runtime_parity_check.py`).
+- For measurement protocol, gap criteria, and parity verification details, see [`sample/readme.md`](sample/readme.md).
 
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 
