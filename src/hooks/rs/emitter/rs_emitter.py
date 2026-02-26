@@ -866,12 +866,27 @@ class RustEmitter(CodeEmitter):
         return False
 
     def _doc_mentions_isinstance(self, node: Any) -> bool:
-        """EAST 全体に `isinstance(...)` 呼び出しが含まれるかを判定する。"""
+        """EAST 全体に type_id runtime helper が必要なノードが含まれるかを判定する。"""
         if isinstance(node, dict):
-            if self.any_dict_get_str(node, "kind", "") == "Call":
+            kind = self.any_dict_get_str(node, "kind", "")
+            if kind in {"IsInstance", "IsSubtype", "IsSubclass", "ObjTypeId"}:
+                return True
+            if kind == "Call":
                 fn = self.any_to_dict_or_empty(node.get("func"))
-                if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
-                    return True
+                if self.any_dict_get_str(fn, "kind", "") == "Name":
+                    fn_name = self.any_dict_get_str(fn, "id", "")
+                    if fn_name in {
+                        "isinstance",
+                        "py_isinstance",
+                        "py_tid_isinstance",
+                        "py_issubclass",
+                        "py_tid_issubclass",
+                        "py_is_subtype",
+                        "py_tid_is_subtype",
+                        "py_runtime_type_id",
+                        "py_tid_runtime_type_id",
+                    }:
+                        return True
             for _k, v in node.items():
                 if self._doc_mentions_isinstance(v):
                     return True
@@ -2612,6 +2627,19 @@ class RustEmitter(CodeEmitter):
                 return "(" + " || ".join(checks) + ")"
         return "false"
 
+    def _render_type_id_expr(self, expr_node: Any) -> str:
+        """type_id 式を Rust runtime 互換の識別子へ変換する。"""
+        expr_d = self.any_to_dict_or_empty(expr_node)
+        if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+            name = self.any_dict_get_str(expr_d, "id", "")
+            builtin_tid = self._builtin_type_id_expr(name)
+            if builtin_tid != "":
+                return builtin_tid
+            normalized = self.normalize_type_name(name)
+            if normalized in self.class_names:
+                return self._safe_name(normalized) + "::PYTRA_TYPE_ID"
+        return self.render_expr(expr_node)
+
     def _render_compare(self, expr: dict[str, Any]) -> str:
         left_node = self.any_to_dict_or_empty(expr.get("left"))
         left = self.render_expr(left_node)
@@ -3192,6 +3220,74 @@ class RustEmitter(CodeEmitter):
             return self._render_call(expr_d)
         if kind == "IfExp":
             return self._render_ifexp_expr(expr_d)
+        if kind == "ObjBool":
+            value = self.render_expr(expr_d.get("value"))
+            self.uses_pyany = True
+            return "py_any_to_bool(&" + value + ")"
+        if kind == "ObjLen":
+            value_node = expr_d.get("value")
+            value = self.render_expr(value_node)
+            value_t = self.normalize_type_name(self.get_expr_type(value_node))
+            if self._is_any_type(value_t):
+                self.uses_pyany = True
+                return (
+                    "(match &" + value + " { "
+                    "PyAny::Str(s) => s.len() as i64, "
+                    "PyAny::Dict(d) => d.len() as i64, "
+                    "PyAny::List(xs) => xs.len() as i64, "
+                    "PyAny::Set(xs) => xs.len() as i64, "
+                    "PyAny::None => 0, "
+                    "_ => 0 })"
+                )
+            return value + ".len() as i64"
+        if kind == "ObjStr":
+            value = self.render_expr(expr_d.get("value"))
+            self.uses_pyany = True
+            return "py_any_to_string(&" + value + ")"
+        if kind == "ObjIterInit":
+            value = self.render_expr(expr_d.get("value"))
+            return "iter(" + value + ")"
+        if kind == "ObjIterNext":
+            iter_expr = self.render_expr(expr_d.get("iter"))
+            return "next(" + iter_expr + ")"
+        if kind == "ObjTypeId":
+            value = self.render_expr(expr_d.get("value"))
+            self.uses_isinstance_runtime = True
+            return "py_runtime_type_id(&" + value + ")"
+        if kind == "IsInstance":
+            value = self.render_expr(expr_d.get("value"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            self.uses_isinstance_runtime = True
+            return "py_isinstance(&" + value + ", " + expected + ")"
+        if kind == "IsSubtype" or kind == "IsSubclass":
+            actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            self.uses_isinstance_runtime = True
+            return "py_is_subtype(" + actual + ", " + expected + ")"
+        if kind == "Box":
+            self.uses_pyany = True
+            return self._render_as_pyany(expr_d.get("value"))
+        if kind == "Unbox":
+            value = self.render_expr(expr_d.get("value"))
+            target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
+            if target_t == "":
+                target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+            if self._is_int_type(target_t):
+                self.uses_pyany = True
+                return "py_any_to_i64(&" + value + ")"
+            if self._is_float_type(target_t):
+                self.uses_pyany = True
+                return "py_any_to_f64(&" + value + ")"
+            if target_t == "bool":
+                self.uses_pyany = True
+                return "py_any_to_bool(&" + value + ")"
+            if target_t == "str":
+                self.uses_pyany = True
+                return "py_any_to_string(&" + value + ")"
+            if self._is_dict_with_any_value(target_t):
+                self.uses_pyany = True
+                return "py_any_as_dict(" + value + ")"
+            return value
         if kind == "List":
             elts = self.any_to_list(expr_d.get("elts"))
             if len(elts) == 0:

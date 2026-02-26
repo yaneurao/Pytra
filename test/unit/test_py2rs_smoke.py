@@ -161,6 +161,136 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("for (k, v) in pairs {", rust)
         self.assertIn("println!(", rust)
 
+    def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {"kind": "ObjBool", "value": {"kind": "Name", "id": "x", "resolved_type": "Any"}, "resolved_type": "bool"},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {"kind": "ObjLen", "value": {"kind": "Name", "id": "x", "resolved_type": "Any"}, "resolved_type": "int64"},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {"kind": "ObjStr", "value": {"kind": "Name", "id": "x", "resolved_type": "Any"}, "resolved_type": "str"},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {"kind": "ObjTypeId", "value": {"kind": "Name", "id": "x", "resolved_type": "Any"}, "resolved_type": "int64"},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {"kind": "ObjIterInit", "value": {"kind": "Name", "id": "x", "resolved_type": "Any"}, "resolved_type": "object"},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "ObjIterNext",
+                        "iter": {"kind": "ObjIterInit", "value": {"kind": "Name", "id": "x", "resolved_type": "Any"}, "resolved_type": "object"},
+                        "resolved_type": "object",
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        rust = transpile_to_rust(east)
+        self.assertIn("py_any_to_bool(&x);", rust)
+        self.assertIn("PyAny::Str(s) => s.len() as i64", rust)
+        self.assertIn("py_any_to_string(&x);", rust)
+        self.assertIn("py_runtime_type_id(&x);", rust)
+        self.assertIn("iter(x);", rust)
+        self.assertIn("next(iter(x));", rust)
+
+    def test_type_predicate_nodes_are_lowered_without_legacy_bridge(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {"kind": "ClassDef", "name": "Base", "base": "", "body": []},
+                {"kind": "ClassDef", "name": "Child", "base": "Base", "body": []},
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x", "resolved_type": "Any"},
+                        "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_INT"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x", "resolved_type": "Any"},
+                        "expected_type_id": {"kind": "Name", "id": "Base"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsSubtype",
+                        "actual_type_id": {"kind": "Name", "id": "PYTRA_TID_BOOL"},
+                        "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_INT"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsSubclass",
+                        "actual_type_id": {"kind": "Name", "id": "Child"},
+                        "expected_type_id": {"kind": "Name", "id": "Base"},
+                        "resolved_type": "bool",
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        rust = transpile_to_rust(east)
+        self.assertIn("py_isinstance(&x, PYTRA_TID_INT);", rust)
+        self.assertIn("py_isinstance(&x, Base::PYTRA_TYPE_ID);", rust)
+        self.assertIn("py_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT);", rust)
+        self.assertIn("py_is_subtype(Child::PYTRA_TYPE_ID, Base::PYTRA_TYPE_ID);", rust)
+
+    def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Assign",
+                    "targets": [{"kind": "Name", "id": "y"}],
+                    "value": {
+                        "kind": "Box",
+                        "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                        "resolved_type": "Any",
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "targets": [{"kind": "Name", "id": "z"}],
+                    "value": {
+                        "kind": "Unbox",
+                        "value": {"kind": "Name", "id": "y", "resolved_type": "Any"},
+                        "target": "int64",
+                        "resolved_type": "int64",
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        rust = transpile_to_rust(east)
+        self.assertIn("PyAny::Int((1) as i64)", rust)
+        self.assertIn("py_any_to_i64(&y)", rust)
+
     def test_cli_smoke_generates_rs_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
