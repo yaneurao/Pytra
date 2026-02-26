@@ -3290,10 +3290,6 @@ class CppEmitter(
                 return f"!({base})"
             return base
         left = self.render_expr(expr.get("left"))
-        if self._looks_like_python_expr_text(left):
-            left_cpp = self._render_repr_expr(left)
-            if left_cpp != "":
-                left = left_cpp
         ops = self.any_to_str_list(expr.get("ops"))
         if len(ops) == 0:
             rep = self.any_dict_get_str(expr, "repr", "")
@@ -3320,10 +3316,6 @@ class CppEmitter(
         for i, op_name in enumerate(ops):
             rhs_node = cmps[i] if i < len(cmps) else {}
             rhs = self.render_expr(rhs_node)
-            if self._looks_like_python_expr_text(rhs):
-                rhs_cpp = self._render_repr_expr(rhs)
-                if rhs_cpp != "":
-                    rhs = rhs_cpp
             rhs_nodes.append(rhs_node)
             rhs_texts.append(rhs)
             if op_name in {"In", "NotIn", "Is", "IsNot"}:
@@ -3743,11 +3735,6 @@ class CppEmitter(
 
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""
-        name_txt = self.any_dict_get_str(expr_d, "id", "")
-        if name_txt != "":
-            rep_like = self._render_repr_expr(name_txt)
-            if rep_like != "" and rep_like != name_txt:
-                return rep_like
         return self.render_name_expr_common(
             expr_d,
             self.reserved_words,
