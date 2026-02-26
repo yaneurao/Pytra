@@ -100,6 +100,10 @@ Names starting with `_` are treated as internal. The following are public APIs.
   - C++ side should use transpiled results of these Python source modules.
 - Classes are emitted as C++ classes inheriting `pytra::gc::PyObj` (except exception classes).
 - Class members are emitted as `inline static`.
+- Class-method calls are routed via dispatch mode separation in `src/hooks/cpp/emitter/call.py` (`virtual` / `direct` / `fallback`).
+  - `virtual` / `direct`: paths where user-defined class method signatures can be resolved.
+  - `fallback`: paths intentionally kept outside virtual-dispatch replacement, including built-in-lowering prerequisite routes and runtime/type_id API calls (`IsInstance`, `IsSubtype`, `IsSubclass`, `ObjTypeId`).
+- Selfhost regression policy fixes that no `type_id` comparison/switch dispatch is reintroduced in `sample/cpp` and `src/runtime/cpp/pytra-gen` (excluding `built_in/type_id.cpp`), enforced by `test_selfhost_virtual_dispatch_regression.py`.
 - `@dataclass` generates field definitions and constructors.
 - Supports `raise` / `try` / `except` / `while`.
 - list/string bounds checks are controlled by `--bounds-check-mode`.
