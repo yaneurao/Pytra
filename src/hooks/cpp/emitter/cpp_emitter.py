@@ -3920,6 +3920,133 @@ class CppEmitter(
         body_expr = self.render_expr(expr_d.get("body"))
         return f"[&]({join_str_list(', ', arg_texts)}) {{ return {body_expr}; }}"
 
+    def _render_expr_dispatch_table(self) -> dict[str, Any]:
+        """`render_expr` の kind->handler テーブル骨格を返す。"""
+        return {
+            "Name": self._render_expr_kind_name,
+            "Constant": self._render_expr_kind_constant,
+            "Attribute": self._render_expr_kind_attribute,
+            "Call": self._render_expr_kind_call,
+            "Box": self._render_expr_kind_box,
+            "Unbox": self._render_expr_kind_unbox,
+            "CastOrRaise": self._render_expr_kind_cast_or_raise,
+            "ObjBool": self._render_expr_kind_obj_bool,
+            "ObjLen": self._render_expr_kind_obj_len,
+            "ObjStr": self._render_expr_kind_obj_str,
+            "ObjIterInit": self._render_expr_kind_obj_iter_init,
+            "ObjIterNext": self._render_expr_kind_obj_iter_next,
+            "ObjTypeId": self._render_expr_kind_obj_type_id,
+            "Subscript": self._render_expr_kind_subscript,
+            "JoinedStr": self._render_expr_kind_joinedstr,
+            "Lambda": self._render_expr_kind_lambda,
+        }
+
+    def _render_expr_kind_name(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        return self._render_name_expr(expr_d)
+
+    def _render_expr_kind_constant(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        return self._render_constant_expr(expr, expr_d)
+
+    def _render_expr_kind_attribute(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        return self._render_attribute_expr(expr_d)
+
+    def _render_expr_kind_call(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        call_ctx = self.prepare_call_context(expr_d)
+        fn = self.any_to_dict_or_empty(call_ctx.get("fn"))
+        fn_name = self.any_to_str(call_ctx.get("fn_name"))
+        arg_nodes = self.any_to_list(call_ctx.get("arg_nodes"))
+        args = self.any_to_str_list(call_ctx.get("args"))
+        kw = self.any_to_str_dict_or_empty(call_ctx.get("kw"))
+        kw_values = self.any_to_str_list(call_ctx.get("kw_values"))
+        kw_nodes = self.any_to_list(call_ctx.get("kw_nodes"))
+        first_arg: object = call_ctx.get("first_arg")
+        return self._render_call_expr_from_context(
+            expr_d,
+            fn,
+            fn_name,
+            args,
+            kw,
+            arg_nodes,
+            kw_values,
+            kw_nodes,
+            first_arg,
+        )
+
+    def _render_expr_kind_box(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr_d
+        expr_dict = self.any_to_dict_or_empty(expr)
+        value_node = expr_dict.get("value")
+        value_expr = self.render_expr(value_node)
+        return self._box_expr_for_any(value_expr, value_node)
+
+    def _render_expr_kind_unbox(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
+        if target_t == "" or target_t == "unknown":
+            target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+        if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
+            return value_expr
+        ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
+        return self._render_unbox_target_cast(value_expr, target_t, ctx)
+
+    def _render_expr_kind_cast_or_raise(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
+        if target_t == "" or target_t == "unknown":
+            target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+        if target_t == "" or target_t == "unknown":
+            return value_expr
+        if self.is_any_like_type(target_t):
+            return self._box_expr_for_any(value_expr, expr_d.get("value"))
+        return self._render_unbox_target_cast(value_expr, target_t, "east3_cast_or_raise")
+
+    def _render_expr_kind_obj_bool(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        return f"py_to<bool>({value_expr})"
+
+    def _render_expr_kind_obj_len(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        return f"py_len({value_expr})"
+
+    def _render_expr_kind_obj_str(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        return f"py_to_string({value_expr})"
+
+    def _render_expr_kind_obj_iter_init(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        return f"py_iter_or_raise({value_expr})"
+
+    def _render_expr_kind_obj_iter_next(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        iter_expr = self.render_expr(expr_d.get("iter"))
+        return f"py_next_or_stop({iter_expr})"
+
+    def _render_expr_kind_obj_type_id(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        value_expr = self.render_expr(expr_d.get("value"))
+        return f"py_runtime_type_id({value_expr})"
+
+    def _render_expr_kind_subscript(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr_d
+        return self._render_subscript_expr(expr)
+
+    def _render_expr_kind_joinedstr(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        return self._render_joinedstr_expr(expr_d)
+
+    def _render_expr_kind_lambda(self, expr: Any, expr_d: dict[str, Any]) -> str:
+        _ = expr
+        return self._render_lambda_expr(expr_d)
+
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに Any/object を `py_to_bool` 判定へ寄せる。"""
         expr_node = self.any_to_dict_or_empty(expr)
@@ -3950,74 +4077,9 @@ class CppEmitter(
         if hook_kind != "":
             return hook_kind
 
-        if kind == "Name":
-            return self._render_name_expr(expr_d)
-        if kind == "Constant":
-            return self._render_constant_expr(expr, expr_d)
-        if kind == "Attribute":
-            return self._render_attribute_expr(expr_d)
-        if kind == "Call":
-            call_ctx = self.prepare_call_context(expr_d)
-            fn = self.any_to_dict_or_empty(call_ctx.get("fn"))
-            fn_name = self.any_to_str(call_ctx.get("fn_name"))
-            arg_nodes = self.any_to_list(call_ctx.get("arg_nodes"))
-            args = self.any_to_str_list(call_ctx.get("args"))
-            kw = self.any_to_str_dict_or_empty(call_ctx.get("kw"))
-            kw_values = self.any_to_str_list(call_ctx.get("kw_values"))
-            kw_nodes = self.any_to_list(call_ctx.get("kw_nodes"))
-            first_arg: object = call_ctx.get("first_arg")
-            return self._render_call_expr_from_context(
-                expr_d,
-                fn,
-                fn_name,
-                args,
-                kw,
-                arg_nodes,
-                kw_values,
-                kw_nodes,
-                first_arg,
-            )
-        if kind == "Box":
-            value_node = expr_d.get("value")
-            value_expr = self.render_expr(value_node)
-            return self._box_expr_for_any(value_expr, value_node)
-        if kind == "Unbox":
-            value_expr = self.render_expr(expr_d.get("value"))
-            target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
-            if target_t == "" or target_t == "unknown":
-                target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
-            if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
-                return value_expr
-            ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
-            return self._render_unbox_target_cast(value_expr, target_t, ctx)
-        if kind == "CastOrRaise":
-            value_expr = self.render_expr(expr_d.get("value"))
-            target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
-            if target_t == "" or target_t == "unknown":
-                target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
-            if target_t == "" or target_t == "unknown":
-                return value_expr
-            if self.is_any_like_type(target_t):
-                return self._box_expr_for_any(value_expr, expr_d.get("value"))
-            return self._render_unbox_target_cast(value_expr, target_t, "east3_cast_or_raise")
-        if kind == "ObjBool":
-            value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_to<bool>({value_expr})"
-        if kind == "ObjLen":
-            value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_len({value_expr})"
-        if kind == "ObjStr":
-            value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_to_string({value_expr})"
-        if kind == "ObjIterInit":
-            value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_iter_or_raise({value_expr})"
-        if kind == "ObjIterNext":
-            iter_expr = self.render_expr(expr_d.get("iter"))
-            return f"py_next_or_stop({iter_expr})"
-        if kind == "ObjTypeId":
-            value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_runtime_type_id({value_expr})"
+        dispatch_handler = self._render_expr_dispatch_table().get(kind)
+        if dispatch_handler is not None:
+            return dispatch_handler(expr, expr_d)
         if kind == "ListAppend":
             owner_node = expr_d.get("owner")
             value_node = expr_d.get("value")
@@ -4559,12 +4621,6 @@ class CppEmitter(
                     v = self._box_expr_for_any(v, val_node)
                 items.append(f"{{{k}, {v}}}")
             return f"{t}{{{join_str_list(', ', items)}}}"
-        if kind == "Subscript":
-            return self._render_subscript_expr(expr)
-        if kind == "JoinedStr":
-            return self._render_joinedstr_expr(expr_d)
-        if kind == "Lambda":
-            return self._render_lambda_expr(expr_d)
         if kind == "ListComp":
             gens = self.any_to_list(expr_d.get("generators"))
             if len(gens) != 1:
