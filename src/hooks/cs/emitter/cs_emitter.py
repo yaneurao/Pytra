@@ -1353,6 +1353,18 @@ class CSharpEmitter(CodeEmitter):
                 return " || ".join(checks)
         return "false"
 
+    def _render_type_id_expr(self, expr_node: Any) -> str:
+        """type_id 式を C# runtime 互換の識別子へ変換する。"""
+        expr_d = self.any_to_dict_or_empty(expr_node)
+        if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+            name = self.any_dict_get_str(expr_d, "id", "")
+            if name.startswith("PYTRA_TID_"):
+                return "Pytra.CsModule.py_runtime." + name
+            mapped = self._type_id_expr_for_name(name)
+            if mapped != "":
+                return mapped
+        return self.render_expr(expr_node)
+
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを C# 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
@@ -1608,6 +1620,61 @@ class CSharpEmitter(CodeEmitter):
 
         if kind == "IfExp":
             return self._render_ifexp_expr(expr_d)
+
+        if kind == "ObjBool":
+            value = self.render_expr(expr_d.get("value"))
+            return "Pytra.CsModule.py_runtime.py_bool(" + value + ")"
+
+        if kind == "ObjLen":
+            value_node = expr_d.get("value")
+            value = self.render_expr(value_node)
+            return self._render_len_call(value, value_node)
+
+        if kind == "ObjStr":
+            value = self.render_expr(expr_d.get("value"))
+            return "System.Convert.ToString(" + value + ")"
+
+        if kind == "ObjIterInit":
+            value = self.render_expr(expr_d.get("value"))
+            return "iter(" + value + ")"
+
+        if kind == "ObjIterNext":
+            iter_expr = self.render_expr(expr_d.get("iter"))
+            return "next(" + iter_expr + ")"
+
+        if kind == "ObjTypeId":
+            value = self.render_expr(expr_d.get("value"))
+            return "Pytra.CsModule.py_runtime.py_runtime_type_id(" + value + ")"
+
+        if kind == "IsInstance":
+            value = self.render_expr(expr_d.get("value"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "Pytra.CsModule.py_runtime.py_isinstance(" + value + ", " + expected + ")"
+
+        if kind == "IsSubtype" or kind == "IsSubclass":
+            actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "Pytra.CsModule.py_runtime.py_is_subtype(" + actual + ", " + expected + ")"
+
+        if kind == "Box":
+            return self.render_expr(expr_d.get("value"))
+
+        if kind == "Unbox":
+            value = self.render_expr(expr_d.get("value"))
+            target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
+            if target_t == "":
+                target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+            if target_t == "bool":
+                return "Pytra.CsModule.py_runtime.py_bool(" + value + ")"
+            if target_t == "str":
+                return "System.Convert.ToString(" + value + ")"
+            if target_t == "float" or target_t == "float32" or target_t == "float64":
+                return "System.Convert.ToDouble(" + value + ")"
+            if target_t == "int" or target_t == "int8" or target_t == "uint8" or target_t == "int16" or target_t == "uint16" or target_t == "int32" or target_t == "uint32" or target_t == "int64" or target_t == "uint64":
+                return "System.Convert.ToInt64(" + value + ")"
+            if target_t in self.class_names:
+                return "((" + self._safe_name(target_t) + ")" + value + ")"
+            return value
 
         if kind == "RangeExpr":
             return self._render_range_expr(expr_d)
