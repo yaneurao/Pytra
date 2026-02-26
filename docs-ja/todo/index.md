@@ -64,6 +64,8 @@
 30. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S13-02] 影響ケース parity と `01/04/09/18` 再計測を実行し、`S13-01` の寄与と残外れ値（`09/18`）を更新する。
 31. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S14-01] Rust runtime helper `py_str_at/py_slice_str` の `Vec<char>` 常時構築を撤去し、ASCII fast-path + 非ASCII fallback へ置換する。
 32. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S14-02] `01/04/09/18` と `18` 単体の再計測で `S14-01` 寄与を確認し、残外れ値を `09` へ収束させる。
+33. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S15-01] C++ runtime `PyFile::write(bytes)` を 1byte `put` ループから一括 `write` へ切替え、PNG/GIF 出力の I/O hot path を短縮する。
+34. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S15-02] `01/04/09/18` と `01/09/18` 再計測で `S15-01` の再現性を確認し、`09` の外れ値解消を記録する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
