@@ -364,8 +364,8 @@ mod math {
 mod pytra {
     pub mod runtime {
         pub mod png {
-            pub fn write_rgb_png(path: impl AsRef<str>, width: i64, height: i64, pixels: Vec<u8>) {
-                super::super::super::py_write_rgb_png(path.as_ref(), width, height, &pixels);
+            pub fn write_rgb_png(path: impl AsRef<str>, width: i64, height: i64, pixels: &[u8]) {
+                super::super::super::py_write_rgb_png(path.as_ref(), width, height, pixels);
             }
         }
 
@@ -378,8 +378,8 @@ mod pytra {
                 path: impl AsRef<str>,
                 width: i64,
                 height: i64,
-                frames: Vec<Vec<u8>>,
-                palette: Vec<u8>,
+                frames: &[Vec<u8>],
+                palette: &[u8],
                 delay_cs: i64,
                 loop_count: i64,
             ) {
@@ -387,8 +387,8 @@ mod pytra {
                     path.as_ref(),
                     width,
                     height,
-                    &frames,
-                    &palette,
+                    frames,
+                    palette,
                     delay_cs,
                     loop_count,
                 );
@@ -2747,8 +2747,14 @@ class RustEmitter(CodeEmitter):
                 and len(merged_args) > 0
             ):
                 call_args = list(merged_args)
-                call_args[0] = "(" + call_args[0] + ").clone()"
-                call_args = self._clone_owned_call_args(call_args, arg_nodes)
+                call_args[0] = "&(" + call_args[0] + ")"
+                if fn_name_raw == "write_rgb_png" and len(call_args) >= 4:
+                    call_args[3] = "&(" + call_args[3] + ")"
+                if fn_name_raw == "save_gif":
+                    if len(call_args) >= 4:
+                        call_args[3] = "&(" + call_args[3] + ")"
+                    if len(call_args) >= 5:
+                        call_args[4] = "&(" + call_args[4] + ")"
                 return fn_name + "(" + ", ".join(call_args) + ")"
             ref_modes = self.function_arg_ref_modes.get(fn_name, [])
             call_args: list[str] = []
@@ -2787,13 +2793,22 @@ class RustEmitter(CodeEmitter):
             attr_raw = self.any_dict_get_str(fn_node, "attr", "")
             attr = self._safe_name(attr_raw)
             if owner_mod != "":
-                call_args = self._clone_owned_call_args(merged_args, arg_nodes)
                 if (
                     attr_raw in {"save_gif", "write_rgb_png"}
                     and owner_mod in {"pytra.runtime.gif", "pytra.utils.gif", "pytra.runtime.png", "pytra.utils.png"}
-                    and len(call_args) > 0
+                    and len(merged_args) > 0
                 ):
-                    call_args[0] = "(" + call_args[0] + ").clone()"
+                    call_args = list(merged_args)
+                    call_args[0] = "&(" + call_args[0] + ")"
+                    if attr_raw == "write_rgb_png" and len(call_args) >= 4:
+                        call_args[3] = "&(" + call_args[3] + ")"
+                    if attr_raw == "save_gif":
+                        if len(call_args) >= 4:
+                            call_args[3] = "&(" + call_args[3] + ")"
+                        if len(call_args) >= 5:
+                            call_args[4] = "&(" + call_args[4] + ")"
+                    return owner_mod.replace(".", "::") + "::" + attr_raw + "(" + ", ".join(call_args) + ")"
+                call_args = self._clone_owned_call_args(merged_args, arg_nodes)
                 return owner_mod.replace(".", "::") + "::" + attr_raw + "(" + ", ".join(call_args) + ")"
             if attr_raw == "items" and len(merged_args) == 0:
                 return "(" + owner_expr + ").clone().into_iter()"
