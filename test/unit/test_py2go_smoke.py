@@ -53,12 +53,12 @@ class Py2GoSmokeTest(unittest.TestCase):
             go = transpile_to_go(loaded)
         self.assertIn("package main", go)
 
-    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
         fixture = find_fixture_case("for_range")
         loaded = load_east(fixture, parser_backend="self_hosted")
         self.assertIsInstance(loaded, dict)
         self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 2)
+        self.assertEqual(loaded.get("east_stage"), 3)
 
     def test_cli_smoke_generates_go_file(self) -> None:
         fixture = find_fixture_case("if_else")

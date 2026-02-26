@@ -6,7 +6,6 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from hooks.rs.emitter.rs_emitter import load_rs_profile, transpile_to_rust
-from pytra.compiler.east_parts.east3_legacy_compat import normalize_east3_to_legacy
 from pytra.compiler.transpile_cli import (
     add_common_transpile_args,
     load_east3_document,
@@ -30,8 +29,7 @@ def load_east(
         parser_backend=parser_backend,
         object_dispatch_mode=object_dispatch_mode,
     )
-    normalized = normalize_east3_to_legacy(doc3)
-    return normalized if isinstance(normalized, dict) else {}
+    return doc3 if isinstance(doc3, dict) else {}
 
 
 def _default_output_path(input_path: Path) -> Path:

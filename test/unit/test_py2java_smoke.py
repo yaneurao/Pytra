@@ -53,12 +53,12 @@ class Py2JavaSmokeTest(unittest.TestCase):
             java = transpile_to_java(loaded)
         self.assertIn("public final class Main", java)
 
-    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
         fixture = find_fixture_case("for_range")
         loaded = load_east(fixture, parser_backend="self_hosted")
         self.assertIsInstance(loaded, dict)
         self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 2)
+        self.assertEqual(loaded.get("east_stage"), 3)
 
     def test_cli_smoke_generates_java_file(self) -> None:
         fixture = find_fixture_case("if_else")

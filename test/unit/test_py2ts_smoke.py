@@ -53,12 +53,12 @@ class Py2TsSmokeTest(unittest.TestCase):
             ts = transpile_to_typescript(loaded)
         self.assertIn("function add(a, b)", ts)
 
-    def test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape(self) -> None:
+    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
         fixture = find_fixture_case("for_range")
         loaded = load_east(fixture, parser_backend="self_hosted")
         self.assertIsInstance(loaded, dict)
         self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 2)
+        self.assertEqual(loaded.get("east_stage"), 3)
 
     def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
         fixture = find_fixture_case("import_time_from")

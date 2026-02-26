@@ -32,11 +32,12 @@ SOURCE_REQUIRED_PATTERNS = [
 
 SOURCE_FORBIDDEN_PATTERNS = [
     "load_east_document_compat",
+    "normalize_east3_to_legacy",
     "warning: --east-stage 2 is compatibility mode; default is 3.",
 ]
 
 SMOKE_REQUIRED_PATTERNS = [
-    "test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape",
+    "test_load_east_defaults_to_stage3_entry_and_returns_east3_shape",
     "test_cli_rejects_stage2_compat_mode",
     "--east-stage 2 is no longer supported; use EAST3 (default).",
 ]

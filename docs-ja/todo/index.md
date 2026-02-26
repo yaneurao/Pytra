@@ -108,7 +108,7 @@
 13. [x] [ID: P3-EAST3-ONLY-01-S4-01] `cs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
 14. [x] [ID: P3-EAST3-ONLY-01-S4-02] `cs_emitter` の `Obj*` / `Is*` / `Box/Unbox` 直接処理を実装する。
 15. [x] [ID: P3-EAST3-ONLY-01-S4-03] C# smoke + `check_py2cs_transpile.py` で回帰を固定する。
-16. [ ] [ID: P3-EAST3-ONLY-01-S5-01] 8本 CLI から `normalize_east3_to_legacy` 呼び出しを撤去する。
+16. [x] [ID: P3-EAST3-ONLY-01-S5-01] 8本 CLI から `normalize_east3_to_legacy` 呼び出しを撤去する。
 17. [ ] [ID: P3-EAST3-ONLY-01-S5-02] `src/pytra/compiler/east_parts/east3_legacy_compat.py` を削除し、参照ゼロを `rg` で確認する。
 18. [ ] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
 19. [ ] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。

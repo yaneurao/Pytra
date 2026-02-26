@@ -6,7 +6,6 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from hooks.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
-from pytra.compiler.east_parts.east3_legacy_compat import normalize_east3_to_legacy
 from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
@@ -28,8 +27,7 @@ def load_east(
         parser_backend=parser_backend,
         object_dispatch_mode=object_dispatch_mode,
     )
-    normalized = normalize_east3_to_legacy(doc3)
-    return normalized if isinstance(normalized, dict) else {}
+    return doc3 if isinstance(doc3, dict) else {}
 
 
 def _default_output_path(input_path: Path) -> Path:
