@@ -193,8 +193,9 @@ java -cp test/transpile/java iterable
 ```
 
 補足:
-- `py2java.py` は EAST ベースのプレビュー出力です（専用 JavaEmitter へ段階移行中）。
-- 現在の出力は最小 `Main` クラスと中間コードコメントを含む形式で、実行互換は保証しません。
+- `py2java.py` は EAST3 から Java native emitter（`src/hooks/java/emitter/java_native_emitter.py`）で直接コード生成します。
+- 既定出力は Java 単体で実行可能です（sidecar JS は既定では生成しません）。
+- 互換確認が必要な場合のみ `--java-backend sidecar` で旧経路を明示指定できます。
 
 </details>
 
@@ -407,9 +408,9 @@ table = {}               # key/value 型が不明
 <details>
 <summary>Java</summary>
 
-- 現状は `Object` ベース実装を併用します。
-- `bytes` / `bytearray` はランタイムで `byte[]` として扱います。
-- Java の型注釈反映を強化して `Object` 退化を減らす作業は `docs-ja/todo/index.md` の未完了項目です。
+- Java native backend は `int -> long`, `float -> double`, `str -> String`, `bool -> boolean` を基本に出力します。
+- `list` / `tuple` は `java.util.ArrayList<Object>`、`dict` は `java.util.HashMap<Object, Object>` を基本形として扱います。
+- `bytes` / `bytearray` はランタイム補助 (`__pytra_bytearray`) を通じて `java.util.ArrayList<Long>` で扱います。
 
 </details>
 

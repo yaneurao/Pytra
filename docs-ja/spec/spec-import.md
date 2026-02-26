@@ -294,13 +294,14 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Go 出力へ進ませない。
 
-### 7. Java（`src/py2java.py` + `src/hooks/java/emitter/java_emitter.py`）
+### 7. Java（`src/py2java.py` + `src/hooks/java/emitter/java_native_emitter.py`）
 
 - 実装方式:
-- EAST 変換。`py2java.py` は薄い CLI、実出力は Java preview emitter が担当。
+- EAST3 変換。`py2java.py` は薄い CLI、既定出力は Java native emitter が担当。
 - 具体実装:
-- import 解決は EAST `meta.import_bindings` を正本として処理する（内部の lower は C# ベース preview を使用）。
-- 生成コードは最小 `Main` クラス + 中間コードコメント形式で、段階移行中の暫定実装。
+- import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
+- 生成コードは Java 単体で実行可能な native 実装出力（`public final class ...`）を生成する。
+- 旧 sidecar 経路は `--java-backend sidecar` の互換モードとして隔離され、既定経路では使用しない。
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Java 出力へ進ませない。
 
@@ -329,5 +330,5 @@ QualifiedSymbolRef
 - Step 1: C++ 実装（EAST）で `ImportBinding` / `QualifiedSymbolRef` を完成させる。
 - Step 2: JS/TS（共通基盤）へ同じ解決器を移植する。
 - Step 3: Swift/Kotlin は JS 経由なので追従確認のみで済ませる。
-- Step 4: Go/Java（共通基盤）へ alias 正規化のみ先行導入する。
+- Step 4: Go（preview 基盤）へ alias 正規化のみ先行導入する。
 - Step 5: Rust/C# は既存実装を壊さない範囲で import 前処理テーブルを導入する。
