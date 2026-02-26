@@ -49,6 +49,7 @@
 - 2026-02-26: `S5-01` として 8本 CLI から `normalize_east3_to_legacy` import/call を撤去し、`load_east` を EAST3 ドキュメント返却へ統一。対応 smoke の `east_stage` 期待を `2 -> 3` へ更新し、8本 smoke 全通過を確認。`tools/check_noncpp_east3_contract.py` へ `normalize_east3_to_legacy` 禁止と新 smoke 名 (`returns_east3_shape`) を反映。
 - 2026-02-26: `S5-02` として `src/pytra/compiler/east_parts/east3_legacy_compat.py` を削除。`rg -n "from .*east3_legacy_compat|normalize_east3_to_legacy\\(" src test tools` が 0 件であることを確認し、`check_noncpp_east3_contract.py --skip-transpile` も通過。
 - 2026-02-26: `S6-01` として `docs-ja/plans/plan-east123-migration.md` の現行運用節を `EAST3 only` 契約へ更新し、非C++ の `stage2` 互換前提（互換モード警告・compat loader 依存）を撤去。旧前提は履歴注記へ移した。
+- 2026-02-26: `S6-02` として `docs/plans/plan-east123-migration.md` を `docs-ja` と同内容へ同期し、`EAST3 only` 契約と注記を日英系ドキュメントで一致させた。
 
 ## 分解
 
@@ -69,6 +70,6 @@
 - [x] [ID: P3-EAST3-ONLY-01-S5-01] 8本 CLI から `normalize_east3_to_legacy` 呼び出しを撤去する。
 - [x] [ID: P3-EAST3-ONLY-01-S5-02] `src/pytra/compiler/east_parts/east3_legacy_compat.py` を削除し、参照ゼロを `rg` で確認する。
 - [x] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
-- [ ] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
+- [x] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
 - [ ] [ID: P3-EAST3-ONLY-01-S7-01] 非C++ 8本の smoke/check（`test_py2*` + `check_py2*`）を全通しする。
 - [ ] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
