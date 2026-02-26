@@ -51,27 +51,29 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 
 |No.|Workload|Python| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
-|01 |Mandelbrot set (PNG)|18.647|0.277|0.735|0.383|0.768|0.806|0.753|0.756|0.760|0.756|
-|02 |Simple sphere ray tracer (PNG)|6.890|0.250|0.163|0.918|0.277|0.288|0.256|0.260|0.289|0.258|
-|03 |Julia set (PNG)|22.770|1.115|0.773|1.468|1.210|1.127|1.126|1.136|1.125|1.151|
-|04 |Orbit-trap Julia set (PNG)|11.950|0.287|0.338|0.416|0.473|0.504|0.466|0.471|0.482|0.469|
-|05 |Mandelbrot zoom (GIF)|14.538|0.685|0.553|1.710|0.703|0.680|0.691|0.689|0.695|0.687|
-|06 |Julia parameter sweep (GIF)|9.627|0.291|0.391|0.329|0.626|0.619|0.622|0.621|0.624|0.629|
-|07 |Game of Life (GIF)|5.134|1.270|0.725|1.530|1.364|1.311|1.191|1.248|1.290|1.267|
-|08 |Langton's Ant (GIF)|5.220|1.757|1.771|2.213|2.031|1.997|1.912|2.011|1.886|2.019|
-|09 |Flame simulation (GIF)|10.895|2.114|7.342|6.566|2.374|2.290|2.368|2.265|2.306|2.358|
-|10 |Plasma effect (GIF)|6.194|1.143|0.555|2.646|1.444|1.886|1.397|1.414|1.444|1.319|
-|11 |Lissajous particles (GIF)|3.582|1.366|0.350|0.714|1.425|1.406|1.389|1.365|1.371|1.413|
-|12 |Sorting visualization (GIF)|3.864|1.311|0.344|0.680|1.341|1.343|1.309|1.348|1.328|1.306|
-|13 |Maze generation steps (GIF)|3.402|1.065|0.295|1.037|1.038|1.035|0.985|1.025|0.997|0.987|
-|14 |Simple ray marching (GIF)|2.670|0.357|0.155|0.606|0.489|0.573|0.490|0.513|0.503|0.492|
-|15 |Wave interference loop (GIF)|2.631|0.496|0.244|1.196|0.616|0.794|0.609|0.614|0.629|0.612|
-|16 |Chaos rotation of glass sculpture (GIF)|6.847|0.843|0.231|1.220|0.650|0.822|0.638|0.643|0.667|0.643|
+|01 |Mandelbrot set (PNG)|18.647|0.188|0.771|0.383|0.768|0.806|0.753|0.756|0.760|0.756|
+|02 |Simple sphere ray tracer (PNG)|6.890|0.265|0.156|0.918|0.277|0.288|0.256|0.260|0.289|0.258|
+|03 |Julia set (PNG)|22.770|0.812|0.769|1.468|1.210|1.127|1.126|1.136|1.125|1.151|
+|04 |Orbit-trap Julia set (PNG)|11.950|0.208|0.339|0.416|0.473|0.504|0.466|0.471|0.482|0.469|
+|05 |Mandelbrot zoom (GIF)|14.538|0.663|0.533|1.710|0.703|0.680|0.691|0.689|0.695|0.687|
+|06 |Julia parameter sweep (GIF)|9.627|0.286|0.383|0.329|0.626|0.619|0.622|0.621|0.624|0.629|
+|07 |Game of Life (GIF)|5.134|1.277|0.727|1.530|1.364|1.311|1.191|1.248|1.290|1.267|
+|08 |Langton's Ant (GIF)|5.220|1.718|1.746|2.213|2.031|1.997|1.912|2.011|1.886|2.019|
+|09 |Flame simulation (GIF)|10.895|2.047|7.330|6.566|2.374|2.290|2.368|2.265|2.306|2.358|
+|10 |Plasma effect (GIF)|6.194|1.251|0.525|2.646|1.444|1.886|1.397|1.414|1.444|1.319|
+|11 |Lissajous particles (GIF)|3.582|1.336|0.338|0.714|1.425|1.406|1.389|1.365|1.371|1.413|
+|12 |Sorting visualization (GIF)|3.864|1.304|0.335|0.680|1.341|1.343|1.309|1.348|1.328|1.306|
+|13 |Maze generation steps (GIF)|3.402|1.039|0.274|1.037|1.038|1.035|0.985|1.025|0.997|0.987|
+|14 |Simple ray marching (GIF)|2.670|0.379|0.147|0.606|0.489|0.573|0.490|0.513|0.503|0.492|
+|15 |Wave interference loop (GIF)|2.631|0.557|0.236|1.196|0.616|0.794|0.609|0.614|0.629|0.612|
+|16 |Chaos rotation of glass sculpture (GIF)|6.847|0.892|0.226|1.220|0.650|0.822|0.638|0.643|0.667|0.643|
 |17 |Monte Carlo Pi approximation|0.293|0.002|0.002|0.010|0.046|0.045|0.047|0.048|0.047|0.048|
-|18 |Mini-language interpreter|2.037|0.424|1.216|0.735|0.446|0.446|0.405|0.417|0.423|0.417|
+|18 |Mini-language interpreter|2.037|0.326|1.117|0.735|0.446|0.446|0.405|0.417|0.423|0.417|
 
 Notes:
-- Values are freshly re-measured across all 18 `sample/py` cases using current transpiler outputs (rounded to 3 decimals).
+- Values are freshly re-measured on 2026-02-26 across all 18 `sample/py` cases using current transpiler outputs (rounded to 3 decimals).
+- Protocol: fresh transpile, `warmup=1` + `repeat=5`, median of program-reported `elapsed_sec` (compile time excluded).
+- Remaining `>1.5x` gaps: Rust slower (`01/04/09/18`), Rust faster (`07/10/11/12/13/14/15/16`); next steps are Rust-side PNG/interpreter hot-path reductions and C++ GIF encode path flattening.
 - Go/Java/Swift/Kotlin currently execute through the JS sidecar bridge, and the numbers reflect that bridge execution path.
 - Output parity for all 18 `sample/py` cases is confirmed across `cpp/rs/cs/js/ts/go/java/swift/kotlin` (S3-S7 verification logs via `tools/runtime_parity_check.py`).
 
