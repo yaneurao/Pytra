@@ -6,7 +6,7 @@
 
 Pytra は、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
 
-対応フロントエンド: Python (subset)
+対応フロントエンド:
 ![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
 
 対応バックエンド:

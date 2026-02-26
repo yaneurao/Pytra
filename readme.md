@@ -6,7 +6,7 @@
 
 Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
 
-Supported frontend: Python (subset)
+Supported frontend:
 ![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
 
 Supported backends:
