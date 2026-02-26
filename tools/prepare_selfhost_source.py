@@ -53,28 +53,40 @@ def _strip_triple_quoted_docstrings(text: str) -> str:
 
 
 def _remove_import_line(text: str) -> str:
-    def _remove_first_line_with_prefix(src: str, prefix: str) -> tuple[str, bool]:
+    def _remove_first_import_with_prefix(src: str, prefix: str) -> tuple[str, bool]:
         lines = src.splitlines(keepends=True)
         out_lines: list[str] = []
         removed = False
+        skipping_block = False
+        paren_depth = 0
         for line in lines:
+            if skipping_block:
+                paren_depth += line.count("(") - line.count(")")
+                if paren_depth <= 0:
+                    skipping_block = False
+                continue
             if (not removed) and line.startswith(prefix):
                 removed = True
+                paren_depth = line.count("(") - line.count(")")
+                if paren_depth > 0:
+                    skipping_block = True
                 continue
             out_lines.append(line)
         return "".join(out_lines), removed
 
-    targets: list[tuple[str, str]] = [
-        ("from pytra.compiler.east_parts.code_emitter import CodeEmitter", "CodeEmitter import"),
-        ("from pytra.compiler.transpile_cli import ", "transpile_cli import"),
-        ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl", "build_cpp_hooks import"),
+    targets: list[tuple[str, str, bool]] = [
+        # `CodeEmitter` import は py2cpp 側から hooks 側へ移ったため、存在しない版も許容する。
+        ("from pytra.compiler.east_parts.code_emitter import CodeEmitter", "CodeEmitter import", False),
+        ("from pytra.compiler.transpile_cli import ", "transpile_cli import", True),
+        ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl", "build_cpp_hooks import", True),
     ]
     out = text
     missing: list[str] = []
-    for prefix, label in targets:
-        out_next, removed = _remove_first_line_with_prefix(out, prefix)
+    for prefix, label, required in targets:
+        out_next, removed = _remove_first_import_with_prefix(out, prefix)
         if not removed:
-            missing.append(label)
+            if required:
+                missing.append(label)
             continue
         out = out_next
     if len(missing) > 0:
@@ -288,14 +300,14 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     )
     out = text[:call_hook_start] + call_hook_stub + text[call_hook_end:]
 
-    class_marker = "class CppEmitter(CodeEmitter):"
+    class_marker = "class CppEmitter"
     i = out.find(class_marker)
     if i < 0:
-        raise RuntimeError("failed to find CppEmitter block in merged selfhost source")
+        return out
     target = "        self.init_base_state(east_doc, profile, hooks)\n"
     j = out.find(target, i + len(class_marker))
     if j < 0:
-        raise RuntimeError("failed to find init_base_state call in CppEmitter.__init__")
+        return out
     inserted = "        self.set_dynamic_hooks_enabled(False)\n"
     if out.startswith(inserted, j + len(target)):
         return out

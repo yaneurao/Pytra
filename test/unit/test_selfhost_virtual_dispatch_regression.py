@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -51,6 +52,27 @@ class SelfhostVirtualDispatchRegressionTest(unittest.TestCase):
                 TYPE_ID_SWITCH_RE.search(text),
                 f"type_id switch dispatch found in {cpp_path}",
             )
+
+    def test_verify_selfhost_end_to_end_two_cases_skip_build(self) -> None:
+        verify = ROOT / "tools" / "verify_selfhost_end_to_end.py"
+        selfhost_bin = ROOT / "selfhost" / "py2cpp.out"
+        if not selfhost_bin.exists():
+            self.skipTest(f"missing selfhost binary: {selfhost_bin}")
+        cmd = [
+            "python3",
+            str(verify),
+            "--skip-build",
+            "--selfhost-bin",
+            str(selfhost_bin),
+            "--cases",
+            "test/fixtures/core/fib.py",
+            "sample/py/17_monte_carlo_pi.py",
+        ]
+        cp = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        combined = (cp.stdout or "") + (cp.stderr or "")
+        self.assertEqual(cp.returncode, 0, combined)
+        self.assertIn("[OK] test/fixtures/core/fib.py", combined)
+        self.assertIn("[OK] sample/py/17_monte_carlo_pi.py", combined)
 
 
 if __name__ == "__main__":

@@ -184,6 +184,19 @@
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'method_call_after_runtime_unbox_is_rendered_with_dynamic_dispatch'`
   - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S5-03` 確定内容（2026-02-26）:
+- `test/unit/test_selfhost_virtual_dispatch_regression.py` に selfhost e2e 検証ケースを追加:
+  - `test_verify_selfhost_end_to_end_two_cases_skip_build`
+  - `tools/verify_selfhost_end_to_end.py --skip-build` を使って以下2ケースの stdout parity を固定。
+    - `test/fixtures/core/fib.py`（再帰呼び出しを含む）
+    - `sample/py/17_monte_carlo_pi.py`
+- 検証:
+  - `python3 -m py_compile src/py2cpp.py tools/prepare_selfhost_source.py test/unit/test_selfhost_virtual_dispatch_regression.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_selfhost_virtual_dispatch_regression.py' -k 'verify_selfhost_end_to_end_two_cases_skip_build'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+- 備考:
+  - `tools/build_selfhost.py` は依然として selfhost 生成導線の制約（hooks import 解決）で失敗するため、当面の回帰固定は `--skip-build` 経路で実施する。
+
 ## 決定ログ
 
 - [2026-02-25] `virtual` が override 済み基底メソッドのみ付与される方向へ変更済み。上記タスクの起点として `selfhost` 側の簡略化余地を低優先で追加。
@@ -201,3 +214,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-03` として `docs-ja/spec/spec-dev.md` へ virtual dispatch mode（`virtual/direct/fallback`）と非対象境界、回帰テスト運用を反映した。`spec-type_id` は意味論変更なしのため更新対象外と判断した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S5-01` として `Base.f` 明示呼び出しと `super().f` の 2 ケース回帰テストを追加した。`super().f` は `Base::f(*this, ...)` へ lower する専用経路を `call.py` に実装し、`type_id` 比較/switch dispatch を伴わないことを固定した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S5-02` として `staticmethod` / `classmethod` / `object` レシーバの境界回帰を `test_py2cpp_codegen_issues.py` に追加・更新し、いずれの経路でも dispatch 用 `type_id` 比較/switch を生成しないことを固定した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S5-03` として `verify_selfhost_end_to_end.py --skip-build` を使う2ケース回帰（`fib.py`, `17_monte_carlo_pi.py`）を `test_selfhost_virtual_dispatch_regression.py` に追加し、再帰呼び出しを含む selfhost e2e stdout parity を固定した。

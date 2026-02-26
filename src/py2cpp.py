@@ -119,18 +119,16 @@ build_module_type_schema = East1BuildHelpers.build_module_type_schema
 from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl
 
 
-from hooks.cpp.runtime_emit import (
-    RUNTIME_CPP_COMPAT_ROOT,
-    RUNTIME_CPP_GEN_ROOT,
-    _join_runtime_path as _join_runtime_path_impl,
-    _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
-    _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl,
-    _runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl,
-    _prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl,
-    _is_runtime_emit_input_path as _is_runtime_emit_input_path_impl,
-    _runtime_output_rel_tail as _runtime_output_rel_tail_impl,
-    _runtime_namespace_for_tail as _runtime_namespace_for_tail_impl,
-)
+from hooks.cpp.runtime_emit import RUNTIME_CPP_COMPAT_ROOT
+from hooks.cpp.runtime_emit import RUNTIME_CPP_GEN_ROOT
+from hooks.cpp.runtime_emit import _is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
+from hooks.cpp.runtime_emit import _join_runtime_path as _join_runtime_path_impl
+from hooks.cpp.runtime_emit import _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
+from hooks.cpp.runtime_emit import _prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl
+from hooks.cpp.runtime_emit import _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl
+from hooks.cpp.runtime_emit import _runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl
+from hooks.cpp.runtime_emit import _runtime_namespace_for_tail as _runtime_namespace_for_tail_impl
+from hooks.cpp.runtime_emit import _runtime_output_rel_tail as _runtime_output_rel_tail_impl
 
 
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
@@ -300,11 +298,9 @@ def cpp_char_lit(ch: str) -> str:
     return "'" + str(ch) + "'"
 
 
-from hooks.cpp.emitter import (
-    CppEmitter,
-    install_py2cpp_runtime_symbols,
-    emit_cpp_from_east,
-)
+from hooks.cpp.emitter import CppEmitter
+from hooks.cpp.emitter import emit_cpp_from_east
+from hooks.cpp.emitter import install_py2cpp_runtime_symbols
 install_py2cpp_runtime_symbols(globals())
 
 
@@ -438,9 +434,39 @@ def build_module_east_map(
     return {key: value for key, value in mp.items() if isinstance(value, dict)}
 
 
-def _write_multi_file_cpp(*args: Any, **kwargs: Any) -> dict[str, Any]:
+def _write_multi_file_cpp(
+    entry_path: Path,
+    module_east_map: dict[str, dict[str, Any]],
+    output_dir: Path,
+    negative_index_mode: str,
+    bounds_check_mode: str,
+    floor_div_mode: str,
+    mod_mode: str,
+    int_width: str,
+    str_index_mode: str,
+    str_slice_mode: str,
+    opt_level: str,
+    top_namespace: str,
+    emit_main: bool,
+    max_generated_lines: int = 0,
+) -> dict[str, Any]:
     """Delegate multi-file output generation to hooks.cpp.multifile."""
-    return _write_multi_file_cpp_impl(*args, **kwargs)  # type: ignore[no-any-return]
+    return _write_multi_file_cpp_impl(
+        entry_path,
+        module_east_map,
+        output_dir,
+        negative_index_mode,
+        bounds_check_mode,
+        floor_div_mode,
+        mod_mode,
+        int_width,
+        str_index_mode,
+        str_slice_mode,
+        opt_level,
+        top_namespace,
+        emit_main,
+        max_generated_lines,
+    )
 
 
 def dump_deps_graph_text(entry_path: Path) -> str:
