@@ -445,6 +445,7 @@ class RustEmitter(CodeEmitter):
         self.class_field_types: dict[str, dict[str, str]] = {}
         self.class_method_mutability: dict[str, dict[str, bool]] = {}
         self.function_arg_ref_modes: dict[str, list[bool]] = {}
+        self.class_method_arg_ref_modes: dict[str, dict[str, list[bool]]] = {}
         self.class_type_id_map: dict[str, int] = {}
         self.type_info_map: dict[int, tuple[int, int, int]] = {}
         self.declared_var_types: dict[str, str] = {}
@@ -628,7 +629,15 @@ class RustEmitter(CodeEmitter):
             return True
         return False
 
-    def _compute_function_arg_ref_modes(self, fn: dict[str, Any]) -> list[bool]:
+    def _should_pass_method_arg_by_ref_type(self, east_type: str) -> bool:
+        t = self.normalize_type_name(east_type)
+        if t == "str" or t in {"bytes", "bytearray"}:
+            return True
+        if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+            return True
+        return False
+
+    def _compute_function_arg_ref_modes(self, fn: dict[str, Any], *, for_method: bool = False) -> list[bool]:
         """関数の各引数を `&T` で受けるべきかを返す（top-level 用）。"""
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
@@ -636,6 +645,7 @@ class RustEmitter(CodeEmitter):
         body = self._dict_stmt_list(fn.get("body"))
         write_counts = self._collect_name_write_counts(body)
         mut_call_counts = self._collect_mutating_receiver_name_counts(body)
+        pass_by_ref_pred = self._should_pass_method_arg_by_ref_type if for_method else self._should_pass_arg_by_ref_type
         modes: list[bool] = []
         for arg_name in arg_order:
             if arg_name == "self":
@@ -644,7 +654,7 @@ class RustEmitter(CodeEmitter):
             write_count = write_counts.get(arg_name, 0)
             mut_call_count = mut_call_counts.get(arg_name, 0)
             is_mut = usage == "reassigned" or usage == "mutable" or usage == "write" or write_count > 0 or mut_call_count > 0
-            modes.append((not is_mut) and self._should_pass_arg_by_ref_type(self.any_to_str(arg_types.get(arg_name))))
+            modes.append((not is_mut) and pass_by_ref_pred(self.any_to_str(arg_types.get(arg_name))))
         return modes
 
     def _receiver_root_name(self, node: dict[str, Any]) -> str:
@@ -1635,6 +1645,7 @@ class RustEmitter(CodeEmitter):
         self.class_type_id_map = {}
         self.type_info_map = {}
         self.function_arg_ref_modes = {}
+        self.class_method_arg_ref_modes = {}
         self.current_ref_vars = set()
 
         module = self.doc
@@ -1731,6 +1742,16 @@ class RustEmitter(CodeEmitter):
         method_mut_map = self._analyze_class_method_mutability(members)
         self.class_method_mutability[class_name_raw] = method_mut_map
         self.class_method_mutability[class_name] = method_mut_map
+        method_ref_modes: dict[str, list[bool]] = {}
+        for member in members:
+            if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
+                continue
+            name = self.any_to_str(member.get("name"))
+            if name == "__init__":
+                continue
+            method_ref_modes[self._safe_name(name)] = self._compute_function_arg_ref_modes(member, for_method=True)
+        self.class_method_arg_ref_modes[class_name_raw] = method_ref_modes
+        self.class_method_arg_ref_modes[class_name] = method_ref_modes
         self._emit_constructor(class_name, stmt, norm_field_types)
         for member in members:
             if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
@@ -1855,7 +1876,10 @@ class RustEmitter(CodeEmitter):
         self.current_ref_vars = set()
         args_text_list: list[str] = []
         scope_names: set[str] = set()
-        fn_ref_modes = self.function_arg_ref_modes.get(fn_name, []) if in_class is None else []
+        if in_class is None:
+            fn_ref_modes = self.function_arg_ref_modes.get(fn_name, [])
+        else:
+            fn_ref_modes = self.class_method_arg_ref_modes.get(in_class, {}).get(fn_name, [])
         arg_pos = 0
 
         if in_class is not None:
@@ -1871,7 +1895,8 @@ class RustEmitter(CodeEmitter):
 
         for arg_name in arg_order:
             safe = self._safe_name(arg_name)
-            arg_t = self._rust_type(self.any_to_str(arg_types.get(arg_name)))
+            arg_east_t = self.any_to_str(arg_types.get(arg_name))
+            arg_t = self._rust_type(arg_east_t)
             usage = self.any_to_str(arg_usage.get(arg_name))
             write_count = self.current_fn_write_counts.get(arg_name, 0)
             mut_call_count = self.current_fn_mutating_call_counts.get(arg_name, 0)
@@ -1881,7 +1906,10 @@ class RustEmitter(CodeEmitter):
                 pass_by_ref = fn_ref_modes[arg_pos]
             arg_pos += 1
             if pass_by_ref:
-                arg_t = "&" + arg_t
+                if self.normalize_type_name(arg_east_t) == "str":
+                    arg_t = "&str"
+                else:
+                    arg_t = "&" + arg_t
             prefix = "mut " if is_mut else ""
             args_text_list.append(f"{prefix}{safe}: {arg_t}")
             scope_names.add(arg_name)
@@ -2752,6 +2780,20 @@ class RustEmitter(CodeEmitter):
             i += 1
         return out
 
+    def _render_by_ref_call_arg(self, arg_txt: str, arg_node: Any) -> str:
+        """`&T` / `&str` 引数向けに最小コストの渡し方を選ぶ。"""
+        str_lit = self._string_constant_literal(arg_node)
+        if str_lit != "":
+            return str_lit
+        arg_d = self.any_to_dict_or_empty(arg_node)
+        if self.any_dict_get_str(arg_d, "kind", "") == "Name":
+            raw = self.any_dict_get_str(arg_d, "id", "")
+            if raw in self.current_ref_vars:
+                return arg_txt
+        if arg_txt.startswith("&"):
+            return arg_txt
+        return "&(" + arg_txt + ")"
+
     def _render_call(self, expr: dict[str, Any]) -> str:
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
@@ -2926,17 +2968,7 @@ class RustEmitter(CodeEmitter):
                 by_ref = i < len(ref_modes) and ref_modes[i]
                 if by_ref:
                     arg_node = arg_nodes[i] if i < len(arg_nodes) else None
-                    arg_d = self.any_to_dict_or_empty(arg_node)
-                    if self.any_dict_get_str(arg_d, "kind", "") == "Name":
-                        raw = self.any_dict_get_str(arg_d, "id", "")
-                        if raw in self.current_ref_vars:
-                            call_args.append(arg_txt)
-                            i += 1
-                            continue
-                    if arg_txt.startswith("&"):
-                        call_args.append(arg_txt)
-                    else:
-                        call_args.append("&(" + arg_txt + ")")
+                    call_args.append(self._render_by_ref_call_arg(arg_txt, arg_node))
                 else:
                     if i < len(arg_nodes):
                         t = self._infer_expr_type_for_call_arg(arg_nodes[i])
@@ -3005,6 +3037,21 @@ class RustEmitter(CodeEmitter):
                         default_txt = self._render_as_pyany(arg_nodes[1])
                     key_expr = self._coerce_dict_key_expr(merged_args[0], key_t, require_owned=False)
                     return owner_expr + ".get(&" + key_expr + ").cloned().unwrap_or(" + default_txt + ")"
+            owner_type_norm = self.normalize_type_name(owner_type)
+            method_ref_modes = self.class_method_arg_ref_modes.get(owner_type_norm, {}).get(attr, [])
+            if len(method_ref_modes) > 0:
+                call_args: list[str] = []
+                i = 0
+                while i < len(merged_args):
+                    arg_txt = merged_args[i]
+                    by_ref = i < len(method_ref_modes) and method_ref_modes[i]
+                    if by_ref:
+                        arg_node = arg_nodes[i] if i < len(arg_nodes) else None
+                        call_args.append(self._render_by_ref_call_arg(arg_txt, arg_node))
+                    else:
+                        call_args.append(arg_txt)
+                    i += 1
+                return owner_expr + "." + attr + "(" + ", ".join(call_args) + ")"
             return owner_expr + "." + attr + "(" + ", ".join(merged_args) + ")"
 
         fn_expr = self.render_expr(fn_node)
