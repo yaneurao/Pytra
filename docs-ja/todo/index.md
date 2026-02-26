@@ -119,7 +119,7 @@
 
 文脈: `docs-ja/plans/p0-cpp-emitter-slimming.md`（`P0-CPP-EMITTER-SLIM-01`）
 
-1. [ ] [ID: P0-CPP-EMITTER-SLIM-01] `cpp_emitter.py` の肥大要因（互換層/責務集中/巨大 `render_expr`）を段階分割で解消し、EAST3 単一契約へ寄せる。
+1. [x] [ID: P0-CPP-EMITTER-SLIM-01] `cpp_emitter.py` の肥大要因（互換層/責務集中/巨大 `render_expr`）を段階分割で解消し、EAST3 単一契約へ寄せる。
 2. [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-01] `cpp_emitter.py` の行数・メソッド数・長大メソッドを計測し、基準値を `docs-ja/plans/p0-cpp-emitter-slimming.md` に固定する。
 3. [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線（golden 比較）を更新し、以後の分割作業の回帰判定点を固定する。
 4. [x] [ID: P0-CPP-EMITTER-SLIM-01-S2-01] `stage2/self_hosted` 前提の legacy builtin compat（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat`）を撤去する。
@@ -143,4 +143,4 @@
 22. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-01] `emit_assign` / `_emit_annassign_stmt` / `_emit_augassign_stmt`（+ AugAssign 左辺 helper）を `stmt.py` へ移設し、statement 責務を縮退する。
 23. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-02] `emit_for_core` / `emit_function` など残存する長大 statement メソッドを段階移設し、`cpp_emitter.py` 行数を `<=2500` 目標へ近づける。
 24. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-03] `_collect_assigned_name_types` / `_collect_mutated_params_from_stmt` など解析系 helper を専用モジュールへ分離し、`cpp_emitter.py` 行数をさらに圧縮する。
-25. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S8-04] `transpile` / call-attribute 系の残存長大メソッドを段階移設し、`cpp_emitter.py` 行数 `<=2500` へ収束させる。
+25. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-04] `transpile` / call-attribute 系の残存長大メソッドを段階移設し、`cpp_emitter.py` 行数 `<=2500` へ収束させる。

@@ -58,7 +58,7 @@
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-01] `emit_assign` / `_emit_annassign_stmt` / `_emit_augassign_stmt`（+ AugAssign 左辺 helper）を `stmt.py` へ移設し、`cpp_emitter.py` の statement 責務を縮退する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-02] `emit_for_core` / `emit_function` など残存する長大 statement メソッドを段階移設し、`cpp_emitter.py` 行数を `<=2500` 目標へ近づける。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-03] `_collect_assigned_name_types` / `_collect_mutated_params_from_stmt` など解析系 helper を専用モジュールへ分離し、`cpp_emitter.py` 行数をさらに圧縮する。
-- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S8-04] `transpile` / call-attribute 系の残存長大メソッドを段階移設し、`cpp_emitter.py` 行数 `<=2500` へ収束させる。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-04] `transpile` / call-attribute 系の残存長大メソッドを段階移設し、`cpp_emitter.py` 行数 `<=2500` へ収束させる。
 
 ## S1-01 基線メトリクス（2026-02-26）
 
@@ -251,6 +251,38 @@
   - `render_expr` 行数: `197`（`L2886-L3082`）
   - legacy/compat 名付き関数残数: `0`
 
+## S8-04 call-attribute 系の移設（2026-02-26）
+
+- 実施内容:
+  - `src/hooks/cpp/emitter/call.py`（`CppCallEmitter`）へ call/attribute 系 helper を移設:
+    - `_coerce_py_assert_args`
+    - `_requires_builtin_call_lowering` / `_requires_builtin_method_call_lowering`
+    - `_is_self_hosted_parser_doc` / `_is_east3_doc`
+    - `_render_range_name_call`
+    - `_render_call_name_or_attr`
+    - `_render_call_module_method` / `_render_call_module_method_with_namespace` / `_render_namespaced_module_call`
+    - `_render_call_class_method` / `_render_append_call_object_method`
+    - `_render_call_attribute` / `_render_call_attribute_non_module`
+    - `_make_missing_symbol_import_error`
+    - `_class_method_sig` / `_has_class_method` / `_class_method_name_sig`
+    - `_merge_args_with_kw_by_name` / `_coerce_args_for_class_method`
+    - `_render_call_fallback`
+    - `_render_call_expr_from_context`
+    - `_prepare_call_parts`
+  - `cpp_emitter.py` 本体から同名実装を削除し、mixin 注入経路へ統一した。
+- 検証:
+  - `python3 -m py_compile src/hooks/cpp/emitter/call.py src/hooks/cpp/emitter/cpp_emitter.py src/hooks/cpp/emitter/trivia.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'`
+  - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_emit_stmt_forcore_runtime_protocol_typed_target_uses_unbox_path'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+- メトリクス更新:
+  - `cpp_emitter.py` 行数: `2478`（`S8-03` 時点 `3092` から `-614`）
+  - `render_expr` 行数: `197`（`L2272-L2468`）
+  - legacy/compat 名付き関数残数: `0`
+- 完了判定:
+  - `ファイル行数 <= 2500` / `render_expr <= 200` / `legacy 0件` をすべて達成。
+  - 親 `P0-CPP-EMITTER-SLIM-01` を完了扱いへ更新する。
+
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
@@ -276,3 +308,4 @@
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S8-01` として assign 系 statement メソッドを `stmt.py` へ移設した。`cpp_emitter.py` 行数は `3646` まで縮退（`-339`）し、`render_expr` 行数 `197` と legacy 0件は維持した。`check_py2cpp_transpile` は `133/133` で回帰なしを確認した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S8-02` として `ForCore` / `emit_function` 系 statement メソッドを `stmt.py` へ移設した。`cpp_emitter.py` 行数は `3323` まで縮退（`S8-01` から `-323`）し、`render_expr=197` と legacy 0件は維持した。`test_east3_cpp_bridge` 代表3件・`test_py2cpp_smoke`・`check_py2cpp_transpile` を通して回帰がないことを確認した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S8-03` として解析系 helper 群を `analysis.py` へ分離した。`cpp_emitter.py` 行数は `3092`（`S8-02` から `-231`）へ縮退し、`render_expr=197` と legacy 0件を維持した。`test_py2cpp_smoke` と `check_py2cpp_transpile` で回帰がないことを確認した。
+- 2026-02-26: P0-CPP-EMITTER-SLIM-01-S8-04 として call/attribute 系 helper 群（`_prepare_call_parts` / `_render_call_expr_from_context` / `_render_call_attribute` など）を `call.py` へ移設し、`cpp_emitter.py` 本体の同名実装を削除した。`py_compile`・`test_py2cpp_smoke`・`test_east3_cpp_bridge` 代表ケース・`check_py2cpp_transpile`（`133/133`）で回帰がないことを確認し、`cpp_emitter.py` は `2478` 行で `<=2500` 目標を達成したため、親 P0-CPP-EMITTER-SLIM-01 を完了扱いへ更新した。
