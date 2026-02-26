@@ -841,6 +841,34 @@ def f(x: object) -> bool:
         self.assertIn("rc<Base> b = obj_to_rc_or_raise<Base>(x, ", cpp)
         self.assertIn("return b->inc(4);", cpp)
         self.assertNotIn("return b.inc(4);", cpp)
+        self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
+        self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
+
+    def test_staticmethod_boundary_uses_class_call_without_type_id_switch(self) -> None:
+        src = """class Base:\n    @staticmethod\n    def sm(x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    pass\n\ndef f() -> int:\n    return Child.sm(3)\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "virtual_staticmethod_boundary.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("int64 sm(int64 x) {", cpp)
+        self.assertIn("return Child::sm(3);", cpp)
+        self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
+        self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
+
+    def test_classmethod_boundary_keeps_class_call_without_type_id_switch(self) -> None:
+        src = """class Base:\n    @classmethod\n    def cm(cls, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    pass\n\ndef f() -> int:\n    return Child.cm(3)\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "virtual_classmethod_boundary.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("int64 cm(const object& cls, int64 x) {", cpp)
+        self.assertIn("return Child::cm(3);", cpp)
+        self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
+        self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
 
     def test_base_qualified_call_keeps_virtual_path_without_type_id_dispatch(self) -> None:
         src = """class Base:\n    def f(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def f(self, x: int) -> int:\n        return Base.f(self, x) + 1\n"""

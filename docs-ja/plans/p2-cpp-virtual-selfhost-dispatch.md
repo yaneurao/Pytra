@@ -168,6 +168,22 @@
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'super_method_call_lowers_to_base_qualified_call_without_type_id_dispatch'`
   - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S5-02` 確定内容（2026-02-26）:
+- `test/unit/test_py2cpp_codegen_issues.py` に境界ケース回帰を追加した。
+  - `test_staticmethod_boundary_uses_class_call_without_type_id_switch`
+  - `test_classmethod_boundary_keeps_class_call_without_type_id_switch`
+  - 既存 `test_method_call_after_runtime_unbox_is_rendered_with_dynamic_dispatch` に `type_id` 比較/switch 不在の検証を追記。
+- 境界の明文化:
+  - `staticmethod`: `Child::sm(...)` の class call を生成し、dispatch 用 `type_id` 分岐を持たない。
+  - `classmethod`: `Child::cm(...)` 経路を維持し、dispatch 用 `type_id` 分岐を持たない。
+  - `object` レシーバ: `obj_to_rc_or_raise<Base>(...)` による明示 unbox 後に仮想呼び出しし、dispatch 用 `type_id` 分岐を持たない。
+- 検証:
+  - `python3 -m py_compile test/unit/test_py2cpp_codegen_issues.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'staticmethod_boundary_uses_class_call_without_type_id_switch'`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'classmethod_boundary_keeps_class_call_without_type_id_switch'`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'method_call_after_runtime_unbox_is_rendered_with_dynamic_dispatch'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+
 ## 決定ログ
 
 - [2026-02-25] `virtual` が override 済み基底メソッドのみ付与される方向へ変更済み。上記タスクの起点として `selfhost` 側の簡略化余地を低優先で追加。
@@ -184,3 +200,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-02` として回帰コマンドを再実行し、`check_selfhost_cpp_diff` は引き続き `mismatches=0`、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`CodeEmitter import` 除去失敗）で停止することを確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-03` として `docs-ja/spec/spec-dev.md` へ virtual dispatch mode（`virtual/direct/fallback`）と非対象境界、回帰テスト運用を反映した。`spec-type_id` は意味論変更なしのため更新対象外と判断した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S5-01` として `Base.f` 明示呼び出しと `super().f` の 2 ケース回帰テストを追加した。`super().f` は `Base::f(*this, ...)` へ lower する専用経路を `call.py` に実装し、`type_id` 比較/switch dispatch を伴わないことを固定した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S5-02` として `staticmethod` / `classmethod` / `object` レシーバの境界回帰を `test_py2cpp_codegen_issues.py` に追加・更新し、いずれの経路でも dispatch 用 `type_id` 比較/switch を生成しないことを固定した。
