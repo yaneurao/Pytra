@@ -35,12 +35,13 @@
 - 2026-02-26: `S1-S7` は粒度が大きく切り戻し単位が重いため、`S*-NN` へ細分化。1サブタスクあたり「機能実装 + 最小回帰確認」を完結単位にする。
 - 2026-02-26: `S1-01` として 8本 CLI の `--east-stage 2` を警告から `parser.error` へ統一。`test/unit/test_py2{rs,cs,js,ts,go,java,swift,kotlin}_smoke.py` の stage2 警告依存を「非0終了 + エラーメッセージ期待」へ更新し、8本を実行して全通過を確認。
 - 2026-02-26: `S1-02` として 8本 CLI から `load_east_document_compat` の import/call と stage2 分岐を削除し、`load_east` を `load_east3_document` 単一路線へ固定。対応 smoke 8本を再実行して全通過を確認。
+- 2026-02-26: `S2-01` として `js_emitter` に `ForCore` 受理を追加し、`iter_plan=StaticRangeForPlan/RuntimeIterForPlan` を内部で `ForRange/For` へ変換して既存 emit 経路へ接続。`test_py2js_smoke.py` に ForCore 直受理回帰（range/runtime tuple target）を追加し、`test_py2js_smoke.py` + `test_py2ts_smoke.py` を実行して全通過を確認。
 
 ## 分解
 
 - [x] [ID: P3-EAST3-ONLY-01-S1-01] 8本 CLI の `--east-stage 2` 入力を非対応エラーへ統一し、互換警告文言依存テストをエラー期待へ更新する。
 - [x] [ID: P3-EAST3-ONLY-01-S1-02] 8本 CLI から `load_east_document_compat` の import/call を撤去し、`load_east3_document` 単一路線へ固定する。
-- [ ] [ID: P3-EAST3-ONLY-01-S2-01] `js_emitter` で `ForCore(iter_plan=StaticRangeForPlan/RuntimeIterForPlan)` を直接処理する。
+- [x] [ID: P3-EAST3-ONLY-01-S2-01] `js_emitter` で `ForCore(iter_plan=StaticRangeForPlan/RuntimeIterForPlan)` を直接処理する。
 - [ ] [ID: P3-EAST3-ONLY-01-S2-02] `js_emitter` で `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId` を直接処理する。
 - [ ] [ID: P3-EAST3-ONLY-01-S2-03] `js_emitter` で `IsInstance/IsSubtype/IsSubclass` を直接処理する。
 - [ ] [ID: P3-EAST3-ONLY-01-S2-04] `js_emitter` で `Box/Unbox` の legacy 前提を撤去し、EAST3 ノードを直接受理する。
