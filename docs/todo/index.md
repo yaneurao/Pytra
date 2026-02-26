@@ -54,7 +54,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 3. [x] [ID: P0-EAST3-OPT-01-S1-02] Implement CLI options (`--east3-opt-level`, `--east3-opt-pass`, dump/trace`) and lock `O0/O1/O2` contract.
 4. [x] [ID: P0-EAST3-OPT-01-S2-01] Implement `NoOpCastCleanupPass` / `LiteralCastFoldPass` and establish default `O1` set.
 5. [x] [ID: P0-EAST3-OPT-01-S2-02] Implement `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` and reflect `for ... in range(...)` boundary.
-6. [ ] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
+6. [x] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
 7. [ ] [ID: P0-EAST3-OPT-01-S3-01] Add pass unit tests (input/output EAST3 diff, non-application guards, semantics preservation).
 8. [ ] [ID: P0-EAST3-OPT-01-S3-02] Run sample regressions + parity checks and verify compatibility under `O0`/`O1`/`O2` switching.
 9. [ ] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diffs to `spec-east3-optimizer` and document operations (trace checks / troubleshooting).
@@ -62,6 +62,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 - `P0-EAST3-OPT-01-S1-02` Wired optimizer CLI options through common/non-C++/`py2cpp` routes and fixed the end-to-end entry path with `test_east3_optimizer_cli.py` plus parser-wrapper tests.
 - `P0-EAST3-OPT-01-S2-01` Implemented `NoOpCastCleanupPass` / `LiteralCastFoldPass`, updated `build_default_passes()` to the `O1` default set, and synchronized pass-unit tests plus CLI trace expectations.
 - `P0-EAST3-OPT-01-S2-02` Added `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` with fail-closed guards for constant `range(...)` canonicalization (`StaticRangeForPlan`) and underscore elision of provably unused loop vars.
+- `P0-EAST3-OPT-01-S2-03` Added `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only passes with conservative guards for non-empty static-range preheader hoist and power-of-two float-division strength reduction.
 
 ### P0: Introduce C++ post-lowering optimizer layer (`CppOptimizer`) (Highest)
 

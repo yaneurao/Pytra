@@ -41,6 +41,7 @@
 - 2026-02-26: `P0-EAST3-OPT-01-S1-02` として `--east3-opt-level`/`--east3-opt-pass`/dump 系オプションを `transpile_cli` と `py2cpp`/非C++ 8本 CLI に配線し、`test_east3_optimizer_cli.py` と既存 parse wrapper テストで経路を固定した。
 - 2026-02-26: `P0-EAST3-OPT-01-S2-01` として `NoOpCastCleanupPass`/`LiteralCastFoldPass` を追加し、`build_default_passes()` を `O1` 既定セットへ更新。pass 単体テストと CLI トレース期待値を同期した。
 - 2026-02-26: `P0-EAST3-OPT-01-S2-02` として `RangeForCanonicalizationPass`/`UnusedLoopVarElisionPass` を追加し、定数 `range(...)` ループを `StaticRangeForPlan` へ正規化。未使用ループ変数は動的名前解決呼び出しを回避した fail-closed 条件で `_` へ置換する実装を導入した。
+- 2026-02-26: `P0-EAST3-OPT-01-S2-03` として `LoopInvariantHoistLitePass`/`StrengthReductionFloatLoopPass` を追加し、`O2` 限定で有効化。非空静的 range の先頭不変代入 hoist と、2冪定数除算の逆数乗算化を保守的ガードで導入した。
 
 ## 分解
 
@@ -48,7 +49,7 @@
 - [x] [ID: P0-EAST3-OPT-01-S1-02] CLI オプション（`--east3-opt-level`, `--east3-opt-pass`, dump/trace）を実装し、`O0/O1/O2` 契約を固定する。
 - [x] [ID: P0-EAST3-OPT-01-S2-01] `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`O1` 既定セットを確立する。
 - [x] [ID: P0-EAST3-OPT-01-S2-02] `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` を実装し、`for ... in range(...)` の責務境界を反映する。
-- [ ] [ID: P0-EAST3-OPT-01-S2-03] `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` を `O2` 限定で導入する。
+- [x] [ID: P0-EAST3-OPT-01-S2-03] `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` を `O2` 限定で導入する。
 - [ ] [ID: P0-EAST3-OPT-01-S3-01] pass 単体テスト（入力/出力EAST3差分、非適用ガード、意味保存）を追加する。
 - [ ] [ID: P0-EAST3-OPT-01-S3-02] `sample` 回帰 + parity 検証を実行し、`O0`/`O1`/`O2` 切替時の互換を確認する。
 - [ ] [ID: P0-EAST3-OPT-01-S3-03] 実装差分を `spec-east3-optimizer` と同期し、運用手順（トレース確認/切り分け）を文書化する。
