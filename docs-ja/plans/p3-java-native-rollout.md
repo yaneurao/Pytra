@@ -48,6 +48,7 @@
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `main_guard_body` を `main()` で実行する経路を追加。`py_assert_*`（最小 true 互換）と `perf_counter`（`System.nanoTime()` 変換）を実装し、再代入時の再宣言を防ぐ `declared` セットを導入。`runtime_parity_check --case-root fixture --targets java add if_else for_range inheritance` と `runtime_parity_check --case-root sample --targets java 17_monte_carlo_pi --ignore-unstable-stdout` の pass を確認。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `bytearray` / `append` / `int` / `float` / `bool` / `str` の基本 call lower と、`png.write_rgb_png` / `save_gif` の no-op マッピング（`__pytra_noop`）を追加。`BinOp.casts` の `float64` 昇格も反映し、`03_julia_set` 生成で `ArrayList<Long>` / `.add()` / `((long)(...))` / `__pytra_noop(...)` を smoke で固定。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `unknown` 型推定、`len()`、`List/Subscript`、Subscript 代入 lower を拡張。`sample/py` 前半 9件（01〜09）を `py2java -> javac` で再確認し `compile_ok 9/9` を達成。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-02`] `super().__init__` を `super(...)` へ lower し、`IsInstance` / `isinstance(...)` を native 経路へ接続。`instanceof` 判定は `((Object)(lhs)) instanceof ...` に統一して sibling class 間の Java 静的型エラーを回避し、`runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` で `pass=8/8` を確認。
 
 ## 分解
 
@@ -55,7 +56,7 @@
 - [x] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
 - [x] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
 - [x] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
-- [ ] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
+- [x] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
