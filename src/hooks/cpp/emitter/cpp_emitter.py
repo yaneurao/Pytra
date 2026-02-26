@@ -2889,14 +2889,6 @@ class CppEmitter(
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         if runtime_call == "":
             legacy_builtin_name = self.any_dict_get_str(expr, "builtin_name", "")
-            if (not self._is_east3_doc()) and self._is_self_hosted_parser_doc():
-                compat_rendered = self._render_legacy_builtin_call_compat(
-                    legacy_builtin_name,
-                    expr,
-                    arg_nodes,
-                )
-                if compat_rendered != "":
-                    return compat_rendered
             raise ValueError(
                 "builtin call must define runtime_call in EAST3: " + legacy_builtin_name
             )
@@ -4277,107 +4269,6 @@ class CppEmitter(
             return not self._is_east3_doc()
         return True
 
-    def _render_legacy_builtin_call_compat(
-        self,
-        builtin_name: str,
-        expr: dict[str, Any],
-        arg_nodes: list[Any],
-    ) -> str:
-        """stage2/self_hosted 互換の未 lower BuiltinCall を描画する。"""
-        args: list[str] = []
-        for arg_node in arg_nodes:
-            args.append(self.render_expr(arg_node))
-        first_arg: Any = expr
-        if len(arg_nodes) > 0:
-            first_arg = arg_nodes[0]
-        collection_ctor = self._render_collection_constructor_call(builtin_name, expr, args, first_arg)
-        if collection_ctor is not None and collection_ctor != "":
-            return str(collection_ctor)
-
-        runtime_call_map: dict[str, str] = {
-            "print": "print",
-            "len": "py_len",
-            "str": "str",
-            "int": "int",
-            "float": "float",
-            "bool": "bool",
-            "range": "range",
-            "zip": "zip",
-            "min": "min",
-            "max": "max",
-            "Path": "path_ctor",
-            "open": "open",
-            "iter": "iter_or_raise",
-            "next": "next_or_stop",
-            "bytes": "bytes_ctor",
-            "bytearray": "bytearray_ctor",
-            "reversed": "reversed",
-            "enumerate": "enumerate",
-            "any": "any",
-            "all": "all",
-            "ord": "ord",
-            "chr": "chr",
-            "Exception": "runtime_error",
-            "RuntimeError": "runtime_error",
-        }
-        runtime_call = runtime_call_map.get(builtin_name, "")
-        if runtime_call == "":
-            return ""
-        rendered = self._render_builtin_runtime_special_ops(runtime_call, expr, arg_nodes, [])
-        if rendered is None:
-            return ""
-        return str(rendered)
-
-    def _render_legacy_builtin_method_call_compat(
-        self,
-        owner_t: str,
-        expr: dict[str, Any],
-        fn: dict[str, Any],
-        attr: str,
-        arg_nodes: list[Any],
-    ) -> str:
-        """stage2/self_hosted 互換の未 lower Builtin method call を描画する。"""
-        owner_norm = self.normalize_type_name(owner_t)
-        runtime_call = ""
-        if owner_norm == "str":
-            if attr == "strip":
-                runtime_call = "py_strip"
-            elif attr == "lstrip":
-                runtime_call = "py_lstrip"
-            elif attr == "rstrip":
-                runtime_call = "py_rstrip"
-            elif attr == "startswith":
-                runtime_call = "py_startswith"
-            elif attr == "endswith":
-                runtime_call = "py_endswith"
-            elif attr == "find":
-                runtime_call = "py_find"
-            elif attr == "rfind":
-                runtime_call = "py_rfind"
-            elif attr == "replace":
-                runtime_call = "py_replace"
-            elif attr == "join":
-                runtime_call = "py_join"
-            elif attr == "isdigit":
-                runtime_call = "py_isdigit"
-            elif attr == "isalpha":
-                runtime_call = "py_isalpha"
-        if runtime_call == "":
-            return ""
-
-        compat_expr: dict[str, Any] = {
-            "kind": "Call",
-            "lowered_kind": "BuiltinCall",
-            "runtime_call": runtime_call,
-            "func": fn,
-            "resolved_type": self.any_to_str(expr.get("resolved_type")),
-            "keywords": [],
-        }
-        rendered = self._render_builtin_runtime_str_ops(runtime_call, compat_expr, arg_nodes)
-        if rendered is None:
-            return ""
-        return str(rendered)
-
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""
         if len(kw) == 0:
@@ -4610,21 +4501,10 @@ class CppEmitter(
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
         if self._requires_builtin_method_call_lowering(owner_t, attr):
-            if self._is_self_hosted_parser_doc() and (not self._is_east3_doc()):
-                compat_rendered = self._render_legacy_builtin_method_call_compat(
-                    owner_t,
-                    expr,
-                    fn,
-                    attr,
-                    arg_nodes,
-                )
-                if compat_rendered != "":
-                    return compat_rendered
-            else:
-                owner_label = self.normalize_type_name(owner_t)
-                if owner_label == "":
-                    owner_label = "unknown"
-                raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
+            owner_label = self.normalize_type_name(owner_t)
+            if owner_label == "":
+                owner_label = "unknown"
+            raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
         return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
