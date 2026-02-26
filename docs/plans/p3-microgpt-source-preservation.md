@@ -14,7 +14,7 @@
 - `docs-ja/todo/index.md` の `ID: P3-MSP-09`
 
 背景:
-- `archive/exec-extracted-20260222.log`（2026-02-23 00:03〜00:13）には、`py2cpp` 変換を通すために `microgpt-20260222.py` を段階的に書き換えた履歴が残っている。
+- 2026-02-23 00:03〜00:13 の作業ログには、`py2cpp` 変換を通すために `microgpt-20260222.py` を段階的に書き換えた履歴が残っている。
 - 現在はユーザーが `materials/refs/microgpt/microgpt-20260222.py` を復元済みで、変換用に改変した版は `work/tmp/microgpt-20260222-lite.py` として分離されている。
 - `materials/refs/microgpt/microgpt-20260222.py` と `work/tmp/microgpt-20260222-lite.py` の差分は、元ソースの意味変更を含む大規模改変になっている。
 
@@ -54,7 +54,7 @@
 1. 再現コマンド（2026-02-23 実行）
    - `python3 src/py2cpp.py materials/refs/microgpt/microgpt-20260222.py -o work/out/msp2-microgpt.cpp`
    - 結果: `unsupported_syntax: self_hosted parser requires type annotation for parameter: data at 33:0`
-2. 失敗要因列挙（再現 + `archive/exec-extracted-20260222.log` 00:03〜00:13 の追跡）
+2. 失敗要因列挙（再現 + 2026-02-23 00:03〜00:13 の作業ログ追跡）
    - 要因 A: 無注釈引数（`def __init__(self, data, ...)` ほか）
    - 要因 B: class 内 1 行メソッド定義（`def __pow__(...): return ...` 形式）
    - 要因 C: top-level `for` / tuple 同時代入 / 複数 `for` 内包など、top-level・式 lower の未対応構文
@@ -248,7 +248,7 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 原本無改変のまま `py2cpp` transpile -> `g++ -fsyntax-only` を通すための実装タスクが TODO 化されている。
 
 決定ログ:
-- 2026-02-23: `archive/exec-extracted-20260222.log` と `materials/refs/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` 差分から、原本改変項目を抽出して本コンテキストを作成。
+- 2026-02-23: 2026-02-23 00:03〜00:13 の作業ログと `materials/refs/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` 差分から、原本改変項目を抽出して本コンテキストを作成。
 - 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
 - 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
 - 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
