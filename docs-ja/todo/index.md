@@ -39,7 +39,7 @@
 2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
 3. [x] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
 4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
-5. [ ] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
+5. [x] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
 6. [ ] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
 7. [ ] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
 8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
@@ -53,6 +53,7 @@
 - `P3-JAVA-NATIVE-01-S2-01` `if/else` 両分岐 `return` 時の到達不能 `return` 追加を抑止する簡易 return-flow 判定を導入し、`if_else` 生成の compile failure を解消。
 - `P3-JAVA-NATIVE-01-S2-01` `main_guard_body` を `main()` へ反映し、`py_assert_*` と `perf_counter` の最小 lower、再代入の再宣言抑止（declared set）を追加。`runtime_parity_check --targets java` で `fixture: add/if_else/for_range/inheritance` と `sample:17_monte_carlo_pi` の pass を確認。
 - `P3-JAVA-NATIVE-01-S2-01` `bytearray`/`append`/`int()` などの基本 lower と画像 runtime 呼び出し no-op を追加し、`03_julia_set` 生成で `ArrayList<Long>` / `.add()` / `((long)(...))` / `__pytra_noop(...)` が出力されることを smoke で固定。
+- `P3-JAVA-NATIVE-01-S2-01` `unknown` 型推定・`len()`・`List/Subscript`・Subscript 代入 lower を拡張し、`sample/py` 前半 9件（01〜09）の `py2java -> javac` が `compile_ok 9/9` になることを確認。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 

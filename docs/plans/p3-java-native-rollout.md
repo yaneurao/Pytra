@@ -47,13 +47,14 @@ Decision log:
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added simple return-flow analysis (`_block_guarantees_return`) to avoid duplicate fallback `return` insertion when both `if/else` branches already return; locked with `test_py2java_smoke.py` assertion that `if_else` output does not include `return 0L;`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added execution wiring for `main_guard_body` in generated `main()`, implemented minimal lowering for `py_assert_*` (true-compatible) and `perf_counter` (`System.nanoTime()` conversion), and introduced declared-name tracking to avoid re-declaration on reassignment. Verified pass on `runtime_parity_check` for `fixture: add/if_else/for_range/inheritance` and `sample:17_monte_carlo_pi`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added basic call lowering for `bytearray` / `append` / `int` / `float` / `bool` / `str`, mapped `png.write_rgb_png` / `save_gif` to no-op (`__pytra_noop`), and applied `BinOp.casts` float-promotion handling. Locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) in smoke tests.
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Extended lowering for `unknown` type inference, `len()`, `List/Subscript`, and subscript assignment, and revalidated early `sample/py` cases (01–09) with `py2java -> javac` at `compile_ok 9/9`.
 
 ## Breakdown
 
 - [x] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (responsibility for input EAST3 nodes, fail-closed behavior on unsupported nodes, runtime boundary) and clarify diff from preview output.
 - [x] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton in `src/hooks/java/emitter` and pass minimal executable route for module/function/class.
 - [x] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`, make native the default, and isolate legacy sidecar into compatibility mode.
-- [ ] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native emitter support for expressions/statements (arithmetic, conditionals, loops, function calls, built-in primitive types) and pass early `sample/py` cases.
+- [x] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native emitter support for expressions/statements (arithmetic, conditionals, loops, function calls, built-in primitive types) and pass early `sample/py` cases.
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks to native route and pass OOP cases.
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-03] Provide minimal compatibility for `import math` and image runtime calls (`png`/`gif`) to handle practical sample cases.
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile`, unit smoke, and parity in native-default mode; lock regression detection.
