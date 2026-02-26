@@ -62,6 +62,8 @@
 28. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S12-02] `01/04/09/18` を再計測し、`&str` 化の寄与と残外れ値（`09/18`）を更新する。
 29. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S13-01] C++ GIF runtime の `to_bytes` 多用箇所を little-endian 直書きと `reserve` へ置換し、`09` の encode/write 常用コストを削減する。
 30. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S13-02] 影響ケース parity と `01/04/09/18` 再計測を実行し、`S13-01` の寄与と残外れ値（`09/18`）を更新する。
+31. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S14-01] Rust runtime helper `py_str_at/py_slice_str` の `Vec<char>` 常時構築を撤去し、ASCII fast-path + 非ASCII fallback へ置換する。
+32. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S14-02] `01/04/09/18` と `18` 単体の再計測で `S14-01` 寄与を確認し、残外れ値を `09` へ収束させる。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
