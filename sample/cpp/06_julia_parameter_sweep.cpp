@@ -4,7 +4,10 @@
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 
+// 06: Sample that sweeps Julia-set parameters and outputs a GIF.
+
 bytes julia_palette() {
+    // Keep index 0 black for points inside the set; build a high-saturation gradient for the rest.
     bytearray palette = bytearray(256 * 3);
     palette[0] = 0;
     palette[1] = 0;
@@ -42,6 +45,7 @@ bytes render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 max_
             if (i >= max_iter) {
                 frame[row_base + x] = 0;
             } else {
+                // Add a small frame phase so colors flow smoothly.
                 int64 color_index = 1 + (i * 224 / max_iter + phase) % 255;
                 frame[row_base + x] = color_index;
             }
@@ -56,12 +60,16 @@ void run_06_julia_parameter_sweep() {
     int64 frames_n = 72;
     int64 max_iter = 180;
     str out_path = "sample/out/06_julia_parameter_sweep.gif";
+    
     auto start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
+    // Orbit an ellipse around a known visually good region to reduce flat blown highlights.
     float64 center_cr = -0.745;
     float64 center_ci = 0.186;
     float64 radius_cr = 0.12;
     float64 radius_ci = 0.10;
+    // Add start and phase offsets so GitHub thumbnails do not appear too dark.
+    // Tune it to start in a red-leaning color range.
     int64 start_offset = 20;
     int64 phase_offset = 180;
     for (int64 i = 0; i < frames_n; ++i) {
