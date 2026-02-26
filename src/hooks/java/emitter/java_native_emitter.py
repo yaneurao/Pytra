@@ -268,6 +268,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "0L"
         return "((long)(" + _render_expr(args[0]) + ".size()))"
+    if callee_name == "isinstance":
+        if len(args) < 2:
+            return "false"
+        lhs = _render_expr(args[0])
+        typ = args[1]
+        return _render_isinstance_check(lhs, typ)
     if callee_name in {"save_gif", "write_rgb_png"}:
         rendered_noop_args: list[str] = []
         i = 0
@@ -291,6 +297,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
+        owner_for_super = func_any.get("value")
+        if attr_name == "__init__" and isinstance(owner_for_super, dict) and owner_for_super.get("kind") == "Call":
+            if _call_name(owner_for_super) == "super":
+                rendered_super_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_super_args.append(_render_expr(args[i]))
+                    i += 1
+                return "super(" + ", ".join(rendered_super_args) + ")"
         owner_any = func_any.get("value")
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
@@ -326,6 +341,37 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         rendered_args.append(_render_expr(args[i]))
         i += 1
     return func_expr + "(" + ", ".join(rendered_args) + ")"
+
+
+def _render_isinstance_check(lhs: str, typ: Any) -> str:
+    if not isinstance(typ, dict):
+        return "false"
+    boxed_lhs = "((Object)(" + lhs + "))"
+    if typ.get("kind") == "Name":
+        name = _safe_ident(typ.get("id"), "")
+        if name in {"int", "int64"}:
+            return "(" + boxed_lhs + " instanceof Long)"
+        if name in {"float", "float64"}:
+            return "(" + boxed_lhs + " instanceof Double)"
+        if name == "bool":
+            return "(" + boxed_lhs + " instanceof Boolean)"
+        if name == "str":
+            return "(" + boxed_lhs + " instanceof String)"
+        if name in {"list", "bytes", "bytearray"}:
+            return "(" + boxed_lhs + " instanceof java.util.ArrayList)"
+        return "(" + boxed_lhs + " instanceof " + name + ")"
+    if typ.get("kind") == "Tuple":
+        elements_any = typ.get("elements")
+        elements = elements_any if isinstance(elements_any, list) else []
+        checks: list[str] = []
+        i = 0
+        while i < len(elements):
+            checks.append(_render_isinstance_check(lhs, elements[i]))
+            i += 1
+        if len(checks) == 0:
+            return "false"
+        return "(" + " || ".join(checks) + ")"
+    return "false"
 
 
 def _render_expr(expr: Any) -> str:
@@ -387,6 +433,9 @@ def _render_expr(expr: Any) -> str:
             if resolved in {"bytes", "bytearray"}:
                 return "((java.util.ArrayList<Long>)(" + base + "))"
         return base
+    if kind == "IsInstance":
+        lhs = _render_expr(expr.get("value"))
+        return _render_isinstance_check(lhs, expr.get("expected_type_id"))
     if kind == "Unbox" or kind == "Box":
         return _render_expr(expr.get("value"))
     return "null"
@@ -568,7 +617,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "Expr":
         return [indent + _render_expr(stmt.get("value")) + ";"]
     if kind == "AnnAssign":
-        target = _target_name(stmt.get("target"))
+        target_any = stmt.get("target")
+        if isinstance(target_any, dict) and target_any.get("kind") == "Attribute":
+            return [indent + _render_attribute_expr(target_any) + " = " + _render_expr(stmt.get("value")) + ";"]
+        target = _target_name(target_any)
         decl_type = _java_type(stmt.get("decl_type") or stmt.get("annotation"), allow_void=False)
         if decl_type == "Object":
             inferred = _infer_java_type_from_expr_node(stmt.get("value"))
@@ -599,6 +651,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             targets = [stmt.get("target")]
         if len(targets) == 0:
             return [indent + "// TODO: Assign without target"]
+        if isinstance(targets[0], dict) and targets[0].get("kind") == "Attribute":
+            lhs_attr = _render_attribute_expr(targets[0])
+            value_attr = _render_expr(stmt.get("value"))
+            return [indent + lhs_attr + " = " + value_attr + ";"]
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
             tgt = targets[0]
             owner = _render_expr(tgt.get("value"))
@@ -709,9 +765,23 @@ def _block_guarantees_return(body: list[Any]) -> bool:
 
 
 def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
+    return _emit_function_in_class(fn, indent=indent, in_class=in_class, class_name=None)
+
+
+def _emit_function_in_class(
+    fn: dict[str, Any],
+    *,
+    indent: str,
+    in_class: bool,
+    class_name: str | None,
+) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     return_type = _java_type(fn.get("return_type"), allow_void=True)
     is_static_method = not in_class
+    is_constructor = False
+    if in_class and name == "__init__" and isinstance(class_name, str):
+        is_constructor = True
+        is_static_method = False
     if in_class:
         decorators_any = fn.get("decorators")
         decorators = decorators_any if isinstance(decorators_any, list) else []
@@ -723,10 +793,13 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
                 break
             i += 1
     static_prefix = "public static " if is_static_method else "public "
-    drop_self = in_class and not is_static_method
+    drop_self = in_class and (not is_static_method or is_constructor)
     params = _function_params(fn, drop_self=drop_self)
     lines: list[str] = []
-    lines.append(indent + static_prefix + return_type + " " + name + "(" + ", ".join(params) + ") {")
+    if is_constructor and isinstance(class_name, str):
+        lines.append(indent + "public " + class_name + "(" + ", ".join(params) + ") {")
+    else:
+        lines.append(indent + static_prefix + return_type + " " + name + "(" + ", ".join(params) + ") {")
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
     ctx: dict[str, Any] = {"tmp": 0, "declared": set()}
@@ -742,7 +815,7 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
         i += 1
     if len(body) == 0:
         lines.append(indent + "    // empty body")
-    if return_type != "void" and not _block_guarantees_return(body):
+    if (not is_constructor) and return_type != "void" and not _block_guarantees_return(body):
         lines.append(indent + "    return " + _default_return_expr(return_type) + ";")
     lines.append(indent + "}")
     return lines
@@ -756,16 +829,67 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         extends = " extends " + _safe_ident(base_any, "Object")
     lines: list[str] = []
     lines.append(indent + "public static class " + class_name + extends + " {")
-    lines.append(indent + "    public " + class_name + "() {")
-    lines.append(indent + "    }")
+
     body_any = cls.get("body")
     body = body_any if isinstance(body_any, list) else []
+    static_field_names: set[str] = set()
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict):
+            kind = node.get("kind")
+            target = node.get("target")
+            if kind in {"AnnAssign", "Assign"} and isinstance(target, dict) and target.get("kind") == "Name":
+                field_name = _safe_ident(target.get("id"), "value")
+                field_type = _java_type(node.get("decl_type") or node.get("annotation"), allow_void=False)
+                if field_type == "Object":
+                    field_type = _infer_java_type_from_expr_node(node.get("value"))
+                if field_type == "void":
+                    field_type = "Object"
+                field_value = _render_expr(node.get("value"))
+                if field_value == "null" and field_type == "long":
+                    field_value = "0L"
+                if field_value == "null" and field_type == "double":
+                    field_value = "0.0"
+                if field_value == "null" and field_type == "boolean":
+                    field_value = "false"
+                if field_value == "null" and field_type == "String":
+                    field_value = '""'
+                lines.append(indent + "    public static " + field_type + " " + field_name + " = " + field_value + ";")
+                static_field_names.add(field_name)
+        i += 1
+
+    field_types_any = cls.get("field_types")
+    field_types = field_types_any if isinstance(field_types_any, dict) else {}
+    for raw_name, raw_type in field_types.items():
+        if not isinstance(raw_name, str):
+            continue
+        field_name = _safe_ident(raw_name, "field")
+        if field_name in static_field_names:
+            continue
+        field_type = _java_type(raw_type, allow_void=False)
+        if field_type == "void":
+            field_type = "Object"
+        lines.append(indent + "    public " + field_type + " " + field_name + ";")
+
+    has_init = False
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "FunctionDef" and _safe_ident(node.get("name"), "") == "__init__":
+            has_init = True
+            break
+        i += 1
+    if not has_init:
+        lines.append(indent + "    public " + class_name + "() {")
+        lines.append(indent + "    }")
+
     i = 0
     while i < len(body):
         node = body[i]
         if isinstance(node, dict) and node.get("kind") == "FunctionDef":
             lines.append("")
-            lines.extend(_emit_function(node, indent=indent + "    ", in_class=True))
+            lines.extend(_emit_function_in_class(node, indent=indent + "    ", in_class=True, class_name=class_name))
         i += 1
     lines.append(indent + "}")
     return lines
