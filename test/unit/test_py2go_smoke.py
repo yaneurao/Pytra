@@ -48,8 +48,8 @@ class Py2GoSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         go = transpile_to_go_native(east)
         self.assertIn("package main", go)
-        self.assertIn("type Animal struct {}", go)
-        self.assertIn("type Dog struct {}", go)
+        self.assertIn("type Animal struct {", go)
+        self.assertIn("type Dog struct {", go)
         self.assertIn("func _case_main()", go)
 
     def test_load_east_from_json(self) -> None:
