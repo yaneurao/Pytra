@@ -49,6 +49,7 @@
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `bytearray` / `append` / `int` / `float` / `bool` / `str` の基本 call lower と、`png.write_rgb_png` / `save_gif` の no-op マッピング（`__pytra_noop`）を追加。`BinOp.casts` の `float64` 昇格も反映し、`03_julia_set` 生成で `ArrayList<Long>` / `.add()` / `((long)(...))` / `__pytra_noop(...)` を smoke で固定。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `unknown` 型推定、`len()`、`List/Subscript`、Subscript 代入 lower を拡張。`sample/py` 前半 9件（01〜09）を `py2java -> javac` で再確認し `compile_ok 9/9` を達成。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-02`] `super().__init__` を `super(...)` へ lower し、`IsInstance` / `isinstance(...)` を native 経路へ接続。`instanceof` 判定は `((Object)(lhs)) instanceof ...` に統一して sibling class 間の Java 静的型エラーを回避し、`runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` で `pass=8/8` を確認。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-03`] `bytearray(n)` を `__pytra_bytearray(Object)` へ lower して 0 埋めバッファ初期化を実装し、`Import` / `ImportFrom` を native 経路で明示 no-op 化。`runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` で `pass=7/7` を確認。
 
 ## 分解
 
@@ -57,7 +58,7 @@
 - [x] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
 - [x] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
 - [x] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
-- [ ] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
+- [x] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。

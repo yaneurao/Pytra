@@ -40,7 +40,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`; make native default and isolate old sidecar as compatibility mode.
 5. [x] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native expression/statement coverage (arithmetic, conditionals, loops, function calls, basic built-ins) and pass early `sample/py` cases.
 6. [x] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks in native route and pass OOP cases.
-7. [ ] [ID: P3-JAVA-NATIVE-01-S2-03] Add minimal compatibility for `import math` and image runtime calls (`png`/`gif`) for practical sample cases.
+7. [x] [ID: P3-JAVA-NATIVE-01-S2-03] Add minimal compatibility for `import math` and image runtime calls (`png`/`gif`) for practical sample cases.
 8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile` / unit smoke / parity with native as default and lock regression detection.
 9. [ ] [ID: P3-JAVA-NATIVE-01-S3-02] Regenerate `sample/java` and replace preview summary output with native implementation output.
 10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] Update Java descriptions in `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` from sidecar assumptions and sync operation steps.
@@ -54,6 +54,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 - `P3-JAVA-NATIVE-01-S2-01` Added basic lowers for `bytearray`/`append`/`int()` and image-runtime call no-op mapping, and locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) via smoke tests.
 - `P3-JAVA-NATIVE-01-S2-01` Extended unknown-type inference, `len()`, `List/Subscript`, and subscript-assignment lowering, and verified `compile_ok 9/9` for early `sample/py` cases (01–09) via `py2java -> javac`.
 - `P3-JAVA-NATIVE-01-S2-02` Completed native lowering for `super().__init__`, `IsInstance`, and `isinstance(...)`; switched Java `instanceof` checks to `((Object)(lhs)) instanceof ...` to avoid static-type rejection on sibling classes. Verified OOP parity with `runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` (`pass=8/8`).
+- `P3-JAVA-NATIVE-01-S2-03` Added `__pytra_bytearray(Object)` lowering for `bytearray(n)` zero-filled buffers and treated `Import/ImportFrom` as explicit no-op in native emission. Verified practical sample compatibility with `runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` (`pass=7/7`).
 
 ### P0: Implement common EAST3 optimizer layer (Highest)
 

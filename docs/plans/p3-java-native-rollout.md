@@ -49,6 +49,7 @@ Decision log:
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added basic call lowering for `bytearray` / `append` / `int` / `float` / `bool` / `str`, mapped `png.write_rgb_png` / `save_gif` to no-op (`__pytra_noop`), and applied `BinOp.casts` float-promotion handling. Locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) in smoke tests.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Extended lowering for `unknown` type inference, `len()`, `List/Subscript`, and subscript assignment, and revalidated early `sample/py` cases (01–09) with `py2java -> javac` at `compile_ok 9/9`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-02`] Lowered `super().__init__` to `super(...)` and wired native handling for both `IsInstance` and `isinstance(...)`. Unified Java `instanceof` checks to `((Object)(lhs)) instanceof ...` to avoid static-type rejection across sibling classes, then verified OOP parity on `class_instance/class_member/inheritance/inheritance_polymorphic_dispatch/is_instance/instance_member/super_init/stateless_value` with `pass=8/8`.
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-03`] Added `__pytra_bytearray(Object)` lowering so `bytearray(n)` allocates zero-filled buffers, and treated `Import` / `ImportFrom` as explicit no-op in native emission. Verified practical sample coverage with `runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` (`pass=7/7`).
 
 ## Breakdown
 
@@ -57,7 +58,7 @@ Decision log:
 - [x] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`, make native the default, and isolate legacy sidecar into compatibility mode.
 - [x] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native emitter support for expressions/statements (arithmetic, conditionals, loops, function calls, built-in primitive types) and pass early `sample/py` cases.
 - [x] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks to native route and pass OOP cases.
-- [ ] [ID: P3-JAVA-NATIVE-01-S2-03] Provide minimal compatibility for `import math` and image runtime calls (`png`/`gif`) to handle practical sample cases.
+- [x] [ID: P3-JAVA-NATIVE-01-S2-03] Provide minimal compatibility for `import math` and image runtime calls (`png`/`gif`) to handle practical sample cases.
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile`, unit smoke, and parity in native-default mode; lock regression detection.
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-02] Regenerate `sample/java` and replace preview summary outputs with native implementation outputs.
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-03] Update Java descriptions in `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` from sidecar assumptions and sync operational instructions.
