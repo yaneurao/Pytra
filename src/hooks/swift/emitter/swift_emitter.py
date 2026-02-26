@@ -1,6 +1,7 @@
-"""EAST -> Swift transpiler.
+"""EAST -> Swift sidecar compatibility emitter.
 
 Swift 本体は Node bridge を生成し、同名 sidecar JavaScript を実行する。
+native 既定経路は `swift_native_emitter.py` を参照。
 """
 
 from __future__ import annotations
