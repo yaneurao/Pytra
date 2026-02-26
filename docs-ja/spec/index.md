@@ -17,6 +17,7 @@
 - フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)
 - EAST 統合仕様（現行正本）: [EAST仕様（統合）](./spec-east.md)
 - EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
+- EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
 - EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
 - EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
@@ -47,6 +48,8 @@
   - [フォルダ責務マップ仕様](./spec-folder.md)
 - EAST を三段（EAST1/EAST2/EAST3）でどう運用するかを確認したい場合:
   - [EAST 段階構成](./spec-east.md#east-stages)
+- `EAST3` 最適化層（共通/言語別）の責務・契約を確認したい場合:
+  - [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:
   - [責務対応表](./spec-east.md#east-file-mapping)
 - `EAST1` build 入口（`east1_build.py`）の責務境界を確認したい場合:
