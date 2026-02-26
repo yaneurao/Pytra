@@ -528,6 +528,20 @@ class RustEmitter(CodeEmitter):
             for item in target:
                 self._collect_store_name_counts_from_target(item, counts)
 
+    def _collect_store_name_counts_from_target_plan(self, target_plan: Any, counts: dict[str, int]) -> None:
+        """ForCore target_plan から束縛名書き込み回数を収集する。"""
+        d = self.any_to_dict_or_empty(target_plan)
+        kind = self.any_dict_get_str(d, "kind", "")
+        if kind == "NameTarget":
+            self._increment_name_count(counts, self.any_dict_get_str(d, "id", ""))
+            return
+        if kind == "TupleTarget":
+            for elem in self.any_to_list(d.get("elements")):
+                self._collect_store_name_counts_from_target_plan(elem, counts)
+            return
+        if kind == "ExprTarget":
+            self._collect_store_name_counts_from_target(d.get("target"), counts)
+
     def _collect_name_write_counts(self, stmts: list[dict[str, Any]]) -> dict[str, int]:
         """関数本文の書き込み回数（束縛名単位）を収集する。"""
         out: dict[str, int] = {}
@@ -538,7 +552,17 @@ class RustEmitter(CodeEmitter):
             if kind == "FunctionDef" or kind == "ClassDef":
                 continue
             if kind == "Assign" or kind == "AnnAssign" or kind == "AugAssign":
-                self._collect_store_name_counts_from_target(st.get("target"), out)
+                if kind == "Assign":
+                    target_any = st.get("target")
+                    target_d = self.any_to_dict_or_empty(target_any)
+                    if len(target_d) > 0:
+                        self._collect_store_name_counts_from_target(target_d, out)
+                    else:
+                        targets = self._dict_stmt_list(st.get("targets"))
+                        for tgt in targets:
+                            self._collect_store_name_counts_from_target(tgt, out)
+                else:
+                    self._collect_store_name_counts_from_target(st.get("target"), out)
                 continue
             if kind == "Swap":
                 self._collect_store_name_counts_from_target(st.get("left"), out)
@@ -553,6 +577,19 @@ class RustEmitter(CodeEmitter):
                     out[name] = out.get(name, 0) + cnt
                 orelse_obj: Any = st.get("orelse")
                 orelse: list[dict[str, Any]] = orelse_obj if isinstance(orelse_obj, list) else []
+                orelse_counts = self._collect_name_write_counts(orelse)
+                for name, cnt in orelse_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                continue
+            if kind == "ForCore":
+                self._collect_store_name_counts_from_target_plan(st.get("target_plan"), out)
+                body_obj = st.get("body")
+                body = body_obj if isinstance(body_obj, list) else []
+                body_counts = self._collect_name_write_counts(body)
+                for name, cnt in body_counts.items():
+                    out[name] = out.get(name, 0) + cnt
+                orelse_obj = st.get("orelse")
+                orelse = orelse_obj if isinstance(orelse_obj, list) else []
                 orelse_counts = self._collect_name_write_counts(orelse)
                 for name, cnt in orelse_counts.items():
                     out[name] = out.get(name, 0) + cnt
@@ -787,9 +824,10 @@ class RustEmitter(CodeEmitter):
             kind = self.any_dict_get_str(st, "kind", "")
             if kind == "FunctionDef" or kind == "ClassDef":
                 continue
-            if kind == "If" or kind == "While" or kind == "For" or kind == "ForRange":
+            if kind == "If" or kind == "While" or kind == "For" or kind == "ForRange" or kind == "ForCore":
                 self._collect_mutating_call_counts_from_expr(st.get("test"), out)
                 self._collect_mutating_call_counts_from_expr(st.get("iter"), out)
+                self._collect_mutating_call_counts_from_expr(st.get("iter_plan"), out)
                 self._collect_mutating_call_counts_from_expr(st.get("start"), out)
                 self._collect_mutating_call_counts_from_expr(st.get("stop"), out)
                 self._collect_mutating_call_counts_from_expr(st.get("step"), out)
@@ -1377,9 +1415,16 @@ class RustEmitter(CodeEmitter):
         self.indent -= 1
         self.emit("}")
         self.emit("")
-        self.emit("fn py_any_to_i64(v: &PyAny) -> i64 {")
+        self.emit("trait PyAnyToI64Arg {")
         self.indent += 1
-        self.emit("match v {")
+        self.emit("fn py_any_to_i64_arg(&self) -> i64;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for PyAny {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 {")
+        self.indent += 1
+        self.emit("match self {")
         self.indent += 1
         self.emit("PyAny::Int(n) => *n,")
         self.emit("PyAny::Float(f) => *f as i64,")
@@ -1390,10 +1435,59 @@ class RustEmitter(CodeEmitter):
         self.emit("}")
         self.indent -= 1
         self.emit("}")
-        self.emit("")
-        self.emit("fn py_any_to_f64(v: &PyAny) -> f64 {")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for i64 {")
         self.indent += 1
-        self.emit("match v {")
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { *self }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for i32 {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { *self as i64 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for f64 {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { *self as i64 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for f32 {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { *self as i64 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for bool {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { if *self { 1 } else { 0 } }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for String {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { self.parse::<i64>().unwrap_or(0) }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToI64Arg for str {")
+        self.indent += 1
+        self.emit("fn py_any_to_i64_arg(&self) -> i64 { self.parse::<i64>().unwrap_or(0) }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("fn py_any_to_i64<T: PyAnyToI64Arg + ?Sized>(v: &T) -> i64 {")
+        self.indent += 1
+        self.emit("v.py_any_to_i64_arg()")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("trait PyAnyToF64Arg {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for PyAny {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 {")
+        self.indent += 1
+        self.emit("match self {")
         self.indent += 1
         self.emit("PyAny::Int(n) => *n as f64,")
         self.emit("PyAny::Float(f) => *f,")
@@ -1404,10 +1498,59 @@ class RustEmitter(CodeEmitter):
         self.emit("}")
         self.indent -= 1
         self.emit("}")
-        self.emit("")
-        self.emit("fn py_any_to_bool(v: &PyAny) -> bool {")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for f64 {")
         self.indent += 1
-        self.emit("match v {")
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { *self }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for f32 {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { *self as f64 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for i64 {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { *self as f64 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for i32 {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { *self as f64 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for bool {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { if *self { 1.0 } else { 0.0 } }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for String {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { self.parse::<f64>().unwrap_or(0.0) }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToF64Arg for str {")
+        self.indent += 1
+        self.emit("fn py_any_to_f64_arg(&self) -> f64 { self.parse::<f64>().unwrap_or(0.0) }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("fn py_any_to_f64<T: PyAnyToF64Arg + ?Sized>(v: &T) -> f64 {")
+        self.indent += 1
+        self.emit("v.py_any_to_f64_arg()")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("trait PyAnyToBoolArg {")
+        self.indent += 1
+        self.emit("fn py_any_to_bool_arg(&self) -> bool;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToBoolArg for PyAny {")
+        self.indent += 1
+        self.emit("fn py_any_to_bool_arg(&self) -> bool {")
+        self.indent += 1
+        self.emit("match self {")
         self.indent += 1
         self.emit("PyAny::Int(n) => *n != 0,")
         self.emit("PyAny::Float(f) => *f != 0.0,")
@@ -1421,10 +1564,49 @@ class RustEmitter(CodeEmitter):
         self.emit("}")
         self.indent -= 1
         self.emit("}")
-        self.emit("")
-        self.emit("fn py_any_to_string(v: &PyAny) -> String {")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToBoolArg for bool {")
         self.indent += 1
-        self.emit("match v {")
+        self.emit("fn py_any_to_bool_arg(&self) -> bool { *self }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToBoolArg for i64 {")
+        self.indent += 1
+        self.emit("fn py_any_to_bool_arg(&self) -> bool { *self != 0 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToBoolArg for f64 {")
+        self.indent += 1
+        self.emit("fn py_any_to_bool_arg(&self) -> bool { *self != 0.0 }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToBoolArg for String {")
+        self.indent += 1
+        self.emit("fn py_any_to_bool_arg(&self) -> bool { !self.is_empty() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToBoolArg for str {")
+        self.indent += 1
+        self.emit("fn py_any_to_bool_arg(&self) -> bool { !self.is_empty() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("fn py_any_to_bool<T: PyAnyToBoolArg + ?Sized>(v: &T) -> bool {")
+        self.indent += 1
+        self.emit("v.py_any_to_bool_arg()")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("trait PyAnyToStringArg {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToStringArg for PyAny {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String {")
+        self.indent += 1
+        self.emit("match self {")
         self.indent += 1
         self.emit("PyAny::Int(n) => n.to_string(),")
         self.emit("PyAny::Float(f) => f.to_string(),")
@@ -1436,6 +1618,38 @@ class RustEmitter(CodeEmitter):
         self.emit("PyAny::None => String::new(),")
         self.indent -= 1
         self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToStringArg for String {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String { self.clone() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToStringArg for str {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String { self.to_string() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToStringArg for i64 {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String { self.to_string() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToStringArg for f64 {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String { self.to_string() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("impl PyAnyToStringArg for bool {")
+        self.indent += 1
+        self.emit("fn py_any_to_string_arg(&self) -> String { self.to_string() }")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("fn py_any_to_string<T: PyAnyToStringArg + ?Sized>(v: &T) -> String {")
+        self.indent += 1
+        self.emit("v.py_any_to_string_arg()")
         self.indent -= 1
         self.emit("}")
 
@@ -1688,8 +1902,10 @@ class RustEmitter(CodeEmitter):
             self.emit("")
         self._emit_runtime_support()
         self.emit("")
+        pyany_emitted = False
         if self.uses_pyany:
             self._emit_pyany_runtime()
+            pyany_emitted = True
             self.emit("")
         if self.uses_isinstance_runtime:
             self._prepare_type_id_table()
@@ -1720,6 +1936,11 @@ class RustEmitter(CodeEmitter):
             scope: set[str] = set()
             self.emit_scoped_stmt_list(top_level_stmts + main_guard_body, scope)
             self.emit("}")
+
+        if self.uses_pyany and not pyany_emitted:
+            # Some Any coercions are discovered during rendering; emit helpers late if needed.
+            self.emit("")
+            self._emit_pyany_runtime()
 
         return "\n".join(self.lines) + ("\n" if len(self.lines) > 0 else "")
 
@@ -2551,7 +2772,7 @@ class RustEmitter(CodeEmitter):
             if self._is_int_type(target_t):
                 value = "py_any_to_i64(&" + value + ")"
             elif self._is_float_type(target_t):
-                value = "py_any_to_f64(&" + value + ")"
+                value = "py_any_to_f64(&(" + value + "))"
             elif target_t == "bool":
                 value = "py_any_to_bool(&" + value + ")"
             elif target_t == "str" and mapped == "+=":
@@ -3023,7 +3244,7 @@ class RustEmitter(CodeEmitter):
                     arg_any = self._is_any_type(self._dict_get_owner_value_type(arg_nodes[0]))
                 if arg_any:
                     self.uses_pyany = True
-                    return "py_any_to_f64(&" + merged_args[0] + ")"
+                    return "py_any_to_f64(&(" + merged_args[0] + "))"
                 return "((" + merged_args[0] + ") as f64)"
             if fn_name_raw == "bool" and len(merged_args) == 1:
                 arg_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0] if len(arg_nodes) > 0 else None))
@@ -3277,7 +3498,7 @@ class RustEmitter(CodeEmitter):
                 return "py_any_to_i64(&" + value + ")"
             if self._is_float_type(target_t):
                 self.uses_pyany = True
-                return "py_any_to_f64(&" + value + ")"
+                return "py_any_to_f64(&(" + value + "))"
             if target_t == "bool":
                 self.uses_pyany = True
                 return "py_any_to_bool(&" + value + ")"
