@@ -185,6 +185,21 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("r = ((long)(", java)
         self.assertIn("__pytra_noop(out_path, width, height, pixels);", java)
 
+    def test_java_native_emitter_maps_math_calls_to_java_math(self) -> None:
+        sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("double angle = ((2.0 * Math.PI) * t);", java)
+        self.assertIn("Math.cos(angle)", java)
+        self.assertIn("Math.sin(angle)", java)
+
+    def test_java_native_emitter_lowers_len_and_subscript_set(self) -> None:
+        sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn(".size()", java)
+        self.assertIn(".set((int)(", java)
+
     def test_java_native_emitter_rejects_non_module_root(self) -> None:
         with self.assertRaises(RuntimeError):
             transpile_to_java_native({"kind": "FunctionDef"}, class_name="Main")

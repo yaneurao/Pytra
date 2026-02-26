@@ -38,7 +38,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (input EAST3 responsibilities, fail-closed behavior for unsupported nodes, runtime boundary) and clarify diffs from preview output.
 3. [x] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton under `src/hooks/java/emitter` and pass minimal executable path for module/function/class.
 4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`; make native default and isolate old sidecar as compatibility mode.
-5. [ ] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native expression/statement coverage (arithmetic, conditionals, loops, function calls, basic built-ins) and pass early `sample/py` cases.
+5. [x] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native expression/statement coverage (arithmetic, conditionals, loops, function calls, basic built-ins) and pass early `sample/py` cases.
 6. [ ] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks in native route and pass OOP cases.
 7. [ ] [ID: P3-JAVA-NATIVE-01-S2-03] Add minimal compatibility for `import math` and image runtime calls (`png`/`gif`) for practical sample cases.
 8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile` / unit smoke / parity with native as default and lock regression detection.
@@ -52,6 +52,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 - `P3-JAVA-NATIVE-01-S2-01` Added simple return-flow analysis to suppress unreachable fallback `return` insertion when both `if/else` branches return, fixing the `if_else` compile failure.
 - `P3-JAVA-NATIVE-01-S2-01` Wired `main_guard_body` into generated `main()`, added minimal lowers for `py_assert_*` and `perf_counter`, and prevented re-declaration on reassignment via a declared-name set. Verified passes on `fixture: add/if_else/for_range/inheritance` and `sample:17_monte_carlo_pi` with `runtime_parity_check --targets java`.
 - `P3-JAVA-NATIVE-01-S2-01` Added basic lowers for `bytearray`/`append`/`int()` and image-runtime call no-op mapping, and locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) via smoke tests.
+- `P3-JAVA-NATIVE-01-S2-01` Extended unknown-type inference, `len()`, `List/Subscript`, and subscript-assignment lowering, and verified `compile_ok 9/9` for early `sample/py` cases (01–09) via `py2java -> javac`.
 
 ### P0: Implement common EAST3 optimizer layer (Highest)
 

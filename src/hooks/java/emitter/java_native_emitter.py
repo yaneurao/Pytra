@@ -22,6 +22,8 @@ def _safe_ident(name: Any, fallback: str) -> str:
     out = "".join(chars)
     if out == "":
         out = fallback
+    if out == "_":
+        out = "__"
     if out[0].isdigit():
         out = "_" + out
     return out
@@ -32,6 +34,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "Object"
     if type_name == "None":
         return "void" if allow_void else "Object"
+    if type_name in {"unknown", "object", "any"}:
+        return "Object"
     if type_name in {"int", "int64"}:
         return "long"
     if type_name in {"float", "float64"}:
@@ -40,6 +44,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "boolean"
     if type_name == "str":
         return "String"
+    if type_name == "bytes":
+        return "java.util.ArrayList<Long>"
     if type_name == "bytearray":
         return "java.util.ArrayList<Long>"
     if type_name.startswith("list["):
@@ -82,6 +88,15 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
         return "null"
     value = expr.get("value")
     if value is None:
+        resolved = expr.get("resolved_type")
+        if resolved in {"int", "int64"}:
+            return "0L"
+        if resolved in {"float", "float64"}:
+            return "0.0"
+        if resolved == "bool":
+            return "false"
+        if resolved == "str":
+            return '""'
         return "null"
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -197,8 +212,15 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
-    value = _render_expr(expr.get("value"))
+    value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
+    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+        owner = _safe_ident(value_any.get("id"), "")
+        if owner == "math" and attr == "pi":
+            return "Math.PI"
+        if owner == "math" and attr == "e":
+            return "Math.E"
+    value = _render_expr(value_any)
     return value + "." + attr
 
 
@@ -222,6 +244,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "(System.nanoTime() / 1000000000.0)"
     if callee_name == "bytearray":
         return "new java.util.ArrayList<Long>()"
+    if callee_name == "bytes":
+        if len(args) == 0:
+            return "new java.util.ArrayList<Long>()"
+        return "new java.util.ArrayList<Long>(" + _render_expr(args[0]) + ")"
     if callee_name == "int":
         if len(args) == 0:
             return "0L"
@@ -238,6 +264,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return '""'
         return "String.valueOf(" + _render_expr(args[0]) + ")"
+    if callee_name == "len":
+        if len(args) == 0:
+            return "0L"
+        return "((long)(" + _render_expr(args[0]) + ".size()))"
+    if callee_name in {"save_gif", "write_rgb_png"}:
+        rendered_noop_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_noop_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+    if callee_name == "grayscale_palette":
+        return "new java.util.ArrayList<Long>()"
     if callee_name == "print":
         if len(args) == 0:
             return "System.out.println()"
@@ -252,6 +291,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
+        owner_any = func_any.get("value")
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+            owner = _safe_ident(owner_any.get("id"), "")
+            if owner == "math":
+                rendered_math_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_math_args.append(_render_expr(args[i]))
+                    i += 1
+                return "Math." + attr_name + "(" + ", ".join(rendered_math_args) + ")"
         owner_expr = _render_expr(func_any.get("value"))
         if attr_name == "append" and len(args) == 1:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
@@ -299,6 +348,45 @@ def _render_expr(expr: Any) -> str:
         return _render_attribute_expr(expr)
     if kind == "Call":
         return _render_call_expr(expr)
+    if kind == "List":
+        elements_any = expr.get("elements")
+        elements = elements_any if isinstance(elements_any, list) else []
+        rendered: list[str] = []
+        i = 0
+        while i < len(elements):
+            rendered.append(_render_expr(elements[i]))
+            i += 1
+        return "new java.util.ArrayList<Object>(java.util.Arrays.asList(" + ", ".join(rendered) + "))"
+    if kind == "Tuple":
+        elements_any = expr.get("elements")
+        elements = elements_any if isinstance(elements_any, list) else []
+        rendered: list[str] = []
+        i = 0
+        while i < len(elements):
+            rendered.append(_render_expr(elements[i]))
+            i += 1
+        return "new java.util.ArrayList<Object>(java.util.Arrays.asList(" + ", ".join(rendered) + "))"
+    if kind == "ListComp":
+        return "new java.util.ArrayList<Object>()"
+    if kind == "Subscript":
+        value_any = expr.get("value")
+        index_any = expr.get("slice")
+        base = _render_expr(value_any) + ".get((int)(" + _render_expr(index_any) + "))"
+        resolved = expr.get("resolved_type")
+        if isinstance(resolved, str):
+            if resolved in {"int", "int64", "uint8"}:
+                return "((Long)(" + base + "))"
+            if resolved in {"float", "float64"}:
+                return "((Double)(" + base + "))"
+            if resolved == "bool":
+                return "((Boolean)(" + base + "))"
+            if resolved == "str":
+                return "String.valueOf(" + base + ")"
+            if resolved.startswith("list["):
+                return "((java.util.ArrayList<Object>)(" + base + "))"
+            if resolved in {"bytes", "bytearray"}:
+                return "((java.util.ArrayList<Long>)(" + base + "))"
+        return base
     if kind == "Unbox" or kind == "Box":
         return _render_expr(expr.get("value"))
     return "null"
@@ -374,6 +462,56 @@ def _declared_set(ctx: dict[str, Any]) -> set[str]:
     return fresh
 
 
+def _infer_java_type_from_expr_node(expr: Any) -> str:
+    if not isinstance(expr, dict):
+        return "Object"
+    kind = expr.get("kind")
+    if kind == "Unbox":
+        target = expr.get("target")
+        inferred = _java_type(target, allow_void=False)
+        if inferred != "Object":
+            return inferred
+    if kind == "Call":
+        func_any = expr.get("func")
+        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+            owner_any = func_any.get("value")
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner = _safe_ident(owner_any.get("id"), "")
+                if owner == "math":
+                    return "double"
+        name = _call_name(expr)
+        if name == "perf_counter":
+            return "double"
+        if name == "float":
+            return "double"
+        if name == "int":
+            return "long"
+        if name == "bool":
+            return "boolean"
+        if name == "str":
+            return "String"
+    if kind == "BinOp":
+        left_t = _infer_java_type_from_expr_node(expr.get("left"))
+        right_t = _infer_java_type_from_expr_node(expr.get("right"))
+        op = expr.get("op")
+        if op == "Div":
+            return "double"
+        if left_t == "double" or right_t == "double":
+            return "double"
+        if left_t == "long" and right_t == "long":
+            return "long"
+    if kind == "UnaryOp":
+        return _infer_java_type_from_expr_node(expr.get("operand"))
+    if kind == "Subscript":
+        resolved = expr.get("resolved_type")
+        inferred = _java_type(resolved, allow_void=False)
+        if inferred != "Object":
+            return inferred
+    resolved = expr.get("resolved_type")
+    inferred = _java_type(resolved, allow_void=False)
+    return inferred
+
+
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
@@ -432,9 +570,21 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "AnnAssign":
         target = _target_name(stmt.get("target"))
         decl_type = _java_type(stmt.get("decl_type") or stmt.get("annotation"), allow_void=False)
+        if decl_type == "Object":
+            inferred = _infer_java_type_from_expr_node(stmt.get("value"))
+            if inferred != "Object":
+                decl_type = inferred
         if decl_type == "void":
             decl_type = "Object"
         value = _render_expr(stmt.get("value"))
+        if value == "null" and decl_type == "long":
+            value = "0L"
+        if value == "null" and decl_type == "double":
+            value = "0.0"
+        if value == "null" and decl_type == "boolean":
+            value = "false"
+        if value == "null" and decl_type == "String":
+            value = '""'
         declared = _declared_set(ctx)
         if stmt.get("declare") is False:
             return [indent + target + " = " + value + ";"]
@@ -449,6 +599,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             targets = [stmt.get("target")]
         if len(targets) == 0:
             return [indent + "// TODO: Assign without target"]
+        if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
+            tgt = targets[0]
+            owner = _render_expr(tgt.get("value"))
+            index = _render_expr(tgt.get("slice"))
+            value = _render_expr(stmt.get("value"))
+            return [indent + owner + ".set((int)(" + index + "), " + value + ");"]
         lhs = _target_name(targets[0])
         value = _render_expr(stmt.get("value"))
         declared = _declared_set(ctx)
@@ -456,8 +612,20 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if lhs in declared:
                 return [indent + lhs + " = " + value + ";"]
             decl_type = _java_type(stmt.get("decl_type"), allow_void=False)
+            if decl_type == "Object":
+                inferred = _infer_java_type_from_expr_node(stmt.get("value"))
+                if inferred != "Object":
+                    decl_type = inferred
             if decl_type == "void":
                 decl_type = "Object"
+            if value == "null" and decl_type == "long":
+                value = "0L"
+            if value == "null" and decl_type == "double":
+                value = "0.0"
+            if value == "null" and decl_type == "boolean":
+                value = "false"
+            if value == "null" and decl_type == "String":
+                value = '""'
             declared.add(lhs)
             return [indent + decl_type + " " + lhs + " = " + value + ";"]
         return [indent + lhs + " = " + value + ";"]
@@ -469,22 +637,27 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "If":
         test_expr = _render_expr(stmt.get("test"))
         lines: list[str] = [indent + "if (" + test_expr + ") {"]
+        declared_parent = set(_declared_set(ctx))
+        body_ctx: dict[str, Any] = {"tmp": ctx.get("tmp", 0), "declared": set(declared_parent)}
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
             i += 1
         orelse_any = stmt.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
+        orelse_ctx: dict[str, Any] = {"tmp": body_ctx.get("tmp", ctx.get("tmp", 0)), "declared": set(declared_parent)}
         if len(orelse) == 0:
+            ctx["tmp"] = orelse_ctx.get("tmp", ctx.get("tmp", 0))
             lines.append(indent + "}")
             return lines
         lines.append(indent + "} else {")
         i = 0
         while i < len(orelse):
-            lines.extend(_emit_stmt(orelse[i], indent=indent + "    ", ctx=ctx))
+            lines.extend(_emit_stmt(orelse[i], indent=indent + "    ", ctx=orelse_ctx))
             i += 1
+        ctx["tmp"] = orelse_ctx.get("tmp", ctx.get("tmp", 0))
         lines.append(indent + "}")
         return lines
     if kind == "ForCore":
