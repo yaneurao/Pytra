@@ -57,6 +57,7 @@
 - `P3-JAVA-NATIVE-01-S2-02` `super().__init__` / `IsInstance` / `isinstance(...)` の native lower を補強し、`((Object)(lhs)) instanceof ...` で Java 静的型制約を回避。`runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` で `pass=8/8` を確認。
 - `P3-JAVA-NATIVE-01-S2-03` `bytearray(n)` を 0 埋め配列へ lower する `__pytra_bytearray(Object)` を追加し、`Import/ImportFrom` を no-op 化。`runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` で `pass=7/7` を確認。
 - `P3-JAVA-NATIVE-01-S3-01` native parity を強化。`listcomp(range)` 代入、`min/max`、`tuple` 分解/swap 代入、list truthy、negative index、`IfExp` lower を追加し、`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` が `pass=16/18`（残: `16_glass_sculpture_chaos`, `18_mini_language_interpreter`）まで改善。
+- `P3-JAVA-NATIVE-01-S3-01` 型追跡（`ctx.types`）と loop scope の宣言漏れ調整を追加し、`16_glass_sculpture_chaos` を解消。`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` は `pass=17/18`（残: `18_mini_language_interpreter`）まで改善。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 

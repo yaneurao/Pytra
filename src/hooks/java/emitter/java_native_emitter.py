@@ -644,10 +644,25 @@ def _declared_set(ctx: dict[str, Any]) -> set[str]:
     return fresh
 
 
-def _infer_java_type_from_expr_node(expr: Any) -> str:
+def _type_map(ctx: dict[str, Any]) -> dict[str, str]:
+    types = ctx.get("types")
+    if isinstance(types, dict):
+        return types
+    fresh: dict[str, str] = {}
+    ctx["types"] = fresh
+    return fresh
+
+
+def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None = None) -> str:
     if not isinstance(expr, dict):
         return "Object"
     kind = expr.get("kind")
+    if kind == "Name" and isinstance(type_map, dict):
+        ident = _safe_ident(expr.get("id"), "")
+        if ident in type_map:
+            mapped = type_map[ident]
+            if mapped != "":
+                return mapped
     if kind == "Unbox":
         target = expr.get("target")
         inferred = _java_type(target, allow_void=False)
@@ -687,8 +702,8 @@ def _infer_java_type_from_expr_node(expr: Any) -> str:
         if name == "str":
             return "String"
     if kind == "BinOp":
-        left_t = _infer_java_type_from_expr_node(expr.get("left"))
-        right_t = _infer_java_type_from_expr_node(expr.get("right"))
+        left_t = _infer_java_type_from_expr_node(expr.get("left"), type_map)
+        right_t = _infer_java_type_from_expr_node(expr.get("right"), type_map)
         op = expr.get("op")
         if op == "Div":
             return "double"
@@ -707,7 +722,7 @@ def _infer_java_type_from_expr_node(expr: Any) -> str:
         if op in {"Add", "Sub", "Mult", "Div", "Mod", "FloorDiv"} and left_t == "Object" and right_t == "Object":
             return "long"
     if kind == "UnaryOp":
-        return _infer_java_type_from_expr_node(expr.get("operand"))
+        return _infer_java_type_from_expr_node(expr.get("operand"), type_map)
     if kind == "Subscript":
         resolved = expr.get("resolved_type")
         inferred = _java_type(resolved, allow_void=False)
@@ -738,6 +753,8 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     lines.append(indent + target_type + " " + step_tmp + " = " + step_expr + ";")
     cond = "(" + step_tmp + " >= 0L) ? (" + target_name + " < " + stop_expr + ") : (" + target_name + " > " + stop_expr + ")"
     declared = _declared_set(ctx)
+    type_map = _type_map(ctx)
+    type_map[target_name] = target_type
     if target_name in declared:
         init = target_name + " = " + start_expr
     else:
@@ -756,10 +773,16 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     )
     body_any = stmt.get("body")
     body = body_any if isinstance(body_any, list) else []
+    body_ctx: dict[str, Any] = {
+        "tmp": ctx.get("tmp", 0),
+        "declared": set(_declared_set(ctx)),
+        "types": dict(_type_map(ctx)),
+    }
     i = 0
     while i < len(body):
-        lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+        lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
         i += 1
+    ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
     lines.append(indent + "}")
     return lines
 
@@ -792,6 +815,7 @@ def _try_emit_tuple_assign(
     tuple_expr = _render_expr(value_any)
     lines: list[str] = [indent + "java.util.ArrayList<Object> " + tuple_tmp + " = ((java.util.ArrayList<Object>)(" + tuple_expr + "));"]
     declared = _declared_set(ctx)
+    type_map = _type_map(ctx)
     tuple_types = _tuple_element_types(decl_type_any)
     if len(tuple_types) == 0 and isinstance(value_any, dict):
         tuple_types = _tuple_element_types(value_any.get("resolved_type"))
@@ -810,12 +834,17 @@ def _try_emit_tuple_assign(
         if kind == "Name":
             name = _safe_ident(elem.get("id"), "tmp_" + str(i))
             if declare_hint:
-                lines.append(indent + java_type + " " + name + " = " + rhs + ";")
-                declared.add(name)
+                if name in declared:
+                    lines.append(indent + name + " = " + rhs + ";")
+                else:
+                    lines.append(indent + java_type + " " + name + " = " + rhs + ";")
+                    declared.add(name)
+                    type_map[name] = java_type
             else:
                 if name not in declared:
                     lines.append(indent + java_type + " " + name + " = " + rhs + ";")
                     declared.add(name)
+                    type_map[name] = java_type
                 else:
                     lines.append(indent + name + " = " + rhs + ";")
         else:
@@ -920,12 +949,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         target = _target_name(target_any)
         decl_type = _java_type(stmt.get("decl_type") or stmt.get("annotation"), allow_void=False)
         if decl_type == "Object":
-            inferred = _infer_java_type_from_expr_node(stmt.get("value"))
+            inferred = _infer_java_type_from_expr_node(stmt.get("value"), _type_map(ctx))
             if inferred != "Object":
                 decl_type = inferred
         if decl_type == "void":
             decl_type = "Object"
         declared = _declared_set(ctx)
+        type_map = _type_map(ctx)
         if isinstance(stmt.get("value"), dict) and stmt.get("value").get("kind") == "ListComp":
             if stmt.get("declare") is False:
                 listcomp_lines = _try_emit_listcomp_assign(target, stmt.get("value"), decl_prefix="", indent=indent, ctx=ctx)
@@ -945,6 +975,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 )
                 if listcomp_lines is not None:
                     declared.add(target)
+                    type_map[target] = decl_type
                     return listcomp_lines
         value = _render_expr(stmt.get("value"))
         if value == "null" and decl_type == "long":
@@ -960,6 +991,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if target in declared:
             return [indent + target + " = " + value + ";"]
         declared.add(target)
+        type_map[target] = decl_type
         return [indent + decl_type + " " + target + " = " + value + ";"]
     if kind == "Assign":
         targets_any = stmt.get("targets")
@@ -991,6 +1023,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + owner + ".set((int)(" + norm_index + "), " + value + ");"]
         lhs = _target_name(targets[0])
         declared = _declared_set(ctx)
+        type_map = _type_map(ctx)
         if isinstance(stmt.get("value"), dict) and stmt.get("value").get("kind") == "ListComp":
             if stmt.get("declare"):
                 if lhs in declared:
@@ -999,7 +1032,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                         return listcomp_lines
                 decl_type = _java_type(stmt.get("decl_type"), allow_void=False)
                 if decl_type == "Object":
-                    inferred = _infer_java_type_from_expr_node(stmt.get("value"))
+                    inferred = _infer_java_type_from_expr_node(stmt.get("value"), _type_map(ctx))
                     if inferred != "Object":
                         decl_type = inferred
                 if decl_type == "void":
@@ -1013,6 +1046,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 )
                 if listcomp_lines is not None:
                     declared.add(lhs)
+                    type_map[lhs] = decl_type
                     return listcomp_lines
             else:
                 listcomp_lines = _try_emit_listcomp_assign(lhs, stmt.get("value"), decl_prefix="", indent=indent, ctx=ctx)
@@ -1024,7 +1058,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 return [indent + lhs + " = " + value + ";"]
             decl_type = _java_type(stmt.get("decl_type"), allow_void=False)
             if decl_type == "Object":
-                inferred = _infer_java_type_from_expr_node(stmt.get("value"))
+                inferred = _infer_java_type_from_expr_node(stmt.get("value"), _type_map(ctx))
                 if inferred != "Object":
                     decl_type = inferred
             if decl_type == "void":
@@ -1038,6 +1072,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if value == "null" and decl_type == "String":
                 value = '""'
             declared.add(lhs)
+            type_map[lhs] = decl_type
             return [indent + decl_type + " " + lhs + " = " + value + ";"]
         return [indent + lhs + " = " + value + ";"]
     if kind == "AugAssign":
@@ -1049,7 +1084,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         test_expr = _render_truthy_expr(stmt.get("test"))
         lines: list[str] = [indent + "if (" + test_expr + ") {"]
         declared_parent = set(_declared_set(ctx))
-        body_ctx: dict[str, Any] = {"tmp": ctx.get("tmp", 0), "declared": set(declared_parent)}
+        types_parent = dict(_type_map(ctx))
+        body_ctx: dict[str, Any] = {"tmp": ctx.get("tmp", 0), "declared": set(declared_parent), "types": dict(types_parent)}
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
@@ -1058,7 +1094,11 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             i += 1
         orelse_any = stmt.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
-        orelse_ctx: dict[str, Any] = {"tmp": body_ctx.get("tmp", ctx.get("tmp", 0)), "declared": set(declared_parent)}
+        orelse_ctx: dict[str, Any] = {
+            "tmp": body_ctx.get("tmp", ctx.get("tmp", 0)),
+            "declared": set(declared_parent),
+            "types": dict(types_parent),
+        }
         if len(orelse) == 0:
             ctx["tmp"] = orelse_ctx.get("tmp", ctx.get("tmp", 0))
             lines.append(indent + "}")
@@ -1159,12 +1199,19 @@ def _emit_function_in_class(
         lines.append(indent + static_prefix + return_type + " " + name + "(" + ", ".join(params) + ") {")
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set()}
+    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
     param_names = _function_param_names(fn, drop_self=drop_self)
+    arg_types_any = fn.get("arg_types")
+    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
     declared = _declared_set(ctx)
+    type_map = _type_map(ctx)
     i = 0
     while i < len(param_names):
-        declared.add(param_names[i])
+        param_name = param_names[i]
+        declared.add(param_name)
+        mapped = _java_type(arg_types.get(param_name), allow_void=False)
+        if mapped != "Object" and mapped != "void":
+            type_map[param_name] = mapped
         i += 1
     i = 0
     while i < len(body):
