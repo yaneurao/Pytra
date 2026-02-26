@@ -77,9 +77,9 @@ def _check_east2_boundary(errors: list[str]) -> None:
     rel = path.relative_to(ROOT).as_posix()
     forbidden_import_prefixes = (
         "pytra.compiler.east_parts.east3",
-        "pytra.compiler.east_parts.east3_lowering",
+        "pytra.compiler.east_parts.east2_to_east3_lowering",
         "src.pytra.compiler.east_parts.east3",
-        "src.pytra.compiler.east_parts.east3_lowering",
+        "src.pytra.compiler.east_parts.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "lower_east2_to_east3",
@@ -104,13 +104,13 @@ def _check_code_emitter_boundary(errors: list[str]) -> None:
         "pytra.compiler.east_parts.east1",
         "pytra.compiler.east_parts.east2",
         "pytra.compiler.east_parts.east3",
-        "pytra.compiler.east_parts.east3_lowering",
+        "pytra.compiler.east_parts.east2_to_east3_lowering",
         "src.pytra.compiler.east",
         "src.pytra.compiler.transpile_cli",
         "src.pytra.compiler.east_parts.east1",
         "src.pytra.compiler.east_parts.east2",
         "src.pytra.compiler.east_parts.east3",
-        "src.pytra.compiler.east_parts.east3_lowering",
+        "src.pytra.compiler.east_parts.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "convert_source_to_east_with_backend",

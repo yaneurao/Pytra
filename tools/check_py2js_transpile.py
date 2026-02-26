@@ -49,7 +49,7 @@ def _run_east3_contract_tests() -> tuple[bool, str]:
             "-s",
             "test/unit",
             "-p",
-            "test_east3_lowering.py",
+            "test_east2_to_east3_lowering.py",
         ],
         [
             "python3",

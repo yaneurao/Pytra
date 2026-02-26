@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.compiler.east_parts.east3_lowering import lower_east2_to_east3
+from pytra.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from pytra.std.pathlib import Path
 from pytra.std.typing import Any
 

@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.east3_lowering import lower_east2_to_east3
+from src.pytra.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.pytra.compiler.transpile_cli import load_east3_document
 
 
@@ -21,7 +21,7 @@ def _const_i(v: int) -> dict[str, object]:
     return {"kind": "Constant", "value": v, "resolved_type": "int64"}
 
 
-class East3LoweringTest(unittest.TestCase):
+class East2ToEast3LoweringTest(unittest.TestCase):
     def _collect_runtime_iter_plans(self, node: object) -> list[dict[str, object]]:
         plans: list[dict[str, object]] = []
         if not isinstance(node, dict):
