@@ -52,6 +52,8 @@
 18. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S7-02] `01/04/09/18` を再計測し、clone 抑止の寄与と未解消乖離を記録する。
 19. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S8-01] Rust emitter の subscript->attribute 二重 clone と文字列比較 `to_string()` を削減し、`18` の hot path を軽量化する。
 20. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S8-02] `01/04/09/18` を再計測し、`18` 改善量と残課題（`01/04/09`）を記録する。
+21. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S9-01] Rust emitter で `bytearray()/bytes()` の空初期化に容量推定 (`with_capacity`) を導入し、`pixels` 系ホットパスの再確保を抑止する。
+22. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S9-02] `01/04/09/18` を再計測し、`with_capacity` 導入の寄与と未解消外れ値を更新する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
