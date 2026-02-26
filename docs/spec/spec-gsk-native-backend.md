@@ -69,3 +69,13 @@ Forbidden in default path:
 - `tools/check_py2go_transpile.py`, `tools/check_py2swift_transpile.py`, and `tools/check_py2kotlin_transpile.py` pass with native-by-default behavior.
 - `tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` keeps parity against Python baseline.
 - Regenerated `sample/go`, `sample/swift`, and `sample/kotlin` contain no stale sidecar `.js` outputs.
+
+## 7. Sidecar Compatibility Isolation Policy (S1-02)
+
+- Default behavior is always native; sidecar is allowed only with explicit flags:
+  - Go: `--go-backend sidecar`
+  - Swift: `--swift-backend sidecar`
+  - Kotlin: `--kotlin-backend sidecar`
+- In native mode (explicit or implicit), no `.js` sidecar or JS runtime shim is emitted.
+- In sidecar mode, `.js` generation is allowed only as compatibility mode and is excluded from default CI regression gates.
+- Unsupported input on default path must fail closed; no implicit fallback from native to sidecar is allowed.
