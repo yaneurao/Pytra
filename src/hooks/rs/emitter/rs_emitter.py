@@ -1202,6 +1202,27 @@ class RustEmitter(CodeEmitter):
             return ""
         return self.normalize_type_name(parts[0])
 
+    def _can_borrow_iter_node(self, iter_node: Any) -> bool:
+        """for/enumerate の反復対象を借用で回して良いかを保守的に判定する。"""
+        d = self.any_to_dict_or_empty(iter_node)
+        if self.any_dict_get_str(d, "kind", "") != "Name":
+            return True
+        name_raw = self.any_dict_get_str(d, "id", "")
+        if name_raw == "":
+            return False
+        write_count = self.current_fn_write_counts.get(name_raw, 0)
+        mut_call_count = self.current_fn_mutating_call_counts.get(name_raw, 0)
+        return write_count == 0 and mut_call_count == 0
+
+    def _render_list_iter_expr(self, list_expr: str, list_type: str, can_borrow: bool) -> str:
+        """list 反復の Rust 式を生成する（必要最小限の clone/copy に寄せる）。"""
+        elem_t = self._list_elem_type(list_type)
+        if self._is_copy_type(elem_t):
+            return "(" + list_expr + ").iter().copied()"
+        if can_borrow and (elem_t in self.class_names or elem_t == "str"):
+            return "(" + list_expr + ").iter()"
+        return "(" + list_expr + ").iter().cloned()"
+
     def _is_copy_type(self, east_type: str) -> bool:
         t = self.normalize_type_name(east_type)
         if self._is_int_type(t):
@@ -1260,10 +1281,12 @@ class RustEmitter(CodeEmitter):
             return "", ""
         return self.normalize_type_name(parts[0]), self.normalize_type_name(parts[1])
 
-    def _coerce_dict_key_expr(self, key_expr: str, key_type: str) -> str:
+    def _coerce_dict_key_expr(self, key_expr: str, key_type: str, require_owned: bool = True) -> str:
         """dict key 型に合わせて key 式を補正する。"""
         if self.normalize_type_name(key_type) == "str":
-            return self._ensure_string_owned(key_expr)
+            if require_owned:
+                return self._ensure_string_owned(key_expr)
+            return key_expr
         return key_expr
 
     def _is_dict_with_any_value(self, east_type: str) -> bool:
@@ -2058,7 +2081,10 @@ class RustEmitter(CodeEmitter):
             or iter_type.startswith("set[")
             or iter_type.startswith("dict[")
         ) and (not iter_is_attr_view) and (not iter_is_enumerate_call):
-            iter_expr = "(" + iter_expr + ").clone()"
+            if iter_type.startswith("list["):
+                iter_expr = self._render_list_iter_expr(iter_expr, iter_type, self._can_borrow_iter_node(iter_node))
+            else:
+                iter_expr = "(" + iter_expr + ").clone()"
 
         if target_kind == "Tuple":
             elts = self.tuple_elements(target_node)
@@ -2550,7 +2576,7 @@ class RustEmitter(CodeEmitter):
         term = left_expr + " == " + right_expr
         if right_t.startswith("dict["):
             key_t, _val_t = self._dict_key_value_types(right_t)
-            key_expr = self._coerce_dict_key_expr(left_expr, key_t)
+            key_expr = self._coerce_dict_key_expr(left_expr, key_t, require_owned=False)
             term = right_expr + ".contains_key(&" + key_expr + ")"
         elif right_t == "str":
             if left_t == "str":
@@ -2769,6 +2795,13 @@ class RustEmitter(CodeEmitter):
             if fn_name_raw == "isinstance":
                 return self._render_isinstance_call(rendered_args, arg_nodes)
             if fn_name_raw == "enumerate" and len(merged_args) == 1:
+                arg_node = arg_nodes[0] if len(arg_nodes) > 0 else None
+                arg_t = self.normalize_type_name(self.get_expr_type(arg_node))
+                if arg_t.startswith("list["):
+                    iter_expr = self._render_list_iter_expr(
+                        merged_args[0], arg_t, self._can_borrow_iter_node(arg_node)
+                    )
+                    return iter_expr + ".enumerate().map(|(i, v)| (i as i64, v))"
                 return "(" + merged_args[0] + ").clone().into_iter().enumerate().map(|(i, v)| (i as i64, v))"
             if fn_name_raw == "bytearray":
                 if len(merged_args) == 0:
@@ -2963,14 +2996,14 @@ class RustEmitter(CodeEmitter):
             if owner_type.startswith("dict["):
                 key_t, owner_val_t = self._dict_key_value_types(owner_type)
                 if attr_raw == "get" and len(merged_args) == 1:
-                    key_expr = self._coerce_dict_key_expr(merged_args[0], key_t)
+                    key_expr = self._coerce_dict_key_expr(merged_args[0], key_t, require_owned=False)
                     return owner_expr + ".get(&" + key_expr + ").cloned().unwrap_or_default()"
                 if attr_raw == "get" and len(merged_args) >= 2:
                     default_txt = merged_args[1]
                     if self._is_any_type(owner_val_t) and len(arg_nodes) >= 2:
                         self.uses_pyany = True
                         default_txt = self._render_as_pyany(arg_nodes[1])
-                    key_expr = self._coerce_dict_key_expr(merged_args[0], key_t)
+                    key_expr = self._coerce_dict_key_expr(merged_args[0], key_t, require_owned=False)
                     return owner_expr + ".get(&" + key_expr + ").cloned().unwrap_or(" + default_txt + ")"
             return owner_expr + "." + attr + "(" + ", ".join(merged_args) + ")"
 
@@ -3083,7 +3116,7 @@ class RustEmitter(CodeEmitter):
             if owner_t.startswith("dict["):
                 key_t, _val_t = self._dict_key_value_types(owner_t)
                 key_expr = self.render_expr(expr_d.get("slice"))
-                key_expr = self._coerce_dict_key_expr(key_expr, key_t)
+                key_expr = self._coerce_dict_key_expr(key_expr, key_t, require_owned=False)
                 return owner + ".get(&" + key_expr + ").cloned().expect(\"dict key not found\")"
             if slice_kind == "Slice":
                 self.uses_string_helpers = True
