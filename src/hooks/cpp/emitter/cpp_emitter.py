@@ -211,9 +211,27 @@ class CppEmitter(
         t = self.any_dict_get_str(node_for_base, "resolved_type", "")
         if t != "":
             t = self.normalize_type_name(t)
+        kind = self._node_kind_from_dict(node_for_base)
+        if kind == "Name":
+            nm = self.any_to_str(node_for_base.get("id"))
+            if nm in self.declared_var_types:
+                declared_t = self.normalize_type_name(self.declared_var_types[nm])
+                if declared_t not in {"", "unknown"}:
+                    return declared_t
+        if kind == "Call":
+            call_t = self.normalize_type_name(self._infer_numeric_call_expr_type(node_for_base))
+            if call_t != "":
+                return call_t
+        if kind == "BinOp":
+            numeric_t = self.normalize_type_name(self._infer_numeric_expr_type(node_for_base))
+            if numeric_t != "":
+                return numeric_t
+            left_t = self.normalize_type_name(self.get_expr_type(node_for_base.get("left")))
+            right_t = self.normalize_type_name(self.get_expr_type(node_for_base.get("right")))
+            if self.is_any_like_type(left_t) or self.is_any_like_type(right_t):
+                return "object"
         if t not in {"", "unknown"}:
             return t
-        kind = self._node_kind_from_dict(node_for_base)
         if kind == "Name":
             nm = self.any_to_str(node_for_base.get("id"))
             if nm in self.declared_var_types:
@@ -835,18 +853,127 @@ class CppEmitter(
 
     def _infer_name_assign_type(self, stmt: dict[str, Any], target_node: dict[str, Any]) -> str:
         """`Name = ...` / `AnnAssign Name` の宣言候補型を推定する。"""
-        decl_t = self.any_dict_get_str(stmt, "decl_type", "")
-        if decl_t != "":
-            return self.normalize_type_name(decl_t)
-        ann_t = self.any_dict_get_str(stmt, "annotation", "")
-        if ann_t != "":
-            return self.normalize_type_name(ann_t)
+        decl_t = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
+        if decl_t not in {"", "unknown"}:
+            return decl_t
+        ann_t = self.normalize_type_name(self.any_dict_get_str(stmt, "annotation", ""))
+        if ann_t not in {"", "unknown"}:
+            return ann_t
         t_target = self.get_expr_type(stmt.get("target"))
-        if isinstance(t_target, str) and t_target != "":
-            return self.normalize_type_name(t_target)
+        t_target_norm = self.normalize_type_name(t_target) if isinstance(t_target, str) else ""
+        if t_target_norm not in {"", "unknown"} and (not self.is_any_like_type(t_target_norm)):
+            return t_target_norm
         t_value = self.get_expr_type(stmt.get("value"))
-        if isinstance(t_value, str) and t_value != "":
-            return self.normalize_type_name(t_value)
+        t_value_norm = self.normalize_type_name(t_value) if isinstance(t_value, str) else ""
+        if t_value_norm not in {"", "unknown"} and (not self.is_any_like_type(t_value_norm)):
+            return t_value_norm
+        t_value_numeric = self._infer_numeric_expr_type(stmt.get("value"))
+        if t_value_numeric != "":
+            return self.normalize_type_name(t_value_numeric)
+        if t_value_norm not in {"", "unknown"}:
+            return t_value_norm
+        if t_target_norm not in {"", "unknown"}:
+            return t_target_norm
+        return ""
+
+    def _is_int_decl_type(self, t: str) -> bool:
+        """整数系 decl type か判定する。"""
+        t_norm = self.normalize_type_name(t)
+        return t_norm in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+
+    def _is_float_decl_type(self, t: str) -> bool:
+        """浮動小数点系 decl type か判定する。"""
+        t_norm = self.normalize_type_name(t)
+        return t_norm in {"float32", "float64"}
+
+    def _is_numeric_decl_type(self, t: str) -> bool:
+        """数値系 decl type（int/float）か判定する。"""
+        return self._is_int_decl_type(t) or self._is_float_decl_type(t)
+
+    def _infer_numeric_expr_type(self, expr: Any) -> str:
+        """数値式から宣言候補型（`int64`/`float64`）を推定する。"""
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
+            return ""
+        kind = self._node_kind_from_dict(node)
+        if kind == "Constant":
+            value_obj = node.get("value")
+            if isinstance(value_obj, bool):
+                return "bool"
+            if isinstance(value_obj, int):
+                return "int64"
+            if isinstance(value_obj, float):
+                return "float64"
+            return ""
+        if kind == "Name":
+            name = self.any_to_str(node.get("id"))
+            if name != "" and name in self.declared_var_types:
+                return self.normalize_type_name(self.declared_var_types[name])
+            return ""
+        if kind == "UnaryOp":
+            op = self.any_to_str(node.get("op"))
+            if op in {"USub", "UAdd"}:
+                operand_t = self.normalize_type_name(self._infer_numeric_expr_type(node.get("operand")))
+                if self._is_numeric_decl_type(operand_t):
+                    return operand_t
+            return ""
+        if kind == "Call":
+            return self._infer_numeric_call_expr_type(node)
+        if kind != "BinOp":
+            return ""
+        left_t = self.normalize_type_name(self.get_expr_type(node.get("left")))
+        right_t = self.normalize_type_name(self.get_expr_type(node.get("right")))
+        if left_t in {"", "unknown"}:
+            left_t = self.normalize_type_name(self._infer_numeric_expr_type(node.get("left")))
+        if right_t in {"", "unknown"}:
+            right_t = self.normalize_type_name(self._infer_numeric_expr_type(node.get("right")))
+        if (not self._is_numeric_decl_type(left_t)) or (not self._is_numeric_decl_type(right_t)):
+            return ""
+        op = self.any_to_str(node.get("op"))
+        if op == "Div":
+            return "float64"
+        if self._is_float_decl_type(left_t) or self._is_float_decl_type(right_t):
+            return "float64"
+        return "int64"
+
+    def _infer_numeric_call_expr_type(self, call_node: dict[str, Any]) -> str:
+        """Call ノードから数値返り値型を推定する。"""
+        if len(call_node) == 0:
+            return ""
+        fn_node = self.any_to_dict_or_empty(call_node.get("func"))
+        fn_kind = self._node_kind_from_dict(fn_node)
+        fn_name = ""
+        if fn_kind == "Name":
+            fn_name = self.any_to_str(fn_node.get("id"))
+            if fn_name != "":
+                ret_t = self.normalize_type_name(self.function_return_types.get(fn_name, ""))
+                if self._is_numeric_decl_type(ret_t):
+                    return ret_t
+        elif fn_kind == "Attribute":
+            owner = self.any_to_dict_or_empty(fn_node.get("value"))
+            owner_kind = self._node_kind_from_dict(owner)
+            owner_name = self.any_to_str(owner.get("id")) if owner_kind == "Name" else ""
+            attr = self.any_to_str(fn_node.get("attr"))
+            if owner_name == "math" and attr in {"sin", "cos", "tan", "sqrt", "exp", "log", "log10", "fabs", "floor", "ceil"}:
+                return "float64"
+        if fn_name in {"int"}:
+            return "int64"
+        if fn_name in {"float"}:
+            return "float64"
+        if fn_name in {"max", "min"}:
+            args = self.any_dict_get_list(call_node, "args")
+            if len(args) == 0:
+                return ""
+            saw_float = False
+            for arg in args:
+                at = self.normalize_type_name(self.get_expr_type(arg))
+                if at in {"", "unknown"}:
+                    at = self.normalize_type_name(self._infer_numeric_expr_type(arg))
+                if not self._is_numeric_decl_type(at):
+                    return ""
+                if self._is_float_decl_type(at):
+                    saw_float = True
+            return "float64" if saw_float else "int64"
         return ""
 
     def _try_optimize_char_compare(
@@ -887,72 +1014,98 @@ class CppEmitter(
     def _collect_assigned_name_types(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
         """文リスト中の `Name` 代入候補型を収集する。"""
         out: dict[str, str] = {}
-        for st in stmts:
-            kind = self._node_kind_from_dict(st)
-            if kind == "Assign":
-                tgt = self.any_to_dict_or_empty(st.get("target"))
-                if self._node_kind_from_dict(tgt) == "Name":
-                    name = self.any_to_str(tgt.get("id"))
-                    if name != "":
-                        out[name] = self._infer_name_assign_type(st, tgt)
-                elif self._node_kind_from_dict(tgt) == "Tuple":
-                    elems = self.any_dict_get_list(tgt, "elements")
-                    value_t_obj = self.get_expr_type(st.get("value"))
-                    value_t = value_t_obj if isinstance(value_t_obj, str) else ""
-                    tuple_t = ""
-                    if value_t.startswith("tuple[") and value_t.endswith("]"):
-                        tuple_t = value_t
-                    elif self._contains_text(value_t, "|"):
-                        for part in self.split_union(value_t):
-                            if part.startswith("tuple[") and part.endswith("]"):
-                                tuple_t = part
-                                break
-                    elem_types: list[str] = []
-                    if tuple_t != "":
-                        elem_types = self.split_generic(tuple_t[6:-1])
-                    for i, elem in enumerate(elems):
-                        ent = self.any_to_dict_or_empty(elem)
-                        if self._node_kind_from_dict(ent) == "Name":
-                            nm = self.any_to_str(ent.get("id"))
-                            if nm != "":
-                                et = ""
-                                if i < len(elem_types):
-                                    et = self.normalize_type_name(elem_types[i])
-                                if et == "":
-                                    t_ent = self.get_expr_type(elem)
-                                    if isinstance(t_ent, str):
-                                        et = self.normalize_type_name(t_ent)
-                                out[nm] = et
-            elif kind == "AnnAssign":
-                tgt = self.any_to_dict_or_empty(st.get("target"))
-                if self._node_kind_from_dict(tgt) == "Name":
-                    name = self.any_to_str(tgt.get("id"))
-                    if name != "":
-                        out[name] = self._infer_name_assign_type(st, tgt)
-            elif kind == "If":
-                child_body = self._collect_assigned_name_types(self._dict_stmt_list(st.get("body")))
-                child_else = self._collect_assigned_name_types(self._dict_stmt_list(st.get("orelse")))
-                for nm, ty in child_body.items():
-                    out[nm] = ty
-                for nm, ty in child_else.items():
-                    if nm in out:
-                        out[nm] = self._merge_decl_types_for_branch_join(out[nm], ty)
-                    else:
+        saved_decl_types = self.declared_var_types
+        local_decl_types = dict(saved_decl_types)
+        self.declared_var_types = local_decl_types
+        try:
+            for st in stmts:
+                kind = self._node_kind_from_dict(st)
+                if kind == "Assign":
+                    tgt = self.any_to_dict_or_empty(st.get("target"))
+                    if self._node_kind_from_dict(tgt) == "Name":
+                        name = self.any_to_str(tgt.get("id"))
+                        if name != "":
+                            inferred = self._infer_name_assign_type(st, tgt)
+                            out[name] = inferred
+                            if inferred not in {"", "unknown"}:
+                                local_decl_types[name] = self.normalize_type_name(inferred)
+                    elif self._node_kind_from_dict(tgt) == "Tuple":
+                        elems = self.any_dict_get_list(tgt, "elements")
+                        value_t_obj = self.get_expr_type(st.get("value"))
+                        value_t = value_t_obj if isinstance(value_t_obj, str) else ""
+                        tuple_t = ""
+                        if value_t.startswith("tuple[") and value_t.endswith("]"):
+                            tuple_t = value_t
+                        elif self._contains_text(value_t, "|"):
+                            for part in self.split_union(value_t):
+                                if part.startswith("tuple[") and part.endswith("]"):
+                                    tuple_t = part
+                                    break
+                        elem_types: list[str] = []
+                        if tuple_t != "":
+                            elem_types = self.split_generic(tuple_t[6:-1])
+                        for i, elem in enumerate(elems):
+                            ent = self.any_to_dict_or_empty(elem)
+                            if self._node_kind_from_dict(ent) == "Name":
+                                nm = self.any_to_str(ent.get("id"))
+                                if nm != "":
+                                    et = ""
+                                    if i < len(elem_types):
+                                        et = self.normalize_type_name(elem_types[i])
+                                    if et == "":
+                                        t_ent = self.get_expr_type(elem)
+                                        if isinstance(t_ent, str):
+                                            et = self.normalize_type_name(t_ent)
+                                    out[nm] = et
+                                    if et not in {"", "unknown"}:
+                                        local_decl_types[nm] = self.normalize_type_name(et)
+                elif kind == "AnnAssign":
+                    tgt = self.any_to_dict_or_empty(st.get("target"))
+                    if self._node_kind_from_dict(tgt) == "Name":
+                        name = self.any_to_str(tgt.get("id"))
+                        if name != "":
+                            inferred = self._infer_name_assign_type(st, tgt)
+                            out[name] = inferred
+                            if inferred not in {"", "unknown"}:
+                                local_decl_types[name] = self.normalize_type_name(inferred)
+                elif kind == "If":
+                    child_body = self._collect_assigned_name_types(self._dict_stmt_list(st.get("body")))
+                    child_else = self._collect_assigned_name_types(self._dict_stmt_list(st.get("orelse")))
+                    for nm, ty in child_body.items():
                         out[nm] = ty
-            elif kind == "Try":
-                child_groups: list[list[dict[str, Any]]] = []
-                child_groups.append(self._dict_stmt_list(st.get("body")))
-                child_groups.append(self._dict_stmt_list(st.get("orelse")))
-                child_groups.append(self._dict_stmt_list(st.get("finalbody")))
-                for h in self._dict_stmt_list(st.get("handlers")):
-                    child_groups.append(self._dict_stmt_list(h.get("body")))
-                for grp in child_groups:
-                    child_map = self._collect_assigned_name_types(grp)
-                    for nm, ty in child_map.items():
+                        if ty not in {"", "unknown"}:
+                            local_decl_types[nm] = self.normalize_type_name(ty)
+                    for nm, ty in child_else.items():
                         if nm in out:
-                            out[nm] = self._merge_decl_types_for_branch_join(out[nm], ty)
+                            merged = self._merge_decl_types_for_branch_join(out[nm], ty)
+                            out[nm] = merged
+                            if merged not in {"", "unknown"}:
+                                local_decl_types[nm] = self.normalize_type_name(merged)
                         else:
                             out[nm] = ty
+                            if ty not in {"", "unknown"}:
+                                local_decl_types[nm] = self.normalize_type_name(ty)
+                elif kind == "Try":
+                    child_groups: list[list[dict[str, Any]]] = []
+                    child_groups.append(self._dict_stmt_list(st.get("body")))
+                    child_groups.append(self._dict_stmt_list(st.get("orelse")))
+                    child_groups.append(self._dict_stmt_list(st.get("finalbody")))
+                    for h in self._dict_stmt_list(st.get("handlers")):
+                        child_groups.append(self._dict_stmt_list(h.get("body")))
+                    for grp in child_groups:
+                        child_map = self._collect_assigned_name_types(grp)
+                        for nm, ty in child_map.items():
+                            if nm in out:
+                                merged = self._merge_decl_types_for_branch_join(out[nm], ty)
+                                out[nm] = merged
+                                if merged not in {"", "unknown"}:
+                                    local_decl_types[nm] = self.normalize_type_name(merged)
+                            else:
+                                out[nm] = ty
+                                if ty not in {"", "unknown"}:
+                                    local_decl_types[nm] = self.normalize_type_name(ty)
+        finally:
+            self.declared_var_types = saved_decl_types
         return out
 
     def _mark_mutated_param_from_target(self, target_obj: Any, params: set[str], out: set[str]) -> None:
@@ -1236,10 +1389,12 @@ class CppEmitter(
             return l
         int_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
         float_types = {"float32", "float64"}
-        if (l in int_types or l in float_types) and (r in int_types or r in float_types):
-            if l in float_types or r in float_types:
-                return "float64"
+        if l in int_types and r in int_types:
             return "int64"
+        if l in float_types and r in float_types:
+            return "float64"
+        if (l in int_types and r in float_types) or (l in float_types and r in int_types):
+            return "float64"
         if self.is_any_like_type(l) or self.is_any_like_type(r):
             return "object"
         return l
@@ -1937,27 +2092,10 @@ class CppEmitter(
             picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
             if picked == "None":
                 picked = "Any"
-            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict) and self._node_kind_from_dict(value) == "BinOp":
-                lt0 = self.get_expr_type(value.get("left"))
-                rt0 = self.get_expr_type(value.get("right"))
-                lt = lt0 if isinstance(lt0, str) else ""
-                rt = rt0 if isinstance(rt0, str) else ""
-                left_node = self.any_to_dict_or_empty(value.get("left"))
-                right_node = self.any_to_dict_or_empty(value.get("right"))
-                if (lt == "" or lt == "unknown") and self._node_kind_from_dict(left_node) == "Name":
-                    ln = self.any_to_str(left_node.get("id"))
-                    if ln in self.declared_var_types:
-                        lt = self.declared_var_types[ln]
-                if (rt == "" or rt == "unknown") and self._node_kind_from_dict(right_node) == "Name":
-                    rn = self.any_to_str(right_node.get("id"))
-                    if rn in self.declared_var_types:
-                        rt = self.declared_var_types[rn]
-                int_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
-                float_types = {"float32", "float64"}
-                if lt in float_types or rt in float_types:
-                    picked = "float64"
-                elif lt in int_types and rt in int_types:
-                    picked = "int64"
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
+                numeric_picked = self._infer_numeric_expr_type(value)
+                if numeric_picked != "":
+                    picked = numeric_picked
             dtype = self._cpp_type_text(picked)
             self.declare_in_current_scope(texpr)
             self.declared_var_types[texpr] = picked

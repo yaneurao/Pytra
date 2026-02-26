@@ -134,6 +134,13 @@ class CppBinaryOperatorEmitter:
         if op_name == "Mod":
             if self.mod_mode == "python":
                 return f"py_mod({left}, {right})"
+            left_t0 = self.get_expr_type(expr.get("left"))
+            right_t0 = self.get_expr_type(expr.get("right"))
+            left_t = left_t0 if isinstance(left_t0, str) else ""
+            right_t = right_t0 if isinstance(right_t0, str) else ""
+            int_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+            if left_t not in int_types or right_t not in int_types:
+                return f"py_mod({left}, {right})"
             return f"{left} % {right}"
         if op_name == "Mult":
             left_t0 = self.get_expr_type(expr.get("left"))
