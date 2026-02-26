@@ -74,6 +74,16 @@
   - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'render_call_class_method_uses_dispatch_mode_table'`
   - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S2-03` 確定内容（2026-02-26）:
+- `S2-01/S2-02` の分岐整理に合わせて、virtual 化の対象/非対象を固定した。
+  - 対象（virtual 化候補維持）:
+    - `_class_method_dispatch_mode(...)` が `virtual` / `direct` を返す class method 呼び出し経路。
+  - 非対象（fallback 維持）:
+    - `BuiltinCall` lower 前提の Name/Attribute 呼び出し（`_requires_builtin_*_lowering` で拒否される経路）。
+    - `runtime_expr.py` の `IsInstance/IsSubtype/IsSubclass/ObjTypeId`（dispatch ではなく runtime/type_id API 呼び出し）。
+    - `built_in/type_id.cpp` の registry/state 管理分岐（S1 で確定済みのタスク外）。
+- 非対象は「class method virtual dispatch 簡略化」タスクの範囲外として明示し、S3 以降の実装対象から除外する。
+
 ### S3: 置換実施
 
 7. `P2-CPP-SELFHOST-VIRTUAL-01-S3-01`: `sample` 側 2〜3 件から着手し、`type_id` 分岐を除去して `virtual` 呼び出し化する。
@@ -100,3 +110,4 @@
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-03` として `virtual` 置換候補の優先順を策定したが、対象は 0 件（no-op）で確定した。以降は非対象理由の固定化と回帰文書化を優先する。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-01` として `src/hooks/cpp/emitter/call.py` の call/render 経路を「PyObj/組み込み method 経路」と「ユーザー定義 class method 経路」へ分解し、仮想呼び出し化の一次対象を後者に限定した。`BuiltinCall` lower 前提と `runtime_expr.py` の type_id API 呼び出しは非対象として固定した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-02` として `call.py` の class method 呼び出しを mode ベース（`virtual` / `direct` / `fallback`）へ分岐明示化し、dispatch table で描画先を切り替える形へ整理した。`_collect_class_method_candidates` へ候補探索を共通化し、`test_east3_cpp_bridge` の追加2ケースと `check_py2cpp_transpile`（`133/133`）で回帰なしを確認した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-03` として置換対象外の `type_id` 関連分岐を理由付きで固定した。`BuiltinCall` lower 前提経路・`runtime_expr.py` の type_id API 呼び出し・`built_in/type_id.cpp` registry 管理は fallback/非対象として維持し、S3 の実装対象から除外する方針を確定した。
