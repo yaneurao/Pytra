@@ -37,10 +37,11 @@
 
 決定ログ:
 - 2026-02-26: 初版作成。`spec-east3-optimizer` に基づき、実装導入を S1/S2/S3 の3段で進める。
+- 2026-02-26: `P0-EAST3-OPT-01-S1-01` として `east3_optimizer.py`/`east3_opt_passes/` 骨格と `test_east3_optimizer.py` を追加し、pass manager と trace 文字列化の最小経路を固定した。
 
 ## 分解
 
-- [ ] [ID: P0-EAST3-OPT-01-S1-01] optimizer エントリ (`east3_optimizer.py`) と pass manager 骨格（`PassContext`/`PassResult`）を追加する。
+- [x] [ID: P0-EAST3-OPT-01-S1-01] optimizer エントリ (`east3_optimizer.py`) と pass manager 骨格（`PassContext`/`PassResult`）を追加する。
 - [ ] [ID: P0-EAST3-OPT-01-S1-02] CLI オプション（`--east3-opt-level`, `--east3-opt-pass`, dump/trace）を実装し、`O0/O1/O2` 契約を固定する。
 - [ ] [ID: P0-EAST3-OPT-01-S2-01] `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`O1` 既定セットを確立する。
 - [ ] [ID: P0-EAST3-OPT-01-S2-02] `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` を実装し、`for ... in range(...)` の責務境界を反映する。
