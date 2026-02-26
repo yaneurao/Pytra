@@ -67,6 +67,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
                 {"cpp"},
                 case_root="sample",
                 ignore_stdout=False,
+                east3_opt_level="1",
                 records=records,
             )
 

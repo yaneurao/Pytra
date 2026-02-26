@@ -125,13 +125,14 @@ def runtime_cpp_sources_shell() -> str:
     return " ".join(paths)
 
 
-def build_targets(case_stem: str, case_path: Path) -> list[Target]:
+def build_targets(case_stem: str, case_path: Path, east3_opt_level: str) -> list[Target]:
     case_src = case_path.as_posix()
     runtime_srcs = runtime_cpp_sources_shell()
+    opt_arg = "--east3-opt-level " + shlex.quote(str(east3_opt_level))
     return [
         Target(
             name="cpp",
-            transpile_cmd=f"python src/py2cpp.py {shlex.quote(case_src)} test/transpile/cpp/{case_stem}.cpp",
+            transpile_cmd=f"python src/py2cpp.py {shlex.quote(case_src)} test/transpile/cpp/{case_stem}.cpp {opt_arg}",
             run_cmd=(
                 f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
                 "-I src/runtime/cpp "
@@ -142,13 +143,13 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="rs",
-            transpile_cmd=f"python src/py2rs.py {shlex.quote(case_src)} -o test/transpile/rs/{case_stem}.rs",
+            transpile_cmd=f"python src/py2rs.py {shlex.quote(case_src)} -o test/transpile/rs/{case_stem}.rs {opt_arg}",
             run_cmd=f"rustc -O test/transpile/rs/{case_stem}.rs -o test/transpile/obj/{case_stem}_rs.out && test/transpile/obj/{case_stem}_rs.out",
             needs=("python", "rustc"),
         ),
         Target(
             name="cs",
-            transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} -o test/transpile/cs/{case_stem}.cs",
+            transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} -o test/transpile/cs/{case_stem}.cs {opt_arg}",
             run_cmd=(
                 f"mcs -warn:0 -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
                 "src/runtime/cs/pytra/built_in/py_runtime.cs "
@@ -163,25 +164,25 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
         ),
         Target(
             name="js",
-            transpile_cmd=f"python src/py2js.py {shlex.quote(case_src)} -o test/transpile/js/{case_stem}.js",
+            transpile_cmd=f"python src/py2js.py {shlex.quote(case_src)} -o test/transpile/js/{case_stem}.js {opt_arg}",
             run_cmd=f"node test/transpile/js/{case_stem}.js",
             needs=("python", "node"),
         ),
         Target(
             name="ts",
-            transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} -o test/transpile/ts/{case_stem}.ts",
+            transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} -o test/transpile/ts/{case_stem}.ts {opt_arg}",
             run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",
             needs=("python", "node", "npx"),
         ),
         Target(
             name="go",
-            transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go",
+            transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go {opt_arg}",
             run_cmd=f"go run test/transpile/go/{case_stem}.go",
             needs=("python", "go", "node"),
         ),
         Target(
             name="java",
-            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java",
+            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java {opt_arg}",
             run_cmd="javac test/transpile/java/Main.java && java -cp test/transpile/java Main",
             needs=("python", "javac", "java", "node"),
         ),
@@ -189,14 +190,14 @@ def build_targets(case_stem: str, case_path: Path) -> list[Target]:
             name="swift",
             transpile_cmd=(
                 f"python src/py2swift.py {shlex.quote(case_src)} --output "
-                f"test/transpile/swift/{case_stem}.swift"
+                f"test/transpile/swift/{case_stem}.swift {opt_arg}"
             ),
             run_cmd=f"{SWIFTC.as_posix()} test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
             needs=("python", SWIFTC.as_posix(), "node"),
         ),
         Target(
             name="kotlin",
-            transpile_cmd=f"python src/py2kotlin.py {shlex.quote(case_src)} -o test/transpile/kotlin/{case_stem}.kt",
+            transpile_cmd=f"python src/py2kotlin.py {shlex.quote(case_src)} -o test/transpile/kotlin/{case_stem}.kt {opt_arg}",
             run_cmd=(
                 f"kotlinc test/transpile/kotlin/{case_stem}.kt -include-runtime -d test/transpile/obj/{case_stem}_kotlin.jar "
                 f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"
@@ -212,6 +213,7 @@ def check_case(
     *,
     case_root: str,
     ignore_stdout: bool,
+    east3_opt_level: str,
     records: list[CheckRecord] | None = None,
 ) -> int:
     def _record(target: str, category: str, detail: str) -> None:
@@ -243,7 +245,7 @@ def check_case(
         expected = _normalize_output_for_compare(py.stdout) if ignore_stdout else py.stdout
 
         mismatches: list[str] = []
-        for target in build_targets(case_stem, case_path):
+        for target in build_targets(case_stem, case_path, east3_opt_level):
             if target.name not in enabled_targets:
                 continue
             if not can_run(target):
@@ -321,6 +323,12 @@ def main() -> int:
         default="",
         help="optional path to write machine-readable summary json",
     )
+    parser.add_argument(
+        "--east3-opt-level",
+        default="1",
+        choices=("0", "1", "2"),
+        help="EAST3 optimizer level passed to transpilers (default: 1)",
+    )
     args = parser.parse_args()
 
     enabled_targets: set[str] = set()
@@ -350,6 +358,7 @@ def main() -> int:
             enabled_targets,
             case_root=args.case_root,
             ignore_stdout=args.ignore_unstable_stdout,
+            east3_opt_level=args.east3_opt_level,
             records=records,
         )
         if code != 0:
@@ -365,7 +374,8 @@ def main() -> int:
     print(
         "SUMMARY "
         + f"cases={len(stems)} pass={pass_cases} fail={fail_cases} "
-        + f"targets={','.join(sorted(enabled_targets))}"
+        + f"targets={','.join(sorted(enabled_targets))} "
+        + f"east3_opt_level={args.east3_opt_level}"
     )
     if len(category_counts) > 0:
         print("SUMMARY_CATEGORIES")
@@ -375,6 +385,7 @@ def main() -> int:
     if args.summary_json != "":
         summary_obj = {
             "case_root": args.case_root,
+            "east3_opt_level": args.east3_opt_level,
             "targets": sorted(enabled_targets),
             "cases": stems,
             "case_total": len(stems),

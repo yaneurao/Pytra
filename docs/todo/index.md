@@ -56,7 +56,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 5. [x] [ID: P0-EAST3-OPT-01-S2-02] Implement `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` and reflect `for ... in range(...)` boundary.
 6. [x] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
 7. [x] [ID: P0-EAST3-OPT-01-S3-01] Add pass unit tests (input/output EAST3 diff, non-application guards, semantics preservation).
-8. [ ] [ID: P0-EAST3-OPT-01-S3-02] Run sample regressions + parity checks and verify compatibility under `O0`/`O1`/`O2` switching.
+8. [x] [ID: P0-EAST3-OPT-01-S3-02] Run sample regressions + parity checks and verify compatibility under `O0`/`O1`/`O2` switching.
 9. [ ] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diffs to `spec-east3-optimizer` and document operations (trace checks / troubleshooting).
 - `P0-EAST3-OPT-01-S1-01` Added `east3_optimizer.py`, `east3_opt_passes/noop_pass.py`, and `test_east3_optimizer.py`, fixing the minimal pass-manager + trace-output path.
 - `P0-EAST3-OPT-01-S1-02` Wired optimizer CLI options through common/non-C++/`py2cpp` routes and fixed the end-to-end entry path with `test_east3_optimizer_cli.py` plus parser-wrapper tests.
@@ -64,6 +64,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 - `P0-EAST3-OPT-01-S2-02` Added `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` with fail-closed guards for constant `range(...)` canonicalization (`StaticRangeForPlan`) and underscore elision of provably unused loop vars.
 - `P0-EAST3-OPT-01-S2-03` Added `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only passes with conservative guards for non-empty static-range preheader hoist and power-of-two float-division strength reduction.
 - `P0-EAST3-OPT-01-S3-01` Expanded pass unit coverage to 21 cases, locking O2 gating, dynamic-name-resolution guards, and non-application behavior (zero-step, non-power-of-two divisors, and post-loop variable reads).
+- `P0-EAST3-OPT-01-S3-02` Added `--east3-opt-level` to `runtime_parity_check.py` and reran `sample/py` 18 cases × `cpp,rs,cs,js,ts` under `O0/O1/O2`; all levels produced `17 pass / 1 fail` with no inter-level diff (existing `18_mini_language_interpreter:cpp` compile failure), logs at `work/logs/east3_opt_parity_o{0,1,2}.json`.
 
 ### P0: Introduce C++ post-lowering optimizer layer (`CppOptimizer`) (Highest)
 
