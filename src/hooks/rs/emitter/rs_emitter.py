@@ -1210,6 +1210,47 @@ class RustEmitter(CodeEmitter):
             return True
         return t in {"bool", "char", "int", "float", "usize", "isize"}
 
+    def _string_constant_literal(self, node: Any) -> str:
+        d = self.any_to_dict_or_empty(node)
+        if self.any_dict_get_str(d, "kind", "") != "Constant":
+            return ""
+        v = d.get("value")
+        if not isinstance(v, str):
+            return ""
+        return self.quote_string_literal(v)
+
+    def _is_fully_parenthesized(self, text: str) -> bool:
+        if len(text) < 2 or not text.startswith("(") or not text.endswith(")"):
+            return False
+        depth = 0
+        i = 0
+        while i < len(text):
+            ch = text[i]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0 and i != len(text) - 1:
+                    return False
+                if depth < 0:
+                    return False
+            i += 1
+        return depth == 0
+
+    def _strip_outer_parens(self, text: str) -> str:
+        out = text.strip()
+        while self._is_fully_parenthesized(out):
+            out = out[1:-1].strip()
+        return out
+
+    def _ensure_string_owned(self, text: str) -> str:
+        expr_trim = self._strip_outer_parens(text)
+        if expr_trim.endswith(".to_string()") or expr_trim.endswith(".to_owned()"):
+            return text
+        if expr_trim.startswith("String::from("):
+            return text
+        return "((" + text + ").to_string())"
+
     def _dict_key_value_types(self, east_type: str) -> tuple[str, str]:
         t = self.normalize_type_name(east_type)
         if not t.startswith("dict[") or not t.endswith("]"):
@@ -1222,7 +1263,7 @@ class RustEmitter(CodeEmitter):
     def _coerce_dict_key_expr(self, key_expr: str, key_type: str) -> str:
         """dict key 型に合わせて key 式を補正する。"""
         if self.normalize_type_name(key_type) == "str":
-            return "((" + key_expr + ").to_string())"
+            return self._ensure_string_owned(key_expr)
         return key_expr
 
     def _is_dict_with_any_value(self, east_type: str) -> bool:
@@ -1473,7 +1514,7 @@ class RustEmitter(CodeEmitter):
             return rendered_expr
         rust_t = self._rust_type(t)
         if rust_t == "String":
-            return "((" + rendered_expr + ").to_string())"
+            return self._ensure_string_owned(rendered_expr)
         if rust_t == "bool":
             return "((" + rendered_expr + ") != 0)"
         return "((" + rendered_expr + ") as " + rust_t + ")"
@@ -2064,7 +2105,7 @@ class RustEmitter(CodeEmitter):
         if src_t == "bool":
             return "PyAny::Bool(" + rendered + ")"
         if src_t == "str":
-            return "PyAny::Str((" + rendered + ").to_string())"
+            return "PyAny::Str(" + self._ensure_string_owned(rendered) + ")"
         if src_t == "None":
             return "PyAny::None"
         return "PyAny::Str(format!(\"{:?}\", " + rendered + "))"
@@ -2089,7 +2130,7 @@ class RustEmitter(CodeEmitter):
                 val_node = ent.get("value")
                 key_txt = self.render_expr(key_node)
                 if key_t == "str":
-                    key_txt = "(" + key_txt + ").to_string()"
+                    key_txt = self._ensure_string_owned(key_txt)
                 val_txt = self.render_expr(val_node)
                 if self._is_any_type(val_t):
                     val_txt = self._render_as_pyany(val_node)
@@ -2104,7 +2145,7 @@ class RustEmitter(CodeEmitter):
                 val_node = vals[i]
                 key_txt = self.render_expr(key_node)
                 if key_t == "str":
-                    key_txt = "(" + key_txt + ").to_string()"
+                    key_txt = self._ensure_string_owned(key_txt)
                 val_txt = self.render_expr(val_node)
                 if self._is_any_type(val_t):
                     val_txt = self._render_as_pyany(val_node)
@@ -2134,7 +2175,7 @@ class RustEmitter(CodeEmitter):
                     return "py_any_as_dict(" + rendered + ")"
             return rendered
         if t == "str":
-            return "((" + self.render_expr(value_obj) + ").to_string())"
+            return self._ensure_string_owned(self.render_expr(value_obj))
         return self.render_expr(value_obj)
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
@@ -2414,7 +2455,20 @@ class RustEmitter(CodeEmitter):
                 terms.append("(" + self._render_membership_compare_term(op, cur_left, cur_left_node, right, right_node) + ")")
             else:
                 mapped = self.cmp_ops.get(op, "==")
-                terms.append("(" + cur_left + " " + mapped + " " + right + ")")
+                cmp_left = cur_left
+                cmp_right = right
+                if mapped in {"==", "!="}:
+                    left_t = self.normalize_type_name(self.get_expr_type(cur_left_node))
+                    right_t = self.normalize_type_name(self.get_expr_type(right_node))
+                    if left_t == "str":
+                        lit_right = self._string_constant_literal(right_node)
+                        if lit_right != "":
+                            cmp_right = lit_right
+                    if right_t == "str":
+                        lit_left = self._string_constant_literal(cur_left_node)
+                        if lit_left != "":
+                            cmp_left = lit_left
+                terms.append("(" + cmp_left + " " + mapped + " " + cmp_right + ")")
             cur_left_node = right_node
             cur_left = right
             i += 1
@@ -2648,7 +2702,7 @@ class RustEmitter(CodeEmitter):
                             break
                         arg_txt = ctor_args[idx]
                         if self.normalize_type_name(field_t) == "str":
-                            arg_txt = "((" + arg_txt + ").to_string())"
+                            arg_txt = self._ensure_string_owned(arg_txt)
                         coerced.append(arg_txt)
                         idx += 1
                     if len(coerced) == len(ctor_args):
