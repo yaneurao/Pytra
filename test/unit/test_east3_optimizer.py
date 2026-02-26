@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import unittest
 
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
@@ -433,6 +434,135 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 0)
         value = for_stmt.get("body", [])[0].get("value")
         self.assertEqual(value.get("op"), "Div")
+
+    def test_unused_loop_var_elision_pass_skips_when_dynamic_name_access_exists(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {"kind": "StaticRangeForPlan", "start": _const_i(0), "stop": _const_i(5), "step": _const_i(1)},
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "locals", "resolved_type": "unknown"},
+                        "args": [],
+                        "keywords": [],
+                        "resolved_type": "object",
+                    },
+                }
+            ],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = UnusedLoopVarElisionPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(for_stmt.get("target_plan", {}).get("id"), "i")
+
+    def test_loop_invariant_hoist_lite_pass_skips_when_dynamic_name_access_exists(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {"kind": "StaticRangeForPlan", "start": _const_i(0), "stop": _const_i(5), "step": _const_i(1)},
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "tmp", "resolved_type": "int64"},
+                    "value": {
+                        "kind": "BinOp",
+                        "op": "Add",
+                        "left": {"kind": "Name", "id": "a", "resolved_type": "int64"},
+                        "right": _const_i(1),
+                        "resolved_type": "int64",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "locals", "resolved_type": "unknown"},
+                        "args": [],
+                        "keywords": [],
+                        "resolved_type": "object",
+                    },
+                },
+            ],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = LoopInvariantHoistLitePass().run(doc, PassContext(opt_level=2))
+        self.assertFalse(result.changed)
+        self.assertEqual(doc.get("body")[0].get("kind"), "ForCore")
+
+    def test_optimize_east3_document_applies_o2_passes_only_at_o2(self) -> None:
+        from pytra.compiler.east_parts.east3_optimizer import optimize_east3_document as optimize_native
+
+        base_for = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {"kind": "StaticRangeForPlan", "start": _const_i(0), "stop": _const_i(4), "step": _const_i(1)},
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "tmp", "resolved_type": "int64"},
+                    "value": {
+                        "kind": "BinOp",
+                        "op": "Add",
+                        "left": {"kind": "Name", "id": "a", "resolved_type": "int64"},
+                        "right": _const_i(1),
+                        "resolved_type": "int64",
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "y", "resolved_type": "float64"},
+                    "value": {
+                        "kind": "BinOp",
+                        "op": "Div",
+                        "left": {"kind": "Name", "id": "x", "resolved_type": "float64"},
+                        "right": {
+                            "kind": "Constant",
+                            "resolved_type": "float64",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "2.0",
+                            "value": 2.0,
+                        },
+                        "resolved_type": "float64",
+                        "borrow_kind": "value",
+                        "casts": [],
+                    },
+                },
+            ],
+            "orelse": [],
+        }
+        doc_o1 = _module_doc()
+        doc_o1["body"] = [copy.deepcopy(base_for)]
+        _, report_o1 = optimize_native(doc_o1, opt_level=1)
+        for_stmt_o1 = doc_o1.get("body")[0]
+        self.assertEqual(for_stmt_o1.get("kind"), "ForCore")
+        self.assertEqual(for_stmt_o1.get("body", [])[0].get("kind"), "Assign")
+        self.assertEqual(for_stmt_o1.get("body", [])[1].get("value", {}).get("op"), "Div")
+        trace_o1 = report_o1.get("trace", [])
+        self.assertFalse(bool(trace_o1[4].get("enabled")))
+        self.assertFalse(bool(trace_o1[5].get("enabled")))
+
+        doc_o2 = _module_doc()
+        doc_o2["body"] = [copy.deepcopy(base_for)]
+        _, report_o2 = optimize_native(doc_o2, opt_level=2)
+        body_o2 = doc_o2.get("body")
+        self.assertEqual(body_o2[0].get("kind"), "Assign")
+        self.assertEqual(body_o2[1].get("kind"), "ForCore")
+        for_stmt_o2 = body_o2[1]
+        self.assertEqual(for_stmt_o2.get("body", [])[0].get("value", {}).get("op"), "Mult")
+        trace_o2 = report_o2.get("trace", [])
+        self.assertTrue(bool(trace_o2[4].get("enabled")))
+        self.assertTrue(bool(trace_o2[5].get("enabled")))
 
 
 if __name__ == "__main__":
