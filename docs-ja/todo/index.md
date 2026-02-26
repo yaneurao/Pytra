@@ -58,6 +58,8 @@
 24. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S10-02] `01/04/09/18` を再計測し、`/` セマンティクス修正の寄与と残外れ値（`09/18`）を記録する。
 25. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S11-01] Rust emitter の list/enumerate 反復で list 全体 clone を削減し、`18` のトークナイズ/文実行 hot path を軽量化する。
 26. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S11-02] `01/04/09/18` を再計測し、反復 clone 削減の寄与と残外れ値（`09/18`）を更新する。
+27. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S12-01] Rust emitter の class method 引数で `str` を `&str` 受けへ縮退し、`py_match/expect` 系の文字列一時確保を削減する。
+28. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S12-02] `01/04/09/18` を再計測し、`&str` 化の寄与と残外れ値（`09/18`）を更新する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
