@@ -130,7 +130,7 @@
 9. [x] [ID: P0-CPP-EMITTER-SLIM-01-S3-03] 型変換 (`_cpp_type_text`) と Any 境界補正 helper を専用モジュールへ分離する。
 10. [x] [ID: P0-CPP-EMITTER-SLIM-01-S3-04] built-in runtime_call（list/set/dict/str/path/special）分岐をディスパッチモジュールへ分離する。
 11. [x] [ID: P0-CPP-EMITTER-SLIM-01-S4-01] `render_expr` の kind 分岐を `kind -> handler` テーブル駆動へ置換する骨格を導入する。
-12. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S4-02] collection literal/comprehension 系ハンドラを `render_expr` から分離し、独立テストを追加する。
+12. [x] [ID: P0-CPP-EMITTER-SLIM-01-S4-02] collection literal/comprehension 系ハンドラを `render_expr` から分離し、独立テストを追加する。
 13. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S4-03] runtime/type_id/path 系ハンドラを `render_expr` から分離し、`render_expr` をディスパッチ専任へ縮退する。
 14. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S5-01] `repr` 依存ノードを parser/lowerer 側で構造化ノードへ落とす前提を整理し、対象ノード一覧を確定する。
 15. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S5-02] `_render_repr_expr` の利用箇所を段階削減し、必要な最終 fallback 以外を除去する。

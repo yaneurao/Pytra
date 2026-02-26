@@ -329,6 +329,26 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(node), "xs.append(make_object(n))")
 
+    def test_render_expr_dispatch_routes_collection_literal_handlers(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter._render_expr_kind_list = lambda _expr, _expr_d: "LIST_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_tuple = lambda _expr, _expr_d: "TUPLE_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_set = lambda _expr, _expr_d: "SET_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_dict = lambda _expr, _expr_d: "DICT_HANDLER"  # type: ignore[method-assign]
+        self.assertEqual(emitter.render_expr({"kind": "List"}), "LIST_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "Tuple"}), "TUPLE_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "Set"}), "SET_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "Dict"}), "DICT_HANDLER")
+
+    def test_render_expr_dispatch_routes_collection_comprehension_handlers(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter._render_expr_kind_list_comp = lambda _expr, _expr_d: "LISTCOMP_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_set_comp = lambda _expr, _expr_d: "SETCOMP_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_dict_comp = lambda _expr, _expr_d: "DICTCOMP_HANDLER"  # type: ignore[method-assign]
+        self.assertEqual(emitter.render_expr({"kind": "ListComp"}), "LISTCOMP_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "SetComp"}), "SETCOMP_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "DictComp"}), "DICTCOMP_HANDLER")
+
     def test_builtin_runtime_list_append_uses_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         expr = {
