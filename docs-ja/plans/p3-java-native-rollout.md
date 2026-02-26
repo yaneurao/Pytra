@@ -42,6 +42,7 @@
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-01`] `docs-ja/spec/spec-java-native-backend.md`（英訳: `docs/spec/spec-java-native-backend.md`）を新設。入力 EAST3 責務、未対応時 fail-closed、runtime 境界、preview との差分を明文化。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-02`] `src/hooks/java/emitter/java_native_emitter.py` を追加し、`Module/FunctionDef/ClassDef` の native 骨格出力（本文は placeholder）を実装。`test_py2java_smoke.py` に module/function/class 最小経路テストを追加し、`tools/check_py2java_transpile.py` と併せて回帰なしを確認。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-03`] `py2java.py` に `--java-backend {native,sidecar}` を追加。既定を native 経路（`transpile_to_java_native`）へ切替え、旧 sidecar 出力は `--java-backend sidecar` 指定時のみ有効化。`test_py2java_smoke.py` の CLI smoke を native 既定へ更新し、sidecar 互換モードの生成確認テストを追加。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `java_native_emitter` の本文 lower を拡張。`Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` と主要式（`Name/Constant/UnaryOp/BinOp/Compare/BoolOp/Attribute/Call`）を Java 構文へ接続し、`test_py2java_smoke.py` に `if_else` / `for_range` の lower 検証を追加。
 
 ## 分解
 
