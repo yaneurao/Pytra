@@ -28,6 +28,25 @@
 - 完了済みタスクは `docs-ja/todo/archive/index.md` 経由で履歴へ移動します。
 - `docs-ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs-ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
+## P0: sample C++/Rust 実行時間乖離の是正（最優先）
+
+文脈: `docs-ja/plans/p0-sample-cpp-rs-perf-gap.md`（`P0-SAMPLE-CPP-RS-PERF-01`）
+
+1. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01] sample の C++/Rust 実行時間乖離を外れ値なしの状態へ是正し、再計測手順と結果を文書化する。
+2. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S1-01] 現行 README 値の C++/Rust 差分表（比率順）を自動抽出し、外れ値ケースを固定する。
+3. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S1-02] 再現可能な計測プロトコル（warmup/repeat/中央値、コンパイル時間の扱い）を文書化する。
+4. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S2-01] Rust emitter の `save_gif`/`write_rgb_png` 呼び出しで不要 clone を除去する。
+5. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S2-02] Rust emitter の list subscript read でコピー不要型の clone を抑止する。
+6. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S2-03] Rust emitter の文字列比較/トークナイズ経路で `to_string()` 連鎖を削減する。
+7. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S2-04] `01/09/18` を再計測し、Rust 側改善の寄与をケース別に記録する。
+8. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S3-01] C++ GIF runtime に `py_slice`/`py_len`/`py_to_int64` 依存を減らす fast-path を追加する。
+9. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S3-02] C++ PNG runtime の scanline/chunk 処理を typed 操作中心へ寄せる。
+10. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S3-03] `11/12/13/16` を再計測し、C++ 側改善の寄与をケース別に記録する。
+11. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S4-01] `sample` 生成コードのフレーム二重コピー（例: `bytes(bytes(frame))`）を削減する。
+12. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S4-02] 出力 parity を維持したまま高速化できることを `runtime_parity_check`/`verify_sample_outputs` で確認する。
+13. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S5-01] C++/Rust 18 件の再計測結果を `readme.md` / `readme-ja.md` へ反映する。
+14. [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S5-02] 乖離が残るケースは未解消要因と次の打ち手を文書へ追記する。
+
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
 文脈: `docs-ja/plans/p2-cpp-virtual-selfhost-dispatch.md`（`P2-CPP-SELFHOST-VIRTUAL-01`）
