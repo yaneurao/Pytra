@@ -124,8 +124,6 @@ class CppBinaryOperatorEmitter:
             right_t = right_t0 if isinstance(right_t0, str) else ""
             if left_t == "Path" and right_t in {"str", "Path"}:
                 return f"{left} / {right}"
-            if len(cast_rules) > 0 or left_t in {"float32", "float64"} or right_t in {"float32", "float64"}:
-                return f"{left} / {right}"
             return f"py_div({left}, {right})"
         if op_name == "Pow":
             return f"::std::pow(py_to_float64({left}), py_to_float64({right}))"
