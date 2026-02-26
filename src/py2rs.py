@@ -10,7 +10,6 @@ from pytra.compiler.east_parts.east3_legacy_compat import normalize_east3_to_leg
 from pytra.compiler.transpile_cli import (
     add_common_transpile_args,
     load_east3_document,
-    load_east_document_compat,
 )
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -24,18 +23,15 @@ def load_east(
     object_dispatch_mode: str = "native",
 ) -> dict[str, Any]:
     """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
-    if east_stage == "3":
-        doc3 = load_east3_document(
-            input_path,
-            parser_backend=parser_backend,
-            object_dispatch_mode=object_dispatch_mode,
-        )
-        normalized = normalize_east3_to_legacy(doc3)
-        return normalized if isinstance(normalized, dict) else {}
-    if east_stage == "2":
-        doc2 = load_east_document_compat(input_path, parser_backend=parser_backend)
-        return doc2
-    raise RuntimeError("invalid east_stage: " + east_stage)
+    if east_stage != "3":
+        raise RuntimeError("unsupported east_stage: " + east_stage)
+    doc3 = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+    )
+    normalized = normalize_east3_to_legacy(doc3)
+    return normalized if isinstance(normalized, dict) else {}
 
 
 def _default_output_path(input_path: Path) -> Path:
