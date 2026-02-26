@@ -50,6 +50,7 @@
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `unknown` 型推定、`len()`、`List/Subscript`、Subscript 代入 lower を拡張。`sample/py` 前半 9件（01〜09）を `py2java -> javac` で再確認し `compile_ok 9/9` を達成。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-02`] `super().__init__` を `super(...)` へ lower し、`IsInstance` / `isinstance(...)` を native 経路へ接続。`instanceof` 判定は `((Object)(lhs)) instanceof ...` に統一して sibling class 間の Java 静的型エラーを回避し、`runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` で `pass=8/8` を確認。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-03`] `bytearray(n)` を `__pytra_bytearray(Object)` へ lower して 0 埋めバッファ初期化を実装し、`Import` / `ImportFrom` を native 経路で明示 no-op 化。`runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` で `pass=7/7` を確認。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S3-01`] parity 改善として `listcomp(range)` 代入 lower（`__pytra_list_repeat` + range 展開）、`min/max`、`tuple` 分解/Swap 代入、`while/if` の list truthy、negative index、`IfExp` lower を追加。`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` を再実行し `pass=16/18`（未解決: `16_glass_sculpture_chaos`, `18_mini_language_interpreter`）まで到達。
 
 ## 分解
 

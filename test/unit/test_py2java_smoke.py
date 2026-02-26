@@ -201,6 +201,33 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("Math.cos(angle)", java)
         self.assertIn("Math.sin(angle)", java)
 
+    def test_java_native_emitter_lowers_listcomp_and_repeat_list_init(self) -> None:
+        sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("private static java.util.ArrayList<Object> __pytra_list_repeat(Object value, long count)", java)
+        self.assertIn("grid = new java.util.ArrayList<Object>();", java)
+        self.assertIn("grid.add(__pytra_list_repeat(0L, w));", java)
+
+    def test_java_native_emitter_maps_min_max_and_list_truthy(self) -> None:
+        sample = ROOT / "sample" / "py" / "14_raymarching_light_cycle.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("Math.max(", java)
+        self.assertIn("Math.min(", java)
+
+        sample2 = ROOT / "sample" / "py" / "13_maze_generation_steps.py"
+        east2 = load_east(sample2, parser_backend="self_hosted")
+        java2 = transpile_to_java_native(east2, class_name="Main")
+        self.assertIn("while (((stack) != null && !(stack).isEmpty()))", java2)
+
+    def test_java_native_emitter_lowers_tuple_subscript_swap_assignment(self) -> None:
+        sample = ROOT / "sample" / "py" / "12_sort_visualizer.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertGreaterEqual(java.count("values.set((int)("), 2)
+        self.assertIn("__tuple_", java)
+
     def test_java_native_emitter_lowers_len_and_subscript_set(self) -> None:
         sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
         east = load_east(sample, parser_backend="self_hosted")
