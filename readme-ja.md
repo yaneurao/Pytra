@@ -4,6 +4,16 @@
   <img alt="Read in English" src="https://img.shields.io/badge/README-English-2563EB?style=flat-square">
 </a>
 
+![Backend C++](https://img.shields.io/badge/Backend-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white)
+![Backend Rust](https://img.shields.io/badge/Backend-Rust-000000?style=flat-square&logo=rust&logoColor=white)
+![Backend C#](https://img.shields.io/badge/Backend-C%23-239120?style=flat-square&logo=csharp&logoColor=white)
+![Backend JavaScript](https://img.shields.io/badge/Backend-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![Backend TypeScript](https://img.shields.io/badge/Backend-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Backend Go](https://img.shields.io/badge/Backend-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
+![Backend Java](https://img.shields.io/badge/Backend-Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Backend Swift](https://img.shields.io/badge/Backend-Swift-F05138?style=flat-square&logo=swift&logoColor=white)
+![Backend Kotlin](https://img.shields.io/badge/Backend-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
+
 Pytra は、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
 
 ## 最新ニュース
