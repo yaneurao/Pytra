@@ -53,6 +53,7 @@
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S3-01`] parity 改善として `listcomp(range)` 代入 lower（`__pytra_list_repeat` + range 展開）、`min/max`、`tuple` 分解/Swap 代入、`while/if` の list truthy、negative index、`IfExp` lower を追加。`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` を再実行し `pass=16/18`（未解決: `16_glass_sculpture_chaos`, `18_mini_language_interpreter`）まで到達。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S3-01`] `ctx.types` ベースの局所型追跡と loop scope の宣言リーク抑止を導入し、`ForCore` / tuple 代入 / 推論精度を改善。`16_glass_sculpture_chaos` を解消し、`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` は `pass=17/18`（残: `18_mini_language_interpreter`）へ更新。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S3-01`] `18_mini_language_interpreter` 向けに `int(str)`/`len(str|list|dict)`、`ObjLen/ObjStr/ObjBool`、`str` の `Slice`、`str.isdigit()`/`str.isalpha()` を native lower へ追加。`check_py2java_transpile.py`（`checked=132 ok=132 fail=0 skipped=6`）、`python3 -m unittest discover -s test/unit -p 'test_py2java_*.py' -v`（`21/21 OK`）、`runtime_parity_check.py --case-root sample --targets java --all-samples --ignore-unstable-stdout`（`pass=18/18`）を確認し、native 既定回帰を固定。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S3-02`] `tools/regenerate_samples.py --langs java --force --cache-file /tmp/pytra_sample_regen_cache_java.json` で `sample/java` 18件を native 再生成し、旧 sidecar 資産（`sample/java/*.js`, `sample/java/pytra/*.js`）を削除。`sample/java/*.java` から `node`/`ProcessBuilder` 参照が消えたことと `check_py2java_transpile.py`（`132/132`）を確認。
 
 ## 分解
 
@@ -63,5 +64,5 @@
 - [x] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
 - [x] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
 - [x] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
-- [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
+- [x] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
