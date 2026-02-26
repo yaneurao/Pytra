@@ -60,17 +60,21 @@ RGB 8bit バッファを PNG ファイルとして保存する。
         bytearray out = bytearray{};
         // zlib header: CMF=0x78(Deflate, 32K window), FLG=0x01(check bits OK, fastest)
         out.extend(py_bytes_lit("\x78\x01"));
-        int64 n = py_len(data);
+        int64 n = static_cast<int64>(data.size());
         int64 pos = 0;
         while (pos < n) {
             int64 remain = n - pos;
             int64 chunk_len = (remain > 65535 ? 65535 : remain);
             int64 final = (pos + chunk_len >= n ? 1 : 0);
             // stored block: BTYPE=00, header bit field in LSB order (final in bit0)
-            out.append(static_cast<uint8>(py_to_int64(final)));
+            out.append(static_cast<uint8>(final));
             out.extend(_u16le(chunk_len));
             out.extend(_u16le(0xFFFF ^ chunk_len));
-            out.extend(py_slice(data, pos, pos + chunk_len));
+            int64 i = 0;
+            while (i < chunk_len) {
+                out.append(data[static_cast<::std::size_t>(pos + i)]);
+                i++;
+            }
             pos += chunk_len;
         }
         out.extend(_u32be(_adler32(data)));
@@ -78,7 +82,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
     }
     
     bytes _chunk(const bytes& chunk_type, const bytes& data) {
-        bytes length = _u32be(py_len(data));
+        bytes length = _u32be(static_cast<int64>(data.size()));
         int64 crc = _crc32(chunk_type + data) & 0xFFFFFFFF;
         return length + chunk_type + data + _u32be(crc);
     }
@@ -94,17 +98,21 @@ RGB 8bit バッファを PNG ファイルとして保存する。
      */
         bytes raw = bytes(pixels);
         int64 expected = width * height * 3;
-        if (py_len(raw) != expected)
-            throw ValueError("pixels length mismatch: got=" + ::std::to_string(py_len(raw)) + " expected=" + ::std::to_string(expected));
+        if (raw.size() != static_cast<::std::size_t>(expected))
+            throw ValueError("pixels length mismatch: got=" + ::std::to_string(static_cast<int64>(raw.size())) + " expected=" + ::std::to_string(expected));
         
         bytearray scanlines = bytearray{};
+        scanlines.reserve(static_cast<::std::size_t>(height * (width * 3 + 1)));
         int64 row_bytes = width * 3;
         int64 y = 0;
         while (y < height) {
-            scanlines.append(static_cast<uint8>(py_to_int64(0)));
+            scanlines.append(static_cast<uint8>(0));
             int64 start = y * row_bytes;
-            int64 end = start + row_bytes;
-            scanlines.extend(py_slice(raw, start, end));
+            int64 i = 0;
+            while (i < row_bytes) {
+                scanlines.append(raw[static_cast<::std::size_t>(start + i)]);
+                i++;
+            }
             y++;
         }
         
