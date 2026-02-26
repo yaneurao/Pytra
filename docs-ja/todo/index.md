@@ -50,6 +50,8 @@
 16. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S6-02] 主要乖離ケース（`01/03/04/09/11/12/13/14/15/16/18`）を再計測し、寄与を記録する。
 17. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S7-01] Rust emitter の nested subscript 読み取りで中間 list clone を抑止し、`enumerate` ループの二重 clone を削減する。
 18. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S7-02] `01/04/09/18` を再計測し、clone 抑止の寄与と未解消乖離を記録する。
+19. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S8-01] Rust emitter の subscript->attribute 二重 clone と文字列比較 `to_string()` を削減し、`18` の hot path を軽量化する。
+20. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S8-02] `01/04/09/18` を再計測し、`18` 改善量と残課題（`01/04/09`）を記録する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
