@@ -8,6 +8,13 @@
 namespace pytra::utils::gif {
 
     /* アニメーションGIFを書き出すための最小ヘルパー。 */
+    namespace {
+        inline void _append_u16_le(bytearray& out, int64 value) {
+            const uint16 v = static_cast<uint16>(value & 0xFFFF);
+            out.append(static_cast<uint8>(v & 0xFF));
+            out.append(static_cast<uint8>((v >> 8) & 0xFF));
+        }
+    }  // namespace
     
     
     bytes _lzw_encode(const bytes& data, int64 min_code_size) {
@@ -21,6 +28,7 @@ namespace pytra::utils::gif {
         int64 code_size = min_code_size + 1;
         
         bytearray out = bytearray{};
+        out.reserve(data.size() * 3 + 16);
         int64 bit_buffer = 0;
         int64 bit_count = 0;
         
@@ -91,11 +99,18 @@ namespace pytra::utils::gif {
             if (fr.size() != static_cast<::std::size_t>(expected_frame_size))
                 throw ValueError("frame size mismatch");
         }
+        const int64 frames_n = static_cast<int64>(frames.size());
+        const int64 estimated_lzw_bytes = (expected_frame_size * 9 + 3) / 4 + 4;
+        const int64 estimated_blocks = (estimated_lzw_bytes + 254) / 255;
+        const int64 estimated_per_frame = 8 + 10 + 1 + estimated_lzw_bytes + estimated_blocks + 1;
+        const int64 estimated_total = 13 + 256 * 3 + 19 + frames_n * estimated_per_frame + 1;
         
         bytearray out = bytearray{};
+        if (estimated_total > 0)
+            out.reserve(static_cast<::std::size_t>(estimated_total));
         out.extend(py_bytes_lit("GIF89a"));
-        out.extend(py_int_to_bytes(width, 2, "little"));
-        out.extend(py_int_to_bytes(height, 2, "little"));
+        _append_u16_le(out, width);
+        _append_u16_le(out, height);
         out.append(static_cast<uint8>(0xF7));
         out.append(static_cast<uint8>(0));
         out.append(static_cast<uint8>(0));
@@ -103,19 +118,19 @@ namespace pytra::utils::gif {
         
         // Netscape loop extension
         out.extend(py_bytes_lit("\x21\xFF\x0BNETSCAPE2.0\x03\x01"));
-        out.extend(py_int_to_bytes(loop, 2, "little"));
+        _append_u16_le(out, loop);
         out.append(static_cast<uint8>(0));
         
         for (const bytes& fr : frames) {
             out.extend(py_bytes_lit("\x21\xF9\x04\x00"));
-            out.extend(py_int_to_bytes(delay_cs, 2, "little"));
+            _append_u16_le(out, delay_cs);
             out.extend(py_bytes_lit("\x00\x00"));
             
             out.append(static_cast<uint8>(0x2C));
-            out.extend(py_int_to_bytes((0), 2, "little"));
-            out.extend(py_int_to_bytes((0), 2, "little"));
-            out.extend(py_int_to_bytes(width, 2, "little"));
-            out.extend(py_int_to_bytes(height, 2, "little"));
+            _append_u16_le(out, 0);
+            _append_u16_le(out, 0);
+            _append_u16_le(out, width);
+            _append_u16_le(out, height);
             out.append(static_cast<uint8>(0));
             
             out.append(static_cast<uint8>(8));
