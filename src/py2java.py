@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.java.emitter.java_emitter import load_java_profile, transpile_to_java
+from hooks.java.emitter import load_java_profile, transpile_to_java, transpile_to_java_native
 from hooks.js.emitter.js_emitter import transpile_to_js
 from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
@@ -104,6 +104,11 @@ def main() -> int:
         choices=["native", "type_id"],
         help="Object boundary dispatch mode used by EAST2->EAST3 lowering",
     )
+    parser.add_argument(
+        "--java-backend",
+        choices=["native", "sidecar"],
+        help="Java backend mode: native (default) or sidecar compatibility",
+    )
     args = parser.parse_args()
     if not isinstance(args, dict):
         raise RuntimeError("argparse result must be dict")
@@ -127,6 +132,9 @@ def main() -> int:
     dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
     dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
     dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
+    java_backend = _arg_get_str(args, "java_backend")
+    if java_backend == "":
+        java_backend = "native"
     if east_stage == "2":
         parser.error("--east-stage 2 is no longer supported; use EAST3 (default).")
 
@@ -141,14 +149,19 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
-    js_output_path = _sidecar_js_path(output_path)
-    js_src = transpile_to_js(east)
     class_name = _java_class_name_from_path(output_path)
-    java_src = transpile_to_java(east, js_entry_path=str(js_output_path), class_name=class_name)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    if java_backend == "sidecar":
+        js_output_path = _sidecar_js_path(output_path)
+        js_src = transpile_to_js(east)
+        java_src = transpile_to_java(east, js_entry_path=str(js_output_path), class_name=class_name)
+        output_path.write_text(java_src, encoding="utf-8")
+        js_output_path.write_text(js_src, encoding="utf-8")
+        write_js_runtime_shims(js_output_path.parent)
+        return 0
+
+    java_src = transpile_to_java_native(east, class_name=class_name)
     output_path.write_text(java_src, encoding="utf-8")
-    js_output_path.write_text(js_src, encoding="utf-8")
-    write_js_runtime_shims(js_output_path.parent)
     return 0
 
 

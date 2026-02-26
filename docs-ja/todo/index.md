@@ -38,7 +38,7 @@
 1. [ ] [ID: P3-JAVA-NATIVE-01] Java backend を `EAST3 -> Java native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
 2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
 3. [x] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
-4. [ ] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
+4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
 5. [ ] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
 6. [ ] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
 7. [ ] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
@@ -47,6 +47,7 @@
 10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
 - `P3-JAVA-NATIVE-01-S1-01` `docs-ja/spec/spec-java-native-backend.md`（英訳: `docs/spec/spec-java-native-backend.md`）を追加し、入力 EAST3 契約・fail-closed・runtime 境界と preview 差分を文書化。
 - `P3-JAVA-NATIVE-01-S1-02` `src/hooks/java/emitter/java_native_emitter.py` を追加し、`Module/FunctionDef/ClassDef` の native 骨格出力を実装。`test_py2java_smoke.py` へ最小経路テストを追加。
+- `P3-JAVA-NATIVE-01-S1-03` `py2java.py` に `--java-backend {native,sidecar}` を追加し、既定を native 化。sidecar は明示指定時のみ生成する互換経路へ隔離。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 
