@@ -42,6 +42,7 @@ Notes:
 ### Directory Structure
 
 - [`py/`](py): Source Python samples (currently `01` to `18`)
+- [`PyPy/`](PyPy): PyPy launchers that run the corresponding `py/` source
 - [`cpp/`](cpp): C++ transpilation outputs
 - [`cs/`](cs): C# transpilation outputs
 - [`rs/`](rs): Rust transpilation outputs
@@ -58,6 +59,7 @@ Notes:
 ### Measurement Conditions (README Table Baseline)
 
 - Python: `PYTHONPATH=src python3 sample/py/<file>.py`
+- PyPy: `PYTHONPATH=src pypy3 sample/PyPy/<file>.py`
 - C++: `g++ -std=c++20 -O3 -ffast-math -flto -I src ...`
 - C#: `mcs ...` + `mono ...`
 - Rust: `rustc -O ...`
