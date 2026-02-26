@@ -19,6 +19,11 @@ def load_east(
     parser_backend: str = "self_hosted",
     east_stage: str = "3",
     object_dispatch_mode: str = "native",
+    east3_opt_level: str = "1",
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
 ) -> dict[str, Any]:
     """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
     if east_stage != "3":
@@ -27,6 +32,12 @@ def load_east(
         input_path,
         parser_backend=parser_backend,
         object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang="swift",
     )
     return doc3 if isinstance(doc3, dict) else {}
 
@@ -87,6 +98,13 @@ def main() -> int:
     object_dispatch_mode = _arg_get_str(args, "object_dispatch_mode")
     if object_dispatch_mode == "":
         object_dispatch_mode = "native"
+    east3_opt_level = _arg_get_str(args, "east3_opt_level")
+    if east3_opt_level == "":
+        east3_opt_level = "1"
+    east3_opt_pass = _arg_get_str(args, "east3_opt_pass")
+    dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
+    dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
+    dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
     if east_stage == "2":
         parser.error("--east-stage 2 is no longer supported; use EAST3 (default).")
 
@@ -95,6 +113,11 @@ def main() -> int:
         parser_backend=parser_backend,
         east_stage=east_stage,
         object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
     )
     js_output_path = _sidecar_js_path(output_path)
     js_src = transpile_to_js(east)

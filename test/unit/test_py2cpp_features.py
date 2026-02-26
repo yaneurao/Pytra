@@ -1225,6 +1225,30 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("dump_options"), "1")
         self.assertEqual(parsed.get("east_stage"), "3")
 
+    def test_parse_py2cpp_argv_east3_optimizer_options(self) -> None:
+        parsed = parse_py2cpp_argv(
+            [
+                "input.py",
+                "--east3-opt-level",
+                "2",
+                "--east3-opt-pass",
+                "+NoOpPass,-FuturePass",
+                "--dump-east3-before-opt",
+                "before.json",
+                "--dump-east3-after-opt",
+                "after.json",
+                "--dump-east3-opt-trace",
+                "trace.txt",
+            ]
+        )
+        err = str(parsed.get("__error", ""))
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("east3_opt_level_opt"), "2")
+        self.assertEqual(parsed.get("east3_opt_pass_opt"), "+NoOpPass,-FuturePass")
+        self.assertEqual(parsed.get("dump_east3_before_opt"), "before.json")
+        self.assertEqual(parsed.get("dump_east3_after_opt"), "after.json")
+        self.assertEqual(parsed.get("dump_east3_opt_trace"), "trace.txt")
+
     def test_parse_py2cpp_argv_accepts_positional_output(self) -> None:
         parsed = parse_py2cpp_argv(["input.py", "out.cpp", "-O2"])
         err = str(parsed.get("__error", ""))
@@ -2288,11 +2312,23 @@ def f() -> int:
             _path: Path,
             parser_backend: str = "self_hosted",
             object_dispatch_mode: str = "",
+            east3_opt_level: str | int | object = 1,
+            east3_opt_pass: str = "",
+            dump_east3_before_opt: str = "",
+            dump_east3_after_opt: str = "",
+            dump_east3_opt_trace: str = "",
+            target_lang: str = "",
             load_east_document_fn: object = None,
             make_user_error_fn: object = None,
         ) -> dict[str, object]:
             _ = parser_backend
             _ = object_dispatch_mode
+            _ = east3_opt_level
+            _ = east3_opt_pass
+            _ = dump_east3_before_opt
+            _ = dump_east3_after_opt
+            _ = dump_east3_opt_trace
+            _ = target_lang
             _ = load_east_document_fn
             _ = make_user_error_fn
             calls.append("called")

@@ -24,6 +24,27 @@ def add_common_transpile_args(
     """各トランスパイラで共通利用する CLI 引数を追加する。"""
     parser.add_argument("input", help="Input .py or EAST .json")
     parser.add_argument("-o", "--output", help="Output file path")
+    parser.add_argument(
+        "--east3-opt-level",
+        choices=["0", "1", "2"],
+        help="EAST3 optimizer level (default: 1)",
+    )
+    parser.add_argument(
+        "--east3-opt-pass",
+        help="Enable/disable EAST3 passes by token list (+Pass,-Pass)",
+    )
+    parser.add_argument(
+        "--dump-east3-before-opt",
+        help="Dump EAST3 JSON before optimizer",
+    )
+    parser.add_argument(
+        "--dump-east3-after-opt",
+        help="Dump EAST3 JSON after optimizer",
+    )
+    parser.add_argument(
+        "--dump-east3-opt-trace",
+        help="Dump EAST3 optimizer trace text",
+    )
     if enable_negative_index_mode:
         parser.add_argument(
             "--negative-index-mode",
@@ -320,12 +341,24 @@ def load_east3_document(
     input_path: Path,
     parser_backend: str = "self_hosted",
     object_dispatch_mode: str = "",
+    east3_opt_level: str | int | object = 1,
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+    target_lang: str = "",
 ) -> dict[str, object]:
     """入力ファイルを読み込み、最小 `EAST2 -> EAST3` lower を適用して返す。"""
     return load_east3_document_stage(
         input_path,
         parser_backend=parser_backend,
         object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang=target_lang,
         load_east_document_fn=load_east_document,
         make_user_error_fn=make_user_error,
     )
@@ -2288,6 +2321,11 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "top_namespace_opt": "",
         "negative_index_mode_opt": "",
         "object_dispatch_mode_opt": "",
+        "east3_opt_level_opt": "1",
+        "east3_opt_pass_opt": "",
+        "dump_east3_before_opt": "",
+        "dump_east3_after_opt": "",
+        "dump_east3_opt_trace": "",
         "bounds_check_mode_opt": "",
         "floor_div_mode_opt": "",
         "mod_mode_opt": "",
@@ -2341,6 +2379,31 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
             if i >= len(argv):
                 return _parse_error_dict("missing value for --east-stage")
             out["east_stage"] = argv[i]
+        elif a == "--east3-opt-level":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --east3-opt-level")
+            out["east3_opt_level_opt"] = argv[i]
+        elif a == "--east3-opt-pass":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --east3-opt-pass")
+            out["east3_opt_pass_opt"] = argv[i]
+        elif a == "--dump-east3-before-opt":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --dump-east3-before-opt")
+            out["dump_east3_before_opt"] = argv[i]
+        elif a == "--dump-east3-after-opt":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --dump-east3-after-opt")
+            out["dump_east3_after_opt"] = argv[i]
+        elif a == "--dump-east3-opt-trace":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --dump-east3-opt-trace")
+            out["dump_east3_opt_trace"] = argv[i]
         elif a == "--output-dir":
             i += 1
             if i >= len(argv):
