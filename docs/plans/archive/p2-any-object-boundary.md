@@ -1,4 +1,4 @@
-<a href="../../docs-ja/plans/p2-any-object-boundary.md">
+<a href="../../docs-ja/plans/archive/p2-any-object-boundary.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 

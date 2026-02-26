@@ -1,6 +1,6 @@
 # Pytra 実装状況メモ
 
-<a href="../../docs/plans/pytra-wip.md">
+<a href="../../docs/plans/archive/pytra-wip.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 

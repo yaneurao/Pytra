@@ -1,4 +1,4 @@
-<a href="../../docs-ja/plans/p3-pythonic-restoration.md">
+<a href="../../docs-ja/plans/archive/p3-pythonic-restoration.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
