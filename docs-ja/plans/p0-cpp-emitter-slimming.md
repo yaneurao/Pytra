@@ -55,6 +55,8 @@
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通して回帰を固定する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` で selfhost 回帰を確認する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] 最終メトリクスを再計測し、完了判定（行数・`render_expr` 行数・legacy 0件）を記録する。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-01] `emit_assign` / `_emit_annassign_stmt` / `_emit_augassign_stmt`（+ AugAssign 左辺 helper）を `stmt.py` へ移設し、`cpp_emitter.py` の statement 責務を縮退する。
+- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S8-02] `emit_for_core` / `emit_function` など残存する長大 statement メソッドを段階移設し、`cpp_emitter.py` 行数を `<=2500` 目標へ近づける。
 
 ## S1-01 基線メトリクス（2026-02-26）
 
@@ -184,6 +186,24 @@
   - `render_expr <= 200` と `legacy 0件` は達成。
   - `ファイル行数 <= 2500` は未達（`3985`）のため、親 `P0-CPP-EMITTER-SLIM-01` は未完了のまま維持する。
 
+## S8-01 statement assign 系の移設（2026-02-26）
+
+- 実施内容:
+  - `CppStatementEmitter`（`src/hooks/cpp/emitter/stmt.py`）へ以下を移設:
+    - `emit_assign`
+    - `_emit_annassign_stmt`
+    - `_emit_augassign_stmt`
+    - `_render_lvalue_for_augassign`
+  - `cpp_emitter.py` 本体から同名メソッド実装を削除し、mixin 注入経路に統一した。
+- 検証:
+  - `python3 -m py_compile src/hooks/cpp/emitter/stmt.py src/hooks/cpp/emitter/cpp_emitter.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_emit_stmt_forcore_runtime_protocol_typed_target_uses_unbox_path'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+- メトリクス更新（参考）:
+  - `cpp_emitter.py` 行数: `3646`（`S7-03` 時点 `3985` から `-339`）
+  - `render_expr` 行数: `197`（`L3440-L3636`）
+  - legacy/compat 名付き関数残数: `0`
+
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
@@ -206,3 +226,4 @@
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S7-01` として C++ 回帰スイートを実行した。`check_py2cpp_transpile` は全件成功 (`133/133`) だが、`test_py2cpp_*.py` は `273 tests / 29 failures` で失敗した。失敗カテゴリは `codegen_issues` の期待差分と `features` の fixture compile/runtime（`py_tid_*` 未解決リンク等）に集中しており、今回差分（`If/While` helper 共通化、Rust paren helper 統一）由来ではないと判断した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S7-02` として selfhost 回帰コマンドを再実行した。`check_selfhost_cpp_diff` は `mismatches=0` だが、`verify_selfhost_end_to_end` は `build_selfhost` 段階で `failed to remove required import lines: CodeEmitter import` により停止した。`build_selfhost.py` 単体でも再現するため、selfhost 前処理スクリプト側の既知不整合として記録した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S7-03` として最終メトリクスを再計測した。`render_expr` 行数は目標内（`197`）かつ legacy/compat 関数は `0` を達成したが、`cpp_emitter.py` 行数は `3985` で目安 `2500` を未達だったため、親タスクは未完了扱いを維持した。
+- 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S8-01` として assign 系 statement メソッドを `stmt.py` へ移設した。`cpp_emitter.py` 行数は `3646` まで縮退（`-339`）し、`render_expr` 行数 `197` と legacy 0件は維持した。`check_py2cpp_transpile` は `133/133` で回帰なしを確認した。

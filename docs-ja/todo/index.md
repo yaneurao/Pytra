@@ -140,3 +140,5 @@
 19. [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通し、分割後の回帰を固定する。
 20. [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` を再実行し、selfhost 再変換可能性を確認する。
 21. [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] `cpp_emitter.py` の最終メトリクス（行数・`render_expr` 行数・legacy 関数残数）を更新し、完了判定を記録する。
+22. [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-01] `emit_assign` / `_emit_annassign_stmt` / `_emit_augassign_stmt`（+ AugAssign 左辺 helper）を `stmt.py` へ移設し、statement 責務を縮退する。
+23. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S8-02] `emit_for_core` / `emit_function` など残存する長大 statement メソッドを段階移設し、`cpp_emitter.py` 行数を `<=2500` 目標へ近づける。

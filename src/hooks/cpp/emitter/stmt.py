@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
+from hooks.cpp.profile import AUG_BIN, AUG_OPS
 
 
 class CppStatementEmitter:
@@ -42,6 +43,343 @@ class CppStatementEmitter:
             body_stmts,
             while_open_default="while ({cond}) {",
         )
+
+    def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
+        """AugAssign 向けに左辺を簡易レンダリングする。"""
+        target_node = self.any_to_dict_or_empty(target_expr)
+        if self._node_kind_from_dict(target_node) == "Name":
+            return self.any_dict_get_str(target_node, "id", "_")
+        return self.render_lvalue(target_expr)
+
+    def _emit_annassign_stmt(self, stmt: dict[str, Any]) -> None:
+        """AnnAssign ノードを出力する。"""
+        t = self.cpp_type(stmt.get("annotation"))
+        decl_hint = self.any_dict_get_str(stmt, "decl_type", "")
+        decl_hint_fallback = str(stmt.get("decl_type"))
+        ann_text_fallback = str(stmt.get("annotation"))
+        if decl_hint == "" and decl_hint_fallback not in {"", "{}", "None"}:
+            decl_hint = decl_hint_fallback
+        if decl_hint != "":
+            t = self._cpp_type_text(decl_hint)
+        elif t == "auto":
+            t = self.cpp_type(stmt.get("decl_type"))
+            if t == "auto" and ann_text_fallback not in {"", "{}", "None"}:
+                t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self.render_expr(stmt.get("target"))
+        val = self.any_to_dict_or_empty(stmt.get("value"))
+        val_is_dict: bool = len(val) > 0
+        rendered_val: str = ""
+        if val_is_dict:
+            rendered_val = self.render_expr(stmt.get("value"))
+        ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
+        ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
+        ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
+        if rendered_val != "" and ann_t_str != "":
+            rendered_val = self._rewrite_nullopt_default_for_typed_target(rendered_val, ann_t_str)
+        if ann_t_str in {"byte", "uint8"} and val_is_dict:
+            byte_val = self._byte_from_str_expr(stmt.get("value"))
+            if byte_val != "":
+                rendered_val = str(byte_val)
+        val_kind = self.any_dict_get_str(val, "kind", "")
+        if val_is_dict and val_kind == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
+            inner_ann = self.split_generic(ann_t_str[5:-1])
+            if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
+                items: list[str] = []
+                for kv in self._dict_stmt_list(val.get("entries")):
+                    k = self.render_expr(kv.get("key"))
+                    v = self.render_expr_as_any(kv.get("value"))
+                    items.append(f"{{{k}, {v}}}")
+                rendered_val = f"{t}{{{', '.join(items)}}}"
+        if val_is_dict and t != "auto":
+            vkind = val_kind
+            if vkind == "BoolOp":
+                if ann_t_str != "bool":
+                    rendered_val = self.render_boolop(stmt.get("value"), True)
+            if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "ListComp" and isinstance(rendered_val, str):
+                rendered_trim = self._trim_ws(rendered_val)
+                if rendered_trim.startswith("[&]() -> list<object> {"):
+                    rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{", 1)
+                    rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;", 1)
+        val_t0 = self.get_expr_type(stmt.get("value"))
+        val_t = val_t0 if isinstance(val_t0, str) else ""
+        if rendered_val != "" and ann_t_str != "" and self._contains_text(val_t, "|"):
+            union_parts = self.split_union(val_t)
+            has_none = False
+            non_none_norm: list[str] = []
+            for p in union_parts:
+                pn = self.normalize_type_name(p)
+                if pn == "None":
+                    has_none = True
+                    continue
+                if pn != "":
+                    non_none_norm.append(pn)
+            ann_norm = self.normalize_type_name(ann_t_str)
+            if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
+                rendered_val = f"({rendered_val}).value()"
+        if self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
+            rendered_val = self._coerce_any_expr_to_target_via_unbox(
+                rendered_val,
+                stmt.get("value"),
+                ann_t_str,
+                f"annassign:{target}",
+            )
+        if self.is_any_like_type(ann_t_str) and val_is_dict:
+            rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
+        is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
+        declare_stmt = self.stmt_declare_flag(stmt, True)
+        declare_name_binding = is_plain_name_target and self.should_declare_name_binding(stmt, target, True)
+        already_declared = is_plain_name_target and self.is_declared_for_name_binding(target)
+        if target.startswith("this->"):
+            if not val_is_dict:
+                self.emit(f"{target};")
+            else:
+                self.emit(f"{target} = {rendered_val};")
+            return
+        if not val_is_dict:
+            if declare_name_binding:
+                self.declare_in_current_scope(target)
+            if declare_stmt and not already_declared:
+                self.emit(f"{t} {target};")
+            return
+        if declare_name_binding:
+            self.declare_in_current_scope(target)
+            picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
+            picked_decl_t = (
+                picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(target_node))
+            )
+            self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
+        if declare_stmt and not already_declared:
+            self.emit(f"{t} {target} = {rendered_val};")
+        else:
+            self.emit(f"{target} = {rendered_val};")
+
+    def _emit_augassign_stmt(self, stmt: dict[str, Any]) -> None:
+        """AugAssign ノードを出力する。"""
+        op = "+="
+        target_expr_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self._render_lvalue_for_augassign(stmt.get("target"))
+        declare_name_binding = self._node_kind_from_dict(target_expr_node) == "Name" and self.should_declare_name_binding(
+            stmt,
+            target,
+            False,
+        )
+        if declare_name_binding:
+            decl_t_raw = stmt.get("decl_type")
+            decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
+            inferred_t = self.get_expr_type(stmt.get("target"))
+            picked_t = decl_t if decl_t != "" else inferred_t
+            t = self._cpp_type_text(picked_t)
+            self.declare_in_current_scope(target)
+            self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
+            return
+        val = self.render_expr(stmt.get("value"))
+        target_t = self.get_expr_type(stmt.get("target"))
+        value_t = self.get_expr_type(stmt.get("value"))
+        if self.is_any_like_type(value_t):
+            if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                val = f"py_to<int64>({val})"
+            elif target_t in {"float32", "float64"}:
+                val = f"static_cast<float64>(py_to<int64>({val}))"
+        op_name = str(stmt.get("op"))
+        op_txt = str(AUG_OPS.get(op_name, ""))
+        if op_txt != "":
+            op = op_txt
+        if str(AUG_BIN.get(op_name, "")) != "":
+            # Prefer idiomatic ++/-- for +/-1 updates.
+            if self._opt_ge(2) and op_name in {"Add", "Sub"} and val == "1":
+                if op_name == "Add":
+                    self.emit(f"{target}++;")
+                else:
+                    self.emit(f"{target}--;")
+                return
+            if op_name == "FloorDiv":
+                if self.floor_div_mode == "python":
+                    self.emit(f"{target} = py_floordiv({target}, {val});")
+                else:
+                    self.emit(f"{target} /= {val};")
+            elif op_name == "Mod":
+                if self.mod_mode == "python":
+                    self.emit(f"{target} = py_mod({target}, {val});")
+                else:
+                    self.emit(f"{target} {op} {val};")
+            else:
+                self.emit(f"{target} {op} {val};")
+            return
+        self.emit(f"{target} {op} {val};")
+
+    def emit_assign(self, stmt: dict[str, Any]) -> None:
+        """代入文（通常代入/タプル代入）を C++ へ出力する。"""
+        target = self.primary_assign_target(stmt)
+        value = self.any_to_dict_or_empty(stmt.get("value"))
+        if len(target) == 0 or len(value) == 0:
+            self.emit("/* invalid assign */")
+            return
+        # `X = imported.Y` / `X = imported` の純再エクスポートは
+        # C++ 側では宣言変数に落とすと未使用・型退化の温床になるため省略する。
+        if self._is_reexport_assign(target, value):
+            return
+        if self._node_kind_from_dict(target) == "Tuple":
+            lhs_elems = self.any_dict_get_list(target, "elements")
+            if len(lhs_elems) == 0:
+                fallback_names = self.fallback_tuple_target_names_from_stmt(target, stmt)
+                if len(fallback_names) > 0:
+                    recovered: list[Any] = []
+                    for nm in fallback_names:
+                        rec: dict[str, Any] = {
+                            "kind": "Name",
+                            "id": nm,
+                            "resolved_type": "unknown",
+                            "repr": nm,
+                        }
+                        rec_any: Any = rec
+                        recovered.append(rec_any)
+                    lhs_elems = recovered
+            if self._opt_ge(2) and isinstance(value, dict) and self._node_kind_from_dict(value) == "Tuple":
+                rhs_elems = self.any_dict_get_list(value, "elements")
+                if (
+                    len(lhs_elems) == 2
+                    and len(rhs_elems) == 2
+                    and self._expr_repr_eq(lhs_elems[0], rhs_elems[1])
+                    and self._expr_repr_eq(lhs_elems[1], rhs_elems[0])
+                ):
+                    self.emit(f"::std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
+                    return
+            tmp = self.next_tuple_tmp_name()
+            value_expr = self.render_expr(stmt.get("value"))
+            tuple_elem_types: list[str] = []
+            value_t = self.get_expr_type(stmt.get("value"))
+            value_is_optional_tuple = False
+            rhs_is_tuple = False
+            if isinstance(value_t, str):
+                tuple_type_text = ""
+                if value_t.startswith("tuple[") and value_t.endswith("]"):
+                    tuple_type_text = value_t
+                elif self._contains_text(value_t, "|"):
+                    for part in self.split_union(value_t):
+                        if part.startswith("tuple[") and part.endswith("]"):
+                            tuple_type_text = part
+                            break
+                if tuple_type_text != "":
+                    rhs_is_tuple = True
+                    tuple_elem_types = self.split_generic(tuple_type_text[6:-1])
+                    if tuple_type_text != value_t:
+                        value_is_optional_tuple = True
+            if not rhs_is_tuple:
+                value_node = self.any_to_dict_or_empty(stmt.get("value"))
+                if self._node_kind_from_dict(value_node) == "Call":
+                    fn_node = self.any_to_dict_or_empty(value_node.get("func"))
+                    fn_name = ""
+                    if self._node_kind_from_dict(fn_node) == "Name":
+                        fn_name = self.any_to_str(fn_node.get("id"))
+                    if fn_name != "":
+                        fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+                        ret_t = self.function_return_types.get(fn_name, "")
+                        if ret_t.startswith("tuple[") and ret_t.endswith("]"):
+                            rhs_is_tuple = True
+                            tuple_elem_types = self.split_generic(ret_t[6:-1])
+            if value_is_optional_tuple:
+                self.emit(f"auto {tmp} = *({value_expr});")
+            else:
+                self.emit(f"auto {tmp} = {value_expr};")
+            for i, elt in enumerate(lhs_elems):
+                lhs = self.render_expr(elt)
+                rhs_item = f"::std::get<{i}>({tmp})" if rhs_is_tuple else f"py_at({tmp}, {i})"
+                if self.is_plain_name_expr(elt):
+                    elt_dict = self.any_to_dict_or_empty(elt)
+                    name = self.any_dict_get_str(elt_dict, "id", "")
+                    if not self.is_declared_for_name_binding(name):
+                        decl_t_txt = tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt)
+                        self.declare_in_current_scope(name)
+                        self.declared_var_types[name] = decl_t_txt
+                        if decl_t_txt in {"", "unknown", "Any", "object"}:
+                            self.emit(f"auto {lhs} = {rhs_item};")
+                            continue
+                        decl_t = self._cpp_type_text(decl_t_txt)
+                        self.emit(f"{decl_t} {lhs} = {rhs_item};")
+                        continue
+                self.emit(f"{lhs} = {rhs_item};")
+            return
+        target_obj: Any = target
+        texpr = self.render_lvalue(target_obj)
+        if self.is_plain_name_expr(target_obj) and not self.is_declared_for_name_binding(texpr):
+            d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
+            d1 = self.normalize_type_name(self.get_expr_type(target_obj))
+            d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
+            if d0 == "unknown":
+                d0 = ""
+            if d1 == "unknown":
+                d1 = ""
+            if d2 == "unknown":
+                d2 = ""
+            picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
+            if picked == "None":
+                picked = "Any"
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
+                numeric_picked = self._infer_numeric_expr_type(value)
+                if numeric_picked != "":
+                    picked = numeric_picked
+            dtype = self._cpp_type_text(picked)
+            self.declare_in_current_scope(texpr)
+            self.declared_var_types[texpr] = picked
+            rval = self.render_expr(stmt.get("value"))
+            rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
+            rval_trim = self._trim_ws(rval)
+            if dtype.startswith("list<") and rval_trim.startswith("[&]() -> list<object> {"):
+                rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{", 1)
+                rval = rval.replace("list<object> __out;", f"{dtype} __out;", 1)
+            if dtype == "uint8" and isinstance(value, dict):
+                byte_val = self._byte_from_str_expr(stmt.get("value"))
+                if byte_val != "":
+                    rval = str(byte_val)
+            if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and picked != "bool":
+                rval = self.render_boolop(stmt.get("value"), True)
+            rval_t0 = self.get_expr_type(stmt.get("value"))
+            rval_t = rval_t0 if isinstance(rval_t0, str) else ""
+            if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
+                rval = self._coerce_any_expr_to_target_via_unbox(
+                    rval,
+                    stmt.get("value"),
+                    picked,
+                    f"assign:{texpr}",
+                )
+            if self.is_any_like_type(picked):
+                rval = self._box_any_target_value(rval, stmt.get("value"))
+            self.emit(f"{dtype} {texpr} = {rval};")
+            return
+        rval = self.render_expr(stmt.get("value"))
+        t_target = self.get_expr_type(target_obj)
+        if t_target == "None":
+            t_target = "Any"
+        if self.is_plain_name_expr(target_obj) and t_target in {"", "unknown"}:
+            if texpr in self.declared_var_types:
+                t_target = self.declared_var_types[texpr]
+        if t_target != "":
+            rval = self._rewrite_nullopt_default_for_typed_target(rval, t_target)
+        if t_target == "uint8" and isinstance(value, dict):
+            byte_val = self._byte_from_str_expr(stmt.get("value"))
+            if byte_val != "":
+                rval = str(byte_val)
+        if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and t_target != "bool":
+            rval = self.render_boolop(stmt.get("value"), True)
+        rval_t0 = self.get_expr_type(stmt.get("value"))
+        rval_t = rval_t0 if isinstance(rval_t0, str) else ""
+        if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
+            rval = self._coerce_any_expr_to_target_via_unbox(
+                rval,
+                stmt.get("value"),
+                t_target,
+                f"assign:{texpr}",
+            )
+        if self.is_any_like_type(t_target):
+            rval = self._box_any_target_value(rval, stmt.get("value"))
+        self.emit(f"{texpr} = {rval};")
 
     def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
         finalbody = self._dict_stmt_list(stmt.get("finalbody"))
