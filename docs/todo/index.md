@@ -75,7 +75,7 @@ Context: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-r
 2. [x] [ID: P0-CPP-OPT-01-S1-01] Add skeleton (`optimizer/context/trace/passes`) under `src/hooks/cpp/optimizer/` and no-op wiring.
 3. [x] [ID: P0-CPP-OPT-01-S1-02] Add `CppOptimizer` call path in `py2cpp` and wire `--cpp-opt-level` / `--cpp-opt-pass` / dump options.
 4. [x] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
-5. [ ] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and lock pre-structuring IR normalization.
+5. [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and lock pre-structuring IR normalization.
 6. [ ] [ID: P0-CPP-OPT-01-S2-03] Add limited `CppRuntimeFastPathPass` within runtime-contract-equivalent boundaries.
 7. [ ] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching in `CppEmitter` and align boundary with `spec-cpp-optimizer`.
 8. [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
@@ -83,6 +83,7 @@ Context: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-r
 - `P0-CPP-OPT-01-S1-01` Added `src/hooks/cpp/optimizer/` scaffold (`context/trace/passes/cpp_optimizer`) plus no-op wiring in `emit_cpp_from_east`, and locked skeleton regressions with `test_cpp_optimizer.py`.
 - `P0-CPP-OPT-01-S1-02` Added `--cpp-opt-level/--cpp-opt-pass/--dump-cpp-*` wiring in `py2cpp` and connected single/multi-file paths; locked CLI acceptance and dump outputs with `test_cpp_optimizer_cli.py` and `test_east3_cpp_bridge.py`.
 - `P0-CPP-OPT-01-S2-01` Added `CppDeadTempPass`/`CppNoOpCastPass` for unused-temp elimination and no-op cast cleanup (`casts` metadata and `static_cast` nodes), registered them in `build_default_cpp_passes()`, and expanded `test_cpp_optimizer.py`.
+- `P0-CPP-OPT-01-S2-02` Added `CppConstConditionPass`/`CppRangeForShapePass` for constant-branch pruning and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wired them into the default pass set and `test_cpp_optimizer.py`.
 
 ### P3: Go/Swift/Kotlin backend direct EAST3 native generation (sidecar removal) (Low)
 

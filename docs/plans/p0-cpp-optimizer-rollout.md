@@ -41,13 +41,14 @@ Decision log:
 - 2026-02-26: Completed `P0-CPP-OPT-01-S1-01` by adding `src/hooks/cpp/optimizer/` scaffold (`context/trace/passes/cpp_optimizer`), wiring no-op optimization in `emit_cpp_from_east`, and validating with `test_cpp_optimizer.py` plus existing `test_east3_cpp_bridge.py`.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S1-02` by wiring `--cpp-opt-level/--cpp-opt-pass/--dump-cpp-*` in `py2cpp` across single/multi-file paths, then validating option acceptance, dump generation, and invalid-value rejection with `test_cpp_optimizer_cli.py` and `test_east3_cpp_bridge.py`.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-01` by adding `CppDeadTempPass` / `CppNoOpCastPass` for safe unused-temp elimination and no-op cast cleanup (`casts` metadata and `static_cast` nodes), registering them in the default pass set, and expanding `test_cpp_optimizer.py` to 9 focused cases.
+- 2026-02-26: Completed `P0-CPP-OPT-01-S2-02` by adding `CppConstConditionPass` / `CppRangeForShapePass` for constant-branch simplification and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wiring them into default passes and expanding `test_cpp_optimizer.py` to 11 focused cases.
 
 ## Breakdown
 
 - [x] [ID: P0-CPP-OPT-01-S1-01] Add the `src/hooks/cpp/optimizer/` skeleton (`optimizer/context/trace/passes`) and no-op wiring.
 - [x] [ID: P0-CPP-OPT-01-S1-02] Add `CppOptimizer` invocation in the `py2cpp` execution path and wire `--cpp-opt-level`, `--cpp-opt-pass`, and dump options.
 - [x] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
-- [ ] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and pin IR normalization before C++ structuring.
+- [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and pin IR normalization before C++ structuring.
 - [ ] [ID: P0-CPP-OPT-01-S2-03] Introduce `CppRuntimeFastPathPass` in a limited scope while preserving runtime contract equivalence.
 - [ ] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching on `CppEmitter` and align boundaries to `spec-cpp-optimizer`.
 - [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).

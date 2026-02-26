@@ -19,8 +19,10 @@ from hooks.cpp.optimizer.cpp_optimizer import CppPassManager
 from hooks.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
 from hooks.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
 from hooks.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
+from hooks.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
 from hooks.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
 from hooks.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
+from hooks.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
 from hooks.cpp.optimizer.trace import render_cpp_opt_trace
 
 
@@ -76,7 +78,7 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = optimize_cpp_ir(
             doc,
             opt_level="1",
-            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppConstConditionPass,-CppRangeForShapePass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -87,10 +89,16 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertFalse(bool(trace[1].get("enabled")))
         self.assertEqual(trace[2].get("name"), "CppNoOpCastPass")
         self.assertFalse(bool(trace[2].get("enabled")))
+        self.assertEqual(trace[3].get("name"), "CppConstConditionPass")
+        self.assertFalse(bool(trace[3].get("enabled")))
+        self.assertEqual(trace[4].get("name"), "CppRangeForShapePass")
+        self.assertFalse(bool(trace[4].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
         self.assertIn("CppDeadTempPass enabled=false", trace_text)
         self.assertIn("CppNoOpCastPass enabled=false", trace_text)
+        self.assertIn("CppConstConditionPass enabled=false", trace_text)
+        self.assertIn("CppRangeForShapePass enabled=false", trace_text)
 
     def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
         doc = _module_doc()
@@ -169,6 +177,61 @@ class CppOptimizerTest(unittest.TestCase):
         body = doc.get("body")
         self.assertIsInstance(body, list)
         self.assertEqual(len(body), 2)
+
+    def test_cpp_const_condition_pass_rewrites_if_true_branch(self) -> None:
+        doc = _module_doc()
+        if_stmt = {
+            "kind": "If",
+            "test": {"kind": "Constant", "value": True, "resolved_type": "bool"},
+            "body": [{"kind": "Expr", "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"}}],
+            "orelse": [{"kind": "Expr", "value": {"kind": "Constant", "value": 2, "resolved_type": "int64"}}],
+        }
+        doc["body"] = [if_stmt]
+        result = CppConstConditionPass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        body = doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(len(body), 1)
+        value = body[0].get("value")
+        self.assertEqual(value.get("value"), 1)
+
+    def test_cpp_range_for_shape_pass_rewrites_runtime_range_forcore(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "resolved_type": "object",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "func": {"kind": "Name", "id": "range", "resolved_type": "unknown"},
+                    "args": [
+                        {"kind": "Constant", "resolved_type": "int64", "value": 5, "repr": "5"},
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "runtime_call": "py_range",
+                },
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = CppRangeForShapePass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        self.assertEqual(for_stmt.get("iter_mode"), "static_fastpath")
+        iter_plan = for_stmt.get("iter_plan")
+        self.assertIsInstance(iter_plan, dict)
+        self.assertEqual(iter_plan.get("kind"), "StaticRangeForPlan")
+        self.assertEqual(iter_plan.get("start", {}).get("value"), 0)
+        self.assertEqual(iter_plan.get("stop", {}).get("value"), 5)
+        self.assertEqual(iter_plan.get("step", {}).get("value"), 1)
 
     def test_emit_cpp_from_east_runs_cpp_optimizer_hook(self) -> None:
         east_doc = _module_doc()
