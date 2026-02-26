@@ -60,6 +60,8 @@
 26. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S11-02] `01/04/09/18` を再計測し、反復 clone 削減の寄与と残外れ値（`09/18`）を更新する。
 27. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S12-01] Rust emitter の class method 引数で `str` を `&str` 受けへ縮退し、`py_match/expect` 系の文字列一時確保を削減する。
 28. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S12-02] `01/04/09/18` を再計測し、`&str` 化の寄与と残外れ値（`09/18`）を更新する。
+29. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S13-01] C++ GIF runtime の `to_bytes` 多用箇所を little-endian 直書きと `reserve` へ置換し、`09` の encode/write 常用コストを削減する。
+30. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S13-02] 影響ケース parity と `01/04/09/18` 再計測を実行し、`S13-01` の寄与と残外れ値（`09/18`）を更新する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
