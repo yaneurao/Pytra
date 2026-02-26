@@ -4406,6 +4406,8 @@ class CppEmitter(
         arg_nodes_list: list[Any] = self.any_to_list(arg_nodes)
         if len(arg_nodes_list) >= 1:
             arg0_node = arg_nodes_list[0]
+        arg0_t_raw = self.get_expr_type(arg0_node)
+        arg0_t = self.normalize_type_name(arg0_t_raw) if isinstance(arg0_t_raw, str) else ""
         if "bytearray" in owner_types:
             a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
             return f"{owner_expr}.append({a0})"
@@ -4426,7 +4428,9 @@ class CppEmitter(
                     else:
                         a0 = f"make_object({a0})"
             elif inner_t != "" and not self.is_any_like_type(inner_t):
-                a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+                inner_t_norm = self.normalize_type_name(inner_t)
+                if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
+                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
             return f"{owner_expr}.append({a0})"
         has_any_like_owner = False
         for t in owner_types:
