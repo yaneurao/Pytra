@@ -1008,6 +1008,44 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
+    def test_prepare_if_stmt_parts_helper(self) -> None:
+        class _IfPartsEmitter(_DummyEmitter):
+            def render_cond(self, expr: Any) -> str:
+                _ = expr
+                return ""
+
+        em = _IfPartsEmitter({})
+        cond, body, orelse = em.prepare_if_stmt_parts(
+            {
+                "kind": "If",
+                "test": {"kind": "Name", "id": "x"},
+                "body": [{"kind": "Expr", "repr": "a"}, "skip"],
+                "orelse": [{"kind": "Expr", "repr": "b"}],
+            },
+            cond_empty_default="fallback_cond",
+        )
+        self.assertEqual(cond, "fallback_cond")
+        self.assertEqual(body, [{"kind": "Expr", "repr": "a"}])
+        self.assertEqual(orelse, [{"kind": "Expr", "repr": "b"}])
+
+    def test_prepare_while_stmt_parts_helper(self) -> None:
+        class _WhilePartsEmitter(_DummyEmitter):
+            def render_cond(self, expr: Any) -> str:
+                _ = expr
+                return ""
+
+        em = _WhilePartsEmitter({})
+        cond, body = em.prepare_while_stmt_parts(
+            {
+                "kind": "While",
+                "test": {"kind": "Name", "id": "x"},
+                "body": [{"kind": "Expr", "repr": "a"}, 1],
+            },
+            cond_empty_default="fallback_while",
+        )
+        self.assertEqual(cond, "fallback_while")
+        self.assertEqual(body, [{"kind": "Expr", "repr": "a"}])
+
     def test_assignment_helper_primitives(self) -> None:
         em = CodeEmitter({})
         target = em.primary_assign_target({"target": {"kind": "Name", "id": "x"}})

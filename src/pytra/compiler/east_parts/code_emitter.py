@@ -757,6 +757,33 @@ class CodeEmitter:
         self.emit_scoped_stmt_list(body_stmts, b_scope)
         self.emit(self.syntax_text("block_close", "}"))
 
+    def prepare_if_stmt_parts(
+        self,
+        stmt: dict[str, Any],
+        *,
+        cond_empty_default: str = "false",
+    ) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]]]:
+        """If ノードの条件式/本体/else 本体を共通前処理して返す。"""
+        cond_expr = self.render_cond(stmt.get("test"))
+        if cond_expr == "":
+            cond_expr = cond_empty_default
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        else_stmts = self._dict_stmt_list(stmt.get("orelse"))
+        return cond_expr, body_stmts, else_stmts
+
+    def prepare_while_stmt_parts(
+        self,
+        stmt: dict[str, Any],
+        *,
+        cond_empty_default: str = "false",
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """While ノードの条件式/本体を共通前処理して返す。"""
+        cond_expr = self.render_cond(stmt.get("test"))
+        if cond_expr == "":
+            cond_expr = cond_empty_default
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        return cond_expr, body_stmts
+
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1

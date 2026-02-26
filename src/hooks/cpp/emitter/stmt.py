@@ -8,11 +8,10 @@ class CppStatementEmitter:
 
     def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
         """If ノードを出力する。"""
-        body_stmts = self._dict_stmt_list(stmt.get("body"))
-        else_stmts = self._dict_stmt_list(stmt.get("orelse"))
-        cond_txt = self.render_cond(stmt.get("test"))
-        if cond_txt == "":
-            cond_txt = "false"
+        cond_txt, body_stmts, else_stmts = self.prepare_if_stmt_parts(
+            stmt,
+            cond_empty_default="false",
+        )
         self._predeclare_if_join_names(body_stmts, else_stmts)
         omit_default = self._default_stmt_omit_braces("If", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("If", stmt, omit_default)
@@ -34,12 +33,13 @@ class CppStatementEmitter:
 
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
-        cond_txt = self.render_cond(stmt.get("test"))
-        if cond_txt == "":
-            cond_txt = "false"
+        cond_txt, body_stmts = self.prepare_while_stmt_parts(
+            stmt,
+            cond_empty_default="false",
+        )
         self.emit_while_stmt_skeleton(
             cond_txt,
-            self._dict_stmt_list(stmt.get("body")),
+            body_stmts,
             while_open_default="while ({cond}) {",
         )
 

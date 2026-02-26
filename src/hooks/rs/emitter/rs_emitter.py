@@ -1271,30 +1271,6 @@ class RustEmitter(CodeEmitter):
             return ""
         return self.quote_string_literal(v)
 
-    def _is_fully_parenthesized(self, text: str) -> bool:
-        if len(text) < 2 or not text.startswith("(") or not text.endswith(")"):
-            return False
-        depth = 0
-        i = 0
-        while i < len(text):
-            ch = text[i]
-            if ch == "(":
-                depth += 1
-            elif ch == ")":
-                depth -= 1
-                if depth == 0 and i != len(text) - 1:
-                    return False
-                if depth < 0:
-                    return False
-            i += 1
-        return depth == 0
-
-    def _strip_outer_parens(self, text: str) -> str:
-        out = text.strip()
-        while self._is_fully_parenthesized(out):
-            out = out[1:-1].strip()
-        return out
-
     def _ensure_string_owned(self, text: str) -> str:
         expr_trim = self._strip_outer_parens(text)
         if expr_trim.endswith(".to_string()") or expr_trim.endswith(".to_owned()"):
@@ -2038,20 +2014,26 @@ class RustEmitter(CodeEmitter):
         self.emit("// unsupported stmt: " + kind)
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
-        cond = self.render_cond(stmt.get("test"))
+        cond, body_stmts, else_stmts = self.prepare_if_stmt_parts(
+            stmt,
+            cond_empty_default="false",
+        )
         self.emit_if_stmt_skeleton(
             cond,
-            self._dict_stmt_list(stmt.get("body")),
-            self._dict_stmt_list(stmt.get("orelse")),
+            body_stmts,
+            else_stmts,
             if_open_default="if {cond} {",
             else_open_default="} else {",
         )
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
-        cond = self.render_cond(stmt.get("test"))
+        cond, body_stmts = self.prepare_while_stmt_parts(
+            stmt,
+            cond_empty_default="false",
+        )
         self.emit_while_stmt_skeleton(
             cond,
-            self._dict_stmt_list(stmt.get("body")),
+            body_stmts,
             while_open_default="while {cond} {",
         )
 

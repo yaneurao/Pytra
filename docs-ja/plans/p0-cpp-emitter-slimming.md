@@ -51,7 +51,7 @@
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-02] `_render_repr_expr` の利用箇所を段階削減し、最終 fallback 以外を除去する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-03] `_render_repr_expr` を撤去（または no-op 化）し、`repr` 文字列依存をなくす。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-01] Rust/C++ 共通化候補（条件式・cast 補助・ループ骨格）を棚卸しし、`CodeEmitter` 移管対象を確定する。
-- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S6-02] 共通化対象の 1〜2 系統を `CodeEmitter` へ移管し、C++/Rust の重複を削減する。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-02] 共通化対象の 1〜2 系統を `CodeEmitter` へ移管し、C++/Rust の重複を削減する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] `test/unit/test_py2cpp_*.py` と `tools/check_py2cpp_transpile.py` を通して回帰を固定する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` で selfhost 回帰を確認する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] 最終メトリクスを再計測し、完了判定（行数・`render_expr` 行数・legacy 0件）を記録する。
@@ -127,6 +127,25 @@
   1. Rust `_strip_outer_parens` の基底実装統一（候補2）
   2. `if/while` ラッパの共通 helper 化（候補3）
 
+## S6-02 共通 helper 移管（2026-02-26）
+
+- 実施内容:
+  1. `CodeEmitter` へ `prepare_if_stmt_parts` / `prepare_while_stmt_parts` を追加し、`If/While` の `cond/body/orelse` 抽出 + 空条件 fallback を共通化した。
+     - 参照: `src/pytra/compiler/east_parts/code_emitter.py`
+  2. C++ 側 `CppStatementEmitter` の `_emit_if_stmt` / `_emit_while_stmt` を新 helper 利用へ置換した（brace 省略や predeclare は既存ロジック維持）。
+     - 参照: `src/hooks/cpp/emitter/stmt.py`
+  3. Rust 側 `RustEmitter` の `_emit_if` / `_emit_while` を新 helper 利用へ置換し、`_strip_outer_parens` 再実装を削除して `CodeEmitter._strip_outer_parens` へ統一した。
+     - 参照: `src/hooks/rs/emitter/rs_emitter.py`
+  4. 共通 helper の回帰テストを `test/unit/test_code_emitter.py` に追加した。
+- 検証:
+  - `python3 -m py_compile src/pytra/compiler/east_parts/code_emitter.py src/hooks/cpp/emitter/stmt.py src/hooks/rs/emitter/rs_emitter.py test/unit/test_code_emitter.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_code_emitter.py' -k 'test_prepare_if_stmt_parts_helper'`
+  - `python3 -m unittest discover -s test/unit -p 'test_code_emitter.py' -k 'test_prepare_while_stmt_parts_helper'`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2rs_smoke.py'`
+  - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_emit_stmt_forcore_runtime_protocol_typed_target_uses_unbox_path'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+  - `python3 tools/check_py2rs_transpile.py`（`checked=132 ok=132 fail=0 skipped=6`）
+
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
@@ -145,3 +164,4 @@
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S5-02` として `_render_compare_expr`（left/right 補正）と `_render_name_expr`（name 補正）から `_render_repr_expr` 呼び出しを削除し、`_render_repr_expr` 呼び出し元を `render_expr` 末尾 fallback のみに縮退した（再帰内部呼び出しは除く）。確認は `rg -n "_render_repr_expr\\(" src/hooks/cpp/emitter/cpp_emitter.py` で実施し、外部呼び出しが fallback 1 箇所のみであることを固定した。検証は `python3 -m py_compile src/hooks/cpp/emitter/cpp_emitter.py src/hooks/cpp/emitter/runtime_expr.py src/hooks/cpp/emitter/collection_expr.py`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_dispatch_routes_runtime_path_type_id_handlers'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_dispatch_routes_collection_literal_handlers'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_builtin_runtime_list_append_uses_ir_node_path'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_supports_path_runtime_op_ir_nodes'`、`python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S5-03` として `_render_repr_expr` / `_render_set_literal_repr` / `_split_call_repr` / `_looks_like_python_expr_text` を `cpp_emitter.py` から削除し、`render_expr`/`render_cond`/statement 側の `repr` フォールバックを撤去した。`stmt.py` / `expr.py` 側に残っていた `_render_repr_expr` 呼び出しも除去し、EAST3 の構造化ノードのみで条件式を扱う形へ統一した。確認は `rg -n "_render_repr_expr|_looks_like_python_expr_text|_split_call_repr|_render_set_literal_repr|expr_d.get\\(\\\"repr\\\"\\)|if \\\"repr\\\" in expr_node" src/hooks/cpp/emitter || true`（出力なし）で実施し、`repr` 文字列依存経路が残らないことを固定した。検証は `python3 -m py_compile src/hooks/cpp/emitter/cpp_emitter.py src/hooks/cpp/emitter/stmt.py src/hooks/cpp/emitter/expr.py src/hooks/cpp/emitter/runtime_expr.py src/hooks/cpp/emitter/collection_expr.py src/hooks/cpp/emitter/builtin_runtime.py src/hooks/cpp/emitter/type_bridge.py src/hooks/cpp/emitter/class_def.py` と `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S6-01` として Rust/C++ の共通化候補を棚卸しし、`easy/medium/risky` で優先度を固定した。`CodeEmitter` と C++/Rust emitter を `rg` で突合し、`_strip_outer_parens` 統一と `if/while` ラッパ helper 化を `S6-02` の実装対象に選定した。一方で `_prepare_call_parts` と `emit_stmt_list` 系 override は selfhost 静的束縛回避が絡むため `risky` として今回の移管対象から除外した。
+- 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S6-02` として `CodeEmitter` へ `prepare_if_stmt_parts` / `prepare_while_stmt_parts` を追加し、C++/Rust の `If/While` 前処理重複を削減した。あわせて Rust 側の `_strip_outer_parens` 再実装を削除し、基底 helper へ統一した。検証は `py_compile`、追加した `test_code_emitter` 2件、`test_py2rs_smoke.py`、`test_east3_cpp_bridge` の代表ケース、`check_py2cpp_transpile`（`133/133`）、`check_py2rs_transpile`（`132/132`）で実施した。
