@@ -43,6 +43,7 @@ Decision log:
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-01` by adding `CppDeadTempPass` / `CppNoOpCastPass` for safe unused-temp elimination and no-op cast cleanup (`casts` metadata and `static_cast` nodes), registering them in the default pass set, and expanding `test_cpp_optimizer.py` to 9 focused cases.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-02` by adding `CppConstConditionPass` / `CppRangeForShapePass` for constant-branch simplification and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wiring them into default passes and expanding `test_cpp_optimizer.py` to 11 focused cases.
 - 2026-02-26: Completed `P0-CPP-OPT-01-S2-03` by adding `CppRuntimeFastPathPass` (O2-only) for contract-equivalent fast paths (`Unbox` same-type fold, `Box(object)` fold, `ObjBool(bool)` fold), then wiring it into default passes and expanding `test_cpp_optimizer.py` to 12 focused cases with O1/O2 behavior checks.
+- 2026-02-26: Completed `P0-CPP-OPT-01-S3-01` by removing char-compare optimization branching (`_try_optimize_char_compare`) from `CppEmitter._render_compare_expr`, keeping compare optimization responsibility on the optimizer side; validated with `test_py2cpp_features.py -k str_index_char_compare_optimized_and_runtime`.
 
 ## Breakdown
 
@@ -51,6 +52,6 @@ Decision log:
 - [x] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
 - [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and pin IR normalization before C++ structuring.
 - [x] [ID: P0-CPP-OPT-01-S2-03] Introduce `CppRuntimeFastPathPass` in a limited scope while preserving runtime contract equivalence.
-- [ ] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching on `CppEmitter` and align boundaries to `spec-cpp-optimizer`.
+- [x] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching on `CppEmitter` and align boundaries to `spec-cpp-optimizer`.
 - [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
 - [ ] [ID: P0-CPP-OPT-01-S3-03] Measure performance/size/generated diff baselines and record introduction effects in context docs.
