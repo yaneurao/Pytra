@@ -63,6 +63,17 @@
   - `rg -n "_render_call_|_render_attribute_expr|_render_call_expr_from_context|type_id|IsInstance|IsSubtype|IsSubclass|ObjTypeId" src/hooks/cpp/emitter`
   - `rg -n "virtual|override|_class_method|_render_call_class_method|_render_call_attribute_non_module" src/hooks/cpp/emitter`
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S2-02` 確定内容（2026-02-26）:
+- `src/hooks/cpp/emitter/call.py` の class method 呼び出し描画を dispatch table 化した。
+  - `dispatch_mode` を `_class_method_dispatch_mode()` で明示化（`virtual` / `direct` / `fallback`）。
+  - `_render_call_class_method()` は mode に応じて `_render_virtual_class_method_call()` / `_render_direct_class_method_call()` を選択し、`fallback` は `None` を返す。
+- class method 候補探索ロジックを `_collect_class_method_candidates()` へ共通化し、`_class_method_sig` / `_has_class_method` / `_class_method_name_sig` の重複を削減した。
+- 回帰検証:
+  - `python3 -m py_compile src/hooks/cpp/emitter/call.py test/unit/test_east3_cpp_bridge.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'class_method_dispatch_mode_routes_virtual_direct_and_fallback'`
+  - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'render_call_class_method_uses_dispatch_mode_table'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+
 ### S3: 置換実施
 
 7. `P2-CPP-SELFHOST-VIRTUAL-01-S3-01`: `sample` 側 2〜3 件から着手し、`type_id` 分岐を除去して `virtual` 呼び出し化する。
@@ -88,3 +99,4 @@
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-02` として抽出結果を 3 区分へ分類したが、dispatch 用 `type_id` 分岐は 0 件だった。非対象は `pytra-gen/built_in/type_id.cpp` の registry 管理分岐のみに整理した。
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-03` として `virtual` 置換候補の優先順を策定したが、対象は 0 件（no-op）で確定した。以降は非対象理由の固定化と回帰文書化を優先する。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-01` として `src/hooks/cpp/emitter/call.py` の call/render 経路を「PyObj/組み込み method 経路」と「ユーザー定義 class method 経路」へ分解し、仮想呼び出し化の一次対象を後者に限定した。`BuiltinCall` lower 前提と `runtime_expr.py` の type_id API 呼び出しは非対象として固定した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-02` として `call.py` の class method 呼び出しを mode ベース（`virtual` / `direct` / `fallback`）へ分岐明示化し、dispatch table で描画先を切り替える形へ整理した。`_collect_class_method_candidates` へ候補探索を共通化し、`test_east3_cpp_bridge` の追加2ケースと `check_py2cpp_transpile`（`133/133`）で回帰なしを確認した。

@@ -383,13 +383,20 @@ class CppCallEmitter:
         arg_nodes: list[Any],
     ) -> str | None:
         """`Class.method(...)` 分岐を処理する。"""
-        method_sig = self._class_method_sig(owner_t, attr)
-        if len(method_sig) == 0:
+        dispatch_mode = self._class_method_dispatch_mode(owner_t, attr)
+        if dispatch_mode == "fallback":
             return None
         call_args = self.merge_call_args(args, kw)
         call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
         fn_expr = self._render_attribute_expr(fn)
-        return f"{fn_expr}({join_str_list(', ', call_args)})"
+        dispatch_table = {
+            "virtual": self._render_virtual_class_method_call,
+            "direct": self._render_direct_class_method_call,
+        }
+        handler = dispatch_table.get(dispatch_mode)
+        if handler is None:
+            return None
+        return handler(fn_expr, call_args)
 
     def _render_append_call_object_method(
         self,
@@ -509,8 +516,8 @@ class CppCallEmitter:
             return class_rendered
         return None
 
-    def _class_method_sig(self, owner_t: str, method: str) -> list[str]:
-        """クラスメソッドの引数型シグネチャを返す。未知なら空配列。"""
+    def _collect_class_method_candidates(self, owner_t: str) -> list[str]:
+        """class method シグネチャ探索で使う候補クラス名を返す。"""
         t_norm = self.normalize_type_name(owner_t)
         candidates: list[str] = []
         if self._contains_text(t_norm, "|"):
@@ -519,6 +526,29 @@ class CppCallEmitter:
             candidates = [t_norm]
         if self.current_class_name is not None and owner_t in {"", "unknown"}:
             candidates.append(self.current_class_name)
+        return candidates
+
+    def _class_method_dispatch_mode(self, owner_t: str, method: str) -> str:
+        """class method 呼び出しの dispatch mode（virtual/direct/fallback）を返す。"""
+        if not self._has_class_method(owner_t, method):
+            return "fallback"
+        candidates = self._collect_class_method_candidates(owner_t)
+        for cls_name in candidates:
+            if method in self.class_method_virtual.get(cls_name, set()):
+                return "virtual"
+        return "direct"
+
+    def _render_virtual_class_method_call(self, fn_expr: str, call_args: list[str]) -> str:
+        """virtual 経路の class method 呼び出しを描画する。"""
+        return f"{fn_expr}({join_str_list(', ', call_args)})"
+
+    def _render_direct_class_method_call(self, fn_expr: str, call_args: list[str]) -> str:
+        """non-virtual 経路の class method 呼び出しを描画する。"""
+        return f"{fn_expr}({join_str_list(', ', call_args)})"
+
+    def _class_method_sig(self, owner_t: str, method: str) -> list[str]:
+        """クラスメソッドの引数型シグネチャを返す。未知なら空配列。"""
+        candidates = self._collect_class_method_candidates(owner_t)
         for c in candidates:
             if c in self.class_method_arg_types:
                 mm = self.class_method_arg_types[c]
@@ -534,14 +564,7 @@ class CppCallEmitter:
 
     def _has_class_method(self, owner_t: str, method: str) -> bool:
         """クラスメソッドが存在するかを返す（0引数メソッド対応）。"""
-        t_norm = self.normalize_type_name(owner_t)
-        candidates: list[str] = []
-        if self._contains_text(t_norm, "|"):
-            candidates = self.split_union(t_norm)
-        elif t_norm != "":
-            candidates = [t_norm]
-        if self.current_class_name is not None and owner_t in {"", "unknown"}:
-            candidates.append(self.current_class_name)
+        candidates = self._collect_class_method_candidates(owner_t)
         for c in candidates:
             if c in self.class_method_arg_types:
                 mm = self.class_method_arg_types[c]
@@ -557,14 +580,7 @@ class CppCallEmitter:
 
     def _class_method_name_sig(self, owner_t: str, method: str) -> list[str]:
         """クラスメソッドの引数名シグネチャを返す。未知なら空配列。"""
-        t_norm = self.normalize_type_name(owner_t)
-        candidates: list[str] = []
-        if self._contains_text(t_norm, "|"):
-            candidates = self.split_union(t_norm)
-        elif t_norm != "":
-            candidates = [t_norm]
-        if self.current_class_name is not None and owner_t in {"", "unknown"}:
-            candidates.append(self.current_class_name)
+        candidates = self._collect_class_method_candidates(owner_t)
         for c in candidates:
             if c in self.class_method_arg_names:
                 mm = self.class_method_arg_names[c]

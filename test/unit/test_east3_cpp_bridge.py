@@ -1993,6 +1993,32 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(plain_isinstance), "py_isinstance(x, PYTRA_TID_INT)")
 
+    def test_class_method_dispatch_mode_routes_virtual_direct_and_fallback(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.class_method_arg_types = {"Base": {"f": []}}
+        emitter.class_method_virtual = {"Base": {"f"}}
+        self.assertEqual(emitter._class_method_dispatch_mode("Base", "f"), "virtual")
+        emitter.class_method_virtual = {"Base": set()}
+        self.assertEqual(emitter._class_method_dispatch_mode("Base", "f"), "direct")
+        self.assertEqual(emitter._class_method_dispatch_mode("Base", "g"), "fallback")
+
+    def test_render_call_class_method_uses_dispatch_mode_table(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.class_method_arg_types = {"Base": {"f": []}}
+        emitter.class_method_virtual = {"Base": {"f"}}
+        fn = {
+            "kind": "Attribute",
+            "value": {"kind": "Name", "id": "obj", "resolved_type": "Base"},
+            "attr": "f",
+            "resolved_type": "unknown",
+        }
+        rendered_virtual = emitter._render_call_class_method("Base", "f", fn, [], {}, [])
+        self.assertEqual(rendered_virtual, "obj.f()")
+        emitter.class_method_virtual = {"Base": set()}
+        rendered_direct = emitter._render_call_class_method("Base", "f", fn, [], {}, [])
+        self.assertEqual(rendered_direct, "obj.f()")
+        self.assertIsNone(emitter._render_call_class_method("Base", "g", fn, [], {}, []))
+
     def test_call_fallback_rejects_parser_lowered_builtins(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         with self.assertRaisesRegex(ValueError, "builtin call must be lowered_kind=BuiltinCall: print"):
