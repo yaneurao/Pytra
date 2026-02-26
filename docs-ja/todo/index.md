@@ -110,7 +110,7 @@
 1. [ ] [ID: P3-GSK-NATIVE-01] Go/Swift/Kotlin backend を `EAST3 -> <lang> native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
 2. [x] [ID: P3-GSK-NATIVE-01-S1-01] 共通移行契約（EAST3 ノード対応範囲、未対応時 fail-closed、runtime 境界）を定義する。
 3. [x] [ID: P3-GSK-NATIVE-01-S1-02] 3言語共通で sidecar 互換モードの隔離方針（既定 native / opt-in legacy）を確定する。
-4. [ ] [ID: P3-GSK-NATIVE-01-S2-01] Go native emitter 骨格と `py2go.py` 既定切替を実装する。
+4. [x] [ID: P3-GSK-NATIVE-01-S2-01] Go native emitter 骨格と `py2go.py` 既定切替を実装する。
 5. [ ] [ID: P3-GSK-NATIVE-01-S2-02] Go の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 6. [ ] [ID: P3-GSK-NATIVE-01-S3-01] Swift native emitter 骨格と `py2swift.py` 既定切替を実装する。
 7. [ ] [ID: P3-GSK-NATIVE-01-S3-02] Swift の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
@@ -120,6 +120,7 @@
 11. [ ] [ID: P3-GSK-NATIVE-01-S5-02] `sample/go` / `sample/swift` / `sample/kotlin` 再生成とドキュメント同期を行う。
 - `P3-GSK-NATIVE-01-S1-01` 共通契約 spec を追加（`docs-ja/spec/spec-gsk-native-backend.md` / `docs/spec/spec-gsk-native-backend.md`）。EAST3 入力責務・fail-closed・runtime 境界・sidecar 隔離方針を固定。
 - `P3-GSK-NATIVE-01-S1-02` 同 spec に互換モード隔離ポリシーを追記し、`--go-backend/--swift-backend/--kotlin-backend sidecar` の明示 opt-in と「既定 native + 自動フォールバック禁止」を固定。
+- `P3-GSK-NATIVE-01-S2-01` `go_native_emitter.py` を追加し、`py2go.py` 既定を native 化（`--go-backend sidecar` 互換維持）。`test_py2go_smoke.py`（`10/10`）と `check_py2go_transpile`（`132/132`）を確認。
 
 ### P3: microgpt 原本保全タスク再開（低優先）
 
