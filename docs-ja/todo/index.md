@@ -127,7 +127,7 @@
 6. [x] [ID: P0-CPP-EMITTER-SLIM-01-S2-03] legacy `isinstance/issubclass` Name-call 許容経路を撤去し、type_id 系は EAST3 ノード前提へ統一する。
 7. [x] [ID: P0-CPP-EMITTER-SLIM-01-S3-01] import/include/namespace/module-init 生成責務を `src/hooks/cpp/emitter/` 配下の専用モジュールへ分離する。
 8. [x] [ID: P0-CPP-EMITTER-SLIM-01-S3-02] class emit（`virtual/override`・`PYTRA_TYPE_ID`・基底継承処理）を専用モジュールへ分離する。
-9. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S3-03] 型変換 (`_cpp_type_text`) と Any 境界補正 helper を専用モジュールへ分離する。
+9. [x] [ID: P0-CPP-EMITTER-SLIM-01-S3-03] 型変換 (`_cpp_type_text`) と Any 境界補正 helper を専用モジュールへ分離する。
 10. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S3-04] built-in runtime_call（list/set/dict/str/path/special）分岐をディスパッチモジュールへ分離する。
 11. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S4-01] `render_expr` の kind 分岐を `kind -> handler` テーブル駆動へ置換する骨格を導入する。
 12. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S4-02] collection literal/comprehension 系ハンドラを `render_expr` から分離し、独立テストを追加する。
