@@ -50,7 +50,7 @@
 
 文脈: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimizer-rollout.md)
 
-1. [ ] [ID: P0-EAST3-OPT-01] `EAST3 -> EAST3` 共通最適化層を導入し、pass manager / opt level / fail-closed 契約を実装へ反映する。
+1. [x] [ID: P0-EAST3-OPT-01] `EAST3 -> EAST3` 共通最適化層を導入し、pass manager / opt level / fail-closed 契約を実装へ反映する。
 2. [x] [ID: P0-EAST3-OPT-01-S1-01] optimizer エントリ (`east3_optimizer.py`) と pass manager 骨格（`PassContext`/`PassResult`）を追加する。
 3. [x] [ID: P0-EAST3-OPT-01-S1-02] CLI オプション（`--east3-opt-level`, `--east3-opt-pass`, dump/trace）を実装し、`O0/O1/O2` 契約を固定する。
 4. [x] [ID: P0-EAST3-OPT-01-S2-01] `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`O1` 既定セットを確立する。

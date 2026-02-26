@@ -49,7 +49,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 
 Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimizer-rollout.md)
 
-1. [ ] [ID: P0-EAST3-OPT-01] Introduce common `EAST3 -> EAST3` optimizer and reflect pass manager / opt-level / fail-closed contract into implementation.
+1. [x] [ID: P0-EAST3-OPT-01] Introduce common `EAST3 -> EAST3` optimizer and reflect pass manager / opt-level / fail-closed contract into implementation.
 2. [x] [ID: P0-EAST3-OPT-01-S1-01] Add optimizer entry (`east3_optimizer.py`) and pass manager skeleton (`PassContext`/`PassResult`).
 3. [x] [ID: P0-EAST3-OPT-01-S1-02] Implement CLI options (`--east3-opt-level`, `--east3-opt-pass`, dump/trace`) and lock `O0/O1/O2` contract.
 4. [x] [ID: P0-EAST3-OPT-01-S2-01] Implement `NoOpCastCleanupPass` / `LiteralCastFoldPass` and establish default `O1` set.
