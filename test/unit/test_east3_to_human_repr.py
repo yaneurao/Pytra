@@ -1,4 +1,4 @@
-"""Tests for EAST3 human renderer and compatibility wrapper."""
+"""Tests for EAST3 human-representation renderer and compatibility wrapper."""
 
 from __future__ import annotations
 
@@ -13,11 +13,11 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.render_human_east2_cpp import render_east_human_cpp
-from src.pytra.compiler.east_parts.render_human_east3_cpp import render_east3_human_cpp
+from src.pytra.compiler.east_parts.east2_to_human_repr import render_east_to_human_repr
+from src.pytra.compiler.east_parts.east3_to_human_repr import render_east3_to_human_repr
 
 
-class RenderHumanEast3CppTest(unittest.TestCase):
+class East3ToHumanReprTest(unittest.TestCase):
     def _sample_east3_doc(self) -> dict[str, object]:
         return {
             "ok": True,
@@ -68,8 +68,8 @@ class RenderHumanEast3CppTest(unittest.TestCase):
             },
         }
 
-    def test_render_east3_human_cpp_renders_core_nodes(self) -> None:
-        rendered = render_east3_human_cpp(self._sample_east3_doc())
+    def test_render_east3_to_human_repr_renders_core_nodes(self) -> None:
+        rendered = render_east3_to_human_repr(self._sample_east3_doc())
         self.assertIn("EAST3 Human View", rendered)
         self.assertIn("ForCore mode=runtime_protocol", rendered)
         self.assertIn("obj_bool(", rendered)
@@ -77,7 +77,7 @@ class RenderHumanEast3CppTest(unittest.TestCase):
         self.assertIn("is_instance(", rendered)
 
     def test_compat_wrapper_dispatches_stage3_doc(self) -> None:
-        rendered = render_east_human_cpp(self._sample_east3_doc())
+        rendered = render_east_to_human_repr(self._sample_east3_doc())
         self.assertIn("EAST3 Human View", rendered)
         self.assertIn("py_iter_runtime(", rendered)
 
@@ -92,7 +92,7 @@ class RenderHumanEast3CppTest(unittest.TestCase):
                 "main_guard_body": [],
             },
         }
-        rendered = render_east_human_cpp(out_doc)
+        rendered = render_east_to_human_repr(out_doc)
         self.assertIn("EAST Human View", rendered)
 
 

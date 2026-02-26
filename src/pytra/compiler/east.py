@@ -25,6 +25,7 @@ from pytra.compiler.east_parts import (  # noqa: F401
     convert_source_to_east_self_hosted,
     convert_source_to_east_with_backend,
     main,
+    render_east_to_human_repr,
     render_east_human_cpp,
 )
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std import argparse
 
 from .core import EastBuildError, convert_path
-from .render_human_east2_cpp import _dump_json, render_east_human_cpp
+from .east2_to_human_repr import _dump_json, render_east_to_human_repr
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.human_output:
             human_path = Path(args.human_output)
             human_path.parent.mkdir(parents=True, exist_ok=True)
-            human_path.write_text(render_east_human_cpp(out), encoding="utf-8")
+            human_path.write_text(render_east_to_human_repr(out), encoding="utf-8")
         return 1
     except EastBuildError as exc:
         out = {"ok": False, "error": exc.to_payload()}
@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.human_output:
             human_path = Path(args.human_output)
             human_path.parent.mkdir(parents=True, exist_ok=True)
-            human_path.write_text(render_east_human_cpp(out), encoding="utf-8")
+            human_path.write_text(render_east_to_human_repr(out), encoding="utf-8")
         return 1
 
     out = {"ok": True, "east": east}
@@ -77,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.human_output:
         human_path = Path(args.human_output)
         human_path.parent.mkdir(parents=True, exist_ok=True)
-        human_path.write_text(render_east_human_cpp(out), encoding="utf-8")
+        human_path.write_text(render_east_to_human_repr(out), encoding="utf-8")
     return 0
 
 
