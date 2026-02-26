@@ -44,6 +44,7 @@
 - 2026-02-26: `S3-01` として `rs_emitter` に `ForCore` 受理を追加し、`iter_plan=StaticRangeForPlan/RuntimeIterForPlan` を内部で `ForRange/For` へ変換する経路を実装。`test_py2rs_smoke.py` に ForCore 直受理回帰（range/runtime tuple target）を追加し、`test_py2rs_smoke.py` 全通過を確認。
 - 2026-02-26: `S3-02` として `rs_emitter` に `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId`・`IsInstance/IsSubtype/IsSubclass`・`Box/Unbox` の直接描画を追加。type_id helper 事前検出（`_doc_mentions_isinstance`）を direct ノード対応へ拡張し、`test_py2rs_smoke.py` に object boundary / type predicate / box-unbox 回帰を追加して全通過を確認。
 - 2026-02-26: `S3-03` として Rust smoke（`test_py2rs_smoke.py`）と `check_py2rs_transpile.py` を実行し、132件（skip 6）の transpile チェック全通過を確認。
+- 2026-02-26: `S4-01` として `cs_emitter` に `ForCore` 受理を追加し、`iter_plan=StaticRangeForPlan/RuntimeIterForPlan` を内部で `ForRange/For` へ変換する経路を実装。`test_py2cs_smoke.py` に ForCore 直受理回帰（range/runtime tuple target）を追加して全通過を確認。
 
 ## 分解
 
@@ -58,7 +59,7 @@
 - [x] [ID: P3-EAST3-ONLY-01-S3-01] `rs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
 - [x] [ID: P3-EAST3-ONLY-01-S3-02] `rs_emitter` の `Obj*` / `Is*` / `Box/Unbox` 直接処理を実装する。
 - [x] [ID: P3-EAST3-ONLY-01-S3-03] Rust smoke + `check_py2rs_transpile.py` で回帰を固定する。
-- [ ] [ID: P3-EAST3-ONLY-01-S4-01] `cs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
+- [x] [ID: P3-EAST3-ONLY-01-S4-01] `cs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
 - [ ] [ID: P3-EAST3-ONLY-01-S4-02] `cs_emitter` の `Obj*` / `Is*` / `Box/Unbox` 直接処理を実装する。
 - [ ] [ID: P3-EAST3-ONLY-01-S4-03] C# smoke + `check_py2cs_transpile.py` で回帰を固定する。
 - [ ] [ID: P3-EAST3-ONLY-01-S5-01] 8本 CLI から `normalize_east3_to_legacy` 呼び出しを撤去する。

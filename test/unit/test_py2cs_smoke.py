@@ -61,6 +61,90 @@ class Py2CsSmokeTest(unittest.TestCase):
         self.assertEqual(loaded.get("kind"), "Module")
         self.assertEqual(loaded.get("east_stage"), 2)
 
+    def test_for_core_static_range_plan_is_emitted(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Constant", "value": 0},
+                        "stop": {"kind": "Constant", "value": 3},
+                        "step": {"kind": "Constant", "value": 1},
+                        "range_mode": "ascending",
+                    },
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "print"},
+                                "args": [{"kind": "Name", "id": "i"}],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("long i = 0;", cs)
+        self.assertIn("for (i = 0; i < 3; i += 1)", cs)
+
+    def test_for_core_runtime_iter_tuple_target_is_emitted(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {
+                        "kind": "TupleTarget",
+                        "elements": [
+                            {"kind": "NameTarget", "id": "k"},
+                            {"kind": "NameTarget", "id": "v"},
+                        ],
+                        "target_type": "tuple[int64,int64]",
+                    },
+                    "iter_plan": {
+                        "kind": "RuntimeIterForPlan",
+                        "iter_expr": {"kind": "Name", "id": "pairs"},
+                        "init_op": "ObjIterInit",
+                        "next_op": "ObjIterNext",
+                    },
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "print"},
+                                "args": [
+                                    {"kind": "Name", "id": "k"},
+                                    {"kind": "Name", "id": "v"},
+                                ],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("foreach (var __it", cs)
+        self.assertIn("var k = __it_", cs)
+        self.assertIn(".Item1;", cs)
+        self.assertIn("var v = __it_", cs)
+        self.assertIn(".Item2;", cs)
+
     def test_cli_smoke_generates_cs_file(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
