@@ -8,7 +8,7 @@
 背景:
 - 現在の `py2go.py` / `py2swift.py` / `py2kotlin.py` は `transpile_to_js` の sidecar JavaScript を生成し、各言語側は Node bridge ラッパーを出力する構成である。
 - その結果、`sample/go` / `sample/swift` / `sample/kotlin` はネイティブ backend としての実コード品質が見えにくく、言語ごとの最適化余地も活かせない。
-- Java native 化（`P0-JAVA-NATIVE-01`）と同じ方向で、非 native backend を段階的に縮退する必要がある。
+- Java native 化（`P3-JAVA-NATIVE-01`）と同じ方向で、非 native backend を段階的に縮退する必要がある。
 
 目的:
 - Go / Swift / Kotlin backend を `EAST3 -> <lang> native emitter` の直生成経路へ移行し、既定経路から JS sidecar bridge を撤去する。
@@ -20,7 +20,7 @@
 - `sample/go` / `sample/swift` / `sample/kotlin` 再生成導線と関連ドキュメント
 
 非対象:
-- Java backend（`P0-JAVA-NATIVE-01` で管理）
+- Java backend（`P3-JAVA-NATIVE-01` で管理）
 - C++/Rust/C#/JS/TS backend の責務変更
 - 高度最適化導入（まずは native 実行互換の確立を優先）
 

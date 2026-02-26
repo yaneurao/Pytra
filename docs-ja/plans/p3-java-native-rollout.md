@@ -1,9 +1,9 @@
-# P0: Java backend の EAST3 直生成移行（sidecar 撤去）
+# P3: Java backend の EAST3 直生成移行（sidecar 撤去）
 
 最終更新: 2026-02-26
 
 関連 TODO:
-- `docs-ja/todo/index.md` の `ID: P0-JAVA-NATIVE-01`
+- `docs-ja/todo/index.md` の `ID: P3-JAVA-NATIVE-01`
 
 背景:
 - 現在の `py2java.py` は `transpile_to_js` で sidecar JavaScript を生成し、Java 側は Node bridge ラッパーを出力する構成である。
@@ -37,16 +37,17 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets java --all-samples --ignore-unstable-stdout`
 
 決定ログ:
-- 2026-02-26: 初版作成。`P0` 最優先として、Java sidecar bridge 依存を段階撤去する実装計画を追加。
+- 2026-02-26: 初版作成。Java sidecar bridge 依存を段階撤去する実装計画を追加。
+- 2026-02-26: ユーザー指示により優先度を低優先へ変更し、Java native 移行タスクの識別子を低優先帯へ更新。
 
 ## 分解
 
-- [ ] [ID: P0-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
-- [ ] [ID: P0-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
-- [ ] [ID: P0-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
-- [ ] [ID: P0-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
-- [ ] [ID: P0-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
-- [ ] [ID: P0-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
-- [ ] [ID: P0-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
-- [ ] [ID: P0-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
-- [ ] [ID: P0-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
+- [ ] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
+- [ ] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
+- [ ] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
+- [ ] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
+- [ ] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
+- [ ] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
+- [ ] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
+- [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
+- [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
