@@ -125,7 +125,7 @@
 4. [x] [ID: P0-CPP-EMITTER-SLIM-01-S2-01] `stage2/self_hosted` 前提の legacy builtin compat（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat`）を撤去する。
 5. [x] [ID: P0-CPP-EMITTER-SLIM-01-S2-02] `For`/`ForRange` から `ForCore` への bridge と逆写像を撤去し、`ForCore` 直接受理へ統一する。
 6. [x] [ID: P0-CPP-EMITTER-SLIM-01-S2-03] legacy `isinstance/issubclass` Name-call 許容経路を撤去し、type_id 系は EAST3 ノード前提へ統一する。
-7. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S3-01] import/include/namespace/module-init 生成責務を `src/hooks/cpp/emitter/` 配下の専用モジュールへ分離する。
+7. [x] [ID: P0-CPP-EMITTER-SLIM-01-S3-01] import/include/namespace/module-init 生成責務を `src/hooks/cpp/emitter/` 配下の専用モジュールへ分離する。
 8. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S3-02] class emit（`virtual/override`・`PYTRA_TYPE_ID`・基底継承処理）を専用モジュールへ分離する。
 9. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S3-03] 型変換 (`_cpp_type_text`) と Any 境界補正 helper を専用モジュールへ分離する。
 10. [ ] [ID: P0-CPP-EMITTER-SLIM-01-S3-04] built-in runtime_call（list/set/dict/str/path/special）分岐をディスパッチモジュールへ分離する。
