@@ -7,15 +7,15 @@
 Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
 
 Supported backends:
-![Backend C++](https://img.shields.io/badge/Backend-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white)
-![Backend Rust](https://img.shields.io/badge/Backend-Rust-000000?style=flat-square&logo=rust&logoColor=white)
-![Backend C#](https://img.shields.io/badge/Backend-C%23-239120?style=flat-square&logo=csharp&logoColor=white)
-![Backend JavaScript](https://img.shields.io/badge/Backend-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![Backend TypeScript](https://img.shields.io/badge/Backend-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Backend Go](https://img.shields.io/badge/Backend-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
-![Backend Java](https://img.shields.io/badge/Backend-Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
-![Backend Swift](https://img.shields.io/badge/Backend-Swift-F05138?style=flat-square&logo=swift&logoColor=white)
-![Backend Kotlin](https://img.shields.io/badge/Backend-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
+![C++](https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white)
+![Rust](https://img.shields.io/badge/-Rust-000000?style=flat-square&logo=rust&logoColor=white)
+![C#](https://img.shields.io/badge/-C%23-239120?style=flat-square&logo=csharp&logoColor=white)
+![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Go](https://img.shields.io/badge/-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
+![Java](https://img.shields.io/badge/-Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Swift](https://img.shields.io/badge/-Swift-F05138?style=flat-square&logo=swift&logoColor=white)
+![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
 
 ## Latest News
 
