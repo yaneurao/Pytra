@@ -21,8 +21,11 @@ def run_integer_grid_checksum(width: int, height: int, seed: int) -> int:
 
 
 def run_integer_benchmark() -> None:
-    width: int = 2400
-    height: int = 1600
+    # Previous baseline: 2400 x 1600 (= 3,840,000 cells).
+    # 7600 x 5000 (= 38,000,000 cells) is ~9.9x larger to make this case
+    # meaningful in runtime benchmarks.
+    width: int = 7600
+    height: int = 5000
 
     start: float = perf_counter()
     checksum: int = run_integer_grid_checksum(width, height, 123456789)

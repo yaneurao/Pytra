@@ -179,9 +179,9 @@
     "17_monte_carlo_pi": {
       "artifact": null,
       "source_rel": "sample/py/17_monte_carlo_pi.py",
-      "source_sha256": "b855c1d8ebea1fcb4d6cbd6df53a4e4408ed354a0d213ab6605b6cecf6c6a154",
-      "stdout_normalized": "pixels: 3840000\nchecksum: 45839292",
-      "stdout_sha256": "fb52b8a70e80e77cc774dc4a5b7f78af797681214a2331fba3579d672c30b153"
+      "source_sha256": "2e42cbc5082923ef0248ae2222e7d972c5a4649e892ea646cd02654c1c490f7f",
+      "stdout_normalized": "pixels: 38000000\nchecksum: 3321178",
+      "stdout_sha256": "00dc1225885c1b7a6759fa20052db6eacf547b65fe6bc7fe7aa259d6405d08a2"
     },
     "18_mini_language_interpreter": {
       "artifact": null,
