@@ -428,6 +428,32 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, int]) -> list[str]:
     return [indent + "// TODO: unsupported stmt kind " + str(kind)]
 
 
+def _stmt_guarantees_return(stmt: Any) -> bool:
+    if not isinstance(stmt, dict):
+        return False
+    kind = stmt.get("kind")
+    if kind == "Return":
+        return True
+    if kind != "If":
+        return False
+    body_any = stmt.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    orelse_any = stmt.get("orelse")
+    orelse = orelse_any if isinstance(orelse_any, list) else []
+    if len(orelse) == 0:
+        return False
+    return _block_guarantees_return(body) and _block_guarantees_return(orelse)
+
+
+def _block_guarantees_return(body: list[Any]) -> bool:
+    i = 0
+    while i < len(body):
+        if _stmt_guarantees_return(body[i]):
+            return True
+        i += 1
+    return False
+
+
 def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     return_type = _java_type(fn.get("return_type"), allow_void=True)
@@ -449,16 +475,13 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
     ctx: dict[str, int] = {"tmp": 0}
-    has_top_level_return = False
     i = 0
     while i < len(body):
-        if isinstance(body[i], dict) and body[i].get("kind") == "Return":
-            has_top_level_return = True
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
         i += 1
     if len(body) == 0:
         lines.append(indent + "    // empty body")
-    if return_type != "void" and not has_top_level_return:
+    if return_type != "void" and not _block_guarantees_return(body):
         lines.append(indent + "    return " + _default_return_expr(return_type) + ";")
     lines.append(indent + "}")
     return lines

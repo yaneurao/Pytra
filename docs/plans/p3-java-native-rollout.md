@@ -44,6 +44,7 @@ Decision log:
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-03`] Added `--java-backend {native,sidecar}` in `py2java.py`, switched default generation to native (`transpile_to_java_native`), and restricted sidecar output to explicit compatibility mode (`--java-backend sidecar`). Updated CLI smoke tests for native default and sidecar compatibility checks.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Expanded `java_native_emitter` body lowering for `Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` and core expressions (`Name/Constant/UnaryOp/BinOp/Compare/BoolOp/Attribute/Call`), and added `if_else` / `for_range` lowering checks in `test_py2java_smoke.py`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Improved basic OOP lowering consistency: map `self` references to `this`, lower class-name calls to constructor form (`new ClassName(...)`), and preserve unknown identifier annotations as class types instead of collapsing to `Object`; extended `inheritance` expectations in `test_py2java_smoke.py`.
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added simple return-flow analysis (`_block_guarantees_return`) to avoid duplicate fallback `return` insertion when both `if/else` branches already return; locked with `test_py2java_smoke.py` assertion that `if_else` output does not include `return 0L;`.
 
 ## Breakdown
 

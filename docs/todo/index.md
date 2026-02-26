@@ -49,6 +49,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 - `P3-JAVA-NATIVE-01-S1-03` Added `--java-backend {native,sidecar}` to `py2java.py`, switched default to native, and isolated sidecar generation to explicit compatibility mode.
 - `P3-JAVA-NATIVE-01-S2-01` Extended `java_native_emitter` body lowering and wired `Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` plus core expressions (constants/arithmetic/comparison/print+normal calls) to Java output.
 - `P3-JAVA-NATIVE-01-S2-01` Preserved class type annotations instead of collapsing to `Object`, and added `self -> this` plus constructor-call lowering (`Dog() -> new Dog()`) for basic OOP route correctness.
+- `P3-JAVA-NATIVE-01-S2-01` Added simple return-flow analysis to suppress unreachable fallback `return` insertion when both `if/else` branches return, fixing the `if_else` compile failure.
 
 ### P0: Implement common EAST3 optimizer layer (Highest)
 

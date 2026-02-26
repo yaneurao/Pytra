@@ -50,6 +50,7 @@
 - `P3-JAVA-NATIVE-01-S1-03` `py2java.py` に `--java-backend {native,sidecar}` を追加し、既定を native 化。sidecar は明示指定時のみ生成する互換経路へ隔離。
 - `P3-JAVA-NATIVE-01-S2-01` `java_native_emitter` に本文 lower を追加し、`Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` と主要式（定数・算術・比較・print/通常 call）を Java 生成へ接続。
 - `P3-JAVA-NATIVE-01-S2-01` class 型の注釈を `Object` へ潰さず保持し、`self -> this` と `Dog() -> new Dog()` 変換を追加して OOP 基本経路の生成整合を改善。
+- `P3-JAVA-NATIVE-01-S2-01` `if/else` 両分岐 `return` 時の到達不能 `return` 追加を抑止する簡易 return-flow 判定を導入し、`if_else` 生成の compile failure を解消。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 

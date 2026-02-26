@@ -161,6 +161,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         if_java = transpile_to_java_native(if_east, class_name="Main")
         self.assertIn("if ((n < 0L))", if_java)
         self.assertIn("return (-n);", if_java)
+        self.assertNotIn("return 0L;", if_java)
 
         for_fixture = find_fixture_case("for_range")
         for_east = load_east(for_fixture, parser_backend="self_hosted")
