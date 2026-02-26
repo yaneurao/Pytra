@@ -48,6 +48,7 @@
 - `P3-JAVA-NATIVE-01-S1-01` `docs-ja/spec/spec-java-native-backend.md`（英訳: `docs/spec/spec-java-native-backend.md`）を追加し、入力 EAST3 契約・fail-closed・runtime 境界と preview 差分を文書化。
 - `P3-JAVA-NATIVE-01-S1-02` `src/hooks/java/emitter/java_native_emitter.py` を追加し、`Module/FunctionDef/ClassDef` の native 骨格出力を実装。`test_py2java_smoke.py` へ最小経路テストを追加。
 - `P3-JAVA-NATIVE-01-S1-03` `py2java.py` に `--java-backend {native,sidecar}` を追加し、既定を native 化。sidecar は明示指定時のみ生成する互換経路へ隔離。
+- `P3-JAVA-NATIVE-01-S2-01` `java_native_emitter` に本文 lower を追加し、`Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` と主要式（定数・算術・比較・print/通常 call）を Java 生成へ接続。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 

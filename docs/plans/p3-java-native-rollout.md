@@ -42,6 +42,7 @@ Decision log:
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-01`] Added `docs-ja/spec/spec-java-native-backend.md` (translation: `docs/spec/spec-java-native-backend.md`) to formalize input EAST3 responsibility, fail-closed behavior, runtime boundary, and preview-vs-native diffs.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-02`] Added `src/hooks/java/emitter/java_native_emitter.py` with native skeleton emission for `Module/FunctionDef/ClassDef` (body placeholder by design), then added minimal-route tests in `test_py2java_smoke.py`; no regression in `tools/check_py2java_transpile.py`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-03`] Added `--java-backend {native,sidecar}` in `py2java.py`, switched default generation to native (`transpile_to_java_native`), and restricted sidecar output to explicit compatibility mode (`--java-backend sidecar`). Updated CLI smoke tests for native default and sidecar compatibility checks.
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Expanded `java_native_emitter` body lowering for `Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` and core expressions (`Name/Constant/UnaryOp/BinOp/Compare/BoolOp/Attribute/Call`), and added `if_else` / `for_range` lowering checks in `test_py2java_smoke.py`.
 
 ## Breakdown
 

@@ -1,10 +1,4 @@
-"""EAST3 -> Java native emitter skeleton.
-
-S1 scope:
-- accept EAST3 Module document
-- emit executable Java scaffold for module/function/class frames
-- keep function/method bodies as conservative placeholders
-"""
+"""EAST3 -> Java native emitter."""
 
 from __future__ import annotations
 
@@ -63,6 +57,187 @@ def _default_return_expr(java_type: str) -> str:
     return "null"
 
 
+def _java_string_literal(text: str) -> str:
+    out = text.replace("\\", "\\\\")
+    out = out.replace('"', '\\"')
+    out = out.replace("\n", "\\n")
+    return '"' + out + '"'
+
+
+def _render_name_expr(expr: dict[str, Any]) -> str:
+    return _safe_ident(expr.get("id"), "value")
+
+
+def _render_constant_expr(expr: dict[str, Any]) -> str:
+    if "value" not in expr:
+        return "null"
+    value = expr.get("value")
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value) + "L"
+    if isinstance(value, float):
+        return str(value)
+    if isinstance(value, str):
+        return _java_string_literal(value)
+    return "null"
+
+
+def _render_unary_expr(expr: dict[str, Any]) -> str:
+    op = expr.get("op")
+    operand = _render_expr(expr.get("operand"))
+    if op == "USub":
+        return "(-" + operand + ")"
+    if op == "UAdd":
+        return "(+" + operand + ")"
+    if op == "Not":
+        return "(!" + operand + ")"
+    return operand
+
+
+def _bin_op_symbol(op: Any) -> str:
+    if op == "Add":
+        return "+"
+    if op == "Sub":
+        return "-"
+    if op == "Mult":
+        return "*"
+    if op == "Div":
+        return "/"
+    if op == "Mod":
+        return "%"
+    if op == "FloorDiv":
+        return "/"
+    return "+"
+
+
+def _render_binop_expr(expr: dict[str, Any]) -> str:
+    left = _render_expr(expr.get("left"))
+    right = _render_expr(expr.get("right"))
+    op = _bin_op_symbol(expr.get("op"))
+    return "(" + left + " " + op + " " + right + ")"
+
+
+def _compare_op_symbol(op: Any) -> str:
+    if op == "Eq":
+        return "=="
+    if op == "NotEq":
+        return "!="
+    if op == "Lt":
+        return "<"
+    if op == "LtE":
+        return "<="
+    if op == "Gt":
+        return ">"
+    if op == "GtE":
+        return ">="
+    return "=="
+
+
+def _render_compare_expr(expr: dict[str, Any]) -> str:
+    left_expr = _render_expr(expr.get("left"))
+    ops_any = expr.get("ops")
+    comps_any = expr.get("comparators")
+    ops = ops_any if isinstance(ops_any, list) else []
+    comps = comps_any if isinstance(comps_any, list) else []
+    if len(ops) == 0 or len(comps) == 0:
+        return left_expr
+    parts: list[str] = []
+    cur_left = left_expr
+    i = 0
+    while i < len(ops) and i < len(comps):
+        right = _render_expr(comps[i])
+        parts.append("(" + cur_left + " " + _compare_op_symbol(ops[i]) + " " + right + ")")
+        cur_left = right
+        i += 1
+    if len(parts) == 0:
+        return left_expr
+    if len(parts) == 1:
+        return parts[0]
+    return "(" + " && ".join(parts) + ")"
+
+
+def _render_boolop_expr(expr: dict[str, Any]) -> str:
+    op = expr.get("op")
+    values_any = expr.get("values")
+    values = values_any if isinstance(values_any, list) else []
+    if len(values) == 0:
+        return "false"
+    delim = " && " if op == "And" else " || "
+    rendered: list[str] = []
+    i = 0
+    while i < len(values):
+        rendered.append(_render_expr(values[i]))
+        i += 1
+    return "(" + delim.join(rendered) + ")"
+
+
+def _render_attribute_expr(expr: dict[str, Any]) -> str:
+    value = _render_expr(expr.get("value"))
+    attr = _safe_ident(expr.get("attr"), "field")
+    return value + "." + attr
+
+
+def _call_name(expr: dict[str, Any]) -> str:
+    func_any = expr.get("func")
+    if not isinstance(func_any, dict):
+        return ""
+    if func_any.get("kind") != "Name":
+        return ""
+    return _safe_ident(func_any.get("id"), "")
+
+
+def _render_call_expr(expr: dict[str, Any]) -> str:
+    args_any = expr.get("args")
+    args = args_any if isinstance(args_any, list) else []
+
+    callee_name = _call_name(expr)
+    if callee_name == "print":
+        if len(args) == 0:
+            return "System.out.println()"
+        if len(args) == 1:
+            return "System.out.println(" + _render_expr(args[0]) + ")"
+        rendered: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered.append("String.valueOf(" + _render_expr(args[i]) + ")")
+            i += 1
+        return "System.out.println(" + " + \" \" + ".join(rendered) + ")"
+
+    func_expr = _render_expr(expr.get("func"))
+    rendered_args: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered_args.append(_render_expr(args[i]))
+        i += 1
+    return func_expr + "(" + ", ".join(rendered_args) + ")"
+
+
+def _render_expr(expr: Any) -> str:
+    if not isinstance(expr, dict):
+        return "null"
+    kind = expr.get("kind")
+    if kind == "Name":
+        return _render_name_expr(expr)
+    if kind == "Constant":
+        return _render_constant_expr(expr)
+    if kind == "UnaryOp":
+        return _render_unary_expr(expr)
+    if kind == "BinOp":
+        return _render_binop_expr(expr)
+    if kind == "Compare":
+        return _render_compare_expr(expr)
+    if kind == "BoolOp":
+        return _render_boolop_expr(expr)
+    if kind == "Attribute":
+        return _render_attribute_expr(expr)
+    if kind == "Call":
+        return _render_call_expr(expr)
+    return "null"
+
+
 def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     arg_order_any = fn.get("arg_order")
     arg_types_any = fn.get("arg_types")
@@ -83,17 +258,196 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     return out
 
 
+def _target_name(target: Any) -> str:
+    if not isinstance(target, dict):
+        return "tmp"
+    kind = target.get("kind")
+    if kind == "Name":
+        return _safe_ident(target.get("id"), "tmp")
+    if kind == "Attribute":
+        return _render_attribute_expr(target)
+    return "tmp"
+
+
+def _augassign_op(op: Any) -> str:
+    if op == "Add":
+        return "+="
+    if op == "Sub":
+        return "-="
+    if op == "Mult":
+        return "*="
+    if op == "Div":
+        return "/="
+    if op == "Mod":
+        return "%="
+    return "+="
+
+
+def _fresh_tmp(ctx: dict[str, int], prefix: str) -> str:
+    idx = ctx.get("tmp", 0)
+    ctx["tmp"] = idx + 1
+    return "__" + prefix + "_" + str(idx)
+
+
+def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, int]) -> list[str]:
+    iter_plan_any = stmt.get("iter_plan")
+    target_plan_any = stmt.get("target_plan")
+    if not isinstance(iter_plan_any, dict) or iter_plan_any.get("kind") != "StaticRangeForPlan":
+        return [indent + "// TODO: unsupported ForCore iter_plan"]
+    if not isinstance(target_plan_any, dict) or target_plan_any.get("kind") != "NameTarget":
+        return [indent + "// TODO: unsupported ForCore target_plan"]
+
+    target_name = _safe_ident(target_plan_any.get("id"), "i")
+    target_type = _java_type(target_plan_any.get("target_type"), allow_void=False)
+    if target_type == "Object":
+        target_type = "long"
+    start_expr = _render_expr(iter_plan_any.get("start"))
+    stop_expr = _render_expr(iter_plan_any.get("stop"))
+    step_expr = _render_expr(iter_plan_any.get("step"))
+    step_tmp = _fresh_tmp(ctx, "step")
+    lines: list[str] = []
+    lines.append(indent + target_type + " " + step_tmp + " = " + step_expr + ";")
+    cond = "(" + step_tmp + " >= 0L) ? (" + target_name + " < " + stop_expr + ") : (" + target_name + " > " + stop_expr + ")"
+    lines.append(
+        indent
+        + "for ("
+        + target_type
+        + " "
+        + target_name
+        + " = "
+        + start_expr
+        + "; "
+        + cond
+        + "; "
+        + target_name
+        + " += "
+        + step_tmp
+        + ") {"
+    )
+    body_any = stmt.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    i = 0
+    while i < len(body):
+        lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+        i += 1
+    lines.append(indent + "}")
+    return lines
+
+
+def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, int]) -> list[str]:
+    if not isinstance(stmt, dict):
+        return [indent + "// TODO: unsupported statement"]
+    kind = stmt.get("kind")
+    if kind == "Return":
+        if "value" in stmt and stmt.get("value") is not None:
+            return [indent + "return " + _render_expr(stmt.get("value")) + ";"]
+        return [indent + "return;"]
+    if kind == "Expr":
+        return [indent + _render_expr(stmt.get("value")) + ";"]
+    if kind == "AnnAssign":
+        target = _target_name(stmt.get("target"))
+        decl_type = _java_type(stmt.get("decl_type") or stmt.get("annotation"), allow_void=False)
+        if decl_type == "void":
+            decl_type = "Object"
+        value = _render_expr(stmt.get("value"))
+        if stmt.get("declare") is False:
+            return [indent + target + " = " + value + ";"]
+        return [indent + decl_type + " " + target + " = " + value + ";"]
+    if kind == "Assign":
+        targets_any = stmt.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        if len(targets) == 0 and isinstance(stmt.get("target"), dict):
+            targets = [stmt.get("target")]
+        if len(targets) == 0:
+            return [indent + "// TODO: Assign without target"]
+        lhs = _target_name(targets[0])
+        value = _render_expr(stmt.get("value"))
+        if stmt.get("declare"):
+            decl_type = _java_type(stmt.get("decl_type"), allow_void=False)
+            if decl_type == "void":
+                decl_type = "Object"
+            return [indent + decl_type + " " + lhs + " = " + value + ";"]
+        return [indent + lhs + " = " + value + ";"]
+    if kind == "AugAssign":
+        lhs = _target_name(stmt.get("target"))
+        rhs = _render_expr(stmt.get("value"))
+        op = _augassign_op(stmt.get("op"))
+        return [indent + lhs + " " + op + " " + rhs + ";"]
+    if kind == "If":
+        test_expr = _render_expr(stmt.get("test"))
+        lines: list[str] = [indent + "if (" + test_expr + ") {"]
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+            i += 1
+        orelse_any = stmt.get("orelse")
+        orelse = orelse_any if isinstance(orelse_any, list) else []
+        if len(orelse) == 0:
+            lines.append(indent + "}")
+            return lines
+        lines.append(indent + "} else {")
+        i = 0
+        while i < len(orelse):
+            lines.extend(_emit_stmt(orelse[i], indent=indent + "    ", ctx=ctx))
+            i += 1
+        lines.append(indent + "}")
+        return lines
+    if kind == "ForCore":
+        return _emit_for_core(stmt, indent=indent, ctx=ctx)
+    if kind == "Pass":
+        return [indent + "// pass"]
+    if kind == "Break":
+        return [indent + "break;"]
+    if kind == "Continue":
+        return [indent + "continue;"]
+    if kind == "While":
+        test_expr = _render_expr(stmt.get("test"))
+        lines = [indent + "while (" + test_expr + ") {"]
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+            i += 1
+        lines.append(indent + "}")
+        return lines
+    return [indent + "// TODO: unsupported stmt kind " + str(kind)]
+
+
 def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     return_type = _java_type(fn.get("return_type"), allow_void=True)
-    static_prefix = "public static " if not in_class else "public "
-    params = _function_params(fn, drop_self=in_class)
+    is_static_method = not in_class
+    if in_class:
+        decorators_any = fn.get("decorators")
+        decorators = decorators_any if isinstance(decorators_any, list) else []
+        i = 0
+        while i < len(decorators):
+            dec = decorators[i]
+            if isinstance(dec, dict) and dec.get("kind") == "Name" and dec.get("id") == "staticmethod":
+                is_static_method = True
+                break
+            i += 1
+    static_prefix = "public static " if is_static_method else "public "
+    params = _function_params(fn, drop_self=in_class and not is_static_method)
     lines: list[str] = []
     lines.append(indent + static_prefix + return_type + " " + name + "(" + ", ".join(params) + ") {")
-    lines.append(indent + "    // TODO(P3-JAVA-NATIVE-01-S2): lower function body from EAST3 statements.")
-    default_expr = _default_return_expr(return_type)
-    if return_type != "void":
-        lines.append(indent + "    return " + default_expr + ";")
+    body_any = fn.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    ctx: dict[str, int] = {"tmp": 0}
+    has_top_level_return = False
+    i = 0
+    while i < len(body):
+        if isinstance(body[i], dict) and body[i].get("kind") == "Return":
+            has_top_level_return = True
+        lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+        i += 1
+    if len(body) == 0:
+        lines.append(indent + "    // empty body")
+    if return_type != "void" and not has_top_level_return:
+        lines.append(indent + "    return " + _default_return_expr(return_type) + ";")
     lines.append(indent + "}")
     return lines
 
@@ -122,7 +476,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
 
 
 def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main") -> str:
-    """Emit Java native skeleton from EAST3 Module."""
+    """Emit Java native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
         raise RuntimeError("java native emitter: east_doc must be dict")
     if east_doc.get("kind") != "Module":
@@ -134,7 +488,6 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     main_class = _safe_ident(class_name, "Main")
     functions: list[dict[str, Any]] = []
     classes: list[dict[str, Any]] = []
-
     i = 0
     while i < len(body_any):
         node = body_any[i]
@@ -147,8 +500,7 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
         i += 1
 
     lines: list[str] = []
-    lines.append("// Auto-generated Java native skeleton from EAST3.")
-    lines.append("// NOTE: Function/method body lowering is completed in P3-JAVA-NATIVE-01-S2.")
+    lines.append("// Auto-generated Java native source from EAST3.")
     lines.append("public final class " + main_class + " {")
     lines.append("    private " + main_class + "() {")
     lines.append("    }")
@@ -180,4 +532,3 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("}")
     lines.append("")
     return "\n".join(lines)
-

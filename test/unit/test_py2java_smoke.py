@@ -82,7 +82,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_java.read_text(encoding="utf-8")
             self.assertIn("public final class", txt)
-            self.assertIn("Auto-generated Java native skeleton", txt)
+            self.assertIn("Auto-generated Java native source", txt)
             self.assertNotIn("ProcessBuilder", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
 
@@ -151,7 +151,20 @@ class Py2JavaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn("public static long add(long a, long b)", java)
-        self.assertIn("return 0L;", java)
+        self.assertIn("return (a + b);", java)
+
+    def test_java_native_emitter_lowers_if_and_forcore(self) -> None:
+        if_fixture = find_fixture_case("if_else")
+        if_east = load_east(if_fixture, parser_backend="self_hosted")
+        if_java = transpile_to_java_native(if_east, class_name="Main")
+        self.assertIn("if ((n < 0L))", if_java)
+        self.assertIn("return (-n);", if_java)
+
+        for_fixture = find_fixture_case("for_range")
+        for_east = load_east(for_fixture, parser_backend="self_hosted")
+        for_java = transpile_to_java_native(for_east, class_name="Main")
+        self.assertIn("for (long i = 0L;", for_java)
+        self.assertIn("total += i;", for_java)
 
     def test_java_native_emitter_rejects_non_module_root(self) -> None:
         with self.assertRaises(RuntimeError):
