@@ -43,7 +43,7 @@
 6. [x] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
 7. [x] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
 8. [x] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
-9. [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
+9. [x] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
 10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
 - `P3-JAVA-NATIVE-01-S1-01` `docs-ja/spec/spec-java-native-backend.md`（英訳: `docs/spec/spec-java-native-backend.md`）を追加し、入力 EAST3 契約・fail-closed・runtime 境界と preview 差分を文書化。
 - `P3-JAVA-NATIVE-01-S1-02` `src/hooks/java/emitter/java_native_emitter.py` を追加し、`Module/FunctionDef/ClassDef` の native 骨格出力を実装。`test_py2java_smoke.py` へ最小経路テストを追加。
@@ -59,6 +59,7 @@
 - `P3-JAVA-NATIVE-01-S3-01` native parity を強化。`listcomp(range)` 代入、`min/max`、`tuple` 分解/swap 代入、list truthy、negative index、`IfExp` lower を追加し、`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` が `pass=16/18`（残: `16_glass_sculpture_chaos`, `18_mini_language_interpreter`）まで改善。
 - `P3-JAVA-NATIVE-01-S3-01` 型追跡（`ctx.types`）と loop scope の宣言漏れ調整を追加し、`16_glass_sculpture_chaos` を解消。`runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` は `pass=17/18`（残: `18_mini_language_interpreter`）まで改善。
 - `P3-JAVA-NATIVE-01-S3-01` `int/len`・`ObjLen`・`str` スライス・`isdigit/isalpha` の native lower を追加し、`check_py2java_transpile`（`132/132`）/ `test_py2java_*.py`（`21/21`）/ `runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout`（`pass=18/18`）を確認。
+- `P3-JAVA-NATIVE-01-S3-02` `tools/regenerate_samples.py --langs java --force` で `sample/java` を全再生成し、旧 sidecar `.js` と `sample/java/pytra/*.js` を削除して native `.java` 出力のみに置換。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 
