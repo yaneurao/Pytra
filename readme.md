@@ -45,7 +45,7 @@ WARNING: Do not expect entire Python applications to be portable as-is. A realis
 
 ## Runtime Performance Comparison
 
-Execution times for [sample programs](sample/readme.md) written in Python and their transpiled versions (unit: seconds).
+Execution times for [sample programs](sample/readme.md) written in Python and their transpiled versions (unit: seconds). In the table, Python is the original code and PyPy is for reference.
 
 |No.|Workload|Python|PyPy| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
