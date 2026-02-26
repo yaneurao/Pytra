@@ -69,3 +69,13 @@ native 生成物は次の runtime 境界のみを利用する。
 - `tools/check_py2go_transpile.py` / `tools/check_py2swift_transpile.py` / `tools/check_py2kotlin_transpile.py` が native 既定で通る。
 - `tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` で Python 基準との出力一致を監視する。
 - `sample/go` / `sample/swift` / `sample/kotlin` 再生成時に sidecar `.js` が残らないことを確認する。
+
+## 7. sidecar 互換モード隔離方針（S1-02）
+
+- 既定挙動は常に native とし、次の明示フラグ指定時のみ sidecar を許可する。
+  - Go: `--go-backend sidecar`
+  - Swift: `--swift-backend sidecar`
+  - Kotlin: `--kotlin-backend sidecar`
+- native 指定（または省略）時は `.js` sidecar と JS runtime shim を生成しない。
+- sidecar 指定時は互換モードとして `.js` 生成を許可するが、CI の既定回帰対象からは外す。
+- 既定経路で unsupported を検出した場合、sidecar へ自動フォールバックせず fail-closed で停止する。
