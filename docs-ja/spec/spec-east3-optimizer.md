@@ -89,18 +89,23 @@
 - `O2`:
   - `O1` に加え、ループ系の保守的最適化を許可。
 
-## 8. v1 で盛り込む推奨パス
+## 8. v1 pass セット（実装同期: 2026-02-27）
 
-| Pass | 目的 | 代表変換 | ガード |
-| --- | --- | --- | --- |
-| `NoOpCastCleanupPass` | 無意味 cast の除去 | `static_cast(T, x)` で `x:T` を削除 | 型一致が静的に証明できる場合のみ |
-| `LiteralCastFoldPass` | リテラル cast 畳み込み | `cast<int64>(42)` -> `42` | リテラル + 無損失変換のみ |
-| `RedundantWrapperCtorPass` | 冗長ラッパ構築除去 | `bytes(bytes_expr)` の冗長ケース削除 | 一時値かつ alias リスクなし |
-| `LoopInvariantHoistLitePass` | ループ不変式の外出し | 定数分母や不変計算を preheader へ移動 | 副作用なし式のみ |
-| `StrengthReductionFloatLoopPass` | 乗除算コスト削減 | `x / C` -> `x * invC` | `C` が不変かつ浮動小数式 |
-| `DeadTempCleanupPass` | 不要一時変数除去 | 未使用一時の削除 | 参照・副作用なし |
-| `RangeForCanonicalizationPass` | `for ... in range(...)` 正規化 | backend 非依存のカウントループ表現へ統一 | `range` 引数の評価順序/副作用/境界条件を保存できる場合のみ |
-| `UnusedLoopVarElisionPass` | 未使用ループ変数の束縛削減 | 実体未使用の反復変数バインドを省略 | 変数名ではなくデータフローで「未使用」を証明できる場合のみ |
+| Pass | opt-level | 状態 | 代表変換 | 主なガード |
+| --- | --- | --- | --- | --- |
+| `NoOpCastCleanupPass` | `O1` | 実装済み | `from == to` の cast エントリ除去 | 型一致が静的に証明できる場合のみ |
+| `LiteralCastFoldPass` | `O1` | 実装済み | `static_cast` なリテラル呼び出しを `Constant` へ畳み込み | リテラル + 無損失（同一型）変換のみ |
+| `RangeForCanonicalizationPass` | `O1` | 実装済み | `RuntimeIterForPlan(py_range)` -> `StaticRangeForPlan` | 現行は定数 int 引数（1〜3引数）かつ `step != 0` に限定 |
+| `UnusedLoopVarElisionPass` | `O1` | 実装済み | 未使用 `NameTarget` を `_` へ置換 | ループ本体/`orelse`/後続参照と動的名前解決（`locals` 等）を検出した場合は不適用 |
+| `LoopInvariantHoistLitePass` | `O2` | 実装済み | 非空 `StaticRangeForPlan` の先頭不変代入を preheader へ hoist | 非空ループの静的証明・副作用なし・再代入なしが条件 |
+| `StrengthReductionFloatLoopPass` | `O2` | 実装済み | `float` の `x / C` を `x * (1/C)` へ変換 | `C` が有限・非0・2冪絶対値の定数のときのみ |
+| `RedundantWrapperCtorPass` | - | 未実装（候補） | `bytes(bytes_expr)` の冗長ケース削除 | 一時値かつ alias リスクなし |
+| `DeadTempCleanupPass` | - | 未実装（候補） | 未使用一時の削除 | 参照・副作用なし |
+
+補足:
+
+- 現行実装は fail-closed を優先し、適用範囲を意図的に狭くしている。
+- `O0` は全 pass 無効、`O1` は上表 `O1` pass、`O2` は `O1 + O2` pass を実行する。
 
 ### 8.1 `for ... in range(...)` 最適化の責務境界
 
@@ -142,6 +147,39 @@
 - 実行した pass 順序
 - pass ごとの `changed/change_count/elapsed_ms`
 - 最終集計（総変更数、総時間）
+
+### 10.1 運用手順（トレース確認・切り分け）
+
+1. まず既定 `O1` で EAST3 ダンプと trace を取得する。
+
+```bash
+python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+  --dump-east3-before-opt work/logs/east3_before.json \
+  --dump-east3-after-opt work/logs/east3_after.json \
+  --dump-east3-opt-trace work/logs/east3_trace.txt
+```
+
+2. 問題が出たら `--east3-opt-pass` で pass を個別に無効化し、原因 pass を切り分ける（例: `-RangeForCanonicalizationPass`）。
+
+```bash
+python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+  --east3-opt-level 2 \
+  --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
+```
+
+3. `O0/O1/O2` の互換性は `runtime_parity_check.py --east3-opt-level` で同一手順比較する。
+
+```bash
+python tools/runtime_parity_check.py --case-root sample --all-samples \
+  --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
+  --east3-opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
+python tools/runtime_parity_check.py --case-root sample --all-samples \
+  --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
+  --east3-opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
+python tools/runtime_parity_check.py --case-root sample --all-samples \
+  --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
+  --east3-opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
+```
 
 ## 11. テスト契約
 

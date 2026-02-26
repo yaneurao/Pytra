@@ -44,6 +44,7 @@ Decision log:
 - 2026-02-26: Completed `P0-EAST3-OPT-01-S2-03` by adding `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only passes, with conservative guards for non-empty static-range preheader hoist and power-of-two float-division reciprocal rewrite.
 - 2026-02-26: Completed `P0-EAST3-OPT-01-S3-01` by expanding pass unit coverage to 21 cases, locking O2 gating, dynamic-name-resolution guards, and non-application behavior (zero-step, non-power-of-two divisors, and post-loop reads).
 - 2026-02-27: Completed `P0-EAST3-OPT-01-S3-02` by adding `--east3-opt-level` to `runtime_parity_check.py` and rerunning `sample/py` 18 cases × `cpp,rs,cs,js,ts` across `O0/O1/O2`; all three levels produced `17 pass / 1 fail` (existing `18_mini_language_interpreter:cpp` compile failure) with no new level-dependent diffs, logged in `work/logs/east3_opt_parity_o{0,1,2}.json`.
+- 2026-02-27: Completed `P0-EAST3-OPT-01-S3-03` by syncing `spec-east3-optimizer` (ja/en) to implementation reality, updating pass-status/fail-closed guard descriptions, and documenting operations for trace capture, pass isolation, and `runtime_parity_check --east3-opt-level`.
 
 ## Breakdown
 
@@ -54,4 +55,4 @@ Decision log:
 - [x] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
 - [x] [ID: P0-EAST3-OPT-01-S3-01] Add pass-level unit tests (input/output EAST3 diff, inapplicable guards, meaning preservation).
 - [x] [ID: P0-EAST3-OPT-01-S3-02] Run `sample` regressions + parity checks and confirm compatibility under `O0`/`O1`/`O2` switching.
-- [ ] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diff back to `spec-east3-optimizer` and document operations (trace checks / issue isolation).
+- [x] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diff back to `spec-east3-optimizer` and document operations (trace checks / issue isolation).

@@ -80,18 +80,23 @@ Execution rules:
 - `O1` (default): conservative local transforms only
 - `O2`: `O1` plus conservative loop-focused transforms
 
-## 8. Recommended v1 Passes
+## 8. v1 Pass Set (Implementation Synced: 2026-02-27)
 
-| Pass | Purpose | Example transform | Guard |
-| --- | --- | --- | --- |
-| `NoOpCastCleanupPass` | remove useless casts | remove cast when source/target static types are equal | static proof required |
-| `LiteralCastFoldPass` | fold literal casts | `cast<int64>(42) -> 42` | lossless literal-only |
-| `RedundantWrapperCtorPass` | remove redundant wrappers | redundant `bytes(...)` around bytes-typed temp | only for safe ephemeral cases |
-| `LoopInvariantHoistLitePass` | hoist loop-invariant expressions | move invariant denominator/computation to preheader | side-effect-free only |
-| `StrengthReductionFloatLoopPass` | reduce loop arithmetic cost | `x / C -> x * invC` | invariant floating-point divisor |
-| `DeadTempCleanupPass` | remove dead temps | drop unused temporary assignments | no side-effect references |
-| `RangeForCanonicalizationPass` | normalize `for ... in range(...)` | convert to backend-agnostic counted-loop form | only when `range` evaluation order/side effects/boundary semantics are preserved |
-| `UnusedLoopVarElisionPass` | reduce unused loop-var binding | elide binding for materially unused iteration variables | only when "unused" is proven by data flow, not by variable name |
+| Pass | opt-level | Status | Example transform | Primary guard |
+| --- | --- | --- | --- | --- |
+| `NoOpCastCleanupPass` | `O1` | implemented | remove cast entries where `from == to` | only when static type equality is proven |
+| `LiteralCastFoldPass` | `O1` | implemented | fold literal `static_cast` call to `Constant` | literal + lossless (same-type) only |
+| `RangeForCanonicalizationPass` | `O1` | implemented | `RuntimeIterForPlan(py_range)` -> `StaticRangeForPlan` | currently limited to constant-int args (1..3) with `step != 0` |
+| `UnusedLoopVarElisionPass` | `O1` | implemented | rename provably unused loop var binding to `_` | skip on body/`orelse`/post-loop reads or dynamic name introspection (`locals`, etc.) |
+| `LoopInvariantHoistLitePass` | `O2` | implemented | hoist first invariant assignment of non-empty static-range loop to preheader | requires statically non-empty loop, side-effect-free expr, and no reassignment |
+| `StrengthReductionFloatLoopPass` | `O2` | implemented | rewrite `float` loop `x / C` into `x * (1/C)` | `C` must be finite, non-zero, and power-of-two absolute value |
+| `RedundantWrapperCtorPass` | - | planned | remove redundant `bytes(bytes_expr)` | safe ephemeral/alias-free only |
+| `DeadTempCleanupPass` | - | planned | remove dead temporary assignments | no side effects / references |
+
+Notes:
+
+- Current implementation intentionally prioritizes fail-closed behavior with conservative applicability.
+- `O0` disables all passes, `O1` runs `O1` passes, `O2` runs `O1 + O2` passes.
 
 ### 8.1 Responsibility Boundary for `for ... in range(...)`
 
@@ -131,6 +136,39 @@ Recommended trace payload:
 - pass execution order
 - per-pass `changed/change_count/elapsed_ms`
 - final summary
+
+### 10.1 Operations (Trace and Isolation)
+
+1. Start with default `O1`, and capture before/after EAST3 plus optimizer trace.
+
+```bash
+python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+  --dump-east3-before-opt work/logs/east3_before.json \
+  --dump-east3-after-opt work/logs/east3_after.json \
+  --dump-east3-opt-trace work/logs/east3_trace.txt
+```
+
+2. If behavior regresses, isolate passes via `--east3-opt-pass` (example disables range-loop passes).
+
+```bash
+python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+  --east3-opt-level 2 \
+  --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
+```
+
+3. Validate `O0/O1/O2` compatibility under the same runtime-parity procedure.
+
+```bash
+python tools/runtime_parity_check.py --case-root sample --all-samples \
+  --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
+  --east3-opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
+python tools/runtime_parity_check.py --case-root sample --all-samples \
+  --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
+  --east3-opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
+python tools/runtime_parity_check.py --case-root sample --all-samples \
+  --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
+  --east3-opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
+```
 
 ## 11. Test Contract
 

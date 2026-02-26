@@ -58,7 +58,7 @@
 6. [x] [ID: P0-EAST3-OPT-01-S2-03] `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` を `O2` 限定で導入する。
 7. [x] [ID: P0-EAST3-OPT-01-S3-01] pass 単体テスト（入力/出力EAST3差分、非適用ガード、意味保存）を追加する。
 8. [x] [ID: P0-EAST3-OPT-01-S3-02] `sample` 回帰 + parity 検証を実行し、`O0`/`O1`/`O2` 切替時の互換を確認する。
-9. [ ] [ID: P0-EAST3-OPT-01-S3-03] 実装差分を `spec-east3-optimizer` と同期し、運用手順（トレース確認/切り分け）を文書化する。
+9. [x] [ID: P0-EAST3-OPT-01-S3-03] 実装差分を `spec-east3-optimizer` と同期し、運用手順（トレース確認/切り分け）を文書化する。
 - `P0-EAST3-OPT-01-S1-01` `east3_optimizer.py` / `east3_opt_passes/noop_pass.py` / `test_east3_optimizer.py` を追加し、pass manager 骨格と trace 出力の最小経路を固定。
 - `P0-EAST3-OPT-01-S1-02` 共通 CLI + `py2cpp`/非C++ 8本へ optimizer オプションを配線し、`test_east3_optimizer_cli.py` と parse wrapper テストで入出力導線を固定。
 - `P0-EAST3-OPT-01-S2-01` `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`build_default_passes()` を `O1` 既定セットへ更新、pass 単体テストと CLI トレース期待値を同期。
@@ -66,6 +66,7 @@
 - `P0-EAST3-OPT-01-S2-03` `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` を追加し、`O2` でのみ有効化。非空静的 range の先頭不変代入 hoist と、2冪除算の逆数乗算化を保守的ガード付きで導入。
 - `P0-EAST3-OPT-01-S3-01` pass 単体テストを 21 ケースへ拡張し、O2 ゲーティング、動的名前解決ガード、非適用（zero-step / 非2冪除算 / ループ後参照）を固定。
 - `P0-EAST3-OPT-01-S3-02` `runtime_parity_check.py --east3-opt-level` を追加し、`sample/py` 18件 × `cpp,rs,cs,js,ts` を `O0/O1/O2` で再実行。各レベルとも `17 pass / 1 fail`（既知の `18_mini_language_interpreter:cpp` コンパイル失敗）でレベル間差分なしを確認（`work/logs/east3_opt_parity_o{0,1,2}.json`）。
+- `P0-EAST3-OPT-01-S3-03` `docs-ja/spec/spec-east3-optimizer.md` / `docs/spec/spec-east3-optimizer.md` を実装同期し、pass 実装状況表・fail-closed ガード・`trace`/`--east3-opt-pass`/`runtime_parity_check --east3-opt-level` の運用手順を追記。
 
 ### P0: C++ backend 後段最適化層（CppOptimizer）導入（最優先）
 
