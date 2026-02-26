@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from pytra.std import json
+from pytra.std import os
 from pytra.std.typing import Any
+from pytra.std.pathlib import Path
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from hooks.cpp.emitter.analysis import CppAnalysisEmitter
@@ -25,6 +28,25 @@ from hooks.cpp.profile import (
     load_cpp_type_map,
 )
 from hooks.cpp.optimizer import optimize_cpp_ir
+from hooks.cpp.optimizer import render_cpp_opt_trace
+
+
+def _write_text_file(path_text: str, text: str) -> None:
+    """Write text output while creating parent directory if needed."""
+    if path_text == "":
+        return
+    out_path = Path(path_text)
+    parent_txt = str(out_path.parent)
+    if parent_txt != "":
+        os.makedirs(parent_txt, exist_ok=True)
+    out_path.write_text(text, encoding="utf-8")
+
+
+def _dump_json_file(path_text: str, payload: dict[str, Any]) -> None:
+    """Write JSON dump with stable formatting."""
+    json_obj: Any = payload
+    text = json.dumps(json_obj, ensure_ascii=False, indent=2) + "\n"
+    _write_text_file(path_text, text)
 
 
 def emit_cpp_from_east(
@@ -40,12 +62,37 @@ def emit_cpp_from_east(
     opt_level: str = "2",
     top_namespace: str = "",
     emit_main: bool = True,
+    cpp_opt_level: str | int | object = 1,
+    cpp_opt_pass: str = "",
+    dump_cpp_ir_before_opt: str = "",
+    dump_cpp_ir_after_opt: str = "",
+    dump_cpp_opt_trace: str = "",
 ) -> str:
     """Emit C++ text from EAST module via CppEmitter (public bridge)."""
     cpp_ir = east_module
     if isinstance(east_module, dict):
-        optimized_ir, _ = optimize_cpp_ir(east_module)
+        if dump_cpp_ir_before_opt != "":
+            _dump_json_file(dump_cpp_ir_before_opt, east_module)
+        optimized_ir, report = optimize_cpp_ir(
+            east_module,
+            opt_level=cpp_opt_level,
+            opt_pass_spec=cpp_opt_pass,
+            debug_flags={
+                "negative_index_mode": negative_index_mode,
+                "bounds_check_mode": bounds_check_mode,
+                "floor_div_mode": floor_div_mode,
+                "mod_mode": mod_mode,
+                "int_width": int_width,
+                "str_index_mode": str_index_mode,
+                "str_slice_mode": str_slice_mode,
+                "opt_level": opt_level,
+            },
+        )
         cpp_ir = optimized_ir
+        if dump_cpp_ir_after_opt != "":
+            _dump_json_file(dump_cpp_ir_after_opt, cpp_ir)
+        if dump_cpp_opt_trace != "":
+            _write_text_file(dump_cpp_opt_trace, render_cpp_opt_trace(report))
     return CppEmitter(
         cpp_ir,
         module_namespace_map,

@@ -99,7 +99,11 @@ class CppOptimizerTest(unittest.TestCase):
         with patch("hooks.cpp.emitter.cpp_emitter.optimize_cpp_ir", return_value=(optimized_doc, {"trace": []})) as opt_mock:
             with patch("hooks.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
                 out = emit_cpp_from_east(east_doc, {})
-        opt_mock.assert_called_once_with(east_doc)
+        self.assertEqual(opt_mock.call_count, 1)
+        call_args = opt_mock.call_args
+        self.assertIsNotNone(call_args)
+        self.assertIs(call_args.args[0], east_doc)
+        self.assertEqual(call_args.kwargs.get("opt_level"), 1)
         self.assertEqual(out, "dummy-cpp:1")
 
 

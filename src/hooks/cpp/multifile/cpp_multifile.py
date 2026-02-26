@@ -23,6 +23,8 @@ from pytra.compiler.transpile_cli import (
 )
 
 from hooks.cpp.emitter import CppEmitter
+from hooks.cpp.optimizer import optimize_cpp_ir
+from hooks.cpp.optimizer import render_cpp_opt_trace
 
 
 def write_multi_file_cpp(
@@ -39,6 +41,11 @@ def write_multi_file_cpp(
     opt_level: str,
     top_namespace: str,
     emit_main: bool,
+    cpp_opt_level: str | int | object = 1,
+    cpp_opt_pass: str = "",
+    dump_cpp_ir_before_opt: str = "",
+    dump_cpp_ir_after_opt: str = "",
+    dump_cpp_opt_trace: str = "",
     max_generated_lines: int = 0,
 ) -> dict[str, Any]:
     """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
@@ -83,6 +90,13 @@ def write_multi_file_cpp(
     type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
     manifest_modules: list[dict[str, Any]] = []
 
+    def _write_debug_text(path_txt: str, text: str) -> None:
+        if path_txt == "":
+            return
+        out_path = Path(path_txt)
+        mkdirs_for_cli(path_parent_text(out_path))
+        write_text_file(out_path, text)
+
     for mod_key in files:
         east = dict_any_get_dict(module_east_map, mod_key)
         if len(east) == 0:
@@ -111,8 +125,38 @@ def write_multi_file_cpp(
         write_text_file(hdr_path, hdr_text)
 
         is_entry = mod_key == entry_key
+        optimized_east: dict[str, Any] = east
+        if isinstance(east, dict):
+            if is_entry and dump_cpp_ir_before_opt != "":
+                _write_debug_text(
+                    dump_cpp_ir_before_opt,
+                    json.dumps(east, ensure_ascii=False, indent=2) + "\n",
+                )
+            optimized_east, cpp_opt_report = optimize_cpp_ir(
+                east,
+                opt_level=cpp_opt_level,
+                opt_pass_spec=cpp_opt_pass,
+                debug_flags={
+                    "negative_index_mode": negative_index_mode,
+                    "bounds_check_mode": bounds_check_mode,
+                    "floor_div_mode": floor_div_mode,
+                    "mod_mode": mod_mode,
+                    "int_width": int_width,
+                    "str_index_mode": str_index_mode,
+                    "str_slice_mode": str_slice_mode,
+                    "opt_level": opt_level,
+                },
+            )
+            if is_entry and dump_cpp_ir_after_opt != "":
+                _write_debug_text(
+                    dump_cpp_ir_after_opt,
+                    json.dumps(optimized_east, ensure_ascii=False, indent=2) + "\n",
+                )
+            if is_entry and dump_cpp_opt_trace != "":
+                _write_debug_text(dump_cpp_opt_trace, render_cpp_opt_trace(cpp_opt_report))
+
         type_emitter = CppEmitter(
-            east,
+            optimized_east,
             module_ns_map,
             negative_index_mode,
             bounds_check_mode,

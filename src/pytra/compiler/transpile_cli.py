@@ -2326,6 +2326,11 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "dump_east3_before_opt": "",
         "dump_east3_after_opt": "",
         "dump_east3_opt_trace": "",
+        "cpp_opt_level_opt": "1",
+        "cpp_opt_pass_opt": "",
+        "dump_cpp_ir_before_opt": "",
+        "dump_cpp_ir_after_opt": "",
+        "dump_cpp_opt_trace": "",
         "bounds_check_mode_opt": "",
         "floor_div_mode_opt": "",
         "mod_mode_opt": "",
@@ -2404,6 +2409,31 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
             if i >= len(argv):
                 return _parse_error_dict("missing value for --dump-east3-opt-trace")
             out["dump_east3_opt_trace"] = argv[i]
+        elif a == "--cpp-opt-level":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --cpp-opt-level")
+            out["cpp_opt_level_opt"] = argv[i]
+        elif a == "--cpp-opt-pass":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --cpp-opt-pass")
+            out["cpp_opt_pass_opt"] = argv[i]
+        elif a == "--dump-cpp-ir-before-opt":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --dump-cpp-ir-before-opt")
+            out["dump_cpp_ir_before_opt"] = argv[i]
+        elif a == "--dump-cpp-ir-after-opt":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --dump-cpp-ir-after-opt")
+            out["dump_cpp_ir_after_opt"] = argv[i]
+        elif a == "--dump-cpp-opt-trace":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --dump-cpp-opt-trace")
+            out["dump_cpp_opt_trace"] = argv[i]
         elif a == "--output-dir":
             i += 1
             if i >= len(argv):

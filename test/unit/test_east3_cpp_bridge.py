@@ -2069,7 +2069,7 @@ class East3CppBridgeTest(unittest.TestCase):
         out_none = emitter._build_any_boundary_expr_from_builtin_call("py_to_bool", [concrete_arg])
         self.assertIsNone(out_none)
 
-    def test_parse_py2cpp_argv_accepts_east_stage_and_object_dispatch_mode(self) -> None:
+    def test_parse_py2cpp_argv_accepts_east_stage_object_dispatch_and_cpp_opt(self) -> None:
         parsed = parse_py2cpp_argv(
             [
                 "input.py",
@@ -2077,11 +2077,17 @@ class East3CppBridgeTest(unittest.TestCase):
                 "3",
                 "--object-dispatch-mode",
                 "type_id",
+                "--cpp-opt-level",
+                "2",
+                "--cpp-opt-pass",
+                "-CppNoOpPass",
             ]
         )
         self.assertEqual(parsed.get("__error"), "")
         self.assertEqual(parsed.get("east_stage"), "3")
         self.assertEqual(parsed.get("object_dispatch_mode_opt"), "type_id")
+        self.assertEqual(parsed.get("cpp_opt_level_opt"), "2")
+        self.assertEqual(parsed.get("cpp_opt_pass_opt"), "-CppNoOpPass")
 
     def test_load_east_stage3_applies_dispatch_mode_override(self) -> None:
         payload = {
