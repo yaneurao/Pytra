@@ -132,6 +132,18 @@
   - `python3 -m unittest discover -s test/unit -p 'test_selfhost_virtual_dispatch_regression.py'`
   - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`（`mismatches=0 known_diffs=2 skipped=0`）
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S4-02` 確定内容（2026-02-26）:
+- 回帰条件の再確認として以下を再実行した。
+  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`
+    - 結果: `mismatches=0 known_diffs=2 skipped=0`
+  - `python3 tools/verify_selfhost_end_to_end.py`
+    - 結果: `[FAIL build_selfhost] ['Traceback (most recent call last):']`
+  - `python3 tools/build_selfhost.py`
+    - 詳細: `RuntimeError: failed to remove required import lines: CodeEmitter import`
+- 判定:
+  - diff 回帰条件は満たす（新規 mismatch なし）。
+  - e2e は既知の build 前段エラーが未解消のため、S4-03/S5 へはこの制約を明示した上で進める。
+
 ### S5: テスト追加（最優先）
 
 13. `P2-CPP-SELFHOST-VIRTUAL-01-S5-01`: `test/unit/test_py2cpp_codegen_issues.py` に、`Child.f` から `Base.f` 呼び出し（`Base.f` 参照 + `super().f`）の 2 パターンで `virtual/override` と `type_id` 分岐除去を検証するケースを追加する。
@@ -151,3 +163,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-02` として selfhost 再変換の再評価を実施し、`check_selfhost_cpp_diff` は `mismatches=0 known_diffs=2` を維持、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`failed to remove required import lines: CodeEmitter import`）で継続失敗することを再確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-03` として移行不能/非対象ケースを最終固定した。`type_id` registry 管理・runtime type_id API 呼び出し・BuiltinCall lower 前提経路は virtual dispatch 置換の対象外として残し、次回は selfhost 前処理エラー解消後に S4/S5 を再開する。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-01` として selfhost virtual dispatch 回帰テスト `test_selfhost_virtual_dispatch_regression.py` を追加し、`sample/cpp` と `pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch が再流入しないことを固定した。`check_selfhost_cpp_diff` でも `mismatches=0 known_diffs=2` を確認した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-02` として回帰コマンドを再実行し、`check_selfhost_cpp_diff` は引き続き `mismatches=0`、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`CodeEmitter import` 除去失敗）で停止することを確認した。
