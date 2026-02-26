@@ -35,7 +35,7 @@
 
 文脈: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollout.md)
 
-1. [ ] [ID: P3-JAVA-NATIVE-01] Java backend を `EAST3 -> Java native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
+1. [x] [ID: P3-JAVA-NATIVE-01] Java backend を `EAST3 -> Java native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
 2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
 3. [x] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
 4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
