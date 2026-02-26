@@ -51,6 +51,7 @@
 - 2026-02-26: `S6-01` として `docs-ja/plans/plan-east123-migration.md` の現行運用節を `EAST3 only` 契約へ更新し、非C++ の `stage2` 互換前提（互換モード警告・compat loader 依存）を撤去。旧前提は履歴注記へ移した。
 - 2026-02-26: `S6-02` として `docs/plans/plan-east123-migration.md` を `docs-ja` と同内容へ同期し、`EAST3 only` 契約と注記を日英系ドキュメントで一致させた。
 - 2026-02-26: `S7-01` として非C++ 8本の smoke/check を全通し。`test_py2{rs,cs,js,ts,go,java,swift,kotlin}_smoke.py` がすべて `OK`、`check_py2{rs,cs,js,ts,go,java,swift,kotlin}_transpile.py` は全8本で `checked=132 ok=132 fail=0 skipped=6` を確認。
+- 2026-02-26: `S7-02` として `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行。`SUMMARY cases=18 pass=18 fail=0`・`ok: 144` を確認し、非C++ 8ターゲットの `EAST3 only` 整合確認を完了した。
 
 ## 分解
 
@@ -73,4 +74,4 @@
 - [x] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
 - [x] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
 - [x] [ID: P3-EAST3-ONLY-01-S7-01] 非C++ 8本の smoke/check（`test_py2*` + `check_py2*`）を全通しする。
-- [ ] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
+- [x] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。

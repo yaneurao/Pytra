@@ -93,7 +93,7 @@
 
 文脈: `docs-ja/plans/p3-east3-only-emitters.md`（`P3-EAST3-ONLY-01`）
 
-1. [ ] [ID: P3-EAST3-ONLY-01] 非C++ 8ターゲット（`rs/cs/js/ts/go/java/swift/kotlin`）を `EAST3` 直結に統一し、`EAST2` 互換経路（`--east-stage 2` / `load_east_document_compat` / `east3_legacy_compat`）を撤去する。
+1. [x] [ID: P3-EAST3-ONLY-01] 非C++ 8ターゲット（`rs/cs/js/ts/go/java/swift/kotlin`）を `EAST3` 直結に統一し、`EAST2` 互換経路（`--east-stage 2` / `load_east_document_compat` / `east3_legacy_compat`）を撤去する。
 2. [x] [ID: P3-EAST3-ONLY-01-S1-01] 8本 CLI の `--east-stage 2` 入力を非対応エラーへ統一し、互換警告文言依存テストをエラー期待へ更新する。
 3. [x] [ID: P3-EAST3-ONLY-01-S1-02] 8本 CLI から `load_east_document_compat` の import/call を撤去し、`load_east3_document` 単一路線へ固定する。
 4. [x] [ID: P3-EAST3-ONLY-01-S2-01] `js_emitter` で `ForCore(iter_plan=StaticRangeForPlan/RuntimeIterForPlan)` を直接処理する。
@@ -113,7 +113,7 @@
 18. [x] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
 19. [x] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
 20. [x] [ID: P3-EAST3-ONLY-01-S7-01] 非C++ 8本の smoke/check（`test_py2*` + `check_py2*`）を全通しする。
-21. [ ] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
+21. [x] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
 
 ## P0: C++ emitter 肥大化の段階縮退（最優先）
 
