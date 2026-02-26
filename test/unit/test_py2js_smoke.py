@@ -142,6 +142,37 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("for (const [k, v] of pairs) {", js)
         self.assertIn("console.log(k, v);", js)
 
+    def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {"kind": "Expr", "value": {"kind": "ObjBool", "value": {"kind": "Name", "id": "x"}, "resolved_type": "bool"}},
+                {"kind": "Expr", "value": {"kind": "ObjLen", "value": {"kind": "Name", "id": "x"}, "resolved_type": "int64"}},
+                {"kind": "Expr", "value": {"kind": "ObjStr", "value": {"kind": "Name", "id": "x"}, "resolved_type": "str"}},
+                {"kind": "Expr", "value": {"kind": "ObjTypeId", "value": {"kind": "Name", "id": "x"}, "resolved_type": "int64"}},
+                {"kind": "Expr", "value": {"kind": "ObjIterInit", "value": {"kind": "Name", "id": "x"}, "resolved_type": "object"}},
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "ObjIterNext",
+                        "iter": {"kind": "ObjIterInit", "value": {"kind": "Name", "id": "x"}, "resolved_type": "object"},
+                        "resolved_type": "object",
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        js = transpile_to_js(east)
+        self.assertIn('import { pyBool, pyLen, pyStr, pyTypeId } from "./pytra/py_runtime.js";', js)
+        self.assertIn("pyBool(x);", js)
+        self.assertIn("pyLen(x);", js)
+        self.assertIn("pyStr(x);", js)
+        self.assertIn("pyTypeId(x);", js)
+        self.assertIn("[Symbol.iterator]()", js)
+        self.assertIn("__next.done ? null : __next.value", js)
+
     def test_browser_import_symbols_are_treated_as_external(self) -> None:
         fixture = find_fixture_case("browser_external_symbols")
         east = load_east(fixture, parser_backend="self_hosted")
