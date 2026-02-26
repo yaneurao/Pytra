@@ -8,7 +8,7 @@ Pytra is a collection of transpilers that convert programs written in a subset o
 
 Supported backends:
 ![C++](https://img.shields.io/badge/-C%2B%2B%C2%A0%C2%A0%C2%A0-00599C?style=flat-square&logo=cplusplus&logoColor=white)
-![Rust](https://img.shields.io/badge/-Rust%C2%A0%C2%A0-000000?style=flat-square&logo=rust&logoColor=white)
+![Rust](https://img.shields.io/badge/-Rust%C2%A0%C2%A0-F6B73C?style=flat-square&logo=rust&logoColor=black)
 ![C#](https://img.shields.io/badge/-C%23%C2%A0%C2%A0%C2%A0%C2%A0-239120?style=flat-square&logo=csharp&logoColor=white)
 ![JS](https://img.shields.io/badge/-JS%C2%A0%C2%A0%C2%A0%C2%A0-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
 ![TS](https://img.shields.io/badge/-TS%C2%A0%C2%A0%C2%A0%C2%A0-3178C6?style=flat-square&logo=typescript&logoColor=white)
