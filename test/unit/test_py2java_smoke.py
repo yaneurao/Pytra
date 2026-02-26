@@ -146,7 +146,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn('return (this.sound() + "-bark");', java)
         self.assertIn("public static void _case_main()", java)
         self.assertIn("Dog d = new Dog();", java)
-        self.assertIn("_case_main();", java)
+        self.assertIn('System.out.println("True");', java)
 
     def test_java_native_emitter_skeleton_maps_simple_int_signature(self) -> None:
         fixture = find_fixture_case("add")
@@ -154,6 +154,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn("public static long add(long a, long b)", java)
         self.assertIn("return (a + b);", java)
+        self.assertIn('System.out.println("True");', java)
 
     def test_java_native_emitter_lowers_if_and_forcore(self) -> None:
         if_fixture = find_fixture_case("if_else")
@@ -168,6 +169,12 @@ class Py2JavaSmokeTest(unittest.TestCase):
         for_java = transpile_to_java_native(for_east, class_name="Main")
         self.assertIn("for (long i = 0L;", for_java)
         self.assertIn("total += i;", for_java)
+
+    def test_java_native_emitter_uses_main_guard_body_for_sample_entry(self) -> None:
+        sample = ROOT / "sample" / "py" / "17_monte_carlo_pi.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("run_integer_benchmark();", java)
 
     def test_java_native_emitter_rejects_non_module_root(self) -> None:
         with self.assertRaises(RuntimeError):

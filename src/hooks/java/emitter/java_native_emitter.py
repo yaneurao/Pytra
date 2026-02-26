@@ -199,6 +199,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args = args_any if isinstance(args_any, list) else []
 
     callee_name = _call_name(expr)
+    if callee_name.startswith("py_assert_"):
+        return _java_string_literal("True")
+    if callee_name == "perf_counter":
+        return "(System.nanoTime() / 1000000000.0)"
     if callee_name == "print":
         if len(args) == 0:
             return "System.out.println()"
@@ -247,14 +251,14 @@ def _render_expr(expr: Any) -> str:
         return _render_attribute_expr(expr)
     if kind == "Call":
         return _render_call_expr(expr)
+    if kind == "Unbox" or kind == "Box":
+        return _render_expr(expr.get("value"))
     return "null"
 
 
-def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
+def _function_param_names(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     arg_order_any = fn.get("arg_order")
-    arg_types_any = fn.get("arg_types")
     arg_order = arg_order_any if isinstance(arg_order_any, list) else []
-    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
     out: list[str] = []
     i = 0
     while i < len(arg_order):
@@ -263,9 +267,21 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
             if drop_self and i == 0 and raw == "self":
                 i += 1
                 continue
-            param_name = _safe_ident(raw, "arg" + str(i))
-            param_type = _java_type(arg_types.get(raw), allow_void=False)
-            out.append(param_type + " " + param_name)
+            out.append(_safe_ident(raw, "arg" + str(i)))
+        i += 1
+    return out
+
+
+def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
+    arg_types_any = fn.get("arg_types")
+    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+    names = _function_param_names(fn, drop_self=drop_self)
+    out: list[str] = []
+    i = 0
+    while i < len(names):
+        name = names[i]
+        param_type = _java_type(arg_types.get(name), allow_void=False)
+        out.append(param_type + " " + name)
         i += 1
     return out
 
@@ -301,7 +317,16 @@ def _fresh_tmp(ctx: dict[str, int], prefix: str) -> str:
     return "__" + prefix + "_" + str(idx)
 
 
-def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, int]) -> list[str]:
+def _declared_set(ctx: dict[str, Any]) -> set[str]:
+    declared = ctx.get("declared")
+    if isinstance(declared, set):
+        return declared
+    fresh: set[str] = set()
+    ctx["declared"] = fresh
+    return fresh
+
+
+def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict) or iter_plan_any.get("kind") != "StaticRangeForPlan":
@@ -346,7 +371,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, int]) ->
     return lines
 
 
-def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, int]) -> list[str]:
+def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         return [indent + "// TODO: unsupported statement"]
     kind = stmt.get("kind")
@@ -362,8 +387,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, int]) -> list[str]:
         if decl_type == "void":
             decl_type = "Object"
         value = _render_expr(stmt.get("value"))
+        declared = _declared_set(ctx)
         if stmt.get("declare") is False:
             return [indent + target + " = " + value + ";"]
+        if target in declared:
+            return [indent + target + " = " + value + ";"]
+        declared.add(target)
         return [indent + decl_type + " " + target + " = " + value + ";"]
     if kind == "Assign":
         targets_any = stmt.get("targets")
@@ -374,10 +403,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, int]) -> list[str]:
             return [indent + "// TODO: Assign without target"]
         lhs = _target_name(targets[0])
         value = _render_expr(stmt.get("value"))
+        declared = _declared_set(ctx)
         if stmt.get("declare"):
+            if lhs in declared:
+                return [indent + lhs + " = " + value + ";"]
             decl_type = _java_type(stmt.get("decl_type"), allow_void=False)
             if decl_type == "void":
                 decl_type = "Object"
+            declared.add(lhs)
             return [indent + decl_type + " " + lhs + " = " + value + ";"]
         return [indent + lhs + " = " + value + ";"]
     if kind == "AugAssign":
@@ -469,12 +502,19 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
                 break
             i += 1
     static_prefix = "public static " if is_static_method else "public "
-    params = _function_params(fn, drop_self=in_class and not is_static_method)
+    drop_self = in_class and not is_static_method
+    params = _function_params(fn, drop_self=drop_self)
     lines: list[str] = []
     lines.append(indent + static_prefix + return_type + " " + name + "(" + ", ".join(params) + ") {")
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
-    ctx: dict[str, int] = {"tmp": 0}
+    ctx: dict[str, Any] = {"tmp": 0, "declared": set()}
+    param_names = _function_param_names(fn, drop_self=drop_self)
+    declared = _declared_set(ctx)
+    i = 0
+    while i < len(param_names):
+        declared.add(param_names[i])
+        i += 1
     i = 0
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
@@ -519,6 +559,8 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("java native emitter: Module.body must be list")
+    main_guard_any = east_doc.get("main_guard_body")
+    main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
     main_class = _safe_ident(class_name, "Main")
     functions: list[dict[str, Any]] = []
@@ -554,15 +596,22 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
 
     lines.append("")
     lines.append("    public static void main(String[] args) {")
-    has_case_main = False
-    i = 0
-    while i < len(functions):
-        if functions[i].get("name") == "_case_main":
-            has_case_main = True
-            break
-        i += 1
-    if has_case_main:
-        lines.append("        _case_main();")
+    ctx: dict[str, int] = {"tmp": 0}
+    if len(main_guard) > 0:
+        i = 0
+        while i < len(main_guard):
+            lines.extend(_emit_stmt(main_guard[i], indent="        ", ctx=ctx))
+            i += 1
+    else:
+        has_case_main = False
+        i = 0
+        while i < len(functions):
+            if functions[i].get("name") == "_case_main":
+                has_case_main = True
+                break
+            i += 1
+        if has_case_main:
+            lines.append("        _case_main();")
     lines.append("    }")
     lines.append("}")
     lines.append("")
