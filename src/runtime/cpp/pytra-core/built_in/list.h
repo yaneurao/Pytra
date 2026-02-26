@@ -88,6 +88,8 @@ public:
 
     ::std::size_t size() const { return data_.size(); }
     bool empty() const { return data_.empty(); }
+    T* data() { return data_.data(); }
+    const T* data() const { return data_.data(); }
     void reserve(::std::size_t n) { data_.reserve(n); }
     void clear() { data_.clear(); }
     void resize(::std::size_t n) { data_.resize(n); }

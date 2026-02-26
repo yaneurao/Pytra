@@ -36,6 +36,17 @@ public:
     template <class BytesLike, class = ::std::enable_if_t<!::std::is_convertible_v<BytesLike, ::std::string>>>
     void write(const BytesLike& bytes_like) {
         ensure_writable();
+        if constexpr (requires { bytes_like.data(); bytes_like.size(); }) {
+            using Elem = ::std::remove_cv_t<::std::remove_pointer_t<decltype(bytes_like.data())>>;
+            if constexpr (sizeof(Elem) == 1) {
+                const auto* ptr = bytes_like.data();
+                const auto n = static_cast<::std::streamsize>(bytes_like.size());
+                if (ptr != nullptr && n > 0) {
+                    ofs_.write(reinterpret_cast<const char*>(ptr), n);
+                }
+                return;
+            }
+        }
         for (const auto& v : bytes_like) {
             ofs_.put(static_cast<char>(v));
         }
