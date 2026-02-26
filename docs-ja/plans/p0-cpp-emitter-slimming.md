@@ -47,7 +47,7 @@
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S4-01] `render_expr` の `kind -> handler` テーブル駆動の骨格を導入する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S4-02] collection literal/comprehension 系 handler を分離し、回帰テストを追加する。
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S4-03] runtime/type_id/path 系 handler を分離し、`render_expr` をディスパッチ専任へ縮退する。
-- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S5-01] `repr` 依存ノードの対象を棚卸しし、parser/lowerer 側の構造化ノード移行計画を確定する。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-01] `repr` 依存ノードの対象を棚卸しし、parser/lowerer 側の構造化ノード移行計画を確定する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S5-02] `_render_repr_expr` の利用箇所を段階削減し、最終 fallback 以外を除去する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S5-03] `_render_repr_expr` を撤去（または no-op 化）し、`repr` 文字列依存をなくす。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S6-01] Rust/C++ 共通化候補（条件式・cast 補助・ループ骨格）を棚卸しし、`CodeEmitter` 移管対象を確定する。
@@ -73,6 +73,31 @@
   - `transpile`: `236` 行
   - `emit_assign`: `166` 行
 
+## S5-01 repr依存棚卸し（2026-02-26）
+
+- `CppEmitter` 内の `repr` 依存入口（`rg -n "_render_repr_expr\\(|\\brepr\\b"`）:
+  - `_render_compare_expr`:
+    - `left/right` が Python 風文字列の場合に `_render_repr_expr` で再解釈。
+    - `ops` 欠落時は `expr.repr` を `in/not in` 文字列分解で補う。
+  - `_render_name_expr`:
+    - `Name.id` を `_render_repr_expr` で再解釈（`self.` 置換など）。
+  - `render_expr` 末尾:
+    - 未対応 kind を `expr.repr` へフォールバック。
+  - `render_cond`:
+    - `render_expr` が空の場合に `expr.repr` を bool 判定へフォールバック。
+- `_render_repr_expr` が現在吸収している構文カテゴリ:
+  - 論理演算: `or/and/not`
+  - 包含比較: `in/not in`（set literal 文字列を含む）
+  - 比較連鎖: `< <= > >= == !=`
+  - 一部 call/slice: `len(x)`, `a[b:c]`
+  - `is None/True/False` と `self.` の文字列置換
+- parser/lowerer 側の構造化ノード移行ターゲット（S5-02 以降の削減順）:
+  1. Compare fallback (`ops==[]`, `repr` 分解) を `Compare`/`Contains` 系へ統一。
+  2. `len()/slice` の repr 分解を `ObjLen`/`SliceExpr` 生成へ寄せる。
+  3. `Name` の repr 再解釈を撤去し、`Attribute(Name(self), ...)` を parser で保証。
+  4. `render_expr` 末尾 repr fallback を最終 1 箇所に限定し、非対応 kind は lowerer で明示 node へ変換。
+  5. `render_cond` の repr fallback も同時に除去（空文字生成経路を先に塞ぐ）。
+
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
@@ -87,3 +112,4 @@
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S4-01` として `render_expr` 先頭へ `kind -> handler` テーブル（`_render_expr_dispatch_table`）を導入し、`Name/Constant/Attribute/Call/Box/Unbox/CastOrRaise/Obj*/Subscript/JoinedStr/Lambda` の経路をテーブル経由へ切替えた。既存 if 分岐は段階移行前提で温存しつつ、S4-02/S4-03 で分離するための骨格を固定した。検証は `python3 -m py_compile src/hooks/cpp/emitter/cpp_emitter.py src/hooks/cpp/emitter/builtin_runtime.py src/hooks/cpp/emitter/type_bridge.py src/hooks/cpp/emitter/class_def.py`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_builtin_runtime_list_append_uses_ir_node_path'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_supports_str_char_class_ir_node'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_runtime_py_isinstance_name_call_uses_type_id_core_node_path'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_call_fallback_rejects_parser_lowered_builtins'`、`python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S4-02` として collection literal/comprehension 系 handler を `src/hooks/cpp/emitter/collection_expr.py`（`CppCollectionExprEmitter`）へ移設し、`render_expr` の `List/Tuple/Set/Dict/ListComp/SetComp/DictComp` 直列分岐を削除した。`_render_expr_dispatch_table` へ該当 kind を追加し、`test/unit/test_east3_cpp_bridge.py` に dispatch 直結の独立テスト（`test_render_expr_dispatch_routes_collection_literal_handlers` / `test_render_expr_dispatch_routes_collection_comprehension_handlers`）を追加した。検証は `python3 -m py_compile src/hooks/cpp/emitter/collection_expr.py src/hooks/cpp/emitter/cpp_emitter.py test/unit/test_east3_cpp_bridge.py`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_dispatch_routes_collection_literal_handlers'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_dispatch_routes_collection_comprehension_handlers'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_builtin_runtime_list_append_uses_ir_node_path'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_supports_str_char_class_ir_node'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_runtime_py_isinstance_name_call_uses_type_id_core_node_path'`、`python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。
 - 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S4-03` として runtime/type_id/path 系 handler を `src/hooks/cpp/emitter/runtime_expr.py`（`CppRuntimeExprEmitter`）へ移設し、`render_expr` から `PathRuntimeOp` / `RuntimeSpecialOp` / `IsSubtype` / `IsSubclass` / `IsInstance` の直列分岐を削除した。`_render_expr_dispatch_table` へ該当 kind を追加し、dispatch 独立テスト（`test_render_expr_dispatch_routes_runtime_path_type_id_handlers`）を追加して `render_expr` をディスパッチ専任へ縮退した。検証は `python3 -m py_compile src/hooks/cpp/emitter/runtime_expr.py src/hooks/cpp/emitter/cpp_emitter.py src/hooks/cpp/emitter/collection_expr.py`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_dispatch_routes_runtime_path_type_id_handlers'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_builtin_runtime_list_append_uses_ir_node_path'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_supports_path_runtime_op_ir_nodes'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_runtime_py_isinstance_name_call_uses_type_id_core_node_path'`、`python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'test_render_expr_dispatch_routes_collection_literal_handlers'`、`python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）で実施した。
+- 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S5-01` として `repr` 依存入口を棚卸しし、`_render_compare_expr` / `_render_name_expr` / `render_expr` 末尾 fallback / `render_cond` fallback を削減対象として確定した。`_render_repr_expr` が吸収する構文カテゴリ（論理演算・包含比較・比較連鎖・`len/slice`・`is None/True/False`・`self.`）を明文化し、S5-02/S5-03 で lowerer 側構造化ノードへ移行する順序を計画に固定した。調査は `rg -n "_render_repr_expr\\(|\\brepr\\b" src/hooks/cpp/emitter/cpp_emitter.py` と `rg -n "repr" src/pytra/compiler/east_parts` で実施した。
