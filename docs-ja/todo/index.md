@@ -56,6 +56,8 @@
 22. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S9-02] `01/04/09/18` を再計測し、`with_capacity` 導入の寄与と未解消外れ値を更新する。
 23. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S10-01] C++ emitter の `/` 数値演算を `py_div`（Python互換 true division）へ統一し、`01/04` の整数除算寄り経路を解消する。
 24. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S10-02] `01/04/09/18` を再計測し、`/` セマンティクス修正の寄与と残外れ値（`09/18`）を記録する。
+25. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S11-01] Rust emitter の list/enumerate 反復で list 全体 clone を削減し、`18` のトークナイズ/文実行 hot path を軽量化する。
+26. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S11-02] `01/04/09/18` を再計測し、反復 clone 削減の寄与と残外れ値（`09/18`）を更新する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
