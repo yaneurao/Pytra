@@ -48,6 +48,8 @@
 14. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S5-02] 乖離が残るケースは未解消要因と次の打ち手を文書へ追記する。
 15. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S6-01] C++ runtime の `list/bytearray` 拡張処理を range insert 化し、GIF/PNG の byte コピー hot path を短縮する。
 16. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S6-02] 主要乖離ケース（`01/03/04/09/11/12/13/14/15/16/18`）を再計測し、寄与を記録する。
+17. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S7-01] Rust emitter の nested subscript 読み取りで中間 list clone を抑止し、`enumerate` ループの二重 clone を削減する。
+18. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S7-02] `01/04/09/18` を再計測し、clone 抑止の寄与と未解消乖離を記録する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
