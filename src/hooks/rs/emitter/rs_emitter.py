@@ -1193,6 +1193,23 @@ class RustEmitter(CodeEmitter):
         t = self.normalize_type_name(east_type)
         return t in {"float32", "float64"}
 
+    def _list_elem_type(self, east_type: str) -> str:
+        t = self.normalize_type_name(east_type)
+        if not t.startswith("list[") or not t.endswith("]"):
+            return ""
+        parts = self.split_generic(t[5:-1].strip())
+        if len(parts) != 1:
+            return ""
+        return self.normalize_type_name(parts[0])
+
+    def _is_copy_type(self, east_type: str) -> bool:
+        t = self.normalize_type_name(east_type)
+        if self._is_int_type(t):
+            return True
+        if self._is_float_type(t):
+            return True
+        return t in {"bool", "char", "int", "float", "usize", "isize"}
+
     def _dict_key_value_types(self, east_type: str) -> tuple[str, str]:
         t = self.normalize_type_name(east_type)
         if not t.startswith("dict[") or not t.endswith("]"):
@@ -2966,6 +2983,9 @@ class RustEmitter(CodeEmitter):
             if owner_t in {"bytes", "bytearray"}:
                 return "((" + indexed + ") as i64)"
             if owner_t.startswith("list["):
+                elem_t = self._list_elem_type(owner_t)
+                if self._is_copy_type(elem_t):
+                    return indexed
                 return "(" + indexed + ").clone()"
             return indexed
         if kind == "Slice":
