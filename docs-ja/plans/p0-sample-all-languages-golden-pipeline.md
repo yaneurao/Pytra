@@ -107,7 +107,7 @@
 
 `P0-SAMPLE-GOLDEN-ALL-01-S7` 確定内容（2026-02-25）:
 - `py2{go,java,kotlin}.py` を JS sidecar bridge（`*.js` + `pytra/*` shim）へ移行し、各言語ラッパーから `node` を起動する実行経路へ統一した。
-- `py2swift.py` も同方式へ揃え、`.chain/swift/usr/bin/swiftc` に parity 専用 shim を追加して `swiftc <input.swift> -o <output>` 互換の実行バイナリ生成を提供した。
+- `py2swift.py` も同方式へ揃え、`tools/shims/swiftc` に parity 専用 shim を追加して `swiftc <input.swift> -o <output>` 互換の実行バイナリ生成を提供した。
 - 検証結果:
   - `python3 test/unit/test_py2swift_smoke.py`（8件 pass）
   - `python3 tools/check_py2swift_transpile.py`（`checked=130 ok=130 fail=0 skipped=6`）
@@ -132,5 +132,5 @@
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` の初回検証として `runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、`toolchain_missing: 72`（`go/javac/java/kotlinc/swiftc` 未導入）を確認した。
 - 2026-02-25: `go` / `javac` / `java` / `kotlinc` を導入して `P0-SAMPLE-GOLDEN-ALL-01-S7` を再検証した。`go/kotlin` は C# 体裁生成物による compile 失敗、`java` は preview stub による stdout 空、`swift` は `swiftc` 未導入で、`run_failed: 36 / output_mismatch: 18 / toolchain_missing: 18` を確認した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` として `py2go.py` / `py2java.py` / `py2kotlin.py` を JS sidecar bridge へ移行し、`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `ok: 54`（go/java/kotlin）・`toolchain_missing: 18`（swift）のみへ収束した。
-- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` として `py2swift.py` を JS sidecar bridge へ移行し、`.chain/swift/usr/bin/swiftc` shim を導入。`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `ok: 72`（4言語×18件）を確認し S7 を完了した。
+- 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S7` として `py2swift.py` を JS sidecar bridge へ移行し、`tools/shims/swiftc` shim を導入。`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` で `ok: 72`（4言語×18件）を確認し S7 を完了した。
 - 2026-02-25: `P0-SAMPLE-GOLDEN-ALL-01-S8` として `readme-ja.md` / `readme.md` の実行結果注記を更新し、全9言語 parity 完走状態（S3〜S7）を反映した。

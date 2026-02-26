@@ -137,3 +137,4 @@ selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発�
 - sample 再生成は「変換器ソース差分」ではなく `src/pytra/compiler/transpiler_versions.json` の minor 以上の更新をトリガーにします。
 - 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/hooks/**`, `src/profiles/**`）を変更したコミットでは、`tools/check_transpiler_version_gate.py` を通過させる必要があります。
 - バージョン更新で sample 再生成したときは、`tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使い、生成差分が出た C++ ケースを compile/run 検証します。
+- ツールチェイン互換用の shim は `tools/shims/` 配下に配置し、ルート直下へ `.chain` のような専用ディレクトリを新設しません。

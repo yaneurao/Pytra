@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
 SAMPLE_ROOT = ROOT / "sample" / "py"
-SWIFTC = ROOT / ".chain" / "swift" / "usr" / "bin" / "swiftc"
+SWIFTC = ROOT / "tools" / "shims" / "swiftc"
 
 
 @dataclass
