@@ -50,6 +50,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "java.util.ArrayList<Long>"
     if type_name.startswith("list["):
         return "java.util.ArrayList<Object>"
+    if type_name.startswith("dict["):
+        return "java.util.HashMap<Object, Object>"
     if type_name.isidentifier():
         return _safe_ident(type_name, "Object")
     return "Object"
@@ -250,8 +252,40 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
     cur_left = left_expr
     i = 0
     while i < len(ops) and i < len(comps):
-        right = _render_expr(comps[i])
-        parts.append("(" + cur_left + " " + _compare_op_symbol(ops[i]) + " " + right + ")")
+        comp_node = comps[i]
+        right = _render_expr(comp_node)
+        op = ops[i]
+        if op == "In" or op == "NotIn":
+            expr_txt = right + ".contains(" + cur_left + ")"
+            if isinstance(comp_node, dict):
+                comp_resolved = comp_node.get("resolved_type")
+                if isinstance(comp_resolved, str):
+                    if comp_resolved.startswith("dict["):
+                        expr_txt = right + ".containsKey(" + cur_left + ")"
+                    elif comp_resolved == "str":
+                        expr_txt = right + ".contains(String.valueOf(" + cur_left + "))"
+            if op == "NotIn":
+                expr_txt = "!(" + expr_txt + ")"
+            parts.append("(" + expr_txt + ")")
+        elif op == "Eq" or op == "NotEq":
+            left_resolved = ""
+            if i == 0 and isinstance(expr.get("left"), dict):
+                left_resolved_any = expr.get("left", {}).get("resolved_type")
+                left_resolved = left_resolved_any if isinstance(left_resolved_any, str) else ""
+            elif i > 0 and isinstance(comps[i - 1], dict):
+                left_resolved_any = comps[i - 1].get("resolved_type")
+                left_resolved = left_resolved_any if isinstance(left_resolved_any, str) else ""
+            right_resolved_any = comp_node.get("resolved_type") if isinstance(comp_node, dict) else ""
+            right_resolved = right_resolved_any if isinstance(right_resolved_any, str) else ""
+            if left_resolved == "str" or right_resolved == "str":
+                expr_txt = "java.util.Objects.equals(" + cur_left + ", " + right + ")"
+                if op == "NotEq":
+                    expr_txt = "!(" + expr_txt + ")"
+                parts.append("(" + expr_txt + ")")
+            else:
+                parts.append("(" + cur_left + " " + _compare_op_symbol(op) + " " + right + ")")
+        else:
+            parts.append("(" + cur_left + " " + _compare_op_symbol(op) + " " + right + ")")
         cur_left = right
         i += 1
     if len(parts) == 0:
@@ -305,6 +339,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
         return _java_string_literal("True")
+    if callee_name == "main" and len(args) == 0:
+        return "__pytra_main()"
     if callee_name == "perf_counter":
         return "(System.nanoTime() / 1000000000.0)"
     if callee_name == "bytearray":
@@ -318,7 +354,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "int":
         if len(args) == 0:
             return "0L"
-        return "((long)(" + _render_expr(args[0]) + "))"
+        return "__pytra_int(" + _render_expr(args[0]) + ")"
     if callee_name == "float":
         if len(args) == 0:
             return "0.0"
@@ -326,7 +362,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
-        return "((boolean)(" + _render_expr(args[0]) + "))"
+        return "__pytra_truthy(" + _render_expr(args[0]) + ")"
     if callee_name == "str":
         if len(args) == 0:
             return '""'
@@ -352,7 +388,17 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "len":
         if len(args) == 0:
             return "0L"
-        return "((long)(" + _render_expr(args[0]) + ".size()))"
+        target = args[0]
+        if isinstance(target, dict):
+            resolved = target.get("resolved_type")
+            rendered = _render_expr(target)
+            if resolved == "str":
+                return "((long)(" + rendered + ".length()))"
+            if isinstance(resolved, str) and resolved.startswith("dict["):
+                return "((long)(" + rendered + ".size()))"
+            if isinstance(resolved, str) and (resolved.startswith("list[") or resolved in {"bytes", "bytearray"}):
+                return "((long)(" + rendered + ".size()))"
+        return "__pytra_len(" + _render_expr(args[0]) + ")"
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -408,6 +454,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if len(args) == 0:
                 return owner_expr + ".remove(" + owner_expr + ".size() - 1)"
             return owner_expr + ".remove((int)(" + _render_expr(args[0]) + "))"
+        if attr_name == "isdigit" and len(args) == 0:
+            return "__pytra_str_isdigit(" + owner_expr + ")"
+        if attr_name == "isalpha" and len(args) == 0:
+            return "__pytra_str_isalpha(" + owner_expr + ")"
         if attr_name in {"write_rgb_png", "save_gif"}:
             rendered_noop_args: list[str] = []
             i = 0
@@ -537,6 +587,20 @@ def _render_expr(expr: Any) -> str:
             rendered.append(_render_expr(elements[i]))
             i += 1
         return "new java.util.ArrayList<Object>(java.util.Arrays.asList(" + ", ".join(rendered) + "))"
+    if kind == "Dict":
+        keys_any = expr.get("keys")
+        vals_any = expr.get("values")
+        keys = keys_any if isinstance(keys_any, list) else []
+        vals = vals_any if isinstance(vals_any, list) else []
+        if len(keys) == 0 or len(vals) == 0:
+            return "new java.util.HashMap<Object, Object>()"
+        rendered: list[str] = []
+        i = 0
+        while i < len(keys) and i < len(vals):
+            rendered.append(_render_expr(keys[i]))
+            rendered.append(_render_expr(vals[i]))
+            i += 1
+        return "__pytra_dict_of(" + ", ".join(rendered) + ")"
     if kind == "ListComp":
         return "new java.util.ArrayList<Object>()"
     if kind == "IfExp":
@@ -548,9 +612,62 @@ def _render_expr(expr: Any) -> str:
         value_any = expr.get("value")
         index_any = expr.get("slice")
         owner_expr = _render_expr(value_any)
+        owner_type = value_any.get("resolved_type") if isinstance(value_any, dict) else None
+        if isinstance(index_any, dict) and index_any.get("kind") == "Slice":
+            lower_any = index_any.get("lower")
+            upper_any = index_any.get("upper")
+            lower_expr = _render_expr(lower_any) if isinstance(lower_any, dict) else "0L"
+            if isinstance(upper_any, dict):
+                upper_expr = _render_expr(upper_any)
+            elif isinstance(owner_type, str) and owner_type == "str":
+                upper_expr = "((long)(" + owner_expr + ".length()))"
+            else:
+                upper_expr = "((long)(" + owner_expr + ".size()))"
+            if isinstance(owner_type, str) and owner_type == "str":
+                start = (
+                    "((("
+                    + lower_expr
+                    + ") < 0L) ? (((long)("
+                    + owner_expr
+                    + ".length())) + ("
+                    + lower_expr
+                    + ")) : ("
+                    + lower_expr
+                    + "))"
+                )
+                stop = (
+                    "((("
+                    + upper_expr
+                    + ") < 0L) ? (((long)("
+                    + owner_expr
+                    + ".length())) + ("
+                    + upper_expr
+                    + ")) : ("
+                    + upper_expr
+                    + "))"
+                )
+                return "__pytra_str_slice(" + owner_expr + ", " + start + ", " + stop + ")"
+            return owner_expr
         index_expr = _render_expr(index_any)
-        norm_index = _normalize_index_expr(owner_expr, index_expr)
-        base = owner_expr + ".get((int)(" + norm_index + "))"
+        base = ""
+        if isinstance(owner_type, str) and owner_type.startswith("dict["):
+            base = owner_expr + ".get(" + index_expr + ")"
+        elif isinstance(owner_type, str) and owner_type == "str":
+            norm_index = (
+                "((("
+                + index_expr
+                + ") < 0L) ? (((long)("
+                + owner_expr
+                + ".length())) + ("
+                + index_expr
+                + ")) : ("
+                + index_expr
+                + "))"
+            )
+            base = "String.valueOf(" + owner_expr + ".charAt((int)(" + norm_index + ")))"
+        else:
+            norm_index = _normalize_index_expr(owner_expr, index_expr)
+            base = owner_expr + ".get((int)(" + norm_index + "))"
         resolved = expr.get("resolved_type")
         if isinstance(resolved, str):
             if resolved in {"int", "int64", "uint8"}:
@@ -565,10 +682,19 @@ def _render_expr(expr: Any) -> str:
                 return "((java.util.ArrayList<Object>)(" + base + "))"
             if resolved in {"bytes", "bytearray"}:
                 return "((java.util.ArrayList<Long>)(" + base + "))"
+            inferred = _java_type(resolved, allow_void=False)
+            if inferred not in {"Object", "void", "long", "double", "boolean", "String"}:
+                return "((" + inferred + ")(" + base + "))"
         return base
     if kind == "IsInstance":
         lhs = _render_expr(expr.get("value"))
         return _render_isinstance_check(lhs, expr.get("expected_type_id"))
+    if kind == "ObjLen":
+        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
+    if kind == "ObjStr":
+        return "String.valueOf(" + _render_expr(expr.get("value")) + ")"
+    if kind == "ObjBool":
+        return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
     if kind == "Unbox" or kind == "Box":
         return _render_expr(expr.get("value"))
     return "null"
@@ -733,12 +859,142 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
     return inferred
 
 
+def _emit_for_runtime_iter(
+    stmt: dict[str, Any],
+    *,
+    iter_plan: dict[str, Any],
+    target_plan: dict[str, Any],
+    indent: str,
+    ctx: dict[str, Any],
+) -> list[str]:
+    iter_expr_any = iter_plan.get("iter_expr")
+    list_expr = _render_expr(iter_expr_any)
+    is_enumerate = False
+    if isinstance(iter_expr_any, dict) and iter_expr_any.get("kind") == "Call" and _call_name(iter_expr_any) == "enumerate":
+        args_any = iter_expr_any.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        if len(args) >= 1:
+            list_expr = _render_expr(args[0])
+            is_enumerate = True
+
+    iter_tmp = _fresh_tmp(ctx, "iter")
+    idx_tmp = _fresh_tmp(ctx, "iter_i")
+    lines: list[str] = []
+    lines.append(indent + "java.util.ArrayList<Object> " + iter_tmp + " = ((java.util.ArrayList<Object>)(" + list_expr + "));")
+    lines.append(
+        indent
+        + "for (long "
+        + idx_tmp
+        + " = 0L; "
+        + idx_tmp
+        + " < ((long)("
+        + iter_tmp
+        + ".size())); "
+        + idx_tmp
+        + " += 1L) {"
+    )
+    body_ctx: dict[str, Any] = {
+        "tmp": ctx.get("tmp", 0),
+        "declared": set(_declared_set(ctx)),
+        "types": dict(_type_map(ctx)),
+    }
+    body_declared = _declared_set(body_ctx)
+    body_types = _type_map(body_ctx)
+
+    if target_plan.get("kind") == "NameTarget":
+        target_name = _safe_ident(target_plan.get("id"), "item")
+        target_type = _java_type(target_plan.get("target_type"), allow_void=False)
+        if target_type == "void":
+            target_type = "Object"
+        base = iter_tmp + ".get((int)(" + idx_tmp + "))"
+        rhs = _cast_from_object(base, target_type)
+        lines.append(indent + "    " + target_type + " " + target_name + " = " + rhs + ";")
+        body_declared.add(target_name)
+        if target_type != "Object":
+            body_types[target_name] = target_type
+    elif target_plan.get("kind") == "TupleTarget":
+        elems_any = target_plan.get("elements")
+        elems = elems_any if isinstance(elems_any, list) else []
+        tuple_types = _tuple_element_types(target_plan.get("target_type"))
+        tuple_item_tmp = _fresh_tmp(body_ctx, "iter_item")
+        if is_enumerate and len(elems) == 2:
+            i = 0
+            while i < len(elems):
+                elem = elems[i]
+                if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
+                    return [indent + "// TODO: unsupported RuntimeIter tuple target"]
+                name = _safe_ident(elem.get("id"), "item_" + str(i))
+                elem_type = "Object"
+                if i < len(tuple_types):
+                    inferred = _java_type(tuple_types[i], allow_void=False)
+                    elem_type = "Object" if inferred == "void" else inferred
+                if i == 0:
+                    if elem_type == "long":
+                        rhs = idx_tmp
+                    else:
+                        rhs = _cast_from_object("Long.valueOf(" + idx_tmp + ")", elem_type)
+                else:
+                    rhs = _cast_from_object(iter_tmp + ".get((int)(" + idx_tmp + "))", elem_type)
+                lines.append(indent + "    " + elem_type + " " + name + " = " + rhs + ";")
+                body_declared.add(name)
+                if elem_type != "Object":
+                    body_types[name] = elem_type
+                i += 1
+        else:
+            lines.append(
+                indent
+                + "    java.util.ArrayList<Object> "
+                + tuple_item_tmp
+                + " = ((java.util.ArrayList<Object>)("
+                + iter_tmp
+                + ".get((int)("
+                + idx_tmp
+                + "))));"
+            )
+            i = 0
+            while i < len(elems):
+                elem = elems[i]
+                if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
+                    return [indent + "// TODO: unsupported RuntimeIter tuple target"]
+                name = _safe_ident(elem.get("id"), "item_" + str(i))
+                elem_type = "Object"
+                if i < len(tuple_types):
+                    inferred = _java_type(tuple_types[i], allow_void=False)
+                    elem_type = "Object" if inferred == "void" else inferred
+                rhs = _cast_from_object(tuple_item_tmp + ".get(" + str(i) + ")", elem_type)
+                lines.append(indent + "    " + elem_type + " " + name + " = " + rhs + ";")
+                body_declared.add(name)
+                if elem_type != "Object":
+                    body_types[name] = elem_type
+                i += 1
+    else:
+        return [indent + "// TODO: unsupported RuntimeIter target_plan"]
+
+    body_any = stmt.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    i = 0
+    while i < len(body):
+        lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
+        i += 1
+    ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
+    lines.append(indent + "}")
+    return lines
+
+
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
-    if not isinstance(iter_plan_any, dict) or iter_plan_any.get("kind") != "StaticRangeForPlan":
+    if not isinstance(iter_plan_any, dict):
         return [indent + "// TODO: unsupported ForCore iter_plan"]
-    if not isinstance(target_plan_any, dict) or target_plan_any.get("kind") != "NameTarget":
+    if not isinstance(target_plan_any, dict):
+        return [indent + "// TODO: unsupported ForCore target_plan"]
+
+    if iter_plan_any.get("kind") == "RuntimeIterForPlan":
+        return _emit_for_runtime_iter(stmt, iter_plan=iter_plan_any, target_plan=target_plan_any, indent=indent, ctx=ctx)
+
+    if iter_plan_any.get("kind") != "StaticRangeForPlan":
+        return [indent + "// TODO: unsupported ForCore iter_plan"]
+    if target_plan_any.get("kind") != "NameTarget":
         return [indent + "// TODO: unsupported ForCore target_plan"]
 
     target_name = _safe_ident(target_plan_any.get("id"), "i")
@@ -1016,9 +1272,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + lhs_attr + " = " + value_attr + ";"]
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
             tgt = targets[0]
+            value_node = tgt.get("value")
             owner = _render_expr(tgt.get("value"))
             index = _render_expr(tgt.get("slice"))
             value = _render_expr(stmt.get("value"))
+            owner_type = value_node.get("resolved_type") if isinstance(value_node, dict) else None
+            if isinstance(owner_type, str) and owner_type.startswith("dict["):
+                return [indent + owner + ".put(" + index + ", " + value + ");"]
             norm_index = _normalize_index_expr(owner, index)
             return [indent + owner + ".set((int)(" + norm_index + "), " + value + ");"]
         lhs = _target_name(targets[0])
@@ -1244,6 +1504,9 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             kind = node.get("kind")
             target = node.get("target")
             if kind in {"AnnAssign", "Assign"} and isinstance(target, dict) and target.get("kind") == "Name":
+                if kind == "AnnAssign" and node.get("value") is None:
+                    i += 1
+                    continue
                 field_name = _safe_ident(target.get("id"), "value")
                 field_type = _java_type(node.get("decl_type") or node.get("annotation"), allow_void=False)
                 if field_type == "Object":
@@ -1265,6 +1528,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
+    instance_field_order: list[str] = []
     for raw_name, raw_type in field_types.items():
         if not isinstance(raw_name, str):
             continue
@@ -1275,6 +1539,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         if field_type == "void":
             field_type = "Object"
         lines.append(indent + "    public " + field_type + " " + field_name + ";")
+        instance_field_order.append(field_name)
 
     has_init = False
     i = 0
@@ -1287,6 +1552,25 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     if not has_init:
         lines.append(indent + "    public " + class_name + "() {")
         lines.append(indent + "    }")
+        if len(instance_field_order) > 0:
+            ctor_params: list[str] = []
+            i = 0
+            while i < len(instance_field_order):
+                field_name = instance_field_order[i]
+                raw_type = field_types.get(field_name)
+                field_type = _java_type(raw_type, allow_void=False)
+                if field_type == "void":
+                    field_type = "Object"
+                ctor_params.append(field_type + " " + field_name)
+                i += 1
+            lines.append("")
+            lines.append(indent + "    public " + class_name + "(" + ", ".join(ctor_params) + ") {")
+            i = 0
+            while i < len(instance_field_order):
+                field_name = instance_field_order[i]
+                lines.append(indent + "        this." + field_name + " = " + field_name + ";")
+                i += 1
+            lines.append(indent + "    }")
 
     i = 0
     while i < len(body):
@@ -1334,6 +1618,104 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("    private static void __pytra_noop(Object... args) {")
     lines.append("    }")
     lines.append("")
+    lines.append("    private static long __pytra_int(Object value) {")
+    lines.append("        if (value == null) {")
+    lines.append("            return 0L;")
+    lines.append("        }")
+    lines.append("        if (value instanceof Number) {")
+    lines.append("            return ((Number) value).longValue();")
+    lines.append("        }")
+    lines.append("        if (value instanceof Boolean) {")
+    lines.append("            return ((Boolean) value) ? 1L : 0L;")
+    lines.append("        }")
+    lines.append("        if (value instanceof String) {")
+    lines.append("            String s = ((String) value).trim();")
+    lines.append("            if (s.isEmpty()) {")
+    lines.append("                return 0L;")
+    lines.append("            }")
+    lines.append("            try {")
+    lines.append("                return Long.parseLong(s);")
+    lines.append("            } catch (NumberFormatException ex) {")
+    lines.append("                return 0L;")
+    lines.append("            }")
+    lines.append("        }")
+    lines.append("        return 0L;")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    private static long __pytra_len(Object value) {")
+    lines.append("        if (value == null) {")
+    lines.append("            return 0L;")
+    lines.append("        }")
+    lines.append("        if (value instanceof String) {")
+    lines.append("            return ((String) value).length();")
+    lines.append("        }")
+    lines.append("        if (value instanceof java.util.Map<?, ?>) {")
+    lines.append("            return ((java.util.Map<?, ?>) value).size();")
+    lines.append("        }")
+    lines.append("        if (value instanceof java.util.List<?>) {")
+    lines.append("            return ((java.util.List<?>) value).size();")
+    lines.append("        }")
+    lines.append("        return 0L;")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    private static boolean __pytra_str_isdigit(Object value) {")
+    lines.append("        String s = String.valueOf(value);")
+    lines.append("        if (s.isEmpty()) {")
+    lines.append("            return false;")
+    lines.append("        }")
+    lines.append("        int i = 0;")
+    lines.append("        while (i < s.length()) {")
+    lines.append("            if (!Character.isDigit(s.charAt(i))) {")
+    lines.append("                return false;")
+    lines.append("            }")
+    lines.append("            i += 1;")
+    lines.append("        }")
+    lines.append("        return true;")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    private static boolean __pytra_str_isalpha(Object value) {")
+    lines.append("        String s = String.valueOf(value);")
+    lines.append("        if (s.isEmpty()) {")
+    lines.append("            return false;")
+    lines.append("        }")
+    lines.append("        int i = 0;")
+    lines.append("        while (i < s.length()) {")
+    lines.append("            if (!Character.isLetter(s.charAt(i))) {")
+    lines.append("                return false;")
+    lines.append("            }")
+    lines.append("            i += 1;")
+    lines.append("        }")
+    lines.append("        return true;")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    private static String __pytra_str_slice(String s, long start, long stop) {")
+    lines.append("        long n = s.length();")
+    lines.append("        long lo = start;")
+    lines.append("        long hi = stop;")
+    lines.append("        if (lo < 0L) {")
+    lines.append("            lo += n;")
+    lines.append("        }")
+    lines.append("        if (hi < 0L) {")
+    lines.append("            hi += n;")
+    lines.append("        }")
+    lines.append("        if (lo < 0L) {")
+    lines.append("            lo = 0L;")
+    lines.append("        }")
+    lines.append("        if (hi < 0L) {")
+    lines.append("            hi = 0L;")
+    lines.append("        }")
+    lines.append("        if (lo > n) {")
+    lines.append("            lo = n;")
+    lines.append("        }")
+    lines.append("        if (hi > n) {")
+    lines.append("            hi = n;")
+    lines.append("        }")
+    lines.append("        if (hi < lo) {")
+    lines.append("            hi = lo;")
+    lines.append("        }")
+    lines.append("        return s.substring((int) lo, (int) hi);")
+    lines.append("    }")
+    lines.append("")
     lines.append("    private static java.util.ArrayList<Long> __pytra_bytearray(Object init) {")
     lines.append("        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();")
     lines.append("        if (init instanceof Number) {")
@@ -1357,6 +1739,16 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("                }")
     lines.append("                i += 1;")
     lines.append("            }")
+    lines.append("        }")
+    lines.append("        return out;")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    private static java.util.HashMap<Object, Object> __pytra_dict_of(Object... kv) {")
+    lines.append("        java.util.HashMap<Object, Object> out = new java.util.HashMap<Object, Object>();")
+    lines.append("        int i = 0;")
+    lines.append("        while (i + 1 < kv.length) {")
+    lines.append("            out.put(kv[i], kv[i + 1]);")
+    lines.append("            i += 2;")
     lines.append("        }")
     lines.append("        return out;")
     lines.append("    }")
