@@ -51,6 +51,7 @@
 - `P3-JAVA-NATIVE-01-S2-01` `java_native_emitter` に本文 lower を追加し、`Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` と主要式（定数・算術・比較・print/通常 call）を Java 生成へ接続。
 - `P3-JAVA-NATIVE-01-S2-01` class 型の注釈を `Object` へ潰さず保持し、`self -> this` と `Dog() -> new Dog()` 変換を追加して OOP 基本経路の生成整合を改善。
 - `P3-JAVA-NATIVE-01-S2-01` `if/else` 両分岐 `return` 時の到達不能 `return` 追加を抑止する簡易 return-flow 判定を導入し、`if_else` 生成の compile failure を解消。
+- `P3-JAVA-NATIVE-01-S2-01` `main_guard_body` を `main()` へ反映し、`py_assert_*` と `perf_counter` の最小 lower、再代入の再宣言抑止（declared set）を追加。`runtime_parity_check --targets java` で `fixture: add/if_else/for_range/inheritance` と `sample:17_monte_carlo_pi` の pass を確認。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 
