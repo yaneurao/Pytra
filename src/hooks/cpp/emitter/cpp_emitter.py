@@ -692,34 +692,6 @@ class CppEmitter(
             return "float64" if saw_float else "int64"
         return ""
 
-    def _try_optimize_char_compare(
-        self,
-        left_node: Any,
-        op: str,
-        right_node: Any,
-    ) -> str:
-        """1文字比較を `'x'` / `.at(i)` 形へ最適化できるか判定する。"""
-        if not self._opt_ge(3):
-            return ""
-        if op not in {"Eq", "NotEq"}:
-            return ""
-        cop = "==" if op == "Eq" else "!="
-        l_access = self._str_index_char_access(left_node)
-        r_ch = self._one_char_str_const(right_node)
-        if l_access != "" and r_ch != "":
-            return f"{l_access} {cop} {cpp_char_lit(r_ch)}"
-        r_access = self._str_index_char_access(right_node)
-        l_ch = self._one_char_str_const(left_node)
-        if r_access != "" and l_ch != "":
-            return f"{cpp_char_lit(l_ch)} {cop} {r_access}"
-        l_ty = self.get_expr_type(left_node)
-        if l_ty == "uint8" and r_ch != "":
-            return f"{self.render_expr(left_node)} {cop} {cpp_char_lit(r_ch)}"
-        r_ty = self.get_expr_type(right_node)
-        if r_ty == "uint8" and l_ch != "":
-            return f"{cpp_char_lit(l_ch)} {cop} {self.render_expr(right_node)}"
-        return ""
-
     def _byte_from_str_expr(self, node: Any) -> str:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
         ch = self._one_char_str_const(node)
@@ -1854,8 +1826,6 @@ class CppEmitter(
             rhs_texts.append(rhs)
             if op_name in {"In", "NotIn", "Is", "IsNot"}:
                 has_special_case = True
-            elif self._try_optimize_char_compare(cur_probe_node, op_name, rhs_node) != "":
-                has_special_case = True
             cur_probe_node = rhs_node
         if not has_special_case:
             return self.render_compare_chain_from_rendered(
@@ -1883,14 +1853,7 @@ class CppEmitter(
             elif cop == "/* not in */":
                 parts.append(f"!py_contains({rhs}, {cur})")
             else:
-                opt_cmp = self._try_optimize_char_compare(
-                    cur_node,
-                    op_name,
-                    rhs_node,
-                )
-                if opt_cmp != "":
-                    parts.append(opt_cmp)
-                elif op_name in {"Is", "IsNot"} and rhs in {"std::nullopt", "::std::nullopt"}:
+                if op_name in {"Is", "IsNot"} and rhs in {"std::nullopt", "::std::nullopt"}:
                     prefix = "!" if op_name == "IsNot" else ""
                     parts.append(f"{prefix}py_is_none({cur})")
                 elif op_name in {"Is", "IsNot"} and cur in {"std::nullopt", "::std::nullopt"}:

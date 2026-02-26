@@ -77,7 +77,7 @@ Context: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-r
 4. [x] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
 5. [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and lock pre-structuring IR normalization.
 6. [x] [ID: P0-CPP-OPT-01-S2-03] Add limited `CppRuntimeFastPathPass` within runtime-contract-equivalent boundaries.
-7. [ ] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching in `CppEmitter` and align boundary with `spec-cpp-optimizer`.
+7. [x] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching in `CppEmitter` and align boundary with `spec-cpp-optimizer`.
 8. [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
 9. [ ] [ID: P0-CPP-OPT-01-S3-03] Measure speed/size/generated-diff baselines and record adoption effects in context docs.
 - `P0-CPP-OPT-01-S1-01` Added `src/hooks/cpp/optimizer/` scaffold (`context/trace/passes/cpp_optimizer`) plus no-op wiring in `emit_cpp_from_east`, and locked skeleton regressions with `test_cpp_optimizer.py`.
@@ -85,6 +85,7 @@ Context: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-r
 - `P0-CPP-OPT-01-S2-01` Added `CppDeadTempPass`/`CppNoOpCastPass` for unused-temp elimination and no-op cast cleanup (`casts` metadata and `static_cast` nodes), registered them in `build_default_cpp_passes()`, and expanded `test_cpp_optimizer.py`.
 - `P0-CPP-OPT-01-S2-02` Added `CppConstConditionPass`/`CppRangeForShapePass` for constant-branch pruning and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wired them into the default pass set and `test_cpp_optimizer.py`.
 - `P0-CPP-OPT-01-S2-03` Added `CppRuntimeFastPathPass` (O2-only) for contract-equivalent fast paths (`Unbox` same-type fold, `Box(object)` fold, `ObjBool(bool)` fold), then wired it into default passes and added O1/O2 behavior checks in `test_cpp_optimizer.py`.
+- `P0-CPP-OPT-01-S3-01` Removed char-compare optimization branching (`_try_optimize_char_compare`) from `CppEmitter._render_compare_expr` to keep compare optimization on the optimizer side; validated with `test_py2cpp_features::test_str_index_char_compare_optimized_and_runtime`.
 
 ### P3: Go/Swift/Kotlin backend direct EAST3 native generation (sidecar removal) (Low)
 

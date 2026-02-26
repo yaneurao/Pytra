@@ -43,6 +43,7 @@
 - 2026-02-26: `P0-CPP-OPT-01-S2-01` として `CppDeadTempPass` / `CppNoOpCastPass` を追加。unused temp 代入の安全削減と no-op cast（`casts`/`static_cast`）除去を導入し、既定 pass 列へ組み込み。`test_cpp_optimizer.py` を 9 ケースへ拡張してガードを固定。
 - 2026-02-26: `P0-CPP-OPT-01-S2-02` として `CppConstConditionPass` / `CppRangeForShapePass` を追加。`If(Constant)` の枝簡約と `range(...)` runtime loop の `StaticRangeForPlan` 正規化を導入し、既定 pass 列・`test_cpp_optimizer.py`（11 ケース）へ反映。
 - 2026-02-26: `P0-CPP-OPT-01-S2-03` として `CppRuntimeFastPathPass`（O2限定）を追加。`Unbox` 同型除去 / `Box(object)` 除去 / `ObjBool(bool)` 直結を導入し、default pass 列と `test_cpp_optimizer.py`（12 ケース、O1/O2差分）へ反映。
+- 2026-02-26: `P0-CPP-OPT-01-S3-01` として `CppEmitter._render_compare_expr` から char-compare 最適化分岐（`_try_optimize_char_compare`）を削除。比較最適化責務を optimizer 側へ寄せ、`test_py2cpp_features.py -k str_index_char_compare_optimized_and_runtime` で回帰確認。
 
 ## 分解
 
@@ -51,6 +52,6 @@
 - [x] [ID: P0-CPP-OPT-01-S2-01] `CppDeadTempPass` / `CppNoOpCastPass` を実装し、emitter 内の同等ロジックを移設する。
 - [x] [ID: P0-CPP-OPT-01-S2-02] `CppConstConditionPass` / `CppRangeForShapePass` を導入し、C++ 構文化前の IR 正規化を固定する。
 - [x] [ID: P0-CPP-OPT-01-S2-03] `CppRuntimeFastPathPass` を限定導入し、runtime 契約同値の範囲で最適化する。
-- [ ] [ID: P0-CPP-OPT-01-S3-01] `CppEmitter` 側の最適化分岐を削減し、責務境界を `spec-cpp-optimizer` に合わせて整理する。
+- [x] [ID: P0-CPP-OPT-01-S3-01] `CppEmitter` 側の最適化分岐を削減し、責務境界を `spec-cpp-optimizer` に合わせて整理する。
 - [ ] [ID: P0-CPP-OPT-01-S3-02] C++ 回帰（`test_py2cpp_*` / `check_py2cpp_transpile.py` / `runtime_parity_check --targets cpp`）を固定する。
 - [ ] [ID: P0-CPP-OPT-01-S3-03] 速度/サイズ/生成差分のベースラインを計測し、導入効果を文脈ファイルへ記録する。
