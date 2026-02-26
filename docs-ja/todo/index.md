@@ -68,6 +68,8 @@
 34. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S15-02] `01/04/09/18` と `01/09/18` 再計測で `S15-01` の再現性を確認し、`09` の外れ値解消を記録する。
 35. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S16-01] 全18サンプルを再計測し、最新版の C++/Rust 実測値を `readme.md` / `readme-ja.md` に反映する。
 36. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S16-02] 外れ値判定を更新し、残課題を `16_glass_sculpture_chaos` 単体へ絞り込んだことを計画文書へ記録する。
+37. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S17-01] C++ emitter の if-join 名宣言で数値型推論を補強し、`16` の hot loop で `object` 退化していた局所変数（`hx/lxv/glow` など）を型付き値へ復帰させる。
+38. [x] [ID: P0-SAMPLE-CPP-RS-PERF-01-S17-02] `16` 再計測と全18件再計測を実行し、`>1.5x` 外れ値が解消した最新版を `readme.md` / `readme-ja.md` と計画文書へ反映する。
 
 ## P2: C++ selfhost の virtual ディスパッチ簡略化（低優先）
 
