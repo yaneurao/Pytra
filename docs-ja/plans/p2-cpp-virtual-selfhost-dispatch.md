@@ -144,6 +144,13 @@
   - diff 回帰条件は満たす（新規 mismatch なし）。
   - e2e は既知の build 前段エラーが未解消のため、S4-03/S5 へはこの制約を明示した上で進める。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S4-03` 確定内容（2026-02-26）:
+- `docs-ja/spec/spec-dev.md` の C++ 変換仕様へ、virtual dispatch 簡略化の現状を追記した。
+  - class method 呼び出しが `virtual/direct/fallback` mode で分岐されること。
+  - `fallback` に残す非対象（`BuiltinCall` lower 前提経路、runtime/type_id API）の境界。
+  - `sample/cpp` と `pytra-gen`（`built_in/type_id.cpp` 除外）で `type_id` 比較/switch dispatch を残さない回帰テスト運用。
+- `spec-type_id` は今回の変更範囲外（type_id 判定意味論自体の変更なし）のため更新対象外とした。
+
 ### S5: テスト追加（最優先）
 
 13. `P2-CPP-SELFHOST-VIRTUAL-01-S5-01`: `test/unit/test_py2cpp_codegen_issues.py` に、`Child.f` から `Base.f` 呼び出し（`Base.f` 参照 + `super().f`）の 2 パターンで `virtual/override` と `type_id` 分岐除去を検証するケースを追加する。
@@ -164,3 +171,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-03` として移行不能/非対象ケースを最終固定した。`type_id` registry 管理・runtime type_id API 呼び出し・BuiltinCall lower 前提経路は virtual dispatch 置換の対象外として残し、次回は selfhost 前処理エラー解消後に S4/S5 を再開する。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-01` として selfhost virtual dispatch 回帰テスト `test_selfhost_virtual_dispatch_regression.py` を追加し、`sample/cpp` と `pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch が再流入しないことを固定した。`check_selfhost_cpp_diff` でも `mismatches=0 known_diffs=2` を確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-02` として回帰コマンドを再実行し、`check_selfhost_cpp_diff` は引き続き `mismatches=0`、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`CodeEmitter import` 除去失敗）で停止することを確認した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-03` として `docs-ja/spec/spec-dev.md` へ virtual dispatch mode（`virtual/direct/fallback`）と非対象境界、回帰テスト運用を反映した。`spec-type_id` は意味論変更なしのため更新対象外と判断した。

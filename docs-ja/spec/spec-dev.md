@@ -113,6 +113,10 @@
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
   - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
+- class method 呼び出しは `src/hooks/cpp/emitter/call.py` の dispatch mode（`virtual` / `direct` / `fallback`）で描画先を分離します。
+  - `virtual` / `direct`: ユーザー定義 class method シグネチャが解決できる経路。
+  - `fallback`: `BuiltinCall` lower 前提経路や runtime/type_id API（`IsInstance/IsSubtype/IsSubclass/ObjTypeId`）など、virtual dispatch 置換対象外の経路。
+- selfhost 回帰では `sample/cpp` と `src/runtime/cpp/pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch を残さないことをテストで固定します（`test_selfhost_virtual_dispatch_regression.py`）。
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
 - `raise` / `try` / `except` / `while` をサポートします。
