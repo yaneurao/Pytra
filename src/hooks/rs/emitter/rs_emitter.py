@@ -2462,16 +2462,12 @@ class RustEmitter(CodeEmitter):
                 cmp_left = cur_left
                 cmp_right = right
                 if mapped in {"==", "!="}:
-                    left_t = self.normalize_type_name(self.get_expr_type(cur_left_node))
-                    right_t = self.normalize_type_name(self.get_expr_type(right_node))
-                    if left_t == "str":
-                        lit_right = self._string_constant_literal(right_node)
-                        if lit_right != "":
-                            cmp_right = lit_right
-                    if right_t == "str":
-                        lit_left = self._string_constant_literal(cur_left_node)
-                        if lit_left != "":
-                            cmp_left = lit_left
+                    lit_right = self._string_constant_literal(right_node)
+                    lit_left = self._string_constant_literal(cur_left_node)
+                    if lit_right != "":
+                        cmp_right = lit_right
+                    if lit_left != "":
+                        cmp_left = lit_left
                 terms.append("(" + cmp_left + " " + mapped + " " + cmp_right + ")")
             cur_left_node = right_node
             cur_left = right
@@ -2956,7 +2952,9 @@ class RustEmitter(CodeEmitter):
                 return owner_mod.replace(".", "::") + "::" + attr_raw
             owner_kind = self.any_dict_get_str(self.any_to_dict_or_empty(expr_d.get("value")), "kind", "")
             if owner_kind == "Subscript":
-                owner = "(" + owner + ").clone()"
+                owner_trim = owner.strip()
+                if not owner_trim.endswith(".clone()"):
+                    owner = "(" + owner + ").clone()"
             attr = self._safe_name(attr_raw)
             return owner + "." + attr
         if kind == "UnaryOp":
