@@ -40,6 +40,10 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "boolean"
     if type_name == "str":
         return "String"
+    if type_name == "bytearray":
+        return "java.util.ArrayList<Long>"
+    if type_name.startswith("list["):
+        return "java.util.ArrayList<Object>"
     if type_name.isidentifier():
         return _safe_ident(type_name, "Object")
     return "Object"
@@ -121,6 +125,19 @@ def _bin_op_symbol(op: Any) -> str:
 def _render_binop_expr(expr: dict[str, Any]) -> str:
     left = _render_expr(expr.get("left"))
     right = _render_expr(expr.get("right"))
+    casts_any = expr.get("casts")
+    casts = casts_any if isinstance(casts_any, list) else []
+    i = 0
+    while i < len(casts):
+        cast = casts[i]
+        if isinstance(cast, dict):
+            cast_to = cast.get("to")
+            cast_on = cast.get("on")
+            if cast_to == "float64" and cast_on == "left":
+                left = "((double)(" + left + "))"
+            if cast_to == "float64" and cast_on == "right":
+                right = "((double)(" + right + "))"
+        i += 1
     op = _bin_op_symbol(expr.get("op"))
     return "(" + left + " " + op + " " + right + ")"
 
@@ -203,6 +220,24 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return _java_string_literal("True")
     if callee_name == "perf_counter":
         return "(System.nanoTime() / 1000000000.0)"
+    if callee_name == "bytearray":
+        return "new java.util.ArrayList<Long>()"
+    if callee_name == "int":
+        if len(args) == 0:
+            return "0L"
+        return "((long)(" + _render_expr(args[0]) + "))"
+    if callee_name == "float":
+        if len(args) == 0:
+            return "0.0"
+        return "((double)(" + _render_expr(args[0]) + "))"
+    if callee_name == "bool":
+        if len(args) == 0:
+            return "false"
+        return "((boolean)(" + _render_expr(args[0]) + "))"
+    if callee_name == "str":
+        if len(args) == 0:
+            return '""'
+        return "String.valueOf(" + _render_expr(args[0]) + ")"
     if callee_name == "print":
         if len(args) == 0:
             return "System.out.println()"
@@ -214,6 +249,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered.append("String.valueOf(" + _render_expr(args[i]) + ")")
             i += 1
         return "System.out.println(" + " + \" \" + ".join(rendered) + ")"
+    func_any = expr.get("func")
+    if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+        attr_name = _safe_ident(func_any.get("attr"), "")
+        owner_expr = _render_expr(func_any.get("value"))
+        if attr_name == "append" and len(args) == 1:
+            return owner_expr + ".add(" + _render_expr(args[0]) + ")"
+        if attr_name in {"write_rgb_png", "save_gif"}:
+            rendered_noop_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_noop_args.append(_render_expr(args[i]))
+                i += 1
+            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
     if callee_name != "" and callee_name[0].isupper():
         rendered_ctor_args: list[str] = []
         i = 0
@@ -581,6 +629,9 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("public final class " + main_class + " {")
     lines.append("    private " + main_class + "() {")
     lines.append("    }")
+    lines.append("")
+    lines.append("    private static void __pytra_noop(Object... args) {")
+    lines.append("    }")
 
     i = 0
     while i < len(classes):
@@ -596,7 +647,7 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
 
     lines.append("")
     lines.append("    public static void main(String[] args) {")
-    ctx: dict[str, int] = {"tmp": 0}
+    ctx: dict[str, Any] = {"tmp": 0}
     if len(main_guard) > 0:
         i = 0
         while i < len(main_guard):

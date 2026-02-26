@@ -176,6 +176,15 @@ class Py2JavaSmokeTest(unittest.TestCase):
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn("run_integer_benchmark();", java)
 
+    def test_java_native_emitter_handles_bytearray_cast_and_runtime_noop(self) -> None:
+        sample = ROOT / "sample" / "py" / "03_julia_set.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();", java)
+        self.assertIn("pixels.add(r);", java)
+        self.assertIn("r = ((long)(", java)
+        self.assertIn("__pytra_noop(out_path, width, height, pixels);", java)
+
     def test_java_native_emitter_rejects_non_module_root(self) -> None:
         with self.assertRaises(RuntimeError):
             transpile_to_java_native({"kind": "FunctionDef"}, class_name="Main")

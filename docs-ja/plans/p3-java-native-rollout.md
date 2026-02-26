@@ -46,6 +46,7 @@
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] OOP 基本整合を補強。`self` 名参照を `this` へ lower、クラス名呼び出しを `new ClassName(...)` へ lower、未知型注釈は識別子であれば class 型として保持するように更新し、`test_py2java_smoke.py` の `inheritance` 生成期待値を拡張。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] 簡易 return-flow 判定（`_block_guarantees_return`）を追加し、`if/else` 両分岐 `return` の関数で fallback `return` を重複挿入しないよう修正。`test_py2java_smoke.py` で `if_else` 生成に `return 0L;` が混入しないことを固定。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `main_guard_body` を `main()` で実行する経路を追加。`py_assert_*`（最小 true 互換）と `perf_counter`（`System.nanoTime()` 変換）を実装し、再代入時の再宣言を防ぐ `declared` セットを導入。`runtime_parity_check --case-root fixture --targets java add if_else for_range inheritance` と `runtime_parity_check --case-root sample --targets java 17_monte_carlo_pi --ignore-unstable-stdout` の pass を確認。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] `bytearray` / `append` / `int` / `float` / `bool` / `str` の基本 call lower と、`png.write_rgb_png` / `save_gif` の no-op マッピング（`__pytra_noop`）を追加。`BinOp.casts` の `float64` 昇格も反映し、`03_julia_set` 生成で `ArrayList<Long>` / `.add()` / `((long)(...))` / `__pytra_noop(...)` を smoke で固定。
 
 ## 分解
 

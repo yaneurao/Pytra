@@ -46,6 +46,7 @@ Decision log:
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Improved basic OOP lowering consistency: map `self` references to `this`, lower class-name calls to constructor form (`new ClassName(...)`), and preserve unknown identifier annotations as class types instead of collapsing to `Object`; extended `inheritance` expectations in `test_py2java_smoke.py`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added simple return-flow analysis (`_block_guarantees_return`) to avoid duplicate fallback `return` insertion when both `if/else` branches already return; locked with `test_py2java_smoke.py` assertion that `if_else` output does not include `return 0L;`.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added execution wiring for `main_guard_body` in generated `main()`, implemented minimal lowering for `py_assert_*` (true-compatible) and `perf_counter` (`System.nanoTime()` conversion), and introduced declared-name tracking to avoid re-declaration on reassignment. Verified pass on `runtime_parity_check` for `fixture: add/if_else/for_range/inheritance` and `sample:17_monte_carlo_pi`.
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S2-01`] Added basic call lowering for `bytearray` / `append` / `int` / `float` / `bool` / `str`, mapped `png.write_rgb_png` / `save_gif` to no-op (`__pytra_noop`), and applied `BinOp.casts` float-promotion handling. Locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) in smoke tests.
 
 ## Breakdown
 

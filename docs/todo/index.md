@@ -51,6 +51,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 - `P3-JAVA-NATIVE-01-S2-01` Preserved class type annotations instead of collapsing to `Object`, and added `self -> this` plus constructor-call lowering (`Dog() -> new Dog()`) for basic OOP route correctness.
 - `P3-JAVA-NATIVE-01-S2-01` Added simple return-flow analysis to suppress unreachable fallback `return` insertion when both `if/else` branches return, fixing the `if_else` compile failure.
 - `P3-JAVA-NATIVE-01-S2-01` Wired `main_guard_body` into generated `main()`, added minimal lowers for `py_assert_*` and `perf_counter`, and prevented re-declaration on reassignment via a declared-name set. Verified passes on `fixture: add/if_else/for_range/inheritance` and `sample:17_monte_carlo_pi` with `runtime_parity_check --targets java`.
+- `P3-JAVA-NATIVE-01-S2-01` Added basic lowers for `bytearray`/`append`/`int()` and image-runtime call no-op mapping, and locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) via smoke tests.
 
 ### P0: Implement common EAST3 optimizer layer (Highest)
 
