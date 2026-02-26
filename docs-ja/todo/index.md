@@ -113,7 +113,7 @@
 4. [x] [ID: P3-GSK-NATIVE-01-S2-01] Go native emitter 骨格と `py2go.py` 既定切替を実装する。
 5. [x] [ID: P3-GSK-NATIVE-01-S2-02] Go の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 6. [x] [ID: P3-GSK-NATIVE-01-S3-01] Swift native emitter 骨格と `py2swift.py` 既定切替を実装する。
-7. [ ] [ID: P3-GSK-NATIVE-01-S3-02] Swift の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
+7. [x] [ID: P3-GSK-NATIVE-01-S3-02] Swift の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 8. [ ] [ID: P3-GSK-NATIVE-01-S4-01] Kotlin native emitter 骨格と `py2kotlin.py` 既定切替を実装する。
 9. [ ] [ID: P3-GSK-NATIVE-01-S4-02] Kotlin の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 10. [ ] [ID: P3-GSK-NATIVE-01-S5-01] 3言語の transpile/smoke/parity 回帰を native 既定で通し、CI 導線を更新する。
@@ -123,6 +123,7 @@
 - `P3-GSK-NATIVE-01-S2-01` `go_native_emitter.py` を追加し、`py2go.py` 既定を native 化（`--go-backend sidecar` 互換維持）。`test_py2go_smoke.py`（`10/10`）と `check_py2go_transpile`（`132/132`）を確認。
 - `P3-GSK-NATIVE-01-S2-02` Go native emitter の本文 lower（式/文/for/while/subscript/listcomp/class）を実装し、`runtime_parity_check --case-root fixture --targets go add if_else for_range inheritance instance_member super_init`（`pass=6/6`）と `sample/py` 前半9件（`01〜09`, `pass=9/9`）を確認。
 - `P3-GSK-NATIVE-01-S3-01` `swift_native_emitter.py` を追加し、`py2swift.py` へ `--swift-backend {native,sidecar}` を配線して既定を native 化。`test_py2swift_smoke.py`（`10/10`）と `check_py2swift_transpile`（`132/132`）の通過を確認。
+- `P3-GSK-NATIVE-01-S3-02` Swift native emitter の本文 lower（`Return/Assign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、isinstance）を実装し、`test_py2swift_smoke.py`（`10/10`）/ `check_py2swift_transpile`（`132/132`）と `sample/py` 前半ケース（`01/06/09`）の native 生成確認を完了。
 
 ### P3: microgpt 原本保全タスク再開（低優先）
 
