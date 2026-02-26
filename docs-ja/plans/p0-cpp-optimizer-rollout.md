@@ -40,12 +40,13 @@
 - 2026-02-26: 初版作成。`spec-cpp-optimizer` の責務境界を実装可能な S1/S2/S3 へ分解した。
 - 2026-02-26: `P0-CPP-OPT-01-S1-01` として `src/hooks/cpp/optimizer/` 骨格（context/trace/passes/cpp_optimizer）を追加し、`emit_cpp_from_east` へ no-op 最適化配線を導入。`test_cpp_optimizer.py` と既存 `test_east3_cpp_bridge.py` で回帰を確認。
 - 2026-02-26: `P0-CPP-OPT-01-S1-02` として `py2cpp` CLI に `--cpp-opt-level/--cpp-opt-pass/--dump-cpp-*` を追加し、single/multi-file 経路へ配線。`test_cpp_optimizer_cli.py` と `test_east3_cpp_bridge.py` でオプション受理・dump 生成・異常値拒否を確認。
+- 2026-02-26: `P0-CPP-OPT-01-S2-01` として `CppDeadTempPass` / `CppNoOpCastPass` を追加。unused temp 代入の安全削減と no-op cast（`casts`/`static_cast`）除去を導入し、既定 pass 列へ組み込み。`test_cpp_optimizer.py` を 9 ケースへ拡張してガードを固定。
 
 ## 分解
 
 - [x] [ID: P0-CPP-OPT-01-S1-01] `src/hooks/cpp/optimizer/` の骨格（optimizer/context/trace/passes）と no-op 配線を追加する。
 - [x] [ID: P0-CPP-OPT-01-S1-02] `py2cpp` 実行経路へ `CppOptimizer` 呼び出しを追加し、`--cpp-opt-level` / `--cpp-opt-pass` / dump オプションを配線する。
-- [ ] [ID: P0-CPP-OPT-01-S2-01] `CppDeadTempPass` / `CppNoOpCastPass` を実装し、emitter 内の同等ロジックを移設する。
+- [x] [ID: P0-CPP-OPT-01-S2-01] `CppDeadTempPass` / `CppNoOpCastPass` を実装し、emitter 内の同等ロジックを移設する。
 - [ ] [ID: P0-CPP-OPT-01-S2-02] `CppConstConditionPass` / `CppRangeForShapePass` を導入し、C++ 構文化前の IR 正規化を固定する。
 - [ ] [ID: P0-CPP-OPT-01-S2-03] `CppRuntimeFastPathPass` を限定導入し、runtime 契約同値の範囲で最適化する。
 - [ ] [ID: P0-CPP-OPT-01-S3-01] `CppEmitter` 側の最適化分岐を削減し、責務境界を `spec-cpp-optimizer` に合わせて整理する。

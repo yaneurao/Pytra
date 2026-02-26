@@ -19,6 +19,8 @@ from hooks.cpp.optimizer.cpp_optimizer import CppPassManager
 from hooks.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
 from hooks.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
 from hooks.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
+from hooks.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
+from hooks.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from hooks.cpp.optimizer.trace import render_cpp_opt_trace
 
 
@@ -71,14 +73,102 @@ class CppOptimizerTest(unittest.TestCase):
 
     def test_optimize_cpp_ir_can_disable_default_pass(self) -> None:
         doc = _module_doc()
-        out_doc, report = optimize_cpp_ir(doc, opt_level="1", opt_pass_spec="-CppNoOpPass")
+        out_doc, report = optimize_cpp_ir(
+            doc,
+            opt_level="1",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass",
+        )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
         self.assertIsInstance(trace, list)
         self.assertEqual(trace[0].get("name"), "CppNoOpPass")
         self.assertFalse(bool(trace[0].get("enabled")))
+        self.assertEqual(trace[1].get("name"), "CppDeadTempPass")
+        self.assertFalse(bool(trace[1].get("enabled")))
+        self.assertEqual(trace[2].get("name"), "CppNoOpCastPass")
+        self.assertFalse(bool(trace[2].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
+        self.assertIn("CppDeadTempPass enabled=false", trace_text)
+        self.assertIn("CppNoOpCastPass enabled=false", trace_text)
+
+    def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
+        doc = _module_doc()
+        expr = {
+            "kind": "Name",
+            "id": "x",
+            "resolved_type": "int64",
+            "casts": [
+                {"on": "self", "from": "int64", "to": "int64"},
+                {"on": "self", "from": "int64", "to": "float64"},
+            ],
+        }
+        doc["body"] = [{"kind": "Expr", "value": expr}]
+        result = CppNoOpCastPass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        casts = expr.get("casts")
+        self.assertIsInstance(casts, list)
+        self.assertEqual(len(casts), 1)
+        self.assertEqual(casts[0].get("to"), "float64")
+
+    def test_cpp_noop_cast_pass_folds_noop_static_cast_call(self) -> None:
+        doc = _module_doc()
+        call = {
+            "kind": "Call",
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+            "resolved_type": "int64",
+            "args": [
+                {
+                    "kind": "Name",
+                    "id": "x",
+                    "resolved_type": "int64",
+                    "casts": [],
+                }
+            ],
+            "keywords": [],
+        }
+        doc["body"] = [{"kind": "Expr", "value": call}]
+        result = CppNoOpCastPass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        value = doc.get("body")[0].get("value")
+        self.assertEqual(value.get("kind"), "Name")
+        self.assertEqual(value.get("id"), "x")
+
+    def test_cpp_dead_temp_pass_removes_unused_pure_temp_assign(self) -> None:
+        doc = _module_doc()
+        dead_assign = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": "__tmp0", "resolved_type": "int64"},
+            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+        }
+        keep_stmt = {"kind": "Expr", "value": {"kind": "Constant", "value": 2, "resolved_type": "int64"}}
+        doc["body"] = [dead_assign, keep_stmt]
+        result = CppDeadTempPass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        body = doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0].get("kind"), "Expr")
+
+    def test_cpp_dead_temp_pass_keeps_temp_assign_when_used(self) -> None:
+        doc = _module_doc()
+        live_assign = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": "__tmp0", "resolved_type": "int64"},
+            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+        }
+        use_stmt = {"kind": "Expr", "value": {"kind": "Name", "id": "__tmp0", "resolved_type": "int64"}}
+        doc["body"] = [live_assign, use_stmt]
+        result = CppDeadTempPass().run(doc, CppOptContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        body = doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(len(body), 2)
 
     def test_emit_cpp_from_east_runs_cpp_optimizer_hook(self) -> None:
         east_doc = _module_doc()
