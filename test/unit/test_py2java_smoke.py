@@ -185,6 +185,14 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("r = ((long)(", java)
         self.assertIn("__pytra_noop(out_path, width, height, pixels);", java)
 
+    def test_java_native_emitter_allocates_sized_bytearray_for_subscript_set(self) -> None:
+        sample = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("private static java.util.ArrayList<Long> __pytra_bytearray(Object init)", java)
+        self.assertIn("__pytra_bytearray((width * height))", java)
+        self.assertIn("frame.set((int)(", java)
+
     def test_java_native_emitter_maps_math_calls_to_java_math(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")

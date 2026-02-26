@@ -243,7 +243,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "perf_counter":
         return "(System.nanoTime() / 1000000000.0)"
     if callee_name == "bytearray":
-        return "new java.util.ArrayList<Long>()"
+        if len(args) == 0:
+            return "new java.util.ArrayList<Long>()"
+        return "__pytra_bytearray(" + _render_expr(args[0]) + ")"
     if callee_name == "bytes":
         if len(args) == 0:
             return "new java.util.ArrayList<Long>()"
@@ -724,6 +726,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + "break;"]
     if kind == "Continue":
         return [indent + "continue;"]
+    if kind == "Import" or kind == "ImportFrom":
+        return []
     if kind == "While":
         test_expr = _render_expr(stmt.get("test"))
         lines = [indent + "while (" + test_expr + ") {"]
@@ -928,6 +932,33 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("    }")
     lines.append("")
     lines.append("    private static void __pytra_noop(Object... args) {")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    private static java.util.ArrayList<Long> __pytra_bytearray(Object init) {")
+    lines.append("        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();")
+    lines.append("        if (init instanceof Number) {")
+    lines.append("            long n = ((Number) init).longValue();")
+    lines.append("            long i = 0L;")
+    lines.append("            while (i < n) {")
+    lines.append("                out.add(0L);")
+    lines.append("                i += 1L;")
+    lines.append("            }")
+    lines.append("            return out;")
+    lines.append("        }")
+    lines.append("        if (init instanceof java.util.List<?>) {")
+    lines.append("            java.util.List<?> src = (java.util.List<?>) init;")
+    lines.append("            int i = 0;")
+    lines.append("            while (i < src.size()) {")
+    lines.append("                Object v = src.get(i);")
+    lines.append("                if (v instanceof Number) {")
+    lines.append("                    out.add(((Number) v).longValue());")
+    lines.append("                } else {")
+    lines.append("                    out.add(0L);")
+    lines.append("                }")
+    lines.append("                i += 1;")
+    lines.append("            }")
+    lines.append("        }")
+    lines.append("        return out;")
     lines.append("    }")
 
     i = 0

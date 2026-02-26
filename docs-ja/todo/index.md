@@ -41,7 +41,7 @@
 4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
 5. [x] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
 6. [x] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。
-7. [ ] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
+7. [x] [ID: P3-JAVA-NATIVE-01-S2-03] `import math` と画像系ランタイム呼び出し（`png`/`gif`）の最小互換を整備し、sample 実運用ケースへ対応する。
 8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] `check_py2java_transpile` / unit smoke / parity を native 既定で通し、回帰検出を固定する。
 9. [ ] [ID: P3-JAVA-NATIVE-01-S3-02] `sample/java` を再生成し、preview 要約出力を native 実装出力へ置換する。
 10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` の Java 記述を sidecar 前提から更新し、運用手順を同期する。
@@ -55,6 +55,7 @@
 - `P3-JAVA-NATIVE-01-S2-01` `bytearray`/`append`/`int()` などの基本 lower と画像 runtime 呼び出し no-op を追加し、`03_julia_set` 生成で `ArrayList<Long>` / `.add()` / `((long)(...))` / `__pytra_noop(...)` が出力されることを smoke で固定。
 - `P3-JAVA-NATIVE-01-S2-01` `unknown` 型推定・`len()`・`List/Subscript`・Subscript 代入 lower を拡張し、`sample/py` 前半 9件（01〜09）の `py2java -> javac` が `compile_ok 9/9` になることを確認。
 - `P3-JAVA-NATIVE-01-S2-02` `super().__init__` / `IsInstance` / `isinstance(...)` の native lower を補強し、`((Object)(lhs)) instanceof ...` で Java 静的型制約を回避。`runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` で `pass=8/8` を確認。
+- `P3-JAVA-NATIVE-01-S2-03` `bytearray(n)` を 0 埋め配列へ lower する `__pytra_bytearray(Object)` を追加し、`Import/ImportFrom` を no-op 化。`runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` で `pass=7/7` を確認。
 
 ### P0: EAST3 共通最適化層の実装導入（最優先）
 
