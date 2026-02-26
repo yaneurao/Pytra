@@ -21,18 +21,27 @@ TARGETS = [
     ("swift", "src/py2swift.py", "test/unit/test_py2swift_smoke.py", "tools/check_py2swift_transpile.py"),
 ]
 
-SOURCE_PATTERNS = [
+SOURCE_REQUIRED_PATTERNS = [
     "--east-stage",
     'choices=["2", "3"]',
     "--object-dispatch-mode",
     "load_east3_document",
-    "load_east_document_compat",
     'east_stage = "3"',
+    "--east-stage 2 is no longer supported; use EAST3 (default).",
+]
+
+SOURCE_FORBIDDEN_PATTERNS = [
+    "load_east_document_compat",
     "warning: --east-stage 2 is compatibility mode; default is 3.",
 ]
 
-SMOKE_PATTERNS = [
+SMOKE_REQUIRED_PATTERNS = [
     "test_load_east_defaults_to_stage3_entry_and_returns_legacy_shape",
+    "test_cli_rejects_stage2_compat_mode",
+    "--east-stage 2 is no longer supported; use EAST3 (default).",
+]
+
+SMOKE_FORBIDDEN_PATTERNS = [
     "test_cli_warns_when_stage2_compat_mode_is_selected",
     "warning: --east-stage 2 is compatibility mode; default is 3.",
 ]
@@ -43,6 +52,13 @@ def _missing_patterns(path: Path, patterns: list[str]) -> list[str]:
         return ["<missing file>"]
     text = path.read_text(encoding="utf-8")
     return [pattern for pattern in patterns if pattern not in text]
+
+
+def _present_patterns(path: Path, patterns: list[str]) -> list[str]:
+    if not path.exists():
+        return ["<missing file>"]
+    text = path.read_text(encoding="utf-8")
+    return [pattern for pattern in patterns if pattern in text]
 
 
 def _run(cmd: list[str]) -> tuple[bool, str]:
@@ -68,12 +84,18 @@ def main() -> int:
     for lang, src_rel, smoke_rel, _ in TARGETS:
         src_path = ROOT / src_rel
         smoke_path = ROOT / smoke_rel
-        missing_src = _missing_patterns(src_path, SOURCE_PATTERNS)
+        missing_src = _missing_patterns(src_path, SOURCE_REQUIRED_PATTERNS)
         if missing_src:
             failures.append(f"{lang}: {src_rel} missing {missing_src}")
-        missing_smoke = _missing_patterns(smoke_path, SMOKE_PATTERNS)
+        present_src = _present_patterns(src_path, SOURCE_FORBIDDEN_PATTERNS)
+        if present_src:
+            failures.append(f"{lang}: {src_rel} contains forbidden {present_src}")
+        missing_smoke = _missing_patterns(smoke_path, SMOKE_REQUIRED_PATTERNS)
         if missing_smoke:
             failures.append(f"{lang}: {smoke_rel} missing {missing_smoke}")
+        present_smoke = _present_patterns(smoke_path, SMOKE_FORBIDDEN_PATTERNS)
+        if present_smoke:
+            failures.append(f"{lang}: {smoke_rel} contains forbidden {present_smoke}")
 
     if failures:
         for failure in failures:

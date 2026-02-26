@@ -157,13 +157,13 @@ class East3CppBridgeTest(unittest.TestCase):
         }
 
         self.assertEqual(emitter.render_expr(obj_len), "py_len(v)")
-        self.assertEqual(emitter.render_expr(obj_bool), "py_to_bool(v)")
+        self.assertEqual(emitter.render_expr(obj_bool), "py_to<bool>(v)")
         self.assertEqual(emitter.render_expr(obj_str), "py_to_string(v)")
         self.assertEqual(emitter.render_expr(obj_iter), "py_iter_or_raise(v)")
         self.assertEqual(emitter.render_expr(obj_next), "py_next_or_stop(v)")
         self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_type_id(v)")
         self.assertEqual(emitter.render_expr(box_expr), "make_object(1)")
-        self.assertEqual(emitter.render_expr(unbox_expr), "int64(py_to_int64(v))")
+        self.assertEqual(emitter.render_expr(unbox_expr), "int64(py_to<int64>(v))")
         self.assertEqual(
             emitter.render_expr(is_instance),
             "py_isinstance(v, PYTRA_TID_INT)",
@@ -244,7 +244,7 @@ class East3CppBridgeTest(unittest.TestCase):
     def test_render_cond_for_any_routes_to_objbool(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
-        self.assertEqual(emitter.render_cond(any_name), "py_to_bool(v)")
+        self.assertEqual(emitter.render_cond(any_name), "py_to<bool>(v)")
 
     def test_render_unbox_honors_ctx_for_refclass_cast(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -268,7 +268,7 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter._coerce_any_expr_to_target = lambda *_args, **_kwargs: "LEGACY_PATH_USED"  # type: ignore[method-assign]
         self.assertEqual(
             emitter._coerce_any_expr_to_target_via_unbox("v", any_name, "int64", "assign:x"),
-            "int64(py_to_int64(v))",
+            "int64(py_to<int64>(v))",
         )
 
     def test_emit_return_stmt_prefers_unbox_ir_over_legacy_coerce(self) -> None:
@@ -281,7 +281,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter._emit_return_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("return int64(py_to_int64(v));", text)
+        self.assertIn("return int64(py_to<int64>(v));", text)
         self.assertNotIn("LEGACY_PATH_USED", text)
 
     def test_box_any_target_value_handles_none_and_plain_values(self) -> None:
@@ -894,7 +894,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_node), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_slice_node),
-            'py_endswith(py_slice(s, py_to_int64(1), py_to_int64(3)), "x")',
+            'py_endswith(py_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
         )
 
     def test_builtin_runtime_py_startswith_endswith_use_ir_node_path(self) -> None:
@@ -934,7 +934,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_expr), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_expr),
-            'py_endswith(py_slice(s, py_to_int64(1), py_to_int64(3)), "x")',
+            'py_endswith(py_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
         )
 
     def test_render_expr_supports_str_find_ir_node(self) -> None:
@@ -1510,12 +1510,12 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
-        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to_int64(16))')
+        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to<int64>(16))')
         self.assertEqual(emitter.render_expr(static_cast_node), 'py_to_int64("10")')
         self.assertEqual(emitter.render_expr(iter_node), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
         self.assertEqual(emitter.render_expr(reversed_node), "py_reversed(xs)")
-        self.assertEqual(emitter.render_expr(enumerate_node), "py_enumerate(xs, py_to_int64(1))")
+        self.assertEqual(emitter.render_expr(enumerate_node), "py_enumerate(xs, py_to<int64>(1))")
         self.assertEqual(emitter.render_expr(any_node), "py_any(xs)")
         self.assertEqual(emitter.render_expr(all_node), "py_all(xs)")
         self.assertEqual(emitter.render_expr(ord_node), 'py_ord("A")')
@@ -1822,11 +1822,11 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
-        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to_int64(16))')
+        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to<int64>(16))')
         self.assertEqual(emitter.render_expr(iter_expr), "py_iter_or_raise(xs)")
         self.assertEqual(emitter.render_expr(next_expr), "py_next_or_stop(it)")
         self.assertEqual(emitter.render_expr(reversed_expr), "py_reversed(xs)")
-        self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to_int64(1))")
+        self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to<int64>(1))")
         self.assertEqual(emitter.render_expr(zip_expr), "zip(xs, ys)")
         self.assertEqual(emitter.render_expr(any_expr), "py_any(xs)")
         self.assertEqual(emitter.render_expr(all_expr), "py_all(xs)")
