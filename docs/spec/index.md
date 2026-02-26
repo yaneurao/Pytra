@@ -14,6 +14,7 @@
 - Folder responsibility map specification: [Folder Responsibility Map Specification](./spec-folder.md)
 - EAST3 optimizer specification: [EAST3 Optimizer Specification](./spec-east3-optimizer.md)
 - C++ backend optimizer specification: [C++ Optimizer Specification](./spec-cpp-optimizer.md)
+- Java native backend contract: [Java Native Backend Contract](./spec-java-native-backend.md)
 - Language-specific specifications: [Language-Specific Specifications](../language/index.md)
 - Codex operation specification: [Codex Operation Specification](./spec-codex.md)
 - `pylib` module index: [pylib Module Index](./spec-pylib-modules.md)
@@ -37,6 +38,8 @@
   - [EAST3 Optimizer Specification](./spec-east3-optimizer.md)
 - If you want post-lowering C++ backend optimization boundaries (`CppOptimizer` vs `CppEmitter`):
   - [C++ Optimizer Specification](./spec-cpp-optimizer.md)
+- If you want Java sidecar-removal migration boundaries (input responsibility / fail-closed / runtime boundary):
+  - [Java Native Backend Contract](./spec-java-native-backend.md)
 - If you want per-language support details:
   - [Language-Specific Specifications](../language/index.md)
 - If you want Codex work rules, TODO operations, and commit operations:
