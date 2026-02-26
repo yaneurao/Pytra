@@ -349,6 +349,19 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr({"kind": "SetComp"}), "SETCOMP_HANDLER")
         self.assertEqual(emitter.render_expr({"kind": "DictComp"}), "DICTCOMP_HANDLER")
 
+    def test_render_expr_dispatch_routes_runtime_path_type_id_handlers(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter._render_expr_kind_runtime_special_op = lambda _expr, _expr_d: "RUNTIME_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_path_runtime_op = lambda _expr, _expr_d: "PATH_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_is_subtype = lambda _expr, _expr_d: "ISSUBTYPE_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_is_subclass = lambda _expr, _expr_d: "ISSUBCLASS_HANDLER"  # type: ignore[method-assign]
+        emitter._render_expr_kind_is_instance = lambda _expr, _expr_d: "ISINSTANCE_HANDLER"  # type: ignore[method-assign]
+        self.assertEqual(emitter.render_expr({"kind": "RuntimeSpecialOp"}), "RUNTIME_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "PathRuntimeOp"}), "PATH_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "IsSubtype"}), "ISSUBTYPE_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "IsSubclass"}), "ISSUBCLASS_HANDLER")
+        self.assertEqual(emitter.render_expr({"kind": "IsInstance"}), "ISINSTANCE_HANDLER")
+
     def test_builtin_runtime_list_append_uses_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         expr = {
