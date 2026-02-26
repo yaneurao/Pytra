@@ -115,7 +115,7 @@ def main() -> int:
     if object_dispatch_mode == "":
         object_dispatch_mode = "native"
     if east_stage == "2":
-        print("warning: --east-stage 2 is compatibility mode; default is 3.", file=sys.stderr)
+        parser.error("--east-stage 2 is no longer supported; use EAST3 (default).")
 
     east = load_east(
         input_path,

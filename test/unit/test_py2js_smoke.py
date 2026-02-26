@@ -113,7 +113,7 @@ class Py2JsSmokeTest(unittest.TestCase):
             txt = out_js.read_text(encoding="utf-8")
             self.assertIn("function abs_like", txt)
 
-    def test_cli_warns_when_stage2_compat_mode_is_selected(self) -> None:
+    def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
             out_js = Path(td) / "if_else.js"
@@ -128,8 +128,8 @@ class Py2JsSmokeTest(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("warning: --east-stage 2 is compatibility mode; default is 3.", proc.stderr)
+            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2js_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2js.py").read_text(encoding="utf-8")
