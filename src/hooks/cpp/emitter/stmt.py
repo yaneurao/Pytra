@@ -11,13 +11,8 @@ class CppStatementEmitter:
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         else_stmts = self._dict_stmt_list(stmt.get("orelse"))
         cond_txt = self.render_cond(stmt.get("test"))
-        cond_fix = self._render_repr_expr(cond_txt)
-        if cond_fix != "":
-            cond_txt = cond_fix
         if cond_txt == "":
-            test_node = self.any_to_dict_or_empty(stmt.get("test"))
-            cond_repr = self.any_dict_get_str(test_node, "repr", "")
-            cond_txt = cond_repr if cond_repr != "" else "false"
+            cond_txt = "false"
         self._predeclare_if_join_names(body_stmts, else_stmts)
         omit_default = self._default_stmt_omit_braces("If", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("If", stmt, omit_default)
@@ -40,13 +35,8 @@ class CppStatementEmitter:
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""
         cond_txt = self.render_cond(stmt.get("test"))
-        cond_fix = self._render_repr_expr(cond_txt)
-        if cond_fix != "":
-            cond_txt = cond_fix
         if cond_txt == "":
-            test_node = self.any_to_dict_or_empty(stmt.get("test"))
-            cond_repr = self.any_dict_get_str(test_node, "repr", "")
-            cond_txt = cond_repr if cond_repr != "" else "false"
+            cond_txt = "false"
         self.emit_while_stmt_skeleton(
             cond_txt,
             self._dict_stmt_list(stmt.get("body")),

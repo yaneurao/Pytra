@@ -87,13 +87,6 @@ class CppExpressionEmitter:
         body_raw = self.render_expr(expr)
         body = self._strip_outer_parens(body_raw)
         if body == "":
-            rep_txt = self.any_dict_get_str(expr_node, "repr", "")
-            body = self._strip_outer_parens(self._trim_ws(rep_txt))
-        if body != "" and self._looks_like_python_expr_text(body):
-            body_cpp = self._render_repr_expr(body)
-            if body_cpp != "":
-                body = self._strip_outer_parens(body_cpp)
-        if body == "":
             return "false"
         if t == "bool":
             return body
