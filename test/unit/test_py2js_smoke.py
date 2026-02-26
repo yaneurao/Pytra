@@ -173,6 +173,60 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("[Symbol.iterator]()", js)
         self.assertIn("__next.done ? null : __next.value", js)
 
+    def test_type_predicate_nodes_are_lowered_without_legacy_bridge(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {"kind": "ClassDef", "name": "Base", "base": "", "body": []},
+                {"kind": "ClassDef", "name": "Child", "base": "Base", "body": []},
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x"},
+                        "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_INT"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x"},
+                        "expected_type_id": {"kind": "Name", "id": "Base"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsSubtype",
+                        "actual_type_id": {"kind": "Name", "id": "PYTRA_TID_BOOL"},
+                        "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_INT"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsSubclass",
+                        "actual_type_id": {"kind": "Name", "id": "Child"},
+                        "expected_type_id": {"kind": "Name", "id": "Base"},
+                        "resolved_type": "bool",
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        js = transpile_to_js(east)
+        self.assertIn("pyIsInstance(x, PY_TYPE_NUMBER);", js)
+        self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID);", js)
+        self.assertIn("pyIsSubtype(PY_TYPE_BOOL, PY_TYPE_NUMBER);", js)
+        self.assertIn("pyIsSubtype(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", js)
+        self.assertIn("pyIsSubtype", js)
+
     def test_browser_import_symbols_are_treated_as_external(self) -> None:
         fixture = find_fixture_case("browser_external_symbols")
         east = load_east(fixture, parser_backend="self_hosted")

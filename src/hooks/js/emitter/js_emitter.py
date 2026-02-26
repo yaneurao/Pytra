@@ -132,6 +132,36 @@ class JsEmitter(CodeEmitter):
             for elt in self.tuple_elements(rhs_node):
                 self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(elt), required)
 
+    def _collect_type_id_expr_symbols(self, expr_node: Any, required: set[str]) -> None:
+        """type_id 式から必要な runtime type 定数を抽出する。"""
+        expr_d = self.any_to_dict_or_empty(expr_node)
+        if len(expr_d) == 0:
+            return
+        if self.any_dict_get_str(expr_d, "kind", "") != "Name":
+            return
+        name = self.any_dict_get_str(expr_d, "id", "")
+        symbol_map = {
+            "PYTRA_TID_BOOL": "PY_TYPE_BOOL",
+            "PYTRA_TID_INT": "PY_TYPE_NUMBER",
+            "PYTRA_TID_FLOAT": "PY_TYPE_NUMBER",
+            "PYTRA_TID_STR": "PY_TYPE_STRING",
+            "PYTRA_TID_LIST": "PY_TYPE_ARRAY",
+            "PYTRA_TID_DICT": "PY_TYPE_MAP",
+            "PYTRA_TID_SET": "PY_TYPE_SET",
+            "PYTRA_TID_OBJECT": "PY_TYPE_OBJECT",
+            "bool": "PY_TYPE_BOOL",
+            "int": "PY_TYPE_NUMBER",
+            "float": "PY_TYPE_NUMBER",
+            "str": "PY_TYPE_STRING",
+            "list": "PY_TYPE_ARRAY",
+            "dict": "PY_TYPE_MAP",
+            "set": "PY_TYPE_SET",
+            "object": "PY_TYPE_OBJECT",
+        }
+        symbol = symbol_map.get(name, "")
+        if symbol != "":
+            required.add(symbol)
+
     def _walk_runtime_requirements(self, node: Any, required: set[str]) -> None:
         """ノード配下から py_runtime シンボル依存を収集する。"""
         if isinstance(node, dict):
@@ -151,6 +181,13 @@ class JsEmitter(CodeEmitter):
             elif kind == "Dict":
                 required.add("PYTRA_TYPE_ID")
                 required.add("PY_TYPE_MAP")
+            elif kind == "IsInstance":
+                required.add("pyIsInstance")
+                self._collect_type_id_expr_symbols(node.get("expected_type_id"), required)
+            elif kind == "IsSubtype" or kind == "IsSubclass":
+                required.add("pyIsSubtype")
+                self._collect_type_id_expr_symbols(node.get("actual_type_id"), required)
+                self._collect_type_id_expr_symbols(node.get("expected_type_id"), required)
             elif kind == "Call":
                 fn = self.any_to_dict_or_empty(node.get("func"))
                 if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
@@ -189,6 +226,7 @@ class JsEmitter(CodeEmitter):
             "PY_TYPE_OBJECT",
             "pyRegisterClassType",
             "pyIsInstance",
+            "pyIsSubtype",
             "pyBool",
             "pyLen",
             "pyStr",
@@ -843,6 +881,36 @@ class JsEmitter(CodeEmitter):
                 return " || ".join(checks)
         return "false"
 
+    def _render_type_id_expr(self, expr_node: Any) -> str:
+        """type_id 式を JS runtime 互換の識別子へ変換する。"""
+        expr_d = self.any_to_dict_or_empty(expr_node)
+        if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+            name = self.any_dict_get_str(expr_d, "id", "")
+            symbol_map = {
+                "PYTRA_TID_BOOL": "PY_TYPE_BOOL",
+                "PYTRA_TID_INT": "PY_TYPE_NUMBER",
+                "PYTRA_TID_FLOAT": "PY_TYPE_NUMBER",
+                "PYTRA_TID_STR": "PY_TYPE_STRING",
+                "PYTRA_TID_LIST": "PY_TYPE_ARRAY",
+                "PYTRA_TID_DICT": "PY_TYPE_MAP",
+                "PYTRA_TID_SET": "PY_TYPE_SET",
+                "PYTRA_TID_OBJECT": "PY_TYPE_OBJECT",
+                "bool": "PY_TYPE_BOOL",
+                "int": "PY_TYPE_NUMBER",
+                "float": "PY_TYPE_NUMBER",
+                "str": "PY_TYPE_STRING",
+                "list": "PY_TYPE_ARRAY",
+                "dict": "PY_TYPE_MAP",
+                "set": "PY_TYPE_SET",
+                "object": "PY_TYPE_OBJECT",
+            }
+            mapped = symbol_map.get(name, "")
+            if mapped != "":
+                return mapped
+            if name in self.class_names:
+                return self._safe_name(name) + ".PYTRA_TYPE_ID"
+        return self.render_expr(expr_node)
+
     def _render_list_repeat(self, base_expr: str, count_expr: str) -> str:
         """Python の list 乗算（`[x] * n`）を JS 式へ lower する。"""
         return (
@@ -1145,6 +1213,14 @@ class JsEmitter(CodeEmitter):
         if kind == "ObjTypeId":
             value = self.render_expr(expr_d.get("value"))
             return "pyTypeId(" + value + ")"
+        if kind == "IsInstance":
+            value = self.render_expr(expr_d.get("value"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "pyIsInstance(" + value + ", " + expected + ")"
+        if kind == "IsSubtype" or kind == "IsSubclass":
+            actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "pyIsSubtype(" + actual + ", " + expected + ")"
         if kind == "RangeExpr":
             return self._render_range_expr(expr_d)
         if kind == "ListComp":
