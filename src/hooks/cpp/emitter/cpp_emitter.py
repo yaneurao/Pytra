@@ -3949,22 +3949,6 @@ class CppEmitter(
             "casts": [],
         }
 
-    def _collect_type_ref_nodes_for_isinstance(self, type_node: Any) -> list[dict[str, Any]]:
-        node = self.any_to_dict_or_empty(type_node)
-        if len(node) == 0:
-            return []
-        kind = self._node_kind_from_dict(node)
-        if kind == "Name":
-            return [node]
-        if kind == "Tuple":
-            out: list[dict[str, Any]] = []
-            for elt in self.tuple_elements(node):
-                ent = self.any_to_dict_or_empty(elt)
-                if self._node_kind_from_dict(ent) == "Name":
-                    out.append(ent)
-            return out
-        return []
-
     def _type_id_name_call_kind(self, raw_name: str) -> str:
         raw = self._trim_ws(self.any_to_str(raw_name))
         if raw == "isinstance":
@@ -3987,50 +3971,6 @@ class CppEmitter(
         arg_nodes: list[Any],
     ) -> dict[str, Any] | None:
         kind = self._type_id_name_call_kind(raw_name)
-        if kind == "legacy_isinstance":
-            if len(arg_nodes) != 2:
-                return self._const_false_expr_node()
-            value_node = arg_nodes[0]
-            type_nodes = self._collect_type_ref_nodes_for_isinstance(arg_nodes[1])
-            if len(type_nodes) == 0:
-                return self._const_false_expr_node()
-            checks: list[dict[str, Any]] = []
-            for type_node in type_nodes:
-                checks.append(
-                    {
-                        "kind": "IsInstance",
-                        "value": value_node,
-                        "expected_type_id": type_node,
-                        "resolved_type": "bool",
-                        "borrow_kind": "value",
-                        "casts": [],
-                    }
-                )
-            if len(checks) == 1:
-                return checks[0]
-            return self._boolop_or_expr_node(checks)
-        if kind == "legacy_issubclass":
-            if len(arg_nodes) != 2:
-                return self._const_false_expr_node()
-            actual_type_node = arg_nodes[0]
-            expected_nodes = self._collect_type_ref_nodes_for_isinstance(arg_nodes[1])
-            if len(expected_nodes) == 0:
-                return self._const_false_expr_node()
-            checks = []
-            for expected_node in expected_nodes:
-                checks.append(
-                    {
-                        "kind": "IsSubclass",
-                        "actual_type_id": actual_type_node,
-                        "expected_type_id": expected_node,
-                        "resolved_type": "bool",
-                        "borrow_kind": "value",
-                        "casts": [],
-                    }
-                )
-            if len(checks) == 1:
-                return checks[0]
-            return self._boolop_or_expr_node(checks)
         if kind == "runtime_isinstance":
             if len(arg_nodes) != 2:
                 return self._const_false_expr_node()
@@ -4202,13 +4142,6 @@ class CppEmitter(
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
         return self.any_to_str(meta.get("east_stage")).strip() == "3"
 
-    def _allows_legacy_type_id_name_call(self, raw_name: str) -> bool:
-        """未 lower の type_id Name-call を許容するか判定する。"""
-        kind = self._type_id_name_call_kind(raw_name)
-        if kind in {"legacy_isinstance", "legacy_issubclass"}:
-            return not self._is_east3_doc()
-        return True
-
     def _render_range_name_call(self, args: list[str], kw: dict[str, str]) -> str | None:
         """`range(...)` 引数を `py_range(start, stop, step)` 形式へ正規化する。"""
         if len(kw) == 0:
@@ -4267,7 +4200,7 @@ class CppEmitter(
                 return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
-            if name_call_kind != "" and not self._allows_legacy_type_id_name_call(raw):
+            if name_call_kind in {"legacy_isinstance", "legacy_issubclass"}:
                 raise ValueError("type_id call must be lowered to EAST3 node: " + raw)
             if name_call_kind != "":
                 type_id_expr = self._build_type_id_expr_from_call_name(raw, arg_nodes)
@@ -5333,15 +5266,7 @@ class CppEmitter(
                 return f"py_len({arg0})"
             legacy_call_kind = self._type_id_name_call_kind(fn_name)
             if legacy_call_kind in {"legacy_isinstance", "legacy_issubclass"}:
-                if not self._allows_legacy_type_id_name_call(fn_name):
-                    raise ValueError("type_id call must be lowered to EAST3 node: " + fn_name)
-                if legacy_call_kind == "legacy_isinstance" and len(fn_args) == 2:
-                    arg0 = self._render_repr_expr(fn_args[0])
-                    arg0 = arg0 if arg0 != "" else self._trim_ws(fn_args[0])
-                    ty = self._trim_ws(fn_args[1])
-                    type_id_expr = self._render_type_id_operand_expr({"kind": "Name", "id": ty})
-                    if type_id_expr != "":
-                        return f"py_isinstance({arg0}, {type_id_expr})"
+                raise ValueError("type_id call must be lowered to EAST3 node: " + fn_name)
 
         if t.endswith("]"):
             p: int64 = t.find("[")

@@ -196,7 +196,7 @@ class East3CppBridgeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "type_id call must be lowered to EAST3 node: isinstance"):
             emitter.render_expr(call_expr)
 
-    def test_legacy_type_id_name_call_allowed_in_east2_compat(self) -> None:
+    def test_legacy_type_id_name_call_rejected_in_east2_compat(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "2"}}, {})
         call_expr = {
             "kind": "Call",
@@ -208,7 +208,8 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
             "resolved_type": "bool",
         }
-        self.assertEqual(emitter.render_expr(call_expr), "py_isinstance(v, PYTRA_TID_INT)")
+        with self.assertRaisesRegex(ValueError, "type_id call must be lowered to EAST3 node: isinstance"):
+            emitter.render_expr(call_expr)
 
     def test_builtin_call_without_runtime_call_rejected_in_east3(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "3"}}, {})
@@ -1945,12 +1946,12 @@ class East3CppBridgeTest(unittest.TestCase):
         ):
             emitter.render_expr(plain_endswith)
 
-    def test_plain_isinstance_call_uses_type_id_core_node_path(self) -> None:
+    def test_runtime_py_isinstance_name_call_uses_type_id_core_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         plain_isinstance = {
             "kind": "Call",
             "resolved_type": "bool",
-            "func": {"kind": "Name", "id": "isinstance", "resolved_type": "unknown"},
+            "func": {"kind": "Name", "id": "py_isinstance", "resolved_type": "unknown"},
             "args": [
                 {"kind": "Name", "id": "x", "resolved_type": "object"},
                 {"kind": "Name", "id": "int", "resolved_type": "unknown"},
