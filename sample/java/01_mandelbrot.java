@@ -1,25 +1,24 @@
-// このファイルは EAST ベース Java プレビュー出力です。
-// TODO: 専用 JavaEmitter 実装へ段階移行する。
-public final class Main {
-    public static void main(String[] args) {
-        // C# ベース中間出力のシグネチャ要約:
-        // public static class Program
-        // // 01: Sample that outputs the Mandelbrot set as a PNG image.
-        // // Syntax is kept straightforward with future transpilation in mind.
-        //
-        // public static long escape_count(double cx, double cy, long max_iter)
-        //
-        // public static (long, long, long) color_map(long iter_count, long max_iter)
-        //
-        // public static List<byte> render_mandelbrot(long width, long height, long max_iter, double x_min, double x_max, double y_min, double y_max)
-        //
-        //
-        //
-        // public static void run_mandelbrot()
-        //
-        //
-        //
-        //
-        // public static void Main(string[] args)
+// このファイルは EAST -> JS bridge 用の Java 実行ラッパです。
+import java.util.ArrayList;
+import java.util.List;
+
+public final class Pytra_01_mandelbrot {
+    private Pytra_01_mandelbrot() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add("node");
+        command.add("sample/java/01_mandelbrot.js");
+        for (String arg : args) {
+            command.add(arg);
+        }
+        Process process = new ProcessBuilder(command)
+            .inheritIO()
+            .start();
+        int code = process.waitFor();
+        if (code != 0) {
+            System.exit(code);
+        }
     }
 }

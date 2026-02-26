@@ -1,23 +1,24 @@
-// このファイルは EAST ベース Java プレビュー出力です。
-// TODO: 専用 JavaEmitter 実装へ段階移行する。
-public final class Main {
-    public static void main(String[] args) {
-        // C# ベース中間出力のシグネチャ要約:
-        // public static class Program
-        // // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
-        //
-        // public static List<byte> julia_palette()
-        // // Keep index 0 black for points inside the set; build a high-saturation gradient for the rest.
-        //
-        // public static List<byte> render_frame(long width, long height, double cr, double ci, long max_iter, long phase)
-        // // Add a small frame phase so colors flow smoothly.
-        //
-        // public static void run_06_julia_parameter_sweep()
-        //
-        // // Orbit an ellipse around a known visually good region to reduce flat blown highlights.
-        // // Add start and phase offsets so GitHub thumbnails do not appear too dark.
-        // // Tune it to start in a red-leaning color range.
-        //
-        // public static void Main(string[] args)
+// このファイルは EAST -> JS bridge 用の Java 実行ラッパです。
+import java.util.ArrayList;
+import java.util.List;
+
+public final class Pytra_06_julia_parameter_sweep {
+    private Pytra_06_julia_parameter_sweep() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add("node");
+        command.add("sample/java/06_julia_parameter_sweep.js");
+        for (String arg : args) {
+            command.add(arg);
+        }
+        Process process = new ProcessBuilder(command)
+            .inheritIO()
+            .start();
+        int code = process.waitFor();
+        if (code != 0) {
+            System.exit(code);
+        }
     }
 }
