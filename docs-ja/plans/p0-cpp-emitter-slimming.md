@@ -1,6 +1,6 @@
 # P0: C++ emitter 肥大化の段階縮退
 
-最終更新: 2026-02-25
+最終更新: 2026-02-26
 
 関連 TODO:
 - `docs-ja/todo/index.md` の `ID: P0-CPP-EMITTER-SLIM-01`
@@ -35,7 +35,7 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-EMITTER-SLIM-01-S1-01] `cpp_emitter.py` の行数・メソッド数・長大メソッドを計測し、基準値を文書化する。
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S1-01] `cpp_emitter.py` の行数・メソッド数・長大メソッドを計測し、基準値を文書化する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S1-02] `sample` と `test/unit` の C++ 生成差分基線を固定する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-01] stage2/self_hosted 由来の legacy builtin compat 経路を撤去する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S2-02] `For`/`ForRange` <-> `ForCore` bridge を撤去し、`ForCore` 直接受理へ統一する。
@@ -56,5 +56,23 @@
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` で selfhost 回帰を確認する。
 - [ ] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] 最終メトリクスを再計測し、完了判定（行数・`render_expr` 行数・legacy 0件）を記録する。
 
+## S1-01 基線メトリクス（2026-02-26）
+
+- 計測コマンド:
+  - `python3 - <<'PY' ... ast.parse(...) ... PY`（`src/hooks/cpp/emitter/cpp_emitter.py` を対象）
+  - `wc -l src/hooks/cpp/emitter/cpp_emitter.py`
+- 基準値:
+  - ファイル行数: `6814`
+  - `CppEmitter` メソッド数: `164`
+  - `render_expr` 行数: `869`（`L5812-L6680`）
+  - legacy/compat 名付きメソッド数: `3`
+- 長大メソッド（上位5件）:
+  - `render_expr`: `869` 行
+  - `_render_builtin_runtime_special_ops`: `359` 行
+  - `emit_class`: `259` 行
+  - `transpile`: `236` 行
+  - `emit_assign`: `166` 行
+
 決定ログ:
 - 2026-02-25: `cpp_emitter.py` の肥大要因分析（互換層残存 + 責務集中 + 巨大 `render_expr`）に基づき、最優先タスクとして追加。
+- 2026-02-26: `P0-CPP-EMITTER-SLIM-01-S1-01` として現状メトリクスを固定した。`file_lines=6814`、`method_count=164`、`render_expr_lines=869`、`legacy_named_methods=3`（`_render_legacy_builtin_call_compat` / `_render_legacy_builtin_method_call_compat` / `_allows_legacy_type_id_name_call`）を基線として、以後の縮退効果をこの値との差分で判定する。
