@@ -441,7 +441,11 @@ class CppEmitter(
             stmt = self.any_to_dict_or_empty(stmt_any)
             if len(stmt) == 0:
                 continue
+            lines_before_stmt = len(self.lines)
             self.emit_stmt(stmt)
+            # Import/ImportFrom など出力を持たない文では余分な空行を増やさない。
+            if len(self.lines) == lines_before_stmt:
+                continue
             self.emit("")
 
         has_module_runtime = len(module_runtime_dicts) > 0
