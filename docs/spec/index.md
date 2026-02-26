@@ -13,6 +13,7 @@
 - Language profile specification: [Language Profile Specification](./spec-language-profile.md)
 - Folder responsibility map specification: [Folder Responsibility Map Specification](./spec-folder.md)
 - EAST3 optimizer specification: [EAST3 Optimizer Specification](./spec-east3-optimizer.md)
+- C++ backend optimizer specification: [C++ Optimizer Specification](./spec-cpp-optimizer.md)
 - Language-specific specifications: [Language-Specific Specifications](../language/index.md)
 - Codex operation specification: [Codex Operation Specification](./spec-codex.md)
 - `pylib` module index: [pylib Module Index](./spec-pylib-modules.md)
@@ -34,6 +35,8 @@
   - [Folder Responsibility Map Specification](./spec-folder.md)
 - If you want the EAST3 optimization layer contract (common/language-specific):
   - [EAST3 Optimizer Specification](./spec-east3-optimizer.md)
+- If you want post-lowering C++ backend optimization boundaries (`CppOptimizer` vs `CppEmitter`):
+  - [C++ Optimizer Specification](./spec-cpp-optimizer.md)
 - If you want per-language support details:
   - [Language-Specific Specifications](../language/index.md)
 - If you want Codex work rules, TODO operations, and commit operations:
