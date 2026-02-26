@@ -6,9 +6,8 @@
 - `docs-ja/todo/index.md` の `ID: P3-EAST3-ONLY-01`
 
 背景:
-- 非C++ 8ターゲット（`rs/cs/js/ts/go/java/swift/kotlin`）は、既定で `EAST3` を読み込む一方で `east3_legacy_compat` による legacy 互換変換を経由している。
-- さらに `--east-stage 2` 互換モードと `load_east_document_compat` 経路が残っており、コード経路と回帰面積を増やしている。
-- `EAST3` を唯一の契約に統一し、互換層を撤去してメンテナンス面積を縮小する。
+- 着手時点では非C++ 8ターゲット（`rs/cs/js/ts/go/java/swift/kotlin`）が `east3_legacy_compat`、`--east-stage 2`、`load_east_document_compat` に依存していた。
+- 現在は互換経路の撤去を進め、`EAST3` を唯一の契約に統一している。
 
 目的:
 - 非C++ 8ターゲットを `EAST3` 直結へ移行し、`EAST2` 互換経路を廃止する。
@@ -49,6 +48,7 @@
 - 2026-02-26: `S4-03` として C# smoke（`test_py2cs_smoke.py`）と `check_py2cs_transpile.py` を実行し、132件（skip 6）の transpile チェック全通過を確認。
 - 2026-02-26: `S5-01` として 8本 CLI から `normalize_east3_to_legacy` import/call を撤去し、`load_east` を EAST3 ドキュメント返却へ統一。対応 smoke の `east_stage` 期待を `2 -> 3` へ更新し、8本 smoke 全通過を確認。`tools/check_noncpp_east3_contract.py` へ `normalize_east3_to_legacy` 禁止と新 smoke 名 (`returns_east3_shape`) を反映。
 - 2026-02-26: `S5-02` として `src/pytra/compiler/east_parts/east3_legacy_compat.py` を削除。`rg -n "from .*east3_legacy_compat|normalize_east3_to_legacy\\(" src test tools` が 0 件であることを確認し、`check_noncpp_east3_contract.py --skip-transpile` も通過。
+- 2026-02-26: `S6-01` として `docs-ja/plans/plan-east123-migration.md` の現行運用節を `EAST3 only` 契約へ更新し、非C++ の `stage2` 互換前提（互換モード警告・compat loader 依存）を撤去。旧前提は履歴注記へ移した。
 
 ## 分解
 
@@ -68,7 +68,7 @@
 - [x] [ID: P3-EAST3-ONLY-01-S4-03] C# smoke + `check_py2cs_transpile.py` で回帰を固定する。
 - [x] [ID: P3-EAST3-ONLY-01-S5-01] 8本 CLI から `normalize_east3_to_legacy` 呼び出しを撤去する。
 - [x] [ID: P3-EAST3-ONLY-01-S5-02] `src/pytra/compiler/east_parts/east3_legacy_compat.py` を削除し、参照ゼロを `rg` で確認する。
-- [ ] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
+- [x] [ID: P3-EAST3-ONLY-01-S6-01] `docs-ja/plans/plan-east123-migration.md` ほか関連文書から `stage=2` 互換前提を撤去し、`EAST3 only` へ更新する。
 - [ ] [ID: P3-EAST3-ONLY-01-S6-02] 必要な `docs/` 翻訳同期を反映し、日英の不整合をなくす。
 - [ ] [ID: P3-EAST3-ONLY-01-S7-01] 非C++ 8本の smoke/check（`test_py2*` + `check_py2*`）を全通しする。
 - [ ] [ID: P3-EAST3-ONLY-01-S7-02] `runtime_parity_check --case-root sample --targets rs,cs,js,ts,go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を実行し、整合を最終確認する。
