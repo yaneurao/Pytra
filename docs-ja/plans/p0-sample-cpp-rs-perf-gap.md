@@ -28,6 +28,12 @@
   - `src/runtime/cpp/pytra-gen/utils/png.cpp`
 - 計測値自体は README に反映済みだが、再現プロトコル（反復回数/中央値採用/コンパイル時間除外）が文書として固定されていない。
 
+S1 固定化（差分表自動抽出）:
+- 抽出コマンド: `python3 tools/report_cpp_rs_gap.py --readme readme.md --top 8 --emit-json work/perf/cpp_rs_gap_readme_20260226.json`
+- Rust が遅い外れ値（`rs/cpp >= 2.0`）: `09` / `18` / `01`
+- Rust が速い外れ値（`cpp/rs >= 2.0`）: `11` / `12` / `16` / `13` / `14` / `10` / `15`
+- S2/S3 は上記 10 ケースを優先対象として改善する。
+
 目的:
 - C++/Rust の実行時間差を「外れ値が出ない状態」まで縮小する。
 - clone/互換変換コストなど、コード生成で回避可能なオーバーヘッドを優先的に除去する。
@@ -60,6 +66,25 @@
 - `python3 tools/verify_sample_outputs.py --targets cpp,rs`
 - （再計測スクリプト導入後）`python3 tools/benchmark_sample_cpp_rs.py --repeat 5 --warmup 1 --emit-json ...`
 
+計測プロトコル（S1-02）:
+1. 入力固定:
+   - 対象は `sample/py` 18 件固定（`__init__` 除外）。
+   - 計測対象は `cpp` と `rs` のみ。
+2. ビルド条件固定:
+   - C++: `g++ -std=c++20 -O2`。
+   - Rust: `rustc -O`。
+   - 両言語とも「同一ソースから fresh transpile」した生成物を使う。
+3. 実行計測:
+   - 1 回 warmup 実行後、5 回本計測する。
+   - 各回はバイナリ実行時間ではなく、プログラムが出力する `elapsed_sec` を採用する（コンパイル時間は除外）。
+   - ケースごとの代表値は中央値（median）を採用する。
+4. 受け入れ判定:
+   - parity（stdout/artefact）は `runtime_parity_check` + `verify_sample_outputs` で別途保証する。
+   - 乖離判定は `max(cpp/rs, rs/cpp)` を使い、外れ値閾値は `> 1.5x` とする。
+5. 記録:
+   - 結果は JSON と Markdown で保存し、README（日英）へ反映する。
+   - 反映時は「計測日」「マシン/ツールチェイン」「warmup/repeat/中央値」を文書に明記する。
+
 ## 分解
 
 - [ ] [ID: P0-SAMPLE-CPP-RS-PERF-01-S1-01] 現行 README 値の C++/Rust 差分表（比率順）を自動抽出し、外れ値ケースを固定する。
@@ -78,3 +103,5 @@
 
 決定ログ:
 - 2026-02-26: `P0-SAMPLE-CPP-RS-PERF-01` を最優先で新設。外れ値は Rust clone/to_string 過多と C++ GIF/PNG 互換レイヤ負荷の双方で発生しており、片側最適化だけでは収束しないため、Rust/C++ 両面で段階是正する。
+- 2026-02-26: `P0-SAMPLE-CPP-RS-PERF-01-S1-01` として `tools/report_cpp_rs_gap.py` を追加し、README 表から C++/Rust 差分表を自動抽出する導線を固定した。抽出結果より優先外れ値を `01/09/10/11/12/13/14/15/16/18` に確定した。
+- 2026-02-26: `P0-SAMPLE-CPP-RS-PERF-01-S1-02` として計測プロトコル（fresh transpile, warmup=1, repeat=5, median, compile時間除外, parity分離検証）を文書化した。
