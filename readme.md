@@ -65,7 +65,7 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 |14 |Simple ray marching (GIF)|2.670|0.150|0.149|0.606|0.489|0.573|0.490|0.513|0.503|0.492|
 |15 |Wave interference loop (GIF)|2.631|0.288|0.237|1.196|0.616|0.794|0.609|0.614|0.629|0.612|
 |16 |Chaos rotation of glass sculpture (GIF)|6.847|0.260|0.227|1.220|0.650|0.822|0.638|0.643|0.667|0.643|
-|17 |Monte Carlo Pi approximation|0.293|0.002|0.002|0.010|0.046|0.045|0.047|0.048|0.047|0.048|
+|17 |Monte Carlo Pi approximation|2.981|0.019|0.017|0.098|0.431|0.433|0.432|0.433|0.436|0.436|
 |18 |Mini-language interpreter|2.037|0.335|0.386|0.735|0.446|0.446|0.405|0.417|0.423|0.417|
 
 Notes:
