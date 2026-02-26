@@ -40,11 +40,12 @@
 - 2026-02-26: 初版作成。Java sidecar bridge 依存を段階撤去する実装計画を追加。
 - 2026-02-26: ユーザー指示により優先度を低優先へ変更し、Java native 移行タスクの識別子を低優先帯へ更新。
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-01`] `docs-ja/spec/spec-java-native-backend.md`（英訳: `docs/spec/spec-java-native-backend.md`）を新設。入力 EAST3 責務、未対応時 fail-closed、runtime 境界、preview との差分を明文化。
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-02`] `src/hooks/java/emitter/java_native_emitter.py` を追加し、`Module/FunctionDef/ClassDef` の native 骨格出力（本文は placeholder）を実装。`test_py2java_smoke.py` に module/function/class 最小経路テストを追加し、`tools/check_py2java_transpile.py` と併せて回帰なしを確認。
 
 ## 分解
 
 - [x] [ID: P3-JAVA-NATIVE-01-S1-01] Java backend 契約（入力 EAST3 ノード責務、未対応時 fail-closed、runtime 境界）を文書化し、preview 出力との差分を明示する。
-- [ ] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
+- [x] [ID: P3-JAVA-NATIVE-01-S1-02] `src/hooks/java/emitter` に native emitter 骨格を追加し、module/function/class の最小実行経路を通す。
 - [ ] [ID: P3-JAVA-NATIVE-01-S1-03] `py2java.py` に backend 切替配線を追加し、既定を native、旧 sidecar を互換モードへ隔離する。
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-01] 式/文（算術、条件、ループ、関数呼び出し、組み込み基本型）を native emitter へ実装し、`sample/py` 前半ケースを通す。
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-02] class/instance/isinstance 系と runtime フックを native 経路へ接続し、OOP 系ケースを通す。

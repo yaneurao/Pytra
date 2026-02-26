@@ -17,6 +17,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.py2java import load_east, load_java_profile, transpile_to_java
+from hooks.java.emitter.java_native_emitter import transpile_to_java_native
 from src.pytra.compiler.east_parts.core import convert_path
 
 
@@ -101,6 +102,27 @@ class Py2JavaSmokeTest(unittest.TestCase):
             )
             self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
+
+    def test_java_native_emitter_skeleton_handles_module_function_class(self) -> None:
+        fixture = find_fixture_case("inheritance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("public final class Main", java)
+        self.assertIn("public static class Animal", java)
+        self.assertIn("public static class Dog extends Animal", java)
+        self.assertIn("public static void _case_main()", java)
+        self.assertIn("_case_main();", java)
+
+    def test_java_native_emitter_skeleton_maps_simple_int_signature(self) -> None:
+        fixture = find_fixture_case("add")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("public static long add(long a, long b)", java)
+        self.assertIn("return 0L;", java)
+
+    def test_java_native_emitter_rejects_non_module_root(self) -> None:
+        with self.assertRaises(RuntimeError):
+            transpile_to_java_native({"kind": "FunctionDef"}, class_name="Main")
 
     def test_py2java_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2java.py").read_text(encoding="utf-8")

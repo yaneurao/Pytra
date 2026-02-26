@@ -40,11 +40,12 @@ Decision log:
 - 2026-02-26: Initial draft created. Added implementation plan for staged removal of Java sidecar bridge dependency.
 - 2026-02-26: Per user instruction, lowered priority and updated Java native migration task identifiers to the low-priority band.
 - 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-01`] Added `docs-ja/spec/spec-java-native-backend.md` (translation: `docs/spec/spec-java-native-backend.md`) to formalize input EAST3 responsibility, fail-closed behavior, runtime boundary, and preview-vs-native diffs.
+- 2026-02-26: [ID: `P3-JAVA-NATIVE-01-S1-02`] Added `src/hooks/java/emitter/java_native_emitter.py` with native skeleton emission for `Module/FunctionDef/ClassDef` (body placeholder by design), then added minimal-route tests in `test_py2java_smoke.py`; no regression in `tools/check_py2java_transpile.py`.
 
 ## Breakdown
 
 - [x] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (responsibility for input EAST3 nodes, fail-closed behavior on unsupported nodes, runtime boundary) and clarify diff from preview output.
-- [ ] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton in `src/hooks/java/emitter` and pass minimal executable route for module/function/class.
+- [x] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton in `src/hooks/java/emitter` and pass minimal executable route for module/function/class.
 - [ ] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`, make native the default, and isolate legacy sidecar into compatibility mode.
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native emitter support for expressions/statements (arithmetic, conditionals, loops, function calls, built-in primitive types) and pass early `sample/py` cases.
 - [ ] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks to native route and pass OOP cases.
