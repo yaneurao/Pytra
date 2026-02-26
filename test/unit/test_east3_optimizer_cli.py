@@ -56,7 +56,7 @@ class East3OptimizerCliTest(unittest.TestCase):
                     "--east3-opt-level",
                     "2",
                     "--east3-opt-pass",
-                    "-NoOpPass",
+                    "-LiteralCastFoldPass",
                     "--dump-east3-opt-trace",
                     str(trace_txt),
                 ],
@@ -69,9 +69,8 @@ class East3OptimizerCliTest(unittest.TestCase):
             self.assertTrue(trace_txt.exists())
             trace = trace_txt.read_text(encoding="utf-8")
             self.assertIn("opt_level: 2", trace)
-            self.assertIn("NoOpPass enabled=false", trace)
+            self.assertIn("LiteralCastFoldPass enabled=false", trace)
 
 
 if __name__ == "__main__":
     unittest.main()
-

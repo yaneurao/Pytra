@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 
+from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
+from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
 from src.pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from src.pytra.compiler.east_parts.east3_optimizer import PassContext
 from src.pytra.compiler.east_parts.east3_optimizer import PassManager
@@ -68,16 +70,108 @@ class East3OptimizerTest(unittest.TestCase):
 
     def test_optimize_east3_document_can_disable_default_pass(self) -> None:
         doc = _module_doc()
-        out_doc, report = optimize_east3_document(doc, opt_level="1", opt_pass_spec="-NoOpPass")
+        out_doc, report = optimize_east3_document(
+            doc,
+            opt_level="1",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass",
+        )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
         self.assertIsInstance(trace, list)
-        self.assertEqual(trace[0].get("name"), "NoOpPass")
+        self.assertEqual(trace[0].get("name"), "NoOpCastCleanupPass")
         self.assertFalse(bool(trace[0].get("enabled")))
+        self.assertEqual(trace[1].get("name"), "LiteralCastFoldPass")
+        self.assertFalse(bool(trace[1].get("enabled")))
         trace_text = render_east3_opt_trace(report)
-        self.assertIn("NoOpPass", trace_text)
+        self.assertIn("NoOpCastCleanupPass", trace_text)
+        self.assertIn("LiteralCastFoldPass", trace_text)
+
+    def test_noop_cast_cleanup_pass_removes_only_proven_noops(self) -> None:
+        doc = _module_doc()
+        expr = {
+            "kind": "Name",
+            "id": "x",
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [
+                {"on": "self", "from": "int64", "to": "int64", "reason": "noop"},
+                {"on": "self", "from": "int64", "to": "float64", "reason": "promotion"},
+                {"on": "self", "from": "unknown", "to": "unknown", "reason": "unknown"},
+            ],
+            "repr": "x",
+        }
+        doc["body"] = [{"kind": "Expr", "value": expr}]
+        result = NoOpCastCleanupPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        casts = expr.get("casts")
+        self.assertIsInstance(casts, list)
+        self.assertEqual(len(casts), 2)
+        self.assertEqual(casts[0].get("to"), "float64")
+        self.assertEqual(casts[1].get("to"), "unknown")
+
+    def test_literal_cast_fold_pass_folds_constant_static_cast(self) -> None:
+        doc = _module_doc()
+        cast_call = {
+            "kind": "Call",
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "int(42)",
+            "func": {"kind": "Name", "id": "int"},
+            "args": [
+                {
+                    "kind": "Constant",
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "42",
+                    "value": 42,
+                }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+        }
+        doc["body"] = [{"kind": "Expr", "value": cast_call}]
+        result = LiteralCastFoldPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        folded_value = doc.get("body")[0].get("value")
+        self.assertEqual(folded_value.get("kind"), "Constant")
+        self.assertEqual(folded_value.get("value"), 42)
+        self.assertEqual(folded_value.get("repr"), "int(42)")
+
+    def test_literal_cast_fold_pass_skips_non_foldable_cast(self) -> None:
+        doc = _module_doc()
+        cast_call = {
+            "kind": "Call",
+            "resolved_type": "float64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "float(42)",
+            "func": {"kind": "Name", "id": "float"},
+            "args": [
+                {
+                    "kind": "Constant",
+                    "resolved_type": "int64",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": "42",
+                    "value": 42,
+                }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+        }
+        doc["body"] = [{"kind": "Expr", "value": cast_call}]
+        result = LiteralCastFoldPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        value = doc.get("body")[0].get("value")
+        self.assertEqual(value.get("kind"), "Call")
 
 
 if __name__ == "__main__":
     unittest.main()
-

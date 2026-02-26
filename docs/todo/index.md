@@ -52,7 +52,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 1. [ ] [ID: P0-EAST3-OPT-01] Introduce common `EAST3 -> EAST3` optimizer and reflect pass manager / opt-level / fail-closed contract into implementation.
 2. [x] [ID: P0-EAST3-OPT-01-S1-01] Add optimizer entry (`east3_optimizer.py`) and pass manager skeleton (`PassContext`/`PassResult`).
 3. [x] [ID: P0-EAST3-OPT-01-S1-02] Implement CLI options (`--east3-opt-level`, `--east3-opt-pass`, dump/trace`) and lock `O0/O1/O2` contract.
-4. [ ] [ID: P0-EAST3-OPT-01-S2-01] Implement `NoOpCastCleanupPass` / `LiteralCastFoldPass` and establish default `O1` set.
+4. [x] [ID: P0-EAST3-OPT-01-S2-01] Implement `NoOpCastCleanupPass` / `LiteralCastFoldPass` and establish default `O1` set.
 5. [ ] [ID: P0-EAST3-OPT-01-S2-02] Implement `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` and reflect `for ... in range(...)` boundary.
 6. [ ] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
 7. [ ] [ID: P0-EAST3-OPT-01-S3-01] Add pass unit tests (input/output EAST3 diff, non-application guards, semantics preservation).
@@ -60,6 +60,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 9. [ ] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diffs to `spec-east3-optimizer` and document operations (trace checks / troubleshooting).
 - `P0-EAST3-OPT-01-S1-01` Added `east3_optimizer.py`, `east3_opt_passes/noop_pass.py`, and `test_east3_optimizer.py`, fixing the minimal pass-manager + trace-output path.
 - `P0-EAST3-OPT-01-S1-02` Wired optimizer CLI options through common/non-C++/`py2cpp` routes and fixed the end-to-end entry path with `test_east3_optimizer_cli.py` plus parser-wrapper tests.
+- `P0-EAST3-OPT-01-S2-01` Implemented `NoOpCastCleanupPass` / `LiteralCastFoldPass`, updated `build_default_passes()` to the `O1` default set, and synchronized pass-unit tests plus CLI trace expectations.
 
 ### P0: Introduce C++ post-lowering optimizer layer (`CppOptimizer`) (Highest)
 

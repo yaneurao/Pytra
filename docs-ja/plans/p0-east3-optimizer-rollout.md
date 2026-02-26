@@ -39,12 +39,13 @@
 - 2026-02-26: 初版作成。`spec-east3-optimizer` に基づき、実装導入を S1/S2/S3 の3段で進める。
 - 2026-02-26: `P0-EAST3-OPT-01-S1-01` として `east3_optimizer.py`/`east3_opt_passes/` 骨格と `test_east3_optimizer.py` を追加し、pass manager と trace 文字列化の最小経路を固定した。
 - 2026-02-26: `P0-EAST3-OPT-01-S1-02` として `--east3-opt-level`/`--east3-opt-pass`/dump 系オプションを `transpile_cli` と `py2cpp`/非C++ 8本 CLI に配線し、`test_east3_optimizer_cli.py` と既存 parse wrapper テストで経路を固定した。
+- 2026-02-26: `P0-EAST3-OPT-01-S2-01` として `NoOpCastCleanupPass`/`LiteralCastFoldPass` を追加し、`build_default_passes()` を `O1` 既定セットへ更新。pass 単体テストと CLI トレース期待値を同期した。
 
 ## 分解
 
 - [x] [ID: P0-EAST3-OPT-01-S1-01] optimizer エントリ (`east3_optimizer.py`) と pass manager 骨格（`PassContext`/`PassResult`）を追加する。
 - [x] [ID: P0-EAST3-OPT-01-S1-02] CLI オプション（`--east3-opt-level`, `--east3-opt-pass`, dump/trace）を実装し、`O0/O1/O2` 契約を固定する。
-- [ ] [ID: P0-EAST3-OPT-01-S2-01] `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`O1` 既定セットを確立する。
+- [x] [ID: P0-EAST3-OPT-01-S2-01] `NoOpCastCleanupPass` / `LiteralCastFoldPass` を実装し、`O1` 既定セットを確立する。
 - [ ] [ID: P0-EAST3-OPT-01-S2-02] `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` を実装し、`for ... in range(...)` の責務境界を反映する。
 - [ ] [ID: P0-EAST3-OPT-01-S2-03] `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` を `O2` 限定で導入する。
 - [ ] [ID: P0-EAST3-OPT-01-S3-01] pass 単体テスト（入力/出力EAST3差分、非適用ガード、意味保存）を追加する。
