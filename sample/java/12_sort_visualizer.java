@@ -1,17 +1,24 @@
-// このファイルは EAST ベース Java プレビュー出力です。
-// TODO: 専用 JavaEmitter 実装へ段階移行する。
-public final class Main {
-    public static void main(String[] args) {
-        // C# ベース中間出力のシグネチャ要約:
-        // public static class Program
-        // // 12: Sample that outputs intermediate states of bubble sort as a GIF.
-        //
-        // public static List<byte> render(System.Collections.Generic.List<long> values, long w, long h)
-        //
-        // public static void run_12_sort_visualizer()
-        //
-        //
-        //
-        // public static void Main(string[] args)
+// このファイルは EAST -> JS bridge 用の Java 実行ラッパです。
+import java.util.ArrayList;
+import java.util.List;
+
+public final class Pytra_12_sort_visualizer {
+    private Pytra_12_sort_visualizer() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add("node");
+        command.add("sample/java/12_sort_visualizer.js");
+        for (String arg : args) {
+            command.add(arg);
+        }
+        Process process = new ProcessBuilder(command)
+            .inheritIO()
+            .start();
+        int code = process.waitFor();
+        if (code != 0) {
+            System.exit(code);
+        }
     }
 }

@@ -1,21 +1,24 @@
-// このファイルは EAST ベース Java プレビュー出力です。
-// TODO: 専用 JavaEmitter 実装へ段階移行する。
-public final class Main {
-    public static void main(String[] args) {
-        // C# ベース中間出力のシグネチャ要約:
-        // public static class Program
-        // // 03: Sample that outputs a Julia set as a PNG image.
-        // // Implemented with simple loop-centric logic for transpilation compatibility.
-        //
-        // public static List<byte> render_julia(long width, long height, long max_iter, double cx, double cy)
-        //
-        //
-        //
-        //
-        // public static void run_julia()
-        //
-        //
-        //
-        // public static void Main(string[] args)
+// このファイルは EAST -> JS bridge 用の Java 実行ラッパです。
+import java.util.ArrayList;
+import java.util.List;
+
+public final class Pytra_03_julia_set {
+    private Pytra_03_julia_set() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add("node");
+        command.add("sample/java/03_julia_set.js");
+        for (String arg : args) {
+            command.add(arg);
+        }
+        Process process = new ProcessBuilder(command)
+            .inheritIO()
+            .start();
+        int code = process.waitFor();
+        if (code != 0) {
+            System.exit(code);
+        }
     }
 }

@@ -1,19 +1,24 @@
-// このファイルは EAST ベース Java プレビュー出力です。
-// TODO: 専用 JavaEmitter 実装へ段階移行する。
-public final class Main {
-    public static void main(String[] args) {
-        // C# ベース中間出力のシグネチャ要約:
-        // public static class Program
-        // // 13: Sample that outputs DFS maze-generation progress as a GIF.
-        //
-        // public static List<byte> capture(System.Collections.Generic.List<System.Collections.Generic.List<long>> grid, long w, long h, long scale)
-        //
-        // public static void run_13_maze_generation_steps()
-        // // Increase maze size and render resolution to ensure sufficient runtime.
-        //
-        //
-        //
-        //
-        // public static void Main(string[] args)
+// このファイルは EAST -> JS bridge 用の Java 実行ラッパです。
+import java.util.ArrayList;
+import java.util.List;
+
+public final class Pytra_13_maze_generation_steps {
+    private Pytra_13_maze_generation_steps() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add("node");
+        command.add("sample/java/13_maze_generation_steps.js");
+        for (String arg : args) {
+            command.add(arg);
+        }
+        Process process = new ProcessBuilder(command)
+            .inheritIO()
+            .start();
+        int code = process.waitFor();
+        if (code != 0) {
+            System.exit(code);
+        }
     }
 }
