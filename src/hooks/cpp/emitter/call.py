@@ -453,6 +453,41 @@ class CppCallEmitter:
             return f"py_append({owner_expr}, {a0})"
         return None
 
+    def _is_super_call_expr(self, node: Any) -> bool:
+        """`super()` 呼び出し式か判定する。"""
+        node_d = self.any_to_dict_or_empty(node)
+        if self._node_kind_from_dict(node_d) != "Call":
+            return False
+        fn = self.any_to_dict_or_empty(node_d.get("func"))
+        if self._node_kind_from_dict(fn) != "Name":
+            return False
+        if self.any_dict_get_str(fn, "id", "") != "super":
+            return False
+        args = self.any_to_list(node_d.get("args"))
+        return len(args) == 0
+
+    def _render_super_attribute_call(
+        self,
+        owner_obj: Any,
+        attr: str,
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> str | None:
+        """`super().method(...)` を `Base::method(*this, ...)` へ変換する。"""
+        if not self._is_super_call_expr(owner_obj):
+            return None
+        base = self.current_class_base_name
+        if base == "":
+            return None
+        if not self._has_class_method(base, attr):
+            return None
+        call_args = self.merge_call_args(args, kw)
+        call_args = self._coerce_args_for_class_method(base, attr, call_args, arg_nodes)
+        if len(call_args) == 0:
+            return f"{base}::{attr}(*this)"
+        return f"{base}::{attr}(*this, {join_str_list(', ', call_args)})"
+
     def _render_call_attribute(
         self,
         expr: dict[str, Any],
@@ -472,6 +507,9 @@ class CppCallEmitter:
         attr = self.any_dict_get_str(call_ctx, "attr", "")
         if attr == "":
             return None
+        super_rendered = self._render_super_attribute_call(owner_obj, attr, args, kw, arg_nodes)
+        if super_rendered is not None and super_rendered != "":
+            return super_rendered
         if owner_mod != "":
             module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
