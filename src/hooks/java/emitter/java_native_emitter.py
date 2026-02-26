@@ -40,6 +40,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "boolean"
     if type_name == "str":
         return "String"
+    if type_name.isidentifier():
+        return _safe_ident(type_name, "Object")
     return "Object"
 
 
@@ -65,7 +67,10 @@ def _java_string_literal(text: str) -> str:
 
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
-    return _safe_ident(expr.get("id"), "value")
+    ident = _safe_ident(expr.get("id"), "value")
+    if ident == "self":
+        return "this"
+    return ident
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -205,6 +210,13 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered.append("String.valueOf(" + _render_expr(args[i]) + ")")
             i += 1
         return "System.out.println(" + " + \" \" + ".join(rendered) + ")"
+    if callee_name != "" and callee_name[0].isupper():
+        rendered_ctor_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_ctor_args.append(_render_expr(args[i]))
+            i += 1
+        return "new " + callee_name + "(" + ", ".join(rendered_ctor_args) + ")"
 
     func_expr = _render_expr(expr.get("func"))
     rendered_args: list[str] = []

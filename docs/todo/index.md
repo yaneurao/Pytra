@@ -48,6 +48,7 @@ Context: [docs-ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollo
 - `P3-JAVA-NATIVE-01-S1-02` Added `src/hooks/java/emitter/java_native_emitter.py` with native scaffold emission for `Module/FunctionDef/ClassDef`, and added minimal-route tests to `test_py2java_smoke.py`.
 - `P3-JAVA-NATIVE-01-S1-03` Added `--java-backend {native,sidecar}` to `py2java.py`, switched default to native, and isolated sidecar generation to explicit compatibility mode.
 - `P3-JAVA-NATIVE-01-S2-01` Extended `java_native_emitter` body lowering and wired `Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` plus core expressions (constants/arithmetic/comparison/print+normal calls) to Java output.
+- `P3-JAVA-NATIVE-01-S2-01` Preserved class type annotations instead of collapsing to `Object`, and added `self -> this` plus constructor-call lowering (`Dog() -> new Dog()`) for basic OOP route correctness.
 
 ### P0: Implement common EAST3 optimizer layer (Highest)
 

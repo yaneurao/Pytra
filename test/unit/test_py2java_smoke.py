@@ -143,7 +143,9 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("public final class Main", java)
         self.assertIn("public static class Animal", java)
         self.assertIn("public static class Dog extends Animal", java)
+        self.assertIn('return (this.sound() + "-bark");', java)
         self.assertIn("public static void _case_main()", java)
+        self.assertIn("Dog d = new Dog();", java)
         self.assertIn("_case_main();", java)
 
     def test_java_native_emitter_skeleton_maps_simple_int_signature(self) -> None:
