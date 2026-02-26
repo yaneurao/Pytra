@@ -90,6 +90,12 @@
 8. `P2-CPP-SELFHOST-VIRTUAL-01-S3-02`: 置換範囲を 5 件程度ずつ拡張し、selfhost 再変換可能性を確認する。
 9. `P2-CPP-SELFHOST-VIRTUAL-01-S3-03`: 置換不能ケース（`type_id` 区分が必要なケース）は理由付きで非対象候補に追加し、対象リストを更新する。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S3-01` 確定内容（2026-02-26）:
+- `sample/cpp` と `src/runtime/cpp/pytra-gen` を再走査し、class method dispatch 由来の `type_id` 条件分岐（`if (..type_id()..)` / `switch(type_id())`）がないことを確認した。
+  - `rg -n "type_id\\(\\).*>=.*&&.*type_id\\(\\).*<=" sample/cpp src/runtime/cpp/pytra-gen`
+  - `rg -n "switch \\(.*type_id\\(" sample/cpp src/runtime/cpp/pytra-gen`
+- `sample` 側で残る `type_id` 利用は `set_type_id(PYTRA_TYPE_ID)` 初期化のみで、dispatch 分岐の置換対象は存在しなかったため no-op 完了とした。
+
 ### S4: 回帰固定と仕様反映
 
 10. `P2-CPP-SELFHOST-VIRTUAL-01-S4-01`: 差分固定のため `test/unit`（selfhost 関連）と `sample` 再生成 golden 的比較を追加/更新する。
@@ -111,3 +117,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-01` として `src/hooks/cpp/emitter/call.py` の call/render 経路を「PyObj/組み込み method 経路」と「ユーザー定義 class method 経路」へ分解し、仮想呼び出し化の一次対象を後者に限定した。`BuiltinCall` lower 前提と `runtime_expr.py` の type_id API 呼び出しは非対象として固定した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-02` として `call.py` の class method 呼び出しを mode ベース（`virtual` / `direct` / `fallback`）へ分岐明示化し、dispatch table で描画先を切り替える形へ整理した。`_collect_class_method_candidates` へ候補探索を共通化し、`test_east3_cpp_bridge` の追加2ケースと `check_py2cpp_transpile`（`133/133`）で回帰なしを確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-03` として置換対象外の `type_id` 関連分岐を理由付きで固定した。`BuiltinCall` lower 前提経路・`runtime_expr.py` の type_id API 呼び出し・`built_in/type_id.cpp` registry 管理は fallback/非対象として維持し、S3 の実装対象から除外する方針を確定した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-01` として `sample/cpp` と `src/runtime/cpp/pytra-gen` を再走査したが、class method dispatch 由来の `type_id` 条件分岐は引き続き 0 件だった。残存する `type_id` 利用は `set_type_id(...)` 初期化のみであり、移行対象なしの no-op 完了として扱う。
