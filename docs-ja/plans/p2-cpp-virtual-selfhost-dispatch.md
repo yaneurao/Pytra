@@ -157,6 +157,17 @@
 14. `P2-CPP-SELFHOST-VIRTUAL-01-S5-02`: `test/unit/test_py2cpp_codegen_issues.py` か新規 selfhost 系テストに、`Base`/`Child` が混在する `test/unit` + `sample` 再変換で、`type_id` スイッチが残る/消える境界ケース（`staticmethod` 風・`cls` method・`object` レシーバ）を分離して検証する。
 15. `P2-CPP-SELFHOST-VIRTUAL-01-S5-03`: `tools/verify_selfhost_end_to_end.py` が対象の `sample`（少なくとも 2 件）を再変換しても `sample` 本体の意味論を壊さないことを確認するテストを追加し、生成コードの簡略化が再帰呼び出しと衝突しないことを固定する。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S5-01` 確定内容（2026-02-26）:
+- `test/unit/test_py2cpp_codegen_issues.py` に以下を追加した。
+  - `test_base_qualified_call_keeps_virtual_path_without_type_id_dispatch`
+  - `test_super_method_call_lowers_to_base_qualified_call_without_type_id_dispatch`
+- 併せて `src/hooks/cpp/emitter/call.py` に `super().method(...)` 専用経路を追加し、`Base::method(*this, ...)` へ lower するよう修正した。
+- 検証:
+  - `python3 -m py_compile src/hooks/cpp/emitter/call.py test/unit/test_py2cpp_codegen_issues.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'base_qualified_call_keeps_virtual_path_without_type_id_dispatch'`
+  - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'super_method_call_lowers_to_base_qualified_call_without_type_id_dispatch'`
+  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+
 ## 決定ログ
 
 - [2026-02-25] `virtual` が override 済み基底メソッドのみ付与される方向へ変更済み。上記タスクの起点として `selfhost` 側の簡略化余地を低優先で追加。
@@ -172,3 +183,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-01` として selfhost virtual dispatch 回帰テスト `test_selfhost_virtual_dispatch_regression.py` を追加し、`sample/cpp` と `pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch が再流入しないことを固定した。`check_selfhost_cpp_diff` でも `mismatches=0 known_diffs=2` を確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-02` として回帰コマンドを再実行し、`check_selfhost_cpp_diff` は引き続き `mismatches=0`、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`CodeEmitter import` 除去失敗）で停止することを確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-03` として `docs-ja/spec/spec-dev.md` へ virtual dispatch mode（`virtual/direct/fallback`）と非対象境界、回帰テスト運用を反映した。`spec-type_id` は意味論変更なしのため更新対象外と判断した。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S5-01` として `Base.f` 明示呼び出しと `super().f` の 2 ケース回帰テストを追加した。`super().f` は `Base::f(*this, ...)` へ lower する専用経路を `call.py` に実装し、`type_id` 比較/switch dispatch を伴わないことを固定した。

@@ -842,6 +842,35 @@ def f(x: object) -> bool:
         self.assertIn("return b->inc(4);", cpp)
         self.assertNotIn("return b.inc(4);", cpp)
 
+    def test_base_qualified_call_keeps_virtual_path_without_type_id_dispatch(self) -> None:
+        src = """class Base:\n    def f(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def f(self, x: int) -> int:\n        return Base.f(self, x) + 1\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "base_qualified_virtual_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("virtual int64 f(int64 x) {", cpp)
+        self.assertIn("int64 f(int64 x) override {", cpp)
+        self.assertIn("return Base::f(*this, x) + 1;", cpp)
+        self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
+        self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
+
+    def test_super_method_call_lowers_to_base_qualified_call_without_type_id_dispatch(self) -> None:
+        src = """class Base:\n    def f(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def f(self, x: int) -> int:\n        return super().f(x) + 1\n"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "super_virtual_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("virtual int64 f(int64 x) {", cpp)
+        self.assertIn("int64 f(int64 x) override {", cpp)
+        self.assertIn("return Base::f(*this, x) + 1;", cpp)
+        self.assertNotIn("super().f(", cpp)
+        self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
+        self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
+
     def test_isinstance_class_and_builtin_mix_is_lowered_to_runtime_type_id_checks(self) -> None:
         src = """class Base:\n    def __init__(self):\n        pass\n\nclass Child(Base):\n    def __init__(self):\n        super().__init__()\n\ndef f(x: object) -> bool:\n    return isinstance(x, (Base, Child, int, str, object))\n"""
         with tempfile.TemporaryDirectory() as tmpdir:
