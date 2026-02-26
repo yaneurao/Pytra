@@ -1,0 +1,53 @@
+# P3: Migrate Java Backend to Direct EAST3 Native Generation (Remove Sidecar)
+
+Last updated: 2026-02-26
+
+Related TODO:
+- `ID: P3-JAVA-NATIVE-01` in `docs-ja/todo/index.md`
+
+Background:
+- Current `py2java.py` generates sidecar JavaScript via `transpile_to_js`, and Java output is a Node bridge wrapper.
+- `sample/java` therefore tends to be thin bridge-oriented output, making Java-native backend quality hard to evaluate.
+- From the user viewpoint, "choosing Java but not getting actual Java implementation output" is confusing, so migration to direct EAST3 generation is required.
+
+Goal:
+- Move Java backend to direct `EAST3 -> Java native emitter` generation and remove sidecar JS dependency from the default path.
+
+In scope:
+- `src/py2java.py` (generation path switch; stop default sidecar output)
+- `src/hooks/java/emitter/` (native emitter implementation)
+- `tools/check_py2java_transpile.py` / `test/unit/test_py2java_smoke.py` (verification updates)
+- Regeneration path and related docs for `sample/java`
+
+Out of scope:
+- Simultaneous native migration of Go/Swift/Kotlin backends
+- Full Java runtime redesign (except minimal required API additions)
+- Advanced optimization for Java backend (correctness and parity first)
+
+Acceptance criteria:
+- Default `py2java.py` does not generate `.js` sidecar and outputs Java code runnable without the bridge.
+- For key `sample/py` cases, `java` execution output matches Python baseline (verifiable through existing parity path).
+- `sample/java` output is replaced from preview summaries to native executable logic.
+- Sidecar path is removed or reduced to explicit opt-in compatibility mode; default is fixed native.
+
+Verification commands:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_py2java_transpile.py`
+- `python3 -m unittest discover -s test/unit -p 'test_py2java_*.py'`
+- `python3 tools/runtime_parity_check.py --case-root sample --targets java --all-samples --ignore-unstable-stdout`
+
+Decision log:
+- 2026-02-26: Initial draft created. Added implementation plan for staged removal of Java sidecar bridge dependency.
+- 2026-02-26: Per user instruction, lowered priority and updated Java native migration task identifiers to the low-priority band.
+
+## Breakdown
+
+- [ ] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (responsibility for input EAST3 nodes, fail-closed behavior on unsupported nodes, runtime boundary) and clarify diff from preview output.
+- [ ] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton in `src/hooks/java/emitter` and pass minimal executable route for module/function/class.
+- [ ] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`, make native the default, and isolate legacy sidecar into compatibility mode.
+- [ ] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native emitter support for expressions/statements (arithmetic, conditionals, loops, function calls, built-in primitive types) and pass early `sample/py` cases.
+- [ ] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks to native route and pass OOP cases.
+- [ ] [ID: P3-JAVA-NATIVE-01-S2-03] Provide minimal compatibility for `import math` and image runtime calls (`png`/`gif`) to handle practical sample cases.
+- [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile`, unit smoke, and parity in native-default mode; lock regression detection.
+- [ ] [ID: P3-JAVA-NATIVE-01-S3-02] Regenerate `sample/java` and replace preview summary outputs with native implementation outputs.
+- [ ] [ID: P3-JAVA-NATIVE-01-S3-03] Update Java descriptions in `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` from sidecar assumptions and sync operational instructions.
