@@ -47,6 +47,22 @@
 5. `P2-CPP-SELFHOST-VIRTUAL-01-S2-02`: `src/py2cpp.py` の class method 呼び出し生成ロジックをテーブル化し、`type_id` 分岐の既定値と `virtual` 経由分岐を明示的に分離する。
 6. `P2-CPP-SELFHOST-VIRTUAL-01-S2-03`: 置換対象を `P2-CPP-SELFHOST-VIRTUAL-01-S2-01` と整合し、既知非対象は fallback で保持する。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S2-01` 確定内容（2026-02-26）:
+- `src/hooks/cpp/emitter/call.py` を起点に call/render 系を 2 系統へ分解した。
+  - PyObj/組み込みメソッド系（候補A）:
+    - `render_expr(Call)` → `_render_call_expr_from_context` → `_render_call_name_or_attr` → `_render_call_attribute`
+    - module call: `_render_call_module_method` / `_render_namespaced_module_call`
+    - 組み込み method は `_requires_builtin_method_call_lowering` で `BuiltinCall` lower 前提に固定（未 lower はエラー）。
+  - ユーザー定義 class method 系（候補B）:
+    - `_render_call_attribute_non_module` → `_render_call_class_method`
+    - `_class_method_sig` / `_coerce_args_for_class_method` でシグネチャ整形後に `fn_expr(args...)` を生成。
+- 仮想呼び出し化の対象境界:
+  - 対象: 候補B（class method 経路）。`owner_t` から class シグネチャ解決できる呼び出し。
+  - 非対象: 候補Aの `BuiltinCall` lower 前提経路と `runtime_expr.py` の `IsInstance/IsSubtype/IsSubclass/ObjTypeId`（dispatch ではなく runtime/type_id API 呼び出し）。
+- 分析コマンド:
+  - `rg -n "_render_call_|_render_attribute_expr|_render_call_expr_from_context|type_id|IsInstance|IsSubtype|IsSubclass|ObjTypeId" src/hooks/cpp/emitter`
+  - `rg -n "virtual|override|_class_method|_render_call_class_method|_render_call_attribute_non_module" src/hooks/cpp/emitter`
+
 ### S3: 置換実施
 
 7. `P2-CPP-SELFHOST-VIRTUAL-01-S3-01`: `sample` 側 2〜3 件から着手し、`type_id` 分岐を除去して `virtual` 呼び出し化する。
@@ -71,3 +87,4 @@
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-01` として `sample/cpp` と `selfhost` 生成領域（`pytra-gen/compiler,std,utils`）の `type_id` 条件分岐を抽出し、class method dispatch 由来の `if/switch` は 0 件、残存は `pytra-gen/built_in/type_id.cpp` の registry 管理のみと確定した。
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-02` として抽出結果を 3 区分へ分類したが、dispatch 用 `type_id` 分岐は 0 件だった。非対象は `pytra-gen/built_in/type_id.cpp` の registry 管理分岐のみに整理した。
 - 2026-02-25: `P2-CPP-SELFHOST-VIRTUAL-01-S1-03` として `virtual` 置換候補の優先順を策定したが、対象は 0 件（no-op）で確定した。以降は非対象理由の固定化と回帰文書化を優先する。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S2-01` として `src/hooks/cpp/emitter/call.py` の call/render 経路を「PyObj/組み込み method 経路」と「ユーザー定義 class method 経路」へ分解し、仮想呼び出し化の一次対象を後者に限定した。`BuiltinCall` lower 前提と `runtime_expr.py` の type_id API 呼び出しは非対象として固定した。
