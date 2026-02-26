@@ -122,6 +122,16 @@
 11. `P2-CPP-SELFHOST-VIRTUAL-01-S4-02`: `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` を実行して回帰条件を更新し、再現性を検証する。
 12. `P2-CPP-SELFHOST-VIRTUAL-01-S4-03`: 進捗を `docs-ja/spec/spec-dev.md`（必要なら `docs-ja/spec/spec-type_id.md`）へ短く反映し、次段の実施基準に接続する。
 
+`P2-CPP-SELFHOST-VIRTUAL-01-S4-01` 確定内容（2026-02-26）:
+- selfhost virtual dispatch 回帰を固定する単体テストを追加:
+  - `test/unit/test_selfhost_virtual_dispatch_regression.py`
+    - `sample/cpp/*.cpp` に `type_id()` 比較/switch ベース dispatch が再流入していないことを検証。
+    - `src/runtime/cpp/pytra-gen/**/*.cpp` でも同様に検証（`built_in/type_id.cpp` は registry 管理なので除外）。
+- 検証:
+  - `python3 -m py_compile test/unit/test_selfhost_virtual_dispatch_regression.py`
+  - `python3 -m unittest discover -s test/unit -p 'test_selfhost_virtual_dispatch_regression.py'`
+  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`（`mismatches=0 known_diffs=2 skipped=0`）
+
 ### S5: テスト追加（最優先）
 
 13. `P2-CPP-SELFHOST-VIRTUAL-01-S5-01`: `test/unit/test_py2cpp_codegen_issues.py` に、`Child.f` から `Base.f` 呼び出し（`Base.f` 参照 + `super().f`）の 2 パターンで `virtual/override` と `type_id` 分岐除去を検証するケースを追加する。
@@ -140,3 +150,4 @@
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-01` として `sample/cpp` と `src/runtime/cpp/pytra-gen` を再走査したが、class method dispatch 由来の `type_id` 条件分岐は引き続き 0 件だった。残存する `type_id` 利用は `set_type_id(...)` 初期化のみであり、移行対象なしの no-op 完了として扱う。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-02` として selfhost 再変換の再評価を実施し、`check_selfhost_cpp_diff` は `mismatches=0 known_diffs=2` を維持、`verify_selfhost_end_to_end` は `build_selfhost` 前段の既知エラー（`failed to remove required import lines: CodeEmitter import`）で継続失敗することを再確認した。
 - 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S3-03` として移行不能/非対象ケースを最終固定した。`type_id` registry 管理・runtime type_id API 呼び出し・BuiltinCall lower 前提経路は virtual dispatch 置換の対象外として残し、次回は selfhost 前処理エラー解消後に S4/S5 を再開する。
+- 2026-02-26: `P2-CPP-SELFHOST-VIRTUAL-01-S4-01` として selfhost virtual dispatch 回帰テスト `test_selfhost_virtual_dispatch_regression.py` を追加し、`sample/cpp` と `pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch が再流入しないことを固定した。`check_selfhost_cpp_diff` でも `mismatches=0 known_diffs=2` を確認した。
