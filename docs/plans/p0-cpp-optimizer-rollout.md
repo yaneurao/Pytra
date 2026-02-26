@@ -38,10 +38,11 @@ Verification commands:
 
 Decision log:
 - 2026-02-26: Initial draft created. Broke down the `spec-cpp-optimizer` boundary into implementable S1/S2/S3 steps.
+- 2026-02-26: Completed `P0-CPP-OPT-01-S1-01` by adding `src/hooks/cpp/optimizer/` scaffold (`context/trace/passes/cpp_optimizer`), wiring no-op optimization in `emit_cpp_from_east`, and validating with `test_cpp_optimizer.py` plus existing `test_east3_cpp_bridge.py`.
 
 ## Breakdown
 
-- [ ] [ID: P0-CPP-OPT-01-S1-01] Add the `src/hooks/cpp/optimizer/` skeleton (`optimizer/context/trace/passes`) and no-op wiring.
+- [x] [ID: P0-CPP-OPT-01-S1-01] Add the `src/hooks/cpp/optimizer/` skeleton (`optimizer/context/trace/passes`) and no-op wiring.
 - [ ] [ID: P0-CPP-OPT-01-S1-02] Add `CppOptimizer` invocation in the `py2cpp` execution path and wire `--cpp-opt-level`, `--cpp-opt-pass`, and dump options.
 - [ ] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
 - [ ] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and pin IR normalization before C++ structuring.

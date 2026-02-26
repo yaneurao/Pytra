@@ -73,7 +73,7 @@
 文脈: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-rollout.md)
 
 1. [ ] [ID: P0-CPP-OPT-01] `EAST3 -> C++ lowering` 後段に `CppOptimizer` 層を導入し、`CppEmitter` から最適化責務を分離する。
-2. [ ] [ID: P0-CPP-OPT-01-S1-01] `src/hooks/cpp/optimizer/` の骨格（optimizer/context/trace/passes）と no-op 配線を追加する。
+2. [x] [ID: P0-CPP-OPT-01-S1-01] `src/hooks/cpp/optimizer/` の骨格（optimizer/context/trace/passes）と no-op 配線を追加する。
 3. [ ] [ID: P0-CPP-OPT-01-S1-02] `py2cpp` 実行経路へ `CppOptimizer` 呼び出しを追加し、`--cpp-opt-level` / `--cpp-opt-pass` / dump オプションを配線する。
 4. [ ] [ID: P0-CPP-OPT-01-S2-01] `CppDeadTempPass` / `CppNoOpCastPass` を実装し、emitter 内の同等ロジックを移設する。
 5. [ ] [ID: P0-CPP-OPT-01-S2-02] `CppConstConditionPass` / `CppRangeForShapePass` を導入し、C++ 構文化前の IR 正規化を固定する。
@@ -81,6 +81,7 @@
 7. [ ] [ID: P0-CPP-OPT-01-S3-01] `CppEmitter` 側の最適化分岐を削減し、責務境界を `spec-cpp-optimizer` に合わせて整理する。
 8. [ ] [ID: P0-CPP-OPT-01-S3-02] C++ 回帰（`test_py2cpp_*` / `check_py2cpp_transpile.py` / `runtime_parity_check --targets cpp`）を固定する。
 9. [ ] [ID: P0-CPP-OPT-01-S3-03] 速度/サイズ/生成差分のベースラインを計測し、導入効果を文脈ファイルへ記録する。
+- `P0-CPP-OPT-01-S1-01` `src/hooks/cpp/optimizer/` 骨格（context/trace/passes/cpp_optimizer）と `emit_cpp_from_east` no-op 配線、`test_cpp_optimizer.py` による骨組み回帰を追加。
 
 ### P3: Go/Swift/Kotlin backend の EAST3 直生成移行（sidecar 撤去）（低優先）
 

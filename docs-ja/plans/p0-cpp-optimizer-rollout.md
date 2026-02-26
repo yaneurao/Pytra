@@ -38,10 +38,11 @@
 
 決定ログ:
 - 2026-02-26: 初版作成。`spec-cpp-optimizer` の責務境界を実装可能な S1/S2/S3 へ分解した。
+- 2026-02-26: `P0-CPP-OPT-01-S1-01` として `src/hooks/cpp/optimizer/` 骨格（context/trace/passes/cpp_optimizer）を追加し、`emit_cpp_from_east` へ no-op 最適化配線を導入。`test_cpp_optimizer.py` と既存 `test_east3_cpp_bridge.py` で回帰を確認。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-OPT-01-S1-01] `src/hooks/cpp/optimizer/` の骨格（optimizer/context/trace/passes）と no-op 配線を追加する。
+- [x] [ID: P0-CPP-OPT-01-S1-01] `src/hooks/cpp/optimizer/` の骨格（optimizer/context/trace/passes）と no-op 配線を追加する。
 - [ ] [ID: P0-CPP-OPT-01-S1-02] `py2cpp` 実行経路へ `CppOptimizer` 呼び出しを追加し、`--cpp-opt-level` / `--cpp-opt-pass` / dump オプションを配線する。
 - [ ] [ID: P0-CPP-OPT-01-S2-01] `CppDeadTempPass` / `CppNoOpCastPass` を実装し、emitter 内の同等ロジックを移設する。
 - [ ] [ID: P0-CPP-OPT-01-S2-02] `CppConstConditionPass` / `CppRangeForShapePass` を導入し、C++ 構文化前の IR 正規化を固定する。

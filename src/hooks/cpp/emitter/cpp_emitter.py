@@ -24,6 +24,7 @@ from hooks.cpp.profile import (
     load_cpp_profile,
     load_cpp_type_map,
 )
+from hooks.cpp.optimizer import optimize_cpp_ir
 
 
 def emit_cpp_from_east(
@@ -41,8 +42,12 @@ def emit_cpp_from_east(
     emit_main: bool = True,
 ) -> str:
     """Emit C++ text from EAST module via CppEmitter (public bridge)."""
+    cpp_ir = east_module
+    if isinstance(east_module, dict):
+        optimized_ir, _ = optimize_cpp_ir(east_module)
+        cpp_ir = optimized_ir
     return CppEmitter(
-        east_module,
+        cpp_ir,
         module_namespace_map,
         negative_index_mode,
         bounds_check_mode,

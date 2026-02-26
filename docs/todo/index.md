@@ -72,7 +72,7 @@ Context: [docs-ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimiz
 Context: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-rollout.md)
 
 1. [ ] [ID: P0-CPP-OPT-01] Introduce `CppOptimizer` after `EAST3 -> C++ lowering` and separate optimization responsibilities from `CppEmitter`.
-2. [ ] [ID: P0-CPP-OPT-01-S1-01] Add skeleton (`optimizer/context/trace/passes`) under `src/hooks/cpp/optimizer/` and no-op wiring.
+2. [x] [ID: P0-CPP-OPT-01-S1-01] Add skeleton (`optimizer/context/trace/passes`) under `src/hooks/cpp/optimizer/` and no-op wiring.
 3. [ ] [ID: P0-CPP-OPT-01-S1-02] Add `CppOptimizer` call path in `py2cpp` and wire `--cpp-opt-level` / `--cpp-opt-pass` / dump options.
 4. [ ] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
 5. [ ] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and lock pre-structuring IR normalization.
@@ -80,6 +80,7 @@ Context: [docs-ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-r
 7. [ ] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching in `CppEmitter` and align boundary with `spec-cpp-optimizer`.
 8. [ ] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
 9. [ ] [ID: P0-CPP-OPT-01-S3-03] Measure speed/size/generated-diff baselines and record adoption effects in context docs.
+- `P0-CPP-OPT-01-S1-01` Added `src/hooks/cpp/optimizer/` scaffold (`context/trace/passes/cpp_optimizer`) plus no-op wiring in `emit_cpp_from_east`, and locked skeleton regressions with `test_cpp_optimizer.py`.
 
 ### P3: Go/Swift/Kotlin backend direct EAST3 native generation (sidecar removal) (Low)
 
