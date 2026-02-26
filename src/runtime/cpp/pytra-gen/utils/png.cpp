@@ -108,11 +108,9 @@ RGB 8bit バッファを PNG ファイルとして保存する。
         while (y < height) {
             scanlines.append(static_cast<uint8>(0));
             int64 start = y * row_bytes;
-            int64 i = 0;
-            while (i < row_bytes) {
-                scanlines.append(raw[static_cast<::std::size_t>(start + i)]);
-                i++;
-            }
+            auto row_begin = raw.begin() + static_cast<::std::size_t>(start);
+            auto row_end = row_begin + static_cast<::std::size_t>(row_bytes);
+            scanlines.insert(scanlines.end(), row_begin, row_end);
             y++;
         }
         

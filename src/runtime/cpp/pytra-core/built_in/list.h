@@ -133,6 +133,11 @@ public:
         }
     }
 
+    void extend(const list<T>& values) {
+        if (values.empty()) return;
+        data_.insert(data_.end(), values.begin(), values.end());
+    }
+
     T pop() {
         if (data_.empty()) {
             throw ::std::out_of_range("pop from empty list");

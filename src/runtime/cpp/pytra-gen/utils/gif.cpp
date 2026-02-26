@@ -126,11 +126,9 @@ namespace pytra::utils::gif {
                 int64 remain = compressed_n - pos;
                 int64 chunk_len = (remain > 255 ? 255 : remain);
                 out.append(static_cast<uint8>(chunk_len));
-                int64 i = 0;
-                while (i < chunk_len) {
-                    out.append(compressed[static_cast<::std::size_t>(pos + i)]);
-                    i++;
-                }
+                auto chunk_begin = compressed.begin() + static_cast<::std::size_t>(pos);
+                auto chunk_end = chunk_begin + static_cast<::std::size_t>(chunk_len);
+                out.insert(out.end(), chunk_begin, chunk_end);
                 pos += chunk_len;
             }
             out.append(static_cast<uint8>(0));
