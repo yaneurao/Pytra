@@ -99,7 +99,7 @@
 4. [x] [ID: P3-EAST3-ONLY-01-S2-01] `js_emitter` で `ForCore(iter_plan=StaticRangeForPlan/RuntimeIterForPlan)` を直接処理する。
 5. [x] [ID: P3-EAST3-ONLY-01-S2-02] `js_emitter` で `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId` を直接処理する。
 6. [x] [ID: P3-EAST3-ONLY-01-S2-03] `js_emitter` で `IsInstance/IsSubtype/IsSubclass` を直接処理する。
-7. [ ] [ID: P3-EAST3-ONLY-01-S2-04] `js_emitter` で `Box/Unbox` の legacy 前提を撤去し、EAST3 ノードを直接受理する。
+7. [x] [ID: P3-EAST3-ONLY-01-S2-04] `js_emitter` で `Box/Unbox` の legacy 前提を撤去し、EAST3 ノードを直接受理する。
 8. [ ] [ID: P3-EAST3-ONLY-01-S2-05] JS/TS smoke + `check_py2{js,ts}_transpile.py` を通し、`js_emitter` 直処理化の回帰を固定する。
 9. [ ] [ID: P3-EAST3-ONLY-01-S2-06] Go/Java/Swift/Kotlin sidecar bridge 経路（`py2{go,java,swift,kotlin}`）で `check_py2*_transpile.py` + smoke を通し、JS直処理化の波及回帰を固定する。
 10. [ ] [ID: P3-EAST3-ONLY-01-S3-01] `rs_emitter` の `ForCore` 直接処理（range/runtime iter）を実装する。
