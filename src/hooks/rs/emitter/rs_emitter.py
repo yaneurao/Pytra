@@ -2035,12 +2035,16 @@ class RustEmitter(CodeEmitter):
         iter_expr = self.render_expr(iter_node)
         iter_type = self.get_expr_type(iter_node)
         iter_is_attr_view = False
+        iter_is_enumerate_call = False
         if self.any_dict_get_str(iter_d, "kind", "") == "Call":
             fn_d = self.any_to_dict_or_empty(iter_d.get("func"))
-            if self.any_dict_get_str(fn_d, "kind", "") == "Attribute":
+            fn_kind = self.any_dict_get_str(fn_d, "kind", "")
+            if fn_kind == "Attribute":
                 attr_name = self.any_dict_get_str(fn_d, "attr", "")
                 if attr_name == "items" or attr_name == "keys" or attr_name == "values":
                     iter_is_attr_view = True
+            elif fn_kind == "Name":
+                iter_is_enumerate_call = self.any_dict_get_str(fn_d, "id", "") == "enumerate"
         if iter_type == "" or iter_type == "unknown":
             iter_type = self._dict_items_owner_type(iter_node)
         iter_key_t = ""
@@ -2053,7 +2057,7 @@ class RustEmitter(CodeEmitter):
             iter_type.startswith("list[")
             or iter_type.startswith("set[")
             or iter_type.startswith("dict[")
-        ) and not iter_is_attr_view:
+        ) and (not iter_is_attr_view) and (not iter_is_enumerate_call):
             iter_expr = "(" + iter_expr + ").clone()"
 
         if target_kind == "Tuple":
@@ -3006,6 +3010,11 @@ class RustEmitter(CodeEmitter):
         if kind == "Subscript":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner = self.render_expr(owner_node)
+            owner_node_kind = self.any_dict_get_str(owner_node, "kind", "")
+            if owner_node_kind == "Subscript":
+                owner_owner_t = self.normalize_type_name(self.get_expr_type(owner_node.get("value")))
+                if owner_owner_t.startswith("list[") or owner_owner_t.startswith("tuple[") or owner_owner_t in {"bytes", "bytearray"}:
+                    owner = self._render_subscript_lvalue(owner_node)
             owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
             slice_node = self.any_to_dict_or_empty(expr_d.get("slice"))
             slice_kind = self.any_dict_get_str(slice_node, "kind", "")
