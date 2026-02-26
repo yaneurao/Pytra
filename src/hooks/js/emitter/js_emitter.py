@@ -140,6 +140,14 @@ class JsEmitter(CodeEmitter):
                 required.add("PYTRA_TYPE_ID")
                 required.add("PY_TYPE_OBJECT")
                 required.add("pyRegisterClassType")
+            elif kind == "ObjBool":
+                required.add("pyBool")
+            elif kind == "ObjLen":
+                required.add("pyLen")
+            elif kind == "ObjStr":
+                required.add("pyStr")
+            elif kind == "ObjTypeId":
+                required.add("pyTypeId")
             elif kind == "Dict":
                 required.add("PYTRA_TYPE_ID")
                 required.add("PY_TYPE_MAP")
@@ -181,6 +189,10 @@ class JsEmitter(CodeEmitter):
             "PY_TYPE_OBJECT",
             "pyRegisterClassType",
             "pyIsInstance",
+            "pyBool",
+            "pyLen",
+            "pyStr",
+            "pyTypeId",
         ]
         out: list[str] = []
         for name in ordered:
@@ -1115,6 +1127,24 @@ class JsEmitter(CodeEmitter):
             return self._render_call(expr_d)
         if kind == "IfExp":
             return self._render_ifexp_expr(expr_d)
+        if kind == "ObjBool":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyBool(" + value + ")"
+        if kind == "ObjLen":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyLen(" + value + ")"
+        if kind == "ObjStr":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyStr(" + value + ")"
+        if kind == "ObjIterInit":
+            value = self.render_expr(expr_d.get("value"))
+            return "((" + value + ")[Symbol.iterator]())"
+        if kind == "ObjIterNext":
+            iter_expr = self.render_expr(expr_d.get("iter"))
+            return "(() => { const __next = (" + iter_expr + ").next(); return __next.done ? null : __next.value; })()"
+        if kind == "ObjTypeId":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyTypeId(" + value + ")"
         if kind == "RangeExpr":
             return self._render_range_expr(expr_d)
         if kind == "ListComp":
