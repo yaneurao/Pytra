@@ -47,6 +47,7 @@ Windows では次の読み替えを行ってください。
 - 現時点の `./pytra` は `--target cpp` のみ対応です。
 - 生成コード最適化レベルは `--codegen-opt {0,1,2,3}` で指定できます。
 - `--build` 時の生成物（`src/*.cpp`, `include/*.h`, `.obj/*.o`, 実行ファイル）は `--output-dir` 配下に出力されます（既定: `out/`）。
+- `--exe` は実行ファイル名/出力先です。相対指定（例: `add.out`）は `--output-dir` 配下に生成されます。
 - 一時出力は `out/` に集約する運用を推奨します。例: `./pytra INPUT.py --build --output-dir /out/mycase --exe app.out`
 
 ## 最初に確認する制約
