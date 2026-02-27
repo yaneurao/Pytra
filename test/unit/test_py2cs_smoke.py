@@ -44,6 +44,20 @@ class Py2CsSmokeTest(unittest.TestCase):
         self.assertIn("public static class Program", cs)
         self.assertIn("public static void Main(string[] args)", cs)
 
+    def test_class_inheritance_emits_base_clause(self) -> None:
+        src = """class Base:
+    pass
+
+class Child(Base):
+    pass
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "class_inherit.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+        self.assertIn("public class Child : Base", cs)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

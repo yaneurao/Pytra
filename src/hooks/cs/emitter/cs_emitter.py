@@ -711,11 +711,17 @@ class CSharpEmitter(CodeEmitter):
         prev_method_scope = self.in_method_scope
         self.current_class_name = class_name_raw
 
-        self.emit("public class " + class_name)
+        base_name = self.class_base_map.get(class_name_raw, "")
+        base_decl = ""
+        if base_name != "":
+            base_cs = self._cs_type(base_name)
+            if base_cs != "" and base_cs != "object":
+                base_decl = " : " + base_cs
+
+        self.emit("public class " + class_name + base_decl)
         self.emit("{")
         self.indent += 1
 
-        base_name = self.class_base_map.get(class_name_raw, "")
         base_type_id_expr = self._type_id_expr_for_name(base_name)
         if base_type_id_expr == "":
             base_type_id_expr = "Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT"
