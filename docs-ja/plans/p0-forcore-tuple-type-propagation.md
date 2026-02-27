@@ -47,6 +47,8 @@
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-01`] `test_east2_to_east3_lowering.py` に tuple target 型伝播テスト 2件、`test_east3_cpp_bridge.py` に `ForCore` tuple unpack（既知型束縛 / unknown フォールバック）テスト 2件を追加した。
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-02`] `python3 -m unittest discover -s test/unit -p 'test_east2_to_east3_lowering.py' -v`（`22/22`）/ `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`80/80`）/ `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を `/tmp/18.cpp` へ生成し、`tokenize` で `int64 line_index` / `str source` が出ることと、`/tmp/pytra_sample18_cpp` コンパイル・実行成功を確認した。
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S3-01`] ユーザー要望に基づき、`enumerate(list[T])` など既知型 runtime iterable で loop header が `object` になる問題を最優先で解消する方針を追加した。
+- 2026-02-27: [ID: P0-FORCORE-TYPE-01-S3-01] `stmt.py` に runtime iterable 要素型推定（`_forcore_runtime_iter_item_type`）を追加し、`ForCore(RuntimeIterForPlan)` + `TupleTarget` で iterable 要素型が既知（例: `list[tuple[int64, str]]`）の場合は `for (::std::tuple<int64, str> __itobj : ...)` の typed loop header を出力する fastpath を実装した。未知型は従来どおり `object + py_dyn_range(...)` へフォールバックする。
+- 2026-02-27: [ID: P0-FORCORE-TYPE-01-S3-02] `test_east3_cpp_bridge.py` に typed header fastpath 回帰テストを追加し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`81/81`）と `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を再生成し `for (::std::tuple<int64, str> __itobj_1 : py_enumerate(lines))` を確認、`/tmp/pytra_sample18_cpp` のコンパイル・実行成功（`elapsed_sec: 0.398722`）を確認した。
 
 ## 分解
 
@@ -54,5 +56,5 @@
 - [x] [ID: P0-FORCORE-TYPE-01-S1-02] C++ tuple unpack emit で要素型既知時に静的束縛し、未知時のみ `object` フォールバックする。
 - [x] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む回帰テストを追加し、生成コードの型束縛を固定する。
 - [x] [ID: P0-FORCORE-TYPE-01-S2-02] transpile + sample コンパイル検証を実行し、文脈ファイルへ結果を記録する。
-- [ ] [ID: P0-FORCORE-TYPE-01-S3-01] `ForCore(RuntimeIterForPlan)` の typed iterable fastpath を実装し、`enumerate(list[T])` の loop header を typed tuple へ切り替える。
-- [ ] [ID: P0-FORCORE-TYPE-01-S3-02] typed header fastpath の回帰テスト（unit + `sample/18` 生成確認）を追加して固定する。
+- [x] [ID: P0-FORCORE-TYPE-01-S3-01] `ForCore(RuntimeIterForPlan)` の typed iterable fastpath を実装し、`enumerate(list[T])` の loop header を typed tuple へ切り替える。
+- [x] [ID: P0-FORCORE-TYPE-01-S3-02] typed header fastpath の回帰テスト（unit + `sample/18` 生成確認）を追加して固定する。

@@ -809,6 +809,36 @@ class CppStatementEmitter:
                 return "descending"
         return "dynamic"
 
+    def _forcore_runtime_iter_item_type(self, iter_expr: dict[str, Any]) -> str:
+        """ForCore runtime iterable の要素型（既知時）を返す。"""
+        if len(iter_expr) == 0:
+            return ""
+        iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if iter_t in {"", "unknown"}:
+            iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+        if iter_t.startswith("list[") and iter_t.endswith("]"):
+            parts = self.split_generic(iter_t[5:-1])
+            if len(parts) == 1:
+                return self.normalize_type_name(parts[0])
+        if iter_t.startswith("set[") and iter_t.endswith("]"):
+            parts = self.split_generic(iter_t[4:-1])
+            if len(parts) == 1:
+                return self.normalize_type_name(parts[0])
+        if self._node_kind_from_dict(iter_expr) == "Call":
+            runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+            if runtime_call == "dict.items":
+                fn_node = self.any_to_dict_or_empty(iter_expr.get("func"))
+                owner_obj = fn_node.get("value")
+                owner_t = self.normalize_type_name(self.get_expr_type(owner_obj))
+                if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                    dict_inner_parts = self.split_generic(owner_t[5:-1])
+                    if len(dict_inner_parts) == 2:
+                        key_t = self.normalize_type_name(dict_inner_parts[0])
+                        val_t = self.normalize_type_name(dict_inner_parts[1])
+                        if key_t != "" and val_t != "":
+                            return f"tuple[{key_t}, {val_t}]"
+        return ""
+
     def emit_for_core(self, stmt: dict[str, Any]) -> None:
         """EAST3 `ForCore` を直接 C++ ループへ描画する。"""
         iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
@@ -923,13 +953,25 @@ class CppStatementEmitter:
             if target_kind == "TupleTarget":
                 iter_tmp = self.next_for_runtime_iter_name()
                 scope_names = self.scope_names_with_tmp(self._forcore_target_bound_names(target_plan), iter_tmp)
-                hdr = self.syntax_line(
-                    "for_each_runtime_open",
-                    "for (object {iter_tmp} : py_dyn_range({iter}))",
-                    {"iter_tmp": iter_tmp, "iter": iter_txt},
-                )
+                iter_item_t = self._forcore_runtime_iter_item_type(iter_expr)
+                typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                inherited_elem_types: list[str] = []
+                if typed_iter and iter_item_t.startswith("tuple[") and iter_item_t.endswith("]"):
+                    inherited_elem_types = self.split_generic(iter_item_t[6:-1])
+                if typed_iter:
+                    hdr = self.syntax_line(
+                        "for_each_typed_open",
+                        "for (const {type}& {target} : {iter})",
+                        {"type": self._cpp_type_text(iter_item_t), "target": iter_tmp, "iter": iter_txt},
+                    )
+                else:
+                    hdr = self.syntax_line(
+                        "for_each_runtime_open",
+                        "for (object {iter_tmp} : py_dyn_range({iter}))",
+                        {"iter_tmp": iter_tmp, "iter": iter_txt},
+                    )
                 self._emit_for_body_open(hdr, scope_names, omit_braces)
-                self._emit_forcore_tuple_unpack_runtime(target_plan, iter_tmp)
+                self._emit_forcore_tuple_unpack_runtime(target_plan, iter_tmp, inherited_elem_types)
                 self._emit_for_body_stmts(body_stmts, omit_braces)
                 self._emit_for_body_close(omit_braces)
                 return
