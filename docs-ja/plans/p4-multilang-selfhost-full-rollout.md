@@ -36,10 +36,33 @@
 
 決定ログ:
 - 2026-02-27: ユーザー要望により、全言語 selfhost 完全化を低低優先（P4）で TODO 追加する方針を確定した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-01`] `python3 tools/check_multilang_selfhost_suite.py` を再実行し、`docs-ja/plans/p1-multilang-selfhost-status.md` / `docs-ja/plans/p1-multilang-selfhost-multistage-status.md` を更新した。未達カテゴリを言語別に固定し、blocking chain を確定した。
+
+## 現状固定（S1-01）
+
+言語別未達要因（2026-02-27）:
+
+| lang | stage1 | stage2 | stage3 | category | 先頭原因 |
+| --- | --- | --- | --- | --- | --- |
+| rs | fail | skip | skip | `stage1_transpile_fail` | `unsupported from-import clause` |
+| cs | pass | fail | skip | `compile_fail` | `Path` 型未解決（`System.IO` 参照不足） |
+| js | pass | fail | skip | `stage1_dependency_transpile_fail` | JS emitter の `object receiver attribute/method access` 制約違反 |
+| ts | pass | blocked | blocked | `preview_only` | 生成 transpiler が preview-only |
+| go | pass | skip | skip | `runner_not_defined` | multistage runner 未定義 |
+| java | pass | skip | skip | `runner_not_defined` | multistage runner 未定義 |
+| swift | pass | skip | skip | `runner_not_defined` | multistage runner 未定義 |
+| kotlin | pass | skip | skip | `runner_not_defined` | multistage runner 未定義 |
+
+優先順（blocking chain）:
+1. `rs` の stage1 失敗を解消（以降の stage2/stage3 検証が不可）。
+2. `cs` の stage2 compile 失敗を解消（stage3 へ進めない）。
+3. `js` の stage2 依存 transpile 失敗を解消（stage3 へ進めない）。
+4. `ts` の preview-only を解消（stage2/stage3 の評価自体が blocked）。
+5. `go/java/swift/kotlin` の runner 契約を定義し、`runner_not_defined` を解消して multistage 監視対象へ昇格。
 
 ## 分解
 
-- [ ] [ID: P4-MULTILANG-SH-01-S1-01] 現状の stage1/stage2/stage3 未達要因を言語別に固定化し、優先順（blocking chain）を明文化する。
+- [x] [ID: P4-MULTILANG-SH-01-S1-01] 現状の stage1/stage2/stage3 未達要因を言語別に固定化し、優先順（blocking chain）を明文化する。
 - [ ] [ID: P4-MULTILANG-SH-01-S1-02] multistage runner 未定義言語（go/java/swift/kotlin）の runner 契約を定義し、`runner_not_defined` を解消する実装方針を確定する。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-01] Rust selfhost の stage1 失敗（from-import 受理）を解消し、stage2 へ進める。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02] C# selfhost の stage2 compile 失敗を解消し、stage3 変換を通す。
