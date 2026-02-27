@@ -31,22 +31,6 @@
 
 ## 未完了タスク
 
-### P0: sample Ruby 実行時間の再計測と README-JA 反映（最優先）
-
-文脈: [docs-ja/plans/p0-sample-ruby-benchmark-refresh.md](../plans/p0-sample-ruby-benchmark-refresh.md)
-
-1. [x] [ID: P0-SAMPLE-RUBY-BENCH-01] `sample/py` の Ruby 実行時間を再計測し、`readme-ja.md` の実行時間比較表へ Ruby 列を右端追加して反映する。
-2. [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-01] 計測プロトコル（fresh transpile, warmup/repeat, 中央値）を固定し、18件の Ruby 実測値を取得する。
-3. [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-02] `readme-ja.md` の比較表に Ruby 列（右端）を追加し、全サンプルの値を反映する。
-4. [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-03] 計測ログと再現手順を文脈ファイルへ記録し、`readme-ja.md` の注記を必要最小限で同期する。
-
-### P0: ForCore runtime 反復の typed ヘッダ化（最優先）
-
-文脈: [docs-ja/plans/p0-forcore-tuple-type-propagation.md](../plans/p0-forcore-tuple-type-propagation.md)
-
-1. [x] [ID: P0-FORCORE-TYPE-01-S3-01] `enumerate(list[T])` など要素型が確定している `ForCore(RuntimeIterForPlan)` について、C++ 生成の loop carrier を `object + py_dyn_range(...)` ではなく typed tuple 受けへ切り替える（未知型/非対応 iterable は従来どおり `object` フォールバックを維持）。
-2. [x] [ID: P0-FORCORE-TYPE-01-S3-02] `sample/18` を含む回帰テストを追加し、loop header が typed で出力されることと parity/コンパイル互換を固定する。
-
 ### P1: sample/18 C++ 生成コードの可読性縮退（選定: #2,#7,#8,#5,#1）
 
 文脈: [docs-ja/plans/p1-cpp-sample18-readability-slimming.md](../plans/p1-cpp-sample18-readability-slimming.md)
