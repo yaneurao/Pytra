@@ -98,7 +98,41 @@ def _insert_support_blocks(py2cs_text: str, support_blocks: str, base_class: str
         raise RuntimeError("failed to find load_east marker in py2cs.py")
     prefix = py2cs_text[:i].rstrip()
     suffix = py2cs_text[i + 1 :]
-    return prefix + "\n\n" + support_blocks + "\n" + base_class + "\n" + cs_core + "\n" + suffix
+    cs_selfhost_stubs = "\n".join(
+        [
+            "def convert_path(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:",
+            "    \"\"\"selfhost compile 向け: parser backend 呼び出しを最小スタブ化する。\"\"\"",
+            "    _ = input_path",
+            "    _ = parser_backend",
+            "    return {}",
+            "",
+            "",
+            "def convert_source_to_east_with_backend(",
+            "    source_text: str,",
+            "    input_txt: str,",
+            "    parser_backend: str = \"self_hosted\",",
+            ") -> dict[str, Any]:",
+            "    \"\"\"selfhost compile 向け: parser backend 呼び出しを最小スタブ化する。\"\"\"",
+            "    _ = source_text",
+            "    _ = input_txt",
+            "    _ = parser_backend",
+            "    return {}",
+            "",
+        ]
+    )
+    return (
+        prefix
+        + "\n\n"
+        + support_blocks
+        + "\n"
+        + cs_selfhost_stubs
+        + "\n"
+        + base_class
+        + "\n"
+        + cs_core
+        + "\n"
+        + suffix
+    )
 
 
 def _patch_selfhost_hooks(text: str, prepare_base) -> str:

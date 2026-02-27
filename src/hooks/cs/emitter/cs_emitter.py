@@ -12,7 +12,7 @@ def load_cs_profile() -> dict[str, Any]:
     """C# 用 profile を読み込む。"""
     return CodeEmitter.load_profile_with_includes(
         "src/profiles/cs/profile.json",
-        anchor_file=__file__,
+        "src/py2cs.py",
     )
 
 
@@ -29,10 +29,10 @@ class CSharpEmitter(CodeEmitter):
     """EAST を C# ソースへ変換するエミッタ。"""
 
     def __init__(self, east_doc: dict[str, Any]) -> None:
-        profile = load_cs_profile()
-        hooks = load_cs_hooks(profile)
+        profile = CodeEmitter.load_profile_with_includes("src/profiles/cs/profile.json", "src/py2cs.py")
+        hooks: dict[str, Any] = {}
         self.init_base_state(east_doc, profile, hooks)
-        self.type_map = self.load_type_map(profile)
+        self.type_map = CodeEmitter.load_type_map(profile)
         operators = self.any_to_dict_or_empty(profile.get("operators"))
         self.bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
         self.cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))
@@ -55,7 +55,18 @@ class CSharpEmitter(CodeEmitter):
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
-        t = super().get_expr_type(expr)
+        expr_node = self.any_to_dict_or_empty(expr)
+        t = self.any_dict_get_str(expr_node, "resolved_type", "")
+        if t != "":
+            t = self.normalize_type_name(t)
+        elif self.any_dict_has(expr_node, "resolved_type"):
+            raw = expr_node["resolved_type"] if "resolved_type" in expr_node else None
+            if isinstance(raw, str):
+                txt = self.any_to_str(raw)
+                if txt == "":
+                    txt = str(raw)
+                if not self._is_empty_dynamic_text(txt):
+                    t = self.normalize_type_name(txt)
         if t not in {"", "unknown"}:
             return t
         node = self.any_to_dict_or_empty(expr)
@@ -375,7 +386,7 @@ class CSharpEmitter(CodeEmitter):
             if len(parts) == 2:
                 return self._render_dict_literal_with_types(node, self._cs_type(parts[0]), self._cs_type(parts[1]))
         if kind == "ListComp" and hint.startswith("list[") and hint.endswith("]"):
-            return self._render_list_comp_expr(node, forced_out_type=hint[5:-1].strip())
+            return self._render_list_comp_expr(node, hint[5:-1].strip())
         if kind == "Call":
             fn_node = self.any_to_dict_or_empty(node.get("func"))
             if self.any_dict_get_str(fn_node, "kind", "") == "Name":
@@ -467,13 +478,15 @@ class CSharpEmitter(CodeEmitter):
             return ""
         value = node.get("value")
         if isinstance(value, bool):
-            return "true" if value else "false"
+            return "true" if self.any_to_bool(value) else "false"
         if isinstance(value, int):
             return str(value)
         if isinstance(value, float):
-            if value.is_integer():
-                return str(int(value)) + ".0"
-            return str(value)
+            as_float = float(value)
+            as_int = int(as_float)
+            if float(as_int) == as_float:
+                return str(as_int) + ".0"
+            return str(as_float)
         if isinstance(value, str):
             return self.quote_string_literal(value)
         if value is None:
@@ -700,7 +713,7 @@ class CSharpEmitter(CodeEmitter):
 
         for fn in function_stmts:
             self.emit_leading_comments(fn)
-            self._emit_function(fn, in_class=None)
+            self._emit_function(fn, None)
             self.emit("")
 
         if self.needs_enumerate_helper:
@@ -723,7 +736,7 @@ class CSharpEmitter(CodeEmitter):
     def _emit_enumerate_helper(self) -> None:
         """enumerate() 用の最小 helper を出力する。"""
         self.emit(
-            "private static System.Collections.Generic.IEnumerable<(long, T)> "
+            "public static System.Collections.Generic.IEnumerable<(long, T)> "
             + "PytraEnumerate<T>(System.Collections.Generic.IEnumerable<T> source, long start = 0)"
         )
         self.emit("{")
@@ -814,7 +827,7 @@ class CSharpEmitter(CodeEmitter):
 
         if init_fn is not None:
             self.emit("")
-            self._emit_function(init_fn, in_class=class_name_raw)
+            self._emit_function(init_fn, class_name_raw)
         elif len(field_types) > 0:
             args: list[str] = []
             for field_name, field_t_obj in field_types.items():
@@ -848,7 +861,7 @@ class CSharpEmitter(CodeEmitter):
             if self.any_to_str(member.get("name")) == "__init__":
                 continue
             self.emit("")
-            self._emit_function(member, in_class=class_name_raw)
+            self._emit_function(member, class_name_raw)
 
         self.indent -= 1
         self.emit("}")
@@ -1089,8 +1102,8 @@ class CSharpEmitter(CodeEmitter):
             cond,
             self._dict_stmt_list(stmt.get("body")),
             self._dict_stmt_list(stmt.get("orelse")),
-            if_open_default="if ({cond}) {",
-            else_open_default="} else {",
+            "if ({cond}) {",
+            "} else {",
         )
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
@@ -1098,7 +1111,7 @@ class CSharpEmitter(CodeEmitter):
         self.emit_while_stmt_skeleton(
             cond,
             self._dict_stmt_list(stmt.get("body")),
-            while_open_default="while ({cond}) {",
+            "while ({cond}) {",
         )
 
     def _emit_for_range(self, stmt: dict[str, Any]) -> None:
@@ -1535,6 +1548,10 @@ class CSharpEmitter(CodeEmitter):
             return "System.Console.WriteLine(string.Join(\" \", new object[] { " + ", ".join(rendered_args) + " }))"
         if fn_name_raw == "len" and len(rendered_args) == 1:
             return self._render_len_call(rendered_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None)
+        if fn_name_raw == "ord" and len(rendered_args) == 1:
+            return "Pytra.CsModule.py_runtime.py_ord(" + rendered_args[0] + ")"
+        if fn_name_raw == "chr" and len(rendered_args) == 1:
+            return "System.Convert.ToString(System.Convert.ToChar(System.Convert.ToInt32(" + rendered_args[0] + ")))"
         if fn_name_raw == "str" and len(rendered_args) == 1:
             return "System.Convert.ToString(" + rendered_args[0] + ")"
         if fn_name_raw == "int" and len(rendered_args) == 1:
@@ -1641,12 +1658,41 @@ class CSharpEmitter(CodeEmitter):
             if attr_raw == "startswith" and len(rendered_args) == 1:
                 return owner_expr + ".StartsWith(" + rendered_args[0] + ")"
 
-        if attr_raw in {"strip", "replace", "find", "rfind"}:
+        if attr_raw in {"strip", "lstrip", "splitlines", "split", "replace", "find", "rfind"}:
             str_owner = owner_expr
             if owner_type != "str":
                 str_owner = "System.Convert.ToString(" + owner_expr + ")"
             if attr_raw == "strip" and len(rendered_args) == 0:
                 return str_owner + ".Trim()"
+            if attr_raw == "strip" and len(rendered_args) == 1:
+                chars = "System.Convert.ToString(" + rendered_args[0] + ")"
+                return str_owner + ".Trim(" + chars + ".ToCharArray())"
+            if attr_raw == "lstrip" and len(rendered_args) == 0:
+                return str_owner + ".TrimStart()"
+            if attr_raw == "lstrip" and len(rendered_args) == 1:
+                chars = "System.Convert.ToString(" + rendered_args[0] + ")"
+                return str_owner + ".TrimStart(" + chars + ".ToCharArray())"
+            if attr_raw == "splitlines":
+                return (
+                    "new System.Collections.Generic.List<string>("
+                    + str_owner
+                    + ".Split(new string[] { \"\\r\\n\", \"\\n\" }, System.StringSplitOptions.None))"
+                )
+            if attr_raw == "split" and len(rendered_args) == 0:
+                return (
+                    "new System.Collections.Generic.List<string>("
+                    + str_owner
+                    + ".Split((char[])null, System.StringSplitOptions.RemoveEmptyEntries))"
+                )
+            if attr_raw == "split" and len(rendered_args) >= 1:
+                sep = "System.Convert.ToString(" + rendered_args[0] + ")"
+                return (
+                    "new System.Collections.Generic.List<string>("
+                    + str_owner
+                    + ".Split(new string[] { "
+                    + sep
+                    + " }, System.StringSplitOptions.None))"
+                )
             if attr_raw == "replace" and len(rendered_args) >= 2:
                 return str_owner + ".Replace(" + rendered_args[0] + ", " + rendered_args[1] + ")"
             if attr_raw == "find" and len(rendered_args) == 1:
@@ -1694,20 +1740,21 @@ class CSharpEmitter(CodeEmitter):
                 return owner_expr + ".Values"
 
         if owner_type in {"", "unknown", "object"}:
+            owner_dict = "((" + "System.Collections.Generic.Dictionary<string, object>)" + owner_expr + ")"
             if attr_raw == "get":
                 if len(rendered_args) == 1:
                     k = "System.Convert.ToString(" + rendered_args[0] + ")"
-                    return "(" + owner_expr + ".ContainsKey(" + k + ") ? " + owner_expr + "[" + k + "] : default)"
+                    return "(" + owner_dict + ".ContainsKey(" + k + ") ? " + owner_dict + "[" + k + "] : default)"
                 if len(rendered_args) >= 2:
                     k = "System.Convert.ToString(" + rendered_args[0] + ")"
                     d = rendered_args[1]
-                    return "(" + owner_expr + ".ContainsKey(" + k + ") ? " + owner_expr + "[" + k + "] : " + d + ")"
+                    return "(" + owner_dict + ".ContainsKey(" + k + ") ? " + owner_dict + "[" + k + "] : " + d + ")"
             if attr_raw == "items" and len(rendered_args) == 0:
-                return owner_expr
+                return owner_dict
             if attr_raw == "keys" and len(rendered_args) == 0:
-                return owner_expr + ".Keys"
+                return owner_dict + ".Keys"
             if attr_raw == "values" and len(rendered_args) == 0:
-                return owner_expr + ".Values"
+                return owner_dict + ".Values"
 
         attr = self._safe_name(attr_raw)
         return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
@@ -1830,8 +1877,8 @@ class CSharpEmitter(CodeEmitter):
             op = self.any_to_str(expr_d.get("op"))
             left_node = self.any_to_dict_or_empty(expr_d.get("left"))
             right_node = self.any_to_dict_or_empty(expr_d.get("right"))
-            left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, op, is_right=False)
-            right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, op, is_right=True)
+            left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, op, False)
+            right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, op, True)
             left_kind = self.any_dict_get_str(left_node, "kind", "")
             right_kind = self.any_dict_get_str(right_node, "kind", "")
             custom = self.hook_on_render_binop(expr_d, left, right)
@@ -1856,11 +1903,11 @@ class CSharpEmitter(CodeEmitter):
             return self.render_boolop_chain_common(
                 vals,
                 op,
-                and_token="&&",
-                or_token="||",
-                empty_literal="false",
-                wrap_each=True,
-                wrap_whole=True,
+                "&&",
+                "||",
+                "false",
+                True,
+                True,
             )
 
         if kind == "Call":
@@ -2008,9 +2055,9 @@ class CSharpEmitter(CodeEmitter):
         """条件式向け描画（数値等を bool 条件へ寄せる）。"""
         return self.render_truthy_cond_common(
             expr,
-            str_non_empty_pattern="{expr}.Length != 0",
-            collection_non_empty_pattern="{expr}.Count != 0",
-            number_non_zero_pattern="{expr} != 0",
+            "{expr}.Length != 0",
+            "{expr}.Count != 0",
+            "{expr} != 0",
         )
 
 

@@ -703,7 +703,7 @@ def mkdirs_for_cli(path_txt: str) -> None:
     """CLI 出力向けに親ディレクトリを作成する。"""
     if path_txt == "":
         return
-    os.makedirs(path_txt, exist_ok=True)
+    Path(path_txt).mkdir(True, True)
 
 
 def write_text_file(path_obj: Path, text: str) -> None:
@@ -1098,7 +1098,7 @@ def build_module_east_map_from_analysis(
             meta["module_id"] = module_id_any
         east["meta"] = meta
         out[str(p)] = east
-    validate_from_import_symbols_or_raise(out, root=root_dir)
+    validate_from_import_symbols_or_raise(out, root_dir)
     return out
 
 
@@ -2170,9 +2170,40 @@ def build_module_east_map_via_east1_build(
     )
 
 
-# 互換公開名は `east1_build` 入口への薄い委譲に固定する。
-analyze_import_graph = analyze_import_graph_via_east1_build
-build_module_east_map = build_module_east_map_via_east1_build
+def analyze_import_graph(
+    entry_path: Path,
+    runtime_std_source_root: Path,
+    runtime_utils_source_root: Path,
+    load_east_fn: object,
+) -> dict[str, object]:
+    """互換公開名: import graph helper（east1_build 入口へ委譲）。"""
+    return analyze_import_graph_via_east1_build(
+        entry_path,
+        runtime_std_source_root,
+        runtime_utils_source_root,
+        load_east_fn,
+    )
+
+
+def build_module_east_map(
+    entry_path: Path,
+    load_east_fn: object,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "2",
+    object_dispatch_mode: str = "",
+    runtime_std_source_root: Path = Path("src/pytra/std"),
+    runtime_utils_source_root: Path = Path("src/pytra/utils"),
+) -> dict[str, dict[str, object]]:
+    """互換公開名: module EAST map helper（east1_build 入口へ委譲）。"""
+    return build_module_east_map_via_east1_build(
+        entry_path,
+        load_east_fn,
+        parser_backend,
+        east_stage,
+        object_dispatch_mode,
+        runtime_std_source_root,
+        runtime_utils_source_root,
+    )
 
 
 def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:

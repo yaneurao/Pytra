@@ -241,8 +241,45 @@ def _extract_support_blocks() -> str:
             ]
         )
     )
-    parts.append("build_module_east_map_common = build_module_east_map\n")
-    parts.append("dump_deps_graph_text_common = dump_deps_graph_text\n")
+    parts.append(
+        "\n".join(
+            [
+                "def build_module_east_map_common(",
+                "    entry_path: Path,",
+                "    load_east_fn: object,",
+                "    parser_backend: str = \"self_hosted\",",
+                "    east_stage: str = \"2\",",
+                "    object_dispatch_mode: str = \"\",",
+                "    runtime_std_source_root: Path = Path(\"src/pytra/std\"),",
+                "    runtime_utils_source_root: Path = Path(\"src/pytra/utils\"),",
+                ") -> dict[str, dict[str, object]]:",
+                "    return build_module_east_map(",
+                "        entry_path,",
+                "        load_east_fn,",
+                "        parser_backend,",
+                "        east_stage,",
+                "        object_dispatch_mode,",
+                "        runtime_std_source_root,",
+                "        runtime_utils_source_root,",
+                "    )",
+                "",
+                "",
+                "def dump_deps_graph_text_common(",
+                "    entry_path: Path,",
+                "    runtime_std_source_root: Path = Path(\"src/pytra/std\"),",
+                "    runtime_utils_source_root: Path = Path(\"src/pytra/utils\"),",
+                "    load_east_fn: object = load_east_document,",
+                ") -> str:",
+                "    return dump_deps_graph_text(",
+                "        entry_path,",
+                "        runtime_std_source_root,",
+                "        runtime_utils_source_root,",
+                "        load_east_fn,",
+                "    )",
+                "",
+            ]
+        )
+    )
     return "\n".join(parts)
 
 

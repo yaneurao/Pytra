@@ -119,8 +119,7 @@ class CodeEmitter:
                 out_parts.append(ch)
         return "".join(out_parts)
 
-    @staticmethod
-    def quote_string_literal(text: str, quote: str = "\"") -> str:
+    def quote_string_literal(self, text: str, quote: str = "\"") -> str:
         """エスケープ済み文字列を引用符で囲んで返す。"""
         q = quote
         if q == "":
@@ -158,7 +157,6 @@ class CodeEmitter:
     @staticmethod
     def load_profile_with_includes(
         profile_rel_path: str,
-        *,
         anchor_file: str = "",
     ) -> dict[str, Any]:
         """`profile.json` + include 断片を読み込み、1つの dict に統合する。"""
@@ -691,12 +689,12 @@ class CodeEmitter:
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_with_scope(self, scope_names: set[str], body_fn: list[Any]) -> None:
+    def emit_with_scope(self, scope_names: set[str], body_fn: list[dict[str, Any]]) -> None:
         """現在 indent 位置でスコープを1段積み、文リスト本体を出力する。"""
         self.indent += 1
         self.scope_stack.append(scope_names)
         for stmt in body_fn:
-            self.emit_stmt(stmt)  # type: ignore[arg-type]
+            self.emit_stmt(stmt)
         self.scope_stack.pop()
         self.indent -= 1
 
@@ -729,7 +727,6 @@ class CodeEmitter:
         cond_expr: str,
         body_stmts: list[dict[str, Any]],
         else_stmts: list[dict[str, Any]],
-        *,
         if_open_default: str = "if ({cond}) {",
         else_open_default: str = "} else {",
         body_scope: set[str] | None = None,
@@ -751,7 +748,6 @@ class CodeEmitter:
         self,
         cond_expr: str,
         body_stmts: list[dict[str, Any]],
-        *,
         while_open_default: str = "while ({cond}) {",
         body_scope: set[str] | None = None,
     ) -> None:
@@ -879,7 +875,6 @@ class CodeEmitter:
         self,
         expr: Any,
         expr_d: dict[str, Any],
-        *,
         none_non_any_literal: str,
         none_any_literal: str,
         bytes_ctor_name: str = "bytes",
@@ -890,8 +885,8 @@ class CodeEmitter:
         common_pair = self.render_constant_non_string_common(
             expr,
             expr_d,
-            none_non_any_literal=none_non_any_literal,
-            none_any_literal=none_any_literal,
+            none_non_any_literal,
+            none_any_literal,
         )
         common_handled = str(common_pair[0]) == "1"
         common_non_str = str(common_pair[1])
@@ -1015,7 +1010,6 @@ class CodeEmitter:
             return False
         return key in obj
 
-    @staticmethod
     def _is_empty_dynamic_text(txt: str) -> bool:
         """動的値から得た文字列が有効値かどうかを判定する。"""
         return txt in {"", "None", "{}", "[]"}
@@ -1447,18 +1441,17 @@ class CodeEmitter:
         return self.render_boolop_chain_common(
             values,
             op,
-            and_token=and_token,
-            or_token=or_token,
-            empty_literal=empty_literal,
-            wrap_each=False,
-            wrap_whole=True,
+            and_token,
+            or_token,
+            empty_literal,
+            False,
+            True,
         )
 
     def render_boolop_chain_common(
         self,
         values: list[Any],
         op: str,
-        *,
         and_token: str = "&&",
         or_token: str = "||",
         empty_literal: str = "false",
@@ -1507,11 +1500,11 @@ class CodeEmitter:
             ops,
             right_exprs,
             cmp_map,
-            empty_literal=empty_literal,
-            in_pattern=in_pattern,
-            not_in_pattern=not_in_pattern,
-            wrap_terms=True,
-            wrap_whole=True,
+            empty_literal,
+            in_pattern,
+            not_in_pattern,
+            True,
+            True,
         )
 
     def render_compare_chain_from_rendered(
@@ -1520,7 +1513,6 @@ class CodeEmitter:
         ops: list[str],
         right_exprs: list[str],
         cmp_map: dict[str, str],
-        *,
         empty_literal: str = "false",
         in_pattern: str = "",
         not_in_pattern: str = "",
@@ -1837,7 +1829,6 @@ class CodeEmitter:
     def render_truthy_cond_common(
         self,
         expr: Any,
-        *,
         str_non_empty_pattern: str,
         collection_non_empty_pattern: str,
         number_non_zero_pattern: str = "{expr} != 0",
@@ -1901,21 +1892,12 @@ class CodeEmitter:
         self.import_symbols = {}
         self.import_symbol_modules = set()
 
-        def _add_symbol_binding(local_name: str, module_id: str, export_name: str) -> None:
-            if local_name == "" or module_id == "" or export_name == "":
-                return
-            sym: dict[str, str] = {}
-            sym["module"] = module_id
-            sym["name"] = export_name
-            self.import_symbols[local_name] = sym
-            self.import_symbol_modules.add(module_id)
-
         binds = self.any_to_dict_list(meta.get("import_bindings"))
         refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
 
         if len(binds) > 0:
             for ref in refs:
-                _add_symbol_binding(
+                self._add_symbol_binding(
                     self.any_to_str(ref.get("local_name")),
                     self.any_to_str(ref.get("module_id")),
                     self.any_to_str(ref.get("symbol")),
@@ -1929,7 +1911,7 @@ class CodeEmitter:
                     if local_name != "" and module_id != "":
                         self.import_modules[local_name] = module_id
                 elif binding_kind == "symbol" and len(refs) == 0:
-                    _add_symbol_binding(local_name, module_id, self.any_to_str(ent.get("export_name")))
+                    self._add_symbol_binding(local_name, module_id, self.any_to_str(ent.get("export_name")))
 
             if len(self.import_symbols) == 0:
                 legacy_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
@@ -1938,7 +1920,7 @@ class CodeEmitter:
                         continue
                     local_name = local_name_obj
                     sym = sym_obj if isinstance(sym_obj, dict) else {}
-                    _add_symbol_binding(
+                    self._add_symbol_binding(
                         local_name,
                         self.any_dict_get_str(sym, "module", ""),
                         self.any_dict_get_str(sym, "name", ""),
@@ -1959,7 +1941,7 @@ class CodeEmitter:
                 continue
             local_name = local_name_obj
             sym = sym_obj if isinstance(sym_obj, dict) else {}
-            _add_symbol_binding(
+            self._add_symbol_binding(
                 local_name,
                 self.any_dict_get_str(sym, "module", ""),
                 self.any_dict_get_str(sym, "name", ""),
@@ -1971,6 +1953,16 @@ class CodeEmitter:
             module_id = self.any_to_str(module_id_obj)
             if module_id != "":
                 self.import_modules[local_name_obj] = module_id
+
+    def _add_symbol_binding(self, local_name: str, module_id: str, export_name: str) -> None:
+        """from-import のローカル束縛を import 解決テーブルへ追加する。"""
+        if local_name == "" or module_id == "" or export_name == "":
+            return
+        sym: dict[str, str] = {}
+        sym["module"] = module_id
+        sym["name"] = export_name
+        self.import_symbols[local_name] = sym
+        self.import_symbol_modules.add(module_id)
 
     def _resolve_imported_symbol(self, name: str) -> dict[str, str]:
         """from-import で束縛された識別子を返す（無ければ空 dict）。"""
