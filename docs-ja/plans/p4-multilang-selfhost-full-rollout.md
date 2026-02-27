@@ -37,6 +37,7 @@
 決定ログ:
 - 2026-02-27: ユーザー要望により、全言語 selfhost 完全化を低低優先（P4）で TODO 追加する方針を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-01`] `python3 tools/check_multilang_selfhost_suite.py` を再実行し、`docs-ja/plans/p1-multilang-selfhost-status.md` / `docs-ja/plans/p1-multilang-selfhost-multistage-status.md` を更新した。未達カテゴリを言語別に固定し、blocking chain を確定した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-02`] `runner_not_defined` 対象（go/java/swift/kotlin）の multistage runner 契約を定義し、`check_multilang_selfhost_multistage.py` へ段階実装する API 形を確定した。
 
 ## 現状固定（S1-01）
 
@@ -60,10 +61,39 @@
 4. `ts` の preview-only を解消（stage2/stage3 の評価自体が blocked）。
 5. `go/java/swift/kotlin` の runner 契約を定義し、`runner_not_defined` を解消して multistage 監視対象へ昇格。
 
+## Runner 契約（S1-02）
+
+目的:
+- `check_multilang_selfhost_multistage.py` の `runner_not_defined` を、言語別 adapter 実装で段階的に置換する。
+
+共通 API 契約（実装方針）:
+1. `build_stage1(lang, stage1_src, stage1_runner)`:
+   - stage1 生成 transpiler ソース（`stage1_src`）を実行可能 runner（binary/jar）へ変換する。
+2. `run_stage2(lang, stage1_runner, src_py, stage2_src)`:
+   - stage1 runner で `src/py2<lang>.py` を再変換し、`stage2_src` を生成する。
+3. `build_stage2(lang, stage2_src, stage2_runner)`:
+   - stage2 transpiler ソースを実行可能 runner へ変換する。
+4. `run_stage3(lang, stage2_runner, sample_py, stage3_out)`:
+   - stage2 runner で `sample/py/01_mandelbrot.py` を変換し、`stage3_out` 生成有無で pass/fail 判定する。
+
+言語別 runner 契約:
+
+| lang | build_stage1 / build_stage2 | run_stage2 / run_stage3 | 成功条件 |
+| --- | --- | --- | --- |
+| go | `go build -o <runner> <stage*.go>` | `<runner> <input.py> -o <out.go>` | `out.go` が生成される |
+| java | `javac <stage*.java>`（main class は stage 出力規約で固定） | `java -cp <dir> <main_class> <input.py> -o <out.java>` | `out.java` が生成される |
+| swift | `swiftc <stage*.swift> -o <runner>` | `<runner> <input.py> -o <out.swift>` | `out.swift` が生成される |
+| kotlin | `kotlinc <stage*.kt> -include-runtime -d <runner.jar>` | `java -jar <runner.jar> <input.py> -o <out.kt>` | `out.kt` が生成される |
+
+実装時の fail 分類ルール:
+- build 失敗: `compile_fail` / `stage2_compile_fail`
+- 実行失敗: `self_retranspile_fail` / `sample_transpile_fail`
+- 生成物欠落: 実行失敗カテゴリへ含め、`output missing` を note に付与
+
 ## 分解
 
 - [x] [ID: P4-MULTILANG-SH-01-S1-01] 現状の stage1/stage2/stage3 未達要因を言語別に固定化し、優先順（blocking chain）を明文化する。
-- [ ] [ID: P4-MULTILANG-SH-01-S1-02] multistage runner 未定義言語（go/java/swift/kotlin）の runner 契約を定義し、`runner_not_defined` を解消する実装方針を確定する。
+- [x] [ID: P4-MULTILANG-SH-01-S1-02] multistage runner 未定義言語（go/java/swift/kotlin）の runner 契約を定義し、`runner_not_defined` を解消する実装方針を確定する。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-01] Rust selfhost の stage1 失敗（from-import 受理）を解消し、stage2 へ進める。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02] C# selfhost の stage2 compile 失敗を解消し、stage3 変換を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
