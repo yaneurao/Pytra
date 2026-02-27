@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-この文書は、`P3-JAVA-NATIVE-01` で導入する `EAST3 -> Java native emitter` 経路の契約を定義する。  
+この文書は、`P3-JAVA-NATIVE-01` で導入した `EAST3 -> Java native emitter` 経路の契約を定義する。  
 対象は「入力 EAST3 の責務」「未対応時 fail-closed」「runtime 境界」「preview 出力との差分」である。
 
 ## 1. 目的
@@ -15,7 +15,7 @@
 
 ## 2. preview 出力との差分
 
-現行（preview / sidecar）:
+旧経路（preview / sidecar, 撤去済み）:
 
 - `py2java.py` は `transpile_to_js` を呼び、`.java` と `.js` を同時生成する。
 - Java 側出力は `ProcessBuilder` で `node <sidecar.js>` を実行するラッパーで、EAST3 本文ロジックを直接表現しない。
@@ -48,7 +48,7 @@ native 経路では「未対応入力を暗黙に sidecar へフォールバッ�
 - 未対応ノード `kind` を検出した場合は即時 `RuntimeError` で失敗する。
 - エラー文面には少なくとも `lang=java`, `node kind`, `location`（可能な範囲）を含める。
 - CLI は非 0 終了し、不完全な `.java` を成功扱いで出力しない。
-- 旧 sidecar 経路を残す場合でも、明示 opt-in の互換モードでのみ許可する（既定は禁止）。
+- 未対応入力を sidecar へ退避する互換モードは持たない。
 
 ## 5. runtime 境界
 
@@ -66,6 +66,5 @@ native 経路の Java 生成物は、以下のみを実行時境界として利�
 ## 6. 移行時の検証観点
 
 - `tools/check_py2java_transpile.py` が native 経路で通る。
-- `test/unit/test_py2java_*.py` で sidecar 前提アサーションを段階除去し、native 既定を固定する。
+- `test/unit/test_py2java_*.py` で native-only 前提アサーションを固定する。
 - `tools/runtime_parity_check.py --targets java` で Python 基準との出力一致を監視する。
-

@@ -5,7 +5,7 @@
 # Go/Swift/Kotlin Native Backend Contract
 
 This document defines the shared contract for the `EAST3 -> Go/Swift/Kotlin native emitter` paths introduced by `P3-GSK-NATIVE-01`.  
-Scope: input EAST3 responsibility, fail-closed behavior, runtime boundary, and default-sidecar removal requirements.
+Scope: input EAST3 responsibility, fail-closed behavior, runtime boundary, and post-sidecar-removal operational requirements.
 
 ## 1. Objective
 
@@ -13,9 +13,9 @@ Scope: input EAST3 responsibility, fail-closed behavior, runtime boundary, and d
 - Keep language-specific differences, but unify unsupported-case behavior and runtime boundaries.
 - Prevent regressions where `sample/go`, `sample/swift`, or `sample/kotlin` drift back to preview wrappers.
 
-## 2. Difference From Sidecar Output
+## 2. Difference From Legacy Sidecar Path
 
-Current (preview / sidecar):
+Legacy path (preview / sidecar, now removed):
 
 - `py2go.py`, `py2swift.py`, and `py2kotlin.py` emit sidecar JavaScript and language wrappers that invoke Node bridge.
 - Generated code often lacks native logic body and becomes a thin `node <sidecar.js>` launcher.
@@ -25,7 +25,7 @@ Target (native):
 
 - Default path uses native emitters only and emits no `.js` sidecar.
 - Generated code directly contains EAST3 logic (expressions/statements/control flow/classes).
-- Sidecar is isolated as explicit opt-in compatibility mode and is not used by default.
+- Sidecar compatibility mode is removed; operation is native-only.
 
 ## 3. Input EAST3 Node Responsibility
 
@@ -48,7 +48,7 @@ Native mode must never silently fallback to sidecar when input is unsupported.
 - On unsupported node `kind`, fail immediately (`RuntimeError`-equivalent).
 - Error text should include at least `lang`, `node kind`, and location when available.
 - CLI must exit non-zero and must not treat partial output as success.
-- Legacy sidecar path, if retained, must be explicit opt-in only.
+- No escape route to sidecar is allowed for unsupported input.
 
 ## 5. Runtime Boundary
 
@@ -70,12 +70,9 @@ Forbidden in default path:
 - `tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` keeps parity against Python baseline.
 - Regenerated `sample/go`, `sample/swift`, and `sample/kotlin` contain no stale sidecar `.js` outputs.
 
-## 7. Sidecar Compatibility Isolation Policy (S1-02)
+## 7. Sidecar Retirement Policy (S1-02)
 
-- Default behavior is always native; sidecar is allowed only with explicit flags:
-  - Go: `--go-backend sidecar`
-  - Swift: `--swift-backend sidecar`
-  - Kotlin: `--kotlin-backend sidecar`
-- In native mode (explicit or implicit), no `.js` sidecar or JS runtime shim is emitted.
-- In sidecar mode, `.js` generation is allowed only as compatibility mode and is excluded from default CI regression gates.
-- Unsupported input on default path must fail closed; no implicit fallback from native to sidecar is allowed.
+- Remove `--*-backend sidecar` from `py2go.py`, `py2swift.py`, and `py2kotlin.py`; backend switching points are retired.
+- Keep generation native-only and emit neither `.js` sidecars nor JS runtime shims.
+- Scope default CI regressions, sample regeneration, and parity checks to native paths only.
+- Unsupported input on the default path must fail closed; automatic or manual sidecar fallback is not available.

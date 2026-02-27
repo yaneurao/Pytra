@@ -15,7 +15,7 @@ Scope: input EAST3 responsibility, fail-closed behavior, runtime boundary, and t
 
 ## 2. Difference From Preview Output
 
-Current (preview / sidecar):
+Legacy path (preview / sidecar, now removed):
 
 - `py2java.py` calls `transpile_to_js` and emits `.java` + `.js` together.
 - Java output is a wrapper that executes `node <sidecar.js>` via `ProcessBuilder`, not a direct Java rendering of EAST3 logic.
@@ -48,7 +48,7 @@ Native mode must never silently fallback to sidecar when input is unsupported.
 - On unsupported node `kind`, fail immediately with `RuntimeError`.
 - Error text should include at least `lang=java`, `node kind`, and location when available.
 - CLI must exit non-zero and must not treat partial `.java` as success.
-- Legacy sidecar mode, if retained, is allowed only as explicit opt-in compatibility mode; default remains native.
+- No compatibility-mode escape to sidecar is available for unsupported input.
 
 ## 5. Runtime Boundary
 
@@ -66,6 +66,5 @@ Forbidden:
 ## 6. Migration Verification Focus
 
 - `tools/check_py2java_transpile.py` passes on the native path.
-- `test/unit/test_py2java_*.py` gradually removes sidecar assumptions and locks native-by-default behavior.
+- `test/unit/test_py2java_*.py` locks native-only behavior.
 - `tools/runtime_parity_check.py --targets java` keeps output parity against Python baseline.
-
