@@ -505,6 +505,49 @@ def stop() -> None:
 
         self.assertIn("return $\"{prefix}_{n}\";", cs)
 
+    def test_builtin_set_call_is_lowered(self) -> None:
+        src = """def f(xs):
+    return set(xs)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "set_call.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("new System.Collections.Generic.HashSet<object>(xs)", cs)
+
+    def test_for_over_string_uses_string_projection(self) -> None:
+        src = """def f(text: str) -> int:
+    c = 0
+    for ch in text:
+        if ch == "a":
+            c += 1
+    return c
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "for_str.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("Select(__ch => __ch.ToString())", cs)
+
+    def test_string_methods_find_rfind_strip_replace_are_lowered(self) -> None:
+        src = """def f(s: str) -> int:
+    return s.strip().replace("x", "y").find("y") + s.rfind("y")
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "str_methods.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn(".Trim()", cs)
+        self.assertIn(".Replace(\"x\", \"y\")", cs)
+        self.assertIn(".IndexOf(\"y\")", cs)
+        self.assertIn(".LastIndexOf(\"y\")", cs)
+
     def test_large_tuple_is_lowered_to_list_object_for_mcs_compat(self) -> None:
         src = """def f() -> tuple[str, str, str, str, str, str, str, str]:
     return ("a", "b", "c", "d", "e", "f", "g", "h")

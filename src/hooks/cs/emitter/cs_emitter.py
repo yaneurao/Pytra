@@ -47,6 +47,7 @@ class CSharpEmitter(CodeEmitter):
         self.class_names: set[str] = set()
         self.class_base_map: dict[str, str] = {}
         self.current_class_name: str = ""
+        self.current_class_field_types: dict[str, str] = {}
         self.in_method_scope: bool = False
         self.needs_enumerate_helper: bool = False
         self.current_return_east_type: str = ""
@@ -374,6 +375,40 @@ class CSharpEmitter(CodeEmitter):
                 return self._render_dict_literal_with_types(node, self._cs_type(parts[0]), self._cs_type(parts[1]))
         if kind == "ListComp" and hint.startswith("list[") and hint.endswith("]"):
             return self._render_list_comp_expr(node, forced_out_type=hint[5:-1].strip())
+        if kind == "Call":
+            fn_node = self.any_to_dict_or_empty(node.get("func"))
+            if self.any_dict_get_str(fn_node, "kind", "") == "Name":
+                fn_raw = self.any_dict_get_str(fn_node, "id", "")
+                arg_nodes = self.any_to_list(node.get("args"))
+                rendered_args: list[str] = []
+                for arg_node in arg_nodes:
+                    rendered_args.append(self.render_expr(arg_node))
+                if fn_raw == "set" and hint.startswith("set[") and hint.endswith("]"):
+                    elem_cs_t = self._cs_type(hint[4:-1].strip())
+                    if elem_cs_t == "":
+                        elem_cs_t = "object"
+                    if len(rendered_args) == 0:
+                        return "new System.Collections.Generic.HashSet<" + elem_cs_t + ">()"
+                    return "new System.Collections.Generic.HashSet<" + elem_cs_t + ">(" + rendered_args[0] + ")"
+                if fn_raw == "list" and hint.startswith("list[") and hint.endswith("]"):
+                    elem_cs_t = self._cs_type(hint[5:-1].strip())
+                    if elem_cs_t == "":
+                        elem_cs_t = "object"
+                    if len(rendered_args) == 0:
+                        return "new System.Collections.Generic.List<" + elem_cs_t + ">()"
+                    return "new System.Collections.Generic.List<" + elem_cs_t + ">(" + rendered_args[0] + ")"
+                if fn_raw == "dict" and hint.startswith("dict[") and hint.endswith("]"):
+                    dict_parts = self.split_generic(hint[5:-1].strip())
+                    if len(dict_parts) == 2:
+                        key_t = self._cs_type(dict_parts[0])
+                        val_t = self._cs_type(dict_parts[1])
+                        if key_t == "":
+                            key_t = "object"
+                        if val_t == "":
+                            val_t = "object"
+                        if len(rendered_args) == 0:
+                            return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
+                        return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">(" + rendered_args[0] + ")"
         return self.render_expr(value_obj)
 
     def _render_list_repeat(self, list_node: dict[str, Any], list_expr: str, count_expr: str) -> str:
@@ -708,6 +743,7 @@ class CSharpEmitter(CodeEmitter):
         class_name_raw = self.any_to_str(stmt.get("name"))
         class_name = self._safe_name(class_name_raw)
         prev_class = self.current_class_name
+        prev_class_field_types = dict(self.current_class_field_types)
         prev_method_scope = self.in_method_scope
         self.current_class_name = class_name_raw
 
@@ -733,6 +769,10 @@ class CSharpEmitter(CodeEmitter):
         )
 
         field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
+        self.current_class_field_types = {}
+        for field_name_obj, field_t_obj in field_types.items():
+            if isinstance(field_name_obj, str):
+                self.current_class_field_types[field_name_obj] = self.any_to_str(field_t_obj)
         instance_fields: set[str] = set()
         for field_name, field_t_obj in field_types.items():
             if not isinstance(field_name, str):
@@ -813,6 +853,7 @@ class CSharpEmitter(CodeEmitter):
         self.emit("}")
 
         self.current_class_name = prev_class
+        self.current_class_field_types = prev_class_field_types
         self.in_method_scope = prev_method_scope
 
     def _render_class_static_annassign(self, stmt: dict[str, Any]) -> str:
@@ -1095,6 +1136,8 @@ class CSharpEmitter(CodeEmitter):
 
         if iter_type.startswith("dict[") and not self._iter_is_dict_items(iter_node):
             iter_expr = "(" + iter_expr + ").Keys"
+        if iter_type == "str":
+            iter_expr = "(" + iter_expr + ").Select(__ch => __ch.ToString())"
 
         if target_kind == "Tuple":
             elts = self.tuple_elements(target_node)
@@ -1288,6 +1331,18 @@ class CSharpEmitter(CodeEmitter):
                 i += 1
             return
 
+        if target_kind == "Attribute":
+            owner_node = self.any_to_dict_or_empty(target.get("value"))
+            owner_kind = self.any_dict_get_str(owner_node, "kind", "")
+            owner_name = self.any_dict_get_str(owner_node, "id", "")
+            attr_name = self.any_dict_get_str(target, "attr", "")
+            if owner_kind == "Name" and owner_name == "self" and self.in_method_scope and attr_name != "":
+                hint_t = self.current_class_field_types.get(attr_name, "")
+                if hint_t != "":
+                    hinted_value = self._render_expr_with_type_hint(value_obj, hint_t)
+                    self.emit(self.render_expr(target) + " = " + hinted_value + ";")
+                    return
+
         if target_kind == "Subscript":
             owner_node = self.any_to_dict_or_empty(target.get("value"))
             owner_type = self.get_expr_type(owner_node)
@@ -1480,6 +1535,21 @@ class CSharpEmitter(CodeEmitter):
             return "System.Convert.ToDouble(" + rendered_args[0] + ")"
         if fn_name_raw == "bool" and len(rendered_args) == 1:
             return "Pytra.CsModule.py_runtime.py_bool(" + rendered_args[0] + ")"
+        if fn_name_raw == "list":
+            if len(rendered_args) == 0:
+                return "new System.Collections.Generic.List<object>()"
+            return "new System.Collections.Generic.List<object>(" + rendered_args[0] + ")"
+        if fn_name_raw == "set":
+            if len(rendered_args) == 0:
+                return "new System.Collections.Generic.HashSet<object>()"
+            return "new System.Collections.Generic.HashSet<object>(" + rendered_args[0] + ")"
+        if fn_name_raw == "dict":
+            if len(rendered_args) == 0:
+                return "new System.Collections.Generic.Dictionary<object, object>()"
+        if fn_name_raw == "callable" and len(rendered_args) == 1:
+            return "(" + rendered_args[0] + " is System.Delegate)"
+        if fn_name_raw == "globals" and len(rendered_args) == 0:
+            return "new System.Collections.Generic.Dictionary<object, object>()"
         if fn_name_raw == "max" and len(rendered_args) >= 1:
             out_expr = rendered_args[0]
             i = 1
@@ -1514,10 +1584,14 @@ class CSharpEmitter(CodeEmitter):
             return "Pytra.CsModule.png_helper.write_rgb_png(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "enumerate":
             self.needs_enumerate_helper = True
+            src_expr = rendered_args[0] if len(rendered_args) > 0 else "new System.Collections.Generic.List<object>()"
+            src_node = arg_nodes[0] if len(arg_nodes) > 0 else None
+            if self.get_expr_type(src_node) == "str":
+                src_expr = "(" + src_expr + ").Select(__ch => __ch.ToString())"
             if len(rendered_args) == 1:
-                return "Program.PytraEnumerate(" + rendered_args[0] + ")"
+                return "Program.PytraEnumerate(" + src_expr + ")"
             if len(rendered_args) >= 2:
-                return "Program.PytraEnumerate(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+                return "Program.PytraEnumerate(" + src_expr + ", " + rendered_args[1] + ")"
         return fn_name + "(" + ", ".join(rendered_args) + ")"
 
     def _render_attr_call(self, owner_node: dict[str, Any], attr_raw: str, rendered_args: list[str]) -> str:
@@ -1554,6 +1628,23 @@ class CSharpEmitter(CodeEmitter):
             if attr_raw == "startswith" and len(rendered_args) == 1:
                 return owner_expr + ".StartsWith(" + rendered_args[0] + ")"
 
+        if attr_raw in {"strip", "replace", "find", "rfind"}:
+            str_owner = owner_expr
+            if owner_type != "str":
+                str_owner = "System.Convert.ToString(" + owner_expr + ")"
+            if attr_raw == "strip" and len(rendered_args) == 0:
+                return str_owner + ".Trim()"
+            if attr_raw == "replace" and len(rendered_args) >= 2:
+                return str_owner + ".Replace(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+            if attr_raw == "find" and len(rendered_args) == 1:
+                return str_owner + ".IndexOf(" + rendered_args[0] + ")"
+            if attr_raw == "find" and len(rendered_args) >= 2:
+                return str_owner + ".IndexOf(" + rendered_args[0] + ", System.Convert.ToInt32(" + rendered_args[1] + "))"
+            if attr_raw == "rfind" and len(rendered_args) == 1:
+                return str_owner + ".LastIndexOf(" + rendered_args[0] + ")"
+            if attr_raw == "rfind" and len(rendered_args) >= 2:
+                return str_owner + ".LastIndexOf(" + rendered_args[0] + ", System.Convert.ToInt32(" + rendered_args[1] + "))"
+
         if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
             if attr_raw == "append" and len(rendered_args) == 1:
                 if owner_type in {"bytes", "bytearray"}:
@@ -1565,6 +1656,12 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"
             if attr_raw == "pop" and len(rendered_args) >= 1:
                 return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"
+
+        if owner_type.startswith("set["):
+            if attr_raw == "add" and len(rendered_args) == 1:
+                return owner_expr + ".Add(" + rendered_args[0] + ")"
+            if attr_raw == "clear" and len(rendered_args) == 0:
+                return owner_expr + ".Clear()"
 
         if owner_type.startswith("dict["):
             if attr_raw == "get":
