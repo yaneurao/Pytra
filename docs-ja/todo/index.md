@@ -31,6 +31,19 @@
 
 ## 未完了タスク
 
+### P0: EAST3最適化層の強化（sample C++ 出力改善）
+
+文脈: [docs-ja/plans/p0-east3-optimizer-sample-cpp-strengthening.md](../plans/p0-east3-optimizer-sample-cpp-strengthening.md)
+
+1. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01] `sample/cpp` 出力で目立つ冗長構文・型変換ノイズを削減するため、EAST3最適化層を7項目で段階強化する。
+2. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-01] `RangeForCanonicalizationPass` を拡張し、`step` 定数かつ有効範囲で `stop` 非定数ケースも `StaticRangeForPlan` へ正規化する。
+3. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-02] `enumerate(list[T])` を typed iterable として扱う EAST3 正規化を追加し、`object + py_at + py_to` 連鎖の発生を抑制する。
+4. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] 数値式の cast-chain 縮退 pass を追加し、型既知式での冗長 `py_to<T>` を削減する。
+5. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] ループ不変な分母・型変換（`py_to<float64>(width)` 等）の preheader hoist を追加し、内側ループの変換負荷を削減する。
+6. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] `list[list[int64]]` など型既知 `py_repeat` 初期化を typed materialization へ正規化し、`make_object(py_repeat(...))` 経路を縮退する。
+7. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-06] `dict<str, V>` の key アクセス/代入で不要な `py_to_string` を削減する EAST3 正規化を追加する。
+8. [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-07] tuple unpack に対する一時 tuple 変数の生成を抑制し、`TupleTarget` 直接展開へ寄せる最適化を追加する。
+
 ### P0: Ruby `/` 演算の真の除算互換修正（最優先）
 
 文脈: [docs-ja/plans/p0-ruby-true-division-parity.md](../plans/p0-ruby-true-division-parity.md)
