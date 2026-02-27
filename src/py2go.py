@@ -5,10 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.go.emitter.go_emitter import load_go_profile, transpile_to_go
-from hooks.go.emitter.go_native_emitter import transpile_to_go_native
-from hooks.js.emitter.js_emitter import transpile_to_js
-from pytra.compiler.js_runtime_shims import write_js_runtime_shims
+from hooks.go.emitter import load_go_profile, transpile_to_go, transpile_to_go_native
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -65,14 +62,6 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
-def _sidecar_js_path(output_path: Path) -> Path:
-    """Go 出力に対応する sidecar JS のパスを返す。"""
-    out = str(output_path)
-    if out.endswith(".go"):
-        return Path(out[:-3] + ".js")
-    return Path(out + ".js")
-
-
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Go transpiler")
@@ -82,11 +71,6 @@ def main() -> int:
         "--object-dispatch-mode",
         choices=["native", "type_id"],
         help="Object boundary dispatch mode used by EAST2->EAST3 lowering",
-    )
-    parser.add_argument(
-        "--go-backend",
-        choices=["native", "sidecar"],
-        help="Go backend mode: native (default) or sidecar compatibility",
     )
     args = parser.parse_args()
     if not isinstance(args, dict):
@@ -111,9 +95,6 @@ def main() -> int:
     dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
     dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
     dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
-    go_backend = _arg_get_str(args, "go_backend")
-    if go_backend == "":
-        go_backend = "native"
     if east_stage == "2":
         parser.error("--east-stage 2 is no longer supported; use EAST3 (default).")
 
@@ -129,15 +110,6 @@ def main() -> int:
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    if go_backend == "sidecar":
-        js_output_path = _sidecar_js_path(output_path)
-        js_src = transpile_to_js(east)
-        go_src = transpile_to_go(east, js_entry_path=str(js_output_path))
-        output_path.write_text(go_src, encoding="utf-8")
-        js_output_path.write_text(js_src, encoding="utf-8")
-        write_js_runtime_shims(js_output_path.parent)
-        return 0
-
     go_src = transpile_to_go_native(east)
     output_path.write_text(go_src, encoding="utf-8")
     return 0
