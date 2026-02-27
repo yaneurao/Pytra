@@ -9,9 +9,10 @@ This directory stores past news items that were moved from the “Latest News”
 ## Maintenance Rules
 
 - `readme.md` keeps only the latest three news items.
-- Older news items from the fourth onward are moved to `docs/en/news/YYYYMMDD-<slug>.md`.
+- Older news items from the fourth onward are appended to a major-version file (for example, `docs/en/news/v0-releases.md`).
+- When a new major version starts, create a new aggregate file (for example, `v1-releases.md`).
 - When moving an item, add a reverse-chronological link in this `index.md`.
 
 ## List (newest first)
 
-- No moved news items are currently archived.
+- [v0 Release Series](./v0-releases.md) (`v0.2.0` / `v0.1.0`)
