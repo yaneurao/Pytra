@@ -58,6 +58,7 @@
 ### P2: Ruby backend 追加（中優先）
 
 文脈: [docs-ja/plans/p2-ruby-backend-rollout.md](../plans/p2-ruby-backend-rollout.md)
+- 言語展開順方針: `Ruby -> Lua -> PHP`（Lua/PHP は Ruby 完了後に `P2` タスクとして起票）
 
 1. [ ] [ID: P2-RUBY-BACKEND-01] Ruby backend（`py2rb.py` + Ruby emitter/runtime）を追加し、`sample/py` 主要ケースで parity を確認できる状態まで引き上げる。
 2. [ ] [ID: P2-RUBY-BACKEND-01-S1-01] Ruby backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を文書化する。

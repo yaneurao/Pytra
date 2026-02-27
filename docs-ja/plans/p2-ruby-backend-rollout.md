@@ -13,6 +13,11 @@
 目的:
 - `py2rb.py` を入口として `EAST3 -> Ruby` の native 直生成経路を追加し、`sample/py` の主要ケースを Ruby で実行可能にする。
 
+言語展開順（決定）:
+1. Ruby（本計画で実施）
+2. Lua（Ruby backend 完了後に `P2` として起票）
+3. PHP（Lua backend 完了後に `P2` として起票）
+
 対象:
 - `src/py2rb.py`
 - `src/hooks/ruby/emitter/`
@@ -39,6 +44,7 @@
 
 決定ログ:
 - 2026-02-27: ユーザー指示により、Ruby backend 追加タスクを `P2` 優先度で TODO 管理する方針を確定した。
+- 2026-02-27: ユーザー指示により、追加言語の実装順を `Ruby -> Lua -> PHP` として固定した。
 
 ## 分解
 
