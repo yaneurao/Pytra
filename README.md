@@ -83,9 +83,6 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 |17 |Monte Carlo Pi approximation|2.981|0.105|0.019|0.018|0.098|0.431|0.433|0.432|0.433|0.436|0.436|1.949|
 |18 |Mini-language interpreter|2.037|0.601|0.610|0.427|0.735|0.446|0.446|0.405|0.417|0.423|0.417|8.272|
 
-Notes:
-- For measurement protocol, gap criteria, and parity verification details, see [`sample/readme.md`](sample/readme.md).
-
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 
 <details>
