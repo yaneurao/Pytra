@@ -41,7 +41,7 @@
 - `README.md` からリンクされるドキュメント（`docs-ja/how-to-use.md`, `sample/readme-ja.md`, `docs-ja/spec/index.md`, `docs-ja/plans/pytra-wip.md`, `docs-ja/spec/spec-philosophy.md`）の整合性を確認し、必要なら同時更新します。
 - 実装とドキュメントの不一致を残さないことを、変更完了条件に含めます。
 - `tools/` にスクリプトを追加・削除・改名した場合は、`docs-ja/spec/spec-tools.md` を同時更新します。
-- `readme-ja.md` の「最新ニュース」は最新 3 件までを保持し、古くなったニュースは `docs-ja/news/YYYYMMDD-<slug>.md` へ移動して `docs-ja/news/index.md` に追記します。
+- `docs-ja/README.md` の「最新ニュース」は最新 3 件までを保持し、古くなったニュースは `docs-ja/news/YYYYMMDD-<slug>.md` へ移動して `docs-ja/news/index.md` に追記します。
 - 用語ルール: type annotation を指す場合は「注釈」ではなく必ず「型注釈」と記載します。
 - 記述ルール: 機能やフォルダ構成を説明するときは、何をするためのものか（目的性）を必ず明記します。
 - 記述ルール: 「どこに置くか」だけでなく「なぜそこに置くか」を併記し、`std` と `tra` の責務混在を防ぎます。
