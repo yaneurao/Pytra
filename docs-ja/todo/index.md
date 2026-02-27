@@ -107,7 +107,7 @@
 
 文脈: [docs-ja/plans/p3-go-swift-kotlin-native-rollout.md](../plans/p3-go-swift-kotlin-native-rollout.md)
 
-1. [ ] [ID: P3-GSK-NATIVE-01] Go/Swift/Kotlin backend を `EAST3 -> <lang> native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
+1. [x] [ID: P3-GSK-NATIVE-01] Go/Swift/Kotlin backend を `EAST3 -> <lang> native emitter` 直生成経路へ移行し、sidecar JS 依存を既定経路から除去する。
 2. [x] [ID: P3-GSK-NATIVE-01-S1-01] 共通移行契約（EAST3 ノード対応範囲、未対応時 fail-closed、runtime 境界）を定義する。
 3. [x] [ID: P3-GSK-NATIVE-01-S1-02] 3言語共通で sidecar 互換モードの隔離方針（既定 native / opt-in legacy）を確定する。
 4. [x] [ID: P3-GSK-NATIVE-01-S2-01] Go native emitter 骨格と `py2go.py` 既定切替を実装する。
