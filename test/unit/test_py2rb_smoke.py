@@ -160,6 +160,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_contains(env, node.name)", ruby)
         self.assertNotIn("stmt.name == env", ruby)
         self.assertNotIn("node.name == env", ruby)
+        self.assertIn("__pytra_main()", ruby)
 
     def test_sample18_dataclass_ctor_and_self_receiver_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")

@@ -36,9 +36,13 @@
 
 決定ログ:
 - 2026-02-27: ユーザー要望に基づき、Ruby の sample 実行時間を `readme-ja.md` 比較表へ右端列として追加する `P0-SAMPLE-RUBY-BENCH-01` を起票。
+- 2026-02-27: `ruby` 未導入で計測が開始できなかったため、環境に Ruby 3.1.2 を導入して再計測を実施。
+- 2026-02-27: `sample/18` の Ruby 実行で `in/not in` 比較が `==` に崩れる不具合と `main` 呼び出し不整合を修正し、`test/unit/test_py2rb_smoke.py`（14件）通過を確認。
+- 2026-02-27: `sample/py` 18件を fresh transpile + `warmup=1` + `repeat=5` で Ruby 実測し、中央値を `work/logs/bench_ruby_sample_20260227.json` に記録。
+- 2026-02-27: `readme-ja.md` の実行速度比較表に Ruby 列（右端）を追加し、18件の中央値を反映。注記に Ruby 再計測ログ参照を追記。
 
 ## 分解
 
-- [ ] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-01] 計測プロトコルを固定し、`sample/py` 18件の Ruby 実測値（中央値）を取得する。
-- [ ] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-02] `readme-ja.md` の比較表へ Ruby 列（右端）を追加し、18件の値を反映する。
-- [ ] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-03] 計測ログ・再現手順・注記同期を完了し、追試可能な状態にする。
+- [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-01] 計測プロトコルを固定し、`sample/py` 18件の Ruby 実測値（中央値）を取得する。
+- [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-02] `readme-ja.md` の比較表へ Ruby 列（右端）を追加し、18件の値を反映する。
+- [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-03] 計測ログ・再現手順・注記同期を完了し、追試可能な状態にする。

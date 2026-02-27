@@ -142,6 +142,8 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     if raw == "self":
         return "self"
     ident = _safe_ident(raw, "value")
+    if ident == "main" and "__pytra_main" in _FUNCTION_NAMES and "main" not in _FUNCTION_NAMES:
+        return "__pytra_main"
     if ident == "self":
         return "self"
     return ident

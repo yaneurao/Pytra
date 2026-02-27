@@ -35,10 +35,10 @@
 
 文脈: [docs-ja/plans/p0-sample-ruby-benchmark-refresh.md](../plans/p0-sample-ruby-benchmark-refresh.md)
 
-1. [ ] [ID: P0-SAMPLE-RUBY-BENCH-01] `sample/py` の Ruby 実行時間を再計測し、`readme-ja.md` の実行時間比較表へ Ruby 列を右端追加して反映する。
-2. [ ] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-01] 計測プロトコル（fresh transpile, warmup/repeat, 中央値）を固定し、18件の Ruby 実測値を取得する。
-3. [ ] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-02] `readme-ja.md` の比較表に Ruby 列（右端）を追加し、全サンプルの値を反映する。
-4. [ ] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-03] 計測ログと再現手順を文脈ファイルへ記録し、`readme-ja.md` の注記を必要最小限で同期する。
+1. [x] [ID: P0-SAMPLE-RUBY-BENCH-01] `sample/py` の Ruby 実行時間を再計測し、`readme-ja.md` の実行時間比較表へ Ruby 列を右端追加して反映する。
+2. [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-01] 計測プロトコル（fresh transpile, warmup/repeat, 中央値）を固定し、18件の Ruby 実測値を取得する。
+3. [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-02] `readme-ja.md` の比較表に Ruby 列（右端）を追加し、全サンプルの値を反映する。
+4. [x] [ID: P0-SAMPLE-RUBY-BENCH-01-S1-03] 計測ログと再現手順を文脈ファイルへ記録し、`readme-ja.md` の注記を必要最小限で同期する。
 
 ### P0: ForCore runtime 反復の typed ヘッダ化（最優先）
 
