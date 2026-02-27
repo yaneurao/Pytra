@@ -1,9 +1,9 @@
-# P2: ForCore tuple unpack 型伝播改善（EAST3 lowering / C++ emitter）
+# P0: ForCore tuple unpack 型伝播改善（EAST3 lowering / C++ emitter）
 
 最終更新: 2026-02-27
 
 関連 TODO:
-- `docs-ja/todo/index.md` の `ID: P2-FORCORE-TYPE-01`
+- `docs-ja/todo/index.md` の `ID: P0-FORCORE-TYPE-01`
 
 背景:
 - `for line_index, source in enumerate(lines)` のような tuple unpack で、親の `target_type=tuple[int64, str]` は得られていても、`TupleTarget.elements` へ要素型が伝播されず `unknown` になる。
@@ -37,11 +37,11 @@
 - `g++ -std=c++20 -O2 -I src/runtime/cpp sample/cpp/18_mini_language_interpreter.cpp -o /tmp/pytra_sample18_cpp`
 
 決定ログ:
-- 2026-02-27: ユーザー質問（型落ち理由）を受け、`ForCore` tuple unpack の要素型伝播不足を独立タスク `P2-FORCORE-TYPE-01` として管理する方針を確定。
+- 2026-02-27: ユーザー質問（型落ち理由）を受け、`ForCore` tuple unpack の要素型伝播不足を独立タスク `P0-FORCORE-TYPE-01` として管理する方針を確定。
 
 ## 分解
 
-- [ ] [ID: P2-FORCORE-TYPE-01-S1-01] `target_type=tuple[...]` の要素型を `TupleTarget.elements` へ伝播する lowering 補助を実装する。
-- [ ] [ID: P2-FORCORE-TYPE-01-S1-02] C++ tuple unpack emit で要素型既知時に静的束縛し、未知時のみ `object` フォールバックする。
-- [ ] [ID: P2-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む回帰テストを追加し、生成コードの型束縛を固定する。
-- [ ] [ID: P2-FORCORE-TYPE-01-S2-02] transpile + sample コンパイル検証を実行し、文脈ファイルへ結果を記録する。
+- [ ] [ID: P0-FORCORE-TYPE-01-S1-01] `target_type=tuple[...]` の要素型を `TupleTarget.elements` へ伝播する lowering 補助を実装する。
+- [ ] [ID: P0-FORCORE-TYPE-01-S1-02] C++ tuple unpack emit で要素型既知時に静的束縛し、未知時のみ `object` フォールバックする。
+- [ ] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む回帰テストを追加し、生成コードの型束縛を固定する。
+- [ ] [ID: P0-FORCORE-TYPE-01-S2-02] transpile + sample コンパイル検証を実行し、文脈ファイルへ結果を記録する。
