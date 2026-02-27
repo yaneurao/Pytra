@@ -72,12 +72,12 @@ struct StmtNode : public PyObj {
 list<rc<Token>> tokenize(const list<str>& lines) {
     list<rc<Token>> tokens = list<rc<Token>>{};
     for (object __itobj_1 : py_dyn_range(py_enumerate(lines))) {
-        auto line_index = py_at(__itobj_1, 0);
-        auto source = py_at(__itobj_1, 1);
+        int64 line_index = int64(py_to<int64>(py_at(__itobj_1, 0)));
+        str source = py_to_string(py_at(__itobj_1, 1));
         int64 i = 0;
         int64 n = py_len(source);
         while (i < n) {
-            str ch = py_at(source, py_to<int64>(i));
+            str ch = source[i];
             
             if (ch == " ") {
                 i++;
@@ -120,7 +120,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
             }
             if (str(ch).isdigit()) {
                 int64 start = i;
-                while ((i < n) && (str(py_at(source, py_to<int64>(i))).isdigit())) {
+                while ((i < n) && (str(source[i]).isdigit())) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
@@ -129,7 +129,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
             }
             if ((str(ch).isalpha()) || (ch == "_")) {
                 int64 start = i;
-                while ((i < n) && (((str(py_at(source, py_to<int64>(i))).isalpha()) || (py_at(source, py_to<int64>(i)) == "_")) || (str(py_at(source, py_to<int64>(i))).isdigit()))) {
+                while ((i < n) && (((str(source[i]).isalpha()) || (source[i] == "_")) || (str(source[i]).isdigit()))) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
@@ -143,7 +143,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 }
                 continue;
             }
-            throw ::std::runtime_error("tokenize error at line=" + py_to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
+            throw ::std::runtime_error("tokenize error at line=" + ::std::to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
         }
         tokens.append(rc<Token>(::rc_new<Token>("NEWLINE", "", n)));
     }

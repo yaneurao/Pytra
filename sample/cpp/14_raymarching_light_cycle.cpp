@@ -11,7 +11,7 @@ bytes palette() {
     for (int64 i = 0; i < 256; ++i) {
         int64 r = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(py_to<float64>(20) + py_to<float64>(i) * 0.9)));
         int64 g = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(py_to<float64>(10) + py_to<float64>(i) * 0.7)));
-        int64 b = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(30 + i)));
+        int64 b = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(30 + i));
         p.append(r);
         p.append(g);
         p.append(b);
