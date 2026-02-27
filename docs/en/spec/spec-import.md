@@ -209,7 +209,7 @@ QualifiedSymbolRef
   - collision detection results (success/failure)
 - Test criterion should be identity of resolution results, not syntax-level similarity.
 
-## Addendum: Concrete Per-language Implementation Policy (Aligned with `readme.md` / `docs/en/plans/pytra-wip.md`)
+## Addendum: Concrete Per-language Implementation Policy (Aligned with `README.md` / `docs/en/plans/pytra-wip.md`)
 
 Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin`.
 

@@ -42,7 +42,7 @@ This document defines the operational rules Codex follows while working.
 - Check consistency for docs linked from `README.md` (`docs/ja/how-to-use.md`, `sample/readme-ja.md`, `docs/ja/spec/index.md`, `docs/ja/plans/pytra-wip.md`, `docs/ja/spec/spec-philosophy.md`) and update together when needed.
 - Include "no implementation-doc mismatch left" in completion criteria.
 - If scripts in `tools/` are added/removed/renamed, update `docs/ja/spec/spec-tools.md` at the same time.
-- Keep only the latest 3 items in "Latest News" in `docs/ja/README.md`; move older items to `docs/ja/news/YYYYMMDD-<slug>.md` and append to `docs/ja/news/index.md`.
+- Keep only the latest 3 items in "Latest News" in `docs/ja/README.md`; append older items to major-version files (for example, `docs/ja/news/v0-releases.md`) and update `docs/ja/news/index.md`.
 - Terminology rule: when referring to type annotation, write "type annotation" explicitly.
 - Writing rule: when describing features/folder structure, always state the purpose.
 - Writing rule: state not only where to place but also why to place there, to avoid responsibility mixing between `std` and `tra`.

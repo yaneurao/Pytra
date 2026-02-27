@@ -1,6 +1,6 @@
 # Pytraとは何？
 
-<a href="readme.md">
+<a href="../../README.md">
   <img alt="Read in English" src="https://img.shields.io/badge/README-English-2563EB?style=flat-square">
 </a>
 
