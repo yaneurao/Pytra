@@ -749,9 +749,19 @@ class CppStatementEmitter:
                 out |= self._forcore_target_bound_names(elem_plan)
         return out
 
-    def _emit_forcore_tuple_unpack_runtime(self, target_plan: dict[str, Any], src_obj: str) -> None:
+    def _emit_forcore_tuple_unpack_runtime(
+        self,
+        target_plan: dict[str, Any],
+        src_obj: str,
+        inherited_elem_types: list[str] | None = None,
+    ) -> None:
         """ForCore tuple target を runtime iterable でアンパックする。"""
         elem_plans = self.any_to_list(target_plan.get("elements"))
+        elem_types: list[str] = inherited_elem_types if isinstance(inherited_elem_types, list) else []
+        if len(elem_types) == 0:
+            parent_target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+            if parent_target_type.startswith("tuple[") and parent_target_type.endswith("]"):
+                elem_types = self.split_generic(parent_target_type[6:-1])
         for i, elem_plan_obj in enumerate(elem_plans):
             elem_plan = self.any_to_dict_or_empty(elem_plan_obj)
             plan_kind = self.any_dict_get_str(elem_plan, "kind", "")
@@ -760,6 +770,8 @@ class CppStatementEmitter:
                 if nm == "":
                     continue
                 elem_t = self.normalize_type_name(self.any_dict_get_str(elem_plan, "target_type", ""))
+                if elem_t in {"", "unknown"} and i < len(elem_types):
+                    elem_t = self.normalize_type_name(elem_types[i])
                 if elem_t == "":
                     elem_t = "unknown"
                 rhs = f"py_at({src_obj}, {i})"
@@ -780,7 +792,12 @@ class CppStatementEmitter:
             if plan_kind == "TupleTarget":
                 nested_tmp = self.next_for_runtime_iter_name()
                 self.emit(f"object {nested_tmp} = py_at({src_obj}, {i});")
-                self._emit_forcore_tuple_unpack_runtime(elem_plan, nested_tmp)
+                nested_elem_types: list[str] = []
+                if i < len(elem_types):
+                    nested_type = self.normalize_type_name(elem_types[i])
+                    if nested_type.startswith("tuple[") and nested_type.endswith("]"):
+                        nested_elem_types = self.split_generic(nested_type[6:-1])
+                self._emit_forcore_tuple_unpack_runtime(elem_plan, nested_tmp, nested_elem_types)
 
     def _range_mode_from_step_expr(self, step_expr: dict[str, Any]) -> str:
         """`step` 式から `range_mode`（ascending/descending/dynamic）を求める。"""

@@ -56,6 +56,43 @@ def _split_union_types(type_name: str) -> list[str]:
     return parts
 
 
+def _split_generic_types(type_name: str) -> list[str]:
+    parts: list[str] = []
+    cur = ""
+    depth = 0
+    for ch in type_name:
+        if ch == "[":
+            depth += 1
+            cur += ch
+            continue
+        if ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+            continue
+        if ch == "," and depth == 0:
+            part = cur.strip()
+            if part != "":
+                parts.append(part)
+            cur = ""
+            continue
+        cur += ch
+    tail = cur.strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _tuple_element_types(type_name: Any) -> list[str]:
+    norm = _normalize_type_name(type_name)
+    if not (norm.startswith("tuple[") and norm.endswith("]")):
+        return []
+    inner = norm[6:-1]
+    if inner == "":
+        return []
+    return _split_generic_types(inner)
+
+
 def _is_any_like_type(type_name: Any) -> bool:
     norm = _normalize_type_name(type_name)
     if norm == "Any" or norm == "object" or norm == "unknown":
@@ -432,26 +469,31 @@ def _resolve_assign_target_type(stmt: dict[str, Any]) -> str:
 
 
 def _build_target_plan(target: Any, target_type: Any, *, dispatch_mode: str) -> dict[str, Any]:
+    target_type_norm = _normalize_type_name(target_type)
     if isinstance(target, dict):
         kind = target.get("kind")
         if kind == "Name":
             out = {"kind": "NameTarget", "id": target.get("id", "")}
-            if isinstance(target_type, str) and target_type != "":
-                out["target_type"] = target_type
+            if target_type_norm != "unknown":
+                out["target_type"] = target_type_norm
             return out
         if kind == "Tuple":
             elements_obj = target.get("elements")
             elem_plans: list[dict[str, Any]] = []
+            elem_types = _tuple_element_types(target_type_norm)
             if isinstance(elements_obj, list):
-                for elem in elements_obj:
-                    elem_plans.append(_build_target_plan(elem, "unknown", dispatch_mode=dispatch_mode))
+                for i, elem in enumerate(elements_obj):
+                    elem_type = "unknown"
+                    if i < len(elem_types):
+                        elem_type = elem_types[i]
+                    elem_plans.append(_build_target_plan(elem, elem_type, dispatch_mode=dispatch_mode))
             out = {"kind": "TupleTarget", "elements": elem_plans}
-            if isinstance(target_type, str) and target_type != "":
-                out["target_type"] = target_type
+            if target_type_norm != "unknown":
+                out["target_type"] = target_type_norm
             return out
     out = {"kind": "ExprTarget", "target": _lower_node(target, dispatch_mode=dispatch_mode)}
-    if isinstance(target_type, str) and target_type != "":
-        out["target_type"] = target_type
+    if target_type_norm != "unknown":
+        out["target_type"] = target_type_norm
     return out
 
 
@@ -484,13 +526,16 @@ def _lower_for_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> dict[str, An
         "init_op": "ObjIterInit",
         "next_op": "ObjIterNext",
     }
+    target_type = _normalize_type_name(stmt.get("target_type"))
+    if target_type == "unknown":
+        target_type = _normalize_type_name(stmt.get("iter_element_type"))
     out = {
         "kind": "ForCore",
         "iter_mode": iter_mode,
         "iter_plan": iter_plan,
         "target_plan": _build_target_plan(
             stmt.get("target"),
-            stmt.get("target_type"),
+            target_type,
             dispatch_mode=dispatch_mode,
         ),
         "body": _lower_node(stmt.get("body", []), dispatch_mode=dispatch_mode),

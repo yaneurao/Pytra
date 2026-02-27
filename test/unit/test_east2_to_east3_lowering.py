@@ -261,6 +261,65 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(for_range.get("target_plan", {}).get("kind"), "NameTarget")
         self.assertEqual(for_range.get("target_plan", {}).get("id"), "i")
 
+    def test_lower_for_tuple_target_propagates_tuple_element_target_types(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {
+                        "kind": "Tuple",
+                        "elements": [
+                            {"kind": "Name", "id": "line_index"},
+                            {"kind": "Name", "id": "source"},
+                        ],
+                    },
+                    "target_type": "tuple[int64, str]",
+                    "iter_mode": "runtime_protocol",
+                    "iter": {"kind": "Name", "id": "pairs", "resolved_type": "object"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        target_plan = out.get("body", [])[0].get("target_plan", {})
+        self.assertEqual(target_plan.get("kind"), "TupleTarget")
+        self.assertEqual(target_plan.get("target_type"), "tuple[int64, str]")
+        elems = target_plan.get("elements", [])
+        self.assertEqual(elems[0].get("target_type"), "int64")
+        self.assertEqual(elems[1].get("target_type"), "str")
+
+    def test_lower_for_tuple_target_uses_iter_element_type_when_target_type_unknown(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {
+                        "kind": "Tuple",
+                        "elements": [
+                            {"kind": "Name", "id": "line_index"},
+                            {"kind": "Name", "id": "source"},
+                        ],
+                    },
+                    "target_type": "unknown",
+                    "iter_element_type": "tuple[int64, str]",
+                    "iter_mode": "runtime_protocol",
+                    "iter": {"kind": "Name", "id": "pairs", "resolved_type": "object"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        target_plan = out.get("body", [])[0].get("target_plan", {})
+        elems = target_plan.get("elements", [])
+        self.assertEqual(elems[0].get("target_type"), "int64")
+        self.assertEqual(elems[1].get("target_type"), "str")
+
     def test_lower_nested_for_statements_inside_function(self) -> None:
         east2 = {
             "kind": "Module",
