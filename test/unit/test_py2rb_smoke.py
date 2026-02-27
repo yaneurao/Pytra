@@ -157,6 +157,30 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_enumerate(lines)", ruby)
         self.assertIn("__pytra_slice(source, start, i)", ruby)
 
+    def test_sample18_dataclass_ctor_and_self_receiver_are_lowered(self) -> None:
+        sample = find_sample_case("18_mini_language_interpreter")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("attr_accessor :kind, :text, :pos", ruby)
+        self.assertIn("def initialize(kind, text, pos)", ruby)
+        self.assertIn("def initialize(tokens)", ruby)
+        self.assertNotIn("def initialize(self_, tokens)", ruby)
+        self.assertIn("self.tokens = tokens", ruby)
+
+    def test_png_module_call_is_lowered_to_runtime_noop(self) -> None:
+        sample = find_sample_case("01_mandelbrot")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("__pytra_noop(out_path, width, height, pixels)", ruby)
+        self.assertNotIn("png.write_rgb_png(", ruby)
+
+    def test_fixture_is_instance_uses_ruby_is_a_checks(self) -> None:
+        fixture = find_fixture_case("is_instance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("cat.is_a?(Dog)", ruby)
+        self.assertIn("cat.is_a?(Animal)", ruby)
+
 
 if __name__ == "__main__":
     unittest.main()
