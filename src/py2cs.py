@@ -116,5 +116,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    _ = load_cs_profile
     sys.exit(main())

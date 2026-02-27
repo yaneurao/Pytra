@@ -902,6 +902,10 @@ class CSharpEmitter(CodeEmitter):
             return
         if kind == "Expr":
             expr_d = self.any_to_dict_or_empty(stmt.get("value"))
+            if self.any_dict_get_str(expr_d, "kind", "") == "Constant":
+                if isinstance(expr_d.get("value"), str):
+                    # Python docstring statement は C# では無意味なので除外する。
+                    return
             if self.any_dict_get_str(expr_d, "kind", "") == "Name":
                 expr_name = self.any_dict_get_str(expr_d, "id", "")
                 if expr_name == "break":
@@ -1477,6 +1481,10 @@ class CSharpEmitter(CodeEmitter):
             return "Pytra.CsModule.gif_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "time":
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+        if owner_name == "sys" and attr_raw == "exit":
+            if len(rendered_args) >= 1:
+                return "System.Environment.Exit(System.Convert.ToInt32(" + rendered_args[0] + "))"
+            return "System.Environment.Exit(0)"
 
         owner_expr = self.render_expr(owner_node)
         owner_type = self.get_expr_type(owner_node)

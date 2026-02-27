@@ -422,6 +422,35 @@ def run() -> str:
         self.assertIn("public static string pick(string name = \"\")", cs)
         self.assertIn("return pick();", cs)
 
+    def test_sys_exit_is_lowered_to_environment_exit(self) -> None:
+        src = """from pytra.std import sys
+
+def stop() -> None:
+    sys.exit(0)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "sys_exit.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("System.Environment.Exit(System.Convert.ToInt32(0))", cs)
+        self.assertNotIn("sys.exit(", cs)
+
+    def test_docstring_expr_is_not_emitted_as_statement(self) -> None:
+        src = '''def f() -> int:
+    """doc"""
+    return 1
+'''
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "docstring_stmt.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertNotIn('"doc";', cs)
+        self.assertIn("return 1;", cs)
+
     def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
         emitter = CSharpEmitter({"kind": "Module", "body": [], "meta": {}})
         emitter.hooks["on_render_expr_name"] = (
