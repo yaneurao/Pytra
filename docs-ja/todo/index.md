@@ -31,6 +31,19 @@
 
 ## 未完了タスク
 
+### P0: Go/Java/Swift/Kotlin sidecar 完全撤去（最優先）
+
+文脈: [docs-ja/plans/p0-sidecar-full-removal.md](../plans/p0-sidecar-full-removal.md)
+
+1. [ ] [ID: P0-SIDECAR-REMOVE-01] Go/Java/Swift/Kotlin backend の sidecar 互換経路を完全撤去し、native 単一路線へ統一する。
+2. [ ] [ID: P0-SIDECAR-REMOVE-01-S1-01] `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` から `--*-backend sidecar` と sidecar 分岐を削除する。
+3. [ ] [ID: P0-SIDECAR-REMOVE-01-S1-02] sidecar 専用 emitter import / `transpile_to_js` / `write_js_runtime_shims` 依存を撤去し、未使用コードを整理する。
+4. [ ] [ID: P0-SIDECAR-REMOVE-01-S2-01] transpile/smoke/check 導線（`test_py2*` / `check_py2*_transpile.py` / `runtime_parity_check.py`）から sidecar 指定経路を除去する。
+5. [ ] [ID: P0-SIDECAR-REMOVE-01-S2-02] `sample/go` / `sample/java` / `sample/swift` / `sample/kotlin` を再生成し、`.js` sidecar 非生成を回帰条件として固定する。
+6. [ ] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
+7. [ ] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
+8. [ ] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
+
 ### P3: microgpt 原本保全タスク再開（低優先）
 
 文脈: [docs-ja/plans/p3-microgpt-revival.md](../plans/p3-microgpt-revival.md)
