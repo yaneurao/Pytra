@@ -39,6 +39,7 @@
 - 2026-02-27: [ID: `P3-MSP-REVIVE-01-S2-01`] `check_microgpt_original_py2cpp_regression.py` の既定期待値を `--expect-stage F --expect-phase syntax-check` へ更新し、phase 監視（`--expect-phase`）を追加した。`test_check_microgpt_original_py2cpp_regression.py` を追加して既定値・phase mismatch 検知・baseline 受理を固定した。
 - 2026-02-27: [ID: `P3-MSP-REVIVE-01-S2-02`] 同スクリプトに `owner=parser/lower/runtime` 出力を追加し、失敗時の責務分類を即時判定できるようにした。あわせて本 plan に運用ログテンプレートを追加し、記録粒度を固定した。
 - 2026-02-27: [ID: `P3-MSP-REVIVE-01-S3-01`] `test_microgpt_revival_smoke.py` を追加し、原本入力回帰スクリプト（`--expect-stage F --expect-phase syntax-check`）を E2E 実行する smoke を CI 導線に組み込んだ（`Ran 1 test ... OK`）。
+- 2026-02-27: [ID: `P3-MSP-REVIVE-01-S3-02`] 本再開タスクを archive へ戻す完了判定を定義し、「監視導線が壊れていないこと」を移管条件として固定した。
 
 ## 旧ID対応表（S1-01）
 
@@ -74,6 +75,15 @@
 - `first_error` にはスクリプト出力の `error=` 行をそのまま1行で残す（詳細ログは別ファイルへ）。
 - `stage` が変化した場合は `期待値更新` の判断（`--expect-stage/--expect-phase`）を同日のログに残す。
 
+## 完了判定（S3-02）
+
+archive へ戻す条件:
+1. `python3 tools/check_microgpt_original_py2cpp_regression.py` が既定（`stage=F`, `phase=syntax-check`）で成功し、`owner=runtime` を出力する。
+2. `python3 -m unittest discover -s test/unit -p 'test_check_microgpt_original_py2cpp_regression.py' -v` が成功する。
+3. `python3 -m unittest discover -s test/unit -p 'test_microgpt_revival_smoke.py' -v` が成功する。
+4. `docs-ja/todo/index.md` の進捗メモに直近の `stage/phase/owner/first_error` が残っている。
+5. 上記 1〜4 を満たした時点で、本 `P3-MSP-REVIVE-01` セクションを `docs-ja/todo/archive/YYYYMMDD.md` へ移し、`docs-ja/todo/archive/index.md` の日付索引を更新する。
+
 ## 分解
 
 - [x] [ID: P3-MSP-REVIVE-01-S1-01] archive 側の `P3-MSP-*` 履歴と再開スコープの対応表を作成し、再開対象を明確化する。
@@ -81,4 +91,4 @@
 - [x] [ID: P3-MSP-REVIVE-01-S2-01] `check_microgpt_original_py2cpp_regression.py` を運用基準へ合わせて見直し、再発検知条件を更新する。
 - [x] [ID: P3-MSP-REVIVE-01-S2-02] 失敗時に parser / lower / runtime の責務へ再分類できるログ運用テンプレートを整備する。
 - [x] [ID: P3-MSP-REVIVE-01-S3-01] 必要に応じて `microgpt` 用の追加 fixture / smoke を補強し、CI での監視を安定化する。
-- [ ] [ID: P3-MSP-REVIVE-01-S3-02] 再開タスク完了時に archive へ戻すための移管条件（完了定義）を文書化する。
+- [x] [ID: P3-MSP-REVIVE-01-S3-02] 再開タスク完了時に archive へ戻すための移管条件（完了定義）を文書化する。
