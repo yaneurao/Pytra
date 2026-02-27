@@ -38,6 +38,7 @@
 - 2026-02-27: [ID: `P3-MSP-REVIVE-01-S1-02`] 原本 `materials/refs/microgpt/microgpt-20260222.py` で `check_microgpt_original_py2cpp_regression.py --expect-stage F` を再実行し、現行期待値を `stage=F`（syntax-check 失敗、先頭シグネチャ: `Value::log()`）に固定した。`py2cpp.py ... -o work/out/microgpt_revival.cpp` も再生成確認した。
 - 2026-02-27: [ID: `P3-MSP-REVIVE-01-S2-01`] `check_microgpt_original_py2cpp_regression.py` の既定期待値を `--expect-stage F --expect-phase syntax-check` へ更新し、phase 監視（`--expect-phase`）を追加した。`test_check_microgpt_original_py2cpp_regression.py` を追加して既定値・phase mismatch 検知・baseline 受理を固定した。
 - 2026-02-27: [ID: `P3-MSP-REVIVE-01-S2-02`] 同スクリプトに `owner=parser/lower/runtime` 出力を追加し、失敗時の責務分類を即時判定できるようにした。あわせて本 plan に運用ログテンプレートを追加し、記録粒度を固定した。
+- 2026-02-27: [ID: `P3-MSP-REVIVE-01-S3-01`] `test_microgpt_revival_smoke.py` を追加し、原本入力回帰スクリプト（`--expect-stage F --expect-phase syntax-check`）を E2E 実行する smoke を CI 導線に組み込んだ（`Ran 1 test ... OK`）。
 
 ## 旧ID対応表（S1-01）
 
@@ -79,5 +80,5 @@
 - [x] [ID: P3-MSP-REVIVE-01-S1-02] 原本 `microgpt` 入力の transpile / syntax-check / 実行確認の現行手順を再確認し、期待値を固定する。
 - [x] [ID: P3-MSP-REVIVE-01-S2-01] `check_microgpt_original_py2cpp_regression.py` を運用基準へ合わせて見直し、再発検知条件を更新する。
 - [x] [ID: P3-MSP-REVIVE-01-S2-02] 失敗時に parser / lower / runtime の責務へ再分類できるログ運用テンプレートを整備する。
-- [ ] [ID: P3-MSP-REVIVE-01-S3-01] 必要に応じて `microgpt` 用の追加 fixture / smoke を補強し、CI での監視を安定化する。
+- [x] [ID: P3-MSP-REVIVE-01-S3-01] 必要に応じて `microgpt` 用の追加 fixture / smoke を補強し、CI での監視を安定化する。
 - [ ] [ID: P3-MSP-REVIVE-01-S3-02] 再開タスク完了時に archive へ戻すための移管条件（完了定義）を文書化する。
