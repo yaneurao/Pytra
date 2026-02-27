@@ -167,7 +167,7 @@ def _cast_from_any(expr: str, kotlin_type: str) -> str:
     if kotlin_type == "Any?":
         return expr
     if kotlin_type in _CLASS_NAMES:
-        return expr
+        return "__pytra_as_" + kotlin_type + "(" + expr + ")"
     return expr
 
 
@@ -415,6 +415,12 @@ def _math_call_name(attr: str) -> str:
         return "kotlin.math.ln"
     if attr == "pow":
         return "kotlin.math.pow"
+    if attr == "floor":
+        return "kotlin.math.floor"
+    if attr == "ceil":
+        return "kotlin.math.ceil"
+    if attr == "abs":
+        return "kotlin.math.abs"
     return _safe_ident(attr, "call")
 
 
@@ -487,6 +493,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "0L"
         return "__pytra_len(" + _render_expr(args[0]) + ")"
+    if callee_name == "enumerate":
+        if len(args) == 0:
+            return "mutableListOf<Any?>()"
+        return "__pytra_enumerate(" + _render_expr(args[0]) + ")"
     if callee_name == "min":
         if len(args) == 0:
             return "0L"
@@ -521,6 +531,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_print(" + ", ".join(rendered_args) + ")"
+    if callee_name in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError"}:
+        if len(args) == 0:
+            return '""'
+        return _render_expr(args[0])
 
     func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
@@ -831,9 +845,34 @@ def _infer_kotlin_type(expr: Any, type_map: dict[str, str] | None = None) -> str
         if name == "len":
             return "Long"
         if name in {"min", "max"}:
+            args_any = expr.get("args")
+            args = args_any if isinstance(args_any, list) else []
+            seen_any = False
+            i = 0
+            while i < len(args):
+                arg_t = _infer_kotlin_type(args[i], type_map)
+                if arg_t == "Double":
+                    return "Double"
+                if arg_t == "Any?":
+                    seen_any = True
+                i += 1
+            if seen_any:
+                return "Any?"
             return "Long"
         if name in _CLASS_NAMES:
             return name
+        func_any = expr.get("func")
+        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+            owner_any = func_any.get("value")
+            owner_name = ""
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner_name = _safe_ident(owner_any.get("id"), "")
+            attr_name = _safe_ident(func_any.get("attr"), "")
+            if owner_name == "math":
+                if attr_name in {"sqrt", "sin", "cos", "tan", "exp", "log", "pow", "floor", "ceil", "abs"}:
+                    return "Double"
+            if attr_name in {"isdigit", "isalpha"}:
+                return "Boolean"
     if kind == "BinOp":
         op = expr.get("op")
         if op == "Div":
@@ -881,8 +920,15 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         stop = "__pytra_int(" + _render_expr(iter_plan_any.get("stop")) + ")"
         step = "__pytra_int(" + _render_expr(iter_plan_any.get("step")) + ")"
         step_tmp = _fresh_tmp(ctx, "step")
+        declared = _declared_set(ctx)
+        type_map = _type_map(ctx)
         lines.append(indent + "val " + step_tmp + " = " + step)
-        lines.append(indent + "var " + target_name + " = " + start)
+        if target_name in declared:
+            lines.append(indent + target_name + " = " + start)
+        else:
+            lines.append(indent + "var " + target_name + " = " + start)
+            declared.add(target_name)
+            type_map[target_name] = "Long"
         lines.append(
             indent
             + "while (("
@@ -905,6 +951,8 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": target_name + " += " + step_tmp,
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = "Long"
@@ -924,19 +972,107 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         target_name = _safe_ident(target_plan_any.get("id"), "item")
         if target_name == "_":
             target_name = _fresh_tmp(ctx, "item")
+        target_type_any = target_plan_any.get("target_type")
+        target_type_txt = target_type_any if isinstance(target_type_any, str) else ""
+        if target_type_txt in {"", "unknown"}:
+            iter_expr_any = iter_plan_any.get("iter_expr")
+            if isinstance(iter_expr_any, dict):
+                iter_elem_t_any = iter_expr_any.get("iter_element_type")
+                if isinstance(iter_elem_t_any, str) and iter_elem_t_any not in {"", "unknown"}:
+                    target_type_txt = iter_elem_t_any
+        target_kotlin_type = _kotlin_type(target_type_txt, allow_void=False)
         lines.append(indent + "val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
         lines.append(indent + "var " + idx_tmp + ": Long = 0L")
         lines.append(indent + "while (" + idx_tmp + " < " + iter_tmp + ".size.toLong()) {")
-        lines.append(indent + "    val " + target_name + " = " + iter_tmp + "[" + idx_tmp + ".toInt()]")
+        if target_kotlin_type == "Any?":
+            lines.append(indent + "    val " + target_name + " = " + iter_tmp + "[" + idx_tmp + ".toInt()]")
+        else:
+            lines.append(
+                indent
+                + "    val "
+                + target_name
+                + ": "
+                + target_kotlin_type
+                + " = "
+                + _cast_from_any(iter_tmp + "[" + idx_tmp + ".toInt()]", target_kotlin_type)
+            )
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": idx_tmp + " += 1L",
         }
         _declared_set(body_ctx).add(target_name)
-        _type_map(body_ctx)[target_name] = "Any?"
+        _type_map(body_ctx)[target_name] = target_kotlin_type
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
+            i += 1
+        lines.append(indent + "    " + idx_tmp + " += 1L")
+        ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
+        lines.append(indent + "}")
+        return lines
+
+    if iter_plan_any.get("kind") == "RuntimeIterForPlan" and target_plan_any.get("kind") == "TupleTarget":
+        iter_expr = _render_expr(iter_plan_any.get("iter_expr"))
+        iter_tmp = _fresh_tmp(ctx, "iter")
+        idx_tmp = _fresh_tmp(ctx, "i")
+        item_tmp = _fresh_tmp(ctx, "it")
+        tuple_tmp = _fresh_tmp(ctx, "tuple")
+        lines.append(indent + "val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
+        lines.append(indent + "var " + idx_tmp + ": Long = 0L")
+        lines.append(indent + "while (" + idx_tmp + " < " + iter_tmp + ".size.toLong()) {")
+        lines.append(indent + "    val " + item_tmp + " = " + iter_tmp + "[" + idx_tmp + ".toInt()]")
+        lines.append(indent + "    val " + tuple_tmp + " = __pytra_as_list(" + item_tmp + ")")
+
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        body_ctx: dict[str, Any] = {
+            "tmp": ctx.get("tmp", 0),
+            "declared": set(_declared_set(ctx)),
+            "types": dict(_type_map(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": idx_tmp + " += 1L",
+        }
+        declared = _declared_set(body_ctx)
+        type_map = _type_map(body_ctx)
+
+        elem_types: list[str] = []
+        parent_t = target_plan_any.get("target_type")
+        if isinstance(parent_t, str):
+            elem_types = _tuple_element_types(parent_t)
+        elem_any = target_plan_any.get("elements")
+        elems = elem_any if isinstance(elem_any, list) else []
+
+        i = 0
+        while i < len(elems):
+            elem = elems[i]
+            if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
+                lines.append(indent + "    // TODO: unsupported tuple target element")
+                i += 1
+                continue
+            name = _safe_ident(elem.get("id"), "item_" + str(i))
+            if name == "_":
+                i += 1
+                continue
+            rhs = tuple_tmp + "[" + str(i) + "]"
+            target_t_any = elem.get("target_type")
+            target_t = target_t_any if isinstance(target_t_any, str) else ""
+            if target_t in {"", "unknown"} and i < len(elem_types):
+                target_t = elem_types[i]
+            kotlin_t = _kotlin_type(target_t, allow_void=False)
+            casted = _cast_from_any(rhs, kotlin_t)
+            if name not in declared:
+                lines.append(indent + "    var " + name + ": " + kotlin_t + " = " + casted)
+                declared.add(name)
+            else:
+                lines.append(indent + "    " + name + " = " + casted)
+            type_map[name] = kotlin_t
+            i += 1
+
         i = 0
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
@@ -987,7 +1123,7 @@ def _emit_tuple_assign(
 
         if kind == "Name":
             name = _safe_ident(elem.get("id"), "tmp_" + str(i))
-            if declare_hint and name not in declared:
+            if name not in declared:
                 lines.append(indent + "var " + name + ": " + elem_type + " = " + casted)
                 declared.add(name)
                 type_map[name] = elem_type
@@ -1011,7 +1147,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
     if kind == "Return":
         if "value" in stmt and stmt.get("value") is not None:
-            return [indent + "return " + _render_expr(stmt.get("value"))]
+            value = _render_expr(stmt.get("value"))
+            return_type_any = ctx.get("return_type")
+            return_type = return_type_any if isinstance(return_type_any, str) else ""
+            if return_type not in {"", "Any?"}:
+                value = _cast_from_any(value, return_type)
+            return [indent + "return " + value]
         return [indent + "return"]
 
     if kind == "Expr":
@@ -1021,6 +1162,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if raw_ident == "break":
                 return [indent + "break"]
             if raw_ident == "continue":
+                prefix_any = ctx.get("continue_prefix")
+                prefix = prefix_any if isinstance(prefix_any, str) else ""
+                if prefix != "":
+                    return [indent + prefix, indent + "continue"]
                 return [indent + "continue"]
         if isinstance(value_any, dict) and value_any.get("kind") == "Call":
             func_any = value_any.get("func")
@@ -1175,6 +1320,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": ctx.get("continue_prefix", ""),
         }
         i = 0
         while i < len(body):
@@ -1193,6 +1340,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": body_ctx.get("tmp", ctx.get("tmp", 0)),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": ctx.get("continue_prefix", ""),
         }
         i = 0
         while i < len(orelse):
@@ -1210,10 +1359,18 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lines = [indent + "while (" + test_expr + ") {"]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
+        body_ctx: dict[str, Any] = {
+            "tmp": ctx.get("tmp", 0),
+            "declared": set(_declared_set(ctx)),
+            "types": dict(_type_map(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": "",
+        }
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
             i += 1
+        ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
         lines.append(indent + "}")
         return lines
 
@@ -1224,13 +1381,20 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + "break"]
 
     if kind == "Continue":
+        prefix_any = ctx.get("continue_prefix")
+        prefix = prefix_any if isinstance(prefix_any, str) else ""
+        if prefix != "":
+            return [indent + prefix, indent + "continue"]
         return [indent + "continue"]
 
     if kind == "Import" or kind == "ImportFrom":
         return []
 
     if kind == "Raise":
-        return [indent + "throw RuntimeException(\"pytra raise\")"]
+        exc_any = stmt.get("exc")
+        if exc_any is None:
+            return [indent + "throw RuntimeException(\"pytra raise\")"]
+        return [indent + "throw RuntimeException(__pytra_str(" + _render_expr(exc_any) + "))"]
 
     return [indent + "// TODO: unsupported stmt kind " + str(kind)]
 
@@ -1286,7 +1450,7 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
 
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
+    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type}
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
 
@@ -1326,6 +1490,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
+    instance_fields: list[tuple[str, str]] = []
     for raw_name, raw_type in field_types.items():
         if not isinstance(raw_name, str):
             continue
@@ -1335,9 +1500,35 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         if default == "":
             default = "0L"
         lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default)
+        instance_fields.append((field_name, field_type))
 
     body_any = cls.get("body")
     body = body_any if isinstance(body_any, list) else []
+    has_init = False
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+            if _safe_ident(node.get("name"), "") == "__init__":
+                has_init = True
+                break
+        i += 1
+
+    if not has_init and len(instance_fields) > 0:
+        ctor_params: list[str] = []
+        i = 0
+        while i < len(instance_fields):
+            fname, ftype = instance_fields[i]
+            ctor_params.append(fname + ": " + ftype)
+            i += 1
+        lines.append("")
+        lines.append(indent + "    constructor(" + ", ".join(ctor_params) + ") : this() {")
+        i = 0
+        while i < len(instance_fields):
+            fname, _ = instance_fields[i]
+            lines.append(indent + "        this." + fname + " = " + fname)
+            i += 1
+        lines.append(indent + "    }")
 
     i = 0
     while i < len(body):
@@ -1568,6 +1759,17 @@ def _emit_runtime_helpers() -> list[str]:
         "    return out",
         "}",
         "",
+        "fun __pytra_enumerate(v: Any?): MutableList<Any?> {",
+        "    val items = __pytra_as_list(v)",
+        "    val out = mutableListOf<Any?>()",
+        "    var i = 0L",
+        "    while (i < items.size.toLong()) {",
+        "        out.add(mutableListOf(i, items[i.toInt()]))",
+        "        i += 1L",
+        "    }",
+        "    return out",
+        "}",
+        "",
         "fun __pytra_as_list(v: Any?): MutableList<Any?> {",
         "    if (v is MutableList<*>) {",
         "        @Suppress(\"UNCHECKED_CAST\")",
@@ -1704,6 +1906,10 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
         lines.append("fun __pytra_is_" + cname + "(v: Any?): Boolean {")
         lines.append("    return v is " + cname)
         lines.append("}")
+        lines.append("")
+        lines.append("fun __pytra_as_" + cname + "(v: Any?): " + cname + " {")
+        lines.append("    return if (v is " + cname + ") v else " + cname + "()")
+        lines.append("}")
         i += 1
 
     i = 0
@@ -1722,9 +1928,33 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
     lines.append("fun main(args: Array<String>) {")
     ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
     if len(main_guard) > 0:
+        has_pytra_main = False
+        i = 0
+        while i < len(functions):
+            if _safe_ident(functions[i].get("name"), "") == "__pytra_main":
+                has_pytra_main = True
+                break
+            i += 1
         i = 0
         while i < len(main_guard):
-            lines.extend(_emit_stmt(main_guard[i], indent="    ", ctx=ctx))
+            st = main_guard[i]
+            if has_pytra_main and isinstance(st, dict) and st.get("kind") == "Expr":
+                value_any = st.get("value")
+                if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+                    fn_any = value_any.get("func")
+                    if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
+                        if _safe_ident(fn_any.get("id"), "") == "main":
+                            args_any = value_any.get("args")
+                            args_main = args_any if isinstance(args_any, list) else []
+                            rendered_args: list[str] = []
+                            j = 0
+                            while j < len(args_main):
+                                rendered_args.append(_render_expr(args_main[j]))
+                                j += 1
+                            lines.append("    __pytra_main(" + ", ".join(rendered_args) + ")")
+                            i += 1
+                            continue
+            lines.extend(_emit_stmt(st, indent="    ", ctx=ctx))
             i += 1
     else:
         has_case_main = False
