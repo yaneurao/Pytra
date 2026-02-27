@@ -77,7 +77,7 @@ def _render_table(rows: list[GapRow], slower: bool, top_n: int) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Extract C++/Rust runtime gap ranking from README table")
-    parser.add_argument("--readme", default="readme.md", help="README path relative to repo root")
+    parser.add_argument("--readme", default="README.md", help="README path relative to repo root")
     parser.add_argument("--top", type=int, default=8, help="rows per ranking table")
     parser.add_argument("--emit-json", default="", help="optional output JSON path")
     args = parser.parse_args()

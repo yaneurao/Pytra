@@ -220,7 +220,7 @@ QualifiedSymbolRef
 - 衝突検出結果（成功/失敗の判定）
 - テストは「構文差」ではなく「解決結果の同一性」を基準にする。
 
-## 追記: 対応言語ごとの具体実装方針（`readme.md` / `docs/ja/plans/pytra-wip.md` 準拠）
+## 追記: 対応言語ごとの具体実装方針（`README.md` / `docs/ja/plans/pytra-wip.md` 準拠）
 
 対応言語は `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin`。
 
