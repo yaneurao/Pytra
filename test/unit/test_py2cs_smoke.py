@@ -376,6 +376,52 @@ def f(x: object) -> bool:
         self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_SET)", cs)
         self.assertNotIn("return isinstance(", cs)
 
+    def test_path_alias_constructor_and_parent_are_lowered(self) -> None:
+        src = """from pytra.std.pathlib import Path
+
+def build_path() -> Path:
+    p: Path = Path("out/file.cs")
+    return p.parent
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "path_case.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("using Path = Pytra.CsModule.py_path;", cs)
+        self.assertIn("new Path(\"out/file.cs\")", cs)
+        self.assertIn("return p.parent();", cs)
+
+    def test_string_endswith_and_startswith_are_lowered(self) -> None:
+        src = """def f(s: str) -> bool:
+    return s.endswith(".py") or s.startswith("tmp")
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "str_methods.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("s.EndsWith(\".py\")", cs)
+        self.assertIn("s.StartsWith(\"tmp\")", cs)
+
+    def test_default_parameter_is_emitted_for_constant_default(self) -> None:
+        src = """def pick(name: str = "") -> str:
+    return name
+
+def run() -> str:
+    return pick()
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "default_param.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("public static string pick(string name = \"\")", cs)
+        self.assertIn("return pick();", cs)
+
     def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
         emitter = CSharpEmitter({"kind": "Module", "body": [], "meta": {}})
         emitter.hooks["on_render_expr_name"] = (

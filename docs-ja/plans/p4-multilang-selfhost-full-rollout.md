@@ -39,6 +39,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-01`] `python3 tools/check_multilang_selfhost_suite.py` を再実行し、`docs-ja/plans/p1-multilang-selfhost-status.md` / `docs-ja/plans/p1-multilang-selfhost-multistage-status.md` を更新した。未達カテゴリを言語別に固定し、blocking chain を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-02`] `runner_not_defined` 対象（go/java/swift/kotlin）の multistage runner 契約を定義し、`check_multilang_selfhost_multistage.py` へ段階実装する API 形を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-01`] `src/py2rs.py` の括弧付き `from-import` を selfhost parser 互換の単一行 import へ修正し、`python3 tools/check_multilang_selfhost_stage1.py` / `python3 tools/check_multilang_selfhost_multistage.py` で `rs stage1=pass` を確認した。`rs` の先頭失敗は `stage1_transpile_fail` から `compile_fail`（stage2 build）へ遷移した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S1`] C# emitter の selfhost compile 阻害を一段解消（`Path` alias/constructor, `str.endswith|startswith` 変換, 関数定義の定数デフォルト引数出力）。`check_multilang_selfhost_*` 再実行で `cs` の先頭失敗が `Path` 未解決から `sys` 未解決へ遷移し、次ブロッカーを特定した。
 
 ## 現状固定（S1-01）
 
@@ -97,6 +98,9 @@
 - [x] [ID: P4-MULTILANG-SH-01-S1-02] multistage runner 未定義言語（go/java/swift/kotlin）の runner 契約を定義し、`runner_not_defined` を解消する実装方針を確定する。
 - [x] [ID: P4-MULTILANG-SH-01-S2-01] Rust selfhost の stage1 失敗（from-import 受理）を解消し、stage2 へ進める。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02] C# selfhost の stage2 compile 失敗を解消し、stage3 変換を通す。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S1] C# emitter の selfhost 互換ギャップ（`Path`/`str.endswith|startswith`/定数デフォルト引数）を埋め、先頭 compile エラーを前進させる。
+- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2] `py2cs.py` selfhost 生成物の import 依存解決方針（単体 selfhost source 生成 or モジュール連結）を確定し、`sys/argparse/transpile_cli` 未解決を解消する。
+- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-02] Go/Java/Swift/Kotlin の native backend 化タスクと接続し、selfhost 実行チェーンを有効化する。

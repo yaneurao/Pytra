@@ -92,6 +92,8 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.png_helper"
             if module_id in {"pytra.runtime", "pytra.utils"} and export_name == "gif":
                 return "Pytra.CsModule.gif_helper"
+            if module_id in {"pathlib", "pytra.std.pathlib"} and export_name == "Path":
+                return "Pytra.CsModule.py_path"
             return ""
         return ""
 
@@ -418,6 +420,26 @@ class CSharpEmitter(CodeEmitter):
             + out_name
             + "; }))()"
         )
+
+    def _render_optional_default_value(self, default_node: Any) -> str:
+        """C# optional parameter の既定値リテラルを描画する。"""
+        node = self.any_to_dict_or_empty(default_node)
+        if self.any_dict_get_str(node, "kind", "") != "Constant":
+            return ""
+        value = node.get("value")
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, int):
+            return str(value)
+        if isinstance(value, float):
+            if value.is_integer():
+                return str(int(value)) + ".0"
+            return str(value)
+        if isinstance(value, str):
+            return self.quote_string_literal(value)
+        if value is None:
+            return "null"
+        return ""
 
     def _render_range_expr(self, expr_d: dict[str, Any]) -> str:
         """RangeExpr を C# `List<long>` 生成式へ lower する。"""
@@ -813,6 +835,7 @@ class CSharpEmitter(CodeEmitter):
         fn_name = self._safe_name(fn_name_raw)
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        arg_defaults = self.any_to_dict_or_empty(fn.get("arg_defaults"))
         args: list[str] = []
         scope_names: set[str] = set()
 
@@ -829,7 +852,11 @@ class CSharpEmitter(CodeEmitter):
             arg_cs_t = self._cs_type(arg_east_t)
             if arg_cs_t == "":
                 arg_cs_t = "object"
-            args.append(arg_cs_t + " " + safe)
+            default_text = self._render_optional_default_value(arg_defaults.get(arg_name))
+            if default_text != "":
+                args.append(arg_cs_t + " " + safe + " = " + default_text)
+            else:
+                args.append(arg_cs_t + " " + safe)
             scope_names.add(arg_name)
             self.declared_var_types[arg_name] = self.normalize_type_name(arg_east_t)
 
@@ -1372,6 +1399,10 @@ class CSharpEmitter(CodeEmitter):
             fn_name = "__pytra_main"
         if fn_name_raw in self.class_names:
             return "new " + self._safe_name(fn_name_raw) + "(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw == "Path":
+            if len(rendered_args) == 0:
+                return "new Path(\"\")"
+            return "new Path(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "isinstance":
             return self._render_isinstance_call(rendered_args, arg_nodes)
         if fn_name_raw == "perf_counter":
@@ -1457,6 +1488,10 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.py_runtime.py_isdigit(" + owner_expr + ")"
             if attr_raw == "isalpha" and len(rendered_args) == 0:
                 return "Pytra.CsModule.py_runtime.py_isalpha(" + owner_expr + ")"
+            if attr_raw == "endswith" and len(rendered_args) == 1:
+                return owner_expr + ".EndsWith(" + rendered_args[0] + ")"
+            if attr_raw == "startswith" and len(rendered_args) == 1:
+                return owner_expr + ".StartsWith(" + rendered_args[0] + ")"
 
         if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
             if attr_raw == "append" and len(rendered_args) == 1:
@@ -1557,6 +1592,14 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.gif_helper." + attr
             if owner_kind == "Name" and owner_name == "time":
                 return "Pytra.CsModule.time." + attr
+            owner_type = self.get_expr_type(owner_node)
+            if owner_type == "Path":
+                if attr == "parent":
+                    return self.render_expr(owner_node) + ".parent()"
+                if attr == "name":
+                    return self.render_expr(owner_node) + ".name()"
+                if attr == "stem":
+                    return self.render_expr(owner_node) + ".stem()"
             return self.render_expr(owner_node) + "." + attr
 
         if kind == "UnaryOp":
