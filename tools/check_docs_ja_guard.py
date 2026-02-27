@@ -11,7 +11,6 @@ DOCS_JA = ROOT / "docs" / "ja"
 
 ALLOWED_EXACT: set[str] = {
     "README.md",
-    "VERSION",
     "how-to-use.md",
     "news/index.md",
     "spec/index.md",
