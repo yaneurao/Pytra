@@ -51,6 +51,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S5`] `set/list/dict` の lower を型ヒント連動で補強し、`for ch in str` を `ToString()` 投影に変換、`strip/find/rfind/replace` lower を追加した。`python3 test/unit/test_py2cs_smoke.py`（32件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1061` は `109 -> 20`、`CS0103` は `81 -> 36` へ縮退した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6`] `@staticmethod/@classmethod` の static 出力を実装し、`json.loads` lower と `dict.get/items` の unknown 型フォールバックを追加した。`python3 test/unit/test_py2cs_smoke.py`（32件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0120` は `5 -> 0`、`CS1061` は `20 -> 10`、`CS0103` は `36 -> 34` に縮退した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CSharpEmitter._collect_using_lines` のローカル helper をクラスメソッドへ抽出し、`_emit_assign` の `item_expr` を事前初期化した。`python3 test/unit/test_py2cs_smoke.py`（34件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0103` を `34 -> 12` へ縮退させた（`CS1503/CS0266` は継続課題）。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# selfhost compile 向けに keyword 引数呼び出し崩れ対策（`code_emitter`/`cs_emitter`/`transpile_cli`）、`chr/ord` lower、`py2cs.py` の argparse 依存除去、`prepare_selfhost_source(_cs).py` の補助生成を実施した。`python3 test/unit/test_py2cs_smoke.py`（34件）は継続通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0103` を `12 -> 1`、`CS0815` を `5 -> 3` まで縮退させた（主残件は `CS1502/CS1503/CS0266` の型不一致群）。
 
 ## 現状固定（S1-01）
 
