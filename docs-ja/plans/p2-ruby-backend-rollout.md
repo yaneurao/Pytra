@@ -47,12 +47,13 @@
 - 2026-02-27: ユーザー指示により、追加言語の実装順を `Ruby -> Lua -> PHP` として固定した。
 - 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S1-01`] `docs-ja/spec/spec-ruby-native-backend.md`（英訳: `docs/spec/spec-ruby-native-backend.md`）を追加し、EAST3 入力責務・fail-closed・runtime 境界・非対象を文書化した。
 - 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S1-02`] `src/py2rb.py` と `src/hooks/ruby/emitter/`（`ruby_native_emitter.py`）を追加し、`add/if_else/for_range` を変換できる最小骨格を実装した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v` は `Ran 9 tests ... OK (skipped=1)`（`ruby` toolchain 未導入で実行系テストを skip）を確認した。
+- 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S2-01`] `ruby_native_emitter.py` に `ListComp/RangeExpr/Slice/ObjLen/ObjStr/Unbox` と `bytearray/bytes/enumerate/range/list/dict/abs` の最小 lower/runtime helper を追加し、`sample/py` 18件の変換通過と `Ran 11 tests ... OK (skipped=1)` を確認した。
 
 ## 分解
 
 - [x] [ID: P2-RUBY-BACKEND-01-S1-01] Ruby backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を文書化する。
 - [x] [ID: P2-RUBY-BACKEND-01-S1-02] `src/py2rb.py` と `src/hooks/ruby/emitter/` の骨格を追加し、最小 fixture を通す。
-- [ ] [ID: P2-RUBY-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
+- [x] [ID: P2-RUBY-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
 - [ ] [ID: P2-RUBY-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装する。
 - [ ] [ID: P2-RUBY-BACKEND-01-S3-01] `check_py2rb_transpile` と smoke/parity 回帰導線を追加する。
 - [ ] [ID: P2-RUBY-BACKEND-01-S3-02] `sample/ruby` 再生成と README/How-to-use 同期を行う。

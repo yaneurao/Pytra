@@ -28,6 +28,13 @@ def find_fixture_case(stem: str) -> Path:
     return matches[0]
 
 
+def find_sample_case(stem: str) -> Path:
+    matches = sorted((ROOT / "sample" / "py").glob(f"{stem}.py"))
+    if not matches:
+        raise FileNotFoundError(f"missing sample: {stem}")
+    return matches[0]
+
+
 class Py2RbSmokeTest(unittest.TestCase):
     def test_load_ruby_profile_contains_core_sections(self) -> None:
         profile = load_ruby_profile()
@@ -134,6 +141,21 @@ class Py2RbSmokeTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             run = subprocess.run(["ruby", str(out_rb)], capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, msg=f"{run.stdout}\n{run.stderr}")
+
+    def test_sample07_listcomp_and_bytearray_are_lowered(self) -> None:
+        sample = find_sample_case("07_game_of_life_loop")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("grid = __pytra_list_comp_range(", ruby)
+        self.assertIn("frame = __pytra_bytearray(", ruby)
+        self.assertNotIn("grid = nil", ruby)
+
+    def test_sample18_enumerate_and_slice_are_lowered(self) -> None:
+        sample = find_sample_case("18_mini_language_interpreter")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("__pytra_enumerate(lines)", ruby)
+        self.assertIn("__pytra_slice(source, start, i)", ruby)
 
 
 if __name__ == "__main__":

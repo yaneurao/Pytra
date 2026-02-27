@@ -207,7 +207,14 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 
 def _render_subscript_expr(expr: dict[str, Any]) -> str:
     owner = _render_expr(expr.get("value"))
-    index = _render_expr(expr.get("slice"))
+    slice_any = expr.get("slice")
+    if isinstance(slice_any, dict) and slice_any.get("kind") == "Slice":
+        lower_any = slice_any.get("lower")
+        upper_any = slice_any.get("upper")
+        lower = _render_expr(lower_any) if isinstance(lower_any, dict) else "0"
+        upper = _render_expr(upper_any) if isinstance(upper_any, dict) else "__pytra_len(" + owner + ")"
+        return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
+    index = _render_expr(slice_any)
     return "__pytra_get_index(" + owner + ", " + index + ")"
 
 
@@ -229,6 +236,55 @@ def _render_list_expr(expr: dict[str, Any]) -> str:
     return "[" + ", ".join(out) + "]"
 
 
+def _render_dict_expr(expr: dict[str, Any]) -> str:
+    keys_any = expr.get("keys")
+    vals_any = expr.get("values")
+    keys = keys_any if isinstance(keys_any, list) else []
+    vals = vals_any if isinstance(vals_any, list) else []
+    if len(keys) == 0 or len(vals) == 0:
+        return "{}"
+    pairs: list[str] = []
+    i = 0
+    while i < len(keys) and i < len(vals):
+        pairs.append(_render_expr(keys[i]) + " => " + _render_expr(vals[i]))
+        i += 1
+    return "{ " + ", ".join(pairs) + " }"
+
+
+def _render_range_expr(expr: dict[str, Any]) -> str:
+    start = _render_expr(expr.get("start"))
+    stop = _render_expr(expr.get("stop"))
+    step = _render_expr(expr.get("step"))
+    return "__pytra_range(" + start + ", " + stop + ", " + step + ")"
+
+
+def _render_list_comp_expr(expr: dict[str, Any]) -> str:
+    gens_any = expr.get("generators")
+    gens = gens_any if isinstance(gens_any, list) else []
+    if len(gens) != 1 or not isinstance(gens[0], dict):
+        return "[]"
+    gen = gens[0]
+    ifs_any = gen.get("ifs")
+    ifs = ifs_any if isinstance(ifs_any, list) else []
+    if len(ifs) != 0:
+        return "[]"
+    target_any = gen.get("target")
+    if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+        return "[]"
+    loop_var = _safe_ident(target_any.get("id"), "__lc_i")
+    if loop_var == "_":
+        loop_var = "__lc_i"
+    elt = _render_expr(expr.get("elt"))
+    iter_any = gen.get("iter")
+    if isinstance(iter_any, dict) and iter_any.get("kind") == "RangeExpr":
+        start = _render_expr(iter_any.get("start"))
+        stop = _render_expr(iter_any.get("stop"))
+        step = _render_expr(iter_any.get("step"))
+        return "__pytra_list_comp_range(" + start + ", " + stop + ", " + step + ") { |" + loop_var + "| " + elt + " }"
+    iter_expr = "__pytra_as_list(" + _render_expr(iter_any) + ")"
+    return iter_expr + ".map { |" + loop_var + "| " + elt + " }"
+
+
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
@@ -245,6 +301,38 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "true"
     if callee_name == "perf_counter":
         return "__pytra_perf_counter()"
+    if callee_name == "bytearray":
+        if len(args) == 0:
+            return "__pytra_bytearray()"
+        return "__pytra_bytearray(" + _render_expr(args[0]) + ")"
+    if callee_name == "bytes":
+        if len(args) == 0:
+            return "__pytra_bytes([])"
+        return "__pytra_bytes(" + _render_expr(args[0]) + ")"
+    if callee_name == "range":
+        if len(args) == 0:
+            return "[]"
+        if len(args) == 1:
+            return "__pytra_range(0, " + _render_expr(args[0]) + ", 1)"
+        if len(args) == 2:
+            return "__pytra_range(" + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ", 1)"
+        return "__pytra_range(" + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ", " + _render_expr(args[2]) + ")"
+    if callee_name == "enumerate":
+        if len(args) == 0:
+            return "[]"
+        return "__pytra_enumerate(" + _render_expr(args[0]) + ")"
+    if callee_name == "list":
+        if len(args) == 0:
+            return "[]"
+        return "__pytra_as_list(" + _render_expr(args[0]) + ")"
+    if callee_name == "dict":
+        if len(args) == 0:
+            return "{}"
+        return "__pytra_as_dict(" + _render_expr(args[0]) + ")"
+    if callee_name == "abs":
+        if len(args) == 0:
+            return "0"
+        return "__pytra_abs(" + _render_expr(args[0]) + ")"
     if callee_name == "int":
         if len(args) == 0:
             return "0"
@@ -393,6 +481,20 @@ def _render_expr(expr: Any) -> str:
         return _render_ifexp_expr(expr)
     if kind == "List" or kind == "Tuple":
         return _render_list_expr(expr)
+    if kind == "Dict":
+        return _render_dict_expr(expr)
+    if kind == "RangeExpr":
+        return _render_range_expr(expr)
+    if kind == "ListComp":
+        return _render_list_comp_expr(expr)
+    if kind == "ObjLen":
+        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
+    if kind == "ObjStr":
+        return "__pytra_str(" + _render_expr(expr.get("value")) + ")"
+    if kind == "ObjBool":
+        return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
+    if kind == "Unbox" or kind == "Box":
+        return _render_expr(expr.get("value"))
     return "nil"
 
 
@@ -426,7 +528,6 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + step_tmp + " = " + step)
         lines.append(indent + target + " = " + start)
         lines.append(indent + "while ((" + step_tmp + " >= 0 && " + target + " < " + stop + ") || (" + step_tmp + " < 0 && " + target + " > " + stop + "))")
-        lines.append(indent + "  ")
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
@@ -725,7 +826,88 @@ def _emit_runtime_helpers() -> list[str]:
         "",
         "def __pytra_as_list(v)",
         "  return v if v.is_a?(Array)",
+        "  return v.to_a if v.respond_to?(:to_a)",
         "  []",
+        "end",
+        "",
+        "def __pytra_as_dict(v)",
+        "  return v if v.is_a?(Hash)",
+        "  {}",
+        "end",
+        "",
+        "def __pytra_bytearray(v=nil)",
+        "  return [] if v.nil?",
+        "  if v.is_a?(Integer)",
+        "    n = v",
+        "    n = 0 if n < 0",
+        "    return Array.new(n, 0)",
+        "  end",
+        "  if v.is_a?(String)",
+        "    return v.bytes",
+        "  end",
+        "  src = __pytra_as_list(v)",
+        "  out = []",
+        "  i = 0",
+        "  while i < src.length",
+        "    out << (__pytra_int(src[i]) & 255)",
+        "    i += 1",
+        "  end",
+        "  out",
+        "end",
+        "",
+        "def __pytra_bytes(v)",
+        "  return [] if v.nil?",
+        "  return v.bytes if v.is_a?(String)",
+        "  src = __pytra_as_list(v)",
+        "  out = []",
+        "  i = 0",
+        "  while i < src.length",
+        "    out << (__pytra_int(src[i]) & 255)",
+        "    i += 1",
+        "  end",
+        "  out",
+        "end",
+        "",
+        "def __pytra_range(start_v, stop_v, step_v)",
+        "  out = []",
+        "  step = __pytra_int(step_v)",
+        "  return out if step == 0",
+        "  i = __pytra_int(start_v)",
+        "  stop = __pytra_int(stop_v)",
+        "  while ((step >= 0 && i < stop) || (step < 0 && i > stop))",
+        "    out << i",
+        "    i += step",
+        "  end",
+        "  out",
+        "end",
+        "",
+        "def __pytra_list_comp_range(start_v, stop_v, step_v)",
+        "  out = []",
+        "  step = __pytra_int(step_v)",
+        "  return out if step == 0",
+        "  i = __pytra_int(start_v)",
+        "  stop = __pytra_int(stop_v)",
+        "  while ((step >= 0 && i < stop) || (step < 0 && i > stop))",
+        "    out << yield(i)",
+        "    i += step",
+        "  end",
+        "  out",
+        "end",
+        "",
+        "def __pytra_enumerate(v)",
+        "  src = __pytra_as_list(v)",
+        "  out = []",
+        "  i = 0",
+        "  while i < src.length",
+        "    out << [i, src[i]]",
+        "    i += 1",
+        "  end",
+        "  out",
+        "end",
+        "",
+        "def __pytra_abs(v)",
+        "  x = __pytra_float(v)",
+        "  x < 0 ? -x : x",
         "end",
         "",
         "def __pytra_get_index(container, index)",
