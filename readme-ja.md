@@ -85,12 +85,11 @@ Pythonで書かれた[サンプルコード](sample/readme-ja.md)の実行時間
 |15 |波干渉ループ（GIF）|2.631|0.402|0.299|0.252|1.196|0.616|0.794|0.609|0.614|0.629|0.612|
 |16 |ガラス彫刻のカオス回転（GIF）|6.847|0.606|0.277|0.246|1.220|0.650|0.822|0.638|0.643|0.667|0.643|
 |17 |モンテカルロ法で円周率近似|2.981|0.105|0.019|0.018|0.098|0.431|0.433|0.432|0.433|0.436|0.436|
-|18 |ミニ言語インタプリタ|2.037|0.601|N/A|0.423|0.735|0.446|0.446|0.405|0.417|0.423|0.417|
+|18 |ミニ言語インタプリタ|2.037|0.601|0.610|0.427|0.735|0.446|0.446|0.405|0.417|0.423|0.417|
 
 注記:
 - 計測条件・判定基準・整合確認ログの詳細は [`sample/readme-ja.md`](sample/readme-ja.md) を参照してください。
-- C++/Rust 列は 2026-02-27 に `tools/benchmark_sample_cpp_rs.py`（fresh transpile, `warmup=1`, `repeat=5`）で再計測しました（ログ: `work/logs/bench_cpp_rs_after_east3_opt_20260227_cases01_17.json`）。
-- `18_mini_language_interpreter` は C++ 生成コードが現状コンパイル失敗（`isdigit`/`isalpha` 解決失敗）するため C++ 列を `N/A` としています。Rust は同条件で個別実測（中央値 `0.423`）を反映しています。
+- C++/Rust 列は 2026-02-27 に `tools/benchmark_sample_cpp_rs.py`（fresh transpile, `warmup=1`, `repeat=5`）で再計測しました（ログ: `work/logs/bench_cpp_rs_after_east3_opt_20260227_cases01_17.json`, `work/logs/bench_cpp_rs_after_east3_opt_20260227_case18.json`）。
 
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 
