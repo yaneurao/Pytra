@@ -223,7 +223,12 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
         return "false"
     left = _render_expr(expr.get("left"))
     right = _render_expr(comps[0])
-    symbol = _cmp_symbol(ops[0])
+    op0 = ops[0]
+    if op0 == "In":
+        return "__pytra_contains(" + right + ", " + left + ")"
+    if op0 == "NotIn":
+        return "(!__pytra_contains(" + right + ", " + left + "))"
+    symbol = _cmp_symbol(op0)
     return "(" + left + " " + symbol + " " + right + ")"
 
 
@@ -1074,6 +1079,14 @@ def _emit_runtime_helpers() -> list[str]:
         "  s = __pytra_str(v)",
         "  return false if s.empty?",
         "  !!(s =~ /\\A[A-Za-z]+\\z/)",
+        "end",
+        "",
+        "def __pytra_contains(container, item)",
+        "  return false if container.nil?",
+        "  return container.key?(item) if container.is_a?(Hash)",
+        "  return container.include?(item) if container.is_a?(Array)",
+        "  return container.include?(__pytra_str(item)) if container.is_a?(String)",
+        "  false",
         "end",
         "",
         "def __pytra_print(*args)",
