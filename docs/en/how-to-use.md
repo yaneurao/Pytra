@@ -24,6 +24,31 @@ For Windows, rewrite commands as follows.
   - Windows PowerShell: `` ` ``
   - Windows cmd.exe: `^`
 
+## Unified CLI (`./pytra`) Usage
+
+Root `./pytra` is a unified launcher that calls `python3 -m pytra.cli`.
+
+```bash
+# Help
+./pytra --help
+
+# Single-file C++ output
+./pytra test/fixtures/core/add.py --output /tmp/add.cpp
+
+# Multi-file C++ output (with manifest)
+./pytra test/fixtures/core/add.py --output-dir out/add_case
+
+# Transpile + build + run
+./pytra test/fixtures/core/add.py --build --output-dir out/add_case --exe add.out --run
+```
+
+Notes:
+- At this point, `./pytra` supports `--target cpp` only.
+- Generated-code optimization level can be set via `--codegen-opt {0,1,2,3}`.
+- In `--build` mode, generated artifacts (`src/*.cpp`, `include/*.h`, `.obj/*.o`, executable) are written under `--output-dir` (default: `out/`).
+- `--exe` sets executable name/output path. Relative values (for example `add.out`) are generated under `--output-dir`.
+- For temporary outputs, prefer consolidating into `out/`. Example: `./pytra INPUT.py --build --output-dir /out/mycase --exe app.out`
+
 ## Constraints To Check First
 
 - Do not directly import Python standard-library modules such as `json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, or `enum`.
