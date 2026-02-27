@@ -1011,8 +1011,25 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
             "resolved_type": "bool",
         }
-        self.assertEqual(emitter.render_expr(isdigit_node), "s.isdigit()")
-        self.assertEqual(emitter.render_expr(isalpha_node), "s.isalpha()")
+        self.assertEqual(emitter.render_expr(isdigit_node), "str(s).isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_node), "str(s).isalpha()")
+
+    def test_render_expr_str_char_class_unknown_value_casts_to_str(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        isdigit_node = {
+            "kind": "StrCharClassOp",
+            "mode": "isdigit",
+            "value": {"kind": "Name", "id": "x", "resolved_type": "unknown"},
+            "resolved_type": "bool",
+        }
+        isalpha_node = {
+            "kind": "StrCharClassOp",
+            "mode": "isalpha",
+            "value": {"kind": "Name", "id": "x", "resolved_type": "unknown"},
+            "resolved_type": "bool",
+        }
+        self.assertEqual(emitter.render_expr(isdigit_node), "str(x).isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_node), "str(x).isalpha()")
 
     def test_builtin_runtime_py_isdigit_isalpha_use_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1044,8 +1061,8 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(isdigit_expr), "s.isdigit()")
-        self.assertEqual(emitter.render_expr(isalpha_expr), "s.isalpha()")
+        self.assertEqual(emitter.render_expr(isdigit_expr), "str(s).isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_expr), "str(s).isalpha()")
 
     def test_render_expr_supports_str_replace_and_join_ir_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

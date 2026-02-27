@@ -118,18 +118,18 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 i++;
                 continue;
             }
-            if (ch.isdigit()) {
+            if (str(ch).isdigit()) {
                 int64 start = i;
-                while ((i < n) && (py_at(source, py_to<int64>(i)).isdigit())) {
+                while ((i < n) && (str(py_at(source, py_to<int64>(i))).isdigit())) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
                 tokens.append(rc<Token>(::rc_new<Token>("NUMBER", text, start)));
                 continue;
             }
-            if ((ch.isalpha()) || (ch == "_")) {
+            if ((str(ch).isalpha()) || (ch == "_")) {
                 int64 start = i;
-                while ((i < n) && (((py_at(source, py_to<int64>(i)).isalpha()) || (py_at(source, py_to<int64>(i)) == "_")) || (py_at(source, py_to<int64>(i)).isdigit()))) {
+                while ((i < n) && (((str(py_at(source, py_to<int64>(i))).isalpha()) || (py_at(source, py_to<int64>(i)) == "_")) || (str(py_at(source, py_to<int64>(i))).isdigit()))) {
                     i++;
                 }
                 str text = py_slice(source, start, i);

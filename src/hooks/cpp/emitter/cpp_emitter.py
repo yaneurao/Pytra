@@ -2467,9 +2467,14 @@ class CppEmitter(
             value_node = expr_d.get("value")
             value_expr = self.render_expr(value_node)
             mode = self.any_dict_get_str(expr_d, "mode", "isdigit")
+            # NOTE:
+            # Some IR nodes keep `resolved_type=str` while rendered C++ expressions
+            # are still `object`-typed (for example `Subscript` on string lowered to
+            # `py_at(...)`). Always normalize through `str(...)` here so char-class
+            # predicates compile and behave consistently.
             if mode == "isalpha":
-                return f"{value_expr}.isalpha()"
-            return f"{value_expr}.isdigit()"
+                return f"str({value_expr}).isalpha()"
+            return f"str({value_expr}).isdigit()"
         if kind == "StrReplace":
             owner_expr = self.render_expr(expr_d.get("owner"))
             old_expr = self.render_expr(expr_d.get("old"))
