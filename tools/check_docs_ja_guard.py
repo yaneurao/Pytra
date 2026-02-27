@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_JA = ROOT / "docs" / "ja"
 
 ALLOWED_EXACT: set[str] = {
+    "AGENTS.md",
     "README.md",
     "how-to-use.md",
     "news/index.md",

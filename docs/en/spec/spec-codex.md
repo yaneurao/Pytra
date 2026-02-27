@@ -17,6 +17,8 @@ This document defines operation rules that Codex follows while working.
 - Assume user instructions are primarily in Japanese and operate with Japanese instructions as the default workflow.
 - `docs/en/` (English docs) may be updated later as delayed translation when needed.
 - If Japanese and English documentation diverge, prioritize `docs/ja/` as canonical.
+- `docs/ja/AGENTS.md` is the committed bootstrap entry for agent operation.
+- Root `AGENTS.md` is a local-only pointer (`.gitignore` target) and is not tracked in Git.
 
 ## 2. TODO Execution Rules
 
