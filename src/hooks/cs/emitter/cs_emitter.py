@@ -100,18 +100,19 @@ class CSharpEmitter(CodeEmitter):
     def _walk_node_names(self, node: Any, out: set[str]) -> None:
         """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
         if isinstance(node, dict):
-            kind = self.any_dict_get_str(node, "kind", "")
+            node_dict = self.any_to_dict_or_empty(node)
+            kind = self.any_dict_get_str(node_dict, "kind", "")
             if kind == "Import" or kind == "ImportFrom":
                 return
             if kind == "Name":
-                name = self.any_to_str(node.get("id"))
+                name = self.any_dict_get_str(node_dict, "id", "")
                 if name != "":
                     out.add(name)
                 return
-            for key, value in node.items():
+            for key in node_dict:
                 if key == "comments":
                     continue
-                self._walk_node_names(value, out)
+                self._walk_node_names(node_dict[key], out)
             return
         if isinstance(node, list):
             for item in node:

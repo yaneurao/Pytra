@@ -43,6 +43,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S1`] C# emitter で `sys.exit` を `System.Environment.Exit` へ lower し、文字列 docstring 式の不要出力を抑止した。`check_multilang_selfhost_*` 再実行で `cs` の先頭失敗が `sys` 未解決から `transpile_to_csharp` 未解決へ遷移し、import 依存閉包（単体 selfhost source 生成 or モジュール連結）の実装が次ブロッカーと確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S1`] 単体 selfhost source 方式の PoC として `tools/prepare_selfhost_source_cs.py` を追加し `selfhost/py2cs.py` を生成。`python3 src/py2cs.py selfhost/py2cs.py -o /tmp/cs_selfhost_full_stage1.cs` を検証した結果、`unsupported_syntax: object receiver attribute/method access is forbidden by language constraints`（`selfhost/py2cs.py` 変換中）で停止し、現行 C# 制約下では PoC が未通過であることを確認した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S1`] `prepare_selfhost_source_cs.py` に C++ selfhost 同等の hook 無効化パッチ（`_call_hook` stub 化 + `set_dynamic_hooks_enabled(False)`）を追加して再検証したが、`selfhost/py2cs.py` の `CSharpEmitter._walk_node_names` 内 `node.get(...)` で同系統の制約違反が継続（`object receiver attribute/method access`）。PoC の阻害要因は dynamic hook 以外にも存在すると確定した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S1`] `CSharpEmitter._walk_node_names` の `Any` 直アクセス（`node.get` / `node.items`）を helper 経由へ置換し、`prepare_selfhost_source_cs.py` 再生成後の `python3 src/py2cs.py selfhost/py2cs.py -o /tmp/cs_selfhost_full_stage1.cs` が成功することを確認した。単体 selfhost source PoC の阻害要因は parse 制約から compile 失敗（`default literal` / C++風テンプレート断片混入等）へ遷移した。
 
 ## 現状固定（S1-01）
 
@@ -107,6 +108,8 @@
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2] C# selfhost 用の import 依存閉包方式（単体 selfhost source 生成 or モジュール連結）を実装し、`transpile_to_csharp` 未解決を解消する。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S1] 単体 selfhost source 方式の PoC（`prepare_selfhost_source_cs.py`）を実装し、変換可否を実測で確認する。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2] PoC 失敗要因（C# object receiver 制約）を解消するか、モジュール連結方式へ pivot して import 依存閉包を成立させる。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S1] 単体 selfhost source PoC の parse 制約（object receiver access）を解消し、`selfhost/py2cs.py` の C# 変換を通す。
+- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2] 単体 selfhost source 生成物（`cs_selfhost_full_stage1.cs`）の compile 失敗を分類し、mcs 通過に必要な emit/runtime 互換ギャップを埋める。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。
