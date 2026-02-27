@@ -31,17 +31,22 @@
 
 確認コマンド:
 - `python3 tools/check_todo_priority.py`
+- `python3 -m unittest discover -s test/unit -p 'test_east2_to_east3_lowering.py' -v`
 - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `python3 tools/check_py2cpp_transpile.py`
-- `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --output-dir sample/cpp --no-runtime`
-- `g++ -std=c++20 -O2 -I src/runtime/cpp sample/cpp/18_mini_language_interpreter.cpp -o /tmp/pytra_sample18_cpp`
+- `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o /tmp/18.cpp --dump-east3-before-opt /tmp/18.east3.before.json`
+- `RUNTIME_SRCS=$(python3 - <<'PY'`<br>`from pathlib import Path`<br>`root = Path('/workspace/Pytra')`<br>`paths = [p.as_posix() for p in sorted((root/'src'/'runtime'/'cpp'/'base').glob('*.cpp'))]`<br>`paths += [p.as_posix() for p in sorted((root/'src'/'runtime'/'cpp'/'pytra').rglob('*.cpp'))]`<br>`print(' '.join(paths))`<br>`PY`<br>`) ; g++ -std=c++20 -O2 -I src/runtime/cpp -I src /tmp/18.cpp $RUNTIME_SRCS -o /tmp/pytra_sample18_cpp`
 
 決定ログ:
 - 2026-02-27: ユーザー質問（型落ち理由）を受け、`ForCore` tuple unpack の要素型伝播不足を独立タスク `P0-FORCORE-TYPE-01` として管理する方針を確定。
+- 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S1-01`] `east2_to_east3_lowering` に tuple 型分解（`tuple[...] -> elements[]`）を実装し、`For` lowering で `target_type=unknown` のとき `iter_element_type` を補助利用して `TupleTarget.elements[].target_type` を埋めるよう更新した。
+- 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S1-02`] C++ `stmt.py` の `ForCore` tuple unpack で、要素 `target_type` が unknown の場合は親 `target_type=tuple[...]` から要素型を復元して `int64/str/...` 束縛を選び、復元不能時のみ `auto/object` にフォールバックするよう更新した。
+- 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-01`] `test_east2_to_east3_lowering.py` に tuple target 型伝播テスト 2件、`test_east3_cpp_bridge.py` に `ForCore` tuple unpack（既知型束縛 / unknown フォールバック）テスト 2件を追加した。
+- 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-02`] `python3 -m unittest discover -s test/unit -p 'test_east2_to_east3_lowering.py' -v`（`22/22`）/ `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`80/80`）/ `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を `/tmp/18.cpp` へ生成し、`tokenize` で `int64 line_index` / `str source` が出ることと、`/tmp/pytra_sample18_cpp` コンパイル・実行成功を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-FORCORE-TYPE-01-S1-01] `target_type=tuple[...]` の要素型を `TupleTarget.elements` へ伝播する lowering 補助を実装する。
-- [ ] [ID: P0-FORCORE-TYPE-01-S1-02] C++ tuple unpack emit で要素型既知時に静的束縛し、未知時のみ `object` フォールバックする。
-- [ ] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む回帰テストを追加し、生成コードの型束縛を固定する。
-- [ ] [ID: P0-FORCORE-TYPE-01-S2-02] transpile + sample コンパイル検証を実行し、文脈ファイルへ結果を記録する。
+- [x] [ID: P0-FORCORE-TYPE-01-S1-01] `target_type=tuple[...]` の要素型を `TupleTarget.elements` へ伝播する lowering 補助を実装する。
+- [x] [ID: P0-FORCORE-TYPE-01-S1-02] C++ tuple unpack emit で要素型既知時に静的束縛し、未知時のみ `object` フォールバックする。
+- [x] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む回帰テストを追加し、生成コードの型束縛を固定する。
+- [x] [ID: P0-FORCORE-TYPE-01-S2-02] transpile + sample コンパイル検証を実行し、文脈ファイルへ結果を記録する。

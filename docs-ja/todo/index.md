@@ -31,42 +31,19 @@
 
 ## 未完了タスク
 
-### P0: Go/Java/Swift/Kotlin sidecar 完全撤去（最優先）
-
-文脈: [docs-ja/plans/p0-sidecar-full-removal.md](../plans/p0-sidecar-full-removal.md)
-
-1. [ ] [ID: P0-SIDECAR-REMOVE-01] Go/Java/Swift/Kotlin backend の sidecar 互換経路を完全撤去し、native 単一路線へ統一する。
-2. [x] [ID: P0-SIDECAR-REMOVE-01-S1-01] `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` から `--*-backend sidecar` と sidecar 分岐を削除する。
-3. [x] [ID: P0-SIDECAR-REMOVE-01-S1-02] sidecar 専用 emitter import / `transpile_to_js` / `write_js_runtime_shims` 依存を撤去し、未使用コードを整理する。
-4. [x] [ID: P0-SIDECAR-REMOVE-01-S2-01] transpile/smoke/check 導線（`test_py2*` / `check_py2*_transpile.py` / `runtime_parity_check.py`）から sidecar 指定経路を除去する。
-5. [x] [ID: P0-SIDECAR-REMOVE-01-S2-02] `sample/go` / `sample/java` / `sample/swift` / `sample/kotlin` を再生成し、`.js` sidecar 非生成を回帰条件として固定する。
-6. [x] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
-7. [x] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
-8. [x] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
-9. [x] [ID: P0-SIDECAR-REMOVE-01-S5-01] Go native parity 失敗 6 ケース（`10/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
-10. [x] [ID: P0-SIDECAR-REMOVE-01-S5-02] Kotlin native parity 失敗 7 ケース（`10/12/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
-11. [x] [ID: P0-SIDECAR-REMOVE-01-S5-03] `runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` を再実行し、`case_fail=0` で親 `P0-SIDECAR-REMOVE-01` を完了化する。
-- `P0-SIDECAR-REMOVE-01-S1-01` `py2{go,java,swift,kotlin}.py` から `--*-backend` CLI と sidecar 分岐（`.js` 生成・runtime shim 出力）を削除し、native 直生成へ統一した。
-- `P0-SIDECAR-REMOVE-01-S1-02` sidecar emitter 4ファイル（`go/java/swift/kotlin *_emitter.py`）を削除し、`hooks/*/emitter/__init__.py` は native 実装へ委譲する互換 API のみに整理した。
-- `P0-SIDECAR-REMOVE-01-S2-01` `test_py2{go,java,swift,kotlin}_smoke.py` と `runtime_parity_check.py` / `check_gsk_native_regression.py` から sidecar 引数・前提を除去し、native-only 回帰を unit test（`51/51`）で確認した。
-- `P0-SIDECAR-REMOVE-01-S2-02` `tools/regenerate_samples.py --langs go,java,swift,kotlin --force`（`regen=72 fail=0`）を実行し、`sample/{go,java,swift,kotlin}` の `.js` sidecar が `0` 件であることを確認した。
-- `P0-SIDECAR-REMOVE-01-S3-01` `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / `docs-ja/spec/spec-gsk-native-backend.md` / `docs-ja/spec/spec-java-native-backend.md` の sidecar 互換前提記述を「撤去済み・native-only」へ更新した。
-- `P0-SIDECAR-REMOVE-01-S3-02` 英語版 `docs/how-to-use.md` / `docs/spec/spec-import.md` / `docs/spec/spec-gsk-native-backend.md` / `docs/spec/spec-java-native-backend.md` を同期し、日英で sidecar 記述の整合性を確保した。
-- `P0-SIDECAR-REMOVE-01-S4-01` 最終回帰を実行し、`check_py2{go,java,swift,kotlin}_transpile.py` は `ok=132 fail=0 skipped=6` で通過、`find sample/{go,java,swift,kotlin} -name '*.js' | wc -l` は `0` を確認した。`runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` は `case_pass=11 case_fail=7 (run_failed=13, toolchain_missing=18)` で失敗し、失敗は Go/Kotlin native 既存課題（型/宣言衝突）に起因することを記録した。
-- `P0-SIDECAR-REMOVE-01-S5-*` ユーザー指示により、Go/Kotlin parity 失敗 7 ケース（Go 6 + Kotlin 7、重複あり）を順に潰すタスクを最優先として追加した。
-- `P0-SIDECAR-REMOVE-01-S5-01` Go 失敗 6 ケース（`10/13/14/15/16/18`）を修正し、`runtime_parity_check --targets go` で `cases=6 pass=6 fail=0` を確認した。
-- `P0-SIDECAR-REMOVE-01-S5-02` Kotlin 失敗 7 ケース（`10/12/13/14/15/16/18`）を修正し、`runtime_parity_check --targets kotlin` で `cases=7 pass=7 fail=0` を確認した。
-- `P0-SIDECAR-REMOVE-01-S5-03` `runtime_parity_check --targets go,java,swift,kotlin --all-samples` を再実行し、`cases=18 pass=18 fail=0`（`toolchain_missing=18` は Swift）を確認した。
-
 ### P0: ForCore tuple unpack 型伝播改善（最優先）
 
 文脈: [docs-ja/plans/p0-forcore-tuple-type-propagation.md](../plans/p0-forcore-tuple-type-propagation.md)
 
 1. [ ] [ID: P0-FORCORE-TYPE-01] `for a, b in ...` の tuple target で要素型が `unknown/object` へ落ちる経路を縮退し、EAST3 lowering から C++ emitter まで型情報を維持する。
-2. [ ] [ID: P0-FORCORE-TYPE-01-S1-01] `east2_to_east3_lowering._build_target_plan` で `target_type=tuple[...]` の要素型を `TupleTarget.elements[].target_type` へ伝播する。
-3. [ ] [ID: P0-FORCORE-TYPE-01-S1-02] C++ `ForCore` tuple unpack の emit で `int64/str/...` を直接束縛し、未確定要素のみ fail-closed で `object` フォールバックする。
-4. [ ] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む fixture/sample を回帰に追加し、`py_at(...)` 由来の `object` 束縛が不要な箇所で発生しないことを固定する。
-5. [ ] [ID: P0-FORCORE-TYPE-01-S2-02] `check_py2cpp_transpile.py` と `sample/18` コンパイル検証を実行し、型伝播導入後の回帰結果を文脈ファイルへ記録する。
+2. [x] [ID: P0-FORCORE-TYPE-01-S1-01] `east2_to_east3_lowering._build_target_plan` で `target_type=tuple[...]` の要素型を `TupleTarget.elements[].target_type` へ伝播する。
+3. [x] [ID: P0-FORCORE-TYPE-01-S1-02] C++ `ForCore` tuple unpack の emit で `int64/str/...` を直接束縛し、未確定要素のみ fail-closed で `object` フォールバックする。
+4. [x] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む fixture/sample を回帰に追加し、`py_at(...)` 由来の `object` 束縛が不要な箇所で発生しないことを固定する。
+5. [x] [ID: P0-FORCORE-TYPE-01-S2-02] `check_py2cpp_transpile.py` と `sample/18` コンパイル検証を実行し、型伝播導入後の回帰結果を文脈ファイルへ記録する。
+- `P0-FORCORE-TYPE-01-S1-01` lowering で `tuple[...]` 型を分解して `TupleTarget.elements[].target_type` へ伝播し、`target_type=unknown` 時は `iter_element_type` を補助的に利用するよう更新した。
+- `P0-FORCORE-TYPE-01-S1-02` C++ `ForCore` tuple unpack は親 `target_type` から要素型を復元できる場合に `int64/str/...` 束縛を選び、未確定要素のみ `auto/object` へフォールバックするよう更新した。
+- `P0-FORCORE-TYPE-01-S2-01` `test_east2_to_east3_lowering.py` と `test_east3_cpp_bridge.py` に `enumerate(list[str])` 相当の型伝播回帰を追加し、既知要素型束縛と unknown フォールバックを固定した。
+- `P0-FORCORE-TYPE-01-S2-02` `test_east2_to_east3_lowering.py`（`22/22`）、`test_east3_cpp_bridge.py`（`80/80`）、`check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）、`sample/18` の C++ 変換/コンパイル/実行通過を確認した。
 
 ### P2: Ruby backend 追加（中優先）
 
