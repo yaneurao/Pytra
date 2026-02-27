@@ -31,32 +31,20 @@
 
 ## 未完了タスク
 
-### P0: ForCore tuple unpack 型伝播改善（最優先）
-
-文脈: [docs-ja/plans/p0-forcore-tuple-type-propagation.md](../plans/p0-forcore-tuple-type-propagation.md)
-
-1. [ ] [ID: P0-FORCORE-TYPE-01] `for a, b in ...` の tuple target で要素型が `unknown/object` へ落ちる経路を縮退し、EAST3 lowering から C++ emitter まで型情報を維持する。
-2. [x] [ID: P0-FORCORE-TYPE-01-S1-01] `east2_to_east3_lowering._build_target_plan` で `target_type=tuple[...]` の要素型を `TupleTarget.elements[].target_type` へ伝播する。
-3. [x] [ID: P0-FORCORE-TYPE-01-S1-02] C++ `ForCore` tuple unpack の emit で `int64/str/...` を直接束縛し、未確定要素のみ fail-closed で `object` フォールバックする。
-4. [x] [ID: P0-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む fixture/sample を回帰に追加し、`py_at(...)` 由来の `object` 束縛が不要な箇所で発生しないことを固定する。
-5. [x] [ID: P0-FORCORE-TYPE-01-S2-02] `check_py2cpp_transpile.py` と `sample/18` コンパイル検証を実行し、型伝播導入後の回帰結果を文脈ファイルへ記録する。
-- `P0-FORCORE-TYPE-01-S1-01` lowering で `tuple[...]` 型を分解して `TupleTarget.elements[].target_type` へ伝播し、`target_type=unknown` 時は `iter_element_type` を補助的に利用するよう更新した。
-- `P0-FORCORE-TYPE-01-S1-02` C++ `ForCore` tuple unpack は親 `target_type` から要素型を復元できる場合に `int64/str/...` 束縛を選び、未確定要素のみ `auto/object` へフォールバックするよう更新した。
-- `P0-FORCORE-TYPE-01-S2-01` `test_east2_to_east3_lowering.py` と `test_east3_cpp_bridge.py` に `enumerate(list[str])` 相当の型伝播回帰を追加し、既知要素型束縛と unknown フォールバックを固定した。
-- `P0-FORCORE-TYPE-01-S2-02` `test_east2_to_east3_lowering.py`（`22/22`）、`test_east3_cpp_bridge.py`（`80/80`）、`check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）、`sample/18` の C++ 変換/コンパイル/実行通過を確認した。
-
 ### P2: Ruby backend 追加（中優先）
 
 文脈: [docs-ja/plans/p2-ruby-backend-rollout.md](../plans/p2-ruby-backend-rollout.md)
 - 言語展開順方針: `Ruby -> Lua -> PHP`（Lua/PHP は Ruby 完了後に `P2` タスクとして起票）
 
 1. [ ] [ID: P2-RUBY-BACKEND-01] Ruby backend（`py2rb.py` + Ruby emitter/runtime）を追加し、`sample/py` 主要ケースで parity を確認できる状態まで引き上げる。
-2. [ ] [ID: P2-RUBY-BACKEND-01-S1-01] Ruby backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を文書化する。
-3. [ ] [ID: P2-RUBY-BACKEND-01-S1-02] `src/py2rb.py` と `src/hooks/ruby/emitter/` の骨格を追加し、最小 fixture（`add` / `if_else` / `for_range`）が変換・実行できる状態を作る。
+2. [x] [ID: P2-RUBY-BACKEND-01-S1-01] Ruby backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を文書化する。
+3. [x] [ID: P2-RUBY-BACKEND-01-S1-02] `src/py2rb.py` と `src/hooks/ruby/emitter/` の骨格を追加し、最小 fixture（`add` / `if_else` / `for_range`）が変換・実行できる状態を作る。
 4. [ ] [ID: P2-RUBY-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、関数呼び出し、組み込み最小セット）を実装し、`sample/py` 前半ケースを通す。
 5. [ ] [ID: P2-RUBY-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装し、残ケースの parity 失敗を縮退する。
 6. [ ] [ID: P2-RUBY-BACKEND-01-S3-01] `tools/check_py2rb_transpile.py` と smoke/parity 導線を追加し、回帰監視を固定する。
 7. [ ] [ID: P2-RUBY-BACKEND-01-S3-02] `sample/ruby` 再生成、README バッジ/対応表、`docs-ja/how-to-use.md` と `docs/how-to-use.md` の手順を同期する。
+- `P2-RUBY-BACKEND-01-S1-01` `docs-ja/spec/spec-ruby-native-backend.md` と `docs/spec/spec-ruby-native-backend.md` を追加し、EAST3入力・fail-closed・runtime境界・非対象を固定した。
+- `P2-RUBY-BACKEND-01-S1-02` `src/py2rb.py` と `src/hooks/ruby/emitter/` を追加し、`test_py2rb_smoke.py`（`9 tests, 1 skip`）および `add/if_else/for_range` の変換で最小骨格を確認した。
 
 ### P3: microgpt 原本保全タスク再開（低優先）
 
