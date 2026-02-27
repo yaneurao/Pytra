@@ -16,7 +16,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
 SAMPLE_ROOT = ROOT / "sample" / "py"
-SWIFTC = ROOT / "tools" / "shims" / "swiftc"
 
 
 @dataclass
@@ -129,9 +128,6 @@ def build_targets(
     case_stem: str,
     case_path: Path,
     east3_opt_level: str,
-    *,
-    swift_backend: str,
-    kotlin_backend: str,
 ) -> list[Target]:
     case_src = case_path.as_posix()
     runtime_srcs = runtime_cpp_sources_shell()
@@ -185,36 +181,34 @@ def build_targets(
             name="go",
             transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go {opt_arg}",
             run_cmd=f"go run test/transpile/go/{case_stem}.go",
-            needs=("python", "go", "node"),
+            needs=("python", "go"),
         ),
         Target(
             name="java",
             transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java {opt_arg}",
             run_cmd="javac test/transpile/java/Main.java && java -cp test/transpile/java Main",
-            needs=("python", "javac", "java", "node"),
+            needs=("python", "javac", "java"),
         ),
         Target(
             name="swift",
             transpile_cmd=(
                 f"python src/py2swift.py {shlex.quote(case_src)} --output "
-                f"test/transpile/swift/{case_stem}.swift {opt_arg} "
-                f"--swift-backend {shlex.quote(swift_backend)}"
+                f"test/transpile/swift/{case_stem}.swift {opt_arg}"
             ),
-            run_cmd=f"{SWIFTC.as_posix()} test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
-            needs=("python", SWIFTC.as_posix(), "node"),
+            run_cmd=f"swiftc test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
+            needs=("python", "swiftc"),
         ),
         Target(
             name="kotlin",
             transpile_cmd=(
                 f"python src/py2kotlin.py {shlex.quote(case_src)} "
-                f"-o test/transpile/kotlin/{case_stem}.kt {opt_arg} "
-                f"--kotlin-backend {shlex.quote(kotlin_backend)}"
+                f"-o test/transpile/kotlin/{case_stem}.kt {opt_arg}"
             ),
             run_cmd=(
                 f"kotlinc test/transpile/kotlin/{case_stem}.kt -include-runtime -d test/transpile/obj/{case_stem}_kotlin.jar "
                 f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"
             ),
-            needs=("python", "kotlinc", "java", "node"),
+            needs=("python", "kotlinc", "java"),
         ),
     ]
 
@@ -226,8 +220,6 @@ def check_case(
     case_root: str,
     ignore_stdout: bool,
     east3_opt_level: str,
-    swift_backend: str,
-    kotlin_backend: str,
     records: list[CheckRecord] | None = None,
 ) -> int:
     def _record(target: str, category: str, detail: str) -> None:
@@ -259,13 +251,7 @@ def check_case(
         expected = _normalize_output_for_compare(py.stdout) if ignore_stdout else py.stdout
 
         mismatches: list[str] = []
-        for target in build_targets(
-            case_stem,
-            case_path,
-            east3_opt_level,
-            swift_backend=swift_backend,
-            kotlin_backend=kotlin_backend,
-        ):
+        for target in build_targets(case_stem, case_path, east3_opt_level):
             if target.name not in enabled_targets:
                 continue
             if not can_run(target):
@@ -349,18 +335,6 @@ def main() -> int:
         choices=("0", "1", "2"),
         help="EAST3 optimizer level passed to transpilers (default: 1)",
     )
-    parser.add_argument(
-        "--swift-backend",
-        default="native",
-        choices=("native", "sidecar"),
-        help="backend mode passed to py2swift.py (default: native)",
-    )
-    parser.add_argument(
-        "--kotlin-backend",
-        default="native",
-        choices=("native", "sidecar"),
-        help="backend mode passed to py2kotlin.py (default: native)",
-    )
     args = parser.parse_args()
 
     enabled_targets: set[str] = set()
@@ -391,8 +365,6 @@ def main() -> int:
             case_root=args.case_root,
             ignore_stdout=args.ignore_unstable_stdout,
             east3_opt_level=args.east3_opt_level,
-            swift_backend=args.swift_backend,
-            kotlin_backend=args.kotlin_backend,
             records=records,
         )
         if code != 0:
@@ -421,8 +393,6 @@ def main() -> int:
             "case_root": args.case_root,
             "east3_opt_level": args.east3_opt_level,
             "targets": sorted(enabled_targets),
-            "swift_backend": args.swift_backend,
-            "kotlin_backend": args.kotlin_backend,
             "cases": stems,
             "case_total": len(stems),
             "case_pass": pass_cases,

@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Regression bundle for Go/Swift/Kotlin native-backend rollout.
-
-Swift runtime parity is intentionally excluded for now:
-- native Swift execution runner (`swiftc`) is not available in this repo setup.
-- sidecar runtime parity also cannot be stabilized because runtime JS shim assets
-  required by py2js imports are not provisioned in the parity temp workspace.
-
-Swift coverage is enforced via native-default smoke/transpile checks.
-"""
+"""Regression bundle for Go/Swift/Kotlin native-backend rollout."""
 
 from __future__ import annotations
 
@@ -46,8 +38,6 @@ def main() -> int:
             "instance_member",
             "super_init",
             "--ignore-unstable-stdout",
-            "--kotlin-backend",
-            "native",
         ],
         [
             "python3",
@@ -66,8 +56,6 @@ def main() -> int:
             "08_langtons_ant",
             "09_fire_simulation",
             "--ignore-unstable-stdout",
-            "--kotlin-backend",
-            "native",
         ],
     ]
 
