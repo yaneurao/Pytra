@@ -55,6 +55,18 @@
 - `P0-SIDECAR-REMOVE-01-S4-01` 最終回帰を実行し、`check_py2{go,java,swift,kotlin}_transpile.py` は `ok=132 fail=0 skipped=6` で通過、`find sample/{go,java,swift,kotlin} -name '*.js' | wc -l` は `0` を確認した。`runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` は `case_pass=11 case_fail=7 (run_failed=13, toolchain_missing=18)` で失敗し、失敗は Go/Kotlin native 既存課題（型/宣言衝突）に起因することを記録した。
 - `P0-SIDECAR-REMOVE-01-S5-*` ユーザー指示により、Go/Kotlin parity 失敗 7 ケース（Go 6 + Kotlin 7、重複あり）を順に潰すタスクを最優先として追加した。
 
+### P2: Ruby backend 追加（中優先）
+
+文脈: [docs-ja/plans/p2-ruby-backend-rollout.md](../plans/p2-ruby-backend-rollout.md)
+
+1. [ ] [ID: P2-RUBY-BACKEND-01] Ruby backend（`py2rb.py` + Ruby emitter/runtime）を追加し、`sample/py` 主要ケースで parity を確認できる状態まで引き上げる。
+2. [ ] [ID: P2-RUBY-BACKEND-01-S1-01] Ruby backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を文書化する。
+3. [ ] [ID: P2-RUBY-BACKEND-01-S1-02] `src/py2rb.py` と `src/hooks/ruby/emitter/` の骨格を追加し、最小 fixture（`add` / `if_else` / `for_range`）が変換・実行できる状態を作る。
+4. [ ] [ID: P2-RUBY-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、関数呼び出し、組み込み最小セット）を実装し、`sample/py` 前半ケースを通す。
+5. [ ] [ID: P2-RUBY-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装し、残ケースの parity 失敗を縮退する。
+6. [ ] [ID: P2-RUBY-BACKEND-01-S3-01] `tools/check_py2rb_transpile.py` と smoke/parity 導線を追加し、回帰監視を固定する。
+7. [ ] [ID: P2-RUBY-BACKEND-01-S3-02] `sample/ruby` 再生成、README バッジ/対応表、`docs-ja/how-to-use.md` と `docs/how-to-use.md` の手順を同期する。
+
 ### P3: microgpt 原本保全タスク再開（低優先）
 
 文脈: [docs-ja/plans/p3-microgpt-revival.md](../plans/p3-microgpt-revival.md)
