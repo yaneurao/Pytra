@@ -79,6 +79,8 @@ Note:
 
 - Values in `readme.md` are measured as of 2026-02-26 for all 18 `sample/py` cases using current transpiler outputs (rounded to 3 decimals).
 - Measurement protocol: fresh transpile, `warmup=1`, `repeat=5`, median of `elapsed_sec` (compile time excluded).
+- C++/Rust columns were remeasured on 2026-02-27 using `tools/benchmark_sample_cpp_rs.py` (fresh transpile, `warmup=1`, `repeat=5`) with logs at `work/logs/bench_cpp_rs_after_east3_opt_20260227_cases01_17.json` and `work/logs/bench_cpp_rs_after_east3_opt_20260227_case18.json`.
+- Ruby column was remeasured on 2026-02-27 with fresh transpile + `ruby --yjit` + `warmup=1` + `repeat=5` (median), with log at `work/logs/bench_ruby_yjit_sample_20260227.json`.
 - Ruby benchmarks are run with `ruby --yjit`.
 - In the latest measurement, there are no `>1.5x` gaps (all 18 cases are `<=1.5x`).
 - Go/Java/Swift/Kotlin currently run via the JS sidecar bridge, so their numbers reflect that bridge execution path.

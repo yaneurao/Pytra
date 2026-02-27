@@ -85,8 +85,6 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 
 Notes:
 - For measurement protocol, gap criteria, and parity verification details, see [`sample/readme.md`](sample/readme.md).
-- C++/Rust columns were remeasured on 2026-02-27 using `tools/benchmark_sample_cpp_rs.py` (fresh transpile, `warmup=1`, `repeat=5`) with logs at `work/logs/bench_cpp_rs_after_east3_opt_20260227_cases01_17.json` and `work/logs/bench_cpp_rs_after_east3_opt_20260227_case18.json`.
-- Ruby column was remeasured on 2026-02-27 with fresh transpile + `ruby --yjit` + `warmup=1` + `repeat=5` (median), with log at `work/logs/bench_ruby_yjit_sample_20260227.json`.
 
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 

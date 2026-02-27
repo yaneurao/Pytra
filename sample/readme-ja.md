@@ -79,6 +79,8 @@
 
 - `docs/ja/README.md` の表の値は 2026-02-26 時点で `sample/py` 18件を現行トランスパイラ出力で再計測した実測値です（小数第3位丸め）。
 - 計測プロトコルは fresh transpile・`warmup=1`・`repeat=5`・`elapsed_sec` の中央値採用（コンパイル時間は除外）です。
+- C++/Rust 列は 2026-02-27 に `tools/benchmark_sample_cpp_rs.py`（fresh transpile, `warmup=1`, `repeat=5`）で再計測しました（ログ: `work/logs/bench_cpp_rs_after_east3_opt_20260227_cases01_17.json`, `work/logs/bench_cpp_rs_after_east3_opt_20260227_case18.json`）。
+- Ruby 列は 2026-02-27 に fresh transpile + `ruby --yjit` + `warmup=1` + `repeat=5` で再計測し、中央値を反映しました（ログ: `work/logs/bench_ruby_yjit_sample_20260227.json`）。
 - Ruby の速度計測は `ruby --yjit` を使用します。
 - 最新計測では `>1.5x` の乖離はありません（18件すべて `<=1.5x`）。
 - Go/Java/Swift/Kotlin は現行実装で JS sidecar bridge 経由で実行されるため、値は bridge 実行経路の計測値です。

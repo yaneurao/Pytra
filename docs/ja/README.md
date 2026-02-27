@@ -86,8 +86,6 @@ Pythonで書かれた[サンプルコード](../sample/readme-ja.md)の実行時
 
 注記:
 - 計測条件・判定基準・整合確認ログの詳細は [`sample/readme-ja.md`](../sample/readme-ja.md) を参照してください。
-- C++/Rust 列は 2026-02-27 に `tools/benchmark_sample_cpp_rs.py`（fresh transpile, `warmup=1`, `repeat=5`）で再計測しました（ログ: `work/logs/bench_cpp_rs_after_east3_opt_20260227_cases01_17.json`, `work/logs/bench_cpp_rs_after_east3_opt_20260227_case18.json`）。
-- Ruby 列は 2026-02-27 に fresh transpile + `ruby --yjit` + `warmup=1` + `repeat=5` で再計測し、中央値を反映しました（ログ: `work/logs/bench_ruby_yjit_sample_20260227.json`）。
 
 ![06_julia_parameter_sweep](../sample/images/06_julia_parameter_sweep.gif)
 
