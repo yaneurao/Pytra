@@ -61,7 +61,7 @@ Pytraの特徴
 
 ## 実行速度の比較
 
-Pythonで書かれた[サンプルコード](../sample/readme-ja.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒） 表中のPythonは元のコード、PyPyは参考用です。
+Pythonで書かれた[サンプルコード](../../sample/readme-ja.md)の実行時間と、そのトランスパイルしたソースコードでの実行時間。（単位: 秒） 表中のPythonは元のコード、PyPyは参考用です。
 
 |No.|内容|Python|PyPy| C++ | Rust | C# | JS | TS | Go | Java | Swift | Kotlin | Ruby |
 |-|-|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|-:|
@@ -84,7 +84,7 @@ Pythonで書かれた[サンプルコード](../sample/readme-ja.md)の実行時
 |17 |モンテカルロ法で円周率近似|2.981|0.105|0.019|0.018|0.098|0.431|0.433|0.432|0.433|0.436|0.436|1.949|
 |18 |ミニ言語インタプリタ|2.037|0.601|0.610|0.427|0.735|0.446|0.446|0.405|0.417|0.423|0.417|8.272|
 
-![06_julia_parameter_sweep](../sample/images/06_julia_parameter_sweep.gif)
+![06_julia_parameter_sweep](../../sample/images/06_julia_parameter_sweep.gif)
 
 <details>
 <summary>サンプルコード : 06_julia_parameter_sweep.py</summary>
@@ -185,22 +185,22 @@ if __name__ == "__main__":
 <details>
 <summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby）</summary>
 
-- C++: [View full code](../sample/cpp/06_julia_parameter_sweep.cpp)
-- Rust: [View full code](../sample/rs/06_julia_parameter_sweep.rs)
-- C#: [View full code](../sample/cs/06_julia_parameter_sweep.cs)
-- JavaScript: [View full code](../sample/js/06_julia_parameter_sweep.js)
-- TypeScript: [View full code](../sample/ts/06_julia_parameter_sweep.ts)
-- Go: [View full code](../sample/go/06_julia_parameter_sweep.go)
-- Java: [View full code](../sample/java/06_julia_parameter_sweep.java)
-- Swift: [View full code](../sample/swift/06_julia_parameter_sweep.swift)
-- Kotlin: [View full code](../sample/kotlin/06_julia_parameter_sweep.kt)
-- Ruby: [View full code](../sample/ruby/06_julia_parameter_sweep.rb)
+- C++: [View full code](../../sample/cpp/06_julia_parameter_sweep.cpp)
+- Rust: [View full code](../../sample/rs/06_julia_parameter_sweep.rs)
+- C#: [View full code](../../sample/cs/06_julia_parameter_sweep.cs)
+- JavaScript: [View full code](../../sample/js/06_julia_parameter_sweep.js)
+- TypeScript: [View full code](../../sample/ts/06_julia_parameter_sweep.ts)
+- Go: [View full code](../../sample/go/06_julia_parameter_sweep.go)
+- Java: [View full code](../../sample/java/06_julia_parameter_sweep.java)
+- Swift: [View full code](../../sample/swift/06_julia_parameter_sweep.swift)
+- Kotlin: [View full code](../../sample/kotlin/06_julia_parameter_sweep.kt)
+- Ruby: [View full code](../../sample/ruby/06_julia_parameter_sweep.rb)
 
 </details>
 
 <br/>
 
-![16_glass_sculpture_chaos](../sample/images/16_glass_sculpture_chaos.gif)
+![16_glass_sculpture_chaos](../../sample/images/16_glass_sculpture_chaos.gif)
 
 <details>
 <summary>サンプルコード : 16_glass_sculpture_chaos.py</summary>
@@ -524,16 +524,16 @@ if __name__ == "__main__":
 <details>
 <summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby）</summary>
 
-- C++: [View full code](../sample/cpp/16_glass_sculpture_chaos.cpp)
-- Rust: [View full code](../sample/rs/16_glass_sculpture_chaos.rs)
-- C#: [View full code](../sample/cs/16_glass_sculpture_chaos.cs)
-- JavaScript: [View full code](../sample/js/16_glass_sculpture_chaos.js)
-- TypeScript: [View full code](../sample/ts/16_glass_sculpture_chaos.ts)
-- Go: [View full code](../sample/go/16_glass_sculpture_chaos.go)
-- Java: [View full code](../sample/java/16_glass_sculpture_chaos.java)
-- Swift: [View full code](../sample/swift/16_glass_sculpture_chaos.swift)
-- Kotlin: [View full code](../sample/kotlin/16_glass_sculpture_chaos.kt)
-- Ruby: [View full code](../sample/ruby/16_glass_sculpture_chaos.rb)
+- C++: [View full code](../../sample/cpp/16_glass_sculpture_chaos.cpp)
+- Rust: [View full code](../../sample/rs/16_glass_sculpture_chaos.rs)
+- C#: [View full code](../../sample/cs/16_glass_sculpture_chaos.cs)
+- JavaScript: [View full code](../../sample/js/16_glass_sculpture_chaos.js)
+- TypeScript: [View full code](../../sample/ts/16_glass_sculpture_chaos.ts)
+- Go: [View full code](../../sample/go/16_glass_sculpture_chaos.go)
+- Java: [View full code](../../sample/java/16_glass_sculpture_chaos.java)
+- Swift: [View full code](../../sample/swift/16_glass_sculpture_chaos.swift)
+- Kotlin: [View full code](../../sample/kotlin/16_glass_sculpture_chaos.kt)
+- Ruby: [View full code](../../sample/ruby/16_glass_sculpture_chaos.rb)
 
 </details>
 
@@ -547,7 +547,7 @@ if __name__ == "__main__":
 - ランタイム配置と include 規約を確認する: [ランタイム仕様](spec/spec-runtime.md)
 - 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](plans/pytra-wip.md)
 - `py2cpp` の機能対応（テスト根拠）を確認する: [py2cpp サポートマトリクス](language/cpp/spec-support.md)
-- サンプル一覧と概要を確認する: [サンプルコード案内](../sample/readme-ja.md)
+- サンプル一覧と概要を確認する: [サンプルコード案内](../../sample/readme-ja.md)
 - 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](spec/index.md)
 - 開発の動機と設計理念: [開発思想](spec/spec-philosophy.md)
 
