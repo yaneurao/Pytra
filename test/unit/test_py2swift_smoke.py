@@ -35,13 +35,13 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_sidecar_contains_node_bridge_and_main(self) -> None:
+    def test_transpile_add_fixture_uses_native_output(self) -> None:
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         swift = transpile_to_swift(east)
         self.assertIn("@main", swift)
-        self.assertIn("PYTRA_JS_ENTRY:", swift)
-        self.assertIn("CommandLine.arguments.dropFirst()", swift)
+        self.assertIn("Auto-generated Pytra Swift native source from EAST3.", swift)
+        self.assertNotIn("PYTRA_JS_ENTRY:", swift)
 
     def test_swift_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
@@ -92,29 +92,6 @@ class Py2SwiftSmokeTest(unittest.TestCase):
             self.assertIn("@main", txt)
             self.assertIn("Auto-generated Pytra Swift native source from EAST3.", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
-
-    def test_cli_sidecar_mode_generates_js_and_runtime_shim(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_swift = Path(td) / "if_else.swift"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2swift.py", str(fixture), "-o", str(out_swift), "--swift-backend", "sidecar"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_swift.exists())
-            self.assertTrue(out_js.exists())
-            txt = out_swift.read_text(encoding="utf-8")
-            self.assertIn("if_else.js", txt)
-            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")

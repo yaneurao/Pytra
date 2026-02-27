@@ -35,13 +35,13 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_sidecar_contains_node_bridge_and_main(self) -> None:
+    def test_transpile_add_fixture_uses_native_output(self) -> None:
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin(east)
         self.assertIn("fun main(args: Array<String>)", kotlin)
-        self.assertIn("ProcessBuilder", kotlin)
-        self.assertIn('command.add("node")', kotlin)
+        self.assertIn("Auto-generated Pytra Kotlin native source from EAST3.", kotlin)
+        self.assertNotIn("ProcessBuilder", kotlin)
 
     def test_kotlin_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
@@ -92,29 +92,6 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             self.assertIn("fun main(args: Array<String>)", txt)
             self.assertIn("Auto-generated Pytra Kotlin native source from EAST3.", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
-
-    def test_cli_sidecar_mode_generates_js_and_runtime_shim(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_kotlin = Path(td) / "if_else.kt"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2kotlin.py", str(fixture), "-o", str(out_kotlin), "--kotlin-backend", "sidecar"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_kotlin.exists())
-            self.assertTrue(out_js.exists())
-            txt = out_kotlin.read_text(encoding="utf-8")
-            self.assertIn("if_else.js", txt)
-            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")

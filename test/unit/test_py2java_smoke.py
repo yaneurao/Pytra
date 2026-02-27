@@ -36,13 +36,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_contains_node_bridge_and_main(self) -> None:
+    def test_transpile_add_fixture_uses_native_output(self) -> None:
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         java = transpile_to_java(east)
         self.assertIn("public final class Main", java)
-        self.assertIn("ProcessBuilder", java)
-        self.assertIn('command.add("node");', java)
+        self.assertIn("Auto-generated Java native source from EAST3.", java)
+        self.assertNotIn("ProcessBuilder", java)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
@@ -85,38 +85,6 @@ class Py2JavaSmokeTest(unittest.TestCase):
             self.assertIn("Auto-generated Java native source", txt)
             self.assertNotIn("ProcessBuilder", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
-
-    def test_cli_sidecar_mode_generates_js_and_runtime_shim(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_java = Path(td) / "if_else.java"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [
-                    sys.executable,
-                    "src/py2java.py",
-                    str(fixture),
-                    "-o",
-                    str(out_java),
-                    "--java-backend",
-                    "sidecar",
-                ],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_java.exists())
-            self.assertTrue(out_js.exists())
-            txt = out_java.read_text(encoding="utf-8")
-            self.assertIn("if_else.js", txt)
-            self.assertIn("ProcessBuilder", txt)
-            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")
