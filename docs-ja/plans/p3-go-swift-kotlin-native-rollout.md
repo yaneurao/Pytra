@@ -46,6 +46,7 @@
 - 2026-02-26: [ID: `P3-GSK-NATIVE-01-S3-01`] `src/hooks/swift/emitter/swift_native_emitter.py` を追加し、`py2swift.py` に `--swift-backend {native,sidecar}` を配線して既定を native 化。`test_py2swift_smoke.py`（`10/10`）と `tools/check_py2swift_transpile.py`（`132/132`）の通過を確認。
 - 2026-02-26: [ID: `P3-GSK-NATIVE-01-S3-02`] Swift native emitter を本文 lower 対応へ拡張（`Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、`isinstance`）。`test_py2swift_smoke.py`（`10/10`）と `tools/check_py2swift_transpile.py`（`132/132`）を再確認し、`sample/py` 前半ケース（`01_mandelbrot`, `06_julia_parameter_sweep`, `09_fire_simulation`）の native 出力確認を完了。
 - 2026-02-26: [ID: `P3-GSK-NATIVE-01-S4-01`] `src/hooks/kotlin/emitter/kotlin_native_emitter.py` を追加し、`py2kotlin.py` に `--kotlin-backend {native,sidecar}` を配線して既定を native 化。`test_py2kotlin_smoke.py`（`10/10`）と `tools/check_py2kotlin_transpile.py`（`132/132`）の通過を確認。
+- 2026-02-26: [ID: `P3-GSK-NATIVE-01-S4-02`] Kotlin native emitter を本文 lower 対応へ拡張（`Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、`isinstance`）。`test_py2kotlin_smoke.py`（`10/10`）と `tools/check_py2kotlin_transpile.py`（`132/132`）を再確認し、`sample/py` 前半ケース（`01_mandelbrot`, `06_julia_parameter_sweep`, `09_fire_simulation`）の native 出力確認を完了。
 
 ## 分解
 
@@ -56,6 +57,6 @@
 - [x] [ID: P3-GSK-NATIVE-01-S3-01] Swift native emitter 骨格と `py2swift.py` 既定切替を実装する。
 - [x] [ID: P3-GSK-NATIVE-01-S3-02] Swift の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 - [x] [ID: P3-GSK-NATIVE-01-S4-01] Kotlin native emitter 骨格と `py2kotlin.py` 既定切替を実装する。
-- [ ] [ID: P3-GSK-NATIVE-01-S4-02] Kotlin の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
+- [x] [ID: P3-GSK-NATIVE-01-S4-02] Kotlin の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 - [ ] [ID: P3-GSK-NATIVE-01-S5-01] 3言語の transpile/smoke/parity 回帰を native 既定で通し、CI 導線を更新する。
 - [ ] [ID: P3-GSK-NATIVE-01-S5-02] `sample/go` / `sample/swift` / `sample/kotlin` 再生成とドキュメント同期を行う。

@@ -115,7 +115,7 @@
 6. [x] [ID: P3-GSK-NATIVE-01-S3-01] Swift native emitter 骨格と `py2swift.py` 既定切替を実装する。
 7. [x] [ID: P3-GSK-NATIVE-01-S3-02] Swift の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 8. [x] [ID: P3-GSK-NATIVE-01-S4-01] Kotlin native emitter 骨格と `py2kotlin.py` 既定切替を実装する。
-9. [ ] [ID: P3-GSK-NATIVE-01-S4-02] Kotlin の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
+9. [x] [ID: P3-GSK-NATIVE-01-S4-02] Kotlin の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 10. [ ] [ID: P3-GSK-NATIVE-01-S5-01] 3言語の transpile/smoke/parity 回帰を native 既定で通し、CI 導線を更新する。
 11. [ ] [ID: P3-GSK-NATIVE-01-S5-02] `sample/go` / `sample/swift` / `sample/kotlin` 再生成とドキュメント同期を行う。
 - `P3-GSK-NATIVE-01-S1-01` 共通契約 spec を追加（`docs-ja/spec/spec-gsk-native-backend.md` / `docs/spec/spec-gsk-native-backend.md`）。EAST3 入力責務・fail-closed・runtime 境界・sidecar 隔離方針を固定。
@@ -125,6 +125,7 @@
 - `P3-GSK-NATIVE-01-S3-01` `swift_native_emitter.py` を追加し、`py2swift.py` へ `--swift-backend {native,sidecar}` を配線して既定を native 化。`test_py2swift_smoke.py`（`10/10`）と `check_py2swift_transpile`（`132/132`）の通過を確認。
 - `P3-GSK-NATIVE-01-S3-02` Swift native emitter の本文 lower（`Return/Assign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、isinstance）を実装し、`test_py2swift_smoke.py`（`10/10`）/ `check_py2swift_transpile`（`132/132`）と `sample/py` 前半ケース（`01/06/09`）の native 生成確認を完了。
 - `P3-GSK-NATIVE-01-S4-01` `kotlin_native_emitter.py` を追加し、`py2kotlin.py` へ `--kotlin-backend {native,sidecar}` を配線して既定を native 化。`test_py2kotlin_smoke.py`（`10/10`）と `check_py2kotlin_transpile`（`132/132`）の通過を確認。
+- `P3-GSK-NATIVE-01-S4-02` Kotlin native emitter の本文 lower（`Return/Assign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、isinstance）を実装し、`test_py2kotlin_smoke.py`（`10/10`）/ `check_py2kotlin_transpile`（`132/132`）と `sample/py` 前半ケース（`01/06/09`）の native 生成確認を完了。
 
 ### P3: microgpt 原本保全タスク再開（低優先）
 
