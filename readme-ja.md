@@ -40,7 +40,7 @@ Pytra は、Pythonのサブセットで書かれたプログラムを様々な�
 Pytraの特徴
 
 - Pythonから各言語への変換器
-  - C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin に変換可能。
+  - C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, Ruby に変換可能。
   - 元のソースコードに極めて近い形のまま変換
 
 - C++で書くのと同等のコードをPythonで書けることが目標
@@ -190,7 +190,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin）</summary>
+<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby）</summary>
 
 - C++: [View full code](sample/cpp/06_julia_parameter_sweep.cpp)
 - Rust: [View full code](sample/rs/06_julia_parameter_sweep.rs)
@@ -201,6 +201,7 @@ if __name__ == "__main__":
 - Java: [View full code](sample/java/06_julia_parameter_sweep.java)
 - Swift: [View full code](sample/swift/06_julia_parameter_sweep.swift)
 - Kotlin: [View full code](sample/kotlin/06_julia_parameter_sweep.kt)
+- Ruby: [View full code](sample/ruby/06_julia_parameter_sweep.rb)
 
 </details>
 
@@ -528,7 +529,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin）</summary>
+<summary>変換後コード（C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby）</summary>
 
 - C++: [View full code](sample/cpp/16_glass_sculpture_chaos.cpp)
 - Rust: [View full code](sample/rs/16_glass_sculpture_chaos.rs)
@@ -539,6 +540,7 @@ if __name__ == "__main__":
 - Java: [View full code](sample/java/16_glass_sculpture_chaos.java)
 - Swift: [View full code](sample/swift/16_glass_sculpture_chaos.swift)
 - Kotlin: [View full code](sample/kotlin/16_glass_sculpture_chaos.kt)
+- Ruby: [View full code](sample/ruby/16_glass_sculpture_chaos.rb)
 
 </details>
 

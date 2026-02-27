@@ -19,6 +19,7 @@ Supported backends:
 ![Java](https://img.shields.io/badge/-Java%C2%A0%C2%A0-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
 ![Swift](https://img.shields.io/badge/-Swift%C2%A0-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
+![Ruby](https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white)
 
 ## Latest News
 
@@ -38,7 +39,7 @@ Supported backends:
 Pytra's features
 
 - Python to multi-language transpiler
-  - Supports conversion to C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, and Kotlin.
+  - Supports conversion to C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, and Ruby.
   - Converts code to output in a form extremely close to the original source.
 
 - Write Python code that targets C++-level output quality
@@ -187,7 +188,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin)</summary>
+<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby)</summary>
 
 - C++: [View full code](sample/cpp/06_julia_parameter_sweep.cpp)
 - Rust: [View full code](sample/rs/06_julia_parameter_sweep.rs)
@@ -198,6 +199,7 @@ if __name__ == "__main__":
 - Java: [View full code](sample/java/06_julia_parameter_sweep.java)
 - Swift: [View full code](sample/swift/06_julia_parameter_sweep.swift)
 - Kotlin: [View full code](sample/kotlin/06_julia_parameter_sweep.kt)
+- Ruby: [View full code](sample/ruby/06_julia_parameter_sweep.rb)
 
 </details>
 
@@ -525,7 +527,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin)</summary>
+<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby)</summary>
 
 - C++: [View full code](sample/cpp/16_glass_sculpture_chaos.cpp)
 - Rust: [View full code](sample/rs/16_glass_sculpture_chaos.rs)
@@ -536,6 +538,7 @@ if __name__ == "__main__":
 - Java: [View full code](sample/java/16_glass_sculpture_chaos.java)
 - Swift: [View full code](sample/swift/16_glass_sculpture_chaos.swift)
 - Kotlin: [View full code](sample/kotlin/16_glass_sculpture_chaos.kt)
+- Ruby: [View full code](sample/ruby/16_glass_sculpture_chaos.rb)
 
 </details>
 

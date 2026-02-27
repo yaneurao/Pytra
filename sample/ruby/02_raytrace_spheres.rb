@@ -1,0 +1,378 @@
+# Auto-generated Pytra Ruby native source from EAST3.
+
+def __pytra_noop(*args)
+  nil
+end
+
+def __pytra_assert(*args)
+  "True"
+end
+
+def __pytra_perf_counter
+  Process.clock_gettime(Process::CLOCK_MONOTONIC)
+end
+
+def __pytra_truthy(v)
+  return false if v.nil?
+  return v if v == true || v == false
+  return v != 0 if v.is_a?(Integer)
+  return v != 0.0 if v.is_a?(Float)
+  return !v.empty? if v.respond_to?(:empty?)
+  true
+end
+
+def __pytra_int(v)
+  return 0 if v.nil?
+  return v.to_i
+end
+
+def __pytra_float(v)
+  return 0.0 if v.nil?
+  return v.to_f
+end
+
+def __pytra_str(v)
+  return "" if v.nil?
+  v.to_s
+end
+
+def __pytra_len(v)
+  return 0 if v.nil?
+  return v.length if v.respond_to?(:length)
+  0
+end
+
+def __pytra_as_list(v)
+  return v if v.is_a?(Array)
+  return v.to_a if v.respond_to?(:to_a)
+  []
+end
+
+def __pytra_as_dict(v)
+  return v if v.is_a?(Hash)
+  {}
+end
+
+def __pytra_bytearray(v=nil)
+  return [] if v.nil?
+  if v.is_a?(Integer)
+    n = v
+    n = 0 if n < 0
+    return Array.new(n, 0)
+  end
+  if v.is_a?(String)
+    return v.bytes
+  end
+  src = __pytra_as_list(v)
+  out = []
+  i = 0
+  while i < src.length
+    out << (__pytra_int(src[i]) & 255)
+    i += 1
+  end
+  out
+end
+
+def __pytra_bytes(v)
+  return [] if v.nil?
+  return v.bytes if v.is_a?(String)
+  src = __pytra_as_list(v)
+  out = []
+  i = 0
+  while i < src.length
+    out << (__pytra_int(src[i]) & 255)
+    i += 1
+  end
+  out
+end
+
+def __pytra_range(start_v, stop_v, step_v)
+  out = []
+  step = __pytra_int(step_v)
+  return out if step == 0
+  i = __pytra_int(start_v)
+  stop = __pytra_int(stop_v)
+  while ((step >= 0 && i < stop) || (step < 0 && i > stop))
+    out << i
+    i += step
+  end
+  out
+end
+
+def __pytra_list_comp_range(start_v, stop_v, step_v)
+  out = []
+  step = __pytra_int(step_v)
+  return out if step == 0
+  i = __pytra_int(start_v)
+  stop = __pytra_int(stop_v)
+  while ((step >= 0 && i < stop) || (step < 0 && i > stop))
+    out << yield(i)
+    i += step
+  end
+  out
+end
+
+def __pytra_enumerate(v)
+  src = __pytra_as_list(v)
+  out = []
+  i = 0
+  while i < src.length
+    out << [i, src[i]]
+    i += 1
+  end
+  out
+end
+
+def __pytra_abs(v)
+  x = __pytra_float(v)
+  x < 0 ? -x : x
+end
+
+def __pytra_get_index(container, index)
+  if container.is_a?(Array)
+    i = __pytra_int(index)
+    i += container.length if i < 0
+    return nil if i < 0 || i >= container.length
+    return container[i]
+  end
+  if container.is_a?(Hash)
+    return container[index]
+  end
+  if container.is_a?(String)
+    i = __pytra_int(index)
+    i += container.length if i < 0
+    return "" if i < 0 || i >= container.length
+    return container[i] || ""
+  end
+  nil
+end
+
+def __pytra_set_index(container, index, value)
+  if container.is_a?(Array)
+    i = __pytra_int(index)
+    i += container.length if i < 0
+    return if i < 0 || i >= container.length
+    container[i] = value
+    return
+  end
+  if container.is_a?(Hash)
+    container[index] = value
+  end
+end
+
+def __pytra_slice(container, lower, upper)
+  return nil if container.nil?
+  lo = __pytra_int(lower)
+  hi = __pytra_int(upper)
+  return container[lo...hi]
+end
+
+def __pytra_min(a, b)
+  __pytra_float(a) < __pytra_float(b) ? a : b
+end
+
+def __pytra_max(a, b)
+  __pytra_float(a) > __pytra_float(b) ? a : b
+end
+
+def __pytra_isdigit(v)
+  s = __pytra_str(v)
+  return false if s.empty?
+  !!(s =~ /\A[0-9]+\z/)
+end
+
+def __pytra_isalpha(v)
+  s = __pytra_str(v)
+  return false if s.empty?
+  !!(s =~ /\A[A-Za-z]+\z/)
+end
+
+def __pytra_print(*args)
+  if args.empty?
+    puts
+    return
+  end
+  puts(args.map { |x| __pytra_str(x) }.join(" "))
+end
+
+def clamp01(v)
+  if __pytra_truthy((v < 0.0))
+    return 0.0
+  end
+  if __pytra_truthy((v > 1.0))
+    return 1.0
+  end
+  return v
+end
+
+def hit_sphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, r)
+  lx = (ox - cx)
+  ly = (oy - cy)
+  lz = (oz - cz)
+  a = (((dx * dx) + (dy * dy)) + (dz * dz))
+  b = (2.0 * (((lx * dx) + (ly * dy)) + (lz * dz)))
+  c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r))
+  d = ((b * b) - ((4.0 * a) * c))
+  if __pytra_truthy((d < 0.0))
+    return (-1.0)
+  end
+  sd = Math.sqrt(__pytra_float(d))
+  t0 = (((-b) - sd) / (2.0 * a))
+  t1 = (((-b) + sd) / (2.0 * a))
+  if __pytra_truthy((t0 > 0.001))
+    return t0
+  end
+  if __pytra_truthy((t1 > 0.001))
+    return t1
+  end
+  return (-1.0)
+end
+
+def render(width, height, aa)
+  pixels = __pytra_bytearray()
+  ox = 0.0
+  oy = 0.0
+  oz = (-3.0)
+  lx = (-0.4)
+  ly = 0.8
+  lz = (-0.45)
+  __step_0 = __pytra_int(1)
+  y = __pytra_int(0)
+  while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
+    __step_1 = __pytra_int(1)
+    x = __pytra_int(0)
+    while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
+      ar = 0
+      ag = 0
+      ab = 0
+      __step_2 = __pytra_int(1)
+      ay = __pytra_int(0)
+      while ((__step_2 >= 0 && ay < __pytra_int(aa)) || (__step_2 < 0 && ay > __pytra_int(aa)))
+        __step_3 = __pytra_int(1)
+        ax = __pytra_int(0)
+        while ((__step_3 >= 0 && ax < __pytra_int(aa)) || (__step_3 < 0 && ax > __pytra_int(aa)))
+          fy = ((y + ((ay + 0.5) / aa)) / (height - 1))
+          fx = ((x + ((ax + 0.5) / aa)) / (width - 1))
+          sy = (1.0 - (2.0 * fy))
+          sx = (((2.0 * fx) - 1.0) * (width / height))
+          dx = sx
+          dy = sy
+          dz = 1.0
+          inv_len = (1.0 / Math.sqrt(__pytra_float((((dx * dx) + (dy * dy)) + (dz * dz)))))
+          dx *= inv_len
+          dy *= inv_len
+          dz *= inv_len
+          t_min = 1e+30
+          hit_id = (-1)
+          t = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8)
+          if __pytra_truthy((__pytra_truthy((t > 0.0)) && __pytra_truthy((t < t_min))))
+            t_min = t
+            hit_id = 0
+          end
+          t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95)
+          if __pytra_truthy((__pytra_truthy((t > 0.0)) && __pytra_truthy((t < t_min))))
+            t_min = t
+            hit_id = 1
+          end
+          t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0)
+          if __pytra_truthy((__pytra_truthy((t > 0.0)) && __pytra_truthy((t < t_min))))
+            t_min = t
+            hit_id = 2
+          end
+          r = 0
+          g = 0
+          b = 0
+          if __pytra_truthy((hit_id >= 0))
+            px = (ox + (dx * t_min))
+            py = (oy + (dy * t_min))
+            pz = (oz + (dz * t_min))
+            nx = 0.0
+            ny = 0.0
+            nz = 0.0
+            if __pytra_truthy((hit_id == 0))
+              nx = ((px + 0.8) / 0.8)
+              ny = ((py + 0.2) / 0.8)
+              nz = ((pz - 2.2) / 0.8)
+            else
+              if __pytra_truthy((hit_id == 1))
+                nx = ((px - 0.9) / 0.95)
+                ny = ((py - 0.1) / 0.95)
+                nz = ((pz - 2.9) / 0.95)
+              else
+                nx = 0.0
+                ny = 1.0
+                nz = 0.0
+              end
+            end
+            diff = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)))
+            diff = clamp01(diff)
+            base_r = 0.0
+            base_g = 0.0
+            base_b = 0.0
+            if __pytra_truthy((hit_id == 0))
+              base_r = 0.95
+              base_g = 0.35
+              base_b = 0.25
+            else
+              if __pytra_truthy((hit_id == 1))
+                base_r = 0.25
+                base_g = 0.55
+                base_b = 0.95
+              else
+                checker = (__pytra_int(((px + 50.0) * 0.8)) + __pytra_int(((pz + 50.0) * 0.8)))
+                if __pytra_truthy(((checker % 2) == 0))
+                  base_r = 0.85
+                  base_g = 0.85
+                  base_b = 0.85
+                else
+                  base_r = 0.2
+                  base_g = 0.2
+                  base_b = 0.2
+                end
+              end
+            end
+            shade = (0.12 + (0.88 * diff))
+            r = __pytra_int((255.0 * clamp01((base_r * shade))))
+            g = __pytra_int((255.0 * clamp01((base_g * shade))))
+            b = __pytra_int((255.0 * clamp01((base_b * shade))))
+          else
+            tsky = (0.5 * (dy + 1.0))
+            r = __pytra_int((255.0 * (0.65 + (0.2 * tsky))))
+            g = __pytra_int((255.0 * (0.75 + (0.18 * tsky))))
+            b = __pytra_int((255.0 * (0.9 + (0.08 * tsky))))
+          end
+          ar += r
+          ag += g
+          ab += b
+          ax += __step_3
+        end
+        ay += __step_2
+      end
+      samples = (aa * aa)
+      pixels.append((__pytra_int(ar) / __pytra_int(samples)))
+      pixels.append((__pytra_int(ag) / __pytra_int(samples)))
+      pixels.append((__pytra_int(ab) / __pytra_int(samples)))
+      x += __step_1
+    end
+    y += __step_0
+  end
+  return pixels
+end
+
+def run_raytrace()
+  width = 1600
+  height = 900
+  aa = 2
+  out_path = "sample/out/02_raytrace_spheres.png"
+  start = __pytra_perf_counter()
+  pixels = render(width, height, aa)
+  __pytra_noop(out_path, width, height, pixels)
+  elapsed = (__pytra_perf_counter() - start)
+  __pytra_print("output:", out_path)
+  __pytra_print("size:", width, "x", height)
+  __pytra_print("elapsed_sec:", elapsed)
+end
+
+if __FILE__ == $PROGRAM_NAME
+  run_raytrace()
+end
