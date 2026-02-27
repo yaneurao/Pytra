@@ -442,6 +442,15 @@ class CSharpEmitter(CodeEmitter):
             return "null"
         return ""
 
+    def _escape_interpolated_literal_text(self, text: str) -> str:
+        """C# 補間文字列で安全に使えるようリテラルをエスケープする。"""
+        return (
+            text.replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("{", "{{")
+            .replace("}", "}}")
+        )
+
     def _render_range_expr(self, expr_d: dict[str, Any]) -> str:
         """RangeExpr を C# `List<long>` 生成式へ lower する。"""
         start = self.render_expr(expr_d.get("start"))
@@ -847,14 +856,30 @@ class CSharpEmitter(CodeEmitter):
             if len(arg_order) > 0 and arg_order[0] == "self":
                 arg_order = arg_order[1:]
 
+        optional_default_texts: dict[str, str] = {}
+        optional_allowed: dict[str, bool] = {}
+        optional_suffix_ok = True
+        i = len(arg_order) - 1
+        while i >= 0:
+            arg_name_rev = arg_order[i]
+            has_default = arg_name_rev in arg_defaults
+            default_text_rev = self._render_optional_default_value(arg_defaults.get(arg_name_rev)) if has_default else ""
+            optional_default_texts[arg_name_rev] = default_text_rev
+            if (not has_default) or default_text_rev == "":
+                optional_suffix_ok = False
+                optional_allowed[arg_name_rev] = False
+            else:
+                optional_allowed[arg_name_rev] = optional_suffix_ok
+            i -= 1
+
         for arg_name in arg_order:
             safe = self._safe_name(arg_name)
             arg_east_t = self.any_to_str(arg_types.get(arg_name))
             arg_cs_t = self._cs_type(arg_east_t)
             if arg_cs_t == "":
                 arg_cs_t = "object"
-            default_text = self._render_optional_default_value(arg_defaults.get(arg_name))
-            if default_text != "":
+            default_text = optional_default_texts.get(arg_name, "")
+            if optional_allowed.get(arg_name, False):
                 args.append(arg_cs_t + " " + safe + " = " + default_text)
             else:
                 args.append(arg_cs_t + " " + safe)
@@ -1189,23 +1214,23 @@ class CSharpEmitter(CodeEmitter):
                 if t_east != "":
                     self.declared_var_types[name_raw] = t_east
                 t_cs = self._cs_type(t_east)
-                value = self._render_expr_with_type_hint(value_obj, t_east)
+                init_value = self._render_expr_with_type_hint(value_obj, t_east)
                 if t_cs.startswith("(") or t_cs == "" or t_cs == "object":
-                    self.emit("var " + name + " = " + value + ";")
+                    self.emit("var " + name + " = " + init_value + ";")
                 else:
-                    self.emit(t_cs + " " + name + " = " + value + ";")
+                    self.emit(t_cs + " " + name + " = " + init_value + ";")
                 return
-            value = self.render_expr(value_obj)
-            self.emit(name + " = " + value + ";")
+            assigned_value = self.render_expr(value_obj)
+            self.emit(name + " = " + assigned_value + ";")
             return
 
         if target_kind == "Tuple":
             items = self.tuple_elements(target)
             if len(items) == 0:
                 return
-            value = self.render_expr(value_obj)
+            tuple_value = self.render_expr(value_obj)
             tmp_name = self.next_tmp("__tmp")
-            self.emit("var " + tmp_name + " = " + value + ";")
+            self.emit("var " + tmp_name + " = " + tuple_value + ";")
             i = 0
             while i < len(items):
                 item_node = self.any_to_dict_or_empty(items[i])
@@ -1242,12 +1267,12 @@ class CSharpEmitter(CodeEmitter):
             if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
                 owner = self.render_expr(owner_node)
                 idx = self.render_expr(target.get("slice"))
-                value = self.render_expr(value_obj)
-                self.emit("Pytra.CsModule.py_runtime.py_set(" + owner + ", " + idx + ", " + value + ");")
+                sub_value = self.render_expr(value_obj)
+                self.emit("Pytra.CsModule.py_runtime.py_set(" + owner + ", " + idx + ", " + sub_value + ");")
                 return
 
-        value = self.render_expr(value_obj)
-        self.emit(self.render_expr(target) + " = " + value + ";")
+        rhs_value = self.render_expr(value_obj)
+        self.emit(self.render_expr(target) + " = " + rhs_value + ";")
 
     def _emit_augassign(self, stmt: dict[str, Any]) -> None:
         target, value, mapped = self.render_augassign_basic(stmt, self.aug_ops, "+=")
@@ -1586,6 +1611,26 @@ class CSharpEmitter(CodeEmitter):
                 return non_str
             return self.quote_string_literal(self.any_to_str(expr_d.get("value")))
 
+        if kind == "JoinedStr":
+            values = self.any_to_list(expr_d.get("values"))
+            pieces: list[str] = []
+            for part in values:
+                p_node = self.any_to_dict_or_empty(part)
+                p_kind = self.any_dict_get_str(p_node, "kind", "")
+                if p_kind == "Constant":
+                    p_val = p_node.get("value")
+                    if isinstance(p_val, str):
+                        pieces.append(self._escape_interpolated_literal_text(p_val))
+                    else:
+                        pieces.append("{" + self.render_expr(part) + "}")
+                    continue
+                if p_kind == "FormattedValue":
+                    inner = self.render_expr(p_node.get("value"))
+                    pieces.append("{" + inner + "}")
+                    continue
+                pieces.append("{" + self.render_expr(part) + "}")
+            return "$\"" + "".join(pieces) + "\""
+
         if kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_kind = self.any_dict_get_str(owner_node, "kind", "")
@@ -1736,6 +1781,17 @@ class CSharpEmitter(CodeEmitter):
 
         if kind == "List":
             return self._typed_list_literal(expr_d)
+
+        if kind == "Set":
+            elts = self.any_to_list(expr_d.get("elts"))
+            if len(elts) == 0:
+                elts = self.any_to_list(expr_d.get("elements"))
+            rendered: list[str] = []
+            for elt in elts:
+                rendered.append(self.render_expr(elt))
+            if len(rendered) == 0:
+                return "new System.Collections.Generic.HashSet<object>()"
+            return "new System.Collections.Generic.HashSet<object> { " + ", ".join(rendered) + " }"
 
         if kind == "Tuple":
             elts = self.tuple_elements(expr_d)

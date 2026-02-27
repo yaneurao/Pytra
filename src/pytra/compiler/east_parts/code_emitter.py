@@ -1949,8 +1949,8 @@ class CodeEmitter:
                         self.import_modules[local_name_obj] = module_id
             return
 
-        legacy_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
-        for local_name_obj, sym_obj in legacy_symbols.items():
+        legacy_symbols_fallback = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        for local_name_obj, sym_obj in legacy_symbols_fallback.items():
             if not isinstance(local_name_obj, str):
                 continue
             local_name = local_name_obj
@@ -1960,8 +1960,8 @@ class CodeEmitter:
                 self.any_dict_get_str(sym, "module", ""),
                 self.any_dict_get_str(sym, "name", ""),
             )
-        legacy_modules = self.any_to_dict_or_empty(meta.get("import_modules"))
-        for local_name_obj, module_id_obj in legacy_modules.items():
+        legacy_modules_fallback = self.any_to_dict_or_empty(meta.get("import_modules"))
+        for local_name_obj, module_id_obj in legacy_modules_fallback.items():
             if not isinstance(local_name_obj, str):
                 continue
             module_id = self.any_to_str(module_id_obj)

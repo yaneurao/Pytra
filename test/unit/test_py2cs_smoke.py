@@ -422,6 +422,21 @@ def run() -> str:
         self.assertIn("public static string pick(string name = \"\")", cs)
         self.assertIn("return pick();", cs)
 
+    def test_optional_param_is_not_emitted_before_required_param(self) -> None:
+        src = """from pytra.std.pathlib import Path
+
+def f(parser_backend: str = "self_hosted", root: Path = Path("src")) -> str:
+    return parser_backend
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "param_order.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("public static string f(string parser_backend, Path root)", cs)
+        self.assertNotIn("string parser_backend = \"self_hosted\"", cs)
+
     def test_sys_exit_is_lowered_to_environment_exit(self) -> None:
         src = """from pytra.std import sys
 
@@ -450,6 +465,31 @@ def stop() -> None:
 
         self.assertNotIn('"doc";', cs)
         self.assertIn("return 1;", cs)
+
+    def test_set_literal_is_lowered_to_hashset(self) -> None:
+        src = """def f(k: str) -> bool:
+    return k in {"A", "B"}
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "set_lit.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("new System.Collections.Generic.HashSet<object>", cs)
+        self.assertIn(".Contains(k)", cs)
+
+    def test_joinedstr_is_lowered_to_csharp_interpolated_string(self) -> None:
+        src = """def f(prefix: str, n: int) -> str:
+    return f"{prefix}_{n}"
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "fstring_case.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("return $\"{prefix}_{n}\";", cs)
 
     def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
         emitter = CSharpEmitter({"kind": "Module", "body": [], "meta": {}})
