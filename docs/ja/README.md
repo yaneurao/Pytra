@@ -1,25 +1,41 @@
-# Pytraとは何？
 
 <a href="../../README.md">
   <img alt="Read in English" src="https://img.shields.io/badge/README-English-2563EB?style=flat-square">
 </a>
 
-Pytra は、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
+<p align="center">
+  <img src="../images/pytra-code-alchemist-s.png" alt="Pytra Code Alchemist" width="256">
+</p>
 
-対応フロントエンド:
-![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+<div align="center">
+    <h1>Pytra</h1>
+    Pytra は、Pythonのサブセットで書かれたプログラムを様々な言語に変換するためのトランスパイラ群です。
+    <p><a href="./index.md">ドキュメントを読む</a></p>
 
-対応バックエンド:
-![C++](https://img.shields.io/badge/-C%2B%2B%C2%A0%C2%A0%C2%A0-00599C?style=flat-square&logo=cplusplus&logoColor=white)
-![Rust](https://img.shields.io/badge/-Rust%C2%A0%C2%A0-F6B73C?style=flat-square&logo=rust&logoColor=black)
-![C#](https://img.shields.io/badge/-C%23%C2%A0%C2%A0%C2%A0%C2%A0-239120?style=flat-square&logo=csharp&logoColor=white)
-![JS](https://img.shields.io/badge/-JS%C2%A0%C2%A0%C2%A0%C2%A0-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![TS](https://img.shields.io/badge/-TS%C2%A0%C2%A0%C2%A0%C2%A0-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Go](https://img.shields.io/badge/-Go%C2%A0%C2%A0%C2%A0%C2%A0-00ADD8?style=flat-square&logo=go&logoColor=white)
-![Java](https://img.shields.io/badge/-Java%C2%A0%C2%A0-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
-![Swift](https://img.shields.io/badge/-Swift%C2%A0-F05138?style=flat-square&logo=swift&logoColor=white)
-![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
-![Ruby](https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white)
+<table align="center">
+  <tr>
+    <td nowrap>
+      <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="../images/brush-arrow.png" alt="arrow" width="64">
+    </td>
+    <td align="center">
+      <img alt="C++" src="https://img.shields.io/badge/-C%2B%2B%C2%A0%C2%A0%C2%A0-00599C?style=flat-square&logo=cplusplus&logoColor=white">
+      <img alt="Rust" src="https://img.shields.io/badge/-Rust%C2%A0%C2%A0-F6B73C?style=flat-square&logo=rust&logoColor=black">
+      <img alt="C#" src="https://img.shields.io/badge/-C%23%C2%A0%C2%A0%C2%A0%C2%A0-239120?style=flat-square&logo=dotnet&logoColor=white">
+      <img alt="JS" src="https://img.shields.io/badge/-JS%C2%A0%C2%A0%C2%A0%C2%A0-F7DF1E?style=flat-square&logo=javascript&logoColor=black">
+      <img alt="TS" src="https://img.shields.io/badge/-TS%C2%A0%C2%A0%C2%A0%C2%A0-3178C6?style=flat-square&logo=typescript&logoColor=white">
+      <img alt="Go" src="https://img.shields.io/badge/-Go%C2%A0%C2%A0%C2%A0%C2%A0-00ADD8?style=flat-square&logo=go&logoColor=white">
+      <br>
+      <img alt="Java" src="https://img.shields.io/badge/-Java%C2%A0%C2%A0-ED8B00?style=flat-square&logo=openjdk&logoColor=white">
+      <img alt="Swift" src="https://img.shields.io/badge/-Swift%C2%A0-F05138?style=flat-square&logo=swift&logoColor=white">
+      <img alt="Kotlin" src="https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
+      <img alt="Ruby" src="https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white">
+      <img alt="Lua" src="https://img.shields.io/badge/-Lua%C2%A0%C2%A0%C2%A0-4C6EF5?style=flat-square&logo=lua&logoColor=white">
+      <img alt="PHP" src="https://img.shields.io/badge/-PHP%C2%A0%C2%A0%C2%A0-777BB4?style=flat-square&logo=php&logoColor=white">
+    </td>
+  </tr>
+</table>
+</div>
+
 
 ## 最新ニュース
 
@@ -536,20 +552,6 @@ if __name__ == "__main__":
 - Ruby: [View full code](../../sample/ruby/16_glass_sculpture_chaos.rb)
 
 </details>
-
-## ドキュメント
-
-利用時によく参照する順で、関連ドキュメントをまとめています。
-
-- まず使い方を確認する: [使い方ガイド](how-to-use.md)
-- 開発補助スクリプト一覧を確認する: [ツール一覧](spec/spec-tools.md)
-- オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](spec/spec-options.md)
-- ランタイム配置と include 規約を確認する: [ランタイム仕様](spec/spec-runtime.md)
-- 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](plans/pytra-wip.md)
-- `py2cpp` の機能対応（テスト根拠）を確認する: [py2cpp サポートマトリクス](language/cpp/spec-support.md)
-- サンプル一覧と概要を確認する: [サンプルコード案内](../../sample/readme-ja.md)
-- 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](spec/index.md)
-- 開発の動機と設計理念: [開発思想](spec/spec-philosophy.md)
 
 ## ライセンス
 
