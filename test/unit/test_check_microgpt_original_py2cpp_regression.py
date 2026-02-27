@@ -61,6 +61,12 @@ class CheckMicrogptOriginalRegressionTest(unittest.TestCase):
             code = self.tool.main()
         self.assertEqual(code, 1)
 
+    def test_stage_owner_mapping(self) -> None:
+        self.assertEqual(self.tool._owner_for_stage("A"), "parser")
+        self.assertEqual(self.tool._owner_for_stage("D"), "lower")
+        self.assertEqual(self.tool._owner_for_stage("F"), "runtime")
+        self.assertEqual(self.tool._owner_for_stage("SUCCESS"), "success")
+
 
 if __name__ == "__main__":
     unittest.main()

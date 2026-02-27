@@ -26,6 +26,16 @@ STAGE_LABELS = {
     "SUCCESS": "transpile-and-syntax-check-passed",
 }
 
+STAGE_OWNERS = {
+    "A": "parser",
+    "B": "parser",
+    "C": "lower",
+    "D": "lower",
+    "E": "lower",
+    "F": "runtime",
+    "SUCCESS": "success",
+}
+
 
 def _run(cmd: list[str]) -> tuple[int, str]:
     cp = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
@@ -94,6 +104,10 @@ def _classify_compile_failure(msg: str) -> str:
     return "F"
 
 
+def _owner_for_stage(stage: str) -> str:
+    return STAGE_OWNERS.get(stage, "unknown")
+
+
 def _matches_expectation(expect: str, stage: str) -> bool:
     if expect == "any-known":
         return stage in KNOWN_STAGES or stage == "SUCCESS"
@@ -159,6 +173,7 @@ def main() -> int:
             phase = "transpile"
             print("result=fail phase=transpile")
             print(f"stage={stage} label={STAGE_LABELS.get(stage, 'unknown')}")
+            print(f"owner={_owner_for_stage(stage)}")
             if first != "":
                 print(f"error={first}")
             if stage == "UNKNOWN":
@@ -177,6 +192,7 @@ def main() -> int:
             phase = "transpile-only"
             print("result=ok phase=transpile-only")
             print(f"stage={stage} label={STAGE_LABELS[stage]}")
+            print(f"owner={_owner_for_stage(stage)}")
             if not _matches_expectation(args.expect_stage, stage):
                 print(f"expectation_mismatch expected={args.expect_stage} actual={stage}")
                 return 1
@@ -204,6 +220,7 @@ def main() -> int:
             phase = "syntax-check"
             print("result=fail phase=syntax-check")
             print(f"stage={stage} label={STAGE_LABELS.get(stage, 'unknown')}")
+            print(f"owner={_owner_for_stage(stage)}")
             if first != "":
                 print(f"error={first}")
             if not _matches_expectation(args.expect_stage, stage):
@@ -218,6 +235,7 @@ def main() -> int:
         phase = "transpile+syntax-check"
         print("result=ok phase=transpile+syntax-check")
         print(f"stage={stage} label={STAGE_LABELS[stage]}")
+        print(f"owner={_owner_for_stage(stage)}")
         if not _matches_expectation(args.expect_stage, stage):
             print(f"expectation_mismatch expected={args.expect_stage} actual={stage}")
             return 1
