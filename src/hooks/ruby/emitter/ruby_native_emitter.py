@@ -138,10 +138,47 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
 
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
-    ident = _safe_ident(expr.get("id"), "value")
+    raw = expr.get("id")
+    if raw == "self":
+        return "self"
+    ident = _safe_ident(raw, "value")
     if ident == "self":
         return "self"
     return ident
+
+
+def _render_isinstance_check(lhs: str, typ: Any) -> str:
+    if not isinstance(typ, dict):
+        return "false"
+    if typ.get("kind") == "Name":
+        name = _safe_ident(typ.get("id"), "")
+        if name in {"int", "int64"}:
+            return lhs + ".is_a?(Integer)"
+        if name in {"float", "float64"}:
+            return lhs + ".is_a?(Float)"
+        if name == "bool":
+            return "(" + lhs + ".is_a?(TrueClass) || " + lhs + ".is_a?(FalseClass))"
+        if name == "str":
+            return lhs + ".is_a?(String)"
+        if name in {"list", "tuple", "bytes", "bytearray"}:
+            return lhs + ".is_a?(Array)"
+        if name == "dict":
+            return lhs + ".is_a?(Hash)"
+        if name in _CLASS_NAMES:
+            return lhs + ".is_a?(" + name + ")"
+        return "false"
+    if typ.get("kind") == "Tuple":
+        elems_any = typ.get("elements")
+        elems = elems_any if isinstance(elems_any, list) else []
+        checks: list[str] = []
+        i = 0
+        while i < len(elems):
+            checks.append(_render_isinstance_check(lhs, elems[i]))
+            i += 1
+        if len(checks) == 0:
+            return "false"
+        return "(" + " || ".join(checks) + ")"
+    return "false"
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
@@ -333,6 +370,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "0"
         return "__pytra_abs(" + _render_expr(args[0]) + ")"
+    if callee_name == "isinstance":
+        if len(args) < 2:
+            return "false"
+        return _render_isinstance_check(_render_expr(args[0]), args[1])
     if callee_name == "int":
         if len(args) == 0:
             return "0"
@@ -425,6 +466,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     return "(" + rendered_math[0] + ").ceil"
                 if attr_name == "abs":
                     return "(" + rendered_math[0] + ").abs"
+            if owner_name in {"png", "gif"}:
+                rendered_noop: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_noop.append(_render_expr(args[i]))
+                    i += 1
+                if attr_name in {"write_rgb_png", "save_gif"}:
+                    return "__pytra_noop(" + ", ".join(rendered_noop) + ")"
+                if attr_name == "grayscale_palette":
+                    return "[]"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + owner + ")"
         if attr_name == "isalpha" and len(args) == 0:
@@ -493,6 +544,8 @@ def _render_expr(expr: Any) -> str:
         return "__pytra_str(" + _render_expr(expr.get("value")) + ")"
     if kind == "ObjBool":
         return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
+    if kind == "IsInstance":
+        return _render_isinstance_check(_render_expr(expr.get("value")), expr.get("expected_type_id"))
     if kind == "Unbox" or kind == "Box":
         return _render_expr(expr.get("value"))
     return "nil"
@@ -731,8 +784,11 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     while i < len(order):
         raw = order[i]
         if isinstance(raw, str):
+            if drop_self and i == 0 and raw == "self":
+                i += 1
+                continue
             name = _safe_ident(raw, "arg" + str(i))
-            if drop_self and i == 0 and name == "self":
+            if drop_self and i == 0 and (name == "self" or name == "self_"):
                 i += 1
                 continue
             out.append(name)
@@ -769,6 +825,57 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     lines: list[str] = [head]
     body_any = cls.get("body")
     body = body_any if isinstance(body_any, list) else []
+    field_names: list[str] = []
+    seen_fields: set[str] = set()
+
+    field_types_any = cls.get("field_types")
+    if isinstance(field_types_any, dict):
+        for raw in field_types_any.keys():
+            if not isinstance(raw, str):
+                continue
+            nm = _safe_ident(raw, "")
+            if nm == "" or nm in seen_fields:
+                continue
+            seen_fields.add(nm)
+            field_names.append(nm)
+
+    if len(field_names) == 0:
+        i = 0
+        while i < len(body):
+            node = body[i]
+            if isinstance(node, dict) and node.get("kind") == "AnnAssign":
+                target_any = node.get("target")
+                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                    nm = _safe_ident(target_any.get("id"), "")
+                    if nm != "" and nm not in seen_fields:
+                        seen_fields.add(nm)
+                        field_names.append(nm)
+            i += 1
+
+    if len(field_names) > 0:
+        lines.append(indent + "  attr_accessor " + ", ".join([":" + n for n in field_names]))
+
+    is_dataclass = bool(cls.get("dataclass"))
+    has_init = False
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+            if _safe_ident(node.get("name"), "") == "__init__":
+                has_init = True
+                break
+        i += 1
+
+    if is_dataclass and not has_init and len(field_names) > 0:
+        lines.append("")
+        lines.append(indent + "  def initialize(" + ", ".join(field_names) + ")")
+        i = 0
+        while i < len(field_names):
+            nm = field_names[i]
+            lines.append(indent + "    self." + nm + " = " + nm)
+            i += 1
+        lines.append(indent + "  end")
+
     i = 0
     while i < len(body):
         node = body[i]
