@@ -25,6 +25,28 @@ Windows では次の読み替えを行ってください。
   - Windows PowerShell: `` ` ``
   - Windows cmd.exe: `^`
 
+## 統合CLI（`./pytra`）の使い方
+
+ルートの `./pytra` は、`python3 -m pytra.cli` を呼び出す統合CLIランチャーです。
+
+```bash
+# ヘルプ
+./pytra --help
+
+# C++へ単一ファイル出力
+./pytra test/fixtures/core/add.py --output /tmp/add.cpp
+
+# C++を複数ファイル出力（manifest付き）
+./pytra test/fixtures/core/add.py --output-dir out/add_case
+
+# 変換 + ビルド + 実行
+./pytra test/fixtures/core/add.py --build --output-dir out/add_case --exe add.out --run
+```
+
+補足:
+- 現時点の `./pytra` は `--target cpp` のみ対応です。
+- 生成コード最適化レベルは `--codegen-opt {0,1,2,3}` で指定できます。
+
 ## 最初に確認する制約
 
 - Python の標準ライブラリ直接 import は原則非推奨です。`pytra.std.*` を使ってください。

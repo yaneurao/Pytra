@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+# /src/pytra/cli.py -> project root is parents[2]
+ROOT = Path(__file__).resolve().parents[2]
 PY2CPP = ROOT / "src" / "py2cpp.py"
 GEN_MAKEFILE = ROOT / "tools" / "gen_makefile_from_manifest.py"
 PYTHON = sys.executable or "python3"
@@ -174,16 +175,16 @@ def _parse(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     ap.add_argument("--exe", default=DEFAULT_EXE, help="output executable name for generated Makefile")
     ap.add_argument("--run", action="store_true", help="run after build")
     ap.add_argument("--codegen-opt", type=int, choices=[0, 1, 2, 3], help="py2cpp optimization level")
-    try:
-        return ap.parse_known_args(argv)
-    except SystemExit:
-        raise RuntimeError("invalid arguments")
+    return ap.parse_known_args(argv)
 
 
 def main(argv: list[str]) -> int:
     try:
         args, passthrough = _parse(argv)
-    except RuntimeError:
+    except SystemExit as exc:
+        code = exc.code
+        if isinstance(code, int):
+            return code
         return 1
 
     input_path = Path(args.input)
