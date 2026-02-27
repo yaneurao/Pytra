@@ -1,107 +1,378 @@
-public static class Program
-{
-    // 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
-    
-    public static List<byte> render_orbit_trap_julia(long width, long height, long max_iter, double cx, double cy)
-    {
-        List<byte> pixels = bytearray();
-        for (long y = 0; y < height; y += 1) {
-            double zy0 = -1.3 + 2.6 * (y / (height - 1));
-            for (long x = 0; x < width; x += 1) {
-                double zx = -1.9 + 3.8 * (x / (width - 1));
-                double zy = zy0;
-                
-                double trap = 1.0e9;
-                long i = 0;
-                while (i < max_iter) {
-                    double ax = zx;
-                    if (ax < 0.0) {
-                        ax = -ax;
-                    }
-                    double ay = zy;
-                    if (ay < 0.0) {
-                        ay = -ay;
-                    }
-                    double dxy = zx - zy;
-                    if (dxy < 0.0) {
-                        dxy = -dxy;
-                    }
-                    if (ax < trap) {
-                        trap = ax;
-                    }
-                    if (ay < trap) {
-                        trap = ay;
-                    }
-                    if (dxy < trap) {
-                        trap = dxy;
-                    }
-                    double zx2 = zx * zx;
-                    double zy2 = zy * zy;
-                    if (zx2 + zy2 > 4.0) {
-                        py_break;
-                    }
-                    zy = 2.0 * zx * zy + cy;
-                    zx = zx2 - zy2 + cx;
-                    i += 1;
-                }
-                long r = 0;
-                long g = 0;
-                long b = 0;
-                if (i >= max_iter) {
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                } else {
-                    double trap_scaled = trap * 3.2;
-                    if (trap_scaled > 1.0) {
-                        trap_scaled = 1.0;
-                    }
-                    if (trap_scaled < 0.0) {
-                        trap_scaled = 0.0;
-                    }
-                    double t = i / max_iter;
-                    long tone = System.Convert.ToInt64(255.0 * (1.0 - trap_scaled));
-                    r = System.Convert.ToInt64(tone * (0.35 + 0.65 * t));
-                    g = System.Convert.ToInt64(tone * (0.15 + 0.85 * (1.0 - t)));
-                    b = System.Convert.ToInt64(255.0 * (0.25 + 0.75 * t));
-                    if (r > 255) {
-                        r = 255;
-                    }
-                    if (g > 255) {
-                        g = 255;
-                    }
-                    if (b > 255) {
-                        b = 255;
-                    }
-                }
-                pixels.Add(r);
-                pixels.Add(g);
-                pixels.Add(b);
+// Auto-generated Pytra Swift native source from EAST3.
+import Foundation
+
+func __pytra_noop(_ args: Any...) {}
+
+func __pytra_any_default() -> Any {
+    return Int64(0)
+}
+
+func __pytra_assert(_ args: Any...) -> String {
+    _ = args
+    return "True"
+}
+
+func __pytra_perf_counter() -> Double {
+    return Date().timeIntervalSince1970
+}
+
+func __pytra_truthy(_ v: Any?) -> Bool {
+    guard let value = v else { return false }
+    if let b = value as? Bool { return b }
+    if let i = value as? Int64 { return i != 0 }
+    if let i = value as? Int { return i != 0 }
+    if let d = value as? Double { return d != 0.0 }
+    if let s = value as? String { return s != "" }
+    if let a = value as? [Any] { return !a.isEmpty }
+    if let m = value as? [AnyHashable: Any] { return !m.isEmpty }
+    return true
+}
+
+func __pytra_int(_ v: Any?) -> Int64 {
+    guard let value = v else { return 0 }
+    if let i = value as? Int64 { return i }
+    if let i = value as? Int { return Int64(i) }
+    if let d = value as? Double { return Int64(d) }
+    if let b = value as? Bool { return b ? 1 : 0 }
+    if let s = value as? String { return Int64(s) ?? 0 }
+    return 0
+}
+
+func __pytra_float(_ v: Any?) -> Double {
+    guard let value = v else { return 0.0 }
+    if let d = value as? Double { return d }
+    if let f = value as? Float { return Double(f) }
+    if let i = value as? Int64 { return Double(i) }
+    if let i = value as? Int { return Double(i) }
+    if let b = value as? Bool { return b ? 1.0 : 0.0 }
+    if let s = value as? String { return Double(s) ?? 0.0 }
+    return 0.0
+}
+
+func __pytra_str(_ v: Any?) -> String {
+    guard let value = v else { return "" }
+    if let s = value as? String { return s }
+    return String(describing: value)
+}
+
+func __pytra_len(_ v: Any?) -> Int64 {
+    guard let value = v else { return 0 }
+    if let s = value as? String { return Int64(s.count) }
+    if let a = value as? [Any] { return Int64(a.count) }
+    if let m = value as? [AnyHashable: Any] { return Int64(m.count) }
+    return 0
+}
+
+func __pytra_index(_ i: Int64, _ n: Int64) -> Int64 {
+    if i < 0 {
+        return i + n
+    }
+    return i
+}
+
+func __pytra_getIndex(_ container: Any?, _ index: Any?) -> Any {
+    if let list = container as? [Any] {
+        if list.isEmpty { return __pytra_any_default() }
+        let i = __pytra_index(__pytra_int(index), Int64(list.count))
+        if i < 0 || i >= Int64(list.count) { return __pytra_any_default() }
+        return list[Int(i)]
+    }
+    if let dict = container as? [AnyHashable: Any] {
+        let key = AnyHashable(__pytra_str(index))
+        return dict[key] ?? __pytra_any_default()
+    }
+    if let s = container as? String {
+        let chars = Array(s)
+        if chars.isEmpty { return "" }
+        let i = __pytra_index(__pytra_int(index), Int64(chars.count))
+        if i < 0 || i >= Int64(chars.count) { return "" }
+        return String(chars[Int(i)])
+    }
+    return __pytra_any_default()
+}
+
+func __pytra_setIndex(_ container: Any?, _ index: Any?, _ value: Any?) {
+    if var list = container as? [Any] {
+        if list.isEmpty { return }
+        let i = __pytra_index(__pytra_int(index), Int64(list.count))
+        if i < 0 || i >= Int64(list.count) { return }
+        list[Int(i)] = value as Any
+        return
+    }
+    if var dict = container as? [AnyHashable: Any] {
+        let key = AnyHashable(__pytra_str(index))
+        dict[key] = value
+    }
+}
+
+func __pytra_slice(_ container: Any?, _ lower: Any?, _ upper: Any?) -> Any {
+    if let s = container as? String {
+        let chars = Array(s)
+        let n = Int64(chars.count)
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if lo < 0 { lo = 0 }
+        if hi < 0 { hi = 0 }
+        if lo > n { lo = n }
+        if hi > n { hi = n }
+        if hi < lo { hi = lo }
+        if lo >= hi { return "" }
+        return String(chars[Int(lo)..<Int(hi)])
+    }
+    if let list = container as? [Any] {
+        let n = Int64(list.count)
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if lo < 0 { lo = 0 }
+        if hi < 0 { hi = 0 }
+        if lo > n { lo = n }
+        if hi > n { hi = n }
+        if hi < lo { hi = lo }
+        if lo >= hi { return [Any]() }
+        return Array(list[Int(lo)..<Int(hi)])
+    }
+    return __pytra_any_default()
+}
+
+func __pytra_isdigit(_ v: Any?) -> Bool {
+    let s = __pytra_str(v)
+    if s.isEmpty { return false }
+    return s.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
+}
+
+func __pytra_isalpha(_ v: Any?) -> Bool {
+    let s = __pytra_str(v)
+    if s.isEmpty { return false }
+    return s.unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) }
+}
+
+func __pytra_contains(_ container: Any?, _ value: Any?) -> Bool {
+    if let list = container as? [Any] {
+        let needle = __pytra_str(value)
+        for item in list {
+            if __pytra_str(item) == needle {
+                return true
             }
         }
-        return pixels;
+        return false
     }
-    
-    public static void run_04_orbit_trap_julia()
-    {
-        long width = 1920;
-        long height = 1080;
-        long max_iter = 1400;
-        string out_path = "sample/out/04_orbit_trap_julia.png";
-        
-        double start = perf_counter();
-        List<byte> pixels = render_orbit_trap_julia(width, height, max_iter, -0.7269, 0.1889);
-        png.write_rgb_png(out_path, width, height, pixels);
-        double elapsed = perf_counter() - start;
-        
-        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "max_iter:", max_iter }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+    if let dict = container as? [AnyHashable: Any] {
+        return dict[AnyHashable(__pytra_str(value))] != nil
     }
-    
-    public static void Main(string[] args)
-    {
-            run_04_orbit_trap_julia();
+    if let s = container as? String {
+        let needle = __pytra_str(value)
+        return s.contains(needle)
+    }
+    return false
+}
+
+func __pytra_ifexp(_ cond: Bool, _ a: Any, _ b: Any) -> Any {
+    return cond ? a : b
+}
+
+func __pytra_bytearray(_ initValue: Any?) -> [Any] {
+    if let i = initValue as? Int64 {
+        return Array(repeating: Int64(0), count: max(0, Int(i)))
+    }
+    if let i = initValue as? Int {
+        return Array(repeating: Int64(0), count: max(0, i))
+    }
+    if let arr = initValue as? [Any] {
+        return arr
+    }
+    return []
+}
+
+func __pytra_bytes(_ v: Any?) -> [Any] {
+    if let arr = v as? [Any] {
+        return arr
+    }
+    return []
+}
+
+func __pytra_list_repeat(_ value: Any, _ count: Any?) -> [Any] {
+    var out: [Any] = []
+    var i: Int64 = 0
+    let n = __pytra_int(count)
+    while i < n {
+        out.append(value)
+        i += 1
+    }
+    return out
+}
+
+func __pytra_as_list(_ v: Any?) -> [Any] {
+    if let arr = v as? [Any] { return arr }
+    return []
+}
+
+func __pytra_as_u8_list(_ v: Any?) -> [UInt8] {
+    if let arr = v as? [UInt8] { return arr }
+    return []
+}
+
+func __pytra_as_dict(_ v: Any?) -> [AnyHashable: Any] {
+    if let dict = v as? [AnyHashable: Any] { return dict }
+    return [:]
+}
+
+func __pytra_pop_last(_ v: [Any]) -> [Any] {
+    if v.isEmpty { return v }
+    return Array(v.dropLast())
+}
+
+func __pytra_print(_ args: Any...) {
+    if args.isEmpty {
+        Swift.print()
+        return
+    }
+    Swift.print(args.map { String(describing: $0) }.joined(separator: " "))
+}
+
+func __pytra_min(_ a: Any?, _ b: Any?) -> Any {
+    let af = __pytra_float(a)
+    let bf = __pytra_float(b)
+    if af < bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) { return af }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) { return bf }
+    return __pytra_int(b)
+}
+
+func __pytra_max(_ a: Any?, _ b: Any?) -> Any {
+    let af = __pytra_float(a)
+    let bf = __pytra_float(b)
+    if af > bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) { return af }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) { return bf }
+    return __pytra_int(b)
+}
+
+func __pytra_is_int(_ v: Any?) -> Bool {
+    return (v is Int) || (v is Int64)
+}
+
+func __pytra_is_float(_ v: Any?) -> Bool {
+    return v is Double
+}
+
+func __pytra_is_bool(_ v: Any?) -> Bool {
+    return v is Bool
+}
+
+func __pytra_is_str(_ v: Any?) -> Bool {
+    return v is String
+}
+
+func __pytra_is_list(_ v: Any?) -> Bool {
+    return v is [Any]
+}
+
+func render_orbit_trap_julia(width: Int64, height: Int64, max_iter: Int64, cx: Double, cy: Double) -> [Any] {
+    var pixels: [Any] = __pytra_as_list([])
+    let __step_0 = __pytra_int(Int64(1))
+    var y = __pytra_int(Int64(0))
+    while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height))) {
+        var zy0: Double = __pytra_float((__pytra_float((-Double(1.3))) + __pytra_float((__pytra_float(Double(2.6)) * __pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(height) - __pytra_int(Int64(1))))))))))
+        let __step_1 = __pytra_int(Int64(1))
+        var x = __pytra_int(Int64(0))
+        while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width))) {
+            var zx: Double = __pytra_float((__pytra_float((-Double(1.9))) + __pytra_float((__pytra_float(Double(3.8)) * __pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(width) - __pytra_int(Int64(1))))))))))
+            var zy: Double = __pytra_float(zy0)
+            var trap: Double = __pytra_float(Double(1000000000.0))
+            var i: Int64 = __pytra_int(Int64(0))
+            while (__pytra_int(i) < __pytra_int(max_iter)) {
+                var ax: Double = __pytra_float(zx)
+                if (__pytra_float(ax) < __pytra_float(Double(0.0))) {
+                    ax = __pytra_float((-ax))
+                }
+                var ay: Double = __pytra_float(zy)
+                if (__pytra_float(ay) < __pytra_float(Double(0.0))) {
+                    ay = __pytra_float((-ay))
+                }
+                var dxy: Double = __pytra_float((__pytra_float(zx) - __pytra_float(zy)))
+                if (__pytra_float(dxy) < __pytra_float(Double(0.0))) {
+                    dxy = __pytra_float((-dxy))
+                }
+                if (__pytra_float(ax) < __pytra_float(trap)) {
+                    trap = __pytra_float(ax)
+                }
+                if (__pytra_float(ay) < __pytra_float(trap)) {
+                    trap = __pytra_float(ay)
+                }
+                if (__pytra_float(dxy) < __pytra_float(trap)) {
+                    trap = __pytra_float(dxy)
+                }
+                var zx2: Double = __pytra_float((__pytra_float(zx) * __pytra_float(zx)))
+                var zy2: Double = __pytra_float((__pytra_float(zy) * __pytra_float(zy)))
+                if (__pytra_float((__pytra_float(zx2) + __pytra_float(zy2))) > __pytra_float(Double(4.0))) {
+                    break
+                }
+                zy = __pytra_float((__pytra_float((__pytra_float((__pytra_float(Double(2.0)) * __pytra_float(zx))) * __pytra_float(zy))) + __pytra_float(cy)))
+                zx = __pytra_float((__pytra_float((__pytra_float(zx2) - __pytra_float(zy2))) + __pytra_float(cx)))
+                i += Int64(1)
+            }
+            var r: Int64 = __pytra_int(Int64(0))
+            var g: Int64 = __pytra_int(Int64(0))
+            var b: Int64 = __pytra_int(Int64(0))
+            if (__pytra_int(i) >= __pytra_int(max_iter)) {
+                r = __pytra_int(Int64(0))
+                g = __pytra_int(Int64(0))
+                b = __pytra_int(Int64(0))
+            } else {
+                var trap_scaled: Double = __pytra_float((__pytra_float(trap) * __pytra_float(Double(3.2))))
+                if (__pytra_float(trap_scaled) > __pytra_float(Double(1.0))) {
+                    trap_scaled = __pytra_float(Double(1.0))
+                }
+                if (__pytra_float(trap_scaled) < __pytra_float(Double(0.0))) {
+                    trap_scaled = __pytra_float(Double(0.0))
+                }
+                var t: Double = __pytra_float((__pytra_float(i) / __pytra_float(max_iter)))
+                var tone: Int64 = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(1.0)) - __pytra_float(trap_scaled))))))
+                r = __pytra_int(__pytra_int((__pytra_float(tone) * __pytra_float((__pytra_float(Double(0.35)) + __pytra_float((__pytra_float(Double(0.65)) * __pytra_float(t))))))))
+                g = __pytra_int(__pytra_int((__pytra_float(tone) * __pytra_float((__pytra_float(Double(0.15)) + __pytra_float((__pytra_float(Double(0.85)) * __pytra_float((__pytra_float(Double(1.0)) - __pytra_float(t))))))))))
+                b = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(0.25)) + __pytra_float((__pytra_float(Double(0.75)) * __pytra_float(t))))))))
+                if (__pytra_int(r) > __pytra_int(Int64(255))) {
+                    r = __pytra_int(Int64(255))
+                }
+                if (__pytra_int(g) > __pytra_int(Int64(255))) {
+                    g = __pytra_int(Int64(255))
+                }
+                if (__pytra_int(b) > __pytra_int(Int64(255))) {
+                    b = __pytra_int(Int64(255))
+                }
+            }
+            pixels = __pytra_as_list(pixels); pixels.append(r)
+            pixels = __pytra_as_list(pixels); pixels.append(g)
+            pixels = __pytra_as_list(pixels); pixels.append(b)
+            x += __step_1
+        }
+        y += __step_0
+    }
+    return pixels
+}
+
+func run_04_orbit_trap_julia() {
+    var width: Int64 = __pytra_int(Int64(1920))
+    var height: Int64 = __pytra_int(Int64(1080))
+    var max_iter: Int64 = __pytra_int(Int64(1400))
+    var out_path: String = __pytra_str("sample/out/04_orbit_trap_julia.png")
+    var start: Double = __pytra_float(__pytra_perf_counter())
+    var pixels: [Any] = __pytra_as_list(render_orbit_trap_julia(width, height, max_iter, (-Double(0.7269)), Double(0.1889)))
+    __pytra_noop(out_path, width, height, pixels)
+    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("output:", out_path)
+    __pytra_print("size:", width, "x", height)
+    __pytra_print("max_iter:", max_iter)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+@main
+struct Main {
+    static func main() {
+        run_04_orbit_trap_julia()
     }
 }

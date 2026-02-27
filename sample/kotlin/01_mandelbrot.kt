@@ -1,86 +1,382 @@
-public static class Program
-{
-    // 01: Sample that outputs the Mandelbrot set as a PNG image.
-    // Syntax is kept straightforward with future transpilation in mind.
-    
-    public static long escape_count(double cx, double cy, long max_iter)
-    {
-        double x = 0.0;
-        double y = 0.0;
-        for (long i = 0; i < max_iter; i += 1) {
-            double x2 = x * x;
-            double y2 = y * y;
-            if (x2 + y2 > 4.0) {
-                return i;
+// Auto-generated Pytra Kotlin native source from EAST3.
+import kotlin.math.*
+
+fun __pytra_noop(vararg args: Any?) { }
+
+fun __pytra_any_default(): Any? {
+    return 0L
+}
+
+fun __pytra_assert(vararg args: Any?): String {
+    return "True"
+}
+
+fun __pytra_perf_counter(): Double {
+    return System.nanoTime().toDouble() / 1_000_000_000.0
+}
+
+fun __pytra_truthy(v: Any?): Boolean {
+    if (v == null) return false
+    if (v is Boolean) return v
+    if (v is Long) return v != 0L
+    if (v is Int) return v != 0
+    if (v is Double) return v != 0.0
+    if (v is String) return v.isNotEmpty()
+    if (v is List<*>) return v.isNotEmpty()
+    if (v is Map<*, *>) return v.isNotEmpty()
+    return true
+}
+
+fun __pytra_int(v: Any?): Long {
+    if (v == null) return 0L
+    if (v is Long) return v
+    if (v is Int) return v.toLong()
+    if (v is Double) return v.toLong()
+    if (v is Boolean) return if (v) 1L else 0L
+    if (v is String) return v.toLongOrNull() ?: 0L
+    return 0L
+}
+
+fun __pytra_float(v: Any?): Double {
+    if (v == null) return 0.0
+    if (v is Double) return v
+    if (v is Float) return v.toDouble()
+    if (v is Long) return v.toDouble()
+    if (v is Int) return v.toDouble()
+    if (v is Boolean) return if (v) 1.0 else 0.0
+    if (v is String) return v.toDoubleOrNull() ?: 0.0
+    return 0.0
+}
+
+fun __pytra_str(v: Any?): String {
+    if (v == null) return ""
+    return v.toString()
+}
+
+fun __pytra_len(v: Any?): Long {
+    if (v == null) return 0L
+    if (v is String) return v.length.toLong()
+    if (v is List<*>) return v.size.toLong()
+    if (v is Map<*, *>) return v.size.toLong()
+    return 0L
+}
+
+fun __pytra_index(i: Long, n: Long): Long {
+    if (i < 0L) return i + n
+    return i
+}
+
+fun __pytra_get_index(container: Any?, index: Any?): Any? {
+    if (container is List<*>) {
+        if (container.isEmpty()) return __pytra_any_default()
+        val i = __pytra_index(__pytra_int(index), container.size.toLong())
+        if (i < 0L || i >= container.size.toLong()) return __pytra_any_default()
+        return container[i.toInt()]
+    }
+    if (container is Map<*, *>) {
+        return container[__pytra_str(index)] ?: __pytra_any_default()
+    }
+    if (container is String) {
+        if (container.isEmpty()) return ""
+        val chars = container.toCharArray()
+        val i = __pytra_index(__pytra_int(index), chars.size.toLong())
+        if (i < 0L || i >= chars.size.toLong()) return ""
+        return chars[i.toInt()].toString()
+    }
+    return __pytra_any_default()
+}
+
+fun __pytra_set_index(container: Any?, index: Any?, value: Any?) {
+    if (container is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        val list = container as MutableList<Any?>
+        if (list.isEmpty()) return
+        val i = __pytra_index(__pytra_int(index), list.size.toLong())
+        if (i < 0L || i >= list.size.toLong()) return
+        list[i.toInt()] = value
+        return
+    }
+    if (container is MutableMap<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val map = container as MutableMap<Any, Any?>
+        map[__pytra_str(index)] = value
+    }
+}
+
+fun __pytra_slice(container: Any?, lower: Any?, upper: Any?): Any? {
+    if (container is String) {
+        val n = container.length.toLong()
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if (lo < 0L) lo = 0L
+        if (hi < 0L) hi = 0L
+        if (lo > n) lo = n
+        if (hi > n) hi = n
+        if (hi < lo) hi = lo
+        return container.substring(lo.toInt(), hi.toInt())
+    }
+    if (container is List<*>) {
+        val n = container.size.toLong()
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if (lo < 0L) lo = 0L
+        if (hi < 0L) hi = 0L
+        if (lo > n) lo = n
+        if (hi > n) hi = n
+        if (hi < lo) hi = lo
+        @Suppress("UNCHECKED_CAST")
+        return container.subList(lo.toInt(), hi.toInt()).toMutableList() as MutableList<Any?>
+    }
+    return __pytra_any_default()
+}
+
+fun __pytra_isdigit(v: Any?): Boolean {
+    val s = __pytra_str(v)
+    if (s.isEmpty()) return false
+    return s.all { it.isDigit() }
+}
+
+fun __pytra_isalpha(v: Any?): Boolean {
+    val s = __pytra_str(v)
+    if (s.isEmpty()) return false
+    return s.all { it.isLetter() }
+}
+
+fun __pytra_contains(container: Any?, value: Any?): Boolean {
+    if (container is List<*>) {
+        val needle = __pytra_str(value)
+        for (item in container) {
+            if (__pytra_str(item) == needle) return true
+        }
+        return false
+    }
+    if (container is Map<*, *>) {
+        return container.containsKey(__pytra_str(value))
+    }
+    if (container is String) {
+        return container.contains(__pytra_str(value))
+    }
+    return false
+}
+
+fun __pytra_ifexp(cond: Boolean, a: Any?, b: Any?): Any? {
+    return if (cond) a else b
+}
+
+fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
+    if (initValue is Long) {
+        val out = mutableListOf<Any?>()
+        var i = 0L
+        while (i < initValue) {
+            out.add(0L)
+            i += 1L
+        }
+        return out
+    }
+    if (initValue is Int) {
+        val out = mutableListOf<Any?>()
+        var i = 0
+        while (i < initValue) {
+            out.add(0L)
+            i += 1
+        }
+        return out
+    }
+    if (initValue is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (initValue as MutableList<Any?>).toMutableList()
+    }
+    if (initValue is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (initValue as List<Any?>).toMutableList()
+    }
+    return mutableListOf()
+}
+
+fun __pytra_bytes(v: Any?): MutableList<Any?> {
+    if (v is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as MutableList<Any?>).toMutableList()
+    }
+    if (v is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as List<Any?>).toMutableList()
+    }
+    return mutableListOf()
+}
+
+fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
+    val out = mutableListOf<Any?>()
+    val n = __pytra_int(count)
+    var i = 0L
+    while (i < n) {
+        out.add(value)
+        i += 1L
+    }
+    return out
+}
+
+fun __pytra_as_list(v: Any?): MutableList<Any?> {
+    if (v is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return v as MutableList<Any?>
+    }
+    if (v is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as List<Any?>).toMutableList()
+    }
+    return mutableListOf()
+}
+
+fun __pytra_as_dict(v: Any?): MutableMap<Any, Any?> {
+    if (v is MutableMap<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        return v as MutableMap<Any, Any?>
+    }
+    if (v is Map<*, *>) {
+        val out = mutableMapOf<Any, Any?>()
+        for ((k, valAny) in v) {
+            if (k != null) out[k] = valAny
+        }
+        return out
+    }
+    return mutableMapOf()
+}
+
+fun __pytra_pop_last(v: MutableList<Any?>): MutableList<Any?> {
+    if (v.isEmpty()) return v
+    v.removeAt(v.size - 1)
+    return v
+}
+
+fun __pytra_print(vararg args: Any?) {
+    if (args.isEmpty()) {
+        println()
+        return
+    }
+    println(args.joinToString(" ") { __pytra_str(it) })
+}
+
+fun __pytra_min(a: Any?, b: Any?): Any? {
+    val af = __pytra_float(a)
+    val bf = __pytra_float(b)
+    if (af < bf) {
+        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
+        return __pytra_int(a)
+    }
+    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
+    return __pytra_int(b)
+}
+
+fun __pytra_max(a: Any?, b: Any?): Any? {
+    val af = __pytra_float(a)
+    val bf = __pytra_float(b)
+    if (af > bf) {
+        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
+        return __pytra_int(a)
+    }
+    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
+    return __pytra_int(b)
+}
+
+fun __pytra_is_int(v: Any?): Boolean {
+    return (v is Long) || (v is Int)
+}
+
+fun __pytra_is_float(v: Any?): Boolean {
+    return v is Double
+}
+
+fun __pytra_is_bool(v: Any?): Boolean {
+    return v is Boolean
+}
+
+fun __pytra_is_str(v: Any?): Boolean {
+    return v is String
+}
+
+fun __pytra_is_list(v: Any?): Boolean {
+    return v is List<*>
+}
+
+fun escape_count(cx: Double, cy: Double, max_iter: Long): Long {
+    var x: Double = __pytra_float(0.0)
+    var y: Double = __pytra_float(0.0)
+    val __step_0 = __pytra_int(1L)
+    var i = __pytra_int(0L)
+    while ((__step_0 >= 0L && i < __pytra_int(max_iter)) || (__step_0 < 0L && i > __pytra_int(max_iter))) {
+        var x2: Double = __pytra_float((__pytra_float(x) * __pytra_float(x)))
+        var y2: Double = __pytra_float((__pytra_float(y) * __pytra_float(y)))
+        if ((__pytra_float((__pytra_float(x2) + __pytra_float(y2))) > __pytra_float(4.0))) {
+            return i
+        }
+        y = __pytra_float((__pytra_float((__pytra_float((__pytra_float(2.0) * __pytra_float(x))) * __pytra_float(y))) + __pytra_float(cy)))
+        x = __pytra_float((__pytra_float((__pytra_float(x2) - __pytra_float(y2))) + __pytra_float(cx)))
+        i += __step_0
+    }
+    return max_iter
+}
+
+fun color_map(iter_count: Long, max_iter: Long): MutableList<Any?> {
+    if ((__pytra_int(iter_count) >= __pytra_int(max_iter))) {
+        return mutableListOf(0L, 0L, 0L)
+    }
+    var t: Double = __pytra_float((__pytra_float(iter_count) / __pytra_float(max_iter)))
+    var r: Long = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(t) * __pytra_float(t))))))
+    var g: Long = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float(t))))
+    var b: Long = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(1.0) - __pytra_float(t))))))
+    return mutableListOf(r, g, b)
+}
+
+fun render_mandelbrot(width: Long, height: Long, max_iter: Long, x_min: Double, x_max: Double, y_min: Double, y_max: Double): MutableList<Any?> {
+    var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    val __step_0 = __pytra_int(1L)
+    var y = __pytra_int(0L)
+    while ((__step_0 >= 0L && y < __pytra_int(height)) || (__step_0 < 0L && y > __pytra_int(height))) {
+        var py: Double = __pytra_float((__pytra_float(y_min) + __pytra_float((__pytra_float((__pytra_float(y_max) - __pytra_float(y_min))) * __pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(height) - __pytra_int(1L)))))))))
+        val __step_1 = __pytra_int(1L)
+        var x = __pytra_int(0L)
+        while ((__step_1 >= 0L && x < __pytra_int(width)) || (__step_1 < 0L && x > __pytra_int(width))) {
+            var px: Double = __pytra_float((__pytra_float(x_min) + __pytra_float((__pytra_float((__pytra_float(x_max) - __pytra_float(x_min))) * __pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(width) - __pytra_int(1L)))))))))
+            var it: Long = __pytra_int(escape_count(px, py, max_iter))
+            var r: Long = 0L
+            var g: Long = 0L
+            var b: Long = 0L
+            if ((__pytra_int(it) >= __pytra_int(max_iter))) {
+                r = __pytra_int(0L)
+                g = __pytra_int(0L)
+                b = __pytra_int(0L)
+            } else {
+                var t: Double = __pytra_float((__pytra_float(it) / __pytra_float(max_iter)))
+                r = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(t) * __pytra_float(t))))))
+                g = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float(t))))
+                b = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(1.0) - __pytra_float(t))))))
             }
-            y = 2.0 * x * y + cy;
-            x = x2 - y2 + cx;
+            pixels = __pytra_as_list(pixels); pixels.add(r)
+            pixels = __pytra_as_list(pixels); pixels.add(g)
+            pixels = __pytra_as_list(pixels); pixels.add(b)
+            x += __step_1
         }
-        return max_iter;
+        y += __step_0
     }
-    
-    public static (long, long, long) color_map(long iter_count, long max_iter)
-    {
-        if (iter_count >= max_iter) {
-            return (0, 0, 0);
-        }
-        double t = iter_count / max_iter;
-        long r = System.Convert.ToInt64(255.0 * t * t);
-        long g = System.Convert.ToInt64(255.0 * t);
-        long b = System.Convert.ToInt64(255.0 * (1.0 - t));
-        return (r, g, b);
-    }
-    
-    public static List<byte> render_mandelbrot(long width, long height, long max_iter, double x_min, double x_max, double y_min, double y_max)
-    {
-        List<byte> pixels = bytearray();
-        for (long y = 0; y < height; y += 1) {
-            double py = y_min + (y_max - y_min) * (y / (height - 1));
-            for (long x = 0; x < width; x += 1) {
-                double px = x_min + (x_max - x_min) * (x / (width - 1));
-                long it = escape_count(px, py, max_iter);
-                long r;
-                long g;
-                long b;
-                if (it >= max_iter) {
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                } else {
-                    double t = it / max_iter;
-                    r = System.Convert.ToInt64(255.0 * t * t);
-                    g = System.Convert.ToInt64(255.0 * t);
-                    b = System.Convert.ToInt64(255.0 * (1.0 - t));
-                }
-                pixels.Add(r);
-                pixels.Add(g);
-                pixels.Add(b);
-            }
-        }
-        return pixels;
-    }
-    
-    public static void run_mandelbrot()
-    {
-        long width = 1600;
-        long height = 1200;
-        long max_iter = 1000;
-        string out_path = "sample/out/01_mandelbrot.png";
-        
-        double start = perf_counter();
-        
-        List<byte> pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
-        png.write_rgb_png(out_path, width, height, pixels);
-        
-        double elapsed = perf_counter() - start;
-        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "max_iter:", max_iter }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
-    }
-    
-    public static void Main(string[] args)
-    {
-            run_mandelbrot();
-    }
+    return pixels
+}
+
+fun run_mandelbrot() {
+    var width: Long = __pytra_int(1600L)
+    var height: Long = __pytra_int(1200L)
+    var max_iter: Long = __pytra_int(1000L)
+    var out_path: String = __pytra_str("sample/out/01_mandelbrot.png")
+    var start: Double = __pytra_float(__pytra_perf_counter())
+    var pixels: MutableList<Any?> = __pytra_as_list(render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2))
+    __pytra_noop(out_path, width, height, pixels)
+    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("output:", out_path)
+    __pytra_print("size:", width, "x", height)
+    __pytra_print("max_iter:", max_iter)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+fun main(args: Array<String>) {
+    run_mandelbrot()
 }

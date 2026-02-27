@@ -1,72 +1,514 @@
-public static class Program
-{
-    // 12: Sample that outputs intermediate states of bubble sort as a GIF.
-    
-    public static List<byte> render(System.Collections.Generic.List<long> values, long w, long h)
-    {
-        List<byte> frame = bytearray(w * h);
-        long n = (values).Count;
-        double bar_w = w / n;
-        for (long i = 0; i < n; i += 1) {
-            long x0 = System.Convert.ToInt64(i * bar_w);
-            long x1 = System.Convert.ToInt64((i + 1) * bar_w);
-            if (x1 <= x0) {
-                x1 = x0 + 1;
+// Auto-generated Pytra Go native source from EAST3.
+package main
+
+import (
+    "fmt"
+    "math"
+    "strconv"
+    "time"
+    "unicode"
+)
+
+var _ = math.Pi
+
+func __pytra_noop(args ...any) {}
+
+func __pytra_assert(args ...any) string {
+    _ = args
+    return "True"
+}
+
+func __pytra_perf_counter() float64 {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
+}
+
+func __pytra_truthy(v any) bool {
+    switch t := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return t
+    case int:
+        return t != 0
+    case int64:
+        return t != 0
+    case float64:
+        return t != 0.0
+    case string:
+        return t != ""
+    case []any:
+        return len(t) != 0
+    case map[any]any:
+        return len(t) != 0
+    default:
+        return true
+    }
+}
+
+func __pytra_int(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case int:
+        return int64(t)
+    case int64:
+        return t
+    case float64:
+        return int64(t)
+    case bool:
+        if t {
+            return 1
+        }
+        return 0
+    case string:
+        if t == "" {
+            return 0
+        }
+        n, err := strconv.ParseInt(t, 10, 64)
+        if err != nil {
+            return 0
+        }
+        return n
+    default:
+        return 0
+    }
+}
+
+func __pytra_float(v any) float64 {
+    switch t := v.(type) {
+    case nil:
+        return 0.0
+    case int:
+        return float64(t)
+    case int64:
+        return float64(t)
+    case float64:
+        return t
+    case bool:
+        if t {
+            return 1.0
+        }
+        return 0.0
+    case string:
+        if t == "" {
+            return 0.0
+        }
+        n, err := strconv.ParseFloat(t, 64)
+        if err != nil {
+            return 0.0
+        }
+        return n
+    default:
+        return 0.0
+    }
+}
+
+func __pytra_str(v any) string {
+    if v == nil {
+        return ""
+    }
+    switch t := v.(type) {
+    case string:
+        return t
+    default:
+        return fmt.Sprint(v)
+    }
+}
+
+func __pytra_len(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case string:
+        return int64(len([]rune(t)))
+    case []any:
+        return int64(len(t))
+    case map[any]any:
+        return int64(len(t))
+    default:
+        return 0
+    }
+}
+
+func __pytra_index(i int64, n int64) int64 {
+    if i < 0 {
+        i += n
+    }
+    return i
+}
+
+func __pytra_get_index(container any, index any) any {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return nil
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return nil
+        }
+        return t[i]
+    case map[any]any:
+        return t[index]
+    case string:
+        runes := []rune(t)
+        if len(runes) == 0 {
+            return ""
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(runes)))
+        if i < 0 || i >= int64(len(runes)) {
+            return ""
+        }
+        return string(runes[i])
+    default:
+        return nil
+    }
+}
+
+func __pytra_set_index(container any, index any, value any) {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return
+        }
+        t[i] = value
+    case map[any]any:
+        t[index] = value
+    }
+}
+
+func __pytra_slice(container any, lower any, upper any) any {
+    switch t := container.(type) {
+    case string:
+        runes := []rune(t)
+        n := int64(len(runes))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        return string(runes[lo:hi])
+    case []any:
+        n := int64(len(t))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        out := []any{}
+        i := lo
+        for i < hi {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return nil
+    }
+}
+
+func __pytra_isdigit(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !unicode.IsDigit(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_isalpha(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !unicode.IsLetter(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_contains(container any, value any) bool {
+    switch t := container.(type) {
+    case []any:
+        i := 0
+        for i < len(t) {
+            if t[i] == value {
+                return true
             }
-            long bh = System.Convert.ToInt64((values[System.Convert.ToInt32(i)] / n) * h);
-            long y = h - bh;
-            for (long y = y; y < h; y += 1) {
-                for (long x = x0; x < x1; x += 1) {
-                    frame[System.Convert.ToInt32(y * w + x)] = 255;
-                }
+            i += 1
+        }
+        return false
+    case map[any]any:
+        _, ok := t[value]
+        return ok
+    case string:
+        needle := __pytra_str(value)
+        return needle != "" && len(needle) <= len(t) && __pytra_str_contains(t, needle)
+    default:
+        return false
+    }
+}
+
+func __pytra_str_contains(haystack string, needle string) bool {
+    if needle == "" {
+        return true
+    }
+    i := 0
+    limit := len(haystack) - len(needle)
+    for i <= limit {
+        if haystack[i:i+len(needle)] == needle {
+            return true
+        }
+        i += 1
+    }
+    return false
+}
+
+func __pytra_ifexp(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func __pytra_bytearray(init any) []any {
+    out := []any{}
+    switch t := init.(type) {
+    case int:
+        i := 0
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case int64:
+        i := int64(0)
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case []any:
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+    }
+    return out
+}
+
+func __pytra_bytes(v any) []any {
+    switch t := v.(type) {
+    case []any:
+        out := []any{}
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return []any{}
+    }
+}
+
+func __pytra_list_repeat(value any, count any) []any {
+    out := []any{}
+    n := __pytra_int(count)
+    i := int64(0)
+    for i < n {
+        out = append(out, value)
+        i += 1
+    }
+    return out
+}
+
+func __pytra_as_list(v any) []any {
+    if t, ok := v.([]any); ok {
+        return t
+    }
+    return []any{}
+}
+
+func __pytra_as_dict(v any) map[any]any {
+    if t, ok := v.(map[any]any); ok {
+        return t
+    }
+    return map[any]any{}
+}
+
+func __pytra_pop_last(v []any) []any {
+    if len(v) == 0 {
+        return v
+    }
+    return v[:len(v)-1]
+}
+
+func __pytra_print(args ...any) {
+    if len(args) == 0 {
+        fmt.Println()
+        return
+    }
+    fmt.Println(args...)
+}
+
+func __pytra_min(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af < bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_max(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af > bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_is_int(v any) bool {
+    switch v.(type) {
+    case int, int64:
+        return true
+    default:
+        return false
+    }
+}
+
+func __pytra_is_float(v any) bool {
+    _, ok := v.(float64)
+    return ok
+}
+
+func __pytra_is_bool(v any) bool {
+    _, ok := v.(bool)
+    return ok
+}
+
+func __pytra_is_str(v any) bool {
+    _, ok := v.(string)
+    return ok
+}
+
+func __pytra_is_list(v any) bool {
+    _, ok := v.([]any)
+    return ok
+}
+
+func render(values []any, w int64, h int64) []any {
+    var frame []any = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
+    var n int64 = __pytra_int(__pytra_len(values))
+    var bar_w float64 = __pytra_float((__pytra_float(w) / __pytra_float(n)))
+    __step_0 := __pytra_int(int64(1))
+    for i := __pytra_int(int64(0)); (__step_0 >= 0 && i < __pytra_int(n)) || (__step_0 < 0 && i > __pytra_int(n)); i += __step_0 {
+        var x0 int64 = __pytra_int(__pytra_int((__pytra_float(i) * __pytra_float(bar_w))))
+        var x1 int64 = __pytra_int(__pytra_int((__pytra_float((__pytra_int(i) + __pytra_int(int64(1)))) * __pytra_float(bar_w))))
+        if (__pytra_int(x1) <= __pytra_int(x0)) {
+            x1 = __pytra_int((__pytra_int(x0) + __pytra_int(int64(1))))
+        }
+        var bh int64 = __pytra_int(__pytra_int((__pytra_float((__pytra_float(__pytra_int(__pytra_get_index(values, i))) / __pytra_float(n))) * __pytra_float(h))))
+        var y int64 = __pytra_int((__pytra_int(h) - __pytra_int(bh)))
+        __step_1 := __pytra_int(int64(1))
+        for y := __pytra_int(y); (__step_1 >= 0 && y < __pytra_int(h)) || (__step_1 < 0 && y > __pytra_int(h)); y += __step_1 {
+            __step_2 := __pytra_int(int64(1))
+            for x := __pytra_int(x0); (__step_2 >= 0 && x < __pytra_int(x1)) || (__step_2 < 0 && x > __pytra_int(x1)); x += __step_2 {
+                __pytra_set_index(frame, (__pytra_int((__pytra_int(y) * __pytra_int(w))) + __pytra_int(x)), int64(255))
             }
         }
-        return bytes(frame);
     }
-    
-    public static void run_12_sort_visualizer()
-    {
-        long w = 320;
-        long h = 180;
-        long n = 124;
-        string out_path = "sample/out/12_sort_visualizer.gif";
-        
-        unknown start = perf_counter();
-        System.Collections.Generic.List<long> values = new System.Collections.Generic.List<unknown>();
-        for (long i = 0; i < n; i += 1) {
-            values.Add((i * 37 + 19) % n);
-        }
-        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<List<byte>>();
-        long frame_stride = 16;
-        
-        long op = 0;
-        for (long i = 0; i < n; i += 1) {
-            bool swapped = false;
-            for (long j = 0; j < n - i - 1; j += 1) {
-                if (values[System.Convert.ToInt32(j)] > values[System.Convert.ToInt32(j + 1)]) {
-                    var __tmp_1 = (values[System.Convert.ToInt32(j + 1)], values[System.Convert.ToInt32(j)]);
-                    values[System.Convert.ToInt32(j)] = __tmp_1.Item1;
-                    values[System.Convert.ToInt32(j + 1)] = __tmp_1.Item2;
-                    swapped = true;
-                }
-                if (op % frame_stride == 0) {
-                    frames.Add(render(values, w, h));
-                }
-                op += 1;
+    return __pytra_bytes(frame)
+}
+
+func run_12_sort_visualizer() {
+    var w int64 = __pytra_int(int64(320))
+    var h int64 = __pytra_int(int64(180))
+    var n int64 = __pytra_int(int64(124))
+    var out_path string = __pytra_str("sample/out/12_sort_visualizer.gif")
+    var start float64 = __pytra_float(__pytra_perf_counter())
+    var values []any = __pytra_as_list([]any{})
+    __step_0 := __pytra_int(int64(1))
+    for i := __pytra_int(int64(0)); (__step_0 >= 0 && i < __pytra_int(n)) || (__step_0 < 0 && i > __pytra_int(n)); i += __step_0 {
+        values = append(__pytra_as_list(values), (__pytra_int((__pytra_int((__pytra_int(i) * __pytra_int(int64(37)))) + __pytra_int(int64(19)))) % __pytra_int(n)))
+    }
+    var frames []any = __pytra_as_list([]any{render(values, w, h)})
+    var frame_stride int64 = __pytra_int(int64(16))
+    var op int64 = __pytra_int(int64(0))
+    __step_1 := __pytra_int(int64(1))
+    for i := __pytra_int(int64(0)); (__step_1 >= 0 && i < __pytra_int(n)) || (__step_1 < 0 && i > __pytra_int(n)); i += __step_1 {
+        var swapped bool = __pytra_truthy(false)
+        __step_2 := __pytra_int(int64(1))
+        for j := __pytra_int(int64(0)); (__step_2 >= 0 && j < __pytra_int((__pytra_int((__pytra_int(n) - __pytra_int(i))) - __pytra_int(int64(1))))) || (__step_2 < 0 && j > __pytra_int((__pytra_int((__pytra_int(n) - __pytra_int(i))) - __pytra_int(int64(1))))); j += __step_2 {
+            if (__pytra_int(__pytra_int(__pytra_get_index(values, j))) > __pytra_int(__pytra_int(__pytra_get_index(values, (__pytra_int(j) + __pytra_int(int64(1))))))) {
+                __tuple_3 := __pytra_as_list([]any{__pytra_int(__pytra_get_index(values, (__pytra_int(j) + __pytra_int(int64(1))))), __pytra_int(__pytra_get_index(values, j))})
+                __pytra_set_index(values, j, __pytra_int(__tuple_3[0]))
+                __pytra_set_index(values, (__pytra_int(j) + __pytra_int(int64(1))), __pytra_int(__tuple_3[1]))
+                swapped = __pytra_truthy(true)
             }
-            if (!swapped) {
-                py_break;
+            if (__pytra_int((__pytra_int(op) % __pytra_int(frame_stride))) == __pytra_int(int64(0))) {
+                frames = append(__pytra_as_list(frames), render(values, w, h))
             }
+            op += int64(1)
         }
-        save_gif(out_path, w, h, frames, grayscale_palette());
-        unknown elapsed = perf_counter() - start;
-        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "frames:", (frames).Count }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        if (!swapped) {
+            break
+        }
     }
-    
-    public static void Main(string[] args)
-    {
-            run_12_sort_visualizer();
-    }
+    __pytra_noop(out_path, w, h, frames, []any{})
+    var elapsed float64 = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("output:", out_path)
+    __pytra_print("frames:", __pytra_len(frames))
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+func main() {
+    run_12_sort_visualizer()
 }

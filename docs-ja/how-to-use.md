@@ -178,8 +178,9 @@ go run test/transpile/go/iterable.go
 ```
 
 補足:
-- `py2go.py` は EAST ベースのプレビュー出力です（専用 GoEmitter へ段階移行中）。
-- 現在の出力は最小 `main` と中間コードコメントを含む形式で、実行互換は保証しません。
+- `py2go.py` は EAST3 から Go native emitter（`src/hooks/go/emitter/go_native_emitter.py`）で直接コード生成します。
+- 既定出力は Go 単体で実行可能です（sidecar JS は既定では生成しません）。
+- 互換確認が必要な場合のみ `--go-backend sidecar` で旧経路を明示指定できます。
 
 </details>
 
@@ -209,8 +210,9 @@ swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.
 ```
 
 補足:
-- `py2swift.py` は EAST ベースのプレビュー出力です（専用 SwiftEmitter へ段階移行中）。
-- 現在の出力は最小 `main` と中間コードコメントを含む形式で、実行互換は保証しません。
+- `py2swift.py` は EAST3 から Swift native emitter（`src/hooks/swift/emitter/swift_native_emitter.py`）で直接コード生成します。
+- 既定出力は Swift native 経路で生成され、sidecar JS は既定では生成しません。
+- 互換確認が必要な場合のみ `--swift-backend sidecar` で旧経路を明示指定できます。
 
 </details>
 
@@ -224,8 +226,9 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 補足:
-- `py2kotlin.py` は EAST ベースのプレビュー出力です（専用 KotlinEmitter へ段階移行中）。
-- 現在の出力は最小 `main` と中間コードコメントを含む形式で、実行互換は保証しません。
+- `py2kotlin.py` は EAST3 から Kotlin native emitter（`src/hooks/kotlin/emitter/kotlin_native_emitter.py`）で直接コード生成します。
+- 既定出力は Kotlin 単体で実行可能です（sidecar JS は既定では生成しません）。
+- 互換確認が必要な場合のみ `--kotlin-backend sidecar` で旧経路を明示指定できます。
 
 </details>
 

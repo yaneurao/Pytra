@@ -1,86 +1,521 @@
-public static class Program
-{
-    // 01: Sample that outputs the Mandelbrot set as a PNG image.
-    // Syntax is kept straightforward with future transpilation in mind.
-    
-    public static long escape_count(double cx, double cy, long max_iter)
-    {
-        double x = 0.0;
-        double y = 0.0;
-        for (long i = 0; i < max_iter; i += 1) {
-            double x2 = x * x;
-            double y2 = y * y;
-            if (x2 + y2 > 4.0) {
-                return i;
+// Auto-generated Pytra Go native source from EAST3.
+package main
+
+import (
+    "fmt"
+    "math"
+    "strconv"
+    "time"
+    "unicode"
+)
+
+var _ = math.Pi
+
+func __pytra_noop(args ...any) {}
+
+func __pytra_assert(args ...any) string {
+    _ = args
+    return "True"
+}
+
+func __pytra_perf_counter() float64 {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
+}
+
+func __pytra_truthy(v any) bool {
+    switch t := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return t
+    case int:
+        return t != 0
+    case int64:
+        return t != 0
+    case float64:
+        return t != 0.0
+    case string:
+        return t != ""
+    case []any:
+        return len(t) != 0
+    case map[any]any:
+        return len(t) != 0
+    default:
+        return true
+    }
+}
+
+func __pytra_int(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case int:
+        return int64(t)
+    case int64:
+        return t
+    case float64:
+        return int64(t)
+    case bool:
+        if t {
+            return 1
+        }
+        return 0
+    case string:
+        if t == "" {
+            return 0
+        }
+        n, err := strconv.ParseInt(t, 10, 64)
+        if err != nil {
+            return 0
+        }
+        return n
+    default:
+        return 0
+    }
+}
+
+func __pytra_float(v any) float64 {
+    switch t := v.(type) {
+    case nil:
+        return 0.0
+    case int:
+        return float64(t)
+    case int64:
+        return float64(t)
+    case float64:
+        return t
+    case bool:
+        if t {
+            return 1.0
+        }
+        return 0.0
+    case string:
+        if t == "" {
+            return 0.0
+        }
+        n, err := strconv.ParseFloat(t, 64)
+        if err != nil {
+            return 0.0
+        }
+        return n
+    default:
+        return 0.0
+    }
+}
+
+func __pytra_str(v any) string {
+    if v == nil {
+        return ""
+    }
+    switch t := v.(type) {
+    case string:
+        return t
+    default:
+        return fmt.Sprint(v)
+    }
+}
+
+func __pytra_len(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case string:
+        return int64(len([]rune(t)))
+    case []any:
+        return int64(len(t))
+    case map[any]any:
+        return int64(len(t))
+    default:
+        return 0
+    }
+}
+
+func __pytra_index(i int64, n int64) int64 {
+    if i < 0 {
+        i += n
+    }
+    return i
+}
+
+func __pytra_get_index(container any, index any) any {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return nil
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return nil
+        }
+        return t[i]
+    case map[any]any:
+        return t[index]
+    case string:
+        runes := []rune(t)
+        if len(runes) == 0 {
+            return ""
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(runes)))
+        if i < 0 || i >= int64(len(runes)) {
+            return ""
+        }
+        return string(runes[i])
+    default:
+        return nil
+    }
+}
+
+func __pytra_set_index(container any, index any, value any) {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return
+        }
+        t[i] = value
+    case map[any]any:
+        t[index] = value
+    }
+}
+
+func __pytra_slice(container any, lower any, upper any) any {
+    switch t := container.(type) {
+    case string:
+        runes := []rune(t)
+        n := int64(len(runes))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        return string(runes[lo:hi])
+    case []any:
+        n := int64(len(t))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        out := []any{}
+        i := lo
+        for i < hi {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return nil
+    }
+}
+
+func __pytra_isdigit(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !unicode.IsDigit(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_isalpha(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !unicode.IsLetter(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_contains(container any, value any) bool {
+    switch t := container.(type) {
+    case []any:
+        i := 0
+        for i < len(t) {
+            if t[i] == value {
+                return true
             }
-            y = 2.0 * x * y + cy;
-            x = x2 - y2 + cx;
+            i += 1
         }
-        return max_iter;
+        return false
+    case map[any]any:
+        _, ok := t[value]
+        return ok
+    case string:
+        needle := __pytra_str(value)
+        return needle != "" && len(needle) <= len(t) && __pytra_str_contains(t, needle)
+    default:
+        return false
     }
-    
-    public static (long, long, long) color_map(long iter_count, long max_iter)
-    {
-        if (iter_count >= max_iter) {
-            return (0, 0, 0);
+}
+
+func __pytra_str_contains(haystack string, needle string) bool {
+    if needle == "" {
+        return true
+    }
+    i := 0
+    limit := len(haystack) - len(needle)
+    for i <= limit {
+        if haystack[i:i+len(needle)] == needle {
+            return true
         }
-        double t = iter_count / max_iter;
-        long r = System.Convert.ToInt64(255.0 * t * t);
-        long g = System.Convert.ToInt64(255.0 * t);
-        long b = System.Convert.ToInt64(255.0 * (1.0 - t));
-        return (r, g, b);
+        i += 1
     }
-    
-    public static List<byte> render_mandelbrot(long width, long height, long max_iter, double x_min, double x_max, double y_min, double y_max)
-    {
-        List<byte> pixels = bytearray();
-        for (long y = 0; y < height; y += 1) {
-            double py = y_min + (y_max - y_min) * (y / (height - 1));
-            for (long x = 0; x < width; x += 1) {
-                double px = x_min + (x_max - x_min) * (x / (width - 1));
-                long it = escape_count(px, py, max_iter);
-                long r;
-                long g;
-                long b;
-                if (it >= max_iter) {
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                } else {
-                    double t = it / max_iter;
-                    r = System.Convert.ToInt64(255.0 * t * t);
-                    g = System.Convert.ToInt64(255.0 * t);
-                    b = System.Convert.ToInt64(255.0 * (1.0 - t));
-                }
-                pixels.Add(r);
-                pixels.Add(g);
-                pixels.Add(b);
+    return false
+}
+
+func __pytra_ifexp(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func __pytra_bytearray(init any) []any {
+    out := []any{}
+    switch t := init.(type) {
+    case int:
+        i := 0
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case int64:
+        i := int64(0)
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case []any:
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+    }
+    return out
+}
+
+func __pytra_bytes(v any) []any {
+    switch t := v.(type) {
+    case []any:
+        out := []any{}
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return []any{}
+    }
+}
+
+func __pytra_list_repeat(value any, count any) []any {
+    out := []any{}
+    n := __pytra_int(count)
+    i := int64(0)
+    for i < n {
+        out = append(out, value)
+        i += 1
+    }
+    return out
+}
+
+func __pytra_as_list(v any) []any {
+    if t, ok := v.([]any); ok {
+        return t
+    }
+    return []any{}
+}
+
+func __pytra_as_dict(v any) map[any]any {
+    if t, ok := v.(map[any]any); ok {
+        return t
+    }
+    return map[any]any{}
+}
+
+func __pytra_pop_last(v []any) []any {
+    if len(v) == 0 {
+        return v
+    }
+    return v[:len(v)-1]
+}
+
+func __pytra_print(args ...any) {
+    if len(args) == 0 {
+        fmt.Println()
+        return
+    }
+    fmt.Println(args...)
+}
+
+func __pytra_min(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af < bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_max(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af > bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_is_int(v any) bool {
+    switch v.(type) {
+    case int, int64:
+        return true
+    default:
+        return false
+    }
+}
+
+func __pytra_is_float(v any) bool {
+    _, ok := v.(float64)
+    return ok
+}
+
+func __pytra_is_bool(v any) bool {
+    _, ok := v.(bool)
+    return ok
+}
+
+func __pytra_is_str(v any) bool {
+    _, ok := v.(string)
+    return ok
+}
+
+func __pytra_is_list(v any) bool {
+    _, ok := v.([]any)
+    return ok
+}
+
+func escape_count(cx float64, cy float64, max_iter int64) int64 {
+    var x float64 = __pytra_float(float64(0.0))
+    var y float64 = __pytra_float(float64(0.0))
+    __step_0 := __pytra_int(int64(1))
+    for i := __pytra_int(int64(0)); (__step_0 >= 0 && i < __pytra_int(max_iter)) || (__step_0 < 0 && i > __pytra_int(max_iter)); i += __step_0 {
+        var x2 float64 = __pytra_float((__pytra_float(x) * __pytra_float(x)))
+        var y2 float64 = __pytra_float((__pytra_float(y) * __pytra_float(y)))
+        if (__pytra_float((__pytra_float(x2) + __pytra_float(y2))) > __pytra_float(float64(4.0))) {
+            return i
+        }
+        y = __pytra_float((__pytra_float((__pytra_float((__pytra_float(float64(2.0)) * __pytra_float(x))) * __pytra_float(y))) + __pytra_float(cy)))
+        x = __pytra_float((__pytra_float((__pytra_float(x2) - __pytra_float(y2))) + __pytra_float(cx)))
+    }
+    return max_iter
+}
+
+func color_map(iter_count int64, max_iter int64) []any {
+    if (__pytra_int(iter_count) >= __pytra_int(max_iter)) {
+        return []any{int64(0), int64(0), int64(0)}
+    }
+    var t float64 = __pytra_float((__pytra_float(iter_count) / __pytra_float(max_iter)))
+    var r int64 = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(t) * __pytra_float(t))))))
+    var g int64 = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float(t))))
+    var b int64 = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(float64(1.0)) - __pytra_float(t))))))
+    return []any{r, g, b}
+}
+
+func render_mandelbrot(width int64, height int64, max_iter int64, x_min float64, x_max float64, y_min float64, y_max float64) []any {
+    var pixels []any = __pytra_as_list([]any{})
+    __step_0 := __pytra_int(int64(1))
+    for y := __pytra_int(int64(0)); (__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)); y += __step_0 {
+        var py float64 = __pytra_float((__pytra_float(y_min) + __pytra_float((__pytra_float((__pytra_float(y_max) - __pytra_float(y_min))) * __pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(height) - __pytra_int(int64(1))))))))))
+        __step_1 := __pytra_int(int64(1))
+        for x := __pytra_int(int64(0)); (__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)); x += __step_1 {
+            var px float64 = __pytra_float((__pytra_float(x_min) + __pytra_float((__pytra_float((__pytra_float(x_max) - __pytra_float(x_min))) * __pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(width) - __pytra_int(int64(1))))))))))
+            var it int64 = __pytra_int(escape_count(px, py, max_iter))
+            var r int64 = 0
+            var g int64 = 0
+            var b int64 = 0
+            if (__pytra_int(it) >= __pytra_int(max_iter)) {
+                r = __pytra_int(int64(0))
+                g = __pytra_int(int64(0))
+                b = __pytra_int(int64(0))
+            } else {
+                var t float64 = __pytra_float((__pytra_float(it) / __pytra_float(max_iter)))
+                r = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(t) * __pytra_float(t))))))
+                g = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float(t))))
+                b = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(float64(1.0)) - __pytra_float(t))))))
             }
+            pixels = append(__pytra_as_list(pixels), r)
+            pixels = append(__pytra_as_list(pixels), g)
+            pixels = append(__pytra_as_list(pixels), b)
         }
-        return pixels;
     }
-    
-    public static void run_mandelbrot()
-    {
-        long width = 1600;
-        long height = 1200;
-        long max_iter = 1000;
-        string out_path = "sample/out/01_mandelbrot.png";
-        
-        double start = perf_counter();
-        
-        List<byte> pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
-        png.write_rgb_png(out_path, width, height, pixels);
-        
-        double elapsed = perf_counter() - start;
-        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "max_iter:", max_iter }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
-    }
-    
-    public static void Main(string[] args)
-    {
-            run_mandelbrot();
-    }
+    return pixels
+}
+
+func run_mandelbrot() {
+    var width int64 = __pytra_int(int64(1600))
+    var height int64 = __pytra_int(int64(1200))
+    var max_iter int64 = __pytra_int(int64(1000))
+    var out_path string = __pytra_str("sample/out/01_mandelbrot.png")
+    var start float64 = __pytra_float(__pytra_perf_counter())
+    var pixels []any = __pytra_as_list(render_mandelbrot(width, height, max_iter, (-float64(2.2)), float64(1.0), (-float64(1.2)), float64(1.2)))
+    __pytra_noop(out_path, width, height, pixels)
+    var elapsed float64 = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("output:", out_path)
+    __pytra_print("size:", width, "x", height)
+    __pytra_print("max_iter:", max_iter)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+func main() {
+    run_mandelbrot()
 }

@@ -281,19 +281,16 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Same as JS. Unsupported import fails during conversion.
 
-### 6. Go (`src/py2go.py` + `src/common/go_java_native_transpiler.py`)
+### 6. Go (`src/py2go.py` + `src/hooks/go/emitter/go_native_emitter.py`)
 
 - Implementation style:
-  - Native AST conversion. Go `import` lines are embedded in runtime templates; Python imports are not emitted in body.
-  - Function/method call resolution is handled by `_transpile_call` (`math.*`, `pathlib.Path`, `perf_counter`, `save_gif`, etc.).
+  - EAST3 conversion. `py2go.py` is a thin CLI and the default output is produced by the Go native emitter.
 - Concrete implementation:
-  - Before dropping import statements, collect `ImportBinding` for alias normalization.
-  - `from time import perf_counter as pc` resolves `pc()` to `pyPerfCounter()`.
-  - `from pathlib import Path as P` resolves `P("x")` to `pyPathNew(...)`.
-  - `from math import sqrt as s` resolves `s(x)` to `math.Sqrt(pyToFloat(x))`.
-  - Normalize `png/gif` calls to `pyWriteRGBPNG` / `pySaveGIF` / `pyGrayscalePalette`.
+  - Import resolution uses EAST `meta.import_bindings` as the source of truth and does not re-emit Python import statements in native output.
+  - Generated output is standalone native Go (`package main` + runtime helpers + lowered program body).
+  - Legacy sidecar mode is isolated behind explicit opt-in: `--go-backend sidecar`.
 - Error policy:
-  - Detect duplicate alias and undefined symbol before Go generation; fail with `input_invalid`.
+  - Unsupported input fails closed on frontend/EAST side before Go code generation.
 
 ### 7. Java (`src/py2java.py` + `src/common/go_java_native_transpiler.py`)
 
@@ -309,34 +306,32 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unresolved methods currently fail as `TranspileError("cannot resolve method call: ...")`; move detection to import-resolution phase and unify message format.
 
-### 8. Swift (`src/py2swift.py` + `src/common/swift_kotlin_node_transpiler.py`)
+### 8. Swift (`src/py2swift.py` + `src/hooks/swift/emitter/swift_native_emitter.py`)
 
 - Implementation style:
-  - Node-backend mode. Convert Python -> JS, then embed JS as Base64 in generated Swift.
-  - Import semantics are canonicalized in JS conversion (`JsTsNativeTranspiler`), not Swift layer.
+  - EAST3 conversion. `py2swift.py` is a thin CLI and the default output is produced by the Swift native emitter.
 - Concrete implementation:
-  - Swift-specific layer does not own import-resolution logic.
-  - Resolve `ImportBinding` during JS generation and embed resolved result.
-  - Keep Swift runtime responsible only for running embedded JS.
+  - Import resolution uses EAST `meta.import_bindings` as the source of truth and does not re-emit Python import statements in native output.
+  - Generated output is native Swift source (`runtime helper` functions + lowered bodies + `@main` entry).
+  - Legacy sidecar mode is isolated behind explicit opt-in: `--swift-backend sidecar`.
 - Error policy:
-  - Stop at JS conversion on import error; do not proceed to Swift generation (single error source).
+  - Unsupported input fails closed on frontend/EAST side before Swift code generation.
 
-### 9. Kotlin (`src/py2kotlin.py` + `src/common/swift_kotlin_node_transpiler.py`)
+### 9. Kotlin (`src/py2kotlin.py` + `src/hooks/kotlin/emitter/kotlin_native_emitter.py`)
 
 - Implementation style:
-  - Same Node-backend mode as Swift (embedded JS execution in Kotlin).
-  - Canonical import semantics are in JS conversion.
+  - EAST3 conversion. `py2kotlin.py` is a thin CLI and the default output is produced by the Kotlin native emitter.
 - Concrete implementation:
-  - Kotlin side handles class-name generation and entrypoint only; no import resolution there.
-  - Embed JS output with already-resolved `ImportBinding` result.
-  - Keep Kotlin runtime focused on `PyRuntime.runEmbeddedNode(...)` invocation.
+  - Import resolution uses EAST `meta.import_bindings` as the source of truth and does not re-emit Python import statements in native output.
+  - Generated output is standalone native Kotlin (`runtime helper` functions + lowered bodies + `main` entry).
+  - Legacy sidecar mode is isolated behind explicit opt-in: `--kotlin-backend sidecar`.
 - Error policy:
-  - Same as Swift. Stop on JS import error before Kotlin generation.
+  - Unsupported input fails closed on frontend/EAST side before Kotlin code generation.
 
 ### 10. Recommended Integration Order Across Languages
 
 - Step 1: complete `ImportBinding` / `QualifiedSymbolRef` in C++ implementation (EAST path).
 - Step 2: port the same resolver to JS/TS shared base.
-- Step 3: Swift/Kotlin only need follow-up validation because they depend on JS path.
-- Step 4: introduce alias normalization first in Go/Java shared base.
+- Step 3: align import alias normalization for Go/Swift/Kotlin native emitters.
+- Step 4: keep sidecar compatibility paths as explicit opt-in only; default regressions must run on native paths.
 - Step 5: add import preprocessing tables to Rust/C# without breaking existing behavior.

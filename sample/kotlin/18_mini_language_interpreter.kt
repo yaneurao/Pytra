@@ -1,428 +1,626 @@
-public class Token
-{
-    public string kind;
-    public string text;
-    public long pos;
-    public static string kind;
-    public static string text;
-    public static long pos;
+// Auto-generated Pytra Kotlin native source from EAST3.
+import kotlin.math.*
+
+fun __pytra_noop(vararg args: Any?) { }
+
+fun __pytra_any_default(): Any? {
+    return 0L
 }
 
-public class ExprNode
-{
-    public string kind;
-    public long value;
-    public string name;
-    public string op;
-    public long left;
-    public long right;
-    public static string kind;
-    public static long value;
-    public static string name;
-    public static string op;
-    public static long left;
-    public static long right;
+fun __pytra_assert(vararg args: Any?): String {
+    return "True"
 }
 
-public class StmtNode
-{
-    public string kind;
-    public string name;
-    public long expr_index;
-    public static string kind;
-    public static string name;
-    public static long expr_index;
+fun __pytra_perf_counter(): Double {
+    return System.nanoTime().toDouble() / 1_000_000_000.0
 }
 
-public class Parser
-{
-    public System.Collections.Generic.List<Token> tokens;
-    public long pos;
-    public System.Collections.Generic.List<ExprNode> expr_nodes;
-    
-    public Parser(System.Collections.Generic.List<Token> tokens)
-    {
-        this.tokens = tokens;
-        this.pos = 0;
-        this.expr_nodes = this.new_expr_nodes();
+fun __pytra_truthy(v: Any?): Boolean {
+    if (v == null) return false
+    if (v is Boolean) return v
+    if (v is Long) return v != 0L
+    if (v is Int) return v != 0
+    if (v is Double) return v != 0.0
+    if (v is String) return v.isNotEmpty()
+    if (v is List<*>) return v.isNotEmpty()
+    if (v is Map<*, *>) return v.isNotEmpty()
+    return true
+}
+
+fun __pytra_int(v: Any?): Long {
+    if (v == null) return 0L
+    if (v is Long) return v
+    if (v is Int) return v.toLong()
+    if (v is Double) return v.toLong()
+    if (v is Boolean) return if (v) 1L else 0L
+    if (v is String) return v.toLongOrNull() ?: 0L
+    return 0L
+}
+
+fun __pytra_float(v: Any?): Double {
+    if (v == null) return 0.0
+    if (v is Double) return v
+    if (v is Float) return v.toDouble()
+    if (v is Long) return v.toDouble()
+    if (v is Int) return v.toDouble()
+    if (v is Boolean) return if (v) 1.0 else 0.0
+    if (v is String) return v.toDoubleOrNull() ?: 0.0
+    return 0.0
+}
+
+fun __pytra_str(v: Any?): String {
+    if (v == null) return ""
+    return v.toString()
+}
+
+fun __pytra_len(v: Any?): Long {
+    if (v == null) return 0L
+    if (v is String) return v.length.toLong()
+    if (v is List<*>) return v.size.toLong()
+    if (v is Map<*, *>) return v.size.toLong()
+    return 0L
+}
+
+fun __pytra_index(i: Long, n: Long): Long {
+    if (i < 0L) return i + n
+    return i
+}
+
+fun __pytra_get_index(container: Any?, index: Any?): Any? {
+    if (container is List<*>) {
+        if (container.isEmpty()) return __pytra_any_default()
+        val i = __pytra_index(__pytra_int(index), container.size.toLong())
+        if (i < 0L || i >= container.size.toLong()) return __pytra_any_default()
+        return container[i.toInt()]
     }
-    
-    public System.Collections.Generic.List<ExprNode> new_expr_nodes()
-    {
-        return new System.Collections.Generic.List<unknown>();
+    if (container is Map<*, *>) {
+        return container[__pytra_str(index)] ?: __pytra_any_default()
     }
-    
-    public string peek_kind()
-    {
-        return this.tokens[System.Convert.ToInt32(this.pos)].kind;
+    if (container is String) {
+        if (container.isEmpty()) return ""
+        val chars = container.toCharArray()
+        val i = __pytra_index(__pytra_int(index), chars.size.toLong())
+        if (i < 0L || i >= chars.size.toLong()) return ""
+        return chars[i.toInt()].toString()
     }
-    
-    public bool match(string kind)
-    {
-        if (this.peek_kind() == kind) {
-            this.pos += 1;
-            return true;
+    return __pytra_any_default()
+}
+
+fun __pytra_set_index(container: Any?, index: Any?, value: Any?) {
+    if (container is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        val list = container as MutableList<Any?>
+        if (list.isEmpty()) return
+        val i = __pytra_index(__pytra_int(index), list.size.toLong())
+        if (i < 0L || i >= list.size.toLong()) return
+        list[i.toInt()] = value
+        return
+    }
+    if (container is MutableMap<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val map = container as MutableMap<Any, Any?>
+        map[__pytra_str(index)] = value
+    }
+}
+
+fun __pytra_slice(container: Any?, lower: Any?, upper: Any?): Any? {
+    if (container is String) {
+        val n = container.length.toLong()
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if (lo < 0L) lo = 0L
+        if (hi < 0L) hi = 0L
+        if (lo > n) lo = n
+        if (hi > n) hi = n
+        if (hi < lo) hi = lo
+        return container.substring(lo.toInt(), hi.toInt())
+    }
+    if (container is List<*>) {
+        val n = container.size.toLong()
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if (lo < 0L) lo = 0L
+        if (hi < 0L) hi = 0L
+        if (lo > n) lo = n
+        if (hi > n) hi = n
+        if (hi < lo) hi = lo
+        @Suppress("UNCHECKED_CAST")
+        return container.subList(lo.toInt(), hi.toInt()).toMutableList() as MutableList<Any?>
+    }
+    return __pytra_any_default()
+}
+
+fun __pytra_isdigit(v: Any?): Boolean {
+    val s = __pytra_str(v)
+    if (s.isEmpty()) return false
+    return s.all { it.isDigit() }
+}
+
+fun __pytra_isalpha(v: Any?): Boolean {
+    val s = __pytra_str(v)
+    if (s.isEmpty()) return false
+    return s.all { it.isLetter() }
+}
+
+fun __pytra_contains(container: Any?, value: Any?): Boolean {
+    if (container is List<*>) {
+        val needle = __pytra_str(value)
+        for (item in container) {
+            if (__pytra_str(item) == needle) return true
         }
-        return false;
+        return false
     }
-    
-    public Token expect(string kind)
-    {
-        if (this.peek_kind() != kind) {
-            Token t = this.tokens[System.Convert.ToInt32(this.pos)];
-            throw RuntimeError("parse error at pos=" + System.Convert.ToString(t.pos) + ", expected=" + kind + ", got=" + t.kind);
+    if (container is Map<*, *>) {
+        return container.containsKey(__pytra_str(value))
+    }
+    if (container is String) {
+        return container.contains(__pytra_str(value))
+    }
+    return false
+}
+
+fun __pytra_ifexp(cond: Boolean, a: Any?, b: Any?): Any? {
+    return if (cond) a else b
+}
+
+fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
+    if (initValue is Long) {
+        val out = mutableListOf<Any?>()
+        var i = 0L
+        while (i < initValue) {
+            out.add(0L)
+            i += 1L
         }
-        Token token = this.tokens[System.Convert.ToInt32(this.pos)];
-        this.pos += 1;
-        return token;
+        return out
     }
-    
-    public void skip_newlines()
-    {
+    if (initValue is Int) {
+        val out = mutableListOf<Any?>()
+        var i = 0
+        while (i < initValue) {
+            out.add(0L)
+            i += 1
+        }
+        return out
+    }
+    if (initValue is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (initValue as MutableList<Any?>).toMutableList()
+    }
+    if (initValue is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (initValue as List<Any?>).toMutableList()
+    }
+    return mutableListOf()
+}
+
+fun __pytra_bytes(v: Any?): MutableList<Any?> {
+    if (v is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as MutableList<Any?>).toMutableList()
+    }
+    if (v is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as List<Any?>).toMutableList()
+    }
+    return mutableListOf()
+}
+
+fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
+    val out = mutableListOf<Any?>()
+    val n = __pytra_int(count)
+    var i = 0L
+    while (i < n) {
+        out.add(value)
+        i += 1L
+    }
+    return out
+}
+
+fun __pytra_as_list(v: Any?): MutableList<Any?> {
+    if (v is MutableList<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return v as MutableList<Any?>
+    }
+    if (v is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as List<Any?>).toMutableList()
+    }
+    return mutableListOf()
+}
+
+fun __pytra_as_dict(v: Any?): MutableMap<Any, Any?> {
+    if (v is MutableMap<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        return v as MutableMap<Any, Any?>
+    }
+    if (v is Map<*, *>) {
+        val out = mutableMapOf<Any, Any?>()
+        for ((k, valAny) in v) {
+            if (k != null) out[k] = valAny
+        }
+        return out
+    }
+    return mutableMapOf()
+}
+
+fun __pytra_pop_last(v: MutableList<Any?>): MutableList<Any?> {
+    if (v.isEmpty()) return v
+    v.removeAt(v.size - 1)
+    return v
+}
+
+fun __pytra_print(vararg args: Any?) {
+    if (args.isEmpty()) {
+        println()
+        return
+    }
+    println(args.joinToString(" ") { __pytra_str(it) })
+}
+
+fun __pytra_min(a: Any?, b: Any?): Any? {
+    val af = __pytra_float(a)
+    val bf = __pytra_float(b)
+    if (af < bf) {
+        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
+        return __pytra_int(a)
+    }
+    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
+    return __pytra_int(b)
+}
+
+fun __pytra_max(a: Any?, b: Any?): Any? {
+    val af = __pytra_float(a)
+    val bf = __pytra_float(b)
+    if (af > bf) {
+        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
+        return __pytra_int(a)
+    }
+    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
+    return __pytra_int(b)
+}
+
+fun __pytra_is_int(v: Any?): Boolean {
+    return (v is Long) || (v is Int)
+}
+
+fun __pytra_is_float(v: Any?): Boolean {
+    return v is Double
+}
+
+fun __pytra_is_bool(v: Any?): Boolean {
+    return v is Boolean
+}
+
+fun __pytra_is_str(v: Any?): Boolean {
+    return v is String
+}
+
+fun __pytra_is_list(v: Any?): Boolean {
+    return v is List<*>
+}
+
+fun __pytra_is_Token(v: Any?): Boolean {
+    return v is Token
+}
+
+fun __pytra_is_ExprNode(v: Any?): Boolean {
+    return v is ExprNode
+}
+
+fun __pytra_is_StmtNode(v: Any?): Boolean {
+    return v is StmtNode
+}
+
+fun __pytra_is_Parser(v: Any?): Boolean {
+    return v is Parser
+}
+
+open class Token() {
+    var kind: String = ""
+    var text: String = ""
+    var pos: Long = 0L
+}
+
+open class ExprNode() {
+    var kind: String = ""
+    var value: Long = 0L
+    var name: String = ""
+    var op: String = ""
+    var left: Long = 0L
+    var right: Long = 0L
+}
+
+open class StmtNode() {
+    var kind: String = ""
+    var name: String = ""
+    var expr_index: Long = 0L
+}
+
+open class Parser() {
+    var tokens: MutableList<Any?> = mutableListOf()
+    var pos: Long = 0L
+    var expr_nodes: MutableList<Any?> = mutableListOf()
+
+    fun new_expr_nodes(): MutableList<Any?> {
+        return mutableListOf<Any?>()
+    }
+
+    constructor(tokens: MutableList<Any?>) : this() {
+        this.tokens = tokens
+        this.pos = 0L
+        this.expr_nodes = this.new_expr_nodes()
+    }
+
+    fun peek_kind(): String {
+        return __pytra_get_index(this.tokens, this.pos).kind
+    }
+
+    fun match(kind: String): Boolean {
+        if ((__pytra_str(this.peek_kind()) == __pytra_str(kind))) {
+            this.pos += 1L
+            return true
+        }
+        return false
+    }
+
+    fun expect(kind: String): Token {
+        if ((__pytra_str(this.peek_kind()) != __pytra_str(kind))) {
+            var t: Token = __pytra_get_index(this.tokens, this.pos)
+            throw RuntimeException("pytra raise")
+        }
+        var token: Token = __pytra_get_index(this.tokens, this.pos)
+        this.pos += 1L
+        return token
+    }
+
+    fun skip_newlines() {
         while (this.match("NEWLINE")) {
             // pass
         }
     }
-    
-    public long add_expr(ExprNode node)
-    {
-        this.expr_nodes.Add(node);
-        return (this.expr_nodes).Count - 1;
+
+    fun add_expr(node: ExprNode): Long {
+        this.expr_nodes = __pytra_as_list(this.expr_nodes); this.expr_nodes.add(node)
+        return (__pytra_int(__pytra_len(this.expr_nodes)) - __pytra_int(1L))
     }
-    
-    public System.Collections.Generic.List<StmtNode> parse_program()
-    {
-        System.Collections.Generic.List<StmtNode> stmts = new System.Collections.Generic.List<unknown>();
-        this.skip_newlines();
-        while (this.peek_kind() != "EOF") {
-            StmtNode stmt = this.parse_stmt();
-            stmts.Add(stmt);
-            this.skip_newlines();
+
+    fun parse_program(): MutableList<Any?> {
+        var stmts: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+        this.skip_newlines()
+        while ((__pytra_str(this.peek_kind()) != __pytra_str("EOF"))) {
+            var stmt: StmtNode = this.parse_stmt()
+            stmts = __pytra_as_list(stmts); stmts.add(stmt)
+            this.skip_newlines()
         }
-        return stmts;
+        return stmts
     }
-    
-    public StmtNode parse_stmt()
-    {
+
+    fun parse_stmt(): StmtNode {
         if (this.match("LET")) {
-            string let_name = this.expect("IDENT").text;
-            this.expect("EQUAL");
-            long let_expr_index = this.parse_expr();
-            return new StmtNode("let", let_name, let_expr_index);
+            var let_name: String = __pytra_str(this.expect("IDENT").text)
+            this.expect("EQUAL")
+            var let_expr_index: Long = __pytra_int(this.parse_expr())
+            return StmtNode("let", let_name, let_expr_index)
         }
         if (this.match("PRINT")) {
-            long print_expr_index = this.parse_expr();
-            return new StmtNode("print", "", print_expr_index);
+            var print_expr_index: Long = __pytra_int(this.parse_expr())
+            return StmtNode("print", "", print_expr_index)
         }
-        string assign_name = this.expect("IDENT").text;
-        this.expect("EQUAL");
-        long assign_expr_index = this.parse_expr();
-        return new StmtNode("assign", assign_name, assign_expr_index);
+        var assign_name: String = __pytra_str(this.expect("IDENT").text)
+        this.expect("EQUAL")
+        var assign_expr_index: Long = __pytra_int(this.parse_expr())
+        return StmtNode("assign", assign_name, assign_expr_index)
     }
-    
-    public long parse_expr()
-    {
-        return this.parse_add();
+
+    fun parse_expr(): Long {
+        return this.parse_add()
     }
-    
-    public long parse_add()
-    {
-        long left = this.parse_mul();
+
+    fun parse_add(): Long {
+        var left: Long = __pytra_int(this.parse_mul())
         while (true) {
             if (this.match("PLUS")) {
-                long right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right));
-                py_continue;
+                var right: Long = __pytra_int(this.parse_mul())
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "+", left, right)))
+                continue
             }
             if (this.match("MINUS")) {
-                long right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right));
-                py_continue;
+                var right: Long = __pytra_int(this.parse_mul())
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "-", left, right)))
+                continue
             }
-            py_break;
+            break
         }
-        return left;
+        return left
     }
-    
-    public long parse_mul()
-    {
-        long left = this.parse_unary();
+
+    fun parse_mul(): Long {
+        var left: Long = __pytra_int(this.parse_unary())
         while (true) {
             if (this.match("STAR")) {
-                long right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right));
-                py_continue;
+                var right: Long = __pytra_int(this.parse_unary())
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "*", left, right)))
+                continue
             }
             if (this.match("SLASH")) {
-                long right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right));
-                py_continue;
+                var right: Long = __pytra_int(this.parse_unary())
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "/", left, right)))
+                continue
             }
-            py_break;
+            break
         }
-        return left;
+        return left
     }
-    
-    public long parse_unary()
-    {
+
+    fun parse_unary(): Long {
         if (this.match("MINUS")) {
-            long child = this.parse_unary();
-            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1));
+            var child: Long = __pytra_int(this.parse_unary())
+            return this.add_expr(ExprNode("neg", 0L, "", "", child, (-1L)))
         }
-        return this.parse_primary();
+        return this.parse_primary()
     }
-    
-    public long parse_primary()
-    {
+
+    fun parse_primary(): Long {
         if (this.match("NUMBER")) {
-            Token token_num = this.tokens[System.Convert.ToInt32(this.pos - 1)];
-            return this.add_expr(new ExprNode("lit", System.Convert.ToInt64(token_num.text), "", "", -1, -1));
+            var token_num: Token = __pytra_get_index(this.tokens, (__pytra_int(this.pos) - __pytra_int(1L)))
+            return this.add_expr(ExprNode("lit", __pytra_int(token_num.text), "", "", (-1L), (-1L)))
         }
         if (this.match("IDENT")) {
-            Token token_ident = this.tokens[System.Convert.ToInt32(this.pos - 1)];
-            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1));
+            var token_ident: Token = __pytra_get_index(this.tokens, (__pytra_int(this.pos) - __pytra_int(1L)))
+            return this.add_expr(ExprNode("var", 0L, token_ident.text, "", (-1L), (-1L)))
         }
         if (this.match("LPAREN")) {
-            long expr_index = this.parse_expr();
-            this.expect("RPAREN");
-            return expr_index;
+            var expr_index: Long = __pytra_int(this.parse_expr())
+            this.expect("RPAREN")
+            return expr_index
         }
-        Token t = this.tokens[System.Convert.ToInt32(this.pos)];
-        throw RuntimeError("primary parse error at pos=" + System.Convert.ToString(t.pos) + " got=" + t.kind);
+        var t: Token = __pytra_get_index(this.tokens, this.pos)
+        throw RuntimeException("pytra raise")
+        return 0L
     }
 }
 
-public static class Program
-{
-    public static System.Collections.Generic.List<Token> tokenize(System.Collections.Generic.List<string> lines)
-    {
-        System.Collections.Generic.List<Token> tokens = new System.Collections.Generic.List<unknown>();
-        foreach (var __it_1 in Program.PytraEnumerate(lines)) {
-        var line_index = __it_1.Item1;
-        var source = __it_1.Item2;
-            long i = 0;
-            long n = (source).Count();
-            while (i < n) {
-                string ch = source[System.Convert.ToInt32(i)];
-                
-                if (ch == " ") {
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "+") {
-                    tokens.Add(new Token("PLUS", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "-") {
-                    tokens.Add(new Token("MINUS", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "*") {
-                    tokens.Add(new Token("STAR", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "/") {
-                    tokens.Add(new Token("SLASH", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "(") {
-                    tokens.Add(new Token("LPAREN", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == ")") {
-                    tokens.Add(new Token("RPAREN", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "=") {
-                    tokens.Add(new Token("EQUAL", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch.isdigit()) {
-                    long start = i;
-                    while (i < n && source[System.Convert.ToInt32(i)].isdigit()) {
-                        i += 1;
-                    }
-                    string text = source[System.Convert.ToInt32(null)];
-                    tokens.Add(new Token("NUMBER", text, start));
-                    py_continue;
-                }
-                if (ch.isalpha() || ch == "_") {
-                    long start = i;
-                    while (i < n && source[System.Convert.ToInt32(i)].isalpha() || source[System.Convert.ToInt32(i)] == "_" || source[System.Convert.ToInt32(i)].isdigit()) {
-                        i += 1;
-                    }
-                    unknown text = source[System.Convert.ToInt32(null)];
-                    if (text == "let") {
-                        tokens.Add(new Token("LET", text, start));
-                    } else {
-                        if (text == "print") {
-                            tokens.Add(new Token("PRINT", text, start));
-                        } else {
-                            tokens.Add(new Token("IDENT", text, start));
-                        }
-                    }
-                    py_continue;
-                }
-                throw RuntimeError("tokenize error at line=" + System.Convert.ToString(line_index) + " pos=" + System.Convert.ToString(i) + " ch=" + ch);
-            }
-            tokens.Add(new Token("NEWLINE", "", n));
-        }
-        tokens.Add(new Token("EOF", "", (lines).Count));
-        return tokens;
+fun tokenize(lines: MutableList<Any?>): MutableList<Any?> {
+    var tokens: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    // TODO: unsupported ForCore plan
+    tokens = __pytra_as_list(tokens); tokens.add(Token("EOF", "", __pytra_len(lines)))
+    return tokens
+}
+
+fun eval_expr(expr_index: Long, expr_nodes: MutableList<Any?>, env: MutableMap<Any, Any?>): Long {
+    var node: ExprNode = __pytra_get_index(expr_nodes, expr_index)
+    if ((__pytra_str(node.kind) == __pytra_str("lit"))) {
+        return node.value
     }
-    
-    public static long eval_expr(long expr_index, System.Collections.Generic.List<ExprNode> expr_nodes, System.Collections.Generic.Dictionary<string, long> env)
-    {
-        ExprNode node = expr_nodes[System.Convert.ToInt32(expr_index)];
-        
-        if (node.kind == "lit") {
-            return node.value;
+    if ((__pytra_str(node.kind) == __pytra_str("var"))) {
+        if ((!(__pytra_contains(env, node.name)))) {
+            throw RuntimeException("pytra raise")
         }
-        if (node.kind == "var") {
-            if (!(env.Contains(node.name))) {
-                throw RuntimeError("undefined variable: " + node.name);
-            }
-            return env[System.Convert.ToInt32(node.name)];
-        }
-        if (node.kind == "neg") {
-            return -eval_expr(node.left, expr_nodes, env);
-        }
-        if (node.kind == "bin") {
-            long lhs = eval_expr(node.left, expr_nodes, env);
-            long rhs = eval_expr(node.right, expr_nodes, env);
-            if (node.op == "+") {
-                return lhs + rhs;
-            }
-            if (node.op == "-") {
-                return lhs - rhs;
-            }
-            if (node.op == "*") {
-                return lhs * rhs;
-            }
-            if (node.op == "/") {
-                if (rhs == 0) {
-                    throw RuntimeError("division by zero");
-                }
-                return System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(lhs) / System.Convert.ToDouble(rhs)));
-            }
-            throw RuntimeError("unknown operator: " + node.op);
-        }
-        throw RuntimeError("unknown node kind: " + node.kind);
+        return __pytra_int(__pytra_get_index(env, node.name))
     }
-    
-    public static long execute(System.Collections.Generic.List<StmtNode> stmts, System.Collections.Generic.List<ExprNode> expr_nodes, bool trace)
-    {
-        System.Collections.Generic.Dictionary<string, long> env = new System.Collections.Generic.Dictionary<unknown, unknown>();
-        long checksum = 0;
-        long printed = 0;
-        foreach (var stmt in stmts) {
-            if (stmt.kind == "let") {
-                env[System.Convert.ToInt32(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
-                py_continue;
-            }
-            if (stmt.kind == "assign") {
-                if (!(env.Contains(stmt.name))) {
-                    throw RuntimeError("assign to undefined variable: " + stmt.name);
-                }
-                env[System.Convert.ToInt32(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
-                py_continue;
-            }
-            long value = eval_expr(stmt.expr_index, expr_nodes, env);
-            if (trace) {
-                System.Console.WriteLine(value);
-            }
-            long norm = value % 1000000007;
-            if (norm < 0) {
-                norm += 1000000007;
-            }
-            checksum = (checksum * 131 + norm) % 1000000007;
-            printed += 1;
+    if ((__pytra_str(node.kind) == __pytra_str("neg"))) {
+        return (-eval_expr(node.left, expr_nodes, env))
+    }
+    if ((__pytra_str(node.kind) == __pytra_str("bin"))) {
+        var lhs: Long = __pytra_int(eval_expr(node.left, expr_nodes, env))
+        var rhs: Long = __pytra_int(eval_expr(node.right, expr_nodes, env))
+        if ((__pytra_str(node.op) == __pytra_str("+"))) {
+            return (__pytra_int(lhs) + __pytra_int(rhs))
         }
+        if ((__pytra_str(node.op) == __pytra_str("-"))) {
+            return (__pytra_int(lhs) - __pytra_int(rhs))
+        }
+        if ((__pytra_str(node.op) == __pytra_str("*"))) {
+            return (__pytra_int(lhs) * __pytra_int(rhs))
+        }
+        if ((__pytra_str(node.op) == __pytra_str("/"))) {
+            if ((__pytra_int(rhs) == __pytra_int(0L))) {
+                throw RuntimeException("pytra raise")
+            }
+            return (__pytra_int(__pytra_int(lhs) / __pytra_int(rhs)))
+        }
+        throw RuntimeException("pytra raise")
+    }
+    throw RuntimeException("pytra raise")
+    return 0L
+}
+
+fun execute(stmts: MutableList<Any?>, expr_nodes: MutableList<Any?>, trace: Boolean): Long {
+    var env: MutableMap<Any, Any?> = __pytra_as_dict(mutableMapOf<Any, Any?>())
+    var checksum: Long = __pytra_int(0L)
+    var printed: Long = __pytra_int(0L)
+    val __iter_0 = __pytra_as_list(stmts)
+    var __i_1: Long = 0L
+    while (__i_1 < __iter_0.size.toLong()) {
+        val stmt = __iter_0[__i_1.toInt()]
+        if ((__pytra_str(stmt.kind) == __pytra_str("let"))) {
+            __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
+            continue
+        }
+        if ((__pytra_str(stmt.kind) == __pytra_str("assign"))) {
+            if ((!(__pytra_contains(env, stmt.name)))) {
+                throw RuntimeException("pytra raise")
+            }
+            __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
+            continue
+        }
+        var value: Long = __pytra_int(eval_expr(stmt.expr_index, expr_nodes, env))
         if (trace) {
-            System.Console.WriteLine(string.Join(" ", new object[] { "printed:", printed }));
+            __pytra_print(value)
         }
-        return checksum;
-    }
-    
-    public static System.Collections.Generic.List<string> build_benchmark_source(long var_count, long loops)
-    {
-        System.Collections.Generic.List<string> lines = new System.Collections.Generic.List<unknown>();
-        for (long i = 0; i < var_count; i += 1) {
-            lines.Add("let v" + System.Convert.ToString(i) + " = " + System.Convert.ToString(i + 1));
+        var norm: Long = __pytra_int((__pytra_int(value) % __pytra_int(1000000007L)))
+        if ((__pytra_int(norm) < __pytra_int(0L))) {
+            norm += 1000000007L
         }
-        for (long i = 0; i < loops; i += 1) {
-            long x = i % var_count;
-            long y = (i + 3) % var_count;
-            long c1 = i % 7 + 1;
-            long c2 = i % 11 + 2;
-            lines.Add("v" + System.Convert.ToString(x) + " = (v" + System.Convert.ToString(x) + " * " + System.Convert.ToString(c1) + " + v" + System.Convert.ToString(y) + " + 10000) / " + System.Convert.ToString(c2));
-            if (i % 97 == 0) {
-                lines.Add("print v" + System.Convert.ToString(x));
-            }
+        checksum = __pytra_int((__pytra_int((__pytra_int((__pytra_int(checksum) * __pytra_int(131L))) + __pytra_int(norm))) % __pytra_int(1000000007L)))
+        printed += 1L
+        __i_1 += 1L
+    }
+    if (trace) {
+        __pytra_print("printed:", printed)
+    }
+    return checksum
+}
+
+fun build_benchmark_source(var_count: Long, loops: Long): MutableList<Any?> {
+    var lines: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    val __step_0 = __pytra_int(1L)
+    var i = __pytra_int(0L)
+    while ((__step_0 >= 0L && i < __pytra_int(var_count)) || (__step_0 < 0L && i > __pytra_int(var_count))) {
+        lines = __pytra_as_list(lines); lines.add((__pytra_str((__pytra_str((__pytra_str("let v") + __pytra_str(__pytra_str(i)))) + __pytra_str(" = "))) + __pytra_str(__pytra_str((__pytra_int(i) + __pytra_int(1L))))))
+        i += __step_0
+    }
+    val __step_1 = __pytra_int(1L)
+    var i = __pytra_int(0L)
+    while ((__step_1 >= 0L && i < __pytra_int(loops)) || (__step_1 < 0L && i > __pytra_int(loops))) {
+        var x: Long = __pytra_int((__pytra_int(i) % __pytra_int(var_count)))
+        var y: Long = __pytra_int((__pytra_int((__pytra_int(i) + __pytra_int(3L))) % __pytra_int(var_count)))
+        var c1: Long = __pytra_int((__pytra_int((__pytra_int(i) % __pytra_int(7L))) + __pytra_int(1L)))
+        var c2: Long = __pytra_int((__pytra_int((__pytra_int(i) % __pytra_int(11L))) + __pytra_int(2L)))
+        lines = __pytra_as_list(lines); lines.add((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str("v") + __pytra_str(__pytra_str(x)))) + __pytra_str(" = (v"))) + __pytra_str(__pytra_str(x)))) + __pytra_str(" * "))) + __pytra_str(__pytra_str(c1)))) + __pytra_str(" + v"))) + __pytra_str(__pytra_str(y)))) + __pytra_str(" + 10000) / "))) + __pytra_str(__pytra_str(c2))))
+        if ((__pytra_int((__pytra_int(i) % __pytra_int(97L))) == __pytra_int(0L))) {
+            lines = __pytra_as_list(lines); lines.add((__pytra_str("print v") + __pytra_str(__pytra_str(x))))
         }
-        // Print final values together.
-        lines.Add("print (v0 + v1 + v2 + v3)");
-        return lines;
+        i += __step_1
     }
-    
-    public static void run_demo()
-    {
-        System.Collections.Generic.List<string> demo_lines = new System.Collections.Generic.List<unknown>();
-        demo_lines.Add("let a = 10");
-        demo_lines.Add("let b = 3");
-        demo_lines.Add("a = (a + b) * 2");
-        demo_lines.Add("print a");
-        demo_lines.Add("print a / b");
-        
-        System.Collections.Generic.List<Token> tokens = tokenize(demo_lines);
-        Parser parser = new Parser(tokens);
-        System.Collections.Generic.List<StmtNode> stmts = parser.parse_program();
-        long checksum = execute(stmts, parser.expr_nodes, true);
-        System.Console.WriteLine(string.Join(" ", new object[] { "demo_checksum:", checksum }));
-    }
-    
-    public static void run_benchmark()
-    {
-        System.Collections.Generic.List<string> source_lines = build_benchmark_source(32, 120000);
-        double start = perf_counter();
-        System.Collections.Generic.List<Token> tokens = tokenize(source_lines);
-        Parser parser = new Parser(tokens);
-        System.Collections.Generic.List<StmtNode> stmts = parser.parse_program();
-        long checksum = execute(stmts, parser.expr_nodes, false);
-        double elapsed = perf_counter() - start;
-        
-        System.Console.WriteLine(string.Join(" ", new object[] { "token_count:", (tokens).Count }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "expr_count:", (parser.expr_nodes).Count() }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "stmt_count:", (stmts).Count }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "checksum:", checksum }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
-    }
-    
-    public static void __pytra_main()
-    {
-        run_demo();
-        run_benchmark();
-    }
-    
-    private static System.Collections.Generic.IEnumerable<(long, T)> PytraEnumerate<T>(System.Collections.Generic.IEnumerable<T> source, long start = 0)
-    {
-        long i = start;
-        foreach (T item in source)
-        {
-            yield return (i, item);
-            i += 1;
-        }
-    }
-    
-    public static void Main(string[] args)
-    {
-            main();
-    }
+    lines = __pytra_as_list(lines); lines.add("print (v0 + v1 + v2 + v3)")
+    return lines
+}
+
+fun run_demo() {
+    var demo_lines: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    demo_lines = __pytra_as_list(demo_lines); demo_lines.add("let a = 10")
+    demo_lines = __pytra_as_list(demo_lines); demo_lines.add("let b = 3")
+    demo_lines = __pytra_as_list(demo_lines); demo_lines.add("a = (a + b) * 2")
+    demo_lines = __pytra_as_list(demo_lines); demo_lines.add("print a")
+    demo_lines = __pytra_as_list(demo_lines); demo_lines.add("print a / b")
+    var tokens: MutableList<Any?> = __pytra_as_list(tokenize(demo_lines))
+    var parser: Parser = Parser(tokens)
+    var stmts: MutableList<Any?> = __pytra_as_list(parser.parse_program())
+    var checksum: Long = __pytra_int(execute(stmts, parser.expr_nodes, true))
+    __pytra_print("demo_checksum:", checksum)
+}
+
+fun run_benchmark() {
+    var source_lines: MutableList<Any?> = __pytra_as_list(build_benchmark_source(32L, 120000L))
+    var start: Double = __pytra_float(__pytra_perf_counter())
+    var tokens: MutableList<Any?> = __pytra_as_list(tokenize(source_lines))
+    var parser: Parser = Parser(tokens)
+    var stmts: MutableList<Any?> = __pytra_as_list(parser.parse_program())
+    var checksum: Long = __pytra_int(execute(stmts, parser.expr_nodes, false))
+    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("token_count:", __pytra_len(tokens))
+    __pytra_print("expr_count:", __pytra_len(parser.expr_nodes))
+    __pytra_print("stmt_count:", __pytra_len(stmts))
+    __pytra_print("checksum:", checksum)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+fun __pytra_main() {
+    run_demo()
+    run_benchmark()
+}
+
+fun main(args: Array<String>) {
+    main()
 }

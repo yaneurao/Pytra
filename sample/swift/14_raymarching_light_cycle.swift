@@ -1,75 +1,349 @@
-using math;
+// Auto-generated Pytra Swift native source from EAST3.
+import Foundation
 
-public static class Program
-{
-    // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
-    
-    public static List<byte> palette()
-    {
-        List<byte> p = bytearray();
-        for (long i = 0; i < 256; i += 1) {
-            unknown r = min(255, System.Convert.ToInt64(20 + i * 0.9));
-            unknown g = min(255, System.Convert.ToInt64(10 + i * 0.7));
-            unknown b = min(255, System.Convert.ToInt64(30 + i));
-            p.Add(r);
-            p.Add(g);
-            p.Add(b);
-        }
-        return bytes(p);
+func __pytra_noop(_ args: Any...) {}
+
+func __pytra_any_default() -> Any {
+    return Int64(0)
+}
+
+func __pytra_assert(_ args: Any...) -> String {
+    _ = args
+    return "True"
+}
+
+func __pytra_perf_counter() -> Double {
+    return Date().timeIntervalSince1970
+}
+
+func __pytra_truthy(_ v: Any?) -> Bool {
+    guard let value = v else { return false }
+    if let b = value as? Bool { return b }
+    if let i = value as? Int64 { return i != 0 }
+    if let i = value as? Int { return i != 0 }
+    if let d = value as? Double { return d != 0.0 }
+    if let s = value as? String { return s != "" }
+    if let a = value as? [Any] { return !a.isEmpty }
+    if let m = value as? [AnyHashable: Any] { return !m.isEmpty }
+    return true
+}
+
+func __pytra_int(_ v: Any?) -> Int64 {
+    guard let value = v else { return 0 }
+    if let i = value as? Int64 { return i }
+    if let i = value as? Int { return Int64(i) }
+    if let d = value as? Double { return Int64(d) }
+    if let b = value as? Bool { return b ? 1 : 0 }
+    if let s = value as? String { return Int64(s) ?? 0 }
+    return 0
+}
+
+func __pytra_float(_ v: Any?) -> Double {
+    guard let value = v else { return 0.0 }
+    if let d = value as? Double { return d }
+    if let f = value as? Float { return Double(f) }
+    if let i = value as? Int64 { return Double(i) }
+    if let i = value as? Int { return Double(i) }
+    if let b = value as? Bool { return b ? 1.0 : 0.0 }
+    if let s = value as? String { return Double(s) ?? 0.0 }
+    return 0.0
+}
+
+func __pytra_str(_ v: Any?) -> String {
+    guard let value = v else { return "" }
+    if let s = value as? String { return s }
+    return String(describing: value)
+}
+
+func __pytra_len(_ v: Any?) -> Int64 {
+    guard let value = v else { return 0 }
+    if let s = value as? String { return Int64(s.count) }
+    if let a = value as? [Any] { return Int64(a.count) }
+    if let m = value as? [AnyHashable: Any] { return Int64(m.count) }
+    return 0
+}
+
+func __pytra_index(_ i: Int64, _ n: Int64) -> Int64 {
+    if i < 0 {
+        return i + n
     }
-    
-    public static long scene(double x, double y, double light_x, double light_y)
-    {
-        double x1 = x + 0.45;
-        double y1 = y + 0.2;
-        double x2 = x - 0.35;
-        double y2 = y - 0.15;
-        unknown r1 = math.sqrt(x1 * x1 + y1 * y1);
-        unknown r2 = math.sqrt(x2 * x2 + y2 * y2);
-        unknown blob = math.exp(-7.0 * r1 * r1) + math.exp(-8.0 * r2 * r2);
-        
-        double lx = x - light_x;
-        double ly = y - light_y;
-        unknown l = math.sqrt(lx * lx + ly * ly);
-        unknown lit = 1.0 / (1.0 + 3.5 * l * l);
-        
-        long v = System.Convert.ToInt64(255.0 * blob * lit * 5.0);
-        return min(255, max(0, v));
+    return i
+}
+
+func __pytra_getIndex(_ container: Any?, _ index: Any?) -> Any {
+    if let list = container as? [Any] {
+        if list.isEmpty { return __pytra_any_default() }
+        let i = __pytra_index(__pytra_int(index), Int64(list.count))
+        if i < 0 || i >= Int64(list.count) { return __pytra_any_default() }
+        return list[Int(i)]
     }
-    
-    public static void run_14_raymarching_light_cycle()
-    {
-        long w = 320;
-        long h = 240;
-        long frames_n = 84;
-        string out_path = "sample/out/14_raymarching_light_cycle.gif";
-        
-        unknown start = perf_counter();
-        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<unknown>();
-        for (long t = 0; t < frames_n; t += 1) {
-            List<byte> frame = bytearray(w * h);
-            unknown a = (t / frames_n) * math.pi * 2.0;
-            unknown light_x = 0.75 * math.cos(a);
-            unknown light_y = 0.55 * math.sin(a * 1.2);
-            for (long y = 0; y < h; y += 1) {
-                long row_base = y * w;
-                double py = (y / (h - 1)) * 2.0 - 1.0;
-                for (long x = 0; x < w; x += 1) {
-                    double px = (x / (w - 1)) * 2.0 - 1.0;
-                    frame[System.Convert.ToInt32(row_base + x)] = scene(px, py, light_x, light_y);
-                }
+    if let dict = container as? [AnyHashable: Any] {
+        let key = AnyHashable(__pytra_str(index))
+        return dict[key] ?? __pytra_any_default()
+    }
+    if let s = container as? String {
+        let chars = Array(s)
+        if chars.isEmpty { return "" }
+        let i = __pytra_index(__pytra_int(index), Int64(chars.count))
+        if i < 0 || i >= Int64(chars.count) { return "" }
+        return String(chars[Int(i)])
+    }
+    return __pytra_any_default()
+}
+
+func __pytra_setIndex(_ container: Any?, _ index: Any?, _ value: Any?) {
+    if var list = container as? [Any] {
+        if list.isEmpty { return }
+        let i = __pytra_index(__pytra_int(index), Int64(list.count))
+        if i < 0 || i >= Int64(list.count) { return }
+        list[Int(i)] = value as Any
+        return
+    }
+    if var dict = container as? [AnyHashable: Any] {
+        let key = AnyHashable(__pytra_str(index))
+        dict[key] = value
+    }
+}
+
+func __pytra_slice(_ container: Any?, _ lower: Any?, _ upper: Any?) -> Any {
+    if let s = container as? String {
+        let chars = Array(s)
+        let n = Int64(chars.count)
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if lo < 0 { lo = 0 }
+        if hi < 0 { hi = 0 }
+        if lo > n { lo = n }
+        if hi > n { hi = n }
+        if hi < lo { hi = lo }
+        if lo >= hi { return "" }
+        return String(chars[Int(lo)..<Int(hi)])
+    }
+    if let list = container as? [Any] {
+        let n = Int64(list.count)
+        var lo = __pytra_index(__pytra_int(lower), n)
+        var hi = __pytra_index(__pytra_int(upper), n)
+        if lo < 0 { lo = 0 }
+        if hi < 0 { hi = 0 }
+        if lo > n { lo = n }
+        if hi > n { hi = n }
+        if hi < lo { hi = lo }
+        if lo >= hi { return [Any]() }
+        return Array(list[Int(lo)..<Int(hi)])
+    }
+    return __pytra_any_default()
+}
+
+func __pytra_isdigit(_ v: Any?) -> Bool {
+    let s = __pytra_str(v)
+    if s.isEmpty { return false }
+    return s.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
+}
+
+func __pytra_isalpha(_ v: Any?) -> Bool {
+    let s = __pytra_str(v)
+    if s.isEmpty { return false }
+    return s.unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) }
+}
+
+func __pytra_contains(_ container: Any?, _ value: Any?) -> Bool {
+    if let list = container as? [Any] {
+        let needle = __pytra_str(value)
+        for item in list {
+            if __pytra_str(item) == needle {
+                return true
             }
-            frames.Add(bytes(frame));
         }
-        save_gif(out_path, w, h, frames, palette());
-        unknown elapsed = perf_counter() - start;
-        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frames_n }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+        return false
     }
-    
-    public static void Main(string[] args)
-    {
-            run_14_raymarching_light_cycle();
+    if let dict = container as? [AnyHashable: Any] {
+        return dict[AnyHashable(__pytra_str(value))] != nil
+    }
+    if let s = container as? String {
+        let needle = __pytra_str(value)
+        return s.contains(needle)
+    }
+    return false
+}
+
+func __pytra_ifexp(_ cond: Bool, _ a: Any, _ b: Any) -> Any {
+    return cond ? a : b
+}
+
+func __pytra_bytearray(_ initValue: Any?) -> [Any] {
+    if let i = initValue as? Int64 {
+        return Array(repeating: Int64(0), count: max(0, Int(i)))
+    }
+    if let i = initValue as? Int {
+        return Array(repeating: Int64(0), count: max(0, i))
+    }
+    if let arr = initValue as? [Any] {
+        return arr
+    }
+    return []
+}
+
+func __pytra_bytes(_ v: Any?) -> [Any] {
+    if let arr = v as? [Any] {
+        return arr
+    }
+    return []
+}
+
+func __pytra_list_repeat(_ value: Any, _ count: Any?) -> [Any] {
+    var out: [Any] = []
+    var i: Int64 = 0
+    let n = __pytra_int(count)
+    while i < n {
+        out.append(value)
+        i += 1
+    }
+    return out
+}
+
+func __pytra_as_list(_ v: Any?) -> [Any] {
+    if let arr = v as? [Any] { return arr }
+    return []
+}
+
+func __pytra_as_u8_list(_ v: Any?) -> [UInt8] {
+    if let arr = v as? [UInt8] { return arr }
+    return []
+}
+
+func __pytra_as_dict(_ v: Any?) -> [AnyHashable: Any] {
+    if let dict = v as? [AnyHashable: Any] { return dict }
+    return [:]
+}
+
+func __pytra_pop_last(_ v: [Any]) -> [Any] {
+    if v.isEmpty { return v }
+    return Array(v.dropLast())
+}
+
+func __pytra_print(_ args: Any...) {
+    if args.isEmpty {
+        Swift.print()
+        return
+    }
+    Swift.print(args.map { String(describing: $0) }.joined(separator: " "))
+}
+
+func __pytra_min(_ a: Any?, _ b: Any?) -> Any {
+    let af = __pytra_float(a)
+    let bf = __pytra_float(b)
+    if af < bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) { return af }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) { return bf }
+    return __pytra_int(b)
+}
+
+func __pytra_max(_ a: Any?, _ b: Any?) -> Any {
+    let af = __pytra_float(a)
+    let bf = __pytra_float(b)
+    if af > bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) { return af }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) { return bf }
+    return __pytra_int(b)
+}
+
+func __pytra_is_int(_ v: Any?) -> Bool {
+    return (v is Int) || (v is Int64)
+}
+
+func __pytra_is_float(_ v: Any?) -> Bool {
+    return v is Double
+}
+
+func __pytra_is_bool(_ v: Any?) -> Bool {
+    return v is Bool
+}
+
+func __pytra_is_str(_ v: Any?) -> Bool {
+    return v is String
+}
+
+func __pytra_is_list(_ v: Any?) -> Bool {
+    return v is [Any]
+}
+
+func palette() -> [Any] {
+    var p: [Any] = __pytra_as_list([])
+    let __step_0 = __pytra_int(Int64(1))
+    var i = __pytra_int(Int64(0))
+    while ((__step_0 >= 0 && i < __pytra_int(Int64(256))) || (__step_0 < 0 && i > __pytra_int(Int64(256)))) {
+        var r: Int64 = __pytra_int(__pytra_min(Int64(255), __pytra_int((__pytra_float(Int64(20)) + __pytra_float((__pytra_float(i) * __pytra_float(Double(0.9))))))))
+        var g: Int64 = __pytra_int(__pytra_min(Int64(255), __pytra_int((__pytra_float(Int64(10)) + __pytra_float((__pytra_float(i) * __pytra_float(Double(0.7))))))))
+        var b: Int64 = __pytra_int(__pytra_min(Int64(255), __pytra_int((__pytra_int(Int64(30)) + __pytra_int(i)))))
+        p = __pytra_as_list(p); p.append(r)
+        p = __pytra_as_list(p); p.append(g)
+        p = __pytra_as_list(p); p.append(b)
+        i += __step_0
+    }
+    return __pytra_bytes(p)
+}
+
+func scene(x: Double, y: Double, light_x: Double, light_y: Double) -> Int64 {
+    var x1: Double = __pytra_float((__pytra_float(x) + __pytra_float(Double(0.45))))
+    var y1: Double = __pytra_float((__pytra_float(y) + __pytra_float(Double(0.2))))
+    var x2: Double = __pytra_float((__pytra_float(x) - __pytra_float(Double(0.35))))
+    var y2: Double = __pytra_float((__pytra_float(y) - __pytra_float(Double(0.15))))
+    var r1: Any = sqrt(__pytra_float((__pytra_float((__pytra_float(x1) * __pytra_float(x1))) + __pytra_float((__pytra_float(y1) * __pytra_float(y1))))))
+    var r2: Any = sqrt(__pytra_float((__pytra_float((__pytra_float(x2) * __pytra_float(x2))) + __pytra_float((__pytra_float(y2) * __pytra_float(y2))))))
+    var blob: Any = (exp(__pytra_float((((-Double(7.0)) * r1) * r1))) + exp(__pytra_float((((-Double(8.0)) * r2) * r2))))
+    var lx: Double = __pytra_float((__pytra_float(x) - __pytra_float(light_x)))
+    var ly: Double = __pytra_float((__pytra_float(y) - __pytra_float(light_y)))
+    var l: Any = sqrt(__pytra_float((__pytra_float((__pytra_float(lx) * __pytra_float(lx))) + __pytra_float((__pytra_float(ly) * __pytra_float(ly))))))
+    var lit: Double = __pytra_float((__pytra_float(Double(1.0)) / __pytra_float((Double(1.0) + ((Double(3.5) * l) * l)))))
+    var v: Int64 = __pytra_int(__pytra_int((((Double(255.0) * blob) * lit) * Double(5.0))))
+    return __pytra_min(Int64(255), __pytra_max(Int64(0), v))
+}
+
+func run_14_raymarching_light_cycle() {
+    var w: Int64 = __pytra_int(Int64(320))
+    var h: Int64 = __pytra_int(Int64(240))
+    var frames_n: Int64 = __pytra_int(Int64(84))
+    var out_path: String = __pytra_str("sample/out/14_raymarching_light_cycle.gif")
+    var start: Double = __pytra_float(__pytra_perf_counter())
+    var frames: [Any] = __pytra_as_list([])
+    let __step_0 = __pytra_int(Int64(1))
+    var t = __pytra_int(Int64(0))
+    while ((__step_0 >= 0 && t < __pytra_int(frames_n)) || (__step_0 < 0 && t > __pytra_int(frames_n))) {
+        var frame: [Any] = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
+        var a: Double = __pytra_float((((__pytra_float(t) / __pytra_float(frames_n)) * Double.pi) * Double(2.0)))
+        var light_x: Double = __pytra_float((Double(0.75) * cos(__pytra_float(a))))
+        var light_y: Double = __pytra_float((Double(0.55) * sin(__pytra_float((a * Double(1.2))))))
+        let __step_1 = __pytra_int(Int64(1))
+        var y = __pytra_int(Int64(0))
+        while ((__step_1 >= 0 && y < __pytra_int(h)) || (__step_1 < 0 && y > __pytra_int(h))) {
+            var row_base: Int64 = __pytra_int((__pytra_int(y) * __pytra_int(w)))
+            var py: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(h) - __pytra_int(Int64(1)))))) * __pytra_float(Double(2.0)))) - __pytra_float(Double(1.0))))
+            let __step_2 = __pytra_int(Int64(1))
+            var x = __pytra_int(Int64(0))
+            while ((__step_2 >= 0 && x < __pytra_int(w)) || (__step_2 < 0 && x > __pytra_int(w))) {
+                var px: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(w) - __pytra_int(Int64(1)))))) * __pytra_float(Double(2.0)))) - __pytra_float(Double(1.0))))
+                __pytra_setIndex(frame, (__pytra_int(row_base) + __pytra_int(x)), scene(px, py, light_x, light_y))
+                x += __step_2
+            }
+            y += __step_1
+        }
+        frames = __pytra_as_list(frames); frames.append(__pytra_bytes(frame))
+        t += __step_0
+    }
+    __pytra_noop(out_path, w, h, frames, palette())
+    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("output:", out_path)
+    __pytra_print("frames:", frames_n)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+@main
+struct Main {
+    static func main() {
+        run_14_raymarching_light_cycle()
     }
 }

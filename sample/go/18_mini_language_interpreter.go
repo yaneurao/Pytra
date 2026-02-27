@@ -1,428 +1,790 @@
-public class Token
-{
-    public string kind;
-    public string text;
-    public long pos;
-    public static string kind;
-    public static string text;
-    public static long pos;
+// Auto-generated Pytra Go native source from EAST3.
+package main
+
+import (
+    "fmt"
+    "math"
+    "strconv"
+    "time"
+    "unicode"
+)
+
+var _ = math.Pi
+
+func __pytra_noop(args ...any) {}
+
+func __pytra_assert(args ...any) string {
+    _ = args
+    return "True"
 }
 
-public class ExprNode
-{
-    public string kind;
-    public long value;
-    public string name;
-    public string op;
-    public long left;
-    public long right;
-    public static string kind;
-    public static long value;
-    public static string name;
-    public static string op;
-    public static long left;
-    public static long right;
+func __pytra_perf_counter() float64 {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
 }
 
-public class StmtNode
-{
-    public string kind;
-    public string name;
-    public long expr_index;
-    public static string kind;
-    public static string name;
-    public static long expr_index;
-}
-
-public class Parser
-{
-    public System.Collections.Generic.List<Token> tokens;
-    public long pos;
-    public System.Collections.Generic.List<ExprNode> expr_nodes;
-    
-    public Parser(System.Collections.Generic.List<Token> tokens)
-    {
-        this.tokens = tokens;
-        this.pos = 0;
-        this.expr_nodes = this.new_expr_nodes();
-    }
-    
-    public System.Collections.Generic.List<ExprNode> new_expr_nodes()
-    {
-        return new System.Collections.Generic.List<unknown>();
-    }
-    
-    public string peek_kind()
-    {
-        return this.tokens[System.Convert.ToInt32(this.pos)].kind;
-    }
-    
-    public bool match(string kind)
-    {
-        if (this.peek_kind() == kind) {
-            this.pos += 1;
-            return true;
-        }
-        return false;
-    }
-    
-    public Token expect(string kind)
-    {
-        if (this.peek_kind() != kind) {
-            Token t = this.tokens[System.Convert.ToInt32(this.pos)];
-            throw RuntimeError("parse error at pos=" + System.Convert.ToString(t.pos) + ", expected=" + kind + ", got=" + t.kind);
-        }
-        Token token = this.tokens[System.Convert.ToInt32(this.pos)];
-        this.pos += 1;
-        return token;
-    }
-    
-    public void skip_newlines()
-    {
-        while (this.match("NEWLINE")) {
-            // pass
-        }
-    }
-    
-    public long add_expr(ExprNode node)
-    {
-        this.expr_nodes.Add(node);
-        return (this.expr_nodes).Count - 1;
-    }
-    
-    public System.Collections.Generic.List<StmtNode> parse_program()
-    {
-        System.Collections.Generic.List<StmtNode> stmts = new System.Collections.Generic.List<unknown>();
-        this.skip_newlines();
-        while (this.peek_kind() != "EOF") {
-            StmtNode stmt = this.parse_stmt();
-            stmts.Add(stmt);
-            this.skip_newlines();
-        }
-        return stmts;
-    }
-    
-    public StmtNode parse_stmt()
-    {
-        if (this.match("LET")) {
-            string let_name = this.expect("IDENT").text;
-            this.expect("EQUAL");
-            long let_expr_index = this.parse_expr();
-            return new StmtNode("let", let_name, let_expr_index);
-        }
-        if (this.match("PRINT")) {
-            long print_expr_index = this.parse_expr();
-            return new StmtNode("print", "", print_expr_index);
-        }
-        string assign_name = this.expect("IDENT").text;
-        this.expect("EQUAL");
-        long assign_expr_index = this.parse_expr();
-        return new StmtNode("assign", assign_name, assign_expr_index);
-    }
-    
-    public long parse_expr()
-    {
-        return this.parse_add();
-    }
-    
-    public long parse_add()
-    {
-        long left = this.parse_mul();
-        while (true) {
-            if (this.match("PLUS")) {
-                long right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right));
-                py_continue;
-            }
-            if (this.match("MINUS")) {
-                long right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right));
-                py_continue;
-            }
-            py_break;
-        }
-        return left;
-    }
-    
-    public long parse_mul()
-    {
-        long left = this.parse_unary();
-        while (true) {
-            if (this.match("STAR")) {
-                long right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right));
-                py_continue;
-            }
-            if (this.match("SLASH")) {
-                long right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right));
-                py_continue;
-            }
-            py_break;
-        }
-        return left;
-    }
-    
-    public long parse_unary()
-    {
-        if (this.match("MINUS")) {
-            long child = this.parse_unary();
-            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1));
-        }
-        return this.parse_primary();
-    }
-    
-    public long parse_primary()
-    {
-        if (this.match("NUMBER")) {
-            Token token_num = this.tokens[System.Convert.ToInt32(this.pos - 1)];
-            return this.add_expr(new ExprNode("lit", System.Convert.ToInt64(token_num.text), "", "", -1, -1));
-        }
-        if (this.match("IDENT")) {
-            Token token_ident = this.tokens[System.Convert.ToInt32(this.pos - 1)];
-            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1));
-        }
-        if (this.match("LPAREN")) {
-            long expr_index = this.parse_expr();
-            this.expect("RPAREN");
-            return expr_index;
-        }
-        Token t = this.tokens[System.Convert.ToInt32(this.pos)];
-        throw RuntimeError("primary parse error at pos=" + System.Convert.ToString(t.pos) + " got=" + t.kind);
+func __pytra_truthy(v any) bool {
+    switch t := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return t
+    case int:
+        return t != 0
+    case int64:
+        return t != 0
+    case float64:
+        return t != 0.0
+    case string:
+        return t != ""
+    case []any:
+        return len(t) != 0
+    case map[any]any:
+        return len(t) != 0
+    default:
+        return true
     }
 }
 
-public static class Program
-{
-    public static System.Collections.Generic.List<Token> tokenize(System.Collections.Generic.List<string> lines)
-    {
-        System.Collections.Generic.List<Token> tokens = new System.Collections.Generic.List<unknown>();
-        foreach (var __it_1 in Program.PytraEnumerate(lines)) {
-        var line_index = __it_1.Item1;
-        var source = __it_1.Item2;
-            long i = 0;
-            long n = (source).Count();
-            while (i < n) {
-                string ch = source[System.Convert.ToInt32(i)];
-                
-                if (ch == " ") {
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "+") {
-                    tokens.Add(new Token("PLUS", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "-") {
-                    tokens.Add(new Token("MINUS", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "*") {
-                    tokens.Add(new Token("STAR", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "/") {
-                    tokens.Add(new Token("SLASH", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "(") {
-                    tokens.Add(new Token("LPAREN", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == ")") {
-                    tokens.Add(new Token("RPAREN", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch == "=") {
-                    tokens.Add(new Token("EQUAL", ch, i));
-                    i += 1;
-                    py_continue;
-                }
-                if (ch.isdigit()) {
-                    long start = i;
-                    while (i < n && source[System.Convert.ToInt32(i)].isdigit()) {
-                        i += 1;
-                    }
-                    string text = source[System.Convert.ToInt32(null)];
-                    tokens.Add(new Token("NUMBER", text, start));
-                    py_continue;
-                }
-                if (ch.isalpha() || ch == "_") {
-                    long start = i;
-                    while (i < n && source[System.Convert.ToInt32(i)].isalpha() || source[System.Convert.ToInt32(i)] == "_" || source[System.Convert.ToInt32(i)].isdigit()) {
-                        i += 1;
-                    }
-                    unknown text = source[System.Convert.ToInt32(null)];
-                    if (text == "let") {
-                        tokens.Add(new Token("LET", text, start));
-                    } else {
-                        if (text == "print") {
-                            tokens.Add(new Token("PRINT", text, start));
-                        } else {
-                            tokens.Add(new Token("IDENT", text, start));
-                        }
-                    }
-                    py_continue;
-                }
-                throw RuntimeError("tokenize error at line=" + System.Convert.ToString(line_index) + " pos=" + System.Convert.ToString(i) + " ch=" + ch);
-            }
-            tokens.Add(new Token("NEWLINE", "", n));
+func __pytra_int(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case int:
+        return int64(t)
+    case int64:
+        return t
+    case float64:
+        return int64(t)
+    case bool:
+        if t {
+            return 1
         }
-        tokens.Add(new Token("EOF", "", (lines).Count));
-        return tokens;
+        return 0
+    case string:
+        if t == "" {
+            return 0
+        }
+        n, err := strconv.ParseInt(t, 10, 64)
+        if err != nil {
+            return 0
+        }
+        return n
+    default:
+        return 0
     }
-    
-    public static long eval_expr(long expr_index, System.Collections.Generic.List<ExprNode> expr_nodes, System.Collections.Generic.Dictionary<string, long> env)
-    {
-        ExprNode node = expr_nodes[System.Convert.ToInt32(expr_index)];
-        
-        if (node.kind == "lit") {
-            return node.value;
+}
+
+func __pytra_float(v any) float64 {
+    switch t := v.(type) {
+    case nil:
+        return 0.0
+    case int:
+        return float64(t)
+    case int64:
+        return float64(t)
+    case float64:
+        return t
+    case bool:
+        if t {
+            return 1.0
         }
-        if (node.kind == "var") {
-            if (!(env.Contains(node.name))) {
-                throw RuntimeError("undefined variable: " + node.name);
-            }
-            return env[System.Convert.ToInt32(node.name)];
+        return 0.0
+    case string:
+        if t == "" {
+            return 0.0
         }
-        if (node.kind == "neg") {
-            return -eval_expr(node.left, expr_nodes, env);
+        n, err := strconv.ParseFloat(t, 64)
+        if err != nil {
+            return 0.0
         }
-        if (node.kind == "bin") {
-            long lhs = eval_expr(node.left, expr_nodes, env);
-            long rhs = eval_expr(node.right, expr_nodes, env);
-            if (node.op == "+") {
-                return lhs + rhs;
-            }
-            if (node.op == "-") {
-                return lhs - rhs;
-            }
-            if (node.op == "*") {
-                return lhs * rhs;
-            }
-            if (node.op == "/") {
-                if (rhs == 0) {
-                    throw RuntimeError("division by zero");
-                }
-                return System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(lhs) / System.Convert.ToDouble(rhs)));
-            }
-            throw RuntimeError("unknown operator: " + node.op);
-        }
-        throw RuntimeError("unknown node kind: " + node.kind);
+        return n
+    default:
+        return 0.0
     }
-    
-    public static long execute(System.Collections.Generic.List<StmtNode> stmts, System.Collections.Generic.List<ExprNode> expr_nodes, bool trace)
-    {
-        System.Collections.Generic.Dictionary<string, long> env = new System.Collections.Generic.Dictionary<unknown, unknown>();
-        long checksum = 0;
-        long printed = 0;
-        foreach (var stmt in stmts) {
-            if (stmt.kind == "let") {
-                env[System.Convert.ToInt32(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
-                py_continue;
-            }
-            if (stmt.kind == "assign") {
-                if (!(env.Contains(stmt.name))) {
-                    throw RuntimeError("assign to undefined variable: " + stmt.name);
-                }
-                env[System.Convert.ToInt32(stmt.name)] = eval_expr(stmt.expr_index, expr_nodes, env);
-                py_continue;
-            }
-            long value = eval_expr(stmt.expr_index, expr_nodes, env);
-            if (trace) {
-                System.Console.WriteLine(value);
-            }
-            long norm = value % 1000000007;
-            if (norm < 0) {
-                norm += 1000000007;
-            }
-            checksum = (checksum * 131 + norm) % 1000000007;
-            printed += 1;
+}
+
+func __pytra_str(v any) string {
+    if v == nil {
+        return ""
+    }
+    switch t := v.(type) {
+    case string:
+        return t
+    default:
+        return fmt.Sprint(v)
+    }
+}
+
+func __pytra_len(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case string:
+        return int64(len([]rune(t)))
+    case []any:
+        return int64(len(t))
+    case map[any]any:
+        return int64(len(t))
+    default:
+        return 0
+    }
+}
+
+func __pytra_index(i int64, n int64) int64 {
+    if i < 0 {
+        i += n
+    }
+    return i
+}
+
+func __pytra_get_index(container any, index any) any {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return nil
         }
-        if (trace) {
-            System.Console.WriteLine(string.Join(" ", new object[] { "printed:", printed }));
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return nil
         }
-        return checksum;
-    }
-    
-    public static System.Collections.Generic.List<string> build_benchmark_source(long var_count, long loops)
-    {
-        System.Collections.Generic.List<string> lines = new System.Collections.Generic.List<unknown>();
-        for (long i = 0; i < var_count; i += 1) {
-            lines.Add("let v" + System.Convert.ToString(i) + " = " + System.Convert.ToString(i + 1));
+        return t[i]
+    case map[any]any:
+        return t[index]
+    case string:
+        runes := []rune(t)
+        if len(runes) == 0 {
+            return ""
         }
-        for (long i = 0; i < loops; i += 1) {
-            long x = i % var_count;
-            long y = (i + 3) % var_count;
-            long c1 = i % 7 + 1;
-            long c2 = i % 11 + 2;
-            lines.Add("v" + System.Convert.ToString(x) + " = (v" + System.Convert.ToString(x) + " * " + System.Convert.ToString(c1) + " + v" + System.Convert.ToString(y) + " + 10000) / " + System.Convert.ToString(c2));
-            if (i % 97 == 0) {
-                lines.Add("print v" + System.Convert.ToString(x));
-            }
+        i := __pytra_index(__pytra_int(index), int64(len(runes)))
+        if i < 0 || i >= int64(len(runes)) {
+            return ""
         }
-        // Print final values together.
-        lines.Add("print (v0 + v1 + v2 + v3)");
-        return lines;
+        return string(runes[i])
+    default:
+        return nil
     }
-    
-    public static void run_demo()
-    {
-        System.Collections.Generic.List<string> demo_lines = new System.Collections.Generic.List<unknown>();
-        demo_lines.Add("let a = 10");
-        demo_lines.Add("let b = 3");
-        demo_lines.Add("a = (a + b) * 2");
-        demo_lines.Add("print a");
-        demo_lines.Add("print a / b");
-        
-        System.Collections.Generic.List<Token> tokens = tokenize(demo_lines);
-        Parser parser = new Parser(tokens);
-        System.Collections.Generic.List<StmtNode> stmts = parser.parse_program();
-        long checksum = execute(stmts, parser.expr_nodes, true);
-        System.Console.WriteLine(string.Join(" ", new object[] { "demo_checksum:", checksum }));
+}
+
+func __pytra_set_index(container any, index any, value any) {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return
+        }
+        t[i] = value
+    case map[any]any:
+        t[index] = value
     }
-    
-    public static void run_benchmark()
-    {
-        System.Collections.Generic.List<string> source_lines = build_benchmark_source(32, 120000);
-        double start = perf_counter();
-        System.Collections.Generic.List<Token> tokens = tokenize(source_lines);
-        Parser parser = new Parser(tokens);
-        System.Collections.Generic.List<StmtNode> stmts = parser.parse_program();
-        long checksum = execute(stmts, parser.expr_nodes, false);
-        double elapsed = perf_counter() - start;
-        
-        System.Console.WriteLine(string.Join(" ", new object[] { "token_count:", (tokens).Count }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "expr_count:", (parser.expr_nodes).Count() }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "stmt_count:", (stmts).Count }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "checksum:", checksum }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+}
+
+func __pytra_slice(container any, lower any, upper any) any {
+    switch t := container.(type) {
+    case string:
+        runes := []rune(t)
+        n := int64(len(runes))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        return string(runes[lo:hi])
+    case []any:
+        n := int64(len(t))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        out := []any{}
+        i := lo
+        for i < hi {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return nil
     }
-    
-    public static void __pytra_main()
-    {
-        run_demo();
-        run_benchmark();
+}
+
+func __pytra_isdigit(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
     }
-    
-    private static System.Collections.Generic.IEnumerable<(long, T)> PytraEnumerate<T>(System.Collections.Generic.IEnumerable<T> source, long start = 0)
-    {
-        long i = start;
-        foreach (T item in source)
-        {
-            yield return (i, item);
-            i += 1;
+    for _, ch := range s {
+        if !unicode.IsDigit(ch) {
+            return false
         }
     }
-    
-    public static void Main(string[] args)
-    {
-            main();
+    return true
+}
+
+func __pytra_isalpha(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
     }
+    for _, ch := range s {
+        if !unicode.IsLetter(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_contains(container any, value any) bool {
+    switch t := container.(type) {
+    case []any:
+        i := 0
+        for i < len(t) {
+            if t[i] == value {
+                return true
+            }
+            i += 1
+        }
+        return false
+    case map[any]any:
+        _, ok := t[value]
+        return ok
+    case string:
+        needle := __pytra_str(value)
+        return needle != "" && len(needle) <= len(t) && __pytra_str_contains(t, needle)
+    default:
+        return false
+    }
+}
+
+func __pytra_str_contains(haystack string, needle string) bool {
+    if needle == "" {
+        return true
+    }
+    i := 0
+    limit := len(haystack) - len(needle)
+    for i <= limit {
+        if haystack[i:i+len(needle)] == needle {
+            return true
+        }
+        i += 1
+    }
+    return false
+}
+
+func __pytra_ifexp(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func __pytra_bytearray(init any) []any {
+    out := []any{}
+    switch t := init.(type) {
+    case int:
+        i := 0
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case int64:
+        i := int64(0)
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case []any:
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+    }
+    return out
+}
+
+func __pytra_bytes(v any) []any {
+    switch t := v.(type) {
+    case []any:
+        out := []any{}
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return []any{}
+    }
+}
+
+func __pytra_list_repeat(value any, count any) []any {
+    out := []any{}
+    n := __pytra_int(count)
+    i := int64(0)
+    for i < n {
+        out = append(out, value)
+        i += 1
+    }
+    return out
+}
+
+func __pytra_as_list(v any) []any {
+    if t, ok := v.([]any); ok {
+        return t
+    }
+    return []any{}
+}
+
+func __pytra_as_dict(v any) map[any]any {
+    if t, ok := v.(map[any]any); ok {
+        return t
+    }
+    return map[any]any{}
+}
+
+func __pytra_pop_last(v []any) []any {
+    if len(v) == 0 {
+        return v
+    }
+    return v[:len(v)-1]
+}
+
+func __pytra_print(args ...any) {
+    if len(args) == 0 {
+        fmt.Println()
+        return
+    }
+    fmt.Println(args...)
+}
+
+func __pytra_min(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af < bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_max(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af > bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_is_int(v any) bool {
+    switch v.(type) {
+    case int, int64:
+        return true
+    default:
+        return false
+    }
+}
+
+func __pytra_is_float(v any) bool {
+    _, ok := v.(float64)
+    return ok
+}
+
+func __pytra_is_bool(v any) bool {
+    _, ok := v.(bool)
+    return ok
+}
+
+func __pytra_is_str(v any) bool {
+    _, ok := v.(string)
+    return ok
+}
+
+func __pytra_is_list(v any) bool {
+    _, ok := v.([]any)
+    return ok
+}
+
+func __pytra_is_Token(v any) bool {
+    _, ok := v.(*Token)
+    return ok
+}
+
+func __pytra_is_ExprNode(v any) bool {
+    _, ok := v.(*ExprNode)
+    return ok
+}
+
+func __pytra_is_StmtNode(v any) bool {
+    _, ok := v.(*StmtNode)
+    return ok
+}
+
+func __pytra_is_Parser(v any) bool {
+    _, ok := v.(*Parser)
+    return ok
+}
+
+type Token struct {
+    kind string
+    text string
+    pos int64
+}
+
+func NewToken() *Token {
+    self := &Token{}
+    return self
+}
+
+type ExprNode struct {
+    kind string
+    value int64
+    name string
+    op string
+    left int64
+    right int64
+}
+
+func NewExprNode() *ExprNode {
+    self := &ExprNode{}
+    return self
+}
+
+type StmtNode struct {
+    kind string
+    name string
+    expr_index int64
+}
+
+func NewStmtNode() *StmtNode {
+    self := &StmtNode{}
+    return self
+}
+
+type Parser struct {
+    tokens []any
+    pos int64
+    expr_nodes []any
+}
+
+func NewParser(tokens []any) *Parser {
+    self := &Parser{}
+    self.Init(tokens)
+    return self
+}
+
+func (self *Parser) new_expr_nodes() []any {
+    return []any{}
+}
+
+func (self *Parser) Init(tokens []any) {
+    self.tokens = tokens
+    self.pos = int64(0)
+    self.expr_nodes = self.new_expr_nodes()
+}
+
+func (self *Parser) peek_kind() string {
+    return __pytra_get_index(self.tokens, self.pos).kind
+}
+
+func (self *Parser) match(kind string) bool {
+    if (__pytra_str(self.peek_kind()) == __pytra_str(kind)) {
+        self.pos += int64(1)
+        return true
+    }
+    return false
+}
+
+func (self *Parser) expect(kind string) *Token {
+    if (__pytra_str(self.peek_kind()) != __pytra_str(kind)) {
+        var t *Token = __pytra_get_index(self.tokens, self.pos)
+        panic("pytra raise")
+    }
+    var token *Token = __pytra_get_index(self.tokens, self.pos)
+    self.pos += int64(1)
+    return token
+}
+
+func (self *Parser) skip_newlines() {
+    for self.match("NEWLINE") {
+        // pass
+    }
+}
+
+func (self *Parser) add_expr(node *ExprNode) int64 {
+    self.expr_nodes = append(__pytra_as_list(self.expr_nodes), node)
+    return (__pytra_int(__pytra_len(self.expr_nodes)) - __pytra_int(int64(1)))
+}
+
+func (self *Parser) parse_program() []any {
+    var stmts []any = __pytra_as_list([]any{})
+    self.skip_newlines()
+    for (__pytra_str(self.peek_kind()) != __pytra_str("EOF")) {
+        var stmt *StmtNode = self.parse_stmt()
+        stmts = append(__pytra_as_list(stmts), stmt)
+        self.skip_newlines()
+    }
+    return stmts
+}
+
+func (self *Parser) parse_stmt() *StmtNode {
+    if self.match("LET") {
+        var let_name string = __pytra_str(self.expect("IDENT").text)
+        self.expect("EQUAL")
+        var let_expr_index int64 = __pytra_int(self.parse_expr())
+        return NewStmtNode("let", let_name, let_expr_index)
+    }
+    if self.match("PRINT") {
+        var print_expr_index int64 = __pytra_int(self.parse_expr())
+        return NewStmtNode("print", "", print_expr_index)
+    }
+    var assign_name string = __pytra_str(self.expect("IDENT").text)
+    self.expect("EQUAL")
+    var assign_expr_index int64 = __pytra_int(self.parse_expr())
+    return NewStmtNode("assign", assign_name, assign_expr_index)
+}
+
+func (self *Parser) parse_expr() int64 {
+    return self.parse_add()
+}
+
+func (self *Parser) parse_add() int64 {
+    var left int64 = __pytra_int(self.parse_mul())
+    for true {
+        if self.match("PLUS") {
+            var right int64 = __pytra_int(self.parse_mul())
+            left = __pytra_int(self.add_expr(NewExprNode("bin", int64(0), "", "+", left, right)))
+            continue
+        }
+        if self.match("MINUS") {
+            var right int64 = __pytra_int(self.parse_mul())
+            left = __pytra_int(self.add_expr(NewExprNode("bin", int64(0), "", "-", left, right)))
+            continue
+        }
+        break
+    }
+    return left
+}
+
+func (self *Parser) parse_mul() int64 {
+    var left int64 = __pytra_int(self.parse_unary())
+    for true {
+        if self.match("STAR") {
+            var right int64 = __pytra_int(self.parse_unary())
+            left = __pytra_int(self.add_expr(NewExprNode("bin", int64(0), "", "*", left, right)))
+            continue
+        }
+        if self.match("SLASH") {
+            var right int64 = __pytra_int(self.parse_unary())
+            left = __pytra_int(self.add_expr(NewExprNode("bin", int64(0), "", "/", left, right)))
+            continue
+        }
+        break
+    }
+    return left
+}
+
+func (self *Parser) parse_unary() int64 {
+    if self.match("MINUS") {
+        var child int64 = __pytra_int(self.parse_unary())
+        return self.add_expr(NewExprNode("neg", int64(0), "", "", child, (-int64(1))))
+    }
+    return self.parse_primary()
+}
+
+func (self *Parser) parse_primary() int64 {
+    if self.match("NUMBER") {
+        var token_num *Token = __pytra_get_index(self.tokens, (__pytra_int(self.pos) - __pytra_int(int64(1))))
+        return self.add_expr(NewExprNode("lit", __pytra_int(token_num.text), "", "", (-int64(1)), (-int64(1))))
+    }
+    if self.match("IDENT") {
+        var token_ident *Token = __pytra_get_index(self.tokens, (__pytra_int(self.pos) - __pytra_int(int64(1))))
+        return self.add_expr(NewExprNode("var", int64(0), token_ident.text, "", (-int64(1)), (-int64(1))))
+    }
+    if self.match("LPAREN") {
+        var expr_index int64 = __pytra_int(self.parse_expr())
+        self.expect("RPAREN")
+        return expr_index
+    }
+    var t *Token = __pytra_get_index(self.tokens, self.pos)
+    panic("pytra raise")
+    return 0
+}
+
+func tokenize(lines []any) []any {
+    var tokens []any = __pytra_as_list([]any{})
+    // TODO: unsupported ForCore plan
+    tokens = append(__pytra_as_list(tokens), NewToken("EOF", "", __pytra_len(lines)))
+    return tokens
+}
+
+func eval_expr(expr_index int64, expr_nodes []any, env map[any]any) int64 {
+    var node *ExprNode = __pytra_get_index(expr_nodes, expr_index)
+    if (__pytra_str(node.kind) == __pytra_str("lit")) {
+        return node.value
+    }
+    if (__pytra_str(node.kind) == __pytra_str("var")) {
+        if (!(__pytra_contains(env, node.name))) {
+            panic("pytra raise")
+        }
+        return __pytra_int(__pytra_get_index(env, node.name))
+    }
+    if (__pytra_str(node.kind) == __pytra_str("neg")) {
+        return (-eval_expr(node.left, expr_nodes, env))
+    }
+    if (__pytra_str(node.kind) == __pytra_str("bin")) {
+        var lhs int64 = __pytra_int(eval_expr(node.left, expr_nodes, env))
+        var rhs int64 = __pytra_int(eval_expr(node.right, expr_nodes, env))
+        if (__pytra_str(node.op) == __pytra_str("+")) {
+            return (__pytra_int(lhs) + __pytra_int(rhs))
+        }
+        if (__pytra_str(node.op) == __pytra_str("-")) {
+            return (__pytra_int(lhs) - __pytra_int(rhs))
+        }
+        if (__pytra_str(node.op) == __pytra_str("*")) {
+            return (__pytra_int(lhs) * __pytra_int(rhs))
+        }
+        if (__pytra_str(node.op) == __pytra_str("/")) {
+            if (__pytra_int(rhs) == __pytra_int(int64(0))) {
+                panic("pytra raise")
+            }
+            return (__pytra_int(__pytra_int(lhs) / __pytra_int(rhs)))
+        }
+        panic("pytra raise")
+    }
+    panic("pytra raise")
+    return 0
+}
+
+func execute(stmts []any, expr_nodes []any, trace bool) int64 {
+    var env map[any]any = __pytra_as_dict(map[any]any{})
+    var checksum int64 = __pytra_int(int64(0))
+    var printed int64 = __pytra_int(int64(0))
+    __iter_0 := __pytra_as_list(stmts)
+    for __i_1 := int64(0); __i_1 < int64(len(__iter_0)); __i_1 += 1 {
+        stmt := __iter_0[__i_1]
+        if (__pytra_str(stmt.kind) == __pytra_str("let")) {
+            __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
+            continue
+        }
+        if (__pytra_str(stmt.kind) == __pytra_str("assign")) {
+            if (!(__pytra_contains(env, stmt.name))) {
+                panic("pytra raise")
+            }
+            __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
+            continue
+        }
+        var value int64 = __pytra_int(eval_expr(stmt.expr_index, expr_nodes, env))
+        if trace {
+            __pytra_print(value)
+        }
+        var norm int64 = __pytra_int((__pytra_int(value) % __pytra_int(int64(1000000007))))
+        if (__pytra_int(norm) < __pytra_int(int64(0))) {
+            norm += int64(1000000007)
+        }
+        checksum = __pytra_int((__pytra_int((__pytra_int((__pytra_int(checksum) * __pytra_int(int64(131)))) + __pytra_int(norm))) % __pytra_int(int64(1000000007))))
+        printed += int64(1)
+    }
+    if trace {
+        __pytra_print("printed:", printed)
+    }
+    return checksum
+}
+
+func build_benchmark_source(var_count int64, loops int64) []any {
+    var lines []any = __pytra_as_list([]any{})
+    __step_0 := __pytra_int(int64(1))
+    for i := __pytra_int(int64(0)); (__step_0 >= 0 && i < __pytra_int(var_count)) || (__step_0 < 0 && i > __pytra_int(var_count)); i += __step_0 {
+        lines = append(__pytra_as_list(lines), (__pytra_str((__pytra_str((__pytra_str("let v") + __pytra_str(__pytra_str(i)))) + __pytra_str(" = "))) + __pytra_str(__pytra_str((__pytra_int(i) + __pytra_int(int64(1)))))))
+    }
+    __step_1 := __pytra_int(int64(1))
+    for i := __pytra_int(int64(0)); (__step_1 >= 0 && i < __pytra_int(loops)) || (__step_1 < 0 && i > __pytra_int(loops)); i += __step_1 {
+        var x int64 = __pytra_int((__pytra_int(i) % __pytra_int(var_count)))
+        var y int64 = __pytra_int((__pytra_int((__pytra_int(i) + __pytra_int(int64(3)))) % __pytra_int(var_count)))
+        var c1 int64 = __pytra_int((__pytra_int((__pytra_int(i) % __pytra_int(int64(7)))) + __pytra_int(int64(1))))
+        var c2 int64 = __pytra_int((__pytra_int((__pytra_int(i) % __pytra_int(int64(11)))) + __pytra_int(int64(2))))
+        lines = append(__pytra_as_list(lines), (__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str("v") + __pytra_str(__pytra_str(x)))) + __pytra_str(" = (v"))) + __pytra_str(__pytra_str(x)))) + __pytra_str(" * "))) + __pytra_str(__pytra_str(c1)))) + __pytra_str(" + v"))) + __pytra_str(__pytra_str(y)))) + __pytra_str(" + 10000) / "))) + __pytra_str(__pytra_str(c2))))
+        if (__pytra_int((__pytra_int(i) % __pytra_int(int64(97)))) == __pytra_int(int64(0))) {
+            lines = append(__pytra_as_list(lines), (__pytra_str("print v") + __pytra_str(__pytra_str(x))))
+        }
+    }
+    lines = append(__pytra_as_list(lines), "print (v0 + v1 + v2 + v3)")
+    return lines
+}
+
+func run_demo() {
+    var demo_lines []any = __pytra_as_list([]any{})
+    demo_lines = append(__pytra_as_list(demo_lines), "let a = 10")
+    demo_lines = append(__pytra_as_list(demo_lines), "let b = 3")
+    demo_lines = append(__pytra_as_list(demo_lines), "a = (a + b) * 2")
+    demo_lines = append(__pytra_as_list(demo_lines), "print a")
+    demo_lines = append(__pytra_as_list(demo_lines), "print a / b")
+    var tokens []any = __pytra_as_list(tokenize(demo_lines))
+    var parser *Parser = NewParser(tokens)
+    var stmts []any = __pytra_as_list(parser.parse_program())
+    var checksum int64 = __pytra_int(execute(stmts, parser.expr_nodes, true))
+    __pytra_print("demo_checksum:", checksum)
+}
+
+func run_benchmark() {
+    var source_lines []any = __pytra_as_list(build_benchmark_source(int64(32), int64(120000)))
+    var start float64 = __pytra_float(__pytra_perf_counter())
+    var tokens []any = __pytra_as_list(tokenize(source_lines))
+    var parser *Parser = NewParser(tokens)
+    var stmts []any = __pytra_as_list(parser.parse_program())
+    var checksum int64 = __pytra_int(execute(stmts, parser.expr_nodes, false))
+    var elapsed float64 = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("token_count:", __pytra_len(tokens))
+    __pytra_print("expr_count:", __pytra_len(parser.expr_nodes))
+    __pytra_print("stmt_count:", __pytra_len(stmts))
+    __pytra_print("checksum:", checksum)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+func __pytra_main() {
+    run_demo()
+    run_benchmark()
+}
+
+func main() {
+    main()
 }

@@ -1,199 +1,619 @@
-using math;
+// Auto-generated Pytra Go native source from EAST3.
+package main
 
-public static class Program
-{
-    // 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
-    // Dependencies are kept minimal (time only) for transpilation compatibility.
-    
-    public static double clamp01(double v)
-    {
-        if (v < 0.0) {
-            return 0.0;
-        }
-        if (v > 1.0) {
-            return 1.0;
-        }
-        return v;
+import (
+    "fmt"
+    "math"
+    "strconv"
+    "time"
+    "unicode"
+)
+
+var _ = math.Pi
+
+func __pytra_noop(args ...any) {}
+
+func __pytra_assert(args ...any) string {
+    _ = args
+    return "True"
+}
+
+func __pytra_perf_counter() float64 {
+    return float64(time.Now().UnixNano()) / 1_000_000_000.0
+}
+
+func __pytra_truthy(v any) bool {
+    switch t := v.(type) {
+    case nil:
+        return false
+    case bool:
+        return t
+    case int:
+        return t != 0
+    case int64:
+        return t != 0
+    case float64:
+        return t != 0.0
+    case string:
+        return t != ""
+    case []any:
+        return len(t) != 0
+    case map[any]any:
+        return len(t) != 0
+    default:
+        return true
     }
-    
-    public static double hit_sphere(double ox, double oy, double oz, double dx, double dy, double dz, double cx, double cy, double cz, double r)
-    {
-        double lx = ox - cx;
-        double ly = oy - cy;
-        double lz = oz - cz;
-        
-        double a = dx * dx + dy * dy + dz * dz;
-        double b = 2.0 * (lx * dx + ly * dy + lz * dz);
-        double c = lx * lx + ly * ly + lz * lz - r * r;
-        
-        double d = b * b - 4.0 * a * c;
-        if (d < 0.0) {
-            return -1.0;
+}
+
+func __pytra_int(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case int:
+        return int64(t)
+    case int64:
+        return t
+    case float64:
+        return int64(t)
+    case bool:
+        if t {
+            return 1
         }
-        double sd = math.sqrt(d);
-        double t0 = (-b - sd) / (2.0 * a);
-        double t1 = (-b + sd) / (2.0 * a);
-        
-        if (t0 > 0.001) {
-            return t0;
+        return 0
+    case string:
+        if t == "" {
+            return 0
         }
-        if (t1 > 0.001) {
-            return t1;
+        n, err := strconv.ParseInt(t, 10, 64)
+        if err != nil {
+            return 0
         }
-        return -1.0;
+        return n
+    default:
+        return 0
     }
-    
-    public static List<byte> render(long width, long height, long aa)
-    {
-        List<byte> pixels = bytearray();
-        
-        // Camera origin
-        double ox = 0.0;
-        double oy = 0.0;
-        double oz = -3.0;
-        
-        // Light direction (normalized)
-        double lx = -0.4;
-        double ly = 0.8;
-        double lz = -0.45;
-        for (long y = 0; y < height; y += 1) {
-            for (long x = 0; x < width; x += 1) {
-                long ar = 0;
-                long ag = 0;
-                long ab = 0;
-                for (long ay = 0; ay < aa; ay += 1) {
-                    for (long ax = 0; ax < aa; ax += 1) {
-                        double fy = (y + (ay + 0.5) / aa) / (height - 1);
-                        double fx = (x + (ax + 0.5) / aa) / (width - 1);
-                        double sy = 1.0 - 2.0 * fy;
-                        double sx = (2.0 * fx - 1.0) * (width / height);
-                        
-                        double dx = sx;
-                        double dy = sy;
-                        double dz = 1.0;
-                        double inv_len = 1.0 / math.sqrt(dx * dx + dy * dy + dz * dz);
-                        dx *= inv_len;
-                        dy *= inv_len;
-                        dz *= inv_len;
-                        
-                        double t_min = 1.0e30;
-                        long hit_id = -1;
-                        
-                        double t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
-                        if (t > 0.0 && t < t_min) {
-                            t_min = t;
-                            hit_id = 0;
-                        }
-                        t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
-                        if (t > 0.0 && t < t_min) {
-                            t_min = t;
-                            hit_id = 1;
-                        }
-                        t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
-                        if (t > 0.0 && t < t_min) {
-                            t_min = t;
-                            hit_id = 2;
-                        }
-                        long r = 0;
-                        long g = 0;
-                        long b = 0;
-                        
-                        if (hit_id >= 0) {
-                            double px = ox + dx * t_min;
-                            double py = oy + dy * t_min;
-                            double pz = oz + dz * t_min;
-                            
-                            double nx = 0.0;
-                            double ny = 0.0;
-                            double nz = 0.0;
-                            
-                            if (hit_id == 0) {
-                                nx = (px + 0.8) / 0.8;
-                                ny = (py + 0.2) / 0.8;
-                                nz = (pz - 2.2) / 0.8;
-                            } else {
-                                if (hit_id == 1) {
-                                    nx = (px - 0.9) / 0.95;
-                                    ny = (py - 0.1) / 0.95;
-                                    nz = (pz - 2.9) / 0.95;
-                                } else {
-                                    nx = 0.0;
-                                    ny = 1.0;
-                                    nz = 0.0;
-                                }
-                            }
-                            double diff = nx * -lx + ny * -ly + nz * -lz;
-                            diff = clamp01(diff);
-                            
-                            double base_r = 0.0;
-                            double base_g = 0.0;
-                            double base_b = 0.0;
-                            
-                            if (hit_id == 0) {
-                                base_r = 0.95;
-                                base_g = 0.35;
-                                base_b = 0.25;
-                            } else {
-                                if (hit_id == 1) {
-                                    base_r = 0.25;
-                                    base_g = 0.55;
-                                    base_b = 0.95;
-                                } else {
-                                    long checker = System.Convert.ToInt64((px + 50.0) * 0.8) + System.Convert.ToInt64((pz + 50.0) * 0.8);
-                                    if (checker % 2 == 0) {
-                                        base_r = 0.85;
-                                        base_g = 0.85;
-                                        base_b = 0.85;
-                                    } else {
-                                        base_r = 0.2;
-                                        base_g = 0.2;
-                                        base_b = 0.2;
-                                    }
-                                }
-                            }
-                            double shade = 0.12 + 0.88 * diff;
-                            r = System.Convert.ToInt64(255.0 * clamp01(base_r * shade));
-                            g = System.Convert.ToInt64(255.0 * clamp01(base_g * shade));
-                            b = System.Convert.ToInt64(255.0 * clamp01(base_b * shade));
-                        } else {
-                            double tsky = 0.5 * (dy + 1.0);
-                            r = System.Convert.ToInt64(255.0 * (0.65 + 0.20 * tsky));
-                            g = System.Convert.ToInt64(255.0 * (0.75 + 0.18 * tsky));
-                            b = System.Convert.ToInt64(255.0 * (0.90 + 0.08 * tsky));
-                        }
-                        ar += r;
-                        ag += g;
-                        ab += b;
-                    }
-                }
-                long samples = aa * aa;
-                pixels.Add(System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ar) / System.Convert.ToDouble(samples))));
-                pixels.Add(System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ag) / System.Convert.ToDouble(samples))));
-                pixels.Add(System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ab) / System.Convert.ToDouble(samples))));
+}
+
+func __pytra_float(v any) float64 {
+    switch t := v.(type) {
+    case nil:
+        return 0.0
+    case int:
+        return float64(t)
+    case int64:
+        return float64(t)
+    case float64:
+        return t
+    case bool:
+        if t {
+            return 1.0
+        }
+        return 0.0
+    case string:
+        if t == "" {
+            return 0.0
+        }
+        n, err := strconv.ParseFloat(t, 64)
+        if err != nil {
+            return 0.0
+        }
+        return n
+    default:
+        return 0.0
+    }
+}
+
+func __pytra_str(v any) string {
+    if v == nil {
+        return ""
+    }
+    switch t := v.(type) {
+    case string:
+        return t
+    default:
+        return fmt.Sprint(v)
+    }
+}
+
+func __pytra_len(v any) int64 {
+    switch t := v.(type) {
+    case nil:
+        return 0
+    case string:
+        return int64(len([]rune(t)))
+    case []any:
+        return int64(len(t))
+    case map[any]any:
+        return int64(len(t))
+    default:
+        return 0
+    }
+}
+
+func __pytra_index(i int64, n int64) int64 {
+    if i < 0 {
+        i += n
+    }
+    return i
+}
+
+func __pytra_get_index(container any, index any) any {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return nil
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return nil
+        }
+        return t[i]
+    case map[any]any:
+        return t[index]
+    case string:
+        runes := []rune(t)
+        if len(runes) == 0 {
+            return ""
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(runes)))
+        if i < 0 || i >= int64(len(runes)) {
+            return ""
+        }
+        return string(runes[i])
+    default:
+        return nil
+    }
+}
+
+func __pytra_set_index(container any, index any, value any) {
+    switch t := container.(type) {
+    case []any:
+        if len(t) == 0 {
+            return
+        }
+        i := __pytra_index(__pytra_int(index), int64(len(t)))
+        if i < 0 || i >= int64(len(t)) {
+            return
+        }
+        t[i] = value
+    case map[any]any:
+        t[index] = value
+    }
+}
+
+func __pytra_slice(container any, lower any, upper any) any {
+    switch t := container.(type) {
+    case string:
+        runes := []rune(t)
+        n := int64(len(runes))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        return string(runes[lo:hi])
+    case []any:
+        n := int64(len(t))
+        lo := __pytra_index(__pytra_int(lower), n)
+        hi := __pytra_index(__pytra_int(upper), n)
+        if lo < 0 {
+            lo = 0
+        }
+        if hi < 0 {
+            hi = 0
+        }
+        if lo > n {
+            lo = n
+        }
+        if hi > n {
+            hi = n
+        }
+        if hi < lo {
+            hi = lo
+        }
+        out := []any{}
+        i := lo
+        for i < hi {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return nil
+    }
+}
+
+func __pytra_isdigit(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !unicode.IsDigit(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_isalpha(v any) bool {
+    s := __pytra_str(v)
+    if s == "" {
+        return false
+    }
+    for _, ch := range s {
+        if !unicode.IsLetter(ch) {
+            return false
+        }
+    }
+    return true
+}
+
+func __pytra_contains(container any, value any) bool {
+    switch t := container.(type) {
+    case []any:
+        i := 0
+        for i < len(t) {
+            if t[i] == value {
+                return true
             }
+            i += 1
         }
-        return pixels;
+        return false
+    case map[any]any:
+        _, ok := t[value]
+        return ok
+    case string:
+        needle := __pytra_str(value)
+        return needle != "" && len(needle) <= len(t) && __pytra_str_contains(t, needle)
+    default:
+        return false
     }
-    
-    public static void run_raytrace()
-    {
-        long width = 1600;
-        long height = 900;
-        long aa = 2;
-        string out_path = "sample/out/02_raytrace_spheres.png";
-        
-        double start = perf_counter();
-        List<byte> pixels = render(width, height, aa);
-        png.write_rgb_png(out_path, width, height, pixels);
-        double elapsed = perf_counter() - start;
-        
-        System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));
-        System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));
+}
+
+func __pytra_str_contains(haystack string, needle string) bool {
+    if needle == "" {
+        return true
     }
-    
-    public static void Main(string[] args)
-    {
-            run_raytrace();
+    i := 0
+    limit := len(haystack) - len(needle)
+    for i <= limit {
+        if haystack[i:i+len(needle)] == needle {
+            return true
+        }
+        i += 1
     }
+    return false
+}
+
+func __pytra_ifexp(cond bool, a any, b any) any {
+    if cond {
+        return a
+    }
+    return b
+}
+
+func __pytra_bytearray(init any) []any {
+    out := []any{}
+    switch t := init.(type) {
+    case int:
+        i := 0
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case int64:
+        i := int64(0)
+        for i < t {
+            out = append(out, int64(0))
+            i += 1
+        }
+    case []any:
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+    }
+    return out
+}
+
+func __pytra_bytes(v any) []any {
+    switch t := v.(type) {
+    case []any:
+        out := []any{}
+        i := 0
+        for i < len(t) {
+            out = append(out, t[i])
+            i += 1
+        }
+        return out
+    default:
+        return []any{}
+    }
+}
+
+func __pytra_list_repeat(value any, count any) []any {
+    out := []any{}
+    n := __pytra_int(count)
+    i := int64(0)
+    for i < n {
+        out = append(out, value)
+        i += 1
+    }
+    return out
+}
+
+func __pytra_as_list(v any) []any {
+    if t, ok := v.([]any); ok {
+        return t
+    }
+    return []any{}
+}
+
+func __pytra_as_dict(v any) map[any]any {
+    if t, ok := v.(map[any]any); ok {
+        return t
+    }
+    return map[any]any{}
+}
+
+func __pytra_pop_last(v []any) []any {
+    if len(v) == 0 {
+        return v
+    }
+    return v[:len(v)-1]
+}
+
+func __pytra_print(args ...any) {
+    if len(args) == 0 {
+        fmt.Println()
+        return
+    }
+    fmt.Println(args...)
+}
+
+func __pytra_min(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af < bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_max(a any, b any) any {
+    af := __pytra_float(a)
+    bf := __pytra_float(b)
+    if af > bf {
+        if __pytra_is_float(a) || __pytra_is_float(b) {
+            return af
+        }
+        return __pytra_int(a)
+    }
+    if __pytra_is_float(a) || __pytra_is_float(b) {
+        return bf
+    }
+    return __pytra_int(b)
+}
+
+func __pytra_is_int(v any) bool {
+    switch v.(type) {
+    case int, int64:
+        return true
+    default:
+        return false
+    }
+}
+
+func __pytra_is_float(v any) bool {
+    _, ok := v.(float64)
+    return ok
+}
+
+func __pytra_is_bool(v any) bool {
+    _, ok := v.(bool)
+    return ok
+}
+
+func __pytra_is_str(v any) bool {
+    _, ok := v.(string)
+    return ok
+}
+
+func __pytra_is_list(v any) bool {
+    _, ok := v.([]any)
+    return ok
+}
+
+func clamp01(v float64) float64 {
+    if (__pytra_float(v) < __pytra_float(float64(0.0))) {
+        return float64(0.0)
+    }
+    if (__pytra_float(v) > __pytra_float(float64(1.0))) {
+        return float64(1.0)
+    }
+    return v
+}
+
+func hit_sphere(ox float64, oy float64, oz float64, dx float64, dy float64, dz float64, cx float64, cy float64, cz float64, r float64) float64 {
+    var lx float64 = __pytra_float((__pytra_float(ox) - __pytra_float(cx)))
+    var ly float64 = __pytra_float((__pytra_float(oy) - __pytra_float(cy)))
+    var lz float64 = __pytra_float((__pytra_float(oz) - __pytra_float(cz)))
+    var a float64 = __pytra_float((__pytra_float((__pytra_float((__pytra_float(dx) * __pytra_float(dx))) + __pytra_float((__pytra_float(dy) * __pytra_float(dy))))) + __pytra_float((__pytra_float(dz) * __pytra_float(dz)))))
+    var b float64 = __pytra_float((__pytra_float(float64(2.0)) * __pytra_float((__pytra_float((__pytra_float((__pytra_float(lx) * __pytra_float(dx))) + __pytra_float((__pytra_float(ly) * __pytra_float(dy))))) + __pytra_float((__pytra_float(lz) * __pytra_float(dz)))))))
+    var c float64 = __pytra_float((__pytra_float((__pytra_float((__pytra_float((__pytra_float(lx) * __pytra_float(lx))) + __pytra_float((__pytra_float(ly) * __pytra_float(ly))))) + __pytra_float((__pytra_float(lz) * __pytra_float(lz))))) - __pytra_float((__pytra_float(r) * __pytra_float(r)))))
+    var d float64 = __pytra_float((__pytra_float((__pytra_float(b) * __pytra_float(b))) - __pytra_float((__pytra_float((__pytra_float(float64(4.0)) * __pytra_float(a))) * __pytra_float(c)))))
+    if (__pytra_float(d) < __pytra_float(float64(0.0))) {
+        return (-float64(1.0))
+    }
+    var sd float64 = __pytra_float(math.Sqrt(__pytra_float(d)))
+    var t0 float64 = __pytra_float((__pytra_float((__pytra_float((-b)) - __pytra_float(sd))) / __pytra_float((__pytra_float(float64(2.0)) * __pytra_float(a)))))
+    var t1 float64 = __pytra_float((__pytra_float((__pytra_float((-b)) + __pytra_float(sd))) / __pytra_float((__pytra_float(float64(2.0)) * __pytra_float(a)))))
+    if (__pytra_float(t0) > __pytra_float(float64(0.001))) {
+        return t0
+    }
+    if (__pytra_float(t1) > __pytra_float(float64(0.001))) {
+        return t1
+    }
+    return (-float64(1.0))
+}
+
+func render(width int64, height int64, aa int64) []any {
+    var pixels []any = __pytra_as_list([]any{})
+    var ox float64 = __pytra_float(float64(0.0))
+    var oy float64 = __pytra_float(float64(0.0))
+    var oz float64 = __pytra_float((-float64(3.0)))
+    var lx float64 = __pytra_float((-float64(0.4)))
+    var ly float64 = __pytra_float(float64(0.8))
+    var lz float64 = __pytra_float((-float64(0.45)))
+    __step_0 := __pytra_int(int64(1))
+    for y := __pytra_int(int64(0)); (__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)); y += __step_0 {
+        __step_1 := __pytra_int(int64(1))
+        for x := __pytra_int(int64(0)); (__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)); x += __step_1 {
+            var ar int64 = __pytra_int(int64(0))
+            var ag int64 = __pytra_int(int64(0))
+            var ab int64 = __pytra_int(int64(0))
+            __step_2 := __pytra_int(int64(1))
+            for ay := __pytra_int(int64(0)); (__step_2 >= 0 && ay < __pytra_int(aa)) || (__step_2 < 0 && ay > __pytra_int(aa)); ay += __step_2 {
+                __step_3 := __pytra_int(int64(1))
+                for ax := __pytra_int(int64(0)); (__step_3 >= 0 && ax < __pytra_int(aa)) || (__step_3 < 0 && ax > __pytra_int(aa)); ax += __step_3 {
+                    var fy float64 = __pytra_float((__pytra_float((__pytra_float(y) + __pytra_float((__pytra_float((__pytra_float(ay) + __pytra_float(float64(0.5)))) / __pytra_float(aa))))) / __pytra_float((__pytra_int(height) - __pytra_int(int64(1))))))
+                    var fx float64 = __pytra_float((__pytra_float((__pytra_float(x) + __pytra_float((__pytra_float((__pytra_float(ax) + __pytra_float(float64(0.5)))) / __pytra_float(aa))))) / __pytra_float((__pytra_int(width) - __pytra_int(int64(1))))))
+                    var sy float64 = __pytra_float((__pytra_float(float64(1.0)) - __pytra_float((__pytra_float(float64(2.0)) * __pytra_float(fy)))))
+                    var sx float64 = __pytra_float((__pytra_float((__pytra_float((__pytra_float(float64(2.0)) * __pytra_float(fx))) - __pytra_float(float64(1.0)))) * __pytra_float((__pytra_float(width) / __pytra_float(height)))))
+                    var dx float64 = __pytra_float(sx)
+                    var dy float64 = __pytra_float(sy)
+                    var dz float64 = __pytra_float(float64(1.0))
+                    var inv_len float64 = __pytra_float((__pytra_float(float64(1.0)) / __pytra_float(math.Sqrt(__pytra_float((__pytra_float((__pytra_float((__pytra_float(dx) * __pytra_float(dx))) + __pytra_float((__pytra_float(dy) * __pytra_float(dy))))) + __pytra_float((__pytra_float(dz) * __pytra_float(dz)))))))))
+                    dx *= inv_len
+                    dy *= inv_len
+                    dz *= inv_len
+                    var t_min float64 = __pytra_float(float64(1e+30))
+                    var hit_id int64 = __pytra_int((-int64(1)))
+                    var t float64 = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, (-float64(0.8)), (-float64(0.2)), float64(2.2), float64(0.8)))
+                    if ((__pytra_float(t) > __pytra_float(float64(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
+                        t_min = __pytra_float(t)
+                        hit_id = __pytra_int(int64(0))
+                    }
+                    t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, float64(0.9), float64(0.1), float64(2.9), float64(0.95)))
+                    if ((__pytra_float(t) > __pytra_float(float64(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
+                        t_min = __pytra_float(t)
+                        hit_id = __pytra_int(int64(1))
+                    }
+                    t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, float64(0.0), (-float64(1001.0)), float64(3.0), float64(1000.0)))
+                    if ((__pytra_float(t) > __pytra_float(float64(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
+                        t_min = __pytra_float(t)
+                        hit_id = __pytra_int(int64(2))
+                    }
+                    var r int64 = __pytra_int(int64(0))
+                    var g int64 = __pytra_int(int64(0))
+                    var b int64 = __pytra_int(int64(0))
+                    if (__pytra_int(hit_id) >= __pytra_int(int64(0))) {
+                        var px float64 = __pytra_float((__pytra_float(ox) + __pytra_float((__pytra_float(dx) * __pytra_float(t_min)))))
+                        var py float64 = __pytra_float((__pytra_float(oy) + __pytra_float((__pytra_float(dy) * __pytra_float(t_min)))))
+                        var pz float64 = __pytra_float((__pytra_float(oz) + __pytra_float((__pytra_float(dz) * __pytra_float(t_min)))))
+                        var nx float64 = __pytra_float(float64(0.0))
+                        var ny float64 = __pytra_float(float64(0.0))
+                        var nz float64 = __pytra_float(float64(0.0))
+                        if (__pytra_int(hit_id) == __pytra_int(int64(0))) {
+                            nx = __pytra_float((__pytra_float((__pytra_float(px) + __pytra_float(float64(0.8)))) / __pytra_float(float64(0.8))))
+                            ny = __pytra_float((__pytra_float((__pytra_float(py) + __pytra_float(float64(0.2)))) / __pytra_float(float64(0.8))))
+                            nz = __pytra_float((__pytra_float((__pytra_float(pz) - __pytra_float(float64(2.2)))) / __pytra_float(float64(0.8))))
+                        } else {
+                            if (__pytra_int(hit_id) == __pytra_int(int64(1))) {
+                                nx = __pytra_float((__pytra_float((__pytra_float(px) - __pytra_float(float64(0.9)))) / __pytra_float(float64(0.95))))
+                                ny = __pytra_float((__pytra_float((__pytra_float(py) - __pytra_float(float64(0.1)))) / __pytra_float(float64(0.95))))
+                                nz = __pytra_float((__pytra_float((__pytra_float(pz) - __pytra_float(float64(2.9)))) / __pytra_float(float64(0.95))))
+                            } else {
+                                nx = __pytra_float(float64(0.0))
+                                ny = __pytra_float(float64(1.0))
+                                nz = __pytra_float(float64(0.0))
+                            }
+                        }
+                        var diff float64 = __pytra_float((__pytra_float((__pytra_float((__pytra_float(nx) * __pytra_float((-lx)))) + __pytra_float((__pytra_float(ny) * __pytra_float((-ly)))))) + __pytra_float((__pytra_float(nz) * __pytra_float((-lz))))))
+                        diff = __pytra_float(clamp01(diff))
+                        var base_r float64 = __pytra_float(float64(0.0))
+                        var base_g float64 = __pytra_float(float64(0.0))
+                        var base_b float64 = __pytra_float(float64(0.0))
+                        if (__pytra_int(hit_id) == __pytra_int(int64(0))) {
+                            base_r = __pytra_float(float64(0.95))
+                            base_g = __pytra_float(float64(0.35))
+                            base_b = __pytra_float(float64(0.25))
+                        } else {
+                            if (__pytra_int(hit_id) == __pytra_int(int64(1))) {
+                                base_r = __pytra_float(float64(0.25))
+                                base_g = __pytra_float(float64(0.55))
+                                base_b = __pytra_float(float64(0.95))
+                            } else {
+                                var checker int64 = __pytra_int((__pytra_int(__pytra_int((__pytra_float((__pytra_float(px) + __pytra_float(float64(50.0)))) * __pytra_float(float64(0.8))))) + __pytra_int(__pytra_int((__pytra_float((__pytra_float(pz) + __pytra_float(float64(50.0)))) * __pytra_float(float64(0.8)))))))
+                                if (__pytra_int((__pytra_int(checker) % __pytra_int(int64(2)))) == __pytra_int(int64(0))) {
+                                    base_r = __pytra_float(float64(0.85))
+                                    base_g = __pytra_float(float64(0.85))
+                                    base_b = __pytra_float(float64(0.85))
+                                } else {
+                                    base_r = __pytra_float(float64(0.2))
+                                    base_g = __pytra_float(float64(0.2))
+                                    base_b = __pytra_float(float64(0.2))
+                                }
+                            }
+                        }
+                        var shade float64 = __pytra_float((__pytra_float(float64(0.12)) + __pytra_float((__pytra_float(float64(0.88)) * __pytra_float(diff)))))
+                        r = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float(clamp01((__pytra_float(base_r) * __pytra_float(shade)))))))
+                        g = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float(clamp01((__pytra_float(base_g) * __pytra_float(shade)))))))
+                        b = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float(clamp01((__pytra_float(base_b) * __pytra_float(shade)))))))
+                    } else {
+                        var tsky float64 = __pytra_float((__pytra_float(float64(0.5)) * __pytra_float((__pytra_float(dy) + __pytra_float(float64(1.0))))))
+                        r = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(float64(0.65)) + __pytra_float((__pytra_float(float64(0.2)) * __pytra_float(tsky))))))))
+                        g = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(float64(0.75)) + __pytra_float((__pytra_float(float64(0.18)) * __pytra_float(tsky))))))))
+                        b = __pytra_int(__pytra_int((__pytra_float(float64(255.0)) * __pytra_float((__pytra_float(float64(0.9)) + __pytra_float((__pytra_float(float64(0.08)) * __pytra_float(tsky))))))))
+                    }
+                    ar += r
+                    ag += g
+                    ab += b
+                }
+            }
+            var samples int64 = __pytra_int((__pytra_int(aa) * __pytra_int(aa)))
+            pixels = append(__pytra_as_list(pixels), (__pytra_int(__pytra_int(ar) / __pytra_int(samples))))
+            pixels = append(__pytra_as_list(pixels), (__pytra_int(__pytra_int(ag) / __pytra_int(samples))))
+            pixels = append(__pytra_as_list(pixels), (__pytra_int(__pytra_int(ab) / __pytra_int(samples))))
+        }
+    }
+    return pixels
+}
+
+func run_raytrace() {
+    var width int64 = __pytra_int(int64(1600))
+    var height int64 = __pytra_int(int64(900))
+    var aa int64 = __pytra_int(int64(2))
+    var out_path string = __pytra_str("sample/out/02_raytrace_spheres.png")
+    var start float64 = __pytra_float(__pytra_perf_counter())
+    var pixels []any = __pytra_as_list(render(width, height, aa))
+    __pytra_noop(out_path, width, height, pixels)
+    var elapsed float64 = __pytra_float((__pytra_perf_counter() - start))
+    __pytra_print("output:", out_path)
+    __pytra_print("size:", width, "x", height)
+    __pytra_print("elapsed_sec:", elapsed)
+}
+
+func main() {
+    run_raytrace()
 }
