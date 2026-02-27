@@ -49,7 +49,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         kotlin = transpile_to_kotlin_native(east)
         self.assertIn("fun main(args: Array<String>)", kotlin)
         self.assertIn("open class Animal", kotlin)
-        self.assertIn("open class Dog : Animal()", kotlin)
+        self.assertIn("open class Dog() : Animal()", kotlin)
         self.assertIn("fun _case_main()", kotlin)
 
     def test_load_east_from_json(self) -> None:

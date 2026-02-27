@@ -36,6 +36,7 @@ _KOTLIN_KEYWORDS = {
 }
 
 _CLASS_NAMES: set[str] = set()
+_FUNCTION_NAMES: set[str] = set()
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -166,12 +167,17 @@ def _cast_from_any(expr: str, kotlin_type: str) -> str:
     if kotlin_type == "Any?":
         return expr
     if kotlin_type in _CLASS_NAMES:
-        return "(" + expr + " as? " + kotlin_type + ") ?: " + kotlin_type + "()"
+        return expr
     return expr
 
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
-    return _safe_ident(expr.get("id"), "value")
+    name = _safe_ident(expr.get("id"), "value")
+    if name == "self":
+        return "this"
+    if name in _FUNCTION_NAMES:
+        return "::" + name
+    return name
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -431,7 +437,12 @@ def _call_name(expr: dict[str, Any]) -> str:
         return ""
     if func_any.get("kind") != "Name":
         return ""
-    return _safe_ident(func_any.get("id"), "")
+    raw = func_any.get("id")
+    if not isinstance(raw, str):
+        return ""
+    if raw == "super":
+        return "super"
+    return _safe_ident(raw, "")
 
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
@@ -450,11 +461,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "__pytra_perf_counter()"
     if callee_name == "bytearray":
         if len(args) == 0:
-            return "mutableListOf()"
+            return "mutableListOf<Any?>()"
         return "__pytra_bytearray(" + _render_expr(args[0]) + ")"
     if callee_name == "bytes":
         if len(args) == 0:
-            return "mutableListOf()"
+            return "mutableListOf<Any?>()"
         return "__pytra_bytes(" + _render_expr(args[0]) + ")"
     if callee_name == "int":
         if len(args) == 0:
@@ -502,7 +513,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
     if callee_name == "grayscale_palette":
-        return "mutableListOf()"
+        return "mutableListOf<Any?>()"
     if callee_name == "print":
         rendered_args: list[str] = []
         i = 0
@@ -516,7 +527,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
         if attr_name == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
-            if _call_name(owner_any) == "super":
+            if _call_name(owner_any) in {"super", "super_"}:
                 return "__pytra_noop()"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
@@ -556,12 +567,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return callee_name + "(" + ", ".join(rendered_ctor_args) + ")"
 
-    func_expr = _render_expr(expr.get("func"))
     rendered_args = []
     i = 0
     while i < len(args):
         rendered_args.append(_render_expr(args[i]))
         i += 1
+    if callee_name != "":
+        return callee_name + "(" + ", ".join(rendered_args) + ")"
+    func_expr = _render_expr(expr.get("func"))
     return func_expr + "(" + ", ".join(rendered_args) + ")"
 
 
@@ -629,6 +642,8 @@ def _render_expr(expr: Any) -> str:
         while i < len(elements):
             rendered.append(_render_expr(elements[i]))
             i += 1
+        if len(rendered) == 0:
+            return "mutableListOf<Any?>()"
         return "mutableListOf(" + ", ".join(rendered) + ")"
 
     if kind == "Dict":
@@ -637,7 +652,7 @@ def _render_expr(expr: Any) -> str:
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
         if len(keys) == 0 or len(vals) == 0:
-            return "mutableMapOf()"
+            return "mutableMapOf<Any, Any?>()"
         parts: list[str] = []
         i = 0
         while i < len(keys) and i < len(vals):
@@ -1258,7 +1273,10 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
 
     lines: list[str] = []
     if is_init:
-        lines.append(indent + "constructor(" + ", ".join(params) + ") {")
+        if len(params) == 0:
+            lines.append(indent + "init {")
+        else:
+            lines.append(indent + "constructor(" + ", ".join(params) + ") : this() {")
     else:
         sig = indent + "fun " + name + "(" + ", ".join(params) + ")"
         if return_type != "Unit":
@@ -1304,7 +1322,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     extends = " : " + base_name + "()" if base_name != "" else ""
 
     lines: list[str] = []
-    lines.append(indent + "open class " + class_name + extends + " {")
+    lines.append(indent + "open class " + class_name + "()" + extends + " {")
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
@@ -1321,21 +1339,13 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     body_any = cls.get("body")
     body = body_any if isinstance(body_any, list) else []
 
-    has_init = False
     i = 0
     while i < len(body):
         node = body[i]
         if isinstance(node, dict) and node.get("kind") == "FunctionDef":
-            if _safe_ident(node.get("name"), "") == "__init__":
-                has_init = True
             lines.append("")
             lines.extend(_emit_function(node, indent=indent + "    ", in_class=True))
         i += 1
-
-    if not has_init:
-        if len(body) > 0:
-            lines.append("")
-        lines.append(indent + "    constructor()")
 
     lines.append(indent + "}")
     return lines
@@ -1670,9 +1680,15 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
 
     global _CLASS_NAMES
     _CLASS_NAMES = set()
+    global _FUNCTION_NAMES
+    _FUNCTION_NAMES = set()
     i = 0
     while i < len(classes):
         _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
+        i += 1
+    i = 0
+    while i < len(functions):
+        _FUNCTION_NAMES.add(_safe_ident(functions[i].get("name"), "func"))
         i += 1
 
     lines: list[str] = []

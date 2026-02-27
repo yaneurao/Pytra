@@ -158,7 +158,7 @@ def _cast_from_any(expr: str, go_type: str) -> str:
     if go_type == "any":
         return expr
     if go_type.startswith("*"):
-        return expr + ".(" + go_type + ")"
+        return expr
     return expr
 
 

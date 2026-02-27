@@ -116,7 +116,7 @@
 7. [x] [ID: P3-GSK-NATIVE-01-S3-02] Swift の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
 8. [x] [ID: P3-GSK-NATIVE-01-S4-01] Kotlin native emitter 骨格と `py2kotlin.py` 既定切替を実装する。
 9. [x] [ID: P3-GSK-NATIVE-01-S4-02] Kotlin の式/文/class 基本対応を実装し、`sample/py` 前半ケースを通す。
-10. [ ] [ID: P3-GSK-NATIVE-01-S5-01] 3言語の transpile/smoke/parity 回帰を native 既定で通し、CI 導線を更新する。
+10. [x] [ID: P3-GSK-NATIVE-01-S5-01] 3言語の transpile/smoke/parity 回帰を native 既定で通し、CI 導線を更新する。
 11. [ ] [ID: P3-GSK-NATIVE-01-S5-02] `sample/go` / `sample/swift` / `sample/kotlin` 再生成とドキュメント同期を行う。
 - `P3-GSK-NATIVE-01-S1-01` 共通契約 spec を追加（`docs-ja/spec/spec-gsk-native-backend.md` / `docs/spec/spec-gsk-native-backend.md`）。EAST3 入力責務・fail-closed・runtime 境界・sidecar 隔離方針を固定。
 - `P3-GSK-NATIVE-01-S1-02` 同 spec に互換モード隔離ポリシーを追記し、`--go-backend/--swift-backend/--kotlin-backend sidecar` の明示 opt-in と「既定 native + 自動フォールバック禁止」を固定。
@@ -126,6 +126,7 @@
 - `P3-GSK-NATIVE-01-S3-02` Swift native emitter の本文 lower（`Return/Assign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、isinstance）を実装し、`test_py2swift_smoke.py`（`10/10`）/ `check_py2swift_transpile`（`132/132`）と `sample/py` 前半ケース（`01/06/09`）の native 生成確認を完了。
 - `P3-GSK-NATIVE-01-S4-01` `kotlin_native_emitter.py` を追加し、`py2kotlin.py` へ `--kotlin-backend {native,sidecar}` を配線して既定を native 化。`test_py2kotlin_smoke.py`（`10/10`）と `check_py2kotlin_transpile`（`132/132`）の通過を確認。
 - `P3-GSK-NATIVE-01-S4-02` Kotlin native emitter の本文 lower（`Return/Assign/If/ForCore/While`、主要式、`math` 呼び出し、`list/subscript/listcomp`、class/init、isinstance）を実装し、`test_py2kotlin_smoke.py`（`10/10`）/ `check_py2kotlin_transpile`（`132/132`）と `sample/py` 前半ケース（`01/06/09`）の native 生成確認を完了。
+- `P3-GSK-NATIVE-01-S5-01` 回帰導線 `tools/check_gsk_native_regression.py` を追加し、`test_py2{go,swift,kotlin}_smoke` / `check_py2{go,swift,kotlin}_transpile` / `runtime_parity_check --targets go,kotlin`（fixture + sample前半9件）を統合実行して通過を確認。`runtime_parity_check` に `--swift-backend` / `--kotlin-backend` を追加し、Swift は runner 制約により parity 対象から除外（native 既定は smoke/transpile で監視）。
 
 ### P3: microgpt 原本保全タスク再開（低優先）
 
