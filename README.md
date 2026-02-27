@@ -1,25 +1,39 @@
-# What is Pytra?
-
 <a href="docs/ja/README.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-2563EB?style=flat-square">
 </a>
 
-Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
+<p align="center">
+  <img src="docs/images/pytra-code-alchemist-s.png" alt="Pytra Code Alchemist" width="256">
+</p>
 
-Supported frontend:
-![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+<div align="center">
+    <h1>Pytra</h1>
+    Pytra is a collection of transpilers that convert programs written in a subset of Python into multiple target languages.
+    <p><a href="docs/en/index.md">Read the Docs</a></p>
 
-Supported backends:
-![C++](https://img.shields.io/badge/-C%2B%2B%C2%A0%C2%A0%C2%A0-00599C?style=flat-square&logo=cplusplus&logoColor=white)
-![Rust](https://img.shields.io/badge/-Rust%C2%A0%C2%A0-F6B73C?style=flat-square&logo=rust&logoColor=black)
-![C#](https://img.shields.io/badge/-C%23%C2%A0%C2%A0%C2%A0%C2%A0-239120?style=flat-square&logo=csharp&logoColor=white)
-![JS](https://img.shields.io/badge/-JS%C2%A0%C2%A0%C2%A0%C2%A0-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![TS](https://img.shields.io/badge/-TS%C2%A0%C2%A0%C2%A0%C2%A0-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Go](https://img.shields.io/badge/-Go%C2%A0%C2%A0%C2%A0%C2%A0-00ADD8?style=flat-square&logo=go&logoColor=white)
-![Java](https://img.shields.io/badge/-Java%C2%A0%C2%A0-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
-![Swift](https://img.shields.io/badge/-Swift%C2%A0-F05138?style=flat-square&logo=swift&logoColor=white)
-![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
-![Ruby](https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white)
+<table align="center">
+  <tr>
+    <td nowrap>
+      <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/images/brush-arrow.png" alt="arrow" width="64">
+    </td>
+    <td align="center">
+      <img alt="C++" src="https://img.shields.io/badge/-C%2B%2B%C2%A0%C2%A0%C2%A0-00599C?style=flat-square&logo=cplusplus&logoColor=white">
+      <img alt="Rust" src="https://img.shields.io/badge/-Rust%C2%A0%C2%A0-F6B73C?style=flat-square&logo=rust&logoColor=black">
+      <img alt="C#" src="https://img.shields.io/badge/-C%23%C2%A0%C2%A0%C2%A0%C2%A0-239120?style=flat-square&logo=dotnet&logoColor=white">
+      <img alt="JS" src="https://img.shields.io/badge/-JS%C2%A0%C2%A0%C2%A0%C2%A0-F7DF1E?style=flat-square&logo=javascript&logoColor=black">
+      <img alt="TS" src="https://img.shields.io/badge/-TS%C2%A0%C2%A0%C2%A0%C2%A0-3178C6?style=flat-square&logo=typescript&logoColor=white">
+      <img alt="Go" src="https://img.shields.io/badge/-Go%C2%A0%C2%A0%C2%A0%C2%A0-00ADD8?style=flat-square&logo=go&logoColor=white">
+      <br>
+      <img alt="Java" src="https://img.shields.io/badge/-Java%C2%A0%C2%A0-ED8B00?style=flat-square&logo=openjdk&logoColor=white">
+      <img alt="Swift" src="https://img.shields.io/badge/-Swift%C2%A0-F05138?style=flat-square&logo=swift&logoColor=white">
+      <img alt="Kotlin" src="https://img.shields.io/badge/-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
+      <img alt="Ruby" src="https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white">
+      <img alt="Lua" src="https://img.shields.io/badge/-Lua%C2%A0%C2%A0%C2%A0-4C6EF5?style=flat-square&logo=lua&logoColor=white">
+      <img alt="PHP" src="https://img.shields.io/badge/-PHP%C2%A0%C2%A0%C2%A0-777BB4?style=flat-square&logo=php&logoColor=white">
+    </td>
+  </tr>
+</table>
+</div>
 
 ## Latest News
 
@@ -535,20 +549,6 @@ if __name__ == "__main__":
 - Ruby: [View full code](sample/ruby/16_glass_sculpture_chaos.rb)
 
 </details>
-
-## Documentation
-
-The related documents are listed below in the order they are most frequently referenced during usage.
-
-- Start with usage instructions: [Usage Guide](docs/en/how-to-use.md)
-- Check the developer utility script list: [Tools](docs/en/spec/spec-tools.md)
-- Review option design (performance/compatibility trade-offs): [Options Specification](docs/en/spec/spec-options.md)
-- Review runtime layout and include conventions: [Runtime Specification](docs/en/spec/spec-runtime.md)
-- Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/en/plans/pytra-wip.md)
-- Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](docs/en/language/cpp/spec-support.md)
-- Browse sample list and overview: [Sample Code Guide](sample/readme.md)
-- Review specs, constraints, architecture, and operational rules: [Specification Index](docs/en/spec/index.md)
-- Motivation and design philosophy: [Development Philosophy](docs/en/spec/spec-philosophy.md)
 
 ## License
 
