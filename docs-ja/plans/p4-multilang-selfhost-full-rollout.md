@@ -45,6 +45,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S1`] `prepare_selfhost_source_cs.py` に C++ selfhost 同等の hook 無効化パッチ（`_call_hook` stub 化 + `set_dynamic_hooks_enabled(False)`）を追加して再検証したが、`selfhost/py2cs.py` の `CSharpEmitter._walk_node_names` 内 `node.get(...)` で同系統の制約違反が継続（`object receiver attribute/method access`）。PoC の阻害要因は dynamic hook 以外にも存在すると確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S1`] `CSharpEmitter._walk_node_names` の `Any` 直アクセス（`node.get` / `node.items`）を helper 経由へ置換し、`prepare_selfhost_source_cs.py` 再生成後の `python3 src/py2cs.py selfhost/py2cs.py -o /tmp/cs_selfhost_full_stage1.cs` が成功することを確認した。単体 selfhost source PoC の阻害要因は parse 制約から compile 失敗（`default literal` / C++風テンプレート断片混入等）へ遷移した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S1`] `tools/check_cs_single_source_selfhost_compile.py` を追加し、単体 selfhost source compile 失敗の定期分類レポート `docs-ja/plans/p4-cs-single-source-selfhost-compile-status.md` を生成した。`mcs -langversion:latest` 条件で `CS1525=175` / `CS1002=21` / `CS1519=6` / `CS1520=3` / `CS0136=2` を固定し、主因を「テンプレート断片混入」と「呼び出し形状崩れ」に分類した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S2`] C# emitter の compile 失敗要因に対し、`JoinedStr` lower（C# 補間文字列）/`Set` lower（`HashSet<object>`）/optional 引数の suffix 制約順守/ローカル変数 shadow 回避を実装。`python3 test/unit/test_py2cs_smoke.py`（26件）と `python3 tools/check_cs_single_source_selfhost_compile.py` を再実行し、`CS1525/CS1002` を 0 件化した。現状の先頭阻害は `mcs` 内部例外 `NotImplementedException: tuples > 7` に収束した。
 
 ## 現状固定（S1-01）
 
@@ -112,7 +113,8 @@
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S1] 単体 selfhost source PoC の parse 制約（object receiver access）を解消し、`selfhost/py2cs.py` の C# 変換を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2] 単体 selfhost source 生成物（`cs_selfhost_full_stage1.cs`）の compile 失敗を分類し、mcs 通過に必要な emit/runtime 互換ギャップを埋める。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S1] compile 失敗の機械分類ツールを追加し、エラーコード/カテゴリの現状値をレポート化する。
-- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S2] 分類結果（テンプレート断片混入 / 呼び出し形状崩れ / shadowed local）に対応する修正を実装し、`CS1525/CS1002` を段階的に削減する。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S2] 分類結果（テンプレート断片混入 / 呼び出し形状崩れ / shadowed local）に対応する修正を実装し、`CS1525/CS1002` を段階的に削減する。
+- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S3] `mcs` 内部例外（`tuples > 7`）を回避する emit 方針を実装し、stage2 compile を次段検証可能な状態へ戻す。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。
