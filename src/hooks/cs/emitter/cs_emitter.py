@@ -276,6 +276,8 @@ class CSharpEmitter(CodeEmitter):
                 return "System.Collections.Generic.Dictionary<" + self._cs_type(parts[0]) + ", " + self._cs_type(parts[1]) + ">"
         if t.startswith("tuple[") and t.endswith("]"):
             parts = self.split_generic(t[6:-1].strip())
+            if not self._is_value_tuple_arity(len(parts)):
+                return "System.Collections.Generic.List<object>"
             rendered: list[str] = []
             for part in parts:
                 rendered.append(self._cs_type(part))
@@ -450,6 +452,20 @@ class CSharpEmitter(CodeEmitter):
             .replace("{", "{{")
             .replace("}", "}}")
         )
+
+    def _tuple_arity_from_type_name(self, east_type: str) -> int:
+        """`tuple[...]` 型名から要素数を返す（非 tuple は 0）。"""
+        norm = self.normalize_type_name(east_type)
+        if not (norm.startswith("tuple[") and norm.endswith("]")):
+            return 0
+        inner = norm[6:-1].strip()
+        if inner == "":
+            return 0
+        return len(self.split_generic(inner))
+
+    def _is_value_tuple_arity(self, arity: int) -> bool:
+        """mcs で安全に扱える C# tuple arity か。"""
+        return arity >= 2 and arity <= 7
 
     def _render_range_expr(self, expr_d: dict[str, Any]) -> str:
         """RangeExpr を C# `List<long>` 生成式へ lower する。"""
@@ -1231,11 +1247,16 @@ class CSharpEmitter(CodeEmitter):
             tuple_value = self.render_expr(value_obj)
             tmp_name = self.next_tmp("__tmp")
             self.emit("var " + tmp_name + " = " + tuple_value + ";")
+            tuple_arity = self._tuple_arity_from_type_name(self.get_expr_type(value_obj))
+            use_indexed_access = len(items) > 7 or tuple_arity == 1 or tuple_arity > 7
             i = 0
             while i < len(items):
                 item_node = self.any_to_dict_or_empty(items[i])
                 item_kind = self.any_dict_get_str(item_node, "kind", "")
-                item_expr = tmp_name + ".Item" + str(i + 1)
+                if use_indexed_access:
+                    item_expr = tmp_name + "[" + str(i) + "]"
+                else:
+                    item_expr = tmp_name + ".Item" + str(i + 1)
                 if item_kind == "Name":
                     raw = self.any_dict_get_str(item_node, "id", "")
                     if raw != "":
@@ -1798,9 +1819,11 @@ class CSharpEmitter(CodeEmitter):
             rendered: list[str] = []
             for elt in elts:
                 rendered.append(self.render_expr(elt))
-            if len(rendered) == 1:
-                return "(" + rendered[0] + ",)"
-            return "(" + ", ".join(rendered) + ")"
+            if self._is_value_tuple_arity(len(rendered)):
+                return "(" + ", ".join(rendered) + ")"
+            if len(rendered) == 0:
+                return "new System.Collections.Generic.List<object>()"
+            return "new System.Collections.Generic.List<object> { " + ", ".join(rendered) + " }"
 
         if kind == "Dict":
             return self._typed_dict_literal(expr_d)

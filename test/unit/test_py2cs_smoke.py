@@ -491,6 +491,33 @@ def stop() -> None:
 
         self.assertIn("return $\"{prefix}_{n}\";", cs)
 
+    def test_large_tuple_is_lowered_to_list_object_for_mcs_compat(self) -> None:
+        src = """def f() -> tuple[str, str, str, str, str, str, str, str]:
+    return ("a", "b", "c", "d", "e", "f", "g", "h")
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "large_tuple.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("public static System.Collections.Generic.List<object> f()", cs)
+        self.assertIn("return new System.Collections.Generic.List<object> { \"a\", \"b\", \"c\", \"d\", \"e\", \"f\", \"g\", \"h\" };", cs)
+
+    def test_large_tuple_unpack_uses_indexer_instead_of_item8(self) -> None:
+        src = """def f() -> str:
+    a0, a1, a2, a3, a4, a5, a6, a7 = ("a", "b", "c", "d", "e", "f", "g", "h")
+    return a7
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "large_tuple_unpack.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("[7]", cs)
+        self.assertNotIn(".Item8", cs)
+
     def test_render_expr_kind_specific_hook_precedes_leaf_hook(self) -> None:
         emitter = CSharpEmitter({"kind": "Module", "body": [], "meta": {}})
         emitter.hooks["on_render_expr_name"] = (
