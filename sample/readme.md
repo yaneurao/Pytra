@@ -69,7 +69,7 @@ Notes:
 - Java: `javac` + `java`
 - Swift: Executable built with `swiftc`
 - Kotlin: `jar` built with `kotlinc -include-runtime`
-- Ruby: `ruby sample/ruby/<file>.rb`
+- Ruby: `ruby --yjit sample/ruby/<file>.rb` (for benchmarking; regular runs can use `ruby sample/ruby/<file>.rb`)
 
 Note:
 - `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` are currently in preview emitter status.
@@ -79,6 +79,7 @@ Note:
 
 - Values in `readme.md` are measured as of 2026-02-26 for all 18 `sample/py` cases using current transpiler outputs (rounded to 3 decimals).
 - Measurement protocol: fresh transpile, `warmup=1`, `repeat=5`, median of `elapsed_sec` (compile time excluded).
+- Ruby benchmarks are run with `ruby --yjit`.
 - In the latest measurement, there are no `>1.5x` gaps (all 18 cases are `<=1.5x`).
 - Go/Java/Swift/Kotlin currently run via the JS sidecar bridge, so their numbers reflect that bridge execution path.
 - Output parity is confirmed for all 18 `sample/py` cases across `cpp/rs/cs/js/ts/go/java/swift/kotlin` (S3-S7 verification logs from `tools/runtime_parity_check.py`).
