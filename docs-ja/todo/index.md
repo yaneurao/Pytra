@@ -43,9 +43,9 @@
 6. [x] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
 7. [x] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
 8. [x] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
-9. [ ] [ID: P0-SIDECAR-REMOVE-01-S5-01] Go native parity 失敗 6 ケース（`10/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
-10. [ ] [ID: P0-SIDECAR-REMOVE-01-S5-02] Kotlin native parity 失敗 7 ケース（`10/12/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
-11. [ ] [ID: P0-SIDECAR-REMOVE-01-S5-03] `runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` を再実行し、`case_fail=0` で親 `P0-SIDECAR-REMOVE-01` を完了化する。
+9. [x] [ID: P0-SIDECAR-REMOVE-01-S5-01] Go native parity 失敗 6 ケース（`10/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
+10. [x] [ID: P0-SIDECAR-REMOVE-01-S5-02] Kotlin native parity 失敗 7 ケース（`10/12/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
+11. [x] [ID: P0-SIDECAR-REMOVE-01-S5-03] `runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` を再実行し、`case_fail=0` で親 `P0-SIDECAR-REMOVE-01` を完了化する。
 - `P0-SIDECAR-REMOVE-01-S1-01` `py2{go,java,swift,kotlin}.py` から `--*-backend` CLI と sidecar 分岐（`.js` 生成・runtime shim 出力）を削除し、native 直生成へ統一した。
 - `P0-SIDECAR-REMOVE-01-S1-02` sidecar emitter 4ファイル（`go/java/swift/kotlin *_emitter.py`）を削除し、`hooks/*/emitter/__init__.py` は native 実装へ委譲する互換 API のみに整理した。
 - `P0-SIDECAR-REMOVE-01-S2-01` `test_py2{go,java,swift,kotlin}_smoke.py` と `runtime_parity_check.py` / `check_gsk_native_regression.py` から sidecar 引数・前提を除去し、native-only 回帰を unit test（`51/51`）で確認した。
@@ -54,6 +54,9 @@
 - `P0-SIDECAR-REMOVE-01-S3-02` 英語版 `docs/how-to-use.md` / `docs/spec/spec-import.md` / `docs/spec/spec-gsk-native-backend.md` / `docs/spec/spec-java-native-backend.md` を同期し、日英で sidecar 記述の整合性を確保した。
 - `P0-SIDECAR-REMOVE-01-S4-01` 最終回帰を実行し、`check_py2{go,java,swift,kotlin}_transpile.py` は `ok=132 fail=0 skipped=6` で通過、`find sample/{go,java,swift,kotlin} -name '*.js' | wc -l` は `0` を確認した。`runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` は `case_pass=11 case_fail=7 (run_failed=13, toolchain_missing=18)` で失敗し、失敗は Go/Kotlin native 既存課題（型/宣言衝突）に起因することを記録した。
 - `P0-SIDECAR-REMOVE-01-S5-*` ユーザー指示により、Go/Kotlin parity 失敗 7 ケース（Go 6 + Kotlin 7、重複あり）を順に潰すタスクを最優先として追加した。
+- `P0-SIDECAR-REMOVE-01-S5-01` Go 失敗 6 ケース（`10/13/14/15/16/18`）を修正し、`runtime_parity_check --targets go` で `cases=6 pass=6 fail=0` を確認した。
+- `P0-SIDECAR-REMOVE-01-S5-02` Kotlin 失敗 7 ケース（`10/12/13/14/15/16/18`）を修正し、`runtime_parity_check --targets kotlin` で `cases=7 pass=7 fail=0` を確認した。
+- `P0-SIDECAR-REMOVE-01-S5-03` `runtime_parity_check --targets go,java,swift,kotlin --all-samples` を再実行し、`cases=18 pass=18 fail=0`（`toolchain_missing=18` は Swift）を確認した。
 
 ### P0: ForCore tuple unpack 型伝播改善（最優先）
 

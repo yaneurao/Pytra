@@ -50,6 +50,9 @@
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S3-02`] 英語版 `docs/how-to-use.md` / `docs/spec/spec-import.md` / `docs/spec/spec-gsk-native-backend.md` / `docs/spec/spec-java-native-backend.md` を同期し、日英で sidecar 記述の不整合を解消した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S4-01`] 最終回帰を実行。`check_py2{go,java,swift,kotlin}_transpile.py` はすべて `checked=132 ok=132 fail=0 skipped=6` で通過し、`find sample/go sample/java sample/swift sample/kotlin -name '*.js' | wc -l` は `0` を確認。`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` は `case_pass=11 case_fail=7 (run_failed=13, toolchain_missing=18)` で失敗し、Go/Kotlin native 既存課題（型不整合・宣言衝突）を確認した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S5-*`] ユーザー指示により、parity 失敗 7 ケース（Go: `10/13/14/15/16/18`, Kotlin: `10/12/13/14/15/16/18`）の逐次解消を最優先に設定した。
+- 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S5-01`] Go emitter を修正し、`python3 tools/runtime_parity_check.py --case-root sample --targets go 10_plasma_effect 13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop 16_glass_sculpture_chaos 18_mini_language_interpreter --ignore-unstable-stdout` が `cases=6 pass=6 fail=0` を確認。併せて `python3 tools/check_py2go_transpile.py`（`ok=132 fail=0`）と `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`（`9/9`）を再確認した。
+- 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S5-02`] Kotlin emitter を修正し、`python3 tools/runtime_parity_check.py --case-root sample --targets kotlin 10_plasma_effect 12_sort_visualizer 13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop 16_glass_sculpture_chaos 18_mini_language_interpreter --ignore-unstable-stdout` が `cases=7 pass=7 fail=0` を確認。併せて `python3 tools/check_py2kotlin_transpile.py`（`ok=132 fail=0`）と `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（`9/9`）を確認した。
+- 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S5-03`] `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` を再実行し、`cases=18 pass=18 fail=0`（`ok=54`, `toolchain_missing=18` は Swift toolchain 未導入）を確認して親 `P0-SIDECAR-REMOVE-01` の完了条件を満たした。
 
 ## 分解
 
@@ -60,6 +63,6 @@
 - [x] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
-- [ ] [ID: P0-SIDECAR-REMOVE-01-S5-01] Go native parity 失敗 6 ケース（`10/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
-- [ ] [ID: P0-SIDECAR-REMOVE-01-S5-02] Kotlin native parity 失敗 7 ケース（`10/12/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
-- [ ] [ID: P0-SIDECAR-REMOVE-01-S5-03] `runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` を再実行し、`case_fail=0` を確認して親 `P0-SIDECAR-REMOVE-01` を完了化する。
+- [x] [ID: P0-SIDECAR-REMOVE-01-S5-01] Go native parity 失敗 6 ケース（`10/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
+- [x] [ID: P0-SIDECAR-REMOVE-01-S5-02] Kotlin native parity 失敗 7 ケース（`10/12/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
+- [x] [ID: P0-SIDECAR-REMOVE-01-S5-03] `runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` を再実行し、`case_fail=0` を確認して親 `P0-SIDECAR-REMOVE-01` を完了化する。
