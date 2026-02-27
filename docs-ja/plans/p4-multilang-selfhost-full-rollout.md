@@ -50,6 +50,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S4`] C# class 出力で base 句（`class Child : Base`）を維持する修正を追加し、自己変換生成物で継承チェーンが復元されるようにした。`python3 tools/check_cs_single_source_selfhost_compile.py` の再計測で `CS1061` は `469 -> 109` に縮退し、失敗件数上位の先頭カテゴリを削減できた。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S5`] `set/list/dict` の lower を型ヒント連動で補強し、`for ch in str` を `ToString()` 投影に変換、`strip/find/rfind/replace` lower を追加した。`python3 test/unit/test_py2cs_smoke.py`（32件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1061` は `109 -> 20`、`CS0103` は `81 -> 36` へ縮退した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6`] `@staticmethod/@classmethod` の static 出力を実装し、`json.loads` lower と `dict.get/items` の unknown 型フォールバックを追加した。`python3 test/unit/test_py2cs_smoke.py`（32件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0120` は `5 -> 0`、`CS1061` は `20 -> 10`、`CS0103` は `36 -> 34` に縮退した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CSharpEmitter._collect_using_lines` のローカル helper をクラスメソッドへ抽出し、`_emit_assign` の `item_expr` を事前初期化した。`python3 test/unit/test_py2cs_smoke.py`（34件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0103` を `34 -> 12` へ縮退させた（`CS1503/CS0266` は継続課題）。
 
 ## 現状固定（S1-01）
 

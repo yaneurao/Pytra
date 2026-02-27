@@ -128,6 +128,13 @@ class CSharpEmitter(CodeEmitter):
             self._walk_node_names(stmt, used)
         return used
 
+    def _add_unique_using_line(self, out: list[str], seen: set[str], line: str) -> None:
+        """using 行を重複排除しつつ追加する。"""
+        if line == "" or line in seen:
+            return
+        seen.add(line)
+        out.append(line)
+
     def _collect_using_lines(
         self,
         body: list[dict[str, Any]],
@@ -138,16 +145,10 @@ class CSharpEmitter(CodeEmitter):
         out: list[str] = []
         seen: set[str] = set(out)
 
-        def _add(line: str) -> None:
-            if line == "" or line in seen:
-                return
-            seen.add(line)
-            out.append(line)
-
-        _add("using System;")
-        _add("using System.Collections.Generic;")
-        _add("using System.Linq;")
-        _add("using Pytra.CsModule;")
+        self._add_unique_using_line(out, seen, "using System;")
+        self._add_unique_using_line(out, seen, "using System.Collections.Generic;")
+        self._add_unique_using_line(out, seen, "using System.Linq;")
+        self._add_unique_using_line(out, seen, "using Pytra.CsModule;")
 
         bindings = self.any_to_dict_list(meta.get("import_bindings"))
         if len(bindings) > 0:
@@ -166,7 +167,7 @@ class CSharpEmitter(CodeEmitter):
                     continue
                 alias_target = self._module_alias_target(module_id, export_name, binding_kind)
                 if alias_target != "" and local_name != "" and local_name in used_names:
-                    _add("using " + self._safe_name(local_name) + " = " + alias_target + ";")
+                    self._add_unique_using_line(out, seen, "using " + self._safe_name(local_name) + " = " + alias_target + ";")
                     i += 1
                     continue
                 if binding_kind == "symbol" and module_id in {"time", "dataclasses"}:
@@ -183,15 +184,15 @@ class CSharpEmitter(CodeEmitter):
                             continue
                         leaf = self._last_dotted_name(module_id)
                         if local_name != leaf:
-                            _add("using " + self._safe_name(local_name) + " = " + ns + ";")
+                            self._add_unique_using_line(out, seen, "using " + self._safe_name(local_name) + " = " + ns + ";")
                         else:
-                            _add("using " + ns + ";")
+                            self._add_unique_using_line(out, seen, "using " + ns + ";")
                     else:
-                        _add("using " + ns + ";")
+                        self._add_unique_using_line(out, seen, "using " + ns + ";")
                 elif binding_kind == "symbol" and export_name != "":
                     if local_name != "" and local_name in used_names:
                         if local_name != export_name:
-                            _add("using " + self._safe_name(local_name) + " = " + ns + "." + export_name + ";")
+                            self._add_unique_using_line(out, seen, "using " + self._safe_name(local_name) + " = " + ns + "." + export_name + ";")
                 i += 1
             return out
 
@@ -210,11 +211,11 @@ class CSharpEmitter(CodeEmitter):
                         if asname != "":
                             if asname not in used_names:
                                 continue
-                            _add("using " + self._safe_name(asname) + " = " + alias_target + ";")
+                            self._add_unique_using_line(out, seen, "using " + self._safe_name(asname) + " = " + alias_target + ";")
                         else:
                             leaf_alias = self._last_dotted_name(module_id)
                             if leaf_alias in used_names:
-                                _add("using " + self._safe_name(leaf_alias) + " = " + alias_target + ";")
+                                self._add_unique_using_line(out, seen, "using " + self._safe_name(leaf_alias) + " = " + alias_target + ";")
                         continue
                     ns = self._module_id_to_cs_namespace(module_id)
                     if ns == "":
@@ -222,12 +223,12 @@ class CSharpEmitter(CodeEmitter):
                     if asname != "":
                         if asname not in used_names:
                             continue
-                        _add("using " + self._safe_name(asname) + " = " + ns + ";")
+                        self._add_unique_using_line(out, seen, "using " + self._safe_name(asname) + " = " + ns + ";")
                     else:
                         leaf = self._last_dotted_name(module_id)
                         if leaf not in used_names:
                             continue
-                        _add("using " + ns + ";")
+                        self._add_unique_using_line(out, seen, "using " + ns + ";")
             elif kind == "ImportFrom":
                 module_id = self.any_to_str(stmt.get("module"))
                 if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
@@ -246,14 +247,14 @@ class CSharpEmitter(CodeEmitter):
                     if alias_target != "":
                         alias_name = asname if asname != "" else sym
                         if alias_name in used_names:
-                            _add("using " + self._safe_name(alias_name) + " = " + alias_target + ";")
+                            self._add_unique_using_line(out, seen, "using " + self._safe_name(alias_name) + " = " + alias_target + ";")
                         continue
                     if asname != "" and asname != sym:
                         if asname not in used_names:
                             continue
-                        _add("using " + self._safe_name(asname) + " = " + ns + "." + sym + ";")
+                        self._add_unique_using_line(out, seen, "using " + self._safe_name(asname) + " = " + ns + "." + sym + ";")
                     elif sym in used_names:
-                        _add("using " + ns + ";")
+                        self._add_unique_using_line(out, seen, "using " + ns + ";")
         return out
 
     def _cs_type(self, east_type: str) -> str:
@@ -1308,6 +1309,7 @@ class CSharpEmitter(CodeEmitter):
             while i < len(items):
                 item_node = self.any_to_dict_or_empty(items[i])
                 item_kind = self.any_dict_get_str(item_node, "kind", "")
+                item_expr = ""
                 if use_indexed_access:
                     item_expr = tmp_name + "[" + str(i) + "]"
                 else:
