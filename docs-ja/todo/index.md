@@ -38,6 +38,18 @@
 1. [ ] [ID: P0-FORCORE-TYPE-01-S3-01] `enumerate(list[T])` など要素型が確定している `ForCore(RuntimeIterForPlan)` について、C++ 生成の loop carrier を `object + py_dyn_range(...)` ではなく typed tuple 受けへ切り替える（未知型/非対応 iterable は従来どおり `object` フォールバックを維持）。
 2. [ ] [ID: P0-FORCORE-TYPE-01-S3-02] `sample/18` を含む回帰テストを追加し、loop header が typed で出力されることと parity/コンパイル互換を固定する。
 
+### P1: Go/Java/Swift/Ruby runtime 外出し（inline helper 撤去）
+
+文脈: [docs-ja/plans/p1-runtime-externalization-gjsr.md](../plans/p1-runtime-externalization-gjsr.md)
+
+1. [ ] [ID: P1-RUNTIME-EXT-01] Go/Java/Swift/Ruby の生成コードから `__pytra_*` runtime helper の inline 定義を撤去し、言語別 runtime ファイル参照へ統一する。
+2. [ ] [ID: P1-RUNTIME-EXT-01-S1-01] 現行 emitter が inline 出力している helper 群を言語別に棚卸しし、runtime 側 API（正本）との対応表を固定する。
+3. [ ] [ID: P1-RUNTIME-EXT-01-S2-01] Go backend を runtime 外部参照方式へ移行し、`py2go` 出力から helper 本体を除去する。
+4. [ ] [ID: P1-RUNTIME-EXT-01-S2-02] Java backend を runtime 外部参照方式へ移行し、`py2java` 出力から helper 本体を除去する。
+5. [ ] [ID: P1-RUNTIME-EXT-01-S2-03] Swift backend 用の native runtime ファイルを整備し、`py2swift` 出力から helper 本体を除去する。
+6. [ ] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby backend 用 runtime ファイルを新設し、`py2rb` 出力から helper 本体を除去する。
+7. [ ] [ID: P1-RUNTIME-EXT-01-S3-01] `runtime_parity_check` / smoke テスト / sample 再生成導線を runtime 外部参照前提に更新し、回帰を固定する。
+
 ### P4: 全言語 selfhost 完全化（低低優先）
 
 文脈: [docs-ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)
