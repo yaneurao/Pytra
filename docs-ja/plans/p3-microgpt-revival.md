@@ -34,10 +34,29 @@
 
 決定ログ:
 - 2026-02-26: ユーザー要望により、archive 移管済みの microgpt タスクを新規 ID で TODO に復活する方針を確定した。
+- 2026-02-27: [ID: `P3-MSP-REVIVE-01-S1-01`] archive 側の旧 `P3-MSP-*` と再開タスクの対応表を作成し、再開スコープを「監視導線の再固定（実装再開ではない）」へ明確化した。
+
+## 旧ID対応表（S1-01）
+
+| 旧ID | 旧タスク要約（archive） | 再開側の扱い |
+| --- | --- | --- |
+| `P3-MSP-01` | 原本改変項目の責務再分類（parser/lower/runtime） | `P3-MSP-REVIVE-01-S1-01` で履歴参照対象として継承 |
+| `P3-MSP-02` | 原本入力失敗要因 A〜F の再現・列挙 | `P3-MSP-REVIVE-01-S1-01` で分類軸を継承、`S2-02` のログ分類テンプレへ接続 |
+| `P3-MSP-03` | 原本で transpile -> syntax-check 成功（`stage=SUCCESS`）まで前進 | `P3-MSP-REVIVE-01-S1-02` で現行期待値を再確認する対象 |
+| `P3-MSP-04` | parser: 無注釈引数/inline method 受理拡張 | 旧実装完了履歴として参照のみ（再開で再実装しない） |
+| `P3-MSP-05` | parser: top-level `for`/tuple代入/複数内包の受理拡張 | 旧実装完了履歴として参照のみ（再開で再実装しない） |
+| `P3-MSP-06` | EAST/emitter: `range(...)` lower 整合 | 旧実装完了履歴として参照のみ（再開で再実装しない） |
+| `P3-MSP-07` | EAST/emitter: `zip` 経由の型崩れ安定化 | 旧実装完了履歴として参照のみ（再開で再実装しない） |
+| `P3-MSP-08` | runtime/std 互換差分（`open`/`index`/`shuffle`）整理 | 旧実装完了履歴として参照のみ（再開で再実装しない） |
+| `P3-MSP-09` | 原本固定の回帰導線（`check_microgpt_original_py2cpp_regression.py`）整備 | `P3-MSP-REVIVE-01-S2-01` で現行運用基準へ見直す対象 |
+
+再開スコープ（S1-01 決定）:
+- 再開 ID は「原本入力の検証導線・期待値・障害分類テンプレート」を維持/更新する運用タスクに限定する。
+- parser/lower/runtime の追加機能実装は、現時点では再開対象外（必要時は別IDで新規起票）とする。
 
 ## 分解
 
-- [ ] [ID: P3-MSP-REVIVE-01-S1-01] archive 側の `P3-MSP-*` 履歴と再開スコープの対応表を作成し、再開対象を明確化する。
+- [x] [ID: P3-MSP-REVIVE-01-S1-01] archive 側の `P3-MSP-*` 履歴と再開スコープの対応表を作成し、再開対象を明確化する。
 - [ ] [ID: P3-MSP-REVIVE-01-S1-02] 原本 `microgpt` 入力の transpile / syntax-check / 実行確認の現行手順を再確認し、期待値を固定する。
 - [ ] [ID: P3-MSP-REVIVE-01-S2-01] `check_microgpt_original_py2cpp_regression.py` を運用基準へ合わせて見直し、再発検知条件を更新する。
 - [ ] [ID: P3-MSP-REVIVE-01-S2-02] 失敗時に parser / lower / runtime の責務へ再分類できるログ運用テンプレートを整備する。
