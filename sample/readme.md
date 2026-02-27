@@ -51,6 +51,7 @@ Notes:
 - [`java/`](java): Java transpilation outputs
 - [`swift/`](swift): Swift transpilation outputs
 - [`kotlin/`](kotlin): Kotlin transpilation outputs
+- [`ruby/`](ruby): Ruby transpilation outputs
 - [`images/`](images): Static images for README rendering (tracked by Git)
 - `obj/`: Build artifacts for each language (not tracked by Git)
 - `out/`: Runtime output images (PNG/GIF, not tracked by Git)
@@ -68,6 +69,7 @@ Notes:
 - Java: `javac` + `java`
 - Swift: Executable built with `swiftc`
 - Kotlin: `jar` built with `kotlinc -include-runtime`
+- Ruby: `ruby sample/ruby/<file>.rb`
 
 Note:
 - `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` are currently in preview emitter status.

@@ -51,6 +51,7 @@
 - [`java/`](java): Java 変換結果
 - [`swift/`](swift): Swift 変換結果
 - [`kotlin/`](kotlin): Kotlin 変換結果
+- [`ruby/`](ruby): Ruby 変換結果
 - [`images/`](images): README 表示用の静的画像（Git 管理）
 - `obj/`: 各言語のビルド生成物（Git 管理外）
 - `out/`: 実行時の出力画像（PNG/GIF、Git 管理外）
@@ -68,6 +69,7 @@
 - Java: `javac` + `java`
 - Swift: `swiftc` でビルドした実行ファイル
 - Kotlin: `kotlinc -include-runtime` でビルドした `jar`
+- Ruby: `ruby sample/ruby/<file>.rb`
 
 注:
 - `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` は現在 preview emitter 段階です。

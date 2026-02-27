@@ -129,6 +129,22 @@ Notes:
 </details>
 
 <details>
+<summary>Ruby</summary>
+
+```bash
+python src/py2rb.py test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
+ruby test/transpile/ruby/iterable.rb
+```
+
+Notes:
+- `py2rb.py` generates Ruby source directly from EAST3 via the native emitter (`src/hooks/ruby/emitter/ruby_native_emitter.py`).
+- Image APIs (`png.write_rgb_png` / `save_gif`) are currently handled by no-op runtime hooks; use the backend primarily for syntax/execution-path regression checks at this stage.
+- Check transpile regressions with `python3 tools/check_py2rb_transpile.py`.
+- Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --ignore-unstable-stdout` (environments without Ruby toolchain are recorded as `toolchain_missing`).
+
+</details>
+
+<details>
 <summary>C#</summary>
 
 ```bash

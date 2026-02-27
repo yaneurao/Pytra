@@ -129,6 +129,22 @@ rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 </details>
 
 <details>
+<summary>Ruby</summary>
+
+```bash
+python src/py2rb.py test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
+ruby test/transpile/ruby/iterable.rb
+```
+
+補足:
+- `py2rb.py` は EAST3 から Ruby native emitter（`src/hooks/ruby/emitter/ruby_native_emitter.py`）で直接コード生成します。
+- 画像出力 API（`png.write_rgb_png` / `save_gif`）は現状 no-op runtime hook で受けるため、まずは出力一致よりも構文/実行導線の回帰監視に使ってください。
+- 変換回帰は `python3 tools/check_py2rb_transpile.py` で確認できます。
+- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --ignore-unstable-stdout` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
+
+</details>
+
+<details>
 <summary>C#</summary>
 
 ```bash
