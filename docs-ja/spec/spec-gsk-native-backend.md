@@ -4,8 +4,8 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-この文書は、`P3-GSK-NATIVE-01` で導入する `EAST3 -> Go/Swift/Kotlin native emitter` 経路の共通契約を定義する。  
-対象は「入力 EAST3 の責務」「未対応時 fail-closed」「runtime 境界」「sidecar 既定撤去時の運用要件」である。
+この文書は、`P3-GSK-NATIVE-01` で導入した `EAST3 -> Go/Swift/Kotlin native emitter` 経路の共通契約を定義する。  
+対象は「入力 EAST3 の責務」「未対応時 fail-closed」「runtime 境界」「sidecar 撤去後の運用要件」である。
 
 ## 1. 目的
 
@@ -13,9 +13,9 @@
 - 言語ごとの差分を許容しつつ、未対応時の失敗動作と runtime 境界を共通化する。
 - `sample/go` / `sample/swift` / `sample/kotlin` が preview ラッパーへ戻る回帰を防ぐ。
 
-## 2. sidecar 出力との差分
+## 2. sidecar 旧経路との差分
 
-現行（preview / sidecar）:
+旧経路（preview / sidecar, 撤去済み）:
 
 - `py2go.py` / `py2swift.py` / `py2kotlin.py` は sidecar JavaScript を生成し、各言語側は Node bridge ラッパーを出力する。
 - 生成コードは実ロジック本体を持たず、`node <sidecar.js>` 実行の薄いラッパーになりやすい。
@@ -25,7 +25,7 @@
 
 - 既定経路は native emitter のみを通し、`.js` sidecar を生成しない。
 - 生成コードは EAST3 本文ロジック（式/文/制御/クラス）を各言語コードとして直接保持する。
-- sidecar は明示 opt-in の互換モードに隔離し、既定では使用しない。
+- sidecar 互換モードは廃止し、native 単一路線で運用する。
 
 ## 3. 入力 EAST3 ノード責務
 
@@ -48,7 +48,7 @@ native 経路では「未対応入力を暗黙に sidecar へフォールバッ�
 - 未対応ノード `kind` を検出した場合は即時失敗（`RuntimeError` 相当）する。
 - エラー文面には少なくとも `lang`, `node kind`, `location`（可能な範囲）を含める。
 - CLI は非 0 終了し、不完全な生成物を成功扱いで出力しない。
-- 互換 sidecar 経路を残す場合も、明示指定時のみ利用可能にする。
+- 未対応入力を sidecar へ逃がす回避経路は持たない。
 
 ## 5. runtime 境界
 
@@ -70,12 +70,9 @@ native 生成物は次の runtime 境界のみを利用する。
 - `tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` で Python 基準との出力一致を監視する。
 - `sample/go` / `sample/swift` / `sample/kotlin` 再生成時に sidecar `.js` が残らないことを確認する。
 
-## 7. sidecar 互換モード隔離方針（S1-02）
+## 7. sidecar 撤去方針（S1-02）
 
-- 既定挙動は常に native とし、次の明示フラグ指定時のみ sidecar を許可する。
-  - Go: `--go-backend sidecar`
-  - Swift: `--swift-backend sidecar`
-  - Kotlin: `--kotlin-backend sidecar`
-- native 指定（または省略）時は `.js` sidecar と JS runtime shim を生成しない。
-- sidecar 指定時は互換モードとして `.js` 生成を許可するが、CI の既定回帰対象からは外す。
-- 既定経路で unsupported を検出した場合、sidecar へ自動フォールバックせず fail-closed で停止する。
+- `py2go.py` / `py2swift.py` / `py2kotlin.py` から `--*-backend sidecar` を削除し、backend 切替点を撤去する。
+- 生成経路は native のみとし、`.js` sidecar / JS runtime shim を一切生成しない。
+- CI の既定回帰・sample 再生成・parity 検証は native 経路のみを監視対象とする。
+- 既定経路で unsupported を検出した場合は fail-closed で停止する（sidecar への自動/手動退避は不可）。

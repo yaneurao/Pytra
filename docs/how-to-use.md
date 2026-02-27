@@ -182,7 +182,7 @@ go run test/transpile/go/iterable.go
 Notes:
 - `py2go.py` generates Go source directly from EAST3 via the native emitter (`src/hooks/go/emitter/go_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
-- Use `--go-backend sidecar` only when you explicitly need legacy compatibility mode.
+- Sidecar compatibility mode has been removed; only the native path is available.
 
 </details>
 
@@ -196,7 +196,9 @@ java -cp test/transpile/java iterable
 ```
 
 Notes:
-- Some `pylib` APIs used by `sample/py` require Java-side runtime extensions (see latest status in `docs/todo/index.md`).
+- `py2java.py` generates Java source directly from EAST3 via the native emitter (`src/hooks/java/emitter/java_native_emitter.py`).
+- Native generation is the default (no sidecar `.js` is emitted).
+- Sidecar compatibility mode has been removed; only the native path is available.
 
 </details>
 
@@ -212,7 +214,7 @@ swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.
 Notes:
 - `py2swift.py` generates Swift source directly from EAST3 via the native emitter (`src/hooks/swift/emitter/swift_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
-- Use `--swift-backend sidecar` only when you explicitly need legacy compatibility mode.
+- Sidecar compatibility mode has been removed; only the native path is available.
 
 </details>
 
@@ -228,7 +230,7 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 Notes:
 - `py2kotlin.py` generates Kotlin source directly from EAST3 via the native emitter (`src/hooks/kotlin/emitter/kotlin_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
-- Use `--kotlin-backend sidecar` only when you explicitly need legacy compatibility mode.
+- Sidecar compatibility mode has been removed; only the native path is available.
 
 </details>
 

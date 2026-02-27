@@ -288,7 +288,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Concrete implementation:
   - Import resolution uses EAST `meta.import_bindings` as the source of truth and does not re-emit Python import statements in native output.
   - Generated output is standalone native Go (`package main` + runtime helpers + lowered program body).
-  - Legacy sidecar mode is isolated behind explicit opt-in: `--go-backend sidecar`.
+  - Sidecar compatibility mode has been removed; only the native path is supported.
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Go code generation.
 
@@ -313,7 +313,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Concrete implementation:
   - Import resolution uses EAST `meta.import_bindings` as the source of truth and does not re-emit Python import statements in native output.
   - Generated output is native Swift source (`runtime helper` functions + lowered bodies + `@main` entry).
-  - Legacy sidecar mode is isolated behind explicit opt-in: `--swift-backend sidecar`.
+  - Sidecar compatibility mode has been removed; only the native path is supported.
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Swift code generation.
 
@@ -324,7 +324,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Concrete implementation:
   - Import resolution uses EAST `meta.import_bindings` as the source of truth and does not re-emit Python import statements in native output.
   - Generated output is standalone native Kotlin (`runtime helper` functions + lowered bodies + `main` entry).
-  - Legacy sidecar mode is isolated behind explicit opt-in: `--kotlin-backend sidecar`.
+  - Sidecar compatibility mode has been removed; only the native path is supported.
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Kotlin code generation.
 
@@ -333,5 +333,5 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Step 1: complete `ImportBinding` / `QualifiedSymbolRef` in C++ implementation (EAST path).
 - Step 2: port the same resolver to JS/TS shared base.
 - Step 3: align import alias normalization for Go/Swift/Kotlin native emitters.
-- Step 4: keep sidecar compatibility paths as explicit opt-in only; default regressions must run on native paths.
+- Step 4: remove sidecar compatibility paths; default regressions must run on native paths only.
 - Step 5: add import preprocessing tables to Rust/C# without breaking existing behavior.

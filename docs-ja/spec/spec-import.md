@@ -291,7 +291,7 @@ QualifiedSymbolRef
 - 具体実装:
 - import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
 - 生成コードは Go 単体で実行可能な native 実装出力（`package main` + runtime helper）を生成する。
-- 旧 sidecar 経路は `--go-backend sidecar` の互換モードとして隔離され、既定経路では使用しない。
+- sidecar 互換経路は撤去済みで、native 経路のみを提供する。
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Go 出力へ進ませない。
 
@@ -302,7 +302,7 @@ QualifiedSymbolRef
 - 具体実装:
 - import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
 - 生成コードは Java 単体で実行可能な native 実装出力（`public final class ...`）を生成する。
-- 旧 sidecar 経路は `--java-backend sidecar` の互換モードとして隔離され、既定経路では使用しない。
+- sidecar 互換経路は撤去済みで、native 経路のみを提供する。
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Java 出力へ進ませない。
 
@@ -313,7 +313,7 @@ QualifiedSymbolRef
 - 具体実装:
 - import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
 - 生成コードは Swift native 実装出力（runtime helper + `@main`）を生成する。
-- 旧 sidecar 経路は `--swift-backend sidecar` の互換モードとして隔離され、既定経路では使用しない。
+- sidecar 互換経路は撤去済みで、native 経路のみを提供する。
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Swift 出力へ進ませない。
 
@@ -324,7 +324,7 @@ QualifiedSymbolRef
 - 具体実装:
 - import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
 - 生成コードは Kotlin 単体で実行可能な native 実装出力（runtime helper + `main`）を生成する。
-- 旧 sidecar 経路は `--kotlin-backend sidecar` の互換モードとして隔離され、既定経路では使用しない。
+- sidecar 互換経路は撤去済みで、native 経路のみを提供する。
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Kotlin 出力へ進ませない。
 
@@ -333,5 +333,5 @@ QualifiedSymbolRef
 - Step 1: C++ 実装（EAST）で `ImportBinding` / `QualifiedSymbolRef` を完成させる。
 - Step 2: JS/TS（共通基盤）へ同じ解決器を移植する。
 - Step 3: Go/Swift/Kotlin の native emitter で import alias 正規化を共通運用へ合わせる。
-- Step 4: sidecar 互換経路は明示 opt-in へ隔離し、既定回帰は native 経路のみで監視する。
+- Step 4: sidecar 互換経路は撤去し、既定回帰は native 経路のみで監視する。
 - Step 5: Rust/C# は既存実装を壊さない範囲で import 前処理テーブルを導入する。
