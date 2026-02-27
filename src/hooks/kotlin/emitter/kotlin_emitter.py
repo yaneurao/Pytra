@@ -1,6 +1,7 @@
-"""EAST -> Kotlin transpiler.
+"""EAST -> Kotlin sidecar compatibility emitter.
 
 Kotlin 本体は Node bridge を生成し、同名 sidecar JavaScript を実行する。
+native 既定経路は `kotlin_native_emitter.py` を参照。
 """
 
 from __future__ import annotations
