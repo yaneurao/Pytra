@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-02-26
+Last updated: 2026-02-27
 
 ## Context Rules
 
@@ -21,6 +21,7 @@ Last updated: 2026-02-26
 - If uncommitted changes remain due to interruption, do not start another `ID` until completing the same `ID` or reverting diffs.
 - When updating `docs/ja/todo/index.md` / `docs/ja/plans/*.md`, run `python3 tools/check_todo_priority.py` and confirm new progress `ID` matches top unfinished `ID` (or its child).
 - Append work-time decisions to the context file `Decision log`.
+- For temporary outputs, use existing `out/` (or `/tmp` only when needed); do not keep creating new top-level temporary folders in the repository.
 
 ## Notes
 
@@ -127,6 +128,15 @@ Context: [docs/ja/plans/p3-microgpt-revival.md](../plans/p3-microgpt-revival.md)
 5. [ ] [ID: P3-MSP-REVIVE-01-S2-02] Prepare logging template for failure reclassification into parser/lower/runtime responsibilities.
 6. [ ] [ID: P3-MSP-REVIVE-01-S3-01] Add fixture/smoke reinforcement for `microgpt` if needed and stabilize CI monitoring.
 7. [ ] [ID: P3-MSP-REVIVE-01-S3-02] Document migration-back conditions (completion definition) for returning resumed tasks to archive.
+
+### P1: Add Rust target to unified CLI `./pytra`
+
+Context: [docs/ja/plans/p1-pytra-cli-rs-target.md](../plans/p1-pytra-cli-rs-target.md)
+
+1. [ ] [ID: P1-PYTRA-CLI-RS-01] Add `--target rs` to unified CLI `./pytra`, so Rust transpilation can be run from the same entrypoint as C++.
+2. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-01] Extend target dispatch in `src/pytra/cli.py` so `--target rs` can invoke `py2rs.py`.
+3. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-02] Define `--output` / `--output-dir` behavior for Rust output and handle extension/path collisions.
+4. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-03] Add Rust examples to the unified CLI section in `docs/ja/how-to-use.md`, including temporary-output operation (`out/` / `/tmp`).
 
 ### P4: Full multi-language selfhost completion (Very low)
 
