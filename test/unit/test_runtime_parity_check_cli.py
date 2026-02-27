@@ -76,6 +76,17 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(records[0].category, "toolchain_missing")
         self.assertEqual(records[0].target, "cpp")
 
+    def test_build_targets_includes_ruby_entry(self) -> None:
+        case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
+        names = {t.name for t in targets}
+        self.assertIn("ruby", names)
+        ruby_target = next(t for t in targets if t.name == "ruby")
+        self.assertIn("src/py2rb.py", ruby_target.transpile_cmd)
+        self.assertIn("test/transpile/ruby/01_mandelbrot.rb", ruby_target.transpile_cmd)
+        self.assertEqual(ruby_target.run_cmd, "ruby test/transpile/ruby/01_mandelbrot.rb")
+        self.assertEqual(ruby_target.needs, ("python", "ruby"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -172,6 +172,12 @@ def build_targets(
             needs=("python", "node"),
         ),
         Target(
+            name="ruby",
+            transpile_cmd=f"python src/py2rb.py {shlex.quote(case_src)} -o test/transpile/ruby/{case_stem}.rb {opt_arg}",
+            run_cmd=f"ruby test/transpile/ruby/{case_stem}.rb",
+            needs=("python", "ruby"),
+        ),
+        Target(
             name="ts",
             transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} -o test/transpile/ts/{case_stem}.ts {opt_arg}",
             run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",

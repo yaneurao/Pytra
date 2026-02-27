@@ -41,12 +41,13 @@
 3. [x] [ID: P2-RUBY-BACKEND-01-S1-02] `src/py2rb.py` と `src/hooks/ruby/emitter/` の骨格を追加し、最小 fixture（`add` / `if_else` / `for_range`）が変換・実行できる状態を作る。
 4. [x] [ID: P2-RUBY-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、関数呼び出し、組み込み最小セット）を実装し、`sample/py` 前半ケースを通す。
 5. [x] [ID: P2-RUBY-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装し、残ケースの parity 失敗を縮退する。
-6. [ ] [ID: P2-RUBY-BACKEND-01-S3-01] `tools/check_py2rb_transpile.py` と smoke/parity 導線を追加し、回帰監視を固定する。
+6. [x] [ID: P2-RUBY-BACKEND-01-S3-01] `tools/check_py2rb_transpile.py` と smoke/parity 導線を追加し、回帰監視を固定する。
 7. [ ] [ID: P2-RUBY-BACKEND-01-S3-02] `sample/ruby` 再生成、README バッジ/対応表、`docs-ja/how-to-use.md` と `docs/how-to-use.md` の手順を同期する。
 - `P2-RUBY-BACKEND-01-S1-01` `docs-ja/spec/spec-ruby-native-backend.md` と `docs/spec/spec-ruby-native-backend.md` を追加し、EAST3入力・fail-closed・runtime境界・非対象を固定した。
 - `P2-RUBY-BACKEND-01-S1-02` `src/py2rb.py` と `src/hooks/ruby/emitter/` を追加し、`test_py2rb_smoke.py`（`9 tests, 1 skip`）および `add/if_else/for_range` の変換で最小骨格を確認した。
 - `P2-RUBY-BACKEND-01-S2-01` `ListComp/RangeExpr/Slice/ObjLen/ObjStr/Unbox` と `bytearray/bytes/enumerate/range/list/dict/abs` の最小 lower を実装し、`sample/py` 18件の変換通過と `test_py2rb_smoke.py`（`11 tests, 1 skip`）を確認した。
 - `P2-RUBY-BACKEND-01-S2-02` dataclass初期化/`self`受け取り/`attr_accessor`/`isinstance`/`png|gif` 属性呼び出しを実装し、`test_py2rb_smoke.py`（`14 tests, 1 skip`）と `test/fixtures/oop` 12件変換通過を確認した。
+- `P2-RUBY-BACKEND-01-S3-01` `tools/check_py2rb_transpile.py` を追加し（`checked=133 ok=133 fail=0 skipped=6`）、`runtime_parity_check.py` の `--targets ruby` 導線と CLI テストを追加した。
 
 ### P3: microgpt 原本保全タスク再開（低優先）
 
