@@ -101,6 +101,23 @@ def _insert_support_blocks(py2cs_text: str, support_blocks: str, base_class: str
     return prefix + "\n\n" + support_blocks + "\n" + base_class + "\n" + cs_core + "\n" + suffix
 
 
+def _patch_selfhost_hooks(text: str, prepare_base) -> str:
+    out = prepare_base._patch_code_emitter_hooks_for_selfhost(text)
+    init_line = "        self.init_base_state(east_doc, profile, hooks)\n"
+    disable_line = "        self.set_dynamic_hooks_enabled(False)\n"
+    if disable_line in out:
+        return out
+    class_marker = "class CSharpEmitter(CodeEmitter):"
+    class_pos = out.find(class_marker)
+    if class_pos < 0:
+        return out
+    init_pos = out.find(init_line, class_pos)
+    if init_pos < 0:
+        return out
+    insert_at = init_pos + len(init_line)
+    return out[:insert_at] + disable_line + out[insert_at:]
+
+
 def main() -> int:
     prepare_base = _load_prepare_base_module()
     py2cs_text = SRC_PY2CS.read_text(encoding="utf-8")
@@ -113,6 +130,7 @@ def main() -> int:
 
     py2cs_text = _remove_import_lines(py2cs_text)
     out = _insert_support_blocks(py2cs_text, support_blocks, base_class, cs_core)
+    out = _patch_selfhost_hooks(out, prepare_base)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
     DST_SELFHOST.write_text(out, encoding="utf-8")
@@ -122,4 +140,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

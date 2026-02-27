@@ -42,6 +42,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S1`] C# emitter の selfhost compile 阻害を一段解消（`Path` alias/constructor, `str.endswith|startswith` 変換, 関数定義の定数デフォルト引数出力）。`check_multilang_selfhost_*` 再実行で `cs` の先頭失敗が `Path` 未解決から `sys` 未解決へ遷移し、次ブロッカーを特定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S1`] C# emitter で `sys.exit` を `System.Environment.Exit` へ lower し、文字列 docstring 式の不要出力を抑止した。`check_multilang_selfhost_*` 再実行で `cs` の先頭失敗が `sys` 未解決から `transpile_to_csharp` 未解決へ遷移し、import 依存閉包（単体 selfhost source 生成 or モジュール連結）の実装が次ブロッカーと確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S1`] 単体 selfhost source 方式の PoC として `tools/prepare_selfhost_source_cs.py` を追加し `selfhost/py2cs.py` を生成。`python3 src/py2cs.py selfhost/py2cs.py -o /tmp/cs_selfhost_full_stage1.cs` を検証した結果、`unsupported_syntax: object receiver attribute/method access is forbidden by language constraints`（`selfhost/py2cs.py` 変換中）で停止し、現行 C# 制約下では PoC が未通過であることを確認した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S1`] `prepare_selfhost_source_cs.py` に C++ selfhost 同等の hook 無効化パッチ（`_call_hook` stub 化 + `set_dynamic_hooks_enabled(False)`）を追加して再検証したが、`selfhost/py2cs.py` の `CSharpEmitter._walk_node_names` 内 `node.get(...)` で同系統の制約違反が継続（`object receiver attribute/method access`）。PoC の阻害要因は dynamic hook 以外にも存在すると確定した。
 
 ## 現状固定（S1-01）
 
