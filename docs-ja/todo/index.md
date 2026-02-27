@@ -68,6 +68,16 @@
 6. [ ] [ID: P2-RUBY-BACKEND-01-S3-01] `tools/check_py2rb_transpile.py` と smoke/parity 導線を追加し、回帰監視を固定する。
 7. [ ] [ID: P2-RUBY-BACKEND-01-S3-02] `sample/ruby` 再生成、README バッジ/対応表、`docs-ja/how-to-use.md` と `docs/how-to-use.md` の手順を同期する。
 
+### P2: ForCore tuple unpack 型伝播改善（中優先）
+
+文脈: [docs-ja/plans/p2-forcore-tuple-type-propagation.md](../plans/p2-forcore-tuple-type-propagation.md)
+
+1. [ ] [ID: P2-FORCORE-TYPE-01] `for a, b in ...` の tuple target で要素型が `unknown/object` へ落ちる経路を縮退し、EAST3 lowering から C++ emitter まで型情報を維持する。
+2. [ ] [ID: P2-FORCORE-TYPE-01-S1-01] `east2_to_east3_lowering._build_target_plan` で `target_type=tuple[...]` の要素型を `TupleTarget.elements[].target_type` へ伝播する。
+3. [ ] [ID: P2-FORCORE-TYPE-01-S1-02] C++ `ForCore` tuple unpack の emit で `int64/str/...` を直接束縛し、未確定要素のみ fail-closed で `object` フォールバックする。
+4. [ ] [ID: P2-FORCORE-TYPE-01-S2-01] `enumerate(list[str])` を含む fixture/sample を回帰に追加し、`py_at(...)` 由来の `object` 束縛が不要な箇所で発生しないことを固定する。
+5. [ ] [ID: P2-FORCORE-TYPE-01-S2-02] `check_py2cpp_transpile.py` と `sample/18` コンパイル検証を実行し、型伝播導入後の回帰結果を文脈ファイルへ記録する。
+
 ### P3: microgpt 原本保全タスク再開（低優先）
 
 文脈: [docs-ja/plans/p3-microgpt-revival.md](../plans/p3-microgpt-revival.md)
