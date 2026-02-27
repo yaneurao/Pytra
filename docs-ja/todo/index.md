@@ -44,8 +44,8 @@
 
 文脈: [docs-ja/plans/p0-forcore-tuple-type-propagation.md](../plans/p0-forcore-tuple-type-propagation.md)
 
-1. [ ] [ID: P0-FORCORE-TYPE-01-S3-01] `enumerate(list[T])` など要素型が確定している `ForCore(RuntimeIterForPlan)` について、C++ 生成の loop carrier を `object + py_dyn_range(...)` ではなく typed tuple 受けへ切り替える（未知型/非対応 iterable は従来どおり `object` フォールバックを維持）。
-2. [ ] [ID: P0-FORCORE-TYPE-01-S3-02] `sample/18` を含む回帰テストを追加し、loop header が typed で出力されることと parity/コンパイル互換を固定する。
+1. [x] [ID: P0-FORCORE-TYPE-01-S3-01] `enumerate(list[T])` など要素型が確定している `ForCore(RuntimeIterForPlan)` について、C++ 生成の loop carrier を `object + py_dyn_range(...)` ではなく typed tuple 受けへ切り替える（未知型/非対応 iterable は従来どおり `object` フォールバックを維持）。
+2. [x] [ID: P0-FORCORE-TYPE-01-S3-02] `sample/18` を含む回帰テストを追加し、loop header が typed で出力されることと parity/コンパイル互換を固定する。
 
 ### P1: sample/18 C++ 生成コードの可読性縮退（選定: #2,#7,#8,#5,#1）
 
