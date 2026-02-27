@@ -909,15 +909,21 @@ class CSharpEmitter(CodeEmitter):
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
         arg_defaults = self.any_to_dict_or_empty(fn.get("arg_defaults"))
+        decorators = set(self.any_to_str_list(fn.get("decorators")))
         args: list[str] = []
         scope_names: set[str] = set()
 
         is_constructor = in_class is not None and fn_name_raw == "__init__"
-        emit_static = in_class is None
+        has_static_decorator = "staticmethod" in decorators or "classmethod" in decorators
+        emit_static = in_class is None or has_static_decorator
 
         if in_class is not None:
-            if len(arg_order) > 0 and arg_order[0] == "self":
-                arg_order = arg_order[1:]
+            if has_static_decorator:
+                if len(arg_order) > 0 and (arg_order[0] == "self" or arg_order[0] == "cls"):
+                    arg_order = arg_order[1:]
+            else:
+                if len(arg_order) > 0 and arg_order[0] == "self":
+                    arg_order = arg_order[1:]
 
         optional_default_texts: dict[str, str] = {}
         optional_allowed: dict[str, bool] = {}
@@ -1608,6 +1614,11 @@ class CSharpEmitter(CodeEmitter):
             return "Pytra.CsModule.gif_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "time":
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+        if owner_name == "json":
+            if attr_raw == "loads" and len(rendered_args) >= 1:
+                return "new System.Collections.Generic.Dictionary<string, object>()"
+            if attr_raw == "dumps" and len(rendered_args) >= 1:
+                return "\"\""
         if owner_name == "sys" and attr_raw == "exit":
             if len(rendered_args) >= 1:
                 return "System.Environment.Exit(System.Convert.ToInt32(" + rendered_args[0] + "))"
@@ -1665,11 +1676,28 @@ class CSharpEmitter(CodeEmitter):
 
         if owner_type.startswith("dict["):
             if attr_raw == "get":
+                key_expr = rendered_args[0] if len(rendered_args) > 0 else "\"\""
+                if owner_type.startswith("dict[str"):
+                    key_expr = "System.Convert.ToString(" + key_expr + ")"
                 if len(rendered_args) == 1:
-                    k = rendered_args[0]
+                    return "(" + owner_expr + ".ContainsKey(" + key_expr + ") ? " + owner_expr + "[" + key_expr + "] : default)"
+                if len(rendered_args) >= 2:
+                    d = rendered_args[1]
+                    return "(" + owner_expr + ".ContainsKey(" + key_expr + ") ? " + owner_expr + "[" + key_expr + "] : " + d + ")"
+            if attr_raw == "items" and len(rendered_args) == 0:
+                return owner_expr
+            if attr_raw == "keys" and len(rendered_args) == 0:
+                return owner_expr + ".Keys"
+            if attr_raw == "values" and len(rendered_args) == 0:
+                return owner_expr + ".Values"
+
+        if owner_type in {"", "unknown", "object"}:
+            if attr_raw == "get":
+                if len(rendered_args) == 1:
+                    k = "System.Convert.ToString(" + rendered_args[0] + ")"
                     return "(" + owner_expr + ".ContainsKey(" + k + ") ? " + owner_expr + "[" + k + "] : default)"
                 if len(rendered_args) >= 2:
-                    k = rendered_args[0]
+                    k = "System.Convert.ToString(" + rendered_args[0] + ")"
                     d = rendered_args[1]
                     return "(" + owner_expr + ".ContainsKey(" + k + ") ? " + owner_expr + "[" + k + "] : " + d + ")"
             if attr_raw == "items" and len(rendered_args) == 0:

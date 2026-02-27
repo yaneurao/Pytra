@@ -47,6 +47,8 @@ class CodeEmitter:
     current_class_static_fields: set[str]
     class_base: dict[str, str]
     class_method_names: dict[str, set[str]]
+    class_field_owner_unique: dict[str, str]
+    class_method_owner_unique: dict[str, str]
     ref_classes: set[str]
     dynamic_hooks_enabled: bool
 
@@ -85,6 +87,8 @@ class CodeEmitter:
         self.class_base = {}
         class_method_names: dict[str, set[str]] = {}
         self.class_method_names = class_method_names
+        self.class_field_owner_unique = {}
+        self.class_method_owner_unique = {}
         self.ref_classes = set()
         self.dynamic_hooks_enabled = True
 
@@ -128,7 +132,7 @@ class CodeEmitter:
         """JSON ファイルを辞書として読み込む。失敗時は空辞書。"""
         if not path.exists():
             return {}
-        raw_obj: object = {}
+        raw_obj: dict[str, Any] = {}
         try:
             txt = path.read_text(encoding="utf-8")
             raw_obj = json.loads(txt)

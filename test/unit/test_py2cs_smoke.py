@@ -533,6 +533,34 @@ def stop() -> None:
 
         self.assertIn("Select(__ch => __ch.ToString())", cs)
 
+    def test_staticmethod_in_class_is_emitted_static(self) -> None:
+        src = """class A:
+    @staticmethod
+    def f(x: int) -> int:
+        return x
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "static_method.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("public static long f(long x)", cs)
+
+    def test_json_loads_call_is_lowered_for_cs_selfhost_compile(self) -> None:
+        src = """from pytra.std import json
+
+def f(s: str):
+    return json.loads(s)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "json_loads.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("new System.Collections.Generic.Dictionary<string, object>()", cs)
+
     def test_string_methods_find_rfind_strip_replace_are_lowered(self) -> None:
         src = """def f(s: str) -> int:
     return s.strip().replace("x", "y").find("y") + s.rfind("y")

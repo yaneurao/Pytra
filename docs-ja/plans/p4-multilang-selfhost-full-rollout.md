@@ -49,6 +49,7 @@
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S3`] tuple arity が `1` または `>7` のときに `List<object>` へ lower する C# emitter 修正（型/式/tuple unpack 参照）を実装し、`python3 test/unit/test_py2cs_smoke.py`（28件）を通過。`python3 tools/check_cs_single_source_selfhost_compile.py` で `mcs` 内部例外 `NotImplementedException: tuples > 7` が消失し、失敗モードが通常 compile エラー（`CS1061/CS0103/CS1503` 主体）へ遷移した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S4`] C# class 出力で base 句（`class Child : Base`）を維持する修正を追加し、自己変換生成物で継承チェーンが復元されるようにした。`python3 tools/check_cs_single_source_selfhost_compile.py` の再計測で `CS1061` は `469 -> 109` に縮退し、失敗件数上位の先頭カテゴリを削減できた。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S5`] `set/list/dict` の lower を型ヒント連動で補強し、`for ch in str` を `ToString()` 投影に変換、`strip/find/rfind/replace` lower を追加した。`python3 test/unit/test_py2cs_smoke.py`（32件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1061` は `109 -> 20`、`CS0103` は `81 -> 36` へ縮退した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6`] `@staticmethod/@classmethod` の static 出力を実装し、`json.loads` lower と `dict.get/items` の unknown 型フォールバックを追加した。`python3 test/unit/test_py2cs_smoke.py`（32件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0120` は `5 -> 0`、`CS1061` は `20 -> 10`、`CS0103` は `36 -> 34` に縮退した。
 
 ## 現状固定（S1-01）
 
@@ -120,7 +121,8 @@
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S3] `mcs` 内部例外（`tuples > 7`）を回避する emit 方針を実装し、stage2 compile を次段検証可能な状態へ戻す。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S4] `mcs` で顕在化した通常 compile エラー（`CS1061/CS0103/CS1503` 上位群）の先頭カテゴリを削減し、stage2 失敗件数を継続的に縮退させる。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S5] 残存上位エラー（`CS0103 set/list/json` と `CS0019 char/string`）を対象に emitter lower を追加し、stage2 compile 失敗件数をさらに縮退させる。
-- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6] 残存の主要失敗（`json` 未解決、`dict.get/items` 未lower、`CodeEmitter` static参照不整合）を段階解消し、stage2 compile の上位エラー構成を更新する。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6] 残存の主要失敗（`json` 未解決、`dict.get/items` 未lower、`CodeEmitter` static参照不整合）を段階解消し、stage2 compile の上位エラー構成を更新する。
+- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7] 残存上位エラー（`_add`/`item_expr` の未定義、`object` 由来の `CS1503/CS0266`）を対象に nested helper/型縮約を補強し、stage2 compile 件数をさらに削減する。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。
