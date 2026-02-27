@@ -14,6 +14,7 @@ PY2CPP = ROOT / "src" / "py2cpp.py"
 DEFAULT_SOURCE = ROOT / "materials" / "refs" / "microgpt" / "microgpt-20260222.py"
 
 KNOWN_STAGES = ("A", "B", "C", "D", "E", "F")
+KNOWN_PHASES = ("transpile", "syntax-check", "transpile-only", "transpile+syntax-check")
 
 STAGE_LABELS = {
     "A": "parser.untyped-parameter",
@@ -101,6 +102,12 @@ def _matches_expectation(expect: str, stage: str) -> bool:
     return stage == expect
 
 
+def _matches_phase_expectation(expect_phase: str, actual_phase: str) -> bool:
+    if expect_phase == "any":
+        return True
+    return expect_phase == actual_phase
+
+
 def _build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         description="check regression stage for original materials/refs/microgpt/microgpt-20260222.py"
@@ -112,9 +119,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--expect-stage",
-        default="any-known",
+        default="F",
         choices=["any-known", "success", "A", "B", "C", "D", "E", "F"],
-        help="expected stage; use explicit stage to detect regression to other blockers",
+        help="expected stage (default: F for current baseline)",
+    )
+    ap.add_argument(
+        "--expect-phase",
+        default="syntax-check",
+        choices=["any", "transpile", "syntax-check", "transpile-only", "transpile+syntax-check"],
+        help="expected phase (default: syntax-check for current baseline)",
     )
     ap.add_argument(
         "--skip-syntax-check",
@@ -143,6 +156,7 @@ def main() -> int:
         if code != 0:
             stage = _classify_parser_failure(msg)
             first = _diagnostic_line(msg)
+            phase = "transpile"
             print("result=fail phase=transpile")
             print(f"stage={stage} label={STAGE_LABELS.get(stage, 'unknown')}")
             if first != "":
@@ -153,14 +167,21 @@ def main() -> int:
             if not _matches_expectation(args.expect_stage, stage):
                 print(f"expectation_mismatch expected={args.expect_stage} actual={stage}")
                 return 1
+            if not _matches_phase_expectation(args.expect_phase, phase):
+                print(f"phase_mismatch expected={args.expect_phase} actual={phase}")
+                return 1
             return 0
 
         if args.skip_syntax_check:
             stage = "SUCCESS"
+            phase = "transpile-only"
             print("result=ok phase=transpile-only")
             print(f"stage={stage} label={STAGE_LABELS[stage]}")
             if not _matches_expectation(args.expect_stage, stage):
                 print(f"expectation_mismatch expected={args.expect_stage} actual={stage}")
+                return 1
+            if not _matches_phase_expectation(args.expect_phase, phase):
+                print(f"phase_mismatch expected={args.expect_phase} actual={phase}")
                 return 1
             return 0
 
@@ -180,6 +201,7 @@ def main() -> int:
         if code != 0:
             stage = _classify_compile_failure(msg)
             first = _diagnostic_line(msg)
+            phase = "syntax-check"
             print("result=fail phase=syntax-check")
             print(f"stage={stage} label={STAGE_LABELS.get(stage, 'unknown')}")
             if first != "":
@@ -187,13 +209,20 @@ def main() -> int:
             if not _matches_expectation(args.expect_stage, stage):
                 print(f"expectation_mismatch expected={args.expect_stage} actual={stage}")
                 return 1
+            if not _matches_phase_expectation(args.expect_phase, phase):
+                print(f"phase_mismatch expected={args.expect_phase} actual={phase}")
+                return 1
             return 0
 
         stage = "SUCCESS"
+        phase = "transpile+syntax-check"
         print("result=ok phase=transpile+syntax-check")
         print(f"stage={stage} label={STAGE_LABELS[stage]}")
         if not _matches_expectation(args.expect_stage, stage):
             print(f"expectation_mismatch expected={args.expect_stage} actual={stage}")
+            return 1
+        if not _matches_phase_expectation(args.expect_phase, phase):
+            print(f"phase_mismatch expected={args.expect_phase} actual={phase}")
             return 1
         return 0
 
