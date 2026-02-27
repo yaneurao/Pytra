@@ -1,6 +1,6 @@
 # What is Pytra?
 
-<a href="docs-ja/README.md">
+<a href="docs/ja/README.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-2563EB?style=flat-square">
 </a>
 
@@ -32,7 +32,7 @@ Supported backends:
 > **2026-02-23 | v0.1.0 Released**  
 > Pytra can now generate more readable C++ code in a style that stays very close to the original Python source.
 
-- Past News: [docs/news/index.md](docs/news/index.md)
+- Past News: [docs/en/news/index.md](docs/en/news/index.md)
 
 ## Features
 
@@ -546,15 +546,15 @@ if __name__ == "__main__":
 
 The related documents are listed below in the order they are most frequently referenced during usage.
 
-- Start with usage instructions: [Usage Guide](docs/how-to-use.md)
-- Check the developer utility script list: [Tools](docs/spec/spec-tools.md)
-- Review option design (performance/compatibility trade-offs): [Options Specification](docs/spec/spec-options.md)
-- Review runtime layout and include conventions: [Runtime Specification](docs/spec/spec-runtime.md)
-- Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/plans/pytra-wip.md)
-- Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](docs/language/cpp/spec-support.md)
+- Start with usage instructions: [Usage Guide](docs/en/how-to-use.md)
+- Check the developer utility script list: [Tools](docs/en/spec/spec-tools.md)
+- Review option design (performance/compatibility trade-offs): [Options Specification](docs/en/spec/spec-options.md)
+- Review runtime layout and include conventions: [Runtime Specification](docs/en/spec/spec-runtime.md)
+- Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](docs/en/plans/pytra-wip.md)
+- Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](docs/en/language/cpp/spec-support.md)
 - Browse sample list and overview: [Sample Code Guide](sample/readme.md)
-- Review specs, constraints, architecture, and operational rules: [Specification Index](docs/spec/index.md)
-- Motivation and design philosophy: [Development Philosophy](docs/spec/spec-philosophy.md)
+- Review specs, constraints, architecture, and operational rules: [Specification Index](docs/en/spec/index.md)
+- Motivation and design philosophy: [Development Philosophy](docs/en/spec/spec-philosophy.md)
 
 ## License
 

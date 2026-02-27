@@ -71,8 +71,8 @@ def _print_multistage_summary(report: Path) -> None:
 
 
 def main() -> int:
-    stage1_report = ROOT / "docs-ja" / "plans" / "p1-multilang-selfhost-status.md"
-    multistage_report = ROOT / "docs-ja" / "plans" / "p1-multilang-selfhost-multistage-status.md"
+    stage1_report = ROOT / "docs" / "ja" / "plans" / "p1-multilang-selfhost-status.md"
+    multistage_report = ROOT / "docs" / "ja" / "plans" / "p1-multilang-selfhost-multistage-status.md"
 
     cmds = [
         ["python3", "tools/check_multilang_selfhost_stage1.py", "--out", str(stage1_report.relative_to(ROOT))],

@@ -1,0 +1,127 @@
+# 利用仕様（Pytra）
+
+<a href="../../en/spec/spec-user.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
+このドキュメントは、Pytra の利用方法と入力制約をまとめた仕様です。
+本書は仕様定義にフォーカスし、実行コマンドや実行手順は [使い方ガイド](../how-to-use.md) で管理します。
+
+## 1. 目的
+
+Pytra は、型注釈付き Python コードを次の言語へ変換するトランスパイラ群です。
+
+- Python -> C# (`src/py2cs.py`)
+- Python -> C++ (`src/py2cpp.py`)
+- Python -> Rust (`src/py2rs.py`)
+- Python -> JavaScript (`src/py2js.py`)
+- Python -> TypeScript (`src/py2ts.py`)
+- Python -> Go (`src/py2go.py`)
+- Python -> Java (`src/py2java.py`)
+- Python -> Swift (`src/py2swift.py`)
+- Python -> Kotlin (`src/py2kotlin.py`)
+
+## 2. Python 入力仕様
+
+- 入力 Python は、基本的に型注釈付きコードを前提とします。
+- 型注釈は次の条件では省略できます（暗黙の型推論）。
+  - 右辺がリテラルで型が一意な代入（例: `x = 1`, `y = 1.5`, `s = "abc"`）。
+  - 右辺の変数型が既知な単純代入（例: `y = x` で `x` の型が確定済み）。
+- self_hosted parser の関数シグネチャでは、引数の型注釈は推奨です。
+  - 無注釈引数（例: `def f(x): ...`）は受理し、`unknown` として扱います。
+  - `def f(...): return ...` 形式の 1 行定義（class 内メソッドを含む）を受理します。
+- `class` は単一継承をサポートします。
+- `self.xxx` に対する `__init__` 内代入はインスタンスメンバーとして扱います。
+- class 本体で宣言されたメンバーは class member（C# では `static`、C++ では `inline static`）として扱います。
+- `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
+- `import` / `from ... import ...` をサポートします。
+- `from ... import *`（ワイルドカード import）をサポートします（相対 import は未対応）。
+- 文末セミコロン（`;`）はサポート対象外です（self_hosted parser では入力エラーとして扱います）。
+- `# type:ignore` はコメントとして扱い、構文/意味解釈には使いません。
+- トランスパイル対象コードでは、Python 標準モジュールの直接 import は原則非推奨です。
+  - 推奨は `pytra.std.*` の明示 import です。
+  - ただし `math` / `random` / `timeit` / `traceback` / `typing` / `enum` など、`pytra.std.*` に対応 shim がある一部モジュールは正規化して扱えます。
+- import 可能なのは `src/pytra/` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
+- 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
+- `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。
+  - 例: `x: object` に対して `x.foo()` / `x.bar` は不可。
+  - 必要な場合は、明示的に型を確定させた変数へ代入してからアクセスしてください。
+- C++ 向けには、コメントによるパススルーを利用できます。
+  - `# Pytra::cpp ...` / `# Pytra::pass ...` を文の直前に置くと、生成 C++ へその行をそのまま挿入します。
+  - 複数行は `# Pytra::cpp begin` ... `# Pytra::cpp end`（または `pass`）で指定できます。
+  - 詳細仕様は `docs/ja/spec/spec-east.md` を参照してください。
+
+## 3. テストケース方針
+
+- 入力 Python は `test/fixtures/` 配下に配置します（カテゴリ別サブディレクトリ）。
+- 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/` に配置します。
+- 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
+- ケース命名は説明的な `snake_case`（例: `dict_get_items.py`）を基本とします。
+
+`test/` の標準構成は次のとおりです。
+
+```text
+test/
+  unit/         # unittest のテストコード（test_*.py）
+  integration/  # 統合テストコード
+  fixtures/     # 変換元 Python ケース（*.py, カテゴリ別）
+    core/
+    control/
+    strings/
+    imports/
+    collections/
+    oop/
+    typing/
+    stdlib/
+    signature/
+  transpile/    # 変換生成物と実行生成物（Git管理外）
+```
+
+- `test/transpile/` は使い捨ての生成物置き場です。必要に応じて全削除して再生成します。
+
+## 4. サンプルプログラム方針
+
+- 実用サンプルは `sample/py/` に配置します。
+- 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/` に配置します。
+- バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
+- Python から import する自作ライブラリは `src/pytra/` 配下（`pytra.std.*`, `pytra.utils.*`）を使用します。
+  - 画像: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`
+  - テスト補助: `from pytra.utils.assertions import py_assert_eq` など
+  - EAST 変換器: `python src/pytra/compiler/east.py <input.py> ...`
+- 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
+- GIF サンプルは `sample/out/*.gif` に出力します。
+
+## 5. ユニットテスト実行方法
+
+プロジェクトルート (`Pytra/`) で次を実行します。
+
+```bash
+python -m unittest discover -s test/unit -p "test_*.py" -v
+```
+
+共通エミッタ基盤（`src/pytra/compiler/east_parts/code_emitter.py`）のみを確認したい場合:
+
+```bash
+python -m unittest discover -s test/unit -p "test_code_emitter.py" -v
+```
+
+`test/fixtures/**/*.py` を一括実行して末尾出力 `True` を検証する専用テスト:
+
+```bash
+python -m unittest discover -s test/unit -p "test_fixtures_truth.py" -v
+```
+
+## 6. 利用時の注意
+
+- C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
+- 未対応構文はトランスパイル時に `TranspileError` で失敗します。
+- `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
+- `src/pytra/` 配下モジュールを使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
+
+## 7. 関連ドキュメント
+
+- 使い方: [使い方ガイド](../how-to-use.md)
+- py2cpp 機能対応表（テスト根拠）: [py2cpp サポートマトリクス](../language/cpp/spec-support.md)
+- サンプルコード: [サンプルコード案内](../../sample/readme-ja.md)
+- 実装状況詳細: [実装状況メモ（WIP）](../plans/pytra-wip.md)

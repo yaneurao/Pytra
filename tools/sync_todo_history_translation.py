@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize docs/todo/archive translation scaffolding from docs-ja/todo/archive."""
+"""Synchronize docs/en/todo/archive translation scaffolding from docs/ja/todo/archive."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-JP_DIR = ROOT / "docs-ja" / "todo" / "archive"
-EN_DIR = ROOT / "docs" / "todo" / "archive"
+JP_DIR = ROOT / "docs" / "ja" / "todo" / "archive"
+EN_DIR = ROOT / "docs" / "en" / "todo" / "archive"
 DATE_FILE_RE = re.compile(r"^[0-9]{8}\.md$")
 STATUS_PENDING = "pending"
 STATUS_DONE = "done"
@@ -71,13 +71,13 @@ def _write_stub(name: str, *, dry_run: bool, overwrite: bool) -> bool:
     date_txt = _date_label(name[:-3])
     body = (
         f"# TODO History ({date_txt})\n\n"
-        f"<a href=\"../../../docs-ja/todo/archive/{name}\">\n"
+        f"<a href=\"../../../ja/todo/archive/{name}\">\n"
         "  <img alt=\"Read in Japanese\" src=\"https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square\">\n"
         "</a>\n\n"
         "<!-- translation-status: pending -->\n"
         f"<!-- source-sha256: {src_hash} -->\n\n"
         "This file is an English translation mirror of the Japanese source.\n\n"
-        f"- Source of truth: `docs-ja/todo/archive/{name}`\n"
+        f"- Source of truth: `docs/ja/todo/archive/{name}`\n"
         "- Status: pending translation\n"
         "- Workflow: translate this file, then update `translation-status` to `done`.\n"
     )
@@ -90,7 +90,7 @@ def _render_index(date_files: list[str], status_map: dict[str, str]) -> str:
     lines: list[str] = []
     lines.append("# TODO History (Index)")
     lines.append("")
-    lines.append("<a href=\"../../../docs-ja/todo/archive/index.md\">")
+    lines.append("<a href=\"../../../ja/todo/archive/index.md\">")
     lines.append("  <img alt=\"Read in Japanese\" src=\"https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square\">")
     lines.append("</a>")
     lines.append("")
@@ -98,7 +98,7 @@ def _render_index(date_files: list[str], status_map: dict[str, str]) -> str:
     lines.append("")
     lines.append("## Policy")
     lines.append("")
-    lines.append("- `docs-ja/todo/archive/` is the source of truth.")
+    lines.append("- `docs/ja/todo/archive/` is the source of truth.")
     lines.append("- Keep one file per date (`YYYYMMDD.md`).")
     lines.append("- Use `python3 tools/sync_todo_history_translation.py` to create missing mirror files and refresh this index.")
     lines.append("")
@@ -165,25 +165,25 @@ def check_only() -> int:
     index_exists = (EN_DIR / "index.md").exists()
 
     if missing:
-        print("[FAIL] missing docs/todo/archive translations:")
+        print("[FAIL] missing docs/en/todo/archive translations:")
         for name in missing:
             print(f"  - {name}")
     if extra:
-        print("[FAIL] extra docs/todo/archive files not present in docs-ja:")
+        print("[FAIL] extra docs/en/todo/archive files not present in docs/ja:")
         for name in extra:
             print(f"  - {name}")
     if not index_exists:
-        print("[FAIL] missing docs/todo/archive/index.md")
+        print("[FAIL] missing docs/en/todo/archive/index.md")
 
     if missing or extra or not index_exists:
         return 1
 
-    print("[OK] docs/todo/archive file set is synchronized with docs-ja/todo/archive")
+    print("[OK] docs/en/todo/archive file set is synchronized with docs/ja/todo/archive")
     return 0
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="sync docs/todo/archive from docs-ja/todo/archive")
+    ap = argparse.ArgumentParser(description="sync docs/en/todo/archive from docs/ja/todo/archive")
     ap.add_argument("--check", action="store_true", help="check only (no write)")
     ap.add_argument("--dry-run", action="store_true", help="show action without writing")
     ap.add_argument(
@@ -210,11 +210,11 @@ def main() -> int:
     if len(result.created) > 0:
         print("created files:")
         for name in result.created:
-            print(f"  - docs/todo/archive/{name}")
+            print(f"  - docs/en/todo/archive/{name}")
     if len(rewritten) > 0:
         print("rewritten files:")
         for name in rewritten:
-            print(f"  - docs/todo/archive/{name}")
+            print(f"  - docs/en/todo/archive/{name}")
     return 0
 
 

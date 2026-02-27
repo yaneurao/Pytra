@@ -1,0 +1,78 @@
+# 仕様書（入口）
+
+<a href="../../en/spec/index.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+
+`docs/ja/spec/index.md` は仕様全体の入口ページです。詳細は次の3ファイルに分割しています。
+
+- 利用仕様: [利用仕様](./spec-user.md)
+- 実装仕様: [実装仕様](./spec-dev.md)
+- ランタイム仕様: [ランタイム仕様](./spec-runtime.md)
+- Boxing/Unboxing 仕様: [Boxing/Unboxing 仕様](./spec-boxing.md)
+- type_id 仕様: [type_id 仕様](./spec-type_id.md)
+- GC 仕様: [GC 仕様](./spec-gc.md)
+- 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
+- フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)
+- EAST 統合仕様（現行正本）: [EAST仕様（統合）](./spec-east.md)
+- EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
+- EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
+- C++ backend 最適化層仕様: [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- Java native backend 契約仕様: [Java Native Backend 契約仕様](./spec-java-native-backend.md)
+- EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
+- EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
+- EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
+- Linker 仕様（EAST 連結）: [Linker 仕様](./spec-linker.md)
+- 言語別仕様: [言語別仕様](../language/index.md)
+- Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
+- 旧仕様アーカイブ: [仕様アーカイブ](./archive/index.md)
+- `pylib` モジュール一覧: [pylib モジュール一覧](./spec-pylib-modules.md)
+- 開発思想: [開発思想](./spec-philosophy.md)
+
+## 読み分け方
+
+- ツールの使い方・入力制約・テスト実行方法を確認したい場合:
+  - [利用仕様](./spec-user.md)
+- 実装方針・モジュール構成・変換仕様を確認したい場合:
+  - [実装仕様](./spec-dev.md)
+- C++ ランタイム配置・include対応規約・`Any` の C++ 表現方針を確認したい場合:
+  - [ランタイム仕様](./spec-runtime.md)
+- `Any/object` 境界の Boxing/Unboxing 契約を確認したい場合:
+  - [Boxing/Unboxing 仕様](./spec-boxing.md)
+- 単一継承の `type_id` 判定契約（`isinstance`/`issubclass`）を確認したい場合:
+  - [type_id 仕様](./spec-type_id.md)
+- RC ベースの GC 方針を確認したい場合:
+  - [GC 仕様](./spec-gc.md)
+- `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
+  - [言語プロファイル仕様](./spec-language-profile.md)
+- どのフォルダに何を置くべきか（責務境界）を確認したい場合:
+  - [フォルダ責務マップ仕様](./spec-folder.md)
+- EAST を三段（EAST1/EAST2/EAST3）でどう運用するかを確認したい場合:
+  - [EAST 段階構成](./spec-east.md#east-stages)
+- `EAST3` 最適化層（共通/言語別）の責務・契約を確認したい場合:
+  - [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
+- C++ backend 後段最適化（`CppOptimizer` と `CppEmitter` の責務分離）を確認したい場合:
+  - [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- Java backend の sidecar 撤去移行契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
+  - [Java Native Backend 契約仕様](./spec-java-native-backend.md)
+- EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:
+  - [責務対応表](./spec-east.md#east-file-mapping)
+- `EAST1` build 入口（`east1_build.py`）の責務境界を確認したい場合:
+  - [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
+- EAST3 主経路化までの移行順を確認したい場合:
+  - [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
+- `EAST3` の連結段（`type_id` 決定、manifest、中間ファイル再開）を確認したい場合:
+  - [Linker 仕様](./spec-linker.md)
+- 言語ごとの機能対応状況を確認したい場合:
+  - [言語別仕様](../language/index.md)
+- Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
+  - [Codex 向け運用仕様](./spec-codex.md)
+- 旧仕様（現行ではない文書）を確認したい場合:
+  - [仕様アーカイブ](./archive/index.md)
+- 設計思想・EAST 中心設計の背景を確認したい場合:
+  - [開発思想](./spec-philosophy.md)
+
+## Codex 起動時の確認先
+
+- Codex は起動時に `docs/ja/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](./spec-codex.md) と [TODO](../todo/index.md) を確認します。

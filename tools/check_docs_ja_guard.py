@@ -7,21 +7,28 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCS_JA = ROOT / "docs-ja"
+DOCS_JA = ROOT / "docs" / "ja"
 
 ALLOWED_EXACT: set[str] = {
+    "README.md",
+    "VERSION",
     "how-to-use.md",
     "news/index.md",
     "spec/index.md",
     "todo/index.md",
     "todo/archive/index.md",
+    "plans/README.md",
+    "plans/instruction-template.md",
+    "language/index.md",
 }
 
 ALLOWED_REGEX: tuple[re.Pattern[str], ...] = (
     re.compile(r"^todo/archive/[0-9]{8}\.md$"),
     re.compile(r"^plans/.+\.md$"),
     re.compile(r"^language/.+\.md$"),
-    re.compile(r"^spec/spec-(boxing|codex|dev|east|east123|east123-migration|folder|gc|import|iterable|language-profile|linker|options|runtime|tools|type_id|user|pylib-modules|sample-code|philosophy|make|template)\.md$"),
+    re.compile(r"^spec/archive/.+\.md$"),
+    re.compile(r"^spec/spec-[a-z0-9_-]+\.md$"),
+    re.compile(r"^news/.+\.md$"),
 )
 
 
@@ -37,7 +44,7 @@ def _is_allowed(rel_path: Path) -> bool:
 
 def main() -> int:
     if not DOCS_JA.exists():
-        print("docs-ja guard: docs-ja/ が存在しません。", file=sys.stderr)
+        print("docs/ja guard: docs/ja/ が存在しません。", file=sys.stderr)
         return 1
 
     disallowed: list[str] = []
@@ -49,13 +56,13 @@ def main() -> int:
             disallowed.append(rel.as_posix())
 
     if disallowed:
-        print("docs-ja guard failed: docs-ja/ 配下に未管理ファイルがあります。")
+        print("docs/ja guard failed: docs/ja/ 配下に未管理ファイルがあります。")
         for item in disallowed:
-            print(f"- docs-ja/{item}")
+            print(f"- docs/ja/{item}")
         print("意図した追加なら、明示依頼を得たうえでこのガードを更新してください。")
         return 1
 
-    print("docs-ja guard passed.")
+    print("docs/ja guard passed.")
     return 0
 
 

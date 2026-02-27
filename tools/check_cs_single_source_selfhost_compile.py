@@ -129,7 +129,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="check C# single-source selfhost compile status")
     ap.add_argument(
         "--out",
-        default="docs-ja/plans/p4-cs-single-source-selfhost-compile-status.md",
+        default="docs/ja/plans/p4-cs-single-source-selfhost-compile-status.md",
         help="write markdown report to this path",
     )
     args = ap.parse_args()

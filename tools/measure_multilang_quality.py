@@ -267,7 +267,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Measure sample code quality metrics")
     parser.add_argument(
         "--out",
-        default="docs-ja/plans/p1-multilang-output-quality-baseline.md",
+        default="docs/ja/plans/p1-multilang-output-quality-baseline.md",
         help="write markdown report to this path",
     )
     args = parser.parse_args()

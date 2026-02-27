@@ -125,7 +125,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="check multilang quality regression against baseline")
     ap.add_argument(
         "--baseline",
-        default="docs-ja/plans/p1-multilang-output-quality-baseline.md",
+        default="docs/ja/plans/p1-multilang-output-quality-baseline.md",
         help="baseline markdown path",
     )
     ap.add_argument(

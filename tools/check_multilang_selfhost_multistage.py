@@ -288,7 +288,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="collect multistage selfhost status for non-cpp transpilers")
     ap.add_argument(
         "--out",
-        default="docs-ja/plans/p1-multilang-selfhost-multistage-status.md",
+        default="docs/ja/plans/p1-multilang-selfhost-multistage-status.md",
         help="write markdown report to this path",
     )
     args = ap.parse_args()
