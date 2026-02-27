@@ -6,9 +6,9 @@
 - `docs-ja/todo/index.md` の `ID: P0-SIDECAR-REMOVE-01`
 
 背景:
-- Go / Java / Swift / Kotlin backend は native 既定へ移行済みだが、CLI 上は `--*-backend sidecar` 互換経路が残っている。
-- 現状は「既定で使わないが残っている」状態であり、分岐維持コストと仕様の曖昧さを継続的に生む。
-- ユーザー要望として sidecar の完全撤去が明示されたため、互換経路を実装・ドキュメント・回帰導線から除去する。
+- Go / Java / Swift / Kotlin backend の sidecar 互換経路は撤去済みで、native 単一路線へ統一済み。
+- 最終回帰では `runtime_parity_check --targets go,java,swift,kotlin --all-samples` が `case_fail=7`（Go/Kotlin の compile/run failed）で未達。
+- ユーザー要望として「この 7 ケースを順に潰す」ことが最優先で明示されたため、Go/Kotlin native 失敗の収束を最上位で実施する。
 
 目的:
 - Go / Java / Swift / Kotlin backend を native 単一路線に統一し、sidecar 実装と運用導線を完全に撤去する。
@@ -49,6 +49,7 @@
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S3-01`] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / `docs-ja/spec/spec-gsk-native-backend.md` / `docs-ja/spec/spec-java-native-backend.md` の sidecar 記述を「撤去済み・native-only」へ更新した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S3-02`] 英語版 `docs/how-to-use.md` / `docs/spec/spec-import.md` / `docs/spec/spec-gsk-native-backend.md` / `docs/spec/spec-java-native-backend.md` を同期し、日英で sidecar 記述の不整合を解消した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S4-01`] 最終回帰を実行。`check_py2{go,java,swift,kotlin}_transpile.py` はすべて `checked=132 ok=132 fail=0 skipped=6` で通過し、`find sample/go sample/java sample/swift sample/kotlin -name '*.js' | wc -l` は `0` を確認。`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` は `case_pass=11 case_fail=7 (run_failed=13, toolchain_missing=18)` で失敗し、Go/Kotlin native 既存課題（型不整合・宣言衝突）を確認した。
+- 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S5-*`] ユーザー指示により、parity 失敗 7 ケース（Go: `10/13/14/15/16/18`, Kotlin: `10/12/13/14/15/16/18`）の逐次解消を最優先に設定した。
 
 ## 分解
 
@@ -59,3 +60,6 @@
 - [x] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
+- [ ] [ID: P0-SIDECAR-REMOVE-01-S5-01] Go native parity 失敗 6 ケース（`10/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
+- [ ] [ID: P0-SIDECAR-REMOVE-01-S5-02] Kotlin native parity 失敗 7 ケース（`10/12/13/14/15/16/18`）を順に修正し、`run_failed` を解消する。
+- [ ] [ID: P0-SIDECAR-REMOVE-01-S5-03] `runtime_parity_check.py --targets go,java,swift,kotlin --all-samples` を再実行し、`case_fail=0` を確認して親 `P0-SIDECAR-REMOVE-01` を完了化する。
