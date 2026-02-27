@@ -45,13 +45,14 @@
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S1-01`] `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` から `--*-backend sidecar` 引数・sidecar 分岐・`.js` 出力経路を削除し、native 単一路線へ統一した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S1-02`] sidecar emitter 実装（`src/hooks/{go,java,swift,kotlin}/emitter/*_emitter.py`）を削除し、`hooks/*/emitter/__init__.py` は native 実装へ委譲する互換 API だけを残す構成へ整理した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S2-01`] `test_py2{go,java,swift,kotlin}_smoke.py` の sidecar 前提ケースを native 前提へ置換し、`runtime_parity_check.py` / `check_gsk_native_regression.py` から sidecar 引数を削除。`python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`、`test_py2java_smoke.py`、`test_py2swift_smoke.py`、`test_py2kotlin_smoke.py`、`test_runtime_parity_check_cli.py` がすべて通過した。
+- 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S2-02`] `python3 tools/regenerate_samples.py --langs go,java,swift,kotlin --force` を実行し、`summary: total=72 skip=0 regen=72 fail=0` を確認。続けて `find sample/go sample/java sample/swift sample/kotlin -name '*.js' | wc -l` が `0` となることを確認した。
 
 ## 分解
 
 - [x] [ID: P0-SIDECAR-REMOVE-01-S1-01] `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py` から `--*-backend sidecar` と sidecar 分岐を削除する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S1-02] sidecar 専用 emitter import / `transpile_to_js` / `write_js_runtime_shims` 依存を撤去し、未使用コードを整理する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S2-01] transpile/smoke/check 導線（`test_py2*` / `check_py2*_transpile.py` / `runtime_parity_check.py`）から sidecar 指定経路を除去する。
-- [ ] [ID: P0-SIDECAR-REMOVE-01-S2-02] `sample/go` / `sample/java` / `sample/swift` / `sample/kotlin` を再生成し、`.js` sidecar 非生成を回帰条件として固定する。
+- [x] [ID: P0-SIDECAR-REMOVE-01-S2-02] `sample/go` / `sample/java` / `sample/swift` / `sample/kotlin` を再生成し、`.js` sidecar 非生成を回帰条件として固定する。
 - [ ] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
 - [ ] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
 - [ ] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
