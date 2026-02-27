@@ -48,6 +48,7 @@
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S2-02`] `python3 tools/regenerate_samples.py --langs go,java,swift,kotlin --force` を実行し、`summary: total=72 skip=0 regen=72 fail=0` を確認。続けて `find sample/go sample/java sample/swift sample/kotlin -name '*.js' | wc -l` が `0` となることを確認した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S3-01`] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / `docs-ja/spec/spec-gsk-native-backend.md` / `docs-ja/spec/spec-java-native-backend.md` の sidecar 記述を「撤去済み・native-only」へ更新した。
 - 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S3-02`] 英語版 `docs/how-to-use.md` / `docs/spec/spec-import.md` / `docs/spec/spec-gsk-native-backend.md` / `docs/spec/spec-java-native-backend.md` を同期し、日英で sidecar 記述の不整合を解消した。
+- 2026-02-27: [ID: `P0-SIDECAR-REMOVE-01-S4-01`] 最終回帰を実行。`check_py2{go,java,swift,kotlin}_transpile.py` はすべて `checked=132 ok=132 fail=0 skipped=6` で通過し、`find sample/go sample/java sample/swift sample/kotlin -name '*.js' | wc -l` は `0` を確認。`runtime_parity_check.py --case-root sample --targets go,java,swift,kotlin --all-samples --ignore-unstable-stdout` は `case_pass=11 case_fail=7 (run_failed=13, toolchain_missing=18)` で失敗し、Go/Kotlin native 既存課題（型不整合・宣言衝突）を確認した。
 
 ## 分解
 
@@ -57,4 +58,4 @@
 - [x] [ID: P0-SIDECAR-REMOVE-01-S2-02] `sample/go` / `sample/java` / `sample/swift` / `sample/kotlin` を再生成し、`.js` sidecar 非生成を回帰条件として固定する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S3-01] `docs-ja/how-to-use.md` / `docs-ja/spec/spec-import.md` / 関連 spec から sidecar 記述を撤去し、native 単一路線へ更新する。
 - [x] [ID: P0-SIDECAR-REMOVE-01-S3-02] `docs/` 翻訳同期を反映し、日英で sidecar 記述の不整合を解消する。
-- [ ] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
+- [x] [ID: P0-SIDECAR-REMOVE-01-S4-01] 最終回帰（4言語 transpile + parity + sample 検証）を完了し、完了条件を文脈へ記録する。
