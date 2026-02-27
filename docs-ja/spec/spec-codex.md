@@ -100,8 +100,8 @@
 
 ## 8. 対外リリース版バージョン運用
 
-- 対外リリース版の正本はリポジトリ直下 `VERSION` とし、形式は `MAJOR.MINOR.PATCH`（SemVer）を使います。
+- 対外リリース版の正本は `docs-ja/VERSION` とし、形式は `MAJOR.MINOR.PATCH`（SemVer）を使います。
 - 現在の対外リリース版は `0.1.0` です。
 - `PATCH` の更新は Codex が実施してよいものとします。
 - `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施します。
-- `src/pytra/compiler/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`VERSION`）とは別管理です。
+- `src/pytra/compiler/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs-ja/VERSION`）とは別管理です。
