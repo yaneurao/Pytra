@@ -955,10 +955,18 @@ static inline ::std::optional<D> py_object_try_cast(const object& v) {
         return obj_to_str(v);
     } else if constexpr (::std::is_same_v<D, bool>) {
         return obj_to_bool(v);
-    } else if constexpr (::std::is_same_v<D, int64>) {
-        return obj_to_int64(v);
-    } else if constexpr (::std::is_same_v<D, float64>) {
-        return obj_to_float64(v);
+    } else if constexpr (::std::is_integral_v<D> && !::std::is_same_v<D, bool>) {
+        int64 i = 0;
+        if (obj_try_to_int64(v, i)) return static_cast<D>(i);
+        float64 f = 0.0;
+        if (obj_try_to_float64(v, f)) return static_cast<D>(f);
+        return ::std::nullopt;
+    } else if constexpr (::std::is_floating_point_v<D>) {
+        float64 f = 0.0;
+        if (obj_try_to_float64(v, f)) return static_cast<D>(f);
+        int64 i = 0;
+        if (obj_try_to_int64(v, i)) return static_cast<D>(i);
+        return ::std::nullopt;
     } else if constexpr (::std::is_same_v<D, dict<str, object>>) {
         if (const auto* p = obj_to_dict_ptr(v)) return *p;
         return ::std::nullopt;

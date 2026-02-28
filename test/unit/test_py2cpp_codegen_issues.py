@@ -1111,6 +1111,21 @@ def f() -> int:
         self.assertIn("py_set_at(object(py_at(grid, py_to<int64>(y))), x, make_object(1));", cpp)
         self.assertNotIn("object(py_at(grid, py_to<int64>(y)))[x]", cpp)
 
+    def test_pyobj_list_model_list_repeat_unboxes_to_value_list_before_py_repeat(self) -> None:
+        src = """def row(w: int) -> list[int]:
+    return [0] * w
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_list_repeat_row.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("py_repeat(list<int64>(make_object(list<int64>{0})), w)", cpp)
+        self.assertNotIn("py_repeat(make_object(list<int64>{0}), w)", cpp)
+
     def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
         src = """def f() -> int:
     xs: list[int] = []

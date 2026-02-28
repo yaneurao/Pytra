@@ -147,10 +147,21 @@ class CppBinaryOperatorEmitter:
             right_t0 = self.get_expr_type(expr.get("right"))
             left_t = left_t0 if isinstance(left_t0, str) else ""
             right_t = right_t0 if isinstance(right_t0, str) else ""
+            list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
             if left_t.startswith("list[") and right_t in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({left}, {right})"
+                list_expr = left
+                left_node = self.any_to_dict_or_empty(expr.get("left"))
+                if list_model == "pyobj" and not self._expr_is_stack_list_local(left_node):
+                    list_cpp_t = self._cpp_list_value_model_type_text(left_t)
+                    list_expr = f"{list_cpp_t}({left})"
+                return f"py_repeat({list_expr}, {right})"
             if right_t.startswith("list[") and left_t in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
-                return f"py_repeat({right}, {left})"
+                list_expr = right
+                right_node = self.any_to_dict_or_empty(expr.get("right"))
+                if list_model == "pyobj" and not self._expr_is_stack_list_local(right_node):
+                    list_cpp_t = self._cpp_list_value_model_type_text(right_t)
+                    list_expr = f"{list_cpp_t}({right})"
+                return f"py_repeat({list_expr}, {left})"
             if left_t == "str" and right_t in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:
                 return f"py_repeat({left}, {right})"
             if right_t == "str" and left_t in {"int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}:

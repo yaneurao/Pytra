@@ -94,6 +94,18 @@ int main() {
     assert(legacy_list.size() == 3);
     assert(as_list_rc->value.size() == 2);
 
+    object as_bytes_obj = make_object(bytes{uint8(1), uint8(2), uint8(255)});
+    bytes as_bytes = bytes(as_bytes_obj);
+    assert(as_bytes.size() == 3);
+    assert(as_bytes[0] == static_cast<uint8>(1));
+    assert(as_bytes[2] == static_cast<uint8>(255));
+
+    object as_frames_obj = make_object(list<object>{make_object(bytes{uint8(3), uint8(4), uint8(5)})});
+    list<bytes> as_frames = list<bytes>(as_frames_obj);
+    assert(as_frames.size() == 1);
+    assert(as_frames[0].size() == 3);
+    assert(as_frames[0][1] == static_cast<uint8>(4));
+
     ::std::any any_num = str("21");
     assert(py_to_int64(any_num) == 21);
     assert(py_to<int64>(any_num) == 21);
