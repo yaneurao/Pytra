@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -80,6 +81,20 @@ def _normalize_output_for_compare(stdout_text: str) -> str:
             continue
         lines.append(line)
     return "\n".join(lines)
+
+
+def _parse_output_path(stdout_text: str) -> str:
+    m = re.search(r"^output:\s*(.+)$", stdout_text, flags=re.MULTILINE)
+    if m is None:
+        return ""
+    return m.group(1).strip()
+
+
+def _resolve_output_path(cwd: Path, output_text: str) -> Path:
+    p = Path(output_text)
+    if p.is_absolute():
+        return p
+    return cwd / p
 
 
 def find_case_path(case_stem: str, case_root: str) -> Path | None:
@@ -264,6 +279,16 @@ def check_case(
             _record("python", "python_failed", py.stderr.strip())
             return 1
         expected = _normalize_output_for_compare(py.stdout) if ignore_stdout else py.stdout
+        expected_artifact_size: int | None = None
+        expected_artifact_path: Path | None = None
+        expected_out_txt = _parse_output_path(py.stdout)
+        if expected_out_txt != "":
+            expected_artifact_path = _resolve_output_path(work, expected_out_txt)
+            if not expected_artifact_path.exists() or not expected_artifact_path.is_file():
+                _record("python", "python_artifact_missing", str(expected_artifact_path))
+                print(f"[ERROR] python:{case_stem} artifact missing: {expected_artifact_path}")
+                return 1
+            expected_artifact_size = int(expected_artifact_path.stat().st_size)
 
         mismatches: list[str] = []
         for target in build_targets(case_stem, case_path, east3_opt_level):
@@ -281,6 +306,10 @@ def check_case(
                 _record(target.name, "transpile_failed", msg)
                 continue
 
+            # Ensure target artifact validation is not masked by stale python output.
+            if expected_artifact_path is not None and expected_artifact_path.exists() and expected_artifact_path.is_file():
+                expected_artifact_path.unlink()
+
             rr = run_shell(target.run_cmd, cwd=work)
             if rr.returncode != 0:
                 msg = rr.stderr.strip()
@@ -296,9 +325,49 @@ def check_case(
                     f"  expected: {expected!r}\n"
                     f"  actual  : {actual!r}"
                 )
-            else:
+                continue
+
+            actual_out_txt = _parse_output_path(rr.stdout)
+            if expected_artifact_size is None:
+                if actual_out_txt != "":
+                    actual_artifact_path = _resolve_output_path(work, actual_out_txt)
+                    if actual_artifact_path.exists() and actual_artifact_path.is_file():
+                        _record(target.name, "artifact_presence_mismatch", "unexpected artifact")
+                        mismatches.append(
+                            f"{case_stem}:{target.name}: artifact presence mismatch "
+                            "(python:none target:exists)"
+                        )
+                        continue
                 print(f"[OK] {case_stem}:{target.name}")
                 _record(target.name, "ok", "")
+                continue
+
+            if actual_out_txt == "":
+                _record(target.name, "artifact_presence_mismatch", "missing output line")
+                mismatches.append(
+                    f"{case_stem}:{target.name}: artifact presence mismatch (python:exists target:none)"
+                )
+                continue
+
+            actual_artifact_path = _resolve_output_path(work, actual_out_txt)
+            if not actual_artifact_path.exists() or not actual_artifact_path.is_file():
+                _record(target.name, "artifact_missing", str(actual_artifact_path))
+                mismatches.append(
+                    f"{case_stem}:{target.name}: output artifact missing: {actual_artifact_path}"
+                )
+                continue
+
+            actual_artifact_size = int(actual_artifact_path.stat().st_size)
+            if actual_artifact_size != expected_artifact_size:
+                _record(target.name, "artifact_size_mismatch", "size mismatch")
+                mismatches.append(
+                    f"{case_stem}:{target.name}: artifact size mismatch "
+                    f"(python:{expected_artifact_size} target:{actual_artifact_size})"
+                )
+                continue
+
+            print(f"[OK] {case_stem}:{target.name}")
+            _record(target.name, "ok", "")
 
     if mismatches:
         print("\n[FAIL] mismatches")

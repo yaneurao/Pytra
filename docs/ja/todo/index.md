@@ -59,12 +59,12 @@
 
 文脈: [docs/ja/plans/p0-sample-artifact-size-stdout-parity.md](../plans/p0-sample-artifact-size-stdout-parity.md)
 
-1. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01] 画像出力 sample に `artifact_size` 出力を追加し、stdout parity で artifact サイズ一致を検証可能にする。
-2. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S1-01] 画像出力 sample ケースを棚卸しし、`artifact_size` 出力追加対象を固定する。
-3. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S2-01] `sample/py` の対象ケースへ `artifact_size` 出力（`Path(out_path).stat().st_size`）を追加する。
-4. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S2-02] 各 backend 生成コードで同等 `artifact_size` 行が出ることを再生成で確認する。
-5. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S3-01] `runtime_parity_check` の回帰テストを更新し、`artifact_size` 行の一致検証を固定する。
-6. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S3-02] sample 全体 parity を再実行し、サイズ不一致があれば fail として検知できる状態を確認する。
+1. [x] [ID: P0-SAMPLE-ARTIFACT-SIZE-01] `runtime_parity_check` で画像 artifact の実サイズ一致を検証し、stdout だけでは見えない回帰を検知可能にする。
+2. [x] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S1-01] 画像出力ケースを棚卸しし、`output:` 行を起点に artifact 比較対象を固定する。
+3. [x] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S2-01] Python baseline の artifact 実サイズ取得を `runtime_parity_check` に追加する。
+4. [x] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S2-02] target 実行時の artifact presence/size 比較（stale file ガード含む）を追加する。
+5. [x] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S3-01] `runtime_parity_check` 回帰テストを更新し、`artifact_size_mismatch` 検知を固定する。
+6. [x] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S3-02] sample parity を再実行し、サイズ比較有効状態で非退行を確認する。
 
 ### P1: EAST3 関数間 non-escape 解析導入（RAII 候補注釈）
 

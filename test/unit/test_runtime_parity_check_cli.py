@@ -87,6 +87,54 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(ruby_target.run_cmd, "ruby test/transpile/ruby/01_mandelbrot.rb")
         self.assertEqual(ruby_target.needs, ("python", "ruby"))
 
+    def test_normalize_output_keeps_artifact_size_line(self) -> None:
+        raw = "output: sample/out/x.png\nartifact_size: 123\nelapsed_sec: 0.12\n"
+        norm = self.rpc._normalize_output_for_compare(raw)
+        self.assertIn("artifact_size: 123", norm)
+        self.assertNotIn("elapsed_sec:", norm)
+
+    def test_check_case_detects_artifact_size_mismatch(self) -> None:
+        records: list = []
+        target = self.rpc.Target(name="ruby", transpile_cmd="noop", run_cmd="noop", needs=())
+        call_index = {"value": 0}
+
+        def _side_effect(cmd: str, cwd: Path, *, env: dict[str, str] | None = None):
+            _ = cmd
+            _ = env
+            out_path = cwd / "tmp" / "out.bin"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            idx = call_index["value"]
+            if idx == 0:
+                out_path.write_bytes(b"a" * 100)
+                cp = subprocess.CompletedProcess(
+                    args="python fake.py",
+                    returncode=0,
+                    stdout="output: tmp/out.bin\nelapsed_sec: 0.1\n",
+                    stderr="",
+                )
+            elif idx == 1:
+                cp = subprocess.CompletedProcess(args="python src/py2rb.py ...", returncode=0, stdout="", stderr="")
+            else:
+                out_path.write_bytes(b"b" * 101)
+                cp = subprocess.CompletedProcess(
+                    args="ruby out.rb",
+                    returncode=0,
+                    stdout="output: tmp/out.bin\nelapsed_sec: 0.2\n",
+                    stderr="",
+                )
+            call_index["value"] = idx + 1
+            return cp
+
+        with patch.object(self.rpc, "find_case_path", return_value=ROOT / "sample" / "py" / "01_mandelbrot.py"), patch.object(
+            self.rpc, "run_shell", side_effect=_side_effect
+        ), patch.object(self.rpc, "build_targets", return_value=[target]), patch.object(self.rpc, "can_run", return_value=True):
+            code = self.rpc.check_case("01_mandelbrot", {"ruby"}, case_root="sample", ignore_stdout=True, east3_opt_level="1", records=records)
+
+        self.assertEqual(code, 1)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].category, "artifact_size_mismatch")
+        self.assertEqual(records[0].target, "ruby")
+
 
 if __name__ == "__main__":
     unittest.main()
