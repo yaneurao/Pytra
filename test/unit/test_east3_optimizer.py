@@ -5,6 +5,7 @@ import unittest
 
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
+from src.pytra.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
 from src.pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
@@ -90,7 +91,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -98,6 +99,7 @@ class East3OptimizerTest(unittest.TestCase):
         by_name = {str(item.get("name", "")): bool(item.get("enabled")) for item in trace if isinstance(item, dict)}
         self.assertFalse(by_name.get("NoOpCastCleanupPass", True))
         self.assertFalse(by_name.get("LiteralCastFoldPass", True))
+        self.assertFalse(by_name.get("NumericCastChainReductionPass", True))
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
@@ -106,6 +108,7 @@ class East3OptimizerTest(unittest.TestCase):
         trace_text = render_east3_opt_trace(report)
         self.assertIn("NoOpCastCleanupPass", trace_text)
         self.assertIn("LiteralCastFoldPass", trace_text)
+        self.assertIn("NumericCastChainReductionPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
@@ -197,6 +200,66 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 0)
         value = doc.get("body")[0].get("value")
         self.assertEqual(value.get("kind"), "Call")
+
+    def test_numeric_cast_chain_reduction_pass_folds_redundant_static_cast(self) -> None:
+        doc = _module_doc()
+        cast_call = {
+            "kind": "Call",
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "int(x)",
+            "func": {"kind": "Name", "id": "int"},
+            "args": [{"kind": "Name", "id": "x", "resolved_type": "int64", "borrow_kind": "value", "casts": []}],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+        }
+        doc["body"] = [{"kind": "Expr", "value": cast_call}]
+        result = NumericCastChainReductionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        folded_value = doc.get("body")[0].get("value")
+        self.assertEqual(folded_value.get("kind"), "Name")
+        self.assertEqual(folded_value.get("id"), "x")
+
+    def test_numeric_cast_chain_reduction_pass_folds_redundant_unbox(self) -> None:
+        doc = _module_doc()
+        unbox_expr = {
+            "kind": "Unbox",
+            "target": "float64",
+            "resolved_type": "float64",
+            "borrow_kind": "value",
+            "casts": [],
+            "value": {"kind": "Name", "id": "v", "resolved_type": "float64", "borrow_kind": "value", "casts": []},
+        }
+        doc["body"] = [{"kind": "Expr", "value": unbox_expr}]
+        result = NumericCastChainReductionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        folded_value = doc.get("body")[0].get("value")
+        self.assertEqual(folded_value.get("kind"), "Name")
+        self.assertEqual(folded_value.get("id"), "v")
+
+    def test_numeric_cast_chain_reduction_pass_skips_any_like_source(self) -> None:
+        doc = _module_doc()
+        cast_call = {
+            "kind": "Call",
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "int(x)",
+            "func": {"kind": "Name", "id": "int"},
+            "args": [{"kind": "Name", "id": "x", "resolved_type": "object", "borrow_kind": "value", "casts": []}],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+        }
+        doc["body"] = [{"kind": "Expr", "value": cast_call}]
+        result = NumericCastChainReductionPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertEqual(doc.get("body")[0].get("value", {}).get("kind"), "Call")
 
     def test_range_for_canonicalization_pass_rewrites_runtime_range_loop(self) -> None:
         doc = _module_doc()

@@ -39,12 +39,13 @@
 - 2026-02-27: `sample/cpp` 実出力レビューに基づき、EAST3最適化層で先に吸収すべき7項目（range正規化拡張、typed enumerate、cast-chain縮退、loop invariant hoist拡張、typed repeat、dict key cast削減、tuple unpack直展開）を P0 として起票。
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-01] `RangeForCanonicalizationPass` を拡張し、`step` 定数かつ `int/int64` 型引数の `range(...)` で `stop` 非定数ケースを `StaticRangeForPlan` へ正規化するよう変更。`test_range_for_canonicalization_pass_accepts_dynamic_stop_with_const_step` / `...skips_dynamic_stop_when_type_is_unknown` を追加して回帰固定。
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-02] `TypedEnumerateNormalizationPass` を追加し、`ForCore(RuntimeIterForPlan)` の `py_enumerate(list[T])` に `iter_item_type=tuple[int64,T]` と `target_plan` の型注釈を補完。C++ emitter 側は `iter_item_type/iter_element_type` ヒントでも typed loop header を選べるよう補強し、`test_typed_enumerate_normalization_pass_*` / `test_emit_stmt_forcore_runtime_tuple_target_uses_iter_item_hint_when_resolved_type_unknown` で回帰固定。
+- 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] `NumericCastChainReductionPass` を追加し、同型数値キャスト（`static_cast` / `Unbox`）の連鎖を fail-closed で縮退。`opt_pass_spec` 無効化経路に pass 名を追加し、`test_numeric_cast_chain_reduction_pass_*` で no-op/skip 条件（`object/Any`）を含めて回帰固定。
 
 ## 分解
 
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-01] `RangeForCanonicalizationPass` 拡張（`stop` 非定数 + `step` 定数対応）を実装し、`for (...; N>0 ? ... : ...)` 形の発生を抑制する。
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-02] `enumerate(list[T])` の typed 反復正規化を実装し、`object + py_at + py_to` 連鎖を縮退する。
-- [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] 数値 cast-chain 縮退 pass を追加し、型既知 `py_to<T>` の連鎖を削減する。
+- [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] 数値 cast-chain 縮退 pass を追加し、型既知 `py_to<T>` の連鎖を削減する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] ループ不変な型変換/分母の hoist を実装し、内側ループの反復処理を軽量化する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] 型既知 `py_repeat` 初期化の typed materialization 正規化を実装する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-06] `dict<str, V>` キー経路の不要 `to_string` 縮退を実装する。
