@@ -54,6 +54,13 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         self.assertIn("final class Dog: Animal", swift)
         self.assertIn("func _case_main()", swift)
 
+    def test_module_leading_comments_are_emitted(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", swift)
+        self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", swift)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

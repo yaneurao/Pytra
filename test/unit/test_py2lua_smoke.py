@@ -53,6 +53,23 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("return (-n)", lua)
         self.assertIn("else", lua)
 
+    def test_module_leading_comments_are_emitted(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "leading_comment.lua_case.py"
+            src_py.write_text(
+                "# leading comment 1\n"
+                "# leading comment 2\n"
+                "def f() -> int:\n"
+                "    return 1\n"
+                "if __name__ == '__main__':\n"
+                "    print(f())\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("-- leading comment 1", lua)
+        self.assertIn("-- leading comment 2", lua)
+
     def test_transpile_for_range_fixture_contains_static_for(self) -> None:
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")

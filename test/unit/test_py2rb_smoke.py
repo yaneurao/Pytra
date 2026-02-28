@@ -62,6 +62,13 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("class Dog < Animal", ruby)
         self.assertIn("def _case_main()", ruby)
 
+    def test_module_leading_comments_are_emitted(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("# 01: Sample that outputs the Mandelbrot set as a PNG image.", ruby)
+        self.assertIn("# Syntax is kept straightforward with future transpilation in mind.", ruby)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

@@ -68,6 +68,56 @@ def _kotlin_string_literal(text: str) -> str:
     return '"' + out + '"'
 
 
+def _module_leading_comment_lines(east_doc: dict[str, Any], prefix: str) -> list[str]:
+    trivia_any = east_doc.get("module_leading_trivia")
+    trivia = trivia_any if isinstance(trivia_any, list) else []
+    out: list[str] = []
+    for item_any in trivia:
+        if not isinstance(item_any, dict):
+            continue
+        kind = item_any.get("kind")
+        if kind == "comment":
+            text = item_any.get("text")
+            if isinstance(text, str):
+                out.append(prefix + text)
+            continue
+        if kind == "blank":
+            count = item_any.get("count")
+            n = count if isinstance(count, int) and count > 0 else 1
+            i = 0
+            while i < n:
+                out.append("")
+                i += 1
+    while len(out) > 0 and out[-1] == "":
+        out.pop()
+    return out
+
+
+def _leading_comment_lines(stmt: dict[str, Any], prefix: str, indent: str = "") -> list[str]:
+    trivia_any = stmt.get("leading_trivia")
+    trivia = trivia_any if isinstance(trivia_any, list) else []
+    out: list[str] = []
+    for item_any in trivia:
+        if not isinstance(item_any, dict):
+            continue
+        kind = item_any.get("kind")
+        if kind == "comment":
+            text = item_any.get("text")
+            if isinstance(text, str):
+                out.append(indent + prefix + text)
+            continue
+        if kind == "blank":
+            count = item_any.get("count")
+            n = count if isinstance(count, int) and count > 0 else 1
+            i = 0
+            while i < n:
+                out.append("")
+                i += 1
+    while len(out) > 0 and out[-1] == "":
+        out.pop()
+    return out
+
+
 def _kotlin_type(type_name: Any, *, allow_void: bool) -> str:
     if not isinstance(type_name, str):
         return "Any?"
@@ -1897,6 +1947,10 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
     lines.append("// Auto-generated Pytra Kotlin native source from EAST3.")
     lines.append("import kotlin.math.*")
     lines.append("")
+    module_comments = _module_leading_comment_lines(east_doc, "// ")
+    if len(module_comments) > 0:
+        lines.extend(module_comments)
+        lines.append("")
     lines.extend(_emit_runtime_helpers())
 
     i = 0
@@ -1914,12 +1968,20 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
 
     i = 0
     while i < len(classes):
+        cls_comments = _leading_comment_lines(classes[i], "// ")
+        if len(cls_comments) > 0:
+            lines.append("")
+            lines.extend(cls_comments)
         lines.append("")
         lines.extend(_emit_class(classes[i], indent=""))
         i += 1
 
     i = 0
     while i < len(functions):
+        fn_comments = _leading_comment_lines(functions[i], "// ")
+        if len(fn_comments) > 0:
+            lines.append("")
+            lines.extend(fn_comments)
         lines.append("")
         lines.extend(_emit_function(functions[i], indent="", in_class=False))
         i += 1

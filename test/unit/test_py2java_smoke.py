@@ -131,6 +131,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("return (a + b);", java)
         self.assertIn('System.out.println("True");', java)
 
+    def test_module_leading_comments_are_emitted(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", java)
+        self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", java)
+
     def test_java_native_emitter_lowers_if_and_forcore(self) -> None:
         if_fixture = find_fixture_case("if_else")
         if_east = load_east(if_fixture, parser_backend="self_hosted")

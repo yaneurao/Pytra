@@ -129,6 +129,60 @@ def _java_string_literal(text: str) -> str:
     return '"' + out + '"'
 
 
+def _module_leading_comment_lines(
+    east_doc: dict[str, Any],
+    prefix: str,
+    indent: str = "",
+) -> list[str]:
+    trivia_any = east_doc.get("module_leading_trivia")
+    trivia = trivia_any if isinstance(trivia_any, list) else []
+    out: list[str] = []
+    for item_any in trivia:
+        if not isinstance(item_any, dict):
+            continue
+        kind = item_any.get("kind")
+        if kind == "comment":
+            text = item_any.get("text")
+            if isinstance(text, str):
+                out.append(indent + prefix + text)
+            continue
+        if kind == "blank":
+            count = item_any.get("count")
+            n = count if isinstance(count, int) and count > 0 else 1
+            i = 0
+            while i < n:
+                out.append("")
+                i += 1
+    while len(out) > 0 and out[-1] == "":
+        out.pop()
+    return out
+
+
+def _leading_comment_lines(stmt: dict[str, Any], prefix: str, indent: str = "") -> list[str]:
+    trivia_any = stmt.get("leading_trivia")
+    trivia = trivia_any if isinstance(trivia_any, list) else []
+    out: list[str] = []
+    for item_any in trivia:
+        if not isinstance(item_any, dict):
+            continue
+        kind = item_any.get("kind")
+        if kind == "comment":
+            text = item_any.get("text")
+            if isinstance(text, str):
+                out.append(indent + prefix + text)
+            continue
+        if kind == "blank":
+            count = item_any.get("count")
+            n = count if isinstance(count, int) and count > 0 else 1
+            i = 0
+            while i < n:
+                out.append("")
+                i += 1
+    while len(out) > 0 and out[-1] == "":
+        out.pop()
+    return out
+
+
 def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
     if ident == "self":
@@ -1615,15 +1669,27 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("    private " + main_class + "() {")
     lines.append("    }")
     lines.append("")
+    module_comments = _module_leading_comment_lines(east_doc, "// ", indent="    ")
+    if len(module_comments) > 0:
+        lines.extend(module_comments)
+        lines.append("")
 
     i = 0
     while i < len(classes):
+        cls_comments = _leading_comment_lines(classes[i], "// ", indent="    ")
+        if len(cls_comments) > 0:
+            lines.append("")
+            lines.extend(cls_comments)
         lines.append("")
         lines.extend(_emit_class(classes[i], indent="    "))
         i += 1
 
     i = 0
     while i < len(functions):
+        fn_comments = _leading_comment_lines(functions[i], "// ", indent="    ")
+        if len(fn_comments) > 0:
+            lines.append("")
+            lines.extend(fn_comments)
         lines.append("")
         lines.extend(_emit_function(functions[i], indent="    ", in_class=False))
         i += 1

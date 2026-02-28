@@ -110,6 +110,10 @@ class LuaNativeEmitter:
     def transpile(self) -> str:
         self.lines.append("-- Auto-generated Pytra Lua native source from EAST3.")
         self.lines.append("")
+        module_comments = self._module_leading_comment_lines(prefix="-- ")
+        if len(module_comments) > 0:
+            self.lines.extend(module_comments)
+            self.lines.append("")
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
@@ -133,6 +137,44 @@ class LuaNativeEmitter:
             if isinstance(item, dict):
                 out.append(item)
         return out
+
+    def _module_leading_comment_lines(self, prefix: str) -> list[str]:
+        trivia = self._dict_list(self.east_doc.get("module_leading_trivia"))
+        out: list[str] = []
+        for item in trivia:
+            kind = item.get("kind")
+            if kind == "comment":
+                text = item.get("text")
+                if isinstance(text, str):
+                    out.append(prefix + text)
+                continue
+            if kind == "blank":
+                count = item.get("count")
+                n = count if isinstance(count, int) and count > 0 else 1
+                i = 0
+                while i < n:
+                    out.append("")
+                    i += 1
+        while len(out) > 0 and out[-1] == "":
+            out.pop()
+        return out
+
+    def _emit_leading_trivia(self, stmt: dict[str, Any], prefix: str) -> None:
+        trivia = self._dict_list(stmt.get("leading_trivia"))
+        for item in trivia:
+            kind = item.get("kind")
+            if kind == "comment":
+                text = item.get("text")
+                if isinstance(text, str):
+                    self._emit_line(prefix + text)
+                continue
+            if kind == "blank":
+                count = item.get("count")
+                n = count if isinstance(count, int) and count > 0 else 1
+                i = 0
+                while i < n:
+                    self._emit_line("")
+                    i += 1
 
     def _emit_line(self, text: str) -> None:
         self.lines.append(("    " * self.indent) + text)
@@ -271,6 +313,7 @@ class LuaNativeEmitter:
         self._emit_line("")
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
+        self._emit_leading_trivia(stmt, prefix="-- ")
         kind = stmt.get("kind")
         if kind in {"Import", "ImportFrom"}:
             return
