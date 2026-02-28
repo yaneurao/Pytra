@@ -78,6 +78,30 @@
 6. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
 7. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-02] `east3 optimizer` 回帰と `check_py2cpp_transpile` を再実行し、非退行を確認する。
 
+### P1: C++ `list` の PyObj/RC モデル移行（段階導入）
+
+文脈: [docs/ja/plans/p1-list-pyobj-migration.md](../plans/p1-list-pyobj-migration.md)
+
+1. [ ] [ID: P1-LIST-PYOBJ-MIG-01] `list` を PyObj/RC 管理モデルへ段階移行し、non-escape 経路のみ RAII 縮退できる構成へ移行する。
+2. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-01] `list` 参照セマンティクス契約（alias/共有/破壊的更新）を docs/spec に明文化する。
+3. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
+4. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピー依存箇所を棚卸しして決定ログに固定する。
+5. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
+6. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
+7. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-03] 旧値モデルとの互換ブリッジ（最小）を追加し、段階移行中の compile break を抑える。
+8. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-04] runtime 単体テスト（構築・alias・iter・境界変換）を追加する。
+9. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-01] C++ emitter の list 型描画を model switch（`value|pyobj`）経由へ集約する。
+10. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-02] list literal/ctor/append/extend/pop/index/slice の出力を `pyobj` モデル対応へ更新する。
+11. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-03] for/enumerate/comprehension の list 反復 lower を `pyobj` list で成立させる。
+12. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-04] `sample/18` を含む代表 fixture の compile/run/parity を `pyobj` モデルで通す。
+13. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-01] `P1-EAST3-NONESCAPE-IPA-01` の注釈を C++ 側へ受け渡す経路を追加する。
+14. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-02] non-escape local list のみ stack/RAII へ縮退する Cpp pass を追加する。
+15. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-03] unknown/external/dynamic call 混在時に縮退しない fail-closed 回帰テストを追加する。
+16. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-01] `value` vs `pyobj` の性能/サイズ/差分を sample で比較し、既定切替判断を記録する。
+17. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
+18. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
+19. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
+
 ### P1: 全言語コメント忠実性ポリシー（生成コメント禁止）
 
 文脈: [docs/ja/plans/p1-comment-fidelity-all-backends.md](../plans/p1-comment-fidelity-all-backends.md)
