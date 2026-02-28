@@ -50,8 +50,8 @@
 
 - [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-01] import closure の収集仕様（対象モジュール範囲、循環時挙動、未解決時 fail-closed）を確定する。
 - [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-02] 関数シンボルを `module_id::symbol` で一意化し、モジュール横断 call target 解決を実装する。
-- [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-01] `NonEscapeInterproceduralPass` をモジュール横断 summary 計算へ拡張し、SCC fixed-point の決定性を維持する。
-- [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-02] callsite `meta.non_escape_callsite` / module `meta.non_escape_summary` を横断解析結果で更新する。
+- [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-01] `NonEscapeInterproceduralPass` をモジュール横断 summary 計算へ拡張し、SCC fixed-point の決定性を維持する。
+- [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-02] callsite `meta.non_escape_callsite` / module `meta.non_escape_summary` を横断解析結果で更新する。
 - [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-01] C++ emitter の safe-call 固定ホワイトリスト依存を縮退し、`non_escape_callsite` 注釈を優先して stack-list 判定できるようにする。
 - [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-02] `sample/05` で `frames` が `object` へ退化しないことを確認し、`save_gif` 呼び出し時の暗黙変換を削減する。
 - [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-01] module-cross / unresolved-import / recursive-import の回帰テストを追加し、fail-closed と決定性を固定する。

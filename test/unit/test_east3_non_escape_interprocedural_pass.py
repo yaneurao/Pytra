@@ -171,6 +171,49 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         self.assertEqual(callsite.get("callee"), "pytra.std.image::save_gif")
         self.assertFalse(callsite.get("resolved", True))
 
+    def test_cross_module_closure_propagates_summary_to_root(self) -> None:
+        callee_unknown = _call_name("unknown_sink", [_name("p")])
+        imported_doc: dict[str, object] = {
+            "kind": "Module",
+            "east_stage": 3,
+            "meta": {"module_id": "pkg.b"},
+            "body": [
+                _fn("sink", ["p"], [_expr(callee_unknown)]),
+            ],
+        }
+        root_call = _call_name("sink", [_name("x")])
+        root_doc: dict[str, object] = {
+            "kind": "Module",
+            "east_stage": 3,
+            "meta": {
+                "module_id": "pkg.a",
+                "import_bindings": [
+                    {
+                        "module_id": "pkg.b",
+                        "export_name": "sink",
+                        "local_name": "sink",
+                        "binding_kind": "symbol",
+                    }
+                ],
+                "non_escape_import_closure": {"pkg.b": imported_doc},
+            },
+            "body": [
+                _fn("main", ["x"], [_expr(root_call)]),
+            ],
+        }
+        result1 = NonEscapeInterproceduralPass().run(root_doc, PassContext(opt_level=1))
+        summary1 = root_doc.get("meta", {}).get("non_escape_summary", {})
+        self.assertTrue(result1.changed)
+        self.assertTrue(summary1["pkg.b::sink"]["arg_escape"][0])
+        self.assertTrue(summary1["pkg.a::main"]["arg_escape"][0])
+        callsite = root_call.get("meta", {}).get("non_escape_callsite", {})
+        self.assertEqual(callsite.get("callee"), "pkg.b::sink")
+        self.assertTrue(callsite.get("resolved", False))
+        result2 = NonEscapeInterproceduralPass().run(root_doc, PassContext(opt_level=1))
+        summary2 = root_doc.get("meta", {}).get("non_escape_summary", {})
+        self.assertFalse(result2.changed)
+        self.assertEqual(summary1, summary2)
+
 
 if __name__ == "__main__":
     unittest.main()
