@@ -44,6 +44,18 @@
 6. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
 7. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、固定コメント残存ゼロを確認する。
 
+### P1: Kotlin runtime 外出し（inline helper 撤去）
+
+文脈: [docs/ja/plans/p1-kotlin-runtime-externalization.md](../plans/p1-kotlin-runtime-externalization.md)
+
+1. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01] Kotlin backend の生成コードから `__pytra_*` helper 本体を撤去し、runtime 外部参照方式へ統一する。
+2. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S1-01] Kotlin emitter の inline helper 出力一覧と runtime API 対応表を確定する。
+3. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-01] Kotlin runtime 正本（`src/runtime/kotlin/pytra`）を整備し、`__pytra_*` API を外部化する。
+4. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-02] Kotlin emitter から helper 本体出力を撤去し、runtime 呼び出し専用へ切り替える。
+5. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-03] `py2kotlin.py` の出力導線で runtime ファイルを配置する。
+6. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-01] `check_py2kotlin_transpile` / Kotlin smoke / parity を更新し、回帰を固定する。
+7. [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-02] `sample/kotlin` を再生成し、inline helper 残存ゼロを確認する。
+
 ### P2: Java 出力の過剰括弧削減（可読性）
 
 文脈: [docs/ja/plans/p2-java-parentheses-reduction.md](../plans/p2-java-parentheses-reduction.md)
