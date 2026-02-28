@@ -26,6 +26,10 @@ def _fn(name: str, args: list[str], body: list[dict[str, object]]) -> dict[str, 
     return {"kind": "FunctionDef", "name": name, "arg_order": args, "body": body}
 
 
+def _sym(name: str) -> str:
+    return "__module__::" + name
+
+
 class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
     def test_pass_propagates_arg_escape_through_known_calls(self) -> None:
         sink_call = _call_name("unknown_sink", [_name("x")])
@@ -42,8 +46,8 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         result = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
         self.assertTrue(result.changed)
         summary = doc.get("meta", {}).get("non_escape_summary", {})
-        self.assertTrue(summary["sink"]["arg_escape"][0])
-        self.assertTrue(summary["wrap"]["arg_escape"][0])
+        self.assertTrue(summary[_sym("sink")]["arg_escape"][0])
+        self.assertTrue(summary[_sym("wrap")]["arg_escape"][0])
         body = doc.get("body", [])
         sink_fn = body[0] if isinstance(body, list) and len(body) > 0 else {}
         wrap_fn = body[1] if isinstance(body, list) and len(body) > 1 else {}
@@ -53,7 +57,7 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         wrap_call_meta = wrap_call.get("meta", {}).get("non_escape_callsite", {})
         self.assertFalse(sink_call_meta.get("resolved", True))
         self.assertTrue(wrap_call_meta.get("resolved", False))
-        self.assertEqual(wrap_call_meta.get("callee"), "sink")
+        self.assertEqual(wrap_call_meta.get("callee"), _sym("sink"))
         self.assertEqual(wrap_call_meta.get("arg_sources"), [[0]])
 
     def test_pass_propagates_return_from_args(self) -> None:
@@ -69,10 +73,10 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         }
         _ = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
         summary = doc.get("meta", {}).get("non_escape_summary", {})
-        self.assertTrue(summary["identity"]["return_from_args"][0])
-        self.assertTrue(summary["wrap"]["return_from_args"][0])
-        self.assertTrue(summary["wrap2"]["return_from_args"][0])
-        self.assertTrue(summary["wrap2"]["return_escape"])
+        self.assertTrue(summary[_sym("identity")]["return_from_args"][0])
+        self.assertTrue(summary[_sym("wrap")]["return_from_args"][0])
+        self.assertTrue(summary[_sym("wrap2")]["return_from_args"][0])
+        self.assertTrue(summary[_sym("wrap2")]["return_escape"])
 
     def test_unknown_call_policy_can_disable_direct_arg_escape(self) -> None:
         doc: dict[str, object] = {
@@ -91,8 +95,8 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
             ),
         )
         summary = doc.get("meta", {}).get("non_escape_summary", {})
-        self.assertFalse(summary["sink"]["arg_escape"][0])
-        self.assertFalse(summary["sink"]["return_escape"])
+        self.assertFalse(summary[_sym("sink")]["arg_escape"][0])
+        self.assertFalse(summary[_sym("sink")]["return_escape"])
 
     def test_pass_handles_mutual_recursion_with_unknown_calls(self) -> None:
         call_a_to_b = _call_name("b", [_name("x")])
@@ -109,15 +113,17 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         }
         _ = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
         summary = doc.get("meta", {}).get("non_escape_summary", {})
-        self.assertTrue(summary["a"]["arg_escape"][0])
-        self.assertTrue(summary["b"]["arg_escape"][0])
-        self.assertTrue(summary["a"]["return_from_args"][0])
-        self.assertTrue(summary["b"]["return_from_args"][0])
-        self.assertTrue(summary["a"]["return_escape"])
-        self.assertTrue(summary["b"]["return_escape"])
+        self.assertTrue(summary[_sym("a")]["arg_escape"][0])
+        self.assertTrue(summary[_sym("b")]["arg_escape"][0])
+        self.assertTrue(summary[_sym("a")]["return_from_args"][0])
+        self.assertTrue(summary[_sym("b")]["return_from_args"][0])
+        self.assertTrue(summary[_sym("a")]["return_escape"])
+        self.assertTrue(summary[_sym("b")]["return_escape"])
         self.assertTrue(call_a_to_b.get("meta", {}).get("non_escape_callsite", {}).get("resolved", False))
         self.assertFalse(call_b_to_unknown.get("meta", {}).get("non_escape_callsite", {}).get("resolved", True))
         self.assertTrue(call_b_to_a.get("meta", {}).get("non_escape_callsite", {}).get("resolved", False))
+        self.assertEqual(call_a_to_b.get("meta", {}).get("non_escape_callsite", {}).get("callee"), _sym("b"))
+        self.assertEqual(call_b_to_a.get("meta", {}).get("non_escape_callsite", {}).get("callee"), _sym("a"))
 
     def test_pass_is_deterministic_after_convergence(self) -> None:
         call_a_to_b = _call_name("b", [_name("x")])
@@ -140,6 +146,30 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         self.assertFalse(result2.changed)
         self.assertEqual(result2.change_count, 0)
         self.assertEqual(summary1, summary2)
+
+    def test_imported_symbol_call_keeps_module_qualified_callee_candidate(self) -> None:
+        imported_call = _call_name("save_gif", [_name("frames")])
+        doc: dict[str, object] = {
+            "kind": "Module",
+            "east_stage": 3,
+            "meta": {
+                "import_bindings": [
+                    {
+                        "module_id": "pytra.std.image",
+                        "export_name": "save_gif",
+                        "local_name": "save_gif",
+                        "binding_kind": "symbol",
+                    }
+                ]
+            },
+            "body": [
+                _fn("main", ["frames"], [_expr(imported_call)]),
+            ],
+        }
+        _ = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
+        callsite = imported_call.get("meta", {}).get("non_escape_callsite", {})
+        self.assertEqual(callsite.get("callee"), "pytra.std.image::save_gif")
+        self.assertFalse(callsite.get("resolved", True))
 
 
 if __name__ == "__main__":

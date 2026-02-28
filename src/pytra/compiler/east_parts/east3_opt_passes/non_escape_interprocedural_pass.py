@@ -5,6 +5,9 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
+from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
+from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import resolve_non_escape_call_target
 from pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from pytra.compiler.east_parts.east3_optimizer import PassContext
 from pytra.compiler.east_parts.east3_optimizer import PassResult
@@ -16,33 +19,6 @@ def _safe_name(value: Any) -> str:
         if text != "":
             return text
     return ""
-
-
-def _collect_symbols(module_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    symbols: dict[str, dict[str, Any]] = {}
-    body_any = module_doc.get("body")
-    body = body_any if isinstance(body_any, list) else []
-    i = 0
-    while i < len(body):
-        node = body[i]
-        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
-            fn_name = _safe_name(node.get("name"))
-            if fn_name != "":
-                symbols[fn_name] = node
-        if isinstance(node, dict) and node.get("kind") == "ClassDef":
-            cls_name = _safe_name(node.get("name"))
-            cls_body_any = node.get("body")
-            cls_body = cls_body_any if isinstance(cls_body_any, list) else []
-            j = 0
-            while j < len(cls_body):
-                child = cls_body[j]
-                if isinstance(child, dict) and child.get("kind") == "FunctionDef":
-                    method_name = _safe_name(child.get("name"))
-                    if cls_name != "" and method_name != "":
-                        symbols[cls_name + "." + method_name] = child
-                j += 1
-        i += 1
-    return symbols
 
 
 def _collect_calls(node: Any, out: list[tuple[dict[str, Any], bool]]) -> None:
@@ -67,29 +43,6 @@ def _collect_calls(node: Any, out: list[tuple[dict[str, Any], bool]]) -> None:
             _walk(value, in_return_expr=False)
 
     _walk(node, in_return_expr=False)
-
-
-def _resolve_call_target(call_node: dict[str, Any], *, owner_class: str, known_symbols: set[str]) -> str:
-    func_any = call_node.get("func")
-    if not isinstance(func_any, dict):
-        return ""
-    kind = _safe_name(func_any.get("kind"))
-    if kind == "Name":
-        callee = _safe_name(func_any.get("id"))
-        return callee if callee in known_symbols else ""
-    if kind != "Attribute":
-        return ""
-    attr_name = _safe_name(func_any.get("attr"))
-    value_any = func_any.get("value")
-    if not isinstance(value_any, dict) or _safe_name(value_any.get("kind")) != "Name":
-        return ""
-    owner_name = _safe_name(value_any.get("id"))
-    if owner_name == "self" and owner_class != "":
-        target_self = owner_class + "." + attr_name
-        if target_self in known_symbols:
-            return target_self
-    target = owner_name + "." + attr_name
-    return target if target in known_symbols else ""
 
 
 def _collect_arg_refs(node: Any, arg_index: dict[str, int], out: set[int]) -> None:
@@ -172,12 +125,13 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
         if module_doc.get("kind") != "Module":
             return PassResult()
 
-        symbols = _collect_symbols(module_doc)
+        _module_id, symbols, local_symbol_map = collect_non_escape_symbols(module_doc)
         if len(symbols) == 0:
             return PassResult()
 
         known_symbols = set(symbols.keys())
-        graph, unresolved_counts = build_non_escape_call_graph(module_doc)
+        import_modules, import_symbols = collect_non_escape_import_maps(module_doc)
+        graph, unresolved_counts = build_non_escape_call_graph(module_doc, known_symbols=known_symbols)
 
         callsites_by_symbol: dict[str, list[dict[str, object]]] = {}
         summary: dict[str, dict[str, object]] = {}
@@ -203,17 +157,21 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
             direct_arg_escape = [False] * len(arg_order)
 
             owner_class = ""
-            if "." in symbol:
-                owner_class = symbol.split(".", 1)[0]
+            local_symbol = symbol.split("::", 1)[1] if "::" in symbol else symbol
+            if "." in local_symbol:
+                owner_class = local_symbol.split(".", 1)[0]
             calls: list[tuple[dict[str, Any], bool]] = []
             _collect_calls(fn_node.get("body"), calls)
             sites: list[dict[str, object]] = []
             k = 0
             while k < len(calls):
                 call_node, in_return_expr = calls[k]
-                target = _resolve_call_target(
+                target, resolved = resolve_non_escape_call_target(
                     call_node,
                     owner_class=owner_class,
+                    local_symbol_map=local_symbol_map,
+                    import_modules=import_modules,
+                    import_symbols=import_symbols,
                     known_symbols=known_symbols,
                 )
                 args_any = call_node.get("args")
@@ -226,7 +184,7 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                     arg_sources.append(sorted(refs))
                     a += 1
 
-                if target == "" and bool(context.non_escape_policy.get("unknown_call_escape", True)):
+                if not resolved and bool(context.non_escape_policy.get("unknown_call_escape", True)):
                     a = 0
                     while a < len(arg_sources):
                         refs = arg_sources[a]
@@ -239,6 +197,7 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                 sites.append(
                     {
                         "callee": target,
+                        "resolved": resolved,
                         "arg_sources": arg_sources,
                         "in_return_expr": in_return_expr,
                         "call_node": call_node,
@@ -361,9 +320,10 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                     callee = site.get("callee")
                     callee_symbol = callee if isinstance(callee, str) else ""
                     callee_summary = summary.get(callee_symbol, {})
+                    resolved = bool(site.get("resolved", False))
                     payload = {
                         "callee": callee_symbol,
-                        "resolved": callee_symbol != "",
+                        "resolved": resolved,
                         "in_return_expr": bool(site.get("in_return_expr", False)),
                         "arg_sources": site.get("arg_sources", []),
                         "callee_arg_escape": list(callee_summary.get("arg_escape", [])) if isinstance(callee_summary, dict) else [],

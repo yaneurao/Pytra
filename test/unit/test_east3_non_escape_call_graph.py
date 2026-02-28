@@ -31,6 +31,10 @@ def _expr(value: dict[str, object]) -> dict[str, object]:
     return {"kind": "Expr", "value": value}
 
 
+def _sym(name: str) -> str:
+    return "__module__::" + name
+
+
 class East3NonEscapeCallGraphTest(unittest.TestCase):
     def test_build_call_graph_for_top_level_functions(self) -> None:
         doc = {
@@ -42,11 +46,11 @@ class East3NonEscapeCallGraphTest(unittest.TestCase):
             ],
         }
         graph, unresolved = build_non_escape_call_graph(doc)
-        self.assertEqual(set(graph.keys()), {"a", "b"})
-        self.assertEqual(graph["a"], {"b"})
-        self.assertEqual(graph["b"], set())
-        self.assertEqual(unresolved["a"], 1)  # print
-        self.assertEqual(unresolved["b"], 0)
+        self.assertEqual(set(graph.keys()), {_sym("a"), _sym("b")})
+        self.assertEqual(graph[_sym("a")], {_sym("b")})
+        self.assertEqual(graph[_sym("b")], set())
+        self.assertEqual(unresolved[_sym("a")], 1)  # print
+        self.assertEqual(unresolved[_sym("b")], 0)
 
     def test_build_call_graph_for_class_methods(self) -> None:
         doc = {
@@ -64,10 +68,10 @@ class East3NonEscapeCallGraphTest(unittest.TestCase):
             ],
         }
         graph, unresolved = build_non_escape_call_graph(doc)
-        self.assertEqual(set(graph.keys()), {"Dog.speak", "Dog.growl"})
-        self.assertEqual(graph["Dog.speak"], {"Dog.growl"})
-        self.assertEqual(graph["Dog.growl"], set())
-        self.assertEqual(unresolved["Dog.speak"], 0)
+        self.assertEqual(set(graph.keys()), {_sym("Dog.speak"), _sym("Dog.growl")})
+        self.assertEqual(graph[_sym("Dog.speak")], {_sym("Dog.growl")})
+        self.assertEqual(graph[_sym("Dog.growl")], set())
+        self.assertEqual(unresolved[_sym("Dog.speak")], 0)
 
     def test_scc_detects_mutual_recursion(self) -> None:
         graph = {
