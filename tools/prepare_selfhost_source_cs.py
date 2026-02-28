@@ -174,7 +174,21 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
     )
     if old_resolved_get not in out:
         raise RuntimeError("failed to patch resolve_module_name dict access in support blocks")
-    return out.replace(old_resolved_get, new_resolved_get, 1)
+    out = out.replace(old_resolved_get, new_resolved_get, 1)
+
+    old_graph_resolved_get = (
+        "            status = dict_any_get_str(resolved, \"status\")\n"
+        "            dep_txt = dict_any_get_str(resolved, \"path\")\n"
+        "            resolved_mod_id = dict_any_get_str(resolved, \"module_id\")\n"
+    )
+    new_graph_resolved_get = (
+        "            status = dict_str_get(resolved, \"status\")\n"
+        "            dep_txt = dict_str_get(resolved, \"path\")\n"
+        "            resolved_mod_id = dict_str_get(resolved, \"module_id\")\n"
+    )
+    if old_graph_resolved_get not in out:
+        raise RuntimeError("failed to patch graph resolve dict access in support blocks")
+    return out.replace(old_graph_resolved_get, new_graph_resolved_get, 1)
 
 
 def _patch_selfhost_hooks(text: str, prepare_base) -> str:
