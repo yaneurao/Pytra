@@ -56,7 +56,7 @@
 
 文脈: [docs/ja/plans/p1-ruby-benchmark-readme-fix.md](../plans/p1-ruby-benchmark-readme-fix.md)
 
-1. [ ] [ID: P1-RUBY-BENCH-FIX-01] Ruby 計測値更新時に「fresh transpile → parity確認 → README反映」を必須化する。
+1. [x] [ID: P1-RUBY-BENCH-FIX-01] Ruby 計測値更新時に「fresh transpile → parity確認 → README反映」を必須化する。
 2. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-01] `sample/01` を `ruby --yjit`（`warmup=1`, `repeat=5`）で再計測し、ログを保存する。
 3. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-02] `runtime_parity_check` で `sample/01` の Ruby parity を確認する。
 4. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-03] `docs/ja/README.md` の Ruby 列へ測定値を反映し、差分を確定する。
