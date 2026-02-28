@@ -408,6 +408,16 @@ static inline rc<T> obj_to_rc_or_raise(const object& v, const char* ctx = "obj_t
     throw ::std::runtime_error(::std::string(label) + ": type mismatch");
 }
 
+template <class T>
+static inline list<rc<T>> py_to_rc_list_from_object(const object& v, const char* ctx = "py_to_rc_list_from_object") {
+    list<rc<T>> out{};
+    const list<object>* src = obj_to_list_ptr(v);
+    if (src == nullptr) return out;
+    out.reserve(src->size());
+    for (const object& item : *src) out.append(obj_to_rc_or_raise<T>(item, ctx));
+    return out;
+}
+
 template <class T, class... Args>
 static inline object object_new(Args&&... args) {
     return object::adopt(static_cast<PyObj*>(pytra::gc::rc_new<T>(::std::forward<Args>(args)...)));
