@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -185,6 +192,14 @@ def __pytra_isalpha(v)
   s = __pytra_str(v)
   return false if s.empty?
   !!(s =~ /\A[A-Za-z]+\z/)
+end
+
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
 end
 
 def __pytra_print(*args)

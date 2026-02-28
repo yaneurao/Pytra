@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -218,7 +233,7 @@ def normalize(x, y, z)
   if __pytra_truthy((l < 1e-09))
     return [0.0, 0.0, 0.0]
   end
-  return [(x / l), (y / l), (z / l)]
+  return [__pytra_div(x, l), __pytra_div(y, l), __pytra_div(z, l)]
 end
 
 def reflect(ix, iy, iz, nx, ny, nz)
@@ -278,15 +293,17 @@ end
 
 def palette_332()
   p = __pytra_bytearray((256 * 3))
+  __hoisted_cast_1 = __pytra_float(7)
+  __hoisted_cast_2 = __pytra_float(3)
   __step_0 = __pytra_int(1)
   i = __pytra_int(0)
   while ((__step_0 >= 0 && i < __pytra_int(256)) || (__step_0 < 0 && i > __pytra_int(256)))
     r = ((i + 5) + 7)
     g = ((i + 2) + 7)
     b = (i + 3)
-    __pytra_set_index(p, ((i * 3) + 0), __pytra_int(((255 * r) / 7)))
-    __pytra_set_index(p, ((i * 3) + 1), __pytra_int(((255 * g) / 7)))
-    __pytra_set_index(p, ((i * 3) + 2), __pytra_int(((255 * b) / 3)))
+    __pytra_set_index(p, ((i * 3) + 0), __pytra_int(__pytra_div((255 * r), __hoisted_cast_1)))
+    __pytra_set_index(p, ((i * 3) + 1), __pytra_int(__pytra_div((255 * g), __hoisted_cast_1)))
+    __pytra_set_index(p, ((i * 3) + 2), __pytra_int(__pytra_div((255 * b), __hoisted_cast_2)))
     i += __step_0
   end
   return __pytra_bytes(p)
@@ -300,7 +317,7 @@ def quantize_332(r, g, b)
 end
 
 def render_frame(width, height, frame_id, frames_n)
-  t = (frame_id / frames_n)
+  t = __pytra_div(frame_id, frames_n)
   tphase = ((2.0 * Math::PI) * t)
   cam_r = 3.0
   cam_x = (cam_r * Math.cos(__pytra_float((tphase * 0.9))))
@@ -335,17 +352,19 @@ def render_frame(width, height, frame_id, frames_n)
   ly = (1.8 + (0.8 * Math.sin(__pytra_float((tphase * 1.2)))))
   lz = (2.4 * Math.sin(__pytra_float((tphase * 1.8))))
   frame = __pytra_bytearray((width * height))
-  aspect = (width / height)
+  aspect = __pytra_div(width, height)
   fov = 1.25
+  __hoisted_cast_3 = __pytra_float(height)
+  __hoisted_cast_4 = __pytra_float(width)
   __step_3 = __pytra_int(1)
   py = __pytra_int(0)
   while ((__step_3 >= 0 && py < __pytra_int(height)) || (__step_3 < 0 && py > __pytra_int(height)))
     row_base = (py * width)
-    sy = (1.0 - ((2.0 * (py + 0.5)) / height))
+    sy = (1.0 - __pytra_div((2.0 * (py + 0.5)), __hoisted_cast_3))
     __step_4 = __pytra_int(1)
     px = __pytra_int(0)
     while ((__step_4 >= 0 && px < __pytra_int(width)) || (__step_4 < 0 && px > __pytra_int(width)))
-      sx = ((((2.0 * (px + 0.5)) / width) - 1.0) * aspect)
+      sx = ((__pytra_div((2.0 * (px + 0.5)), __hoisted_cast_4) - 1.0) * aspect)
       rx = (fwd_x + (fov * ((sx * right_x) + (sy * up_x))))
       ry = (fwd_y + (fov * ((sx * right_y) + (sy * up_y))))
       rz = (fwd_z + (fov * ((sx * right_z) + (sy * up_z))))
@@ -359,7 +378,7 @@ def render_frame(width, height, frame_id, frames_n)
       g = 0.0
       b = 0.0
       if __pytra_truthy((dy < (-1e-06)))
-        tf = (((-1.2) - cam_y) / dy)
+        tf = __pytra_div(((-1.2) - cam_y), dy)
         if __pytra_truthy((__pytra_truthy((tf > 0.0001)) && __pytra_truthy((tf < best_t))))
           best_t = tf
           hit_kind = 1
@@ -404,7 +423,7 @@ def render_frame(width, height, frame_id, frames_n)
           ldz = __tuple_7[2]
           ndotl = __pytra_max(ldy, 0.0)
           ldist2 = (((lxv * lxv) + (lyv * lyv)) + (lzv * lzv))
-          glow = (8.0 / (1.0 + ldist2))
+          glow = __pytra_div(8.0, (1.0 + ldist2))
           r = ((base_r + (0.8 * glow)) + (0.2 * ndotl))
           g = ((base_g + (0.5 * glow)) + (0.18 * ndotl))
           b = ((base_b + (1.0 * glow)) + (0.24 * ndotl))
@@ -434,7 +453,7 @@ def render_frame(width, height, frame_id, frames_n)
           hx = (cam_x + (best_t * dx))
           hy = (cam_y + (best_t * dy))
           hz = (cam_z + (best_t * dz))
-          __tuple_8 = __pytra_as_list(normalize(((hx - cx) / rad), ((hy - cy) / rad), ((hz - cz) / rad)))
+          __tuple_8 = __pytra_as_list(normalize(__pytra_div((hx - cx), rad), __pytra_div((hy - cy), rad), __pytra_div((hz - cz), rad)))
           nx = __tuple_8[0]
           ny = __tuple_8[1]
           nz = __tuple_8[2]
@@ -442,7 +461,7 @@ def render_frame(width, height, frame_id, frames_n)
           rdx = __tuple_9[0]
           rdy = __tuple_9[1]
           rdz = __tuple_9[2]
-          __tuple_10 = __pytra_as_list(refract(dx, dy, dz, nx, ny, nz, (1.0 / 1.45)))
+          __tuple_10 = __pytra_as_list(refract(dx, dy, dz, nx, ny, nz, __pytra_div(1.0, 1.45)))
           tdx = __tuple_10[0]
           tdy = __tuple_10[1]
           tdz = __tuple_10[2]
@@ -476,7 +495,7 @@ def render_frame(width, height, frame_id, frames_n)
           spec = (spec * spec)
           spec = (spec * spec)
           spec = (spec * spec)
-          glow = (10.0 / (((1.0 + (lxv * lxv)) + (lyv * lyv)) + (lzv * lzv)))
+          glow = __pytra_div(10.0, (((1.0 + (lxv * lxv)) + (lyv * lyv)) + (lzv * lzv)))
           r += (((0.2 * ndotl) + (0.8 * spec)) + (0.45 * glow))
           g += (((0.18 * ndotl) + (0.6 * spec)) + (0.35 * glow))
           b += (((0.26 * ndotl) + (1.0 * spec)) + (0.65 * glow))

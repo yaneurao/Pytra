@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -197,14 +212,17 @@ end
 
 def render_julia(width, height, max_iter, cx, cy)
   pixels = __pytra_bytearray()
+  __hoisted_cast_1 = __pytra_float((height - 1))
+  __hoisted_cast_2 = __pytra_float((width - 1))
+  __hoisted_cast_3 = __pytra_float(max_iter)
   __step_0 = __pytra_int(1)
   y = __pytra_int(0)
   while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
-    zy0 = ((-1.2) + (2.4 * (y / (height - 1))))
+    zy0 = ((-1.2) + (2.4 * __pytra_div(y, __hoisted_cast_1)))
     __step_1 = __pytra_int(1)
     x = __pytra_int(0)
     while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
-      zx = ((-1.8) + (3.6 * (x / (width - 1))))
+      zx = ((-1.8) + (3.6 * __pytra_div(x, __hoisted_cast_2)))
       zy = zy0
       i = 0
       while __pytra_truthy((i < max_iter))
@@ -225,7 +243,7 @@ def render_julia(width, height, max_iter, cx, cy)
         g = 0
         b = 0
       else
-        t = (i / max_iter)
+        t = __pytra_div(i, __hoisted_cast_3)
         r = __pytra_int((255.0 * (0.2 + (0.8 * t))))
         g = __pytra_int((255.0 * (0.1 + (0.9 * (t * t)))))
         b = __pytra_int((255.0 * (1.0 - t)))

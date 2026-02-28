@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -217,8 +232,8 @@ def hit_sphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, r)
     return (-1.0)
   end
   sd = Math.sqrt(__pytra_float(d))
-  t0 = (((-b) - sd) / (2.0 * a))
-  t1 = (((-b) + sd) / (2.0 * a))
+  t0 = __pytra_div(((-b) - sd), (2.0 * a))
+  t1 = __pytra_div(((-b) + sd), (2.0 * a))
   if __pytra_truthy((t0 > 0.001))
     return t0
   end
@@ -236,6 +251,10 @@ def render(width, height, aa)
   lx = (-0.4)
   ly = 0.8
   lz = (-0.45)
+  __hoisted_cast_1 = __pytra_float(aa)
+  __hoisted_cast_2 = __pytra_float((height - 1))
+  __hoisted_cast_3 = __pytra_float((width - 1))
+  __hoisted_cast_4 = __pytra_float(height)
   __step_0 = __pytra_int(1)
   y = __pytra_int(0)
   while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
@@ -251,14 +270,14 @@ def render(width, height, aa)
         __step_3 = __pytra_int(1)
         ax = __pytra_int(0)
         while ((__step_3 >= 0 && ax < __pytra_int(aa)) || (__step_3 < 0 && ax > __pytra_int(aa)))
-          fy = ((y + ((ay + 0.5) / aa)) / (height - 1))
-          fx = ((x + ((ax + 0.5) / aa)) / (width - 1))
+          fy = __pytra_div((y + __pytra_div((ay + 0.5), __hoisted_cast_1)), __hoisted_cast_2)
+          fx = __pytra_div((x + __pytra_div((ax + 0.5), __hoisted_cast_1)), __hoisted_cast_3)
           sy = (1.0 - (2.0 * fy))
-          sx = (((2.0 * fx) - 1.0) * (width / height))
+          sx = (((2.0 * fx) - 1.0) * __pytra_div(width, __hoisted_cast_4))
           dx = sx
           dy = sy
           dz = 1.0
-          inv_len = (1.0 / Math.sqrt(__pytra_float((((dx * dx) + (dy * dy)) + (dz * dz)))))
+          inv_len = __pytra_div(1.0, Math.sqrt(__pytra_float((((dx * dx) + (dy * dy)) + (dz * dz)))))
           dx *= inv_len
           dy *= inv_len
           dz *= inv_len
@@ -290,14 +309,14 @@ def render(width, height, aa)
             ny = 0.0
             nz = 0.0
             if __pytra_truthy((hit_id == 0))
-              nx = ((px + 0.8) / 0.8)
-              ny = ((py + 0.2) / 0.8)
-              nz = ((pz - 2.2) / 0.8)
+              nx = __pytra_div((px + 0.8), 0.8)
+              ny = __pytra_div((py + 0.2), 0.8)
+              nz = __pytra_div((pz - 2.2), 0.8)
             else
               if __pytra_truthy((hit_id == 1))
-                nx = ((px - 0.9) / 0.95)
-                ny = ((py - 0.1) / 0.95)
-                nz = ((pz - 2.9) / 0.95)
+                nx = __pytra_div((px - 0.9), 0.95)
+                ny = __pytra_div((py - 0.1), 0.95)
+                nz = __pytra_div((pz - 2.9), 0.95)
               else
                 nx = 0.0
                 ny = 1.0

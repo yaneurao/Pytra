@@ -55,10 +55,10 @@
 
 文脈: [docs/ja/plans/p0-ruby-true-division-parity.md](../plans/p0-ruby-true-division-parity.md)
 
-1. [ ] [ID: P0-RUBY-DIV-SEMANTICS-01] Ruby backend の `/` lowering を Python 互換（true division）へ修正し、`int/int` 由来の意味差を解消する。
-2. [ ] [ID: P0-RUBY-DIV-SEMANTICS-01-S1-01] `sample/06` を含む回帰ケースで現象再現を固定化し、ユニット/スモークで `/` の意味差を検知できるテストを追加する。
-3. [ ] [ID: P0-RUBY-DIV-SEMANTICS-01-S1-02] Ruby emitter の二項演算 lower を修正し、Python の `/` を常に真の除算として出力する（必要に応じて型変換 helper を追加）。
-4. [ ] [ID: P0-RUBY-DIV-SEMANTICS-01-S1-03] `sample/ruby` 再生成と parity 再検証（特に `sample/06`）を実施し、README 計測値の妥当性確認手順を文書へ反映する。
+1. [x] [ID: P0-RUBY-DIV-SEMANTICS-01] Ruby backend の `/` lowering を Python 互換（true division）へ修正し、`int/int` 由来の意味差を解消する。
+2. [x] [ID: P0-RUBY-DIV-SEMANTICS-01-S1-01] `sample/06` を含む回帰ケースで現象再現を固定化し、ユニット/スモークで `/` の意味差を検知できるテストを追加する。
+3. [x] [ID: P0-RUBY-DIV-SEMANTICS-01-S1-02] Ruby emitter の二項演算 lower を修正し、Python の `/` を常に真の除算として出力する（必要に応じて型変換 helper を追加）。
+4. [x] [ID: P0-RUBY-DIV-SEMANTICS-01-S1-03] `sample/ruby` 再生成と parity 再検証（特に `sample/06`）を実施し、README 計測値の妥当性確認手順を文書へ反映する。
 
 ### P1: sample/18 C++ 生成コードの可読性縮退（選定: #2,#7,#8,#5,#1）
 
