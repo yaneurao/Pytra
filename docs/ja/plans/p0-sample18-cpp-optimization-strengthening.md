@@ -56,6 +56,7 @@
 - 2026-03-01: `execute` typed loop へ接続するため、`S6-02` は `parse_program`/`execute` 境界を `list<rc<StmtNode>>` 優先に変更し、外部境界（main 呼び出し、必要なら runtime API）でのみ `object` boxing を許可する方針に固定した。
 - 2026-03-01: `S6-02` として runtime に `py_to_rc_list_from_object<T>()` を追加し、ForCore(NameTarget) の `list[RefClass]` 反復で `pyobj` 強制 runtime path を typed 反復へ戻す fastpath を実装した。sample/18 の `execute` は `for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, ...))` へ縮退することを確認した。
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（76件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を再実行し非退行を確認した。
+- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` を実行し、`[PASS] 18_mini_language_interpreter` を確認した。
 
 ## 分解
 
@@ -80,4 +81,4 @@
 - [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、`obj_to_rc_or_raise<StmtNode>` のループ内変換を削減する。
 
 - [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（上記6点）を固定する golden 回帰を追加する。
-- [ ] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
+- [x] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。

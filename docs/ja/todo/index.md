@@ -59,7 +59,7 @@
 12. [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型の整合を確定する。
 13. [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、ループ内 `obj_to_rc_or_raise` を削減する。
 14. [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（6項目）を golden 回帰で固定する。
-15. [ ] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
+15. [x] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
 - `P0-CPP-S18-OPT-01-S1-01` `pyobj` モードでも `enumerate(list[str])` は `py_to_str_list_from_object(...)` を介して typed enumerate へ戻す契約を `CppStatementEmitter` に実装した。
 - `P0-CPP-S18-OPT-01-S1-02` `test_py2cpp_codegen_issues.py` に sample/18 回帰（`for (const auto& [line_index, source] : ... )`）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成で `object + py_at` 連鎖が消えることを確認した。
 - `P0-CPP-S18-OPT-01-S2-01` `cpp_list_model=pyobj` 時に `list[T] -> object` へ型写像される境界（`_cpp_type_text`）と、`tokens` が「関数戻り値+クラスフィールド」に乗るため stack list 縮退対象外であることを計画書に固定した。
@@ -68,6 +68,7 @@
 - `P0-CPP-S18-OPT-01-S5-01` `NUMBER` は tokenize 時点で `int64 number_value` を predecode し、`parse_primary` では `token_num->number_value` を優先利用する仕様（非 NUMBER は既定値0）を確定した。
 - `P0-CPP-S18-OPT-01-S6-01` `parse_program` 戻り値を `list<rc<StmtNode>>`（必要境界のみ boxing）へ寄せる整合方針を固定し、`execute` 側 typed loop への接続契約を定義した。
 - `P0-CPP-S18-OPT-01-S6-02` `py_to_rc_list_from_object<T>()` runtime helper と ForCore emitter fastpath を追加し、sample/18 の `execute` ループを `for (rc<StmtNode> stmt : ...)` へ置換した（`obj_to_rc_or_raise` のループ内呼び出しを削減）。
+- `P0-CPP-S18-OPT-01-S7-02` `test_py2cpp_codegen_issues.py`（76件）/`test_east3_cpp_bridge.py`（90件）/`check_py2cpp_transpile.py`（`ok=134`）に加え、`runtime_parity_check --case-root sample --targets cpp 18_mini_language_interpreter`（PASS）で非退行を確認した。
 
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 
