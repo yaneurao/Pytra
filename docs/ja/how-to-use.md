@@ -36,19 +36,27 @@ Windows では次の読み替えを行ってください。
 # C++へ単一ファイル出力
 ./pytra test/fixtures/core/add.py --output /tmp/add.cpp
 
+# Rustへ単一ファイル出力
+./pytra test/fixtures/core/add.py --target rs --output /tmp/add.rs
+
 # C++を複数ファイル出力（manifest付き）
 ./pytra test/fixtures/core/add.py --output-dir out/add_case
+
+# Rustを out/ 配下へ出力
+./pytra test/fixtures/core/add.py --target rs --output-dir out/rs_case
 
 # 変換 + ビルド + 実行
 ./pytra test/fixtures/core/add.py --build --output-dir out/add_case --exe add.out --run
 ```
 
 補足:
-- 現時点の `./pytra` は `--target cpp` のみ対応です。
+- `--target` は `cpp` / `rs` に対応しています。
+- `--build` は `--target cpp` のみ対応です（Rust は変換のみ）。
 - 生成コード最適化レベルは `--codegen-opt {0,1,2,3}` で指定できます。
 - `--build` 時の生成物（`src/*.cpp`, `include/*.h`, `.obj/*.o`, 実行ファイル）は `--output-dir` 配下に出力されます（既定: `out/`）。
 - `--exe` は実行ファイル名/出力先です。相対指定（例: `add.out`）は `--output-dir` 配下に生成されます。
-- 一時出力は `out/` に集約する運用を推奨します。例: `./pytra INPUT.py --build --output-dir /out/mycase --exe app.out`
+- Rust 変換は `--output` 未指定時、`--output-dir/<入力stem>.rs` へ出力されます（例: `out/rs_case/add.rs`）。
+- 一時出力は `out/` に集約する運用を推奨し、共有一時確認が必要な場合のみ `/tmp` を使用します。
 
 ## 最初に確認する制約
 

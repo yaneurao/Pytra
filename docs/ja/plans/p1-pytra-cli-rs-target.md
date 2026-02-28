@@ -38,9 +38,12 @@
 
 決定ログ:
 - 2026-02-27: ユーザー指示により、`--target rs` を P1 で TODO へ追加する方針を確定。
+- 2026-02-28: `S1-01` として `src/pytra/cli.py` に `--target {cpp,rs}` dispatch を実装し、`--target rs` 時は `py2rs.py` を呼び出す経路を追加した。`--build` は `cpp` のみ許可するガードを維持した。
+- 2026-02-28: `S1-02` として Rust 出力仕様を固定した。`--output` 指定時はそのパスへ出力、未指定時は `--output-dir/<入力stem>.rs`（既定 `out/`）へ出力する。`output` が既存ディレクトリの場合は早期エラーにした。
+- 2026-02-28: `S1-03` として `docs/ja/how-to-use.md` の統合CLI節へ Rust 例を追記し、`out/` 集約と `/tmp` 例外運用を明記した。`./pytra --help` / `--target rs --output` / `--target rs --output-dir` の実コマンド確認を通過した。
 
 ## 分解
 
-- [ ] [ID: P1-PYTRA-CLI-RS-01-S1-01] `src/pytra/cli.py` に `--target rs` dispatch を追加し、`py2rs.py` 呼び出しを統合する。
-- [ ] [ID: P1-PYTRA-CLI-RS-01-S1-02] Rust 出力時の `--output` / `--output-dir` 仕様を確定し、衝突ケース（拡張子、同名生成）を整理する。
-- [ ] [ID: P1-PYTRA-CLI-RS-01-S1-03] `docs/ja/how-to-use.md` の統合CLI節へ Rust 例を追記し、出力先運用（`out/` / `/tmp`）を明記する。
+- [x] [ID: P1-PYTRA-CLI-RS-01-S1-01] `src/pytra/cli.py` に `--target rs` dispatch を追加し、`py2rs.py` 呼び出しを統合する。
+- [x] [ID: P1-PYTRA-CLI-RS-01-S1-02] Rust 出力時の `--output` / `--output-dir` 仕様を確定し、衝突ケース（拡張子、同名生成）を整理する。
+- [x] [ID: P1-PYTRA-CLI-RS-01-S1-03] `docs/ja/how-to-use.md` の統合CLI節へ Rust 例を追記し、出力先運用（`out/` / `/tmp`）を明記する。

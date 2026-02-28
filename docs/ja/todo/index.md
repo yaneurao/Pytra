@@ -89,9 +89,12 @@
 文脈: [docs/ja/plans/p1-pytra-cli-rs-target.md](../plans/p1-pytra-cli-rs-target.md)
 
 1. [ ] [ID: P1-PYTRA-CLI-RS-01] 統合CLI `./pytra` に `--target rs` を追加し、Rust 変換を C++ と同じ入口で実行可能にする。
-2. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-01] `src/pytra/cli.py` の target dispatch を拡張し、`--target rs` で `py2rs.py` を呼び出せるようにする。
-3. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-02] Rust 出力時の `--output` / `--output-dir` の挙動を確定し、拡張子と出力先衝突を整理する。
-4. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-03] `docs/ja/how-to-use.md` の統合CLI節に Rust 例を追加し、`out/` / `/tmp` の一時出力運用を明記する。
+2. [x] [ID: P1-PYTRA-CLI-RS-01-S1-01] `src/pytra/cli.py` の target dispatch を拡張し、`--target rs` で `py2rs.py` を呼び出せるようにする。
+3. [x] [ID: P1-PYTRA-CLI-RS-01-S1-02] Rust 出力時の `--output` / `--output-dir` の挙動を確定し、拡張子と出力先衝突を整理する。
+4. [x] [ID: P1-PYTRA-CLI-RS-01-S1-03] `docs/ja/how-to-use.md` の統合CLI節に Rust 例を追加し、`out/` / `/tmp` の一時出力運用を明記する。
+- `P1-PYTRA-CLI-RS-01-S1-01` `src/pytra/cli.py` に `--target {cpp,rs}` を実装し、`rs` は `py2rs.py` 呼び出しへ接続した。`--build` は `cpp` 限定のまま維持した。
+- `P1-PYTRA-CLI-RS-01-S1-02` Rust 出力は `--output` 優先、未指定時は `--output-dir/<入力stem>.rs`（既定 `out/`）へ生成する仕様に固定し、出力先がディレクトリの場合は早期エラーにした。
+- `P1-PYTRA-CLI-RS-01-S1-03` `docs/ja/how-to-use.md` の統合CLI節へ Rust 例（`--output` / `--output-dir`）を追記し、`out/` 集約と `/tmp` 例外運用を明記した。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
