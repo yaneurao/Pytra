@@ -39,10 +39,11 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、Lua backend 追加を最優先（P0）として着手する方針を確定した。
+- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S1-01`] `docs/ja/spec/spec-lua-native-backend.md` を追加し、入力責務（EAST3 only）、fail-closed、runtime 境界、非対象を契約として固定した。
 
 ## 分解
 
-- [ ] [ID: P0-LUA-BACKEND-01-S1-01] Lua backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を `docs/ja/spec` に文書化する。
+- [x] [ID: P0-LUA-BACKEND-01-S1-01] Lua backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を `docs/ja/spec` に文書化する。
 - [ ] [ID: P0-LUA-BACKEND-01-S1-02] `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、最小 fixture を通す。
 - [ ] [ID: P0-LUA-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
 - [ ] [ID: P0-LUA-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装する。

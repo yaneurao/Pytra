@@ -21,6 +21,7 @@
 - C++ backend 最適化層仕様: [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
 - stdlib シグネチャ正本化仕様: [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
 - Java native backend 契約仕様: [Java Native Backend 契約仕様](./spec-java-native-backend.md)
+- Lua native backend 契約仕様: [Lua Native Backend 契約仕様](./spec-lua-native-backend.md)
 - EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
 - EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
 - EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
@@ -59,6 +60,8 @@
   - [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
 - Java backend の sidecar 撤去移行契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
   - [Java Native Backend 契約仕様](./spec-java-native-backend.md)
+- Lua backend の native 直生成契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
+  - [Lua Native Backend 契約仕様](./spec-lua-native-backend.md)
 - EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:
   - [責務対応表](./spec-east.md#east-file-mapping)
 - `EAST1` build 入口（`east1_build.py`）の責務境界を確認したい場合:
