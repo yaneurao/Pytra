@@ -379,6 +379,57 @@ def f() -> float:
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter()", cpp)
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter() - start)", cpp)
 
+    def test_float_div_uses_direct_slash_fastpath(self) -> None:
+        src = """def f(a: float, b: float) -> float:
+    return a / b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "float_div_direct.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return a / b;", cpp)
+        self.assertNotIn("py_div(a, b)", cpp)
+
+    def test_mixed_float_int_div_uses_direct_slash_after_promotion(self) -> None:
+        src = """def f(a: float, b: int) -> float:
+    return a / b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "float_int_div.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return a / py_to<float64>(b);", cpp)
+        self.assertNotIn("py_div(", cpp)
+
+    def test_int_div_uses_direct_slash_after_promotion(self) -> None:
+        src = """def f(a: int, b: int) -> float:
+    return a / b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "int_div.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_to<float64>(a) / py_to<float64>(b);", cpp)
+        self.assertNotIn("py_div(", cpp)
+
+    def test_unknown_div_keeps_py_div(self) -> None:
+        src = """def f(a, b):
+    return a / b
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "unknown_div.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_div(a, b);", cpp)
+
     def test_sample18_perf_counter_is_typed_without_redundant_cast(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
