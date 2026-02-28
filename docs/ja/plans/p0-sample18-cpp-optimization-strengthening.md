@@ -60,6 +60,9 @@
 - 2026-03-01: `S3-02` として sample/18 の `Parser` 実装を `current_token()/previous_token()` 補助メソッド経由に整理し、生成 C++ の `expect` で同一 index の token 取得を 1 回化した。`test_py2cpp_codegen_issues.py` に回帰を追加し、`runtime_parity_check` で挙動一致を確認した。
 - 2026-03-01: `S5-02` として sample/18 の `Token` に `number_value` を追加し、`tokenize` で NUMBER のみ `int(text)` を predecode、`parse_primary` を `token_num.number_value` 参照へ切り替えた。`test_py2cpp_codegen_issues.py` と `runtime_parity_check`、`check_py2cpp_transpile` で非退行を確認した。
 - 2026-03-01: `S4-02` として `ExprNode/StmtNode` へ `kind_tag/op_tag` を追加し、eval/execute の分岐を整数比較へ移行した。トップレベル定数の初期化が module init で shadow される問題を回避するため、tag 値は literal で固定した。
+- 2026-03-01: `S2-02` として `cpp_list_model=pyobj` でも `list[RefClass]` は typed container を使う方針へ拡張し、`Token/ExprNode/StmtNode` 系 list を `list<rc<...>>` で保持するよう emitter を更新した。sample/18 では `tokenize`/`Parser.tokens`/`parse_program`/`execute` が `object` 経路から typed container 経路へ移行した。
+- 2026-03-01: `S7-01` として `test_py2cpp_codegen_issues.py` に sample/18 typed token container 回帰（`tokenize` signature / `Parser.tokens` field / `current_token` access）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成差分を固定した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）/`runtime_parity_check`（sample/18 cpp PASS）を再実行し、親 `P0-CPP-S18-OPT-01` を完了扱いにした。
 
 ## 分解
 
@@ -69,7 +72,7 @@
 - [x] [ID: P0-CPP-S18-OPT-01-S1-02] `sample/18` tokenize ループで `for (::std::tuple<int64, str> ...)` 相当の出力を固定する回帰を追加する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` の型情報（`list[Token]` 相当）を parse->EAST3->emitter で保持し、`object(list<object>)` への退化条件を特定する。
-- [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize` / `Parser` の `tokens` を typed container 出力へ移行し、`py_append(make_object(...))` の過剰 boxing を削減する。
+- [x] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize` / `Parser` の `tokens` を typed container 出力へ移行し、`py_append(make_object(...))` の過剰 boxing を削減する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser.peek_kind/expect/parse_primary` の repeated `py_at + obj_to_rc_or_raise` パターンを検出し、共通 helper（token cache）方針を設計する。
 - [x] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
@@ -83,5 +86,5 @@
 - [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型と下流利用の整合を設計する。
 - [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、`obj_to_rc_or_raise<StmtNode>` のループ内変換を削減する。
 
-- [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（上記6点）を固定する golden 回帰を追加する。
+- [x] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（上記6点）を固定する golden 回帰を追加する。
 - [x] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。

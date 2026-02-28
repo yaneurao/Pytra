@@ -469,12 +469,20 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn(
-            'for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")) {',
-            cpp,
-        )
+        self.assertIn("for (rc<StmtNode> stmt : stmts) {", cpp)
         self.assertNotIn("for (object __itobj_2 : py_dyn_range(stmts)) {", cpp)
         self.assertNotIn('obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt")', cpp)
+        self.assertNotIn('py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")', cpp)
+
+    def test_sample18_pyobj_tokens_are_typed_containers(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("list<rc<Token>> tokenize(const object& lines) {", cpp)
+        self.assertIn("list<rc<Token>> tokens = list<rc<Token>>{};", cpp)
+        self.assertIn("list<rc<Token>> tokens;", cpp)
+        self.assertIn("return this->tokens[this->pos];", cpp)
+        self.assertNotIn('obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")', cpp)
 
     def test_sample18_parser_expect_uses_current_token_helper(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"

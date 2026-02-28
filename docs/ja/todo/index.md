@@ -49,7 +49,7 @@
 2. [x] [ID: P0-CPP-S18-OPT-01-S1-01] `enumerate(lines)` の typed tuple 反復条件を設計し、EAST3->C++ 出力契約を固定する。
 3. [x] [ID: P0-CPP-S18-OPT-01-S1-02] tokenize ループで `object` + `py_at` を使わない typed loop header 出力を回帰固定する。
 4. [x] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` が `object(list<object>)` へ退化する条件を特定し、型情報保持経路を定義する。
-5. [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize`/`Parser` の tokens を typed container 出力へ移行し、boxing を削減する。
+5. [x] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize`/`Parser` の tokens を typed container 出力へ移行し、boxing を削減する。
 6. [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser` の repeated token access を棚卸しし、共通 token cache 方針を確定する。
 7. [x] [ID: P0-CPP-S18-OPT-01-S3-02] `peek_kind/expect/parse_primary` で同一 index の重複 `py_at + obj_to_rc_or_raise` を削減する。
 8. [x] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の文字列比較箇所を enum/整数タグ化方針へ落とし込む。
@@ -58,7 +58,7 @@
 11. [x] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` 数値フィールドを利用して `parse_primary` の文字列->数値変換を削減する。
 12. [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型の整合を確定する。
 13. [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、ループ内 `obj_to_rc_or_raise` を削減する。
-14. [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（6項目）を golden 回帰で固定する。
+14. [x] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（6項目）を golden 回帰で固定する。
 15. [x] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
 - `P0-CPP-S18-OPT-01-S1-01` `pyobj` モードでも `enumerate(list[str])` は `py_to_str_list_from_object(...)` を介して typed enumerate へ戻す契約を `CppStatementEmitter` に実装した。
 - `P0-CPP-S18-OPT-01-S1-02` `test_py2cpp_codegen_issues.py` に sample/18 回帰（`for (const auto& [line_index, source] : ... )`）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成で `object + py_at` 連鎖が消えることを確認した。
@@ -72,6 +72,9 @@
 - `P0-CPP-S18-OPT-01-S7-02` `test_py2cpp_codegen_issues.py`（76件）/`test_east3_cpp_bridge.py`（90件）/`check_py2cpp_transpile.py`（`ok=134`）に加え、`runtime_parity_check --case-root sample --targets cpp 18_mini_language_interpreter`（PASS）で非退行を確認した。
 - `P0-CPP-S18-OPT-01-S5-02` `Token.number_value` を追加し tokenize で NUMBER のみ predecode、`parse_primary` は `token_num.number_value` を直接利用するよう更新した（`py_to_int64(token_num->text)` を除去）。
 - `P0-CPP-S18-OPT-01-S4-02` `ExprNode/StmtNode` に `kind_tag/op_tag` を追加して eval/execute 分岐を整数比較へ置換し、文字列比較連鎖を削減した（parity PASS、`test_py2cpp_codegen_issues.py` で回帰固定）。
+- `P0-CPP-S18-OPT-01-S2-02` `cpp_list_model=pyobj` でも `list[RefClass]` は typed container として扱う経路を emitter に追加し、sample/18 の `tokenize` 戻り値・`Parser.tokens`・`parse_program`/`execute` 引数を `list<rc<...>>` へ縮退した（`object + py_append/py_at` 連鎖を削減）。
+- `P0-CPP-S18-OPT-01-S7-01` `test_py2cpp_codegen_issues.py` に sample/18 の typed token container 回帰（`tokenize`/`Parser.tokens`/`current_token`）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成差分を固定した。
+- `P0-CPP-S18-OPT-01` 80件 unit / `test_east3_cpp_bridge.py` 90件 / `check_py2cpp_transpile.py`（`ok=134`）/ `runtime_parity_check`（sample/18 cpp PASS）で6項目の非退行を確認し、親タスクを完了扱いにした。
 
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 
