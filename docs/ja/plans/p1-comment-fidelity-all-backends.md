@@ -42,6 +42,7 @@
 決定ログ:
 - 2026-02-28: ユーザー要望により「全言語で、元ソースにないコメント出力を禁止し、元コメントを強制反映する」方針を `P1-COMMENT-FIDELITY-01` として起票。
 - 2026-02-28: `rg` による棚卸しで固定コメント出力の残存箇所を backend 横断で抽出し、禁止パターン一覧を確定した（`P1-COMMENT-FIDELITY-01-S1-01` 完了）。
+- 2026-02-28: 許可コメントソースを `module_leading_trivia` / `leading_trivia` のみに限定する契約と、unsupported 時はコメント埋め込みではなく例外停止する fail-closed 方針を確定した（`P1-COMMENT-FIDELITY-01-S1-02` 完了）。
 
 ## S1-01 棚卸し結果（固定コメント禁止パターン）
 
@@ -67,10 +68,34 @@
 補助生成導線（同時に整理対象）:
 - `src/hooks/cpp/header/cpp_header.py`, `src/hooks/cpp/multifile/cpp_multifile.py`, `src/hooks/cpp/runtime_emit/cpp_runtime_emit.py` の `AUTO-GENERATED` バナー。
 
+## S1-02 コメント出力契約（明文化）
+
+適用範囲:
+- `src/hooks/*/emitter/*.py` が生成する「入力 Python ソースに対応する本体コード」。
+
+許可されるコメント出力:
+- `east_doc["module_leading_trivia"]` に含まれるコメントのみ。
+- `stmt["leading_trivia"]` に含まれるコメントのみ。
+- 出力形式は各言語コメント記法へ変換してよいが、テキスト内容は元コメント由来に限定する。
+
+禁止されるコメント出力:
+- emitter 固有説明（`Auto-generated`, `preview`, `Runtime helpers are provided` など）。
+- 未対応構文を隠すコメント（`TODO: unsupported ...`, `unsupported ...`, `invalid ...`）。
+- `pass` 代替コメント（`// pass`, `# pass`, `-- pass`, `/* pass */`）。
+- 制御説明コメント（`// __main__ guard` など）。
+
+fail-closed 方針:
+- 未対応構文・不正ノード形状を検知したら、コメントを出さず `RuntimeError` / `ValueError` で停止する。
+- `pass` はコメントを出さず、各言語の no-op 文（例: `;` / `pass` / `_ = _` など）へ変換するか、文脈上不要なら非出力とする。
+- TODO コメントでのフォールバックは禁止し、未対応を明示的に失敗として表面化する。
+
+補足:
+- `src/hooks/cpp/header/*` や `multifile` などの補助生成ファイルにあるバナーは、この契約の主対象外だが、最終的には別IDで整理対象に含める。
+
 ## 分解
 
 - [x] [ID: P1-COMMENT-FIDELITY-01-S1-01] 全 emitter の固定コメント/`TODO`/`pass` コメント出力箇所を棚卸しし、禁止パターン一覧を固定する。
-- [ ] [ID: P1-COMMENT-FIDELITY-01-S1-02] コメント出力契約（許可ソース: `module_leading_trivia` / `leading_trivia` のみ）を仕様化し、fail-closed 方針を明文化する。
+- [x] [ID: P1-COMMENT-FIDELITY-01-S1-02] コメント出力契約（許可ソース: `module_leading_trivia` / `leading_trivia` のみ）を仕様化し、fail-closed 方針を明文化する。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S2-01] `ts/go/java/swift/kotlin/ruby/lua` の固定コメント出力を撤去し、元コメント伝播のみへ統一する。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換し、生成コメントを残さない実装へ寄せる。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
