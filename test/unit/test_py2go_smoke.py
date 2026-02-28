@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2go import load_east, load_go_profile, transpile_to_go, transpile_to_go_native
 from src.pytra.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -40,8 +41,7 @@ class Py2GoSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         go = transpile_to_go(east)
         self.assertIn("package main", go)
-        self.assertNotIn("Auto-generated Pytra Go native source from EAST3.", go)
-        self.assertNotIn("Runtime helpers are provided by py_runtime.go in the same package.", go)
+        assert_no_generated_comments(self, go)
         self.assertNotIn("func __pytra_truthy(v any) bool {", go)
         self.assertNotIn('exec.Command("node"', go)
 
@@ -58,8 +58,8 @@ class Py2GoSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         go = transpile_to_go_native(east)
-        self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", go)
-        self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", go)
+        assert_no_generated_comments(self, go)
+        assert_sample01_module_comments(self, go, prefix="//")
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

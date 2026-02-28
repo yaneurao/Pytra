@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PY2CPP = ROOT / "src" / "py2cpp.py"
 STAGE2_REMOVED_ERROR = "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
 STAGE2_COMPAT_WARNING = "warning: --east-stage 2 is compatibility mode; default is 3."
+if str(ROOT / "test" / "unit") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit"))
+
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 class Py2CppSmokeTest(unittest.TestCase):
@@ -65,6 +70,21 @@ class Py2CppSmokeTest(unittest.TestCase):
             )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn(STAGE2_REMOVED_ERROR, proc.stderr)
+
+    def test_comment_fidelity_preserves_source_comments(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+            out_cpp = Path(tmpdir) / "sample01.cpp"
+            proc = subprocess.run(
+                ["python3", str(PY2CPP), str(sample), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            cpp = out_cpp.read_text(encoding="utf-8")
+        assert_no_generated_comments(self, cpp)
+        assert_sample01_module_comments(self, cpp, prefix="//")
 
 
 if __name__ == "__main__":

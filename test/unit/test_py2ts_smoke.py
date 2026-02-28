@@ -19,6 +19,7 @@ if str(ROOT / "src") not in sys.path:
 from src.py2ts import load_east, load_ts_profile, transpile_to_typescript
 from src.pytra.compiler.east_parts.core import convert_path
 from hooks.ts.emitter import ts_emitter as ts_emitter_mod
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -40,9 +41,15 @@ class Py2TsSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
-        self.assertNotIn("TypeScript プレビュー出力", ts)
-        self.assertNotIn("TODO: 専用 TSEmitter", ts)
+        assert_no_generated_comments(self, ts)
         self.assertIn("function add(a, b) {", ts)
+
+    def test_comment_fidelity_preserves_source_comments(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        ts = transpile_to_typescript(east)
+        assert_no_generated_comments(self, ts)
+        assert_sample01_module_comments(self, ts, prefix="//")
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

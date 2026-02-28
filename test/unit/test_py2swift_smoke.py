@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2swift import load_east, load_swift_profile, transpile_to_swift, transpile_to_swift_native
 from src.pytra.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -40,8 +41,7 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         swift = transpile_to_swift(east)
         self.assertIn("@main", swift)
-        self.assertNotIn("Auto-generated Pytra Swift native source from EAST3.", swift)
-        self.assertNotIn("Runtime helpers are provided by py_runtime.swift in the same module.", swift)
+        assert_no_generated_comments(self, swift)
         self.assertNotIn("func __pytra_truthy(_ v: Any?) -> Bool {", swift)
         self.assertNotIn("PYTRA_JS_ENTRY:", swift)
 
@@ -58,8 +58,8 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         swift = transpile_to_swift_native(east)
-        self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", swift)
-        self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", swift)
+        assert_no_generated_comments(self, swift)
+        assert_sample01_module_comments(self, swift, prefix="//")
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

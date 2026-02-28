@@ -19,6 +19,7 @@ if str(ROOT / "src") not in sys.path:
 from src.py2java import load_east, load_java_profile, transpile_to_java
 from hooks.java.emitter.java_native_emitter import transpile_to_java_native
 from src.pytra.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -41,7 +42,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         java = transpile_to_java(east)
         self.assertIn("public final class Main", java)
-        self.assertNotIn("Auto-generated Java native source from EAST3.", java)
+        assert_no_generated_comments(self, java)
         self.assertNotIn("private static boolean __pytra_truthy(Object value)", java)
         self.assertNotIn("private static long __pytra_int(Object value)", java)
         self.assertNotIn("ProcessBuilder", java)
@@ -135,8 +136,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", java)
-        self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", java)
+        assert_no_generated_comments(self, java)
+        assert_sample01_module_comments(self, java, prefix="//")
 
     def test_java_native_emitter_lowers_if_and_forcore(self) -> None:
         if_fixture = find_fixture_case("if_else")

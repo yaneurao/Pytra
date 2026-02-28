@@ -19,6 +19,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2rb import load_east, load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
 from src.pytra.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -47,8 +48,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         ruby = transpile_to_ruby(east)
-        self.assertNotIn("Auto-generated Pytra Ruby native source from EAST3.", ruby)
-        self.assertNotIn("Runtime helpers are provided by py_runtime.rb in the same directory.", ruby)
+        assert_no_generated_comments(self, ruby)
         self.assertIn('require_relative "py_runtime"', ruby)
         self.assertIn("def add(a, b)", ruby)
         self.assertNotIn("def __pytra_truthy(v)", ruby)
@@ -66,8 +66,8 @@ class Py2RbSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         ruby = transpile_to_ruby_native(east)
-        self.assertIn("# 01: Sample that outputs the Mandelbrot set as a PNG image.", ruby)
-        self.assertIn("# Syntax is kept straightforward with future transpilation in mind.", ruby)
+        assert_no_generated_comments(self, ruby)
+        assert_sample01_module_comments(self, ruby, prefix="#")
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

@@ -19,6 +19,7 @@ if str(ROOT / "src") not in sys.path:
 from src.py2cs import load_east, load_cs_profile, transpile_to_csharp
 from src.pytra.compiler.east_parts.core import convert_path
 from hooks.cs.emitter.cs_emitter import CSharpEmitter
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -40,9 +41,17 @@ class Py2CsSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         cs = transpile_to_csharp(east)
+        assert_no_generated_comments(self, cs)
         self.assertIn("public static long add(long a, long b)", cs)
         self.assertIn("public static class Program", cs)
         self.assertIn("public static void Main(string[] args)", cs)
+
+    def test_comment_fidelity_preserves_source_comments(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        assert_no_generated_comments(self, cs)
+        assert_sample01_module_comments(self, cs, prefix="//")
 
     def test_class_inheritance_emits_base_clause(self) -> None:
         src = """class Base:

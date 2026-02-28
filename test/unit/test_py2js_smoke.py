@@ -19,6 +19,7 @@ if str(ROOT / "src") not in sys.path:
 from src.py2js import load_east, load_js_profile, transpile_to_js
 from src.pytra.compiler.east_parts.core import convert_path
 from hooks.js.emitter.js_emitter import JsEmitter
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -42,6 +43,13 @@ class Py2JsSmokeTest(unittest.TestCase):
         js = transpile_to_js(east)
         self.assertIn("function add(a, b) {", js)
         self.assertIn("console.log(", js)
+
+    def test_comment_fidelity_blocks_generated_comments_and_preserves_source_comments(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        assert_no_generated_comments(self, js)
+        assert_sample01_module_comments(self, js, prefix="//")
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

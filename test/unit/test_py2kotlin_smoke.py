@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2kotlin import load_east, load_kotlin_profile, transpile_to_kotlin, transpile_to_kotlin_native
 from src.pytra.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -40,7 +41,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin(east)
         self.assertIn("fun main(args: Array<String>)", kotlin)
-        self.assertNotIn("Auto-generated Pytra Kotlin native source from EAST3.", kotlin)
+        assert_no_generated_comments(self, kotlin)
         self.assertNotIn("ProcessBuilder", kotlin)
 
     def test_kotlin_native_emitter_skeleton_handles_module_function_class(self) -> None:
@@ -56,8 +57,8 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin_native(east)
-        self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", kotlin)
-        self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", kotlin)
+        assert_no_generated_comments(self, kotlin)
+        assert_sample01_module_comments(self, kotlin, prefix="//")
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

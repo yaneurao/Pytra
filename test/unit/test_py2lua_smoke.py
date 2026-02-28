@@ -18,6 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2lua import load_east, load_lua_profile, transpile_to_lua, transpile_to_lua_native
 from src.pytra.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -39,7 +40,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         lua = transpile_to_lua(east)
-        self.assertNotIn("Auto-generated Pytra Lua native source from EAST3.", lua)
+        assert_no_generated_comments(self, lua)
         self.assertIn("function add(a, b)", lua)
         self.assertIn("print(add(3, 4))", lua)
         self.assertNotIn("node ", lua)
@@ -67,6 +68,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             )
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
+        assert_no_generated_comments(self, lua)
         self.assertIn("-- leading comment 1", lua)
         self.assertIn("-- leading comment 2", lua)
 

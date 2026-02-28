@@ -19,6 +19,7 @@ if str(ROOT / "src") not in sys.path:
 from src.py2rs import load_east, load_rs_profile, transpile_to_rust
 from src.pytra.compiler.east_parts.core import convert_path
 from hooks.rs.emitter.rs_emitter import RustEmitter
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -40,9 +41,17 @@ class Py2RsSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         rust = transpile_to_rust(east)
+        assert_no_generated_comments(self, rust)
         self.assertIn("fn add(a: i64, b: i64) -> i64 {", rust)
         self.assertIn("fn _case_main()", rust)
         self.assertIn("fn main()", rust)
+
+    def test_comment_fidelity_preserves_source_comments(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        assert_no_generated_comments(self, rust)
+        assert_sample01_module_comments(self, rust, prefix="//")
 
     def test_transpile_for_range_fixture_lowers_to_while(self) -> None:
         fixture = find_fixture_case("for_range")

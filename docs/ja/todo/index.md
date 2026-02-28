@@ -118,7 +118,7 @@
 3. [x] [ID: P1-COMMENT-FIDELITY-01-S1-02] コメント出力契約（`module_leading_trivia` / `leading_trivia` のみ許可）と fail-closed 方針を仕様化する。
 4. [x] [ID: P1-COMMENT-FIDELITY-01-S2-01] `ts/go/java/swift/kotlin/ruby/lua` の固定コメント出力を撤去し、元コメント伝播のみへ統一する。
 5. [x] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換する。
-6. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
+6. [x] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
 7. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、固定コメント残存ゼロを確認する。
 
 ### P1: Kotlin runtime 外出し（inline helper 撤去）
