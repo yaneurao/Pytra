@@ -71,9 +71,7 @@ struct StmtNode : public PyObj {
 
 object tokenize(const object& lines) {
     object tokens = make_object(list<object>{});
-    for (object __itobj_1 : py_dyn_range(py_enumerate(lines))) {
-        int64 line_index = int64(py_to<int64>(py_at(__itobj_1, 0)));
-        str source = py_to_string(py_at(__itobj_1, 1));
+    for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines))) {
         int64 i = 0;
         int64 n = py_len(source);
         while (i < n) {

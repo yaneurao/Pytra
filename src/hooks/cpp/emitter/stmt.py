@@ -884,6 +884,54 @@ class CppStatementEmitter:
                             return f"tuple[{key_t}, {val_t}]"
         return ""
 
+    def _forcore_type_has_list_str(self, type_text: str) -> bool:
+        """型文字列が `list[str]`（またはそれを含む union）か判定する。"""
+        t_norm = self.normalize_type_name(type_text)
+        if t_norm == "list[str]":
+            return True
+        if self._contains_text(t_norm, "|"):
+            for part in self.split_union(t_norm):
+                if self.normalize_type_name(part) == "list[str]":
+                    return True
+        return False
+
+    def _render_forcore_typed_enumerate_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
+        """`enumerate(list[str])` を pyobj でも typed enumerate へ戻す。"""
+        iter_item_norm = self.normalize_type_name(iter_item_t)
+        if iter_item_norm != "tuple[int64, str]":
+            return ""
+        if self._node_kind_from_dict(iter_expr) != "Call":
+            return ""
+        runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+        lowered_kind = self.any_dict_get_str(iter_expr, "lowered_kind", "")
+        builtin_name = self.any_dict_get_str(iter_expr, "builtin_name", "")
+        is_enumerate = runtime_call == "py_enumerate" or (lowered_kind == "BuiltinCall" and builtin_name == "enumerate")
+        if not is_enumerate:
+            return ""
+        args = self.any_to_list(iter_expr.get("args"))
+        if len(args) < 1:
+            return ""
+        src_node = self.any_to_dict_or_empty(args[0])
+        if self._node_kind_from_dict(src_node) != "Name":
+            return ""
+        src_name = self.any_dict_get_str(src_node, "id", "")
+        if src_name == "" or self._is_stack_list_local_name(src_name):
+            return ""
+        src_t = self.normalize_type_name(self.get_expr_type(src_node))
+        if src_t in {"", "unknown"}:
+            src_t = self.normalize_type_name(self.any_dict_get_str(src_node, "resolved_type", ""))
+        if not self._forcore_type_has_list_str(src_t):
+            return ""
+        src_expr = self.render_expr(src_node)
+        if src_expr == "":
+            return ""
+        if len(args) >= 2:
+            start_expr = self.render_expr(args[1])
+            if start_expr == "":
+                return ""
+            return f"py_enumerate(py_to_str_list_from_object({src_expr}), py_to<int64>({start_expr}))"
+        return f"py_enumerate(py_to_str_list_from_object({src_expr}))"
+
     def emit_for_core(self, stmt: dict[str, Any]) -> None:
         """EAST3 `ForCore` を直接 C++ ループへ描画する。"""
         iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
@@ -1030,6 +1078,12 @@ class CppStatementEmitter:
                 scope_names = self.scope_names_with_tmp(self._forcore_target_bound_names(target_plan), iter_tmp)
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                typed_iter_expr = iter_txt
+                if force_runtime_iter and typed_iter:
+                    enumerate_override = self._render_forcore_typed_enumerate_iter_expr(iter_expr, iter_item_t)
+                    if enumerate_override != "":
+                        typed_iter_expr = enumerate_override
+                        force_runtime_iter = False
                 if force_runtime_iter:
                     typed_iter = False
                 inherited_elem_types: list[str] = []
@@ -1046,7 +1100,7 @@ class CppStatementEmitter:
                         direct_names_txt.append(raw_name)
                 if typed_iter and direct_unpack and len(direct_names_txt) > 0:
                     bind_targets = ", ".join(direct_names_txt)
-                    hdr = f"for (const auto& [{bind_targets}] : {iter_txt})"
+                    hdr = f"for (const auto& [{bind_targets}] : {typed_iter_expr})"
                     self._emit_for_body_open(hdr, set(direct_names_txt), omit_braces)
                     i = 0
                     while i < len(direct_names_txt):
@@ -1064,7 +1118,7 @@ class CppStatementEmitter:
                     hdr = self.syntax_line(
                         "for_each_typed_open",
                         "for (const {type}& {target} : {iter})",
-                        {"type": self._cpp_type_text(iter_item_t), "target": iter_tmp, "iter": iter_txt},
+                        {"type": self._cpp_type_text(iter_item_t), "target": iter_tmp, "iter": typed_iter_expr},
                     )
                 else:
                     hdr = self.syntax_line(

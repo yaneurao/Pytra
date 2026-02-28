@@ -453,6 +453,18 @@ def f() -> float:
         self.assertIn('tokens.append(::rc_new<Token>("PLUS", ch, i));', cpp)
         self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
 
+    def test_sample18_pyobj_enumerate_list_str_uses_typed_direct_unpack(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn(
+            "for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines))) {",
+            cpp,
+        )
+        self.assertNotIn("for (object __itobj_1 : py_dyn_range(py_enumerate(lines))) {", cpp)
+        self.assertNotIn("line_index = int64(py_to<int64>(py_at(__itobj_1, 0)))", cpp)
+        self.assertNotIn("source = py_to_string(py_at(__itobj_1, 1))", cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass

@@ -45,13 +45,16 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、sample/18 C++ の最適化余地6項目を P0 として詳細分解し、実装計画を作成した。
+- 2026-03-01: `cpp_list_model=pyobj` では `enumerate(lines)` が `py_enumerate(object)` 解決になって typed direct unpack へ進めないため、`iter_item_type=tuple[int64, str]` かつ `lines:list[str]` の場合のみ `py_to_str_list_from_object(lines)` を経由して typed enumerate を選ぶ方針を採用した。
+- 2026-03-01: `test_py2cpp_codegen_issues.py` に `cpp_list_model="pyobj"` 前提の sample/18 回帰を追加し、`for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines)))` を固定した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（75件）、`test_east3_cpp_bridge.py`（90件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を通過した。
 
 ## 分解
 
 - [ ] [ID: P0-CPP-S18-OPT-01] sample/18 C++ のホットパス6項目（typed enumerate / typed container / parser access / enum tag / number predecode / typed execute loop）を段階実装する。
 
-- [ ] [ID: P0-CPP-S18-OPT-01-S1-01] `enumerate(lines)` を typed tuple 反復へ縮退するため、EAST3 と C++ emitter の for-header 生成条件を整理する。
-- [ ] [ID: P0-CPP-S18-OPT-01-S1-02] `sample/18` tokenize ループで `for (::std::tuple<int64, str> ...)` 相当の出力を固定する回帰を追加する。
+- [x] [ID: P0-CPP-S18-OPT-01-S1-01] `enumerate(lines)` を typed tuple 反復へ縮退するため、EAST3 と C++ emitter の for-header 生成条件を整理する。
+- [x] [ID: P0-CPP-S18-OPT-01-S1-02] `sample/18` tokenize ループで `for (::std::tuple<int64, str> ...)` 相当の出力を固定する回帰を追加する。
 
 - [ ] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` の型情報（`list[Token]` 相当）を parse->EAST3->emitter で保持し、`object(list<object>)` への退化条件を特定する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize` / `Parser` の `tokens` を typed container 出力へ移行し、`py_append(make_object(...))` の過剰 boxing を削減する。
