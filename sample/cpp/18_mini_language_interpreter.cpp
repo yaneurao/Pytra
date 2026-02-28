@@ -386,12 +386,12 @@ void run_demo() {
 
 void run_benchmark() {
     list<str> source_lines = build_benchmark_source(32, 120000);
-    float64 start = py_to<float64>(pytra::std::time::perf_counter());
+    float64 start = pytra::std::time::perf_counter();
     list<rc<Token>> tokens = tokenize(source_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);
     list<rc<StmtNode>> stmts = parser->parse_program();
     int64 checksum = execute(stmts, parser->expr_nodes, false);
-    float64 elapsed = py_to<float64>(pytra::std::time::perf_counter() - start);
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     
     py_print("token_count:", py_len(tokens));
     py_print("expr_count:", py_len(parser->expr_nodes));
