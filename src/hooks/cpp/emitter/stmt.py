@@ -809,8 +809,17 @@ class CppStatementEmitter:
                 return "descending"
         return "dynamic"
 
-    def _forcore_runtime_iter_item_type(self, iter_expr: dict[str, Any]) -> str:
+    def _forcore_runtime_iter_item_type(
+        self, iter_expr: dict[str, Any], iter_plan: dict[str, Any] | None = None
+    ) -> str:
         """ForCore runtime iterable の要素型（既知時）を返す。"""
+        iter_plan_norm = iter_plan if isinstance(iter_plan, dict) else {}
+        iter_item_hint = self.normalize_type_name(self.any_dict_get_str(iter_plan_norm, "iter_item_type", ""))
+        if iter_item_hint not in {"", "unknown"} and not self.is_any_like_type(iter_item_hint):
+            return iter_item_hint
+        iter_elem_hint = self.normalize_type_name(self.any_dict_get_str(iter_expr, "iter_element_type", ""))
+        if iter_elem_hint not in {"", "unknown"} and not self.is_any_like_type(iter_elem_hint):
+            return iter_elem_hint
         if len(iter_expr) == 0:
             return ""
         iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
@@ -953,7 +962,7 @@ class CppStatementEmitter:
             if target_kind == "TupleTarget":
                 iter_tmp = self.next_for_runtime_iter_name()
                 scope_names = self.scope_names_with_tmp(self._forcore_target_bound_names(target_plan), iter_tmp)
-                iter_item_t = self._forcore_runtime_iter_item_type(iter_expr)
+                iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 inherited_elem_types: list[str] = []
                 if typed_iter and iter_item_t.startswith("tuple[") and iter_item_t.endswith("]"):

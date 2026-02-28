@@ -8,6 +8,7 @@ from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pa
 from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
 from src.pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
+from src.pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
 from src.pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from src.pytra.compiler.east_parts.east3_optimizer import PassContext
@@ -89,27 +90,24 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-RangeForCanonicalizationPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
         self.assertIsInstance(trace, list)
-        self.assertEqual(trace[0].get("name"), "NoOpCastCleanupPass")
-        self.assertFalse(bool(trace[0].get("enabled")))
-        self.assertEqual(trace[1].get("name"), "LiteralCastFoldPass")
-        self.assertFalse(bool(trace[1].get("enabled")))
-        self.assertEqual(trace[2].get("name"), "RangeForCanonicalizationPass")
-        self.assertFalse(bool(trace[2].get("enabled")))
-        self.assertEqual(trace[3].get("name"), "UnusedLoopVarElisionPass")
-        self.assertFalse(bool(trace[3].get("enabled")))
-        self.assertEqual(trace[4].get("name"), "LoopInvariantHoistLitePass")
-        self.assertFalse(bool(trace[4].get("enabled")))
-        self.assertEqual(trace[5].get("name"), "StrengthReductionFloatLoopPass")
-        self.assertFalse(bool(trace[5].get("enabled")))
+        by_name = {str(item.get("name", "")): bool(item.get("enabled")) for item in trace if isinstance(item, dict)}
+        self.assertFalse(by_name.get("NoOpCastCleanupPass", True))
+        self.assertFalse(by_name.get("LiteralCastFoldPass", True))
+        self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
+        self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
+        self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
+        self.assertFalse(by_name.get("LoopInvariantHoistLitePass", True))
+        self.assertFalse(by_name.get("StrengthReductionFloatLoopPass", True))
         trace_text = render_east3_opt_trace(report)
         self.assertIn("NoOpCastCleanupPass", trace_text)
         self.assertIn("LiteralCastFoldPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
+        self.assertIn("TypedEnumerateNormalizationPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
         self.assertIn("StrengthReductionFloatLoopPass", trace_text)
@@ -345,6 +343,107 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 0)
         self.assertEqual(for_stmt.get("iter_mode"), "runtime_protocol")
         self.assertEqual(for_stmt.get("iter_plan", {}).get("kind"), "RuntimeIterForPlan")
+
+    def test_typed_enumerate_normalization_pass_populates_metadata_from_list_arg(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "func": {"kind": "Name", "id": "enumerate", "resolved_type": "unknown"},
+                    "args": [
+                        {"kind": "Name", "id": "lines", "resolved_type": "list[str]", "borrow_kind": "value", "casts": []}
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "enumerate",
+                    "runtime_call": "py_enumerate",
+                },
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "unknown"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "unknown"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = TypedEnumerateNormalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        iter_plan = for_stmt.get("iter_plan", {})
+        iter_expr = iter_plan.get("iter_expr", {})
+        self.assertEqual(iter_expr.get("resolved_type"), "list[tuple[int64, str]]")
+        self.assertEqual(iter_expr.get("iter_element_type"), "tuple[int64, str]")
+        self.assertEqual(iter_expr.get("iterable_trait"), "yes")
+        self.assertEqual(iter_expr.get("iter_protocol"), "static_range")
+        self.assertEqual(iter_plan.get("iter_item_type"), "tuple[int64, str]")
+        target_plan = for_stmt.get("target_plan", {})
+        self.assertEqual(target_plan.get("target_type"), "tuple[int64, str]")
+        elems = target_plan.get("elements", [])
+        self.assertEqual(elems[0].get("target_type"), "int64")
+        self.assertEqual(elems[1].get("target_type"), "str")
+
+    def test_typed_enumerate_normalization_pass_skips_when_list_elem_type_unknown(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "resolved_type": "unknown",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "func": {"kind": "Name", "id": "enumerate", "resolved_type": "unknown"},
+                    "args": [
+                        {
+                            "kind": "Name",
+                            "id": "lines",
+                            "resolved_type": "list[unknown]",
+                            "borrow_kind": "value",
+                            "casts": [],
+                        }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "enumerate",
+                    "runtime_call": "py_enumerate",
+                },
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "unknown"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "unknown"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = TypedEnumerateNormalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        iter_expr = for_stmt.get("iter_plan", {}).get("iter_expr", {})
+        self.assertEqual(iter_expr.get("resolved_type"), "unknown")
+        self.assertIsNone(for_stmt.get("iter_plan", {}).get("iter_item_type"))
 
     def test_unused_loop_var_elision_pass_renames_unused_target_to_underscore(self) -> None:
         doc = _module_doc()
@@ -623,8 +722,9 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(for_stmt_o1.get("body", [])[0].get("kind"), "Assign")
         self.assertEqual(for_stmt_o1.get("body", [])[1].get("value", {}).get("op"), "Div")
         trace_o1 = report_o1.get("trace", [])
-        self.assertFalse(bool(trace_o1[4].get("enabled")))
-        self.assertFalse(bool(trace_o1[5].get("enabled")))
+        by_name_o1 = {str(item.get("name", "")): bool(item.get("enabled")) for item in trace_o1 if isinstance(item, dict)}
+        self.assertFalse(by_name_o1.get("LoopInvariantHoistLitePass", True))
+        self.assertFalse(by_name_o1.get("StrengthReductionFloatLoopPass", True))
 
         doc_o2 = _module_doc()
         doc_o2["body"] = [copy.deepcopy(base_for)]
@@ -635,8 +735,9 @@ class East3OptimizerTest(unittest.TestCase):
         for_stmt_o2 = body_o2[1]
         self.assertEqual(for_stmt_o2.get("body", [])[0].get("value", {}).get("op"), "Mult")
         trace_o2 = report_o2.get("trace", [])
-        self.assertTrue(bool(trace_o2[4].get("enabled")))
-        self.assertTrue(bool(trace_o2[5].get("enabled")))
+        by_name_o2 = {str(item.get("name", "")): bool(item.get("enabled")) for item in trace_o2 if isinstance(item, dict)}
+        self.assertTrue(by_name_o2.get("LoopInvariantHoistLitePass", False))
+        self.assertTrue(by_name_o2.get("StrengthReductionFloatLoopPass", False))
 
 
 if __name__ == "__main__":

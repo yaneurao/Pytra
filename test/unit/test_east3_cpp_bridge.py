@@ -148,6 +148,46 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertIn("int64 line_index = int64(py_to<int64>(py_at(", text)
         self.assertIn("str source = py_to_string(py_at(", text)
 
+    def test_emit_stmt_forcore_runtime_tuple_target_uses_iter_item_hint_when_resolved_type_unknown(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "func": {"kind": "Name", "id": "enumerate", "resolved_type": "unknown"},
+                    "args": [{"kind": "Name", "id": "lines", "resolved_type": "list[str]"}],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "enumerate",
+                    "runtime_call": "py_enumerate",
+                    "resolved_type": "unknown",
+                    "iter_element_type": "tuple[int64, str]",
+                },
+                "iter_item_type": "tuple[int64, str]",
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "target_type": "tuple[int64, str]",
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "int64"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "str"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("for (::std::tuple<int64, str> __itobj", text)
+        self.assertNotIn("for (object __itobj", text)
+        self.assertNotIn("py_dyn_range(", text)
+
     def test_emit_stmt_forcore_runtime_tuple_target_falls_back_to_auto_when_unknown(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
