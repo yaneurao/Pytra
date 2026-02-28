@@ -36,7 +36,8 @@ def load_east(
         dump_east3_opt_trace=dump_east3_opt_trace,
         target_lang="cs",
     )
-    return doc3 if isinstance(doc3, dict) else {}
+    empty_doc: dict[str, Any] = {}
+    return doc3 if isinstance(doc3, dict) else empty_doc
 
 
 def _default_output_path(input_path: Path) -> Path:
