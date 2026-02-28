@@ -70,7 +70,7 @@
 
 文脈: [docs/ja/plans/p1-runtime-externalization-gjsr.md](../plans/p1-runtime-externalization-gjsr.md)
 
-1. [ ] [ID: P1-RUNTIME-EXT-01] Go/Java/Swift/Ruby の生成コードから `__pytra_*` runtime helper の inline 定義を撤去し、言語別 runtime ファイル参照へ統一する。
+1. [x] [ID: P1-RUNTIME-EXT-01] Go/Java/Swift/Ruby の生成コードから `__pytra_*` runtime helper の inline 定義を撤去し、言語別 runtime ファイル参照へ統一する。
 2. [x] [ID: P1-RUNTIME-EXT-01-S1-01] 現行 emitter が inline 出力している helper 群を言語別に棚卸しし、runtime 側 API（正本）との対応表を固定する。
 3. [x] [ID: P1-RUNTIME-EXT-01-S2-01] Go backend を runtime 外部参照方式へ移行し、`py2go` 出力から helper 本体を除去する。
 4. [x] [ID: P1-RUNTIME-EXT-01-S2-02] Java backend を runtime 外部参照方式へ移行し、`py2java` 出力から helper 本体を除去する。
