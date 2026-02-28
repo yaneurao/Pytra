@@ -84,6 +84,20 @@ def _java_class_name_from_path(output_path: Path) -> str:
     return out
 
 
+def _java_runtime_source_path() -> Path:
+    """Java runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "java" / "pytra" / "built_in" / "PyRuntime.java"
+
+
+def _copy_java_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Java runtime を配置する。"""
+    runtime_src = _java_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("java runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "PyRuntime.java"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Java transpiler")
@@ -135,6 +149,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     java_src = transpile_to_java_native(east, class_name=class_name)
     output_path.write_text(java_src, encoding="utf-8")
+    _copy_java_runtime(output_path)
     return 0
 
 

@@ -192,7 +192,7 @@ def build_targets(
         Target(
             name="java",
             transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java {opt_arg}",
-            run_cmd="javac test/transpile/java/Main.java && java -cp test/transpile/java Main",
+            run_cmd="javac test/transpile/java/Main.java test/transpile/java/PyRuntime.java && java -cp test/transpile/java Main",
             needs=("python", "javac", "java"),
         ),
         Target(

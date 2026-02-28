@@ -199,12 +199,12 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             elems_any = left_any.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             if len(elems) == 1:
-                return "__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(right_any) + ")"
+                return "PyRuntime.__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(right_any) + ")"
         if isinstance(right_any, dict) and right_any.get("kind") == "List":
             elems_any = right_any.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             if len(elems) == 1:
-                return "__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
+                return "PyRuntime.__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
     left = _render_expr(expr.get("left"))
     right = _render_expr(expr.get("right"))
     casts_any = expr.get("casts")
@@ -346,7 +346,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "bytearray":
         if len(args) == 0:
             return "new java.util.ArrayList<Long>()"
-        return "__pytra_bytearray(" + _render_expr(args[0]) + ")"
+        return "PyRuntime.__pytra_bytearray(" + _render_expr(args[0]) + ")"
     if callee_name == "bytes":
         if len(args) == 0:
             return "new java.util.ArrayList<Long>()"
@@ -354,7 +354,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "int":
         if len(args) == 0:
             return "0L"
-        return "__pytra_int(" + _render_expr(args[0]) + ")"
+        return "PyRuntime.__pytra_int(" + _render_expr(args[0]) + ")"
     if callee_name == "float":
         if len(args) == 0:
             return "0.0"
@@ -362,7 +362,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
-        return "__pytra_truthy(" + _render_expr(args[0]) + ")"
+        return "PyRuntime.__pytra_truthy(" + _render_expr(args[0]) + ")"
     if callee_name == "str":
         if len(args) == 0:
             return '""'
@@ -398,7 +398,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return "((long)(" + rendered + ".size()))"
             if isinstance(resolved, str) and (resolved.startswith("list[") or resolved in {"bytes", "bytearray"}):
                 return "((long)(" + rendered + ".size()))"
-        return "__pytra_len(" + _render_expr(args[0]) + ")"
+        return "PyRuntime.__pytra_len(" + _render_expr(args[0]) + ")"
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -411,7 +411,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         while i < len(args):
             rendered_noop_args.append(_render_expr(args[i]))
             i += 1
-        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        return "PyRuntime.__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
     if callee_name == "grayscale_palette":
         return "new java.util.ArrayList<Long>()"
     if callee_name == "print":
@@ -455,16 +455,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return owner_expr + ".remove(" + owner_expr + ".size() - 1)"
             return owner_expr + ".remove((int)(" + _render_expr(args[0]) + "))"
         if attr_name == "isdigit" and len(args) == 0:
-            return "__pytra_str_isdigit(" + owner_expr + ")"
+            return "PyRuntime.__pytra_str_isdigit(" + owner_expr + ")"
         if attr_name == "isalpha" and len(args) == 0:
-            return "__pytra_str_isalpha(" + owner_expr + ")"
+            return "PyRuntime.__pytra_str_isalpha(" + owner_expr + ")"
         if attr_name in {"write_rgb_png", "save_gif"}:
             rendered_noop_args: list[str] = []
             i = 0
             while i < len(args):
                 rendered_noop_args.append(_render_expr(args[i]))
                 i += 1
-            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+            return "PyRuntime.__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
     if callee_name != "" and callee_name[0].isupper():
         rendered_ctor_args: list[str] = []
         i = 0
@@ -516,7 +516,7 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
 def _render_truthy_expr(expr: Any) -> str:
     rendered = _render_expr(expr)
     if not isinstance(expr, dict):
-        return "__pytra_truthy(" + rendered + ")"
+        return "PyRuntime.__pytra_truthy(" + rendered + ")"
     resolved = expr.get("resolved_type")
     if isinstance(resolved, str):
         if resolved == "bool":
@@ -532,7 +532,7 @@ def _render_truthy_expr(expr: Any) -> str:
     kind = expr.get("kind")
     if kind in {"Compare", "BoolOp", "IsInstance"}:
         return rendered
-    return "__pytra_truthy(" + rendered + ")"
+    return "PyRuntime.__pytra_truthy(" + rendered + ")"
 
 
 def _normalize_index_expr(owner_expr: str, index_expr: str) -> str:
@@ -600,7 +600,7 @@ def _render_expr(expr: Any) -> str:
             rendered.append(_render_expr(keys[i]))
             rendered.append(_render_expr(vals[i]))
             i += 1
-        return "__pytra_dict_of(" + ", ".join(rendered) + ")"
+        return "PyRuntime.__pytra_dict_of(" + ", ".join(rendered) + ")"
     if kind == "ListComp":
         return "new java.util.ArrayList<Object>()"
     if kind == "IfExp":
@@ -646,7 +646,7 @@ def _render_expr(expr: Any) -> str:
                     + upper_expr
                     + "))"
                 )
-                return "__pytra_str_slice(" + owner_expr + ", " + start + ", " + stop + ")"
+                return "PyRuntime.__pytra_str_slice(" + owner_expr + ", " + start + ", " + stop + ")"
             return owner_expr
         index_expr = _render_expr(index_any)
         base = ""
@@ -690,11 +690,11 @@ def _render_expr(expr: Any) -> str:
         lhs = _render_expr(expr.get("value"))
         return _render_isinstance_check(lhs, expr.get("expected_type_id"))
     if kind == "ObjLen":
-        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
+        return "PyRuntime.__pytra_len(" + _render_expr(expr.get("value")) + ")"
     if kind == "ObjStr":
         return "String.valueOf(" + _render_expr(expr.get("value")) + ")"
     if kind == "ObjBool":
-        return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
+        return "PyRuntime.__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
     if kind == "Unbox" or kind == "Box":
         return _render_expr(expr.get("value"))
     return "null"
@@ -1615,172 +1615,6 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     lines.append("    private " + main_class + "() {")
     lines.append("    }")
     lines.append("")
-    lines.append("    private static void __pytra_noop(Object... args) {")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static long __pytra_int(Object value) {")
-    lines.append("        if (value == null) {")
-    lines.append("            return 0L;")
-    lines.append("        }")
-    lines.append("        if (value instanceof Number) {")
-    lines.append("            return ((Number) value).longValue();")
-    lines.append("        }")
-    lines.append("        if (value instanceof Boolean) {")
-    lines.append("            return ((Boolean) value) ? 1L : 0L;")
-    lines.append("        }")
-    lines.append("        if (value instanceof String) {")
-    lines.append("            String s = ((String) value).trim();")
-    lines.append("            if (s.isEmpty()) {")
-    lines.append("                return 0L;")
-    lines.append("            }")
-    lines.append("            try {")
-    lines.append("                return Long.parseLong(s);")
-    lines.append("            } catch (NumberFormatException ex) {")
-    lines.append("                return 0L;")
-    lines.append("            }")
-    lines.append("        }")
-    lines.append("        return 0L;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static long __pytra_len(Object value) {")
-    lines.append("        if (value == null) {")
-    lines.append("            return 0L;")
-    lines.append("        }")
-    lines.append("        if (value instanceof String) {")
-    lines.append("            return ((String) value).length();")
-    lines.append("        }")
-    lines.append("        if (value instanceof java.util.Map<?, ?>) {")
-    lines.append("            return ((java.util.Map<?, ?>) value).size();")
-    lines.append("        }")
-    lines.append("        if (value instanceof java.util.List<?>) {")
-    lines.append("            return ((java.util.List<?>) value).size();")
-    lines.append("        }")
-    lines.append("        return 0L;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static boolean __pytra_str_isdigit(Object value) {")
-    lines.append("        String s = String.valueOf(value);")
-    lines.append("        if (s.isEmpty()) {")
-    lines.append("            return false;")
-    lines.append("        }")
-    lines.append("        int i = 0;")
-    lines.append("        while (i < s.length()) {")
-    lines.append("            if (!Character.isDigit(s.charAt(i))) {")
-    lines.append("                return false;")
-    lines.append("            }")
-    lines.append("            i += 1;")
-    lines.append("        }")
-    lines.append("        return true;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static boolean __pytra_str_isalpha(Object value) {")
-    lines.append("        String s = String.valueOf(value);")
-    lines.append("        if (s.isEmpty()) {")
-    lines.append("            return false;")
-    lines.append("        }")
-    lines.append("        int i = 0;")
-    lines.append("        while (i < s.length()) {")
-    lines.append("            if (!Character.isLetter(s.charAt(i))) {")
-    lines.append("                return false;")
-    lines.append("            }")
-    lines.append("            i += 1;")
-    lines.append("        }")
-    lines.append("        return true;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static String __pytra_str_slice(String s, long start, long stop) {")
-    lines.append("        long n = s.length();")
-    lines.append("        long lo = start;")
-    lines.append("        long hi = stop;")
-    lines.append("        if (lo < 0L) {")
-    lines.append("            lo += n;")
-    lines.append("        }")
-    lines.append("        if (hi < 0L) {")
-    lines.append("            hi += n;")
-    lines.append("        }")
-    lines.append("        if (lo < 0L) {")
-    lines.append("            lo = 0L;")
-    lines.append("        }")
-    lines.append("        if (hi < 0L) {")
-    lines.append("            hi = 0L;")
-    lines.append("        }")
-    lines.append("        if (lo > n) {")
-    lines.append("            lo = n;")
-    lines.append("        }")
-    lines.append("        if (hi > n) {")
-    lines.append("            hi = n;")
-    lines.append("        }")
-    lines.append("        if (hi < lo) {")
-    lines.append("            hi = lo;")
-    lines.append("        }")
-    lines.append("        return s.substring((int) lo, (int) hi);")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static java.util.ArrayList<Long> __pytra_bytearray(Object init) {")
-    lines.append("        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();")
-    lines.append("        if (init instanceof Number) {")
-    lines.append("            long n = ((Number) init).longValue();")
-    lines.append("            long i = 0L;")
-    lines.append("            while (i < n) {")
-    lines.append("                out.add(0L);")
-    lines.append("                i += 1L;")
-    lines.append("            }")
-    lines.append("            return out;")
-    lines.append("        }")
-    lines.append("        if (init instanceof java.util.List<?>) {")
-    lines.append("            java.util.List<?> src = (java.util.List<?>) init;")
-    lines.append("            int i = 0;")
-    lines.append("            while (i < src.size()) {")
-    lines.append("                Object v = src.get(i);")
-    lines.append("                if (v instanceof Number) {")
-    lines.append("                    out.add(((Number) v).longValue());")
-    lines.append("                } else {")
-    lines.append("                    out.add(0L);")
-    lines.append("                }")
-    lines.append("                i += 1;")
-    lines.append("            }")
-    lines.append("        }")
-    lines.append("        return out;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static java.util.HashMap<Object, Object> __pytra_dict_of(Object... kv) {")
-    lines.append("        java.util.HashMap<Object, Object> out = new java.util.HashMap<Object, Object>();")
-    lines.append("        int i = 0;")
-    lines.append("        while (i + 1 < kv.length) {")
-    lines.append("            out.put(kv[i], kv[i + 1]);")
-    lines.append("            i += 2;")
-    lines.append("        }")
-    lines.append("        return out;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static java.util.ArrayList<Object> __pytra_list_repeat(Object value, long count) {")
-    lines.append("        java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();")
-    lines.append("        long i = 0L;")
-    lines.append("        while (i < count) {")
-    lines.append("            out.add(value);")
-    lines.append("            i += 1L;")
-    lines.append("        }")
-    lines.append("        return out;")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    private static boolean __pytra_truthy(Object value) {")
-    lines.append("        if (value == null) {")
-    lines.append("            return false;")
-    lines.append("        }")
-    lines.append("        if (value instanceof Boolean) {")
-    lines.append("            return ((Boolean) value);")
-    lines.append("        }")
-    lines.append("        if (value instanceof Number) {")
-    lines.append("            return ((Number) value).doubleValue() != 0.0;")
-    lines.append("        }")
-    lines.append("        if (value instanceof String) {")
-    lines.append("            return !((String) value).isEmpty();")
-    lines.append("        }")
-    lines.append("        if (value instanceof java.util.List<?>) {")
-    lines.append("            return !((java.util.List<?>) value).isEmpty();")
-    lines.append("        }")
-    lines.append("        return true;")
-    lines.append("    }")
 
     i = 0
     while i < len(classes):

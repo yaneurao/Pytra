@@ -42,6 +42,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         java = transpile_to_java(east)
         self.assertIn("public final class Main", java)
         self.assertIn("Auto-generated Java native source from EAST3.", java)
+        self.assertNotIn("private static boolean __pytra_truthy(Object value)", java)
+        self.assertNotIn("private static long __pytra_int(Object value)", java)
         self.assertNotIn("ProcessBuilder", java)
 
     def test_load_east_from_json(self) -> None:
@@ -83,6 +85,11 @@ class Py2JavaSmokeTest(unittest.TestCase):
             txt = out_java.read_text(encoding="utf-8")
             self.assertIn("public final class", txt)
             self.assertIn("Auto-generated Java native source", txt)
+            self.assertNotIn("private static boolean __pytra_truthy(Object value)", txt)
+            runtime_java = Path(td) / "PyRuntime.java"
+            self.assertTrue(runtime_java.exists())
+            runtime_txt = runtime_java.read_text(encoding="utf-8")
+            self.assertIn("static boolean __pytra_truthy(Object value)", runtime_txt)
             self.assertNotIn("ProcessBuilder", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
 
@@ -157,15 +164,14 @@ class Py2JavaSmokeTest(unittest.TestCase):
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn("java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();", java)
         self.assertIn("pixels.add(r);", java)
-        self.assertIn("r = __pytra_int(", java)
-        self.assertIn("__pytra_noop(out_path, width, height, pixels);", java)
+        self.assertIn("r = PyRuntime.__pytra_int(", java)
+        self.assertIn("PyRuntime.__pytra_noop(out_path, width, height, pixels);", java)
 
     def test_java_native_emitter_allocates_sized_bytearray_for_subscript_set(self) -> None:
         sample = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("private static java.util.ArrayList<Long> __pytra_bytearray(Object init)", java)
-        self.assertIn("__pytra_bytearray((width * height))", java)
+        self.assertIn("PyRuntime.__pytra_bytearray((width * height))", java)
         self.assertIn("frame.set((int)(", java)
 
     def test_java_native_emitter_maps_math_calls_to_java_math(self) -> None:
@@ -180,9 +186,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("private static java.util.ArrayList<Object> __pytra_list_repeat(Object value, long count)", java)
         self.assertIn("grid = new java.util.ArrayList<Object>();", java)
-        self.assertIn("grid.add(__pytra_list_repeat(0L, w));", java)
+        self.assertIn("grid.add(PyRuntime.__pytra_list_repeat(0L, w));", java)
 
     def test_java_native_emitter_maps_min_max_and_list_truthy(self) -> None:
         sample = ROOT / "sample" / "py" / "14_raymarching_light_cycle.py"
