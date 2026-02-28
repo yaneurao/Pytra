@@ -50,6 +50,7 @@
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（75件）、`test_east3_cpp_bridge.py`（90件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を通過した。
 - 2026-03-01: `tokens` 退化の主因は `cpp_list_model=pyobj` で `_cpp_type_text(list[T]) -> object` になる型境界にある。`tokenize()` 戻り値と `Parser.tokens` は関数境界を越える list のため、現行 stack-list（non-escape）縮退の対象外であることを確認した。
 - 2026-03-01: `S2-02` は sample/18 先行で `list[Token]` 専用 unbox-once 経路（`tokenize -> Parser` 境界）を追加し、`py_append(make_object(...))` と `py_at + obj_to_rc_or_raise` 連鎖を段階縮退する方針に固定した。
+- 2026-03-01: `Parser` の token access を棚卸しし、`py_at(this->tokens, this->pos)` 形が `peek_kind`（1箇所）/`expect`（2箇所）/`parse_primary`（1箇所）で重複することを確認した。`S3-02` は emitter 側で `_current_token()` / `_previous_token()` helper を合成し、同一 index の unbox 重複を削減する方針に固定した。
 
 ## 分解
 
@@ -61,7 +62,7 @@
 - [x] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` の型情報（`list[Token]` 相当）を parse->EAST3->emitter で保持し、`object(list<object>)` への退化条件を特定する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize` / `Parser` の `tokens` を typed container 出力へ移行し、`py_append(make_object(...))` の過剰 boxing を削減する。
 
-- [ ] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser.peek_kind/expect/parse_primary` の repeated `py_at + obj_to_rc_or_raise` パターンを検出し、共通 helper（token cache）方針を設計する。
+- [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser.peek_kind/expect/parse_primary` の repeated `py_at + obj_to_rc_or_raise` パターンを検出し、共通 helper（token cache）方針を設計する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
 
 - [ ] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の比較箇所を棚卸しし、enum/整数タグ化の最小導入面（sample/18 先行）を定義する。
