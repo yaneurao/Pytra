@@ -41,33 +41,21 @@
 3. [x] [ID: P0-STDLIB-SOT-02-S1-02] `test_east_core.py` に「`core.py` へ `perf_counter` 直書きが再混入しない」回帰を追加する。
 4. [x] [ID: P0-STDLIB-SOT-02-S2-01] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` を再実行し、`perf_counter` 型推論と C++ 出力非退行を確認する。
 
-### P0: EAST3 モジュール横断 non-escape 解析（import 先本文を含む）
-
-文脈: [docs/ja/plans/p0-east3-cross-module-nonescape-ipa.md](../plans/p0-east3-cross-module-nonescape-ipa.md)
-
-1. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01] non-escape 解析を同一モジュール内限定から import closure を含むモジュール横断解析へ拡張する。
-2. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-01] import closure の収集仕様（対象モジュール範囲、循環時挙動、未解決時 fail-closed）を確定する。
-3. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-02] 関数シンボルを `module_id::symbol` で一意化し、モジュール横断 call target 解決を実装する。
-4. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-01] `NonEscapeInterproceduralPass` をモジュール横断 summary 計算へ拡張し、SCC fixed-point の決定性を維持する。
-5. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-02] callsite `meta.non_escape_callsite` / module `meta.non_escape_summary` を横断解析結果で更新する。
-6. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-01] C++ emitter の safe-call 固定ホワイトリスト依存を縮退し、`non_escape_callsite` 注釈を優先して stack-list 判定できるようにする。
-7. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-02] `sample/05` で `frames` が `object` へ退化しないことを確認し、`save_gif` 呼び出し時の暗黙変換を削減する。
-8. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-01] module-cross / unresolved-import / recursive-import の回帰テストを追加し、fail-closed と決定性を固定する。
-9. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-02] `check_py2cpp_transpile` と C++ 回帰を実行し、非退行を確認する。
-- `P0-EAST3-XMOD-NONESCAPE-01-S3-02` `sample/cpp/05_mandelbrot_zoom.cpp` を再生成し、`object frames` が `list<bytes> frames` へ縮退することを確認した。
-- `P0-EAST3-XMOD-NONESCAPE-01-S4-01` re-export alias / unresolved-import / recursive-import の回帰を `test_east3_non_escape_interprocedural_pass.py` に追加した。
-- `P0-EAST3-XMOD-NONESCAPE-01-S4-02` `check_py2cpp_transpile`（`ok=134 fail=0 skipped=6`）と C++ 回帰（`test_py2cpp_codegen_issues`, `test_cpp_non_escape_bridge`, `test_py2cpp_smoke`）を再実行し、非退行を確認した。
-
 ### P0: C++ `float64` 同士除算の `py_div` 縮退（`/` 直接出力）
 
 文脈: [docs/ja/plans/p0-cpp-float-div-direct-slash.md](../plans/p0-cpp-float-div-direct-slash.md)
 
 1. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01] C++ backend の `Div` lower で `float64` 同士は `py_div` を使わず `/` を直接出力する。
-2. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01] `Div` lower の型条件（`float64/float64` 優先、Any/object/int は `py_div` 維持）を文書化する。
-3. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01] `operator.py` の `Div` 分岐へ typed fastpath（`/` 直接出力）を実装する。
-4. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02] `float32` / mixed float / int / Any/object の境界ケースを回帰テストで固定する。
-5. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
-6. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
+2. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01] `Div` lower の型条件（`float64/float64` 優先、Any/object/int は `py_div` 維持）を文書化する。
+3. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01] `operator.py` の `Div` 分岐へ typed fastpath（`/` 直接出力）を実装する。
+4. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02] `float32` / mixed float / int / Any/object の境界ケースを回帰テストで固定する。
+5. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
+6. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
+- `P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01` cast 適用後の実効型（`float32/float64`）を優先し、`Path` 特例と unknown fail-closed を維持する判定契約を計画書へ反映した。
+- `P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01` `src/hooks/cpp/emitter/operator.py` の `Div` 分岐を更新し、実効型が float 系なら `py_div(...)` ではなく `/` を直接出力するようにした。
+- `P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02` `test_py2cpp_codegen_issues.py` に float/mixed/int/unknown の `Div` 回帰を追加し、fastpath と fail-closed を固定した。
+- `P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01` `check_py2cpp_transpile`（`ok=134 fail=0 skipped=6`）と `test_py2cpp_smoke.py` / `test_east3_cpp_bridge.py` / `test_py2cpp_codegen_issues.py` を再実行して非退行を確認した。
+- `P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02` `sample/cpp/01_mandelbrot.cpp` を再生成し、`py_div(py_to<float64>(...), ...)` が `py_to<float64>(...) / ...` へ縮退したことを確認した。
 
 ### P0: sample/18 C++ 出力最適化の強化（実行系ホットパス）
 

@@ -12,7 +12,8 @@
 
 目的:
 - 型が `float64`（または `float32`）同士で確定している `Div` は、C++ 出力で `lhs / rhs` を直接使う。
-- Python 互換が必要な mixed/int 経路は引き続き `py_div` を維持し、意味を壊さない。
+- cast 適用後に float 同士へ昇格する経路（`int/int`・`float/int` 含む）も `/` 直接出力へ寄せる。
+- unknown/object など型未確定経路は `py_div` を維持し、fail-closed を保つ。
 
 対象:
 - `src/hooks/cpp/emitter/operator.py`（`Div` lower 判定）
@@ -27,7 +28,8 @@
 
 受け入れ基準:
 - `float64/float64`（必要なら `float32` 含む）で型確定した `Div` は `py_div` ではなく `/` が出力される。
-- `int/int` や Any/object 経路では `py_div` を維持し、Python 互換を壊さない。
+- cast 適用後に float 同士となる `Div`（`int/int`・`float/int` を含む）も `/` へ縮退される。
+- unknown/object 経路では `py_div` を維持し、Python 互換を壊さない。
 - `check_py2cpp_transpile` と C++ smoke が非退行で通る。
 - `sample/cpp/01_mandelbrot.cpp` の該当行（`t` 計算）が `/` 表記へ変わる。
 
@@ -41,11 +43,13 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、`float64` 同士の `Div` で `py_div` を使わない C++ 出力最適化を `P0` で起票した。
+- 2026-02-28: `Div` の実効型は `get_expr_type()` だけでなく `casts`（`on=left/right`, `to=float64/float32`）を反映して判定し、型昇格済み経路も `/` へ縮退する方針にした。
+- 2026-02-28: unknown/object は従来どおり `py_div` を維持し、fastpath 未適用時は fail-closed を守る方針にした。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01] `Div` lower の型条件（`float64/float64` 優先、Any/object/int は `py_div` 維持）を文書化する。
-- [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01] `operator.py` の `Div` 分岐へ typed fastpath（`/` 直接出力）を実装する。
-- [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02] `float32` / mixed float / int / Any/object の境界ケースを回帰テストで固定する。
-- [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
-- [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
+- [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01] `Div` lower の型条件（`float64/float64` 優先、Any/object/int は `py_div` 維持）を文書化する。
+- [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01] `operator.py` の `Div` 分岐へ typed fastpath（`/` 直接出力）を実装する。
+- [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02] `float32` / mixed float / int / Any/object の境界ケースを回帰テストで固定する。
+- [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
+- [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
