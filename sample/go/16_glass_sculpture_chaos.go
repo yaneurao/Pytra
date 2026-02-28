@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
+
 func clamp01(v float64) float64 {
     if (__pytra_float(v) < __pytra_float(float64(0.0))) {
         return __pytra_float(float64(0.0))

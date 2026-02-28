@@ -4,6 +4,8 @@ public final class Pytra_07_game_of_life_loop {
     }
 
 
+    // 07: Sample that outputs Game of Life evolution as a GIF.
+
     public static java.util.ArrayList<Object> next_state(java.util.ArrayList<Object> grid, long w, long h) {
         java.util.ArrayList<Object> nxt = new java.util.ArrayList<Object>(java.util.Arrays.asList());
         long __step_0 = 1L;

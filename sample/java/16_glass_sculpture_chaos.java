@@ -4,6 +4,8 @@ public final class Pytra_16_glass_sculpture_chaos {
     }
 
 
+    // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
+
     public static double clamp01(double v) {
         if ((v < 0.0)) {
             return 0.0;

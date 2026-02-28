@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,14 +310,17 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+// Dependencies are kept minimal (time only) for transpilation compatibility.
+
 fun clamp01(v: Double): Double {
     if ((__pytra_float(v) < __pytra_float(0.0))) {
-        return 0.0
+        return __pytra_float(0.0)
     }
     if ((__pytra_float(v) > __pytra_float(1.0))) {
-        return 1.0
+        return __pytra_float(1.0)
     }
-    return v
+    return __pytra_float(v)
 }
 
 fun hit_sphere(ox: Double, oy: Double, oz: Double, dx: Double, dy: Double, dz: Double, cx: Double, cy: Double, cz: Double, r: Double): Double {
@@ -318,18 +332,18 @@ fun hit_sphere(ox: Double, oy: Double, oz: Double, dx: Double, dy: Double, dz: D
     var c: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float((__pytra_float(lx) * __pytra_float(lx))) + __pytra_float((__pytra_float(ly) * __pytra_float(ly))))) + __pytra_float((__pytra_float(lz) * __pytra_float(lz))))) - __pytra_float((__pytra_float(r) * __pytra_float(r)))))
     var d: Double = __pytra_float((__pytra_float((__pytra_float(b) * __pytra_float(b))) - __pytra_float((__pytra_float((__pytra_float(4.0) * __pytra_float(a))) * __pytra_float(c)))))
     if ((__pytra_float(d) < __pytra_float(0.0))) {
-        return (-1.0)
+        return __pytra_float((-1.0))
     }
     var sd: Double = __pytra_float(kotlin.math.sqrt(__pytra_float(d)))
     var t0: Double = __pytra_float((__pytra_float((__pytra_float((-b)) - __pytra_float(sd))) / __pytra_float((__pytra_float(2.0) * __pytra_float(a)))))
     var t1: Double = __pytra_float((__pytra_float((__pytra_float((-b)) + __pytra_float(sd))) / __pytra_float((__pytra_float(2.0) * __pytra_float(a)))))
     if ((__pytra_float(t0) > __pytra_float(0.001))) {
-        return t0
+        return __pytra_float(t0)
     }
     if ((__pytra_float(t1) > __pytra_float(0.001))) {
-        return t1
+        return __pytra_float(t1)
     }
-    return (-1.0)
+    return __pytra_float((-1.0))
 }
 
 fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
@@ -340,6 +354,10 @@ fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
     var lx: Double = __pytra_float((-0.4))
     var ly: Double = __pytra_float(0.8)
     var lz: Double = __pytra_float((-0.45))
+    var __hoisted_cast_1: Double = __pytra_float(__pytra_float(aa))
+    var __hoisted_cast_2: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(1L))))
+    var __hoisted_cast_3: Double = __pytra_float(__pytra_float((__pytra_int(width) - __pytra_int(1L))))
+    var __hoisted_cast_4: Double = __pytra_float(__pytra_float(height))
     val __step_0 = __pytra_int(1L)
     var y = __pytra_int(0L)
     while ((__step_0 >= 0L && y < __pytra_int(height)) || (__step_0 < 0L && y > __pytra_int(height))) {
@@ -355,10 +373,10 @@ fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
                 val __step_3 = __pytra_int(1L)
                 var ax = __pytra_int(0L)
                 while ((__step_3 >= 0L && ax < __pytra_int(aa)) || (__step_3 < 0L && ax > __pytra_int(aa))) {
-                    var fy: Double = __pytra_float((__pytra_float((__pytra_float(y) + __pytra_float((__pytra_float((__pytra_float(ay) + __pytra_float(0.5))) / __pytra_float(aa))))) / __pytra_float((__pytra_int(height) - __pytra_int(1L)))))
-                    var fx: Double = __pytra_float((__pytra_float((__pytra_float(x) + __pytra_float((__pytra_float((__pytra_float(ax) + __pytra_float(0.5))) / __pytra_float(aa))))) / __pytra_float((__pytra_int(width) - __pytra_int(1L)))))
+                    var fy: Double = __pytra_float((__pytra_float((__pytra_float(y) + __pytra_float((__pytra_float((__pytra_float(ay) + __pytra_float(0.5))) / __pytra_float(__hoisted_cast_1))))) / __pytra_float(__hoisted_cast_2)))
+                    var fx: Double = __pytra_float((__pytra_float((__pytra_float(x) + __pytra_float((__pytra_float((__pytra_float(ax) + __pytra_float(0.5))) / __pytra_float(__hoisted_cast_1))))) / __pytra_float(__hoisted_cast_3)))
                     var sy: Double = __pytra_float((__pytra_float(1.0) - __pytra_float((__pytra_float(2.0) * __pytra_float(fy)))))
-                    var sx: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(2.0) * __pytra_float(fx))) - __pytra_float(1.0))) * __pytra_float((__pytra_float(width) / __pytra_float(height)))))
+                    var sx: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(2.0) * __pytra_float(fx))) - __pytra_float(1.0))) * __pytra_float((__pytra_float(width) / __pytra_float(__hoisted_cast_4)))))
                     var dx: Double = __pytra_float(sx)
                     var dy: Double = __pytra_float(sy)
                     var dz: Double = __pytra_float(1.0)
@@ -460,7 +478,7 @@ fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
         }
         y += __step_0
     }
-    return pixels
+    return __pytra_as_list(pixels)
 }
 
 fun run_raytrace() {
@@ -471,7 +489,7 @@ fun run_raytrace() {
     var start: Double = __pytra_float(__pytra_perf_counter())
     var pixels: MutableList<Any?> = __pytra_as_list(render(width, height, aa))
     __pytra_noop(out_path, width, height, pixels)
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)
     __pytra_print("elapsed_sec:", elapsed)

@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,16 +310,21 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
+
 fun render_orbit_trap_julia(width: Long, height: Long, max_iter: Long, cx: Double, cy: Double): MutableList<Any?> {
     var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var __hoisted_cast_1: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(1L))))
+    var __hoisted_cast_2: Double = __pytra_float(__pytra_float((__pytra_int(width) - __pytra_int(1L))))
+    var __hoisted_cast_3: Double = __pytra_float(__pytra_float(max_iter))
     val __step_0 = __pytra_int(1L)
     var y = __pytra_int(0L)
     while ((__step_0 >= 0L && y < __pytra_int(height)) || (__step_0 < 0L && y > __pytra_int(height))) {
-        var zy0: Double = __pytra_float((__pytra_float((-1.3)) + __pytra_float((__pytra_float(2.6) * __pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(height) - __pytra_int(1L)))))))))
+        var zy0: Double = __pytra_float((__pytra_float((-1.3)) + __pytra_float((__pytra_float(2.6) * __pytra_float((__pytra_float(y) / __pytra_float(__hoisted_cast_1)))))))
         val __step_1 = __pytra_int(1L)
         var x = __pytra_int(0L)
         while ((__step_1 >= 0L && x < __pytra_int(width)) || (__step_1 < 0L && x > __pytra_int(width))) {
-            var zx: Double = __pytra_float((__pytra_float((-1.9)) + __pytra_float((__pytra_float(3.8) * __pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(width) - __pytra_int(1L)))))))))
+            var zx: Double = __pytra_float((__pytra_float((-1.9)) + __pytra_float((__pytra_float(3.8) * __pytra_float((__pytra_float(x) / __pytra_float(__hoisted_cast_2)))))))
             var zy: Double = __pytra_float(zy0)
             var trap: Double = __pytra_float(1000000000.0)
             var i: Long = __pytra_int(0L)
@@ -358,7 +374,7 @@ fun render_orbit_trap_julia(width: Long, height: Long, max_iter: Long, cx: Doubl
                 if ((__pytra_float(trap_scaled) < __pytra_float(0.0))) {
                     trap_scaled = __pytra_float(0.0)
                 }
-                var t: Double = __pytra_float((__pytra_float(i) / __pytra_float(max_iter)))
+                var t: Double = __pytra_float((__pytra_float(i) / __pytra_float(__hoisted_cast_3)))
                 var tone: Long = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(1.0) - __pytra_float(trap_scaled))))))
                 r = __pytra_int(__pytra_int((__pytra_float(tone) * __pytra_float((__pytra_float(0.35) + __pytra_float((__pytra_float(0.65) * __pytra_float(t))))))))
                 g = __pytra_int(__pytra_int((__pytra_float(tone) * __pytra_float((__pytra_float(0.15) + __pytra_float((__pytra_float(0.85) * __pytra_float((__pytra_float(1.0) - __pytra_float(t))))))))))
@@ -380,7 +396,7 @@ fun render_orbit_trap_julia(width: Long, height: Long, max_iter: Long, cx: Doubl
         }
         y += __step_0
     }
-    return pixels
+    return __pytra_as_list(pixels)
 }
 
 fun run_04_orbit_trap_julia() {
@@ -391,7 +407,7 @@ fun run_04_orbit_trap_julia() {
     var start: Double = __pytra_float(__pytra_perf_counter())
     var pixels: MutableList<Any?> = __pytra_as_list(render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889))
     __pytra_noop(out_path, width, height, pixels)
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)
     __pytra_print("max_iter:", max_iter)

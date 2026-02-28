@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 13: Sample that outputs DFS maze-generation progress as a GIF.
+
 func capture(grid: [Any], w: Int64, h: Int64, scale: Int64) -> [Any] {
     var width: Int64 = __pytra_int((__pytra_int(w) * __pytra_int(scale)))
     var height: Int64 = __pytra_int((__pytra_int(h) * __pytra_int(scale)))

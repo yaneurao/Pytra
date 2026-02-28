@@ -3,6 +3,9 @@
 require_relative "py_runtime"
 
 
+# 03: Sample that outputs a Julia set as a PNG image.
+# Implemented with simple loop-centric logic for transpilation compatibility.
+
 def render_julia(width, height, max_iter, cx, cy)
   pixels = __pytra_bytearray()
   __hoisted_cast_1 = __pytra_float((height - 1))

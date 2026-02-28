@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 15: Sample that renders wave interference animation and writes a GIF.
+
 func run_15_wave_interference_loop() {
     var w: Int64 = __pytra_int(Int64(320))
     var h: Int64 = __pytra_int(Int64(240))

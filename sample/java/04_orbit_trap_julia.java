@@ -4,6 +4,8 @@ public final class Pytra_04_orbit_trap_julia {
     }
 
 
+    // 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
+
     public static java.util.ArrayList<Long> render_orbit_trap_julia(long width, long height, long max_iter, double cx, double cy) {
         java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();
         double __hoisted_cast_1 = ((double)((height - 1L)));

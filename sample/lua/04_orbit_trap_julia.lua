@@ -4,16 +4,20 @@
 -- from time import perf_counter as perf_counter (not yet mapped)
 local png = { write_rgb_png = function(...) end, write_gif = function(...) end }
 
+-- 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
+
 function render_orbit_trap_julia(width, height, max_iter, cx, cy)
     local pixels = bytearray()
     local __hoisted_cast_1 = float((height - 1))
     local __hoisted_cast_2 = float((width - 1))
     local __hoisted_cast_3 = float(max_iter)
+    
     for y = 0, (height) - 1, 1 do
         local zy0 = ((-1.3) + (2.6 * (y / __hoisted_cast_1)))
         for x = 0, (width) - 1, 1 do
             local zx = ((-1.9) + (3.8 * (x / __hoisted_cast_2)))
             local zy = zy0
+            
             local trap = 1000000000.0
             local i = 0
             while (i < max_iter) do
@@ -90,10 +94,12 @@ function run_04_orbit_trap_julia()
     local height = 1080
     local max_iter = 1400
     local out_path = "sample/out/04_orbit_trap_julia.png"
+    
     local start = perf_counter()
     local pixels = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889)
     png:write_rgb_png(out_path, width, height, pixels)
     local elapsed = (perf_counter() - start)
+    
     print("output:", out_path)
     print("size:", width, "x", height)
     print("max_iter:", max_iter)

@@ -4,6 +4,8 @@ public final class Pytra_05_mandelbrot_zoom {
     }
 
 
+    // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
+
     public static java.util.ArrayList<Long> render_frame(long width, long height, double center_x, double center_y, double scale, long max_iter) {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray((width * height));
         double __hoisted_cast_1 = ((double)(max_iter));

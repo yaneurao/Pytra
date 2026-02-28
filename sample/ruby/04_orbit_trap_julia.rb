@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
+
 def render_orbit_trap_julia(width, height, max_iter, cx, cy)
   pixels = __pytra_bytearray()
   __hoisted_cast_1 = __pytra_float((height - 1))

@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 11: Sample that outputs Lissajous-motion particles as a GIF.
+
 func color_palette() []any {
     var p []any = __pytra_as_list([]any{})
     __step_0 := __pytra_int(int64(1))

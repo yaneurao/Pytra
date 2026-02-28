@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 15: Sample that renders wave interference animation and writes a GIF.
+
 def run_15_wave_interference_loop()
   w = 320
   h = 240

@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 10: Sample that outputs a plasma effect as a GIF.
+
 func run_10_plasma_effect() {
     var w int64 = __pytra_int(int64(320))
     var h int64 = __pytra_int(int64(240))

@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
+
 func render_orbit_trap_julia(width: Int64, height: Int64, max_iter: Int64, cx: Double, cy: Double) -> [Any] {
     var pixels: [Any] = __pytra_as_list([])
     var __hoisted_cast_1: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(Int64(1)))))

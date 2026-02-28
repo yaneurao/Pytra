@@ -4,6 +4,8 @@ public final class Pytra_09_fire_simulation {
     }
 
 
+    // 09: Sample that outputs a simple fire effect as a GIF.
+
     public static java.util.ArrayList<Long> fire_palette() {
         java.util.ArrayList<Long> p = new java.util.ArrayList<Long>();
         long __step_0 = 1L;

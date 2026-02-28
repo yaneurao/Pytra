@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
+
 func clamp01(v: Double) -> Double {
     if (__pytra_float(v) < __pytra_float(Double(0.0))) {
         return Double(0.0)

@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
+
 def render_frame(width, height, center_x, center_y, scale, max_iter)
   frame = __pytra_bytearray((width * height))
   __hoisted_cast_1 = __pytra_float(max_iter)

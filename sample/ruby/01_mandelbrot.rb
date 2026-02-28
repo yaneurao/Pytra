@@ -3,6 +3,9 @@
 require_relative "py_runtime"
 
 
+# 01: Sample that outputs the Mandelbrot set as a PNG image.
+# Syntax is kept straightforward with future transpilation in mind.
+
 def escape_count(cx, cy, max_iter)
   x = 0.0
   y = 0.0

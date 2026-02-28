@@ -4,6 +4,8 @@ public final class Pytra_12_sort_visualizer {
     }
 
 
+    // 12: Sample that outputs intermediate states of bubble sort as a GIF.
+
     public static java.util.ArrayList<Long> render(java.util.ArrayList<Object> values, long w, long h) {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray((w * h));
         long n = ((long)(values.size()));

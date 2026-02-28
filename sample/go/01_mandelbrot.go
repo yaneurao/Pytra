@@ -9,6 +9,9 @@ import (
 var _ = math.Pi
 
 
+// 01: Sample that outputs the Mandelbrot set as a PNG image.
+// Syntax is kept straightforward with future transpilation in mind.
+
 func escape_count(cx float64, cy float64, max_iter int64) int64 {
     var x float64 = __pytra_float(float64(0.0))
     var y float64 = __pytra_float(float64(0.0))

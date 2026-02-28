@@ -4,6 +4,8 @@ public final class Pytra_06_julia_parameter_sweep {
     }
 
 
+    // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
+
     public static java.util.ArrayList<Long> julia_palette() {
         java.util.ArrayList<Long> palette = PyRuntime.__pytra_bytearray((256L * 3L));
         palette.set((int)((((0L) < 0L) ? (((long)(palette.size())) + (0L)) : (0L))), 0L);

@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 06: Sample that sweeps Julia-set parameters and outputs a GIF.
+
 def julia_palette()
   palette = __pytra_bytearray((256 * 3))
   __pytra_set_index(palette, 0, 0)

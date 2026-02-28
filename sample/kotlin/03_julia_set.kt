@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,16 +310,22 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 03: Sample that outputs a Julia set as a PNG image.
+// Implemented with simple loop-centric logic for transpilation compatibility.
+
 fun render_julia(width: Long, height: Long, max_iter: Long, cx: Double, cy: Double): MutableList<Any?> {
     var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var __hoisted_cast_1: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(1L))))
+    var __hoisted_cast_2: Double = __pytra_float(__pytra_float((__pytra_int(width) - __pytra_int(1L))))
+    var __hoisted_cast_3: Double = __pytra_float(__pytra_float(max_iter))
     val __step_0 = __pytra_int(1L)
     var y = __pytra_int(0L)
     while ((__step_0 >= 0L && y < __pytra_int(height)) || (__step_0 < 0L && y > __pytra_int(height))) {
-        var zy0: Double = __pytra_float((__pytra_float((-1.2)) + __pytra_float((__pytra_float(2.4) * __pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(height) - __pytra_int(1L)))))))))
+        var zy0: Double = __pytra_float((__pytra_float((-1.2)) + __pytra_float((__pytra_float(2.4) * __pytra_float((__pytra_float(y) / __pytra_float(__hoisted_cast_1)))))))
         val __step_1 = __pytra_int(1L)
         var x = __pytra_int(0L)
         while ((__step_1 >= 0L && x < __pytra_int(width)) || (__step_1 < 0L && x > __pytra_int(width))) {
-            var zx: Double = __pytra_float((__pytra_float((-1.8)) + __pytra_float((__pytra_float(3.6) * __pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(width) - __pytra_int(1L)))))))))
+            var zx: Double = __pytra_float((__pytra_float((-1.8)) + __pytra_float((__pytra_float(3.6) * __pytra_float((__pytra_float(x) / __pytra_float(__hoisted_cast_2)))))))
             var zy: Double = __pytra_float(zy0)
             var i: Long = __pytra_int(0L)
             while ((__pytra_int(i) < __pytra_int(max_iter))) {
@@ -329,7 +346,7 @@ fun render_julia(width: Long, height: Long, max_iter: Long, cx: Double, cy: Doub
                 g = __pytra_int(0L)
                 b = __pytra_int(0L)
             } else {
-                var t: Double = __pytra_float((__pytra_float(i) / __pytra_float(max_iter)))
+                var t: Double = __pytra_float((__pytra_float(i) / __pytra_float(__hoisted_cast_3)))
                 r = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(0.2) + __pytra_float((__pytra_float(0.8) * __pytra_float(t))))))))
                 g = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(0.1) + __pytra_float((__pytra_float(0.9) * __pytra_float((__pytra_float(t) * __pytra_float(t))))))))))
                 b = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(1.0) - __pytra_float(t))))))
@@ -341,7 +358,7 @@ fun render_julia(width: Long, height: Long, max_iter: Long, cx: Double, cy: Doub
         }
         y += __step_0
     }
-    return pixels
+    return __pytra_as_list(pixels)
 }
 
 fun run_julia() {
@@ -352,7 +369,7 @@ fun run_julia() {
     var start: Double = __pytra_float(__pytra_perf_counter())
     var pixels: MutableList<Any?> = __pytra_as_list(render_julia(width, height, max_iter, (-0.8), 0.156))
     __pytra_noop(out_path, width, height, pixels)
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)
     __pytra_print("max_iter:", max_iter)

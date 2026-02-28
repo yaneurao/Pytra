@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 13: Sample that outputs DFS maze-generation progress as a GIF.
+
 def capture(grid, w, h, scale)
   width = (w * scale)
   height = (h * scale)

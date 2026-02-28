@@ -4,6 +4,9 @@ public final class Pytra_03_julia_set {
     }
 
 
+    // 03: Sample that outputs a Julia set as a PNG image.
+    // Implemented with simple loop-centric logic for transpilation compatibility.
+
     public static java.util.ArrayList<Long> render_julia(long width, long height, long max_iter, double cx, double cy) {
         java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();
         double __hoisted_cast_1 = ((double)((height - 1L)));

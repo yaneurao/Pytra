@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 12: Sample that outputs intermediate states of bubble sort as a GIF.
+
 func render(values: [Any], w: Int64, h: Int64) -> [Any] {
     var frame: [Any] = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
     var n: Int64 = __pytra_int(__pytra_len(values))

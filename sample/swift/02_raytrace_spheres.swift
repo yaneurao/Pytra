@@ -3,6 +3,10 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+// Dependencies are kept minimal (time only) for transpilation compatibility.
+
 func clamp01(v: Double) -> Double {
     if (__pytra_float(v) < __pytra_float(Double(0.0))) {
         return Double(0.0)

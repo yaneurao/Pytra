@@ -4,6 +4,8 @@ public final class Pytra_14_raymarching_light_cycle {
     }
 
 
+    // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
+
     public static java.util.ArrayList<Long> palette() {
         java.util.ArrayList<Long> p = new java.util.ArrayList<Long>();
         long __step_0 = 1L;

@@ -9,6 +9,9 @@ import (
 var _ = math.Pi
 
 
+// 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+// It avoids floating-point error effects, making cross-language comparisons easier.
+
 func run_integer_grid_checksum(width int64, height int64, seed int64) int64 {
     var mod_main int64 = __pytra_int(int64(2147483647))
     var mod_out int64 = __pytra_int(int64(1000000007))

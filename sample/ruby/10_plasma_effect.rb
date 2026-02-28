@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 10: Sample that outputs a plasma effect as a GIF.
+
 def run_10_plasma_effect()
   w = 320
   h = 240

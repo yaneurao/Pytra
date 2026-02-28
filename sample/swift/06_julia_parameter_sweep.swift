@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 06: Sample that sweeps Julia-set parameters and outputs a GIF.
+
 func julia_palette() -> [Any] {
     var palette: [Any] = __pytra_as_list(__pytra_bytearray((__pytra_int(Int64(256)) * __pytra_int(Int64(3)))))
     __pytra_setIndex(palette, Int64(0), Int64(0))

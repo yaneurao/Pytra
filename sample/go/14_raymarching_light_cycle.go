@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
+
 func palette() []any {
     var p []any = __pytra_as_list([]any{})
     __step_0 := __pytra_int(int64(1))

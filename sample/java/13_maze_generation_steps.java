@@ -4,6 +4,8 @@ public final class Pytra_13_maze_generation_steps {
     }
 
 
+    // 13: Sample that outputs DFS maze-generation progress as a GIF.
+
     public static java.util.ArrayList<Long> capture(java.util.ArrayList<Object> grid, long w, long h, long scale) {
         long width = (w * scale);
         long height = (h * scale);

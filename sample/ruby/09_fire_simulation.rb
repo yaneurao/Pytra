@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 09: Sample that outputs a simple fire effect as a GIF.
+
 def fire_palette()
   p = __pytra_bytearray()
   __step_0 = __pytra_int(1)

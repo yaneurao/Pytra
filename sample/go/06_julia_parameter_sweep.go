@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 06: Sample that sweeps Julia-set parameters and outputs a GIF.
+
 func julia_palette() []any {
     var palette []any = __pytra_as_list(__pytra_bytearray((__pytra_int(int64(256)) * __pytra_int(int64(3)))))
     __pytra_set_index(palette, int64(0), int64(0))

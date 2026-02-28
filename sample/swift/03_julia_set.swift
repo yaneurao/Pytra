@@ -3,6 +3,10 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 03: Sample that outputs a Julia set as a PNG image.
+// Implemented with simple loop-centric logic for transpilation compatibility.
+
 func render_julia(width: Int64, height: Int64, max_iter: Int64, cx: Double, cy: Double) -> [Any] {
     var pixels: [Any] = __pytra_as_list([])
     var __hoisted_cast_1: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(Int64(1)))))

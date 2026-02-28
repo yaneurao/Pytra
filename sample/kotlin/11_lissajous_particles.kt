@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,8 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 11: Sample that outputs Lissajous-motion particles as a GIF.
+
 fun color_palette(): MutableList<Any?> {
     var p: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     val __step_0 = __pytra_int(1L)
@@ -312,7 +325,7 @@ fun color_palette(): MutableList<Any?> {
         p = __pytra_as_list(p); p.add(b)
         i += __step_0
     }
-    return __pytra_bytes(p)
+    return __pytra_as_list(__pytra_bytes(p))
 }
 
 fun run_11_lissajous_particles() {
@@ -327,12 +340,13 @@ fun run_11_lissajous_particles() {
     var t = __pytra_int(0L)
     while ((__step_0 >= 0L && t < __pytra_int(frames_n)) || (__step_0 < 0L && t > __pytra_int(frames_n))) {
         var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
+        var __hoisted_cast_1: Double = __pytra_float(__pytra_float(t))
         val __step_1 = __pytra_int(1L)
         var p = __pytra_int(0L)
         while ((__step_1 >= 0L && p < __pytra_int(particles)) || (__step_1 < 0L && p > __pytra_int(particles))) {
             var phase: Double = __pytra_float((__pytra_float(p) * __pytra_float(0.261799)))
-            var x: Long = __pytra_int(__pytra_int(((__pytra_float(w) * __pytra_float(0.5)) + ((__pytra_float(w) * __pytra_float(0.38)) * kotlin.math.sin(__pytra_float((__pytra_float((__pytra_float(0.11) * __pytra_float(t))) + __pytra_float((__pytra_float(phase) * __pytra_float(2.0))))))))))
-            var y: Long = __pytra_int(__pytra_int(((__pytra_float(h) * __pytra_float(0.5)) + ((__pytra_float(h) * __pytra_float(0.38)) * kotlin.math.sin(__pytra_float((__pytra_float((__pytra_float(0.17) * __pytra_float(t))) + __pytra_float((__pytra_float(phase) * __pytra_float(3.0))))))))))
+            var x: Long = __pytra_int(__pytra_int(((__pytra_float(w) * __pytra_float(0.5)) + ((__pytra_float(w) * __pytra_float(0.38)) * kotlin.math.sin(__pytra_float((__pytra_float((__pytra_float(0.11) * __pytra_float(__hoisted_cast_1))) + __pytra_float((__pytra_float(phase) * __pytra_float(2.0))))))))))
+            var y: Long = __pytra_int(__pytra_int(((__pytra_float(h) * __pytra_float(0.5)) + ((__pytra_float(h) * __pytra_float(0.38)) * kotlin.math.sin(__pytra_float((__pytra_float((__pytra_float(0.17) * __pytra_float(__hoisted_cast_1))) + __pytra_float((__pytra_float(phase) * __pytra_float(3.0))))))))))
             var color: Long = __pytra_int((__pytra_int(30L) + __pytra_int((__pytra_int((__pytra_int(p) * __pytra_int(9L))) % __pytra_int(220L)))))
             val __step_2 = __pytra_int(1L)
             var dy = __pytra_int((-2L))
@@ -363,7 +377,7 @@ fun run_11_lissajous_particles() {
         t += __step_0
     }
     __pytra_noop(out_path, w, h, frames, color_palette())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", frames_n)
     __pytra_print("elapsed_sec:", elapsed)
