@@ -7,6 +7,7 @@ from pytra.std.typing import Any
 from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
 from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
 from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import module_id_for_doc
 from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import resolve_non_escape_call_target
 from pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from pytra.compiler.east_parts.east3_optimizer import PassContext
@@ -79,6 +80,30 @@ def _set_meta_value(node: dict[str, Any], key: str, value: Any) -> bool:
     return True
 
 
+def _collect_non_escape_module_closure(module_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    root_module_id = module_id_for_doc(module_doc)
+    out[root_module_id] = module_doc
+    meta_any = module_doc.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    closure_any = meta.get("non_escape_import_closure")
+    closure = closure_any if isinstance(closure_any, dict) else {}
+    for module_id_any, doc_any in closure.items():
+        module_id = _safe_name(module_id_any)
+        if module_id == "":
+            continue
+        if not isinstance(doc_any, dict) or doc_any.get("kind") != "Module":
+            continue
+        child_doc = doc_any
+        child_meta_any = child_doc.get("meta")
+        child_meta = child_meta_any if isinstance(child_meta_any, dict) else {}
+        if _safe_name(child_meta.get("module_id")) == "":
+            child_meta["module_id"] = module_id
+            child_doc["meta"] = child_meta
+        out[module_id] = child_doc
+    return out
+
+
 def _collect_return_from_args(node: Any, arg_index: dict[str, int], out: set[int]) -> tuple[bool, int]:
     """Collect direct return escapes.
 
@@ -125,13 +150,31 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
         if module_doc.get("kind") != "Module":
             return PassResult()
 
-        _module_id, symbols, local_symbol_map = collect_non_escape_symbols(module_doc)
+        module_docs = _collect_non_escape_module_closure(module_doc)
+        symbols: dict[str, dict[str, Any]] = {}
+        symbol_module_ids: dict[str, str] = {}
+        module_local_symbol_maps: dict[str, dict[str, str]] = {}
+        module_import_modules_maps: dict[str, dict[str, str]] = {}
+        module_import_symbols_maps: dict[str, dict[str, str]] = {}
+        for module_id, mod_doc in module_docs.items():
+            _mod_id, mod_symbols, local_symbol_map = collect_non_escape_symbols(mod_doc)
+            module_local_symbol_maps[module_id] = local_symbol_map
+            import_modules, import_symbols = collect_non_escape_import_maps(mod_doc)
+            module_import_modules_maps[module_id] = import_modules
+            module_import_symbols_maps[module_id] = import_symbols
+            for symbol, fn_node in mod_symbols.items():
+                symbols[symbol] = fn_node
+                symbol_module_ids[symbol] = module_id
         if len(symbols) == 0:
             return PassResult()
 
         known_symbols = set(symbols.keys())
-        import_modules, import_symbols = collect_non_escape_import_maps(module_doc)
-        graph, unresolved_counts = build_non_escape_call_graph(module_doc, known_symbols=known_symbols)
+        graph: dict[str, set[str]] = {}
+        unresolved_counts: dict[str, int] = {}
+        for _module_id, mod_doc in module_docs.items():
+            mod_graph, mod_unresolved = build_non_escape_call_graph(mod_doc, known_symbols=known_symbols)
+            graph.update(mod_graph)
+            unresolved_counts.update(mod_unresolved)
 
         callsites_by_symbol: dict[str, list[dict[str, object]]] = {}
         summary: dict[str, dict[str, object]] = {}
@@ -156,6 +199,10 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
             has_return_value, _ = _collect_return_from_args(fn_node.get("body"), arg_index, direct_return_from_args)
             direct_arg_escape = [False] * len(arg_order)
 
+            owner_module_id = symbol_module_ids.get(symbol, "")
+            local_symbol_map = module_local_symbol_maps.get(owner_module_id, {})
+            import_modules = module_import_modules_maps.get(owner_module_id, {})
+            import_symbols = module_import_symbols_maps.get(owner_module_id, {})
             owner_class = ""
             local_symbol = symbol.split("::", 1)[1] if "::" in symbol else symbol
             if "." in local_symbol:
