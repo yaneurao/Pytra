@@ -41,6 +41,7 @@
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-02] `TypedEnumerateNormalizationPass` を追加し、`ForCore(RuntimeIterForPlan)` の `py_enumerate(list[T])` に `iter_item_type=tuple[int64,T]` と `target_plan` の型注釈を補完。C++ emitter 側は `iter_item_type/iter_element_type` ヒントでも typed loop header を選べるよう補強し、`test_typed_enumerate_normalization_pass_*` / `test_emit_stmt_forcore_runtime_tuple_target_uses_iter_item_hint_when_resolved_type_unknown` で回帰固定。
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] `NumericCastChainReductionPass` を追加し、同型数値キャスト（`static_cast` / `Unbox`）の連鎖を fail-closed で縮退。`opt_pass_spec` 無効化経路に pass 名を追加し、`test_numeric_cast_chain_reduction_pass_*` で no-op/skip 条件（`object/Any`）を含めて回帰固定。
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] `LoopInvariantCastHoistPass` を追加し、`ForCore(StaticRangeForPlan)` 内の `BinOp` 数値昇格 cast（特に右辺 `int -> float64`）を preheader へ hoist。`sample/06_julia_parameter_sweep.py` で `height-1` / `width-1` / `frames_n` の `float64` 変換がループ外へ移動することを実測し、`test_loop_invariant_cast_hoist_pass_*` を追加して回帰固定。
+- 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] `TypedRepeatMaterializationPass` を追加し、`BinOp(Mult)` の list-repeat 型推論（`list[T] * int -> list[T]`）と `ListComp` 出力型補完（`list[unknown] -> list[list[T]]`）を実装。`sample/py` 全件再変換で `make_object(py_repeat(...))` の発生が 0 件になることを確認し、`test_typed_repeat_materialization_pass_*` を追加して回帰固定。
 
 ## 分解
 
@@ -48,6 +49,6 @@
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-02] `enumerate(list[T])` の typed 反復正規化を実装し、`object + py_at + py_to` 連鎖を縮退する。
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] 数値 cast-chain 縮退 pass を追加し、型既知 `py_to<T>` の連鎖を削減する。
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] ループ不変な型変換/分母の hoist を実装し、内側ループの反復処理を軽量化する。
-- [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] 型既知 `py_repeat` 初期化の typed materialization 正規化を実装する。
+- [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] 型既知 `py_repeat` 初期化の typed materialization 正規化を実装する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-06] `dict<str, V>` キー経路の不要 `to_string` 縮退を実装する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-07] tuple unpack 一時変数の消し込み（`TupleTarget` 直展開）を実装する。

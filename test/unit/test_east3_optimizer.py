@@ -11,6 +11,7 @@ from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass impor
 from src.pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
 from src.pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
+from src.pytra.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
 from src.pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from src.pytra.compiler.east_parts.east3_optimizer import PassContext
@@ -92,7 +93,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -103,6 +104,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("NumericCastChainReductionPass", True))
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
+        self.assertFalse(by_name.get("TypedRepeatMaterializationPass", True))
         self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
         self.assertFalse(by_name.get("LoopInvariantHoistLitePass", True))
@@ -113,6 +115,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("NumericCastChainReductionPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
+        self.assertIn("TypedRepeatMaterializationPass", trace_text)
         self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
@@ -510,6 +513,54 @@ class East3OptimizerTest(unittest.TestCase):
         iter_expr = for_stmt.get("iter_plan", {}).get("iter_expr", {})
         self.assertEqual(iter_expr.get("resolved_type"), "unknown")
         self.assertIsNone(for_stmt.get("iter_plan", {}).get("iter_item_type"))
+
+    def test_typed_repeat_materialization_pass_inferrs_listcomp_type_from_repeat_binop(self) -> None:
+        doc = _module_doc()
+        repeat_elt = {
+            "kind": "BinOp",
+            "op": "Mult",
+            "resolved_type": "unknown",
+            "left": {"kind": "List", "resolved_type": "list[int64]", "elements": [_const_i(0)]},
+            "right": {"kind": "Name", "id": "w", "resolved_type": "int64"},
+            "casts": [],
+        }
+        list_comp = {
+            "kind": "ListComp",
+            "resolved_type": "list[unknown]",
+            "elt": repeat_elt,
+            "generators": [],
+            "casts": [],
+        }
+        doc["body"] = [{"kind": "Expr", "value": list_comp}]
+        result = TypedRepeatMaterializationPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 2)
+        self.assertEqual(repeat_elt.get("resolved_type"), "list[int64]")
+        self.assertEqual(list_comp.get("resolved_type"), "list[list[int64]]")
+
+    def test_typed_repeat_materialization_pass_skips_when_repeat_factor_not_int(self) -> None:
+        doc = _module_doc()
+        repeat_elt = {
+            "kind": "BinOp",
+            "op": "Mult",
+            "resolved_type": "unknown",
+            "left": {"kind": "List", "resolved_type": "list[int64]", "elements": [_const_i(0)]},
+            "right": {"kind": "Name", "id": "w", "resolved_type": "float64"},
+            "casts": [],
+        }
+        list_comp = {
+            "kind": "ListComp",
+            "resolved_type": "list[unknown]",
+            "elt": repeat_elt,
+            "generators": [],
+            "casts": [],
+        }
+        doc["body"] = [{"kind": "Expr", "value": list_comp}]
+        result = TypedRepeatMaterializationPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertEqual(repeat_elt.get("resolved_type"), "unknown")
+        self.assertEqual(list_comp.get("resolved_type"), "list[unknown]")
 
     def test_unused_loop_var_elision_pass_renames_unused_target_to_underscore(self) -> None:
         doc = _module_doc()
