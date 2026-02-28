@@ -1856,10 +1856,28 @@ class RustEmitter(CodeEmitter):
             return "()"
         return t
 
-    def _emit_runtime_support(self) -> None:
-        """Rust 単体実行に必要な最小 runtime/module を埋め込む。"""
-        for line in RUST_RUNTIME_SUPPORT.splitlines():
-            self.emit(line)
+    def _emit_runtime_prelude(self) -> None:
+        """外部 runtime 参照の基本宣言を出力する。"""
+        self.emit("mod py_runtime;")
+        self.emit("pub use crate::py_runtime::{math, pytra, time};")
+        self.emit("use crate::py_runtime::*;")
+
+    def _emit_type_info_registration_helper(self) -> None:
+        """`isinstance` 用の生成済み type table 登録関数を出力する。"""
+        if not self.uses_isinstance_runtime:
+            return
+        self.emit("fn py_register_generated_type_info() {")
+        self.indent += 1
+        self.emit("static INIT: ::std::sync::Once = ::std::sync::Once::new();")
+        self.emit("INIT.call_once(|| {")
+        self.indent += 1
+        for tid in sorted(self.type_info_map.keys()):
+            order, min_id, max_id = self.type_info_map[tid]
+            self.emit(f"py_register_type_info({tid}, {order}, {min_id}, {max_id});")
+        self.indent -= 1
+        self.emit("});")
+        self.indent -= 1
+        self.emit("}")
 
     def transpile(self) -> str:
         """モジュール全体を Rust ソースへ変換する。"""
@@ -1895,21 +1913,16 @@ class RustEmitter(CodeEmitter):
 
         self.load_import_bindings_from_meta(meta)
         self.emit_module_leading_trivia()
+        self._emit_runtime_prelude()
+        self.emit("")
         use_lines = self._collect_use_lines(body, meta)
         for line in use_lines:
             self.emit(line)
         if len(use_lines) > 0:
             self.emit("")
-        self._emit_runtime_support()
-        self.emit("")
-        pyany_emitted = False
-        if self.uses_pyany:
-            self._emit_pyany_runtime()
-            pyany_emitted = True
-            self.emit("")
         if self.uses_isinstance_runtime:
             self._prepare_type_id_table()
-            self._emit_isinstance_runtime_helpers()
+            self._emit_type_info_registration_helper()
             self.emit("")
 
         top_level_stmts: list[dict[str, Any]] = []
@@ -1933,14 +1946,13 @@ class RustEmitter(CodeEmitter):
         should_emit_main = len(main_guard_body) > 0 or len(top_level_stmts) > 0
         if should_emit_main:
             self.emit("fn main() {")
+            if self.uses_isinstance_runtime:
+                self.indent += 1
+                self.emit("py_register_generated_type_info();")
+                self.indent -= 1
             scope: set[str] = set()
             self.emit_scoped_stmt_list(top_level_stmts + main_guard_body, scope)
             self.emit("}")
-
-        if self.uses_pyany and not pyany_emitted:
-            # Some Any coercions are discovered during rendering; emit helpers late if needed.
-            self.emit("")
-            self._emit_pyany_runtime()
 
         return "\n".join(self.lines) + ("\n" if len(self.lines) > 0 else "")
 
@@ -2819,7 +2831,7 @@ class RustEmitter(CodeEmitter):
         if self._is_any_type(actual):
             self.uses_pyany = True
         self.uses_isinstance_runtime = True
-        return "py_isinstance(&" + value_expr + ", " + expected_tid + ")"
+        return "({ py_register_generated_type_info(); py_isinstance(&" + value_expr + ", " + expected_tid + ") })"
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを Rust へ lower する。"""
@@ -3478,12 +3490,12 @@ class RustEmitter(CodeEmitter):
             value = self.render_expr(expr_d.get("value"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             self.uses_isinstance_runtime = True
-            return "py_isinstance(&" + value + ", " + expected + ")"
+            return "({ py_register_generated_type_info(); py_isinstance(&" + value + ", " + expected + ") })"
         if kind == "IsSubtype" or kind == "IsSubclass":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             self.uses_isinstance_runtime = True
-            return "py_is_subtype(" + actual + ", " + expected + ")"
+            return "({ py_register_generated_type_info(); py_is_subtype(" + actual + ", " + expected + ") })"
         if kind == "Box":
             self.uses_pyany = True
             return self._render_as_pyany(expr_d.get("value"))

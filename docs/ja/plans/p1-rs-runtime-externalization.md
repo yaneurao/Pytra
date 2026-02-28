@@ -48,9 +48,9 @@
 - [x] [ID: P1-RS-RUNTIME-EXT-01-S1-02] Rust 生成物の runtime 参照方式（`mod/use` 構成と出力ディレクトリ配置契約）を確定し、fail-closed 条件を文書化する。
 - [x] [ID: P1-RS-RUNTIME-EXT-01-S2-01] `src/runtime/rs/pytra` 側へ不足 helper/API を補完し、inline 実装と同等の意味を提供する。
 - [x] [ID: P1-RS-RUNTIME-EXT-01-S2-02] `py2rs.py` に runtime ファイル配置導線を追加し、生成コードが外部 runtime を解決できる状態へ移行する。
-- [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-03] `rs_emitter.py` から runtime/helper 本体出力を撤去し、runtime API 呼び出し専用へ切り替える。
-- [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
-- [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-02] `sample/rs` を再生成し、inline helper 残存ゼロを確認する。
+- [x] [ID: P1-RS-RUNTIME-EXT-01-S2-03] `rs_emitter.py` から runtime/helper 本体出力を撤去し、runtime API 呼び出し専用へ切り替える。
+- [x] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
+- [x] [ID: P1-RS-RUNTIME-EXT-01-S3-02] `sample/rs` を再生成し、inline helper 残存ゼロを確認する。
 
 ## S1-01 棚卸し結果（inline helper vs runtime 正本）
 
@@ -121,3 +121,6 @@
 - 2026-03-01: 生成時の runtime 配置契約（`mod py_runtime;` + `pub use` + `use crate::py_runtime::*;`）と fail-closed 条件を確定した（`S1-02`）。
 - 2026-03-01: `src/runtime/rs/pytra/built_in/py_runtime.rs` に `py_str_at`/`py_slice_str`、`PyAny` 変換群、`type_id/isinstance` 基盤、`pub mod time/math/pytra` を追加し、`rustc --crate-type lib` で単体構文確認した（`S2-01`）。
 - 2026-03-01: `py2rs.py` に `py_runtime.rs` 同梱コピー導線を追加し、CLI smoke で生成先に runtime が配置されることを確認した（`S2-02`）。`check_py2rs_transpile.py` の失敗4件（`Try/Yield/Swap` 未対応）は既存仕様差分として `S3-01` で扱う。
+- 2026-03-01: `rs_emitter.py` の runtime inline 出力（`RUST_RUNTIME_SUPPORT`/`_emit_pyany_runtime`/`_emit_isinstance_runtime_helpers` 呼び出し）を撤去し、`mod py_runtime;` + `pub use` + `use crate::py_runtime::*;` へ移行した。`isinstance` は `py_register_generated_type_info()` で runtime 側 type table を初期化する方式へ切替えた（`S2-03`）。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs_smoke.py' -v`（28件 OK）、`python3 tools/check_py2rs_transpile.py`（`checked=129 ok=129 fail=0 skipped=10`）、`python3 tools/runtime_parity_check.py --case-root sample --targets rs --all-samples --ignore-unstable-stdout`（18/18 PASS）を確認した（`S3-01`）。
+- 2026-03-01: `python3 tools/regenerate_samples.py --langs rs --force`（`regen=18 fail=0`）後、`rg -n "fn py_perf_counter|fn py_isdigit|mod pytra \\{" sample/rs --glob '!py_runtime.rs'` で inline helper 残存ゼロを確認した（`S3-02`）。
