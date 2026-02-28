@@ -32,6 +32,15 @@
 
 ## 未完了タスク
 
+### P0: `core.py` の `perf_counter` 特化分岐の完全撤去（回帰修正）
+
+文脈: [docs/ja/plans/p0-stdlib-signature-source-of-truth.md](../plans/p0-stdlib-signature-source-of-truth.md)
+
+1. [ ] [ID: P0-STDLIB-SOT-02] `core.py` の `fn_name == "perf_counter"` 直分岐を撤去し、stdlib シグネチャ参照層経由へ一本化する。
+2. [ ] [ID: P0-STDLIB-SOT-02-S1-01] `core.py` から `perf_counter` 文字列依存を削除し、`BuiltinCall` 判定は import 解決情報または共通 resolver 経由へ移行する。
+3. [ ] [ID: P0-STDLIB-SOT-02-S1-02] `test_east_core.py` に「`core.py` へ `perf_counter` 直書きが再混入しない」回帰を追加する。
+4. [ ] [ID: P0-STDLIB-SOT-02-S2-01] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` を再実行し、`perf_counter` 型推論と C++ 出力非退行を確認する。
+
 ### P0: EAST3 モジュール横断 non-escape 解析（import 先本文を含む）
 
 文脈: [docs/ja/plans/p0-east3-cross-module-nonescape-ipa.md](../plans/p0-east3-cross-module-nonescape-ipa.md)
