@@ -191,6 +191,26 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
     return out.replace(old_graph_resolved_get, new_graph_resolved_get, 1)
 
 
+def _patch_base_class_for_cs(base_class: str) -> str:
+    old_includes_block = (
+        "        includes_obj = meta.get(\"include\")\n"
+        "        includes: list[str] = []\n"
+        "        includes_raw: list[Any] = []\n"
+        "        if isinstance(includes_obj, list):\n"
+        "            includes_raw = includes_obj\n"
+        "\n"
+        "        for item_obj in includes_raw:\n"
+        "            if isinstance(item_obj, str) and item_obj != \"\":\n"
+        "                includes.append(item_obj)\n"
+    )
+    new_includes_block = (
+        "        includes: list[str] = []\n"
+    )
+    if old_includes_block not in base_class:
+        raise RuntimeError("failed to patch load_profile_with_includes block for selfhost cs")
+    return base_class.replace(old_includes_block, new_includes_block, 1)
+
+
 def _patch_selfhost_hooks(text: str, prepare_base) -> str:
     out = prepare_base._patch_code_emitter_hooks_for_selfhost(text)
     init_line = "        self.init_base_state(east_doc, profile, hooks)\n"
@@ -226,6 +246,7 @@ def main() -> int:
     support_blocks = prepare_base._extract_support_blocks()
     support_blocks = _patch_support_blocks_for_cs(support_blocks)
     base_class = prepare_base._strip_triple_quoted_docstrings(prepare_base._extract_code_emitter_class(base_text))
+    base_class = _patch_base_class_for_cs(base_class)
     cs_core = _extract_cs_emitter_core(cs_emitter_text)
 
     py2cs_text = _remove_import_lines(py2cs_text)
