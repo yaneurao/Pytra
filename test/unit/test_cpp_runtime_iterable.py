@@ -82,6 +82,18 @@ int main() {
     assert(m1.has_value() && obj_to_int64(*m1) == 20);
     assert(m2.has_value() && obj_to_int64(*m2) == 30);
     assert(!m3.has_value());
+    py_extend(mut_list_obj, make_object(list<int64>{40, 50}));
+    assert(py_len(mut_list_obj) == 5);
+    object p0 = py_pop(mut_list_obj);
+    assert(obj_to_int64(p0) == 50);
+    object p1 = py_pop(mut_list_obj, 0);
+    assert(obj_to_int64(p1) == 10);
+    py_reverse(mut_list_obj);
+    assert(obj_to_int64(py_at(mut_list_obj, 0)) == 40);
+    py_sort(mut_list_obj);
+    assert(obj_to_int64(py_at(mut_list_obj, 0)) == 20);
+    py_clear(mut_list_obj);
+    assert(py_len(mut_list_obj) == 0);
 
     int64 sum = 0;
     for (object v : py_dyn_range(list_obj)) {

@@ -1493,6 +1493,65 @@ static inline void py_append(const object& v, const object& item) {
     throw ::std::runtime_error("append on non-list object");
 }
 
+static inline void py_extend(const object& v, const object& items) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("extend on non-list object");
+    }
+    const auto* src = obj_to_list_ptr(items);
+    if (src == nullptr) {
+        throw ::std::runtime_error("extend source must be list object");
+    }
+    for (const object& item : *src) {
+        p->value.append(item);
+    }
+}
+
+static inline object py_pop(const object& v) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("pop on non-list object");
+    }
+    return p->value.pop();
+}
+
+static inline object py_pop(const object& v, int64 idx) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("pop on non-list object");
+    }
+    return p->value.pop(idx);
+}
+
+static inline void py_clear(const object& v) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("clear on non-list object");
+    }
+    p->value.clear();
+}
+
+static inline void py_reverse(const object& v) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("reverse on non-list object");
+    }
+    ::std::reverse(p->value.begin(), p->value.end());
+}
+
+static inline void py_sort(const object& v) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("sort on non-list object");
+    }
+    ::std::sort(
+        p->value.begin(),
+        p->value.end(),
+        [](const object& lhs, const object& rhs) {
+            return py_to_string(lhs) < py_to_string(rhs);
+        });
+}
+
 static inline int64 py_index(const object& v, const object& item) {
     if (const auto* p = obj_to_list_ptr(v)) {
         const int64 n = static_cast<int64>(p->size());

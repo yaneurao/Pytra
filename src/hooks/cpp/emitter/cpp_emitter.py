@@ -1469,6 +1469,18 @@ class CppEmitter(
         """`set/list/dict` コンストラクタ呼び出しの型依存分岐を共通化する。"""
         if raw not in {"set", "list", "dict"}:
             return None
+        if raw == "list" and self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            if len(args) == 0:
+                return "make_object(list<object>{})"
+            if len(args) != 1:
+                return None
+            at0 = self.get_expr_type(first_arg)
+            at = at0 if isinstance(at0, str) else ""
+            if at.startswith("list["):
+                return args[0]
+            if at in {"Any", "object"}:
+                return f"make_object(list<object>({args[0]}))"
+            return f"make_object(list<object>({args[0]}))"
         t = self.cpp_type(expr.get("resolved_type"))
         if len(args) == 0:
             return f"{t}{{}}"
@@ -1980,6 +1992,12 @@ class CppEmitter(
             if idx_is_str_key:
                 return f"py_dict_get({val}, {idx})"
             return f"py_at({val}, py_to<int64>({idx}))"
+        if (
+            self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
+            and val_ty.startswith("list[")
+            and val_ty.endswith("]")
+        ):
+            return f"py_at({val}, py_to<int64>({idx}))"
         if val_ty.startswith("tuple[") and val_ty.endswith("]"):
             parts = self.split_generic(val_ty[6:-1])
             if idx_const is None:
@@ -2348,6 +2366,9 @@ class CppEmitter(
             value_node = expr_d.get("value")
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                boxed_value = self._box_expr_for_any(value_expr, value_node)
+                return f"py_append({owner_expr}, {boxed_value})"
             owner_t0 = self.get_expr_type(owner_node)
             owner_t = owner_t0 if isinstance(owner_t0, str) else ""
             owner_types: list[str] = [owner_t]
@@ -2362,6 +2383,9 @@ class CppEmitter(
             value_node = expr_d.get("value")
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                boxed_value = self._box_expr_for_any(value_expr, value_node)
+                return f"py_extend({owner_expr}, {boxed_value})"
             return f"{owner_expr}.insert({owner_expr}.end(), {value_expr}.begin(), {value_expr}.end())"
         if kind == "SetAdd":
             owner_node = expr_d.get("owner")
@@ -2373,6 +2397,14 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             has_index = self.any_dict_has(expr_d, "index")
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                if not has_index:
+                    return f"py_pop({owner_expr})"
+                index_node = expr_d.get("index")
+                index_expr = self.render_expr(index_node)
+                if index_expr in {"", "/* none */"}:
+                    return f"py_pop({owner_expr})"
+                return f"py_pop({owner_expr}, py_to<int64>({index_expr}))"
             if not has_index:
                 return f"{owner_expr}.pop()"
             index_node = expr_d.get("index")
@@ -2383,14 +2415,20 @@ class CppEmitter(
         if kind == "ListClear":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                return f"py_clear({owner_expr})"
             return f"{owner_expr}.clear()"
         if kind == "ListReverse":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                return f"py_reverse({owner_expr})"
             return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "ListSort":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                return f"py_sort({owner_expr})"
             return f"::std::sort({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "SetErase":
             owner_node = expr_d.get("owner")

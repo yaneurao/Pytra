@@ -1035,6 +1035,31 @@ def f(x: object) -> bool:
         self.assertIn("virtual int64 inc(int64 x) {", cpp)
         self.assertNotIn("virtual int64 unused(int64 x) {", cpp)
 
+    def test_pyobj_list_model_uses_runtime_list_ops(self) -> None:
+        src = """def f() -> int:
+    xs: list[int] = [1, 2]
+    xs.append(3)
+    xs.extend([4, 5])
+    v = xs.pop()
+    head = xs[0]
+    seg = xs[0:2]
+    return v + head + len(seg)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_list_model_ops.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("object xs = make_object(list<int64>{1, 2});", cpp)
+        self.assertIn("py_append(xs, make_object(3));", cpp)
+        self.assertIn("py_extend(xs, make_object(list<int64>{4, 5}));", cpp)
+        self.assertIn("auto v = py_pop(xs);", cpp)
+        self.assertIn("int64 head = py_at(xs, py_to<int64>(0));", cpp)
+        self.assertIn("object seg = py_slice(xs, 0, 2);", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()

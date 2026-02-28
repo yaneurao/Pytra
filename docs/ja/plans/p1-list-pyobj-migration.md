@@ -118,6 +118,9 @@
 - 2026-02-28: runtime 単体テストに list モデル回帰（owner 連動 iterator / `obj_to_list_obj` / legacy bridge）を追加し、`test_cpp_runtime_iterable.py` と `test_cpp_runtime_boxing.py` が通過することを確認した。
 - 2026-02-28: C++ emitter に `cpp_list_model`（`value|pyobj`）設定を追加し、`_cpp_type_text(list[...])` を model switch 経由へ集約した。`pyobj` モード時は list 型を `object` へ描画する。
 - 2026-02-28: `test_cpp_type.py` に list model switch 回帰を追加し、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）と合わせて非退行を確認した。
+- 2026-02-28: `pyobj` list モード向けに runtime helper（`py_extend/py_pop/py_clear/py_reverse/py_sort`）を追加し、emitter 側で `ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` を object runtime 呼び出しへ切り替えた。
+- 2026-02-28: list literal を `make_object(list<...>{...})` へ描画する分岐と、`list(...)` ctor の `pyobj` 経路、`Subscript` の list index を `py_at(...)` へ寄せる分岐を追加した。
+- 2026-02-28: `test_py2cpp_codegen_issues.py` に `pyobj` list モード回帰を追加し、`test_cpp_runtime_iterable.py` / `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
 
 ## 分解
 
@@ -131,7 +134,7 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-04] runtime 単体テスト（構築・alias・iter・境界変換）を追加する。
 
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-01] C++ emitter の list 型描画を model switch（`value|pyobj`）経由へ集約する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-02] list literal/ctor/append/extend/pop/index/slice の出力を `pyobj` モデル対応へ更新する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-02] list literal/ctor/append/extend/pop/index/slice の出力を `pyobj` モデル対応へ更新する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-03] for/enumerate/comprehension の list 反復 lower を `pyobj` list で成立させる。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-04] `sample/18` を含む代表 fixture の compile/run/parity を `pyobj` モデルで通す。
 

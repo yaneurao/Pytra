@@ -9,6 +9,8 @@ class CppCollectionExprEmitter:
 
     def _render_expr_kind_list(self, expr: Any, expr_d: dict[str, Any]) -> str:
         t = self.cpp_type(expr_d.get("resolved_type"))
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+        pyobj_list_mode = list_model == "pyobj"
         elem_t = ""
         rt = self.get_expr_type(expr)
         if isinstance(rt, str) and rt.startswith("list[") and rt.endswith("]"):
@@ -36,6 +38,19 @@ class CppCollectionExprEmitter:
                 t = expect_t
         sep = ", "
         items = sep.join(parts)
+        if pyobj_list_mode:
+            value_list_t = "list<object>"
+            if ctor_elem != "" and not ctor_mixed:
+                value_list_t = f"list<{ctor_elem}>"
+            elif elem_t not in {"", "unknown", "None"} and not self.is_any_like_type(elem_t):
+                value_list_t = f"list<{self._cpp_type_text(elem_t)}>"
+            if value_list_t == "list<object>":
+                boxed_parts: list[str] = []
+                for i, e in enumerate(elements):
+                    rv = parts[i] if i < len(parts) else ""
+                    boxed_parts.append(self._box_expr_for_any(rv, e))
+                items = sep.join(boxed_parts)
+            return f"make_object({value_list_t}{{{items}}})"
         return f"{t}{{{items}}}"
 
     def _render_expr_kind_tuple(self, expr: Any, expr_d: dict[str, Any]) -> str:
