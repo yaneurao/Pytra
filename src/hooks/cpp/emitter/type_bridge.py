@@ -7,6 +7,22 @@ from pytra.compiler.transpile_cli import dict_any_get_str, join_str_list
 class CppTypeBridgeEmitter:
     """Type conversion and Any-boundary helpers extracted from CppEmitter."""
 
+    def _is_pyobj_runtime_list_type(self, east_type: str) -> bool:
+        """`cpp_list_model=pyobj` で object runtime 経路を使う list 型か判定する。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        t_norm = self.normalize_type_name(east_type)
+        if not (t_norm.startswith("list[") and t_norm.endswith("]")):
+            return False
+        list_inner = self.type_generic_args(t_norm, "list")
+        if len(list_inner) != 1:
+            return True
+        elem_t = self.normalize_type_name(list_inner[0])
+        # list[RefClass] は pyobj モデルでも typed container へ寄せる。
+        if elem_t in self.ref_classes:
+            return False
+        return True
+
     def _build_box_expr_node(self, value_node: Any) -> dict[str, Any]:
         return {
             "kind": "Box",
@@ -99,6 +115,13 @@ class CppTypeBridgeEmitter:
                 items.append(item_expr)
                 i += 1
             return f"::std::make_tuple({join_str_list(', ', items)})"
+        if t_norm.startswith("list[") and t_norm.endswith("]"):
+            list_inner = self.type_generic_args(t_norm, "list")
+            if len(list_inner) == 1:
+                elem_t = self.normalize_type_name(list_inner[0])
+                if elem_t in self.ref_classes:
+                    ctx_safe = ctx.replace("\\", "\\\\").replace('"', '\\"')
+                    return f'py_to_rc_list_from_object<{elem_t}>({expr_txt}, "{ctx_safe}")'
         if t_norm.startswith("list[") or t_norm.startswith("dict[") or t_norm.startswith("set["):
             return f"{self._cpp_type_text(t_norm)}({expr_txt})"
         return expr_txt
@@ -124,11 +147,9 @@ class CppTypeBridgeEmitter:
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
         t_norm = self.normalize_type_name(target_t)
-        # `cpp_list_model=pyobj` では list 注釈の関数引数は C++ 側で `object` になる。
-        # シグネチャ記録は EAST 型（list[...]）を保持するため、callsite coercion だけ
-        # effective target を object へ寄せて型不整合を防ぐ。
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        if list_model == "pyobj" and t_norm.startswith("list["):
+        # `cpp_list_model=pyobj` でも list[RefClass] は typed container として扱う。
+        # それ以外の list[...] は callsite coercion の target を object へ寄せる。
+        if self._is_pyobj_runtime_list_type(t_norm):
             t_norm = "object"
         arg_node_dict = self.any_to_dict_or_empty(arg_node)
         if self.is_any_like_type(t_norm):
@@ -136,7 +157,7 @@ class CppTypeBridgeEmitter:
                 return arg_txt
             if arg_txt == "*this":
                 return "object(static_cast<PyObj*>(this), true)"
-            if list_model == "pyobj" and at.startswith("list[") and len(arg_node_dict) > 0:
+            if self._is_pyobj_runtime_list_type(at) and len(arg_node_dict) > 0:
                 if not self._expr_is_stack_list_local(arg_node_dict):
                     return arg_txt
             if self.is_any_like_type(at):
@@ -244,8 +265,7 @@ class CppTypeBridgeEmitter:
             return "pytra::runtime::cpp::base::PyFile"
         list_inner = self.type_generic_args(east_type, "list")
         if len(list_inner) == 1:
-            list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-            if list_model == "pyobj":
+            if self._is_pyobj_runtime_list_type(east_type):
                 return "object"
             list_elem = list_inner[0]
             if list_elem == "None":

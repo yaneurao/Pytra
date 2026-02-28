@@ -104,9 +104,7 @@ class CppStatementEmitter:
                 if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
                     rendered_val = f"{t}{{}}"
                 elif (
-                    self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
-                    and ann_t_str.startswith("list[")
-                    and ann_t_str.endswith("]")
+                    self._is_pyobj_runtime_list_type(ann_t_str)
                 ):
                     rendered_val = "make_object(list<object>{})"
                 else:
@@ -243,14 +241,7 @@ class CppStatementEmitter:
             and self._node_kind_from_dict(target) == "Subscript"
         ):
             owner_node = self.any_to_dict_or_empty(target.get("value"))
-            owner_ty = self.normalize_type_name(self.get_expr_type(owner_node))
-            owner_is_stack_list = self._expr_is_stack_list_local(owner_node)
-            if not owner_is_stack_list and (
-                owner_ty.startswith("list[")
-                and owner_ty.endswith("]")
-                or self.is_any_like_type(owner_ty)
-                or owner_ty in {"", "unknown"}
-            ):
+            if self._uses_pyobj_runtime_list_expr(owner_node):
                 owner_expr = self.render_expr(owner_node)
                 idx_node = target.get("slice")
                 idx_expr = self.render_expr(idx_node)
@@ -1041,18 +1032,17 @@ class CppStatementEmitter:
             if len(iter_expr) == 0:
                 raise RuntimeError("cpp emitter: invalid forcore runtime iter_plan")
             iter_txt = self.render_expr(iter_expr)
-            list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
             iter_expr_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
             if iter_expr_t in {"", "unknown"}:
                 iter_expr_t = self.normalize_type_name(self.get_expr_type(iter_expr))
             force_runtime_iter = False
-            if list_model == "pyobj":
-                if iter_expr_t.startswith("list[") and iter_expr_t.endswith("]"):
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                if self._is_pyobj_runtime_list_type(iter_expr_t):
                     force_runtime_iter = True
                 elif self._contains_text(iter_expr_t, "|"):
                     for part in self.split_union(iter_expr_t):
                         part_norm = self.normalize_type_name(part)
-                        if part_norm.startswith("list[") and part_norm.endswith("]"):
+                        if self._is_pyobj_runtime_list_type(part_norm):
                             force_runtime_iter = True
                             break
             iter_expr_name = ""
@@ -1197,13 +1187,13 @@ class CppStatementEmitter:
             if list_model == "pyobj":
                 if self._is_stack_list_local_name(iter_name):
                     return mode_txt
-                if iter_t.startswith("list[") and iter_t.endswith("]"):
+                if self._is_pyobj_runtime_list_type(iter_t):
                     return "runtime_protocol"
                 if self._contains_text(iter_t, "|"):
                     parts = self.split_union(iter_t)
                     for p in parts:
                         p_norm = self.normalize_type_name(p)
-                        if p_norm.startswith("list[") and p_norm.endswith("]"):
+                        if self._is_pyobj_runtime_list_type(p_norm):
                             return "runtime_protocol"
             return mode_txt
         if iter_t == "Any" or iter_t == "object":
@@ -1211,7 +1201,7 @@ class CppStatementEmitter:
         if list_model == "pyobj":
             if self._is_stack_list_local_name(iter_name):
                 return "static_fastpath"
-            if iter_t.startswith("list[") and iter_t.endswith("]"):
+            if self._is_pyobj_runtime_list_type(iter_t):
                 return "runtime_protocol"
         # 明示 `iter_mode` が無い既存 EAST では selfhost 互換を優先し、unknown は static 側に倒す。
         if iter_t == "" or iter_t == "unknown":
@@ -1222,7 +1212,7 @@ class CppStatementEmitter:
                 p_norm = self.normalize_type_name(p)
                 if p_norm == "Any" or p_norm == "object":
                     return "runtime_protocol"
-                if list_model == "pyobj" and p_norm.startswith("list[") and p_norm.endswith("]"):
+                if list_model == "pyobj" and self._is_pyobj_runtime_list_type(p_norm):
                     return "runtime_protocol"
             return "static_fastpath"
         return "static_fastpath"

@@ -77,8 +77,8 @@ struct StmtNode : public PyObj {
     
 };
 
-object tokenize(const object& lines) {
-    object tokens = make_object(list<object>{});
+list<rc<Token>> tokenize(const object& lines) {
+    list<rc<Token>> tokens = list<rc<Token>>{};
     for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines))) {
         int64 i = 0;
         int64 n = py_len(source);
@@ -90,37 +90,37 @@ object tokenize(const object& lines) {
                 continue;
             }
             if (ch == "+") {
-                py_append(tokens, make_object(::rc_new<Token>("PLUS", ch, i, 0)));
+                tokens.append(::rc_new<Token>("PLUS", ch, i, 0));
                 i++;
                 continue;
             }
             if (ch == "-") {
-                py_append(tokens, make_object(::rc_new<Token>("MINUS", ch, i, 0)));
+                tokens.append(::rc_new<Token>("MINUS", ch, i, 0));
                 i++;
                 continue;
             }
             if (ch == "*") {
-                py_append(tokens, make_object(::rc_new<Token>("STAR", ch, i, 0)));
+                tokens.append(::rc_new<Token>("STAR", ch, i, 0));
                 i++;
                 continue;
             }
             if (ch == "/") {
-                py_append(tokens, make_object(::rc_new<Token>("SLASH", ch, i, 0)));
+                tokens.append(::rc_new<Token>("SLASH", ch, i, 0));
                 i++;
                 continue;
             }
             if (ch == "(") {
-                py_append(tokens, make_object(::rc_new<Token>("LPAREN", ch, i, 0)));
+                tokens.append(::rc_new<Token>("LPAREN", ch, i, 0));
                 i++;
                 continue;
             }
             if (ch == ")") {
-                py_append(tokens, make_object(::rc_new<Token>("RPAREN", ch, i, 0)));
+                tokens.append(::rc_new<Token>("RPAREN", ch, i, 0));
                 i++;
                 continue;
             }
             if (ch == "=") {
-                py_append(tokens, make_object(::rc_new<Token>("EQUAL", ch, i, 0)));
+                tokens.append(::rc_new<Token>("EQUAL", ch, i, 0));
                 i++;
                 continue;
             }
@@ -130,7 +130,7 @@ object tokenize(const object& lines) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
-                py_append(tokens, make_object(::rc_new<Token>("NUMBER", text, start, py_to_int64(text))));
+                tokens.append(::rc_new<Token>("NUMBER", text, start, py_to_int64(text)));
                 continue;
             }
             if ((ch.isalpha()) || (ch == "_")) {
@@ -140,27 +140,27 @@ object tokenize(const object& lines) {
                 }
                 str text = py_slice(source, start, i);
                 if (text == "let") {
-                    py_append(tokens, make_object(::rc_new<Token>("LET", text, start, 0)));
+                    tokens.append(::rc_new<Token>("LET", text, start, 0));
                 } else {
                     if (text == "print")
-                        py_append(tokens, make_object(::rc_new<Token>("PRINT", text, start, 0)));
+                        tokens.append(::rc_new<Token>("PRINT", text, start, 0));
                     else
-                        py_append(tokens, make_object(::rc_new<Token>("IDENT", text, start, 0)));
+                        tokens.append(::rc_new<Token>("IDENT", text, start, 0));
                 }
                 continue;
             }
             throw ::std::runtime_error("tokenize error at line=" + ::std::to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
         }
-        py_append(tokens, make_object(::rc_new<Token>("NEWLINE", "", n, 0)));
+        tokens.append(::rc_new<Token>("NEWLINE", "", n, 0));
     }
-    py_append(tokens, make_object(::rc_new<Token>("EOF", "", py_len(lines), 0)));
+    tokens.append(::rc_new<Token>("EOF", "", py_len(lines), 0));
     return tokens;
 }
 
 struct Parser : public PyObj {
-    object expr_nodes;
+    list<rc<ExprNode>> expr_nodes;
     int64 pos;
-    object tokens;
+    list<rc<Token>> tokens;
     inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
     uint32 py_type_id() const noexcept override {
         return PYTRA_TYPE_ID;
@@ -169,19 +169,19 @@ struct Parser : public PyObj {
         return expected_type_id == PYTRA_TYPE_ID;
     }
     
-    object new_expr_nodes() {
-        return make_object(list<object>{});
+    list<rc<ExprNode>> new_expr_nodes() {
+        return list<rc<ExprNode>>{};
     }
-    Parser(const object& tokens) {
+    Parser(const list<rc<Token>>& tokens) {
         this->tokens = tokens;
         this->pos = 0;
         this->expr_nodes = this->new_expr_nodes();
     }
     rc<Token> current_token() {
-        return obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list");
+        return this->tokens[this->pos];
     }
     rc<Token> previous_token() {
-        return obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos - 1)), "subscript:list");
+        return this->tokens[this->pos - 1];
     }
     str peek_kind() {
         return this->current_token()->kind;
@@ -206,15 +206,15 @@ struct Parser : public PyObj {
         }
     }
     int64 add_expr(const rc<ExprNode>& node) {
-        py_append(this->expr_nodes, make_object(node));
+        this->expr_nodes.append(node);
         return py_len(this->expr_nodes) - 1;
     }
-    object parse_program() {
-        object stmts = make_object(list<object>{});
+    list<rc<StmtNode>> parse_program() {
+        list<rc<StmtNode>> stmts = list<rc<StmtNode>>{};
         this->skip_newlines();
         while (this->peek_kind() != "EOF") {
             rc<StmtNode> stmt = this->parse_stmt();
-            py_append(stmts, make_object(stmt));
+            stmts.append(stmt);
             this->skip_newlines();
         }
         return stmts;
@@ -298,8 +298,8 @@ struct Parser : public PyObj {
     }
 };
 
-int64 eval_expr(int64 expr_index, const object& expr_nodes, const dict<str, int64>& env) {
-    rc<ExprNode> node = obj_to_rc_or_raise<ExprNode>(py_at(expr_nodes, py_to<int64>(expr_index)), "subscript:list");
+int64 eval_expr(int64 expr_index, const list<rc<ExprNode>>& expr_nodes, const dict<str, int64>& env) {
+    rc<ExprNode> node = expr_nodes[expr_index];
     
     if (node->kind_tag == 1)
         return node->value;
@@ -329,12 +329,12 @@ int64 eval_expr(int64 expr_index, const object& expr_nodes, const dict<str, int6
     throw ::std::runtime_error("unknown node kind: " + node->kind);
 }
 
-int64 execute(const object& stmts, const object& expr_nodes, bool trace) {
+int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_nodes, bool trace) {
     dict<str, int64> env = dict<str, int64>{};
     int64 checksum = 0;
     int64 printed = 0;
     
-    for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")) {
+    for (rc<StmtNode> stmt : stmts) {
         if (stmt->kind_tag == 1) {
             env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
@@ -389,20 +389,20 @@ void run_demo() {
     py_append(demo_lines, make_object("print a"));
     py_append(demo_lines, make_object("print a / b"));
     
-    object tokens = tokenize(demo_lines);
+    list<rc<Token>> tokens = tokenize(demo_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);
-    object stmts = parser->parse_program();
-    int64 checksum = execute(stmts, make_object(parser->expr_nodes), true);
+    list<rc<StmtNode>> stmts = parser->parse_program();
+    int64 checksum = execute(stmts, parser->expr_nodes, true);
     py_print("demo_checksum:", checksum);
 }
 
 void run_benchmark() {
     object source_lines = build_benchmark_source(32, 120000);
     float64 start = pytra::std::time::perf_counter();
-    object tokens = tokenize(source_lines);
+    list<rc<Token>> tokens = tokenize(source_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);
-    object stmts = parser->parse_program();
-    int64 checksum = execute(stmts, make_object(parser->expr_nodes), false);
+    list<rc<StmtNode>> stmts = parser->parse_program();
+    int64 checksum = execute(stmts, parser->expr_nodes, false);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     
     py_print("token_count:", py_len(tokens));
