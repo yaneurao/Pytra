@@ -66,6 +66,26 @@
 5. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
 6. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
 
+### P0: sample/18 C++ 出力最適化の強化（実行系ホットパス）
+
+文脈: [docs/ja/plans/p0-sample18-cpp-optimization-strengthening.md](../plans/p0-sample18-cpp-optimization-strengthening.md)
+
+1. [ ] [ID: P0-CPP-S18-OPT-01] sample/18 C++ のホットパス6項目（typed enumerate / typed container / parser access / enum tag / number predecode / typed execute loop）を段階実装する。
+2. [ ] [ID: P0-CPP-S18-OPT-01-S1-01] `enumerate(lines)` の typed tuple 反復条件を設計し、EAST3->C++ 出力契約を固定する。
+3. [ ] [ID: P0-CPP-S18-OPT-01-S1-02] tokenize ループで `object` + `py_at` を使わない typed loop header 出力を回帰固定する。
+4. [ ] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` が `object(list<object>)` へ退化する条件を特定し、型情報保持経路を定義する。
+5. [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize`/`Parser` の tokens を typed container 出力へ移行し、boxing を削減する。
+6. [ ] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser` の repeated token access を棚卸しし、共通 token cache 方針を確定する。
+7. [ ] [ID: P0-CPP-S18-OPT-01-S3-02] `peek_kind/expect/parse_primary` で同一 index の重複 `py_at + obj_to_rc_or_raise` を削減する。
+8. [ ] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の文字列比較箇所を enum/整数タグ化方針へ落とし込む。
+9. [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ 出力をタグ分岐へ移行し、`if (node->kind == \"...\")` 連鎖を縮退する。
+10. [ ] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の parse 時 `py_to_int64` 経路を字句段 predecode へ移行する仕様を確定する。
+11. [ ] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` 数値フィールドを利用して `parse_primary` の文字列->数値変換を削減する。
+12. [ ] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型の整合を確定する。
+13. [ ] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、ループ内 `obj_to_rc_or_raise` を削減する。
+14. [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（6項目）を golden 回帰で固定する。
+15. [ ] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
+
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 
 文脈: [docs/ja/plans/p1-rs-runtime-externalization.md](../plans/p1-rs-runtime-externalization.md)

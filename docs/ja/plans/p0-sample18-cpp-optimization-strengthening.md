@@ -1,0 +1,72 @@
+# P0: sample/18 C++ 出力最適化の強化（実行系ホットパス）
+
+最終更新: 2026-03-01
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-CPP-S18-OPT-01`
+
+背景:
+- `sample/cpp/18_mini_language_interpreter.cpp` には、動作互換を優先した `object` 経由処理が残っている。
+- とくに tokenize / parse / execute のホットパスで、typed path に落とせる箇所が未縮退。
+- 既存の可読性タスク（`P1-CPP-S18-READ-01`）で一部は改善済みだが、現行出力には再び動的経路が残存している。
+
+目的:
+- `sample/18` の C++ 出力で、`object` 経路と文字列判定コストを段階縮退し、実行時オーバーヘッドを削減する。
+- EAST3 から型が分かる経路は typed loop / typed container / typed access を優先する。
+
+対象:
+- `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要時）
+- `src/hooks/cpp/emitter/*.py`（for/call/stmt/expr/type_bridge）
+- `test/unit/test_east3_cpp_bridge.py`
+- `test/unit/test_py2cpp_codegen_issues.py`
+- `sample/cpp/18_mini_language_interpreter.cpp`（再生成確認）
+
+非対象:
+- mini language の仕様変更
+- runtime ABI の全面変更
+- sample/18 以外の一括最適化
+
+受け入れ基準:
+- `sample/18` で次の6点が確認できる:
+  1. `enumerate(lines)` が `object` + `py_at` ではなく typed tuple 反復になる。
+  2. `tokens` が `object(list<object>)` ではなく typed container で保持される。
+  3. `Parser` 内の `py_at + obj_to_rc_or_raise` の重複取得が削減される。
+  4. `ExprNode.kind` / `StmtNode.kind` / `op` の実行時文字列比較が enum/整数タグへ縮退する。
+  5. `NUMBER` token は parse 時に毎回 `py_to_int64` せず、字句解析段で数値化済み値を利用する。
+  6. `execute` の stmt 反復が typed loop（非 `object`）へ縮退する。
+- `check_py2cpp_transpile.py`、`test_east3_cpp_bridge.py`、`test_py2cpp_codegen_issues.py` が通る。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_py2cpp_transpile.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
+- `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o sample/cpp/18_mini_language_interpreter.cpp`
+
+決定ログ:
+- 2026-03-01: ユーザー指示により、sample/18 C++ の最適化余地6項目を P0 として詳細分解し、実装計画を作成した。
+
+## 分解
+
+- [ ] [ID: P0-CPP-S18-OPT-01] sample/18 C++ のホットパス6項目（typed enumerate / typed container / parser access / enum tag / number predecode / typed execute loop）を段階実装する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S1-01] `enumerate(lines)` を typed tuple 反復へ縮退するため、EAST3 と C++ emitter の for-header 生成条件を整理する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S1-02] `sample/18` tokenize ループで `for (::std::tuple<int64, str> ...)` 相当の出力を固定する回帰を追加する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` の型情報（`list[Token]` 相当）を parse->EAST3->emitter で保持し、`object(list<object>)` への退化条件を特定する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize` / `Parser` の `tokens` を typed container 出力へ移行し、`py_append(make_object(...))` の過剰 boxing を削減する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser.peek_kind/expect/parse_primary` の repeated `py_at + obj_to_rc_or_raise` パターンを検出し、共通 helper（token cache）方針を設計する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の比較箇所を棚卸しし、enum/整数タグ化の最小導入面（sample/18 先行）を定義する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ emitter でタグベース分岐を出力し、`if (node->kind == "...")` 連鎖を縮退する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の現在の文字列保持経路（tokenize->parse_primary->py_to_int64）を検証し、字句段 predecode 方針を確定する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` の数値フィールド利用へ移行し、`parse_primary` の `py_to_int64(token->text)` を削減する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型と下流利用の整合を設計する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、`obj_to_rc_or_raise<StmtNode>` のループ内変換を削減する。
+
+- [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（上記6点）を固定する golden 回帰を追加する。
+- [ ] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
