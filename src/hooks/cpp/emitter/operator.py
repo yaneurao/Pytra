@@ -118,11 +118,23 @@ class CppBinaryOperatorEmitter:
         """`op` 分岐を `emit_binary_op` の実体としてまとめる。"""
         op_name = str(expr.get("op"))
         if op_name == "Div":
-            left_t0 = self.get_expr_type(expr.get("left"))
-            right_t0 = self.get_expr_type(expr.get("right"))
-            left_t = left_t0 if isinstance(left_t0, str) else ""
-            right_t = right_t0 if isinstance(right_t0, str) else ""
+            left_t_raw = self.get_expr_type(expr.get("left"))
+            right_t_raw = self.get_expr_type(expr.get("right"))
+            left_t = self.normalize_type_name(left_t_raw if isinstance(left_t_raw, str) else "")
+            right_t = self.normalize_type_name(right_t_raw if isinstance(right_t_raw, str) else "")
+            i = 0
+            while i < len(cast_rules):
+                cast_rule = self.any_to_dict_or_empty(cast_rules[i])
+                on = self.any_to_str(cast_rule.get("on"))
+                to_t = self.normalize_type_name(self.any_to_str(cast_rule.get("to")))
+                if on == "left" and to_t != "":
+                    left_t = to_t
+                elif on == "right" and to_t != "":
+                    right_t = to_t
+                i += 1
             if left_t == "Path" and right_t in {"str", "Path"}:
+                return f"{left} / {right}"
+            if left_t in {"float32", "float64"} and right_t in {"float32", "float64"}:
                 return f"{left} / {right}"
             return f"py_div({left}, {right})"
         if op_name == "Pow":
