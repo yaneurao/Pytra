@@ -42,6 +42,7 @@
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] `NumericCastChainReductionPass` を追加し、同型数値キャスト（`static_cast` / `Unbox`）の連鎖を fail-closed で縮退。`opt_pass_spec` 無効化経路に pass 名を追加し、`test_numeric_cast_chain_reduction_pass_*` で no-op/skip 条件（`object/Any`）を含めて回帰固定。
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] `LoopInvariantCastHoistPass` を追加し、`ForCore(StaticRangeForPlan)` 内の `BinOp` 数値昇格 cast（特に右辺 `int -> float64`）を preheader へ hoist。`sample/06_julia_parameter_sweep.py` で `height-1` / `width-1` / `frames_n` の `float64` 変換がループ外へ移動することを実測し、`test_loop_invariant_cast_hoist_pass_*` を追加して回帰固定。
 - 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] `TypedRepeatMaterializationPass` を追加し、`BinOp(Mult)` の list-repeat 型推論（`list[T] * int -> list[T]`）と `ListComp` 出力型補完（`list[unknown] -> list[list[T]]`）を実装。`sample/py` 全件再変換で `make_object(py_repeat(...))` の発生が 0 件になることを確認し、`test_typed_repeat_materialization_pass_*` を追加して回帰固定。
+- 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-06] `DictStrKeyNormalizationPass` を追加し、`dict[str, V]` の key ノードへ `dict_key_verified` を付与（必要時 `resolved_type=str` 補完）。C++ emitter 側はこのフラグ付き key で `py_to_string` を省略するようにし、`sample/18` の `env[node->name]` / `env[stmt->name]` を直接キー化できることを確認。`test_dict_str_key_normalization_pass_*` / `test_coerce_dict_key_expr_skips_str_cast_when_key_is_verified` を追加し、`check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を通過。
 
 ## 分解
 
@@ -50,5 +51,5 @@
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] 数値 cast-chain 縮退 pass を追加し、型既知 `py_to<T>` の連鎖を削減する。
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] ループ不変な型変換/分母の hoist を実装し、内側ループの反復処理を軽量化する。
 - [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-05] 型既知 `py_repeat` 初期化の typed materialization 正規化を実装する。
-- [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-06] `dict<str, V>` キー経路の不要 `to_string` 縮退を実装する。
+- [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-06] `dict<str, V>` キー経路の不要 `to_string` 縮退を実装する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-07] tuple unpack 一時変数の消し込み（`TupleTarget` 直展開）を実装する。

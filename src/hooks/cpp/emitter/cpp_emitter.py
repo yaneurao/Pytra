@@ -1341,6 +1341,10 @@ class CppEmitter(
                 return self.render_expr(self._build_box_expr_node(key_node))
             return f"make_object({key_expr})"
         if key_t == "str":
+            key_node_d = self.any_to_dict_or_empty(key_node)
+            key_verified = bool(key_node_d.get("dict_key_verified", False))
+            if key_verified:
+                return key_expr
             return f"py_to_string({key_expr})"
         return key_expr
 

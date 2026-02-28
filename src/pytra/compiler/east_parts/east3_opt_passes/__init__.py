@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
 from pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
 from pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
 from pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
@@ -23,6 +24,7 @@ def build_default_passes() -> list[object]:
         RangeForCanonicalizationPass(),
         TypedEnumerateNormalizationPass(),
         TypedRepeatMaterializationPass(),
+        DictStrKeyNormalizationPass(),
         LoopInvariantCastHoistPass(),
         UnusedLoopVarElisionPass(),
         LoopInvariantHoistLitePass(),

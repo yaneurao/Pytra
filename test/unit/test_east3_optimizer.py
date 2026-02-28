@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import unittest
 
+from src.pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
@@ -93,7 +94,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -105,6 +106,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
         self.assertFalse(by_name.get("TypedRepeatMaterializationPass", True))
+        self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
         self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
         self.assertFalse(by_name.get("LoopInvariantHoistLitePass", True))
@@ -116,6 +118,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("RangeForCanonicalizationPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
         self.assertIn("TypedRepeatMaterializationPass", trace_text)
+        self.assertIn("DictStrKeyNormalizationPass", trace_text)
         self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
@@ -561,6 +564,38 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 0)
         self.assertEqual(repeat_elt.get("resolved_type"), "unknown")
         self.assertEqual(list_comp.get("resolved_type"), "list[unknown]")
+
+    def test_dict_str_key_normalization_pass_marks_subscript_key_for_str_dict(self) -> None:
+        doc = _module_doc()
+        subscript = {
+            "kind": "Subscript",
+            "value": {"kind": "Name", "id": "env", "resolved_type": "dict[str, int64]"},
+            "slice": {"kind": "Name", "id": "k", "resolved_type": "unknown"},
+            "resolved_type": "int64",
+        }
+        doc["body"] = [{"kind": "Expr", "value": subscript}]
+        result = DictStrKeyNormalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        key_node = subscript.get("slice", {})
+        self.assertEqual(key_node.get("resolved_type"), "str")
+        self.assertTrue(bool(key_node.get("dict_key_verified", False)))
+
+    def test_dict_str_key_normalization_pass_skips_non_str_key_dict(self) -> None:
+        doc = _module_doc()
+        subscript = {
+            "kind": "Subscript",
+            "value": {"kind": "Name", "id": "env", "resolved_type": "dict[int64, int64]"},
+            "slice": {"kind": "Name", "id": "k", "resolved_type": "unknown"},
+            "resolved_type": "int64",
+        }
+        doc["body"] = [{"kind": "Expr", "value": subscript}]
+        result = DictStrKeyNormalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        key_node = subscript.get("slice", {})
+        self.assertEqual(key_node.get("resolved_type"), "unknown")
+        self.assertFalse(bool(key_node.get("dict_key_verified", False)))
 
     def test_unused_loop_var_elision_pass_renames_unused_target_to_underscore(self) -> None:
         doc = _module_doc()
