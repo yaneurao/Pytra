@@ -272,6 +272,80 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(for_stmt.get("iter_mode"), "runtime_protocol")
         self.assertEqual(for_stmt.get("iter_plan", {}).get("kind"), "RuntimeIterForPlan")
 
+    def test_range_for_canonicalization_pass_accepts_dynamic_stop_with_const_step(self) -> None:
+        doc = _module_doc()
+        stop_name = {"kind": "Name", "id": "n", "resolved_type": "int64", "borrow_kind": "value", "casts": []}
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "resolved_type": "object",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "func": {"kind": "Name", "id": "range", "resolved_type": "unknown"},
+                    "args": [stop_name],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "runtime_call": "py_range",
+                },
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = RangeForCanonicalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        iter_plan = for_stmt.get("iter_plan")
+        self.assertIsInstance(iter_plan, dict)
+        self.assertEqual(iter_plan.get("kind"), "StaticRangeForPlan")
+        self.assertEqual(iter_plan.get("start", {}).get("value"), 0)
+        self.assertEqual(iter_plan.get("stop", {}).get("kind"), "Name")
+        self.assertEqual(iter_plan.get("stop", {}).get("id"), "n")
+        self.assertEqual(iter_plan.get("step", {}).get("value"), 1)
+        self.assertEqual(iter_plan.get("range_mode"), "ascending")
+
+    def test_range_for_canonicalization_pass_skips_dynamic_stop_when_type_is_unknown(self) -> None:
+        doc = _module_doc()
+        stop_name = {"kind": "Name", "id": "n", "resolved_type": "unknown", "borrow_kind": "value", "casts": []}
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "resolved_type": "object",
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "func": {"kind": "Name", "id": "range", "resolved_type": "unknown"},
+                    "args": [stop_name],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "runtime_call": "py_range",
+                },
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = RangeForCanonicalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertEqual(for_stmt.get("iter_mode"), "runtime_protocol")
+        self.assertEqual(for_stmt.get("iter_plan", {}).get("kind"), "RuntimeIterForPlan")
+
     def test_unused_loop_var_elision_pass_renames_unused_target_to_underscore(self) -> None:
         doc = _module_doc()
         for_stmt = {

@@ -39,6 +39,18 @@ def _is_constant_int_expr(expr: Any) -> bool:
     return isinstance(expr.get("value"), int)
 
 
+def _is_int_like_expr(expr: Any) -> bool:
+    if _is_constant_int_expr(expr):
+        return True
+    if not isinstance(expr, dict):
+        return False
+    resolved_type_obj = expr.get("resolved_type")
+    resolved_type = str(resolved_type_obj).strip() if resolved_type_obj is not None else ""
+    if resolved_type == "":
+        return False
+    return resolved_type in {"int", "int64"}
+
+
 class RangeForCanonicalizationPass(East3OptimizerPass):
     """Convert conservative runtime `range` loops into `StaticRangeForPlan`."""
 
@@ -73,7 +85,7 @@ class RangeForCanonicalizationPass(East3OptimizerPass):
             return False
 
         for arg in args:
-            if not _is_constant_int_expr(arg):
+            if not _is_int_like_expr(arg):
                 return False
 
         start_expr: dict[str, Any]
@@ -136,4 +148,3 @@ class RangeForCanonicalizationPass(East3OptimizerPass):
         _ = context
         change_count = self._visit(east3_doc)
         return PassResult(changed=change_count > 0, change_count=change_count)
-

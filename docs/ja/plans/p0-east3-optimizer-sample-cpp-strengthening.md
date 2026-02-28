@@ -37,10 +37,11 @@
 
 決定ログ:
 - 2026-02-27: `sample/cpp` 実出力レビューに基づき、EAST3最適化層で先に吸収すべき7項目（range正規化拡張、typed enumerate、cast-chain縮退、loop invariant hoist拡張、typed repeat、dict key cast削減、tuple unpack直展開）を P0 として起票。
+- 2026-02-28: [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-01] `RangeForCanonicalizationPass` を拡張し、`step` 定数かつ `int/int64` 型引数の `range(...)` で `stop` 非定数ケースを `StaticRangeForPlan` へ正規化するよう変更。`test_range_for_canonicalization_pass_accepts_dynamic_stop_with_const_step` / `...skips_dynamic_stop_when_type_is_unknown` を追加して回帰固定。
 
 ## 分解
 
-- [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-01] `RangeForCanonicalizationPass` 拡張（`stop` 非定数 + `step` 定数対応）を実装し、`for (...; N>0 ? ... : ...)` 形の発生を抑制する。
+- [x] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-01] `RangeForCanonicalizationPass` 拡張（`stop` 非定数 + `step` 定数対応）を実装し、`for (...; N>0 ? ... : ...)` 形の発生を抑制する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-02] `enumerate(list[T])` の typed 反復正規化を実装し、`object + py_at + py_to` 連鎖を縮退する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-03] 数値 cast-chain 縮退 pass を追加し、型既知 `py_to<T>` の連鎖を削減する。
 - [ ] [ID: P0-EAST3-OPT-SAMPLE-CPP-01-S1-04] ループ不変な型変換/分母の hoist を実装し、内側ループの反復処理を軽量化する。
