@@ -14,6 +14,11 @@ class CppExpressionEmitter:
         if to_type_text == "":
             return rendered_expr
         norm_t = self.normalize_type_name(to_type_text)
+        inferred_src_t = self.normalize_type_name(
+            self.infer_rendered_arg_type(rendered_expr, "unknown", self.declared_var_types)
+        )
+        if inferred_src_t == norm_t and inferred_src_t not in {"", "unknown"} and not self.is_any_like_type(inferred_src_t):
+            return rendered_expr
         if norm_t in {"float32", "float64"}:
             return f"py_to<float64>({rendered_expr})"
         if norm_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
