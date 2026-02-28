@@ -3,172 +3,6 @@ public final class Pytra_16_glass_sculpture_chaos {
     private Pytra_16_glass_sculpture_chaos() {
     }
 
-    private static void __pytra_noop(Object... args) {
-    }
-
-    private static long __pytra_int(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        if (value instanceof Boolean) {
-            return ((Boolean) value) ? 1L : 0L;
-        }
-        if (value instanceof String) {
-            String s = ((String) value).trim();
-            if (s.isEmpty()) {
-                return 0L;
-            }
-            try {
-                return Long.parseLong(s);
-            } catch (NumberFormatException ex) {
-                return 0L;
-            }
-        }
-        return 0L;
-    }
-
-    private static long __pytra_len(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof String) {
-            return ((String) value).length();
-        }
-        if (value instanceof java.util.Map<?, ?>) {
-            return ((java.util.Map<?, ?>) value).size();
-        }
-        if (value instanceof java.util.List<?>) {
-            return ((java.util.List<?>) value).size();
-        }
-        return 0L;
-    }
-
-    private static boolean __pytra_str_isdigit(Object value) {
-        String s = String.valueOf(value);
-        if (s.isEmpty()) {
-            return false;
-        }
-        int i = 0;
-        while (i < s.length()) {
-            if (!Character.isDigit(s.charAt(i))) {
-                return false;
-            }
-            i += 1;
-        }
-        return true;
-    }
-
-    private static boolean __pytra_str_isalpha(Object value) {
-        String s = String.valueOf(value);
-        if (s.isEmpty()) {
-            return false;
-        }
-        int i = 0;
-        while (i < s.length()) {
-            if (!Character.isLetter(s.charAt(i))) {
-                return false;
-            }
-            i += 1;
-        }
-        return true;
-    }
-
-    private static String __pytra_str_slice(String s, long start, long stop) {
-        long n = s.length();
-        long lo = start;
-        long hi = stop;
-        if (lo < 0L) {
-            lo += n;
-        }
-        if (hi < 0L) {
-            hi += n;
-        }
-        if (lo < 0L) {
-            lo = 0L;
-        }
-        if (hi < 0L) {
-            hi = 0L;
-        }
-        if (lo > n) {
-            lo = n;
-        }
-        if (hi > n) {
-            hi = n;
-        }
-        if (hi < lo) {
-            hi = lo;
-        }
-        return s.substring((int) lo, (int) hi);
-    }
-
-    private static java.util.ArrayList<Long> __pytra_bytearray(Object init) {
-        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
-        if (init instanceof Number) {
-            long n = ((Number) init).longValue();
-            long i = 0L;
-            while (i < n) {
-                out.add(0L);
-                i += 1L;
-            }
-            return out;
-        }
-        if (init instanceof java.util.List<?>) {
-            java.util.List<?> src = (java.util.List<?>) init;
-            int i = 0;
-            while (i < src.size()) {
-                Object v = src.get(i);
-                if (v instanceof Number) {
-                    out.add(((Number) v).longValue());
-                } else {
-                    out.add(0L);
-                }
-                i += 1;
-            }
-        }
-        return out;
-    }
-
-    private static java.util.HashMap<Object, Object> __pytra_dict_of(Object... kv) {
-        java.util.HashMap<Object, Object> out = new java.util.HashMap<Object, Object>();
-        int i = 0;
-        while (i + 1 < kv.length) {
-            out.put(kv[i], kv[i + 1]);
-            i += 2;
-        }
-        return out;
-    }
-
-    private static java.util.ArrayList<Object> __pytra_list_repeat(Object value, long count) {
-        java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
-        long i = 0L;
-        while (i < count) {
-            out.add(value);
-            i += 1L;
-        }
-        return out;
-    }
-
-    private static boolean __pytra_truthy(Object value) {
-        if (value == null) {
-            return false;
-        }
-        if (value instanceof Boolean) {
-            return ((Boolean) value);
-        }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue() != 0.0;
-        }
-        if (value instanceof String) {
-            return !((String) value).isEmpty();
-        }
-        if (value instanceof java.util.List<?>) {
-            return !((java.util.List<?>) value).isEmpty();
-        }
-        return true;
-    }
 
     public static double clamp01(double v) {
         if ((v < 0.0)) {
@@ -252,23 +86,25 @@ public final class Pytra_16_glass_sculpture_chaos {
     }
 
     public static java.util.ArrayList<Long> palette_332() {
-        java.util.ArrayList<Long> p = __pytra_bytearray((256L * 3L));
+        java.util.ArrayList<Long> p = PyRuntime.__pytra_bytearray((256L * 3L));
+        double __hoisted_cast_1 = ((double)(7L));
+        double __hoisted_cast_2 = ((double)(3L));
         long __step_0 = 1L;
         for (long i = 0L; (__step_0 >= 0L) ? (i < 256L) : (i > 256L); i += __step_0) {
             long r = ((i + 5L) + 7L);
             long g = ((i + 2L) + 7L);
             long b = (i + 3L);
-            p.set((int)((((((i * 3L) + 0L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 0L))) : (((i * 3L) + 0L)))), __pytra_int((((double)((255L * r))) / ((double)(7L)))));
-            p.set((int)((((((i * 3L) + 1L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 1L))) : (((i * 3L) + 1L)))), __pytra_int((((double)((255L * g))) / ((double)(7L)))));
-            p.set((int)((((((i * 3L) + 2L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 2L))) : (((i * 3L) + 2L)))), __pytra_int((((double)((255L * b))) / ((double)(3L)))));
+            p.set((int)((((((i * 3L) + 0L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 0L))) : (((i * 3L) + 0L)))), PyRuntime.__pytra_int((((double)((255L * r))) / __hoisted_cast_1)));
+            p.set((int)((((((i * 3L) + 1L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 1L))) : (((i * 3L) + 1L)))), PyRuntime.__pytra_int((((double)((255L * g))) / __hoisted_cast_1)));
+            p.set((int)((((((i * 3L) + 2L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 2L))) : (((i * 3L) + 2L)))), PyRuntime.__pytra_int((((double)((255L * b))) / __hoisted_cast_2)));
         }
         return new java.util.ArrayList<Long>(p);
     }
 
     public static long quantize_332(double r, double g, double b) {
-        long rr = __pytra_int((clamp01(r) * 255.0));
-        long gg = __pytra_int((clamp01(g) * 255.0));
-        long bb = __pytra_int((clamp01(b) * 255.0));
+        long rr = PyRuntime.__pytra_int((clamp01(r) * 255.0));
+        long gg = PyRuntime.__pytra_int((clamp01(g) * 255.0));
+        long bb = PyRuntime.__pytra_int((clamp01(b) * 255.0));
         return ((((rr + 5L) + 5L) + ((gg + 5L) + 2L)) + (bb + 6L));
     }
 
@@ -307,16 +143,18 @@ public final class Pytra_16_glass_sculpture_chaos {
         double lx = (2.4 * Math.cos((tphase * 1.8)));
         double ly = (1.8 + (0.8 * Math.sin((tphase * 1.2))));
         double lz = (2.4 * Math.sin((tphase * 1.8)));
-        java.util.ArrayList<Long> frame = __pytra_bytearray((width * height));
+        java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray((width * height));
         double aspect = (((double)(width)) / ((double)(height)));
         double fov = 1.25;
+        double __hoisted_cast_3 = ((double)(height));
+        double __hoisted_cast_4 = ((double)(width));
         long __step_3 = 1L;
         for (long py = 0L; (__step_3 >= 0L) ? (py < height) : (py > height); py += __step_3) {
             long row_base = (py * width);
-            double sy = (1.0 - ((2.0 * (((double)(py)) + 0.5)) / ((double)(height))));
+            double sy = (1.0 - ((2.0 * (((double)(py)) + 0.5)) / __hoisted_cast_3));
             long __step_4 = 1L;
             for (long px = 0L; (__step_4 >= 0L) ? (px < width) : (px > width); px += __step_4) {
-                double sx = ((((2.0 * (((double)(px)) + 0.5)) / ((double)(width))) - 1.0) * aspect);
+                double sx = ((((2.0 * (((double)(px)) + 0.5)) / __hoisted_cast_4) - 1.0) * aspect);
                 double rx = (fwd_x + (fov * ((sx * right_x) + (sy * up_x))));
                 double ry = (fwd_y + (fov * ((sx * right_y) + (sy * up_y))));
                 double rz = (fwd_z + (fov * ((sx * right_z) + (sy * up_z))));
@@ -360,8 +198,8 @@ public final class Pytra_16_glass_sculpture_chaos {
                     if ((hit_kind == 1L)) {
                         double hx = (cam_x + (best_t * dx));
                         double hz = (cam_z + (best_t * dz));
-                        long cx = __pytra_int(Math.floor((hx * 2.0)));
-                        long cz = __pytra_int(Math.floor((hz * 2.0)));
+                        long cx = PyRuntime.__pytra_int(Math.floor((hx * 2.0)));
+                        long cz = PyRuntime.__pytra_int(Math.floor((hz * 2.0)));
                         long checker = (((((cx + cz) % 2L) == 0L)) ? (0L) : (1L));
                         double base_r = (((checker == 0L)) ? (0.1) : (0.04));
                         double base_g = (((checker == 0L)) ? (0.11) : (0.05));
@@ -488,7 +326,7 @@ public final class Pytra_16_glass_sculpture_chaos {
         for (long i = 0L; (__step_0 >= 0L) ? (i < frames_n) : (i > frames_n); i += __step_0) {
             frames.add(render_frame(width, height, i, frames_n));
         }
-        __pytra_noop(out_path, width, height, frames, palette_332());
+        PyRuntime.__pytra_noop(out_path, width, height, frames, palette_332());
         double elapsed = ((System.nanoTime() / 1000000000.0) - start);
         System.out.println(String.valueOf("output:") + " " + String.valueOf(out_path));
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));

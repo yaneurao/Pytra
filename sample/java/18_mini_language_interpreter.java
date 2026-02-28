@@ -3,172 +3,6 @@ public final class Pytra_18_mini_language_interpreter {
     private Pytra_18_mini_language_interpreter() {
     }
 
-    private static void __pytra_noop(Object... args) {
-    }
-
-    private static long __pytra_int(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        if (value instanceof Boolean) {
-            return ((Boolean) value) ? 1L : 0L;
-        }
-        if (value instanceof String) {
-            String s = ((String) value).trim();
-            if (s.isEmpty()) {
-                return 0L;
-            }
-            try {
-                return Long.parseLong(s);
-            } catch (NumberFormatException ex) {
-                return 0L;
-            }
-        }
-        return 0L;
-    }
-
-    private static long __pytra_len(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof String) {
-            return ((String) value).length();
-        }
-        if (value instanceof java.util.Map<?, ?>) {
-            return ((java.util.Map<?, ?>) value).size();
-        }
-        if (value instanceof java.util.List<?>) {
-            return ((java.util.List<?>) value).size();
-        }
-        return 0L;
-    }
-
-    private static boolean __pytra_str_isdigit(Object value) {
-        String s = String.valueOf(value);
-        if (s.isEmpty()) {
-            return false;
-        }
-        int i = 0;
-        while (i < s.length()) {
-            if (!Character.isDigit(s.charAt(i))) {
-                return false;
-            }
-            i += 1;
-        }
-        return true;
-    }
-
-    private static boolean __pytra_str_isalpha(Object value) {
-        String s = String.valueOf(value);
-        if (s.isEmpty()) {
-            return false;
-        }
-        int i = 0;
-        while (i < s.length()) {
-            if (!Character.isLetter(s.charAt(i))) {
-                return false;
-            }
-            i += 1;
-        }
-        return true;
-    }
-
-    private static String __pytra_str_slice(String s, long start, long stop) {
-        long n = s.length();
-        long lo = start;
-        long hi = stop;
-        if (lo < 0L) {
-            lo += n;
-        }
-        if (hi < 0L) {
-            hi += n;
-        }
-        if (lo < 0L) {
-            lo = 0L;
-        }
-        if (hi < 0L) {
-            hi = 0L;
-        }
-        if (lo > n) {
-            lo = n;
-        }
-        if (hi > n) {
-            hi = n;
-        }
-        if (hi < lo) {
-            hi = lo;
-        }
-        return s.substring((int) lo, (int) hi);
-    }
-
-    private static java.util.ArrayList<Long> __pytra_bytearray(Object init) {
-        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
-        if (init instanceof Number) {
-            long n = ((Number) init).longValue();
-            long i = 0L;
-            while (i < n) {
-                out.add(0L);
-                i += 1L;
-            }
-            return out;
-        }
-        if (init instanceof java.util.List<?>) {
-            java.util.List<?> src = (java.util.List<?>) init;
-            int i = 0;
-            while (i < src.size()) {
-                Object v = src.get(i);
-                if (v instanceof Number) {
-                    out.add(((Number) v).longValue());
-                } else {
-                    out.add(0L);
-                }
-                i += 1;
-            }
-        }
-        return out;
-    }
-
-    private static java.util.HashMap<Object, Object> __pytra_dict_of(Object... kv) {
-        java.util.HashMap<Object, Object> out = new java.util.HashMap<Object, Object>();
-        int i = 0;
-        while (i + 1 < kv.length) {
-            out.put(kv[i], kv[i + 1]);
-            i += 2;
-        }
-        return out;
-    }
-
-    private static java.util.ArrayList<Object> __pytra_list_repeat(Object value, long count) {
-        java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
-        long i = 0L;
-        while (i < count) {
-            out.add(value);
-            i += 1L;
-        }
-        return out;
-    }
-
-    private static boolean __pytra_truthy(Object value) {
-        if (value == null) {
-            return false;
-        }
-        if (value instanceof Boolean) {
-            return ((Boolean) value);
-        }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue() != 0.0;
-        }
-        if (value instanceof String) {
-            return !((String) value).isEmpty();
-        }
-        if (value instanceof java.util.List<?>) {
-            return !((java.util.List<?>) value).isEmpty();
-        }
-        return true;
-    }
 
     public static class Token {
         public String kind;
@@ -345,7 +179,7 @@ public final class Pytra_18_mini_language_interpreter {
         public long parse_primary() {
             if (this.match("NUMBER")) {
                 Token token_num = ((Token)(this.tokens.get((int)(((((this.pos - 1L)) < 0L) ? (((long)(this.tokens.size())) + ((this.pos - 1L))) : ((this.pos - 1L)))))));
-                return this.add_expr(new ExprNode("lit", __pytra_int(token_num.text), "", "", (-1L), (-1L)));
+                return this.add_expr(new ExprNode("lit", PyRuntime.__pytra_int(token_num.text), "", "", (-1L), (-1L)));
             }
             if (this.match("IDENT")) {
                 Token token_ident = ((Token)(this.tokens.get((int)(((((this.pos - 1L)) < 0L) ? (((long)(this.tokens.size())) + ((this.pos - 1L))) : ((this.pos - 1L)))))));
@@ -411,21 +245,21 @@ public final class Pytra_18_mini_language_interpreter {
                     i += 1L;
                     continue;
                 }
-                if (__pytra_truthy(__pytra_str_isdigit(ch))) {
+                if (PyRuntime.__pytra_truthy(PyRuntime.__pytra_str_isdigit(ch))) {
                     long start = i;
-                    while (((i < n) && __pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))))) {
+                    while (((i < n) && PyRuntime.__pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))))) {
                         i += 1L;
                     }
-                    String text = __pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
+                    String text = PyRuntime.__pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
                     tokens.add(new Token("NUMBER", text, start));
                     continue;
                 }
-                if ((__pytra_str_isalpha(ch) || (java.util.Objects.equals(ch, "_")))) {
+                if ((PyRuntime.__pytra_str_isalpha(ch) || (java.util.Objects.equals(ch, "_")))) {
                     long start = i;
-                    while (((i < n) && ((__pytra_str_isalpha(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))) || (java.util.Objects.equals(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))), "_"))) || __pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))))))) {
+                    while (((i < n) && ((PyRuntime.__pytra_str_isalpha(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))) || (java.util.Objects.equals(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))), "_"))) || PyRuntime.__pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))))))) {
                         i += 1L;
                     }
-                    String text = __pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
+                    String text = PyRuntime.__pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
                     if ((java.util.Objects.equals(text, "let"))) {
                         tokens.add(new Token("LET", text, start));
                     } else {
@@ -562,7 +396,7 @@ public final class Pytra_18_mini_language_interpreter {
         long checksum = execute(stmts, parser.expr_nodes, false);
         double elapsed = ((System.nanoTime() / 1000000000.0) - start);
         System.out.println(String.valueOf("token_count:") + " " + String.valueOf(((long)(tokens.size()))));
-        System.out.println(String.valueOf("expr_count:") + " " + String.valueOf(__pytra_len(parser.expr_nodes)));
+        System.out.println(String.valueOf("expr_count:") + " " + String.valueOf(PyRuntime.__pytra_len(parser.expr_nodes)));
         System.out.println(String.valueOf("stmt_count:") + " " + String.valueOf(((long)(stmts.size()))));
         System.out.println(String.valueOf("checksum:") + " " + String.valueOf(checksum));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
