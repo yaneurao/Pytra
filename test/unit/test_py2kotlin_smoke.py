@@ -41,6 +41,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin(east)
         self.assertIn("fun main(args: Array<String>)", kotlin)
+        self.assertNotIn("fun __pytra_truthy(v: Any?): Boolean", kotlin)
         assert_no_generated_comments(self, kotlin)
         self.assertNotIn("ProcessBuilder", kotlin)
 
@@ -98,8 +99,13 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_kotlin.read_text(encoding="utf-8")
             self.assertIn("fun main(args: Array<String>)", txt)
+            self.assertNotIn("fun __pytra_truthy(v: Any?): Boolean", txt)
             self.assertNotIn("Auto-generated Pytra Kotlin native source from EAST3.", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
+            runtime_kt = Path(td) / "py_runtime.kt"
+            self.assertTrue(runtime_kt.exists())
+            runtime_txt = runtime_kt.read_text(encoding="utf-8")
+            self.assertIn("fun __pytra_truthy(v: Any?): Boolean", runtime_txt)
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")

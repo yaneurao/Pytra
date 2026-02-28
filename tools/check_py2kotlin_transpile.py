@@ -25,6 +25,10 @@ FORBIDDEN_PREVIEW_MARKERS = [
     "TODO: 専用 KotlinEmitter 実装へ段階移行する。",
 ]
 
+FORBIDDEN_INLINE_RUNTIME_MARKERS = [
+    "fun __pytra_truthy(v: Any?): Boolean",
+]
+
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
@@ -41,6 +45,15 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
         for marker in FORBIDDEN_PREVIEW_MARKERS:
             if marker in output:
                 return False, f"preview marker still present: {marker}"
+        for marker in FORBIDDEN_INLINE_RUNTIME_MARKERS:
+            if marker in output:
+                return False, f"inline runtime helper still present: {marker}"
+        runtime_file = out.parent / "py_runtime.kt"
+        if not runtime_file.exists():
+            return False, "runtime file missing: py_runtime.kt"
+        runtime_src = runtime_file.read_text(encoding="utf-8")
+        if "fun __pytra_truthy(v: Any?): Boolean" not in runtime_src:
+            return False, "runtime file missing __pytra_truthy helper"
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"

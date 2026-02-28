@@ -1948,7 +1948,6 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
     if len(module_comments) > 0:
         lines.extend(module_comments)
         lines.append("")
-    lines.extend(_emit_runtime_helpers())
 
     i = 0
     while i < len(classes):

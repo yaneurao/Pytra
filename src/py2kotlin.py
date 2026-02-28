@@ -62,6 +62,20 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _kotlin_runtime_source_path() -> Path:
+    """Kotlin runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "kotlin" / "pytra" / "py_runtime.kt"
+
+
+def _copy_kotlin_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Kotlin runtime を配置する。"""
+    runtime_src = _kotlin_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("kotlin runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "py_runtime.kt"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Kotlin transpiler")
@@ -112,6 +126,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     kotlin_src = transpile_to_kotlin_native(east)
     output_path.write_text(kotlin_src, encoding="utf-8")
+    _copy_kotlin_runtime(output_path)
     return 0
 
 
