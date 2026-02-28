@@ -465,6 +465,17 @@ def f() -> float:
         self.assertNotIn("line_index = int64(py_to<int64>(py_at(__itobj_1, 0)))", cpp)
         self.assertNotIn("source = py_to_string(py_at(__itobj_1, 1))", cpp)
 
+    def test_sample18_pyobj_execute_loop_uses_typed_stmt_iteration(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn(
+            'for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")) {',
+            cpp,
+        )
+        self.assertNotIn("for (object __itobj_2 : py_dyn_range(stmts)) {", cpp)
+        self.assertNotIn('obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt")', cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass

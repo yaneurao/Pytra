@@ -895,6 +895,20 @@ class CppStatementEmitter:
                     return True
         return False
 
+    def _forcore_type_has_list_of(self, type_text: str, elem_type: str) -> bool:
+        """型文字列が `list[elem_type]`（またはそれを含む union）か判定する。"""
+        elem_norm = self.normalize_type_name(elem_type)
+        if elem_norm == "":
+            return False
+        t_norm = self.normalize_type_name(type_text)
+        if t_norm == f"list[{elem_norm}]":
+            return True
+        if self._contains_text(t_norm, "|"):
+            for part in self.split_union(t_norm):
+                if self.normalize_type_name(part) == f"list[{elem_norm}]":
+                    return True
+        return False
+
     def _render_forcore_typed_enumerate_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
         """`enumerate(list[str])` を pyobj でも typed enumerate へ戻す。"""
         iter_item_norm = self.normalize_type_name(iter_item_t)
@@ -931,6 +945,32 @@ class CppStatementEmitter:
                 return ""
             return f"py_enumerate(py_to_str_list_from_object({src_expr}), py_to<int64>({start_expr}))"
         return f"py_enumerate(py_to_str_list_from_object({src_expr}))"
+
+    def _render_forcore_typed_refclass_list_iter_expr(
+        self,
+        iter_expr: dict[str, Any],
+        iter_item_t: str,
+        target_id: str,
+    ) -> str:
+        """`list[RefClass]` object 反復を typed list 反復へ戻す。"""
+        item_norm = self.normalize_type_name(iter_item_t)
+        if item_norm == "" or item_norm not in self.ref_classes:
+            return ""
+        if self._node_kind_from_dict(iter_expr) != "Name":
+            return ""
+        src_name = self.any_dict_get_str(iter_expr, "id", "")
+        if src_name == "" or self._is_stack_list_local_name(src_name):
+            return ""
+        src_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+        if src_t in {"", "unknown"}:
+            src_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if not self._forcore_type_has_list_of(src_t, item_norm):
+            return ""
+        src_expr = self.render_expr(iter_expr)
+        if src_expr == "":
+            return ""
+        target_label = target_id if target_id != "" else "_"
+        return f'py_to_rc_list_from_object<{item_norm}>({src_expr}, "for_target:{target_label}")'
 
     def emit_for_core(self, stmt: dict[str, Any]) -> None:
         """EAST3 `ForCore` を直接 C++ ループへ描画する。"""
@@ -1028,6 +1068,12 @@ class CppStatementEmitter:
                 target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                typed_iter_expr = iter_txt
+                if force_runtime_iter and typed_iter:
+                    refclass_override = self._render_forcore_typed_refclass_list_iter_expr(iter_expr, iter_item_t, target_id)
+                    if refclass_override != "":
+                        typed_iter_expr = refclass_override
+                        force_runtime_iter = False
                 if force_runtime_iter:
                     typed_iter = False
                 if target_type in {"", "unknown"}:
@@ -1047,7 +1093,7 @@ class CppStatementEmitter:
                     hdr = self.syntax_line(
                         "for_each_typed_open",
                         "for ({type} {target} : {iter})",
-                        {"type": self._cpp_type_text(target_type), "target": target_id, "iter": iter_txt},
+                        {"type": self._cpp_type_text(target_type), "target": target_id, "iter": typed_iter_expr},
                     )
                     self.declared_var_types[target_id] = target_type
                     self._emit_for_body_open(hdr, {target_id}, omit_braces)

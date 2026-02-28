@@ -54,6 +54,8 @@
 - 2026-03-01: 文字列比較の現状を固定した（`node->kind` 4箇所、`node->op` 4箇所、`stmt->kind` 2箇所）。`S4-02` では `kind/op` の string フィールドを維持しつつ `uint8` タグ併置で比較を整数化し、エラーメッセージのみ既存文字列を利用する方針にする。
 - 2026-03-01: `NUMBER` は tokenize で既に `text` を切り出しているため、`S5-02` は `Token` に `int64 number_value`（非 NUMBER は 0）を追加し、字句段で1回だけ `py_to_int64` して parse 時再変換をなくす方針に固定した。
 - 2026-03-01: `execute` typed loop へ接続するため、`S6-02` は `parse_program`/`execute` 境界を `list<rc<StmtNode>>` 優先に変更し、外部境界（main 呼び出し、必要なら runtime API）でのみ `object` boxing を許可する方針に固定した。
+- 2026-03-01: `S6-02` として runtime に `py_to_rc_list_from_object<T>()` を追加し、ForCore(NameTarget) の `list[RefClass]` 反復で `pyobj` 強制 runtime path を typed 反復へ戻す fastpath を実装した。sample/18 の `execute` は `for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, ...))` へ縮退することを確認した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（76件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を再実行し非退行を確認した。
 
 ## 分解
 
@@ -75,7 +77,7 @@
 - [ ] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` の数値フィールド利用へ移行し、`parse_primary` の `py_to_int64(token->text)` を削減する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型と下流利用の整合を設計する。
-- [ ] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、`obj_to_rc_or_raise<StmtNode>` のループ内変換を削減する。
+- [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、`obj_to_rc_or_raise<StmtNode>` のループ内変換を削減する。
 
 - [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（上記6点）を固定する golden 回帰を追加する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。

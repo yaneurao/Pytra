@@ -57,7 +57,7 @@
 10. [x] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の parse 時 `py_to_int64` 経路を字句段 predecode へ移行する仕様を確定する。
 11. [ ] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` 数値フィールドを利用して `parse_primary` の文字列->数値変換を削減する。
 12. [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型の整合を確定する。
-13. [ ] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、ループ内 `obj_to_rc_or_raise` を削減する。
+13. [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、ループ内 `obj_to_rc_or_raise` を削減する。
 14. [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（6項目）を golden 回帰で固定する。
 15. [ ] [ID: P0-CPP-S18-OPT-01-S7-02] `check_py2cpp_transpile.py` / unit test / sample 実行で非退行を確認する。
 - `P0-CPP-S18-OPT-01-S1-01` `pyobj` モードでも `enumerate(list[str])` は `py_to_str_list_from_object(...)` を介して typed enumerate へ戻す契約を `CppStatementEmitter` に実装した。
@@ -67,6 +67,7 @@
 - `P0-CPP-S18-OPT-01-S4-01` 文字列比較の現状（`node->kind` 4箇所、`node->op` 4箇所、`stmt->kind` 2箇所）を棚卸しし、`kind/op` を `uint8` タグへ併置して比較を整数化する段階移行方針を確定した。
 - `P0-CPP-S18-OPT-01-S5-01` `NUMBER` は tokenize 時点で `int64 number_value` を predecode し、`parse_primary` では `token_num->number_value` を優先利用する仕様（非 NUMBER は既定値0）を確定した。
 - `P0-CPP-S18-OPT-01-S6-01` `parse_program` 戻り値を `list<rc<StmtNode>>`（必要境界のみ boxing）へ寄せる整合方針を固定し、`execute` 側 typed loop への接続契約を定義した。
+- `P0-CPP-S18-OPT-01-S6-02` `py_to_rc_list_from_object<T>()` runtime helper と ForCore emitter fastpath を追加し、sample/18 の `execute` ループを `for (rc<StmtNode> stmt : ...)` へ置換した（`obj_to_rc_or_raise` のループ内呼び出しを削減）。
 
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 

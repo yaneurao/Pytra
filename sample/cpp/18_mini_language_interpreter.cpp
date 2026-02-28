@@ -322,8 +322,7 @@ int64 execute(const object& stmts, const object& expr_nodes, bool trace) {
     int64 checksum = 0;
     int64 printed = 0;
     
-    for (object __itobj_2 : py_dyn_range(stmts)) {
-        rc<StmtNode> stmt = obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt");
+    for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")) {
         if (stmt->kind == "let") {
             env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
