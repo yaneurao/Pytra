@@ -132,6 +132,8 @@
 - 2026-02-28: `pyobj` での二段添字代入 compile blocker（`object(...)[x] = ...`）を解消するため `py_set_at` runtime helper と `Assign(Subscript)` の lower を追加した。`test_py2cpp_codegen_issues.py` に nested subscript 代入回帰を追加し、`check_py2cpp_transpile.py` は通過。再ベンチ（`work/logs/cpp_list_model_compare_20260228_cases07_09_after_setat.json`）で `07/08/09` は compile fail から runtime fail（`setitem on non-list object`）へ遷移したため、次段の blocker は row 構築/boxing 経路の補正と整理した。
 - 2026-02-28: `pyobj` で list repeat が `py_repeat(make_object(list<int64>{0}), w)` へ出力されると `07/08/09` で row が list object ではなくなり `setitem on non-list object` が発生するため、`operator.py` で `cpp_list_model=pyobj` 時の list repeat 入力を `list<T>(object_expr)` へ明示 unbox する補正を追加した。`test_py2cpp_codegen_issues.py` に回帰（`test_pyobj_list_model_list_repeat_unboxes_to_value_list_before_py_repeat`）を追加し、68件通過を確認した。
 - 2026-02-28: 上記修正後に `07/08/09` が `frame size mismatch` で失敗したため、runtime の `py_object_try_cast` が `uint8` を含む算術型を未対応だった点を修正した。`test_cpp_runtime_boxing.py` に `object -> bytes/list<bytes>` 変換回帰を追加し、`tools/benchmark_cpp_list_models.py 07_game_of_life_loop 08_langtons_ant 09_fire_simulation --warmup 0 --repeat 1 --allow-failures` で 3件とも実行成功することを確認した。
+- 2026-02-28: `12_sort_visualizer` で `render(const object&)` 呼び出しに stack 縮退した `list<int64>` がそのまま渡される compile blocker を確認した。`type_bridge._coerce_call_arg` で `cpp_list_model=pyobj` かつ list 注釈シグネチャ時の effective target を `object` へ寄せ、stack list だけ `make_object(...)` する補正を追加した。`test_py2cpp_codegen_issues.py` に回帰（`test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation`）を追加し、`benchmark_cpp_list_models.py 12_sort_visualizer --warmup 0 --repeat 1 --allow-failures` で実行成功を確認した。
+- 2026-02-28: `13_maze_generation_steps` で tuple/list runtime blocker（`index access on non-indexable object`）を確認した。原因は `make_object(list<T>)` 内の `make_object(v)` が tuple overload を拾えず tuple 要素が `object()` に潰れる点と、pyobj list subscript の tuple unbox 不足だった。tuple boxing overload を `list<T>` より前に配置し、`_render_unbox_target_cast` に `tuple[...]` 用 `::std::make_tuple(py_at(...))` 変換を追加して解消した。`test_py2cpp_codegen_issues.py` の tuple subscript 回帰（`test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure`）と `benchmark_cpp_list_models.py 13_maze_generation_steps --warmup 0 --repeat 1 --allow-failures` 実行成功を確認した。
 
 ## 分解
 
@@ -159,6 +161,8 @@
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2] `sample` 失敗 12 件（`05..16`）の compile/runtime blocker を段階解消し、`pyobj` モデルの実行成立範囲を拡張する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S1] pyobj で `grid[y][x] = ...` が `object[...]` へ落ちる compile blocker を `py_set_at(...)` lower で解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S2] `07/08/09` の runtime 失敗（`setitem on non-list object`）原因を特定し、`py_set_at` 入力が list object になるよう lower/runtime を補正する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S3] `12_sort_visualizer` の compile blocker（list 注釈引数が `object` シグネチャへ合わない）を callsite boxing 補正で解消する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。

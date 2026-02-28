@@ -1126,6 +1126,33 @@ def f() -> int:
         self.assertIn("py_repeat(list<int64>(make_object(list<int64>{0})), w)", cpp)
         self.assertNotIn("py_repeat(make_object(list<int64>{0}), w)", cpp)
 
+    def test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation(self) -> None:
+        sample_py = Path(__file__).resolve().parents[2] / "sample" / "py" / "12_sort_visualizer.py"
+        east = load_east(sample_py)
+        em = CppEmitter(east, {}, emit_main=False)
+        em.cpp_list_model = "pyobj"
+        cpp = em.transpile()
+
+        self.assertIn("list<int64> values = list<int64>{};", cpp)
+        self.assertIn("render(make_object(values), w, h)", cpp)
+
+    def test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure(self) -> None:
+        src = """def f(stack: list[tuple[int, int]]) -> int:
+    x, y = stack[-1]
+    return x + y
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_tuple_subscript_unbox.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("::std::make_tuple(", cpp)
+        self.assertIn("py_at(py_at(stack, py_to<int64>(-1)), 0)", cpp)
+        self.assertIn("py_at(py_at(stack, py_to<int64>(-1)), 1)", cpp)
+
     def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
         src = """def f() -> int:
     xs: list[int] = []

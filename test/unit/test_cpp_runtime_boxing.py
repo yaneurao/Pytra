@@ -106,6 +106,14 @@ int main() {
     assert(as_frames[0].size() == 3);
     assert(as_frames[0][1] == static_cast<uint8>(4));
 
+    object tuple_list_obj = make_object(list<::std::tuple<int64, int64>>{::std::make_tuple(7, 8)});
+    assert(py_len(tuple_list_obj) == 1);
+    object tuple_elem_obj = py_at(tuple_list_obj, int64(-1));
+    assert(py_is_list(tuple_elem_obj));
+    assert(py_len(tuple_elem_obj) == 2);
+    assert(py_to<int64>(py_at(tuple_elem_obj, int64(0))) == 7);
+    assert(py_to<int64>(py_at(tuple_elem_obj, int64(1))) == 8);
+
     ::std::any any_num = str("21");
     assert(py_to_int64(any_num) == 21);
     assert(py_to<int64>(any_num) == 21);

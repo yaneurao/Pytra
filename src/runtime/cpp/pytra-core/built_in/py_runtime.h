@@ -474,6 +474,18 @@ static inline object make_object(const ::std::any& v) {
     return object();
 }
 
+template <class... Ts>
+static inline object make_object(const ::std::tuple<Ts...>& values) {
+    list<object> out{};
+    out.reserve(sizeof...(Ts));
+    ::std::apply(
+        [&](const auto&... elems) {
+            (out.append(make_object(elems)), ...);
+        },
+        values);
+    return object_new<PyListObj>(::std::move(out));
+}
+
 template <class T>
 static inline object make_object(const list<T>& values) {
     list<object> out;
@@ -503,18 +515,6 @@ static inline object make_object(const set<T>& values) {
     out.reserve(values.size());
     for (const auto& v : values) out.append(make_object(v));
     return object_new<PySetObj>(::std::move(out));
-}
-
-template <class... Ts>
-static inline object make_object(const ::std::tuple<Ts...>& values) {
-    list<object> out{};
-    out.reserve(sizeof...(Ts));
-    ::std::apply(
-        [&](const auto&... elems) {
-            (out.append(make_object(elems)), ...);
-        },
-        values);
-    return object_new<PyListObj>(::std::move(out));
 }
 
 template <class T>

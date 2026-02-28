@@ -85,6 +85,20 @@ class CppTypeBridgeEmitter:
             return f"py_to<bool>({expr_txt})"
         if t_norm == "str":
             return f"py_to_string({expr_txt})"
+        if t_norm.startswith("tuple[") and t_norm.endswith("]"):
+            elems = self.split_generic(t_norm[6:-1])
+            if len(elems) == 0:
+                return "::std::tuple<>{}"
+            items: list[str] = []
+            i = 0
+            while i < len(elems):
+                elem_t = self.normalize_type_name(self.any_to_str(elems[i]))
+                item_expr = f"py_at({expr_txt}, {i})"
+                if elem_t not in {"", "unknown"} and not self.is_any_like_type(elem_t) and self._can_runtime_cast_target(elem_t):
+                    item_expr = self._render_unbox_target_cast(item_expr, elem_t, f"{ctx}:tuple[{i}]")
+                items.append(item_expr)
+                i += 1
+            return f"::std::make_tuple({join_str_list(', ', items)})"
         if t_norm.startswith("list[") or t_norm.startswith("dict[") or t_norm.startswith("set["):
             return f"{self._cpp_type_text(t_norm)}({expr_txt})"
         return expr_txt
@@ -110,12 +124,21 @@ class CppTypeBridgeEmitter:
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
         t_norm = self.normalize_type_name(target_t)
+        # `cpp_list_model=pyobj` では list 注釈の関数引数は C++ 側で `object` になる。
+        # シグネチャ記録は EAST 型（list[...]）を保持するため、callsite coercion だけ
+        # effective target を object へ寄せて型不整合を防ぐ。
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+        if list_model == "pyobj" and t_norm.startswith("list["):
+            t_norm = "object"
         arg_node_dict = self.any_to_dict_or_empty(arg_node)
         if self.is_any_like_type(t_norm):
             if self.is_boxed_object_expr(arg_txt):
                 return arg_txt
             if arg_txt == "*this":
                 return "object(static_cast<PyObj*>(this), true)"
+            if list_model == "pyobj" and at.startswith("list[") and len(arg_node_dict) > 0:
+                if not self._expr_is_stack_list_local(arg_node_dict):
+                    return arg_txt
             if self.is_any_like_type(at):
                 return arg_txt
             if len(arg_node_dict) > 0:
