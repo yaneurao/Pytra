@@ -1121,6 +1121,47 @@ def f() -> int:
         self.assertIn("py_append(xs, make_object(1));", cpp)
         self.assertIn("return sink(xs);", cpp)
 
+    def test_pyobj_list_model_does_not_stack_lower_when_dynamic_callable_consumes_list(self) -> None:
+        src = """def f(cb: object) -> int:
+    xs: list[int] = []
+    xs.append(1)
+    n: int = len(xs)
+    return n + cb(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_stack_local_list_dynamic_call_escape.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("object xs = make_object(list<object>{});", cpp)
+        self.assertIn("py_append(xs, make_object(1));", cpp)
+        self.assertNotIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertNotIn("xs.append(int64(1));", cpp)
+
+    def test_pyobj_list_model_does_not_stack_lower_when_external_attr_call_consumes_list(self) -> None:
+        src = """from ext_module import consume
+
+def f() -> int:
+    xs: list[int] = []
+    xs.append(1)
+    return consume(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_stack_local_list_external_call_escape.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("object xs = make_object(list<object>{});", cpp)
+        self.assertIn("py_append(xs, make_object(1));", cpp)
+        self.assertNotIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertNotIn("xs.append(int64(1));", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
