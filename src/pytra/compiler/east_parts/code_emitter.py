@@ -25,7 +25,7 @@ class EmitterHooks:
         """CodeEmitter へ渡せる dict 形式へ変換する。"""
         out: dict[str, Any] = {}
         for key, val in self.hooks.items():
-            out[key] = val
+            out[str(key)] = val
         return out
 
 
@@ -98,7 +98,8 @@ class CodeEmitter:
 
     def _root_scope_stack(self) -> list[set[str]]:
         """最上位 1 スコープだけを持つ初期スコープスタックを返す。"""
-        return [set()]
+        root_scope: set[str] = set()
+        return [root_scope]
 
     @staticmethod
     def escape_string_for_literal(text: str) -> str:
