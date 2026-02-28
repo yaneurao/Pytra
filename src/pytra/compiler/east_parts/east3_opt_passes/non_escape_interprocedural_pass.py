@@ -104,6 +104,26 @@ def _collect_non_escape_module_closure(module_doc: dict[str, Any]) -> dict[str, 
     return out
 
 
+def _infer_builtin_callee_arg_escape(call_node: dict[str, Any]) -> list[bool]:
+    args_any = call_node.get("args")
+    args = args_any if isinstance(args_any, list) else []
+    arg_count = len(args)
+    if arg_count == 0:
+        return []
+    runtime_call = _safe_name(call_node.get("runtime_call"))
+    builtin_name = _safe_name(call_node.get("builtin_name"))
+    if runtime_call in {"py_len", "py_to_string", "py_to_bool", "py_to_int64", "py_to_float64"}:
+        return [False] * arg_count
+    if builtin_name in {"len", "str", "bool", "int", "float"}:
+        return [False] * arg_count
+    func_any = call_node.get("func")
+    if isinstance(func_any, dict) and _safe_name(func_any.get("kind")) == "Name":
+        fn_name = _safe_name(func_any.get("id"))
+        if fn_name in {"len", "str", "bool", "int", "float"}:
+            return [False] * arg_count
+    return []
+
+
 def _collect_return_from_args(node: Any, arg_index: dict[str, int], out: set[int]) -> tuple[bool, int]:
     """Collect direct return escapes.
 
@@ -368,12 +388,20 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                     callee_symbol = callee if isinstance(callee, str) else ""
                     callee_summary = summary.get(callee_symbol, {})
                     resolved = bool(site.get("resolved", False))
+                    callee_arg_escape_payload: list[bool] = []
+                    if callee_symbol != "" and isinstance(callee_summary, dict):
+                        arg_escape_any = callee_summary.get("arg_escape")
+                        if isinstance(arg_escape_any, list):
+                            for item in arg_escape_any:
+                                callee_arg_escape_payload.append(bool(item))
+                    elif not resolved:
+                        callee_arg_escape_payload = _infer_builtin_callee_arg_escape(call_node)
                     payload = {
                         "callee": callee_symbol,
                         "resolved": resolved,
                         "in_return_expr": bool(site.get("in_return_expr", False)),
                         "arg_sources": site.get("arg_sources", []),
-                        "callee_arg_escape": list(callee_summary.get("arg_escape", [])) if isinstance(callee_summary, dict) else [],
+                        "callee_arg_escape": callee_arg_escape_payload,
                         "callee_return_from_args": (
                             list(callee_summary.get("return_from_args", []))
                             if isinstance(callee_summary, dict)

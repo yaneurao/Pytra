@@ -214,6 +214,21 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         self.assertFalse(result2.changed)
         self.assertEqual(summary1, summary2)
 
+    def test_unresolved_builtin_len_gets_non_escape_arg_annotation(self) -> None:
+        len_call = _call_name("len", [_name("xs")])
+        doc: dict[str, object] = {
+            "kind": "Module",
+            "east_stage": 3,
+            "meta": {},
+            "body": [
+                _fn("f", ["xs"], [_ret(len_call)]),
+            ],
+        }
+        _ = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
+        callsite = len_call.get("meta", {}).get("non_escape_callsite", {})
+        self.assertFalse(callsite.get("resolved", True))
+        self.assertEqual(callsite.get("callee_arg_escape"), [False])
+
 
 if __name__ == "__main__":
     unittest.main()

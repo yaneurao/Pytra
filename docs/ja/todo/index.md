@@ -50,7 +50,7 @@
 3. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-02] 関数シンボルを `module_id::symbol` で一意化し、モジュール横断 call target 解決を実装する。
 4. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-01] `NonEscapeInterproceduralPass` をモジュール横断 summary 計算へ拡張し、SCC fixed-point の決定性を維持する。
 5. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-02] callsite `meta.non_escape_callsite` / module `meta.non_escape_summary` を横断解析結果で更新する。
-6. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-01] C++ emitter の safe-call 固定ホワイトリスト依存を縮退し、`non_escape_callsite` 注釈を優先して stack-list 判定できるようにする。
+6. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-01] C++ emitter の safe-call 固定ホワイトリスト依存を縮退し、`non_escape_callsite` 注釈を優先して stack-list 判定できるようにする。
 7. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-02] `sample/05` で `frames` が `object` へ退化しないことを確認し、`save_gif` 呼び出し時の暗黙変換を削減する。
 8. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-01] module-cross / unresolved-import / recursive-import の回帰テストを追加し、fail-closed と決定性を固定する。
 9. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-02] `check_py2cpp_transpile` と C++ 回帰を実行し、非退行を確認する。

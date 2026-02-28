@@ -516,19 +516,40 @@ class CppEmitter(
             if kind == "Call":
                 meta = self.any_to_dict_or_empty(node.get("meta"))
                 callsite = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
-                callee_arg_escape_any = callsite.get("callee_arg_escape")
-                if isinstance(callee_arg_escape_any, list) and len(callee_arg_escape_any) > 0:
-                    args_any = self.any_to_list(node.get("args"))
-                    i = 0
-                    while i < len(args_any):
-                        if i < len(callee_arg_escape_any) and bool(callee_arg_escape_any[i]):
+                args_any = self.any_to_list(node.get("args"))
+                callsite_handled = False
+                if len(callsite) > 0:
+                    handled_by_callsite = False
+                    callee_arg_escape_any = callsite.get("callee_arg_escape")
+                    if isinstance(callee_arg_escape_any, list):
+                        handled_by_callsite = True
+                        i = 0
+                        while i < len(args_any):
+                            must_escape = True
+                            if i < len(callee_arg_escape_any):
+                                must_escape = bool(callee_arg_escape_any[i])
+                            if must_escape:
+                                reads_cs: set[str] = set()
+                                self._collect_name_reads(args_any[i], reads_cs)
+                                for nm in reads_cs:
+                                    if nm in candidates:
+                                        escaped.add(nm)
+                            i += 1
+                    elif isinstance(callsite.get("resolved"), bool):
+                        # `non_escape_callsite` があるのに arg 情報が欠ける場合は fail-closed。
+                        handled_by_callsite = True
+                        i = 0
+                        while i < len(args_any):
                             reads_cs: set[str] = set()
                             self._collect_name_reads(args_any[i], reads_cs)
                             for nm in reads_cs:
                                 if nm in candidates:
                                     escaped.add(nm)
-                        i += 1
-                else:
+                            i += 1
+                    if handled_by_callsite:
+                        callsite_handled = True
+
+                if not callsite_handled:
                     safe_call = False
                     runtime_call = self.any_dict_get_str(node, "runtime_call", "")
                     builtin_name = self.any_dict_get_str(node, "builtin_name", "")
@@ -553,7 +574,7 @@ class CppEmitter(
                             safe_call = True
                     if not safe_call:
                         arg_reads: set[str] = set()
-                        self._collect_name_reads(node.get("args"), arg_reads)
+                        self._collect_name_reads(args_any, arg_reads)
                         self._collect_name_reads(node.get("keywords"), arg_reads)
                         for nm in arg_reads:
                             if nm in candidates:
