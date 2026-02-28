@@ -32,6 +32,17 @@
 
 ## 未完了タスク
 
+### P0: C++ `float64` 同士除算の `py_div` 縮退（`/` 直接出力）
+
+文脈: [docs/ja/plans/p0-cpp-float-div-direct-slash.md](../plans/p0-cpp-float-div-direct-slash.md)
+
+1. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01] C++ backend の `Div` lower で `float64` 同士は `py_div` を使わず `/` を直接出力する。
+2. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01] `Div` lower の型条件（`float64/float64` 優先、Any/object/int は `py_div` 維持）を文書化する。
+3. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01] `operator.py` の `Div` 分岐へ typed fastpath（`/` 直接出力）を実装する。
+4. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02] `float32` / mixed float / int / Any/object の境界ケースを回帰テストで固定する。
+5. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
+6. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
+
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 
 文脈: [docs/ja/plans/p1-rs-runtime-externalization.md](../plans/p1-rs-runtime-externalization.md)
