@@ -68,7 +68,7 @@
 
 文脈: [docs/ja/plans/p1-core-path-direct-branch-removal.md](../plans/p1-core-path-direct-branch-removal.md)
 
-1. [ ] [ID: P1-CORE-PATH-SOT-01] `core.py` の `Path` 直分岐を撤去し、stdlib 参照層 + import 解決情報へ一本化する。
+1. [x] [ID: P1-CORE-PATH-SOT-01] `core.py` の `Path` 直分岐を撤去し、stdlib 参照層 + import 解決情報へ一本化する。
 2. [x] [ID: P1-CORE-PATH-SOT-01-S1-01] `Path` 依存分岐（戻り値推論 / BuiltinCall lower / 属性推論）を棚卸しし、置換先 API を固定する。
 3. [x] [ID: P1-CORE-PATH-SOT-01-S2-01] `Path` 判定を名前直書きから resolver 経由へ置換し、`core.py` から `fn_name == "Path"` を削除する。
 4. [x] [ID: P1-CORE-PATH-SOT-01-S2-02] `Path` constructor/method/attribute の戻り値推論を stdlib 参照層で補完する。
