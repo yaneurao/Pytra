@@ -65,11 +65,12 @@
 文脈: [docs/ja/plans/p1-cpp-sample18-readability-slimming.md](../plans/p1-cpp-sample18-readability-slimming.md)
 
 1. [ ] [ID: P1-CPP-S18-READ-01] `sample/18` の C++ 生成コードについて、選定改善項目（#2,#7,#8,#5,#1）を段階適用し、可読性を上げつつ挙動互換を維持する。
-2. [ ] [ID: P1-CPP-S18-READ-01-S1-02] 改善項目 #2: tuple unpack / 一時変数周辺の冗長 cast (`py_cast` / `py_to_*`) を削減し、型既知経路で直接利用できる emit に寄せる。
+2. [x] [ID: P1-CPP-S18-READ-01-S1-02] 改善項目 #2: tuple unpack / 一時変数周辺の冗長 cast (`py_cast` / `py_to_*`) を削減し、型既知経路で直接利用できる emit に寄せる。
 3. [ ] [ID: P1-CPP-S18-READ-01-S1-07] 改善項目 #7: `map` キーアクセス時の不要な key 変換（`py_to_string` 連鎖など）を縮退し、同一キー型では直接アクセスを優先する。
 4. [ ] [ID: P1-CPP-S18-READ-01-S1-08] 改善項目 #8: 計測/時刻差分まわりの変換コードを簡約し、冗長な数値変換チェーンを減らす。
 5. [ ] [ID: P1-CPP-S18-READ-01-S1-05] 改善項目 #5: `unknown` 起点の過剰な default 初期化・型減衰を抑え、可能な範囲で宣言型を安定化する。
 6. [ ] [ID: P1-CPP-S18-READ-01-S1-01] 改善項目 #1: `ForCore(RuntimeIterForPlan)` の typed loop header 化（`P0-FORCORE-TYPE-01-S3-01` と整合）を可読性改善セットへ統合する。
+- `P1-CPP-S18-READ-01-S1-02` `ForCore(RuntimeIterForPlan)+NameTarget` で typed iterable を優先する emit を追加し、`sample/18` の `for stmt in stmts` から `object __itobj + obj_to_rc_or_raise` を除去した。
 
 ### P1: Go/Java/Swift/Ruby runtime 外出し（inline helper 撤去）
 

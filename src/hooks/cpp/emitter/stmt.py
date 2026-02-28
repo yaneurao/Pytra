@@ -927,8 +927,10 @@ class CppStatementEmitter:
                     self.emit("/* invalid forcore target name */")
                     return
                 target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+                iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
+                typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 if target_type in {"", "unknown"}:
-                    target_type = "object"
+                    target_type = iter_item_t if typed_iter else "object"
                 if self.is_any_like_type(target_type):
                     hdr = self.syntax_line(
                         "for_each_runtime_target_open",
@@ -936,6 +938,17 @@ class CppStatementEmitter:
                         {"target": target_id, "iter": iter_txt},
                     )
                     self.declared_var_types[target_id] = "object"
+                    self._emit_for_body_open(hdr, {target_id}, omit_braces)
+                    self._emit_for_body_stmts(body_stmts, omit_braces)
+                    self._emit_for_body_close(omit_braces)
+                    return
+                if typed_iter:
+                    hdr = self.syntax_line(
+                        "for_each_typed_open",
+                        "for ({type} {target} : {iter})",
+                        {"type": self._cpp_type_text(target_type), "target": target_id, "iter": iter_txt},
+                    )
+                    self.declared_var_types[target_id] = target_type
                     self._emit_for_body_open(hdr, {target_id}, omit_braces)
                     self._emit_for_body_stmts(body_stmts, omit_braces)
                     self._emit_for_body_close(omit_braces)

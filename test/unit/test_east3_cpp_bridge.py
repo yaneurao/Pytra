@@ -88,6 +88,28 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertIn("for (object __itobj", text)
         self.assertIn("int64 v = int64(py_to<int64>(__itobj", text)
 
+    def test_emit_stmt_forcore_runtime_name_target_typed_iter_uses_typed_loop_header(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "v", "target_type": "int64"},
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("for (int64 v : xs)", text)
+        self.assertNotIn("py_dyn_range(xs)", text)
+        self.assertNotIn("py_to<int64>", text)
+
     def test_emit_stmt_forcore_runtime_tuple_target_uses_element_types_from_parent_target_type(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {

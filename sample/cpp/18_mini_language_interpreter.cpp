@@ -71,9 +71,7 @@ struct StmtNode : public PyObj {
 
 list<rc<Token>> tokenize(const list<str>& lines) {
     list<rc<Token>> tokens = list<rc<Token>>{};
-    for (object __itobj_1 : py_dyn_range(py_enumerate(lines))) {
-        int64 line_index = int64(py_to<int64>(py_at(__itobj_1, 0)));
-        str source = py_to_string(py_at(__itobj_1, 1));
+    for (const auto& [line_index, source] : py_enumerate(lines)) {
         int64 i = 0;
         int64 n = py_len(source);
         while (i < n) {
@@ -296,7 +294,7 @@ int64 eval_expr(int64 expr_index, const list<rc<ExprNode>>& expr_nodes, const di
     if (node->kind == "var") {
         if (!(py_contains(env, node->name)))
             throw ::std::runtime_error("undefined variable: " + node->name);
-        return py_dict_get(env, py_to_string(node->name));
+        return py_dict_get(env, node->name);
     }
     if (node->kind == "neg")
         return -eval_expr(node->left, expr_nodes, env);
@@ -324,16 +322,15 @@ int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_no
     int64 checksum = 0;
     int64 printed = 0;
     
-    for (object __itobj_2 : py_dyn_range(stmts)) {
-        rc<StmtNode> stmt = obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt");
+    for (rc<StmtNode> stmt : stmts) {
         if (stmt->kind == "let") {
-            env[py_to_string(stmt->name)] = eval_expr(stmt->expr_index, expr_nodes, env);
+            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         if (stmt->kind == "assign") {
             if (!(py_contains(env, stmt->name)))
                 throw ::std::runtime_error("assign to undefined variable: " + stmt->name);
-            env[py_to_string(stmt->name)] = eval_expr(stmt->expr_index, expr_nodes, env);
+            env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
         int64 value = eval_expr(stmt->expr_index, expr_nodes, env);
