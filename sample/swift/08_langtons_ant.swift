@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 08: Sample that outputs Langton's Ant trajectories as a GIF.
+
 func capture(grid: [Any], w: Int64, h: Int64) -> [Any] {
     var frame: [Any] = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
     let __step_0 = __pytra_int(Int64(1))

@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,9 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+// It avoids floating-point error effects, making cross-language comparisons easier.
+
 fun run_integer_grid_checksum(width: Long, height: Long, seed: Long): Long {
     var mod_main: Long = __pytra_int(2147483647L)
     var mod_out: Long = __pytra_int(1000000007L)
@@ -318,7 +332,7 @@ fun run_integer_grid_checksum(width: Long, height: Long, seed: Long): Long {
         acc = __pytra_int((__pytra_int((__pytra_int(acc) + __pytra_int((__pytra_int(row_sum) * __pytra_int((__pytra_int(y) + __pytra_int(1L))))))) % __pytra_int(mod_out)))
         y += __step_0
     }
-    return acc
+    return __pytra_int(acc)
 }
 
 fun run_integer_benchmark() {
@@ -326,7 +340,7 @@ fun run_integer_benchmark() {
     var height: Long = __pytra_int(5000L)
     var start: Double = __pytra_float(__pytra_perf_counter())
     var checksum: Long = __pytra_int(run_integer_grid_checksum(width, height, 123456789L))
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("pixels:", (__pytra_int(width) * __pytra_int(height)))
     __pytra_print("checksum:", checksum)
     __pytra_print("elapsed_sec:", elapsed)

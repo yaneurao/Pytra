@@ -3,6 +3,9 @@
 require_relative "py_runtime"
 
 
+# 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+# Dependencies are kept minimal (time only) for transpilation compatibility.
+
 def clamp01(v)
   if __pytra_truthy((v < 0.0))
     return 0.0

@@ -4,6 +4,8 @@ public final class Pytra_08_langtons_ant {
     }
 
 
+    // 08: Sample that outputs Langton's Ant trajectories as a GIF.
+
     public static java.util.ArrayList<Long> capture(java.util.ArrayList<Object> grid, long w, long h) {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray((w * h));
         long __step_0 = 1L;

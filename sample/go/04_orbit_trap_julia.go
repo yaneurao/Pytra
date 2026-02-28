@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
+
 func render_orbit_trap_julia(width int64, height int64, max_iter int64, cx float64, cy float64) []any {
     var pixels []any = __pytra_as_list([]any{})
     var __hoisted_cast_1 float64 = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(int64(1)))))

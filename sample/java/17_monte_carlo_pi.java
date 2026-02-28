@@ -4,6 +4,9 @@ public final class Pytra_17_monte_carlo_pi {
     }
 
 
+    // 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+    // It avoids floating-point error effects, making cross-language comparisons easier.
+
     public static long run_integer_grid_checksum(long width, long height, long seed) {
         long mod_main = 2147483647L;
         long mod_out = 1000000007L;

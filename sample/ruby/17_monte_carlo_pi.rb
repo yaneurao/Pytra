@@ -3,6 +3,9 @@
 require_relative "py_runtime"
 
 
+# 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+# It avoids floating-point error effects, making cross-language comparisons easier.
+
 def run_integer_grid_checksum(width, height, seed)
   mod_main = 2147483647
   mod_out = 1000000007

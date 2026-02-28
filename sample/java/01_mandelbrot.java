@@ -4,6 +4,9 @@ public final class Pytra_01_mandelbrot {
     }
 
 
+    // 01: Sample that outputs the Mandelbrot set as a PNG image.
+    // Syntax is kept straightforward with future transpilation in mind.
+
     public static long escape_count(double cx, double cy, long max_iter) {
         double x = 0.0;
         double y = 0.0;

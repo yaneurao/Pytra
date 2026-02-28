@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
+
 def clamp01(v)
   if __pytra_truthy((v < 0.0))
     return 0.0

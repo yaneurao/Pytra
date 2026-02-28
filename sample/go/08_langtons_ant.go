@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 08: Sample that outputs Langton's Ant trajectories as a GIF.
+
 func capture(grid []any, w int64, h int64) []any {
     var frame []any = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
     __step_0 := __pytra_int(int64(1))

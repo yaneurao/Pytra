@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 12: Sample that outputs intermediate states of bubble sort as a GIF.
+
 func render(values []any, w int64, h int64) []any {
     var frame []any = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
     var n int64 = __pytra_int(__pytra_len(values))

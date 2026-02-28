@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 11: Sample that outputs Lissajous-motion particles as a GIF.
+
 def color_palette()
   p = __pytra_bytearray()
   __step_0 = __pytra_int(1)

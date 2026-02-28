@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
+
 func render_frame(width int64, height int64, center_x float64, center_y float64, scale float64, max_iter int64) []any {
     var frame []any = __pytra_as_list(__pytra_bytearray((__pytra_int(width) * __pytra_int(height))))
     var __hoisted_cast_1 float64 = __pytra_float(__pytra_float(max_iter))

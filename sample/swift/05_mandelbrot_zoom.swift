@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
+
 func render_frame(width: Int64, height: Int64, center_x: Double, center_y: Double, scale: Double, max_iter: Int64) -> [Any] {
     var frame: [Any] = __pytra_as_list(__pytra_bytearray((__pytra_int(width) * __pytra_int(height))))
     var __hoisted_cast_1: Double = __pytra_float(__pytra_float(max_iter))

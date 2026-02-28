@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,8 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 08: Sample that outputs Langton's Ant trajectories as a GIF.
+
 fun capture(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
     var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((__pytra_int(w) * __pytra_int(h))))
     val __step_0 = __pytra_int(1L)
@@ -313,7 +326,7 @@ fun capture(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
         }
         y += __step_0
     }
-    return __pytra_bytes(frame)
+    return __pytra_as_list(__pytra_bytes(frame))
 }
 
 fun run_08_langtons_ant() {
@@ -357,7 +370,7 @@ fun run_08_langtons_ant() {
         i += __step_0
     }
     __pytra_noop(out_path, w, h, frames, mutableListOf<Any?>())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", __pytra_len(frames))
     __pytra_print("elapsed_sec:", elapsed)

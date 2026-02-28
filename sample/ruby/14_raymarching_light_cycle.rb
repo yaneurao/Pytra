@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
+
 def palette()
   p = __pytra_bytearray()
   __step_0 = __pytra_int(1)

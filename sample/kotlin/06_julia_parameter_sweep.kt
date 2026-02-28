@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,8 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 06: Sample that sweeps Julia-set parameters and outputs a GIF.
+
 fun julia_palette(): MutableList<Any?> {
     var palette: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((__pytra_int(256L) * __pytra_int(3L))))
     __pytra_set_index(palette, 0L, 0L)
@@ -316,20 +329,22 @@ fun julia_palette(): MutableList<Any?> {
         __pytra_set_index(palette, (__pytra_int((__pytra_int(i) * __pytra_int(3L))) + __pytra_int(2L)), b)
         i += __step_0
     }
-    return __pytra_bytes(palette)
+    return __pytra_as_list(__pytra_bytes(palette))
 }
 
 fun render_frame(width: Long, height: Long, cr: Double, ci: Double, max_iter: Long, phase: Long): MutableList<Any?> {
     var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((__pytra_int(width) * __pytra_int(height))))
+    var __hoisted_cast_1: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(1L))))
+    var __hoisted_cast_2: Double = __pytra_float(__pytra_float((__pytra_int(width) - __pytra_int(1L))))
     val __step_0 = __pytra_int(1L)
     var y = __pytra_int(0L)
     while ((__step_0 >= 0L && y < __pytra_int(height)) || (__step_0 < 0L && y > __pytra_int(height))) {
         var row_base: Long = __pytra_int((__pytra_int(y) * __pytra_int(width)))
-        var zy0: Double = __pytra_float((__pytra_float((-1.2)) + __pytra_float((__pytra_float(2.4) * __pytra_float((__pytra_float(y) / __pytra_float((__pytra_int(height) - __pytra_int(1L)))))))))
+        var zy0: Double = __pytra_float((__pytra_float((-1.2)) + __pytra_float((__pytra_float(2.4) * __pytra_float((__pytra_float(y) / __pytra_float(__hoisted_cast_1)))))))
         val __step_1 = __pytra_int(1L)
         var x = __pytra_int(0L)
         while ((__step_1 >= 0L && x < __pytra_int(width)) || (__step_1 < 0L && x > __pytra_int(width))) {
-            var zx: Double = __pytra_float((__pytra_float((-1.8)) + __pytra_float((__pytra_float(3.6) * __pytra_float((__pytra_float(x) / __pytra_float((__pytra_int(width) - __pytra_int(1L)))))))))
+            var zx: Double = __pytra_float((__pytra_float((-1.8)) + __pytra_float((__pytra_float(3.6) * __pytra_float((__pytra_float(x) / __pytra_float(__hoisted_cast_2)))))))
             var zy: Double = __pytra_float(zy0)
             var i: Long = __pytra_int(0L)
             while ((__pytra_int(i) < __pytra_int(max_iter))) {
@@ -352,7 +367,7 @@ fun render_frame(width: Long, height: Long, cr: Double, ci: Double, max_iter: Lo
         }
         y += __step_0
     }
-    return __pytra_bytes(frame)
+    return __pytra_as_list(__pytra_bytes(frame))
 }
 
 fun run_06_julia_parameter_sweep() {
@@ -369,10 +384,11 @@ fun run_06_julia_parameter_sweep() {
     var radius_ci: Double = __pytra_float(0.1)
     var start_offset: Long = __pytra_int(20L)
     var phase_offset: Long = __pytra_int(180L)
+    var __hoisted_cast_3: Double = __pytra_float(__pytra_float(frames_n))
     val __step_0 = __pytra_int(1L)
     var i = __pytra_int(0L)
     while ((__step_0 >= 0L && i < __pytra_int(frames_n)) || (__step_0 < 0L && i > __pytra_int(frames_n))) {
-        var t: Double = __pytra_float((__pytra_float((__pytra_int((__pytra_int(i) + __pytra_int(start_offset))) % __pytra_int(frames_n))) / __pytra_float(frames_n)))
+        var t: Double = __pytra_float((__pytra_float((__pytra_int((__pytra_int(i) + __pytra_int(start_offset))) % __pytra_int(frames_n))) / __pytra_float(__hoisted_cast_3)))
         var angle: Double = __pytra_float(((2.0 * Math.PI) * t))
         var cr: Double = __pytra_float((center_cr + (radius_cr * kotlin.math.cos(__pytra_float(angle)))))
         var ci: Double = __pytra_float((center_ci + (radius_ci * kotlin.math.sin(__pytra_float(angle)))))
@@ -381,7 +397,7 @@ fun run_06_julia_parameter_sweep() {
         i += __step_0
     }
     __pytra_noop(out_path, width, height, frames, julia_palette())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", frames_n)
     __pytra_print("elapsed_sec:", elapsed)

@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 13: Sample that outputs DFS maze-generation progress as a GIF.
+
 func capture(grid []any, w int64, h int64, scale int64) []any {
     var width int64 = __pytra_int((__pytra_int(w) * __pytra_int(scale)))
     var height int64 = __pytra_int((__pytra_int(h) * __pytra_int(scale)))

@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,8 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 13: Sample that outputs DFS maze-generation progress as a GIF.
+
 fun capture(grid: MutableList<Any?>, w: Long, h: Long, scale: Long): MutableList<Any?> {
     var width: Long = __pytra_int((__pytra_int(w) * __pytra_int(scale)))
     var height: Long = __pytra_int((__pytra_int(h) * __pytra_int(scale)))
@@ -326,7 +339,7 @@ fun capture(grid: MutableList<Any?>, w: Long, h: Long, scale: Long): MutableList
         }
         y += __step_0
     }
-    return __pytra_bytes(frame)
+    return __pytra_as_list(__pytra_bytes(frame))
 }
 
 fun run_13_maze_generation_steps() {
@@ -344,17 +357,17 @@ fun run_13_maze_generation_steps() {
     var step: Long = __pytra_int(0L)
     while ((__pytra_len(stack) != 0L)) {
         val __tuple_0 = __pytra_as_list(__pytra_as_list(__pytra_get_index(stack, (-1L))))
-        x = __pytra_int(__tuple_0[0])
-        y = __pytra_int(__tuple_0[1])
+        var x: Long = __pytra_int(__tuple_0[0])
+        var y: Long = __pytra_int(__tuple_0[1])
         var candidates: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
         val __step_1 = __pytra_int(1L)
         var k = __pytra_int(0L)
         while ((__step_1 >= 0L && k < __pytra_int(4L)) || (__step_1 < 0L && k > __pytra_int(4L))) {
             val __tuple_2 = __pytra_as_list(__pytra_as_list(__pytra_get_index(dirs, k)))
-            dx = __pytra_int(__tuple_2[0])
-            dy = __pytra_int(__tuple_2[1])
-            var nx: Any? = (x + dx)
-            var ny: Any? = (y + dy)
+            var dx: Long = __pytra_int(__tuple_2[0])
+            var dy: Long = __pytra_int(__tuple_2[1])
+            var nx: Long = __pytra_int((x + dx))
+            var ny: Long = __pytra_int((y + dy))
             if (((__pytra_int(nx) >= __pytra_int(1L)) && (__pytra_int(nx) < __pytra_int((__pytra_int(cell_w) - __pytra_int(1L)))) && (__pytra_int(ny) >= __pytra_int(1L)) && (__pytra_int(ny) < __pytra_int((__pytra_int(cell_h) - __pytra_int(1L)))) && (__pytra_int(__pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(grid, ny)), nx))) == __pytra_int(1L)))) {
                 if ((__pytra_int(dx) == __pytra_int(2L))) {
                     candidates = __pytra_as_list(candidates); candidates.add(mutableListOf(nx, ny, (x + 1L), y))
@@ -392,7 +405,7 @@ fun run_13_maze_generation_steps() {
     }
     frames = __pytra_as_list(frames); frames.add(capture(grid, cell_w, cell_h, scale))
     __pytra_noop(out_path, (__pytra_int(cell_w) * __pytra_int(scale)), (__pytra_int(cell_h) * __pytra_int(scale)), frames, mutableListOf<Any?>())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", __pytra_len(frames))
     __pytra_print("elapsed_sec:", elapsed)

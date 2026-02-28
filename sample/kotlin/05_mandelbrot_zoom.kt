@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,8 +310,11 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
+
 fun render_frame(width: Long, height: Long, center_x: Double, center_y: Double, scale: Double, max_iter: Long): MutableList<Any?> {
     var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((__pytra_int(width) * __pytra_int(height))))
+    var __hoisted_cast_1: Double = __pytra_float(__pytra_float(max_iter))
     val __step_0 = __pytra_int(1L)
     var y = __pytra_int(0L)
     while ((__step_0 >= 0L && y < __pytra_int(height)) || (__step_0 < 0L && y > __pytra_int(height))) {
@@ -323,12 +337,12 @@ fun render_frame(width: Long, height: Long, center_x: Double, center_y: Double, 
                 zx = __pytra_float((__pytra_float((__pytra_float(zx2) - __pytra_float(zy2))) + __pytra_float(cx)))
                 i += 1L
             }
-            __pytra_set_index(frame, (__pytra_int(row_base) + __pytra_int(x)), __pytra_int((__pytra_float((__pytra_float(255.0) * __pytra_float(i))) / __pytra_float(max_iter))))
+            __pytra_set_index(frame, (__pytra_int(row_base) + __pytra_int(x)), __pytra_int((__pytra_float((__pytra_float(255.0) * __pytra_float(i))) / __pytra_float(__hoisted_cast_1))))
             x += __step_1
         }
         y += __step_0
     }
-    return __pytra_bytes(frame)
+    return __pytra_as_list(__pytra_bytes(frame))
 }
 
 fun run_05_mandelbrot_zoom() {
@@ -352,7 +366,7 @@ fun run_05_mandelbrot_zoom() {
         __loop_0 += __step_1
     }
     __pytra_noop(out_path, width, height, frames, mutableListOf<Any?>())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", frame_count)
     __pytra_print("elapsed_sec:", elapsed)

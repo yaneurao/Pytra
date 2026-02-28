@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 07: Sample that outputs Game of Life evolution as a GIF.
+
 func next_state(grid []any, w int64, h int64) []any {
     var nxt []any = __pytra_as_list([]any{})
     __step_0 := __pytra_int(int64(1))

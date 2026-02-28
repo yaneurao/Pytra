@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 07: Sample that outputs Game of Life evolution as a GIF.
+
 func next_state(grid: [Any], w: Int64, h: Int64) -> [Any] {
     var nxt: [Any] = __pytra_as_list([])
     let __step_0 = __pytra_int(Int64(1))

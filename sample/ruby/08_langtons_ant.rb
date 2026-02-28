@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 08: Sample that outputs Langton's Ant trajectories as a GIF.
+
 def capture(grid, w, h)
   frame = __pytra_bytearray((w * h))
   __step_0 = __pytra_int(1)

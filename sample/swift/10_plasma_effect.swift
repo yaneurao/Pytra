@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 10: Sample that outputs a plasma effect as a GIF.
+
 func run_10_plasma_effect() {
     var w: Int64 = __pytra_int(Int64(320))
     var h: Int64 = __pytra_int(Int64(240))

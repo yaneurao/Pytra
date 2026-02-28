@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,8 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 09: Sample that outputs a simple fire effect as a GIF.
+
 fun fire_palette(): MutableList<Any?> {
     var p: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     val __step_0 = __pytra_int(1L)
@@ -327,7 +340,7 @@ fun fire_palette(): MutableList<Any?> {
         p = __pytra_as_list(p); p.add(b)
         i += __step_0
     }
-    return __pytra_bytes(p)
+    return __pytra_as_list(__pytra_bytes(p))
 }
 
 fun run_09_fire_simulation() {
@@ -352,7 +365,7 @@ fun run_09_fire_simulation() {
         var y = __pytra_int(1L)
         while ((__step_2 >= 0L && y < __pytra_int(h)) || (__step_2 < 0L && y > __pytra_int(h))) {
             val __step_3 = __pytra_int(1L)
-            var x = __pytra_int(0L)
+            x = __pytra_int(0L)
             while ((__step_3 >= 0L && x < __pytra_int(w)) || (__step_3 < 0L && x > __pytra_int(w))) {
                 var a: Long = __pytra_int(__pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(heat, y)), x)))
                 var b: Long = __pytra_int(__pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(heat, y)), (__pytra_int((__pytra_int((__pytra_int(x) - __pytra_int(1L))) + __pytra_int(w))) % __pytra_int(w)))))
@@ -383,7 +396,7 @@ fun run_09_fire_simulation() {
         t += __step_0
     }
     __pytra_noop(out_path, w, h, frames, fire_palette())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", steps)
     __pytra_print("elapsed_sec:", elapsed)

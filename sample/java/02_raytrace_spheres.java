@@ -4,6 +4,9 @@ public final class Pytra_02_raytrace_spheres {
     }
 
 
+    // 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+    // Dependencies are kept minimal (time only) for transpilation compatibility.
+
     public static double clamp01(double v) {
         if ((v < 0.0)) {
             return 0.0;

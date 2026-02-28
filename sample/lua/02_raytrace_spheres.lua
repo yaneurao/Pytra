@@ -4,6 +4,9 @@ local math = math
 local png = { write_rgb_png = function(...) end, write_gif = function(...) end }
 -- from time import perf_counter as perf_counter (not yet mapped)
 
+-- 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+-- Dependencies are kept minimal (time only) for transpilation compatibility.
+
 function clamp01(v)
     if (v < 0.0) then
         return 0.0
@@ -18,9 +21,11 @@ function hit_sphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, r)
     local lx = (ox - cx)
     local ly = (oy - cy)
     local lz = (oz - cz)
+    
     local a = (((dx * dx) + (dy * dy)) + (dz * dz))
     local b = (2.0 * (((lx * dx) + (ly * dy)) + (lz * dz)))
     local c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r))
+    
     local d = ((b * b) - ((4.0 * a) * c))
     if (d < 0.0) then
         return (-1.0)
@@ -28,6 +33,7 @@ function hit_sphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, r)
     local sd = math.sqrt(d)
     local t0 = (((-b) - sd) / (2.0 * a))
     local t1 = (((-b) + sd) / (2.0 * a))
+    
     if (t0 > 0.001) then
         return t0
     end
@@ -39,9 +45,13 @@ end
 
 function render(width, height, aa)
     local pixels = bytearray()
+    
+    -- Camera origin
     local ox = 0.0
     local oy = 0.0
     local oz = (-3.0)
+    
+    -- Light direction (normalized)
     local lx = (-0.4)
     local ly = 0.8
     local lz = (-0.45)
@@ -49,17 +59,20 @@ function render(width, height, aa)
     local __hoisted_cast_2 = float((height - 1))
     local __hoisted_cast_3 = float((width - 1))
     local __hoisted_cast_4 = float(height)
+    
     for y = 0, (height) - 1, 1 do
         for x = 0, (width) - 1, 1 do
             local ar = 0
             local ag = 0
             local ab = 0
+            
             for ay = 0, (aa) - 1, 1 do
                 for ax = 0, (aa) - 1, 1 do
                     fy = ((y + ((ay + 0.5) / __hoisted_cast_1)) / __hoisted_cast_2)
                     fx = ((x + ((ax + 0.5) / __hoisted_cast_1)) / __hoisted_cast_3)
                     local sy = (1.0 - (2.0 * fy))
                     local sx = (((2.0 * fx) - 1.0) * (width / __hoisted_cast_4))
+                    
                     local dx = sx
                     local dy = sy
                     local dz = 1.0
@@ -67,8 +80,10 @@ function render(width, height, aa)
                     dx = dx * inv_len
                     dy = dy * inv_len
                     dz = dz * inv_len
+                    
                     local t_min = 1e+30
                     local hit_id = (-1)
+                    
                     local t = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8)
                     if ((t > 0.0) and (t < t_min)) then
                         t_min = t
@@ -87,13 +102,16 @@ function render(width, height, aa)
                     local r = 0
                     local g = 0
                     local b = 0
+                    
                     if (hit_id >= 0) then
                         local px = (ox + (dx * t_min))
                         local py = (oy + (dy * t_min))
                         local pz = (oz + (dz * t_min))
+                        
                         local nx = 0.0
                         local ny = 0.0
                         local nz = 0.0
+                        
                         if (hit_id == 0) then
                             nx = ((px + 0.8) / 0.8)
                             ny = ((py + 0.2) / 0.8)
@@ -111,9 +129,11 @@ function render(width, height, aa)
                         end
                         local diff = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)))
                         diff = clamp01(diff)
+                        
                         local base_r = 0.0
                         local base_g = 0.0
                         local base_b = 0.0
+                        
                         if (hit_id == 0) then
                             base_r = 0.95
                             base_g = 0.35
@@ -165,10 +185,12 @@ function run_raytrace()
     local height = 900
     local aa = 2
     local out_path = "sample/out/02_raytrace_spheres.png"
+    
     local start = perf_counter()
     local pixels = render(width, height, aa)
     png:write_rgb_png(out_path, width, height, pixels)
     local elapsed = (perf_counter() - start)
+    
     print("output:", out_path)
     print("size:", width, "x", height)
     print("elapsed_sec:", elapsed)

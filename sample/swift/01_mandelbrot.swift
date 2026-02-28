@@ -3,6 +3,10 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 01: Sample that outputs the Mandelbrot set as a PNG image.
+// Syntax is kept straightforward with future transpilation in mind.
+
 func escape_count(cx: Double, cy: Double, max_iter: Int64) -> Int64 {
     var x: Double = __pytra_float(Double(0.0))
     var y: Double = __pytra_float(Double(0.0))

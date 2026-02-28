@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 07: Sample that outputs Game of Life evolution as a GIF.
+
 def next_state(grid, w, h)
   nxt = []
   __step_0 = __pytra_int(1)

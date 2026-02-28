@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 09: Sample that outputs a simple fire effect as a GIF.
+
 func fire_palette() -> [Any] {
     var p: [Any] = __pytra_as_list([])
     let __step_0 = __pytra_int(Int64(1))

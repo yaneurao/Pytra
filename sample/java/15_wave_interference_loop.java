@@ -4,6 +4,8 @@ public final class Pytra_15_wave_interference_loop {
     }
 
 
+    // 15: Sample that renders wave interference animation and writes a GIF.
+
     public static void run_15_wave_interference_loop() {
         long w = 320L;
         long h = 240L;

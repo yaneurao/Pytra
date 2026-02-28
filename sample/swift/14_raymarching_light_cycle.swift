@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
+
 func palette() -> [Any] {
     var p: [Any] = __pytra_as_list([])
     let __step_0 = __pytra_int(Int64(1))

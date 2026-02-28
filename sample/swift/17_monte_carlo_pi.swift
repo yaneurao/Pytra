@@ -3,6 +3,10 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
+// It avoids floating-point error effects, making cross-language comparisons easier.
+
 func run_integer_grid_checksum(width: Int64, height: Int64, seed: Int64) -> Int64 {
     var mod_main: Int64 = __pytra_int(Int64(2147483647))
     var mod_out: Int64 = __pytra_int(Int64(1000000007))

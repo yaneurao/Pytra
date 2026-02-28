@@ -4,6 +4,8 @@ public final class Pytra_10_plasma_effect {
     }
 
 
+    // 10: Sample that outputs a plasma effect as a GIF.
+
     public static void run_10_plasma_effect() {
         long w = 320L;
         long h = 240L;

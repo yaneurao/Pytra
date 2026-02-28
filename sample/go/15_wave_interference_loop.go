@@ -9,6 +9,8 @@ import (
 var _ = math.Pi
 
 
+// 15: Sample that renders wave interference animation and writes a GIF.
+
 func run_15_wave_interference_loop() {
     var w int64 = __pytra_int(int64(320))
     var h int64 = __pytra_int(int64(240))

@@ -216,6 +216,17 @@ fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_enumerate(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = 0L
+    while (i < items.size.toLong()) {
+        out.add(mutableListOf(i, items[i.toInt()]))
+        i += 1L
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -299,6 +310,8 @@ fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
 
+// 07: Sample that outputs Game of Life evolution as a GIF.
+
 fun next_state(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
     var nxt: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     val __step_0 = __pytra_int(1L)
@@ -339,7 +352,7 @@ fun next_state(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
         nxt = __pytra_as_list(nxt); nxt.add(row)
         y += __step_0
     }
-    return nxt
+    return __pytra_as_list(nxt)
 }
 
 fun render(grid: MutableList<Any?>, w: Long, h: Long, cell: Long): MutableList<Any?> {
@@ -369,7 +382,7 @@ fun render(grid: MutableList<Any?>, w: Long, h: Long, cell: Long): MutableList<A
         }
         y += __step_0
     }
-    return __pytra_bytes(frame)
+    return __pytra_as_list(__pytra_bytes(frame))
 }
 
 fun run_07_game_of_life_loop() {
@@ -468,7 +481,7 @@ fun run_07_game_of_life_loop() {
         __loop_10 += __step_11
     }
     __pytra_noop(out_path, (__pytra_int(w) * __pytra_int(cell)), (__pytra_int(h) * __pytra_int(cell)), frames, mutableListOf<Any?>())
-    var elapsed: Double = __pytra_float((__pytra_perf_counter() - start))
+    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
     __pytra_print("output:", out_path)
     __pytra_print("frames:", steps)
     __pytra_print("elapsed_sec:", elapsed)

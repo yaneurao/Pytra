@@ -3,6 +3,8 @@
 require_relative "py_runtime"
 
 
+# 12: Sample that outputs intermediate states of bubble sort as a GIF.
+
 def render(values, w, h)
   frame = __pytra_bytearray((w * h))
   n = __pytra_len(values)

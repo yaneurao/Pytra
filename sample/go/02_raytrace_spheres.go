@@ -9,6 +9,9 @@ import (
 var _ = math.Pi
 
 
+// 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
+// Dependencies are kept minimal (time only) for transpilation compatibility.
+
 func clamp01(v float64) float64 {
     if (__pytra_float(v) < __pytra_float(float64(0.0))) {
         return __pytra_float(float64(0.0))

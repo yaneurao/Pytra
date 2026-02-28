@@ -4,6 +4,8 @@ public final class Pytra_11_lissajous_particles {
     }
 
 
+    // 11: Sample that outputs Lissajous-motion particles as a GIF.
+
     public static java.util.ArrayList<Long> color_palette() {
         java.util.ArrayList<Long> p = new java.util.ArrayList<Long>();
         long __step_0 = 1L;

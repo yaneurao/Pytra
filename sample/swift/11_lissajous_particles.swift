@@ -3,6 +3,9 @@ import Foundation
 
 // Runtime helpers are provided by py_runtime.swift in the same module.
 
+
+// 11: Sample that outputs Lissajous-motion particles as a GIF.
+
 func color_palette() -> [Any] {
     var p: [Any] = __pytra_as_list([])
     let __step_0 = __pytra_int(Int64(1))
