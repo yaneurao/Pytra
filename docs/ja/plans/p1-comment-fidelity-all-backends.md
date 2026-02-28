@@ -41,10 +41,35 @@
 
 決定ログ:
 - 2026-02-28: ユーザー要望により「全言語で、元ソースにないコメント出力を禁止し、元コメントを強制反映する」方針を `P1-COMMENT-FIDELITY-01` として起票。
+- 2026-02-28: `rg` による棚卸しで固定コメント出力の残存箇所を backend 横断で抽出し、禁止パターン一覧を確定した（`P1-COMMENT-FIDELITY-01-S1-01` 完了）。
+
+## S1-01 棚卸し結果（固定コメント禁止パターン）
+
+禁止パターン:
+- `pass` 代替コメント（`// pass`, `# pass`, `-- pass`, `/* pass */`）
+- 未対応構文を隠すコメント（`unsupported ...`, `TODO: unsupported ...`, `invalid ...`）
+- 生成器由来バナー（`Auto-generated ...`, `Runtime helpers are provided ...`, `TypeScript preview ...`）
+- 制御説明コメント（`// __main__ guard` など）
+
+主要 backend の検出箇所:
+- `cpp`: `src/hooks/cpp/emitter/cpp_emitter.py`, `src/hooks/cpp/emitter/stmt.py`（`/* pass */`, `/* unsupported ... */`, `/* invalid ... */`）
+- `rs`: `src/hooks/rs/emitter/rs_emitter.py`（`// pass`, `// unsupported ...`）
+- `cs`: `src/hooks/cs/emitter/cs_emitter.py`（`// pass`, `// unsupported ...`）
+- `js`: `src/hooks/js/emitter/js_emitter.py`（`// pass`, `// unsupported ...`, `// __main__ guard`）
+- `ts`: `src/hooks/ts/emitter/ts_emitter.py`（preview/TODO 固定コメント）
+- `go`: `src/hooks/go/emitter/go_native_emitter.py`（`// TODO: unsupported ...`, `// pass`, `// Auto-generated ...`）
+- `java`: `src/hooks/java/emitter/java_native_emitter.py`（`// TODO: unsupported ...`, `// pass`, `// Auto-generated ...`）
+- `swift`: `src/hooks/swift/emitter/swift_native_emitter.py`（`// TODO: unsupported ...`, `// pass`, `// Auto-generated ...`）
+- `kotlin`: `src/hooks/kotlin/emitter/kotlin_native_emitter.py`（`// TODO: unsupported ...`, `// pass`, `// Auto-generated ...`）
+- `ruby`: `src/hooks/ruby/emitter/ruby_native_emitter.py`（`# TODO: unsupported ...`, `# pass`, `# Auto-generated ...`）
+- `lua`: `src/hooks/lua/emitter/lua_native_emitter.py`（`-- pass`, `-- Auto-generated ...`）
+
+補助生成導線（同時に整理対象）:
+- `src/hooks/cpp/header/cpp_header.py`, `src/hooks/cpp/multifile/cpp_multifile.py`, `src/hooks/cpp/runtime_emit/cpp_runtime_emit.py` の `AUTO-GENERATED` バナー。
 
 ## 分解
 
-- [ ] [ID: P1-COMMENT-FIDELITY-01-S1-01] 全 emitter の固定コメント/`TODO`/`pass` コメント出力箇所を棚卸しし、禁止パターン一覧を固定する。
+- [x] [ID: P1-COMMENT-FIDELITY-01-S1-01] 全 emitter の固定コメント/`TODO`/`pass` コメント出力箇所を棚卸しし、禁止パターン一覧を固定する。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S1-02] コメント出力契約（許可ソース: `module_leading_trivia` / `leading_trivia` のみ）を仕様化し、fail-closed 方針を明文化する。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S2-01] `ts/go/java/swift/kotlin/ruby/lua` の固定コメント出力を撤去し、元コメント伝播のみへ統一する。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換し、生成コメントを残さない実装へ寄せる。
