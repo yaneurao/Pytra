@@ -12,6 +12,74 @@ _CLASS_PATTERN = r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*
 _FUNC_RETURNS_CACHE: dict[str, str] | None = None
 _METHOD_RETURNS_CACHE: dict[str, dict[str, str]] | None = None
 
+_OWNER_METHOD_RUNTIME_CALLS: dict[str, dict[str, str]] = {
+    "str": {
+        "strip": "py_strip",
+        "lstrip": "py_lstrip",
+        "rstrip": "py_rstrip",
+        "startswith": "py_startswith",
+        "endswith": "py_endswith",
+        "find": "py_find",
+        "rfind": "py_rfind",
+        "replace": "py_replace",
+        "join": "py_join",
+        "isdigit": "py_isdigit",
+        "isalpha": "py_isalpha",
+    },
+    "Path": {
+        "mkdir": "std::filesystem::create_directories",
+        "exists": "std::filesystem::exists",
+        "write_text": "py_write_text",
+        "read_text": "py_read_text",
+        "parent": "path_parent",
+        "name": "path_name",
+        "stem": "path_stem",
+    },
+    "int": {
+        "to_bytes": "py_int_to_bytes",
+    },
+    "list": {
+        "append": "list.append",
+        "extend": "list.extend",
+        "pop": "list.pop",
+        "clear": "list.clear",
+        "reverse": "list.reverse",
+        "sort": "list.sort",
+    },
+    "set": {
+        "add": "set.add",
+        "discard": "set.discard",
+        "remove": "set.remove",
+        "clear": "set.clear",
+    },
+    "dict": {
+        "get": "dict.get",
+        "pop": "dict.pop",
+        "items": "dict.items",
+        "keys": "dict.keys",
+        "values": "dict.values",
+    },
+    "unknown": {
+        "append": "list.append",
+        "extend": "list.extend",
+        "pop": "list.pop",
+        "get": "dict.get",
+        "items": "dict.items",
+        "keys": "dict.keys",
+        "values": "dict.values",
+        "isdigit": "py_isdigit",
+        "isalpha": "py_isalpha",
+    },
+}
+
+_OWNER_ATTRIBUTE_TYPES: dict[str, dict[str, str]] = {
+    "Path": {
+        "name": "str",
+        "stem": "str",
+        "parent": "Path",
+    },
+}
+
 
 def _std_root() -> Path:
     return Path(__file__).resolve().parent.parent.parent / "std"
@@ -193,7 +261,37 @@ def lookup_stdlib_method_return_type(owner_type: str, method_name: str) -> str:
     return methods.get(method_name, "")
 
 
+def lookup_stdlib_method_runtime_call(owner_type: str, method_name: str) -> str:
+    owner = owner_type.strip()
+    method = method_name.strip()
+    if owner.startswith("list["):
+        owner = "list"
+    elif owner.startswith("set["):
+        owner = "set"
+    elif owner.startswith("dict["):
+        owner = "dict"
+    elif owner in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+        owner = "int"
+    if owner == "":
+        owner = "unknown"
+    owner_map = _OWNER_METHOD_RUNTIME_CALLS.get(owner, {})
+    if not isinstance(owner_map, dict):
+        return ""
+    return owner_map.get(method, "")
+
+
+def lookup_stdlib_attribute_type(owner_type: str, attr_name: str) -> str:
+    owner = owner_type.strip()
+    attr = attr_name.strip()
+    owner_map = _OWNER_ATTRIBUTE_TYPES.get(owner, {})
+    if not isinstance(owner_map, dict):
+        return ""
+    return owner_map.get(attr, "")
+
+
 __all__ = [
+    "lookup_stdlib_attribute_type",
     "lookup_stdlib_function_return_type",
+    "lookup_stdlib_method_runtime_call",
     "lookup_stdlib_method_return_type",
 ]

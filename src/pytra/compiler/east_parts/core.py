@@ -10,7 +10,9 @@ from pytra.std.dataclasses import dataclass
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 from pytra.std import sys
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
@@ -2384,11 +2386,9 @@ class _ShExprParser:
                     maybe_field_t = self.name_types.get(attr_name)
                     if isinstance(maybe_field_t, str) and maybe_field_t != "":
                         attr_t = maybe_field_t
-                if owner_t == "Path":
-                    if attr_name in {"name", "stem"}:
-                        attr_t = "str"
-                    elif attr_name == "parent":
-                        attr_t = "Path"
+                std_attr_t = lookup_stdlib_attribute_type(owner_t, attr_name)
+                if std_attr_t != "":
+                    attr_t = std_attr_t
                 node = {
                     "kind": "Attribute",
                     "source_span": self._node_span(s, e),
@@ -2616,112 +2616,12 @@ class _ShExprParser:
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
                     owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
-                    if owner_t == "str":
-                        str_map = {
-                            "strip": "py_strip",
-                            "lstrip": "py_lstrip",
-                            "rstrip": "py_rstrip",
-                            "startswith": "py_startswith",
-                            "endswith": "py_endswith",
-                            "find": "py_find",
-                            "rfind": "py_rfind",
-                            "replace": "py_replace",
-                            "join": "py_join",
-                            "isdigit": "py_isdigit",
-                            "isalpha": "py_isalpha",
-                        }
-                        if attr in str_map:
-                            rc = str_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
-                    elif owner_t == "Path":
-                        path_map = {
-                            "mkdir": "std::filesystem::create_directories",
-                            "exists": "std::filesystem::exists",
-                            "write_text": "py_write_text",
-                            "read_text": "py_read_text",
-                            "parent": "path_parent",
-                            "name": "path_name",
-                            "stem": "path_stem",
-                        }
-                        if attr in path_map:
-                            rc = path_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
-                    elif owner_t in INT_TYPES or owner_t == "int":
-                        int_map = {
-                            "to_bytes": "py_int_to_bytes",
-                        }
-                        if attr in int_map:
-                            rc = int_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
-                    elif owner_t.startswith("list["):
-                        list_map = {
-                            "append": "list.append",
-                            "extend": "list.extend",
-                            "pop": "list.pop",
-                            "clear": "list.clear",
-                            "reverse": "list.reverse",
-                            "sort": "list.sort",
-                        }
-                        if attr in list_map:
-                            rc = list_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
-                    elif owner_t.startswith("set["):
-                        set_map = {
-                            "add": "set.add",
-                            "discard": "set.discard",
-                            "remove": "set.remove",
-                            "clear": "set.clear",
-                        }
-                        if attr in set_map:
-                            rc = set_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
-                    elif owner_t.startswith("dict["):
-                        dict_map = {
-                            "get": "dict.get",
-                            "pop": "dict.pop",
-                            "items": "dict.items",
-                            "keys": "dict.keys",
-                            "values": "dict.values",
-                        }
-                        if attr in dict_map:
-                            rc = dict_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
-                    elif owner_t == "unknown":
-                        unknown_map = {
-                            "append": "list.append",
-                            "extend": "list.extend",
-                            "pop": "list.pop",
-                            "get": "dict.get",
-                            "items": "dict.items",
-                            "keys": "dict.keys",
-                            "values": "dict.values",
-                            "isdigit": "py_isdigit",
-                            "isalpha": "py_isalpha",
-                        }
-                        if attr in unknown_map:
-                            rc = unknown_map[attr]
-                            payload["lowered_kind"] = "BuiltinCall"
-                            payload["builtin_name"] = attr
-                            payload["runtime_call"] = rc
-                            payload["runtime_owner"] = owner
+                    rc = lookup_stdlib_method_runtime_call(owner_t, attr)
+                    if rc != "":
+                        payload["lowered_kind"] = "BuiltinCall"
+                        payload["builtin_name"] = attr
+                        payload["runtime_call"] = rc
+                        payload["runtime_owner"] = owner
                 node = payload
                 continue
             if tok["k"] == "[":

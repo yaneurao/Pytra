@@ -42,6 +42,7 @@
 - 2026-02-28: [ID: `P0-STDLIB-SOT-01-S1-02`] `docs/ja/spec/spec-stdlib-signature-source-of-truth.md` を追加し、正本/参照境界、取得単位、fail-closed を文書化した。
 - 2026-02-28: [ID: `P0-STDLIB-SOT-01-S2-01`] `src/pytra/compiler/stdlib/signature_registry.py` を新設し、`pytra/std/*.py` から関数/メソッド戻り値注釈を読み取る参照層を追加した。
 - 2026-02-28: [ID: `P0-STDLIB-SOT-01-S2-02`] `core.py` の `perf_counter -> float64` 直書きを廃止し、`lookup_stdlib_function_return_type("perf_counter")` 参照へ置換した。`test_stdlib_signature_registry.py`、`test_east_core.py` の新規ケース、`test_py2cpp_codegen_issues.py` の既存 perf_counter 回帰で確認した。
+- 2026-02-28: [ID: `P0-STDLIB-SOT-01-S2-03`] `str/Path/int/list/set/dict/unknown` の method runtime map と `Path` 属性型 map を `signature_registry.py` へ移管し、`core.py` から巨大 map 直書きを撤去した。`test_stdlib_signature_registry.py` と `test_east_core.py` の既存 lower 回帰で挙動維持を確認した。
 
 ## 棚卸し結果（S1-01）
 
@@ -65,5 +66,5 @@
 - [x] [ID: P0-STDLIB-SOT-01-S1-02] `pytra/std` を正本とするシグネチャ参照仕様（取得単位・型表現・未定義時の fail-closed）を文書化する。
 - [x] [ID: P0-STDLIB-SOT-01-S2-01] compiler 側に stdlib シグネチャ参照層を新設し、`core.py` から直接文字列マップを参照しない構成へ切り替える。
 - [x] [ID: P0-STDLIB-SOT-01-S2-02] `perf_counter` を含む代表ケースを参照層経由へ移し、`core.py` の戻り値型直書きを撤去する。
-- [ ] [ID: P0-STDLIB-SOT-01-S2-03] `Path` / `str.*` などメソッド系マッピングを段階移行し、`core.py` の責務を構文解析+EAST整形へ限定する。
+- [x] [ID: P0-STDLIB-SOT-01-S2-03] `Path` / `str.*` などメソッド系マッピングを段階移行し、`core.py` の責務を構文解析+EAST整形へ限定する。
 - [ ] [ID: P0-STDLIB-SOT-01-S3-01] 回帰テスト（型推論・lowering・sample 代表ケース）を追加し、`pytra/std` 仕様変更時の検知を固定する。
