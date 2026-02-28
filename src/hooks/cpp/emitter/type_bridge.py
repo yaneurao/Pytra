@@ -68,10 +68,7 @@ class CppTypeBridgeEmitter:
     def _render_unbox_target_cast(self, expr_txt: str, target_t: str, ctx: str) -> str:
         """`Unbox` / `CastOrRaise` の最終 C++ 変換を行う。"""
         t_norm = self.normalize_type_name(target_t)
-        inferred_src_t = self.normalize_type_name(
-            self.infer_rendered_arg_type(expr_txt, "unknown", self.declared_var_types)
-        )
-        if inferred_src_t == t_norm and inferred_src_t not in {"", "unknown"} and not self.is_any_like_type(inferred_src_t):
+        if self.should_skip_same_type_cast(expr_txt, t_norm):
             return expr_txt
         if t_norm in self.ref_classes:
             cpp_t = self._cpp_type_text(t_norm)

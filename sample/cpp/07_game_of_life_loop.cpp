@@ -60,8 +60,8 @@ void run_07_game_of_life_loop() {
     int64 steps = 105;
     str out_path = "sample/out/07_game_of_life_loop.gif";
     
-    auto start = pytra::std::time::perf_counter();
-    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{0}, w)));     }     return __out; }();
+    float64 start = pytra::std::time::perf_counter();
+    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>{0}, w));     }     return __out; }();
     
     // Lay down sparse noise so the whole field is less likely to stabilize too early.
     // Avoid large integer literals so all transpilers handle the expression consistently.
@@ -119,7 +119,7 @@ void run_07_game_of_life_loop() {
         grid = next_state(grid, w, h);
     }
     pytra::utils::gif::save_gif(out_path, w * cell, h * cell, frames, pytra::utils::gif::grayscale_palette(), int64(py_to<int64>(4)), int64(py_to<int64>(0)));
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", steps);
     py_print("elapsed_sec:", elapsed);

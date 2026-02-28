@@ -26,16 +26,17 @@ void run_11_lissajous_particles() {
     int64 particles = 48;
     str out_path = "sample/out/11_lissajous_particles.gif";
     
-    auto start = pytra::std::time::perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
+        float64 __hoisted_cast_1 = static_cast<float64>(t);
         
         for (int64 p = 0; p < particles; ++p) {
             float64 phase = py_to<float64>(p) * 0.261799;
-            int64 x = int64(py_to<float64>(w) * 0.5 + py_to<float64>(w) * 0.38 * pytra::std::math::sin(0.11 * py_to<float64>(t) + phase * 2.0));
-            int64 y = int64(py_to<float64>(h) * 0.5 + py_to<float64>(h) * 0.38 * pytra::std::math::sin(0.17 * py_to<float64>(t) + phase * 3.0));
+            int64 x = int64(py_to<float64>(w) * 0.5 + py_to<float64>(w) * 0.38 * pytra::std::math::sin(0.11 * __hoisted_cast_1 + phase * 2.0));
+            int64 y = int64(py_to<float64>(h) * 0.5 + py_to<float64>(h) * 0.38 * pytra::std::math::sin(0.17 * __hoisted_cast_1 + phase * 3.0));
             int64 color = 30 + p * 9 % 220;
             
             for (int64 dy = -2; dy < 3; ++dy) {
@@ -58,7 +59,7 @@ void run_11_lissajous_particles() {
         frames.append(bytes(frame));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, color_palette(), 3, 0);
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

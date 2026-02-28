@@ -6,6 +6,22 @@ from pytra.std.typing import Any
 class CppAnalysisEmitter:
     """Analysis helpers for assignment/type/mutability inference."""
 
+    def should_skip_same_type_cast(self, rendered_expr: str, target_t: str) -> bool:
+        """同型かつ非 Any/object/unknown なら cast を省略できるか判定する。"""
+        t_norm = self.normalize_type_name(target_t)
+        if t_norm in {"", "unknown"}:
+            return False
+        if self.is_any_like_type(t_norm):
+            return False
+        inferred_src_t = self.normalize_type_name(
+            self.infer_rendered_arg_type(rendered_expr, "unknown", self.declared_var_types)
+        )
+        if inferred_src_t in {"", "unknown"}:
+            return False
+        if self.is_any_like_type(inferred_src_t):
+            return False
+        return inferred_src_t == t_norm
+
     def _collect_assigned_name_types(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
         """文リスト中の `Name` 代入候補型を収集する。"""
         out: dict[str, str] = {}

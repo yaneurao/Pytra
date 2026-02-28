@@ -42,16 +42,18 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、`isdigit` 個別対応ではなく「str を含む同型 cast 全体の除去」を P0 で実施する方針を確定した。
+- 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S1-01`] 同型 cast 判定を `CppAnalysisEmitter.should_skip_same_type_cast()` へ集約し、`apply_cast` と `_render_unbox_target_cast` が同一規約（非 Any/object/unknown の同型は no-op）を共有する構成へ固定した。
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S1-02`] `CppEmitter.get_expr_type()` の `Subscript` 推論へ `Subscript(str, int) -> str` を追加し、文字列添字の型落ちを防止した。
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S1-03`] `StrCharClassOp` で型既知 `str` は `receiver.isdigit()/isalpha()` を直接出力し、unknown/object 経路のみ `str(...)` defensive cast を維持する方針へ更新した。
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S2-01`] `apply_cast` と `_render_unbox_target_cast` に同型 no-op 判定を追加し、描画済み式から推論できる同型 cast（非 Any/object/unknown）を省略するようにした。
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S2-02`] `sample/18` を対象に char-class 回帰を追加（`test_sample18_charclass_avoids_redundant_str_cast`）。併せて `test_east3_cpp_bridge.py` の期待値を更新し、型既知 `str` での no-cast 出力を固定した。
+- 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S3-01`] `python3 tools/regenerate_samples.py --langs cpp --force`（`summary: total=18 skip=0 regen=18 fail=0`）と `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`（`[PASS] 18_mini_language_interpreter`）を再実行し、sample 再生成と parity 通過を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-SAMECAST-01-S1-01] 同型 cast 除去規約（source/target が同型かつ非 Any/object/unknown の場合は無変換）を C++ emitter 共通方針として固定する。
+- [x] [ID: P0-CPP-SAMECAST-01-S1-01] 同型 cast 除去規約（source/target が同型かつ非 Any/object/unknown の場合は無変換）を C++ emitter 共通方針として固定する。
 - [x] [ID: P0-CPP-SAMECAST-01-S1-02] `get_expr_type()` の `Subscript` 推論を拡張し、`Subscript(str, int) -> str` を確定できるようにする。
 - [x] [ID: P0-CPP-SAMECAST-01-S1-03] `StrCharClassOp` を含む文字列系 lowering を修正し、型既知 `str` では `str(...)` を挿入しない。
 - [x] [ID: P0-CPP-SAMECAST-01-S2-01] `apply_cast` / `Unbox` / builtin runtime 変換経路に同型 no-op 判定を導入し、`py_to_*` の冗長連鎖を抑止する。
 - [x] [ID: P0-CPP-SAMECAST-01-S2-02] 同型 cast 非出力の回帰テスト（fixture + `sample/18` 断片検証）を追加する。
-- [ ] [ID: P0-CPP-SAMECAST-01-S3-01] `sample/cpp` を再生成し、`sample/18` の compile/run/parity を再確認して結果を文脈へ記録する。
+- [x] [ID: P0-CPP-SAMECAST-01-S3-01] `sample/cpp` を再生成し、`sample/18` の compile/run/parity を再確認して結果を文脈へ記録する。

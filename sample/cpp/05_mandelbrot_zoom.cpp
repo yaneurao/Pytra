@@ -7,6 +7,7 @@
 
 bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
     bytearray frame = bytearray(width * height);
+    float64 __hoisted_cast_1 = static_cast<float64>(max_iter);
     for (int64 y = 0; y < height; ++y) {
         int64 row_base = y * width;
         float64 cy = center_y + (py_to<float64>(y) - py_to<float64>(height) * 0.5) * scale;
@@ -24,7 +25,7 @@ bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y
                 zx = zx2 - zy2 + cx;
                 i++;
             }
-            frame[row_base + x] = int64(py_div(255.0 * py_to<float64>(i), py_to<float64>(max_iter)));
+            frame[row_base + x] = int64(py_div(255.0 * py_to<float64>(i), __hoisted_cast_1));
         }
     }
     return bytes(frame);
@@ -41,7 +42,7 @@ void run_05_mandelbrot_zoom() {
     float64 zoom_per_frame = 0.93;
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
-    auto start = pytra::std::time::perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
     float64 scale = base_scale;
     for (int64 _ = 0; _ < frame_count; ++_) {
@@ -49,7 +50,7 @@ void run_05_mandelbrot_zoom() {
         scale *= zoom_per_frame;
     }
     pytra::utils::gif::save_gif(out_path, width, height, frames, pytra::utils::gif::grayscale_palette(), 5, 0);
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frame_count);
     py_print("elapsed_sec:", elapsed);

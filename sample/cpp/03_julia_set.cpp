@@ -8,12 +8,15 @@
 
 bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, float64 cy) {
     bytearray pixels = bytearray{};
+    float64 __hoisted_cast_1 = static_cast<float64>(height - 1);
+    float64 __hoisted_cast_2 = static_cast<float64>(width - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -1.2 + 2.4 * (py_div(py_to<float64>(y), (py_to<float64>(height - 1))));
+        float64 zy0 = -1.2 + 2.4 * (py_div(py_to<float64>(y), __hoisted_cast_1));
         
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.8 + 3.6 * (py_div(py_to<float64>(x), (py_to<float64>(width - 1))));
+            float64 zx = -1.8 + 3.6 * (py_div(py_to<float64>(x), __hoisted_cast_2));
             float64 zy = zy0;
             
             int64 i = 0;
@@ -34,7 +37,7 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
                 g = 0;
                 b = 0;
             } else {
-                float64 t = py_div(py_to<float64>(i), py_to<float64>(max_iter));
+                float64 t = py_div(py_to<float64>(i), __hoisted_cast_3);
                 r = int64(255.0 * (0.2 + 0.8 * t));
                 g = int64(255.0 * (0.1 + 0.9 * t * t));
                 b = int64(255.0 * (1.0 - t));
@@ -53,10 +56,10 @@ void run_julia() {
     int64 max_iter = 20000;
     str out_path = "sample/out/03_julia_set.png";
     
-    float64 start = py_to<float64>(pytra::std::time::perf_counter());
+    float64 start = pytra::std::time::perf_counter();
     bytearray pixels = render_julia(width, height, max_iter, -0.8, 0.156);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
-    float64 elapsed = py_to<float64>(pytra::std::time::perf_counter() - start);
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     
     py_print("output:", out_path);
     py_print("size:", width, "x", height);

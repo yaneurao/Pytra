@@ -51,6 +51,10 @@ bytearray render(int64 width, int64 height, int64 aa) {
     float64 lx = -0.4;
     float64 ly = 0.8;
     float64 lz = -0.45;
+    float64 __hoisted_cast_1 = static_cast<float64>(aa);
+    float64 __hoisted_cast_2 = static_cast<float64>(height - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(width - 1);
+    float64 __hoisted_cast_4 = static_cast<float64>(height);
     
     for (int64 y = 0; y < height; ++y) {
         for (int64 x = 0; x < width; ++x) {
@@ -60,10 +64,10 @@ bytearray render(int64 width, int64 height, int64 aa) {
             
             for (int64 ay = 0; ay < aa; ++ay) {
                 for (int64 ax = 0; ax < aa; ++ax) {
-                    float64 fy = py_div((py_to<float64>(y) + py_div((py_to<float64>(ay) + 0.5), py_to<float64>(aa))), (py_to<float64>(height - 1)));
-                    float64 fx = py_div((py_to<float64>(x) + py_div((py_to<float64>(ax) + 0.5), py_to<float64>(aa))), (py_to<float64>(width - 1)));
+                    float64 fy = py_div((py_to<float64>(y) + py_div((py_to<float64>(ay) + 0.5), __hoisted_cast_1)), __hoisted_cast_2);
+                    float64 fx = py_div((py_to<float64>(x) + py_div((py_to<float64>(ax) + 0.5), __hoisted_cast_1)), __hoisted_cast_3);
                     float64 sy = 1.0 - 2.0 * fy;
-                    float64 sx = (2.0 * fx - 1.0) * (py_div(py_to<float64>(width), py_to<float64>(height)));
+                    float64 sx = (2.0 * fx - 1.0) * (py_div(py_to<float64>(width), __hoisted_cast_4));
                     
                     float64 dx = sx;
                     float64 dy = sy;
@@ -178,10 +182,10 @@ void run_raytrace() {
     int64 aa = 2;
     str out_path = "sample/out/02_raytrace_spheres.png";
     
-    float64 start = py_to<float64>(pytra::std::time::perf_counter());
+    float64 start = pytra::std::time::perf_counter();
     bytearray pixels = render(width, height, aa);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
-    float64 elapsed = py_to<float64>(pytra::std::time::perf_counter() - start);
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     
     py_print("output:", out_path);
     py_print("size:", width, "x", height);

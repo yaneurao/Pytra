@@ -85,13 +85,15 @@ float64 sphere_intersect(float64 ox, float64 oy, float64 oz, float64 dx, float64
 bytes palette_332() {
     // 3-3-2 quantized palette. Lightweight quantization that stays fast after transpilation.
     bytearray p = bytearray(256 * 3);
+    float64 __hoisted_cast_1 = static_cast<float64>(7);
+    float64 __hoisted_cast_2 = static_cast<float64>(3);
     for (int64 i = 0; i < 256; ++i) {
         int64 r = i >> 5 & 7;
         int64 g = i >> 2 & 7;
         int64 b = i & 3;
-        p[i * 3 + 0] = int64(py_div(py_to<float64>(255 * r), py_to<float64>(7)));
-        p[i * 3 + 1] = int64(py_div(py_to<float64>(255 * g), py_to<float64>(7)));
-        p[i * 3 + 2] = int64(py_div(py_to<float64>(255 * b), py_to<float64>(3)));
+        p[i * 3 + 0] = int64(py_div(py_to<float64>(255 * r), __hoisted_cast_1));
+        p[i * 3 + 1] = int64(py_div(py_to<float64>(255 * g), __hoisted_cast_1));
+        p[i * 3 + 2] = int64(py_div(py_to<float64>(255 * b), __hoisted_cast_2));
     }
     return bytes(p);
 }
@@ -147,12 +149,14 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     bytearray frame = bytearray(width * height);
     float64 aspect = py_div(py_to<float64>(width), py_to<float64>(height));
     float64 fov = 1.25;
+    float64 __hoisted_cast_3 = static_cast<float64>(height);
+    float64 __hoisted_cast_4 = static_cast<float64>(width);
     
     for (int64 py = 0; py < height; ++py) {
         int64 row_base = py * width;
-        float64 sy = 1.0 - py_div(2.0 * (py_to<float64>(py) + 0.5), py_to<float64>(height));
+        float64 sy = 1.0 - py_div(2.0 * (py_to<float64>(py) + 0.5), __hoisted_cast_3);
         for (int64 px = 0; px < width; ++px) {
-            float64 sx = (py_div(2.0 * (py_to<float64>(px) + 0.5), py_to<float64>(width)) - 1.0) * aspect;
+            float64 sx = (py_div(2.0 * (py_to<float64>(px) + 0.5), __hoisted_cast_4) - 1.0) * aspect;
             float64 rx = fwd_x + fov * (sx * right_x + sy * up_x);
             float64 ry = fwd_y + fov * (sx * right_y + sy * up_y);
             float64 rz = fwd_z + fov * (sx * right_z + sy * up_z);
@@ -172,7 +176,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
             if (dy < -1e-6) {
                 float64 tf = py_div((-1.2 - cam_y), dy);
                 if ((tf > 1e-4) && (tf < best_t)) {
-                    best_t = py_to<float64>(tf);
+                    best_t = tf;
                     hit_kind = 1;
                 }
             }
@@ -238,20 +242,20 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     cz = 0.0;
                     float64 rad = 1.0;
                     if (hit_kind == 2) {
-                        cx = py_to<float64>(s0x);
-                        cy = py_to<float64>(s0y);
-                        cz = py_to<float64>(s0z);
+                        cx = s0x;
+                        cy = s0y;
+                        cz = s0z;
                         rad = 0.65;
                     } else {
                         if (hit_kind == 3) {
-                            cx = py_to<float64>(s1x);
-                            cy = py_to<float64>(s1y);
-                            cz = py_to<float64>(s1z);
+                            cx = s1x;
+                            cy = s1y;
+                            cz = s1z;
                             rad = 0.72;
                         } else {
-                            cx = py_to<float64>(s2x);
-                            cy = py_to<float64>(s2y);
-                            cz = py_to<float64>(s2z);
+                            cx = s2x;
+                            cy = s2y;
+                            cz = s2z;
                             rad = 0.58;
                         }
                     }
@@ -342,13 +346,13 @@ void run_16_glass_sculpture_chaos() {
     int64 frames_n = 72;
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
-    auto start = pytra::std::time::perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
     for (int64 i = 0; i < frames_n; ++i) {
         frames.append(render_frame(width, height, i, frames_n));
     }
     pytra::utils::gif::save_gif(out_path, width, height, frames, palette_332(), 6, 0);
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

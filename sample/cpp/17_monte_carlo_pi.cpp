@@ -29,9 +29,9 @@ void run_integer_benchmark() {
     int64 width = 7600;
     int64 height = 5000;
     
-    float64 start = py_to<float64>(pytra::std::time::perf_counter());
+    float64 start = pytra::std::time::perf_counter();
     int64 checksum = run_integer_grid_checksum(width, height, 123456789);
-    float64 elapsed = py_to<float64>(pytra::std::time::perf_counter() - start);
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     
     py_print("pixels:", width * height);
     py_print("checksum:", checksum);

@@ -35,12 +35,15 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
 bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
     /* Generate RGB bytes for a Mandelbrot image. */
     bytearray pixels = bytearray{};
+    float64 __hoisted_cast_1 = static_cast<float64>(height - 1);
+    float64 __hoisted_cast_2 = static_cast<float64>(width - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 py = y_min + (y_max - y_min) * (py_div(py_to<float64>(y), (py_to<float64>(height - 1))));
+        float64 py = y_min + (y_max - y_min) * (py_div(py_to<float64>(y), __hoisted_cast_1));
         
         for (int64 x = 0; x < width; ++x) {
-            float64 px = x_min + (x_max - x_min) * (py_div(py_to<float64>(x), (py_to<float64>(width - 1))));
+            float64 px = x_min + (x_max - x_min) * (py_div(py_to<float64>(x), __hoisted_cast_2));
             int64 it = escape_count(px, py, max_iter);
             int64 r;
             int64 g;
@@ -50,7 +53,7 @@ bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x
                 g = 0;
                 b = 0;
             } else {
-                float64 t = py_div(py_to<float64>(it), py_to<float64>(max_iter));
+                float64 t = py_div(py_to<float64>(it), __hoisted_cast_3);
                 r = int64(255.0 * t * t);
                 g = int64(255.0 * t);
                 b = int64(255.0 * (1.0 - t));
@@ -69,12 +72,12 @@ void run_mandelbrot() {
     int64 max_iter = 1000;
     str out_path = "sample/out/01_mandelbrot.png";
     
-    float64 start = py_to<float64>(pytra::std::time::perf_counter());
+    float64 start = pytra::std::time::perf_counter();
     
     bytearray pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
     
-    float64 elapsed = py_to<float64>(pytra::std::time::perf_counter() - start);
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("size:", width, "x", height);
     py_print("max_iter:", max_iter);

@@ -31,8 +31,8 @@ void run_13_maze_generation_steps() {
     int64 capture_every = 20;
     str out_path = "sample/out/13_maze_generation_steps.gif";
     
-    auto start = pytra::std::time::perf_counter();
-    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < cell_h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{1}, cell_w)));     }     return __out; }();
+    float64 start = pytra::std::time::perf_counter();
+    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < cell_h); _ += (1)) {         __out.append(py_repeat(list<int64>{1}, cell_w));     }     return __out; }();
     list<::std::tuple<int64, int64>> stack = list<::std::tuple<int64, int64>>{::std::make_tuple(1, 1)};
     grid[1][1] = 0;
     
@@ -85,7 +85,7 @@ void run_13_maze_generation_steps() {
     }
     frames.append(capture(grid, cell_w, cell_h, scale));
     pytra::utils::gif::save_gif(out_path, cell_w * scale, cell_h * scale, frames, pytra::utils::gif::grayscale_palette(), 4, 0);
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

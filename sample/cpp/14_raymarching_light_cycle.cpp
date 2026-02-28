@@ -43,27 +43,30 @@ void run_14_raymarching_light_cycle() {
     int64 frames_n = 84;
     str out_path = "sample/out/14_raymarching_light_cycle.gif";
     
-    auto start = pytra::std::time::perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
+    float64 __hoisted_cast_1 = static_cast<float64>(frames_n);
+    float64 __hoisted_cast_2 = static_cast<float64>(h - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(w - 1);
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        auto a = (py_div(py_to<float64>(t), py_to<float64>(frames_n))) * pytra::std::math::pi * 2.0;
+        auto a = (py_div(py_to<float64>(t), __hoisted_cast_1)) * pytra::std::math::pi * 2.0;
         float64 light_x = 0.75 * pytra::std::math::cos(a);
         float64 light_y = 0.55 * pytra::std::math::sin(a * 1.2);
         
         for (int64 y = 0; y < h; ++y) {
             int64 row_base = y * w;
-            float64 py = (py_div(py_to<float64>(y), (py_to<float64>(h - 1)))) * 2.0 - 1.0;
+            float64 py = (py_div(py_to<float64>(y), __hoisted_cast_2)) * 2.0 - 1.0;
             for (int64 x = 0; x < w; ++x) {
-                float64 px = (py_div(py_to<float64>(x), (py_to<float64>(w - 1)))) * 2.0 - 1.0;
+                float64 px = (py_div(py_to<float64>(x), __hoisted_cast_3)) * 2.0 - 1.0;
                 frame[row_base + x] = scene(px, py, light_x, light_y);
             }
         }
         frames.append(bytes(frame));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, palette(), 3, 0);
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);

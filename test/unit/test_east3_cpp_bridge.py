@@ -443,6 +443,16 @@ class East3CppBridgeTest(unittest.TestCase):
             'obj_to_rc_or_raise<Box>(arg, "call_arg:Box")',
         )
 
+    def test_apply_cast_skips_same_type_for_typed_rendered_expr(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.declared_var_types["s"] = "str"
+        self.assertEqual(emitter.apply_cast("s", "str"), "s")
+
+    def test_render_unbox_target_cast_skips_same_type_for_typed_rendered_expr(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.declared_var_types["s"] = "str"
+        self.assertEqual(emitter._render_unbox_target_cast("s", "str", "assign:s"), "s")
+
     def test_coerce_any_expr_to_target_via_unbox_prefers_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}

@@ -21,9 +21,9 @@ void run_08_langtons_ant() {
     int64 h = 420;
     str out_path = "sample/out/08_langtons_ant.gif";
     
-    auto start = pytra::std::time::perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     
-    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>{0}, w)));     }     return __out; }();
+    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>{0}, w));     }     return __out; }();
     int64 x = w / 2;
     int64 y = h / 2;
     int64 d = 0;
@@ -56,7 +56,7 @@ void run_08_langtons_ant() {
             frames.append(capture(grid, w, h));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 5, 0);
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));
     py_print("elapsed_sec:", elapsed);

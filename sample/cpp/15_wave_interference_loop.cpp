@@ -12,7 +12,7 @@ void run_15_wave_interference_loop() {
     int64 frames_n = 96;
     str out_path = "sample/out/15_wave_interference_loop.gif";
     
-    auto start = pytra::std::time::perf_counter();
+    float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < frames_n; ++t) {
@@ -35,7 +35,7 @@ void run_15_wave_interference_loop() {
         frames.append(bytes(frame));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), int64(py_to<int64>(4)), int64(py_to<int64>(0)));
-    auto elapsed = pytra::std::time::perf_counter() - start;
+    float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);
     py_print("elapsed_sec:", elapsed);
