@@ -2548,6 +2548,7 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "perf_counter"
                     payload["runtime_call"] = "perf_counter"
+                    payload["resolved_type"] = "float64"
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name

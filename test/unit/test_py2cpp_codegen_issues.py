@@ -360,6 +360,25 @@ def f() -> float:
 
         self.assertIn("return pytra::std::time::perf_counter();", cpp)
 
+    def test_perf_counter_float_assign_avoids_redundant_float_unbox(self) -> None:
+        src = """from pytra.std.time import perf_counter
+
+def f() -> float:
+    start: float = perf_counter()
+    elapsed: float = perf_counter() - start
+    return elapsed
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "perf_counter_float_assign.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("float64 start = pytra::std::time::perf_counter();", cpp)
+        self.assertIn("float64 elapsed = pytra::std::time::perf_counter() - start;", cpp)
+        self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter()", cpp)
+        self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter() - start)", cpp)
+
     def test_dynamic_tuple_index_falls_back_to_py_at(self) -> None:
         src = """def pick(i: int) -> object:
     t: tuple[int, int, int] = (10, 20, 30)
@@ -400,8 +419,8 @@ def f() -> float:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('d.get(py_to_string("k"), int64())', cpp)
-        self.assertNotIn('d.get(py_to_string("k"), ::std::nullopt)', cpp)
+        self.assertIn('d.get("k", int64())', cpp)
+        self.assertNotIn('d.get("k", ::std::nullopt)', cpp)
 
     def test_dict_get_object_none_default_in_annassign_uses_typed_default(self) -> None:
         src = """def f(d: dict[str, object]) -> int:
@@ -606,7 +625,11 @@ def f(x: object) -> None:
         unpack_lines = [
             line.strip()
             for line in lines
-            if line.strip().startswith("for (auto __it_") or line.strip().startswith("for (object __itobj_")
+            if (
+                line.strip().startswith("for (const auto& [")
+                or line.strip().startswith("for (auto __it_")
+                or line.strip().startswith("for (object __itobj_")
+            )
         ]
         self.assertEqual(len(unpack_lines), 1)
         self.assertTrue(unpack_lines[0].endswith("{"))
