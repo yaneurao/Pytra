@@ -48,6 +48,7 @@
 - 2026-02-28: `dict_key_verified` の dict load/store 経路を `test_east3_cpp_bridge.py` に追加し、`sample/18` 再生成で `env[stmt->name]` が維持されることを確認して key 変換連鎖の再発を防止した。
 - 2026-02-28: `core.py` の `BuiltinCall(perf_counter)` を `resolved_type=float64` で固定し、`sample/18` の `start/elapsed` で `py_to<float64>` が不要になることを `test_py2cpp_codegen_issues.py` / parity で確認した。
 - 2026-02-28: return 経路に空 collection literal の型寄せ補正（`_rewrite_empty_collection_literal_for_typed_target`）を追加し、`new_expr_nodes() -> list[ExprNode]` で `list<object>{}` へ減衰しないことを回帰固定した。
+- 2026-02-28: tuple direct unpack（`for (const auto& [line_index, source] : py_enumerate(lines))`）と NameTarget typed loop（`for (rc<StmtNode> stmt : stmts)`）が `sample/18` へ統合済みであることを確認し、改善項目 #1 を完了扱いとした。
 
 ## 分解
 
@@ -55,4 +56,4 @@
 - [x] [ID: P1-CPP-S18-READ-01-S1-07] 改善項目 #7: `map` キーアクセス時の不要な key 変換連鎖を縮退する。
 - [x] [ID: P1-CPP-S18-READ-01-S1-08] 改善項目 #8: timing/elapsed 計算まわりの数値変換チェーンを簡約する。
 - [x] [ID: P1-CPP-S18-READ-01-S1-05] 改善項目 #5: `unknown` 起点の過剰 default 初期化・型減衰を抑制する。
-- [ ] [ID: P1-CPP-S18-READ-01-S1-01] 改善項目 #1: typed loop header 化の成果を `sample/18` 出力へ統合する（`P0-FORCORE-TYPE-01-S3-01` 依存）。
+- [x] [ID: P1-CPP-S18-READ-01-S1-01] 改善項目 #1: typed loop header 化の成果を `sample/18` 出力へ統合する（`P0-FORCORE-TYPE-01-S3-01` 依存）。
