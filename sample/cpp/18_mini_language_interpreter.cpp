@@ -32,6 +32,8 @@ struct ExprNode : public PyObj {
     str op;
     int64 left;
     int64 right;
+    int64 kind_tag;
+    int64 op_tag;
     inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
     uint32 py_type_id() const noexcept override {
         return PYTRA_TYPE_ID;
@@ -40,13 +42,15 @@ struct ExprNode : public PyObj {
         return expected_type_id == PYTRA_TYPE_ID;
     }
     
-    ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right) {
+    ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) {
         this->kind = kind;
         this->value = value;
         this->name = name;
         this->op = op;
         this->left = left;
         this->right = right;
+        this->kind_tag = kind_tag;
+        this->op_tag = op_tag;
     }
     
 };
@@ -55,6 +59,7 @@ struct StmtNode : public PyObj {
     str kind;
     str name;
     int64 expr_index;
+    int64 kind_tag;
     inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
     uint32 py_type_id() const noexcept override {
         return PYTRA_TYPE_ID;
@@ -63,10 +68,11 @@ struct StmtNode : public PyObj {
         return expected_type_id == PYTRA_TYPE_ID;
     }
     
-    StmtNode(str kind, str name, int64 expr_index) {
+    StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) {
         this->kind = kind;
         this->name = name;
         this->expr_index = expr_index;
+        this->kind_tag = kind_tag;
     }
     
 };
@@ -218,16 +224,16 @@ struct Parser : public PyObj {
             str let_name = py_to_string(this->expect("IDENT")->text);
             this->expect("EQUAL");
             int64 let_expr_index = this->parse_expr();
-            return ::rc_new<StmtNode>("let", let_name, let_expr_index);
+            return ::rc_new<StmtNode>("let", let_name, let_expr_index, 1);
         }
         if (this->match("PRINT")) {
             int64 print_expr_index = this->parse_expr();
-            return ::rc_new<StmtNode>("print", "", print_expr_index);
+            return ::rc_new<StmtNode>("print", "", print_expr_index, 3);
         }
         str assign_name = py_to_string(this->expect("IDENT")->text);
         this->expect("EQUAL");
         int64 assign_expr_index = this->parse_expr();
-        return ::rc_new<StmtNode>("assign", assign_name, assign_expr_index);
+        return ::rc_new<StmtNode>("assign", assign_name, assign_expr_index, 2);
     }
     int64 parse_expr() {
         return this->parse_add();
@@ -237,12 +243,12 @@ struct Parser : public PyObj {
         while (true) {
             if (this->match("PLUS")) {
                 int64 right = this->parse_mul();
-                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "+", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "+", left, right, 3, 1));
                 continue;
             }
             if (this->match("MINUS")) {
                 int64 right = this->parse_mul();
-                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "-", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "-", left, right, 3, 2));
                 continue;
             }
             break;
@@ -254,12 +260,12 @@ struct Parser : public PyObj {
         while (true) {
             if (this->match("STAR")) {
                 int64 right = this->parse_unary();
-                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "*", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "*", left, right, 3, 3));
                 continue;
             }
             if (this->match("SLASH")) {
                 int64 right = this->parse_unary();
-                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "/", left, right));
+                left = this->add_expr(::rc_new<ExprNode>("bin", 0, "", "/", left, right, 3, 4));
                 continue;
             }
             break;
@@ -269,18 +275,18 @@ struct Parser : public PyObj {
     int64 parse_unary() {
         if (this->match("MINUS")) {
             int64 child = this->parse_unary();
-            return this->add_expr(::rc_new<ExprNode>("neg", 0, "", "", child, -1));
+            return this->add_expr(::rc_new<ExprNode>("neg", 0, "", "", child, -1, 4, 0));
         }
         return this->parse_primary();
     }
     int64 parse_primary() {
         if (this->match("NUMBER")) {
             rc<Token> token_num = this->previous_token();
-            return this->add_expr(::rc_new<ExprNode>("lit", token_num->number_value, "", "", -1, -1));
+            return this->add_expr(::rc_new<ExprNode>("lit", token_num->number_value, "", "", -1, -1, 1, 0));
         }
         if (this->match("IDENT")) {
             rc<Token> token_ident = this->previous_token();
-            return this->add_expr(::rc_new<ExprNode>("var", 0, token_ident->text, "", -1, -1));
+            return this->add_expr(::rc_new<ExprNode>("var", 0, token_ident->text, "", -1, -1, 2, 0));
         }
         if (this->match("LPAREN")) {
             int64 expr_index = this->parse_expr();
@@ -295,25 +301,25 @@ struct Parser : public PyObj {
 int64 eval_expr(int64 expr_index, const object& expr_nodes, const dict<str, int64>& env) {
     rc<ExprNode> node = obj_to_rc_or_raise<ExprNode>(py_at(expr_nodes, py_to<int64>(expr_index)), "subscript:list");
     
-    if (node->kind == "lit")
+    if (node->kind_tag == 1)
         return node->value;
-    if (node->kind == "var") {
+    if (node->kind_tag == 2) {
         if (!(py_contains(env, node->name)))
             throw ::std::runtime_error("undefined variable: " + node->name);
         return py_dict_get(env, node->name);
     }
-    if (node->kind == "neg")
+    if (node->kind_tag == 4)
         return -eval_expr(node->left, expr_nodes, env);
-    if (node->kind == "bin") {
+    if (node->kind_tag == 3) {
         int64 lhs = eval_expr(node->left, expr_nodes, env);
         int64 rhs = eval_expr(node->right, expr_nodes, env);
-        if (node->op == "+")
+        if (node->op_tag == 1)
             return lhs + rhs;
-        if (node->op == "-")
+        if (node->op_tag == 2)
             return lhs - rhs;
-        if (node->op == "*")
+        if (node->op_tag == 3)
             return lhs * rhs;
-        if (node->op == "/") {
+        if (node->op_tag == 4) {
             if (rhs == 0)
                 throw ::std::runtime_error("division by zero");
             return lhs / rhs;
@@ -329,11 +335,11 @@ int64 execute(const object& stmts, const object& expr_nodes, bool trace) {
     int64 printed = 0;
     
     for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")) {
-        if (stmt->kind == "let") {
+        if (stmt->kind_tag == 1) {
             env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;
         }
-        if (stmt->kind == "assign") {
+        if (stmt->kind_tag == 2) {
             if (!(py_contains(env, stmt->name)))
                 throw ::std::runtime_error("assign to undefined variable: " + stmt->name);
             env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);

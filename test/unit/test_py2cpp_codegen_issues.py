@@ -494,6 +494,17 @@ def f() -> float:
         self.assertIn("token_num->number_value", cpp)
         self.assertNotIn("py_to_int64(token_num->text)", cpp)
 
+    def test_sample18_uses_tag_based_dispatch_in_eval_and_execute(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("if (node->kind_tag == 1)", cpp)
+        self.assertIn("if (node->op_tag == 1)", cpp)
+        self.assertIn("if (stmt->kind_tag == 1)", cpp)
+        self.assertNotIn('if (node->kind == "lit")', cpp)
+        self.assertNotIn('if (node->op == "+")', cpp)
+        self.assertNotIn('if (stmt->kind == "let")', cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass

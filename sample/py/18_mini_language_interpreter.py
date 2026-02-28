@@ -20,6 +20,8 @@ class ExprNode:
     op: str          # operator for `bin`
     left: int        # child node index
     right: int       # child node index
+    kind_tag: int    # EXPR_KIND_*
+    op_tag: int      # OP_TAG_*
 
 
 # Statement node. `kind` identifies the concrete variant.
@@ -28,6 +30,7 @@ class StmtNode:
     kind: str        # "let" | "assign" | "print"
     name: str        # variable name (unused for `print`)
     expr_index: int  # expression node index
+    kind_tag: int    # STMT_KIND_*
 
 def tokenize(lines: list[str]) -> list[Token]:
     tokens: list[Token] = []
@@ -158,16 +161,16 @@ class Parser:
             let_name: str = self.expect("IDENT").text
             self.expect("EQUAL")
             let_expr_index: int = self.parse_expr()
-            return StmtNode("let", let_name, let_expr_index)
+            return StmtNode("let", let_name, let_expr_index, 1)
 
         if self.match("PRINT"):
             print_expr_index: int = self.parse_expr()
-            return StmtNode("print", "", print_expr_index)
+            return StmtNode("print", "", print_expr_index, 3)
 
         assign_name: str = self.expect("IDENT").text
         self.expect("EQUAL")
         assign_expr_index: int = self.parse_expr()
-        return StmtNode("assign", assign_name, assign_expr_index)
+        return StmtNode("assign", assign_name, assign_expr_index, 2)
 
     def parse_expr(self) -> int:
         return self.parse_add()
@@ -177,11 +180,11 @@ class Parser:
         while True:
             if self.match("PLUS"):
                 right: int = self.parse_mul()
-                left = self.add_expr(ExprNode("bin", 0, "", "+", left, right))
+                left = self.add_expr(ExprNode("bin", 0, "", "+", left, right, 3, 1))
                 continue
             if self.match("MINUS"):
                 right = self.parse_mul()
-                left = self.add_expr(ExprNode("bin", 0, "", "-", left, right))
+                left = self.add_expr(ExprNode("bin", 0, "", "-", left, right, 3, 2))
                 continue
             break
         return left
@@ -191,11 +194,11 @@ class Parser:
         while True:
             if self.match("STAR"):
                 right: int = self.parse_unary()
-                left = self.add_expr(ExprNode("bin", 0, "", "*", left, right))
+                left = self.add_expr(ExprNode("bin", 0, "", "*", left, right, 3, 3))
                 continue
             if self.match("SLASH"):
                 right = self.parse_unary()
-                left = self.add_expr(ExprNode("bin", 0, "", "/", left, right))
+                left = self.add_expr(ExprNode("bin", 0, "", "/", left, right, 3, 4))
                 continue
             break
         return left
@@ -203,17 +206,17 @@ class Parser:
     def parse_unary(self) -> int:
         if self.match("MINUS"):
             child: int = self.parse_unary()
-            return self.add_expr(ExprNode("neg", 0, "", "", child, -1))
+            return self.add_expr(ExprNode("neg", 0, "", "", child, -1, 4, 0))
         return self.parse_primary()
 
     def parse_primary(self) -> int:
         if self.match("NUMBER"):
             token_num: Token = self.previous_token()
-            return self.add_expr(ExprNode("lit", token_num.number_value, "", "", -1, -1))
+            return self.add_expr(ExprNode("lit", token_num.number_value, "", "", -1, -1, 1, 0))
 
         if self.match("IDENT"):
             token_ident: Token = self.previous_token()
-            return self.add_expr(ExprNode("var", 0, token_ident.text, "", -1, -1))
+            return self.add_expr(ExprNode("var", 0, token_ident.text, "", -1, -1, 2, 0))
 
         if self.match("LPAREN"):
             expr_index: int = self.parse_expr()
@@ -227,27 +230,27 @@ class Parser:
 def eval_expr(expr_index: int, expr_nodes: list[ExprNode], env: dict[str, int]) -> int:
     node: ExprNode = expr_nodes[expr_index]
 
-    if node.kind == "lit":
+    if node.kind_tag == 1:
         return node.value
 
-    if node.kind == "var":
+    if node.kind_tag == 2:
         if not (node.name in env):
             raise RuntimeError("undefined variable: " + node.name)
         return env[node.name]
 
-    if node.kind == "neg":
+    if node.kind_tag == 4:
         return -eval_expr(node.left, expr_nodes, env)
 
-    if node.kind == "bin":
+    if node.kind_tag == 3:
         lhs: int = eval_expr(node.left, expr_nodes, env)
         rhs: int = eval_expr(node.right, expr_nodes, env)
-        if node.op == "+":
+        if node.op_tag == 1:
             return lhs + rhs
-        if node.op == "-":
+        if node.op_tag == 2:
             return lhs - rhs
-        if node.op == "*":
+        if node.op_tag == 3:
             return lhs * rhs
-        if node.op == "/":
+        if node.op_tag == 4:
             if rhs == 0:
                 raise RuntimeError("division by zero")
             # The mini-language uses integer division.
@@ -263,11 +266,11 @@ def execute(stmts: list[StmtNode], expr_nodes: list[ExprNode], trace: bool) -> i
     printed: int = 0
 
     for stmt in stmts:
-        if stmt.kind == "let":
+        if stmt.kind_tag == 1:
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env)
             continue
 
-        if stmt.kind == "assign":
+        if stmt.kind_tag == 2:
             if not (stmt.name in env):
                 raise RuntimeError("assign to undefined variable: " + stmt.name)
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env)

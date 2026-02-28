@@ -59,6 +59,7 @@
 - 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` を実行し、`[PASS] 18_mini_language_interpreter` を確認した。
 - 2026-03-01: `S3-02` として sample/18 の `Parser` 実装を `current_token()/previous_token()` 補助メソッド経由に整理し、生成 C++ の `expect` で同一 index の token 取得を 1 回化した。`test_py2cpp_codegen_issues.py` に回帰を追加し、`runtime_parity_check` で挙動一致を確認した。
 - 2026-03-01: `S5-02` として sample/18 の `Token` に `number_value` を追加し、`tokenize` で NUMBER のみ `int(text)` を predecode、`parse_primary` を `token_num.number_value` 参照へ切り替えた。`test_py2cpp_codegen_issues.py` と `runtime_parity_check`、`check_py2cpp_transpile` で非退行を確認した。
+- 2026-03-01: `S4-02` として `ExprNode/StmtNode` へ `kind_tag/op_tag` を追加し、eval/execute の分岐を整数比較へ移行した。トップレベル定数の初期化が module init で shadow される問題を回避するため、tag 値は literal で固定した。
 
 ## 分解
 
@@ -74,7 +75,7 @@
 - [x] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の比較箇所を棚卸しし、enum/整数タグ化の最小導入面（sample/18 先行）を定義する。
-- [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ emitter でタグベース分岐を出力し、`if (node->kind == "...")` 連鎖を縮退する。
+- [x] [ID: P0-CPP-S18-OPT-01-S4-02] C++ emitter でタグベース分岐を出力し、`if (node->kind == "...")` 連鎖を縮退する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の現在の文字列保持経路（tokenize->parse_primary->py_to_int64）を検証し、字句段 predecode 方針を確定する。
 - [x] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` の数値フィールド利用へ移行し、`parse_primary` の `py_to_int64(token->text)` を削減する。
