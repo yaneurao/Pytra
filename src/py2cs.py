@@ -51,7 +51,7 @@ def _default_output_path(input_path: Path) -> Path:
     return Path(out)
 
 
-def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str:
+def _arg_get_str(args: dict[str, str], key: str, default_value: str = "") -> str:
     """argparse(dict) から文字列値を取り出す。"""
     if key not in args:
         return default_value
