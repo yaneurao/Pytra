@@ -32,58 +32,6 @@
 
 ## 未完了タスク
 
-### P0: C++ 同型 cast 除去と型推論前倒し（最優先）
-
-文脈: [docs/ja/plans/p0-cpp-redundant-same-type-cast-elimination.md](../plans/p0-cpp-redundant-same-type-cast-elimination.md)
-
-1. [x] [ID: P0-CPP-SAMECAST-01] C++ backend の cast 規約を「同型なら無変換」に統一し、型既知経路で不要な `str(...)` / `py_to_*` を出力しないようにする。
-2. [x] [ID: P0-CPP-SAMECAST-01-S1-01] 同型 cast 除去規約（source/target が同型かつ非 Any/object/unknown の場合は無変換）を C++ emitter 共通方針として固定する。
-3. [x] [ID: P0-CPP-SAMECAST-01-S1-02] `get_expr_type()` の `Subscript` 推論を拡張し、`Subscript(str, int) -> str` を確定できるようにする。
-4. [x] [ID: P0-CPP-SAMECAST-01-S1-03] `StrCharClassOp` を含む文字列系 lowering を修正し、型既知 `str` では `str(...)` を挿入しない。
-5. [x] [ID: P0-CPP-SAMECAST-01-S2-01] `apply_cast` / `Unbox` / builtin runtime 変換経路に同型 no-op 判定を導入し、`py_to_*` の冗長連鎖を抑止する。
-6. [x] [ID: P0-CPP-SAMECAST-01-S2-02] 同型 cast 非出力の回帰テスト（fixture + `sample/18` 断片検証）を追加する。
-7. [x] [ID: P0-CPP-SAMECAST-01-S3-01] `sample/cpp` を再生成し、`sample/18` の compile/run/parity を再確認して結果を固定する。
-- `P0-CPP-SAMECAST-01-S1-02` `CppEmitter.get_expr_type()` で `Subscript(str, int) -> str` を推論するようにし、文字列添字の型落ちを抑止した。
-- `P0-CPP-SAMECAST-01-S1-03` `StrCharClassOp` で型既知 `str` は直接 `receiver.isdigit()/isalpha()` を出力し、unknown/object 経路のみ `str(...)` を維持した。
-- `P0-CPP-SAMECAST-01-S2-01` `apply_cast` と `_render_unbox_target_cast` に同型 no-op 判定を追加し、推論可能な同型 cast を省略するようにした。
-- `P0-CPP-SAMECAST-01-S2-02` `test_py2cpp_codegen_issues.py` に `sample/18` 回帰（`test_sample18_charclass_avoids_redundant_str_cast`）を追加し、`test_east3_cpp_bridge.py` の期待値を型既知 no-cast へ更新した。
-
-### P0: Lua backend 追加（最優先）
-
-文脈: [docs/ja/plans/p0-lua-backend-rollout.md](../plans/p0-lua-backend-rollout.md)
-
-1. [x] [ID: P0-LUA-BACKEND-01] `py2lua.py` を入口として EAST3 から Lua native 直生成経路を追加し、`sample/py` の主要ケースを Lua 実行可能にする。
-2. [x] [ID: P0-LUA-BACKEND-01-S1-01] Lua backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を `docs/ja/spec` に文書化する。
-3. [x] [ID: P0-LUA-BACKEND-01-S1-02] `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、最小 fixture（`add` / `if_else` / `for_range`）を通す。
-4. [x] [ID: P0-LUA-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
-5. [x] [ID: P0-LUA-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装する。
-6. [x] [ID: P0-LUA-BACKEND-01-S3-01] `tools/check_py2lua_transpile.py` と `test_py2lua_smoke.py`、`runtime_parity_check --targets lua` 導線を追加し回帰を固定する。
-7. [x] [ID: P0-LUA-BACKEND-01-S3-02] `sample/lua` 再生成と `docs/ja` 利用手順・対応表の同期を行う。
-- `P0-LUA-BACKEND-01-S1-01` `docs/ja/spec/spec-lua-native-backend.md` を追加し、EAST3 only / fail-closed / runtime 境界 / 非対象を契約として明文化した。
-- `P0-LUA-BACKEND-01-S1-02` `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、`test_py2lua_smoke.py` で `add/if_else/for_range` を通る最小 native 経路を固定した。
-- `P0-LUA-BACKEND-01-S2-01` 基本 lower（`Assign/While/Dict/Subscript/IfExp/JoinedStr/Attribute` など）を追加し、`test_py2lua_smoke.py` を 12 件へ拡張。fixture 横断で `ok 22 -> 57` に改善した。
-- `P0-LUA-BACKEND-01-S2-02` class/instance/isinstance/import（`math`・画像stub）を追加し、`test_py2lua_smoke.py` を 15 件へ拡張。fixture 横断で `ok 57 -> 81` に改善した。
-- `P0-LUA-BACKEND-01-S3-01` `check_py2lua_transpile.py` を追加し `checked=86 ok=86 fail=0 skipped=53` を確認。`runtime_parity_check --targets lua` 導線を追加し、toolchain未導入環境でも PASS まで確認した。
-- `P0-LUA-BACKEND-01-S3-02` `sample/lua` を `02/03/04/17` で再生成（`summary: total=4 skip=0 regen=4 fail=0`）し、`docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` / `docs/ja/spec/spec-import.md` / `sample/readme-ja.md` を Lua 導線に同期した。
-
-### P1: Go/Java/Swift/Ruby runtime 外出し（inline helper 撤去）
-
-文脈: [docs/ja/plans/p1-runtime-externalization-gjsr.md](../plans/p1-runtime-externalization-gjsr.md)
-
-1. [x] [ID: P1-RUNTIME-EXT-01] Go/Java/Swift/Ruby の生成コードから `__pytra_*` runtime helper の inline 定義を撤去し、言語別 runtime ファイル参照へ統一する。
-2. [x] [ID: P1-RUNTIME-EXT-01-S1-01] 現行 emitter が inline 出力している helper 群を言語別に棚卸しし、runtime 側 API（正本）との対応表を固定する。
-3. [x] [ID: P1-RUNTIME-EXT-01-S2-01] Go backend を runtime 外部参照方式へ移行し、`py2go` 出力から helper 本体を除去する。
-4. [x] [ID: P1-RUNTIME-EXT-01-S2-02] Java backend を runtime 外部参照方式へ移行し、`py2java` 出力から helper 本体を除去する。
-5. [x] [ID: P1-RUNTIME-EXT-01-S2-03] Swift backend 用の native runtime ファイルを整備し、`py2swift` 出力から helper 本体を除去する。
-6. [x] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby backend 用 runtime ファイルを新設し、`py2rb` 出力から helper 本体を除去する。
-7. [x] [ID: P1-RUNTIME-EXT-01-S3-01] `runtime_parity_check` / smoke テスト / sample 再生成導線を runtime 外部参照前提に更新し、回帰を固定する。
-- `P1-RUNTIME-EXT-01-S1-01` Go/Java/Swift/Ruby の inline helper 群と runtime 正本 API の対応表を `docs/ja/plans/p1-runtime-externalization-gjsr.md` に固定し、Go/Java は命名差吸収、Swift/Ruby は runtime 正本新設が主要ギャップと整理した。
-- `P1-RUNTIME-EXT-01-S2-01` Go native emitter から `func __pytra_*` inline 定義を撤去し、`py2go.py` で `py_runtime.go` を出力先へ配置する導線へ移行した。`test_py2go_smoke.py` と `runtime_parity_check --targets go`（`sample/18`）で実行導線を確認した。
-- `P1-RUNTIME-EXT-01-S2-02` Java native emitter から helper 本体定義を撤去し、呼び出しを `PyRuntime.__pytra_*` へ集約した。`py2java.py` で `PyRuntime.java` を出力先へ配置し、`test_py2java_smoke.py` と `runtime_parity_check --targets java`（`sample/18`）で実行導線を確認した。
-- `P1-RUNTIME-EXT-01-S2-03` Swift native emitter から helper 本体定義を撤去し、`src/runtime/swift/pytra/py_runtime.swift` へ移管した。`py2swift.py` で `py_runtime.swift` を出力先へ配置し、`test_py2swift_smoke.py` を通過。`runtime_parity_check --targets swift` は `swiftc` 未導入環境のため `toolchain_missing` を確認した。
-- `P1-RUNTIME-EXT-01-S2-04` Ruby native emitter から inline helper 本体定義を撤去し、`src/runtime/ruby/pytra/py_runtime.rb` を新設。`py2rb.py` が `py_runtime.rb` を出力先へ配置する導線へ移行し、`test_py2rb_smoke.py` と `runtime_parity_check --targets ruby`（`sample/18`）で実行導線を確認した。
-- `P1-RUNTIME-EXT-01-S3-01` `test_py2{go,java,swift,rb}_smoke.py` を再実行して全 pass を確認。`runtime_parity_check --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout` は `cases=18 pass=18 fail=0`（`swift` は `toolchain_missing`）を確認し、`tools/regenerate_samples.py` に `ruby` を追加して `--langs go,java,swift,ruby --force`（`total=72 regen=72 fail=0`）まで固定した。
-
 ### P1: 全言語コメント忠実性ポリシー（生成コメント禁止）
 
 文脈: [docs/ja/plans/p1-comment-fidelity-all-backends.md](../plans/p1-comment-fidelity-all-backends.md)
@@ -95,18 +43,6 @@
 5. [ ] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換する。
 6. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
 7. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、固定コメント残存ゼロを確認する。
-
-### P1: 統合CLI `./pytra` の Rust target 追加
-
-文脈: [docs/ja/plans/p1-pytra-cli-rs-target.md](../plans/p1-pytra-cli-rs-target.md)
-
-1. [x] [ID: P1-PYTRA-CLI-RS-01] 統合CLI `./pytra` に `--target rs` を追加し、Rust 変換を C++ と同じ入口で実行可能にする。
-2. [x] [ID: P1-PYTRA-CLI-RS-01-S1-01] `src/pytra/cli.py` の target dispatch を拡張し、`--target rs` で `py2rs.py` を呼び出せるようにする。
-3. [x] [ID: P1-PYTRA-CLI-RS-01-S1-02] Rust 出力時の `--output` / `--output-dir` の挙動を確定し、拡張子と出力先衝突を整理する。
-4. [x] [ID: P1-PYTRA-CLI-RS-01-S1-03] `docs/ja/how-to-use.md` の統合CLI節に Rust 例を追加し、`out/` / `/tmp` の一時出力運用を明記する。
-- `P1-PYTRA-CLI-RS-01-S1-01` `src/pytra/cli.py` に `--target {cpp,rs}` を実装し、`rs` は `py2rs.py` 呼び出しへ接続した。`--build` は `cpp` 限定のまま維持した。
-- `P1-PYTRA-CLI-RS-01-S1-02` Rust 出力は `--output` 優先、未指定時は `--output-dir/<入力stem>.rs`（既定 `out/`）へ生成する仕様に固定し、出力先がディレクトリの場合は早期エラーにした。
-- `P1-PYTRA-CLI-RS-01-S1-03` `docs/ja/how-to-use.md` の統合CLI節へ Rust 例（`--output` / `--output-dir`）を追記し、`out/` 集約と `/tmp` 例外運用を明記した。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
