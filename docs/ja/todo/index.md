@@ -46,7 +46,7 @@
 文脈: [docs/ja/plans/p0-east3-cross-module-nonescape-ipa.md](../plans/p0-east3-cross-module-nonescape-ipa.md)
 
 1. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01] non-escape 解析を同一モジュール内限定から import closure を含むモジュール横断解析へ拡張する。
-2. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-01] import closure の収集仕様（対象モジュール範囲、循環時挙動、未解決時 fail-closed）を確定する。
+2. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-01] import closure の収集仕様（対象モジュール範囲、循環時挙動、未解決時 fail-closed）を確定する。
 3. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S1-02] 関数シンボルを `module_id::symbol` で一意化し、モジュール横断 call target 解決を実装する。
 4. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-01] `NonEscapeInterproceduralPass` をモジュール横断 summary 計算へ拡張し、SCC fixed-point の決定性を維持する。
 5. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-02] callsite `meta.non_escape_callsite` / module `meta.non_escape_summary` を横断解析結果で更新する。
