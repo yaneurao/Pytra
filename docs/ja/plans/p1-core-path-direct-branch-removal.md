@@ -35,12 +35,12 @@
 
 ## 分解
 
-- [ ] [ID: P1-CORE-PATH-SOT-01] `core.py` の `Path` 直分岐を撤去し、stdlib 参照層 + import 解決情報へ一本化する。
+- [x] [ID: P1-CORE-PATH-SOT-01] `core.py` の `Path` 直分岐を撤去し、stdlib 参照層 + import 解決情報へ一本化する。
 - [x] [ID: P1-CORE-PATH-SOT-01-S1-01] `core.py` の `Path` 依存分岐（戻り値推論 / BuiltinCall lower / 属性推論）を棚卸しし、置換先 API を固定する。
 - [x] [ID: P1-CORE-PATH-SOT-01-S2-01] `Path` 判定を名前直書きから resolver 経由へ置換し、`core.py` から `fn_name == "Path"` を削除する。
 - [x] [ID: P1-CORE-PATH-SOT-01-S2-02] `Path` の constructor / method / attribute の戻り値推論を stdlib 参照層で補完し、`core.py` 側重複知識を増やさない。
-- [ ] [ID: P1-CORE-PATH-SOT-01-S3-01] `test_east_core.py` に再混入防止回帰を追加し、`Path` 直書き再導入を検知可能にする。
-- [ ] [ID: P1-CORE-PATH-SOT-01-S3-02] `check_py2cpp_transpile.py` を実行し、非退行を確認する。
+- [x] [ID: P1-CORE-PATH-SOT-01-S3-01] `test_east_core.py` に再混入防止回帰を追加し、`Path` 直書き再導入を検知可能にする。
+- [x] [ID: P1-CORE-PATH-SOT-01-S3-02] `check_py2cpp_transpile.py` を実行し、非退行を確認する。
 
 ## S1-01 棚卸し結果（`core.py` の `Path` 直依存）
 
@@ -79,3 +79,5 @@
 - 2026-03-01: `core.py` 内の `Path` 直依存4箇所（戻り値推論2、BuiltinCall1、演算型推論1）と再利用可能な stdlib API を棚卸しし、S2 置換方針を確定した（`S1-01`）。
 - 2026-03-01: `core.py` の `fn_name == "Path"` / `owner_t == "Path"` 直分岐を撤去し、`lookup_stdlib_imported_symbol_return_type` / `lookup_stdlib_imported_symbol_runtime_call` 経由の resolver へ移行した（`P1-CORE-PATH-SOT-01-S2-01`）。
 - 2026-03-01: `Path` メソッド戻り値推論を `lookup_stdlib_method_return_type` に移管し、`from pathlib import Path as P` / `from pytra.std.pathlib import Path as PP` の constructor 推論・`BuiltinCall(runtime_call=Path)` 維持を `test_east_core.py` で確認した（`P1-CORE-PATH-SOT-01-S2-02`）。
+- 2026-03-01: `test_east_core.py` に `Path` 直分岐の再混入検知と alias import 回帰を追加し、`python3 -m unittest discover -s test/unit -p 'test_east_core.py' -v`（28件）を通過させた（`P1-CORE-PATH-SOT-01-S3-01`）。
+- 2026-03-01: `python3 tools/check_py2cpp_transpile.py` を実行し、`checked=134 ok=134 fail=0 skipped=6` で非退行を確認した（`P1-CORE-PATH-SOT-01-S3-02`）。
