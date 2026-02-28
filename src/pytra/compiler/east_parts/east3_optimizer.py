@@ -10,6 +10,29 @@ from pytra.std.typing import Any
 
 PASS_NAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
+DEFAULT_NON_ESCAPE_POLICY: dict[str, bool] = {
+    # 未解決/動的呼び出しは安全側（escape）へ倒す。
+    "unknown_call_escape": True,
+    "unknown_attr_call_escape": True,
+    # 外部観測され得る書き込み（global/nonlocal）は escape 扱い。
+    "global_write_escape": True,
+    # 関数境界での値流出は既定で escape とみなす。
+    "return_escape_by_default": True,
+    "yield_escape_by_default": True,
+}
+
+
+def normalize_non_escape_policy(raw: dict[str, object] | None = None) -> dict[str, bool]:
+    """non-escape policy 設定を既定値で正規化する。"""
+    out: dict[str, bool] = dict(DEFAULT_NON_ESCAPE_POLICY)
+    if not isinstance(raw, dict):
+        return out
+    for key in DEFAULT_NON_ESCAPE_POLICY.keys():
+        value = raw.get(key)
+        if isinstance(value, bool):
+            out[key] = value
+    return out
+
 
 class PassContext:
     """実行時コンテキスト。"""
@@ -21,12 +44,14 @@ class PassContext:
         debug_flags: dict[str, object] | None = None,
         enabled_passes: set[str] | None = None,
         disabled_passes: set[str] | None = None,
+        non_escape_policy: dict[str, object] | None = None,
     ) -> None:
         self.opt_level = opt_level
         self.target_lang = target_lang
         self.debug_flags = dict(debug_flags) if isinstance(debug_flags, dict) else {}
         self.enabled_passes = set(enabled_passes) if isinstance(enabled_passes, set) else set()
         self.disabled_passes = set(disabled_passes) if isinstance(disabled_passes, set) else set()
+        self.non_escape_policy = normalize_non_escape_policy(non_escape_policy)
 
 
 class PassResult:
@@ -195,6 +220,7 @@ def optimize_east3_document(
     target_lang: str = "",
     opt_pass_spec: str = "",
     debug_flags: dict[str, object] | None = None,
+    non_escape_policy: dict[str, object] | None = None,
     pass_manager: PassManager | None = None,
 ) -> tuple[dict[str, object], dict[str, object]]:
     """`EAST3` に pass manager を適用する。"""
@@ -214,6 +240,7 @@ def optimize_east3_document(
         debug_flags=debug_flags,
         enabled_passes=enabled,
         disabled_passes=disabled,
+        non_escape_policy=non_escape_policy,
     )
     manager = pass_manager if isinstance(pass_manager, PassManager) else build_default_pass_manager()
     report = manager.run(east3_doc, context)
@@ -221,6 +248,7 @@ def optimize_east3_document(
     report["target_lang"] = target_lang
     report["enabled_passes"] = sorted(list(enabled))
     report["disabled_passes"] = sorted(list(disabled))
+    report["non_escape_policy"] = dict(context.non_escape_policy)
     return east3_doc, report
 
 
@@ -271,4 +299,3 @@ def render_east3_opt_trace(report: dict[str, object]) -> str:
         for item in warnings:
             lines.append("      - " + str(item))
     return "\n".join(lines) + "\n"
-

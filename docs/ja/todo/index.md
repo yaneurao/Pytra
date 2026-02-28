@@ -71,7 +71,7 @@
 文脈: [docs/ja/plans/p1-east3-interprocedural-nonescape-analysis.md](../plans/p1-east3-interprocedural-nonescape-analysis.md)
 
 1. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01] EAST3 最適化層へ関数間 non-escape 解析（SCC + fixed point）を導入し、RAII 変換候補注釈を `meta` に保存する。
-2. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-01] escape 判定ドメイン（arg escape / return escape / unknown-call policy）を仕様化し、`PassContext` に保持する。
+2. [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-01] escape 判定ドメイン（arg escape / return escape / unknown-call policy）を仕様化し、`PassContext` に保持する。
 3. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
 4. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-01] `NonEscapeInterproceduralPass` を実装し、summary fixed-point 更新を成立させる。
 5. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-02] 収束した summary を関数/式ノード `meta` へ注釈する。

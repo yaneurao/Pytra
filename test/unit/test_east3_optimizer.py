@@ -23,6 +23,7 @@ from src.pytra.compiler.east_parts.east3_optimizer import optimize_east3_documen
 from src.pytra.compiler.east_parts.east3_optimizer import parse_east3_opt_pass_overrides
 from src.pytra.compiler.east_parts.east3_optimizer import render_east3_opt_trace
 from src.pytra.compiler.east_parts.east3_optimizer import resolve_east3_opt_level
+from src.pytra.compiler.east_parts.east3_optimizer import normalize_non_escape_policy
 
 
 def _module_doc() -> dict[str, object]:
@@ -51,6 +52,18 @@ class _TouchPass(East3OptimizerPass):
         meta["touch"] = "ok"
         east3_doc["meta"] = meta
         return PassResult(changed=True, change_count=1)
+
+
+class _CapturePolicyPass(East3OptimizerPass):
+    name = "CapturePolicyPass"
+    min_opt_level = 1
+
+    def run(self, east3_doc: dict[str, object], context: PassContext) -> PassResult:
+        meta_any = east3_doc.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        meta["non_escape_policy"] = dict(context.non_escape_policy)
+        east3_doc["meta"] = meta
+        return PassResult(changed=False, change_count=0)
 
 
 class East3OptimizerTest(unittest.TestCase):
@@ -82,6 +95,62 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIsInstance(trace, list)
         self.assertEqual(trace[0].get("name"), "TouchPass")
         self.assertTrue(bool(trace[0].get("enabled")))
+
+    def test_pass_context_non_escape_policy_defaults(self) -> None:
+        context = PassContext(opt_level=1)
+        policy = context.non_escape_policy
+        self.assertIsInstance(policy, dict)
+        self.assertTrue(bool(policy.get("unknown_call_escape")))
+        self.assertTrue(bool(policy.get("unknown_attr_call_escape")))
+        self.assertTrue(bool(policy.get("global_write_escape")))
+        self.assertTrue(bool(policy.get("return_escape_by_default")))
+        self.assertTrue(bool(policy.get("yield_escape_by_default")))
+
+    def test_pass_context_non_escape_policy_override(self) -> None:
+        context = PassContext(
+            opt_level=1,
+            non_escape_policy={
+                "unknown_call_escape": False,
+                "yield_escape_by_default": False,
+                "ignored_key": True,
+            },
+        )
+        policy = context.non_escape_policy
+        self.assertFalse(bool(policy.get("unknown_call_escape")))
+        self.assertFalse(bool(policy.get("yield_escape_by_default")))
+        self.assertTrue(bool(policy.get("unknown_attr_call_escape")))
+        self.assertTrue(bool(policy.get("global_write_escape")))
+
+    def test_normalize_non_escape_policy_is_fail_closed(self) -> None:
+        policy = normalize_non_escape_policy({"unknown_call_escape": False, "unknown_attr_call_escape": "yes"})
+        self.assertFalse(bool(policy.get("unknown_call_escape")))
+        self.assertTrue(bool(policy.get("unknown_attr_call_escape")))
+
+    def test_pass_manager_exposes_non_escape_policy_to_passes(self) -> None:
+        doc = _module_doc()
+        manager = PassManager([_CapturePolicyPass()])
+        context = PassContext(
+            opt_level=1,
+            non_escape_policy={"return_escape_by_default": False},
+        )
+        _ = manager.run(doc, context)
+        meta = doc.get("meta", {})
+        self.assertIsInstance(meta, dict)
+        captured = meta.get("non_escape_policy")
+        self.assertIsInstance(captured, dict)
+        self.assertFalse(bool(captured.get("return_escape_by_default")))
+
+    def test_optimize_east3_document_reports_non_escape_policy(self) -> None:
+        doc = _module_doc()
+        _, report = optimize_east3_document(
+            doc,
+            opt_level="1",
+            non_escape_policy={"unknown_call_escape": False},
+            pass_manager=PassManager([_CapturePolicyPass()]),
+        )
+        policy_obj = report.get("non_escape_policy")
+        self.assertIsInstance(policy_obj, dict)
+        self.assertFalse(bool(policy_obj.get("unknown_call_escape")))
 
     def test_optimize_east3_document_validates_stage(self) -> None:
         doc = _module_doc()

@@ -68,6 +68,12 @@
   - `opt_level`
   - `target_lang`（空文字可）
   - `debug_flags`
+  - `non_escape_policy`
+    - `unknown_call_escape`（未解決呼び出しは escape 扱い）
+    - `unknown_attr_call_escape`（動的 attribute call は escape 扱い）
+    - `global_write_escape`（global/nonlocal 書き込みは escape 扱い）
+    - `return_escape_by_default`（return 境界は既定で escape 扱い）
+    - `yield_escape_by_default`（yield 境界は既定で escape 扱い）
 - `PassResult`
   - `changed: bool`
   - `change_count: int`

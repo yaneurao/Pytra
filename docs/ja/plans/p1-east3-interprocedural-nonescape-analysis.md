@@ -50,10 +50,12 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、RAII 置換の前段として EAST3 側に関数間 non-escape 解析（SCC + fixed point）を導入する方針を確定した。
+- 2026-02-28: `PassContext` に `non_escape_policy` を導入し、fail-closed 既定（`unknown_call_escape` など）を正規化して pass へ配布する実装方針を確定した。
+- 2026-02-28: `optimize_east3_document` の report へ `non_escape_policy` を出力し、unit test で default/override/報告値の安定性を固定した。
 
 ## 分解
 
-- [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-01] escape 判定ドメイン（arg escape / return escape / unknown-call policy）を仕様化し、`PassContext` に保持する。
+- [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-01] escape 判定ドメイン（arg escape / return escape / unknown-call policy）を仕様化し、`PassContext` に保持する。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-01] `NonEscapeInterproceduralPass` を実装し、summary fixed-point 更新を成立させる。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-02] 収束した summary を関数/式ノード `meta` へ注釈する。
