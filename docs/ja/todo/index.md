@@ -37,13 +37,15 @@
 文脈: [docs/ja/plans/p1-rs-runtime-externalization.md](../plans/p1-rs-runtime-externalization.md)
 
 1. [ ] [ID: P1-RS-RUNTIME-EXT-01] Rust backend の生成コードから runtime/helper 本体の inline 出力を撤去し、runtime 外部参照方式へ統一する。
-2. [ ] [ID: P1-RS-RUNTIME-EXT-01-S1-01] Rust emitter の inline helper 出力一覧と `src/runtime/rs/pytra` 正本 API 対応表を確定する。
-3. [ ] [ID: P1-RS-RUNTIME-EXT-01-S1-02] Rust 生成物の runtime 参照方式（`mod/use` 構成と出力ディレクトリ配置契約）を確定し、fail-closed 条件を文書化する。
+2. [x] [ID: P1-RS-RUNTIME-EXT-01-S1-01] Rust emitter の inline helper 出力一覧と `src/runtime/rs/pytra` 正本 API 対応表を確定する。
+3. [x] [ID: P1-RS-RUNTIME-EXT-01-S1-02] Rust 生成物の runtime 参照方式（`mod/use` 構成と出力ディレクトリ配置契約）を確定し、fail-closed 条件を文書化する。
 4. [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-01] `src/runtime/rs/pytra` 側へ不足 helper/API を補完し、inline 実装と同等の意味を提供する。
 5. [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-02] `py2rs.py` に runtime ファイル配置導線を追加し、生成コードが外部 runtime を解決できる状態へ移行する。
 6. [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-03] `rs_emitter.py` から runtime/helper 本体出力を撤去し、runtime API 呼び出し専用へ切り替える。
 7. [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
 8. [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-02] `sample/rs` を再生成し、inline helper 残存ゼロを確認する。
+- `P1-RS-RUNTIME-EXT-01-S1-01` `RUST_RUNTIME_SUPPORT` / `_emit_pyany_runtime` / `_emit_isinstance_runtime_helpers` の inline 出力を棚卸しし、`src/runtime/rs/pytra/built_in/py_runtime.rs` との API 対応差分（不足: `py_str_at`/`py_slice_str`/`mod time|math|pytra`/`PyAny`/`isinstance` 群）を計画書へ固定した。
+- `P1-RS-RUNTIME-EXT-01-S1-02` Rust runtime 参照契約（`py_runtime.rs` 同梱配置、`mod py_runtime;` + `pub use` + `use crate::py_runtime::*;`）と fail-closed 条件（正本未検出/配置失敗/inline残存検知で失敗）を計画書へ明記した。
 
 ### P1: Ruby 計測値の再計測・parity確認・README反映フロー固定
 
