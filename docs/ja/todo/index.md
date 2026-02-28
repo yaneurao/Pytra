@@ -36,12 +36,12 @@
 
 文脈: [docs/ja/plans/p0-cpp-rcnew-samecast-elimination.md](../plans/p0-cpp-rcnew-samecast-elimination.md)
 
-1. [ ] [ID: P0-CPP-RCNEW-SAMECAST-01] C++ 出力の `rc<T>(::rc_new<T>(...))` を同型 cast 判定で除去し、`::rc_new<T>(...)` へ簡約する。
-2. [ ] [ID: P0-CPP-RCNEW-SAMECAST-01-S1-01] `infer_rendered_arg_type()` で `::rc_new<T>(...) -> rc<T>` を推論できるようにする。
-3. [ ] [ID: P0-CPP-RCNEW-SAMECAST-01-S1-02] `should_skip_same_type_cast` 判定で `rc_new` 起点の同型 cast を no-op として扱えるようにする。
-4. [ ] [ID: P0-CPP-RCNEW-SAMECAST-01-S2-01] C++ cast 適用経路の回帰テストを追加し、`rc<T>(::rc_new<T>(...))` 再発を防止する。
-5. [ ] [ID: P0-CPP-RCNEW-SAMECAST-01-S2-02] `sample/cpp` 再生成で `sample/18` の該当断片が `::rc_new<Token>(...)` へ簡約されることを確認する。
-6. [ ] [ID: P0-CPP-RCNEW-SAMECAST-01-S3-01] `check_py2cpp_transpile` / smoke 実行で非退行を確認し、文脈の決定ログへ記録する。
+1. [x] [ID: P0-CPP-RCNEW-SAMECAST-01] C++ 出力の `rc<T>(::rc_new<T>(...))` を同型 cast 判定で除去し、`::rc_new<T>(...)` へ簡約する。
+2. [x] [ID: P0-CPP-RCNEW-SAMECAST-01-S1-01] `infer_rendered_arg_type()` で `::rc_new<T>(...) -> rc<T>` を推論できるようにする。
+3. [x] [ID: P0-CPP-RCNEW-SAMECAST-01-S1-02] `should_skip_same_type_cast` 判定で `rc_new` 起点の同型 cast を no-op として扱えるようにする。
+4. [x] [ID: P0-CPP-RCNEW-SAMECAST-01-S2-01] C++ cast 適用経路の回帰テストを追加し、`rc<T>(::rc_new<T>(...))` 再発を防止する。
+5. [x] [ID: P0-CPP-RCNEW-SAMECAST-01-S2-02] `sample/cpp` 再生成で `sample/18` の該当断片が `::rc_new<Token>(...)` へ簡約されることを確認する。
+6. [x] [ID: P0-CPP-RCNEW-SAMECAST-01-S3-01] `check_py2cpp_transpile` / smoke 実行で非退行を確認し、文脈の決定ログへ記録する。
 
 ### P0: Ruby 画像出力 runtime 実装とバイト parity 回復（最優先）
 

@@ -395,6 +395,13 @@ def f() -> float:
         self.assertNotIn("str(ch).isdigit()", cpp)
         self.assertNotIn("str(source[i]).isdigit()", cpp)
 
+    def test_sample18_rc_new_avoids_redundant_rc_cast(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east)
+        self.assertIn('tokens.append(::rc_new<Token>("PLUS", ch, i));', cpp)
+        self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass
@@ -620,6 +627,11 @@ def f(x: object) -> None:
         self.assertEqual(em.infer_rendered_arg_type("x", "unknown", em.declared_var_types), "object")
         self.assertEqual(em.infer_rendered_arg_type("(x)", "", em.declared_var_types), "object")
         self.assertEqual(em.infer_rendered_arg_type("x", "int64", em.declared_var_types), "int64")
+
+    def test_infer_rendered_arg_type_detects_rc_new_constructor_result(self) -> None:
+        em = CppEmitter({}, load_cpp_profile(), {})
+        rendered = '::rc_new<Token>("IDENT", "name", 3)'
+        self.assertEqual(em.infer_rendered_arg_type(rendered, "unknown", em.declared_var_types), "Token")
 
     def test_box_expr_for_any_uses_declared_type_hint_for_unknown_source(self) -> None:
         em = CppEmitter({}, load_cpp_profile(), {})

@@ -448,6 +448,12 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter.declared_var_types["s"] = "str"
         self.assertEqual(emitter.apply_cast("s", "str"), "s")
 
+    def test_apply_cast_skips_same_type_for_rc_new_expr(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.ref_classes = {"Token"}
+        expr = '::rc_new<Token>("IDENT", "name", 3)'
+        self.assertEqual(emitter.apply_cast(expr, "rc<Token>"), expr)
+
     def test_render_unbox_target_cast_skips_same_type_for_typed_rendered_expr(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.declared_var_types["s"] = "str"

@@ -6,6 +6,15 @@ from pytra.std.typing import Any
 class CppAnalysisEmitter:
     """Analysis helpers for assignment/type/mutability inference."""
 
+    def _strip_rc_wrapper(self, t: str) -> str:
+        """`rc<T>` 形式の型文字列を `T` へ正規化する。"""
+        txt = self.normalize_type_name(t)
+        if txt.startswith("rc<") and txt.endswith(">"):
+            inner = txt[3:-1].strip()
+            if inner != "":
+                return self.normalize_type_name(inner)
+        return txt
+
     def should_skip_same_type_cast(self, rendered_expr: str, target_t: str) -> bool:
         """同型かつ非 Any/object/unknown なら cast を省略できるか判定する。"""
         t_norm = self.normalize_type_name(target_t)
@@ -20,7 +29,9 @@ class CppAnalysisEmitter:
             return False
         if self.is_any_like_type(inferred_src_t):
             return False
-        return inferred_src_t == t_norm
+        t_cmp = self._strip_rc_wrapper(t_norm)
+        src_cmp = self._strip_rc_wrapper(inferred_src_t)
+        return src_cmp == t_cmp
 
     def _collect_assigned_name_types(self, stmts: list[dict[str, Any]]) -> dict[str, str]:
         """文リスト中の `Name` 代入候補型を収集する。"""

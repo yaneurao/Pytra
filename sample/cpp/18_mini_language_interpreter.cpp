@@ -82,37 +82,37 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 continue;
             }
             if (ch == "+") {
-                tokens.append(rc<Token>(::rc_new<Token>("PLUS", ch, i)));
+                tokens.append(::rc_new<Token>("PLUS", ch, i));
                 i++;
                 continue;
             }
             if (ch == "-") {
-                tokens.append(rc<Token>(::rc_new<Token>("MINUS", ch, i)));
+                tokens.append(::rc_new<Token>("MINUS", ch, i));
                 i++;
                 continue;
             }
             if (ch == "*") {
-                tokens.append(rc<Token>(::rc_new<Token>("STAR", ch, i)));
+                tokens.append(::rc_new<Token>("STAR", ch, i));
                 i++;
                 continue;
             }
             if (ch == "/") {
-                tokens.append(rc<Token>(::rc_new<Token>("SLASH", ch, i)));
+                tokens.append(::rc_new<Token>("SLASH", ch, i));
                 i++;
                 continue;
             }
             if (ch == "(") {
-                tokens.append(rc<Token>(::rc_new<Token>("LPAREN", ch, i)));
+                tokens.append(::rc_new<Token>("LPAREN", ch, i));
                 i++;
                 continue;
             }
             if (ch == ")") {
-                tokens.append(rc<Token>(::rc_new<Token>("RPAREN", ch, i)));
+                tokens.append(::rc_new<Token>("RPAREN", ch, i));
                 i++;
                 continue;
             }
             if (ch == "=") {
-                tokens.append(rc<Token>(::rc_new<Token>("EQUAL", ch, i)));
+                tokens.append(::rc_new<Token>("EQUAL", ch, i));
                 i++;
                 continue;
             }
@@ -122,7 +122,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
-                tokens.append(rc<Token>(::rc_new<Token>("NUMBER", text, start)));
+                tokens.append(::rc_new<Token>("NUMBER", text, start));
                 continue;
             }
             if ((ch.isalpha()) || (ch == "_")) {
@@ -132,20 +132,20 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 }
                 str text = py_slice(source, start, i);
                 if (text == "let") {
-                    tokens.append(rc<Token>(::rc_new<Token>("LET", text, start)));
+                    tokens.append(::rc_new<Token>("LET", text, start));
                 } else {
                     if (text == "print")
-                        tokens.append(rc<Token>(::rc_new<Token>("PRINT", text, start)));
+                        tokens.append(::rc_new<Token>("PRINT", text, start));
                     else
-                        tokens.append(rc<Token>(::rc_new<Token>("IDENT", text, start)));
+                        tokens.append(::rc_new<Token>("IDENT", text, start));
                 }
                 continue;
             }
             throw ::std::runtime_error("tokenize error at line=" + ::std::to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
         }
-        tokens.append(rc<Token>(::rc_new<Token>("NEWLINE", "", n)));
+        tokens.append(::rc_new<Token>("NEWLINE", "", n));
     }
-    tokens.append(rc<Token>(::rc_new<Token>("EOF", "", py_len(lines))));
+    tokens.append(::rc_new<Token>("EOF", "", py_len(lines)));
     return tokens;
 }
 
@@ -194,7 +194,7 @@ struct Parser : public PyObj {
         }
     }
     int64 add_expr(const rc<ExprNode>& node) {
-        this->expr_nodes.append(rc<ExprNode>(node));
+        this->expr_nodes.append(node);
         return py_len(this->expr_nodes) - 1;
     }
     list<rc<StmtNode>> parse_program() {
@@ -202,7 +202,7 @@ struct Parser : public PyObj {
         this->skip_newlines();
         while (this->peek_kind() != "EOF") {
             rc<StmtNode> stmt = this->parse_stmt();
-            stmts.append(rc<StmtNode>(stmt));
+            stmts.append(stmt);
             this->skip_newlines();
         }
         return stmts;

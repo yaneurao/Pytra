@@ -435,7 +435,9 @@ class CppCallEmitter:
             elif inner_t != "" and not self.is_any_like_type(inner_t):
                 inner_t_norm = self.normalize_type_name(inner_t)
                 if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
-                    a0 = f"{self._cpp_type_text(inner_t)}({a0})"
+                    inner_cpp_t = self._cpp_type_text(inner_t)
+                    if not self.should_skip_same_type_cast(a0, inner_cpp_t):
+                        a0 = f"{inner_cpp_t}({a0})"
             return f"{owner_expr}.append({a0})"
         has_any_like_owner = False
         for t in owner_types:

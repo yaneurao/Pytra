@@ -2146,6 +2146,28 @@ class CodeEmitter:
             declared_t = self.normalize_type_name(declared_var_types[text])
             if declared_t != "":
                 return declared_t
+        rc_new_prefix = ""
+        if text.startswith("::rc_new<"):
+            rc_new_prefix = "::rc_new<"
+        elif text.startswith("rc_new<"):
+            rc_new_prefix = "rc_new<"
+        if rc_new_prefix != "":
+            start = len(rc_new_prefix)
+            i = start
+            depth = 1
+            while i < len(text):
+                ch = text[i]
+                if ch == "<":
+                    depth += 1
+                elif ch == ">":
+                    depth -= 1
+                    if depth == 0:
+                        ctor_t = self.normalize_type_name(text[start:i].strip())
+                        tail = text[i + 1 :].lstrip()
+                        if ctor_t != "" and tail.startswith("("):
+                            return ctor_t
+                        break
+                i += 1
         return arg_type
 
     def _is_std_runtime_call(self, runtime_call: str) -> bool:
