@@ -38,11 +38,14 @@
 
 1. [ ] [ID: P0-CPP-SAMECAST-01] C++ backend の cast 規約を「同型なら無変換」に統一し、型既知経路で不要な `str(...)` / `py_to_*` を出力しないようにする。
 2. [ ] [ID: P0-CPP-SAMECAST-01-S1-01] 同型 cast 除去規約（source/target が同型かつ非 Any/object/unknown の場合は無変換）を C++ emitter 共通方針として固定する。
-3. [ ] [ID: P0-CPP-SAMECAST-01-S1-02] `get_expr_type()` の `Subscript` 推論を拡張し、`Subscript(str, int) -> str` を確定できるようにする。
-4. [ ] [ID: P0-CPP-SAMECAST-01-S1-03] `StrCharClassOp` を含む文字列系 lowering を修正し、型既知 `str` では `str(...)` を挿入しない。
+3. [x] [ID: P0-CPP-SAMECAST-01-S1-02] `get_expr_type()` の `Subscript` 推論を拡張し、`Subscript(str, int) -> str` を確定できるようにする。
+4. [x] [ID: P0-CPP-SAMECAST-01-S1-03] `StrCharClassOp` を含む文字列系 lowering を修正し、型既知 `str` では `str(...)` を挿入しない。
 5. [ ] [ID: P0-CPP-SAMECAST-01-S2-01] `apply_cast` / `Unbox` / builtin runtime 変換経路に同型 no-op 判定を導入し、`py_to_*` の冗長連鎖を抑止する。
-6. [ ] [ID: P0-CPP-SAMECAST-01-S2-02] 同型 cast 非出力の回帰テスト（fixture + `sample/18` 断片検証）を追加する。
+6. [x] [ID: P0-CPP-SAMECAST-01-S2-02] 同型 cast 非出力の回帰テスト（fixture + `sample/18` 断片検証）を追加する。
 7. [ ] [ID: P0-CPP-SAMECAST-01-S3-01] `sample/cpp` を再生成し、`sample/18` の compile/run/parity を再確認して結果を固定する。
+- `P0-CPP-SAMECAST-01-S1-02` `CppEmitter.get_expr_type()` で `Subscript(str, int) -> str` を推論するようにし、文字列添字の型落ちを抑止した。
+- `P0-CPP-SAMECAST-01-S1-03` `StrCharClassOp` で型既知 `str` は直接 `receiver.isdigit()/isalpha()` を出力し、unknown/object 経路のみ `str(...)` を維持した。
+- `P0-CPP-SAMECAST-01-S2-02` `test_py2cpp_codegen_issues.py` に `sample/18` 回帰（`test_sample18_charclass_avoids_redundant_str_cast`）を追加し、`test_east3_cpp_bridge.py` の期待値を型既知 no-cast へ更新した。
 
 ### P0: Lua backend 追加（最優先）
 

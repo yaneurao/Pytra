@@ -386,6 +386,15 @@ def f() -> float:
         self.assertIn("pytra::std::time::perf_counter()", cpp)
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter()", cpp)
 
+    def test_sample18_charclass_avoids_redundant_str_cast(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east)
+        self.assertIn("if (ch.isdigit()) {", cpp)
+        self.assertIn("(source[i].isdigit())", cpp)
+        self.assertNotIn("str(ch).isdigit()", cpp)
+        self.assertNotIn("str(source[i]).isdigit()", cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass
