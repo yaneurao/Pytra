@@ -4,6 +4,7 @@ import copy
 import unittest
 
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
+from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
 from src.pytra.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
@@ -91,7 +92,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -102,6 +103,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("NumericCastChainReductionPass", True))
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
+        self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
         self.assertFalse(by_name.get("LoopInvariantHoistLitePass", True))
         self.assertFalse(by_name.get("StrengthReductionFloatLoopPass", True))
@@ -111,6 +113,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("NumericCastChainReductionPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
+        self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
         self.assertIn("StrengthReductionFloatLoopPass", trace_text)
@@ -603,6 +606,133 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(result.changed)
         self.assertEqual(result.change_count, 0)
         self.assertEqual(doc.get("body")[0].get("kind"), "ForCore")
+
+    def test_loop_invariant_cast_hoist_pass_hoists_static_cast_arg_without_loop_var(self) -> None:
+        doc = _module_doc()
+        cast_call = {
+            "kind": "Call",
+            "resolved_type": "float64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "float(width - 1)",
+            "func": {"kind": "Name", "id": "float"},
+            "args": [
+                {
+                    "kind": "BinOp",
+                    "op": "Sub",
+                    "resolved_type": "int64",
+                    "left": {"kind": "Name", "id": "width", "resolved_type": "int64"},
+                    "right": _const_i(1),
+                }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+        }
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {"kind": "StaticRangeForPlan", "start": _const_i(0), "stop": _const_i(5), "step": _const_i(1)},
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "denom", "resolved_type": "float64"},
+                    "value": cast_call,
+                }
+            ],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = LoopInvariantCastHoistPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        body = doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(body[0].get("kind"), "AnnAssign")
+        hoisted_name = body[0].get("target", {}).get("id")
+        self.assertIsInstance(hoisted_name, str)
+        self.assertTrue(hoisted_name.startswith("__hoisted_cast_"))
+        self.assertEqual(body[1].get("kind"), "ForCore")
+        loop_assign = body[1].get("body", [])[0]
+        self.assertEqual(loop_assign.get("value", {}).get("kind"), "Name")
+        self.assertEqual(loop_assign.get("value", {}).get("id"), hoisted_name)
+
+    def test_loop_invariant_cast_hoist_pass_skips_when_cast_depends_on_loop_var(self) -> None:
+        doc = _module_doc()
+        cast_call = {
+            "kind": "Call",
+            "resolved_type": "float64",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "float(i)",
+            "func": {"kind": "Name", "id": "float"},
+            "args": [{"kind": "Name", "id": "i", "resolved_type": "int64"}],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "static_cast",
+        }
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {"kind": "StaticRangeForPlan", "start": _const_i(0), "stop": _const_i(5), "step": _const_i(1)},
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "y", "resolved_type": "float64"},
+                    "value": cast_call,
+                }
+            ],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = LoopInvariantCastHoistPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertEqual(doc.get("body")[0].get("kind"), "ForCore")
+
+    def test_loop_invariant_cast_hoist_pass_hoists_binop_right_numeric_promotion(self) -> None:
+        doc = _module_doc()
+        div_expr = {
+            "kind": "BinOp",
+            "op": "Div",
+            "resolved_type": "float64",
+            "left": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+            "right": {
+                "kind": "BinOp",
+                "op": "Sub",
+                "resolved_type": "int64",
+                "left": {"kind": "Name", "id": "width", "resolved_type": "int64"},
+                "right": _const_i(1),
+            },
+            "casts": [
+                {"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"},
+                {"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"},
+            ],
+        }
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {"kind": "StaticRangeForPlan", "start": _const_i(0), "stop": _const_i(5), "step": _const_i(1)},
+            "target_plan": {"kind": "NameTarget", "id": "x", "target_type": "int64"},
+            "body": [{"kind": "Assign", "target": {"kind": "Name", "id": "ratio", "resolved_type": "float64"}, "value": div_expr}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = LoopInvariantCastHoistPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        body = doc.get("body")
+        self.assertEqual(body[0].get("kind"), "AnnAssign")
+        tmp_name = body[0].get("target", {}).get("id")
+        self.assertTrue(isinstance(tmp_name, str) and tmp_name.startswith("__hoisted_cast_"))
+        loop_div = body[1].get("body", [])[0].get("value", {})
+        self.assertEqual(loop_div.get("right", {}).get("kind"), "Name")
+        self.assertEqual(loop_div.get("right", {}).get("id"), tmp_name)
+        casts = loop_div.get("casts", [])
+        self.assertEqual(len(casts), 1)
+        self.assertEqual(casts[0].get("on"), "left")
 
     def test_strength_reduction_float_loop_pass_rewrites_div_power_of_two(self) -> None:
         doc = _module_doc()
