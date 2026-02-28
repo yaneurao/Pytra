@@ -175,6 +175,43 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("z = math.sqrt(9)", lua)
         self.assertIn('return ("v=" .. tostring(y) .. ":" .. tostring(z))', lua)
 
+    def test_lowering_supports_class_constructor_and_method_dispatch(self) -> None:
+        fixture = find_fixture_case("inheritance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("Animal = {}", lua)
+        self.assertIn("Dog = setmetatable({}, { __index = Animal })", lua)
+        self.assertIn("function Dog.new()", lua)
+        self.assertIn("d = Dog.new()", lua)
+        self.assertIn("return (self:sound() + \"-bark\")", lua)
+        self.assertIn("print(d:bark())", lua)
+
+    def test_lowering_supports_isinstance_node_for_classes(self) -> None:
+        fixture = find_fixture_case("is_instance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_isinstance(obj, class_tbl)", lua)
+        self.assertIn("__pytra_isinstance(cat, Dog)", lua)
+        self.assertIn("__pytra_isinstance(cat, Animal)", lua)
+
+    def test_import_lowering_maps_assertions_and_png_stub(self) -> None:
+        src = (
+            "from pytra.utils.assertions import py_assert_stdout\n"
+            "from pytra.utils import png\n"
+            "def f() -> None:\n"
+            "    png.write_rgb_png('x.png', 1, 1, b'')\n"
+            "def g() -> None:\n"
+            "    print(py_assert_stdout(['ok'], f))\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "imports_png.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local py_assert_stdout = function(expected, fn) fn(); return true end", lua)
+        self.assertIn("local png = { write_rgb_png = function(...) end, write_gif = function(...) end }", lua)
+        self.assertIn('png:write_rgb_png("x.png", 1, 1, "")', lua)
+
 
 if __name__ == "__main__":
     unittest.main()

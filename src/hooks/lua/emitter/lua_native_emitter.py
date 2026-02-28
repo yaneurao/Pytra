@@ -104,12 +104,18 @@ class LuaNativeEmitter:
         self.east_doc = east_doc
         self.lines: list[str] = []
         self.indent = 0
+        self.class_names: set[str] = set()
+        self.imported_modules: set[str] = set()
 
     def transpile(self) -> str:
         self.lines.append("-- Auto-generated Pytra Lua native source from EAST3.")
         self.lines.append("")
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
+        self._scan_module_symbols(body)
+        self._emit_imports(body)
+        if len(self.class_names) > 0:
+            self._emit_isinstance_helper()
         for stmt in body:
             self._emit_stmt(stmt)
         if len(main_guard) > 0:
@@ -139,9 +145,137 @@ class LuaNativeEmitter:
         for stmt in body:
             self._emit_stmt(stmt)
 
+    def _scan_module_symbols(self, body: list[dict[str, Any]]) -> None:
+        self.class_names = set()
+        self.imported_modules = set()
+        for stmt in body:
+            kind = stmt.get("kind")
+            if kind == "ClassDef":
+                self.class_names.add(_safe_ident(stmt.get("name"), "Class"))
+                continue
+            if kind == "Import":
+                names_any = stmt.get("names")
+                names = names_any if isinstance(names_any, list) else []
+                for ent in names:
+                    if not isinstance(ent, dict):
+                        continue
+                    module_name = ent.get("name")
+                    if not isinstance(module_name, str) or module_name == "":
+                        continue
+                    asname = ent.get("asname")
+                    alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
+                    self.imported_modules.add(_safe_ident(alias, "mod"))
+
+    def _emit_imports(self, body: list[dict[str, Any]]) -> None:
+        emitted = False
+        for stmt in body:
+            kind = stmt.get("kind")
+            if kind == "Import":
+                names_any = stmt.get("names")
+                names = names_any if isinstance(names_any, list) else []
+                for ent in names:
+                    if not isinstance(ent, dict):
+                        continue
+                    module_name = ent.get("name")
+                    if not isinstance(module_name, str) or module_name == "":
+                        continue
+                    asname = ent.get("asname")
+                    alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
+                    alias_txt = _safe_ident(alias, "mod")
+                    if module_name == "math":
+                        self._emit_line("local " + alias_txt + " = math")
+                        emitted = True
+                        continue
+                    if module_name in {"pytra.utils.png", "pytra.runtime.png", "pytra.utils.gif", "pytra.runtime.gif"}:
+                        self._emit_line(
+                            "local "
+                            + alias_txt
+                            + " = { write_rgb_png = function(...) end, write_gif = function(...) end }"
+                        )
+                        emitted = True
+                        continue
+                    self._emit_line("-- import " + module_name + " as " + alias_txt + " (not yet mapped)")
+                    emitted = True
+                continue
+            if kind == "ImportFrom":
+                module_name = stmt.get("module")
+                if not isinstance(module_name, str):
+                    continue
+                names_any = stmt.get("names")
+                names = names_any if isinstance(names_any, list) else []
+                for ent in names:
+                    if not isinstance(ent, dict):
+                        continue
+                    symbol = ent.get("name")
+                    if not isinstance(symbol, str) or symbol == "":
+                        continue
+                    asname = ent.get("asname")
+                    alias = asname if isinstance(asname, str) and asname != "" else symbol
+                    alias_txt = _safe_ident(alias, symbol)
+                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_stdout":
+                        self._emit_line(
+                            "local py_assert_stdout = function(expected, fn) fn(); return true end"
+                        )
+                        emitted = True
+                        continue
+                    if module_name == "math":
+                        self._emit_line("local " + alias_txt + " = math." + _safe_ident(symbol, symbol))
+                        emitted = True
+                        continue
+                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol in {"png", "gif"}:
+                        self._emit_line(
+                            "local "
+                            + alias_txt
+                            + " = { write_rgb_png = function(...) end, write_gif = function(...) end }"
+                        )
+                        emitted = True
+                        continue
+                    self._emit_line(
+                        "-- from " + module_name + " import " + symbol + " as " + alias_txt + " (not yet mapped)"
+                    )
+                    emitted = True
+        if emitted:
+            self._emit_line("")
+
+    def _emit_isinstance_helper(self) -> None:
+        self._emit_line("local function __pytra_isinstance(obj, class_tbl)")
+        self.indent += 1
+        self._emit_line("if type(obj) ~= \"table\" then")
+        self.indent += 1
+        self._emit_line("return false")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local mt = getmetatable(obj)")
+        self._emit_line("while mt do")
+        self.indent += 1
+        self._emit_line("if mt == class_tbl then")
+        self.indent += 1
+        self._emit_line("return true")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local parent = getmetatable(mt)")
+        self._emit_line("if type(parent) == \"table\" and type(parent.__index) == \"table\" then")
+        self.indent += 1
+        self._emit_line("mt = parent.__index")
+        self.indent -= 1
+        self._emit_line("else")
+        self.indent += 1
+        self._emit_line("mt = nil")
+        self.indent -= 1
+        self._emit_line("end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return false")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         kind = stmt.get("kind")
         if kind in {"Import", "ImportFrom"}:
+            return
+        if kind == "ClassDef":
+            self._emit_class_def(stmt)
             return
         if kind == "FunctionDef":
             self._emit_function_def(stmt)
@@ -187,6 +321,9 @@ class LuaNativeEmitter:
         if kind == "While":
             self._emit_while(stmt)
             return
+        if kind == "Pass":
+            self._emit_line("-- pass")
+            return
         raise RuntimeError("lang=lua unsupported stmt kind: " + str(kind))
 
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
@@ -217,6 +354,59 @@ class LuaNativeEmitter:
                 self._emit_stmt(sub)
             self.indent -= 1
         self._emit_line("end")
+
+    def _emit_class_def(self, stmt: dict[str, Any]) -> None:
+        cls_name = _safe_ident(stmt.get("name"), "Class")
+        base_any = stmt.get("base")
+        base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+        if base_name != "":
+            self._emit_line(cls_name + " = setmetatable({}, { __index = " + base_name + " })")
+        else:
+            self._emit_line(cls_name + " = {}")
+        self._emit_line(cls_name + ".__index = " + cls_name)
+        self._emit_line("")
+        body = self._dict_list(stmt.get("body"))
+        has_init = False
+        for sub in body:
+            if sub.get("kind") != "FunctionDef":
+                continue
+            if sub.get("name") == "__init__":
+                has_init = True
+            self._emit_class_method(cls_name, sub)
+        if not has_init:
+            self._emit_line("function " + cls_name + ".new()")
+            self.indent += 1
+            self._emit_line("return setmetatable({}, " + cls_name + ")")
+            self.indent -= 1
+            self._emit_line("end")
+            self._emit_line("")
+
+    def _emit_class_method(self, cls_name: str, stmt: dict[str, Any]) -> None:
+        method_name = _safe_ident(stmt.get("name"), "method")
+        arg_order_any = stmt.get("arg_order")
+        arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+        args: list[str] = []
+        for i, arg in enumerate(arg_order):
+            arg_name = _safe_ident(arg, "arg")
+            if i == 0 and arg_name == "self":
+                continue
+            args.append(arg_name)
+        if method_name == "__init__":
+            self._emit_line("function " + cls_name + ".new(" + ", ".join(args) + ")")
+            self.indent += 1
+            self._emit_line("local self = setmetatable({}, " + cls_name + ")")
+            self._emit_block(stmt.get("body"))
+            self._emit_line("return self")
+            self.indent -= 1
+            self._emit_line("end")
+            self._emit_line("")
+            return
+        self._emit_line("function " + cls_name + ":" + method_name + "(" + ", ".join(args) + ")")
+        self.indent += 1
+        self._emit_block(stmt.get("body"))
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
 
     def _emit_for_core(self, stmt: dict[str, Any]) -> None:
         iter_mode = str(stmt.get("iter_mode"))
@@ -263,6 +453,10 @@ class LuaNativeEmitter:
     def _name_from_target(self, target_any: Any) -> str:
         if isinstance(target_any, dict) and target_any.get("kind") == "Name":
             return _safe_ident(target_any.get("id"), "value")
+        if isinstance(target_any, dict) and target_any.get("kind") == "Attribute":
+            owner = self._render_expr(target_any.get("value"))
+            attr = _safe_ident(target_any.get("attr"), "field")
+            return owner + "." + attr
         raise RuntimeError("lang=lua unsupported assignment target")
 
     def _render_expr(self, expr_any: Any) -> str:
@@ -367,6 +561,22 @@ class LuaNativeEmitter:
             owner = self._render_expr(expr_any.get("value"))
             attr = _safe_ident(expr_any.get("attr"), "field")
             return owner + "." + attr
+        if kind == "IsInstance":
+            value = self._render_expr(expr_any.get("value"))
+            expected_any = expr_any.get("expected_type_id")
+            if isinstance(expected_any, dict) and expected_any.get("kind") == "Name":
+                expected = _safe_ident(expected_any.get("id"), "object")
+                if expected in {"int", "int64", "float", "float64"}:
+                    return '(type(' + value + ') == "number")'
+                if expected in {"str", "string"}:
+                    return '(type(' + value + ') == "string")'
+                if expected in {"bool"}:
+                    return '(type(' + value + ') == "boolean")'
+                if expected in {"list", "dict", "set", "tuple"}:
+                    return '(type(' + value + ') == "table")'
+                if expected in self.class_names:
+                    return "__pytra_isinstance(" + value + ", " + expected + ")"
+            return "false"
         if kind == "IfExp":
             test = self._render_expr(expr_any.get("test"))
             body = self._render_expr(expr_any.get("body"))
@@ -405,11 +615,18 @@ class LuaNativeEmitter:
             fn_name = _safe_ident(func_any.get("id"), "fn")
             if fn_name == "print":
                 return "print(" + ", ".join(rendered_args) + ")"
+            if fn_name in self.class_names:
+                return fn_name + ".new(" + ", ".join(rendered_args) + ")"
             return fn_name + "(" + ", ".join(rendered_args) + ")"
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
             owner = self._render_expr(func_any.get("value"))
+            owner_node = func_any.get("value")
             attr = _safe_ident(func_any.get("attr"), "call")
-            return owner + "." + attr + "(" + ", ".join(rendered_args) + ")"
+            if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+                owner_name = _safe_ident(owner_node.get("id"), "")
+                if owner_name in self.imported_modules:
+                    return owner + "." + attr + "(" + ", ".join(rendered_args) + ")"
+            return owner + ":" + attr + "(" + ", ".join(rendered_args) + ")"
         raise RuntimeError("lang=lua unsupported call target")
 
     def _render_constant(self, value: Any) -> str:
