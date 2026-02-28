@@ -2351,7 +2351,7 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "output_dir": "",
         "top_namespace_opt": "",
         "negative_index_mode_opt": "",
-        "cpp_list_model_opt": "",
+        "cpp_list_model_opt": "pyobj",
         "object_dispatch_mode_opt": "",
         "east3_opt_level_opt": "1",
         "east3_opt_pass_opt": "",

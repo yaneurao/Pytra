@@ -135,6 +135,7 @@
 - 2026-02-28: `12_sort_visualizer` で `render(const object&)` 呼び出しに stack 縮退した `list<int64>` がそのまま渡される compile blocker を確認した。`type_bridge._coerce_call_arg` で `cpp_list_model=pyobj` かつ list 注釈シグネチャ時の effective target を `object` へ寄せ、stack list だけ `make_object(...)` する補正を追加した。`test_py2cpp_codegen_issues.py` に回帰（`test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation`）を追加し、`benchmark_cpp_list_models.py 12_sort_visualizer --warmup 0 --repeat 1 --allow-failures` で実行成功を確認した。
 - 2026-02-28: `13_maze_generation_steps` で tuple/list runtime blocker（`index access on non-indexable object`）を確認した。原因は `make_object(list<T>)` 内の `make_object(v)` が tuple overload を拾えず tuple 要素が `object()` に潰れる点と、pyobj list subscript の tuple unbox 不足だった。tuple boxing overload を `list<T>` より前に配置し、`_render_unbox_target_cast` に `tuple[...]` 用 `::std::make_tuple(py_at(...))` 変換を追加して解消した。`test_py2cpp_codegen_issues.py` の tuple subscript 回帰（`test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure`）と `benchmark_cpp_list_models.py 13_maze_generation_steps --warmup 0 --repeat 1 --allow-failures` 実行成功を確認した。
 - 2026-02-28: `05..16` の `pyobj` 単独 compile/run 検証を追加実施し、12件すべて成功（`passed=12 failed=0`）を確認した。検証コマンドは `python3 src/py2cpp.py ... --cpp-list-model pyobj` + `g++ -O0` + 実行をケースごとに回す one-shot スクリプト。これにより `S4-02-S2` を完了扱いとした。
+- 2026-02-28: `parse_py2cpp_argv` の `cpp_list_model_opt` 既定を `pyobj` に切替し、`py2cpp` 本体の fallback も `pyobj` へ統一した。`docs/ja/how-to-use.md` の C++ 節へ rollback 手順（`--cpp-list-model value`）を追記し、`test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj` と `python3 tools/check_todo_priority.py` / `python3 tools/check_py2cpp_transpile.py` の通過を確認した。さらに `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` と `--cpp-list-model value` の比較で、既定は `object lines = make_object(list<object>{});`、rollback 指定時は `list<str> lines = ...;` へ切り替わることを確認した。これにより `S4-02-S3` と親 `S4-02` を完了扱いとした。
 
 ## 分解
 
@@ -157,13 +158,13 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S3-03] unknown/external/dynamic call 混在時に縮退しない fail-closed 回帰テストを追加する。
 
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-01] `value` vs `pyobj` の性能/サイズ/差分を sample で比較し、既定切替判断を記録する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S1] rollback 準備として `py2cpp` に `--cpp-list-model {value,pyobj}` を追加し、single/multi-file 出力へ反映する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2] `sample` 失敗 12 件（`05..16`）の compile/runtime blocker を段階解消し、`pyobj` モデルの実行成立範囲を拡張する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S1] pyobj で `grid[y][x] = ...` が `object[...]` へ落ちる compile blocker を `py_set_at(...)` lower で解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S2] `07/08/09` の runtime 失敗（`setitem on non-list object`）原因を特定し、`py_set_at` 入力が list object になるよう lower/runtime を補正する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S3] `12_sort_visualizer` の compile blocker（list 注釈引数が `object` シグネチャへ合わない）を callsite boxing 補正で解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。

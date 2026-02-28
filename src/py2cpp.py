@@ -566,7 +566,7 @@ def main(argv: list[str]) -> int:
     output_dir_txt = dict_str_get(parsed, "output_dir", "")
     top_namespace_opt = dict_str_get(parsed, "top_namespace_opt", "")
     negative_index_mode_opt = dict_str_get(parsed, "negative_index_mode_opt", "")
-    cpp_list_model_opt = dict_str_get(parsed, "cpp_list_model_opt", "")
+    cpp_list_model_opt = dict_str_get(parsed, "cpp_list_model_opt", "pyobj")
     object_dispatch_mode_opt = dict_str_get(parsed, "object_dispatch_mode_opt", "")
     east3_opt_level_opt = dict_str_get(parsed, "east3_opt_level_opt", "1")
     east3_opt_pass_opt = dict_str_get(parsed, "east3_opt_pass_opt", "")
@@ -612,7 +612,7 @@ def main(argv: list[str]) -> int:
     str_index_mode = ""
     str_slice_mode = ""
     opt_level = ""
-    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--cpp-list-model {value,pyobj}] [--object-dispatch-mode {native,type_id}] [--east-stage {3} (default:3)] [--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] [--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--cpp-opt-level {0,1,2}] [--cpp-opt-pass SPEC] [--dump-cpp-ir-before-opt PATH] [--dump-cpp-ir-after-opt PATH] [--dump-cpp-opt-trace PATH] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
+    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--cpp-list-model {value,pyobj} (default:pyobj)] [--object-dispatch-mode {native,type_id}] [--east-stage {3} (default:3)] [--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] [--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--cpp-opt-level {0,1,2}] [--cpp-opt-pass SPEC] [--dump-cpp-ir-before-opt PATH] [--dump-cpp-ir-after-opt PATH] [--dump-cpp-opt-trace PATH] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
     guard_limits: dict[str, int] = {}
 
     if show_help:

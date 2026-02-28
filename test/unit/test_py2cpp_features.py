@@ -1231,6 +1231,12 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(err, "")
         self.assertEqual(parsed.get("cpp_list_model_opt"), "pyobj")
 
+    def test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj(self) -> None:
+        parsed = parse_py2cpp_argv(["input.py"])
+        err = str(parsed.get("__error", ""))
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("cpp_list_model_opt"), "pyobj")
+
     def test_parse_py2cpp_argv_east3_optimizer_options(self) -> None:
         parsed = parse_py2cpp_argv(
             [

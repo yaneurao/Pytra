@@ -98,14 +98,14 @@
 14. [x] [ID: P1-LIST-PYOBJ-MIG-01-S3-02] non-escape local list のみ stack/RAII へ縮退する Cpp pass を追加する。
 15. [x] [ID: P1-LIST-PYOBJ-MIG-01-S3-03] unknown/external/dynamic call 混在時に縮退しない fail-closed 回帰テストを追加する。
 16. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-01] `value` vs `pyobj` の性能/サイズ/差分を sample で比較し、既定切替判断を記録する。
-17. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
+17. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
 18. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S1] rollback 準備として `py2cpp` に `--cpp-list-model {value,pyobj}` を追加し、single/multi-file 出力へ反映する。
 19. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2] `sample` 失敗 12 件（`05..16`）の compile/runtime blocker を段階解消し、`pyobj` モデルの実行成立範囲を拡張する。
 20. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S1] pyobj で `grid[y][x] = ...` が `object[...]` へ落ちる compile blocker を `py_set_at(...)` lower で解消する。
 21. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S2] `07/08/09` の runtime 失敗（`setitem on non-list object`）原因を特定し、`py_set_at` 入力が list object になるよう lower/runtime を補正する。
 22. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S3] `12_sort_visualizer` の compile blocker（list 注釈引数が `object` シグネチャへ合わない）を callsite boxing 補正で解消する。
 23. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
-24. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
+24. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
 25. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
 26. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
 
