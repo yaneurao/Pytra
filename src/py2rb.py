@@ -62,6 +62,20 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _ruby_runtime_source_path() -> Path:
+    """Ruby runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "ruby" / "pytra" / "py_runtime.rb"
+
+
+def _copy_ruby_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Ruby runtime を配置する。"""
+    runtime_src = _ruby_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("ruby runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "py_runtime.rb"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Ruby transpiler")
@@ -112,6 +126,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ruby_src = transpile_to_ruby_native(east)
     output_path.write_text(ruby_src, encoding="utf-8")
+    _copy_ruby_runtime(output_path)
     return 0
 
 
