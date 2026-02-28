@@ -43,6 +43,7 @@
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S1-02`] `src/py2lua.py` と `src/hooks/lua/emitter/lua_native_emitter.py` を追加し、`add/if_else/for_range` を通す最小 native 経路を実装した。`test/unit/test_py2lua_smoke.py`（9件）を追加して CLI/EAST3 読み込み/最小 fixture 変換を固定した。
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S2-01`] Lua emitter に `Assign(target/targets)`・`While`・`Dict/Subscript/IfExp/JoinedStr/Attribute/Box/Unbox`・Attribute Call lower を追加し、`test_py2lua_smoke.py` を 12 件へ拡張して通過した。fixture 横断では `ok 22 -> 57` へ改善し、残差は `ClassDef/ListComp/Lambda` など S2-02 領域へ収束した。
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S2-02`] `ClassDef`/constructor/method dispatch/`IsInstance`/import lower（`math` と `pytra.utils png/gif` stub）を追加し、`test_py2lua_smoke.py` を 15 件へ拡張して通過した。fixture 横断では `ok 57 -> 81` へ改善し、残差は `ListComp/Lambda/ObjStr` など非 class 領域へ収束した。
+- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-01`] `tools/check_py2lua_transpile.py` を追加し、`checked=86 ok=86 fail=0 skipped=53` を確認した。`runtime_parity_check --targets lua` 導線を追加し、`17_monte_carlo_pi` で `toolchain_missing` 付き PASS（exit 0）を確認した。
 
 ## 分解
 
@@ -50,5 +51,5 @@
 - [x] [ID: P0-LUA-BACKEND-01-S1-02] `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、最小 fixture を通す。
 - [x] [ID: P0-LUA-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
 - [x] [ID: P0-LUA-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装する。
-- [ ] [ID: P0-LUA-BACKEND-01-S3-01] `check_py2lua_transpile` と smoke/parity 回帰導線を追加する。
+- [x] [ID: P0-LUA-BACKEND-01-S3-01] `check_py2lua_transpile` と smoke/parity 回帰導線を追加する。
 - [ ] [ID: P0-LUA-BACKEND-01-S3-02] `sample/lua` 再生成と README/How-to-use 同期を行う。

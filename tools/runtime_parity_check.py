@@ -178,6 +178,12 @@ def build_targets(
             needs=("python", "ruby"),
         ),
         Target(
+            name="lua",
+            transpile_cmd=f"python src/py2lua.py {shlex.quote(case_src)} -o test/transpile/lua/{case_stem}.lua {opt_arg}",
+            run_cmd=f"lua test/transpile/lua/{case_stem}.lua",
+            needs=("python", "lua"),
+        ),
+        Target(
             name="ts",
             transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} -o test/transpile/ts/{case_stem}.ts {opt_arg}",
             run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",
