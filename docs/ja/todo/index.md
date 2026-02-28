@@ -66,6 +66,18 @@
 5. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S3-01] `runtime_parity_check` の回帰テストを更新し、`artifact_size` 行の一致検証を固定する。
 6. [ ] [ID: P0-SAMPLE-ARTIFACT-SIZE-01-S3-02] sample 全体 parity を再実行し、サイズ不一致があれば fail として検知できる状態を確認する。
 
+### P1: EAST3 関数間 non-escape 解析導入（RAII 候補注釈）
+
+文脈: [docs/ja/plans/p1-east3-interprocedural-nonescape-analysis.md](../plans/p1-east3-interprocedural-nonescape-analysis.md)
+
+1. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01] EAST3 最適化層へ関数間 non-escape 解析（SCC + fixed point）を導入し、RAII 変換候補注釈を `meta` に保存する。
+2. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-01] escape 判定ドメイン（arg escape / return escape / unknown-call policy）を仕様化し、`PassContext` に保持する。
+3. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
+4. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-01] `NonEscapeInterproceduralPass` を実装し、summary fixed-point 更新を成立させる。
+5. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-02] 収束した summary を関数/式ノード `meta` へ注釈する。
+6. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
+7. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-02] `east3 optimizer` 回帰と `check_py2cpp_transpile` を再実行し、非退行を確認する。
+
 ### P1: 全言語コメント忠実性ポリシー（生成コメント禁止）
 
 文脈: [docs/ja/plans/p1-comment-fidelity-all-backends.md](../plans/p1-comment-fidelity-all-backends.md)
