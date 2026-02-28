@@ -152,6 +152,15 @@ def _patch_selfhost_hooks(text: str, prepare_base) -> str:
     return out[:insert_at] + disable_line + out[insert_at:]
 
 
+def _patch_main_guard_for_cs_entry(text: str) -> str:
+    """C# selfhost entry 互換のため __main__ ガードの argv 参照を簡約する。"""
+    old = 'if __name__ == "__main__":\n    sys.exit(main(sys.argv[1:]))\n'
+    new = 'if __name__ == "__main__":\n    main([str(x) for x in args])\n'
+    if old not in text:
+        raise RuntimeError("failed to patch __main__ guard for selfhost cs entry")
+    return text.replace(old, new, 1)
+
+
 def main() -> int:
     prepare_base = _load_prepare_base_module()
     py2cs_text = SRC_PY2CS.read_text(encoding="utf-8")
@@ -165,6 +174,7 @@ def main() -> int:
     py2cs_text = _remove_import_lines(py2cs_text)
     out = _insert_support_blocks(py2cs_text, support_blocks, base_class, cs_core)
     out = _patch_selfhost_hooks(out, prepare_base)
+    out = _patch_main_guard_for_cs_entry(out)
 
     DST_SELFHOST.parent.mkdir(parents=True, exist_ok=True)
     DST_SELFHOST.write_text(out, encoding="utf-8")
