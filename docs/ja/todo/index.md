@@ -57,9 +57,12 @@
 文脈: [docs/ja/plans/p1-ruby-benchmark-readme-fix.md](../plans/p1-ruby-benchmark-readme-fix.md)
 
 1. [ ] [ID: P1-RUBY-BENCH-FIX-01] Ruby 計測値更新時に「fresh transpile → parity確認 → README反映」を必須化する。
-2. [ ] [ID: P1-RUBY-BENCH-FIX-01-S1-01] `sample/01` を `ruby --yjit`（`warmup=1`, `repeat=5`）で再計測し、ログを保存する。
-3. [ ] [ID: P1-RUBY-BENCH-FIX-01-S1-02] `runtime_parity_check` で `sample/01` の Ruby parity を確認する。
-4. [ ] [ID: P1-RUBY-BENCH-FIX-01-S1-03] `docs/ja/README.md` の Ruby 列へ測定値を反映し、差分を確定する。
+2. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-01] `sample/01` を `ruby --yjit`（`warmup=1`, `repeat=5`）で再計測し、ログを保存する。
+3. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-02] `runtime_parity_check` で `sample/01` の Ruby parity を確認する。
+4. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-03] `docs/ja/README.md` の Ruby 列へ測定値を反映し、差分を確定する。
+- `P1-RUBY-BENCH-FIX-01-S1-01` `ruby --yjit`（warmup=1 / repeat=5）で `sample/ruby/01_mandelbrot.rb` を再計測し、`work/logs/bench_ruby_yjit_01_mandelbrot_20260301.json` に実測5回と中央値 `18.954643653007224` 秒を保存した。
+- `P1-RUBY-BENCH-FIX-01-S1-02` `runtime_parity_check --case-root sample --targets ruby 01_mandelbrot --ignore-unstable-stdout` を実行し、`SUMMARY cases=1 pass=1 fail=0` を確認した。
+- `P1-RUBY-BENCH-FIX-01-S1-03` `docs/ja/README.md` の実行速度比較表で `01_mandelbrot` の Ruby 値を `18.682 -> 18.955`（中央値の小数第3位丸め）へ更新した。
 
 ### P1: `core.py` の `Path` 直分岐撤去（stdlib 正本化）
 
