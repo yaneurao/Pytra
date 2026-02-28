@@ -121,6 +121,7 @@
 - 2026-02-28: `pyobj` list モード向けに runtime helper（`py_extend/py_pop/py_clear/py_reverse/py_sort`）を追加し、emitter 側で `ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` を object runtime 呼び出しへ切り替えた。
 - 2026-02-28: list literal を `make_object(list<...>{...})` へ描画する分岐と、`list(...)` ctor の `pyobj` 経路、`Subscript` の list index を `py_at(...)` へ寄せる分岐を追加した。
 - 2026-02-28: `test_py2cpp_codegen_issues.py` に `pyobj` list モード回帰を追加し、`test_cpp_runtime_iterable.py` / `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
+- 2026-02-28: `for` 反復モード判定を `cpp_list_model=pyobj` 時に `list[...]` 型へ fail-closed で `runtime_protocol` を選ぶよう更新し、list comprehension を `object` 戻り・`make_object(__out)` で成立させた。`test_py2cpp_codegen_issues.py`（61件）と `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
 
 ## 分解
 
@@ -135,7 +136,7 @@
 
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-01] C++ emitter の list 型描画を model switch（`value|pyobj`）経由へ集約する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-02] list literal/ctor/append/extend/pop/index/slice の出力を `pyobj` モデル対応へ更新する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-03] for/enumerate/comprehension の list 反復 lower を `pyobj` list で成立させる。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-03] for/enumerate/comprehension の list 反復 lower を `pyobj` list で成立させる。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-04] `sample/18` を含む代表 fixture の compile/run/parity を `pyobj` モデルで通す。
 
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-01] `P1-EAST3-NONESCAPE-IPA-01` の注釈を C++ 側へ受け渡す経路を追加する。

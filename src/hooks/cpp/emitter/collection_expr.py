@@ -168,6 +168,8 @@ class CppCollectionExprEmitter:
         gens = self.any_to_list(expr_d.get("generators"))
         if len(gens) != 1:
             return "{}"
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+        pyobj_list_mode = list_model == "pyobj"
         g_obj = gens[0]
         g = self.any_to_dict_or_empty(g_obj)
         g_target_raw: object = g.get("target")
@@ -192,7 +194,16 @@ class CppCollectionExprEmitter:
             elt_ctor = elt[:brace_pos].strip()
             if elt_ctor.startswith("dict<") or elt_ctor.startswith("list<") or elt_ctor.startswith("set<"):
                 out_t = f"list<{elt_ctor}>"
-        lines = [f"[&]() -> {out_t} {{", f"    {out_t} __out;"]
+        emit_out_t = out_t
+        lambda_ret_t = out_t
+        if pyobj_list_mode:
+            lambda_ret_t = "object"
+            if not (emit_out_t.startswith("list<") and emit_out_t.endswith(">")):
+                if elt_t not in {"", "unknown"}:
+                    emit_out_t = self._cpp_type_text(f"list[{elt_t}]")
+                if not (emit_out_t.startswith("list<") and emit_out_t.endswith(">")):
+                    emit_out_t = "list<object>"
+        lines = [f"[&]() -> {lambda_ret_t} {{", f"    {emit_out_t} __out;"]
         tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
         iter_tmp = self.next_for_iter_name()
         rg = self.any_to_dict_or_empty(g.get("iter"))
@@ -232,8 +243,8 @@ class CppCollectionExprEmitter:
             out_parts = self.split_generic(out_east_t[5:-1])
             if len(out_parts) == 1:
                 out_elem_t = self.normalize_type_name(out_parts[0])
-        if (out_elem_t == "" or self.is_any_like_type(out_elem_t)) and out_t.startswith("list<") and out_t.endswith(">"):
-            cpp_inner = self._trim_ws(out_t[5:-1])
+        if (out_elem_t == "" or self.is_any_like_type(out_elem_t)) and emit_out_t.startswith("list<") and emit_out_t.endswith(">"):
+            cpp_inner = self._trim_ws(emit_out_t[5:-1])
             if cpp_inner in {
                 "float32",
                 "float64",
@@ -261,7 +272,7 @@ class CppCollectionExprEmitter:
                     out_elem_t,
                     "listcomp:elt",
                 )
-        if out_t == "list<object>" and not self.is_boxed_object_expr(list_elt):
+        if emit_out_t == "list<object>" and not self.is_boxed_object_expr(list_elt):
             list_elt = self._box_any_target_value(list_elt, expr_d.get("elt"))
         if len(ifs) == 0:
             lines.append(f"        __out.append({list_elt});")
@@ -278,7 +289,10 @@ class CppCollectionExprEmitter:
             cond: str = join_str_list(" && ", cond_parts)
             lines.append(f"        if ({cond}) __out.append({list_elt});")
         lines.append("    }")
-        lines.append("    return __out;")
+        if pyobj_list_mode:
+            lines.append("    return make_object(__out);")
+        else:
+            lines.append("    return __out;")
         lines.append("}()")
         sep = " "
         return sep.join(lines)

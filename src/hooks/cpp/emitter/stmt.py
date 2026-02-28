@@ -1032,11 +1032,15 @@ class CppStatementEmitter:
         mode_txt = self.any_to_str(stmt.get("iter_mode"))
         if mode_txt == "static_fastpath" or mode_txt == "runtime_protocol":
             return mode_txt
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
         if iter_t == "":
             iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
         if iter_t == "Any" or iter_t == "object":
             return "runtime_protocol"
+        if list_model == "pyobj":
+            if iter_t.startswith("list[") and iter_t.endswith("]"):
+                return "runtime_protocol"
         # 明示 `iter_mode` が無い既存 EAST では selfhost 互換を優先し、unknown は static 側に倒す。
         if iter_t == "" or iter_t == "unknown":
             return "static_fastpath"
@@ -1045,6 +1049,8 @@ class CppStatementEmitter:
             for p in parts:
                 p_norm = self.normalize_type_name(p)
                 if p_norm == "Any" or p_norm == "object":
+                    return "runtime_protocol"
+                if list_model == "pyobj" and p_norm.startswith("list[") and p_norm.endswith("]"):
                     return "runtime_protocol"
             return "static_fastpath"
         return "static_fastpath"

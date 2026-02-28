@@ -1060,6 +1060,23 @@ def f(x: object) -> bool:
         self.assertIn("int64 head = py_at(xs, py_to<int64>(0));", cpp)
         self.assertIn("object seg = py_slice(xs, 0, 2);", cpp)
 
+    def test_pyobj_list_model_list_comprehension_returns_object(self) -> None:
+        src = """def f(xs: list[int]) -> list[int]:
+    return [x + 1 for x in xs]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_list_model_list_comp.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("object f(const object& xs)", cpp)
+        self.assertIn("[&]() -> object {", cpp)
+        self.assertIn("list<object> __out;", cpp)
+        self.assertIn("return make_object(__out);", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()
