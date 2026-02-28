@@ -17,18 +17,23 @@ from src.py2cpp import CppEmitter
 
 class CppTypeTest(unittest.TestCase):
     def test_union_optional_and_dedup(self) -> None:
-        em = CppEmitter({"body": []}, emit_main=False)
+        em = CppEmitter({"body": []}, {}, emit_main=False)
         self.assertEqual(em._cpp_type_text("str|None"), "::std::optional<str>")
         self.assertEqual(em._cpp_type_text("list[int64]|None|None"), "::std::optional<list<int64>>")
         self.assertEqual(em._cpp_type_text("dict[str, int64]|None|None"), "::std::optional<dict<str, int64>>")
         self.assertEqual(em._cpp_type_text("int64|int64"), "int64")
 
     def test_union_any_and_bytes_priority(self) -> None:
-        em = CppEmitter({"body": []}, emit_main=False)
+        em = CppEmitter({"body": []}, {}, emit_main=False)
         self.assertEqual(em._cpp_type_text("Any|None"), "object")
         self.assertEqual(em._cpp_type_text("bytes|bytearray|None"), "bytes")
+
+    def test_list_type_text_can_switch_to_pyobj_model(self) -> None:
+        em = CppEmitter({"body": []}, {}, emit_main=False)
+        em.cpp_list_model = "pyobj"
+        self.assertEqual(em._cpp_type_text("list[int64]"), "object")
+        self.assertEqual(em._cpp_type_text("list[str]"), "object")
 
 
 if __name__ == "__main__":
     unittest.main()
-

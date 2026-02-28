@@ -221,6 +221,9 @@ class CppTypeBridgeEmitter:
             return "pytra::runtime::cpp::base::PyFile"
         list_inner = self.type_generic_args(east_type, "list")
         if len(list_inner) == 1:
+            list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+            if list_model == "pyobj":
+                return "object"
             list_elem = list_inner[0]
             if list_elem == "None":
                 return "list<object>"
