@@ -156,6 +156,12 @@ class LuaNativeEmitter:
             self._emit_line("local " + target + " = " + value)
             return
         if kind == "Assign":
+            target_any = stmt.get("target")
+            if isinstance(target_any, dict):
+                target = self._name_from_target(target_any)
+                value = self._render_expr(stmt.get("value"))
+                self._emit_line(target + " = " + value)
+                return
             targets = stmt.get("targets")
             if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
                 target = self._name_from_target(targets[0])
@@ -177,6 +183,9 @@ class LuaNativeEmitter:
             return
         if kind == "ForCore":
             self._emit_for_core(stmt)
+            return
+        if kind == "While":
+            self._emit_while(stmt)
             return
         raise RuntimeError("lang=lua unsupported stmt kind: " + str(kind))
 
@@ -243,6 +252,14 @@ class LuaNativeEmitter:
             return
         raise RuntimeError("lang=lua unsupported forcore iter_mode: " + iter_mode)
 
+    def _emit_while(self, stmt: dict[str, Any]) -> None:
+        test = self._render_expr(stmt.get("test"))
+        self._emit_line("while " + test + " do")
+        self.indent += 1
+        self._emit_block(stmt.get("body"))
+        self.indent -= 1
+        self._emit_line("end")
+
     def _name_from_target(self, target_any: Any) -> str:
         if isinstance(target_any, dict) and target_any.get("kind") == "Name":
             return _safe_ident(target_any.get("id"), "value")
@@ -299,6 +316,82 @@ class LuaNativeEmitter:
             for e in elems:
                 out.append(self._render_expr(e))
             return "{ " + ", ".join(out) + " }"
+        if kind == "Set":
+            elems_any = expr_any.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            out: list[str] = []
+            for e in elems:
+                out.append(self._render_expr(e))
+            return "{ " + ", ".join(out) + " }"
+        if kind == "Dict":
+            keys_any = expr_any.get("keys")
+            values_any = expr_any.get("values")
+            keys = keys_any if isinstance(keys_any, list) else []
+            values = values_any if isinstance(values_any, list) else []
+            if len(keys) == 0 or len(values) == 0:
+                entries_any = expr_any.get("entries")
+                entries = entries_any if isinstance(entries_any, list) else []
+                if len(entries) == 0:
+                    return "{}"
+                pairs_from_entries: list[str] = []
+                i = 0
+                while i < len(entries):
+                    ent = entries[i]
+                    if isinstance(ent, dict):
+                        k = self._render_expr(ent.get("key"))
+                        v = self._render_expr(ent.get("value"))
+                        pairs_from_entries.append("[" + k + "] = " + v)
+                    i += 1
+                if len(pairs_from_entries) == 0:
+                    return "{}"
+                return "{ " + ", ".join(pairs_from_entries) + " }"
+            pairs: list[str] = []
+            i = 0
+            while i < len(keys) and i < len(values):
+                k = self._render_expr(keys[i])
+                v = self._render_expr(values[i])
+                pairs.append("[" + k + "] = " + v)
+                i += 1
+            return "{ " + ", ".join(pairs) + " }"
+        if kind == "Subscript":
+            owner = self._render_expr(expr_any.get("value"))
+            index = self._render_expr(expr_any.get("slice"))
+            owner_node = expr_any.get("value")
+            owner_type = ""
+            if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
+                owner_type = owner_node.get("resolved_type") or ""
+            if owner_type.startswith("dict["):
+                return owner + "[" + index + "]"
+            return owner + "[(" + index + ") + 1]"
+        if kind == "Attribute":
+            owner = self._render_expr(expr_any.get("value"))
+            attr = _safe_ident(expr_any.get("attr"), "field")
+            return owner + "." + attr
+        if kind == "IfExp":
+            test = self._render_expr(expr_any.get("test"))
+            body = self._render_expr(expr_any.get("body"))
+            orelse = self._render_expr(expr_any.get("orelse"))
+            return "((" + test + ") and (" + body + ") or (" + orelse + "))"
+        if kind == "JoinedStr":
+            values_any = expr_any.get("values")
+            values = values_any if isinstance(values_any, list) else []
+            if len(values) == 0:
+                return '""'
+            parts: list[str] = []
+            for item in values:
+                item_d = item if isinstance(item, dict) else {}
+                item_kind = item_d.get("kind")
+                if item_kind == "Constant" and isinstance(item_d.get("value"), str):
+                    parts.append(self._render_expr(item_d))
+                elif item_kind == "FormattedValue":
+                    parts.append("tostring(" + self._render_expr(item_d.get("value")) + ")")
+                else:
+                    parts.append("tostring(" + self._render_expr(item_d) + ")")
+            return "(" + " .. ".join(parts) + ")"
+        if kind == "Box":
+            return self._render_expr(expr_any.get("value"))
+        if kind == "Unbox":
+            return self._render_expr(expr_any.get("value"))
         raise RuntimeError("lang=lua unsupported expr kind: " + str(kind))
 
     def _render_call(self, expr: dict[str, Any]) -> str:
@@ -313,6 +406,10 @@ class LuaNativeEmitter:
             if fn_name == "print":
                 return "print(" + ", ".join(rendered_args) + ")"
             return fn_name + "(" + ", ".join(rendered_args) + ")"
+        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+            owner = self._render_expr(func_any.get("value"))
+            attr = _safe_ident(func_any.get("attr"), "call")
+            return owner + "." + attr + "(" + ", ".join(rendered_args) + ")"
         raise RuntimeError("lang=lua unsupported call target")
 
     def _render_constant(self, value: Any) -> str:
@@ -332,4 +429,3 @@ class LuaNativeEmitter:
 def transpile_to_lua_native(east_doc: dict[str, Any]) -> str:
     """EAST3 ドキュメントを Lua native ソースへ変換する。"""
     return LuaNativeEmitter(east_doc).transpile()
-

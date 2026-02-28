@@ -124,7 +124,57 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_lowering_supports_while_loop_and_augassign(self) -> None:
+        src = (
+            "def f(n: int) -> int:\n"
+            "    i: int = 0\n"
+            "    s: int = 0\n"
+            "    while i < n:\n"
+            "        s += i\n"
+            "        i += 1\n"
+            "    return s\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "while_loop.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("while (i < n) do", lua)
+        self.assertIn("s = s + i", lua)
+        self.assertIn("i = i + 1", lua)
+
+    def test_lowering_supports_dict_and_subscript(self) -> None:
+        src = (
+            "def f() -> int:\n"
+            "    d = {'x': 7}\n"
+            "    a = [10, 20, 30]\n"
+            "    return d['x'] + a[1]\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "dict_subscript.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn('d = { ["x"] = 7 }', lua)
+        self.assertIn('return (d["x"] + a[(1) + 1])', lua)
+
+    def test_lowering_supports_ifexp_joinedstr_and_attribute_call(self) -> None:
+        src = (
+            "import math\n"
+            "def f(flag: bool, x: int) -> str:\n"
+            "    y = x if flag else 0\n"
+            "    z = math.sqrt(9)\n"
+            "    return f'v={y}:{z}'\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ifexp_joinedstr_attr.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("y = ((flag) and (x) or (0))", lua)
+        self.assertIn("z = math.sqrt(9)", lua)
+        self.assertIn('return ("v=" .. tostring(y) .. ":" .. tostring(z))', lua)
+
 
 if __name__ == "__main__":
     unittest.main()
-

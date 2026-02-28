@@ -55,12 +55,13 @@
 1. [ ] [ID: P0-LUA-BACKEND-01] `py2lua.py` を入口として EAST3 から Lua native 直生成経路を追加し、`sample/py` の主要ケースを Lua 実行可能にする。
 2. [x] [ID: P0-LUA-BACKEND-01-S1-01] Lua backend の契約（入力 EAST3、fail-closed、runtime 境界、非対象）を `docs/ja/spec` に文書化する。
 3. [x] [ID: P0-LUA-BACKEND-01-S1-02] `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、最小 fixture（`add` / `if_else` / `for_range`）を通す。
-4. [ ] [ID: P0-LUA-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
+4. [x] [ID: P0-LUA-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
 5. [ ] [ID: P0-LUA-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装する。
 6. [ ] [ID: P0-LUA-BACKEND-01-S3-01] `tools/check_py2lua_transpile.py` と `test_py2lua_smoke.py`、`runtime_parity_check --targets lua` 導線を追加し回帰を固定する。
 7. [ ] [ID: P0-LUA-BACKEND-01-S3-02] `sample/lua` 再生成と `docs/ja` 利用手順・対応表の同期を行う。
 - `P0-LUA-BACKEND-01-S1-01` `docs/ja/spec/spec-lua-native-backend.md` を追加し、EAST3 only / fail-closed / runtime 境界 / 非対象を契約として明文化した。
 - `P0-LUA-BACKEND-01-S1-02` `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、`test_py2lua_smoke.py` で `add/if_else/for_range` を通る最小 native 経路を固定した。
+- `P0-LUA-BACKEND-01-S2-01` 基本 lower（`Assign/While/Dict/Subscript/IfExp/JoinedStr/Attribute` など）を追加し、`test_py2lua_smoke.py` を 12 件へ拡張。fixture 横断で `ok 22 -> 57` に改善した。
 
 ### P1: Go/Java/Swift/Ruby runtime 外出し（inline helper 撤去）
 
