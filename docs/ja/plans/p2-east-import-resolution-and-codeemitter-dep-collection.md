@@ -1,0 +1,51 @@
+# P2: EAST 解決情報 + CodeEmitter 依存収集による最小 import 生成
+
+最終更新: 2026-02-28
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P2-EAST-IMPORT-RESOLUTION-01`
+
+背景:
+- 一部 backend では `import` / `using` / `#include` を固定文字列で常時出力しており、未使用依存回避のダミーコード（例: Go の `var _ = math.Pi`）が必要になっている。
+- 依存確定は現状 emitter ごとに分散しており、言語間で実装方針が揃っていない。
+- `CodeEmitter` 基底には `meta.import_bindings` / `qualified_symbol_refs` を読む仕組みがあるが、ノード単位解決情報と import 収集の共通 API までは未整備。
+
+目的:
+- EAST レベルで「識別子/呼び出しがどの import 由来か」を保持し、CodeEmitter 基底で依存モジュールを集約する。
+- 各言語 emitter は「依存キー→言語固有 import 文」のマッピングのみ担当し、最小 import を共通方針で生成する。
+
+対象:
+- EAST3 ノード属性または side table への import 解決情報付与
+- `src/pytra/compiler/east_parts/code_emitter.py` の依存収集 API（register/finalize）
+- 各 backend emitter の import 出力経路（固定 import の撤去対象洗い出しと段階移行）
+- import 回帰テスト（未使用 import 禁止、必要 import のみ出力）
+
+非対象:
+- 画像 runtime / 数値最適化など import 以外の性能課題
+- 既存言語仕様（演算意味、型規約）の変更
+- 一度に全 backend を同一PRで完全移行すること
+
+受け入れ基準:
+- EAST 側で import 解決情報（`resolved_import` 相当）が参照可能である。
+- CodeEmitter 基底が依存収集の単一 API を提供し、重複排除・安定順序で確定できる。
+- 先行対象 backend（少なくとも Go）で固定 import とダミー未使用回避コードを撤去し、必要 import のみを出力できる。
+- 回帰テストで「未使用 import を出さない」「必要 import は欠けない」を検知できる。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
+- `python3 tools/check_py2go_transpile.py`
+- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check_py2java_transpile.py`
+
+決定ログ:
+- 2026-02-28: ユーザー指示により、import 依存確定を「EAST 解決情報 + CodeEmitter 基底集約」で行う `P2` 計画を起票した。
+
+## 分解
+
+- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-01] EAST3 で識別子/呼び出しの import 解決情報（module/symbol）を保持する仕様を定義する。
+- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-02] parser/lowering で解決情報を `meta` もしくはノード属性へ記録し、欠落時 fail-closed 条件を決める。
+- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-01] CodeEmitter 基底に `require_dep` / `finalize_deps` 等の依存収集 API を追加する。
+- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-02] backend 側で import 直書きを撤去し、基底の依存収集 API 経由へ段階移行する（先行: Go）。
+- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-03] 先行 backend（Go）で `var _ = math.Pi` など未使用回避ダミーを撤去し、必要 import のみ出力する。
+- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S3-01] import 回帰テスト（必要最小/未使用禁止/依存欠落禁止）を追加し、CI 導線へ固定する。
