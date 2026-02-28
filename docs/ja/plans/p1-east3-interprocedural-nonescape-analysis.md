@@ -52,11 +52,13 @@
 - 2026-02-28: ユーザー指示により、RAII 置換の前段として EAST3 側に関数間 non-escape 解析（SCC + fixed point）を導入する方針を確定した。
 - 2026-02-28: `PassContext` に `non_escape_policy` を導入し、fail-closed 既定（`unknown_call_escape` など）を正規化して pass へ配布する実装方針を確定した。
 - 2026-02-28: `optimize_east3_document` の report へ `non_escape_policy` を出力し、unit test で default/override/報告値の安定性を固定した。
+- 2026-02-28: `non_escape_call_graph.py` を追加し、EAST3 Module から関数/メソッド symbol を抽出して resolved edge と unresolved call 件数を返す call graph ユーティリティ、および deterministic Tarjan SCC 分解を実装した。
+- 2026-02-28: `test_east3_non_escape_call_graph.py` を追加し、top-level/class method/mutual recursion の call graph・SCC 回帰を固定した。
 
 ## 分解
 
 - [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-01] escape 判定ドメイン（arg escape / return escape / unknown-call policy）を仕様化し、`PassContext` に保持する。
-- [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
+- [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-01] `NonEscapeInterproceduralPass` を実装し、summary fixed-point 更新を成立させる。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-02] 収束した summary を関数/式ノード `meta` へ注釈する。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
