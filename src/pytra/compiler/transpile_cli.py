@@ -2351,6 +2351,7 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
         "output_dir": "",
         "top_namespace_opt": "",
         "negative_index_mode_opt": "",
+        "cpp_list_model_opt": "",
         "object_dispatch_mode_opt": "",
         "east3_opt_level_opt": "1",
         "east3_opt_pass_opt": "",
@@ -2410,6 +2411,11 @@ def parse_py2cpp_argv(argv: list[str]) -> dict[str, str]:
             if i >= len(argv):
                 return _parse_error_dict("missing value for --object-dispatch-mode")
             out["object_dispatch_mode_opt"] = argv[i]
+        elif a == "--cpp-list-model":
+            i += 1
+            if i >= len(argv):
+                return _parse_error_dict("missing value for --cpp-list-model")
+            out["cpp_list_model_opt"] = argv[i]
         elif a == "--east-stage":
             i += 1
             if i >= len(argv):

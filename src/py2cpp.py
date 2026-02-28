@@ -352,6 +352,7 @@ def _transpile_to_cpp_with_map(
     dump_cpp_ir_before_opt: str = "",
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
+    cpp_list_model: str = "",
 ) -> str:
     """EAST Module を C++ ソース文字列へ変換する。"""
     return emit_cpp_from_east(
@@ -372,6 +373,7 @@ def _transpile_to_cpp_with_map(
         dump_cpp_ir_before_opt,
         dump_cpp_ir_after_opt,
         dump_cpp_opt_trace,
+        cpp_list_model,
     )
 
 
@@ -392,6 +394,7 @@ def transpile_to_cpp(
     dump_cpp_ir_before_opt: str = "",
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
+    cpp_list_model: str = "",
 ) -> str:
     """後方互換を維持した公開 API。"""
     ns_map: dict[str, str] = {}
@@ -413,6 +416,7 @@ def transpile_to_cpp(
         dump_cpp_ir_before_opt,
         dump_cpp_ir_after_opt,
         dump_cpp_opt_trace,
+        cpp_list_model,
     )
 
 
@@ -497,6 +501,7 @@ def _write_multi_file_cpp(
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
     max_generated_lines: int = 0,
+    cpp_list_model: str = "",
 ) -> dict[str, Any]:
     """Delegate multi-file output generation to hooks.cpp.multifile."""
     return _write_multi_file_cpp_impl(
@@ -519,6 +524,7 @@ def _write_multi_file_cpp(
         dump_cpp_ir_after_opt,
         dump_cpp_opt_trace,
         max_generated_lines,
+        cpp_list_model,
     )
 
 
@@ -560,6 +566,7 @@ def main(argv: list[str]) -> int:
     output_dir_txt = dict_str_get(parsed, "output_dir", "")
     top_namespace_opt = dict_str_get(parsed, "top_namespace_opt", "")
     negative_index_mode_opt = dict_str_get(parsed, "negative_index_mode_opt", "")
+    cpp_list_model_opt = dict_str_get(parsed, "cpp_list_model_opt", "")
     object_dispatch_mode_opt = dict_str_get(parsed, "object_dispatch_mode_opt", "")
     east3_opt_level_opt = dict_str_get(parsed, "east3_opt_level_opt", "1")
     east3_opt_pass_opt = dict_str_get(parsed, "east3_opt_pass_opt", "")
@@ -605,7 +612,7 @@ def main(argv: list[str]) -> int:
     str_index_mode = ""
     str_slice_mode = ""
     opt_level = ""
-    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--object-dispatch-mode {native,type_id}] [--east-stage {3} (default:3)] [--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] [--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--cpp-opt-level {0,1,2}] [--cpp-opt-pass SPEC] [--dump-cpp-ir-before-opt PATH] [--dump-cpp-ir-after-opt PATH] [--dump-cpp-opt-trace PATH] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
+    usage_text = "usage: py2cpp.py INPUT.py [-o OUTPUT.cpp] [--header-output OUTPUT.h] [--emit-runtime-cpp] [--output-dir DIR] [--single-file|--multi-file] [--top-namespace NS] [--preset MODE] [--negative-index-mode MODE] [--cpp-list-model {value,pyobj}] [--object-dispatch-mode {native,type_id}] [--east-stage {3} (default:3)] [--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] [--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--cpp-opt-level {0,1,2}] [--cpp-opt-pass SPEC] [--dump-cpp-ir-before-opt PATH] [--dump-cpp-ir-after-opt PATH] [--dump-cpp-opt-trace PATH] [--bounds-check-mode MODE] [--floor-div-mode MODE] [--mod-mode MODE] [--int-width MODE] [--str-index-mode MODE] [--str-slice-mode MODE] [-O0|-O1|-O2|-O3] [--guard-profile {off,default,strict}] [--max-ast-depth N] [--max-parse-nodes N] [--max-symbols-per-module N] [--max-scope-depth N] [--max-import-graph-nodes N] [--max-import-graph-edges N] [--max-generated-lines N] [--no-main] [--dump-deps] [--dump-options]"
     guard_limits: dict[str, int] = {}
 
     if show_help:
@@ -622,6 +629,9 @@ def main(argv: list[str]) -> int:
         return 1
     if object_dispatch_mode_opt not in {"", "native", "type_id"}:
         print(f"error: invalid --object-dispatch-mode: {object_dispatch_mode_opt}", file=sys.stderr)
+        return 1
+    if cpp_list_model_opt not in {"", "value", "pyobj"}:
+        print(f"error: invalid --cpp-list-model: {cpp_list_model_opt}", file=sys.stderr)
         return 1
     if east3_opt_level_opt not in {"0", "1", "2"}:
         print(f"error: invalid --east3-opt-level: {east3_opt_level_opt}", file=sys.stderr)
@@ -812,6 +822,7 @@ def main(argv: list[str]) -> int:
                 dump_cpp_ir_before_opt,
                 dump_cpp_ir_after_opt,
                 dump_cpp_opt_trace,
+                cpp_list_model_opt,
             )
             own_runtime_header = '#include "pytra/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
@@ -879,6 +890,7 @@ def main(argv: list[str]) -> int:
                 dump_cpp_ir_before_opt,
                 dump_cpp_ir_after_opt,
                 dump_cpp_opt_trace,
+                cpp_list_model_opt,
             )
             check_guard_limit("emit", "max_generated_lines", count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
@@ -924,6 +936,7 @@ def main(argv: list[str]) -> int:
                 dump_cpp_ir_after_opt,
                 dump_cpp_opt_trace,
                 guard_limits["max_generated_lines"] if "max_generated_lines" in guard_limits else 0,
+                cpp_list_model_opt,
             )
             msg = "multi-file output generated at: " + str(out_dir)
             manifest_obj: Any = mf.get("manifest")

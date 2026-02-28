@@ -1077,6 +1077,25 @@ def f(x: object) -> bool:
         self.assertIn("list<object> __out;", cpp)
         self.assertIn("return make_object(__out);", cpp)
 
+    def test_transpile_to_cpp_accepts_cpp_list_model_override(self) -> None:
+        src = """def sink(xs: list[int]) -> int:
+    return len(xs)
+
+def f() -> int:
+    xs: list[int] = []
+    xs.append(1)
+    return sink(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_list_model_api_override.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+
+        self.assertIn("object xs = make_object(list<object>{});", cpp)
+        self.assertIn("py_append(xs, make_object(1));", cpp)
+        self.assertIn("return sink(xs);", cpp)
+
     def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
         src = """def f() -> int:
     xs: list[int] = []

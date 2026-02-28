@@ -47,6 +47,7 @@ def write_multi_file_cpp(
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
     max_generated_lines: int = 0,
+    cpp_list_model: str = "",
 ) -> dict[str, Any]:
     """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
     _ = top_namespace
@@ -169,6 +170,8 @@ def write_multi_file_cpp(
             "pytra_mod_" + label,
             emit_main if is_entry else False,
         )
+        if cpp_list_model in {"value", "pyobj"}:
+            type_emitter.cpp_list_model = cpp_list_model
         cpp_txt = type_emitter.transpile()
 
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。

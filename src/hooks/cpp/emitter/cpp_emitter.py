@@ -67,6 +67,7 @@ def emit_cpp_from_east(
     dump_cpp_ir_before_opt: str = "",
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
+    cpp_list_model: str = "",
 ) -> str:
     """Emit C++ text from EAST module via CppEmitter (public bridge)."""
     cpp_ir = east_module
@@ -93,7 +94,7 @@ def emit_cpp_from_east(
             _dump_json_file(dump_cpp_ir_after_opt, cpp_ir)
         if dump_cpp_opt_trace != "":
             _write_text_file(dump_cpp_opt_trace, render_cpp_opt_trace(report))
-    return CppEmitter(
+    emitter = CppEmitter(
         cpp_ir,
         module_namespace_map,
         negative_index_mode,
@@ -106,7 +107,10 @@ def emit_cpp_from_east(
         opt_level,
         top_namespace,
         emit_main,
-    ).transpile()
+    )
+    if cpp_list_model in {"value", "pyobj"}:
+        emitter.cpp_list_model = cpp_list_model
+    return emitter.transpile()
 
 
 def install_py2cpp_runtime_symbols(globals_snapshot: dict[str, Any]) -> None:

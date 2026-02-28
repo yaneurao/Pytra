@@ -1225,6 +1225,12 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(parsed.get("dump_options"), "1")
         self.assertEqual(parsed.get("east_stage"), "3")
 
+    def test_parse_py2cpp_argv_cpp_list_model(self) -> None:
+        parsed = parse_py2cpp_argv(["input.py", "--cpp-list-model", "pyobj"])
+        err = str(parsed.get("__error", ""))
+        self.assertEqual(err, "")
+        self.assertEqual(parsed.get("cpp_list_model_opt"), "pyobj")
+
     def test_parse_py2cpp_argv_east3_optimizer_options(self) -> None:
         parsed = parse_py2cpp_argv(
             [
