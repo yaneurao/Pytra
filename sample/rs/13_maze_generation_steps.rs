@@ -2,23 +2,440 @@ use crate::time::perf_counter;
 use crate::pytra::runtime::gif::grayscale_palette;
 use crate::pytra::runtime::gif::save_gif;
 
+use std::fs;
+use std::io::Write;
+use std::sync::Once;
+use std::time::Instant;
+
+fn py_perf_counter() -> f64 {
+    static INIT: Once = Once::new();
+    static mut START: Option<Instant> = None;
+    INIT.call_once(|| unsafe {
+        START = Some(Instant::now());
+    });
+    unsafe {
+        START
+            .as_ref()
+            .expect("perf counter start must be initialized")
+            .elapsed()
+            .as_secs_f64()
+    }
+}
+
+fn py_isdigit(v: &str) -> bool {
+    if v.is_empty() {
+        return false;
+    }
+    v.chars().all(|c| c.is_ascii_digit())
+}
+
+fn py_isalpha(v: &str) -> bool {
+    if v.is_empty() {
+        return false;
+    }
+    v.chars().all(|c| c.is_ascii_alphabetic())
+}
+
+fn py_str_at(s: &str, index: i64) -> String {
+    let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
+    let mut idx = index;
+    if idx < 0 {
+        idx += n;
+    }
+    if idx < 0 || idx >= n {
+        return String::new();
+    }
+    if s.is_ascii() {
+        let b = s.as_bytes()[idx as usize];
+        return (b as char).to_string();
+    }
+    s.chars().nth(idx as usize).map(|c| c.to_string()).unwrap_or_default()
+}
+
+fn py_slice_str(s: &str, start: Option<i64>, end: Option<i64>) -> String {
+    let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
+    let mut i = start.unwrap_or(0);
+    let mut j = end.unwrap_or(n);
+    if i < 0 {
+        i += n;
+    }
+    if j < 0 {
+        j += n;
+    }
+    if i < 0 {
+        i = 0;
+    }
+    if j < 0 {
+        j = 0;
+    }
+    if i > n {
+        i = n;
+    }
+    if j > n {
+        j = n;
+    }
+    if j < i {
+        j = i;
+    }
+    if s.is_ascii() {
+        return s[(i as usize)..(j as usize)].to_string();
+    }
+    let start_b = if i == 0 {
+        0
+    } else {
+        s.char_indices()
+            .nth(i as usize)
+            .map(|(b, _)| b)
+            .unwrap_or(s.len())
+    };
+    let end_b = if j == n {
+        s.len()
+    } else {
+        s.char_indices()
+            .nth(j as usize)
+            .map(|(b, _)| b)
+            .unwrap_or(s.len())
+    };
+    s[start_b..end_b].to_string()
+}
+
+fn py_grayscale_palette() -> Vec<u8> {
+    let mut p = Vec::<u8>::with_capacity(256 * 3);
+    let mut i: u16 = 0;
+    while i < 256 {
+        let v = i as u8;
+        p.push(v);
+        p.push(v);
+        p.push(v);
+        i += 1;
+    }
+    p
+}
+
+fn py_png_crc32(data: &[u8]) -> u32 {
+    let mut crc: u32 = 0xFFFF_FFFF;
+    for &b in data {
+        crc ^= b as u32;
+        for _ in 0..8 {
+            if (crc & 1) != 0 {
+                crc = (crc >> 1) ^ 0xEDB8_8320;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    !crc
+}
+
+fn py_png_adler32(data: &[u8]) -> u32 {
+    const MOD: u32 = 65521;
+    let mut s1: u32 = 1;
+    let mut s2: u32 = 0;
+    for &b in data {
+        s1 = (s1 + b as u32) % MOD;
+        s2 = (s2 + s1) % MOD;
+    }
+    (s2 << 16) | s1
+}
+
+fn py_png_chunk(kind: &[u8; 4], data: &[u8]) -> Vec<u8> {
+    let mut out = Vec::<u8>::with_capacity(12 + data.len());
+    out.extend_from_slice(&(data.len() as u32).to_be_bytes());
+    out.extend_from_slice(kind);
+    out.extend_from_slice(data);
+    let mut crc_input = Vec::<u8>::with_capacity(4 + data.len());
+    crc_input.extend_from_slice(kind);
+    crc_input.extend_from_slice(data);
+    out.extend_from_slice(&py_png_crc32(&crc_input).to_be_bytes());
+    out
+}
+
+fn py_zlib_store_compress(raw: &[u8]) -> Vec<u8> {
+    let mut out = Vec::<u8>::with_capacity(raw.len() + 64);
+    out.push(0x78);
+    out.push(0x01);
+
+    let mut pos: usize = 0;
+    while pos < raw.len() {
+        let remain = raw.len() - pos;
+        let block_len = if remain > 65_535 { 65_535 } else { remain };
+        let final_block = pos + block_len >= raw.len();
+        out.push(if final_block { 0x01 } else { 0x00 });
+        let len = block_len as u16;
+        let nlen = !len;
+        out.extend_from_slice(&len.to_le_bytes());
+        out.extend_from_slice(&nlen.to_le_bytes());
+        out.extend_from_slice(&raw[pos..(pos + block_len)]);
+        pos += block_len;
+    }
+    out.extend_from_slice(&py_png_adler32(raw).to_be_bytes());
+    out
+}
+
+fn py_write_rgb_png(path: &str, width: i64, height: i64, pixels: &[u8]) {
+    if width <= 0 || height <= 0 {
+        panic!("invalid image size");
+    }
+    let w = width as usize;
+    let h = height as usize;
+    let expected = w * h * 3;
+    if pixels.len() != expected {
+        panic!("pixels length mismatch: got={} expected={}", pixels.len(), expected);
+    }
+
+    let row_bytes = w * 3;
+    let mut scanlines = Vec::<u8>::with_capacity(h * (row_bytes + 1));
+    for y in 0..h {
+        scanlines.push(0);
+        let start = y * row_bytes;
+        scanlines.extend_from_slice(&pixels[start..(start + row_bytes)]);
+    }
+
+    let mut ihdr = Vec::<u8>::with_capacity(13);
+    ihdr.extend_from_slice(&(width as u32).to_be_bytes());
+    ihdr.extend_from_slice(&(height as u32).to_be_bytes());
+    ihdr.push(8);
+    ihdr.push(2);
+    ihdr.push(0);
+    ihdr.push(0);
+    ihdr.push(0);
+
+    let idat = py_zlib_store_compress(&scanlines);
+    let mut png = Vec::<u8>::new();
+    png.extend_from_slice(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+    png.extend_from_slice(&py_png_chunk(b"IHDR", &ihdr));
+    png.extend_from_slice(&py_png_chunk(b"IDAT", &idat));
+    png.extend_from_slice(&py_png_chunk(b"IEND", &[]));
+
+    let parent = std::path::Path::new(path).parent();
+    if let Some(dir) = parent {
+        let _ = fs::create_dir_all(dir);
+    }
+    let mut f = fs::File::create(path).expect("create png file failed");
+    f.write_all(&png).expect("write png file failed");
+}
+
+fn py_gif_lzw_encode(data: &[u8], min_code_size: u8) -> Vec<u8> {
+    if data.is_empty() {
+        return Vec::new();
+    }
+    let clear_code: u16 = 1u16 << min_code_size;
+    let end_code: u16 = clear_code + 1;
+    let code_size: u8 = min_code_size + 1;
+    let mut out = Vec::<u8>::new();
+    let mut bit_buffer: u32 = 0;
+    let mut bit_count: u8 = 0;
+
+    let emit = |code: u16, out: &mut Vec<u8>, bit_buffer: &mut u32, bit_count: &mut u8| {
+        *bit_buffer |= (code as u32) << (*bit_count as u32);
+        *bit_count += code_size;
+        while *bit_count >= 8 {
+            out.push((*bit_buffer & 0xFF) as u8);
+            *bit_buffer >>= 8;
+            *bit_count -= 8;
+        }
+    };
+
+    emit(clear_code, &mut out, &mut bit_buffer, &mut bit_count);
+    for &v in data {
+        emit(v as u16, &mut out, &mut bit_buffer, &mut bit_count);
+        emit(clear_code, &mut out, &mut bit_buffer, &mut bit_count);
+    }
+    emit(end_code, &mut out, &mut bit_buffer, &mut bit_count);
+    if bit_count > 0 {
+        out.push((bit_buffer & 0xFF) as u8);
+    }
+    out
+}
+
+fn py_save_gif(
+    path: &str,
+    width: i64,
+    height: i64,
+    frames: &[Vec<u8>],
+    palette: &[u8],
+    delay_cs: i64,
+    loop_count: i64,
+) {
+    if palette.len() != 256 * 3 {
+        panic!("palette must be 256*3 bytes");
+    }
+    let w = width as usize;
+    let h = height as usize;
+    for fr in frames.iter() {
+        if fr.len() != w * h {
+            panic!("frame size mismatch");
+        }
+    }
+
+    let mut out = Vec::<u8>::new();
+    out.extend_from_slice(b"GIF89a");
+    out.extend_from_slice(&(width as u16).to_le_bytes());
+    out.extend_from_slice(&(height as u16).to_le_bytes());
+    out.push(0xF7);
+    out.push(0);
+    out.push(0);
+    out.extend_from_slice(palette);
+
+    out.extend_from_slice(b"\x21\xFF\x0BNETSCAPE2.0\x03\x01");
+    out.extend_from_slice(&(loop_count as u16).to_le_bytes());
+    out.push(0);
+
+    for fr in frames.iter() {
+        out.extend_from_slice(b"\x21\xF9\x04\x00");
+        out.extend_from_slice(&(delay_cs as u16).to_le_bytes());
+        out.extend_from_slice(b"\x00\x00");
+
+        out.push(0x2C);
+        out.extend_from_slice(&(0u16).to_le_bytes());
+        out.extend_from_slice(&(0u16).to_le_bytes());
+        out.extend_from_slice(&(width as u16).to_le_bytes());
+        out.extend_from_slice(&(height as u16).to_le_bytes());
+        out.push(0);
+
+        out.push(8);
+        let compressed = py_gif_lzw_encode(fr, 8);
+        let mut pos = 0usize;
+        while pos < compressed.len() {
+            let remain = compressed.len() - pos;
+            let chunk_len = if remain > 255 { 255 } else { remain };
+            out.push(chunk_len as u8);
+            out.extend_from_slice(&compressed[pos..(pos + chunk_len)]);
+            pos += chunk_len;
+        }
+        out.push(0);
+    }
+
+    out.push(0x3B);
+    let parent = std::path::Path::new(path).parent();
+    if let Some(dir) = parent {
+        let _ = fs::create_dir_all(dir);
+    }
+    let mut f = fs::File::create(path).expect("create gif file failed");
+    f.write_all(&out).expect("write gif file failed");
+}
+
+mod time {
+    pub fn perf_counter() -> f64 {
+        super::py_perf_counter()
+    }
+}
+
+mod math {
+    pub const pi: f64 = ::std::f64::consts::PI;
+    pub trait ToF64 {
+        fn to_f64(self) -> f64;
+    }
+    impl ToF64 for f64 {
+        fn to_f64(self) -> f64 { self }
+    }
+    impl ToF64 for f32 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for i64 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for i32 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for i16 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for i8 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for u64 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for u32 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for u16 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for u8 {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for usize {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+    impl ToF64 for isize {
+        fn to_f64(self) -> f64 { self as f64 }
+    }
+
+    pub fn sin<T: ToF64>(v: T) -> f64 { v.to_f64().sin() }
+    pub fn cos<T: ToF64>(v: T) -> f64 { v.to_f64().cos() }
+    pub fn tan<T: ToF64>(v: T) -> f64 { v.to_f64().tan() }
+    pub fn sqrt<T: ToF64>(v: T) -> f64 { v.to_f64().sqrt() }
+    pub fn exp<T: ToF64>(v: T) -> f64 { v.to_f64().exp() }
+    pub fn log<T: ToF64>(v: T) -> f64 { v.to_f64().ln() }
+    pub fn log10<T: ToF64>(v: T) -> f64 { v.to_f64().log10() }
+    pub fn fabs<T: ToF64>(v: T) -> f64 { v.to_f64().abs() }
+    pub fn floor<T: ToF64>(v: T) -> f64 { v.to_f64().floor() }
+    pub fn ceil<T: ToF64>(v: T) -> f64 { v.to_f64().ceil() }
+    pub fn pow(a: f64, b: f64) -> f64 { a.powf(b) }
+}
+
+mod pytra {
+    pub mod runtime {
+        pub mod png {
+            pub fn write_rgb_png(path: impl AsRef<str>, width: i64, height: i64, pixels: &[u8]) {
+                super::super::super::py_write_rgb_png(path.as_ref(), width, height, pixels);
+            }
+        }
+
+        pub mod gif {
+            pub fn grayscale_palette() -> Vec<u8> {
+                super::super::super::py_grayscale_palette()
+            }
+
+            pub fn save_gif(
+                path: impl AsRef<str>,
+                width: i64,
+                height: i64,
+                frames: &[Vec<u8>],
+                palette: &[u8],
+                delay_cs: i64,
+                loop_count: i64,
+            ) {
+                super::super::super::py_save_gif(
+                    path.as_ref(),
+                    width,
+                    height,
+                    frames,
+                    palette,
+                    delay_cs,
+                    loop_count,
+                );
+            }
+        }
+    }
+
+    pub mod utils {
+        pub use super::runtime::gif;
+        pub use super::runtime::png;
+    }
+}
+
 // 13: Sample that outputs DFS maze-generation progress as a GIF.
 
-fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
+fn capture(grid: &Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
     let width = w * scale;
     let height = h * scale;
-    let mut frame = bytearray(width * height);
+    let mut frame = vec![0u8; (width * height) as usize];
     let mut y: i64 = 0;
     while y < h {
         let mut x: i64 = 0;
         while x < w {
-            let v = ((grid[y as usize][x as usize] == 0) ? 255 : 40);
+            let v = (if grid[((if ((y) as i64) < 0 { (grid.len() as i64 + ((y) as i64)) } else { ((y) as i64) }) as usize)][((if ((x) as i64) < 0 { (grid[((if ((y) as i64) < 0 { (grid.len() as i64 + ((y) as i64)) } else { ((y) as i64) }) as usize)].len() as i64 + ((x) as i64)) } else { ((x) as i64) }) as usize)] == 0 { 255 } else { 40 });
             let mut yy: i64 = 0;
             while yy < scale {
                 let base = (y * scale + yy) * width + x * scale;
                 let mut xx: i64 = 0;
                 while xx < scale {
-                    frame[base + xx as usize] = v;
+                    let __idx_i64_1 = ((base + xx) as i64);
+                    let __idx_2 = if __idx_i64_1 < 0 { (frame.len() as i64 + __idx_i64_1) as usize } else { __idx_i64_1 as usize };
+                    frame[__idx_2] = ((v) as u8);
                     xx += 1;
                 }
                 yy += 1;
@@ -27,7 +444,7 @@ fn capture(grid: Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
         }
         y += 1;
     }
-    return bytes(frame);
+    return (frame).clone();
 }
 
 fn run_13_maze_generation_steps() {
@@ -36,30 +453,34 @@ fn run_13_maze_generation_steps() {
     let cell_h = 67;
     let scale = 5;
     let capture_every = 20;
-    let out_path = "sample/out/13_maze_generation_steps.gif";
+    let out_path = ("sample/out/13_maze_generation_steps.gif").to_string();
     
     let start = perf_counter();
-    let mut grid: Vec<Vec<i64>> = [[1] * cell_w for _ in range(cell_h)];
-    let mut stack: Vec<(i64, i64)> = vec![];
-    grid[1 as usize][1 as usize] = 0;
+    let mut grid: Vec<Vec<i64>> = (((0)..(cell_h))).map(|py_underscore| vec![1; ((cell_w) as usize)]).collect::<Vec<_>>();
+    let mut stack: Vec<(i64, i64)> = vec![(1, 1)];
+    let __idx_i64_3 = ((1) as i64);
+    let __idx_4 = if __idx_i64_3 < 0 { (grid.len() as i64 + __idx_i64_3) as usize } else { __idx_i64_3 as usize };
+    let __idx_i64_5 = ((1) as i64);
+    let __idx_6 = if __idx_i64_5 < 0 { (grid[__idx_4].len() as i64 + __idx_i64_5) as usize } else { __idx_i64_5 as usize };
+    grid[__idx_4][__idx_6] = 0;
     
-    let dirs: Vec<(i64, i64)> = vec![];
+    let dirs: Vec<(i64, i64)> = vec![(2, 0), (-2, 0), (0, 2), (0, -2)];
     let mut frames: Vec<Vec<u8>> = vec![];
     let mut step = 0;
     
     while stack.len() != 0 {
-        let __tmp_1 = stack[-1 as usize];
-        x = __tmp_1.0;
-        y = __tmp_1.1;
+        let __tmp_7 = (stack[((if ((-1) as i64) < 0 { (stack.len() as i64 + ((-1) as i64)) } else { ((-1) as i64) }) as usize)]).clone();
+        let x = __tmp_7.0;
+        let y = __tmp_7.1;
         let mut candidates: Vec<(i64, i64, i64, i64)> = vec![];
         let mut k: i64 = 0;
         while k < 4 {
-            let __tmp_2 = dirs[k as usize];
-            dx = __tmp_2.0;
-            dy = __tmp_2.1;
+            let __tmp_8 = (dirs[((if ((k) as i64) < 0 { (dirs.len() as i64 + ((k) as i64)) } else { ((k) as i64) }) as usize)]).clone();
+            let dx = __tmp_8.0;
+            let dy = __tmp_8.1;
             let mut nx = x + dx;
             let mut ny = y + dy;
-            if (nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny as usize][nx as usize] == 1) {
+            if (nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[((if ((ny) as i64) < 0 { (grid.len() as i64 + ((ny) as i64)) } else { ((ny) as i64) }) as usize)][((if ((nx) as i64) < 0 { (grid[((if ((ny) as i64) < 0 { (grid.len() as i64 + ((ny) as i64)) } else { ((ny) as i64) }) as usize)].len() as i64 + ((nx) as i64)) } else { ((nx) as i64) }) as usize)] == 1) {
                 if dx == 2 {
                     candidates.push((nx, ny, x + 1, y));
                 } else {
@@ -79,23 +500,35 @@ fn run_13_maze_generation_steps() {
         if candidates.len() as i64 == 0 {
             stack.pop().unwrap_or_default();
         } else {
-            let sel = candidates[(x * 17 + y * 29 + stack.len() as i64 * 13) % candidates.len() as i64 as usize];
-            (nx, ny, wx, wy) = sel;
-            grid[wy as usize][wx as usize] = 0;
-            grid[ny as usize][nx as usize] = 0;
+            let sel = (candidates[((if (((x * 17 + y * 29 + stack.len() as i64 * 13) % candidates.len() as i64) as i64) < 0 { (candidates.len() as i64 + (((x * 17 + y * 29 + stack.len() as i64 * 13) % candidates.len() as i64) as i64)) } else { (((x * 17 + y * 29 + stack.len() as i64 * 13) % candidates.len() as i64) as i64) }) as usize)]).clone();
+            let __tmp_9 = sel;
+            let mut nx = __tmp_9.0;
+            let mut ny = __tmp_9.1;
+            let wx = __tmp_9.2;
+            let wy = __tmp_9.3;
+            let __idx_i64_10 = ((wy) as i64);
+            let __idx_11 = if __idx_i64_10 < 0 { (grid.len() as i64 + __idx_i64_10) as usize } else { __idx_i64_10 as usize };
+            let __idx_i64_12 = ((wx) as i64);
+            let __idx_13 = if __idx_i64_12 < 0 { (grid[__idx_11].len() as i64 + __idx_i64_12) as usize } else { __idx_i64_12 as usize };
+            grid[__idx_11][__idx_13] = 0;
+            let __idx_i64_14 = ((ny) as i64);
+            let __idx_15 = if __idx_i64_14 < 0 { (grid.len() as i64 + __idx_i64_14) as usize } else { __idx_i64_14 as usize };
+            let __idx_i64_16 = ((nx) as i64);
+            let __idx_17 = if __idx_i64_16 < 0 { (grid[__idx_15].len() as i64 + __idx_i64_16) as usize } else { __idx_i64_16 as usize };
+            grid[__idx_15][__idx_17] = 0;
             stack.push((nx, ny));
         }
         if step % capture_every == 0 {
-            frames.push(capture(grid, cell_w, cell_h, scale));
+            frames.push(capture(&(grid), cell_w, cell_h, scale));
         }
         step += 1;
     }
-    frames.push(capture(grid, cell_w, cell_h, scale));
-    save_gif(out_path, cell_w * scale, cell_h * scale, frames, grayscale_palette());
+    frames.push(capture(&(grid), cell_w, cell_h, scale));
+    save_gif(&(out_path), cell_w * scale, cell_h * scale, &(frames), &(grayscale_palette()), 4, 0);
     let elapsed = perf_counter() - start;
-    println!("{:?}", ("output:", out_path));
-    println!("{:?}", ("frames:", frames.len() as i64));
-    println!("{:?}", ("elapsed_sec:", elapsed));
+    println!("{} {}", ("output:").to_string(), out_path);
+    println!("{} {}", ("frames:").to_string(), frames.len() as i64);
+    println!("{} {}", ("elapsed_sec:").to_string(), elapsed);
 }
 
 fn main() {

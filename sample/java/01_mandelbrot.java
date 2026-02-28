@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_01_mandelbrot {
     private Pytra_01_mandelbrot() {
     }

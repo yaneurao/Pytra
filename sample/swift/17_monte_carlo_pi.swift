@@ -1,7 +1,4 @@
-// Auto-generated Pytra Swift native source from EAST3.
 import Foundation
-
-// Runtime helpers are provided by py_runtime.swift in the same module.
 
 
 // 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.

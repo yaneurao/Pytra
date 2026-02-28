@@ -1,17 +1,18 @@
-// このファイルは EAST ベース TypeScript プレビュー出力です。
-// TODO: 専用 TSEmitter 実装へ段階移行する。
-import { perf_counter } from "./time.js";
+import { perf_counter } from "./pytra/std/time.js";
 import { grayscale_palette } from "./pytra/runtime/gif.js";
 import { save_gif } from "./pytra/runtime/gif.js";
 
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 function render_frame(width, height, center_x, center_y, scale, max_iter) {
-    let frame = bytearray(width * height);
-    for (let y = 0; y < height; y += 1) {
+    let frame = (typeof (width * height) === "number" ? new Array(Math.max(0, Math.trunc(Number((width * height))))).fill(0) : (Array.isArray((width * height)) ? (width * height).slice() : Array.from((width * height))));
+    let __hoisted_cast_1 = Number(max_iter);
+    const __start_1 = 0;
+    for (let y = __start_1; y < height; y += 1) {
         let row_base = y * width;
         let cy = center_y + (y - height * 0.5) * scale;
-        for (let x = 0; x < width; x += 1) {
+        const __start_2 = 0;
+        for (let x = __start_2; x < width; x += 1) {
             let cx = center_x + (x - width * 0.5) * scale;
             let zx = 0.0;
             let zy = 0.0;
@@ -26,10 +27,10 @@ function render_frame(width, height, center_x, center_y, scale, max_iter) {
                 zx = zx2 - zy2 + cx;
                 i += 1;
             }
-            frame[row_base + x] = Math.trunc(Number(255.0 * i / max_iter));
+            frame[(((row_base + x) < 0) ? ((frame).length + (row_base + x)) : (row_base + x))] = Math.trunc(Number(255.0 * i / __hoisted_cast_1));
         }
     }
-    return bytes(frame);
+    return (Array.isArray((frame)) ? (frame).slice() : Array.from((frame)));
 }
 
 function run_05_mandelbrot_zoom() {
@@ -46,7 +47,8 @@ function run_05_mandelbrot_zoom() {
     let start = perf_counter();
     let frames = [];
     let scale = base_scale;
-    for (let _ = 0; _ < frame_count; _ += 1) {
+    const __start_3 = 0;
+    for (let _ = __start_3; _ < frame_count; _ += 1) {
         frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;
     }
@@ -57,5 +59,4 @@ function run_05_mandelbrot_zoom() {
     console.log("elapsed_sec:", elapsed);
 }
 
-// __main__ guard
 run_05_mandelbrot_zoom();

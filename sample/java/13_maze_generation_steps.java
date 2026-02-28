@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_13_maze_generation_steps {
     private Pytra_13_maze_generation_steps() {
     }

@@ -1,5 +1,3 @@
--- Auto-generated Pytra Lua native source from EAST3.
-
 local math = math
 local png = { write_rgb_png = function(...) end, write_gif = function(...) end }
 -- from time import perf_counter as perf_counter (not yet mapped)
@@ -197,5 +195,4 @@ function run_raytrace()
 end
 
 
--- __main__ guard
 run_raytrace()

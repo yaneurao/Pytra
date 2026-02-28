@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_10_plasma_effect {
     private Pytra_10_plasma_effect() {
     }

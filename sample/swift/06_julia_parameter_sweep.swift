@@ -1,7 +1,4 @@
-// Auto-generated Pytra Swift native source from EAST3.
 import Foundation
-
-// Runtime helpers are provided by py_runtime.swift in the same module.
 
 
 // 06: Sample that sweeps Julia-set parameters and outputs a GIF.

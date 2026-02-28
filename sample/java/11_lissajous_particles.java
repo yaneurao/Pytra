@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_11_lissajous_particles {
     private Pytra_11_lissajous_particles() {
     }

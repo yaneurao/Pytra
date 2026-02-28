@@ -973,17 +973,13 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "}")
         return lines
 
-    if iter_plan_any.get("kind") == "RuntimeIterForPlan" and target_plan_any.get("kind") == "NameTarget":
+    if iter_plan_any.get("kind") == "RuntimeIterForPlan":
         iter_expr = _render_expr(iter_plan_any.get("iter_expr"))
         iter_tmp = _fresh_tmp(ctx, "iter")
         idx_tmp = _fresh_tmp(ctx, "i")
-        target_name = _safe_ident(target_plan_any.get("id"), "item")
-        if target_name == "_":
-            target_name = _fresh_tmp(ctx, "item")
         lines.append(indent + "let " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
         lines.append(indent + "var " + idx_tmp + ": Int64 = 0")
         lines.append(indent + "while " + idx_tmp + " < Int64(" + iter_tmp + ".count) {")
-        lines.append(indent + "    let " + target_name + " = " + iter_tmp + "[Int(" + idx_tmp + ")]")
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
@@ -991,8 +987,32 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
         }
-        _declared_set(body_ctx).add(target_name)
-        _type_map(body_ctx)[target_name] = "Any"
+        target_kind = target_plan_any.get("kind")
+        if target_kind == "NameTarget":
+            target_name = _safe_ident(target_plan_any.get("id"), "item")
+            if target_name == "_":
+                target_name = _fresh_tmp(ctx, "item")
+            lines.append(indent + "    let " + target_name + " = " + iter_tmp + "[Int(" + idx_tmp + ")]")
+            _declared_set(body_ctx).add(target_name)
+            _type_map(body_ctx)[target_name] = "Any"
+        elif target_kind == "TupleTarget":
+            tuple_tmp = _fresh_tmp(ctx, "tuple")
+            lines.append(indent + "    let " + tuple_tmp + " = __pytra_as_list(" + iter_tmp + "[Int(" + idx_tmp + ")])")
+            elems_any = target_plan_any.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            i = 0
+            while i < len(elems):
+                elem = elems[i]
+                if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
+                    raise RuntimeError("swift native emitter: unsupported RuntimeIter tuple target element")
+                name = _safe_ident(elem.get("id"), "item_" + str(i))
+                if name != "_":
+                    lines.append(indent + "    let " + name + " = " + tuple_tmp + "[Int(" + str(i) + ")]")
+                    _declared_set(body_ctx).add(name)
+                    _type_map(body_ctx)[name] = "Any"
+                i += 1
+        else:
+            raise RuntimeError("swift native emitter: unsupported RuntimeIter target_plan")
         i = 0
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))

@@ -1,4 +1,9 @@
-using math;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Pytra.CsModule;
+using math = Pytra.CsModule.math;
+using png = Pytra.CsModule.png_helper;
 
 public static class Program
 {
@@ -30,7 +35,7 @@ public static class Program
         if (d < 0.0) {
             return -1.0;
         }
-        double sd = math.sqrt(d);
+        double sd = System.Convert.ToDouble(Pytra.CsModule.math.sqrt(d));
         double t0 = (-b - sd) / (2.0 * a);
         double t1 = (-b + sd) / (2.0 * a);
         
@@ -45,7 +50,7 @@ public static class Program
     
     public static List<byte> render(long width, long height, long aa)
     {
-        List<byte> pixels = bytearray();
+        List<byte> pixels = new System.Collections.Generic.List<byte>();
         
         // Camera origin
         double ox = 0.0;
@@ -56,24 +61,32 @@ public static class Program
         double lx = -0.4;
         double ly = 0.8;
         double lz = -0.45;
+        double __hoisted_cast_1 = System.Convert.ToDouble(aa);
+        double __hoisted_cast_2 = System.Convert.ToDouble(height - 1);
+        double __hoisted_cast_3 = System.Convert.ToDouble(width - 1);
+        double __hoisted_cast_4 = System.Convert.ToDouble(height);
         
-        for (long y = 0; y < height; y += 1) {
-            for (long x = 0; x < width; x += 1) {
+        long y = 0;
+        for (y = 0; y < height; y += 1) {
+            long x = 0;
+            for (x = 0; x < width; x += 1) {
                 long ar = 0;
                 long ag = 0;
                 long ab = 0;
                 
-                for (long ay = 0; ay < aa; ay += 1) {
-                    for (long ax = 0; ax < aa; ax += 1) {
-                        double fy = (y + (ay + 0.5) / aa) / (height - 1);
-                        double fx = (x + (ax + 0.5) / aa) / (width - 1);
+                long ay = 0;
+                for (ay = 0; ay < aa; ay += 1) {
+                    long ax = 0;
+                    for (ax = 0; ax < aa; ax += 1) {
+                        double fy = (y + (ay + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
+                        double fx = (x + (ax + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
                         double sy = 1.0 - 2.0 * fy;
-                        double sx = (2.0 * fx - 1.0) * (width / height);
+                        double sx = (2.0 * fx - 1.0) * (width / __hoisted_cast_4);
                         
                         double dx = sx;
                         double dy = sy;
                         double dz = 1.0;
-                        double inv_len = 1.0 / math.sqrt(dx * dx + dy * dy + dz * dz);
+                        double inv_len = System.Convert.ToDouble(1.0 / Pytra.CsModule.math.sqrt(dx * dx + dy * dy + dz * dz));
                         dx *= inv_len;
                         dy *= inv_len;
                         dz *= inv_len;
@@ -82,17 +95,17 @@ public static class Program
                         long hit_id = -1;
                         
                         double t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
-                        if (t > 0.0 && t < t_min) {
+                        if ((t > 0.0) && (t < t_min)) {
                             t_min = t;
                             hit_id = 0;
                         }
                         t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
-                        if (t > 0.0 && t < t_min) {
+                        if ((t > 0.0) && (t < t_min)) {
                             t_min = t;
                             hit_id = 1;
                         }
                         t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
-                        if (t > 0.0 && t < t_min) {
+                        if ((t > 0.0) && (t < t_min)) {
                             t_min = t;
                             hit_id = 2;
                         }
@@ -141,7 +154,7 @@ public static class Program
                                     base_g = 0.55;
                                     base_b = 0.95;
                                 } else {
-                                    long checker = System.Convert.ToInt64((px + 50.0) * 0.8) + System.Convert.ToInt64((pz + 50.0) * 0.8);
+                                    long checker = Pytra.CsModule.py_runtime.py_int((px + 50.0) * 0.8) + Pytra.CsModule.py_runtime.py_int((pz + 50.0) * 0.8);
                                     if (checker % 2 == 0) {
                                         base_r = 0.85;
                                         base_g = 0.85;
@@ -154,14 +167,14 @@ public static class Program
                                 }
                             }
                             double shade = 0.12 + 0.88 * diff;
-                            r = System.Convert.ToInt64(255.0 * clamp01(base_r * shade));
-                            g = System.Convert.ToInt64(255.0 * clamp01(base_g * shade));
-                            b = System.Convert.ToInt64(255.0 * clamp01(base_b * shade));
+                            r = Pytra.CsModule.py_runtime.py_int(255.0 * clamp01(base_r * shade));
+                            g = Pytra.CsModule.py_runtime.py_int(255.0 * clamp01(base_g * shade));
+                            b = Pytra.CsModule.py_runtime.py_int(255.0 * clamp01(base_b * shade));
                         } else {
                             double tsky = 0.5 * (dy + 1.0);
-                            r = System.Convert.ToInt64(255.0 * (0.65 + 0.20 * tsky));
-                            g = System.Convert.ToInt64(255.0 * (0.75 + 0.18 * tsky));
-                            b = System.Convert.ToInt64(255.0 * (0.90 + 0.08 * tsky));
+                            r = Pytra.CsModule.py_runtime.py_int(255.0 * (0.65 + 0.20 * tsky));
+                            g = Pytra.CsModule.py_runtime.py_int(255.0 * (0.75 + 0.18 * tsky));
+                            b = Pytra.CsModule.py_runtime.py_int(255.0 * (0.90 + 0.08 * tsky));
                         }
                         ar += r;
                         ag += g;
@@ -169,9 +182,9 @@ public static class Program
                     }
                 }
                 long samples = aa * aa;
-                pixels.Add(System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ar) / System.Convert.ToDouble(samples))));
-                pixels.Add(System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ag) / System.Convert.ToDouble(samples))));
-                pixels.Add(System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ab) / System.Convert.ToDouble(samples))));
+                Pytra.CsModule.py_runtime.py_append(pixels, System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ar) / System.Convert.ToDouble(samples))));
+                Pytra.CsModule.py_runtime.py_append(pixels, System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ag) / System.Convert.ToDouble(samples))));
+                Pytra.CsModule.py_runtime.py_append(pixels, System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(ab) / System.Convert.ToDouble(samples))));
             }
         }
         return pixels;
@@ -184,10 +197,10 @@ public static class Program
         long aa = 2;
         string out_path = "sample/out/02_raytrace_spheres.png";
         
-        double start = perf_counter();
+        double start = Pytra.CsModule.time.perf_counter();
         List<byte> pixels = render(width, height, aa);
-        png.write_rgb_png(out_path, width, height, pixels);
-        double elapsed = perf_counter() - start;
+        Pytra.CsModule.png_helper.write_rgb_png(out_path, width, height, pixels);
+        double elapsed = Pytra.CsModule.time.perf_counter() - start;
         
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "size:", width, "x", height }));

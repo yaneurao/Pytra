@@ -46,6 +46,7 @@
 - 2026-02-28: `ts/go/java/swift/kotlin/ruby/lua` の固定コメント経路を撤去し、`pass` は no-op 文へ置換、unsupported は例外停止へ統一した。`test_py2*smoke.py` 183件通過で回帰を確認した（`P1-COMMENT-FIDELITY-01-S2-01` 完了）。
 - 2026-02-28: `cpp/rs/cs/js` の `pass` コメント経路を no-op 文（`;` / `();`）へ置換し、`unsupported` / `invalid` コメント経路を例外停止へ統一した。`test_py2cpp/rs/cs/js_smoke.py`（84件）通過で回帰を確認した（`P1-COMMENT-FIDELITY-01-S2-02` 完了）。
 - 2026-02-28: `test_py2*smoke.py` 全体へ共通禁止コメント検査を導入し、`sample/01` または language 対応 fixture で元コメント伝播を固定した。`python3 -m unittest discover -s test/unit -p 'test_py2*smoke.py'`（188件）通過を確認した（`P1-COMMENT-FIDELITY-01-S3-01` 完了）。
+- 2026-02-28: `sample/*` を全 backend で再生成し（`regen=184` / `fail=14` は Lua 未対応ケース）、固定コメント禁止パターンを機械検査した結果 0 件を確認した。あわせて `test_py2*smoke.py`（188件）通過で回帰を固定した（S3-02 完了）。
 
 ## S1-01 棚卸し結果（固定コメント禁止パターン）
 
@@ -102,4 +103,4 @@ fail-closed 方針:
 - [x] [ID: P1-COMMENT-FIDELITY-01-S2-01] `ts/go/java/swift/kotlin/ruby/lua` の固定コメント出力を撤去し、元コメント伝播のみへ統一する。
 - [x] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換し、生成コメントを残さない実装へ寄せる。
 - [x] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
-- [ ] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、全言語の出力先に固定コメントが残存しないことを確認する。
+- [x] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、全言語の出力先に固定コメントが残存しないことを確認する。

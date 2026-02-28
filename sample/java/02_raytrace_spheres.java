@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_02_raytrace_spheres {
     private Pytra_02_raytrace_spheres() {
     }

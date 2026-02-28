@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_05_mandelbrot_zoom {
     private Pytra_05_mandelbrot_zoom() {
     }

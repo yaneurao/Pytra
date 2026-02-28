@@ -1,5 +1,3 @@
--- Auto-generated Pytra Lua native source from EAST3.
-
 -- from time import perf_counter as perf_counter (not yet mapped)
 local png = { write_rgb_png = function(...) end, write_gif = function(...) end }
 
@@ -69,5 +67,4 @@ function run_julia()
 end
 
 
--- __main__ guard
 run_julia()

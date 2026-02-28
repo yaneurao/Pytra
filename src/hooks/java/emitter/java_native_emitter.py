@@ -1394,6 +1394,11 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         rhs = _render_expr(stmt.get("value"))
         op = _augassign_op(stmt.get("op"))
         return [indent + lhs + " " + op + " " + rhs + ";"]
+    if kind == "Raise":
+        exc_any = stmt.get("exc")
+        if exc_any is None:
+            return [indent + 'throw new RuntimeException("pytra raise");']
+        return [indent + "throw new RuntimeException(__pytra_str(" + _render_expr(exc_any) + "));"]
     if kind == "If":
         test_expr = _render_truthy_expr(stmt.get("test"))
         lines: list[str] = [indent + "if (" + test_expr + ") {"]

@@ -1,4 +1,3 @@
-// Auto-generated Pytra Kotlin native source from EAST3.
 import kotlin.math.*
 
 fun __pytra_noop(vararg args: Any?) { }
@@ -423,7 +422,7 @@ open class Parser() {
 
     fun skip_newlines() {
         while (this.match("NEWLINE")) {
-            // pass
+            run { }
         }
     }
 

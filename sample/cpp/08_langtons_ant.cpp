@@ -5,12 +5,12 @@
 
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
-bytes capture(const list<list<int64>>& grid, int64 w, int64 h) {
+bytes capture(const object& grid, int64 w, int64 h) {
     bytearray frame = bytearray(w * h);
     for (int64 y = 0; y < h; ++y) {
         int64 row_base = y * w;
         for (int64 x = 0; x < w; ++x) {
-            frame[row_base + x] = (grid[y][x] ? 255 : 0);
+            frame[row_base + x] = (int64(py_to<int64>(py_at(object(py_at(grid, py_to<int64>(y))), py_to<int64>(x)))) ? 255 : 0);
         }
     }
     return bytes(frame);
@@ -23,22 +23,22 @@ void run_08_langtons_ant() {
     
     float64 start = pytra::std::time::perf_counter();
     
-    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>{0}, w));     }     return __out; }();
+    object grid = [&]() -> object {     list<object> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>(make_object(list<int64>{0})), w)));     }     return make_object(__out); }();
     int64 x = w / 2;
     int64 y = h / 2;
     int64 d = 0;
     
     int64 steps_total = 600000;
     int64 capture_every = 3000;
-    list<bytes> frames = list<bytes>{};
+    object frames = make_object(list<object>{});
     
     for (int64 i = 0; i < steps_total; ++i) {
-        if (grid[y][x] == 0) {
+        if (int64(py_to<int64>(py_at(object(py_at(grid, py_to<int64>(y))), py_to<int64>(x)))) == 0) {
             d = (d + 1) % 4;
-            grid[y][x] = 1;
+            py_set_at(object(py_at(grid, py_to<int64>(y))), x, make_object(1));
         } else {
             d = (d + 3) % 4;
-            grid[y][x] = 0;
+            py_set_at(object(py_at(grid, py_to<int64>(y))), x, make_object(0));
         }
         if (d == 0) {
             y = (y - 1 + h) % h;
@@ -53,7 +53,7 @@ void run_08_langtons_ant() {
             }
         }
         if (i % capture_every == 0)
-            frames.append(capture(grid, w, h));
+            py_append(frames, make_object(capture(grid, w, h)));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 5, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

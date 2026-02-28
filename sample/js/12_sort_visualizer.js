@@ -1,28 +1,33 @@
-import { perf_counter } from "./time.js";
+import { perf_counter } from "./pytra/std/time.js";
 import { grayscale_palette } from "./pytra/utils/gif.js";
 import { save_gif } from "./pytra/utils/gif.js";
 
 // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
 function render(values, w, h) {
-    let frame = bytearray(w * h);
+    let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
     let n = (values).length;
     let bar_w = w / n;
-    for (let i = 0; i < n; i += 1) {
+    let __hoisted_cast_1 = Number(n);
+    let __hoisted_cast_2 = Number(h);
+    const __start_1 = 0;
+    for (let i = __start_1; i < n; i += 1) {
         let x0 = Math.trunc(Number(i * bar_w));
         let x1 = Math.trunc(Number((i + 1) * bar_w));
         if (x1 <= x0) {
             x1 = x0 + 1;
         }
-        let bh = Math.trunc(Number((values[i] / n) * h));
-        let y0 = h - bh;
-        for (let y = y0; y < h; y += 1) {
-            for (let x = x0; x < x1; x += 1) {
-                frame[y * w + x] = 255;
+        let bh = Math.trunc(Number((values[(((i) < 0) ? ((values).length + (i)) : (i))] / __hoisted_cast_1) * __hoisted_cast_2));
+        let y = h - bh;
+        const __start_2 = y;
+        for (let y = __start_2; y < h; y += 1) {
+            const __start_3 = x0;
+            for (let x = __start_3; x < x1; x += 1) {
+                frame[(((y * w + x) < 0) ? ((frame).length + (y * w + x)) : (y * w + x))] = 255;
             }
         }
     }
-    return bytes(frame);
+    return (Array.isArray((frame)) ? (frame).slice() : Array.from((frame)));
 }
 
 function run_12_sort_visualizer() {
@@ -33,20 +38,23 @@ function run_12_sort_visualizer() {
     
     let start = perf_counter();
     let values = [];
-    for (let i = 0; i < n; i += 1) {
+    const __start_4 = 0;
+    for (let i = __start_4; i < n; i += 1) {
         values.push((i * 37 + 19) % n);
     }
-    let frames = [];
+    let frames = [render(values, w, h)];
     let frame_stride = 16;
     
     let op = 0;
-    for (let i = 0; i < n; i += 1) {
+    const __start_5 = 0;
+    for (let i = __start_5; i < n; i += 1) {
         let swapped = false;
-        for (let j = 0; j < n - i - 1; j += 1) {
-            if (values[j] > values[j + 1]) {
-                const __tmp_1 = [values[j + 1], values[j]];
-                values[j] = __tmp_1[0];
-                values[j + 1] = __tmp_1[1];
+        const __start_6 = 0;
+        for (let j = __start_6; j < n - i - 1; j += 1) {
+            if (values[(((j) < 0) ? ((values).length + (j)) : (j))] > values[(((j + 1) < 0) ? ((values).length + (j + 1)) : (j + 1))]) {
+                const __tmp_7 = [values[(((j + 1) < 0) ? ((values).length + (j + 1)) : (j + 1))], values[(((j) < 0) ? ((values).length + (j)) : (j))]];
+                values[(((j) < 0) ? ((values).length + (j)) : (j))] = __tmp_7[0];
+                values[(((j + 1) < 0) ? ((values).length + (j + 1)) : (j + 1))] = __tmp_7[1];
                 swapped = true;
             }
             if (op % frame_stride === 0) {
@@ -65,5 +73,4 @@ function run_12_sort_visualizer() {
     console.log("elapsed_sec:", elapsed);
 }
 
-// __main__ guard
 run_12_sort_visualizer();

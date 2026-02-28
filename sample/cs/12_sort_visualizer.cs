@@ -1,27 +1,36 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Pytra.CsModule;
+
 public static class Program
 {
     // 12: Sample that outputs intermediate states of bubble sort as a GIF.
     
     public static List<byte> render(System.Collections.Generic.List<long> values, long w, long h)
     {
-        List<byte> frame = bytearray(w * h);
+        List<byte> frame = Pytra.CsModule.py_runtime.py_bytearray(w * h);
         long n = (values).Count;
         double bar_w = w / n;
-        for (long i = 0; i < n; i += 1) {
-            long x0 = System.Convert.ToInt64(i * bar_w);
-            long x1 = System.Convert.ToInt64((i + 1) * bar_w);
+        double __hoisted_cast_1 = System.Convert.ToDouble(n);
+        double __hoisted_cast_2 = System.Convert.ToDouble(h);
+        long i = 0;
+        for (i = 0; i < n; i += 1) {
+            long x0 = Pytra.CsModule.py_runtime.py_int(i * bar_w);
+            long x1 = Pytra.CsModule.py_runtime.py_int((i + 1) * bar_w);
             if (x1 <= x0) {
                 x1 = x0 + 1;
             }
-            long bh = System.Convert.ToInt64((values[System.Convert.ToInt32(i)] / n) * h);
+            long bh = Pytra.CsModule.py_runtime.py_int((Pytra.CsModule.py_runtime.py_get(values, i) / __hoisted_cast_1) * __hoisted_cast_2);
             long y = h - bh;
-            for (long y = y; y < h; y += 1) {
-                for (long x = x0; x < x1; x += 1) {
-                    frame[System.Convert.ToInt32(y * w + x)] = 255;
+            for (y = y; y < h; y += 1) {
+                long x = x0;
+                for (x = x0; x < x1; x += 1) {
+                    Pytra.CsModule.py_runtime.py_set(frame, y * w + x, 255);
                 }
             }
         }
-        return bytes(frame);
+        return Pytra.CsModule.py_runtime.py_bytes(frame);
     }
     
     public static void run_12_sort_visualizer()
@@ -31,22 +40,24 @@ public static class Program
         long n = 124;
         string out_path = "sample/out/12_sort_visualizer.gif";
         
-        unknown start = perf_counter();
-        System.Collections.Generic.List<long> values = new System.Collections.Generic.List<unknown>();
-        for (long i = 0; i < n; i += 1) {
+        double start = Pytra.CsModule.time.perf_counter();
+        System.Collections.Generic.List<long> values = new System.Collections.Generic.List<long>();
+        long i = 0;
+        for (i = 0; i < n; i += 1) {
             values.Add((i * 37 + 19) % n);
         }
-        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<List<byte>>();
+        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<List<byte>> { render(values, w, h) };
         long frame_stride = 16;
         
         long op = 0;
-        for (long i = 0; i < n; i += 1) {
+        for (i = 0; i < n; i += 1) {
             bool swapped = false;
-            for (long j = 0; j < n - i - 1; j += 1) {
-                if (values[System.Convert.ToInt32(j)] > values[System.Convert.ToInt32(j + 1)]) {
-                    var __tmp_1 = (values[System.Convert.ToInt32(j + 1)], values[System.Convert.ToInt32(j)]);
-                    values[System.Convert.ToInt32(j)] = __tmp_1.Item1;
-                    values[System.Convert.ToInt32(j + 1)] = __tmp_1.Item2;
+            long j = 0;
+            for (j = 0; j < n - i - 1; j += 1) {
+                if (Pytra.CsModule.py_runtime.py_get(values, j) > Pytra.CsModule.py_runtime.py_get(values, j + 1)) {
+                    var __tmp_1 = (Pytra.CsModule.py_runtime.py_get(values, j + 1), Pytra.CsModule.py_runtime.py_get(values, j));
+                    Pytra.CsModule.py_runtime.py_set(values, j, __tmp_1.Item1);
+                    Pytra.CsModule.py_runtime.py_set(values, j + 1, __tmp_1.Item2);
                     swapped = true;
                 }
                 if (op % frame_stride == 0) {
@@ -55,11 +66,11 @@ public static class Program
                 op += 1;
             }
             if (!swapped) {
-                py_break;
+                break;
             }
         }
-        save_gif(out_path, w, h, frames, grayscale_palette());
-        unknown elapsed = perf_counter() - start;
+        Pytra.CsModule.gif_helper.save_gif(out_path, w, h, frames, Pytra.CsModule.gif_helper.grayscale_palette());
+        double elapsed = Pytra.CsModule.time.perf_counter() - start;
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "frames:", (frames).Count }));
         System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));

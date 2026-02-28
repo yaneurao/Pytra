@@ -1,4 +1,4 @@
-import { perf_counter } from "./time.js";
+import { perf_counter } from "./pytra/std/time.js";
 import { png } from "./pytra/runtime.js";
 
 // 01: Sample that outputs the Mandelbrot set as a PNG image.
@@ -7,7 +7,8 @@ import { png } from "./pytra/runtime.js";
 function escape_count(cx, cy, max_iter) {
     let x = 0.0;
     let y = 0.0;
-    for (let i = 0; i < max_iter; i += 1) {
+    const __start_1 = 0;
+    for (let i = __start_1; i < max_iter; i += 1) {
         let x2 = x * x;
         let y2 = y * y;
         if (x2 + y2 > 4.0) {
@@ -31,13 +32,18 @@ function color_map(iter_count, max_iter) {
 }
 
 function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max) {
-    let pixels = bytearray();
+    let pixels = [];
+    let __hoisted_cast_1 = Number(height - 1);
+    let __hoisted_cast_2 = Number(width - 1);
+    let __hoisted_cast_3 = Number(max_iter);
     
-    for (let y = 0; y < height; y += 1) {
-        let py = y_min + (y_max - y_min) * (y / (height - 1));
+    const __start_2 = 0;
+    for (let y = __start_2; y < height; y += 1) {
+        let py = y_min + (y_max - y_min) * (y / __hoisted_cast_1);
         
-        for (let x = 0; x < width; x += 1) {
-            let px = x_min + (x_max - x_min) * (x / (width - 1));
+        const __start_3 = 0;
+        for (let x = __start_3; x < width; x += 1) {
+            let px = x_min + (x_max - x_min) * (x / __hoisted_cast_2);
             let it = escape_count(px, py, max_iter);
             let r;
             let g;
@@ -47,7 +53,7 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max) 
                 g = 0;
                 b = 0;
             } else {
-                let t = it / max_iter;
+                let t = it / __hoisted_cast_3;
                 r = Math.trunc(Number(255.0 * t * t));
                 g = Math.trunc(Number(255.0 * t));
                 b = Math.trunc(Number(255.0 * (1.0 - t)));
@@ -78,5 +84,4 @@ function run_mandelbrot() {
     console.log("elapsed_sec:", elapsed);
 }
 
-// __main__ guard
 run_mandelbrot();

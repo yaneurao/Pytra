@@ -1,7 +1,4 @@
-// Auto-generated Pytra Swift native source from EAST3.
 import Foundation
-
-// Runtime helpers are provided by py_runtime.swift in the same module.
 
 
 // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.

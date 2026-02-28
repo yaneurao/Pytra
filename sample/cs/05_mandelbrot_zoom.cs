@@ -1,14 +1,22 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Pytra.CsModule;
+
 public static class Program
 {
     // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
     
     public static List<byte> render_frame(long width, long height, double center_x, double center_y, double scale, long max_iter)
     {
-        List<byte> frame = bytearray(width * height);
-        for (long y = 0; y < height; y += 1) {
+        List<byte> frame = Pytra.CsModule.py_runtime.py_bytearray(width * height);
+        double __hoisted_cast_1 = System.Convert.ToDouble(max_iter);
+        long y = 0;
+        for (y = 0; y < height; y += 1) {
             long row_base = y * width;
             double cy = center_y + (y - height * 0.5) * scale;
-            for (long x = 0; x < width; x += 1) {
+            long x = 0;
+            for (x = 0; x < width; x += 1) {
                 double cx = center_x + (x - width * 0.5) * scale;
                 double zx = 0.0;
                 double zy = 0.0;
@@ -17,16 +25,16 @@ public static class Program
                     double zx2 = zx * zx;
                     double zy2 = zy * zy;
                     if (zx2 + zy2 > 4.0) {
-                        py_break;
+                        break;
                     }
                     zy = 2.0 * zx * zy + cy;
                     zx = zx2 - zy2 + cx;
                     i += 1;
                 }
-                frame[System.Convert.ToInt32(row_base + x)] = System.Convert.ToInt64(255.0 * i / max_iter);
+                Pytra.CsModule.py_runtime.py_set(frame, row_base + x, Pytra.CsModule.py_runtime.py_int(255.0 * i / __hoisted_cast_1));
             }
         }
-        return bytes(frame);
+        return Pytra.CsModule.py_runtime.py_bytes(frame);
     }
     
     public static void run_05_mandelbrot_zoom()
@@ -41,15 +49,16 @@ public static class Program
         double zoom_per_frame = 0.93;
         string out_path = "sample/out/05_mandelbrot_zoom.gif";
         
-        unknown start = perf_counter();
-        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<unknown>();
+        double start = Pytra.CsModule.time.perf_counter();
+        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<List<byte>>();
         double scale = base_scale;
-        for (long _ = 0; _ < frame_count; _ += 1) {
+        long _ = 0;
+        for (_ = 0; _ < frame_count; _ += 1) {
             frames.Add(render_frame(width, height, center_x, center_y, scale, max_iter));
             scale *= zoom_per_frame;
         }
-        save_gif(out_path, width, height, frames, grayscale_palette());
-        unknown elapsed = perf_counter() - start;
+        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, Pytra.CsModule.gif_helper.grayscale_palette());
+        double elapsed = Pytra.CsModule.time.perf_counter() - start;
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frame_count }));
         System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));

@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_18_mini_language_interpreter {
     private Pytra_18_mini_language_interpreter() {
     }
@@ -82,7 +81,7 @@ public final class Pytra_18_mini_language_interpreter {
         public Token expect(String kind) {
             if ((!(java.util.Objects.equals(this.peek_kind(), kind)))) {
                 Token t = ((Token)(this.tokens.get((int)((((this.pos) < 0L) ? (((long)(this.tokens.size())) + (this.pos)) : (this.pos))))));
-                // TODO: unsupported stmt kind Raise
+                throw new RuntimeException(__pytra_str(new RuntimeError(((((("parse error at pos=" + String.valueOf(t.pos)) + ", expected=") + kind) + ", got=") + t.kind))));
             }
             Token token = ((Token)(this.tokens.get((int)((((this.pos) < 0L) ? (((long)(this.tokens.size())) + (this.pos)) : (this.pos))))));
             this.pos += 1L;
@@ -91,7 +90,7 @@ public final class Pytra_18_mini_language_interpreter {
 
         public void skip_newlines() {
             while (this.match("NEWLINE")) {
-                // pass
+                ;
             }
         }
 
@@ -191,7 +190,7 @@ public final class Pytra_18_mini_language_interpreter {
                 return expr_index;
             }
             Token t = ((Token)(this.tokens.get((int)((((this.pos) < 0L) ? (((long)(this.tokens.size())) + (this.pos)) : (this.pos))))));
-            // TODO: unsupported stmt kind Raise
+            throw new RuntimeException(__pytra_str(new RuntimeError(((("primary parse error at pos=" + String.valueOf(t.pos)) + " got=") + t.kind))));
             return 0L;
         }
     }
@@ -271,7 +270,7 @@ public final class Pytra_18_mini_language_interpreter {
                     }
                     continue;
                 }
-                // TODO: unsupported stmt kind Raise
+                throw new RuntimeException(__pytra_str(new RuntimeError(((((("tokenize error at line=" + String.valueOf(line_index)) + " pos=") + String.valueOf(i)) + " ch=") + ch))));
             }
             tokens.add(new Token("NEWLINE", "", n));
         }
@@ -286,7 +285,7 @@ public final class Pytra_18_mini_language_interpreter {
         }
         if ((java.util.Objects.equals(node.kind, "var"))) {
             if ((!(env.containsKey(node.name)))) {
-                // TODO: unsupported stmt kind Raise
+                throw new RuntimeException(__pytra_str(new RuntimeError(("undefined variable: " + node.name))));
             }
             return ((Long)(env.get(node.name)));
         }
@@ -307,13 +306,13 @@ public final class Pytra_18_mini_language_interpreter {
             }
             if ((java.util.Objects.equals(node.op, "/"))) {
                 if ((rhs == 0L)) {
-                    // TODO: unsupported stmt kind Raise
+                    throw new RuntimeException(__pytra_str(new RuntimeError("division by zero")));
                 }
                 return (lhs / rhs);
             }
-            // TODO: unsupported stmt kind Raise
+            throw new RuntimeException(__pytra_str(new RuntimeError(("unknown operator: " + node.op))));
         }
-        // TODO: unsupported stmt kind Raise
+        throw new RuntimeException(__pytra_str(new RuntimeError(("unknown node kind: " + node.kind))));
         return 0L;
     }
 
@@ -330,7 +329,7 @@ public final class Pytra_18_mini_language_interpreter {
             }
             if ((java.util.Objects.equals(stmt.kind, "assign"))) {
                 if ((!(env.containsKey(stmt.name)))) {
-                    // TODO: unsupported stmt kind Raise
+                    throw new RuntimeException(__pytra_str(new RuntimeError(("assign to undefined variable: " + stmt.name))));
                 }
                 env.put(stmt.name, eval_expr(stmt.expr_index, expr_nodes, env));
                 continue;

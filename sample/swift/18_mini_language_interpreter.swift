@@ -1,7 +1,4 @@
-// Auto-generated Pytra Swift native source from EAST3.
 import Foundation
-
-// Runtime helpers are provided by py_runtime.swift in the same module.
 
 
 func __pytra_is_Token(_ v: Any?) -> Bool {
@@ -89,7 +86,7 @@ final class Parser {
 
     func skip_newlines() {
         while self.match("NEWLINE") {
-            // pass
+            _ = 0
         }
     }
 
@@ -196,7 +193,86 @@ final class Parser {
 
 func tokenize(lines: [Any]) -> [Any] {
     var tokens: [Any] = __pytra_as_list([])
-    // TODO: unsupported ForCore plan
+    let __iter_0 = __pytra_as_list(enumerate(lines))
+    var __i_1: Int64 = 0
+    while __i_1 < Int64(__iter_0.count) {
+        let __tuple_2 = __pytra_as_list(__iter_0[Int(__i_1)])
+        let line_index = __tuple_2[Int(0)]
+        let source = __tuple_2[Int(1)]
+        var i: Int64 = __pytra_int(Int64(0))
+        var n: Int64 = __pytra_int(__pytra_len(source))
+        while (__pytra_int(i) < __pytra_int(n)) {
+            var ch: String = __pytra_str(__pytra_str(__pytra_getIndex(source, i)))
+            if (__pytra_str(ch) == __pytra_str(" ")) {
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str("+")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("PLUS", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str("-")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("MINUS", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str("*")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("STAR", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str("/")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("SLASH", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str("(")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("LPAREN", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str(")")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("RPAREN", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if (__pytra_str(ch) == __pytra_str("=")) {
+                tokens = __pytra_as_list(tokens); tokens.append(Token("EQUAL", ch, i))
+                i += Int64(1)
+                continue
+            }
+            if __pytra_truthy(__pytra_isdigit(ch)) {
+                var start: Int64 = __pytra_int(i)
+                while ((__pytra_int(i) < __pytra_int(n)) && __pytra_truthy(__pytra_isdigit(__pytra_str(__pytra_getIndex(source, i))))) {
+                    i += Int64(1)
+                }
+                var text: String = __pytra_str(__pytra_slice(source, start, i))
+                tokens = __pytra_as_list(tokens); tokens.append(Token("NUMBER", text, start))
+                continue
+            }
+            if (__pytra_truthy(__pytra_isalpha(ch)) || (__pytra_str(ch) == __pytra_str("_"))) {
+                var start: Int64 = __pytra_int(i)
+                while ((__pytra_int(i) < __pytra_int(n)) && ((__pytra_truthy(__pytra_isalpha(__pytra_str(__pytra_getIndex(source, i)))) || (__pytra_str(__pytra_str(__pytra_getIndex(source, i))) == __pytra_str("_"))) || __pytra_truthy(__pytra_isdigit(__pytra_str(__pytra_getIndex(source, i)))))) {
+                    i += Int64(1)
+                }
+                var text: String = __pytra_str(__pytra_slice(source, start, i))
+                if (__pytra_str(text) == __pytra_str("let")) {
+                    tokens = __pytra_as_list(tokens); tokens.append(Token("LET", text, start))
+                } else {
+                    if (__pytra_str(text) == __pytra_str("print")) {
+                        tokens = __pytra_as_list(tokens); tokens.append(Token("PRINT", text, start))
+                    } else {
+                        tokens = __pytra_as_list(tokens); tokens.append(Token("IDENT", text, start))
+                    }
+                }
+                continue
+            }
+            fatalError("pytra raise")
+        }
+        tokens = __pytra_as_list(tokens); tokens.append(Token("NEWLINE", "", n))
+        __i_1 += 1
+    }
     tokens = __pytra_as_list(tokens); tokens.append(Token("EOF", "", __pytra_len(lines)))
     return tokens
 }

@@ -1,5 +1,5 @@
-import * as math from "./math.js";
-import { perf_counter } from "./time.js";
+import * as math from "./pytra/std/math.js";
+import { perf_counter } from "./pytra/std/time.js";
 import { grayscale_palette } from "./pytra/runtime/gif.js";
 import { save_gif } from "./pytra/runtime/gif.js";
 
@@ -14,11 +14,14 @@ function run_10_plasma_effect() {
     let start = perf_counter();
     let frames = [];
     
-    for (let t = 0; t < frames_n; t += 1) {
-        let frame = bytearray(w * h);
-        for (let y = 0; y < h; y += 1) {
+    const __start_1 = 0;
+    for (let t = __start_1; t < frames_n; t += 1) {
+        let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
+        const __start_2 = 0;
+        for (let y = __start_2; y < h; y += 1) {
             let row_base = y * w;
-            for (let x = 0; x < w; x += 1) {
+            const __start_3 = 0;
+            for (let x = __start_3; x < w; x += 1) {
                 let dx = x - 160;
                 let dy = y - 120;
                 let v = math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05) + math.sin((x + y + t * 1.7) * 0.03) + math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18);
@@ -29,10 +32,10 @@ function run_10_plasma_effect() {
                 if (c > 255) {
                     c = 255;
                 }
-                frame[row_base + x] = c;
+                frame[(((row_base + x) < 0) ? ((frame).length + (row_base + x)) : (row_base + x))] = c;
             }
         }
-        frames.push(bytes(frame));
+        frames.push((Array.isArray((frame)) ? (frame).slice() : Array.from((frame))));
     }
     save_gif(out_path, w, h, frames, grayscale_palette());
     let elapsed = perf_counter() - start;
@@ -41,5 +44,4 @@ function run_10_plasma_effect() {
     console.log("elapsed_sec:", elapsed);
 }
 
-// __main__ guard
 run_10_plasma_effect();

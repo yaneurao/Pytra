@@ -1,5 +1,3 @@
--- Auto-generated Pytra Lua native source from EAST3.
-
 -- from time import perf_counter as perf_counter (not yet mapped)
 
 -- 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
@@ -39,5 +37,4 @@ function run_integer_benchmark()
 end
 
 
--- __main__ guard
 run_integer_benchmark()

@@ -1,11 +1,9 @@
-// Auto-generated Pytra Go native source from EAST3.
 package main
 
 import (
     "math"
 )
 
-// Runtime helpers are provided by py_runtime.go in the same package.
 var _ = math.Pi
 
 
@@ -151,7 +149,7 @@ func (self *Parser) expect(kind string) *Token {
 
 func (self *Parser) skip_newlines() {
     for self.match("NEWLINE") {
-        // pass
+        _ = 0
     }
 }
 

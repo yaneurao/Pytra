@@ -1,26 +1,14 @@
-import {
-  PYTRA_TYPE_ID,
-  PY_TYPE_MAP,
-  PY_TYPE_OBJECT,
-  pyRegisterClassType,
-} from "./pytra/runtime.js";
-
-function RuntimeError(message) {
-    const err = new Error(message);
-    err.name = "RuntimeError";
-    return err;
-}
-
-import { perf_counter } from "./time.js";
+import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyLen, pyStr } from "./pytra/py_runtime.js";
+import { perf_counter } from "./pytra/std/time.js";
 
 class Token {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
     constructor(kind, text, pos) {
-        this[PYTRA_TYPE_ID] = Token.PYTRA_TYPE_ID;
-        this.kind = kind;
-        this.text = text;
-        this.pos = pos;
+    this[PYTRA_TYPE_ID] = Token.PYTRA_TYPE_ID;
+    this.kind = kind;
+    this.text = text;
+    this.pos = pos;
     }
 }
 
@@ -28,13 +16,13 @@ class ExprNode {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
     constructor(kind, value, name, op, left, right) {
-        this[PYTRA_TYPE_ID] = ExprNode.PYTRA_TYPE_ID;
-        this.kind = kind;
-        this.value = value;
-        this.name = name;
-        this.op = op;
-        this.left = left;
-        this.right = right;
+    this[PYTRA_TYPE_ID] = ExprNode.PYTRA_TYPE_ID;
+    this.kind = kind;
+    this.value = value;
+    this.name = name;
+    this.op = op;
+    this.left = left;
+    this.right = right;
     }
 }
 
@@ -42,10 +30,10 @@ class StmtNode {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
     constructor(kind, name, expr_index) {
-        this[PYTRA_TYPE_ID] = StmtNode.PYTRA_TYPE_ID;
-        this.kind = kind;
-        this.name = name;
-        this.expr_index = expr_index;
+    this[PYTRA_TYPE_ID] = StmtNode.PYTRA_TYPE_ID;
+    this.kind = kind;
+    this.name = name;
+    this.expr_index = expr_index;
     }
 }
 
@@ -55,7 +43,7 @@ function tokenize(lines) {
         let i = 0;
         let n = (source).length;
         while (i < n) {
-            let ch = source[i];
+            let ch = source[(((i) < 0) ? ((source).length + (i)) : (i))];
             
             if (ch === " ") {
                 i += 1;
@@ -96,18 +84,18 @@ function tokenize(lines) {
                 i += 1;
                 continue;
             }
-            if ("0" <= ch && ch <= "9") {
+            if ((typeof ch === "string") && (ch).length > 0 && (/^[0-9]+$/.test(ch))) {
                 let start = i;
-                while (i < n && source[i] >= "0" && source[i] <= "9") {
+                while (i < n && ((typeof source[(((i) < 0) ? ((source).length + (i)) : (i))] === "string") && (source[(((i) < 0) ? ((source).length + (i)) : (i))]).length > 0 && (/^[0-9]+$/.test(source[(((i) < 0) ? ((source).length + (i)) : (i))])))) {
                     i += 1;
                 }
                 let text = source.slice(start, i);
                 tokens.push(new Token("NUMBER", text, start));
                 continue;
             }
-            if (/^[A-Za-z_]$/.test(ch)) {
+            if (((typeof ch === "string") && (ch).length > 0 && (/^[A-Za-z]+$/.test(ch))) || ch === "_") {
                 let start = i;
-                while ((i < n && /^[A-Za-z_]$/.test(source[i])) || ("0" <= source[i] && source[i] <= "9")) {
+                while (i < n && ((typeof source[(((i) < 0) ? ((source).length + (i)) : (i))] === "string") && (source[(((i) < 0) ? ((source).length + (i)) : (i))]).length > 0 && (/^[A-Za-z]+$/.test(source[(((i) < 0) ? ((source).length + (i)) : (i))]))) || source[(((i) < 0) ? ((source).length + (i)) : (i))] === "_" || ((typeof source[(((i) < 0) ? ((source).length + (i)) : (i))] === "string") && (source[(((i) < 0) ? ((source).length + (i)) : (i))]).length > 0 && (/^[0-9]+$/.test(source[(((i) < 0) ? ((source).length + (i)) : (i))])))) {
                     i += 1;
                 }
                 let text = source.slice(start, i);
@@ -122,7 +110,7 @@ function tokenize(lines) {
                 }
                 continue;
             }
-            throw RuntimeError("tokenize error at line=" + String(line_index) + " pos=" + String(i) + " ch=" + ch);
+            throw new Error("tokenize error at line=" + String(line_index) + " pos=" + String(i) + " ch=" + ch);
         }
         tokens.push(new Token("NEWLINE", "", n));
     }
@@ -145,7 +133,7 @@ class Parser {
     }
     
     peek_kind() {
-        return this.tokens[this.pos].kind;
+        return this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))].kind;
     }
     
     match(kind) {
@@ -158,17 +146,17 @@ class Parser {
     
     expect(kind) {
         if (this.peek_kind() !== kind) {
-            let t = this.tokens[this.pos];
-            throw RuntimeError("parse error at pos=" + String(t.pos) + ", expected=" + kind + ", got=" + t.kind);
+            let t = this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
+            throw new Error("parse error at pos=" + pyStr(t.pos) + ", expected=" + kind + ", got=" + t.kind);
         }
-        let token = this.tokens[this.pos];
+        let token = this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
         this.pos += 1;
         return token;
     }
     
     skip_newlines() {
         while (this.match("NEWLINE")) {
-            // pass
+            ;
         }
     }
     
@@ -255,11 +243,11 @@ class Parser {
     
     parse_primary() {
         if (this.match("NUMBER")) {
-            let token_num = this.tokens[this.pos - 1];
+            let token_num = this.tokens[(((this.pos - 1) < 0) ? ((this.tokens).length + (this.pos - 1)) : (this.pos - 1))];
             return this.add_expr(new ExprNode("lit", Math.trunc(Number(token_num.text)), "", "", -1, -1));
         }
         if (this.match("IDENT")) {
-            let token_ident = this.tokens[this.pos - 1];
+            let token_ident = this.tokens[(((this.pos - 1) < 0) ? ((this.tokens).length + (this.pos - 1)) : (this.pos - 1))];
             return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1));
         }
         if (this.match("LPAREN")) {
@@ -267,20 +255,20 @@ class Parser {
             this.expect("RPAREN");
             return expr_index;
         }
-        let t = this.tokens[this.pos];
-        throw RuntimeError("primary parse error at pos=" + String(t.pos) + " got=" + t.kind);
+        let t = this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
+        throw new Error("primary parse error at pos=" + pyStr(t.pos) + " got=" + t.kind);
     }
 }
 
 function eval_expr(expr_index, expr_nodes, env) {
-    let node = expr_nodes[expr_index];
+    let node = expr_nodes[(((expr_index) < 0) ? ((expr_nodes).length + (expr_index)) : (expr_index))];
     
     if (node.kind === "lit") {
         return node.value;
     }
     if (node.kind === "var") {
-        if (!(node.name in env)) {
-            throw RuntimeError("undefined variable: " + node.name);
+        if (!(Object.prototype.hasOwnProperty.call(env, node.name))) {
+            throw new Error("undefined variable: " + node.name);
         }
         return env[node.name];
     }
@@ -301,13 +289,13 @@ function eval_expr(expr_index, expr_nodes, env) {
         }
         if (node.op === "/") {
             if (rhs === 0) {
-                throw RuntimeError("division by zero");
+                throw new Error("division by zero");
             }
             return Math.floor(lhs / rhs);
         }
-        throw RuntimeError("unknown operator: " + node.op);
+        throw new Error("unknown operator: " + node.op);
     }
-    throw RuntimeError("unknown node kind: " + node.kind);
+    throw new Error("unknown node kind: " + node.kind);
 }
 
 function execute(stmts, expr_nodes, trace) {
@@ -321,8 +309,8 @@ function execute(stmts, expr_nodes, trace) {
             continue;
         }
         if (stmt.kind === "assign") {
-            if (!(stmt.name in env)) {
-                throw RuntimeError("assign to undefined variable: " + stmt.name);
+            if (!(Object.prototype.hasOwnProperty.call(env, stmt.name))) {
+                throw new Error("assign to undefined variable: " + stmt.name);
             }
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
             continue;
@@ -348,11 +336,13 @@ function build_benchmark_source(var_count, loops) {
     let lines = [];
     
     // Declare initial variables.
-    for (let i = 0; i < var_count; i += 1) {
+    const __start_1 = 0;
+    for (let i = __start_1; i < var_count; i += 1) {
         lines.push("let v" + String(i) + " = " + String(i + 1));
     }
     // Force evaluation of many arithmetic expressions.
-    for (let i = 0; i < loops; i += 1) {
+    const __start_2 = 0;
+    for (let i = __start_2; i < loops; i += 1) {
         let x = i % var_count;
         let y = (i + 3) % var_count;
         let c1 = i % 7 + 1;
@@ -392,7 +382,7 @@ function run_benchmark() {
     let elapsed = perf_counter() - start;
     
     console.log("token_count:", (tokens).length);
-    console.log("expr_count:", (parser.expr_nodes).length);
+    console.log("expr_count:", pyLen(parser.expr_nodes));
     console.log("stmt_count:", (stmts).length);
     console.log("checksum:", checksum);
     console.log("elapsed_sec:", elapsed);
@@ -403,14 +393,4 @@ function __pytra_main() {
     run_benchmark();
 }
 
-if (typeof globalThis !== "undefined") {
-  globalThis.__pytra_debug_tokenize = tokenize;
-  globalThis.__pytra_debug_Parser = Parser;
-  globalThis.__pytra_debug_run_demo = run_demo;
-  globalThis.__pytra_debug_run_benchmark = run_benchmark;
-}
-
-// __main__ guard
-if (globalThis.__pytra_skip_main !== true) {
-  __pytra_main();
-}
+__pytra_main();

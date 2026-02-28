@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_12_sort_visualizer {
     private Pytra_12_sort_visualizer() {
     }

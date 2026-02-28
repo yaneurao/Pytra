@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_15_wave_interference_loop {
     private Pytra_15_wave_interference_loop() {
     }

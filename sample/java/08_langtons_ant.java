@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_08_langtons_ant {
     private Pytra_08_langtons_ant() {
     }

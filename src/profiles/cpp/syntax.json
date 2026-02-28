@@ -18,7 +18,7 @@
     "for_each_auto_ref_open": "for (auto& {target} : {iter})",
     "for_each_typed_open": "for ({type} {target} : {iter})",
     "for_open_block": "{header} {",
-    "pass_stmt": "/* pass */",
+    "pass_stmt": ";",
     "break_stmt": "break;",
     "continue_stmt": "continue;",
     "swap_stmt": "::std::swap({left}, {right});",

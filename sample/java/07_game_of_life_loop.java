@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_07_game_of_life_loop {
     private Pytra_07_game_of_life_loop() {
     }

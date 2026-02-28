@@ -1,4 +1,3 @@
-// Auto-generated Pytra Kotlin native source from EAST3.
 import kotlin.math.*
 
 fun __pytra_noop(vararg args: Any?) { }

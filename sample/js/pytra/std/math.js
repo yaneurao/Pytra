@@ -1,0 +1,14 @@
+const rt = require(process.cwd() + '/src/runtime/js/pytra/math.js');
+exports.pi = rt.pi;
+exports.e = rt.e;
+exports.sin = rt.sin;
+exports.cos = rt.cos;
+exports.tan = rt.tan;
+exports.sqrt = rt.sqrt;
+exports.exp = rt.exp;
+exports.log = rt.log;
+exports.log10 = rt.log10;
+exports.fabs = rt.fabs;
+exports.floor = rt.floor;
+exports.ceil = rt.ceil;
+exports.pow = rt.pow;

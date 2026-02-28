@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_06_julia_parameter_sweep {
     private Pytra_06_julia_parameter_sweep() {
     }

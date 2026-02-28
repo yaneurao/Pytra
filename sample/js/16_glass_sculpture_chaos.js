@@ -1,5 +1,5 @@
-import * as math from "./math.js";
-import { perf_counter } from "./time.js";
+import * as math from "./pytra/std/math.js";
+import { perf_counter } from "./pytra/std/time.js";
 import { save_gif } from "./pytra/runtime/gif.js";
 
 // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
@@ -89,16 +89,19 @@ function sphere_intersect(ox, oy, oz, dx, dy, dz, cx, cy, cz, radius) {
 
 function palette_332() {
     // 3-3-2 quantized palette. Lightweight quantization that stays fast after transpilation.
-    let p = bytearray(256 * 3);
-    for (let i = 0; i < 256; i += 1) {
+    let p = (typeof (256 * 3) === "number" ? new Array(Math.max(0, Math.trunc(Number((256 * 3))))).fill(0) : (Array.isArray((256 * 3)) ? (256 * 3).slice() : Array.from((256 * 3))));
+    let __hoisted_cast_1 = Number(7);
+    let __hoisted_cast_2 = Number(3);
+    const __start_1 = 0;
+    for (let i = __start_1; i < 256; i += 1) {
         let r = i >> 5 & 7;
         let g = i >> 2 & 7;
         let b = i & 3;
-        p[i * 3 + 0] = Math.trunc(Number(255 * r / 7));
-        p[i * 3 + 1] = Math.trunc(Number(255 * g / 7));
-        p[i * 3 + 2] = Math.trunc(Number(255 * b / 3));
+        p[(((i * 3 + 0) < 0) ? ((p).length + (i * 3 + 0)) : (i * 3 + 0))] = Math.trunc(Number(255 * r / __hoisted_cast_1));
+        p[(((i * 3 + 1) < 0) ? ((p).length + (i * 3 + 1)) : (i * 3 + 1))] = Math.trunc(Number(255 * g / __hoisted_cast_1));
+        p[(((i * 3 + 2) < 0) ? ((p).length + (i * 3 + 2)) : (i * 3 + 2))] = Math.trunc(Number(255 * b / __hoisted_cast_2));
     }
-    return bytes(p);
+    return (Array.isArray((p)) ? (p).slice() : Array.from((p)));
 }
 
 function quantize_332(r, g, b) {
@@ -120,19 +123,19 @@ function render_frame(width, height, frame_id, frames_n) {
     let look_x = 0.0;
     let look_y = 0.35;
     let look_z = 0.0;
-    let fwd_x = 0.0;
-    let fwd_y = 0.0;
-    let fwd_z = 0.0;
-    let right_x = 0.0;
-    let right_y = 0.0;
-    let right_z = 0.0;
-    let up_x = 0.0;
-    let up_y = 0.0;
-    let up_z = 0.0;
     
-    [fwd_x, fwd_y, fwd_z] = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
-    [right_x, right_y, right_z] = normalize(fwd_z, 0.0, -fwd_x);
-    [up_x, up_y, up_z] = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
+    const __tmp_2 = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
+    let fwd_x = __tmp_2[0];
+    let fwd_y = __tmp_2[1];
+    let fwd_z = __tmp_2[2];
+    const __tmp_3 = normalize(fwd_z, 0.0, -fwd_x);
+    let right_x = __tmp_3[0];
+    let right_y = __tmp_3[1];
+    let right_z = __tmp_3[2];
+    const __tmp_4 = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
+    let up_x = __tmp_4[0];
+    let up_y = __tmp_4[1];
+    let up_z = __tmp_4[2];
     
     // Moving glass sculpture (3 spheres) and an emissive sphere.
     let s0x = 0.9 * math.cos(1.3 * tphase);
@@ -149,43 +152,26 @@ function render_frame(width, height, frame_id, frames_n) {
     let ly = 1.8 + 0.8 * math.sin(tphase * 1.2);
     let lz = 2.4 * math.sin(tphase * 1.8);
     
-    let frame = bytearray(width * height);
+    let frame = (typeof (width * height) === "number" ? new Array(Math.max(0, Math.trunc(Number((width * height))))).fill(0) : (Array.isArray((width * height)) ? (width * height).slice() : Array.from((width * height))));
     let aspect = width / height;
     let fov = 1.25;
-    let dx = 0.0;
-    let dy = 0.0;
-    let dz = 0.0;
-    let ldx = 0.0;
-    let ldy = 0.0;
-    let ldz = 0.0;
-    let nx = 0.0;
-    let ny = 0.0;
-    let nz = 0.0;
-    let rdx = 0.0;
-    let rdy = 0.0;
-    let rdz = 0.0;
-    let tdx = 0.0;
-    let tdy = 0.0;
-    let tdz = 0.0;
-    let sr = 0.0;
-    let sg = 0.0;
-    let sb = 0.0;
-    let tr = 0.0;
-    let tg = 0.0;
-    let tb = 0.0;
-    let hvx = 0.0;
-    let hvy = 0.0;
-    let hvz = 0.0;
+    let __hoisted_cast_3 = Number(height);
+    let __hoisted_cast_4 = Number(width);
     
-    for (let py = 0; py < height; py += 1) {
+    const __start_5 = 0;
+    for (let py = __start_5; py < height; py += 1) {
         let row_base = py * width;
-        let sy = 1.0 - 2.0 * (py + 0.5) / height;
-        for (let px = 0; px < width; px += 1) {
-            let sx = (2.0 * (px + 0.5) / width - 1.0) * aspect;
+        let sy = 1.0 - 2.0 * (py + 0.5) / __hoisted_cast_3;
+        const __start_6 = 0;
+        for (let px = __start_6; px < width; px += 1) {
+            let sx = (2.0 * (px + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
             let rx = fwd_x + fov * (sx * right_x + sy * up_x);
             let ry = fwd_y + fov * (sx * right_y + sy * up_y);
             let rz = fwd_z + fov * (sx * right_z + sy * up_z);
-            [dx, dy, dz] = normalize(rx, ry, rz);
+            const __tmp_7 = normalize(rx, ry, rz);
+            let dx = __tmp_7[0];
+            let dy = __tmp_7[1];
+            let dz = __tmp_7[2];
             
             // Search for the nearest hit.
             let best_t = 1e9;
@@ -218,7 +204,10 @@ function render_frame(width, height, frame_id, frames_n) {
                 hit_kind = 4;
             }
             if (hit_kind === 0) {
-                [r, g, b] = sky_color(dx, dy, dz, tphase);
+                const __tmp_8 = sky_color(dx, dy, dz, tphase);
+                r = __tmp_8[0];
+                g = __tmp_8[1];
+                b = __tmp_8[2];
             } else {
                 if (hit_kind === 1) {
                     let hx = cam_x + best_t * dx;
@@ -233,8 +222,11 @@ function render_frame(width, height, frame_id, frames_n) {
                     let lxv = lx - hx;
                     let lyv = ly - -1.2;
                     let lzv = lz - hz;
-                    [ldx, ldy, ldz] = normalize(lxv, lyv, lzv);
-                    let ndotl = max(ldy, 0.0);
+                    const __tmp_9 = normalize(lxv, lyv, lzv);
+                    let ldx = __tmp_9[0];
+                    let ldy = __tmp_9[1];
+                    let ldz = __tmp_9[2];
+                    let ndotl = Math.max(ldy, 0.0);
                     let ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
                     let glow = 8.0 / (1.0 + ldist2);
                     r = base_r + 0.8 * glow + 0.20 * ndotl;
@@ -266,14 +258,29 @@ function render_frame(width, height, frame_id, frames_n) {
                     let hx = cam_x + best_t * dx;
                     let hy = cam_y + best_t * dy;
                     let hz = cam_z + best_t * dz;
-                    [nx, ny, nz] = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
+                    const __tmp_10 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
+                    let nx = __tmp_10[0];
+                    let ny = __tmp_10[1];
+                    let nz = __tmp_10[2];
                     
                     // Simple glass shading (reflection + refraction + light highlights).
-                    [rdx, rdy, rdz] = reflect(dx, dy, dz, nx, ny, nz);
-                    [tdx, tdy, tdz] = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
-                    [sr, sg, sb] = sky_color(rdx, rdy, rdz, tphase);
-                    [tr, tg, tb] = sky_color(tdx, tdy, tdz, tphase + 0.8);
-                    let cosi = max(-(dx * nx + dy * ny + dz * nz), 0.0);
+                    const __tmp_11 = reflect(dx, dy, dz, nx, ny, nz);
+                    let rdx = __tmp_11[0];
+                    let rdy = __tmp_11[1];
+                    let rdz = __tmp_11[2];
+                    const __tmp_12 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
+                    let tdx = __tmp_12[0];
+                    let tdy = __tmp_12[1];
+                    let tdz = __tmp_12[2];
+                    const __tmp_13 = sky_color(rdx, rdy, rdz, tphase);
+                    let sr = __tmp_13[0];
+                    let sg = __tmp_13[1];
+                    let sb = __tmp_13[2];
+                    const __tmp_14 = sky_color(tdx, tdy, tdz, tphase + 0.8);
+                    let tr = __tmp_14[0];
+                    let tg = __tmp_14[1];
+                    let tb = __tmp_14[2];
+                    let cosi = Math.max(-(dx * nx + dy * ny + dz * nz), 0.0);
                     let fr = schlick(cosi, 0.04);
                     r = tr * (1.0 - fr) + sr * fr;
                     g = tg * (1.0 - fr) + sg * fr;
@@ -282,10 +289,16 @@ function render_frame(width, height, frame_id, frames_n) {
                     let lxv = lx - hx;
                     let lyv = ly - hy;
                     let lzv = lz - hz;
-                    [ldx, ldy, ldz] = normalize(lxv, lyv, lzv);
-                    let ndotl = max(nx * ldx + ny * ldy + nz * ldz, 0.0);
-                    [hvx, hvy, hvz] = normalize(ldx - dx, ldy - dy, ldz - dz);
-                    let ndoth = max(nx * hvx + ny * hvy + nz * hvz, 0.0);
+                    const __tmp_15 = normalize(lxv, lyv, lzv);
+                    let ldx = __tmp_15[0];
+                    let ldy = __tmp_15[1];
+                    let ldz = __tmp_15[2];
+                    let ndotl = Math.max(nx * ldx + ny * ldy + nz * ldz, 0.0);
+                    const __tmp_16 = normalize(ldx - dx, ldy - dy, ldz - dz);
+                    let hvx = __tmp_16[0];
+                    let hvy = __tmp_16[1];
+                    let hvz = __tmp_16[2];
+                    let ndoth = Math.max(nx * hvx + ny * hvy + nz * hvz, 0.0);
                     let spec = ndoth * ndoth;
                     spec = spec * spec;
                     spec = spec * spec;
@@ -317,10 +330,10 @@ function render_frame(width, height, frame_id, frames_n) {
             r = math.sqrt(clamp01(r));
             g = math.sqrt(clamp01(g));
             b = math.sqrt(clamp01(b));
-            frame[row_base + px] = quantize_332(r, g, b);
+            frame[(((row_base + px) < 0) ? ((frame).length + (row_base + px)) : (row_base + px))] = quantize_332(r, g, b);
         }
     }
-    return bytes(frame);
+    return (Array.isArray((frame)) ? (frame).slice() : Array.from((frame)));
 }
 
 function run_16_glass_sculpture_chaos() {
@@ -331,7 +344,8 @@ function run_16_glass_sculpture_chaos() {
     
     let start = perf_counter();
     let frames = [];
-    for (let i = 0; i < frames_n; i += 1) {
+    const __start_17 = 0;
+    for (let i = __start_17; i < frames_n; i += 1) {
         frames.push(render_frame(width, height, i, frames_n));
     }
     save_gif(out_path, width, height, frames, palette_332());
@@ -341,5 +355,4 @@ function run_16_glass_sculpture_chaos() {
     console.log("elapsed_sec:", elapsed);
 }
 
-// __main__ guard
 run_16_glass_sculpture_chaos();

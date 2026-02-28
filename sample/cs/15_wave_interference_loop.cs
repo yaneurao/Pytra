@@ -1,4 +1,8 @@
-using math;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Pytra.CsModule;
+using math = Pytra.CsModule.math;
 
 public static class Program
 {
@@ -11,32 +15,35 @@ public static class Program
         long frames_n = 96;
         string out_path = "sample/out/15_wave_interference_loop.gif";
         
-        unknown start = perf_counter();
-        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<unknown>();
+        double start = Pytra.CsModule.time.perf_counter();
+        System.Collections.Generic.List<List<byte>> frames = new System.Collections.Generic.List<List<byte>>();
         
-        for (long t = 0; t < frames_n; t += 1) {
-            List<byte> frame = bytearray(w * h);
+        long t = 0;
+        for (t = 0; t < frames_n; t += 1) {
+            List<byte> frame = Pytra.CsModule.py_runtime.py_bytearray(w * h);
             double phase = t * 0.12;
-            for (long y = 0; y < h; y += 1) {
+            long y = 0;
+            for (y = 0; y < h; y += 1) {
                 long row_base = y * w;
-                for (long x = 0; x < w; x += 1) {
+                long x = 0;
+                for (x = 0; x < w; x += 1) {
                     long dx = x - 160;
                     long dy = y - 120;
-                    unknown v = math.sin((x + t * 1.5) * 0.045) + math.sin((y - t * 1.2) * 0.04) + math.sin((x + y) * 0.02 + phase) + math.sin(math.sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);
-                    long c = System.Convert.ToInt64((v + 4.0) * (255.0 / 8.0));
+                    var v = Pytra.CsModule.math.sin((x + t * 1.5) * 0.045) + Pytra.CsModule.math.sin((y - t * 1.2) * 0.04) + Pytra.CsModule.math.sin((x + y) * 0.02 + phase) + Pytra.CsModule.math.sin(Pytra.CsModule.math.sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);
+                    long c = Pytra.CsModule.py_runtime.py_int((v + 4.0) * (255.0 / 8.0));
                     if (c < 0) {
                         c = 0;
                     }
                     if (c > 255) {
                         c = 255;
                     }
-                    frame[System.Convert.ToInt32(row_base + x)] = c;
+                    Pytra.CsModule.py_runtime.py_set(frame, row_base + x, c);
                 }
             }
-            frames.Add(bytes(frame));
+            frames.Add(Pytra.CsModule.py_runtime.py_bytes(frame));
         }
-        save_gif(out_path, w, h, frames, grayscale_palette());
-        unknown elapsed = perf_counter() - start;
+        Pytra.CsModule.gif_helper.save_gif(out_path, w, h, frames, Pytra.CsModule.gif_helper.grayscale_palette());
+        double elapsed = Pytra.CsModule.time.perf_counter() - start;
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frames_n }));
         System.Console.WriteLine(string.Join(" ", new object[] { "elapsed_sec:", elapsed }));

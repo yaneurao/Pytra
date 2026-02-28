@@ -1,17 +1,20 @@
-// このファイルは EAST ベース TypeScript プレビュー出力です。
-// TODO: 専用 TSEmitter 実装へ段階移行する。
-import { perf_counter } from "./time.js";
+import { perf_counter } from "./pytra/std/time.js";
 import { png } from "./pytra/utils.js";
 
 // 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
 
 function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
-    let pixels = bytearray();
+    let pixels = [];
+    let __hoisted_cast_1 = Number(height - 1);
+    let __hoisted_cast_2 = Number(width - 1);
+    let __hoisted_cast_3 = Number(max_iter);
     
-    for (let y = 0; y < height; y += 1) {
-        let zy0 = -1.3 + 2.6 * (y / (height - 1));
-        for (let x = 0; x < width; x += 1) {
-            let zx = -1.9 + 3.8 * (x / (width - 1));
+    const __start_1 = 0;
+    for (let y = __start_1; y < height; y += 1) {
+        let zy0 = -1.3 + 2.6 * (y / __hoisted_cast_1);
+        const __start_2 = 0;
+        for (let x = __start_2; x < width; x += 1) {
+            let zx = -1.9 + 3.8 * (x / __hoisted_cast_2);
             let zy = zy0;
             
             let trap = 1.0e9;
@@ -62,7 +65,7 @@ function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
                 if (trap_scaled < 0.0) {
                     trap_scaled = 0.0;
                 }
-                let t = i / max_iter;
+                let t = i / __hoisted_cast_3;
                 let tone = Math.trunc(Number(255.0 * (1.0 - trap_scaled)));
                 r = Math.trunc(Number(tone * (0.35 + 0.65 * t)));
                 g = Math.trunc(Number(tone * (0.15 + 0.85 * (1.0 - t))));
@@ -102,5 +105,4 @@ function run_04_orbit_trap_julia() {
     console.log("elapsed_sec:", elapsed);
 }
 
-// __main__ guard
 run_04_orbit_trap_julia();

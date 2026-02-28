@@ -9,7 +9,7 @@
     "expr_stmt": "{expr};",
     "return_void": "return;",
     "return_value": "return {value};",
-    "pass_stmt": "// pass",
+    "pass_stmt": ";",
     "break_stmt": "break;",
     "continue_stmt": "continue;",
     "annassign_decl_noinit": "let {target};",

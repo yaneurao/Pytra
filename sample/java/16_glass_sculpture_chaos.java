@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_16_glass_sculpture_chaos {
     private Pytra_16_glass_sculpture_chaos() {
     }

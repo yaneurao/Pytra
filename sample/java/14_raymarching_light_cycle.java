@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_14_raymarching_light_cycle {
     private Pytra_14_raymarching_light_cycle() {
     }

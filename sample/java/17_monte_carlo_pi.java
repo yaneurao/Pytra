@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_17_monte_carlo_pi {
     private Pytra_17_monte_carlo_pi() {
     }

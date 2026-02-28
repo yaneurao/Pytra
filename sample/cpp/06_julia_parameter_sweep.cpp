@@ -64,7 +64,7 @@ void run_06_julia_parameter_sweep() {
     str out_path = "sample/out/06_julia_parameter_sweep.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    object frames = make_object(list<object>{});
     // Orbit an ellipse around a known visually good region to reduce flat blown highlights.
     float64 center_cr = -0.745;
     float64 center_ci = 0.186;
@@ -81,7 +81,7 @@ void run_06_julia_parameter_sweep() {
         float64 cr = center_cr + radius_cr * pytra::std::math::cos(angle);
         float64 ci = center_ci + radius_ci * pytra::std::math::sin(angle);
         int64 phase = (phase_offset + i * 5) % 255;
-        frames.append(render_frame(width, height, cr, ci, max_iter, phase));
+        py_append(frames, make_object(render_frame(width, height, cr, ci, max_iter, phase)));
     }
     pytra::utils::gif::save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

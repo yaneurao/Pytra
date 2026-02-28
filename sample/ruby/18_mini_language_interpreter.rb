@@ -1,5 +1,3 @@
-# Auto-generated Pytra Ruby native source from EAST3.
-# Runtime helpers are provided by py_runtime.rb in the same directory.
 require_relative "py_runtime"
 
 
@@ -73,7 +71,7 @@ class Parser
 
   def skip_newlines()
     while __pytra_truthy(self.match("NEWLINE"))
-      # pass
+      nil
     end
   end
 

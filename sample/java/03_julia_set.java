@@ -1,4 +1,3 @@
-// Auto-generated Java native source from EAST3.
 public final class Pytra_03_julia_set {
     private Pytra_03_julia_set() {
     }

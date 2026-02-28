@@ -347,9 +347,9 @@ void run_16_glass_sculpture_chaos() {
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    object frames = make_object(list<object>{});
     for (int64 i = 0; i < frames_n; ++i) {
-        frames.append(render_frame(width, height, i, frames_n));
+        py_append(frames, make_object(render_frame(width, height, i, frames_n)));
     }
     pytra::utils::gif::save_gif(out_path, width, height, frames, palette_332(), 6, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

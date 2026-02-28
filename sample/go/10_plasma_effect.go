@@ -1,11 +1,9 @@
-// Auto-generated Pytra Go native source from EAST3.
 package main
 
 import (
     "math"
 )
 
-// Runtime helpers are provided by py_runtime.go in the same package.
 var _ = math.Pi
 
 
