@@ -1,0 +1,328 @@
+"""Interprocedural non-escape summary analysis for EAST3."""
+
+from __future__ import annotations
+
+from pytra.std.typing import Any
+
+from pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
+from pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
+from pytra.compiler.east_parts.east3_optimizer import PassContext
+from pytra.compiler.east_parts.east3_optimizer import PassResult
+
+
+def _safe_name(value: Any) -> str:
+    if isinstance(value, str):
+        text = value.strip()
+        if text != "":
+            return text
+    return ""
+
+
+def _collect_symbols(module_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    symbols: dict[str, dict[str, Any]] = {}
+    body_any = module_doc.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+            fn_name = _safe_name(node.get("name"))
+            if fn_name != "":
+                symbols[fn_name] = node
+        if isinstance(node, dict) and node.get("kind") == "ClassDef":
+            cls_name = _safe_name(node.get("name"))
+            cls_body_any = node.get("body")
+            cls_body = cls_body_any if isinstance(cls_body_any, list) else []
+            j = 0
+            while j < len(cls_body):
+                child = cls_body[j]
+                if isinstance(child, dict) and child.get("kind") == "FunctionDef":
+                    method_name = _safe_name(child.get("name"))
+                    if cls_name != "" and method_name != "":
+                        symbols[cls_name + "." + method_name] = child
+                j += 1
+        i += 1
+    return symbols
+
+
+def _collect_calls(node: Any, out: list[tuple[dict[str, Any], bool]]) -> None:
+    def _walk(cur: Any, in_return_expr: bool) -> None:
+        if isinstance(cur, list):
+            i = 0
+            while i < len(cur):
+                _walk(cur[i], in_return_expr=False)
+                i += 1
+            return
+        if not isinstance(cur, dict):
+            return
+        kind = cur.get("kind")
+        if kind == "Return":
+            value_any = cur.get("value")
+            if isinstance(value_any, dict):
+                _walk(value_any, in_return_expr=True)
+            return
+        if kind == "Call":
+            out.append((cur, in_return_expr))
+        for value in cur.values():
+            _walk(value, in_return_expr=False)
+
+    _walk(node, in_return_expr=False)
+
+
+def _resolve_call_target(call_node: dict[str, Any], *, owner_class: str, known_symbols: set[str]) -> str:
+    func_any = call_node.get("func")
+    if not isinstance(func_any, dict):
+        return ""
+    kind = _safe_name(func_any.get("kind"))
+    if kind == "Name":
+        callee = _safe_name(func_any.get("id"))
+        return callee if callee in known_symbols else ""
+    if kind != "Attribute":
+        return ""
+    attr_name = _safe_name(func_any.get("attr"))
+    value_any = func_any.get("value")
+    if not isinstance(value_any, dict) or _safe_name(value_any.get("kind")) != "Name":
+        return ""
+    owner_name = _safe_name(value_any.get("id"))
+    if owner_name == "self" and owner_class != "":
+        target_self = owner_class + "." + attr_name
+        if target_self in known_symbols:
+            return target_self
+    target = owner_name + "." + attr_name
+    return target if target in known_symbols else ""
+
+
+def _collect_arg_refs(node: Any, arg_index: dict[str, int], out: set[int]) -> None:
+    if isinstance(node, list):
+        i = 0
+        while i < len(node):
+            _collect_arg_refs(node[i], arg_index, out)
+            i += 1
+        return
+    if not isinstance(node, dict):
+        return
+    if node.get("kind") == "Name":
+        ident = _safe_name(node.get("id"))
+        if ident in arg_index:
+            out.add(arg_index[ident])
+    for value in node.values():
+        _collect_arg_refs(value, arg_index, out)
+
+
+def _collect_return_from_args(node: Any, arg_index: dict[str, int], out: set[int]) -> tuple[bool, int]:
+    """Collect direct return escapes.
+
+    Returns:
+      (has_non_none_return, direct_return_stmt_count)
+    """
+    has_return_value = False
+    direct_return_count = 0
+    if isinstance(node, list):
+        i = 0
+        while i < len(node):
+            has_val_i, cnt_i = _collect_return_from_args(node[i], arg_index, out)
+            has_return_value = has_return_value or has_val_i
+            direct_return_count += cnt_i
+            i += 1
+        return has_return_value, direct_return_count
+    if not isinstance(node, dict):
+        return False, 0
+    if node.get("kind") == "Return":
+        value_any = node.get("value")
+        if isinstance(value_any, dict):
+            has_return_value = True
+            direct_return_count = 1
+            refs: set[int] = set()
+            _collect_arg_refs(value_any, arg_index, refs)
+            for idx in refs:
+                out.add(idx)
+        return has_return_value, direct_return_count
+    for value in node.values():
+        has_val_i, cnt_i = _collect_return_from_args(value, arg_index, out)
+        has_return_value = has_return_value or has_val_i
+        direct_return_count += cnt_i
+    return has_return_value, direct_return_count
+
+
+class NonEscapeInterproceduralPass(East3OptimizerPass):
+    """Compute conservative function summaries for non-escape decisions."""
+
+    name = "NonEscapeInterproceduralPass"
+    min_opt_level = 1
+
+    def run(self, east3_doc: dict[str, object], context: PassContext) -> PassResult:
+        module_doc = east3_doc if isinstance(east3_doc, dict) else {}
+        if module_doc.get("kind") != "Module":
+            return PassResult()
+
+        symbols = _collect_symbols(module_doc)
+        if len(symbols) == 0:
+            return PassResult()
+
+        known_symbols = set(symbols.keys())
+        graph, unresolved_counts = build_non_escape_call_graph(module_doc)
+
+        callsites_by_symbol: dict[str, list[dict[str, object]]] = {}
+        summary: dict[str, dict[str, object]] = {}
+        sorted_symbols = sorted(symbols.keys())
+
+        i = 0
+        while i < len(sorted_symbols):
+            symbol = sorted_symbols[i]
+            fn_node = symbols[symbol]
+            arg_order_any = fn_node.get("arg_order")
+            arg_order_raw = arg_order_any if isinstance(arg_order_any, list) else []
+            arg_order: list[str] = []
+            j = 0
+            while j < len(arg_order_raw):
+                nm = _safe_name(arg_order_raw[j])
+                if nm != "":
+                    arg_order.append(nm)
+                j += 1
+            arg_index = {name: idx for idx, name in enumerate(arg_order)}
+
+            direct_return_from_args: set[int] = set()
+            has_return_value, _ = _collect_return_from_args(fn_node.get("body"), arg_index, direct_return_from_args)
+            direct_arg_escape = [False] * len(arg_order)
+
+            owner_class = ""
+            if "." in symbol:
+                owner_class = symbol.split(".", 1)[0]
+            calls: list[tuple[dict[str, Any], bool]] = []
+            _collect_calls(fn_node.get("body"), calls)
+            sites: list[dict[str, object]] = []
+            k = 0
+            while k < len(calls):
+                call_node, in_return_expr = calls[k]
+                target = _resolve_call_target(
+                    call_node,
+                    owner_class=owner_class,
+                    known_symbols=known_symbols,
+                )
+                args_any = call_node.get("args")
+                args = args_any if isinstance(args_any, list) else []
+                arg_sources: list[list[int]] = []
+                a = 0
+                while a < len(args):
+                    refs: set[int] = set()
+                    _collect_arg_refs(args[a], arg_index, refs)
+                    arg_sources.append(sorted(refs))
+                    a += 1
+
+                if target == "" and bool(context.non_escape_policy.get("unknown_call_escape", True)):
+                    a = 0
+                    while a < len(arg_sources):
+                        refs = arg_sources[a]
+                        b = 0
+                        while b < len(refs):
+                            direct_arg_escape[refs[b]] = True
+                            b += 1
+                        a += 1
+
+                sites.append(
+                    {
+                        "callee": target,
+                        "arg_sources": arg_sources,
+                        "in_return_expr": in_return_expr,
+                    }
+                )
+                k += 1
+
+            callsites_by_symbol[symbol] = sites
+            ret_from_args = [False] * len(arg_order)
+            for idx in direct_return_from_args:
+                if idx >= 0 and idx < len(ret_from_args):
+                    ret_from_args[idx] = True
+            ret_escape = bool(has_return_value or any(ret_from_args))
+            if bool(context.non_escape_policy.get("unknown_call_escape", True)) and int(unresolved_counts.get(symbol, 0)) > 0:
+                ret_escape = True
+            summary[symbol] = {
+                "symbol": symbol,
+                "arg_order": list(arg_order),
+                "arg_escape": list(direct_arg_escape),
+                "return_escape": ret_escape,
+                "return_from_args": ret_from_args,
+                "unresolved_calls": int(unresolved_counts.get(symbol, 0)),
+            }
+            i += 1
+
+        changed = True
+        while changed:
+            changed = False
+            i = 0
+            while i < len(sorted_symbols):
+                symbol = sorted_symbols[i]
+                cur = summary[symbol]
+                arg_escape = list(cur.get("arg_escape", []))
+                ret_from_args = list(cur.get("return_from_args", []))
+                ret_escape = bool(cur.get("return_escape", False))
+                sites = callsites_by_symbol.get(symbol, [])
+                s = 0
+                while s < len(sites):
+                    site = sites[s]
+                    callee = site.get("callee")
+                    if not isinstance(callee, str) or callee == "":
+                        s += 1
+                        continue
+                    callee_sum = summary.get(callee)
+                    if not isinstance(callee_sum, dict):
+                        s += 1
+                        continue
+                    src_lists_any = site.get("arg_sources")
+                    src_lists = src_lists_any if isinstance(src_lists_any, list) else []
+                    callee_arg_escape_any = callee_sum.get("arg_escape")
+                    callee_arg_escape = callee_arg_escape_any if isinstance(callee_arg_escape_any, list) else []
+                    j = 0
+                    while j < len(callee_arg_escape):
+                        if bool(callee_arg_escape[j]) and j < len(src_lists):
+                            refs_any = src_lists[j]
+                            refs = refs_any if isinstance(refs_any, list) else []
+                            r = 0
+                            while r < len(refs):
+                                src_idx = int(refs[r])
+                                if src_idx >= 0 and src_idx < len(arg_escape) and not arg_escape[src_idx]:
+                                    arg_escape[src_idx] = True
+                                    changed = True
+                                r += 1
+                        j += 1
+                    if bool(site.get("in_return_expr", False)):
+                        if bool(callee_sum.get("return_escape", False)) and not ret_escape:
+                            ret_escape = True
+                            changed = True
+                        callee_ret_from_any = callee_sum.get("return_from_args")
+                        callee_ret_from = callee_ret_from_any if isinstance(callee_ret_from_any, list) else []
+                        j = 0
+                        while j < len(callee_ret_from):
+                            if bool(callee_ret_from[j]) and j < len(src_lists):
+                                refs_any = src_lists[j]
+                                refs = refs_any if isinstance(refs_any, list) else []
+                                r = 0
+                                while r < len(refs):
+                                    src_idx = int(refs[r])
+                                    if src_idx >= 0 and src_idx < len(ret_from_args) and not ret_from_args[src_idx]:
+                                        ret_from_args[src_idx] = True
+                                        changed = True
+                                    r += 1
+                            j += 1
+                    s += 1
+                if any(ret_from_args) and not ret_escape:
+                    ret_escape = True
+                    changed = True
+                cur["arg_escape"] = arg_escape
+                cur["return_from_args"] = ret_from_args
+                cur["return_escape"] = ret_escape
+                i += 1
+
+        meta_any = module_doc.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        old_summary = meta.get("non_escape_summary")
+        out_summary: dict[str, object] = {}
+        i = 0
+        while i < len(sorted_symbols):
+            symbol = sorted_symbols[i]
+            out_summary[symbol] = summary[symbol]
+            i += 1
+        meta["non_escape_summary"] = out_summary
+        module_doc["meta"] = meta
+        changed_out = old_summary != out_summary
+        return PassResult(changed=changed_out, change_count=len(sorted_symbols) if changed_out else 0)
