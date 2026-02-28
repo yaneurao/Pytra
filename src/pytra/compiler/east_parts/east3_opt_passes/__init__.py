@@ -12,6 +12,7 @@ from pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass 
 from pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
 from pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
 from pytra.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
+from pytra.compiler.east_parts.east3_opt_passes.tuple_target_direct_expansion_pass import TupleTargetDirectExpansionPass
 from pytra.compiler.east_parts.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
 
 
@@ -25,6 +26,7 @@ def build_default_passes() -> list[object]:
         TypedEnumerateNormalizationPass(),
         TypedRepeatMaterializationPass(),
         DictStrKeyNormalizationPass(),
+        TupleTargetDirectExpansionPass(),
         LoopInvariantCastHoistPass(),
         UnusedLoopVarElisionPass(),
         LoopInvariantHoistLitePass(),

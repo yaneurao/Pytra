@@ -13,6 +13,7 @@ from src.pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_p
 from src.pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
 from src.pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
+from src.pytra.compiler.east_parts.east3_opt_passes.tuple_target_direct_expansion_pass import TupleTargetDirectExpansionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
 from src.pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from src.pytra.compiler.east_parts.east3_optimizer import PassContext
@@ -94,7 +95,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -107,6 +108,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
         self.assertFalse(by_name.get("TypedRepeatMaterializationPass", True))
         self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
+        self.assertFalse(by_name.get("TupleTargetDirectExpansionPass", True))
         self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
         self.assertFalse(by_name.get("LoopInvariantHoistLitePass", True))
@@ -119,6 +121,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
         self.assertIn("TypedRepeatMaterializationPass", trace_text)
         self.assertIn("DictStrKeyNormalizationPass", trace_text)
+        self.assertIn("TupleTargetDirectExpansionPass", trace_text)
         self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
@@ -596,6 +599,77 @@ class East3OptimizerTest(unittest.TestCase):
         key_node = subscript.get("slice", {})
         self.assertEqual(key_node.get("resolved_type"), "unknown")
         self.assertFalse(bool(key_node.get("dict_key_verified", False)))
+
+    def test_tuple_target_direct_expansion_pass_marks_flat_typed_tuple_target(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                    "kind": "Call",
+                    "resolved_type": "unknown",
+                    "runtime_call": "py_enumerate",
+                    "iter_element_type": "tuple[int64, str]",
+                    "args": [{"kind": "Name", "id": "lines", "resolved_type": "list[str]"}],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "enumerate",
+                },
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "unknown"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "unknown"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = TupleTargetDirectExpansionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        target_plan = for_stmt.get("target_plan", {})
+        self.assertTrue(bool(target_plan.get("direct_unpack", False)))
+        self.assertEqual(target_plan.get("direct_unpack_names"), ["line_index", "source"])
+        self.assertEqual(target_plan.get("direct_unpack_types"), ["int64", "str"])
+        self.assertEqual(for_stmt.get("iter_plan", {}).get("iter_item_type"), "tuple[int64, str]")
+
+    def test_tuple_target_direct_expansion_pass_skips_nested_tuple_target(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {"kind": "Name", "id": "pairs", "resolved_type": "list[tuple[int64, tuple[str, str]]]"},
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "idx", "target_type": "int64"},
+                    {
+                        "kind": "TupleTarget",
+                        "elements": [
+                            {"kind": "NameTarget", "id": "a", "target_type": "str"},
+                            {"kind": "NameTarget", "id": "b", "target_type": "str"},
+                        ],
+                    },
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = TupleTargetDirectExpansionPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertFalse(bool(for_stmt.get("target_plan", {}).get("direct_unpack", False)))
 
     def test_unused_loop_var_elision_pass_renames_unused_target_to_underscore(self) -> None:
         doc = _module_doc()

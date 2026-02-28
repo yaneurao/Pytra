@@ -188,6 +188,38 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertNotIn("for (object __itobj", text)
         self.assertNotIn("py_dyn_range(", text)
 
+    def test_emit_stmt_forcore_runtime_tuple_target_direct_unpack_uses_structured_binding(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {"kind": "Name", "id": "pairs", "resolved_type": "list[tuple[int64, str]]"},
+                "iter_item_type": "tuple[int64, str]",
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "direct_unpack": True,
+                "direct_unpack_names": ["line_index", "source"],
+                "direct_unpack_types": ["int64", "str"],
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "int64"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "str"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("for (const auto& [line_index, source] : pairs)", text)
+        self.assertNotIn("py_at(", text)
+        self.assertNotIn("py_to<int64>(py_at(", text)
+
     def test_emit_stmt_forcore_runtime_tuple_target_falls_back_to_auto_when_unknown(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {

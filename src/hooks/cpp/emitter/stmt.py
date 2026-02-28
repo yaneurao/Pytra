@@ -967,6 +967,31 @@ class CppStatementEmitter:
                 inherited_elem_types: list[str] = []
                 if typed_iter and iter_item_t.startswith("tuple[") and iter_item_t.endswith("]"):
                     inherited_elem_types = self.split_generic(iter_item_t[6:-1])
+                direct_unpack = bool(target_plan.get("direct_unpack", False))
+                direct_names_obj = target_plan.get("direct_unpack_names")
+                direct_types_obj = target_plan.get("direct_unpack_types")
+                direct_names = direct_names_obj if isinstance(direct_names_obj, list) else []
+                direct_types = direct_types_obj if isinstance(direct_types_obj, list) else []
+                direct_names_txt: list[str] = []
+                for raw_name in direct_names:
+                    if isinstance(raw_name, str) and raw_name != "":
+                        direct_names_txt.append(raw_name)
+                if typed_iter and direct_unpack and len(direct_names_txt) > 0:
+                    bind_targets = ", ".join(direct_names_txt)
+                    hdr = f"for (const auto& [{bind_targets}] : {iter_txt})"
+                    self._emit_for_body_open(hdr, set(direct_names_txt), omit_braces)
+                    i = 0
+                    while i < len(direct_names_txt):
+                        nm = direct_names_txt[i]
+                        nm_t = "unknown"
+                        if i < len(direct_types) and isinstance(direct_types[i], str):
+                            nm_t = self.normalize_type_name(direct_types[i])
+                        if nm_t != "":
+                            self.declared_var_types[nm] = nm_t
+                        i += 1
+                    self._emit_for_body_stmts(body_stmts, omit_braces)
+                    self._emit_for_body_close(omit_braces)
+                    return
                 if typed_iter:
                     hdr = self.syntax_line(
                         "for_each_typed_open",
