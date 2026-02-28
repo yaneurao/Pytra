@@ -322,6 +322,10 @@ class CppEmitter(
                 tuple_parts = self.split_generic(owner_t[6:-1])
                 if len(tuple_parts) == 1:
                     return self.normalize_type_name(tuple_parts[0])
+            if owner_t == "str":
+                sl_node = self.any_to_dict_or_empty(node_for_base.get("slice"))
+                if self._node_kind_from_dict(sl_node) != "Slice":
+                    return "str"
         return ""
 
     # module/import helpers moved to hooks.cpp.emitter.module.CppModuleEmitter.
@@ -2499,14 +2503,19 @@ class CppEmitter(
             value_node = expr_d.get("value")
             value_expr = self.render_expr(value_node)
             mode = self.any_dict_get_str(expr_d, "mode", "isdigit")
-            # NOTE:
-            # Some IR nodes keep `resolved_type=str` while rendered C++ expressions
-            # are still `object`-typed (for example `Subscript` on string lowered to
-            # `py_at(...)`). Always normalize through `str(...)` here so char-class
-            # predicates compile and behave consistently.
+            value_t = self.normalize_type_name(self.get_expr_type(value_node))
+            value_t = self.normalize_type_name(self.infer_rendered_arg_type(value_expr, value_t, self.declared_var_types))
+            receiver_expr = value_expr
+            value_node_d = self.any_to_dict_or_empty(value_node)
+            if self._node_kind_from_dict(value_node_d) in {"BinOp", "BoolOp", "Compare", "IfExp"}:
+                receiver_expr = f"({receiver_expr})"
+            # `str` が確定している経路では同型 cast を入れない。
+            if value_t != "str":
+                # `Subscript` 等で object 側に落ちる経路だけ defensive cast を維持する。
+                receiver_expr = f"str({receiver_expr})"
             if mode == "isalpha":
-                return f"str({value_expr}).isalpha()"
-            return f"str({value_expr}).isdigit()"
+                return f"{receiver_expr}.isalpha()"
+            return f"{receiver_expr}.isdigit()"
         if kind == "StrReplace":
             owner_expr = self.render_expr(expr_d.get("owner"))
             old_expr = self.render_expr(expr_d.get("old"))

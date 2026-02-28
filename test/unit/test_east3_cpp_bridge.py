@@ -1228,8 +1228,8 @@ class East3CppBridgeTest(unittest.TestCase):
             "value": {"kind": "Name", "id": "s", "resolved_type": "str"},
             "resolved_type": "bool",
         }
-        self.assertEqual(emitter.render_expr(isdigit_node), "str(s).isdigit()")
-        self.assertEqual(emitter.render_expr(isalpha_node), "str(s).isalpha()")
+        self.assertEqual(emitter.render_expr(isdigit_node), "s.isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_node), "s.isalpha()")
 
     def test_render_expr_str_char_class_unknown_value_casts_to_str(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1278,8 +1278,8 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(isdigit_expr), "str(s).isdigit()")
-        self.assertEqual(emitter.render_expr(isalpha_expr), "str(s).isalpha()")
+        self.assertEqual(emitter.render_expr(isdigit_expr), "s.isdigit()")
+        self.assertEqual(emitter.render_expr(isalpha_expr), "s.isalpha()")
 
     def test_render_expr_supports_str_replace_and_join_ir_nodes(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
