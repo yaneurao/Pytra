@@ -28,13 +28,15 @@ def _fn(name: str, args: list[str], body: list[dict[str, object]]) -> dict[str, 
 
 class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
     def test_pass_propagates_arg_escape_through_known_calls(self) -> None:
+        sink_call = _call_name("unknown_sink", [_name("x")])
+        wrap_call = _call_name("sink", [_name("y")])
         doc: dict[str, object] = {
             "kind": "Module",
             "east_stage": 3,
             "meta": {},
             "body": [
-                _fn("sink", ["x"], [_expr(_call_name("unknown_sink", [_name("x")]))]),
-                _fn("wrap", ["y"], [_expr(_call_name("sink", [_name("y")]))]),
+                _fn("sink", ["x"], [_expr(sink_call)]),
+                _fn("wrap", ["y"], [_expr(wrap_call)]),
             ],
         }
         result = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
@@ -42,6 +44,17 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         summary = doc.get("meta", {}).get("non_escape_summary", {})
         self.assertTrue(summary["sink"]["arg_escape"][0])
         self.assertTrue(summary["wrap"]["arg_escape"][0])
+        body = doc.get("body", [])
+        sink_fn = body[0] if isinstance(body, list) and len(body) > 0 else {}
+        wrap_fn = body[1] if isinstance(body, list) and len(body) > 1 else {}
+        self.assertTrue(sink_fn.get("meta", {}).get("escape_summary", {}).get("arg_escape", [False])[0])
+        self.assertTrue(wrap_fn.get("meta", {}).get("escape_summary", {}).get("arg_escape", [False])[0])
+        sink_call_meta = sink_call.get("meta", {}).get("non_escape_callsite", {})
+        wrap_call_meta = wrap_call.get("meta", {}).get("non_escape_callsite", {})
+        self.assertFalse(sink_call_meta.get("resolved", True))
+        self.assertTrue(wrap_call_meta.get("resolved", False))
+        self.assertEqual(wrap_call_meta.get("callee"), "sink")
+        self.assertEqual(wrap_call_meta.get("arg_sources"), [[0]])
 
     def test_pass_propagates_return_from_args(self) -> None:
         doc: dict[str, object] = {

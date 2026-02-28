@@ -109,6 +109,23 @@ def _collect_arg_refs(node: Any, arg_index: dict[str, int], out: set[int]) -> No
         _collect_arg_refs(value, arg_index, out)
 
 
+def _ensure_meta(node: dict[str, Any]) -> dict[str, Any]:
+    meta_any = node.get("meta")
+    if isinstance(meta_any, dict):
+        return meta_any
+    meta: dict[str, Any] = {}
+    node["meta"] = meta
+    return meta
+
+
+def _set_meta_value(node: dict[str, Any], key: str, value: Any) -> bool:
+    meta = _ensure_meta(node)
+    if meta.get(key) == value:
+        return False
+    meta[key] = value
+    return True
+
+
 def _collect_return_from_args(node: Any, arg_index: dict[str, int], out: set[int]) -> tuple[bool, int]:
     """Collect direct return escapes.
 
@@ -224,6 +241,7 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                         "callee": target,
                         "arg_sources": arg_sources,
                         "in_return_expr": in_return_expr,
+                        "call_node": call_node,
                     }
                 )
                 k += 1
@@ -317,12 +335,57 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
         meta = meta_any if isinstance(meta_any, dict) else {}
         old_summary = meta.get("non_escape_summary")
         out_summary: dict[str, object] = {}
+        annotation_changes = 0
         i = 0
         while i < len(sorted_symbols):
             symbol = sorted_symbols[i]
-            out_summary[symbol] = summary[symbol]
+            fn_summary = summary[symbol]
+            out_summary[symbol] = fn_summary
+            fn_node = symbols[symbol]
+            fn_payload = {
+                "symbol": symbol,
+                "arg_order": list(fn_summary.get("arg_order", [])),
+                "arg_escape": list(fn_summary.get("arg_escape", [])),
+                "return_escape": bool(fn_summary.get("return_escape", False)),
+                "return_from_args": list(fn_summary.get("return_from_args", [])),
+                "unresolved_calls": int(fn_summary.get("unresolved_calls", 0)),
+            }
+            if _set_meta_value(fn_node, "escape_summary", fn_payload):
+                annotation_changes += 1
+            sites = callsites_by_symbol.get(symbol, [])
+            s = 0
+            while s < len(sites):
+                site = sites[s]
+                call_node = site.get("call_node")
+                if isinstance(call_node, dict):
+                    callee = site.get("callee")
+                    callee_symbol = callee if isinstance(callee, str) else ""
+                    callee_summary = summary.get(callee_symbol, {})
+                    payload = {
+                        "callee": callee_symbol,
+                        "resolved": callee_symbol != "",
+                        "in_return_expr": bool(site.get("in_return_expr", False)),
+                        "arg_sources": site.get("arg_sources", []),
+                        "callee_arg_escape": list(callee_summary.get("arg_escape", [])) if isinstance(callee_summary, dict) else [],
+                        "callee_return_from_args": (
+                            list(callee_summary.get("return_from_args", []))
+                            if isinstance(callee_summary, dict)
+                            else []
+                        ),
+                        "callee_return_escape": bool(callee_summary.get("return_escape", False))
+                        if isinstance(callee_summary, dict)
+                        else False,
+                    }
+                    if _set_meta_value(call_node, "non_escape_callsite", payload):
+                        annotation_changes += 1
+                s += 1
             i += 1
         meta["non_escape_summary"] = out_summary
         module_doc["meta"] = meta
         changed_out = old_summary != out_summary
-        return PassResult(changed=changed_out, change_count=len(sorted_symbols) if changed_out else 0)
+        changed_flag = changed_out or annotation_changes > 0
+        change_count = 0
+        if changed_out:
+            change_count += len(sorted_symbols)
+        change_count += annotation_changes
+        return PassResult(changed=changed_flag, change_count=change_count)
