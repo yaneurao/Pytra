@@ -83,9 +83,9 @@
 文脈: [docs/ja/plans/p1-list-pyobj-migration.md](../plans/p1-list-pyobj-migration.md)
 
 1. [ ] [ID: P1-LIST-PYOBJ-MIG-01] `list` を PyObj/RC 管理モデルへ段階移行し、non-escape 経路のみ RAII 縮退できる構成へ移行する。
-2. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-01] `list` 参照セマンティクス契約（alias/共有/破壊的更新）を docs/spec に明文化する。
-3. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
-4. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピー依存箇所を棚卸しして決定ログに固定する。
+2. [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-01] `list` 参照セマンティクス契約（alias/共有/破壊的更新）を docs/spec に明文化する。
+3. [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
+4. [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピー依存箇所を棚卸しして決定ログに固定する。
 5. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
 6. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
 7. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-03] 旧値モデルとの互換ブリッジ（最小）を追加し、段階移行中の compile break を抑える。

@@ -19,6 +19,7 @@
 - EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
 - EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - C++ backend 最適化層仕様: [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- C++ list 参照セマンティクス仕様: [C++ list 参照セマンティクス仕様](./spec-cpp-list-reference-semantics.md)
 - stdlib シグネチャ正本化仕様: [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
 - Java native backend 契約仕様: [Java Native Backend 契約仕様](./spec-java-native-backend.md)
 - Lua native backend 契約仕様: [Lua Native Backend 契約仕様](./spec-lua-native-backend.md)
@@ -56,6 +57,8 @@
   - [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - C++ backend 後段最適化（`CppOptimizer` と `CppEmitter` の責務分離）を確認したい場合:
   - [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- C++ list の alias/共有/破壊的更新契約（value/pyobj 移行境界）を確認したい場合:
+  - [C++ list 参照セマンティクス仕様](./spec-cpp-list-reference-semantics.md)
 - `pytra/std` を型仕様の正本にする契約（`core.py` 直書き撤去）を確認したい場合:
   - [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
 - Java backend の sidecar 撤去移行契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:

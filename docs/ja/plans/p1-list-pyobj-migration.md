@@ -107,12 +107,15 @@
 決定ログ:
 - 2026-02-28: ユーザー指示により、`str/dict/set` へ広げる前に `list` 単体で PyObj/RC モデル移行を優先する方針を確定した。
 - 2026-02-28: 移行リスク抑制のため、`value/pyobj` dual model を前提に段階切替する方針を採用した。
+- 2026-02-28: `docs/ja/spec/spec-cpp-list-reference-semantics.md` を新設し、現行 `value model` 契約（コピー代入）と移行先 `pyobj model` 契約（alias 共有）を明文化した。
+- 2026-02-28: alias 期待 fixture `test/fixtures/collections/list_alias_shared_mutation.py` を追加し、`python3 tools/runtime_parity_check.py --case-root fixture --targets cpp list_alias_shared_mutation` で `output mismatch`（Python=`True`, C++=`False`）を確認して差分を固定した。
+- 2026-02-28: `sample/py` + `test/fixtures` を AST スキャンし、list 型注釈を持つ `name = name` 代入の候補を棚卸しした結果、現時点の候補は `test/fixtures/collections/list_alias_shared_mutation.py:7 (b = a)` の 1 件のみだった。
 
 ## 分解
 
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-01] `list` 参照セマンティクス契約（alias/共有/破壊的更新）を docs/spec に明文化する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピーに依存する箇所を棚卸しして決定ログに固定する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-01] `list` 参照セマンティクス契約（alias/共有/破壊的更新）を docs/spec に明文化する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピーに依存する箇所を棚卸しして決定ログに固定する。
 
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
