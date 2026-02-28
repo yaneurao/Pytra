@@ -450,7 +450,7 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east)
-        self.assertIn('tokens.append(::rc_new<Token>("PLUS", ch, i));', cpp)
+        self.assertIn('tokens.append(::rc_new<Token>("PLUS", ch, i, 0));', cpp)
         self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
 
     def test_sample18_pyobj_enumerate_list_str_uses_typed_direct_unpack(self) -> None:
@@ -485,6 +485,14 @@ def f() -> float:
         self.assertIn("rc<Token> token = this->current_token();", cpp)
         self.assertIn("if (token->kind != kind)", cpp)
         self.assertNotIn("if (this->peek_kind() != kind)", cpp)
+
+    def test_sample18_number_token_uses_predecoded_number_value(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("int64 number_value;", cpp)
+        self.assertIn("token_num->number_value", cpp)
+        self.assertNotIn("py_to_int64(token_num->text)", cpp)
 
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:

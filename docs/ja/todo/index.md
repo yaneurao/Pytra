@@ -55,7 +55,7 @@
 8. [x] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の文字列比較箇所を enum/整数タグ化方針へ落とし込む。
 9. [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ 出力をタグ分岐へ移行し、`if (node->kind == \"...\")` 連鎖を縮退する。
 10. [x] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の parse 時 `py_to_int64` 経路を字句段 predecode へ移行する仕様を確定する。
-11. [ ] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` 数値フィールドを利用して `parse_primary` の文字列->数値変換を削減する。
+11. [x] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` 数値フィールドを利用して `parse_primary` の文字列->数値変換を削減する。
 12. [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型の整合を確定する。
 13. [x] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、ループ内 `obj_to_rc_or_raise` を削減する。
 14. [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（6項目）を golden 回帰で固定する。
@@ -70,6 +70,7 @@
 - `P0-CPP-S18-OPT-01-S6-01` `parse_program` 戻り値を `list<rc<StmtNode>>`（必要境界のみ boxing）へ寄せる整合方針を固定し、`execute` 側 typed loop への接続契約を定義した。
 - `P0-CPP-S18-OPT-01-S6-02` `py_to_rc_list_from_object<T>()` runtime helper と ForCore emitter fastpath を追加し、sample/18 の `execute` ループを `for (rc<StmtNode> stmt : ...)` へ置換した（`obj_to_rc_or_raise` のループ内呼び出しを削減）。
 - `P0-CPP-S18-OPT-01-S7-02` `test_py2cpp_codegen_issues.py`（76件）/`test_east3_cpp_bridge.py`（90件）/`check_py2cpp_transpile.py`（`ok=134`）に加え、`runtime_parity_check --case-root sample --targets cpp 18_mini_language_interpreter`（PASS）で非退行を確認した。
+- `P0-CPP-S18-OPT-01-S5-02` `Token.number_value` を追加し tokenize で NUMBER のみ predecode、`parse_primary` は `token_num.number_value` を直接利用するよう更新した（`py_to_int64(token_num->text)` を除去）。
 
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 

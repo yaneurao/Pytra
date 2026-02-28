@@ -8,6 +8,7 @@ class Token:
     kind: str
     text: str
     pos: int
+    number_value: int
 
 
 # Expression node. `kind` identifies the concrete variant.
@@ -41,37 +42,37 @@ def tokenize(lines: list[str]) -> list[Token]:
                 continue
 
             if ch == "+":
-                tokens.append(Token("PLUS", ch, i))
+                tokens.append(Token("PLUS", ch, i, 0))
                 i += 1
                 continue
 
             if ch == "-":
-                tokens.append(Token("MINUS", ch, i))
+                tokens.append(Token("MINUS", ch, i, 0))
                 i += 1
                 continue
 
             if ch == "*":
-                tokens.append(Token("STAR", ch, i))
+                tokens.append(Token("STAR", ch, i, 0))
                 i += 1
                 continue
 
             if ch == "/":
-                tokens.append(Token("SLASH", ch, i))
+                tokens.append(Token("SLASH", ch, i, 0))
                 i += 1
                 continue
 
             if ch == "(":
-                tokens.append(Token("LPAREN", ch, i))
+                tokens.append(Token("LPAREN", ch, i, 0))
                 i += 1
                 continue
 
             if ch == ")":
-                tokens.append(Token("RPAREN", ch, i))
+                tokens.append(Token("RPAREN", ch, i, 0))
                 i += 1
                 continue
 
             if ch == "=":
-                tokens.append(Token("EQUAL", ch, i))
+                tokens.append(Token("EQUAL", ch, i, 0))
                 i += 1
                 continue
 
@@ -80,7 +81,7 @@ def tokenize(lines: list[str]) -> list[Token]:
                 while i < n and source[i].isdigit():
                     i += 1
                 text: str = source[start:i]
-                tokens.append(Token("NUMBER", text, start))
+                tokens.append(Token("NUMBER", text, start, int(text)))
                 continue
 
             if ch.isalpha() or ch == "_":
@@ -89,18 +90,18 @@ def tokenize(lines: list[str]) -> list[Token]:
                     i += 1
                 text = source[start:i]
                 if text == "let":
-                    tokens.append(Token("LET", text, start))
+                    tokens.append(Token("LET", text, start, 0))
                 elif text == "print":
-                    tokens.append(Token("PRINT", text, start))
+                    tokens.append(Token("PRINT", text, start, 0))
                 else:
-                    tokens.append(Token("IDENT", text, start))
+                    tokens.append(Token("IDENT", text, start, 0))
                 continue
 
             raise RuntimeError("tokenize error at line=" + str(line_index) + " pos=" + str(i) + " ch=" + ch)
 
-        tokens.append(Token("NEWLINE", "", n))
+        tokens.append(Token("NEWLINE", "", n, 0))
 
-    tokens.append(Token("EOF", "", len(lines)))
+    tokens.append(Token("EOF", "", len(lines), 0))
     return tokens
 
 
@@ -208,7 +209,7 @@ class Parser:
     def parse_primary(self) -> int:
         if self.match("NUMBER"):
             token_num: Token = self.previous_token()
-            return self.add_expr(ExprNode("lit", int(token_num.text), "", "", -1, -1))
+            return self.add_expr(ExprNode("lit", token_num.number_value, "", "", -1, -1))
 
         if self.match("IDENT"):
             token_ident: Token = self.previous_token()

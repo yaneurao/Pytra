@@ -7,6 +7,7 @@ struct Token : public PyObj {
     str kind;
     str text;
     int64 pos;
+    int64 number_value;
     inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
     uint32 py_type_id() const noexcept override {
         return PYTRA_TYPE_ID;
@@ -15,10 +16,11 @@ struct Token : public PyObj {
         return expected_type_id == PYTRA_TYPE_ID;
     }
     
-    Token(str kind, str text, int64 pos) {
+    Token(str kind, str text, int64 pos, int64 number_value) {
         this->kind = kind;
         this->text = text;
         this->pos = pos;
+        this->number_value = number_value;
     }
     
 };
@@ -82,37 +84,37 @@ object tokenize(const object& lines) {
                 continue;
             }
             if (ch == "+") {
-                py_append(tokens, make_object(::rc_new<Token>("PLUS", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("PLUS", ch, i, 0)));
                 i++;
                 continue;
             }
             if (ch == "-") {
-                py_append(tokens, make_object(::rc_new<Token>("MINUS", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("MINUS", ch, i, 0)));
                 i++;
                 continue;
             }
             if (ch == "*") {
-                py_append(tokens, make_object(::rc_new<Token>("STAR", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("STAR", ch, i, 0)));
                 i++;
                 continue;
             }
             if (ch == "/") {
-                py_append(tokens, make_object(::rc_new<Token>("SLASH", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("SLASH", ch, i, 0)));
                 i++;
                 continue;
             }
             if (ch == "(") {
-                py_append(tokens, make_object(::rc_new<Token>("LPAREN", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("LPAREN", ch, i, 0)));
                 i++;
                 continue;
             }
             if (ch == ")") {
-                py_append(tokens, make_object(::rc_new<Token>("RPAREN", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("RPAREN", ch, i, 0)));
                 i++;
                 continue;
             }
             if (ch == "=") {
-                py_append(tokens, make_object(::rc_new<Token>("EQUAL", ch, i)));
+                py_append(tokens, make_object(::rc_new<Token>("EQUAL", ch, i, 0)));
                 i++;
                 continue;
             }
@@ -122,7 +124,7 @@ object tokenize(const object& lines) {
                     i++;
                 }
                 str text = py_slice(source, start, i);
-                py_append(tokens, make_object(::rc_new<Token>("NUMBER", text, start)));
+                py_append(tokens, make_object(::rc_new<Token>("NUMBER", text, start, py_to_int64(text))));
                 continue;
             }
             if ((ch.isalpha()) || (ch == "_")) {
@@ -132,20 +134,20 @@ object tokenize(const object& lines) {
                 }
                 str text = py_slice(source, start, i);
                 if (text == "let") {
-                    py_append(tokens, make_object(::rc_new<Token>("LET", text, start)));
+                    py_append(tokens, make_object(::rc_new<Token>("LET", text, start, 0)));
                 } else {
                     if (text == "print")
-                        py_append(tokens, make_object(::rc_new<Token>("PRINT", text, start)));
+                        py_append(tokens, make_object(::rc_new<Token>("PRINT", text, start, 0)));
                     else
-                        py_append(tokens, make_object(::rc_new<Token>("IDENT", text, start)));
+                        py_append(tokens, make_object(::rc_new<Token>("IDENT", text, start, 0)));
                 }
                 continue;
             }
             throw ::std::runtime_error("tokenize error at line=" + ::std::to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
         }
-        py_append(tokens, make_object(::rc_new<Token>("NEWLINE", "", n)));
+        py_append(tokens, make_object(::rc_new<Token>("NEWLINE", "", n, 0)));
     }
-    py_append(tokens, make_object(::rc_new<Token>("EOF", "", py_len(lines))));
+    py_append(tokens, make_object(::rc_new<Token>("EOF", "", py_len(lines), 0)));
     return tokens;
 }
 
@@ -274,7 +276,7 @@ struct Parser : public PyObj {
     int64 parse_primary() {
         if (this->match("NUMBER")) {
             rc<Token> token_num = this->previous_token();
-            return this->add_expr(::rc_new<ExprNode>("lit", py_to_int64(token_num->text), "", "", -1, -1));
+            return this->add_expr(::rc_new<ExprNode>("lit", token_num->number_value, "", "", -1, -1));
         }
         if (this->match("IDENT")) {
             rc<Token> token_ident = this->previous_token();
