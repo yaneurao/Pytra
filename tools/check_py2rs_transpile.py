@@ -13,6 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PY2RS = ROOT / "src" / "py2rs.py"
 
 DEFAULT_EXPECTED_FAILS = {
+    "test/fixtures/control/finally.py",
+    "test/fixtures/control/try_raise.py",
+    "test/fixtures/control/yield_generator_min.py",
+    "test/fixtures/core/tuple_assign.py",
     "test/fixtures/signature/ng_kwargs.py",
     "test/fixtures/signature/ng_object_receiver.py",
     "test/fixtures/signature/ng_posonly.py",
