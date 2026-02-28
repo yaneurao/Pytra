@@ -47,7 +47,7 @@
 ## 分解
 
 - [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S1-01] Kotlin emitter の inline helper 出力一覧と runtime API 対応表を確定する。
-- [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-01] Kotlin runtime 正本（`src/runtime/kotlin/pytra`）を整備し、`__pytra_*` API を外部化する。
+- [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-01] Kotlin runtime 正本（`src/runtime/kotlin/pytra`）を整備し、`__pytra_*` API を外部化する。
 - [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-02] Kotlin emitter から helper 本体出力を撤去し、runtime 呼び出し専用へ切り替える。
 - [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-03] `py2kotlin.py` の出力導線で runtime ファイルを配置する。
 - [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-01] `check_py2kotlin_transpile` / smoke / parity を更新し、回帰を固定する。
@@ -82,3 +82,4 @@
 
 決定ログ:
 - 2026-03-01: `kotlin_native_emitter.py` の `_emit_runtime_helpers()` で inline 出力される `__pytra_*` 32 API を棚卸しし、`src/runtime/kotlin/pytra/py_runtime.kt`（現状 `runEmbeddedNode` のみ）とのギャップを固定した（`P1-KOTLIN-RUNTIME-EXT-01-S1-01`）。
+- 2026-03-01: `src/runtime/kotlin/pytra/py_runtime.kt` を `__pytra_*` 32 helper 実装入りの runtime 正本へ更新し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（10件）で非退行を確認した（`P1-KOTLIN-RUNTIME-EXT-01-S2-01`）。
