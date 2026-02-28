@@ -106,7 +106,7 @@
 22. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S3] `12_sort_visualizer` の compile blocker（list 注釈引数が `object` シグネチャへ合わない）を callsite boxing 補正で解消する。
 23. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
 24. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
-25. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
+25. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
 26. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
 
 ### P1: 全言語コメント忠実性ポリシー（生成コメント禁止）

@@ -79,6 +79,23 @@
 - 旧値モデルの暫定互換コードを段階撤去する（ただし rollback 可能な期間を設ける）。
 - docs/spec/how-to-use へ運用差分を同期する。
 
+#### S4-03 確定: 旧 `value` 互換コードの撤去計画
+
+- 互換コードの対象（撤去候補）
+  - C++ emitter の `cpp_list_model == "value"` 分岐（型描画/collection op/for lower の value 専用分岐）
+  - runtime の `list<T>(object)` / `obj_to_list<T>` など value 側 bridge
+  - `py2cpp` の rollback オプション（`--cpp-list-model value`）
+- 撤去の段階
+  - Stage A（現行）: `pyobj` を既定化し、`value` は rollback 専用で維持。
+  - Stage B（次ID）: `value` 分岐の利用実態を `sample + fixture + selfhost` で再計測し、未使用/低使用を確認。
+  - Stage C（次ID）: emitter の value 専用分岐を段階撤去し、`pyobj` 単一路へ縮退。
+  - Stage D（次ID）: runtime bridge（`list<T>(object)` など）を最小化し、不要経路を削除。
+  - Stage E（次ID）: `--cpp-list-model value` を削除し、CLI 契約を `pyobj` 固定へ更新。
+- 別ID起票条件（fail-closed）
+  - `value` 撤去で `check_py2cpp_transpile` / `runtime_parity_check --targets cpp` / selfhost のいずれかに退行が出る場合。
+  - `list` 以外（`dict/set/tuple`）へ同時波及し、変更半径が本IDの受け入れ基準を超える場合。
+  - 既存ユーザー導線で rollback 必須ケースが残り、段階的 deprecation 期間の明示が必要な場合。
+
 ## 受け入れ基準
 
 - `pyobj` list モデルで `check_py2cpp_transpile` と C++ smoke が通る。
@@ -136,6 +153,7 @@
 - 2026-02-28: `13_maze_generation_steps` で tuple/list runtime blocker（`index access on non-indexable object`）を確認した。原因は `make_object(list<T>)` 内の `make_object(v)` が tuple overload を拾えず tuple 要素が `object()` に潰れる点と、pyobj list subscript の tuple unbox 不足だった。tuple boxing overload を `list<T>` より前に配置し、`_render_unbox_target_cast` に `tuple[...]` 用 `::std::make_tuple(py_at(...))` 変換を追加して解消した。`test_py2cpp_codegen_issues.py` の tuple subscript 回帰（`test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure`）と `benchmark_cpp_list_models.py 13_maze_generation_steps --warmup 0 --repeat 1 --allow-failures` 実行成功を確認した。
 - 2026-02-28: `05..16` の `pyobj` 単独 compile/run 検証を追加実施し、12件すべて成功（`passed=12 failed=0`）を確認した。検証コマンドは `python3 src/py2cpp.py ... --cpp-list-model pyobj` + `g++ -O0` + 実行をケースごとに回す one-shot スクリプト。これにより `S4-02-S2` を完了扱いとした。
 - 2026-02-28: `parse_py2cpp_argv` の `cpp_list_model_opt` 既定を `pyobj` に切替し、`py2cpp` 本体の fallback も `pyobj` へ統一した。`docs/ja/how-to-use.md` の C++ 節へ rollback 手順（`--cpp-list-model value`）を追記し、`test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj` と `python3 tools/check_todo_priority.py` / `python3 tools/check_py2cpp_transpile.py` の通過を確認した。さらに `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` と `--cpp-list-model value` の比較で、既定は `object lines = make_object(list<object>{});`、rollback 指定時は `list<str> lines = ...;` へ切り替わることを確認した。これにより `S4-02-S3` と親 `S4-02` を完了扱いとした。
+- 2026-02-28: `S4-03` として、旧 `value` 互換コードの撤去対象（emitter 分岐 / runtime bridge / CLI rollback）と段階撤去ステージ（A〜E）を確定した。あわせて別ID起票条件（parity/selfhost 退行、`list` 以外への波及、deprecation 期間明示の必要）を定義し、本IDの範囲を固定した。
 
 ## 分解
 
@@ -166,5 +184,5 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S3] `12_sort_visualizer` の compile blocker（list 注釈引数が `object` シグネチャへ合わない）を callsite boxing 補正で解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
