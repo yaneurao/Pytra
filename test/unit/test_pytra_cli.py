@@ -31,6 +31,8 @@ class PytraCliTest(unittest.TestCase):
             cmd_list = list(cmd)
             calls.append((cmd_list, cwd))
             if str(pytra_cli_mod.PY2CPP) in " ".join(cmd_list):
+                if "--multi-file" not in cmd_list:
+                    return subprocess.CompletedProcess(cmd_list, 0, stdout="", stderr="")
                 output_dir = ROOT
                 if "--output-dir" in cmd_list:
                     idx = cmd_list.index("--output-dir")
@@ -119,21 +121,29 @@ class PytraCliTest(unittest.TestCase):
     def test_transpile_only_invokes_py2cpp(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
         runner = self._fake_run(calls)
-        with patch("src.pytra.cli.subprocess.run", side_effect=runner):
-            rc = pytra_cli_mod.main(["test/fixtures/core/top_level.py", "--target", "cpp", "--output", "tmp/main.cpp"])
+        with tempfile.TemporaryDirectory() as work:
+            output = Path(work) / "main.cpp"
+            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+                rc = pytra_cli_mod.main(
+                    ["test/fixtures/core/top_level.py", "--target", "cpp", "--output", str(output)]
+                )
         self.assertEqual(rc, 0)
         self.assertIn(str(pytra_cli_mod.PY2CPP), " ".join(calls[0][0]))
 
     def test_transpile_only_invokes_py2rs_with_explicit_output(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
         runner = self._fake_run(calls)
-        with patch("src.pytra.cli.subprocess.run", side_effect=runner):
-            rc = pytra_cli_mod.main(["test/fixtures/core/top_level.py", "--target", "rs", "--output", "tmp/main.rs"])
+        with tempfile.TemporaryDirectory() as work:
+            output = Path(work) / "main.rs"
+            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+                rc = pytra_cli_mod.main(
+                    ["test/fixtures/core/top_level.py", "--target", "rs", "--output", str(output)]
+                )
         self.assertEqual(rc, 0)
         self.assertIn(str(pytra_cli_mod.PY2RS), " ".join(calls[0][0]))
         self.assertIn("--output", calls[0][0])
         out_idx = calls[0][0].index("--output")
-        self.assertEqual(calls[0][0][out_idx + 1], "tmp/main.rs")
+        self.assertEqual(calls[0][0][out_idx + 1], str(output))
 
     def test_transpile_rs_uses_output_dir_with_input_stem(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
