@@ -32,6 +32,16 @@
 
 ## 未完了タスク
 
+### P0: EAST3 同型 `py_to<T>` 縮退（最優先）
+
+文脈: [docs/ja/plans/p0-east3-pyto-identity-elimination.md](../plans/p0-east3-pyto-identity-elimination.md)
+
+1. [ ] [ID: P0-EAST3-PYTO-IDENTITY-01] 同型 `py_to<T>` の削減を EAST3 最適化層へ主担当として移し、C++ emitter 側は安全網へ縮退する。
+2. [ ] [ID: P0-EAST3-PYTO-IDENTITY-01-S1-01] 同型 `py_to<T>` 縮退規約（適用条件/除外条件）を EAST3 pass 仕様として固定する。
+3. [ ] [ID: P0-EAST3-PYTO-IDENTITY-01-S2-01] EAST3 optimizer に同型 cast 縮退 pass を実装し、既存 pass 順序へ組み込む。
+4. [ ] [ID: P0-EAST3-PYTO-IDENTITY-01-S2-02] C++ emitter 側の同型 cast 抑止を最終ガードに整理し、EAST3 pass 非適用時も fail-closed を維持する。
+5. [ ] [ID: P0-EAST3-PYTO-IDENTITY-01-S3-01] unit / transpile check / sample 再生成で回帰を固定する。
+
 ### P1: Kotlin runtime 外出し（inline helper 撤去）
 
 文脈: [docs/ja/plans/p1-kotlin-runtime-externalization.md](../plans/p1-kotlin-runtime-externalization.md)
