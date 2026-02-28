@@ -32,54 +32,6 @@
 
 ## 未完了タスク
 
-### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
-
-文脈: [docs/ja/plans/p1-rs-runtime-externalization.md](../plans/p1-rs-runtime-externalization.md)
-
-1. [x] [ID: P1-RS-RUNTIME-EXT-01] Rust backend の生成コードから runtime/helper 本体の inline 出力を撤去し、runtime 外部参照方式へ統一する。
-2. [x] [ID: P1-RS-RUNTIME-EXT-01-S1-01] Rust emitter の inline helper 出力一覧と `src/runtime/rs/pytra` 正本 API 対応表を確定する。
-3. [x] [ID: P1-RS-RUNTIME-EXT-01-S1-02] Rust 生成物の runtime 参照方式（`mod/use` 構成と出力ディレクトリ配置契約）を確定し、fail-closed 条件を文書化する。
-4. [x] [ID: P1-RS-RUNTIME-EXT-01-S2-01] `src/runtime/rs/pytra` 側へ不足 helper/API を補完し、inline 実装と同等の意味を提供する。
-5. [x] [ID: P1-RS-RUNTIME-EXT-01-S2-02] `py2rs.py` に runtime ファイル配置導線を追加し、生成コードが外部 runtime を解決できる状態へ移行する。
-6. [x] [ID: P1-RS-RUNTIME-EXT-01-S2-03] `rs_emitter.py` から runtime/helper 本体出力を撤去し、runtime API 呼び出し専用へ切り替える。
-7. [x] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
-8. [x] [ID: P1-RS-RUNTIME-EXT-01-S3-02] `sample/rs` を再生成し、inline helper 残存ゼロを確認する。
-- `P1-RS-RUNTIME-EXT-01-S1-01` `RUST_RUNTIME_SUPPORT` / `_emit_pyany_runtime` / `_emit_isinstance_runtime_helpers` の inline 出力を棚卸しし、`src/runtime/rs/pytra/built_in/py_runtime.rs` との API 対応差分（不足: `py_str_at`/`py_slice_str`/`mod time|math|pytra`/`PyAny`/`isinstance` 群）を計画書へ固定した。
-- `P1-RS-RUNTIME-EXT-01-S1-02` Rust runtime 参照契約（`py_runtime.rs` 同梱配置、`mod py_runtime;` + `pub use` + `use crate::py_runtime::*;`）と fail-closed 条件（正本未検出/配置失敗/inline残存検知で失敗）を計画書へ明記した。
-- `P1-RS-RUNTIME-EXT-01-S2-01` `py_runtime.rs` に不足 API（`py_str_at`/`py_slice_str`、`PyAny` 変換群、`PYTRA_TID_*` + `py_isinstance` 基盤、`pub mod time/math/pytra`）を追加し、`rustc --crate-type lib src/runtime/rs/pytra/built_in/py_runtime.rs` で構文確認を通した。
-- `P1-RS-RUNTIME-EXT-01-S2-02` `py2rs.py` に runtime コピー導線を追加し、`test_py2rs_smoke` の CLI ケースで `py_runtime.rs` 同梱出力を確認した（`check_py2rs_transpile` の失敗4件は `Try/Yield/Swap` 未対応の既存差分として `S3-01` で扱う）。
-- `P1-RS-RUNTIME-EXT-01-S2-03` `rs_emitter.py` から runtime/helper 本体の inline 出力を撤去し、`mod py_runtime;` + `pub use` + `use crate::py_runtime::*;` 参照へ切替えた。`isinstance` は `py_register_generated_type_info()`（`Once` ガード）で runtime 側 type table を初期化する方式へ移行した。
-- `P1-RS-RUNTIME-EXT-01-S3-01` `test_py2rs_smoke`（28件）、`check_py2rs_transpile.py`（`checked=129 ok=129 fail=0 skipped=10`）、`runtime_parity_check --targets rs --all-samples`（18/18 PASS）を通し、回帰なしを確認した。
-- `P1-RS-RUNTIME-EXT-01-S3-02` `tools/regenerate_samples.py --langs rs --force` で `sample/rs` 18件を再生成し、`py_runtime.rs` 以外に `fn py_perf_counter|fn py_isdigit|mod pytra {` が残っていないことを確認した。
-
-### P1: Ruby 計測値の再計測・parity確認・README反映フロー固定
-
-文脈: [docs/ja/plans/p1-ruby-benchmark-readme-fix.md](../plans/p1-ruby-benchmark-readme-fix.md)
-
-1. [x] [ID: P1-RUBY-BENCH-FIX-01] Ruby 計測値更新時に「fresh transpile → parity確認 → README反映」を必須化する。
-2. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-01] `sample/01` を `ruby --yjit`（`warmup=1`, `repeat=5`）で再計測し、ログを保存する。
-3. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-02] `runtime_parity_check` で `sample/01` の Ruby parity を確認する。
-4. [x] [ID: P1-RUBY-BENCH-FIX-01-S1-03] `docs/ja/README.md` の Ruby 列へ測定値を反映し、差分を確定する。
-- `P1-RUBY-BENCH-FIX-01-S1-01` `ruby --yjit`（warmup=1 / repeat=5）で `sample/ruby/01_mandelbrot.rb` を再計測し、`work/logs/bench_ruby_yjit_01_mandelbrot_20260301.json` に実測5回と中央値 `18.954643653007224` 秒を保存した。
-- `P1-RUBY-BENCH-FIX-01-S1-02` `runtime_parity_check --case-root sample --targets ruby 01_mandelbrot --ignore-unstable-stdout` を実行し、`SUMMARY cases=1 pass=1 fail=0` を確認した。
-- `P1-RUBY-BENCH-FIX-01-S1-03` `docs/ja/README.md` の実行速度比較表で `01_mandelbrot` の Ruby 値を `18.682 -> 18.955`（中央値の小数第3位丸め）へ更新した。
-
-### P1: `core.py` の `Path` 直分岐撤去（stdlib 正本化）
-
-文脈: [docs/ja/plans/p1-core-path-direct-branch-removal.md](../plans/p1-core-path-direct-branch-removal.md)
-
-1. [x] [ID: P1-CORE-PATH-SOT-01] `core.py` の `Path` 直分岐を撤去し、stdlib 参照層 + import 解決情報へ一本化する。
-2. [x] [ID: P1-CORE-PATH-SOT-01-S1-01] `Path` 依存分岐（戻り値推論 / BuiltinCall lower / 属性推論）を棚卸しし、置換先 API を固定する。
-3. [x] [ID: P1-CORE-PATH-SOT-01-S2-01] `Path` 判定を名前直書きから resolver 経由へ置換し、`core.py` から `fn_name == "Path"` を削除する。
-4. [x] [ID: P1-CORE-PATH-SOT-01-S2-02] `Path` constructor/method/attribute の戻り値推論を stdlib 参照層で補完する。
-5. [x] [ID: P1-CORE-PATH-SOT-01-S3-01] 再混入防止回帰を `test_east_core.py` に追加する。
-6. [x] [ID: P1-CORE-PATH-SOT-01-S3-02] `check_py2cpp_transpile.py` を再実行し、非退行を確認する。
-- `P1-CORE-PATH-SOT-01-S1-01` `core.py` の `Path` 直依存4箇所（`fn_name == "Path"` の戻り値推論/BuiltinCall、`owner_t == "Path"` の属性戻り値推論、`BinOp "/"` の `lt == "Path"`）を棚卸しし、`signature_registry` と import 解決情報へ寄せる置換方針を計画書に固定した。
-- `P1-CORE-PATH-SOT-01-S2-01` `lookup_stdlib_imported_symbol_return_type` / `lookup_stdlib_imported_symbol_runtime_call` を追加して `Path` constructor 判定を import resolver 経由へ移行し、`core.py` から `fn_name == "Path"` 分岐を撤去した。
-- `P1-CORE-PATH-SOT-01-S2-02` `lookup_stdlib_method_return_type` に `Path` メソッド戻り値推論を移管し、`test_east_core.py` に alias import (`Path as P/PP`) 回帰を追加して `python3 -m unittest discover -s test/unit -p 'test_east_core.py' -v` を通した。
-- `P1-CORE-PATH-SOT-01-S3-01` `test_east_core.py` に `Path` 直分岐再混入検知（`fn_name/owner_t` 直比較禁止）を追加し、alias import 経路の constructor/type 推論回帰を固定した。
-- `P1-CORE-PATH-SOT-01-S3-02` `python3 tools/check_py2cpp_transpile.py` を再実行し、`checked=134 ok=134 fail=0 skipped=6` で非退行を確認した。
-
 ### P1: Kotlin runtime 外出し（inline helper 撤去）
 
 文脈: [docs/ja/plans/p1-kotlin-runtime-externalization.md](../plans/p1-kotlin-runtime-externalization.md)
