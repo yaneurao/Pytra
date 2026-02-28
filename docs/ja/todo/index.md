@@ -32,6 +32,18 @@
 
 ## 未完了タスク
 
+### P0: stdlib 型仕様の正本化（core 直書き撤去）
+
+文脈: [docs/ja/plans/p0-stdlib-signature-source-of-truth.md](../plans/p0-stdlib-signature-source-of-truth.md)
+
+1. [ ] [ID: P0-STDLIB-SOT-01] `pytra/std` を標準ライブラリ型仕様の唯一正本にし、`core.py` の標準ライブラリ個別知識直書きを段階撤去する。
+2. [ ] [ID: P0-STDLIB-SOT-01-S1-01] `core.py` の標準ライブラリ知識直書き箇所（`perf_counter` / `Path` / `str.*` / `dict.*` 等）を棚卸しし、置換対象を固定する。
+3. [ ] [ID: P0-STDLIB-SOT-01-S1-02] `pytra/std` を正本とするシグネチャ参照仕様（取得単位・型表現・未定義時 fail-closed）を文書化する。
+4. [ ] [ID: P0-STDLIB-SOT-01-S2-01] compiler 側に stdlib シグネチャ参照層を新設し、`core.py` が直接マップを持たない構成へ切り替える。
+5. [ ] [ID: P0-STDLIB-SOT-01-S2-02] `perf_counter` を含む代表ケースを参照層経由へ移し、戻り値型直書きを撤去する。
+6. [ ] [ID: P0-STDLIB-SOT-01-S2-03] `Path` / `str.*` などメソッド系マッピングを段階移行し、`core.py` の責務を構文解析+EAST整形へ限定する。
+7. [ ] [ID: P0-STDLIB-SOT-01-S3-01] 回帰テスト（型推論・lowering・sample 代表ケース）を追加し、`pytra/std` 仕様変更時の検知を固定する。
+
 ### P0: C++ 同型 cast 除去と型推論前倒し（最優先）
 
 文脈: [docs/ja/plans/p0-cpp-redundant-same-type-cast-elimination.md](../plans/p0-cpp-redundant-same-type-cast-elimination.md)
