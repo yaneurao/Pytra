@@ -1493,6 +1493,22 @@ static inline void py_append(const object& v, const object& item) {
     throw ::std::runtime_error("append on non-list object");
 }
 
+static inline void py_set_at(const object& v, int64 idx, const object& item) {
+    auto p = obj_to_list_obj(v);
+    if (!p) {
+        throw ::std::runtime_error("setitem on non-list object");
+    }
+    int64 pos = idx;
+    const int64 n = static_cast<int64>(p->value.size());
+    if (pos < 0) {
+        pos += n;
+    }
+    if (pos < 0 || pos >= n) {
+        throw ::std::out_of_range("list index out of range");
+    }
+    p->value[static_cast<::std::size_t>(pos)] = item;
+}
+
 static inline void py_extend(const object& v, const object& items) {
     auto p = obj_to_list_obj(v);
     if (!p) {

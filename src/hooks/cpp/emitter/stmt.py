@@ -238,6 +238,29 @@ class CppStatementEmitter:
         # C++ 側では宣言変数に落とすと未使用・型退化の温床になるため省略する。
         if self._is_reexport_assign(target, value):
             return
+        if (
+            self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
+            and self._node_kind_from_dict(target) == "Subscript"
+        ):
+            owner_node = self.any_to_dict_or_empty(target.get("value"))
+            owner_ty = self.normalize_type_name(self.get_expr_type(owner_node))
+            owner_is_stack_list = self._expr_is_stack_list_local(owner_node)
+            if not owner_is_stack_list and (
+                owner_ty.startswith("list[")
+                and owner_ty.endswith("]")
+                or self.is_any_like_type(owner_ty)
+                or owner_ty in {"", "unknown"}
+            ):
+                owner_expr = self.render_expr(owner_node)
+                idx_node = target.get("slice")
+                idx_expr = self.render_expr(idx_node)
+                idx_ty = self.normalize_type_name(self.get_expr_type(idx_node))
+                if self.is_any_like_type(idx_ty):
+                    idx_expr = f"py_to<int64>({idx_expr})"
+                value_expr = self.render_expr(stmt.get("value"))
+                boxed_value = self._box_expr_for_any(value_expr, stmt.get("value"))
+                self.emit(f"py_set_at({owner_expr}, {idx_expr}, {boxed_value});")
+                return
         if self._node_kind_from_dict(target) == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
             if len(lhs_elems) == 0:
