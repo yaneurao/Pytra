@@ -88,7 +88,7 @@
 
 文脈: [docs/ja/plans/p1-pytra-cli-rs-target.md](../plans/p1-pytra-cli-rs-target.md)
 
-1. [ ] [ID: P1-PYTRA-CLI-RS-01] 統合CLI `./pytra` に `--target rs` を追加し、Rust 変換を C++ と同じ入口で実行可能にする。
+1. [x] [ID: P1-PYTRA-CLI-RS-01] 統合CLI `./pytra` に `--target rs` を追加し、Rust 変換を C++ と同じ入口で実行可能にする。
 2. [x] [ID: P1-PYTRA-CLI-RS-01-S1-01] `src/pytra/cli.py` の target dispatch を拡張し、`--target rs` で `py2rs.py` を呼び出せるようにする。
 3. [x] [ID: P1-PYTRA-CLI-RS-01-S1-02] Rust 出力時の `--output` / `--output-dir` の挙動を確定し、拡張子と出力先衝突を整理する。
 4. [x] [ID: P1-PYTRA-CLI-RS-01-S1-03] `docs/ja/how-to-use.md` の統合CLI節に Rust 例を追加し、`out/` / `/tmp` の一時出力運用を明記する。
