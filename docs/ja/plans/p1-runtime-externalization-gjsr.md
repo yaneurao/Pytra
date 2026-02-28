@@ -46,10 +46,34 @@
 
 決定ログ:
 - 2026-02-27: ユーザー要望により「Go/Java/Swift/Ruby の inline runtime helper を埋め込まない」方針を `P1-RUNTIME-EXT-01` として起票した。
+- 2026-02-28: `S1-01` として inline helper の棚卸しと runtime 正本 API 対応表を作成し、Go/Java は命名差吸収が主課題、Swift/Ruby は runtime 正本不足が主課題であることを固定した。
+
+## S1-01 棚卸し結果（2026-02-28）
+
+| 言語 | inline helper 出力箇所 | inline helper 規模 | runtime 正本 | 所見 |
+| --- | --- | --- | --- | --- |
+| Go | `src/hooks/go/emitter/go_native_emitter.py` `transpile_to_go_native` 内（`func __pytra_*` を直書き） | `32` 定義（`__pytra_truthy/int/float/str/len/get_index/set_index/slice/print/perf_counter` 等） | `src/runtime/go/pytra/py_runtime.go`（`pyBool/pyToInt/pyToFloat/pyToString/pyLen/pyGet/pySet/pySlice/pyPrint/pyPerfCounter` 等） | 意味対応は揃うが命名・シグネチャが不一致。emitter 側 call 名の切替と import 導線追加で外出し可能。 |
+| Java | `src/hooks/java/emitter/java_native_emitter.py` `transpile_to_java_native` 内（`private static __pytra_*`） | `10` 定義（`__pytra_noop/int/len/str_isdigit/str_isalpha/str_slice/bytearray/dict_of/list_repeat/truthy`） | `src/runtime/java/pytra/built_in/PyRuntime.java`（`pyToLong/pyLen/pyIsDigit/pyIsAlpha/pySlice/pyBytearray/pyDict/pyList/pyBool` 等） | runtime 正本は充実。inline 側の `__pytra_*` 呼び出しを `PyRuntime.py*` へ集約する接着層が必要。 |
+| Swift | `src/hooks/swift/emitter/swift_native_emitter.py` `_emit_runtime_helpers()` | `32` 定義（`__pytra_any_default/int/float/str/len/getIndex/setIndex/slice/print/perf_counter` 等） | `src/runtime/swift/pytra/py_runtime.swift`（`pytraRunEmbeddedNode` のみ） | native runtime API 正本が未整備。外出し前に Swift 用 `py*` API 群を runtime 側へ新設する必要あり。 |
+| Ruby | `src/hooks/ruby/emitter/ruby_native_emitter.py` `_emit_runtime_helpers()` | `26` 定義（`__pytra_truthy/int/float/div/str/len/as_list/as_dict/get_index/set_index/slice/print/perf_counter` 等） | `src/runtime/ruby/` 未存在 | runtime 正本が未整備。外出し前に `src/runtime/ruby/pytra/` を新設して API を定義する必要あり。 |
+
+### 対応表（最小必須 API）
+
+| inline helper 意味 | Go runtime 正本 API | Java runtime 正本 API | Swift runtime 正本 | Ruby runtime 正本 |
+| --- | --- | --- | --- | --- |
+| truthy 判定 | `pyBool` | `pyBool` | `TBD (新設)` | `TBD (新設)` |
+| 整数変換 | `pyToInt` / `pyToLong` | `pyToLong` | `TBD (新設)` | `TBD (新設)` |
+| 浮動小数変換 | `pyToFloat` | `pyToFloat` | `TBD (新設)` | `TBD (新設)` |
+| 文字列化 | `pyToString` | `pyToString` | `TBD (新設)` | `TBD (新設)` |
+| 長さ取得 | `pyLen` | `pyLen` | `TBD (新設)` | `TBD (新設)` |
+| 添字 read/write | `pyGet` / `pySet` | `pyGet` / `pySet` | `TBD (新設)` | `TBD (新設)` |
+| slice | `pySlice` | `pySlice` | `TBD (新設)` | `TBD (新設)` |
+| print | `pyPrint` | `pyPrint` | `TBD (新設)` | `TBD (新設)` |
+| perf_counter | `pyPerfCounter` | `pyPerfCounter` | `TBD (新設)` | `TBD (新設)` |
 
 ## 分解
 
-- [ ] [ID: P1-RUNTIME-EXT-01-S1-01] 言語別 helper 出力一覧（inline）と runtime 正本 API の対応表を作成する。
+- [x] [ID: P1-RUNTIME-EXT-01-S1-01] 言語別 helper 出力一覧（inline）と runtime 正本 API の対応表を作成する。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-01] Go emitter から helper 本体出力を撤去し、`src/runtime/go/pytra` 側 API 呼び出しへ切替える。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-02] Java emitter から helper 本体出力を撤去し、`src/runtime/java/pytra` 側 API 呼び出しへ切替える。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-03] Swift native 用 runtime 実体を整備し、emitter の helper inline 出力を撤去する。
