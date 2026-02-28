@@ -62,6 +62,20 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _rust_runtime_source_path() -> Path:
+    """Rust runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
+
+
+def _copy_rust_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Rust runtime を配置する。"""
+    runtime_src = _rust_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("rust runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "py_runtime.rs"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Rust transpiler")
@@ -112,6 +126,7 @@ def main() -> int:
     rust_src = transpile_to_rust(east)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(rust_src, encoding="utf-8")
+    _copy_rust_runtime(output_path)
     return 0
 
 

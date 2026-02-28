@@ -317,6 +317,8 @@ class Py2RsSmokeTest(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue(out_rs.exists())
+            runtime_rs = Path(td) / "py_runtime.rs"
+            self.assertTrue(runtime_rs.exists())
             txt = out_rs.read_text(encoding="utf-8")
             self.assertIn("fn abs_like", txt)
 
