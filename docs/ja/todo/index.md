@@ -75,7 +75,7 @@
 3. [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
 4. [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-01] `NonEscapeInterproceduralPass` を実装し、summary fixed-point 更新を成立させる。
 5. [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-02] 収束した summary を関数/式ノード `meta` へ注釈する。
-6. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
+6. [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
 7. [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-02] `east3 optimizer` 回帰と `check_py2cpp_transpile` を再実行し、非退行を確認する。
 
 ### P1: C++ `list` の PyObj/RC モデル移行（段階導入）

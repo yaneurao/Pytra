@@ -57,6 +57,7 @@
 - 2026-02-28: `NonEscapeInterproceduralPass` を追加し、`arg_escape` / `return_from_args` / `return_escape` を fixed-point で収束させる summary 計算を実装した（fail-closed な unknown-call policy 反映）。
 - 2026-02-28: `test_east3_non_escape_interprocedural_pass.py` で summary 伝播（sink->wrap）・return 起源伝播（identity->wrap2）・policy override を回帰固定した。
 - 2026-02-28: 収束後 summary を関数ノード `meta.escape_summary` と call 式 `meta.non_escape_callsite` へ注釈する実装を追加し、unit test に注釈 payload の回帰アサーションを追加した。
+- 2026-02-28: 相互再帰 + 外部呼び出し混在ケース（`a <-> b` と `unknown_sink`）の summary 伝播テストと、2回目実行で `changed=False` になる決定性テストを追加した。
 
 ## 分解
 
@@ -64,5 +65,5 @@
 - [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S1-02] EAST3 から call graph を抽出し、SCC 分解ユーティリティを追加する。
 - [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-01] `NonEscapeInterproceduralPass` を実装し、summary fixed-point 更新を成立させる。
 - [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S2-02] 収束した summary を関数/式ノード `meta` へ注釈する。
-- [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
+- [x] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-01] 再帰・相互再帰・外部呼び出し混在の unit テストを追加し、fail-closed と決定性を固定する。
 - [ ] [ID: P1-EAST3-NONESCAPE-IPA-01-S3-02] `east3 optimizer` 既存回帰と `check_py2cpp_transpile` を再実行し、非退行を確認する。
