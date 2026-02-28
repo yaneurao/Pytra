@@ -88,6 +88,11 @@ int main() {
     auto as_list_rc = obj_to_list_obj(as_list);
     assert(static_cast<bool>(as_list_rc));
     assert(as_list_rc->value.size() == 2);
+    list<int64> legacy_list = list<int64>(as_list);
+    assert(legacy_list.size() == 2);
+    legacy_list.append(99);
+    assert(legacy_list.size() == 3);
+    assert(as_list_rc->value.size() == 2);
 
     ::std::any any_num = str("21");
     assert(py_to_int64(any_num) == 21);

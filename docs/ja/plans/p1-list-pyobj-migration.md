@@ -114,6 +114,8 @@
 - 2026-02-28: `test_cpp_runtime_iterable.py` に「反復中 `py_append` した要素を iterator が観測する」回帰を追加し、`test_cpp_runtime_iterable.py` / `test_cpp_runtime_boxing.py` の runtime compile-run テストがともに通過することを確認した。
 - 2026-02-28: `obj_to_list_obj()` を runtime へ追加し、`obj_to_list_ptr` / `py_append` を PyListObj 取得ヘルパ経由へ集約した。加えて `make_object(const list<object>&)` / `make_object(list<object>&&)` を追加し、list<object> boxing の直接経路を導入した。
 - 2026-02-28: `test_cpp_runtime_boxing.py` に `obj_to_list_obj` 回帰を追加し、runtime compile-run テストが通過することを確認した。
+- 2026-02-28: 旧値モデル互換ブリッジとして `list<T>(object)` 経路が維持されることを `test_cpp_runtime_boxing.py` で固定した（`list<int64> legacy_list = list<int64>(as_list)` が動作し、PyListObj 側サイズが不変であることを確認）。
+- 2026-02-28: runtime 単体テストに list モデル回帰（owner 連動 iterator / `obj_to_list_obj` / legacy bridge）を追加し、`test_cpp_runtime_iterable.py` と `test_cpp_runtime_boxing.py` が通過することを確認した。
 
 ## 分解
 
@@ -123,8 +125,8 @@
 
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-03] 旧値モデルとの互換ブリッジ（最小）を追加し、段階移行中の compile break を抑える。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-04] runtime 単体テスト（構築・alias・iter・境界変換）を追加する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-03] 旧値モデルとの互換ブリッジ（最小）を追加し、段階移行中の compile break を抑える。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-04] runtime 単体テスト（構築・alias・iter・境界変換）を追加する。
 
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-01] C++ emitter の list 型描画を model switch（`value|pyobj`）経由へ集約する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S2-02] list literal/ctor/append/extend/pop/index/slice の出力を `pyobj` モデル対応へ更新する。
