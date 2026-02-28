@@ -102,8 +102,8 @@ def _insert_support_blocks(py2cs_text: str, support_blocks: str, base_class: str
         [
             "def convert_path(input_path: Path, parser_backend: str = \"self_hosted\") -> dict[str, Any]:",
             "    \"\"\"selfhost compile 向け: parser backend 呼び出しを最小スタブ化する。\"\"\"",
-            "    _ = input_path",
-            "    _ = parser_backend",
+            "    _ignored_input = input_path",
+            "    _ignored_backend = parser_backend",
             "    return {}",
             "",
             "",
@@ -113,9 +113,9 @@ def _insert_support_blocks(py2cs_text: str, support_blocks: str, base_class: str
             "    parser_backend: str = \"self_hosted\",",
             ") -> dict[str, Any]:",
             "    \"\"\"selfhost compile 向け: parser backend 呼び出しを最小スタブ化する。\"\"\"",
-            "    _ = source_text",
-            "    _ = input_txt",
-            "    _ = parser_backend",
+            "    _ignored_source = source_text",
+            "    _ignored_input = input_txt",
+            "    _ignored_backend = parser_backend",
             "    return {}",
             "",
         ]
