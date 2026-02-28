@@ -45,11 +45,12 @@
 - 2026-02-27: 改善項目 #1 は既存 `P0-FORCORE-TYPE-01-S3-01` と整合管理し、重複実装を避ける方針を確定。
 - 2026-02-28: `ForCore(RuntimeIterForPlan)+NameTarget` に typed iterable 経路を追加し、`list[T]` 既知時は `py_dyn_range + Unbox` ではなく typed loop header を採用する方針で `sample/18` の `for stmt in stmts` 冗長 cast を削減。
 - 2026-02-28: `test_east3_cpp_bridge.py`（85件）、`check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）、`runtime_parity_check.py --case-root sample 18_mini_language_interpreter --targets cpp`（pass）で回帰確認した。
+- 2026-02-28: `dict_key_verified` の dict load/store 経路を `test_east3_cpp_bridge.py` に追加し、`sample/18` 再生成で `env[stmt->name]` が維持されることを確認して key 変換連鎖の再発を防止した。
 
 ## 分解
 
 - [x] [ID: P1-CPP-S18-READ-01-S1-02] 改善項目 #2: tuple unpack / 一時変数周辺の冗長 cast を削減する。
-- [ ] [ID: P1-CPP-S18-READ-01-S1-07] 改善項目 #7: `map` キーアクセス時の不要な key 変換連鎖を縮退する。
+- [x] [ID: P1-CPP-S18-READ-01-S1-07] 改善項目 #7: `map` キーアクセス時の不要な key 変換連鎖を縮退する。
 - [ ] [ID: P1-CPP-S18-READ-01-S1-08] 改善項目 #8: timing/elapsed 計算まわりの数値変換チェーンを簡約する。
 - [ ] [ID: P1-CPP-S18-READ-01-S1-05] 改善項目 #5: `unknown` 起点の過剰 default 初期化・型減衰を抑制する。
 - [ ] [ID: P1-CPP-S18-READ-01-S1-01] 改善項目 #1: typed loop header 化の成果を `sample/18` 出力へ統合する（`P0-FORCORE-TYPE-01-S3-01` 依存）。

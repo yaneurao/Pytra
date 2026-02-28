@@ -500,6 +500,35 @@ class East3CppBridgeTest(unittest.TestCase):
         out = emitter._coerce_dict_key_expr(owner, "k", key_node)
         self.assertEqual(out, "k")
 
+    def test_render_expr_subscript_dict_str_key_verified_skips_py_to_string(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Subscript",
+            "value": {"kind": "Name", "id": "env", "resolved_type": "dict[str, int64]"},
+            "slice": {"kind": "Name", "id": "k", "resolved_type": "str", "dict_key_verified": True},
+            "ctx": "Load",
+            "resolved_type": "int64",
+        }
+        self.assertEqual(emitter.render_expr(expr), "py_dict_get(env, k)")
+
+    def test_emit_assign_dict_str_key_verified_skips_py_to_string(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "Assign",
+            "targets": [
+                {
+                    "kind": "Subscript",
+                    "value": {"kind": "Name", "id": "env", "resolved_type": "dict[str, int64]"},
+                    "slice": {"kind": "Name", "id": "k", "resolved_type": "str", "dict_key_verified": True},
+                    "ctx": "Store",
+                    "resolved_type": "int64",
+                }
+            ],
+            "value": {"kind": "Name", "id": "v", "resolved_type": "int64"},
+        }
+        emitter.emit_stmt(stmt)
+        self.assertIn("env[k] = v;", "\n".join(emitter.lines))
+
     def test_render_append_call_object_method_boxes_list_any_arg(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         owner_types = ["list[Any]"]
