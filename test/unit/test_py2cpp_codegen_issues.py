@@ -1057,7 +1057,7 @@ def f(x: object) -> bool:
         self.assertIn("py_append(xs, make_object(3));", cpp)
         self.assertIn("py_extend(xs, make_object(list<int64>{4, 5}));", cpp)
         self.assertIn("auto v = py_pop(xs);", cpp)
-        self.assertIn("int64 head = py_at(xs, py_to<int64>(0));", cpp)
+        self.assertIn("int64 head = int64(py_to<int64>(py_at(xs, py_to<int64>(0))));", cpp)
         self.assertIn("object seg = py_slice(xs, 0, 2);", cpp)
 
     def test_pyobj_list_model_list_comprehension_returns_object(self) -> None:

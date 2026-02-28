@@ -97,7 +97,14 @@ class CppStatementEmitter:
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
             if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                rendered_val = f"{t}{{}}"
+                if (
+                    self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
+                    and ann_t_str.startswith("list[")
+                    and ann_t_str.endswith("]")
+                ):
+                    rendered_val = "make_object(list<object>{})"
+                else:
+                    rendered_val = f"{t}{{}}"
             elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
                 rendered_val = f"{t}{{}}"
             elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
@@ -920,6 +927,20 @@ class CppStatementEmitter:
                 self.emit("/* invalid forcore runtime iter_plan */")
                 return
             iter_txt = self.render_expr(iter_expr)
+            list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+            iter_expr_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+            if iter_expr_t in {"", "unknown"}:
+                iter_expr_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+            force_runtime_iter = False
+            if list_model == "pyobj":
+                if iter_expr_t.startswith("list[") and iter_expr_t.endswith("]"):
+                    force_runtime_iter = True
+                elif self._contains_text(iter_expr_t, "|"):
+                    for part in self.split_union(iter_expr_t):
+                        part_norm = self.normalize_type_name(part)
+                        if part_norm.startswith("list[") and part_norm.endswith("]"):
+                            force_runtime_iter = True
+                            break
             target_kind = self.any_dict_get_str(target_plan, "kind", "")
             if target_kind == "NameTarget":
                 target_id = self.any_dict_get_str(target_plan, "id", "")
@@ -929,6 +950,8 @@ class CppStatementEmitter:
                 target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                if force_runtime_iter:
+                    typed_iter = False
                 if target_type in {"", "unknown"}:
                     target_type = iter_item_t if typed_iter else "object"
                 if self.is_any_like_type(target_type):
@@ -977,6 +1000,8 @@ class CppStatementEmitter:
                 scope_names = self.scope_names_with_tmp(self._forcore_target_bound_names(target_plan), iter_tmp)
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                if force_runtime_iter:
+                    typed_iter = False
                 inherited_elem_types: list[str] = []
                 if typed_iter and iter_item_t.startswith("tuple[") and iter_item_t.endswith("]"):
                     inherited_elem_types = self.split_generic(iter_item_t[6:-1])
@@ -1030,12 +1055,23 @@ class CppStatementEmitter:
     def _resolve_for_iter_mode(self, stmt: dict[str, Any], iter_expr: dict[str, Any]) -> str:
         """`For` の反復モード（static/runtime）を決定する。"""
         mode_txt = self.any_to_str(stmt.get("iter_mode"))
-        if mode_txt == "static_fastpath" or mode_txt == "runtime_protocol":
+        if mode_txt == "runtime_protocol":
             return mode_txt
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
         if iter_t == "":
             iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if mode_txt == "static_fastpath":
+            if list_model == "pyobj":
+                if iter_t.startswith("list[") and iter_t.endswith("]"):
+                    return "runtime_protocol"
+                if self._contains_text(iter_t, "|"):
+                    parts = self.split_union(iter_t)
+                    for p in parts:
+                        p_norm = self.normalize_type_name(p)
+                        if p_norm.startswith("list[") and p_norm.endswith("]"):
+                            return "runtime_protocol"
+            return mode_txt
         if iter_t == "Any" or iter_t == "object":
             return "runtime_protocol"
         if list_model == "pyobj":

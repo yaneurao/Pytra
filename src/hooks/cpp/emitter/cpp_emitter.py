@@ -789,6 +789,8 @@ class CppEmitter(
         kind = self._node_kind_from_dict(node)
         if kind == "List" and t.startswith("list[") and t.endswith("]"):
             if len(self._dict_stmt_list(node.get("elements"))) == 0:
+                if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+                    return "make_object(list<object>{})"
                 return f"{self._cpp_type_text(t)}{{}}"
         if kind == "Dict" and t.startswith("dict[") and t.endswith("]"):
             if len(self._dict_stmt_list(node.get("entries"))) == 0:
@@ -1997,7 +1999,11 @@ class CppEmitter(
             and val_ty.startswith("list[")
             and val_ty.endswith("]")
         ):
-            return f"py_at({val}, py_to<int64>({idx}))"
+            at_expr = f"py_at({val}, py_to<int64>({idx}))"
+            expr_t = self.normalize_type_name(self.get_expr_type(expr))
+            if expr_t != "" and not self.is_any_like_type(expr_t) and self._can_runtime_cast_target(expr_t):
+                return self._render_unbox_target_cast(at_expr, expr_t, "subscript:list")
+            return at_expr
         if val_ty.startswith("tuple[") and val_ty.endswith("]"):
             parts = self.split_generic(val_ty[6:-1])
             if idx_const is None:

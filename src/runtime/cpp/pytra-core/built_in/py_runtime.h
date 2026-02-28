@@ -3194,6 +3194,44 @@ static inline list<::std::tuple<int64, str>> py_enumerate(const str& values, int
     return out;
 }
 
+static inline list<object> py_enumerate(const object& values) {
+    list<object> out;
+    if (const auto* p = obj_to_list_ptr(values)) {
+        out.reserve(p->size());
+        for (::std::size_t i = 0; i < p->size(); i++) {
+            out.append(make_object(list<object>{make_object(static_cast<int64>(i)), (*p)[i]}));
+        }
+        return out;
+    }
+    if (const auto* s = py_obj_cast<PyStrObj>(values)) {
+        out.reserve(s->value.size());
+        for (::std::size_t i = 0; i < s->value.size(); i++) {
+            out.append(make_object(list<object>{make_object(static_cast<int64>(i)), make_object(s->value[i])}));
+        }
+        return out;
+    }
+    return out;
+}
+
+static inline list<object> py_enumerate(const object& values, int64 start) {
+    list<object> out;
+    if (const auto* p = obj_to_list_ptr(values)) {
+        out.reserve(p->size());
+        for (::std::size_t i = 0; i < p->size(); i++) {
+            out.append(make_object(list<object>{make_object(start + static_cast<int64>(i)), (*p)[i]}));
+        }
+        return out;
+    }
+    if (const auto* s = py_obj_cast<PyStrObj>(values)) {
+        out.reserve(s->value.size());
+        for (::std::size_t i = 0; i < s->value.size(); i++) {
+            out.append(make_object(list<object>{make_object(start + static_cast<int64>(i)), make_object(s->value[i])}));
+        }
+        return out;
+    }
+    return out;
+}
+
 static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values) {
     if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p);
     if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p);
