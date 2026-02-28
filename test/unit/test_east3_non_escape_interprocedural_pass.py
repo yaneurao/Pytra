@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 
 from src.pytra.compiler.east_parts.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
 from src.pytra.compiler.east_parts.east3_optimizer import PassContext
@@ -228,6 +230,202 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         callsite = len_call.get("meta", {}).get("non_escape_callsite", {})
         self.assertFalse(callsite.get("resolved", True))
         self.assertEqual(callsite.get("callee_arg_escape"), [False])
+
+    def test_auto_import_closure_loads_module_from_source_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root_dir = Path(tmpdir)
+            dep_py = root_dir / "b.py"
+            dep_py.write_text(
+                "def sink(xs):\n"
+                "    print(xs)\n"
+                "    return 0\n",
+                encoding="utf-8",
+            )
+            src_py = root_dir / "a.py"
+            src_py.write_text(
+                "from b import sink\n"
+                "def main(x):\n"
+                "    return sink(x)\n",
+                encoding="utf-8",
+            )
+
+            call_sink = _call_name("sink", [_name("x")])
+            root_doc: dict[str, object] = {
+                "kind": "Module",
+                "east_stage": 3,
+                "source_path": str(src_py),
+                "meta": {
+                    "import_bindings": [
+                        {
+                            "module_id": "b",
+                            "export_name": "sink",
+                            "local_name": "sink",
+                            "binding_kind": "symbol",
+                        }
+                    ]
+                },
+                "body": [_fn("main", ["x"], [_ret(call_sink)])],
+            }
+
+            _ = NonEscapeInterproceduralPass().run(root_doc, PassContext(opt_level=1))
+            summary = root_doc.get("meta", {}).get("non_escape_summary", {})
+            self.assertTrue("b::sink" in summary)
+            self.assertTrue(summary["b::sink"]["arg_escape"][0])
+            root_keys = [k for k in summary.keys() if isinstance(k, str) and k.endswith("::main")]
+            self.assertEqual(len(root_keys), 1)
+            self.assertTrue(summary[root_keys[0]]["arg_escape"][0])
+            callsite = call_sink.get("meta", {}).get("non_escape_callsite", {})
+            self.assertEqual(callsite.get("callee"), "b::sink")
+            self.assertTrue(callsite.get("resolved", False))
+
+    def test_reexport_module_alias_is_resolved_to_real_callee(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root_dir = Path(tmpdir)
+            pkg_dir = root_dir / "pkg"
+            pkg_dir.mkdir(parents=True, exist_ok=True)
+            runtime_py = pkg_dir / "runtime.py"
+            runtime_py.write_text(
+                "from .util import sink\n",
+                encoding="utf-8",
+            )
+            util_py = pkg_dir / "util.py"
+            util_py.write_text(
+                "def sink(xs):\n"
+                "    print(xs)\n"
+                "    return 0\n",
+                encoding="utf-8",
+            )
+            src_py = pkg_dir / "main.py"
+            src_py.write_text(
+                "from pkg.runtime import sink\n"
+                "def main(x):\n"
+                "    return sink(x)\n",
+                encoding="utf-8",
+            )
+
+            call_sink = _call_name("sink", [_name("x")])
+            root_doc: dict[str, object] = {
+                "kind": "Module",
+                "east_stage": 3,
+                "source_path": str(src_py),
+                "meta": {
+                    "module_id": "pkg.main",
+                    "import_bindings": [
+                        {
+                            "module_id": "pkg.runtime",
+                            "export_name": "sink",
+                            "local_name": "sink",
+                            "binding_kind": "symbol",
+                        }
+                    ]
+                },
+                "body": [_fn("main", ["x"], [_ret(call_sink)])],
+            }
+
+            _ = NonEscapeInterproceduralPass().run(root_doc, PassContext(opt_level=1))
+            summary = root_doc.get("meta", {}).get("non_escape_summary", {})
+            self.assertTrue("pkg.util::sink" in summary)
+            self.assertTrue(summary["pkg.util::sink"]["arg_escape"][0])
+            self.assertTrue(summary["pkg.main::main"]["arg_escape"][0])
+            callsite = call_sink.get("meta", {}).get("non_escape_callsite", {})
+            self.assertEqual(callsite.get("callee"), "pkg.util::sink")
+            self.assertTrue(callsite.get("resolved", False))
+
+    def test_unresolved_import_is_fail_closed_and_deterministic(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root_dir = Path(tmpdir)
+            src_py = root_dir / "a.py"
+            src_py.write_text(
+                "from missing_mod import sink\n"
+                "def main(x):\n"
+                "    return sink(x)\n",
+                encoding="utf-8",
+            )
+            call_sink = _call_name("sink", [_name("x")])
+            root_doc: dict[str, object] = {
+                "kind": "Module",
+                "east_stage": 3,
+                "source_path": str(src_py),
+                "meta": {
+                    "module_id": "a",
+                    "import_bindings": [
+                        {
+                            "module_id": "missing_mod",
+                            "export_name": "sink",
+                            "local_name": "sink",
+                            "binding_kind": "symbol",
+                        }
+                    ],
+                },
+                "body": [_fn("main", ["x"], [_ret(call_sink)])],
+            }
+
+            pass_obj = NonEscapeInterproceduralPass()
+            result1 = pass_obj.run(root_doc, PassContext(opt_level=1))
+            summary1 = root_doc.get("meta", {}).get("non_escape_summary", {})
+            self.assertTrue(result1.changed)
+            self.assertTrue("missing_mod::sink" not in summary1)
+            self.assertTrue(summary1["a::main"]["arg_escape"][0])
+            callsite = call_sink.get("meta", {}).get("non_escape_callsite", {})
+            self.assertEqual(callsite.get("callee"), "missing_mod::sink")
+            self.assertFalse(callsite.get("resolved", True))
+
+            result2 = pass_obj.run(root_doc, PassContext(opt_level=1))
+            summary2 = root_doc.get("meta", {}).get("non_escape_summary", {})
+            self.assertFalse(result2.changed)
+            self.assertEqual(summary1, summary2)
+
+    def test_recursive_import_closure_converges(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root_dir = Path(tmpdir)
+            mod_a = root_dir / "a.py"
+            mod_b = root_dir / "b.py"
+            mod_a.write_text(
+                "from b import g\n"
+                "def f(x):\n"
+                "    return g(x)\n",
+                encoding="utf-8",
+            )
+            mod_b.write_text(
+                "from a import f\n"
+                "def g(y):\n"
+                "    return f(y)\n",
+                encoding="utf-8",
+            )
+
+            call_g = _call_name("g", [_name("x")])
+            root_doc: dict[str, object] = {
+                "kind": "Module",
+                "east_stage": 3,
+                "source_path": str(mod_a),
+                "meta": {
+                    "module_id": "a",
+                    "import_bindings": [
+                        {
+                            "module_id": "b",
+                            "export_name": "g",
+                            "local_name": "g",
+                            "binding_kind": "symbol",
+                        }
+                    ],
+                },
+                "body": [_fn("f", ["x"], [_ret(call_g)])],
+            }
+
+            pass_obj = NonEscapeInterproceduralPass()
+            result1 = pass_obj.run(root_doc, PassContext(opt_level=1))
+            summary1 = root_doc.get("meta", {}).get("non_escape_summary", {})
+            self.assertTrue(result1.changed)
+            self.assertTrue("a::f" in summary1)
+            self.assertTrue("b::g" in summary1)
+            callsite = call_g.get("meta", {}).get("non_escape_callsite", {})
+            self.assertEqual(callsite.get("callee"), "b::g")
+            self.assertTrue(callsite.get("resolved", False))
+
+            result2 = pass_obj.run(root_doc, PassContext(opt_level=1))
+            summary2 = root_doc.get("meta", {}).get("non_escape_summary", {})
+            self.assertFalse(result2.changed)
+            self.assertEqual(summary1, summary2)
 
 
 if __name__ == "__main__":

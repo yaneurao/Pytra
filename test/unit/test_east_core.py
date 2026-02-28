@@ -229,6 +229,18 @@ def main() -> None:
         names = [k.get("arg") for k in kws if isinstance(k, dict)]
         self.assertEqual(names, ["start", "stop", "step"])
 
+    def test_numeric_literal_prefixes_are_parsed(self) -> None:
+        src = """
+def main() -> int:
+    a: int = 0xFF
+    b: int = 0X10
+    return a + b
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        constants = [n.get("value") for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Constant"]
+        self.assertIn(255, constants)
+        self.assertIn(16, constants)
+
     def test_identifier_prefixed_with_import_is_not_import_stmt(self) -> None:
         src = """
 def f() -> None:

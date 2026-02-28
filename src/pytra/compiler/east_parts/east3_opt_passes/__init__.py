@@ -8,6 +8,7 @@ from pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass i
 from pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
 from pytra.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
 from pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
+from pytra.compiler.east_parts.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
 from pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
 from pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
 from pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
@@ -27,6 +28,7 @@ def build_default_passes() -> list[object]:
         TypedRepeatMaterializationPass(),
         DictStrKeyNormalizationPass(),
         TupleTargetDirectExpansionPass(),
+        NonEscapeInterproceduralPass(),
         LoopInvariantCastHoistPass(),
         UnusedLoopVarElisionPass(),
         LoopInvariantHoistLitePass(),

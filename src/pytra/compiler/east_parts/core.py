@@ -2972,13 +2972,14 @@ class _ShExprParser:
         if tok["k"] == "INT":
             self._eat("INT")
             tok_v: str = str(tok["v"])
-            tok_value: int = int(tok_v)
             if tok_v.startswith("0x") or tok_v.startswith("0X"):
                 tok_value = int(tok_v[2:], 16)
             elif tok_v.startswith("0b") or tok_v.startswith("0B"):
                 tok_value = int(tok_v[2:], 2)
             elif tok_v.startswith("0o") or tok_v.startswith("0O"):
                 tok_value = int(tok_v[2:], 8)
+            else:
+                tok_value = int(tok_v)
             return {
                 "kind": "Constant",
                 "source_span": self._node_span(tok["s"], tok["e"]),

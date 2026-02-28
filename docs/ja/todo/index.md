@@ -51,9 +51,12 @@
 4. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-01] `NonEscapeInterproceduralPass` をモジュール横断 summary 計算へ拡張し、SCC fixed-point の決定性を維持する。
 5. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S2-02] callsite `meta.non_escape_callsite` / module `meta.non_escape_summary` を横断解析結果で更新する。
 6. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-01] C++ emitter の safe-call 固定ホワイトリスト依存を縮退し、`non_escape_callsite` 注釈を優先して stack-list 判定できるようにする。
-7. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-02] `sample/05` で `frames` が `object` へ退化しないことを確認し、`save_gif` 呼び出し時の暗黙変換を削減する。
-8. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-01] module-cross / unresolved-import / recursive-import の回帰テストを追加し、fail-closed と決定性を固定する。
-9. [ ] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-02] `check_py2cpp_transpile` と C++ 回帰を実行し、非退行を確認する。
+7. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S3-02] `sample/05` で `frames` が `object` へ退化しないことを確認し、`save_gif` 呼び出し時の暗黙変換を削減する。
+8. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-01] module-cross / unresolved-import / recursive-import の回帰テストを追加し、fail-closed と決定性を固定する。
+9. [x] [ID: P0-EAST3-XMOD-NONESCAPE-01-S4-02] `check_py2cpp_transpile` と C++ 回帰を実行し、非退行を確認する。
+- `P0-EAST3-XMOD-NONESCAPE-01-S3-02` `sample/cpp/05_mandelbrot_zoom.cpp` を再生成し、`object frames` が `list<bytes> frames` へ縮退することを確認した。
+- `P0-EAST3-XMOD-NONESCAPE-01-S4-01` re-export alias / unresolved-import / recursive-import の回帰を `test_east3_non_escape_interprocedural_pass.py` に追加した。
+- `P0-EAST3-XMOD-NONESCAPE-01-S4-02` `check_py2cpp_transpile`（`ok=134 fail=0 skipped=6`）と C++ 回帰（`test_py2cpp_codegen_issues`, `test_cpp_non_escape_bridge`, `test_py2cpp_smoke`）を再実行し、非退行を確認した。
 
 ### P0: C++ `float64` 同士除算の `py_div` 縮退（`/` 直接出力）
 
