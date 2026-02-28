@@ -10,10 +10,14 @@ from pytra.std.dataclasses import dataclass
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 from pytra.std import sys
+from pytra.compiler.stdlib.signature_registry import is_stdlib_path_type
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_call
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_return_type
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_runtime_call
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_return_type
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
@@ -35,6 +39,7 @@ _SH_STR_PREFIX_CHARS = {"r", "R", "b", "B", "u", "U", "f", "F"}
 _SH_FN_RETURNS: dict[str, str] = {}
 _SH_CLASS_METHOD_RETURNS: dict[str, dict[str, str]] = {}
 _SH_CLASS_BASE: dict[str, str | None] = {}
+_SH_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
 _SH_TYPE_ALIASES: dict[str, str] = {
     "List": "list",
     "Dict": "dict",
@@ -1713,6 +1718,16 @@ def _sh_append_import_binding(
     )
 
 
+def _sh_register_import_symbol(local_name: str, module_id: str, export_name: str) -> None:
+    """from-import で導入されたシンボル解決情報を式パーサ共有コンテキストへ反映する。"""
+    local = local_name.strip()
+    module = module_id.strip()
+    export = export_name.strip()
+    if local == "" or module == "" or export == "":
+        return
+    _SH_IMPORT_SYMBOLS[local] = {"module": module, "name": export}
+
+
 class _ShExprParser:
     src: str
     line_no: int
@@ -2432,10 +2447,15 @@ class _ShExprParser:
                 fn_name = ""
                 if isinstance(node, dict) and node.get("kind") == "Name":
                     fn_name = str(node.get("id", ""))
+                    stdlib_imported_ret = (
+                        lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
+                        if fn_name != ""
+                        else ""
+                    )
                     if fn_name == "print":
                         call_ret = "None"
-                    elif fn_name == "Path":
-                        call_ret = "Path"
+                    elif stdlib_imported_ret != "":
+                        call_ret = stdlib_imported_ret
                     elif fn_name == "open":
                         call_ret = "PyFile"
                     elif fn_name == "int":
@@ -2486,14 +2506,10 @@ class _ShExprParser:
                             call_ret = self._lookup_method_return(owner_t, attr)
                             if call_ret == "unknown":
                                 call_ret = self._lookup_builtin_method_return(owner_t, attr)
-                        if owner_t == "Path":
-                            if attr in {"read_text", "name", "stem"}:
-                                call_ret = "str"
-                            elif attr in {"exists"}:
-                                call_ret = "bool"
-                            elif attr in {"mkdir", "write_text"}:
-                                call_ret = "None"
-                        elif owner_t == "PyFile":
+                            stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)
+                            if stdlib_method_ret != "":
+                                call_ret = stdlib_method_ret
+                        if owner_t == "PyFile":
                             if attr in {"close", "write"}:
                                 call_ret = "None"
                 elif isinstance(node, dict) and node.get("kind") == "Lambda":
@@ -2510,6 +2526,11 @@ class _ShExprParser:
                     "keywords": keywords,
                 }
                 stdlib_fn_runtime_call = lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""
+                stdlib_symbol_runtime_call = (
+                    lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)
+                    if fn_name != ""
+                    else ""
+                )
                 if fn_name == "print":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "print"
@@ -2554,14 +2575,14 @@ class _ShExprParser:
                     sig_ret = lookup_stdlib_function_return_type(fn_name)
                     if sig_ret != "":
                         payload["resolved_type"] = sig_ret
+                elif stdlib_symbol_runtime_call != "":
+                    payload["lowered_kind"] = "BuiltinCall"
+                    payload["builtin_name"] = fn_name
+                    payload["runtime_call"] = stdlib_symbol_runtime_call
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = "std::runtime_error"
-                elif fn_name == "Path":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "Path"
-                    payload["runtime_call"] = "Path"
                 elif fn_name == "open":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "open"
@@ -2915,7 +2936,7 @@ class _ShExprParser:
         rt = str(right.get("resolved_type", "unknown"))
         casts: list[dict[str, Any]] = []
         if op_sym == "/":
-            if lt == "Path" and rt in {"str", "Path"}:
+            if is_stdlib_path_type(lt) and (rt == "str" or is_stdlib_path_type(rt)):
                 out_t = "Path"
             elif (lt in INT_TYPES or lt in FLOAT_TYPES) and (rt in INT_TYPES or rt in FLOAT_TYPES):
                 out_t = "float64"
@@ -4761,6 +4782,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         hint="Use `from module import name` or `... as alias`.",
                     )
                 sym_name, as_name_txt = parsed_alias
+                bind_name = as_name_txt if as_name_txt != "" else sym_name
+                _sh_register_import_symbol(bind_name, mod_name, sym_name)
                 alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt
@@ -5236,6 +5259,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     class_method_return_types: dict[str, dict[str, str]] = {}
     class_base: dict[str, str | None] = {}
     fn_returns: dict[str, str] = {}
+    pre_import_symbol_bindings: dict[str, dict[str, str]] = {}
     type_aliases: dict[str, str] = _sh_default_type_aliases()
 
     cur_cls: str | None = None
@@ -5252,6 +5276,23 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             if m_import_from is not None:
                 mod_txt = re.strip_group(m_import_from, 1)
                 names_txt = re.strip_group(m_import_from, 2)
+                if names_txt != "*":
+                    raw_parts: list[str] = []
+                    for p in names_txt.split(","):
+                        p2 = p.strip()
+                        if p2 != "":
+                            raw_parts.append(p2)
+                    for part in raw_parts:
+                        parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                        if parsed_alias is None:
+                            continue
+                        sym_txt, as_name = parsed_alias
+                        alias_name = as_name if as_name != "" else sym_txt
+                        if alias_name != "":
+                            pre_import_symbol_bindings[alias_name] = {
+                                "module": mod_txt,
+                                "name": sym_txt,
+                            }
                 if mod_txt == "typing":
                     raw_parts: list[str] = []
                     for p in names_txt.split(","):
@@ -5311,6 +5352,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             class_method_return_types[cur_cls_name] = methods
 
     _sh_set_parse_context(fn_returns, class_method_return_types, class_base, type_aliases)
+    _SH_IMPORT_SYMBOLS.clear()
+    _SH_IMPORT_SYMBOLS.update(pre_import_symbol_bindings)
 
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
@@ -5582,6 +5625,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_file=filename,
                         source_line=i,
                     )
+                    import_symbol_bindings[bind_name] = {
+                        "module": mod_name,
+                        "name": sym_name,
+                    }
+                    _sh_register_import_symbol(bind_name, mod_name, sym_name)
                 alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt

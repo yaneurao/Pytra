@@ -16,6 +16,16 @@ _FUNCTION_RUNTIME_CALLS: dict[str, str] = {
     "perf_counter": "perf_counter",
 }
 
+_IMPORTED_SYMBOL_RETURNS: dict[tuple[str, str], str] = {
+    ("pathlib", "Path"): "Path",
+    ("pytra.std.pathlib", "Path"): "Path",
+}
+
+_IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
+    ("pathlib", "Path"): "Path",
+    ("pytra.std.pathlib", "Path"): "Path",
+}
+
 _OWNER_METHOD_RUNTIME_CALLS: dict[str, dict[str, str]] = {
     "str": {
         "strip": "py_strip",
@@ -300,10 +310,54 @@ def lookup_stdlib_attribute_type(owner_type: str, attr_name: str) -> str:
     return owner_map.get(attr, "")
 
 
+def _resolve_imported_symbol(
+    local_name: str,
+    import_symbols: dict[str, dict[str, str]] | None,
+) -> tuple[str, str]:
+    if import_symbols is None:
+        return ("", "")
+    local = local_name.strip()
+    if local == "":
+        return ("", "")
+    binding_obj = import_symbols.get(local)
+    if not isinstance(binding_obj, dict):
+        return ("", "")
+    module = str(binding_obj.get("module", "")).strip()
+    symbol = str(binding_obj.get("name", "")).strip()
+    return (module, symbol)
+
+
+def lookup_stdlib_imported_symbol_return_type(
+    local_name: str,
+    import_symbols: dict[str, dict[str, str]] | None,
+) -> str:
+    module, symbol = _resolve_imported_symbol(local_name, import_symbols)
+    if module == "" or symbol == "":
+        return ""
+    return _IMPORTED_SYMBOL_RETURNS.get((module, symbol), "")
+
+
+def lookup_stdlib_imported_symbol_runtime_call(
+    local_name: str,
+    import_symbols: dict[str, dict[str, str]] | None,
+) -> str:
+    module, symbol = _resolve_imported_symbol(local_name, import_symbols)
+    if module == "" or symbol == "":
+        return ""
+    return _IMPORTED_SYMBOL_RUNTIME_CALLS.get((module, symbol), "")
+
+
+def is_stdlib_path_type(type_name: str) -> bool:
+    return type_name.strip() == "Path"
+
+
 __all__ = [
+    "is_stdlib_path_type",
     "lookup_stdlib_attribute_type",
     "lookup_stdlib_function_return_type",
     "lookup_stdlib_function_runtime_call",
+    "lookup_stdlib_imported_symbol_return_type",
+    "lookup_stdlib_imported_symbol_runtime_call",
     "lookup_stdlib_method_runtime_call",
     "lookup_stdlib_method_return_type",
 ]

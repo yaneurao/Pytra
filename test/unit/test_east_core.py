@@ -183,6 +183,46 @@ def main() -> float:
         self.assertNotIn('fn_name == "perf_counter"', src)
         self.assertNotIn("fn_name == 'perf_counter'", src)
 
+    def test_core_does_not_reintroduce_path_direct_branches(self) -> None:
+        core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
+        src = core_path.read_text(encoding="utf-8")
+        self.assertNotIn('fn_name == "Path"', src)
+        self.assertNotIn("fn_name == 'Path'", src)
+        self.assertNotIn('owner_t == "Path"', src)
+        self.assertNotIn("owner_t == 'Path'", src)
+
+    def test_path_constructor_is_resolved_via_import_binding(self) -> None:
+        src = """
+from pathlib import Path as P
+from pytra.std.pathlib import Path as PP
+
+def main() -> None:
+    p = P("out")
+    q = PP("tmp")
+    r = p / "a.txt"
+    print(q, r)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
+        path_ctor_calls = [
+            n
+            for n in calls
+            if n.get("lowered_kind") == "BuiltinCall" and n.get("runtime_call") == "Path"
+        ]
+        self.assertEqual(len(path_ctor_calls), 2)
+        for call in path_ctor_calls:
+            self.assertEqual(call.get("resolved_type"), "Path")
+
+        path_div_binops = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict)
+            and n.get("kind") == "BinOp"
+            and n.get("op") == "Div"
+            and n.get("resolved_type") == "Path"
+        ]
+        self.assertEqual(len(path_div_binops), 1)
+
     def test_path_mkdir_keywords_are_kept(self) -> None:
         src = """
 from pathlib import Path
