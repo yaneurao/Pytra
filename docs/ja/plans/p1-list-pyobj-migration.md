@@ -134,6 +134,7 @@
 - 2026-02-28: 上記修正後に `07/08/09` が `frame size mismatch` で失敗したため、runtime の `py_object_try_cast` が `uint8` を含む算術型を未対応だった点を修正した。`test_cpp_runtime_boxing.py` に `object -> bytes/list<bytes>` 変換回帰を追加し、`tools/benchmark_cpp_list_models.py 07_game_of_life_loop 08_langtons_ant 09_fire_simulation --warmup 0 --repeat 1 --allow-failures` で 3件とも実行成功することを確認した。
 - 2026-02-28: `12_sort_visualizer` で `render(const object&)` 呼び出しに stack 縮退した `list<int64>` がそのまま渡される compile blocker を確認した。`type_bridge._coerce_call_arg` で `cpp_list_model=pyobj` かつ list 注釈シグネチャ時の effective target を `object` へ寄せ、stack list だけ `make_object(...)` する補正を追加した。`test_py2cpp_codegen_issues.py` に回帰（`test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation`）を追加し、`benchmark_cpp_list_models.py 12_sort_visualizer --warmup 0 --repeat 1 --allow-failures` で実行成功を確認した。
 - 2026-02-28: `13_maze_generation_steps` で tuple/list runtime blocker（`index access on non-indexable object`）を確認した。原因は `make_object(list<T>)` 内の `make_object(v)` が tuple overload を拾えず tuple 要素が `object()` に潰れる点と、pyobj list subscript の tuple unbox 不足だった。tuple boxing overload を `list<T>` より前に配置し、`_render_unbox_target_cast` に `tuple[...]` 用 `::std::make_tuple(py_at(...))` 変換を追加して解消した。`test_py2cpp_codegen_issues.py` の tuple subscript 回帰（`test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure`）と `benchmark_cpp_list_models.py 13_maze_generation_steps --warmup 0 --repeat 1 --allow-failures` 実行成功を確認した。
+- 2026-02-28: `05..16` の `pyobj` 単独 compile/run 検証を追加実施し、12件すべて成功（`passed=12 failed=0`）を確認した。検証コマンドは `python3 src/py2cpp.py ... --cpp-list-model pyobj` + `g++ -O0` + 実行をケースごとに回す one-shot スクリプト。これにより `S4-02-S2` を完了扱いとした。
 
 ## 分解
 
@@ -158,7 +159,7 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-01] `value` vs `pyobj` の性能/サイズ/差分を sample で比較し、既定切替判断を記録する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S1] rollback 準備として `py2cpp` に `--cpp-list-model {value,pyobj}` を追加し、single/multi-file 出力へ反映する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2] `sample` 失敗 12 件（`05..16`）の compile/runtime blocker を段階解消し、`pyobj` モデルの実行成立範囲を拡張する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2] `sample` 失敗 12 件（`05..16`）の compile/runtime blocker を段階解消し、`pyobj` モデルの実行成立範囲を拡張する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S1] pyobj で `grid[y][x] = ...` が `object[...]` へ落ちる compile blocker を `py_set_at(...)` lower で解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S2] `07/08/09` の runtime 失敗（`setitem on non-list object`）原因を特定し、`py_set_at` 入力が list object になるよう lower/runtime を補正する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S3] `12_sort_visualizer` の compile blocker（list 注釈引数が `object` シグネチャへ合わない）を callsite boxing 補正で解消する。
