@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-cpp-redundant-same-type-cast-elimination.md](../plans/p0-cpp-redundant-same-type-cast-elimination.md)
 
-1. [ ] [ID: P0-CPP-SAMECAST-01] C++ backend の cast 規約を「同型なら無変換」に統一し、型既知経路で不要な `str(...)` / `py_to_*` を出力しないようにする。
+1. [x] [ID: P0-CPP-SAMECAST-01] C++ backend の cast 規約を「同型なら無変換」に統一し、型既知経路で不要な `str(...)` / `py_to_*` を出力しないようにする。
 2. [x] [ID: P0-CPP-SAMECAST-01-S1-01] 同型 cast 除去規約（source/target が同型かつ非 Any/object/unknown の場合は無変換）を C++ emitter 共通方針として固定する。
 3. [x] [ID: P0-CPP-SAMECAST-01-S1-02] `get_expr_type()` の `Subscript` 推論を拡張し、`Subscript(str, int) -> str` を確定できるようにする。
 4. [x] [ID: P0-CPP-SAMECAST-01-S1-03] `StrCharClassOp` を含む文字列系 lowering を修正し、型既知 `str` では `str(...)` を挿入しない。
