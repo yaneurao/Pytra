@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-02-28
+最終更新: 2026-03-01
 
 ## 文脈運用ルール
 
@@ -78,6 +78,17 @@
 6. [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-03] `rs_emitter.py` から runtime/helper 本体出力を撤去し、runtime API 呼び出し専用へ切り替える。
 7. [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
 8. [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-02] `sample/rs` を再生成し、inline helper 残存ゼロを確認する。
+
+### P1: `core.py` の `Path` 直分岐撤去（stdlib 正本化）
+
+文脈: [docs/ja/plans/p1-core-path-direct-branch-removal.md](../plans/p1-core-path-direct-branch-removal.md)
+
+1. [ ] [ID: P1-CORE-PATH-SOT-01] `core.py` の `Path` 直分岐を撤去し、stdlib 参照層 + import 解決情報へ一本化する。
+2. [ ] [ID: P1-CORE-PATH-SOT-01-S1-01] `Path` 依存分岐（戻り値推論 / BuiltinCall lower / 属性推論）を棚卸しし、置換先 API を固定する。
+3. [ ] [ID: P1-CORE-PATH-SOT-01-S2-01] `Path` 判定を名前直書きから resolver 経由へ置換し、`core.py` から `fn_name == "Path"` を削除する。
+4. [ ] [ID: P1-CORE-PATH-SOT-01-S2-02] `Path` constructor/method/attribute の戻り値推論を stdlib 参照層で補完する。
+5. [ ] [ID: P1-CORE-PATH-SOT-01-S3-01] 再混入防止回帰を `test_east_core.py` に追加する。
+6. [ ] [ID: P1-CORE-PATH-SOT-01-S3-02] `check_py2cpp_transpile.py` を再実行し、非退行を確認する。
 
 ### P1: Kotlin runtime 外出し（inline helper 撤去）
 
