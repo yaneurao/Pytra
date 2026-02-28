@@ -924,9 +924,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore iter_plan"]
+        raise RuntimeError("swift native emitter: unsupported ForCore iter_plan")
     if not isinstance(target_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore target_plan"]
+        raise RuntimeError("swift native emitter: unsupported ForCore target_plan")
 
     lines: list[str] = []
     if iter_plan_any.get("kind") == "StaticRangeForPlan" and target_plan_any.get("kind") == "NameTarget":
@@ -1002,7 +1002,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "}")
         return lines
 
-    return [indent + "// TODO: unsupported ForCore plan"]
+    raise RuntimeError("swift native emitter: unsupported ForCore plan")
 
 
 def _emit_tuple_assign(
@@ -1062,7 +1062,7 @@ def _emit_tuple_assign(
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
-        return [indent + "// TODO: unsupported statement"]
+        raise RuntimeError("swift native emitter: unsupported statement")
     kind = stmt.get("kind")
 
     if kind == "Return":
@@ -1149,7 +1149,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if len(targets) == 0 and isinstance(stmt.get("target"), dict):
             targets = [stmt.get("target")]
         if len(targets) == 0:
-            return [indent + "// TODO: Assign without target"]
+            raise RuntimeError("swift native emitter: Assign without target")
 
         tuple_lines = _emit_tuple_assign(
             targets[0],
@@ -1274,7 +1274,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     if kind == "Pass":
-        return [indent + "// pass"]
+        return [indent + "_ = 0"]
 
     if kind == "Break":
         return [indent + "break"]
@@ -1288,7 +1288,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "Raise":
         return [indent + "fatalError(\"pytra raise\")"]
 
-    return [indent + "// TODO: unsupported stmt kind " + str(kind)]
+    raise RuntimeError("swift native emitter: unsupported stmt kind: " + str(kind))
 
 
 def _stmt_guarantees_return(stmt: Any) -> bool:
@@ -1721,10 +1721,7 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         i += 1
 
     lines: list[str] = []
-    lines.append("// Auto-generated Pytra Swift native source from EAST3.")
     lines.append("import Foundation")
-    lines.append("")
-    lines.append("// Runtime helpers are provided by py_runtime.swift in the same module.")
     lines.append("")
     module_comments = _module_leading_comment_lines(east_doc, "// ")
     if len(module_comments) > 0:

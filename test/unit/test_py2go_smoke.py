@@ -40,8 +40,8 @@ class Py2GoSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         go = transpile_to_go(east)
         self.assertIn("package main", go)
-        self.assertIn("Auto-generated Pytra Go native source from EAST3.", go)
-        self.assertIn("Runtime helpers are provided by py_runtime.go in the same package.", go)
+        self.assertNotIn("Auto-generated Pytra Go native source from EAST3.", go)
+        self.assertNotIn("Runtime helpers are provided by py_runtime.go in the same package.", go)
         self.assertNotIn("func __pytra_truthy(v any) bool {", go)
         self.assertNotIn('exec.Command("node"', go)
 
@@ -99,7 +99,7 @@ class Py2GoSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_go.read_text(encoding="utf-8")
             self.assertIn("package main", txt)
-            self.assertIn("Auto-generated Pytra Go native source from EAST3.", txt)
+            self.assertNotIn("Auto-generated Pytra Go native source from EAST3.", txt)
             self.assertNotIn("func __pytra_truthy(v any) bool {", txt)
             runtime_go = Path(td) / "py_runtime.go"
             self.assertTrue(runtime_go.exists())

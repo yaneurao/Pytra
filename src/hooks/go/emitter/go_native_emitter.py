@@ -1032,9 +1032,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore iter_plan"]
+        raise RuntimeError("go native emitter: unsupported ForCore iter_plan")
     if not isinstance(target_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore target_plan"]
+        raise RuntimeError("go native emitter: unsupported ForCore target_plan")
 
     lines: list[str] = []
     if iter_plan_any.get("kind") == "StaticRangeForPlan" and target_plan_any.get("kind") == "NameTarget":
@@ -1170,9 +1170,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         while i < len(elems):
             elem = elems[i]
             if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
-                lines.append(indent + "    // TODO: unsupported tuple target element")
-                i += 1
-                continue
+                raise RuntimeError("go native emitter: unsupported RuntimeIter tuple target element")
             name = _safe_ident(elem.get("id"), "item_" + str(i))
             if name == "_":
                 name = _fresh_tmp(body_ctx, "item")
@@ -1204,7 +1202,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "}")
         return lines
 
-    return [indent + "// TODO: unsupported ForCore plan"]
+    raise RuntimeError("go native emitter: unsupported ForCore plan")
 
 
 def _emit_tuple_assign(
@@ -1271,7 +1269,7 @@ def _emit_tuple_assign(
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
-        return [indent + "// TODO: unsupported statement"]
+        raise RuntimeError("go native emitter: unsupported statement")
     kind = stmt.get("kind")
 
     if kind == "Return":
@@ -1369,7 +1367,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if len(targets) == 0 and isinstance(stmt.get("target"), dict):
             targets = [stmt.get("target")]
         if len(targets) == 0:
-            return [indent + "// TODO: Assign without target"]
+            raise RuntimeError("go native emitter: Assign without target")
 
         tuple_lines = _emit_tuple_assign(
             targets[0],
@@ -1503,7 +1501,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     if kind == "Pass":
-        return [indent + "// pass"]
+        return [indent + "_ = 0"]
 
     if kind == "Break":
         return [indent + "break"]
@@ -1520,7 +1518,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "panic(__pytra_str(" + _render_expr(exc_any) + "))"]
         return [indent + "panic(\"pytra raise\")"]
 
-    return [indent + "// TODO: unsupported stmt kind " + str(kind)]
+    raise RuntimeError("go native emitter: unsupported stmt kind: " + str(kind))
 
 
 def _stmt_guarantees_return(stmt: Any) -> bool:
@@ -1600,9 +1598,6 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
         i += 1
-
-    if len(body) == 0:
-        lines.append(indent + "    // empty body")
 
     if return_type != "" and not _block_guarantees_return(body):
         lines.append(indent + "    return " + _default_return_expr(return_type))
@@ -1724,14 +1719,12 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
         i += 1
 
     lines: list[str] = []
-    lines.append("// Auto-generated Pytra Go native source from EAST3.")
     lines.append("package main")
     lines.append("")
     lines.append("import (")
     lines.append('    "math"')
     lines.append(")")
     lines.append("")
-    lines.append("// Runtime helpers are provided by py_runtime.go in the same package.")
     lines.append("var _ = math.Pi")
     lines.append("")
     module_comments = _module_leading_comment_lines(east_doc, "// ")

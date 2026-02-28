@@ -40,8 +40,8 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         swift = transpile_to_swift(east)
         self.assertIn("@main", swift)
-        self.assertIn("Auto-generated Pytra Swift native source from EAST3.", swift)
-        self.assertIn("Runtime helpers are provided by py_runtime.swift in the same module.", swift)
+        self.assertNotIn("Auto-generated Pytra Swift native source from EAST3.", swift)
+        self.assertNotIn("Runtime helpers are provided by py_runtime.swift in the same module.", swift)
         self.assertNotIn("func __pytra_truthy(_ v: Any?) -> Bool {", swift)
         self.assertNotIn("PYTRA_JS_ENTRY:", swift)
 
@@ -99,7 +99,7 @@ class Py2SwiftSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_swift.read_text(encoding="utf-8")
             self.assertIn("@main", txt)
-            self.assertIn("Auto-generated Pytra Swift native source from EAST3.", txt)
+            self.assertNotIn("Auto-generated Pytra Swift native source from EAST3.", txt)
             self.assertNotIn("func __pytra_truthy(_ v: Any?) -> Bool {", txt)
             runtime_swift = Path(td) / "py_runtime.swift"
             self.assertTrue(runtime_swift.exists())

@@ -41,7 +41,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         java = transpile_to_java(east)
         self.assertIn("public final class Main", java)
-        self.assertIn("Auto-generated Java native source from EAST3.", java)
+        self.assertNotIn("Auto-generated Java native source from EAST3.", java)
         self.assertNotIn("private static boolean __pytra_truthy(Object value)", java)
         self.assertNotIn("private static long __pytra_int(Object value)", java)
         self.assertNotIn("ProcessBuilder", java)
@@ -84,7 +84,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_java.read_text(encoding="utf-8")
             self.assertIn("public final class", txt)
-            self.assertIn("Auto-generated Java native source", txt)
+            self.assertNotIn("Auto-generated Java native source", txt)
             self.assertNotIn("private static boolean __pytra_truthy(Object value)", txt)
             runtime_java = Path(td) / "PyRuntime.java"
             self.assertTrue(runtime_java.exists())

@@ -976,7 +976,7 @@ def _emit_for_runtime_iter(
             while i < len(elems):
                 elem = elems[i]
                 if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
-                    return [indent + "// TODO: unsupported RuntimeIter tuple target"]
+                    raise RuntimeError("java native emitter: unsupported RuntimeIter tuple target")
                 name = _safe_ident(elem.get("id"), "item_" + str(i))
                 elem_type = "Object"
                 if i < len(tuple_types):
@@ -1009,7 +1009,7 @@ def _emit_for_runtime_iter(
             while i < len(elems):
                 elem = elems[i]
                 if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
-                    return [indent + "// TODO: unsupported RuntimeIter tuple target"]
+                    raise RuntimeError("java native emitter: unsupported RuntimeIter tuple target")
                 name = _safe_ident(elem.get("id"), "item_" + str(i))
                 elem_type = "Object"
                 if i < len(tuple_types):
@@ -1022,7 +1022,7 @@ def _emit_for_runtime_iter(
                     body_types[name] = elem_type
                 i += 1
     else:
-        return [indent + "// TODO: unsupported RuntimeIter target_plan"]
+        raise RuntimeError("java native emitter: unsupported RuntimeIter target_plan")
 
     body_any = stmt.get("body")
     body = body_any if isinstance(body_any, list) else []
@@ -1039,17 +1039,17 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore iter_plan"]
+        raise RuntimeError("java native emitter: unsupported ForCore iter_plan")
     if not isinstance(target_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore target_plan"]
+        raise RuntimeError("java native emitter: unsupported ForCore target_plan")
 
     if iter_plan_any.get("kind") == "RuntimeIterForPlan":
         return _emit_for_runtime_iter(stmt, iter_plan=iter_plan_any, target_plan=target_plan_any, indent=indent, ctx=ctx)
 
     if iter_plan_any.get("kind") != "StaticRangeForPlan":
-        return [indent + "// TODO: unsupported ForCore iter_plan"]
+        raise RuntimeError("java native emitter: unsupported ForCore iter_plan")
     if target_plan_any.get("kind") != "NameTarget":
-        return [indent + "// TODO: unsupported ForCore target_plan"]
+        raise RuntimeError("java native emitter: unsupported ForCore target_plan")
 
     target_name = _safe_ident(target_plan_any.get("id"), "i")
     target_type = _java_type(target_plan_any.get("target_type"), allow_void=False)
@@ -1234,7 +1234,7 @@ def _try_emit_listcomp_assign(
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
-        return [indent + "// TODO: unsupported statement"]
+        raise RuntimeError("java native emitter: unsupported statement")
     kind = stmt.get("kind")
     if kind == "Return":
         if "value" in stmt and stmt.get("value") is not None:
@@ -1309,7 +1309,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if len(targets) == 0 and isinstance(stmt.get("target"), dict):
             targets = [stmt.get("target")]
         if len(targets) == 0:
-            return [indent + "// TODO: Assign without target"]
+            raise RuntimeError("java native emitter: Assign without target")
         tuple_lines = _try_emit_tuple_assign(
             targets[0],
             stmt.get("value"),
@@ -1428,7 +1428,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "ForCore":
         return _emit_for_core(stmt, indent=indent, ctx=ctx)
     if kind == "Pass":
-        return [indent + "// pass"]
+        return [indent + ";"]
     if kind == "Break":
         return [indent + "break;"]
     if kind == "Continue":
@@ -1446,7 +1446,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             i += 1
         lines.append(indent + "}")
         return lines
-    return [indent + "// TODO: unsupported stmt kind " + str(kind)]
+    raise RuntimeError("java native emitter: unsupported stmt kind: " + str(kind))
 
 
 def _stmt_guarantees_return(stmt: Any) -> bool:
@@ -1664,7 +1664,6 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
         i += 1
 
     lines: list[str] = []
-    lines.append("// Auto-generated Java native source from EAST3.")
     lines.append("public final class " + main_class + " {")
     lines.append("    private " + main_class + "() {")
     lines.append("    }")

@@ -108,8 +108,6 @@ class LuaNativeEmitter:
         self.imported_modules: set[str] = set()
 
     def transpile(self) -> str:
-        self.lines.append("-- Auto-generated Pytra Lua native source from EAST3.")
-        self.lines.append("")
         module_comments = self._module_leading_comment_lines(prefix="-- ")
         if len(module_comments) > 0:
             self.lines.extend(module_comments)
@@ -124,7 +122,6 @@ class LuaNativeEmitter:
             self._emit_stmt(stmt)
         if len(main_guard) > 0:
             self.lines.append("")
-            self.lines.append("-- __main__ guard")
             for stmt in main_guard:
                 self._emit_stmt(stmt)
         return "\n".join(self.lines).rstrip() + "\n"
@@ -182,7 +179,7 @@ class LuaNativeEmitter:
     def _emit_block(self, body_any: Any) -> None:
         body = self._dict_list(body_any)
         if len(body) == 0:
-            self._emit_line("-- pass")
+            self._emit_line("do end")
             return
         for stmt in body:
             self._emit_stmt(stmt)
@@ -365,7 +362,7 @@ class LuaNativeEmitter:
             self._emit_while(stmt)
             return
         if kind == "Pass":
-            self._emit_line("-- pass")
+            self._emit_line("do end")
             return
         raise RuntimeError("lang=lua unsupported stmt kind: " + str(kind))
 
