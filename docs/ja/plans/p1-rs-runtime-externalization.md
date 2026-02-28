@@ -46,7 +46,7 @@
 
 - [x] [ID: P1-RS-RUNTIME-EXT-01-S1-01] Rust emitter の inline helper 出力一覧と `src/runtime/rs/pytra` 正本 API 対応表を確定する。
 - [x] [ID: P1-RS-RUNTIME-EXT-01-S1-02] Rust 生成物の runtime 参照方式（`mod/use` 構成と出力ディレクトリ配置契約）を確定し、fail-closed 条件を文書化する。
-- [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-01] `src/runtime/rs/pytra` 側へ不足 helper/API を補完し、inline 実装と同等の意味を提供する。
+- [x] [ID: P1-RS-RUNTIME-EXT-01-S2-01] `src/runtime/rs/pytra` 側へ不足 helper/API を補完し、inline 実装と同等の意味を提供する。
 - [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-02] `py2rs.py` に runtime ファイル配置導線を追加し、生成コードが外部 runtime を解決できる状態へ移行する。
 - [ ] [ID: P1-RS-RUNTIME-EXT-01-S2-03] `rs_emitter.py` から runtime/helper 本体出力を撤去し、runtime API 呼び出し専用へ切り替える。
 - [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
@@ -119,3 +119,4 @@
 - 2026-02-28: ユーザー指示により、Rust の helper/runtime 分離を `P1` として新規起票した。
 - 2026-03-01: `RUST_RUNTIME_SUPPORT`/`_emit_pyany_runtime`/`_emit_isinstance_runtime_helpers` の棚卸しを実施し、`py_runtime.rs` への移管対象と不足 API を確定した（`S1-01`）。
 - 2026-03-01: 生成時の runtime 配置契約（`mod py_runtime;` + `pub use` + `use crate::py_runtime::*;`）と fail-closed 条件を確定した（`S1-02`）。
+- 2026-03-01: `src/runtime/rs/pytra/built_in/py_runtime.rs` に `py_str_at`/`py_slice_str`、`PyAny` 変換群、`type_id/isinstance` 基盤、`pub mod time/math/pytra` を追加し、`rustc --crate-type lib` で単体構文確認した（`S2-01`）。
