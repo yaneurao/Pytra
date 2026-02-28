@@ -135,6 +135,24 @@ def _insert_support_blocks(py2cs_text: str, support_blocks: str, base_class: str
     )
 
 
+def _patch_support_blocks_for_cs(support_blocks: str) -> str:
+    old = (
+        "def write_text_file(path_obj: Path, text: str) -> None:\n"
+        "    \"\"\"CLI 出力向けにテキストを書き出す。\"\"\"\n"
+        "    f = open(str(path_obj), \"w\", encoding=\"utf-8\")\n"
+        "    f.write(text)\n"
+        "    f.close()\n"
+    )
+    new = (
+        "def write_text_file(path_obj: Path, text: str) -> None:\n"
+        "    \"\"\"CLI 出力向けにテキストを書き出す。\"\"\"\n"
+        "    path_obj.write_text(text, encoding=\"utf-8\")\n"
+    )
+    if old not in support_blocks:
+        raise RuntimeError("failed to patch write_text_file in support blocks")
+    return support_blocks.replace(old, new, 1)
+
+
 def _patch_selfhost_hooks(text: str, prepare_base) -> str:
     out = prepare_base._patch_code_emitter_hooks_for_selfhost(text)
     init_line = "        self.init_base_state(east_doc, profile, hooks)\n"
@@ -168,6 +186,7 @@ def main() -> int:
     cs_emitter_text = SRC_CS_EMITTER.read_text(encoding="utf-8")
 
     support_blocks = prepare_base._extract_support_blocks()
+    support_blocks = _patch_support_blocks_for_cs(support_blocks)
     base_class = prepare_base._strip_triple_quoted_docstrings(prepare_base._extract_code_emitter_class(base_text))
     cs_core = _extract_cs_emitter_core(cs_emitter_text)
 
