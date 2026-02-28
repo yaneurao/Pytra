@@ -150,7 +150,17 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
     )
     if old not in support_blocks:
         raise RuntimeError("failed to patch write_text_file in support blocks")
-    return support_blocks.replace(old, new, 1)
+    out = support_blocks.replace(old, new, 1)
+
+    old_east_get = "        east = dict_any_get_dict(module_east_raw, str(p))\n"
+    new_east_get = (
+        "        east: dict[str, Any] = {}\n"
+        "        if str(p) in module_east_raw:\n"
+        "            east = module_east_raw[str(p)]\n"
+    )
+    if old_east_get not in out:
+        raise RuntimeError("failed to patch module_east_raw access in support blocks")
+    return out.replace(old_east_get, new_east_get, 1)
 
 
 def _patch_selfhost_hooks(text: str, prepare_base) -> str:

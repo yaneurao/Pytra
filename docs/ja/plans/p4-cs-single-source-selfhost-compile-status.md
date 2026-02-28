@@ -13,7 +13,7 @@ python3 tools/check_cs_single_source_selfhost_compile.py
 - prepare: `python3 tools/prepare_selfhost_source_cs.py`
 - transpile selfhost source: `rc=0`
 - mcs compile: `rc=1`
-- compile note: `/tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(7377,92): error CS1503: Argument `#1' cannot convert `System.Collections.Generic.Dictionary<string,System.Collections.Generic.Dictionary<string,object>>' expression to type `System.Collections.Generic.Dictionary<string,object>'`
+- compile note: `/tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(7289,44): error CS1503: Argument `#1' cannot convert `System.Collections.Generic.Dictionary<string,string>' expression to type `System.Collections.Generic.Dictionary<string,object>'`
 
 ## Error Code Counts
 
@@ -28,8 +28,8 @@ python3 tools/check_cs_single_source_selfhost_compile.py
 | CS0266 | 33 |
 | CS0411 | 1 |
 | CS0815 | 3 |
-| CS1502 | 33 |
-| CS1503 | 46 |
+| CS1502 | 32 |
+| CS1503 | 45 |
 | CS1579 | 6 |
 | CS1729 | 1 |
 | CS1929 | 1 |
@@ -44,24 +44,24 @@ python3 tools/check_cs_single_source_selfhost_compile.py
 
 ## Top Errors (first 20)
 
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(200,28): error CS0266: Cannot implicitly convert type `object' to `System.Collections.Generic.List<object>'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(204,26): error CS1502: The best overloaded method match for `System.Collections.Generic.List<string>.Add(string)' has some invalid arguments
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(204,30): error CS1503: Argument `#1' cannot convert `object' expression to type `string'
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(243,24): error CS0019: Operator `*' cannot be applied to operands of type `string' and `long'
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(377,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(378,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(379,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(380,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(381,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(382,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(383,13): error CS0029: Cannot implicitly convert type `long' to `string'
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(421,21): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(429,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `bool?'
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(433,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `object'
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(448,13): error CS0029: Cannot implicitly convert type `System.Collections.Generic.Dictionary<string,object>' to `string'
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(456,20): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(469,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(478,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(487,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmp57tghl4e/cs_selfhost_full_stage1.cs(496,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(200,28): error CS0266: Cannot implicitly convert type `object' to `System.Collections.Generic.List<object>'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(204,26): error CS1502: The best overloaded method match for `System.Collections.Generic.List<string>.Add(string)' has some invalid arguments
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(204,30): error CS1503: Argument `#1' cannot convert `object' expression to type `string'
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(243,24): error CS0019: Operator `*' cannot be applied to operands of type `string' and `long'
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(377,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(378,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(379,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(380,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(381,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(382,13): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(383,13): error CS0029: Cannot implicitly convert type `long' to `string'
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(421,21): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(429,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `bool?'
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(433,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `object'
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(448,13): error CS0029: Cannot implicitly convert type `System.Collections.Generic.Dictionary<string,object>' to `string'
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(456,20): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(469,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(478,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(487,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpxhtu1oz_/cs_selfhost_full_stage1.cs(496,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
 
