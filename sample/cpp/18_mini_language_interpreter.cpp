@@ -162,7 +162,7 @@ struct Parser : public PyObj {
     }
     
     list<rc<ExprNode>> new_expr_nodes() {
-        return list<object>{};
+        return list<rc<ExprNode>>{};
     }
     Parser(const list<rc<Token>>& tokens) {
         this->tokens = tokens;

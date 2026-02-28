@@ -761,6 +761,33 @@ class CppEmitter(
             return rendered_expr[: -len(tail_b)] + ", " + typed_default + ")"
         return rendered_expr
 
+    def _rewrite_empty_collection_literal_for_typed_target(
+        self,
+        rendered_expr: str,
+        value_node: Any,
+        east_target_t: str,
+    ) -> str:
+        """空コレクション literal を既知ターゲット型へ寄せる。"""
+        if rendered_expr == "":
+            return rendered_expr
+        t = self.normalize_type_name(east_target_t)
+        if t == "" or self.is_any_like_type(t):
+            return rendered_expr
+        node = self.any_to_dict_or_empty(value_node)
+        if len(node) == 0:
+            return rendered_expr
+        kind = self._node_kind_from_dict(node)
+        if kind == "List" and t.startswith("list[") and t.endswith("]"):
+            if len(self._dict_stmt_list(node.get("elements"))) == 0:
+                return f"{self._cpp_type_text(t)}{{}}"
+        if kind == "Dict" and t.startswith("dict[") and t.endswith("]"):
+            if len(self._dict_stmt_list(node.get("entries"))) == 0:
+                return f"{self._cpp_type_text(t)}{{}}"
+        if kind == "Set" and t.startswith("set[") and t.endswith("]"):
+            if len(self._dict_stmt_list(node.get("elements"))) == 0:
+                return f"{self._cpp_type_text(t)}{{}}"
+        return rendered_expr
+
     def _coerce_param_signature_default(self, rendered_expr: str, east_target_t: str) -> str:
         """関数シグネチャ既定値を引数型に合わせて整形する。"""
         if rendered_expr == "":
@@ -1208,6 +1235,7 @@ class CppEmitter(
         ret_t = self.current_function_return_type
         if ret_t != "":
             rv = self._rewrite_nullopt_default_for_typed_target(rv, ret_t)
+            rv = self._rewrite_empty_collection_literal_for_typed_target(rv, value_node, ret_t)
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
         if self.is_any_like_type(ret_t) and (not self.is_any_like_type(expr_t)):

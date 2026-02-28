@@ -379,6 +379,22 @@ def f() -> float:
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter()", cpp)
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter() - start)", cpp)
 
+    def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
+        src = """class Node:
+    pass
+
+def new_nodes() -> list[Node]:
+    return []
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_empty_list_return.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return list<Node>{};", cpp)
+        self.assertNotIn("return list<object>{};", cpp)
+
     def test_dynamic_tuple_index_falls_back_to_py_at(self) -> None:
         src = """def pick(i: int) -> object:
     t: tuple[int, int, int] = (10, 20, 30)
