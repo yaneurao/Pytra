@@ -201,7 +201,10 @@ def build_targets(
                 f"python src/py2swift.py {shlex.quote(case_src)} --output "
                 f"test/transpile/swift/{case_stem}.swift {opt_arg}"
             ),
-            run_cmd=f"swiftc test/transpile/swift/{case_stem}.swift -o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out",
+            run_cmd=(
+                f"swiftc test/transpile/swift/{case_stem}.swift test/transpile/swift/py_runtime.swift "
+                f"-o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out"
+            ),
             needs=("python", "swiftc"),
         ),
         Target(

@@ -49,6 +49,7 @@
 - 2026-02-28: `S1-01` として inline helper の棚卸しと runtime 正本 API 対応表を作成し、Go/Java は命名差吸収が主課題、Swift/Ruby は runtime 正本不足が主課題であることを固定した。
 - 2026-02-28: `S2-01` として Go emitter から `func __pytra_*` inline 定義を撤去し、`src/runtime/go/pytra/py_runtime.go` に互換 helper を集約。`py2go.py` が出力先へ `py_runtime.go` を配置する運用へ切替え、`test_py2go_smoke.py` と `runtime_parity_check --targets go`（`sample/18`）で回帰確認した。
 - 2026-02-28: `S2-02` として Java emitter から helper 本体定義を撤去し、呼び出しを `PyRuntime.__pytra_*` に移管。`src/runtime/java/pytra/built_in/PyRuntime.java` に互換 helper を集約し、`py2java.py` が出力先へ `PyRuntime.java` を配置する導線へ切替えた。`test_py2java_smoke.py` と `runtime_parity_check --targets java`（`sample/18`）で回帰確認した。
+- 2026-02-28: `S2-03` として Swift emitter から helper inline 出力を停止し、`src/runtime/swift/pytra/py_runtime.swift` に helper 群を集約。`py2swift.py` が出力先へ `py_runtime.swift` を配置する導線に切替え、`test_py2swift_smoke.py` を通過。`runtime_parity_check --targets swift` は `swiftc` 未導入で `toolchain_missing`（環境制約）を確認した。
 
 ## S1-01 棚卸し結果（2026-02-28）
 
@@ -78,6 +79,6 @@
 - [x] [ID: P1-RUNTIME-EXT-01-S1-01] 言語別 helper 出力一覧（inline）と runtime 正本 API の対応表を作成する。
 - [x] [ID: P1-RUNTIME-EXT-01-S2-01] Go emitter から helper 本体出力を撤去し、`src/runtime/go/pytra` 側 API 呼び出しへ切替える。
 - [x] [ID: P1-RUNTIME-EXT-01-S2-02] Java emitter から helper 本体出力を撤去し、`src/runtime/java/pytra` 側 API 呼び出しへ切替える。
-- [ ] [ID: P1-RUNTIME-EXT-01-S2-03] Swift native 用 runtime 実体を整備し、emitter の helper inline 出力を撤去する。
+- [x] [ID: P1-RUNTIME-EXT-01-S2-03] Swift native 用 runtime 実体を整備し、emitter の helper inline 出力を撤去する。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby runtime 実体を新設し、`require_relative` 等で外部参照する方式へ切替える。
 - [ ] [ID: P1-RUNTIME-EXT-01-S3-01] parity/smoke/sample 再生成導線を更新し、回帰確認を完了する。

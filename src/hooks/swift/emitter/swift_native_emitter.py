@@ -1674,7 +1674,7 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     lines.append("// Auto-generated Pytra Swift native source from EAST3.")
     lines.append("import Foundation")
     lines.append("")
-    lines.extend(_emit_runtime_helpers())
+    lines.append("// Runtime helpers are provided by py_runtime.swift in the same module.")
 
     i = 0
     while i < len(classes):

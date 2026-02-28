@@ -41,6 +41,8 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         swift = transpile_to_swift(east)
         self.assertIn("@main", swift)
         self.assertIn("Auto-generated Pytra Swift native source from EAST3.", swift)
+        self.assertIn("Runtime helpers are provided by py_runtime.swift in the same module.", swift)
+        self.assertNotIn("func __pytra_truthy(_ v: Any?) -> Bool {", swift)
         self.assertNotIn("PYTRA_JS_ENTRY:", swift)
 
     def test_swift_native_emitter_skeleton_handles_module_function_class(self) -> None:
@@ -91,6 +93,11 @@ class Py2SwiftSmokeTest(unittest.TestCase):
             txt = out_swift.read_text(encoding="utf-8")
             self.assertIn("@main", txt)
             self.assertIn("Auto-generated Pytra Swift native source from EAST3.", txt)
+            self.assertNotIn("func __pytra_truthy(_ v: Any?) -> Bool {", txt)
+            runtime_swift = Path(td) / "py_runtime.swift"
+            self.assertTrue(runtime_swift.exists())
+            runtime_txt = runtime_swift.read_text(encoding="utf-8")
+            self.assertIn("func __pytra_truthy(_ v: Any?) -> Bool {", runtime_txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:

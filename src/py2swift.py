@@ -62,6 +62,20 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _swift_runtime_source_path() -> Path:
+    """Swift runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "swift" / "pytra" / "py_runtime.swift"
+
+
+def _copy_swift_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Swift runtime を配置する。"""
+    runtime_src = _swift_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("swift runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "py_runtime.swift"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Swift transpiler")
@@ -112,6 +126,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     swift_src = transpile_to_swift_native(east)
     output_path.write_text(swift_src, encoding="utf-8")
+    _copy_swift_runtime(output_path)
     return 0
 
 

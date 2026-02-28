@@ -83,12 +83,13 @@
 2. [x] [ID: P1-RUNTIME-EXT-01-S1-01] 現行 emitter が inline 出力している helper 群を言語別に棚卸しし、runtime 側 API（正本）との対応表を固定する。
 3. [x] [ID: P1-RUNTIME-EXT-01-S2-01] Go backend を runtime 外部参照方式へ移行し、`py2go` 出力から helper 本体を除去する。
 4. [x] [ID: P1-RUNTIME-EXT-01-S2-02] Java backend を runtime 外部参照方式へ移行し、`py2java` 出力から helper 本体を除去する。
-5. [ ] [ID: P1-RUNTIME-EXT-01-S2-03] Swift backend 用の native runtime ファイルを整備し、`py2swift` 出力から helper 本体を除去する。
+5. [x] [ID: P1-RUNTIME-EXT-01-S2-03] Swift backend 用の native runtime ファイルを整備し、`py2swift` 出力から helper 本体を除去する。
 6. [ ] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby backend 用 runtime ファイルを新設し、`py2rb` 出力から helper 本体を除去する。
 7. [ ] [ID: P1-RUNTIME-EXT-01-S3-01] `runtime_parity_check` / smoke テスト / sample 再生成導線を runtime 外部参照前提に更新し、回帰を固定する。
 - `P1-RUNTIME-EXT-01-S1-01` Go/Java/Swift/Ruby の inline helper 群と runtime 正本 API の対応表を `docs/ja/plans/p1-runtime-externalization-gjsr.md` に固定し、Go/Java は命名差吸収、Swift/Ruby は runtime 正本新設が主要ギャップと整理した。
 - `P1-RUNTIME-EXT-01-S2-01` Go native emitter から `func __pytra_*` inline 定義を撤去し、`py2go.py` で `py_runtime.go` を出力先へ配置する導線へ移行した。`test_py2go_smoke.py` と `runtime_parity_check --targets go`（`sample/18`）で実行導線を確認した。
 - `P1-RUNTIME-EXT-01-S2-02` Java native emitter から helper 本体定義を撤去し、呼び出しを `PyRuntime.__pytra_*` へ集約した。`py2java.py` で `PyRuntime.java` を出力先へ配置し、`test_py2java_smoke.py` と `runtime_parity_check --targets java`（`sample/18`）で実行導線を確認した。
+- `P1-RUNTIME-EXT-01-S2-03` Swift native emitter から helper 本体定義を撤去し、`src/runtime/swift/pytra/py_runtime.swift` へ移管した。`py2swift.py` で `py_runtime.swift` を出力先へ配置し、`test_py2swift_smoke.py` を通過。`runtime_parity_check --targets swift` は `swiftc` 未導入環境のため `toolchain_missing` を確認した。
 
 ### P1: 統合CLI `./pytra` の Rust target 追加
 
