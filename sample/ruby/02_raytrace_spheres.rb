@@ -181,7 +181,7 @@ def run_raytrace()
   out_path = "sample/out/02_raytrace_spheres.png"
   start = __pytra_perf_counter()
   pixels = render(width, height, aa)
-  __pytra_noop(out_path, width, height, pixels)
+  write_rgb_png(out_path, width, height, pixels)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("size:", width, "x", height)

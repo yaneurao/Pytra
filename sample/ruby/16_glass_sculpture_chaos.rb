@@ -335,7 +335,7 @@ def run_16_glass_sculpture_chaos()
     frames.append(render_frame(width, height, i, frames_n))
     i += __step_0
   end
-  __pytra_noop(out_path, width, height, frames, palette_332())
+  save_gif(out_path, width, height, frames, palette_332(), 6, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frames_n)

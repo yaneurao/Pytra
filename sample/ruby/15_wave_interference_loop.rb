@@ -42,7 +42,7 @@ def run_15_wave_interference_loop()
     frames.append(__pytra_bytes(frame))
     t += __step_0
   end
-  __pytra_noop(out_path, w, h, frames, [])
+  save_gif(out_path, w, h, frames, grayscale_palette(), 4, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frames_n)

@@ -170,6 +170,41 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(func_any.get("id"), "")
 
 
+def _render_positional_call_args(args: list[Any]) -> list[str]:
+    rendered: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered.append(_render_expr(args[i]))
+        i += 1
+    return rendered
+
+
+def _render_keyword_call_args(expr: dict[str, Any]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    keywords_any = expr.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    i = 0
+    while i < len(keywords):
+        kw = keywords[i]
+        if isinstance(kw, dict):
+            arg_name = kw.get("arg")
+            value_any = kw.get("value")
+            if isinstance(arg_name, str) and isinstance(value_any, dict):
+                out[arg_name] = _render_expr(value_any)
+        i += 1
+    return out
+
+
+def _render_save_gif_call_args(expr: dict[str, Any], args: list[Any]) -> list[str]:
+    rendered = _render_positional_call_args(args)
+    kw = _render_keyword_call_args(expr)
+    if len(rendered) < 6:
+        rendered.append(kw.get("delay_cs", "4"))
+    if len(rendered) < 7:
+        rendered.append(kw.get("loop", "0"))
+    return rendered
+
+
 def _render_constant_expr(expr: dict[str, Any]) -> str:
     if "value" not in expr:
         return "nil"
@@ -471,15 +506,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name in {"save_gif", "write_rgb_png"}:
-        rendered_noop: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_noop.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_noop(" + ", ".join(rendered_noop) + ")"
+    if callee_name == "write_rgb_png":
+        rendered_png = _render_positional_call_args(args)
+        return "write_rgb_png(" + ", ".join(rendered_png) + ")"
+    if callee_name == "save_gif":
+        rendered_gif = _render_save_gif_call_args(expr, args)
+        return "save_gif(" + ", ".join(rendered_gif) + ")"
     if callee_name == "grayscale_palette":
-        return "[]"
+        return "grayscale_palette()"
     if callee_name == "print":
         rendered_print: list[str] = []
         i = 0
@@ -526,15 +560,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if attr_name == "abs":
                     return "(" + rendered_math[0] + ").abs"
             if owner_name in {"png", "gif"}:
-                rendered_noop: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_noop.append(_render_expr(args[i]))
-                    i += 1
-                if attr_name in {"write_rgb_png", "save_gif"}:
-                    return "__pytra_noop(" + ", ".join(rendered_noop) + ")"
+                if attr_name == "write_rgb_png":
+                    rendered_png = _render_positional_call_args(args)
+                    return "write_rgb_png(" + ", ".join(rendered_png) + ")"
+                if attr_name == "save_gif":
+                    rendered_gif = _render_save_gif_call_args(expr, args)
+                    return "save_gif(" + ", ".join(rendered_gif) + ")"
                 if attr_name == "grayscale_palette":
-                    return "[]"
+                    return "grayscale_palette()"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + owner + ")"
         if attr_name == "isalpha" and len(args) == 0:

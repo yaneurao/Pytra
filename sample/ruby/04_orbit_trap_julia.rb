@@ -99,7 +99,7 @@ def run_04_orbit_trap_julia()
   out_path = "sample/out/04_orbit_trap_julia.png"
   start = __pytra_perf_counter()
   pixels = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889)
-  __pytra_noop(out_path, width, height, pixels)
+  write_rgb_png(out_path, width, height, pixels)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("size:", width, "x", height)

@@ -88,7 +88,7 @@ def run_09_fire_simulation()
     frames.append(__pytra_bytes(frame))
     t += __step_0
   end
-  __pytra_noop(out_path, w, h, frames, fire_palette())
+  save_gif(out_path, w, h, frames, fire_palette(), 4, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", steps)

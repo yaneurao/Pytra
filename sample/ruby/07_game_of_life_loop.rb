@@ -173,7 +173,7 @@ def run_07_game_of_life_loop()
     grid = next_state(grid, w, h)
     __loop_10 += __step_11
   end
-  __pytra_noop(out_path, (w * cell), (h * cell), frames, [])
+  save_gif(out_path, (w * cell), (h * cell), frames, grayscale_palette(), 4, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", steps)

@@ -77,7 +77,7 @@ def run_12_sort_visualizer()
     end
     i += __step_1
   end
-  __pytra_noop(out_path, w, h, frames, [])
+  save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", __pytra_len(frames))

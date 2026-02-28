@@ -61,7 +61,7 @@ def run_julia()
   out_path = "sample/out/03_julia_set.png"
   start = __pytra_perf_counter()
   pixels = render_julia(width, height, max_iter, (-0.8), 0.156)
-  __pytra_noop(out_path, width, height, pixels)
+  write_rgb_png(out_path, width, height, pixels)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("size:", width, "x", height)

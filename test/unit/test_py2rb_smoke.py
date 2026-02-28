@@ -194,12 +194,27 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertNotIn("def initialize(self_, tokens)", ruby)
         self.assertIn("self.tokens = tokens", ruby)
 
-    def test_png_module_call_is_lowered_to_runtime_noop(self) -> None:
+    def test_png_module_call_uses_runtime_writer(self) -> None:
         sample = find_sample_case("01_mandelbrot")
         east = load_east(sample, parser_backend="self_hosted")
         ruby = transpile_to_ruby_native(east)
-        self.assertIn("__pytra_noop(out_path, width, height, pixels)", ruby)
+        self.assertIn("write_rgb_png(out_path, width, height, pixels)", ruby)
         self.assertNotIn("png.write_rgb_png(", ruby)
+        self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", ruby)
+
+    def test_gif_calls_use_runtime_writer_and_keywords(self) -> None:
+        sample06 = find_sample_case("06_julia_parameter_sweep")
+        east06 = load_east(sample06, parser_backend="self_hosted")
+        ruby06 = transpile_to_ruby_native(east06)
+        self.assertIn("save_gif(out_path, width, height, frames, julia_palette(), 8, 0)", ruby06)
+        self.assertNotIn("__pytra_noop(out_path, width, height, frames, julia_palette())", ruby06)
+
+        sample05 = find_sample_case("05_mandelbrot_zoom")
+        east05 = load_east(sample05, parser_backend="self_hosted")
+        ruby05 = transpile_to_ruby_native(east05)
+        self.assertIn("grayscale_palette()", ruby05)
+        self.assertIn("save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0)", ruby05)
+        self.assertNotIn("__pytra_noop(out_path, width, height, frames, [])", ruby05)
 
     def test_fixture_is_instance_uses_ruby_is_a_checks(self) -> None:
         fixture = find_fixture_case("is_instance")

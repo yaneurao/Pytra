@@ -58,7 +58,7 @@ def run_05_mandelbrot_zoom()
     scale *= zoom_per_frame
     __loop_0 += __step_1
   end
-  __pytra_noop(out_path, width, height, frames, [])
+  save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frame_count)

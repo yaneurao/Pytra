@@ -97,7 +97,7 @@ def run_13_maze_generation_steps()
     step += 1
   end
   frames.append(capture(grid, cell_w, cell_h, scale))
-  __pytra_noop(out_path, (cell_w * scale), (cell_h * scale), frames, [])
+  save_gif(out_path, (cell_w * scale), (cell_h * scale), frames, grayscale_palette(), 4, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", __pytra_len(frames))

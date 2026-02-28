@@ -71,7 +71,7 @@ def run_14_raymarching_light_cycle()
     frames.append(__pytra_bytes(frame))
     t += __step_0
   end
-  __pytra_noop(out_path, w, h, frames, palette())
+  save_gif(out_path, w, h, frames, palette(), 3, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frames_n)

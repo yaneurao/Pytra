@@ -47,13 +47,13 @@
 
 文脈: [docs/ja/plans/p0-ruby-image-runtime-parity.md](../plans/p0-ruby-image-runtime-parity.md)
 
-1. [ ] [ID: P0-RUBY-IMAGE-PARITY-01] Ruby backend の画像出力を no-op から実体 runtime へ移行し、`sample/01` の PNG を含む画像アーティファクト parity を回復する。
-2. [ ] [ID: P0-RUBY-IMAGE-PARITY-01-S1-01] Ruby 画像出力経路（emitter / runtime）の現状を棚卸しし、`__pytra_noop` 依存箇所を固定する。
-3. [ ] [ID: P0-RUBY-IMAGE-PARITY-01-S2-01] Ruby runtime に PNG 書き出し実体（Python runtime 互換）を実装する。
-4. [ ] [ID: P0-RUBY-IMAGE-PARITY-01-S2-02] Ruby runtime に GIF 書き出し実体（Python runtime 互換）を実装する。
-5. [ ] [ID: P0-RUBY-IMAGE-PARITY-01-S2-03] Ruby emitter の画像保存 lower を `__pytra_noop` から実体 runtime 呼び出しへ切り替える。
-6. [ ] [ID: P0-RUBY-IMAGE-PARITY-01-S3-01] `sample/01` の PNG バイト一致検証を自動化し、回帰テストへ組み込む。
-7. [ ] [ID: P0-RUBY-IMAGE-PARITY-01-S3-02] 代表 GIF ケースでバイト一致を検証し、`sample/ruby` 再生成と parity 非退行を確認する。
+1. [x] [ID: P0-RUBY-IMAGE-PARITY-01] Ruby backend の画像出力を no-op から実体 runtime へ移行し、`sample/01` の PNG を含む画像アーティファクト parity を回復する。
+2. [x] [ID: P0-RUBY-IMAGE-PARITY-01-S1-01] Ruby 画像出力経路（emitter / runtime）の現状を棚卸しし、`__pytra_noop` 依存箇所を固定する。
+3. [x] [ID: P0-RUBY-IMAGE-PARITY-01-S2-01] Ruby runtime に PNG 書き出し実体（Python runtime 互換）を実装する。
+4. [x] [ID: P0-RUBY-IMAGE-PARITY-01-S2-02] Ruby runtime に GIF 書き出し実体（Python runtime 互換）を実装する。
+5. [x] [ID: P0-RUBY-IMAGE-PARITY-01-S2-03] Ruby emitter の画像保存 lower を `__pytra_noop` から実体 runtime 呼び出しへ切り替える。
+6. [x] [ID: P0-RUBY-IMAGE-PARITY-01-S3-01] `sample/01` の PNG バイト一致検証を自動化し、回帰テストへ組み込む。
+7. [x] [ID: P0-RUBY-IMAGE-PARITY-01-S3-02] 代表 GIF ケースでバイト一致を検証し、`sample/ruby` 再生成と parity 非退行を確認する。
 
 ### P0: sample 画像 artifact_size の stdout parity 導入（最優先）
 

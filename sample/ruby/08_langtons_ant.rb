@@ -62,7 +62,7 @@ def run_08_langtons_ant()
     end
     i += __step_0
   end
-  __pytra_noop(out_path, w, h, frames, [])
+  save_gif(out_path, w, h, frames, grayscale_palette(), 5, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", __pytra_len(frames))

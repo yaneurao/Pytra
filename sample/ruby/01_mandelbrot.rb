@@ -79,7 +79,7 @@ def run_mandelbrot()
   out_path = "sample/out/01_mandelbrot.png"
   start = __pytra_perf_counter()
   pixels = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2)
-  __pytra_noop(out_path, width, height, pixels)
+  write_rgb_png(out_path, width, height, pixels)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("size:", width, "x", height)

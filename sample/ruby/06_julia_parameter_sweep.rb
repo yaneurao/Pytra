@@ -89,7 +89,7 @@ def run_06_julia_parameter_sweep()
     frames.append(render_frame(width, height, cr, ci, max_iter, phase))
     i += __step_0
   end
-  __pytra_noop(out_path, width, height, frames, julia_palette())
+  save_gif(out_path, width, height, frames, julia_palette(), 8, 0)
   elapsed = (__pytra_perf_counter() - start)
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frames_n)
