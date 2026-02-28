@@ -379,6 +379,13 @@ def f() -> float:
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter()", cpp)
         self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter() - start)", cpp)
 
+    def test_sample18_perf_counter_is_typed_without_redundant_cast(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east)
+        self.assertIn("pytra::std::time::perf_counter()", cpp)
+        self.assertNotIn("py_to<float64>(pytra::std::time::perf_counter()", cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass
