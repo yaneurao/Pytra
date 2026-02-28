@@ -1,6 +1,6 @@
 # P1: Go/Java/Swift/Ruby runtime 外出し（inline helper 撤去）
 
-最終更新: 2026-02-27
+最終更新: 2026-02-28
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-RUNTIME-EXT-01`
@@ -47,6 +47,7 @@
 決定ログ:
 - 2026-02-27: ユーザー要望により「Go/Java/Swift/Ruby の inline runtime helper を埋め込まない」方針を `P1-RUNTIME-EXT-01` として起票した。
 - 2026-02-28: `S1-01` として inline helper の棚卸しと runtime 正本 API 対応表を作成し、Go/Java は命名差吸収が主課題、Swift/Ruby は runtime 正本不足が主課題であることを固定した。
+- 2026-02-28: `S2-01` として Go emitter から `func __pytra_*` inline 定義を撤去し、`src/runtime/go/pytra/py_runtime.go` に互換 helper を集約。`py2go.py` が出力先へ `py_runtime.go` を配置する運用へ切替え、`test_py2go_smoke.py` と `runtime_parity_check --targets go`（`sample/18`）で回帰確認した。
 
 ## S1-01 棚卸し結果（2026-02-28）
 
@@ -74,7 +75,7 @@
 ## 分解
 
 - [x] [ID: P1-RUNTIME-EXT-01-S1-01] 言語別 helper 出力一覧（inline）と runtime 正本 API の対応表を作成する。
-- [ ] [ID: P1-RUNTIME-EXT-01-S2-01] Go emitter から helper 本体出力を撤去し、`src/runtime/go/pytra` 側 API 呼び出しへ切替える。
+- [x] [ID: P1-RUNTIME-EXT-01-S2-01] Go emitter から helper 本体出力を撤去し、`src/runtime/go/pytra` 側 API 呼び出しへ切替える。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-02] Java emitter から helper 本体出力を撤去し、`src/runtime/java/pytra` 側 API 呼び出しへ切替える。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-03] Swift native 用 runtime 実体を整備し、emitter の helper inline 出力を撤去する。
 - [ ] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby runtime 実体を新設し、`require_relative` 等で外部参照する方式へ切替える。

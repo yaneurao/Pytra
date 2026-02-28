@@ -41,6 +41,8 @@ class Py2GoSmokeTest(unittest.TestCase):
         go = transpile_to_go(east)
         self.assertIn("package main", go)
         self.assertIn("Auto-generated Pytra Go native source from EAST3.", go)
+        self.assertIn("Runtime helpers are provided by py_runtime.go in the same package.", go)
+        self.assertNotIn("func __pytra_truthy(v any) bool {", go)
         self.assertNotIn('exec.Command("node"', go)
 
     def test_go_native_emitter_skeleton_handles_module_function_class(self) -> None:
@@ -91,6 +93,11 @@ class Py2GoSmokeTest(unittest.TestCase):
             txt = out_go.read_text(encoding="utf-8")
             self.assertIn("package main", txt)
             self.assertIn("Auto-generated Pytra Go native source from EAST3.", txt)
+            self.assertNotIn("func __pytra_truthy(v any) bool {", txt)
+            runtime_go = Path(td) / "py_runtime.go"
+            self.assertTrue(runtime_go.exists())
+            runtime_txt = runtime_go.read_text(encoding="utf-8")
+            self.assertIn("func __pytra_truthy(v any) bool {", runtime_txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:

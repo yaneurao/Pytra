@@ -186,7 +186,7 @@ def build_targets(
         Target(
             name="go",
             transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go {opt_arg}",
-            run_cmd=f"go run test/transpile/go/{case_stem}.go",
+            run_cmd=f"go run test/transpile/go/{case_stem}.go test/transpile/go/py_runtime.go",
             needs=("python", "go"),
         ),
         Target(
