@@ -655,9 +655,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
-        return [indent + "# TODO: unsupported ForCore iter_plan"]
+        raise RuntimeError("ruby native emitter: unsupported ForCore iter_plan")
     if not isinstance(target_plan_any, dict):
-        return [indent + "# TODO: unsupported ForCore target_plan"]
+        raise RuntimeError("ruby native emitter: unsupported ForCore target_plan")
 
     lines: list[str] = []
     iter_kind = target_plan_any.get("kind")
@@ -724,7 +724,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + "end")
             return lines
 
-    return [indent + "# TODO: unsupported ForCore plan"]
+    raise RuntimeError("ruby native emitter: unsupported ForCore plan")
 
 
 def _emit_tuple_assign(target_any: Any, value_any: Any, *, indent: str, ctx: dict[str, Any]) -> list[str] | None:
@@ -758,7 +758,7 @@ def _emit_tuple_assign(target_any: Any, value_any: Any, *, indent: str, ctx: dic
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
-        return [indent + "# TODO: unsupported statement"]
+        raise RuntimeError("ruby native emitter: unsupported statement")
     kind = stmt.get("kind")
 
     if kind == "Return":
@@ -792,7 +792,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if len(targets) == 0 and isinstance(stmt.get("target"), dict):
             targets = [stmt.get("target")]
         if len(targets) == 0:
-            return [indent + "# TODO: Assign without target"]
+            raise RuntimeError("ruby native emitter: Assign without target")
         tuple_lines = _emit_tuple_assign(targets[0], stmt.get("value"), indent=indent, ctx=ctx)
         if tuple_lines is not None:
             return tuple_lines
@@ -848,7 +848,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     if kind == "Pass":
-        return [indent + "# pass"]
+        return [indent + "nil"]
 
     if kind == "Break":
         return [indent + "break"]
@@ -865,7 +865,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "raise RuntimeError, \"pytra raise\""]
         return [indent + "raise RuntimeError, __pytra_str(" + _render_expr(exc_any) + ")"]
 
-    return [indent + "# TODO: unsupported stmt kind " + str(kind)]
+    raise RuntimeError("ruby native emitter: unsupported stmt kind: " + str(kind))
 
 
 def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
@@ -1019,8 +1019,6 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
         i += 1
 
     lines: list[str] = []
-    lines.append("# Auto-generated Pytra Ruby native source from EAST3.")
-    lines.append("# Runtime helpers are provided by py_runtime.rb in the same directory.")
     lines.append("require_relative \"py_runtime\"")
     lines.append("")
     module_comments = _module_leading_comment_lines(east_doc, "# ")

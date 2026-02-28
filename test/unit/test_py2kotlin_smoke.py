@@ -40,7 +40,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin(east)
         self.assertIn("fun main(args: Array<String>)", kotlin)
-        self.assertIn("Auto-generated Pytra Kotlin native source from EAST3.", kotlin)
+        self.assertNotIn("Auto-generated Pytra Kotlin native source from EAST3.", kotlin)
         self.assertNotIn("ProcessBuilder", kotlin)
 
     def test_kotlin_native_emitter_skeleton_handles_module_function_class(self) -> None:
@@ -97,7 +97,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_kotlin.read_text(encoding="utf-8")
             self.assertIn("fun main(args: Array<String>)", txt)
-            self.assertIn("Auto-generated Pytra Kotlin native source from EAST3.", txt)
+            self.assertNotIn("Auto-generated Pytra Kotlin native source from EAST3.", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:

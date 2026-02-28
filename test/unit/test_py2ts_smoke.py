@@ -40,7 +40,8 @@ class Py2TsSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
-        self.assertIn("TypeScript プレビュー出力", ts)
+        self.assertNotIn("TypeScript プレビュー出力", ts)
+        self.assertNotIn("TODO: 専用 TSEmitter", ts)
         self.assertIn("function add(a, b) {", ts)
 
     def test_load_east_from_json(self) -> None:

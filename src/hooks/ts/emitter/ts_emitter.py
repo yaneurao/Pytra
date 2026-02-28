@@ -1,4 +1,4 @@
-"""EAST -> TypeScript transpiler (preview backend)."""
+"""EAST -> TypeScript transpiler."""
 
 from __future__ import annotations
 
@@ -15,10 +15,7 @@ def load_ts_profile() -> dict[str, Any]:
 def transpile_to_typescript(east_doc: dict[str, Any]) -> str:
     """EAST ドキュメントを TypeScript ソース（JS互換）へ変換する。"""
     js = transpile_to_js(east_doc)
-    out = "// このファイルは EAST ベース TypeScript プレビュー出力です。\n"
-    out += "// TODO: 専用 TSEmitter 実装へ段階移行する。\n"
-    out += js
+    out = js
     if out != "" and not out.endswith("\n"):
         out += "\n"
     return out
-

@@ -39,7 +39,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")
         lua = transpile_to_lua(east)
-        self.assertIn("Auto-generated Pytra Lua native source from EAST3.", lua)
+        self.assertNotIn("Auto-generated Pytra Lua native source from EAST3.", lua)
         self.assertIn("function add(a, b)", lua)
         self.assertIn("print(add(3, 4))", lua)
         self.assertNotIn("node ", lua)
@@ -116,7 +116,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             self.assertTrue(out_lua.exists())
             self.assertFalse(out_js.exists())
             txt = out_lua.read_text(encoding="utf-8")
-            self.assertIn("Auto-generated Pytra Lua native source from EAST3.", txt)
+            self.assertNotIn("Auto-generated Pytra Lua native source from EAST3.", txt)
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")
