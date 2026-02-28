@@ -94,6 +94,53 @@ class East3NonEscapeInterproceduralPassTest(unittest.TestCase):
         self.assertFalse(summary["sink"]["arg_escape"][0])
         self.assertFalse(summary["sink"]["return_escape"])
 
+    def test_pass_handles_mutual_recursion_with_unknown_calls(self) -> None:
+        call_a_to_b = _call_name("b", [_name("x")])
+        call_b_to_unknown = _call_name("unknown_sink", [_name("y")])
+        call_b_to_a = _call_name("a", [_name("y")])
+        doc: dict[str, object] = {
+            "kind": "Module",
+            "east_stage": 3,
+            "meta": {},
+            "body": [
+                _fn("a", ["x"], [_ret(call_a_to_b)]),
+                _fn("b", ["y"], [_expr(call_b_to_unknown), _ret(call_b_to_a)]),
+            ],
+        }
+        _ = NonEscapeInterproceduralPass().run(doc, PassContext(opt_level=1))
+        summary = doc.get("meta", {}).get("non_escape_summary", {})
+        self.assertTrue(summary["a"]["arg_escape"][0])
+        self.assertTrue(summary["b"]["arg_escape"][0])
+        self.assertTrue(summary["a"]["return_from_args"][0])
+        self.assertTrue(summary["b"]["return_from_args"][0])
+        self.assertTrue(summary["a"]["return_escape"])
+        self.assertTrue(summary["b"]["return_escape"])
+        self.assertTrue(call_a_to_b.get("meta", {}).get("non_escape_callsite", {}).get("resolved", False))
+        self.assertFalse(call_b_to_unknown.get("meta", {}).get("non_escape_callsite", {}).get("resolved", True))
+        self.assertTrue(call_b_to_a.get("meta", {}).get("non_escape_callsite", {}).get("resolved", False))
+
+    def test_pass_is_deterministic_after_convergence(self) -> None:
+        call_a_to_b = _call_name("b", [_name("x")])
+        call_b_to_unknown = _call_name("unknown_sink", [_name("y")])
+        doc: dict[str, object] = {
+            "kind": "Module",
+            "east_stage": 3,
+            "meta": {},
+            "body": [
+                _fn("a", ["x"], [_ret(call_a_to_b)]),
+                _fn("b", ["y"], [_expr(call_b_to_unknown)]),
+            ],
+        }
+        pass_obj = NonEscapeInterproceduralPass()
+        result1 = pass_obj.run(doc, PassContext(opt_level=1))
+        summary1 = doc.get("meta", {}).get("non_escape_summary", {})
+        result2 = pass_obj.run(doc, PassContext(opt_level=1))
+        summary2 = doc.get("meta", {}).get("non_escape_summary", {})
+        self.assertTrue(result1.changed)
+        self.assertFalse(result2.changed)
+        self.assertEqual(result2.change_count, 0)
+        self.assertEqual(summary1, summary2)
+
 
 if __name__ == "__main__":
     unittest.main()
