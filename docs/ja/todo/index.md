@@ -50,7 +50,7 @@
 3. [x] [ID: P0-CPP-S18-OPT-01-S1-02] tokenize ループで `object` + `py_at` を使わない typed loop header 出力を回帰固定する。
 4. [x] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` が `object(list<object>)` へ退化する条件を特定し、型情報保持経路を定義する。
 5. [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize`/`Parser` の tokens を typed container 出力へ移行し、boxing を削減する。
-6. [ ] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser` の repeated token access を棚卸しし、共通 token cache 方針を確定する。
+6. [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser` の repeated token access を棚卸しし、共通 token cache 方針を確定する。
 7. [ ] [ID: P0-CPP-S18-OPT-01-S3-02] `peek_kind/expect/parse_primary` で同一 index の重複 `py_at + obj_to_rc_or_raise` を削減する。
 8. [ ] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の文字列比較箇所を enum/整数タグ化方針へ落とし込む。
 9. [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ 出力をタグ分岐へ移行し、`if (node->kind == \"...\")` 連鎖を縮退する。
@@ -63,6 +63,7 @@
 - `P0-CPP-S18-OPT-01-S1-01` `pyobj` モードでも `enumerate(list[str])` は `py_to_str_list_from_object(...)` を介して typed enumerate へ戻す契約を `CppStatementEmitter` に実装した。
 - `P0-CPP-S18-OPT-01-S1-02` `test_py2cpp_codegen_issues.py` に sample/18 回帰（`for (const auto& [line_index, source] : ... )`）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成で `object + py_at` 連鎖が消えることを確認した。
 - `P0-CPP-S18-OPT-01-S2-01` `cpp_list_model=pyobj` 時に `list[T] -> object` へ型写像される境界（`_cpp_type_text`）と、`tokens` が「関数戻り値+クラスフィールド」に乗るため stack list 縮退対象外であることを計画書に固定した。
+- `P0-CPP-S18-OPT-01-S3-01` `Parser` で `py_at(this->tokens, this->pos)` が `peek_kind/expect/parse_primary` に重複する箇所を棚卸しし、`_current_token()` / `_previous_token()` 相当 helper を emitter が合成する方式を実装方針として固定した。
 
 ### P1: Rust runtime 外出し（inline helper / `mod pytra` 埋め込み撤去）
 
