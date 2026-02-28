@@ -898,12 +898,10 @@ class CppStatementEmitter:
 
         if plan_kind == "StaticRangeForPlan":
             if self.any_dict_get_str(target_plan, "kind", "") != "NameTarget":
-                self.emit("/* invalid forcore target for static range */")
-                return
+                raise RuntimeError("cpp emitter: invalid forcore target for static range")
             target_id = self.any_dict_get_str(target_plan, "id", "")
             if target_id == "":
-                self.emit("/* invalid forcore target name */")
-                return
+                raise RuntimeError("cpp emitter: invalid forcore target name")
             target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
             if target_type in {"", "unknown"}:
                 target_type = "int64"
@@ -953,8 +951,7 @@ class CppStatementEmitter:
         if plan_kind == "RuntimeIterForPlan":
             iter_expr = self.any_to_dict_or_empty(iter_plan.get("iter_expr"))
             if len(iter_expr) == 0:
-                self.emit("/* invalid forcore runtime iter_plan */")
-                return
+                raise RuntimeError("cpp emitter: invalid forcore runtime iter_plan")
             iter_txt = self.render_expr(iter_expr)
             list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
             iter_expr_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
@@ -979,8 +976,7 @@ class CppStatementEmitter:
             if target_kind == "NameTarget":
                 target_id = self.any_dict_get_str(target_plan, "id", "")
                 if target_id == "":
-                    self.emit("/* invalid forcore target name */")
-                    return
+                    raise RuntimeError("cpp emitter: invalid forcore target name")
                 target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
@@ -1081,10 +1077,9 @@ class CppStatementEmitter:
                 self._emit_for_body_stmts(body_stmts, omit_braces)
                 self._emit_for_body_close(omit_braces)
                 return
-            self.emit("/* invalid forcore runtime target */")
-            return
+            raise RuntimeError("cpp emitter: invalid forcore runtime target")
 
-        self.emit(f"/* unsupported ForCore iter_plan kind: {plan_kind} */")
+        raise RuntimeError("cpp emitter: unsupported ForCore iter_plan kind: " + plan_kind)
 
     def _resolve_for_iter_mode(self, stmt: dict[str, Any], iter_expr: dict[str, Any]) -> str:
         """`For` の反復モード（static/runtime）を決定する。"""

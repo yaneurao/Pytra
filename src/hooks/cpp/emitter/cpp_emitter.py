@@ -1265,7 +1265,7 @@ class CppEmitter(
         if self.hook_on_emit_stmt_kind(kind, stmt):
             return
         self.render_trivia(stmt)
-        self.emit(f"/* unsupported stmt kind: {kind} */")
+        raise RuntimeError("cpp emitter: unsupported stmt kind: " + kind)
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         """CppEmitter 側で文ディスパッチを固定し、selfhost時の静的束縛を避ける。"""
@@ -1310,7 +1310,7 @@ class CppEmitter(
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt
-        self.emit(self.syntax_text("pass_stmt", "/* pass */"))
+        self.emit(self.syntax_text("pass_stmt", ";"))
 
     def _emit_break_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt
@@ -1444,11 +1444,9 @@ class CppEmitter(
             self.emit_block_comment(str(value_node.get("value")))
             return
         if value_is_dict and self._is_redundant_super_init_call(stmt.get("value")):
-            self.emit("/* super().__init__ omitted: base ctor is called implicitly */")
             return
         if not value_is_dict:
-            self.emit("/* unsupported expr */")
-            return
+            raise RuntimeError("cpp emitter: Expr without value node")
         self.emit_bridge_comment(value_node)
         rendered = self.render_expr(stmt.get("value"))
         # Guard against stray identifier-only expression statements (e.g. "r;").
@@ -1458,9 +1456,9 @@ class CppEmitter(
             elif rendered == "continue" or rendered == "py_continue":
                 self.emit("continue;")
             elif rendered == "pass":
-                self.emit("/* pass */")
+                self.emit(";")
             else:
-                self.emit(f"/* omitted bare identifier expression: {rendered} */")
+                self.emit(";")
             return
         self.emit(
             self.syntax_line(
@@ -1474,8 +1472,7 @@ class CppEmitter(
         if self.current_function_is_generator:
             buf = self.current_function_yield_buffer
             if buf == "":
-                self.emit("/* invalid generator return */")
-                return
+                raise RuntimeError("cpp emitter: invalid generator return")
             self.emit(f"return {buf};")
             return
         value_node = self.any_to_dict_or_empty(stmt.get("value"))
@@ -1509,8 +1506,7 @@ class CppEmitter(
 
     def _emit_yield_stmt(self, stmt: dict[str, Any]) -> None:
         if not self.current_function_is_generator or self.current_function_yield_buffer == "":
-            self.emit("/* unsupported yield outside generator */")
-            return
+            raise RuntimeError("cpp emitter: unsupported yield outside generator")
         buf = self.current_function_yield_buffer
         value_node = self.any_to_dict_or_empty(stmt.get("value"))
         if len(value_node) == 0:
@@ -2828,7 +2824,7 @@ class CppEmitter(
         if op_rendered != "":
             return op_rendered
         # collection literal/comprehension handlers moved to hooks.cpp.emitter.collection_expr.CppCollectionExprEmitter.
-        return f"/* unsupported expr: {kind} */"
+        raise RuntimeError("cpp emitter: unsupported expr kind: " + kind)
 
     def emit_bridge_comment(self, expr: dict[str, Any] | None) -> None:
         """ランタイムブリッジ呼び出しの補助コメントを必要時に付与する。"""

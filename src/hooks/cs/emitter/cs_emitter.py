@@ -1001,7 +1001,7 @@ class CSharpEmitter(CodeEmitter):
             return
 
         if kind == "Pass":
-            self.emit(self.syntax_text("pass_stmt", "// pass"))
+            self.emit(self.syntax_text("pass_stmt", ";"))
             return
         if kind == "Break":
             self.emit(self.syntax_text("break_stmt", "break;"))
@@ -1024,7 +1024,7 @@ class CSharpEmitter(CodeEmitter):
                     self.emit(self.syntax_text("continue_stmt", "continue;"))
                     return
                 if expr_name == "pass":
-                    self.emit(self.syntax_text("pass_stmt", "// pass"))
+                    self.emit(self.syntax_text("pass_stmt", ";"))
                     return
             expr_txt = self.render_expr(stmt.get("value"))
             self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
@@ -1073,7 +1073,7 @@ class CSharpEmitter(CodeEmitter):
         if kind == "Import" or kind == "ImportFrom":
             return
 
-        self.emit("// unsupported stmt: " + kind)
+        raise RuntimeError("csharp emitter: unsupported stmt kind: " + kind)
 
     def _emit_try(self, stmt: dict[str, Any]) -> None:
         """Try/Except/Finally を C# の try/catch/finally へ変換する。"""
@@ -1090,7 +1090,7 @@ class CSharpEmitter(CodeEmitter):
             self.emit("} catch (System.Exception " + self._safe_name(ex_name) + ") {")
             self.emit_scoped_stmt_list(self._dict_stmt_list(first.get("body")), {ex_name})
             if len(handlers) > 1:
-                self.emit("    // unsupported: additional except handlers are ignored")
+                raise RuntimeError("csharp emitter: multiple except handlers are unsupported")
         if len(finalbody) > 0:
             self.emit("} finally {")
             self.emit_scoped_stmt_list(finalbody, set())
@@ -1243,7 +1243,7 @@ class CSharpEmitter(CodeEmitter):
                 }
             )
             return
-        self.emit("// unsupported ForCore iter_plan: " + plan_kind)
+        raise RuntimeError("csharp emitter: unsupported ForCore iter_plan: " + plan_kind)
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))

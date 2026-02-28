@@ -2180,7 +2180,7 @@ class RustEmitter(CodeEmitter):
             return
 
         if kind == "Pass":
-            self.emit(self.syntax_text("pass_stmt", "// pass"))
+            self.emit(self.syntax_text("pass_stmt", "();"))
             return
         if kind == "Break":
             self.emit(self.syntax_text("break_stmt", "break;"))
@@ -2199,7 +2199,7 @@ class RustEmitter(CodeEmitter):
                     self.emit(self.syntax_text("continue_stmt", "continue;"))
                     return
                 if expr_name == "pass":
-                    self.emit(self.syntax_text("pass_stmt", "// pass"))
+                    self.emit(self.syntax_text("pass_stmt", "();"))
                     return
             expr_txt = self.render_expr(stmt.get("value"))
             self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
@@ -2249,8 +2249,7 @@ class RustEmitter(CodeEmitter):
         if kind == "Import" or kind == "ImportFrom":
             return
 
-        # 未対応文はコメント化して処理継続する。
-        self.emit("// unsupported stmt: " + kind)
+        raise RuntimeError("rust emitter: unsupported stmt kind: " + kind)
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
         cond, body_stmts, else_stmts = self.prepare_if_stmt_parts(
@@ -2428,7 +2427,7 @@ class RustEmitter(CodeEmitter):
                 }
             )
             return
-        self.emit("// unsupported ForCore iter_plan: " + plan_kind)
+        raise RuntimeError("rust emitter: unsupported ForCore iter_plan: " + plan_kind)
 
     def _render_as_pyany(self, expr: Any) -> str:
         """式を `PyAny` へ昇格する。"""

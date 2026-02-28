@@ -408,7 +408,6 @@ class JsEmitter(CodeEmitter):
             top_level_stmts.append(stmt)
 
         if len(main_guard_body) > 0:
-            self.emit("// __main__ guard")
             self.emit_stmt_list(main_guard_body)
         elif len(top_level_stmts) > 0:
             self.emit_stmt_list(top_level_stmts)
@@ -508,7 +507,7 @@ class JsEmitter(CodeEmitter):
             return
 
         if kind == "Pass":
-            self.emit(self.syntax_text("pass_stmt", "// pass"))
+            self.emit(self.syntax_text("pass_stmt", ";"))
             return
         if kind == "Break":
             self.emit(self.syntax_text("break_stmt", "break;"))
@@ -527,7 +526,7 @@ class JsEmitter(CodeEmitter):
                     self.emit(self.syntax_text("continue_stmt", "continue;"))
                     return
                 if expr_name == "pass":
-                    self.emit(self.syntax_text("pass_stmt", "// pass"))
+                    self.emit(self.syntax_text("pass_stmt", ";"))
                     return
             expr_txt = self.render_expr(stmt.get("value"))
             self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
@@ -575,7 +574,7 @@ class JsEmitter(CodeEmitter):
             return
         if kind == "Import" or kind == "ImportFrom":
             return
-        self.emit("// unsupported stmt: " + kind)
+        raise RuntimeError("js emitter: unsupported stmt kind: " + kind)
 
     def _emit_try(self, stmt: dict[str, Any]) -> None:
         """Try/Except/Finally を JavaScript の try/catch/finally へ変換する。"""
@@ -593,7 +592,7 @@ class JsEmitter(CodeEmitter):
             self.emit("} catch (" + ex_name_safe + ") {")
             self.emit_scoped_stmt_list(self._dict_stmt_list(first.get("body")), set([ex_name]))
             if len(handlers) > 1:
-                self.emit("    // unsupported: additional except handlers are ignored")
+                raise RuntimeError("js emitter: multiple except handlers are unsupported")
         if len(finalbody) > 0:
             if len(handlers) == 0:
                 self.emit("} finally {")
@@ -728,7 +727,7 @@ class JsEmitter(CodeEmitter):
                 }
             )
             return
-        self.emit("// unsupported ForCore iter_plan: " + plan_kind)
+        raise RuntimeError("js emitter: unsupported ForCore iter_plan: " + plan_kind)
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))

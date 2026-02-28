@@ -44,6 +44,7 @@
 - 2026-02-28: `rg` による棚卸しで固定コメント出力の残存箇所を backend 横断で抽出し、禁止パターン一覧を確定した（`P1-COMMENT-FIDELITY-01-S1-01` 完了）。
 - 2026-02-28: 許可コメントソースを `module_leading_trivia` / `leading_trivia` のみに限定する契約と、unsupported 時はコメント埋め込みではなく例外停止する fail-closed 方針を確定した（`P1-COMMENT-FIDELITY-01-S1-02` 完了）。
 - 2026-02-28: `ts/go/java/swift/kotlin/ruby/lua` の固定コメント経路を撤去し、`pass` は no-op 文へ置換、unsupported は例外停止へ統一した。`test_py2*smoke.py` 183件通過で回帰を確認した（`P1-COMMENT-FIDELITY-01-S2-01` 完了）。
+- 2026-02-28: `cpp/rs/cs/js` の `pass` コメント経路を no-op 文（`;` / `();`）へ置換し、`unsupported` / `invalid` コメント経路を例外停止へ統一した。`test_py2cpp/rs/cs/js_smoke.py`（84件）通過で回帰を確認した（`P1-COMMENT-FIDELITY-01-S2-02` 完了）。
 
 ## S1-01 棚卸し結果（固定コメント禁止パターン）
 
@@ -98,6 +99,6 @@ fail-closed 方針:
 - [x] [ID: P1-COMMENT-FIDELITY-01-S1-01] 全 emitter の固定コメント/`TODO`/`pass` コメント出力箇所を棚卸しし、禁止パターン一覧を固定する。
 - [x] [ID: P1-COMMENT-FIDELITY-01-S1-02] コメント出力契約（許可ソース: `module_leading_trivia` / `leading_trivia` のみ）を仕様化し、fail-closed 方針を明文化する。
 - [x] [ID: P1-COMMENT-FIDELITY-01-S2-01] `ts/go/java/swift/kotlin/ruby/lua` の固定コメント出力を撤去し、元コメント伝播のみへ統一する。
-- [ ] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換し、生成コメントを残さない実装へ寄せる。
+- [x] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換し、生成コメントを残さない実装へ寄せる。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
 - [ ] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、全言語の出力先に固定コメントが残存しないことを確認する。
