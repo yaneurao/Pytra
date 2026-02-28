@@ -51,6 +51,9 @@
 - 2026-03-01: `tokens` 退化の主因は `cpp_list_model=pyobj` で `_cpp_type_text(list[T]) -> object` になる型境界にある。`tokenize()` 戻り値と `Parser.tokens` は関数境界を越える list のため、現行 stack-list（non-escape）縮退の対象外であることを確認した。
 - 2026-03-01: `S2-02` は sample/18 先行で `list[Token]` 専用 unbox-once 経路（`tokenize -> Parser` 境界）を追加し、`py_append(make_object(...))` と `py_at + obj_to_rc_or_raise` 連鎖を段階縮退する方針に固定した。
 - 2026-03-01: `Parser` の token access を棚卸しし、`py_at(this->tokens, this->pos)` 形が `peek_kind`（1箇所）/`expect`（2箇所）/`parse_primary`（1箇所）で重複することを確認した。`S3-02` は emitter 側で `_current_token()` / `_previous_token()` helper を合成し、同一 index の unbox 重複を削減する方針に固定した。
+- 2026-03-01: 文字列比較の現状を固定した（`node->kind` 4箇所、`node->op` 4箇所、`stmt->kind` 2箇所）。`S4-02` では `kind/op` の string フィールドを維持しつつ `uint8` タグ併置で比較を整数化し、エラーメッセージのみ既存文字列を利用する方針にする。
+- 2026-03-01: `NUMBER` は tokenize で既に `text` を切り出しているため、`S5-02` は `Token` に `int64 number_value`（非 NUMBER は 0）を追加し、字句段で1回だけ `py_to_int64` して parse 時再変換をなくす方針に固定した。
+- 2026-03-01: `execute` typed loop へ接続するため、`S6-02` は `parse_program`/`execute` 境界を `list<rc<StmtNode>>` 優先に変更し、外部境界（main 呼び出し、必要なら runtime API）でのみ `object` boxing を許可する方針に固定した。
 
 ## 分解
 
@@ -65,13 +68,13 @@
 - [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser.peek_kind/expect/parse_primary` の repeated `py_at + obj_to_rc_or_raise` パターンを検出し、共通 helper（token cache）方針を設計する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
 
-- [ ] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の比較箇所を棚卸しし、enum/整数タグ化の最小導入面（sample/18 先行）を定義する。
+- [x] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の比較箇所を棚卸しし、enum/整数タグ化の最小導入面（sample/18 先行）を定義する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ emitter でタグベース分岐を出力し、`if (node->kind == "...")` 連鎖を縮退する。
 
-- [ ] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の現在の文字列保持経路（tokenize->parse_primary->py_to_int64）を検証し、字句段 predecode 方針を確定する。
+- [x] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の現在の文字列保持経路（tokenize->parse_primary->py_to_int64）を検証し、字句段 predecode 方針を確定する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S5-02] `Token` の数値フィールド利用へ移行し、`parse_primary` の `py_to_int64(token->text)` を削減する。
 
-- [ ] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型と下流利用の整合を設計する。
+- [x] [ID: P0-CPP-S18-OPT-01-S6-01] `execute` の stmt 反復を typed loop 化するため、`parse_program` 戻り値型と下流利用の整合を設計する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S6-02] `for (object ... : py_dyn_range(stmts))` を typed 反復へ置換し、`obj_to_rc_or_raise<StmtNode>` のループ内変換を削減する。
 
 - [ ] [ID: P0-CPP-S18-OPT-01-S7-01] `sample/18` 再生成差分（上記6点）を固定する golden 回帰を追加する。
