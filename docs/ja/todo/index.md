@@ -84,6 +84,18 @@
 - `P1-RUNTIME-EXT-01-S2-04` Ruby native emitter から inline helper 本体定義を撤去し、`src/runtime/ruby/pytra/py_runtime.rb` を新設。`py2rb.py` が `py_runtime.rb` を出力先へ配置する導線へ移行し、`test_py2rb_smoke.py` と `runtime_parity_check --targets ruby`（`sample/18`）で実行導線を確認した。
 - `P1-RUNTIME-EXT-01-S3-01` `test_py2{go,java,swift,rb}_smoke.py` を再実行して全 pass を確認。`runtime_parity_check --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout` は `cases=18 pass=18 fail=0`（`swift` は `toolchain_missing`）を確認し、`tools/regenerate_samples.py` に `ruby` を追加して `--langs go,java,swift,ruby --force`（`total=72 regen=72 fail=0`）まで固定した。
 
+### P1: 全言語コメント忠実性ポリシー（生成コメント禁止）
+
+文脈: [docs/ja/plans/p1-comment-fidelity-all-backends.md](../plans/p1-comment-fidelity-all-backends.md)
+
+1. [ ] [ID: P1-COMMENT-FIDELITY-01] 全 backend の出力で「元ソースにないコメントを禁止し、元コメントを欠落なく反映する」契約を実装とテストで固定する。
+2. [ ] [ID: P1-COMMENT-FIDELITY-01-S1-01] 全 emitter の固定コメント/`TODO`/`pass` コメント出力箇所を棚卸しし、禁止パターン一覧を固定する。
+3. [ ] [ID: P1-COMMENT-FIDELITY-01-S1-02] コメント出力契約（`module_leading_trivia` / `leading_trivia` のみ許可）と fail-closed 方針を仕様化する。
+4. [ ] [ID: P1-COMMENT-FIDELITY-01-S2-01] `ts/go/java/swift/kotlin/ruby/lua` の固定コメント出力を撤去し、元コメント伝播のみへ統一する。
+5. [ ] [ID: P1-COMMENT-FIDELITY-01-S2-02] `cpp/rs/cs/js` の `pass` / unsupported コメント経路を no-op または例外へ置換する。
+6. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-01] 全 `test_py2*smoke.py` に禁止コメント検査と元コメント反映テストを追加し、回帰を固定する。
+7. [ ] [ID: P1-COMMENT-FIDELITY-01-S3-02] `sample/*` 再生成と差分検証を行い、固定コメント残存ゼロを確認する。
+
 ### P1: 統合CLI `./pytra` の Rust target 追加
 
 文脈: [docs/ja/plans/p1-pytra-cli-rs-target.md](../plans/p1-pytra-cli-rs-target.md)
