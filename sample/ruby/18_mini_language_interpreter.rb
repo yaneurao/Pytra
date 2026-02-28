@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -185,6 +192,14 @@ def __pytra_isalpha(v)
   s = __pytra_str(v)
   return false if s.empty?
   !!(s =~ /\A[A-Za-z]+\z/)
+end
+
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
 end
 
 def __pytra_print(*args)
@@ -459,7 +474,7 @@ def eval_expr(expr_index, expr_nodes, env)
     return node.value
   end
   if __pytra_truthy((node.kind == "var"))
-    if __pytra_truthy((!__pytra_truthy((node.name == env))))
+    if __pytra_truthy((!__pytra_truthy(__pytra_contains(env, node.name))))
       raise RuntimeError, __pytra_str(("undefined variable: " + node.name))
     end
     return __pytra_get_index(env, node.name)
@@ -500,7 +515,7 @@ def execute(stmts, expr_nodes, trace)
       next
     end
     if __pytra_truthy((stmt.kind == "assign"))
-      if __pytra_truthy((!__pytra_truthy((stmt.name == env))))
+      if __pytra_truthy((!__pytra_truthy(__pytra_contains(env, stmt.name))))
         raise RuntimeError, __pytra_str(("assign to undefined variable: " + stmt.name))
       end
       __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
@@ -583,5 +598,5 @@ def __pytra_main()
 end
 
 if __FILE__ == $PROGRAM_NAME
-  main()
+  __pytra_main()
 end

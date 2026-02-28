@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -202,7 +217,7 @@ def palette()
   while ((__step_0 >= 0 && i < __pytra_int(256)) || (__step_0 < 0 && i > __pytra_int(256)))
     r = __pytra_min(255, __pytra_int((20 + (i * 0.9))))
     g = __pytra_min(255, __pytra_int((10 + (i * 0.7))))
-    b = __pytra_min(255, __pytra_int((30 + i)))
+    b = __pytra_min(255, (30 + i))
     p.append(r)
     p.append(g)
     p.append(b)
@@ -222,7 +237,7 @@ def scene(x, y, light_x, light_y)
   lx = (x - light_x)
   ly = (y - light_y)
   l = Math.sqrt(__pytra_float(((lx * lx) + (ly * ly))))
-  lit = (1.0 / (1.0 + ((3.5 * l) * l)))
+  lit = __pytra_div(1.0, (1.0 + ((3.5 * l) * l)))
   v = __pytra_int((((255.0 * blob) * lit) * 5.0))
   return __pytra_min(255, __pytra_max(0, v))
 end
@@ -234,22 +249,25 @@ def run_14_raymarching_light_cycle()
   out_path = "sample/out/14_raymarching_light_cycle.gif"
   start = __pytra_perf_counter()
   frames = []
+  __hoisted_cast_1 = __pytra_float(frames_n)
+  __hoisted_cast_2 = __pytra_float((h - 1))
+  __hoisted_cast_3 = __pytra_float((w - 1))
   __step_0 = __pytra_int(1)
   t = __pytra_int(0)
   while ((__step_0 >= 0 && t < __pytra_int(frames_n)) || (__step_0 < 0 && t > __pytra_int(frames_n)))
     frame = __pytra_bytearray((w * h))
-    a = (((t / frames_n) * Math::PI) * 2.0)
+    a = ((__pytra_div(t, __hoisted_cast_1) * Math::PI) * 2.0)
     light_x = (0.75 * Math.cos(__pytra_float(a)))
     light_y = (0.55 * Math.sin(__pytra_float((a * 1.2))))
     __step_1 = __pytra_int(1)
     y = __pytra_int(0)
     while ((__step_1 >= 0 && y < __pytra_int(h)) || (__step_1 < 0 && y > __pytra_int(h)))
       row_base = (y * w)
-      py = (((y / (h - 1)) * 2.0) - 1.0)
+      py = ((__pytra_div(y, __hoisted_cast_2) * 2.0) - 1.0)
       __step_2 = __pytra_int(1)
       x = __pytra_int(0)
       while ((__step_2 >= 0 && x < __pytra_int(w)) || (__step_2 < 0 && x > __pytra_int(w)))
-        px = (((x / (w - 1)) * 2.0) - 1.0)
+        px = ((__pytra_div(x, __hoisted_cast_3) * 2.0) - 1.0)
         __pytra_set_index(frame, (row_base + x), scene(px, py, light_x, light_y))
         x += __step_2
       end

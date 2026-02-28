@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -216,7 +231,7 @@ def run_10_plasma_effect()
         dx = (x - 160)
         dy = (y - 120)
         v = (((Math.sin(__pytra_float(((x + (t * 2.0)) * 0.045))) + Math.sin(__pytra_float(((y - (t * 1.2)) * 0.05)))) + Math.sin(__pytra_float((((x + y) + (t * 1.7)) * 0.03)))) + Math.sin(__pytra_float(((Math.sqrt(__pytra_float(((dx * dx) + (dy * dy)))) * 0.07) - (t * 0.18)))))
-        c = __pytra_int(((v + 4.0) * (255.0 / 8.0)))
+        c = __pytra_int(((v + 4.0) * __pytra_div(255.0, 8.0)))
         if __pytra_truthy((c < 0))
           c = 0
         end

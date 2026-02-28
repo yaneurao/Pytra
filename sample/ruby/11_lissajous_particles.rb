@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -223,12 +238,13 @@ def run_11_lissajous_particles()
   t = __pytra_int(0)
   while ((__step_0 >= 0 && t < __pytra_int(frames_n)) || (__step_0 < 0 && t > __pytra_int(frames_n)))
     frame = __pytra_bytearray((w * h))
+    __hoisted_cast_1 = __pytra_float(t)
     __step_1 = __pytra_int(1)
     p = __pytra_int(0)
     while ((__step_1 >= 0 && p < __pytra_int(particles)) || (__step_1 < 0 && p > __pytra_int(particles)))
       phase = (p * 0.261799)
-      x = __pytra_int(((w * 0.5) + ((w * 0.38) * Math.sin(__pytra_float(((0.11 * t) + (phase * 2.0)))))))
-      y = __pytra_int(((h * 0.5) + ((h * 0.38) * Math.sin(__pytra_float(((0.17 * t) + (phase * 3.0)))))))
+      x = __pytra_int(((w * 0.5) + ((w * 0.38) * Math.sin(__pytra_float(((0.11 * __hoisted_cast_1) + (phase * 2.0)))))))
+      y = __pytra_int(((h * 0.5) + ((h * 0.38) * Math.sin(__pytra_float(((0.17 * __hoisted_cast_1) + (phase * 3.0)))))))
       color = (30 + ((p * 9) % 220))
       __step_2 = __pytra_int(1)
       dy = __pytra_int((-2))

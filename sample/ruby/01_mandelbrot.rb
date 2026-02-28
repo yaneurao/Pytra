@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -217,7 +232,7 @@ def color_map(iter_count, max_iter)
   if __pytra_truthy((iter_count >= max_iter))
     return [0, 0, 0]
   end
-  t = (iter_count / max_iter)
+  t = __pytra_div(iter_count, max_iter)
   r = __pytra_int((255.0 * (t * t)))
   g = __pytra_int((255.0 * t))
   b = __pytra_int((255.0 * (1.0 - t)))
@@ -226,14 +241,17 @@ end
 
 def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
   pixels = __pytra_bytearray()
+  __hoisted_cast_1 = __pytra_float((height - 1))
+  __hoisted_cast_2 = __pytra_float((width - 1))
+  __hoisted_cast_3 = __pytra_float(max_iter)
   __step_0 = __pytra_int(1)
   y = __pytra_int(0)
   while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
-    py = (y_min + ((y_max - y_min) * (y / (height - 1))))
+    py = (y_min + ((y_max - y_min) * __pytra_div(y, __hoisted_cast_1)))
     __step_1 = __pytra_int(1)
     x = __pytra_int(0)
     while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
-      px = (x_min + ((x_max - x_min) * (x / (width - 1))))
+      px = (x_min + ((x_max - x_min) * __pytra_div(x, __hoisted_cast_2)))
       it = escape_count(px, py, max_iter)
       r = nil
       g = nil
@@ -243,7 +261,7 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
         g = 0
         b = 0
       else
-        t = (it / max_iter)
+        t = __pytra_div(it, __hoisted_cast_3)
         r = __pytra_int((255.0 * (t * t)))
         g = __pytra_int((255.0 * t))
         b = __pytra_int((255.0 * (1.0 - t)))

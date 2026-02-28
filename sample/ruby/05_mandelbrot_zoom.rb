@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -197,6 +212,7 @@ end
 
 def render_frame(width, height, center_x, center_y, scale, max_iter)
   frame = __pytra_bytearray((width * height))
+  __hoisted_cast_1 = __pytra_float(max_iter)
   __step_0 = __pytra_int(1)
   y = __pytra_int(0)
   while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
@@ -219,7 +235,7 @@ def render_frame(width, height, center_x, center_y, scale, max_iter)
         zx = ((zx2 - zy2) + cx)
         i += 1
       end
-      __pytra_set_index(frame, (row_base + x), __pytra_int(((255.0 * i) / max_iter)))
+      __pytra_set_index(frame, (row_base + x), __pytra_int(__pytra_div((255.0 * i), __hoisted_cast_1)))
       x += __step_1
     end
     y += __step_0
@@ -234,7 +250,7 @@ def run_05_mandelbrot_zoom()
   max_iter = 110
   center_x = (-0.743643887037151)
   center_y = 0.13182590420533
-  base_scale = (3.2 / width)
+  base_scale = __pytra_div(3.2, width)
   zoom_per_frame = 0.93
   out_path = "sample/out/05_mandelbrot_zoom.gif"
   start = __pytra_perf_counter()

@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -203,7 +218,7 @@ def julia_palette()
   __step_0 = __pytra_int(1)
   i = __pytra_int(1)
   while ((__step_0 >= 0 && i < __pytra_int(256)) || (__step_0 < 0 && i > __pytra_int(256)))
-    t = ((i - 1) / 254.0)
+    t = __pytra_div((i - 1), 254.0)
     r = __pytra_int((255.0 * ((((9.0 * (1.0 - t)) * t) * t) * t)))
     g = __pytra_int((255.0 * ((((15.0 * (1.0 - t)) * (1.0 - t)) * t) * t)))
     b = __pytra_int((255.0 * ((((8.5 * (1.0 - t)) * (1.0 - t)) * (1.0 - t)) * t)))
@@ -217,15 +232,17 @@ end
 
 def render_frame(width, height, cr, ci, max_iter, phase)
   frame = __pytra_bytearray((width * height))
+  __hoisted_cast_1 = __pytra_float((height - 1))
+  __hoisted_cast_2 = __pytra_float((width - 1))
   __step_0 = __pytra_int(1)
   y = __pytra_int(0)
   while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
     row_base = (y * width)
-    zy0 = ((-1.2) + (2.4 * (y / (height - 1))))
+    zy0 = ((-1.2) + (2.4 * __pytra_div(y, __hoisted_cast_1)))
     __step_1 = __pytra_int(1)
     x = __pytra_int(0)
     while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
-      zx = ((-1.8) + (3.6 * (x / (width - 1))))
+      zx = ((-1.8) + (3.6 * __pytra_div(x, __hoisted_cast_2)))
       zy = zy0
       i = 0
       while __pytra_truthy((i < max_iter))
@@ -265,10 +282,11 @@ def run_06_julia_parameter_sweep()
   radius_ci = 0.1
   start_offset = 20
   phase_offset = 180
+  __hoisted_cast_3 = __pytra_float(frames_n)
   __step_0 = __pytra_int(1)
   i = __pytra_int(0)
   while ((__step_0 >= 0 && i < __pytra_int(frames_n)) || (__step_0 < 0 && i > __pytra_int(frames_n)))
-    t = (((i + start_offset) % frames_n) / frames_n)
+    t = __pytra_div(((i + start_offset) % frames_n), __hoisted_cast_3)
     angle = ((2.0 * Math::PI) * t)
     cr = (center_cr + (radius_cr * Math.cos(__pytra_float(angle))))
     ci = (center_ci + (radius_ci * Math.sin(__pytra_float(angle))))

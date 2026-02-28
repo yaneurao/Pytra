@@ -31,6 +31,13 @@ def __pytra_float(v)
   return v.to_f
 end
 
+def __pytra_div(a, b)
+  lhs = __pytra_float(a)
+  rhs = __pytra_float(b)
+  raise ZeroDivisionError, 'division by zero' if rhs == 0.0
+  lhs / rhs
+end
+
 def __pytra_str(v)
   return "" if v.nil?
   v.to_s
@@ -187,6 +194,14 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_contains(container, item)
+  return false if container.nil?
+  return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Array)
+  return container.include?(__pytra_str(item)) if container.is_a?(String)
+  false
+end
+
 def __pytra_print(*args)
   if args.empty?
     puts
@@ -198,7 +213,9 @@ end
 def render(values, w, h)
   frame = __pytra_bytearray((w * h))
   n = __pytra_len(values)
-  bar_w = (w / n)
+  bar_w = __pytra_div(w, n)
+  __hoisted_cast_1 = __pytra_float(n)
+  __hoisted_cast_2 = __pytra_float(h)
   __step_0 = __pytra_int(1)
   i = __pytra_int(0)
   while ((__step_0 >= 0 && i < __pytra_int(n)) || (__step_0 < 0 && i > __pytra_int(n)))
@@ -207,7 +224,7 @@ def render(values, w, h)
     if __pytra_truthy((x1 <= x0))
       x1 = (x0 + 1)
     end
-    bh = __pytra_int(((__pytra_get_index(values, i) / n) * h))
+    bh = __pytra_int((__pytra_div(__pytra_get_index(values, i), __hoisted_cast_1) * __hoisted_cast_2))
     y = (h - bh)
     __step_1 = __pytra_int(1)
     y = __pytra_int(y)

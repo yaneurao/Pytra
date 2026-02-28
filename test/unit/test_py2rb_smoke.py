@@ -186,6 +186,27 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("cat.is_a?(Dog)", ruby)
         self.assertIn("cat.is_a?(Animal)", ruby)
 
+    def test_true_division_binop_uses_pytra_div_helper(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "true_div.py"
+            src_py.write_text(
+                "def main() -> None:\n"
+                "    x: float = 1 / 2\n"
+                "    print(x)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            ruby = transpile_to_ruby_native(east)
+        self.assertIn("__pytra_div(1, 2)", ruby)
+        self.assertNotIn("(1 / 2)", ruby)
+
+    def test_sample06_uses_true_division_helper(self) -> None:
+        sample = find_sample_case("06_julia_parameter_sweep")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("__pytra_div(", ruby)
+        self.assertNotIn("(y / (height - 1))", ruby)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -211,6 +211,8 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     left = _render_expr(expr.get("left"))
     right = _render_expr(expr.get("right"))
     op = expr.get("op")
+    if op == "Div":
+        return "__pytra_div(" + left + ", " + right + ")"
     if op == "FloorDiv":
         return "(__pytra_int(" + left + ") / __pytra_int(" + right + "))"
     return "(" + left + " " + _bin_op_symbol(op) + " " + right + ")"
@@ -925,6 +927,13 @@ def _emit_runtime_helpers() -> list[str]:
         "def __pytra_float(v)",
         "  return 0.0 if v.nil?",
         "  return v.to_f",
+        "end",
+        "",
+        "def __pytra_div(a, b)",
+        "  lhs = __pytra_float(a)",
+        "  rhs = __pytra_float(b)",
+        "  raise ZeroDivisionError, 'division by zero' if rhs == 0.0",
+        "  lhs / rhs",
         "end",
         "",
         "def __pytra_str(v)",
