@@ -113,8 +113,14 @@ class Parser:
         self.pos: int = 0
         self.expr_nodes: list[ExprNode] = self.new_expr_nodes()
 
+    def current_token(self) -> Token:
+        return self.tokens[self.pos]
+
+    def previous_token(self) -> Token:
+        return self.tokens[self.pos - 1]
+
     def peek_kind(self) -> str:
-        return self.tokens[self.pos].kind
+        return self.current_token().kind
 
     def match(self, kind: str) -> bool:
         if self.peek_kind() == kind:
@@ -123,10 +129,9 @@ class Parser:
         return False
 
     def expect(self, kind: str) -> Token:
-        if self.peek_kind() != kind:
-            t: Token = self.tokens[self.pos]
-            raise RuntimeError("parse error at pos=" + str(t.pos) + ", expected=" + kind + ", got=" + t.kind)
-        token: Token = self.tokens[self.pos]
+        token: Token = self.current_token()
+        if token.kind != kind:
+            raise RuntimeError("parse error at pos=" + str(token.pos) + ", expected=" + kind + ", got=" + token.kind)
         self.pos += 1
         return token
 
@@ -202,11 +207,11 @@ class Parser:
 
     def parse_primary(self) -> int:
         if self.match("NUMBER"):
-            token_num: Token = self.tokens[self.pos - 1]
+            token_num: Token = self.previous_token()
             return self.add_expr(ExprNode("lit", int(token_num.text), "", "", -1, -1))
 
         if self.match("IDENT"):
-            token_ident: Token = self.tokens[self.pos - 1]
+            token_ident: Token = self.previous_token()
             return self.add_expr(ExprNode("var", 0, token_ident.text, "", -1, -1))
 
         if self.match("LPAREN"):
@@ -214,7 +219,7 @@ class Parser:
             self.expect("RPAREN")
             return expr_index
 
-        t = self.tokens[self.pos]
+        t = self.current_token()
         raise RuntimeError("primary parse error at pos=" + str(t.pos) + " got=" + t.kind)
 
 

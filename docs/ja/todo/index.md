@@ -51,7 +51,7 @@
 4. [x] [ID: P0-CPP-S18-OPT-01-S2-01] `tokens` が `object(list<object>)` へ退化する条件を特定し、型情報保持経路を定義する。
 5. [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize`/`Parser` の tokens を typed container 出力へ移行し、boxing を削減する。
 6. [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser` の repeated token access を棚卸しし、共通 token cache 方針を確定する。
-7. [ ] [ID: P0-CPP-S18-OPT-01-S3-02] `peek_kind/expect/parse_primary` で同一 index の重複 `py_at + obj_to_rc_or_raise` を削減する。
+7. [x] [ID: P0-CPP-S18-OPT-01-S3-02] `peek_kind/expect/parse_primary` で同一 index の重複 `py_at + obj_to_rc_or_raise` を削減する。
 8. [x] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の文字列比較箇所を enum/整数タグ化方針へ落とし込む。
 9. [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ 出力をタグ分岐へ移行し、`if (node->kind == \"...\")` 連鎖を縮退する。
 10. [x] [ID: P0-CPP-S18-OPT-01-S5-01] `NUMBER` token の parse 時 `py_to_int64` 経路を字句段 predecode へ移行する仕様を確定する。
@@ -64,6 +64,7 @@
 - `P0-CPP-S18-OPT-01-S1-02` `test_py2cpp_codegen_issues.py` に sample/18 回帰（`for (const auto& [line_index, source] : ... )`）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成で `object + py_at` 連鎖が消えることを確認した。
 - `P0-CPP-S18-OPT-01-S2-01` `cpp_list_model=pyobj` 時に `list[T] -> object` へ型写像される境界（`_cpp_type_text`）と、`tokens` が「関数戻り値+クラスフィールド」に乗るため stack list 縮退対象外であることを計画書に固定した。
 - `P0-CPP-S18-OPT-01-S3-01` `Parser` で `py_at(this->tokens, this->pos)` が `peek_kind/expect/parse_primary` に重複する箇所を棚卸しし、`_current_token()` / `_previous_token()` 相当 helper を emitter が合成する方式を実装方針として固定した。
+- `P0-CPP-S18-OPT-01-S3-02` sample/18 の `Parser` を `current_token()/previous_token()` 参照へ寄せ、C++ 出力の `expect` で token 取得を1回化し、`peek_kind` / `parse_primary` も helper 経由へ統一した。
 - `P0-CPP-S18-OPT-01-S4-01` 文字列比較の現状（`node->kind` 4箇所、`node->op` 4箇所、`stmt->kind` 2箇所）を棚卸しし、`kind/op` を `uint8` タグへ併置して比較を整数化する段階移行方針を確定した。
 - `P0-CPP-S18-OPT-01-S5-01` `NUMBER` は tokenize 時点で `int64 number_value` を predecode し、`parse_primary` では `token_num->number_value` を優先利用する仕様（非 NUMBER は既定値0）を確定した。
 - `P0-CPP-S18-OPT-01-S6-01` `parse_program` 戻り値を `list<rc<StmtNode>>`（必要境界のみ boxing）へ寄せる整合方針を固定し、`execute` 側 typed loop への接続契約を定義した。

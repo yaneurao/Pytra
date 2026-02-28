@@ -57,6 +57,7 @@
 - 2026-03-01: `S6-02` として runtime に `py_to_rc_list_from_object<T>()` を追加し、ForCore(NameTarget) の `list[RefClass]` 反復で `pyobj` 強制 runtime path を typed 反復へ戻す fastpath を実装した。sample/18 の `execute` は `for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, ...))` へ縮退することを確認した。
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（76件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を再実行し非退行を確認した。
 - 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` を実行し、`[PASS] 18_mini_language_interpreter` を確認した。
+- 2026-03-01: `S3-02` として sample/18 の `Parser` 実装を `current_token()/previous_token()` 補助メソッド経由に整理し、生成 C++ の `expect` で同一 index の token 取得を 1 回化した。`test_py2cpp_codegen_issues.py` に回帰を追加し、`runtime_parity_check` で挙動一致を確認した。
 
 ## 分解
 
@@ -69,7 +70,7 @@
 - [ ] [ID: P0-CPP-S18-OPT-01-S2-02] `tokenize` / `Parser` の `tokens` を typed container 出力へ移行し、`py_append(make_object(...))` の過剰 boxing を削減する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S3-01] `Parser.peek_kind/expect/parse_primary` の repeated `py_at + obj_to_rc_or_raise` パターンを検出し、共通 helper（token cache）方針を設計する。
-- [ ] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
+- [x] [ID: P0-CPP-S18-OPT-01-S3-02] emitter 出力を token 取得1回利用へ変更し、同一 index の重複 dynamic access を削減する。
 
 - [x] [ID: P0-CPP-S18-OPT-01-S4-01] `ExprNode.kind` / `StmtNode.kind` / `op` の比較箇所を棚卸しし、enum/整数タグ化の最小導入面（sample/18 先行）を定義する。
 - [ ] [ID: P0-CPP-S18-OPT-01-S4-02] C++ emitter でタグベース分岐を出力し、`if (node->kind == "...")` 連鎖を縮退する。

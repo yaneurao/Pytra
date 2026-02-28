@@ -169,8 +169,14 @@ struct Parser : public PyObj {
         this->pos = 0;
         this->expr_nodes = this->new_expr_nodes();
     }
+    rc<Token> current_token() {
+        return obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list");
+    }
+    rc<Token> previous_token() {
+        return obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos - 1)), "subscript:list");
+    }
     str peek_kind() {
-        return obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")->kind;
+        return this->current_token()->kind;
     }
     bool match(const str& kind) {
         if (this->peek_kind() == kind) {
@@ -180,11 +186,9 @@ struct Parser : public PyObj {
         return false;
     }
     rc<Token> expect(const str& kind) {
-        if (this->peek_kind() != kind) {
-            rc<Token> t = obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list");
-            throw ::std::runtime_error("parse error at pos=" + py_to_string(t->pos) + ", expected=" + kind + ", got=" + t->kind);
-        }
-        rc<Token> token = obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list");
+        rc<Token> token = this->current_token();
+        if (token->kind != kind)
+            throw ::std::runtime_error("parse error at pos=" + py_to_string(token->pos) + ", expected=" + kind + ", got=" + token->kind);
         this->pos++;
         return token;
     }
@@ -269,11 +273,11 @@ struct Parser : public PyObj {
     }
     int64 parse_primary() {
         if (this->match("NUMBER")) {
-            rc<Token> token_num = obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos - 1)), "subscript:list");
+            rc<Token> token_num = this->previous_token();
             return this->add_expr(::rc_new<ExprNode>("lit", py_to_int64(token_num->text), "", "", -1, -1));
         }
         if (this->match("IDENT")) {
-            rc<Token> token_ident = obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos - 1)), "subscript:list");
+            rc<Token> token_ident = this->previous_token();
             return this->add_expr(::rc_new<ExprNode>("var", 0, token_ident->text, "", -1, -1));
         }
         if (this->match("LPAREN")) {
@@ -281,7 +285,7 @@ struct Parser : public PyObj {
             this->expect("RPAREN");
             return expr_index;
         }
-        rc<Token> t = obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list");
+        rc<Token> t = this->current_token();
         throw ::std::runtime_error("primary parse error at pos=" + py_to_string(t->pos) + " got=" + t->kind);
     }
 };
