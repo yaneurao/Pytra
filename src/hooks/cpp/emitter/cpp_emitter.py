@@ -221,8 +221,13 @@ class CppEmitter(
         self.current_function_is_generator: bool = False
         self.current_function_yield_buffer: str = ""
         self.current_function_yield_type: str = "unknown"
+        self.current_function_symbol: str = ""
+        self.current_function_non_escape_summary: dict[str, Any] = {}
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
+        self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
+        self.function_non_escape_summary_map: dict[str, dict[str, Any]] = {}
+        self.non_escape_callsite_records: list[dict[str, Any]] = []
 
     def current_scope_names(self) -> set[str]:
         """現在スコープの識別子集合を返す（selfhost では CppEmitter 側を正とする）。"""
@@ -336,10 +341,58 @@ class CppEmitter(
 
     # module/import helpers moved to hooks.cpp.emitter.module.CppModuleEmitter.
 
+    def _seed_non_escape_summary_from_meta(self, meta: dict[str, Any]) -> None:
+        """module meta の `non_escape_summary` を C++ 側状態へ取り込む。"""
+        out: dict[str, dict[str, Any]] = {}
+        summary_any = meta.get("non_escape_summary")
+        if isinstance(summary_any, dict):
+            for symbol_any, payload_any in summary_any.items():
+                if not isinstance(symbol_any, str):
+                    continue
+                symbol = self.any_to_str(symbol_any).strip()
+                if symbol == "":
+                    continue
+                if isinstance(payload_any, dict):
+                    out[symbol] = dict(payload_any)
+        self.non_escape_summary_map = out
+
+    def _resolve_function_non_escape_summary(
+        self,
+        stmt: dict[str, Any],
+        function_symbol: str,
+    ) -> dict[str, Any]:
+        """FunctionDef ノードの non-escape 注釈を module summary から解決する。"""
+        meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        local = self.any_to_dict_or_empty(meta.get("escape_summary"))
+        if len(local) > 0:
+            return dict(local)
+        if function_symbol in self.non_escape_summary_map:
+            payload = self.any_to_dict_or_empty(self.non_escape_summary_map.get(function_symbol))
+            if len(payload) > 0:
+                return dict(payload)
+        return {}
+
+    def _record_non_escape_callsite(self, call_node: dict[str, Any]) -> None:
+        """Call ノードの non-escape 注釈を C++ 側レコードへ保存する。"""
+        meta = self.any_to_dict_or_empty(call_node.get("meta"))
+        callsite = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
+        if len(callsite) == 0:
+            return
+        callee = self.any_dict_get_str(callsite, "callee", "")
+        record: dict[str, Any] = {
+            "function_symbol": self.current_function_symbol,
+            "callee": callee,
+            "resolved": bool(callsite.get("resolved", False)),
+            "callee_return_escape": bool(callsite.get("callee_return_escape", False)),
+            "callee_arg_escape": self.any_to_list(callsite.get("callee_arg_escape")),
+        }
+        self.non_escape_callsite_records.append(record)
+
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
         self._seed_import_maps_from_meta()
         meta: dict[str, Any] = dict_any_get_dict(self.doc, "meta")
+        self._seed_non_escape_summary_from_meta(meta)
         body: list[dict[str, Any]] = []
         raw_body = self.any_dict_get_list(self.doc, "body")
         if isinstance(raw_body, list):
@@ -2247,6 +2300,7 @@ class CppEmitter(
 
     def _render_expr_kind_call(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
+        self._record_non_escape_callsite(expr_d)
         call_ctx = self.prepare_call_context(expr_d)
         fn = self.any_to_dict_or_empty(call_ctx.get("fn"))
         fn_name = self.any_to_str(call_ctx.get("fn_name"))

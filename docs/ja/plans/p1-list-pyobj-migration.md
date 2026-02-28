@@ -124,6 +124,7 @@
 - 2026-02-28: `for` 反復モード判定を `cpp_list_model=pyobj` 時に `list[...]` 型へ fail-closed で `runtime_protocol` を選ぶよう更新し、list comprehension を `object` 戻り・`make_object(__out)` で成立させた。`test_py2cpp_codegen_issues.py`（61件）と `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
 - 2026-02-28: `ForCore(RuntimeIterForPlan)` で `cpp_list_model=pyobj` かつ `iter_expr` が `list[...]` のとき static typed 反復を無効化し、`py_dyn_range` + runtime unbox へ強制した。合わせて `Subscript(list)` の `py_at` 結果を式型へ unbox する経路、`AnnAssign` の空 list 初期化を `make_object(list<object>{})` へ寄せる経路を追加した。
 - 2026-02-28: runtime の `py_enumerate(const object&)` / `py_enumerate(const object&, int64)` を追加し、`pyobj` list モデルの runtime 反復で index 可能な `list<object>` 形へ正規化した。`test_py2cpp_list_pyobj_model.py`（2件: `sample/18` + `list_alias_shared_mutation`）/ `test_py2cpp_codegen_issues.py`（61件）/ `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
+- 2026-02-28: C++ emitter に non-escape 受け渡し状態（`non_escape_summary_map` / `function_non_escape_summary_map` / `current_function_non_escape_summary` / `non_escape_callsite_records`）を追加し、`meta.non_escape_summary`・`FunctionDef.meta.escape_summary`・`Call.meta.non_escape_callsite` を C++ 側で収集できる経路を実装した。`test_cpp_non_escape_bridge.py`（2件）/ `test_py2cpp_codegen_issues.py`（61件）/ `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
 
 ## 分解
 
@@ -141,7 +142,7 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-03] for/enumerate/comprehension の list 反復 lower を `pyobj` list で成立させる。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S2-04] `sample/18` を含む代表 fixture の compile/run/parity を `pyobj` モデルで通す。
 
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-01] `P1-EAST3-NONESCAPE-IPA-01` の注釈を C++ 側へ受け渡す経路を追加する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S3-01] `P1-EAST3-NONESCAPE-IPA-01` の注釈を C++ 側へ受け渡す経路を追加する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-02] non-escape local list のみ stack/RAII へ縮退する Cpp pass を追加する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S3-03] unknown/external/dynamic call 混在時に縮退しない fail-closed 回帰テストを追加する。
 

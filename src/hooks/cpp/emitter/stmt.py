@@ -1094,6 +1094,11 @@ class CppStatementEmitter:
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
         """関数定義ノードを C++ 関数として出力する。"""
         name = self.any_dict_get_str(stmt, "name", "fn")
+        function_symbol = str(name)
+        if in_class and self.current_class_name is not None and function_symbol != "":
+            function_symbol = str(self.current_class_name) + "." + function_symbol
+        fn_non_escape_summary = self._resolve_function_non_escape_summary(stmt, function_symbol)
+        self.function_non_escape_summary_map[function_symbol] = dict(fn_non_escape_summary) if len(fn_non_escape_summary) > 0 else {}
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
         is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
         yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
@@ -1173,9 +1178,13 @@ class CppStatementEmitter:
         prev_is_gen = self.current_function_is_generator
         prev_yield_buf = self.current_function_yield_buffer
         prev_yield_ty = self.current_function_yield_type
+        prev_fn_symbol = self.current_function_symbol
+        prev_fn_non_escape = self.current_function_non_escape_summary
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
+        self.current_function_symbol = function_symbol
+        self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         for i, an in enumerate(arg_names):
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
@@ -1200,6 +1209,8 @@ class CppStatementEmitter:
         self.current_function_is_generator = prev_is_gen
         self.current_function_yield_buffer = prev_yield_buf
         self.current_function_yield_type = prev_yield_ty
+        self.current_function_symbol = prev_fn_symbol
+        self.current_function_non_escape_summary = prev_fn_non_escape
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1
