@@ -50,6 +50,7 @@
 - 2026-02-28: `S2-01` として Go emitter から `func __pytra_*` inline 定義を撤去し、`src/runtime/go/pytra/py_runtime.go` に互換 helper を集約。`py2go.py` が出力先へ `py_runtime.go` を配置する運用へ切替え、`test_py2go_smoke.py` と `runtime_parity_check --targets go`（`sample/18`）で回帰確認した。
 - 2026-02-28: `S2-02` として Java emitter から helper 本体定義を撤去し、呼び出しを `PyRuntime.__pytra_*` に移管。`src/runtime/java/pytra/built_in/PyRuntime.java` に互換 helper を集約し、`py2java.py` が出力先へ `PyRuntime.java` を配置する導線へ切替えた。`test_py2java_smoke.py` と `runtime_parity_check --targets java`（`sample/18`）で回帰確認した。
 - 2026-02-28: `S2-03` として Swift emitter から helper inline 出力を停止し、`src/runtime/swift/pytra/py_runtime.swift` に helper 群を集約。`py2swift.py` が出力先へ `py_runtime.swift` を配置する導線に切替え、`test_py2swift_smoke.py` を通過。`runtime_parity_check --targets swift` は `swiftc` 未導入で `toolchain_missing`（環境制約）を確認した。
+- 2026-02-28: `S2-04` として Ruby emitter から inline helper 本体を撤去し、生成コードを `require_relative "py_runtime"` 参照へ切替えた。`src/runtime/ruby/pytra/py_runtime.rb` を新設し、`py2rb.py` が出力先へ `py_runtime.rb` を配置する導線を追加。`test_py2rb_smoke.py` と `runtime_parity_check --targets ruby`（`sample/18`）で回帰確認した。
 
 ## S1-01 棚卸し結果（2026-02-28）
 
@@ -58,21 +59,21 @@
 | Go | `src/hooks/go/emitter/go_native_emitter.py` `transpile_to_go_native` 内（`func __pytra_*` を直書き） | `32` 定義（`__pytra_truthy/int/float/str/len/get_index/set_index/slice/print/perf_counter` 等） | `src/runtime/go/pytra/py_runtime.go`（`pyBool/pyToInt/pyToFloat/pyToString/pyLen/pyGet/pySet/pySlice/pyPrint/pyPerfCounter` 等） | 意味対応は揃うが命名・シグネチャが不一致。emitter 側 call 名の切替と import 導線追加で外出し可能。 |
 | Java | `src/hooks/java/emitter/java_native_emitter.py` `transpile_to_java_native` 内（`private static __pytra_*`） | `10` 定義（`__pytra_noop/int/len/str_isdigit/str_isalpha/str_slice/bytearray/dict_of/list_repeat/truthy`） | `src/runtime/java/pytra/built_in/PyRuntime.java`（`pyToLong/pyLen/pyIsDigit/pyIsAlpha/pySlice/pyBytearray/pyDict/pyList/pyBool` 等） | runtime 正本は充実。inline 側の `__pytra_*` 呼び出しを `PyRuntime.py*` へ集約する接着層が必要。 |
 | Swift | `src/hooks/swift/emitter/swift_native_emitter.py` `_emit_runtime_helpers()` | `32` 定義（`__pytra_any_default/int/float/str/len/getIndex/setIndex/slice/print/perf_counter` 等） | `src/runtime/swift/pytra/py_runtime.swift`（`pytraRunEmbeddedNode` のみ） | native runtime API 正本が未整備。外出し前に Swift 用 `py*` API 群を runtime 側へ新設する必要あり。 |
-| Ruby | `src/hooks/ruby/emitter/ruby_native_emitter.py` `_emit_runtime_helpers()` | `26` 定義（`__pytra_truthy/int/float/div/str/len/as_list/as_dict/get_index/set_index/slice/print/perf_counter` 等） | `src/runtime/ruby/` 未存在 | runtime 正本が未整備。外出し前に `src/runtime/ruby/pytra/` を新設して API を定義する必要あり。 |
+| Ruby | `src/hooks/ruby/emitter/ruby_native_emitter.py`（helper 参照のみ） | `26` 定義（`__pytra_truthy/int/float/div/str/len/as_list/as_dict/get_index/set_index/slice/print/perf_counter` 等） | `src/runtime/ruby/pytra/py_runtime.rb` | emitter 側は `require_relative "py_runtime"` 参照に統一し、`py2rb.py` が runtime を同一出力ディレクトリへ配置する。 |
 
 ### 対応表（最小必須 API）
 
 | inline helper 意味 | Go runtime 正本 API | Java runtime 正本 API | Swift runtime 正本 | Ruby runtime 正本 |
 | --- | --- | --- | --- | --- |
-| truthy 判定 | `pyBool` | `pyBool` | `TBD (新設)` | `TBD (新設)` |
-| 整数変換 | `pyToInt` / `pyToLong` | `pyToLong` | `TBD (新設)` | `TBD (新設)` |
-| 浮動小数変換 | `pyToFloat` | `pyToFloat` | `TBD (新設)` | `TBD (新設)` |
-| 文字列化 | `pyToString` | `pyToString` | `TBD (新設)` | `TBD (新設)` |
-| 長さ取得 | `pyLen` | `pyLen` | `TBD (新設)` | `TBD (新設)` |
-| 添字 read/write | `pyGet` / `pySet` | `pyGet` / `pySet` | `TBD (新設)` | `TBD (新設)` |
-| slice | `pySlice` | `pySlice` | `TBD (新設)` | `TBD (新設)` |
-| print | `pyPrint` | `pyPrint` | `TBD (新設)` | `TBD (新設)` |
-| perf_counter | `pyPerfCounter` | `pyPerfCounter` | `TBD (新設)` | `TBD (新設)` |
+| truthy 判定 | `pyBool` | `pyBool` | `TBD (新設)` | `__pytra_truthy` |
+| 整数変換 | `pyToInt` / `pyToLong` | `pyToLong` | `TBD (新設)` | `__pytra_int` |
+| 浮動小数変換 | `pyToFloat` | `pyToFloat` | `TBD (新設)` | `__pytra_float` |
+| 文字列化 | `pyToString` | `pyToString` | `TBD (新設)` | `__pytra_str` |
+| 長さ取得 | `pyLen` | `pyLen` | `TBD (新設)` | `__pytra_len` |
+| 添字 read/write | `pyGet` / `pySet` | `pyGet` / `pySet` | `TBD (新設)` | `__pytra_get_index` / `__pytra_set_index` |
+| slice | `pySlice` | `pySlice` | `TBD (新設)` | `__pytra_slice` |
+| print | `pyPrint` | `pyPrint` | `TBD (新設)` | `__pytra_print` |
+| perf_counter | `pyPerfCounter` | `pyPerfCounter` | `TBD (新設)` | `__pytra_perf_counter` |
 
 ## 分解
 
@@ -80,5 +81,5 @@
 - [x] [ID: P1-RUNTIME-EXT-01-S2-01] Go emitter から helper 本体出力を撤去し、`src/runtime/go/pytra` 側 API 呼び出しへ切替える。
 - [x] [ID: P1-RUNTIME-EXT-01-S2-02] Java emitter から helper 本体出力を撤去し、`src/runtime/java/pytra` 側 API 呼び出しへ切替える。
 - [x] [ID: P1-RUNTIME-EXT-01-S2-03] Swift native 用 runtime 実体を整備し、emitter の helper inline 出力を撤去する。
-- [ ] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby runtime 実体を新設し、`require_relative` 等で外部参照する方式へ切替える。
+- [x] [ID: P1-RUNTIME-EXT-01-S2-04] Ruby runtime 実体を新設し、`require_relative` 等で外部参照する方式へ切替える。
 - [ ] [ID: P1-RUNTIME-EXT-01-S3-01] parity/smoke/sample 再生成導線を更新し、回帰確認を完了する。

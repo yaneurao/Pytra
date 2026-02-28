@@ -48,7 +48,10 @@ class Py2RbSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         ruby = transpile_to_ruby(east)
         self.assertIn("Auto-generated Pytra Ruby native source from EAST3.", ruby)
+        self.assertIn("Runtime helpers are provided by py_runtime.rb in the same directory.", ruby)
+        self.assertIn('require_relative "py_runtime"', ruby)
         self.assertIn("def add(a, b)", ruby)
+        self.assertNotIn("def __pytra_truthy(v)", ruby)
         self.assertNotIn('exec.Command("node"', ruby)
 
     def test_ruby_native_emitter_skeleton_handles_module_function_class(self) -> None:
@@ -97,6 +100,12 @@ class Py2RbSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_rb.read_text(encoding="utf-8")
             self.assertIn("Auto-generated Pytra Ruby native source from EAST3.", txt)
+            self.assertIn('require_relative "py_runtime"', txt)
+            self.assertNotIn("def __pytra_truthy(v)", txt)
+            runtime_rb = Path(td) / "py_runtime.rb"
+            self.assertTrue(runtime_rb.exists())
+            runtime_txt = runtime_rb.read_text(encoding="utf-8")
+            self.assertIn("def __pytra_truthy(v)", runtime_txt)
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
         fixture = find_fixture_case("if_else")
@@ -120,6 +129,12 @@ class Py2RbSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "py2rb.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
+
+    def test_ruby_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "ruby" / "pytra" / "py_runtime.rb"
+        legacy_path = ROOT / "src" / "ruby_module" / "py_runtime.rb"
+        self.assertTrue(runtime_path.exists())
+        self.assertFalse(legacy_path.exists())
 
     def test_generated_add_fixture_executes_when_ruby_available(self) -> None:
         if shutil.which("ruby") is None:
