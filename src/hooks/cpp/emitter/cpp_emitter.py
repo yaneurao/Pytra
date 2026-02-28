@@ -6,6 +6,12 @@ from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from pytra.compiler.transpile_cli import (
+    dict_any_get_dict,
+    dict_any_get_str,
+    set_import_module_binding,
+    set_import_symbol_binding_and_module_set,
+)
 from hooks.cpp.emitter.analysis import CppAnalysisEmitter
 from hooks.cpp.emitter.builtin_runtime import CppBuiltinRuntimeEmitter
 from hooks.cpp.emitter.call import CppCallEmitter
