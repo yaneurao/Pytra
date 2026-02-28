@@ -10,6 +10,7 @@ from pytra.std.dataclasses import dataclass
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 from pytra.std import sys
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
@@ -2548,7 +2549,9 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "perf_counter"
                     payload["runtime_call"] = "perf_counter"
-                    payload["resolved_type"] = "float64"
+                    sig_ret = lookup_stdlib_function_return_type("perf_counter")
+                    if sig_ret != "":
+                        payload["resolved_type"] = sig_ret
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name

@@ -157,6 +157,26 @@ if __name__ == "__main__":
         self.assertIn("py_len", runtime_calls)
         self.assertIn("py_print", runtime_calls)
 
+    def test_perf_counter_resolved_type_comes_from_stdlib_signature(self) -> None:
+        src = """
+from pytra.std.time import perf_counter
+
+def main() -> float:
+    t0: float = perf_counter()
+    return t0
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict)
+            and n.get("kind") == "Call"
+            and n.get("lowered_kind") == "BuiltinCall"
+            and n.get("runtime_call") == "perf_counter"
+        ]
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].get("resolved_type"), "float64")
+
     def test_path_mkdir_keywords_are_kept(self) -> None:
         src = """
 from pathlib import Path

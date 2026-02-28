@@ -19,6 +19,7 @@
 - EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
 - EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - C++ backend 最適化層仕様: [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- stdlib シグネチャ正本化仕様: [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
 - Java native backend 契約仕様: [Java Native Backend 契約仕様](./spec-java-native-backend.md)
 - EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
 - EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
@@ -54,6 +55,8 @@
   - [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
 - C++ backend 後段最適化（`CppOptimizer` と `CppEmitter` の責務分離）を確認したい場合:
   - [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
+- `pytra/std` を型仕様の正本にする契約（`core.py` 直書き撤去）を確認したい場合:
+  - [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
 - Java backend の sidecar 撤去移行契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
   - [Java Native Backend 契約仕様](./spec-java-native-backend.md)
 - EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:

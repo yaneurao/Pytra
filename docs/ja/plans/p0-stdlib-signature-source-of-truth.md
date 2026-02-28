@@ -38,12 +38,32 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、`pytra/std` を型仕様の唯一正本にし、`core.py` の標準ライブラリ知識を撤去する P0 方針を確定した。
+- 2026-02-28: [ID: `P0-STDLIB-SOT-01-S1-01`] `core.py` の標準ライブラリ直書きを棚卸しし、置換対象を「組み込み関数 map」「owner 型別 method map」「`perf_counter` 戻り値直書き」に分類して固定した。
+- 2026-02-28: [ID: `P0-STDLIB-SOT-01-S1-02`] `docs/ja/spec/spec-stdlib-signature-source-of-truth.md` を追加し、正本/参照境界、取得単位、fail-closed を文書化した。
+- 2026-02-28: [ID: `P0-STDLIB-SOT-01-S2-01`] `src/pytra/compiler/stdlib/signature_registry.py` を新設し、`pytra/std/*.py` から関数/メソッド戻り値注釈を読み取る参照層を追加した。
+- 2026-02-28: [ID: `P0-STDLIB-SOT-01-S2-02`] `core.py` の `perf_counter -> float64` 直書きを廃止し、`lookup_stdlib_function_return_type("perf_counter")` 参照へ置換した。`test_stdlib_signature_registry.py`、`test_east_core.py` の新規ケース、`test_py2cpp_codegen_issues.py` の既存 perf_counter 回帰で確認した。
+
+## 棚卸し結果（S1-01）
+
+- 組み込み関数 call 直書き:
+  - `print/len/range/zip/str/int/float/bool/min/max/perf_counter/open/iter/next/reversed/enumerate/any/all/ord/chr/bytes/bytearray/list/set/dict`
+- 例外/特殊 call 直書き:
+  - `Exception/RuntimeError -> std::runtime_error`
+  - `Path -> Path`
+- owner 型別 method map 直書き:
+  - `str`: `strip/lstrip/rstrip/startswith/endswith/find/rfind/replace/join/isdigit/isalpha`
+  - `Path`: `mkdir/exists/write_text/read_text/parent/name/stem`
+  - `int`: `to_bytes`
+  - `list`: `append/extend/pop/clear/reverse/sort`
+  - `set`: `add/discard/remove/clear`
+  - `dict`: `get/pop/items/keys/values`
+  - `unknown`: `append/extend/pop/get/items/keys/values/isdigit/isalpha`
 
 ## 分解
 
-- [ ] [ID: P0-STDLIB-SOT-01-S1-01] `core.py` の標準ライブラリ知識直書き箇所（`perf_counter` / `Path` / `str.*` / `dict.*` 等）を棚卸しし、置換対象を固定する。
-- [ ] [ID: P0-STDLIB-SOT-01-S1-02] `pytra/std` を正本とするシグネチャ参照仕様（取得単位・型表現・未定義時の fail-closed）を文書化する。
-- [ ] [ID: P0-STDLIB-SOT-01-S2-01] compiler 側に stdlib シグネチャ参照層を新設し、`core.py` から直接文字列マップを参照しない構成へ切り替える。
-- [ ] [ID: P0-STDLIB-SOT-01-S2-02] `perf_counter` を含む代表ケースを参照層経由へ移し、`core.py` の戻り値型直書きを撤去する。
+- [x] [ID: P0-STDLIB-SOT-01-S1-01] `core.py` の標準ライブラリ知識直書き箇所（`perf_counter` / `Path` / `str.*` / `dict.*` 等）を棚卸しし、置換対象を固定する。
+- [x] [ID: P0-STDLIB-SOT-01-S1-02] `pytra/std` を正本とするシグネチャ参照仕様（取得単位・型表現・未定義時の fail-closed）を文書化する。
+- [x] [ID: P0-STDLIB-SOT-01-S2-01] compiler 側に stdlib シグネチャ参照層を新設し、`core.py` から直接文字列マップを参照しない構成へ切り替える。
+- [x] [ID: P0-STDLIB-SOT-01-S2-02] `perf_counter` を含む代表ケースを参照層経由へ移し、`core.py` の戻り値型直書きを撤去する。
 - [ ] [ID: P0-STDLIB-SOT-01-S2-03] `Path` / `str.*` などメソッド系マッピングを段階移行し、`core.py` の責務を構文解析+EAST整形へ限定する。
 - [ ] [ID: P0-STDLIB-SOT-01-S3-01] 回帰テスト（型推論・lowering・sample 代表ケース）を追加し、`pytra/std` 仕様変更時の検知を固定する。
