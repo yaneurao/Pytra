@@ -290,22 +290,35 @@ public:
 
 class PyListIterObj : public PyObj {
 public:
+    explicit PyListIterObj(object owner_list)
+        : PyObj(PYTRA_TID_OBJECT), owner_list_(::std::move(owner_list)), use_owner_(true), index_(0) {}
+
     explicit PyListIterObj(list<object> values)
-        : PyObj(PYTRA_TID_OBJECT), values_(::std::move(values)), index_(0) {}
+        : PyObj(PYTRA_TID_OBJECT), values_(::std::move(values)), use_owner_(false), index_(0) {}
 
     object py_iter_or_raise() const override {
         return object(static_cast<PyObj*>(const_cast<PyListIterObj*>(this)));
     }
 
     ::std::optional<object> py_next_or_stop() override {
-        if (index_ >= static_cast<int64>(values_.size())) return ::std::nullopt;
-        object out = values_[static_cast<::std::size_t>(index_)];
+        const list<object>* values_ptr = nullptr;
+        if (use_owner_) {
+            const auto* owner = dynamic_cast<const PyListObj*>(owner_list_.get());
+            if (owner == nullptr) return ::std::nullopt;
+            values_ptr = &(owner->value);
+        } else {
+            values_ptr = &values_;
+        }
+        if (values_ptr == nullptr || index_ >= static_cast<int64>(values_ptr->size())) return ::std::nullopt;
+        object out = (*values_ptr)[static_cast<::std::size_t>(index_)];
         index_ += 1;
         return out;
     }
 
 private:
+    object owner_list_;
     list<object> values_;
+    bool use_owner_;
     int64 index_;
 };
 
@@ -356,7 +369,7 @@ inline object PyStrObj::py_iter_or_raise() const {
 }
 
 inline object PyListObj::py_iter_or_raise() const {
-    return object_new<PyListIterObj>(value);
+    return object_new<PyListIterObj>(object(static_cast<PyObj*>(const_cast<PyListObj*>(this))));
 }
 
 inline object PyDictObj::py_iter_or_raise() const {

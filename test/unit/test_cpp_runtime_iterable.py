@@ -71,6 +71,18 @@ int main() {
     assert(n2.has_value() && obj_to_int64(*n2) == 3);
     assert(!n3.has_value());
 
+    object mut_list_obj = make_object(list<int64>{10, 20});
+    object mut_iter_obj = py_iter_or_raise(mut_list_obj);
+    auto m0 = py_next_or_stop(mut_iter_obj);
+    assert(m0.has_value() && obj_to_int64(*m0) == 10);
+    py_append(mut_list_obj, make_object(int64(30)));
+    auto m1 = py_next_or_stop(mut_iter_obj);
+    auto m2 = py_next_or_stop(mut_iter_obj);
+    auto m3 = py_next_or_stop(mut_iter_obj);
+    assert(m1.has_value() && obj_to_int64(*m1) == 20);
+    assert(m2.has_value() && obj_to_int64(*m2) == 30);
+    assert(!m3.has_value());
+
     int64 sum = 0;
     for (object v : py_dyn_range(list_obj)) {
         sum += obj_to_int64(v);

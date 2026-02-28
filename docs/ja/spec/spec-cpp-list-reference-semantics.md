@@ -38,20 +38,27 @@
 - 共有 alias がある場合、すべての参照から更新結果が観測できなければならない。
 - 非 alias（別実体）の場合のみ独立に更新される。
 
-## 7. 段階移行ポリシー
+## 7. PyListObj の寿命/iter 契約
+
+- `PyListObj::py_iter_or_raise()` は list 値の snapshot ではなく owner list 実体を参照する iterator を返す。
+- iterator は owner list の寿命を保持する（owner 参照が失効した場合は停止）。
+- 反復中に `py_append` された要素は、未走査範囲に存在する限り反復結果へ反映される。
+- `py_try_len` / `py_truthy` は owner list 実体の現在状態に対して評価される。
+
+## 8. 段階移行ポリシー
 
 - Phase 1: `value|pyobj` dual model を許容し、切替フラグで比較可能にする。
 - Phase 2: `pyobj` モデルで transpile/smoke/parity を安定化する。
 - Phase 3: non-escape 注釈付き経路のみ stack/RAII へ縮退する。
 - Phase 4: 既定を `pyobj` へ切替し、`value` は rollback 期間後に撤去する。
 
-## 8. fail-closed ルール
+## 9. fail-closed ルール
 
 - 変換不能・型不明・外部呼び出し混在経路は最適化を適用しない。
 - non-escape が証明できない list を stack 化しない。
 - 意味論が不明な場合は heap/pyobj 側に倒す。
 
-## 9. 受け入れ判定
+## 10. 受け入れ判定
 
 - alias 期待 fixture（`a=b` 後の `append/pop`）で Python と一致する。
 - `check_py2cpp_transpile` / C++ smoke / sample parity を満たす。

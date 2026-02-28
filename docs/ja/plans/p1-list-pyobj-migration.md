@@ -110,6 +110,8 @@
 - 2026-02-28: `docs/ja/spec/spec-cpp-list-reference-semantics.md` を新設し、現行 `value model` 契約（コピー代入）と移行先 `pyobj model` 契約（alias 共有）を明文化した。
 - 2026-02-28: alias 期待 fixture `test/fixtures/collections/list_alias_shared_mutation.py` を追加し、`python3 tools/runtime_parity_check.py --case-root fixture --targets cpp list_alias_shared_mutation` で `output mismatch`（Python=`True`, C++=`False`）を確認して差分を固定した。
 - 2026-02-28: `sample/py` + `test/fixtures` を AST スキャンし、list 型注釈を持つ `name = name` 代入の候補を棚卸しした結果、現時点の候補は `test/fixtures/collections/list_alias_shared_mutation.py:7 (b = a)` の 1 件のみだった。
+- 2026-02-28: runtime の `PyListIterObj` を owner list 参照型へ拡張し、`PyListObj::py_iter_or_raise()` が snapshot ではなく owner 実体を保持する iterator を返すよう変更した。
+- 2026-02-28: `test_cpp_runtime_iterable.py` に「反復中 `py_append` した要素を iterator が観測する」回帰を追加し、`test_cpp_runtime_iterable.py` / `test_cpp_runtime_boxing.py` の runtime compile-run テストがともに通過することを確認した。
 
 ## 分解
 
@@ -117,7 +119,7 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピーに依存する箇所を棚卸しして決定ログに固定する。
 
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-03] 旧値モデルとの互換ブリッジ（最小）を追加し、段階移行中の compile break を抑える。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-04] runtime 単体テスト（構築・alias・iter・境界変換）を追加する。
