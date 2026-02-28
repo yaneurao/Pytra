@@ -160,7 +160,21 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
     )
     if old_east_get not in out:
         raise RuntimeError("failed to patch module_east_raw access in support blocks")
-    return out.replace(old_east_get, new_east_get, 1)
+    out = out.replace(old_east_get, new_east_get, 1)
+
+    old_resolved_get = (
+        "    status = dict_any_get_str(resolved, \"status\")\n"
+        "    module_id = dict_any_get_str(resolved, \"module_id\", raw_name)\n"
+        "    path_txt = dict_any_get_str(resolved, \"path\")\n"
+    )
+    new_resolved_get = (
+        "    status = resolved[\"status\"] if \"status\" in resolved else \"\"\n"
+        "    module_id = resolved[\"module_id\"] if \"module_id\" in resolved else raw_name\n"
+        "    path_txt = resolved[\"path\"] if \"path\" in resolved else \"\"\n"
+    )
+    if old_resolved_get not in out:
+        raise RuntimeError("failed to patch resolve_module_name dict access in support blocks")
+    return out.replace(old_resolved_get, new_resolved_get, 1)
 
 
 def _patch_selfhost_hooks(text: str, prepare_base) -> str:
