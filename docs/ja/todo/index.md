@@ -79,6 +79,15 @@
 7. [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-01] `check_py2rs_transpile` / Rust smoke / parity を更新して回帰を固定する。
 8. [ ] [ID: P1-RS-RUNTIME-EXT-01-S3-02] `sample/rs` を再生成し、inline helper 残存ゼロを確認する。
 
+### P1: Ruby 計測値の再計測・parity確認・README反映フロー固定
+
+文脈: [docs/ja/plans/p1-ruby-benchmark-readme-fix.md](../plans/p1-ruby-benchmark-readme-fix.md)
+
+1. [ ] [ID: P1-RUBY-BENCH-FIX-01] Ruby 計測値更新時に「fresh transpile → parity確認 → README反映」を必須化する。
+2. [ ] [ID: P1-RUBY-BENCH-FIX-01-S1-01] `sample/01` を `ruby --yjit`（`warmup=1`, `repeat=5`）で再計測し、ログを保存する。
+3. [ ] [ID: P1-RUBY-BENCH-FIX-01-S1-02] `runtime_parity_check` で `sample/01` の Ruby parity を確認する。
+4. [ ] [ID: P1-RUBY-BENCH-FIX-01-S1-03] `docs/ja/README.md` の Ruby 列へ測定値を反映し、差分を確定する。
+
 ### P1: `core.py` の `Path` 直分岐撤去（stdlib 正本化）
 
 文脈: [docs/ja/plans/p1-core-path-direct-branch-removal.md](../plans/p1-core-path-direct-branch-removal.md)
