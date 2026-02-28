@@ -12,6 +12,10 @@ _CLASS_PATTERN = r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*
 _FUNC_RETURNS_CACHE: dict[str, str] | None = None
 _METHOD_RETURNS_CACHE: dict[str, dict[str, str]] | None = None
 
+_FUNCTION_RUNTIME_CALLS: dict[str, str] = {
+    "perf_counter": "perf_counter",
+}
+
 _OWNER_METHOD_RUNTIME_CALLS: dict[str, dict[str, str]] = {
     "str": {
         "strip": "py_strip",
@@ -280,6 +284,13 @@ def lookup_stdlib_method_runtime_call(owner_type: str, method_name: str) -> str:
     return owner_map.get(method, "")
 
 
+def lookup_stdlib_function_runtime_call(function_name: str) -> str:
+    fn = function_name.strip()
+    if fn == "":
+        return ""
+    return _FUNCTION_RUNTIME_CALLS.get(fn, "")
+
+
 def lookup_stdlib_attribute_type(owner_type: str, attr_name: str) -> str:
     owner = owner_type.strip()
     attr = attr_name.strip()
@@ -292,6 +303,7 @@ def lookup_stdlib_attribute_type(owner_type: str, attr_name: str) -> str:
 __all__ = [
     "lookup_stdlib_attribute_type",
     "lookup_stdlib_function_return_type",
+    "lookup_stdlib_function_runtime_call",
     "lookup_stdlib_method_runtime_call",
     "lookup_stdlib_method_return_type",
 ]

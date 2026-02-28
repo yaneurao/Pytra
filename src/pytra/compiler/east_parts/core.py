@@ -12,6 +12,7 @@ from pytra.std.pathlib import Path
 from pytra.std import sys
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
+from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_call
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
 
 
@@ -2508,6 +2509,7 @@ class _ShExprParser:
                     "args": args,
                     "keywords": keywords,
                 }
+                stdlib_fn_runtime_call = lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""
                 if fn_name == "print":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "print"
@@ -2545,11 +2547,11 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = "py_min" if fn_name == "min" else "py_max"
-                elif fn_name == "perf_counter":
+                elif stdlib_fn_runtime_call != "":
                     payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "perf_counter"
-                    payload["runtime_call"] = "perf_counter"
-                    sig_ret = lookup_stdlib_function_return_type("perf_counter")
+                    payload["builtin_name"] = fn_name
+                    payload["runtime_call"] = stdlib_fn_runtime_call
+                    sig_ret = lookup_stdlib_function_return_type(fn_name)
                     if sig_ret != "":
                         payload["resolved_type"] = sig_ret
                 elif fn_name in {"Exception", "RuntimeError"}:

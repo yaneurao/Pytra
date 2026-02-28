@@ -15,6 +15,7 @@ from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_
 from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
 from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
 from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_return_type
+from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_call
 
 
 class StdlibSignatureRegistryTest(unittest.TestCase):
@@ -33,6 +34,10 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
         self.assertEqual(lookup_stdlib_method_runtime_call("list[int64]", "append"), "list.append")
         self.assertEqual(lookup_stdlib_method_runtime_call("int64", "to_bytes"), "py_int_to_bytes")
         self.assertEqual(lookup_stdlib_method_runtime_call("unknown", "isdigit"), "py_isdigit")
+
+    def test_lookup_function_runtime_call(self) -> None:
+        self.assertEqual(lookup_stdlib_function_runtime_call("perf_counter"), "perf_counter")
+        self.assertEqual(lookup_stdlib_function_runtime_call("unknown_symbol"), "")
 
     def test_lookup_attribute_type_by_owner_type(self) -> None:
         self.assertEqual(lookup_stdlib_attribute_type("Path", "parent"), "Path")

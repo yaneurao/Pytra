@@ -177,6 +177,12 @@ def main() -> float:
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].get("resolved_type"), "float64")
 
+    def test_core_does_not_reintroduce_perf_counter_direct_branch(self) -> None:
+        core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
+        src = core_path.read_text(encoding="utf-8")
+        self.assertNotIn('fn_name == "perf_counter"', src)
+        self.assertNotIn("fn_name == 'perf_counter'", src)
+
     def test_path_mkdir_keywords_are_kept(self) -> None:
         src = """
 from pathlib import Path

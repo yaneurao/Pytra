@@ -70,7 +70,7 @@
 - [x] [ID: P0-STDLIB-SOT-01-S2-02] `perf_counter` を含む代表ケースを参照層経由へ移し、`core.py` の戻り値型直書きを撤去する。
 - [x] [ID: P0-STDLIB-SOT-01-S2-03] `Path` / `str.*` などメソッド系マッピングを段階移行し、`core.py` の責務を構文解析+EAST整形へ限定する。
 - [x] [ID: P0-STDLIB-SOT-01-S3-01] 回帰テスト（型推論・lowering・sample 代表ケース）を追加し、`pytra/std` 仕様変更時の検知を固定する。
-- [ ] [ID: P0-STDLIB-SOT-02] `core.py` の `fn_name == "perf_counter"` 直分岐を撤去し、stdlib シグネチャ参照層へ一本化する。
-- [ ] [ID: P0-STDLIB-SOT-02-S1-01] `core.py` から `perf_counter` 文字列依存を削除し、`BuiltinCall` 判定を import 解決情報または共通 resolver 経由へ移行する。
-- [ ] [ID: P0-STDLIB-SOT-02-S1-02] `test_east_core.py` に再混入防止回帰を追加する。
-- [ ] [ID: P0-STDLIB-SOT-02-S2-01] `test_py2cpp_codegen_issues.py` と `check_py2cpp_transpile.py` で非退行を確認する。
+- [x] [ID: P0-STDLIB-SOT-02] `core.py` の `fn_name == "perf_counter"` 直分岐を撤去し、stdlib シグネチャ参照層へ一本化する。
+- [x] [ID: P0-STDLIB-SOT-02-S1-01] `core.py` から `perf_counter` 文字列依存を削除し、`BuiltinCall` 判定を import 解決情報または共通 resolver 経由へ移行する。
+- [x] [ID: P0-STDLIB-SOT-02-S1-02] `test_east_core.py` に再混入防止回帰を追加する。
+- [x] [ID: P0-STDLIB-SOT-02-S2-01] `test_py2cpp_codegen_issues.py` と `check_py2cpp_transpile.py` で非退行を確認する。
