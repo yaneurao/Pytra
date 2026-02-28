@@ -1077,6 +1077,50 @@ def f(x: object) -> bool:
         self.assertIn("list<object> __out;", cpp)
         self.assertIn("return make_object(__out);", cpp)
 
+    def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
+        src = """def f() -> int:
+    xs: list[int] = []
+    xs.append(1)
+    xs.append(2)
+    head: int = xs[0]
+    return head + len(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_stack_local_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("xs.append(int64(1));", cpp)
+        self.assertIn("xs.append(int64(2));", cpp)
+        self.assertIn("int64 head = xs[0];", cpp)
+        self.assertNotIn("py_append(xs", cpp)
+        self.assertNotIn("py_at(xs", cpp)
+
+    def test_pyobj_list_model_keeps_runtime_path_when_local_list_escapes(self) -> None:
+        src = """def sink(xs: list[int]) -> int:
+    return len(xs)
+
+def f() -> int:
+    xs: list[int] = []
+    xs.append(1)
+    return sink(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_stack_local_list_escape.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("object xs = make_object(list<object>{});", cpp)
+        self.assertIn("py_append(xs, make_object(1));", cpp)
+        self.assertIn("return sink(xs);", cpp)
+
 
 if __name__ == "__main__":
     unittest.main()

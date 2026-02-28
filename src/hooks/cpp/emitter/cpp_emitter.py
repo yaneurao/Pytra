@@ -223,10 +223,12 @@ class CppEmitter(
         self.current_function_yield_type: str = "unknown"
         self.current_function_symbol: str = ""
         self.current_function_non_escape_summary: dict[str, Any] = {}
+        self.current_function_stack_list_locals: set[str] = set()
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_non_escape_summary_map: dict[str, dict[str, Any]] = {}
+        self.function_stack_list_locals_map: dict[str, list[str]] = {}
         self.non_escape_callsite_records: list[dict[str, Any]] = []
 
     def current_scope_names(self) -> set[str]:
@@ -387,6 +389,187 @@ class CppEmitter(
             "callee_arg_escape": self.any_to_list(callsite.get("callee_arg_escape")),
         }
         self.non_escape_callsite_records.append(record)
+
+    def _is_stack_list_local_name(self, name: str) -> bool:
+        """現在関数で stack/value 縮退対象になった list ローカルか判定する。"""
+        if name == "":
+            return False
+        return name in self.current_function_stack_list_locals
+
+    def _expr_is_stack_list_local(self, expr_node: Any) -> bool:
+        """式が stack/value list ローカル参照かを返す（Name 限定）。"""
+        node = self.any_to_dict_or_empty(expr_node)
+        if self._node_kind_from_dict(node) != "Name":
+            return False
+        name = self.any_dict_get_str(node, "id", "")
+        return self._is_stack_list_local_name(name)
+
+    def _cpp_list_value_model_type_text(self, east_type: str) -> str:
+        """`cpp_list_model=pyobj` 下でも list を value-model 型文字列へ展開する。"""
+        t = self.normalize_type_name(east_type)
+        parts = self.type_generic_args(t, "list")
+        if len(parts) != 1:
+            return "list<object>"
+        elem = self.normalize_type_name(parts[0])
+        if elem in {"", "unknown", "Any", "object", "None"}:
+            return "list<object>"
+        if elem == "uint8":
+            return "bytearray"
+        return f"list<{self._cpp_type_text(elem)}>"
+
+    def _collect_name_reads(self, node: Any, out: set[str]) -> None:
+        """式/文ノード内の Name 参照を抽出する。"""
+        if isinstance(node, list):
+            i = 0
+            while i < len(node):
+                self._collect_name_reads(node[i], out)
+                i += 1
+            return
+        if not isinstance(node, dict):
+            return
+        if node.get("kind") == "Name":
+            ident = self.any_dict_get_str(node, "id", "")
+            if ident != "":
+                out.add(ident)
+        for value in node.values():
+            self._collect_name_reads(value, out)
+
+    def _collect_name_targets(self, target_node: Any, out: set[str]) -> None:
+        """代入ターゲットの Name 集合を抽出する。"""
+        if isinstance(target_node, list):
+            i = 0
+            while i < len(target_node):
+                self._collect_name_targets(target_node[i], out)
+                i += 1
+            return
+        node = self.any_to_dict_or_empty(target_node)
+        kind = self._node_kind_from_dict(node)
+        if kind == "Name":
+            ident = self.any_dict_get_str(node, "id", "")
+            if ident != "":
+                out.add(ident)
+            return
+        if kind == "Tuple":
+            elems = self.any_to_list(node.get("elements"))
+            i = 0
+            while i < len(elems):
+                self._collect_name_targets(elems[i], out)
+                i += 1
+
+    def _collect_stack_list_locals(self, fn_stmt: dict[str, Any]) -> set[str]:
+        """関数内で stack/value 縮退可能な list ローカル候補を返す（fail-closed）。"""
+        out: set[str] = set()
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return out
+        body = self._dict_stmt_list(fn_stmt.get("body"))
+        candidates: set[str] = set()
+        i = 0
+        while i < len(body):
+            st = body[i]
+            if self._node_kind_from_dict(st) == "AnnAssign":
+                target = self.any_to_dict_or_empty(st.get("target"))
+                if self._node_kind_from_dict(target) == "Name":
+                    ann_t = self.normalize_type_name(self.any_dict_get_str(st, "annotation", ""))
+                    value = self.any_to_dict_or_empty(st.get("value"))
+                    is_empty_list_literal = (
+                        self._node_kind_from_dict(value) == "List"
+                        and len(self._dict_stmt_list(value.get("elements"))) == 0
+                    )
+                    if ann_t.startswith("list[") and ann_t.endswith("]") and is_empty_list_literal:
+                        nm = self.any_dict_get_str(target, "id", "")
+                        if nm != "":
+                            candidates.add(nm)
+            i += 1
+        if len(candidates) == 0:
+            return out
+
+        escaped: set[str] = set()
+
+        def _scan_escape(cur: Any) -> None:
+            node = self.any_to_dict_or_empty(cur)
+            if len(node) == 0:
+                return
+            kind = self._node_kind_from_dict(node)
+            if kind == "Return":
+                value_node = self.any_to_dict_or_empty(node.get("value"))
+                value_kind = self._node_kind_from_dict(value_node)
+                if value_kind == "Name":
+                    value_name = self.any_dict_get_str(value_node, "id", "")
+                    if value_name in candidates:
+                        escaped.add(value_name)
+                elif value_kind in {"Tuple", "List", "Set", "Dict"}:
+                    reads: set[str] = set()
+                    self._collect_name_reads(value_node, reads)
+                    for nm in reads:
+                        if nm in candidates:
+                            escaped.add(nm)
+            if kind == "Call":
+                meta = self.any_to_dict_or_empty(node.get("meta"))
+                callsite = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
+                callee_arg_escape_any = callsite.get("callee_arg_escape")
+                if isinstance(callee_arg_escape_any, list) and len(callee_arg_escape_any) > 0:
+                    args_any = self.any_to_list(node.get("args"))
+                    i = 0
+                    while i < len(args_any):
+                        if i < len(callee_arg_escape_any) and bool(callee_arg_escape_any[i]):
+                            reads_cs: set[str] = set()
+                            self._collect_name_reads(args_any[i], reads_cs)
+                            for nm in reads_cs:
+                                if nm in candidates:
+                                    escaped.add(nm)
+                        i += 1
+                else:
+                    safe_call = False
+                    runtime_call = self.any_dict_get_str(node, "runtime_call", "")
+                    builtin_name = self.any_dict_get_str(node, "builtin_name", "")
+                    if runtime_call in {"py_len", "py_to_string", "py_to_bool", "py_to_int64", "py_to_float64"}:
+                        safe_call = True
+                    if builtin_name == "len":
+                        safe_call = True
+                    fn_node = self.any_to_dict_or_empty(node.get("func"))
+                    fn_kind = self._node_kind_from_dict(fn_node)
+                    if fn_kind == "Name":
+                        fn_name = self.any_dict_get_str(fn_node, "id", "")
+                        if fn_name == "len":
+                            safe_call = True
+                    if fn_kind == "Attribute":
+                        attr = self.any_dict_get_str(fn_node, "attr", "")
+                        owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
+                        owner_name = self.any_dict_get_str(owner_node, "id", "")
+                        if (
+                            owner_name in candidates
+                            and attr in {"append", "extend", "pop", "clear", "reverse", "sort"}
+                        ):
+                            safe_call = True
+                    if not safe_call:
+                        arg_reads: set[str] = set()
+                        self._collect_name_reads(node.get("args"), arg_reads)
+                        self._collect_name_reads(node.get("keywords"), arg_reads)
+                        for nm in arg_reads:
+                            if nm in candidates:
+                                escaped.add(nm)
+            if kind == "Assign" or kind == "AnnAssign":
+                targets2: set[str] = set()
+                self._collect_name_targets(node.get("target"), targets2)
+                value_node = self.any_to_dict_or_empty(node.get("value"))
+                if self._node_kind_from_dict(value_node) == "Name":
+                    value_name = self.any_dict_get_str(value_node, "id", "")
+                    if value_name in candidates:
+                        # `x = x` 以外の Name 直代入（別名化）は escape。
+                        if not (len(targets2) == 1 and value_name in targets2):
+                            escaped.add(value_name)
+            for value in node.values():
+                if isinstance(value, dict) or isinstance(value, list):
+                    _scan_escape(value)
+
+        i = 0
+        while i < len(body):
+            _scan_escape(body[i])
+            i += 1
+        for nm in candidates:
+            if nm not in escaped:
+                out.add(nm)
+        return out
 
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
@@ -2051,6 +2234,7 @@ class CppEmitter(
             self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
             and val_ty.startswith("list[")
             and val_ty.endswith("]")
+            and not self._expr_is_stack_list_local(expr.get("value"))
         ):
             at_expr = f"py_at({val}, py_to<int64>({idx}))"
             expr_t = self.normalize_type_name(self.get_expr_type(expr))
@@ -2426,7 +2610,8 @@ class CppEmitter(
             value_node = expr_d.get("value")
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            owner_stack_list = self._expr_is_stack_list_local(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj" and not owner_stack_list:
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
                 return f"py_append({owner_expr}, {boxed_value})"
             owner_t0 = self.get_expr_type(owner_node)
@@ -2443,7 +2628,8 @@ class CppEmitter(
             value_node = expr_d.get("value")
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            owner_stack_list = self._expr_is_stack_list_local(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj" and not owner_stack_list:
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
                 return f"py_extend({owner_expr}, {boxed_value})"
             return f"{owner_expr}.insert({owner_expr}.end(), {value_expr}.begin(), {value_expr}.end())"
@@ -2457,7 +2643,8 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             has_index = self.any_dict_has(expr_d, "index")
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            owner_stack_list = self._expr_is_stack_list_local(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj" and not owner_stack_list:
                 if not has_index:
                     return f"py_pop({owner_expr})"
                 index_node = expr_d.get("index")
@@ -2475,19 +2662,22 @@ class CppEmitter(
         if kind == "ListClear":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            owner_stack_list = self._expr_is_stack_list_local(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj" and not owner_stack_list:
                 return f"py_clear({owner_expr})"
             return f"{owner_expr}.clear()"
         if kind == "ListReverse":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            owner_stack_list = self._expr_is_stack_list_local(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj" and not owner_stack_list:
                 return f"py_reverse({owner_expr})"
             return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "ListSort":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            owner_stack_list = self._expr_is_stack_list_local(owner_node)
+            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj" and not owner_stack_list:
                 return f"py_sort({owner_expr})"
             return f"::std::sort({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "SetErase":

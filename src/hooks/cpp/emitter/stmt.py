@@ -67,6 +67,8 @@ class CppStatementEmitter:
                 t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
         target = self.render_expr(stmt.get("target"))
+        target_name_raw = self.any_dict_get_str(target_node, "id", "")
+        stack_list_local = self._is_stack_list_local_name(target_name_raw)
         val = self.any_to_dict_or_empty(stmt.get("value"))
         val_is_dict: bool = len(val) > 0
         rendered_val: str = ""
@@ -75,6 +77,8 @@ class CppStatementEmitter:
         ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
         ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
         ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
+        if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
+            t = self._cpp_list_value_model_type_text(ann_t_str)
         if rendered_val != "" and ann_t_str != "":
             rendered_val = self._rewrite_nullopt_default_for_typed_target(rendered_val, ann_t_str)
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
@@ -97,7 +101,9 @@ class CppStatementEmitter:
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
             if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                if (
+                if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
+                    rendered_val = f"{t}{{}}"
+                elif (
                     self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
                     and ann_t_str.startswith("list[")
                     and ann_t_str.endswith("]")
@@ -941,6 +947,11 @@ class CppStatementEmitter:
                         if part_norm.startswith("list[") and part_norm.endswith("]"):
                             force_runtime_iter = True
                             break
+            iter_expr_name = ""
+            if self._node_kind_from_dict(iter_expr) == "Name":
+                iter_expr_name = self.any_dict_get_str(iter_expr, "id", "")
+            if self._is_stack_list_local_name(iter_expr_name):
+                force_runtime_iter = False
             target_kind = self.any_dict_get_str(target_plan, "kind", "")
             if target_kind == "NameTarget":
                 target_id = self.any_dict_get_str(target_plan, "id", "")
@@ -1058,11 +1069,16 @@ class CppStatementEmitter:
         if mode_txt == "runtime_protocol":
             return mode_txt
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+        iter_name = ""
+        if self._node_kind_from_dict(iter_expr) == "Name":
+            iter_name = self.any_dict_get_str(iter_expr, "id", "")
         iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
         if iter_t == "":
             iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
         if mode_txt == "static_fastpath":
             if list_model == "pyobj":
+                if self._is_stack_list_local_name(iter_name):
+                    return mode_txt
                 if iter_t.startswith("list[") and iter_t.endswith("]"):
                     return "runtime_protocol"
                 if self._contains_text(iter_t, "|"):
@@ -1075,6 +1091,8 @@ class CppStatementEmitter:
         if iter_t == "Any" or iter_t == "object":
             return "runtime_protocol"
         if list_model == "pyobj":
+            if self._is_stack_list_local_name(iter_name):
+                return "static_fastpath"
             if iter_t.startswith("list[") and iter_t.endswith("]"):
                 return "runtime_protocol"
         # 明示 `iter_mode` が無い既存 EAST では selfhost 互換を優先し、unknown は static 側に倒す。
@@ -1099,6 +1117,11 @@ class CppStatementEmitter:
             function_symbol = str(self.current_class_name) + "." + function_symbol
         fn_non_escape_summary = self._resolve_function_non_escape_summary(stmt, function_symbol)
         self.function_non_escape_summary_map[function_symbol] = dict(fn_non_escape_summary) if len(fn_non_escape_summary) > 0 else {}
+        prev_fn_non_escape_for_collect = self.current_function_non_escape_summary
+        self.current_function_non_escape_summary = dict(fn_non_escape_summary)
+        stack_list_locals = self._collect_stack_list_locals(stmt)
+        self.current_function_non_escape_summary = prev_fn_non_escape_for_collect
+        self.function_stack_list_locals_map[function_symbol] = sorted(list(stack_list_locals))
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
         is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
         yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
@@ -1180,11 +1203,13 @@ class CppStatementEmitter:
         prev_yield_ty = self.current_function_yield_type
         prev_fn_symbol = self.current_function_symbol
         prev_fn_non_escape = self.current_function_non_escape_summary
+        prev_stack_list_locals = self.current_function_stack_list_locals
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
         self.current_function_symbol = function_symbol
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
+        self.current_function_stack_list_locals = set(stack_list_locals)
         for i, an in enumerate(arg_names):
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
@@ -1211,6 +1236,7 @@ class CppStatementEmitter:
         self.current_function_yield_type = prev_yield_ty
         self.current_function_symbol = prev_fn_symbol
         self.current_function_non_escape_summary = prev_fn_non_escape
+        self.current_function_stack_list_locals = prev_stack_list_locals
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1
