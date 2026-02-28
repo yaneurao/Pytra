@@ -170,6 +170,23 @@ ruby test/transpile/ruby/iterable.rb
 </details>
 
 <details>
+<summary>Lua</summary>
+
+```bash
+python src/py2lua.py test/fixtures/collections/iterable.py -o test/transpile/lua/iterable.lua
+lua test/transpile/lua/iterable.lua
+```
+
+補足:
+- `py2lua.py` は EAST3 から Lua native emitter（`src/hooks/lua/emitter/lua_native_emitter.py`）で直接コード生成します。
+- 画像 API（`png.write_rgb_png` / `save_gif`）は現状 stub/no-op runtime で受けます。
+- 変換回帰は `python3 tools/check_py2lua_transpile.py` で確認できます（現状は expected-fail を除外して監視）。
+- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets lua 17_monte_carlo_pi --ignore-unstable-stdout` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
+- `sample/lua` は現時点で `02_raytrace_spheres` / `03_julia_set` / `04_orbit_trap_julia` / `17_monte_carlo_pi` を再生成済みです。
+
+</details>
+
+<details>
 <summary>C#</summary>
 
 ```bash

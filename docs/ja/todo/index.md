@@ -58,12 +58,13 @@
 4. [x] [ID: P0-LUA-BACKEND-01-S2-01] 式/文の基本 lower（代入、分岐、ループ、呼び出し、組み込み最小）を実装する。
 5. [x] [ID: P0-LUA-BACKEND-01-S2-02] class/instance/isinstance/import（`math`・画像runtime含む）対応を段階実装する。
 6. [x] [ID: P0-LUA-BACKEND-01-S3-01] `tools/check_py2lua_transpile.py` と `test_py2lua_smoke.py`、`runtime_parity_check --targets lua` 導線を追加し回帰を固定する。
-7. [ ] [ID: P0-LUA-BACKEND-01-S3-02] `sample/lua` 再生成と `docs/ja` 利用手順・対応表の同期を行う。
+7. [x] [ID: P0-LUA-BACKEND-01-S3-02] `sample/lua` 再生成と `docs/ja` 利用手順・対応表の同期を行う。
 - `P0-LUA-BACKEND-01-S1-01` `docs/ja/spec/spec-lua-native-backend.md` を追加し、EAST3 only / fail-closed / runtime 境界 / 非対象を契約として明文化した。
 - `P0-LUA-BACKEND-01-S1-02` `src/py2lua.py` と `src/hooks/lua/emitter/` の骨格を追加し、`test_py2lua_smoke.py` で `add/if_else/for_range` を通る最小 native 経路を固定した。
 - `P0-LUA-BACKEND-01-S2-01` 基本 lower（`Assign/While/Dict/Subscript/IfExp/JoinedStr/Attribute` など）を追加し、`test_py2lua_smoke.py` を 12 件へ拡張。fixture 横断で `ok 22 -> 57` に改善した。
 - `P0-LUA-BACKEND-01-S2-02` class/instance/isinstance/import（`math`・画像stub）を追加し、`test_py2lua_smoke.py` を 15 件へ拡張。fixture 横断で `ok 57 -> 81` に改善した。
 - `P0-LUA-BACKEND-01-S3-01` `check_py2lua_transpile.py` を追加し `checked=86 ok=86 fail=0 skipped=53` を確認。`runtime_parity_check --targets lua` 導線を追加し、toolchain未導入環境でも PASS まで確認した。
+- `P0-LUA-BACKEND-01-S3-02` `sample/lua` を `02/03/04/17` で再生成（`summary: total=4 skip=0 regen=4 fail=0`）し、`docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` / `docs/ja/spec/spec-import.md` / `sample/readme-ja.md` を Lua 導線に同期した。
 
 ### P1: Go/Java/Swift/Ruby runtime 外出し（inline helper 撤去）
 

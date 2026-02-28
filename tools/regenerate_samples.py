@@ -33,6 +33,7 @@ LANG_CONFIGS: dict[str, dict[str, str]] = {
     "java": {"cli": "src/py2java.py", "out_dir": "sample/java", "ext": ".java"},
     "swift": {"cli": "src/py2swift.py", "out_dir": "sample/swift", "ext": ".swift"},
     "kotlin": {"cli": "src/py2kotlin.py", "out_dir": "sample/kotlin", "ext": ".kt"},
+    "lua": {"cli": "src/py2lua.py", "out_dir": "sample/lua", "ext": ".lua"},
 }
 
 LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
@@ -45,6 +46,7 @@ LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
     "java": ["java", "cs"],
     "swift": ["swift", "cs"],
     "kotlin": ["kotlin", "cs"],
+    "lua": ["lua"],
 }
 
 SEMVER_PARTS = 3

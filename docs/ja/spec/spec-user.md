@@ -21,6 +21,8 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 - Python -> Java (`src/py2java.py`)
 - Python -> Swift (`src/py2swift.py`)
 - Python -> Kotlin (`src/py2kotlin.py`)
+- Python -> Ruby (`src/py2rb.py`)
+- Python -> Lua (`src/py2lua.py`)
 
 ## 2. Python 入力仕様
 
@@ -55,7 +57,7 @@ Pytra は、型注釈付き Python コードを次の言語へ変換するトラ
 ## 3. テストケース方針
 
 - 入力 Python は `test/fixtures/` 配下に配置します（カテゴリ別サブディレクトリ）。
-- 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/` に配置します。
+- 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/`, `test/transpile/ruby/`, `test/transpile/lua/` に配置します。
 - 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
 - ケース命名は説明的な `snake_case`（例: `dict_get_items.py`）を基本とします。
 
@@ -83,7 +85,7 @@ test/
 ## 4. サンプルプログラム方針
 
 - 実用サンプルは `sample/py/` に配置します。
-- 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/` に配置します。
+- 言語別の変換結果は `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/`, `sample/ruby/`, `sample/lua/` に配置します。
 - バイナリや中間生成物は `sample/obj/`, `sample/out/` を利用します（Git 管理外）。
 - Python から import する自作ライブラリは `src/pytra/` 配下（`pytra.std.*`, `pytra.utils.*`）を使用します。
   - 画像: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`

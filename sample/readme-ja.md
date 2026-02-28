@@ -32,6 +32,7 @@
 注記:
 - `実行結果` が `-` の項目は、現時点で `sample/images/` に公開画像/GIF成果物を置いていないサンプルです。
 - GitHub 上で `sample/` を開いたときに辿りやすいよう、パスベースで整理しています。
+- Lua 出力は fail-closed 運用です。現時点で `sample/lua` へ再生成済みなのは `02/03/04/17` の4件です。
 
 ## サンプル運用ガイド
 
@@ -52,6 +53,7 @@
 - [`swift/`](swift): Swift 変換結果
 - [`kotlin/`](kotlin): Kotlin 変換結果
 - [`ruby/`](ruby): Ruby 変換結果
+- [`lua/`](lua): Lua 変換結果（段階対応）
 - [`images/`](images): README 表示用の静的画像（Git 管理）
 - `obj/`: 各言語のビルド生成物（Git 管理外）
 - `out/`: 実行時の出力画像（PNG/GIF、Git 管理外）

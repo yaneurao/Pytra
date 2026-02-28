@@ -222,7 +222,7 @@ QualifiedSymbolRef
 
 ## 追記: 対応言語ごとの具体実装方針（`README.md` / `docs/ja/plans/pytra-wip.md` 準拠）
 
-対応言語は `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin`。
+対応言語は `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin / Ruby / Lua`。
 
 ### 1. C++（`src/py2cpp.py`）
 
@@ -328,7 +328,27 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Kotlin 出力へ進ませない。
 
-### 10. 言語別実装の統合順序（推奨）
+### 10. Ruby（`src/py2rb.py` + `src/hooks/ruby/emitter/ruby_native_emitter.py`）
+
+- 実装方式:
+- EAST3 変換。`py2rb.py` は薄い CLI、既定出力は Ruby native emitter が担当。
+- 具体実装:
+- import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
+- 生成コードは Ruby 単体で実行可能な native 実装出力を生成する。
+- エラー方針:
+- 未対応構文は frontend/EAST 側で停止し、Ruby 出力へ進ませない。
+
+### 11. Lua（`src/py2lua.py` + `src/hooks/lua/emitter/lua_native_emitter.py`）
+
+- 実装方式:
+- EAST3 変換。`py2lua.py` は薄い CLI、既定出力は Lua native emitter が担当。
+- 具体実装:
+- import 解決は EAST `meta.import_bindings` を正本として処理し、native 出力では Python import 文を再出力しない。
+- `math` は Lua 標準 `math` へ、`pytra.utils png/gif` は段階実装の stub runtime へ接続する。
+- エラー方針:
+- 未対応構文は fail-closed で停止し、Lua 出力へ進ませない。
+
+### 12. 言語別実装の統合順序（推奨）
 
 - Step 1: C++ 実装（EAST）で `ImportBinding` / `QualifiedSymbolRef` を完成させる。
 - Step 2: JS/TS（共通基盤）へ同じ解決器を移植する。
