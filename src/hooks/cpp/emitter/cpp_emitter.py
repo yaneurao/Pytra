@@ -175,6 +175,12 @@ class CppEmitter(
         self.str_index_mode = str_index_mode
         self.str_slice_mode = str_slice_mode
         self.opt_level = opt_level
+        self.cpp_list_model = "value"
+        profile_cpp_any = self.profile.get("cpp") if isinstance(self.profile, dict) else {}
+        if isinstance(profile_cpp_any, dict):
+            list_model_any = profile_cpp_any.get("list_model")
+            if isinstance(list_model_any, str) and list_model_any in {"value", "pyobj"}:
+                self.cpp_list_model = list_model_any
         self.top_namespace = top_namespace
         self.emit_main = emit_main
         # NOTE:
