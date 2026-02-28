@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p1-rs-runtime-externalization.md](../plans/p1-rs-runtime-externalization.md)
 
-1. [ ] [ID: P1-RS-RUNTIME-EXT-01] Rust backend の生成コードから runtime/helper 本体の inline 出力を撤去し、runtime 外部参照方式へ統一する。
+1. [x] [ID: P1-RS-RUNTIME-EXT-01] Rust backend の生成コードから runtime/helper 本体の inline 出力を撤去し、runtime 外部参照方式へ統一する。
 2. [x] [ID: P1-RS-RUNTIME-EXT-01-S1-01] Rust emitter の inline helper 出力一覧と `src/runtime/rs/pytra` 正本 API 対応表を確定する。
 3. [x] [ID: P1-RS-RUNTIME-EXT-01-S1-02] Rust 生成物の runtime 参照方式（`mod/use` 構成と出力ディレクトリ配置契約）を確定し、fail-closed 条件を文書化する。
 4. [x] [ID: P1-RS-RUNTIME-EXT-01-S2-01] `src/runtime/rs/pytra` 側へ不足 helper/API を補完し、inline 実装と同等の意味を提供する。
