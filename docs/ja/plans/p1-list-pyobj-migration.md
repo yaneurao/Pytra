@@ -127,6 +127,7 @@
 - 2026-02-28: C++ emitter に non-escape 受け渡し状態（`non_escape_summary_map` / `function_non_escape_summary_map` / `current_function_non_escape_summary` / `non_escape_callsite_records`）を追加し、`meta.non_escape_summary`・`FunctionDef.meta.escape_summary`・`Call.meta.non_escape_callsite` を C++ 側で収集できる経路を実装した。`test_cpp_non_escape_bridge.py`（2件）/ `test_py2cpp_codegen_issues.py`（61件）/ `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
 - 2026-02-28: `cpp_list_model=pyobj` 時に non-escape な空 list ローカル（`AnnAssign list[...] = []`）のみ value-model へ fail-closed 縮退する経路を追加した。`Call.meta.non_escape_callsite` による escape 判定を優先し、unknown/external 呼び出しは縮退対象から除外する。`test_py2cpp_codegen_issues.py` に縮退成功/escape維持の回帰（2件）を追加し、`test_cpp_non_escape_bridge.py`（2件）/ `test_py2cpp_list_pyobj_model.py`（2件）/ `test_py2cpp_codegen_issues.py`（63件）/ `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）で非退行を確認した。
 - 2026-02-28: fail-closed 固定として `test_py2cpp_codegen_issues.py` に unknown/external/dynamic call 混在ケースの回帰（2件）を追加し、`cpp_list_model=pyobj` 下でも local list が stack 縮退しないこと（`object xs` + `py_append` 維持）を確認した。`test_py2cpp_codegen_issues.py`（65件）で通過を確認した。
+- 2026-02-28: `tools/benchmark_cpp_list_models.py` を追加し、`value`/`pyobj` の transpile+compile+run（`warmup=1`,`repeat=3`）を比較できるようにした。`work/logs/cpp_list_model_compare_20260228_all.json` の実測では成功 6/18（`01,02,03,04,17,18`）、失敗 12/18（`05..16`）で、成功ケース中央値は `elapsed=0.999x` / `bin=1.000x` / `src=1.000x`（pyobj/value）。差分は `18` に集中（`elapsed=1.954x`,`changed_lines=344`）し、既定切替は「未実施（S4-02 へ継続）」と判断した。
 
 ## 分解
 
@@ -148,7 +149,7 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S3-02] non-escape local list のみ stack/RAII へ縮退する Cpp pass を追加する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S3-03] unknown/external/dynamic call 混在時に縮退しない fail-closed 回帰テストを追加する。
 
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-01] `value` vs `pyobj` の性能/サイズ/差分を sample で比較し、既定切替判断を記録する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-01] `value` vs `pyobj` の性能/サイズ/差分を sample で比較し、既定切替判断を記録する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-02] 既定モデルを `pyobj` に切替し、rollback 手順（フラグで `value` 復帰）を整備する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
