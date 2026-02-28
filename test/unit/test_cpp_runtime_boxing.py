@@ -84,6 +84,11 @@ int main() {
     assert(py_to_int64(as_str_bad) == 0);
     assert(py_to<int64>(as_str_bad) == 0);
 
+    object as_list = make_object(list<int64>{1, 2});
+    auto as_list_rc = obj_to_list_obj(as_list);
+    assert(static_cast<bool>(as_list_rc));
+    assert(as_list_rc->value.size() == 2);
+
     ::std::any any_num = str("21");
     assert(py_to_int64(any_num) == 21);
     assert(py_to<int64>(any_num) == 21);

@@ -53,6 +53,7 @@ static inline rc<T> rc_new(Args&&... args) {
 }
 
 class str;
+class PyListObj;
 template <class T> class list;
 template <class K, class V> class dict;
 static inline str obj_to_str(const object& v);
@@ -481,6 +482,14 @@ static inline object make_object(const list<T>& values) {
     return object_new<PyListObj>(::std::move(out));
 }
 
+static inline object make_object(const list<object>& values) {
+    return object_new<PyListObj>(values);
+}
+
+static inline object make_object(list<object>&& values) {
+    return object_new<PyListObj>(::std::move(values));
+}
+
 template <class V>
 static inline object make_object(const dict<str, V>& values) {
     dict<str, object> out;
@@ -647,8 +656,13 @@ static inline const dict<str, object>* obj_to_dict_ptr(const object& v) {
 }
 
 static inline const list<object>* obj_to_list_ptr(const object& v) {
-    if (const auto* p = py_obj_cast<PyListObj>(v)) return &(p->value);
+    const auto p = obj_to_rc<PyListObj>(v);
+    if (p) return &(p->value);
     return nullptr;
+}
+
+static inline rc<PyListObj> obj_to_list_obj(const object& v) {
+    return obj_to_rc<PyListObj>(v);
 }
 
 static inline const list<object>* obj_to_set_ptr(const object& v) {
@@ -1471,7 +1485,8 @@ static inline object py_slice(const object& v, int64 lo, const ::std::any& up) {
 }
 
 static inline void py_append(const object& v, const object& item) {
-    if (auto* p = py_obj_cast<PyListObj>(v)) {
+    auto p = obj_to_list_obj(v);
+    if (p) {
         p->value.append(item);
         return;
     }

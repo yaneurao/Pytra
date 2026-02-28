@@ -112,6 +112,8 @@
 - 2026-02-28: `sample/py` + `test/fixtures` を AST スキャンし、list 型注釈を持つ `name = name` 代入の候補を棚卸しした結果、現時点の候補は `test/fixtures/collections/list_alias_shared_mutation.py:7 (b = a)` の 1 件のみだった。
 - 2026-02-28: runtime の `PyListIterObj` を owner list 参照型へ拡張し、`PyListObj::py_iter_or_raise()` が snapshot ではなく owner 実体を保持する iterator を返すよう変更した。
 - 2026-02-28: `test_cpp_runtime_iterable.py` に「反復中 `py_append` した要素を iterator が観測する」回帰を追加し、`test_cpp_runtime_iterable.py` / `test_cpp_runtime_boxing.py` の runtime compile-run テストがともに通過することを確認した。
+- 2026-02-28: `obj_to_list_obj()` を runtime へ追加し、`obj_to_list_ptr` / `py_append` を PyListObj 取得ヘルパ経由へ集約した。加えて `make_object(const list<object>&)` / `make_object(list<object>&&)` を追加し、list<object> boxing の直接経路を導入した。
+- 2026-02-28: `test_cpp_runtime_boxing.py` に `obj_to_list_obj` 回帰を追加し、runtime compile-run テストが通過することを確認した。
 
 ## 分解
 
@@ -120,7 +122,7 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピーに依存する箇所を棚卸しして決定ログに固定する。
 
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-01] runtime に新 list PyObj モデル（型・寿命・iter/len/truthy 契約）を追加する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S1-02] `make_object` / `obj_to_*` / `py_iter_or_raise` を新 list モデル対応へ拡張する。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-03] 旧値モデルとの互換ブリッジ（最小）を追加し、段階移行中の compile break を抑える。
 - [ ] [ID: P1-LIST-PYOBJ-MIG-01-S1-04] runtime 単体テスト（構築・alias・iter・境界変換）を追加する。
 
