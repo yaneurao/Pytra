@@ -41,22 +41,6 @@
 3. [x] [ID: P0-STDLIB-SOT-02-S1-02] `test_east_core.py` に「`core.py` へ `perf_counter` 直書きが再混入しない」回帰を追加する。
 4. [x] [ID: P0-STDLIB-SOT-02-S2-01] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` を再実行し、`perf_counter` 型推論と C++ 出力非退行を確認する。
 
-### P0: C++ `float64` 同士除算の `py_div` 縮退（`/` 直接出力）
-
-文脈: [docs/ja/plans/p0-cpp-float-div-direct-slash.md](../plans/p0-cpp-float-div-direct-slash.md)
-
-1. [ ] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01] C++ backend の `Div` lower で `float64` 同士は `py_div` を使わず `/` を直接出力する。
-2. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01] `Div` lower の型条件（`float64/float64` 優先、Any/object/int は `py_div` 維持）を文書化する。
-3. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01] `operator.py` の `Div` 分岐へ typed fastpath（`/` 直接出力）を実装する。
-4. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02] `float32` / mixed float / int / Any/object の境界ケースを回帰テストで固定する。
-5. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01] `check_py2cpp_transpile` / C++ smoke を通し、非退行を確認する。
-6. [x] [ID: P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02] `sample/cpp` を再生成し、`01_mandelbrot.cpp` で `py_div` 縮退を確認する。
-- `P0-CPP-DIV-FLOAT-FASTPATH-01-S1-01` cast 適用後の実効型（`float32/float64`）を優先し、`Path` 特例と unknown fail-closed を維持する判定契約を計画書へ反映した。
-- `P0-CPP-DIV-FLOAT-FASTPATH-01-S2-01` `src/hooks/cpp/emitter/operator.py` の `Div` 分岐を更新し、実効型が float 系なら `py_div(...)` ではなく `/` を直接出力するようにした。
-- `P0-CPP-DIV-FLOAT-FASTPATH-01-S2-02` `test_py2cpp_codegen_issues.py` に float/mixed/int/unknown の `Div` 回帰を追加し、fastpath と fail-closed を固定した。
-- `P0-CPP-DIV-FLOAT-FASTPATH-01-S3-01` `check_py2cpp_transpile`（`ok=134 fail=0 skipped=6`）と `test_py2cpp_smoke.py` / `test_east3_cpp_bridge.py` / `test_py2cpp_codegen_issues.py` を再実行して非退行を確認した。
-- `P0-CPP-DIV-FLOAT-FASTPATH-01-S3-02` `sample/cpp/01_mandelbrot.cpp` を再生成し、`py_div(py_to<float64>(...), ...)` が `py_to<float64>(...) / ...` へ縮退したことを確認した。
-
 ### P0: sample/18 C++ 出力最適化の強化（実行系ホットパス）
 
 文脈: [docs/ja/plans/p0-sample18-cpp-optimization-strengthening.md](../plans/p0-sample18-cpp-optimization-strengthening.md)
