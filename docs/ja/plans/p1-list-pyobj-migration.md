@@ -154,6 +154,7 @@
 - 2026-02-28: `05..16` の `pyobj` 単独 compile/run 検証を追加実施し、12件すべて成功（`passed=12 failed=0`）を確認した。検証コマンドは `python3 src/py2cpp.py ... --cpp-list-model pyobj` + `g++ -O0` + 実行をケースごとに回す one-shot スクリプト。これにより `S4-02-S2` を完了扱いとした。
 - 2026-02-28: `parse_py2cpp_argv` の `cpp_list_model_opt` 既定を `pyobj` に切替し、`py2cpp` 本体の fallback も `pyobj` へ統一した。`docs/ja/how-to-use.md` の C++ 節へ rollback 手順（`--cpp-list-model value`）を追記し、`test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj` と `python3 tools/check_todo_priority.py` / `python3 tools/check_py2cpp_transpile.py` の通過を確認した。さらに `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` と `--cpp-list-model value` の比較で、既定は `object lines = make_object(list<object>{});`、rollback 指定時は `list<str> lines = ...;` へ切り替わることを確認した。これにより `S4-02-S3` と親 `S4-02` を完了扱いとした。
 - 2026-02-28: `S4-03` として、旧 `value` 互換コードの撤去対象（emitter 分岐 / runtime bridge / CLI rollback）と段階撤去ステージ（A〜E）を確定した。あわせて別ID起票条件（parity/selfhost 退行、`list` 以外への波及、deprecation 期間明示の必要）を定義し、本IDの範囲を固定した。
+- 2026-02-28: `S4-04` として `docs/ja/how-to-use.md`（既定/rollback 手順）、`docs/ja/spec/spec-cpp-list-reference-semantics.md`（pyobj 既定 + value rollback 契約）、`docs/ja/todo/index.md`（親/子ID完了）を同期した。`python3 tools/check_todo_priority.py` を再実行し、TODO運用整合が崩れていないことを確認した。
 
 ## 分解
 
@@ -185,4 +186,4 @@
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
 - [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
-- [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
+- [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。

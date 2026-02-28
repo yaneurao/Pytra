@@ -82,7 +82,7 @@
 
 文脈: [docs/ja/plans/p1-list-pyobj-migration.md](../plans/p1-list-pyobj-migration.md)
 
-1. [ ] [ID: P1-LIST-PYOBJ-MIG-01] `list` を PyObj/RC 管理モデルへ段階移行し、non-escape 経路のみ RAII 縮退できる構成へ移行する。
+1. [x] [ID: P1-LIST-PYOBJ-MIG-01] `list` を PyObj/RC 管理モデルへ段階移行し、non-escape 経路のみ RAII 縮退できる構成へ移行する。
 2. [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-01] `list` 参照セマンティクス契約（alias/共有/破壊的更新）を docs/spec に明文化する。
 3. [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-02] alias 期待 fixture（`a=b` 後の `append/pop` 共有）を追加し、現状差分を可視化する。
 4. [x] [ID: P1-LIST-PYOBJ-MIG-01-S0-03] 現行 sample/fixture のうち list 値コピー依存箇所を棚卸しして決定ログに固定する。
@@ -107,7 +107,7 @@
 23. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S2-S4] `13_maze_generation_steps` の tuple/list runtime blocker（tuple boxing 欠落と tuple subscript unbox 欠落）を解消する。
 24. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-02-S3] 既定モデルを `pyobj` へ切替し、`--cpp-list-model value` を rollback 手順として運用記述へ反映する。
 25. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-03] 旧値モデルの互換コード撤去計画（別ID起票条件を含む）を確定する。
-26. [ ] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
+26. [x] [ID: P1-LIST-PYOBJ-MIG-01-S4-04] docs/how-to-use/spec/todo の運用記述を同期し、最終受け入れ基準を満たす。
 
 ### P1: 全言語コメント忠実性ポリシー（生成コメント禁止）
 
