@@ -12,9 +12,16 @@ class CppCollectionExprEmitter:
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         pyobj_list_mode = list_model == "pyobj"
         elem_t = ""
-        rt = self.get_expr_type(expr)
-        if isinstance(rt, str) and rt.startswith("list[") and rt.endswith("]"):
-            elem_t = rt[5:-1].strip()
+        rt0 = self.get_expr_type(expr)
+        rt = rt0 if isinstance(rt0, str) else ""
+        rt_norm = self.normalize_type_name(rt)
+        if rt_norm in {"", "unknown"}:
+            rt_norm = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+        if rt_norm.startswith("list[") and rt_norm.endswith("]"):
+            elem_t = rt_norm[5:-1].strip()
+        pyobj_runtime_list_mode = pyobj_list_mode and (
+            rt_norm in {"", "unknown", "Any", "object"} or self._is_pyobj_runtime_list_type(rt_norm)
+        )
         parts: list[str] = []
         ctor_elem = ""
         ctor_mixed = False
@@ -38,7 +45,7 @@ class CppCollectionExprEmitter:
                 t = expect_t
         sep = ", "
         items = sep.join(parts)
-        if pyobj_list_mode:
+        if pyobj_runtime_list_mode:
             value_list_t = "list<object>"
             if ctor_elem != "" and not ctor_mixed:
                 value_list_t = f"list<{ctor_elem}>"
@@ -178,6 +185,13 @@ class CppCollectionExprEmitter:
         it = self.render_expr(g.get("iter"))
         elt = self.render_expr(expr_d.get("elt"))
         out_t = self.cpp_type(expr_d.get("resolved_type"))
+        out_east_t0 = self.get_expr_type(expr)
+        out_east_t = self.normalize_type_name(out_east_t0 if isinstance(out_east_t0, str) else "")
+        if out_east_t in {"", "unknown"}:
+            out_east_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+        pyobj_runtime_list_mode = pyobj_list_mode and (
+            out_east_t in {"", "unknown", "Any", "object"} or self._is_pyobj_runtime_list_type(out_east_t)
+        )
         elt_t0 = self.get_expr_type(expr_d.get("elt"))
         elt_t = elt_t0 if isinstance(elt_t0, str) else ""
         expected_out_t = ""
@@ -196,7 +210,7 @@ class CppCollectionExprEmitter:
                 out_t = f"list<{elt_ctor}>"
         emit_out_t = out_t
         lambda_ret_t = out_t
-        if pyobj_list_mode:
+        if pyobj_runtime_list_mode:
             lambda_ret_t = "object"
             if not (emit_out_t.startswith("list<") and emit_out_t.endswith(">")):
                 if elt_t not in {"", "unknown"}:
@@ -236,8 +250,6 @@ class CppCollectionExprEmitter:
                 lines.append(f"    for (auto {tgt} : {it}) {{")
         ifs = self.any_to_list(g.get("ifs"))
         list_elt = elt
-        out_east_t0 = self.get_expr_type(expr)
-        out_east_t = out_east_t0 if isinstance(out_east_t0, str) else ""
         out_elem_t = ""
         if out_east_t.startswith("list[") and out_east_t.endswith("]"):
             out_parts = self.split_generic(out_east_t[5:-1])
@@ -289,7 +301,7 @@ class CppCollectionExprEmitter:
             cond: str = join_str_list(" && ", cond_parts)
             lines.append(f"        if ({cond}) __out.append({list_elt});")
         lines.append("    }")
-        if pyobj_list_mode:
+        if pyobj_runtime_list_mode:
             lines.append("    return make_object(__out);")
         else:
             lines.append("    return __out;")
