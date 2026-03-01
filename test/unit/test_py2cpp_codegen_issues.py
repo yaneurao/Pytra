@@ -510,6 +510,29 @@ def f() -> float:
         self.assertIn("const rc<ExprNode>& node = expr_nodes[expr_index];", cpp)
         self.assertNotIn("rc<ExprNode> node = expr_nodes[expr_index];", cpp)
 
+    def test_sample18_synthesized_ctors_use_init_list(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn(
+            "Token(str kind, str text, int64 pos, int64 number_value) : kind(kind), text(text), pos(pos), number_value(number_value) {",
+            cpp,
+        )
+        self.assertIn(
+            "ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) : kind(kind), value(value), name(name), op(op), left(left), right(right), kind_tag(kind_tag), op_tag(op_tag) {",
+            cpp,
+        )
+        self.assertIn(
+            "StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) : kind(kind), name(name), expr_index(expr_index), kind_tag(kind_tag) {",
+            cpp,
+        )
+        self.assertNotIn("Token(str kind, str text, int64 pos, int64 number_value) {\n        this->kind = kind;", cpp)
+        self.assertNotIn(
+            "ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) {\n        this->kind = kind;",
+            cpp,
+        )
+        self.assertNotIn("StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) {\n        this->kind = kind;", cpp)
+
     def test_sample18_pyobj_benchmark_source_lines_stay_typed_list_str(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
