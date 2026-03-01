@@ -247,7 +247,7 @@ struct Parser : public PyObj {
 };
 
 int64 eval_expr(int64 expr_index, const list<rc<ExprNode>>& expr_nodes, const dict<str, int64>& env) {
-    rc<ExprNode> node = expr_nodes[expr_index];
+    const rc<ExprNode>& node = expr_nodes[expr_index];
     
     if (node->kind_tag == 1)
         return node->value;

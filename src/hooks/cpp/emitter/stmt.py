@@ -203,8 +203,28 @@ class CppStatementEmitter:
             self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
             if force_typed_list_str and target_name_raw != "" and len(self.scope_stack) >= 2:
                 self.current_function_typed_list_str_locals.add(target_name_raw)
+        use_const_ref_decl = False
+        if declare_stmt and not already_declared and is_plain_name_target and target_name_raw != "":
+            decl_type_norm = self.normalize_type_name(ann_t_str if ann_t_str != "" else decl_hint)
+            if decl_type_norm == "":
+                decl_type_norm = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(target_name_raw)))
+            emitted_type_norm = self.normalize_type_name(t)
+            reassigned_names = set(getattr(self, "current_function_reassigned_names", set()))
+            if (
+                emitted_type_norm.startswith("rc<")
+                and self._node_kind_from_dict(val) == "Subscript"
+                and target_name_raw not in reassigned_names
+            ):
+                value_type_norm = self.normalize_type_name(val_t)
+                decl_cmp = self._strip_rc_wrapper(emitted_type_norm)
+                value_cmp = self._strip_rc_wrapper(value_type_norm)
+                if value_cmp in {"", "unknown", decl_cmp}:
+                    use_const_ref_decl = True
         if declare_stmt and not already_declared:
-            self.emit(f"{t} {target} = {rendered_val};")
+            if use_const_ref_decl:
+                self.emit(f"const {t}& {target} = {rendered_val};")
+            else:
+                self.emit(f"{t} {target} = {rendered_val};")
         else:
             self.emit(f"{target} = {rendered_val};")
 
@@ -415,7 +435,23 @@ class CppStatementEmitter:
                 )
             if self.is_any_like_type(picked):
                 rval = self._box_any_target_value(rval, stmt.get("value"))
-            self.emit(f"{dtype} {texpr} = {rval};")
+            use_const_ref_decl = False
+            if self.is_plain_name_expr(target_obj):
+                reassigned_names = set(getattr(self, "current_function_reassigned_names", set()))
+                if (
+                    dtype.startswith("rc<")
+                    and self._node_kind_from_dict(value) == "Subscript"
+                    and texpr not in reassigned_names
+                ):
+                    value_type_norm = self.normalize_type_name(d2)
+                    decl_cmp = self._strip_rc_wrapper(dtype)
+                    value_cmp = self._strip_rc_wrapper(value_type_norm)
+                    if value_cmp in {"", "unknown", decl_cmp}:
+                        use_const_ref_decl = True
+            if use_const_ref_decl:
+                self.emit(f"const {dtype}& {texpr} = {rval};")
+            else:
+                self.emit(f"{dtype} {texpr} = {rval};")
             return
         rval = self.render_expr(stmt.get("value"))
         t_target = self.get_expr_type(target_obj)
@@ -1447,6 +1483,8 @@ class CppStatementEmitter:
         arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
         arg_index = self.any_to_dict_or_empty(stmt.get("arg_index"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
+        assign_counts = self._collect_assigned_name_counts(body_stmts)
+        reassigned_names = {name for name, count in assign_counts.items() if int(count) > 1}
         params: list[str] = []
         fn_scope: set[str] = set()
         arg_names: list[str] = []
@@ -1522,6 +1560,7 @@ class CppStatementEmitter:
         prev_stack_list_locals = self.current_function_stack_list_locals
         prev_typed_list_str_params = getattr(self, "current_function_typed_list_str_params", set())
         prev_typed_list_str_locals = getattr(self, "current_function_typed_list_str_locals", set())
+        prev_reassigned_names = getattr(self, "current_function_reassigned_names", set())
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
@@ -1530,6 +1569,7 @@ class CppStatementEmitter:
         self.current_function_stack_list_locals = set(stack_list_locals)
         self.current_function_typed_list_str_params = set(typed_list_str_params)
         self.current_function_typed_list_str_locals = set()
+        self.current_function_reassigned_names = set(reassigned_names)
         for i, an in enumerate(arg_names):
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
@@ -1559,6 +1599,7 @@ class CppStatementEmitter:
         self.current_function_stack_list_locals = prev_stack_list_locals
         self.current_function_typed_list_str_params = set(prev_typed_list_str_params)
         self.current_function_typed_list_str_locals = set(prev_typed_list_str_locals)
+        self.current_function_reassigned_names = set(prev_reassigned_names)
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1

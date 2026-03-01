@@ -38,11 +38,12 @@
 - 2026-03-01: S1-01 として sample/18 の主なコピー点を `for (rc<StmtNode> stmt : stmts)` と `rc<ExprNode> node = expr_nodes[expr_index]` に固定した。
 - 2026-03-01: S2-01 の第1段として、typed range-for で要素型が `rc<...>` の場合に `const rc<...>&` で束縛する規則へ更新した。
 - 2026-03-01: S2-02/S3-01 として `test_py2cpp_codegen_issues.py`・`test_east3_cpp_bridge.py`・`check_py2cpp_transpile.py` を通し、sample/18 再生成で `for (const rc<StmtNode>& stmt : stmts)` 反映を確認した。
+- 2026-03-01: S2-03 として `AnnAssign/Assign` の subscript 由来 `rc` 一時束縛を安全条件付きで `const` 参照化し、sample/18 で `const rc<ExprNode>& node = expr_nodes[expr_index];` 反映を確認した。
 
 ## 分解
 
 - [x] [ID: P0-CPP-S18-RC-COPY-02-S1-01] sample/18 の `rc` コピー発生点（range-for / 添字一時束縛）を棚卸しし、参照化可能条件を定義する。
 - [x] [ID: P0-CPP-S18-RC-COPY-02-S2-01] C++ emitter の for 出力を更新し、`rc` 要素の読み取り専用 range-for を `const` 参照へ縮退する。
-- [ ] [ID: P0-CPP-S18-RC-COPY-02-S2-03] 添字アクセス由来の一時 `rc` 束縛（例: `node = expr_nodes[idx]`）を、安全条件付きで `const` 参照へ縮退する。
+- [x] [ID: P0-CPP-S18-RC-COPY-02-S2-03] 添字アクセス由来の一時 `rc` 束縛（例: `node = expr_nodes[idx]`）を、安全条件付きで `const` 参照へ縮退する。
 - [x] [ID: P0-CPP-S18-RC-COPY-02-S2-02] 回帰テストを追加し、`rc` 値コピー再発を検知する。
 - [x] [ID: P0-CPP-S18-RC-COPY-02-S3-01] sample/18 再生成と transpile 回帰で非退行を確認する。

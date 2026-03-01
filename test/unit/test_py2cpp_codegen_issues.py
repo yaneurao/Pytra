@@ -507,6 +507,8 @@ def f() -> float:
         self.assertIn("list<rc<Token>> tokens;", cpp)
         self.assertIn("return this->tokens[this->pos];", cpp)
         self.assertNotIn('obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")', cpp)
+        self.assertIn("const rc<ExprNode>& node = expr_nodes[expr_index];", cpp)
+        self.assertNotIn("rc<ExprNode> node = expr_nodes[expr_index];", cpp)
 
     def test_sample18_pyobj_benchmark_source_lines_stay_typed_list_str(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
