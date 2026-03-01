@@ -46,7 +46,7 @@
 分解:
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-01] Scala/Lua の inline helper 出力箇所と runtime API 依存を棚卸しし、外出し境界を確定する。
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-02] runtime ファイル配置規約（パス/ファイル名/読み込み方式）を仕様化する。
-- [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] Scala runtime 正本（`src/runtime/scala/pytra/py_runtime.scala`）を整備する。
+- [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] Scala runtime 正本（`src/runtime/scala/pytra/py_runtime.scala`）を整備する。
 - [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-02] Scala emitter の inline helper 出力を撤去し、`py2scala.py` で runtime 配置を実装する。
 - [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-03] Lua runtime 正本（`src/runtime/lua/pytra/py_runtime.lua`）を整備する。
 - [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の inline helper 出力を撤去し、`py2lua.py` で runtime 配置と読み込み導線を実装する。
@@ -87,3 +87,4 @@
 - 2026-03-02: ユーザー指示により、Scala/Lua runtime 分離を P0 最優先として新規起票した。
 - 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-01] Scala/Lua の inline helper 出力点と runtime API 依存を棚卸しし、外出し境界を「helper本体の runtime 正本移管 + emitter 側は参照専任」に確定した。
 - 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-02] runtime 配置規約を「`src/runtime/<lang>/pytra/py_runtime.*` 正本 + `output_path.parent/py_runtime.*` コピー」に確定した。
+- 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] `src/runtime/scala/pytra/py_runtime.scala` を追加し、現行 `_emit_runtime_helpers()` の helper 群を正本ファイルへ切り出した。
