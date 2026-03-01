@@ -95,10 +95,10 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-candidate-index-cse.md](../plans/p0-cpp-s13-candidate-index-cse.md)
 
-1. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01] sample/13 の `sel` 抽出で重複する index 計算と要素取得を hoist し、同一式の再評価を削減する。
-2. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S1-01] `sel` 周辺の重複式パターンと適用条件（fail-closed）を定義する。
-3. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S2-01] index/要素取得の hoist を実装し、重複出力を削減する。
-4. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
+1. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01] sample/13 の `sel` 抽出で重複する index 計算と要素取得を hoist し、同一式の再評価を削減する。
+2. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S1-01] `sel` 周辺の重複式パターンと適用条件（fail-closed）を定義する。
+3. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S2-01] index/要素取得の hoist を実装し、重複出力を削減する。
+4. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
 
 ### P0: sample/13 同型 cast 連鎖の縮退（最優先）
 

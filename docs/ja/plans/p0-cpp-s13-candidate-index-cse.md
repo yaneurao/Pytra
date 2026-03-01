@@ -32,9 +32,10 @@
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 の `candidates` 選択式重複を独立 P0 として起票。
+- 2026-03-01: 直前の typed-list 拡張反映後、sample/13 の `sel` は `candidates[idx]` 単一取得へ既に縮退していたため、専用 CSE 実装は追加せず回帰テストで固定した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S1-01] `sel` 周辺の重複式パターンと適用条件（fail-closed）を定義する。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S2-01] index/要素取得の hoist を実装し、重複出力を削減する。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S1-01] `sel` 周辺の重複式パターンと適用条件（fail-closed）を定義する。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S2-01] index/要素取得の hoist を実装し、重複出力を削減する。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
