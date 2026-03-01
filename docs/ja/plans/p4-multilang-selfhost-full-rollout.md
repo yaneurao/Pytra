@@ -83,6 +83,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.emit_scoped_stmt_list` / `emit_with_scope` / `emit_scoped_block` 系の `scope_names` を object-safe 正規化（`_normalize_scope_names`）へ統一し、`HashSet<object>` 受け渡し由来のシグネチャ不一致を解消した。`test_code_emitter.py` に回帰（48件）を追加して通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 11 -> 8`, `CS1502: 11 -> 8` へ縮退させた。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.hook_on_render_call` と `CSharpEmitter._escape_interpolated_literal_text` の引数型を object-safe 化し、hook/補間文字列経路の `string` 固定シグネチャ依存を削減した。`test_code_emitter.py`（48件）/`test_py2cs_smoke.py`（43件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 8 -> 6`, `CS1502: 8 -> 6` へ縮退させた。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `transpile_cli.py` の `dict_any_get*` / `collect_symbols_from_stmt` / `collect_import_modules` を object-safe 再構築寄りへ更新し、helper 戻り値/`append` 引数に混入する `object` を縮退した。`test_py2cs_smoke.py`（43件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 6 -> 2`, `CS1502: 6 -> 2`, `CS0266: 10 -> 7` へ縮退させた（先頭は `CS0119`）。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `prepare_selfhost_source_cs.py` の support block パッチに dynamic callable 経路の固定化（`stage_fn_any`/`load_east_fn`）と typed 空リスト/空dict 補正を追加し、selfhost 生成物の method-group 失敗を解消した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0119: 3 -> 0`, `CS1503: 2 -> 1`, `CS1502: 2 -> 1`, `CS0030: 4 -> 2` を確認した（`CS0266=7` は継続）。
 
 ## 現状固定（S1-01）
 

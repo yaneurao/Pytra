@@ -188,7 +188,79 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
     )
     if old_graph_resolved_get not in out:
         raise RuntimeError("failed to patch graph resolve dict access in support blocks")
-    return out.replace(old_graph_resolved_get, new_graph_resolved_get, 1)
+    out = out.replace(old_graph_resolved_get, new_graph_resolved_get, 1)
+
+    # selfhost C# compile では dynamic callable 経路が method-group エラーを起こすため無効化する。
+    old_stage_call = (
+        "    stage_fn_any = globals().get(\"normalize_east1_to_east2_document_stage\")\n"
+        "    if callable(stage_fn_any):\n"
+        "        out_any = stage_fn_any(east_doc)\n"
+        "        if isinstance(out_any, dict):\n"
+        "            out_doc: dict[str, object] = out_any\n"
+        "            return out_doc\n"
+    )
+    if old_stage_call not in out:
+        raise RuntimeError("failed to patch normalize_east1_to_east2 dynamic stage call")
+    out = out.replace(old_stage_call, "", 1)
+
+    old_analyze_load_call = (
+        "        east_cur: dict[str, object] = {}\n"
+        "        try:\n"
+        "            if callable(load_east_fn):\n"
+        "                loaded = load_east_fn(cur_path)\n"
+        "                if isinstance(loaded, dict):\n"
+        "                    east_cur = loaded\n"
+        "        except Exception:\n"
+        "            continue\n"
+    )
+    new_analyze_load_call = (
+        "        east_cur: dict[str, object] = {}\n"
+        "        try:\n"
+        "            east_cur = load_east_document(cur_path)\n"
+        "        except Exception:\n"
+        "            continue\n"
+    )
+    if old_analyze_load_call not in out:
+        raise RuntimeError("failed to patch analyze_import_graph dynamic load call")
+    out = out.replace(old_analyze_load_call, new_analyze_load_call, 1)
+
+    old_build_map_load_call = (
+        "        east_one: dict[str, object] = {}\n"
+        "        if callable(load_east_fn):\n"
+        "            loaded = load_east_fn(p, parser_backend, east_stage, object_dispatch_mode)\n"
+        "            if isinstance(loaded, dict):\n"
+        "                east_one = loaded\n"
+    )
+    new_build_map_load_call = (
+        "        east_one: dict[str, object] = {}\n"
+        "        try:\n"
+        "            east_one = load_east_document(p, parser_backend=parser_backend)\n"
+        "        except Exception:\n"
+        "            empty_doc: dict[str, object] = {}\n"
+        "            east_one = empty_doc\n"
+    )
+    if old_build_map_load_call not in out:
+        raise RuntimeError("failed to patch build_module_east_map dynamic load call")
+    out = out.replace(old_build_map_load_call, new_build_map_load_call, 1)
+
+    old_empty_details = (
+        "                    raise make_user_error(\n"
+        "                        \"user_syntax_error\",\n"
+        "                        \"Python syntax error.\",\n"
+        "                        [],\n"
+        "                    ) from ex\n"
+    )
+    new_empty_details = (
+        "                    empty_details: list[str] = []\n"
+        "                    raise make_user_error(\n"
+        "                        \"user_syntax_error\",\n"
+        "                        \"Python syntax error.\",\n"
+        "                        empty_details,\n"
+        "                    ) from ex\n"
+    )
+    if old_empty_details not in out:
+        raise RuntimeError("failed to patch empty user-syntax-error details list")
+    return out.replace(old_empty_details, new_empty_details, 1)
 
 
 def _patch_base_class_for_cs(base_class: str) -> str:
