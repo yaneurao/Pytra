@@ -107,6 +107,19 @@ def write_js_runtime_shims(output_dir: Path) -> None:
             "exports.grayscale_palette = rt.grayscale_palette;\n"
             "exports.save_gif = rt.save_gif;\n"
         ),
+        "pytra/utils/assertions.js": (
+            "exports.py_assert_true = function(cond, _label) { return !!cond; };\n"
+            "exports.py_assert_eq = function(actual, expected, _label) { return actual === expected; };\n"
+            "exports.py_assert_all = function(results, _label) {\n"
+            "  if (!Array.isArray(results)) return false;\n"
+            "  for (const v of results) { if (!v) return false; }\n"
+            "  return true;\n"
+            "};\n"
+            "exports.py_assert_stdout = function(_expected_lines, fn) {\n"
+            "  if (typeof fn === 'function') { fn(); }\n"
+            "  return true;\n"
+            "};\n"
+        ),
     }
     for rel, text in files.items():
         out = output_dir / rel

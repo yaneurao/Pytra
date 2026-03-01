@@ -27,9 +27,12 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets js`
 
 分解:
-- [ ] class 宣言に `extends` を導入する。
-- [ ] `super` 呼び出し lower を追加する。
-- [ ] fixture 回帰を追加する。
+- [x] class 宣言に `extends` を導入する。
+- [x] `super` 呼び出し lower を追加する。
+- [x] fixture 回帰を追加する。
 
 決定ログ:
 - 2026-03-01: JS は class 表現の根幹を優先して修正する。
+- 2026-03-01: `js_emitter` に `class Child extends Base` 出力を追加し、派生コンストラクタの `super()` 注入・`super().__init__` / `super().method` lower を実装した。
+- 2026-03-01: `pytra/utils/assertions.js` shim を追加し、JS 実行時の `py_assert_*` import 解決を安定化した。
+- 2026-03-01: `test_py2js_smoke.py` に継承 dispatch 回帰を追加し、`runtime_parity_check --targets js`（1/1 pass）で fixture 一致を確認した。

@@ -306,6 +306,7 @@ class Py2JsSmokeTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
             self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
+            self.assertTrue((Path(td) / "pytra" / "utils" / "assertions.js").exists())
 
     def test_cli_smoke_generates_js_file(self) -> None:
         fixture = find_fixture_case("if_else")
@@ -382,11 +383,22 @@ def f(x: object) -> bool:
         self.assertIn('import { PYTRA_TYPE_ID, PY_TYPE_NUMBER, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } from "./pytra/py_runtime.js";', js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([Base.PYTRA_TYPE_ID]);", js)
+        self.assertIn("class Child extends Base {", js)
+        self.assertIn("super();", js)
         self.assertIn("this[PYTRA_TYPE_ID] = Base.PYTRA_TYPE_ID;", js)
         self.assertIn("this[PYTRA_TYPE_ID] = Child.PYTRA_TYPE_ID;", js)
         self.assertIn("pyIsInstance(x, PY_TYPE_NUMBER)", js)
         self.assertIn("pyIsInstance(x, Base.PYTRA_TYPE_ID)", js)
         self.assertIn("pyIsInstance(x, Child.PYTRA_TYPE_ID)", js)
+
+    def test_inheritance_virtual_dispatch_lowers_extends_and_super_method(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn("class Dog extends Animal {", js)
+        self.assertIn("class LoudDog extends Dog {", js)
+        self.assertIn('return "loud-" + super.speak();', js)
+        self.assertNotIn("py_super()", js)
 
     def test_dict_literal_has_type_id_tag_for_isinstance(self) -> None:
         src = """def f() -> bool:

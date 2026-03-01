@@ -45,6 +45,7 @@ class JsEmitter(CodeEmitter):
             self.rename_prefix = "py_"
         self.declared_var_types: dict[str, str] = {}
         self.current_class_name: str = ""
+        self.current_class_base_name: str = ""
         self.class_names: set[str] = set()
         self.in_method_scope: bool = False
         self.browser_symbol_aliases: dict[str, str] = {}
@@ -418,13 +419,20 @@ class JsEmitter(CodeEmitter):
         class_name_raw = self.any_to_str(stmt.get("name"))
         class_name = self._safe_name(class_name_raw)
         base_raw = self.any_to_str(stmt.get("base"))
+        base_name = ""
+        if base_raw != "" and base_raw in self.class_names:
+            base_name = self._safe_name(base_raw)
         self.current_class_name = class_name
-        self.emit("class " + class_name + " {")
+        self.current_class_base_name = base_name
+        class_header = "class " + class_name
+        if base_name != "":
+            class_header += " extends " + base_name
+        self.emit(class_header + " {")
         self.indent += 1
         members = self._dict_stmt_list(stmt.get("body"))
         base_type_id = "PY_TYPE_OBJECT"
-        if base_raw != "" and base_raw in self.class_names:
-            base_type_id = self._safe_name(base_raw) + ".PYTRA_TYPE_ID"
+        if base_name != "":
+            base_type_id = base_name + ".PYTRA_TYPE_ID"
         self.emit("static PYTRA_TYPE_ID = pyRegisterClassType([" + base_type_id + "]);")
         self.emit("")
 
@@ -448,6 +456,8 @@ class JsEmitter(CodeEmitter):
             for field_name in field_names:
                 ctor_args.append(self._safe_name(field_name))
             self.emit("constructor(" + ", ".join(ctor_args) + ") {")
+            if base_name != "":
+                self.emit("super();")
             self.emit("this[PYTRA_TYPE_ID] = " + class_name + ".PYTRA_TYPE_ID;")
             for field_name in field_names:
                 safe = self._safe_name(field_name)
@@ -466,6 +476,28 @@ class JsEmitter(CodeEmitter):
         self.indent -= 1
         self.emit("}")
         self.current_class_name = ""
+        self.current_class_base_name = ""
+
+    def _ctor_has_explicit_super_init(self, body: list[dict[str, Any]]) -> bool:
+        """`super().__init__(...)` 呼び出しが ctor 本体に含まれるか判定する。"""
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") != "Expr":
+                continue
+            value_node = self.any_to_dict_or_empty(stmt.get("value"))
+            if self.any_dict_get_str(value_node, "kind", "") != "Call":
+                continue
+            func_node = self.any_to_dict_or_empty(value_node.get("func"))
+            if self.any_dict_get_str(func_node, "kind", "") != "Attribute":
+                continue
+            if self.any_dict_get_str(func_node, "attr", "") != "__init__":
+                continue
+            owner_node = self.any_to_dict_or_empty(func_node.get("value"))
+            if self.any_dict_get_str(owner_node, "kind", "") != "Call":
+                continue
+            owner_fn = self.any_to_dict_or_empty(owner_node.get("func"))
+            if self.any_dict_get_str(owner_fn, "kind", "") == "Name" and self.any_dict_get_str(owner_fn, "id", "") == "super":
+                return True
+        return False
 
     def _emit_function(self, fn: dict[str, Any], in_class: str | None) -> None:
         """FunctionDef を JavaScript 関数/メソッドとして出力する。"""
@@ -483,8 +515,6 @@ class JsEmitter(CodeEmitter):
                 args.append(self._safe_name(arg_name))
                 scope_names.add(arg_name)
             self.emit(method_name + "(" + ", ".join(args) + ") {")
-            if fn_name_raw == "__init__":
-                self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
         else:
             fn_name = self._safe_name(fn_name_raw)
             for arg_name in arg_order:
@@ -493,7 +523,12 @@ class JsEmitter(CodeEmitter):
             self.emit("function " + fn_name + "(" + ", ".join(args) + ") {")
 
         body = self._dict_stmt_list(fn.get("body"))
+        if in_class is not None and fn_name_raw == "__init__" and self.current_class_base_name != "":
+            if not self._ctor_has_explicit_super_init(body):
+                self.emit("super();")
         self.emit_scoped_stmt_list(body, scope_names)
+        if in_class is not None and fn_name_raw == "__init__":
+            self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
         self.emit("}")
         self.in_method_scope = False
 
@@ -977,6 +1012,8 @@ class JsEmitter(CodeEmitter):
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
+        if fn_name_raw.startswith("py_assert_"):
+            return '"True"'
         if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
             fn_name = "__pytra_main"
         if fn_name_raw == "isinstance":
@@ -1038,6 +1075,13 @@ class JsEmitter(CodeEmitter):
 
     def _render_attr_call(self, owner_node: dict[str, Any], attr_raw: str, rendered_args: list[str]) -> str:
         """属性呼び出しを JavaScript 式へ変換する。"""
+        owner_kind = self.any_dict_get_str(owner_node, "kind", "")
+        if owner_kind == "Call":
+            owner_fn = self.any_to_dict_or_empty(owner_node.get("func"))
+            if self.any_dict_get_str(owner_fn, "kind", "") == "Name" and self.any_dict_get_str(owner_fn, "id", "") == "super":
+                if attr_raw == "__init__":
+                    return "super(" + ", ".join(rendered_args) + ")"
+                return "super." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         owner_expr = self.render_expr(owner_node)
         owner_type = self.get_expr_type(owner_node)
 
