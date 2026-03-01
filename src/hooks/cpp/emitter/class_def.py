@@ -233,14 +233,15 @@ class CppClassEmitter:
                     if not self._expr_is_none_marker(default_expr):
                         p += f" = {default_expr}"
                 params.append(p)
-            self.emit(f"{name}({join_str_list(', ', params)}) {{")
-            self.indent += 1
-            self.scope_stack.append(set())
+            init_items: list[str] = []
             for fname, _ in instance_fields_ordered:
-                self.emit(f"this->{fname} = {fname};")
-            self.scope_stack.pop()
-            self.indent -= 1
-            self.emit_block_close()
+                init_items.append(f"{fname}({fname})")
+            init_txt = join_str_list(", ", init_items)
+            if init_txt != "":
+                self.emit(f"{name}({join_str_list(', ', params)}) : {init_txt} {{")
+            else:
+                self.emit(f"{name}({join_str_list(', ', params)}) {{")
+            self.emit("}")
             self.emit("")
         for s in class_body:
             if self._node_kind_from_dict(s) == "AnnAssign":

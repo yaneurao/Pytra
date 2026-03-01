@@ -69,11 +69,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-ctor-initlist.md](../plans/p0-cpp-s18-ctor-initlist.md)
 
-1. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01] sample/18 生成クラスの合成コンストラクタを初期化リスト形式へ移行する。
-2. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S1-01] 現行 constructor 出力を棚卸しし、初期化リスト化対象と除外条件を固定する。
-3. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-01] class emitter の合成コンストラクタ出力を初期化リスト形式へ変更する。
-4. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-02] 回帰テストを追加し、本文代入形式の再発を検知する。
-5. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
+1. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01] sample/18 生成クラスの合成コンストラクタを初期化リスト形式へ移行する。
+2. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S1-01] 現行 constructor 出力を棚卸しし、初期化リスト化対象と除外条件を固定する。
+3. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-01] class emitter の合成コンストラクタ出力を初期化リスト形式へ変更する。
+4. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-02] 回帰テストを追加し、本文代入形式の再発を検知する。
+5. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
 
 ### P0: 非C++ 継承メソッド動的ディスパッチ改善（全backend）
 

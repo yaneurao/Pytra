@@ -10,11 +10,7 @@ struct Token : public PyObj {
     int64 number_value;
     PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
-    Token(str kind, str text, int64 pos, int64 number_value) {
-        this->kind = kind;
-        this->text = text;
-        this->pos = pos;
-        this->number_value = number_value;
+    Token(str kind, str text, int64 pos, int64 number_value) : kind(kind), text(text), pos(pos), number_value(number_value) {
     }
     
 };
@@ -30,15 +26,7 @@ struct ExprNode : public PyObj {
     int64 op_tag;
     PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
-    ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) {
-        this->kind = kind;
-        this->value = value;
-        this->name = name;
-        this->op = op;
-        this->left = left;
-        this->right = right;
-        this->kind_tag = kind_tag;
-        this->op_tag = op_tag;
+    ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) : kind(kind), value(value), name(name), op(op), left(left), right(right), kind_tag(kind_tag), op_tag(op_tag) {
     }
     
 };
@@ -50,11 +38,7 @@ struct StmtNode : public PyObj {
     int64 kind_tag;
     PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
-    StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) {
-        this->kind = kind;
-        this->name = name;
-        this->expr_index = expr_index;
-        this->kind_tag = kind_tag;
+    StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) : kind(kind), name(name), expr_index(expr_index), kind_tag(kind_tag) {
     }
     
 };

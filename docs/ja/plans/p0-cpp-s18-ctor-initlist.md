@@ -35,10 +35,13 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、sample/18 生成クラスの初期化リスト化を `P0` で起票した。
+- 2026-03-01: S1-01 として sample/18 の対象を「`__init__` 未定義クラスの合成 ctor」のみに固定し、ユーザー定義 `__init__` は非対象のままとした。
+- 2026-03-01: S2-01 として class emitter の合成 ctor を本文代入から初期化リスト（宣言順）へ変更した。
+- 2026-03-01: S2-02/S3-01 として回帰テストを追加し、sample/18 再生成・unit/transpile 回帰通過を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S1-01] 現行 class constructor 出力（本文代入）を棚卸しし、初期化リスト化対象と除外条件を固定する。
-- [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-01] class emitter の合成コンストラクタ出力を初期化リスト形式へ変更する。
-- [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-02] 回帰テストを追加し、本文代入形式の再発を検知する。
-- [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S3-01] sample/18 再生成差分を固定し、transpile 回帰で非退行を確認する。
+- [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S1-01] 現行 class constructor 出力（本文代入）を棚卸しし、初期化リスト化対象と除外条件を固定する。
+- [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-01] class emitter の合成コンストラクタ出力を初期化リスト形式へ変更する。
+- [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-02] 回帰テストを追加し、本文代入形式の再発を検知する。
+- [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S3-01] sample/18 再生成差分を固定し、transpile 回帰で非退行を確認する。
