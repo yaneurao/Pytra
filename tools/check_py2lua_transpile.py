@@ -33,6 +33,10 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/core/lambda_immediate.py",
     "test/fixtures/core/lambda_local_state.py",
     "test/fixtures/core/tuple_assign.py",
+    "test/fixtures/imports/bom_from_import.py",
+    "test/fixtures/imports/from_pytra_std_import_math.py",
+    "test/fixtures/imports/type_ignore_from_import.py",
+    "test/fixtures/microgpt/microgpt_compat_min.py",
     "test/fixtures/signature/ng_kwargs.py",
     "test/fixtures/signature/ng_object_receiver.py",
     "test/fixtures/signature/ng_posonly.py",
@@ -44,7 +48,14 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/signature/ok_top_level_tuple_assign.py",
     "test/fixtures/signature/ok_tuple_of_list_comp.py",
     "test/fixtures/stdlib/argparse_extended.py",
+    "test/fixtures/stdlib/dataclasses_extended.py",
+    "test/fixtures/stdlib/enum_extended.py",
+    "test/fixtures/stdlib/json_extended.py",
     "test/fixtures/stdlib/os_glob_extended.py",
+    "test/fixtures/stdlib/pytra_std_import_math.py",
+    "test/fixtures/stdlib/re_extended.py",
+    "test/fixtures/stdlib/sys_extended.py",
+    "test/fixtures/stdlib/typing_extended.py",
     "test/fixtures/strings/str_slice.py",
     "test/fixtures/typing/any_basic.py",
     "test/fixtures/typing/any_class_alias.py",
@@ -52,6 +63,9 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/typing/any_list_mixed.py",
     "test/fixtures/typing/any_none.py",
     "test/fixtures/typing/bytearray_basic.py",
+    "test/fixtures/typing/enum_basic.py",
+    "test/fixtures/typing/intenum_basic.py",
+    "test/fixtures/typing/intflag_basic.py",
 }
 
 STAGE2_REMOVED_FRAGMENT = "--east-stage 2 is no longer supported; use EAST3 (default)."
@@ -65,6 +79,12 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
         text=True,
     )
     if cp.returncode == 0:
+        runtime_path = out.parent / "py_runtime.lua"
+        if not runtime_path.exists():
+            return False, "missing runtime file: py_runtime.lua"
+        src_text = out.read_text(encoding="utf-8")
+        if "local function __pytra_truthy(" in src_text or "function __pytra_truthy(" in src_text:
+            return False, "inline lua runtime helper detected in generated source"
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"

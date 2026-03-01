@@ -33,6 +33,12 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     if cp.returncode == 0 and compat_warning in cp.stderr:
         return False, "unexpected stage2 compatibility warning in default run"
     if cp.returncode == 0:
+        runtime_path = out.parent / "py_runtime.scala"
+        if not runtime_path.exists():
+            return False, "missing runtime file: py_runtime.scala"
+        src_text = out.read_text(encoding="utf-8")
+        if "def __pytra_truthy(" in src_text or "def __pytra_int(" in src_text:
+            return False, "inline scala runtime helper detected in generated source"
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"
