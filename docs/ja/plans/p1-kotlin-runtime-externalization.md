@@ -1,6 +1,6 @@
 # P1: Kotlin runtime 外出し（inline helper 撤去）
 
-最終更新: 2026-02-28
+最終更新: 2026-03-01
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-KOTLIN-RUNTIME-EXT-01`
@@ -50,8 +50,8 @@
 - [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-01] Kotlin runtime 正本（`src/runtime/kotlin/pytra`）を整備し、`__pytra_*` API を外部化する。
 - [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-02] Kotlin emitter から helper 本体出力を撤去し、runtime 呼び出し専用へ切り替える。
 - [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S2-03] `py2kotlin.py` の出力導線で runtime ファイルを配置する。
-- [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-01] `check_py2kotlin_transpile` / smoke / parity を更新し、回帰を固定する。
-- [ ] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-02] `sample/kotlin` 再生成で inline helper 残存ゼロを確認する。
+- [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-01] `check_py2kotlin_transpile` / smoke / parity を更新し、回帰を固定する。
+- [x] [ID: P1-KOTLIN-RUNTIME-EXT-01-S3-02] `sample/kotlin` 再生成で inline helper 残存ゼロを確認する。
 
 ## S1-01 棚卸し結果
 
@@ -85,3 +85,7 @@
 - 2026-03-01: `src/runtime/kotlin/pytra/py_runtime.kt` を `__pytra_*` 32 helper 実装入りの runtime 正本へ更新し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（10件）で非退行を確認した（`P1-KOTLIN-RUNTIME-EXT-01-S2-01`）。
 - 2026-03-01: `transpile_to_kotlin_native()` から `_emit_runtime_helpers()` 呼び出しを撤去し、生成 `.kt` から helper 本体 inline 出力を停止した。`test_py2kotlin_smoke` の回帰で `fun __pytra_truthy` 非出力を固定した（`P1-KOTLIN-RUNTIME-EXT-01-S2-02`）。
 - 2026-03-01: `py2kotlin.py` に runtime コピー導線（`_copy_kotlin_runtime`）を追加し、出力先へ `py_runtime.kt` を同梱するよう変更した。`/tmp` 変換実測で runtime 同梱を確認した（`P1-KOTLIN-RUNTIME-EXT-01-S2-03`）。
+- 2026-03-01: `tools/check_py2kotlin_transpile.py` に Kotlin 未対応 fixture（Try/Yield/Swap）を expected fail として明示化し、`checked=129 ok=129 fail=0 skipped=10` を確認した。
+- 2026-03-01: Kotlin parity 導線を更新し、`runtime_parity_check.py` の Kotlin 実行で `py_runtime.kt` 同梱コンパイルと artifact no-op 方針を反映した。
+- 2026-03-01: Kotlin emitter の `dict.get(key, default)` を `map.get(key) ?: default` へ修正し、`Dict(entries)` 描画を追加して sample/18 の runtime 失敗（token map 空化）を解消した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（12件）、`python3 tools/check_py2kotlin_transpile.py`、`python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`（18/18 pass）、`python3 tools/regenerate_samples.py --langs kotlin --force` を通過した。

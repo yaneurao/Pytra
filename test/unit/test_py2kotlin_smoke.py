@@ -125,6 +125,33 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
+    def test_dict_get_with_default_uses_kotlin_elvis(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "dict_get_default.py"
+            src.write_text(
+                "def f(d, k):\n"
+                "    return d.get(k, 0)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("?: 0L", kotlin)
+        self.assertNotIn(".get(k, 0L)", kotlin)
+
+    def test_dict_literal_entries_are_materialized(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "dict_literal_entries.py"
+            src.write_text(
+                "def f():\n"
+                "    d = {'=': 7}\n"
+                "    return d.get('=', 0)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            kotlin = transpile_to_kotlin_native(east)
+        self.assertIn('Pair("=", 7L)', kotlin)
+        self.assertIn('(d.get("=") ?: 0L)', kotlin)
+
     def test_py2kotlin_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2kotlin.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)

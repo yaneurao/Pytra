@@ -616,6 +616,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_noop_args.append(_render_expr(args[i]))
                 i += 1
             return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        if attr_name == "get" and len(args) == 2:
+            key_expr = _render_expr(args[0])
+            default_expr = _render_expr(args[1])
+            return "(" + owner_expr + ".get(" + key_expr + ") ?: " + default_expr + ")"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -711,6 +715,22 @@ def _render_expr(expr: Any) -> str:
         return "mutableListOf(" + ", ".join(rendered) + ")"
 
     if kind == "Dict":
+        entries_any = expr.get("entries")
+        entries = entries_any if isinstance(entries_any, list) else []
+        if len(entries) > 0:
+            parts: list[str] = []
+            i = 0
+            while i < len(entries):
+                entry_any = entries[i]
+                if isinstance(entry_any, dict):
+                    key_expr = _render_expr(entry_any.get("key"))
+                    value_expr = _render_expr(entry_any.get("value"))
+                    parts.append("Pair(" + key_expr + ", " + value_expr + ")")
+                i += 1
+            if len(parts) == 0:
+                return "mutableMapOf<Any, Any?>()"
+            return "mutableMapOf(" + ", ".join(parts) + ")"
+
         keys_any = expr.get("keys")
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []

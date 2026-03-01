@@ -1,313 +1,5 @@
 import kotlin.math.*
 
-fun __pytra_noop(vararg args: Any?) { }
-
-fun __pytra_any_default(): Any? {
-    return 0L
-}
-
-fun __pytra_assert(vararg args: Any?): String {
-    return "True"
-}
-
-fun __pytra_perf_counter(): Double {
-    return System.nanoTime().toDouble() / 1_000_000_000.0
-}
-
-fun __pytra_truthy(v: Any?): Boolean {
-    if (v == null) return false
-    if (v is Boolean) return v
-    if (v is Long) return v != 0L
-    if (v is Int) return v != 0
-    if (v is Double) return v != 0.0
-    if (v is String) return v.isNotEmpty()
-    if (v is List<*>) return v.isNotEmpty()
-    if (v is Map<*, *>) return v.isNotEmpty()
-    return true
-}
-
-fun __pytra_int(v: Any?): Long {
-    if (v == null) return 0L
-    if (v is Long) return v
-    if (v is Int) return v.toLong()
-    if (v is Double) return v.toLong()
-    if (v is Boolean) return if (v) 1L else 0L
-    if (v is String) return v.toLongOrNull() ?: 0L
-    return 0L
-}
-
-fun __pytra_float(v: Any?): Double {
-    if (v == null) return 0.0
-    if (v is Double) return v
-    if (v is Float) return v.toDouble()
-    if (v is Long) return v.toDouble()
-    if (v is Int) return v.toDouble()
-    if (v is Boolean) return if (v) 1.0 else 0.0
-    if (v is String) return v.toDoubleOrNull() ?: 0.0
-    return 0.0
-}
-
-fun __pytra_str(v: Any?): String {
-    if (v == null) return ""
-    return v.toString()
-}
-
-fun __pytra_len(v: Any?): Long {
-    if (v == null) return 0L
-    if (v is String) return v.length.toLong()
-    if (v is List<*>) return v.size.toLong()
-    if (v is Map<*, *>) return v.size.toLong()
-    return 0L
-}
-
-fun __pytra_index(i: Long, n: Long): Long {
-    if (i < 0L) return i + n
-    return i
-}
-
-fun __pytra_get_index(container: Any?, index: Any?): Any? {
-    if (container is List<*>) {
-        if (container.isEmpty()) return __pytra_any_default()
-        val i = __pytra_index(__pytra_int(index), container.size.toLong())
-        if (i < 0L || i >= container.size.toLong()) return __pytra_any_default()
-        return container[i.toInt()]
-    }
-    if (container is Map<*, *>) {
-        return container[__pytra_str(index)] ?: __pytra_any_default()
-    }
-    if (container is String) {
-        if (container.isEmpty()) return ""
-        val chars = container.toCharArray()
-        val i = __pytra_index(__pytra_int(index), chars.size.toLong())
-        if (i < 0L || i >= chars.size.toLong()) return ""
-        return chars[i.toInt()].toString()
-    }
-    return __pytra_any_default()
-}
-
-fun __pytra_set_index(container: Any?, index: Any?, value: Any?) {
-    if (container is MutableList<*>) {
-        @Suppress("UNCHECKED_CAST")
-        val list = container as MutableList<Any?>
-        if (list.isEmpty()) return
-        val i = __pytra_index(__pytra_int(index), list.size.toLong())
-        if (i < 0L || i >= list.size.toLong()) return
-        list[i.toInt()] = value
-        return
-    }
-    if (container is MutableMap<*, *>) {
-        @Suppress("UNCHECKED_CAST")
-        val map = container as MutableMap<Any, Any?>
-        map[__pytra_str(index)] = value
-    }
-}
-
-fun __pytra_slice(container: Any?, lower: Any?, upper: Any?): Any? {
-    if (container is String) {
-        val n = container.length.toLong()
-        var lo = __pytra_index(__pytra_int(lower), n)
-        var hi = __pytra_index(__pytra_int(upper), n)
-        if (lo < 0L) lo = 0L
-        if (hi < 0L) hi = 0L
-        if (lo > n) lo = n
-        if (hi > n) hi = n
-        if (hi < lo) hi = lo
-        return container.substring(lo.toInt(), hi.toInt())
-    }
-    if (container is List<*>) {
-        val n = container.size.toLong()
-        var lo = __pytra_index(__pytra_int(lower), n)
-        var hi = __pytra_index(__pytra_int(upper), n)
-        if (lo < 0L) lo = 0L
-        if (hi < 0L) hi = 0L
-        if (lo > n) lo = n
-        if (hi > n) hi = n
-        if (hi < lo) hi = lo
-        @Suppress("UNCHECKED_CAST")
-        return container.subList(lo.toInt(), hi.toInt()).toMutableList() as MutableList<Any?>
-    }
-    return __pytra_any_default()
-}
-
-fun __pytra_isdigit(v: Any?): Boolean {
-    val s = __pytra_str(v)
-    if (s.isEmpty()) return false
-    return s.all { it.isDigit() }
-}
-
-fun __pytra_isalpha(v: Any?): Boolean {
-    val s = __pytra_str(v)
-    if (s.isEmpty()) return false
-    return s.all { it.isLetter() }
-}
-
-fun __pytra_contains(container: Any?, value: Any?): Boolean {
-    if (container is List<*>) {
-        val needle = __pytra_str(value)
-        for (item in container) {
-            if (__pytra_str(item) == needle) return true
-        }
-        return false
-    }
-    if (container is Map<*, *>) {
-        return container.containsKey(__pytra_str(value))
-    }
-    if (container is String) {
-        return container.contains(__pytra_str(value))
-    }
-    return false
-}
-
-fun __pytra_ifexp(cond: Boolean, a: Any?, b: Any?): Any? {
-    return if (cond) a else b
-}
-
-fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
-    if (initValue is Long) {
-        val out = mutableListOf<Any?>()
-        var i = 0L
-        while (i < initValue) {
-            out.add(0L)
-            i += 1L
-        }
-        return out
-    }
-    if (initValue is Int) {
-        val out = mutableListOf<Any?>()
-        var i = 0
-        while (i < initValue) {
-            out.add(0L)
-            i += 1
-        }
-        return out
-    }
-    if (initValue is MutableList<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (initValue as MutableList<Any?>).toMutableList()
-    }
-    if (initValue is List<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (initValue as List<Any?>).toMutableList()
-    }
-    return mutableListOf()
-}
-
-fun __pytra_bytes(v: Any?): MutableList<Any?> {
-    if (v is MutableList<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (v as MutableList<Any?>).toMutableList()
-    }
-    if (v is List<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (v as List<Any?>).toMutableList()
-    }
-    return mutableListOf()
-}
-
-fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
-    val out = mutableListOf<Any?>()
-    val n = __pytra_int(count)
-    var i = 0L
-    while (i < n) {
-        out.add(value)
-        i += 1L
-    }
-    return out
-}
-
-fun __pytra_enumerate(v: Any?): MutableList<Any?> {
-    val items = __pytra_as_list(v)
-    val out = mutableListOf<Any?>()
-    var i = 0L
-    while (i < items.size.toLong()) {
-        out.add(mutableListOf(i, items[i.toInt()]))
-        i += 1L
-    }
-    return out
-}
-
-fun __pytra_as_list(v: Any?): MutableList<Any?> {
-    if (v is MutableList<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return v as MutableList<Any?>
-    }
-    if (v is List<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (v as List<Any?>).toMutableList()
-    }
-    return mutableListOf()
-}
-
-fun __pytra_as_dict(v: Any?): MutableMap<Any, Any?> {
-    if (v is MutableMap<*, *>) {
-        @Suppress("UNCHECKED_CAST")
-        return v as MutableMap<Any, Any?>
-    }
-    if (v is Map<*, *>) {
-        val out = mutableMapOf<Any, Any?>()
-        for ((k, valAny) in v) {
-            if (k != null) out[k] = valAny
-        }
-        return out
-    }
-    return mutableMapOf()
-}
-
-fun __pytra_pop_last(v: MutableList<Any?>): MutableList<Any?> {
-    if (v.isEmpty()) return v
-    v.removeAt(v.size - 1)
-    return v
-}
-
-fun __pytra_print(vararg args: Any?) {
-    if (args.isEmpty()) {
-        println()
-        return
-    }
-    println(args.joinToString(" ") { __pytra_str(it) })
-}
-
-fun __pytra_min(a: Any?, b: Any?): Any? {
-    val af = __pytra_float(a)
-    val bf = __pytra_float(b)
-    if (af < bf) {
-        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
-        return __pytra_int(a)
-    }
-    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
-    return __pytra_int(b)
-}
-
-fun __pytra_max(a: Any?, b: Any?): Any? {
-    val af = __pytra_float(a)
-    val bf = __pytra_float(b)
-    if (af > bf) {
-        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
-        return __pytra_int(a)
-    }
-    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
-    return __pytra_int(b)
-}
-
-fun __pytra_is_int(v: Any?): Boolean {
-    return (v is Long) || (v is Int)
-}
-
-fun __pytra_is_float(v: Any?): Boolean {
-    return v is Double
-}
-
-fun __pytra_is_bool(v: Any?): Boolean {
-    return v is Boolean
-}
-
-fun __pytra_is_str(v: Any?): Boolean {
-    return v is String
-}
-
-fun __pytra_is_list(v: Any?): Boolean {
-    return v is List<*>
-}
 
 fun __pytra_is_Token(v: Any?): Boolean {
     return v is Token
@@ -345,11 +37,13 @@ open class Token() {
     var kind: String = ""
     var text: String = ""
     var pos: Long = 0L
+    var number_value: Long = 0L
 
-    constructor(kind: String, text: String, pos: Long) : this() {
+    constructor(kind: String, text: String, pos: Long, number_value: Long) : this() {
         this.kind = kind
         this.text = text
         this.pos = pos
+        this.number_value = number_value
     }
 }
 
@@ -360,14 +54,18 @@ open class ExprNode() {
     var op: String = ""
     var left: Long = 0L
     var right: Long = 0L
+    var kind_tag: Long = 0L
+    var op_tag: Long = 0L
 
-    constructor(kind: String, value: Long, name: String, op: String, left: Long, right: Long) : this() {
+    constructor(kind: String, value: Long, name: String, op: String, left: Long, right: Long, kind_tag: Long, op_tag: Long) : this() {
         this.kind = kind
         this.value = value
         this.name = name
         this.op = op
         this.left = left
         this.right = right
+        this.kind_tag = kind_tag
+        this.op_tag = op_tag
     }
 }
 
@@ -375,11 +73,13 @@ open class StmtNode() {
     var kind: String = ""
     var name: String = ""
     var expr_index: Long = 0L
+    var kind_tag: Long = 0L
 
-    constructor(kind: String, name: String, expr_index: Long) : this() {
+    constructor(kind: String, name: String, expr_index: Long, kind_tag: Long) : this() {
         this.kind = kind
         this.name = name
         this.expr_index = expr_index
+        this.kind_tag = kind_tag
     }
 }
 
@@ -398,8 +98,16 @@ open class Parser() {
         this.expr_nodes = this.new_expr_nodes()
     }
 
+    fun current_token(): Token {
+        return __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, this.pos)))
+    }
+
+    fun previous_token(): Token {
+        return __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, (__pytra_int(this.pos) - __pytra_int(1L)))))
+    }
+
     fun peek_kind(): String {
-        return __pytra_str(__pytra_as_Token(__pytra_get_index(this.tokens, this.pos)).kind)
+        return __pytra_str(this.current_token().kind)
     }
 
     fun match(kind: String): Boolean {
@@ -411,11 +119,10 @@ open class Parser() {
     }
 
     fun expect(kind: String): Token {
-        if ((__pytra_str(this.peek_kind()) != __pytra_str(kind))) {
-            var t: Token = __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, this.pos)))
-            throw RuntimeException(__pytra_str(((__pytra_str((__pytra_str((__pytra_str((__pytra_str("parse error at pos=") + __pytra_str(__pytra_str(t.pos)))) + __pytra_str(", expected="))) + __pytra_str(kind))) + __pytra_str(", got=")) + t.kind)))
+        var token: Token = __pytra_as_Token(this.current_token())
+        if ((__pytra_str(token.kind) != __pytra_str(kind))) {
+            throw RuntimeException(__pytra_str(((__pytra_str((__pytra_str((__pytra_str((__pytra_str("parse error at pos=") + __pytra_str(__pytra_str(token.pos)))) + __pytra_str(", expected="))) + __pytra_str(kind))) + __pytra_str(", got=")) + token.kind)))
         }
-        var token: Token = __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, this.pos)))
         this.pos += 1L
         return __pytra_as_Token(token)
     }
@@ -447,16 +154,16 @@ open class Parser() {
             var let_name: String = __pytra_str(this.expect("IDENT").text)
             this.expect("EQUAL")
             var let_expr_index: Long = __pytra_int(this.parse_expr())
-            return __pytra_as_StmtNode(StmtNode("let", let_name, let_expr_index))
+            return __pytra_as_StmtNode(StmtNode("let", let_name, let_expr_index, 1L))
         }
         if (this.match("PRINT")) {
             var print_expr_index: Long = __pytra_int(this.parse_expr())
-            return __pytra_as_StmtNode(StmtNode("print", "", print_expr_index))
+            return __pytra_as_StmtNode(StmtNode("print", "", print_expr_index, 3L))
         }
         var assign_name: String = __pytra_str(this.expect("IDENT").text)
         this.expect("EQUAL")
         var assign_expr_index: Long = __pytra_int(this.parse_expr())
-        return __pytra_as_StmtNode(StmtNode("assign", assign_name, assign_expr_index))
+        return __pytra_as_StmtNode(StmtNode("assign", assign_name, assign_expr_index, 2L))
     }
 
     fun parse_expr(): Long {
@@ -468,12 +175,12 @@ open class Parser() {
         while (true) {
             if (this.match("PLUS")) {
                 var right: Long = __pytra_int(this.parse_mul())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "+", left, right)))
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "+", left, right, 3L, 1L)))
                 continue
             }
             if (this.match("MINUS")) {
                 var right: Long = __pytra_int(this.parse_mul())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "-", left, right)))
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "-", left, right, 3L, 2L)))
                 continue
             }
             break
@@ -486,12 +193,12 @@ open class Parser() {
         while (true) {
             if (this.match("STAR")) {
                 var right: Long = __pytra_int(this.parse_unary())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "*", left, right)))
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "*", left, right, 3L, 3L)))
                 continue
             }
             if (this.match("SLASH")) {
                 var right: Long = __pytra_int(this.parse_unary())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "/", left, right)))
+                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "/", left, right, 3L, 4L)))
                 continue
             }
             break
@@ -502,32 +209,34 @@ open class Parser() {
     fun parse_unary(): Long {
         if (this.match("MINUS")) {
             var child: Long = __pytra_int(this.parse_unary())
-            return __pytra_int(this.add_expr(ExprNode("neg", 0L, "", "", child, (-1L))))
+            return __pytra_int(this.add_expr(ExprNode("neg", 0L, "", "", child, (-1L), 4L, 0L)))
         }
         return __pytra_int(this.parse_primary())
     }
 
     fun parse_primary(): Long {
         if (this.match("NUMBER")) {
-            var token_num: Token = __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, (__pytra_int(this.pos) - __pytra_int(1L)))))
-            return __pytra_int(this.add_expr(ExprNode("lit", __pytra_int(token_num.text), "", "", (-1L), (-1L))))
+            var token_num: Token = __pytra_as_Token(this.previous_token())
+            return __pytra_int(this.add_expr(ExprNode("lit", token_num.number_value, "", "", (-1L), (-1L), 1L, 0L)))
         }
         if (this.match("IDENT")) {
-            var token_ident: Token = __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, (__pytra_int(this.pos) - __pytra_int(1L)))))
-            return __pytra_int(this.add_expr(ExprNode("var", 0L, token_ident.text, "", (-1L), (-1L))))
+            var token_ident: Token = __pytra_as_Token(this.previous_token())
+            return __pytra_int(this.add_expr(ExprNode("var", 0L, token_ident.text, "", (-1L), (-1L), 2L, 0L)))
         }
         if (this.match("LPAREN")) {
             var expr_index: Long = __pytra_int(this.parse_expr())
             this.expect("RPAREN")
             return __pytra_int(expr_index)
         }
-        var t: Token = __pytra_as_Token(__pytra_as_Token(__pytra_get_index(this.tokens, this.pos)))
+        var t: Token = __pytra_as_Token(this.current_token())
         throw RuntimeException(__pytra_str(((__pytra_str((__pytra_str("primary parse error at pos=") + __pytra_str(__pytra_str(t.pos)))) + __pytra_str(" got=")) + t.kind)))
         return 0L
     }
 }
 
 fun tokenize(lines: MutableList<Any?>): MutableList<Any?> {
+    var single_char_token_tags: MutableMap<Any, Any?> = __pytra_as_dict(mutableMapOf(Pair("+", 1L), Pair("-", 2L), Pair("*", 3L), Pair("/", 4L), Pair("(", 5L), Pair(")", 6L), Pair("=", 7L)))
+    var single_char_token_kinds: MutableList<Any?> = __pytra_as_list(mutableListOf("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"))
     var tokens: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     val __iter_0 = __pytra_as_list(__pytra_enumerate(lines))
     var __i_1: Long = 0L
@@ -544,38 +253,9 @@ fun tokenize(lines: MutableList<Any?>): MutableList<Any?> {
                 i += 1L
                 continue
             }
-            if ((__pytra_str(ch) == __pytra_str("+"))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("PLUS", ch, i))
-                i += 1L
-                continue
-            }
-            if ((__pytra_str(ch) == __pytra_str("-"))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("MINUS", ch, i))
-                i += 1L
-                continue
-            }
-            if ((__pytra_str(ch) == __pytra_str("*"))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("STAR", ch, i))
-                i += 1L
-                continue
-            }
-            if ((__pytra_str(ch) == __pytra_str("/"))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("SLASH", ch, i))
-                i += 1L
-                continue
-            }
-            if ((__pytra_str(ch) == __pytra_str("("))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("LPAREN", ch, i))
-                i += 1L
-                continue
-            }
-            if ((__pytra_str(ch) == __pytra_str(")"))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("RPAREN", ch, i))
-                i += 1L
-                continue
-            }
-            if ((__pytra_str(ch) == __pytra_str("="))) {
-                tokens = __pytra_as_list(tokens); tokens.add(Token("EQUAL", ch, i))
+            var single_tag: Long = __pytra_int((single_char_token_tags.get(ch) ?: 0L))
+            if ((__pytra_int(single_tag) > __pytra_int(0L))) {
+                tokens = __pytra_as_list(tokens); tokens.add(Token(__pytra_str(__pytra_get_index(single_char_token_kinds, (__pytra_int(single_tag) - __pytra_int(1L)))), ch, i, 0L))
                 i += 1L
                 continue
             }
@@ -585,7 +265,7 @@ fun tokenize(lines: MutableList<Any?>): MutableList<Any?> {
                     i += 1L
                 }
                 var text: String = __pytra_str(__pytra_slice(source, start, i))
-                tokens = __pytra_as_list(tokens); tokens.add(Token("NUMBER", text, start))
+                tokens = __pytra_as_list(tokens); tokens.add(Token("NUMBER", text, start, __pytra_int(text)))
                 continue
             }
             if ((__pytra_truthy(__pytra_isalpha(ch)) || (__pytra_str(ch) == __pytra_str("_")))) {
@@ -595,52 +275,52 @@ fun tokenize(lines: MutableList<Any?>): MutableList<Any?> {
                 }
                 var text: String = __pytra_str(__pytra_slice(source, start, i))
                 if ((__pytra_str(text) == __pytra_str("let"))) {
-                    tokens = __pytra_as_list(tokens); tokens.add(Token("LET", text, start))
+                    tokens = __pytra_as_list(tokens); tokens.add(Token("LET", text, start, 0L))
                 } else {
                     if ((__pytra_str(text) == __pytra_str("print"))) {
-                        tokens = __pytra_as_list(tokens); tokens.add(Token("PRINT", text, start))
+                        tokens = __pytra_as_list(tokens); tokens.add(Token("PRINT", text, start, 0L))
                     } else {
-                        tokens = __pytra_as_list(tokens); tokens.add(Token("IDENT", text, start))
+                        tokens = __pytra_as_list(tokens); tokens.add(Token("IDENT", text, start, 0L))
                     }
                 }
                 continue
             }
             throw RuntimeException(__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str("tokenize error at line=") + __pytra_str(__pytra_str(line_index)))) + __pytra_str(" pos="))) + __pytra_str(__pytra_str(i)))) + __pytra_str(" ch="))) + __pytra_str(ch))))
         }
-        tokens = __pytra_as_list(tokens); tokens.add(Token("NEWLINE", "", n))
+        tokens = __pytra_as_list(tokens); tokens.add(Token("NEWLINE", "", n, 0L))
         __i_1 += 1L
     }
-    tokens = __pytra_as_list(tokens); tokens.add(Token("EOF", "", __pytra_len(lines)))
+    tokens = __pytra_as_list(tokens); tokens.add(Token("EOF", "", __pytra_len(lines), 0L))
     return __pytra_as_list(tokens)
 }
 
 fun eval_expr(expr_index: Long, expr_nodes: MutableList<Any?>, env: MutableMap<Any, Any?>): Long {
     var node: ExprNode = __pytra_as_ExprNode(__pytra_as_ExprNode(__pytra_get_index(expr_nodes, expr_index)))
-    if ((__pytra_str(node.kind) == __pytra_str("lit"))) {
+    if ((__pytra_int(node.kind_tag) == __pytra_int(1L))) {
         return __pytra_int(node.value)
     }
-    if ((__pytra_str(node.kind) == __pytra_str("var"))) {
+    if ((__pytra_int(node.kind_tag) == __pytra_int(2L))) {
         if ((!(__pytra_contains(env, node.name)))) {
             throw RuntimeException(__pytra_str(("undefined variable: " + node.name)))
         }
         return __pytra_int(__pytra_int(__pytra_get_index(env, node.name)))
     }
-    if ((__pytra_str(node.kind) == __pytra_str("neg"))) {
+    if ((__pytra_int(node.kind_tag) == __pytra_int(4L))) {
         return __pytra_int((-eval_expr(node.left, expr_nodes, env)))
     }
-    if ((__pytra_str(node.kind) == __pytra_str("bin"))) {
+    if ((__pytra_int(node.kind_tag) == __pytra_int(3L))) {
         var lhs: Long = __pytra_int(eval_expr(node.left, expr_nodes, env))
         var rhs: Long = __pytra_int(eval_expr(node.right, expr_nodes, env))
-        if ((__pytra_str(node.op) == __pytra_str("+"))) {
+        if ((__pytra_int(node.op_tag) == __pytra_int(1L))) {
             return __pytra_int((__pytra_int(lhs) + __pytra_int(rhs)))
         }
-        if ((__pytra_str(node.op) == __pytra_str("-"))) {
+        if ((__pytra_int(node.op_tag) == __pytra_int(2L))) {
             return __pytra_int((__pytra_int(lhs) - __pytra_int(rhs)))
         }
-        if ((__pytra_str(node.op) == __pytra_str("*"))) {
+        if ((__pytra_int(node.op_tag) == __pytra_int(3L))) {
             return __pytra_int((__pytra_int(lhs) * __pytra_int(rhs)))
         }
-        if ((__pytra_str(node.op) == __pytra_str("/"))) {
+        if ((__pytra_int(node.op_tag) == __pytra_int(4L))) {
             if ((__pytra_int(rhs) == __pytra_int(0L))) {
                 throw RuntimeException(__pytra_str("division by zero"))
             }
@@ -660,12 +340,12 @@ fun execute(stmts: MutableList<Any?>, expr_nodes: MutableList<Any?>, trace: Bool
     var __i_1: Long = 0L
     while (__i_1 < __iter_0.size.toLong()) {
         val stmt: StmtNode = __pytra_as_StmtNode(__iter_0[__i_1.toInt()])
-        if ((__pytra_str(stmt.kind) == __pytra_str("let"))) {
+        if ((__pytra_int(stmt.kind_tag) == __pytra_int(1L))) {
             __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
             __i_1 += 1L
             continue
         }
-        if ((__pytra_str(stmt.kind) == __pytra_str("assign"))) {
+        if ((__pytra_int(stmt.kind_tag) == __pytra_int(2L))) {
             if ((!(__pytra_contains(env, stmt.name)))) {
                 throw RuntimeException(__pytra_str(("assign to undefined variable: " + stmt.name)))
             }
