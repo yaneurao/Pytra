@@ -58,6 +58,25 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("// 01: Sample that outputs the Mandelbrot set as a PNG image.", scala)
         self.assertIn("// Syntax is kept straightforward with future transpilation in mind.", scala)
 
+    def test_png_writer_uses_runtime_helper_instead_of_noop(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("def __pytra_write_rgb_png(path: Any, width: Any, height: Any, pixels: Any): Unit = {", scala)
+        self.assertIn("__pytra_write_rgb_png(out_path, width, height, pixels)", scala)
+        self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", scala)
+
+    def test_gif_writer_uses_runtime_helper_instead_of_noop(self) -> None:
+        sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn(
+            "def __pytra_save_gif(path: Any, width: Any, height: Any, frames: Any, palette: Any, delayCsArg: Any = 4L, loopArg: Any = 0L): Unit = {",
+            scala,
+        )
+        self.assertIn("__pytra_save_gif(out_path, width, height, frames, julia_palette())", scala)
+        self.assertNotIn("__pytra_noop(out_path, width, height, frames, julia_palette())", scala)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

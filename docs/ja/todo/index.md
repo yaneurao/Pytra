@@ -40,7 +40,7 @@
 1. [ ] [ID: P0-SCALA3-PARITY-ALL-01] Scala3 backend で parity（stdout + artifact）を sample/fixture ともに全通過させる。
 2. [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-01] sample 全件 + fixture 正例群の baseline を取得し、失敗カテゴリを固定する。
 3. [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-02] Scala fixture parity の対象マニフェストを定義し、負例（P2）との境界を固定する。
-4. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-01] `save_gif` / `write_rgb_png` の `__pytra_noop` 経路を撤去して runtime 実装へ接続する。
+4. [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-01] `save_gif` / `write_rgb_png` の `__pytra_noop` 経路を撤去して runtime 実装へ接続する。
 5. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装する（未対応は fail-closed）。
 6. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースの builtin/container 不足を補完し、`run_failed` を解消する。
 7. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-04] 継承先で上書きされるメソッドに `override def` を出力し、Scala3 の継承契約へ一致させる。
