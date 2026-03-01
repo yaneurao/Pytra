@@ -32,6 +32,16 @@
 
 ## 未完了タスク
 
+### P0: sample/lua/01 runtime マッピング是正（最優先）
+
+文脈: [docs/ja/plans/p0-lua-sample01-runtime-mapping.md](../plans/p0-lua-sample01-runtime-mapping.md)
+
+1. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01] `sample/lua/01` の runtime マッピング欠落（time/png no-op）を是正し、機能欠落を解消する。
+2. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
+3. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-01] `pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく実 runtime 呼び出しへ接続する。
+4. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-02] 未解決 import の no-op フォールバックを撤去し、fail-closed（明示エラー）へ変更する。
+5. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成 + parity で非退行を固定する。
+
 ### P1: sample/go/01 品質改善（C++品質との差分縮小）
 
 文脈: [docs/ja/plans/p1-go-sample01-quality-uplift.md](../plans/p1-go-sample01-quality-uplift.md)
@@ -79,6 +89,17 @@
 5. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] 比較式/論理式の `__pytra_truthy` 挿入条件を最適化し、Ruby ネイティブ条件式を優先する。
 6. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-04] `sample/01` の `r/g/b` 等で不要な `nil` 初期化を削減する typed 代入 fastpath を追加する。
 7. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片 + parity）を追加し、`sample/ruby/01` 再生成差分を固定する。
+
+### P1: sample/lua/01 品質改善（可読性・冗長性の縮小）
+
+文脈: [docs/ja/plans/p1-lua-sample01-quality-uplift.md](../plans/p1-lua-sample01-quality-uplift.md)
+
+1. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01] `sample/lua/01` の可読性/冗長性を改善し、C++ 出力との差を縮小する。
+2. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。
+3. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray` など runtime 依存の出力を明示化し、自己完結性を改善する。
+4. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] typed 経路で `r/g/b` の不要な `nil` 初期化を削減する。
+5. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループの step/括弧出力を簡素化する fastpath を追加する。
+6. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成差分を固定する。
 
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 
