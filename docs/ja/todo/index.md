@@ -47,14 +47,14 @@
 文脈: [docs/ja/plans/p0-cpp-s08-quality-uplift.md](../plans/p0-cpp-s08-quality-uplift.md)
 
 1. [ ] [ID: P0-CPP-S08-QUALITY-01] `sample/cpp/08` の生成品質を改善し、可読性とホットパス効率を同時に引き上げる。
-2. [ ] [ID: P0-CPP-S08-QUALITY-01-S1-01] `sample/cpp/08` の品質差分（初期化/変換/分岐/ループ/capacity）をコード断片で固定する。
+2. [x] [ID: P0-CPP-S08-QUALITY-01-S1-01] `sample/cpp/08` の品質差分（初期化/変換/分岐/ループ/capacity）をコード断片で固定する。
 3. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-01] `grid` 初期化を IIFE + `py_repeat` から typed 直接初期化へ縮退する。
-4. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-02] `capture` 返却時の `bytes(frame)` を不要変換削減ルールで簡素化する。
+4. [x] [ID: P0-CPP-S08-QUALITY-01-S2-02] `capture` 返却時の `bytes(frame)` を不要変換削減ルールで簡素化する。
 5. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-03] capture 判定の `%` を next-capture カウンタ方式へ置換する fastpath を導入する。
-6. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-04] `if/elif/elif/else` 由来の入れ子分岐を `else if`/`switch` 相当の出力へ縮退する。
+6. [x] [ID: P0-CPP-S08-QUALITY-01-S2-04] `if/elif/elif/else` 由来の入れ子分岐を `else if`/`switch` 相当の出力へ縮退する。
 7. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-05] 事前に推定可能な `list` に `reserve` を出力する最小規則を追加し、`frames` へ適用する。
-8. [ ] [ID: P0-CPP-S08-QUALITY-01-S3-01] 回帰テストを追加し、`sample/cpp/08` 再生成差分を固定する。
-9. [ ] [ID: P0-CPP-S08-QUALITY-01-S3-02] transpile / unit / sample再生成確認を実施し、非退行を確認する。
+8. [x] [ID: P0-CPP-S08-QUALITY-01-S3-01] 回帰テストを追加し、`sample/cpp/08` 再生成差分を固定する。
+9. [x] [ID: P0-CPP-S08-QUALITY-01-S3-02] transpile / unit / sample再生成確認を実施し、非退行を確認する。
 
 ### P0: `range(len-1, -1, -1)` 多言語回帰（test追加 + 全backend通過）
 
