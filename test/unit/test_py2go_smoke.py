@@ -56,6 +56,15 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertNotIn('    "math"', go)
         self.assertNotIn("var _ = math.Pi", go)
 
+    def test_inheritance_virtual_dispatch_fixture_uses_interface_typed_base_dispatch(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        self.assertIn("type AnimalLike interface {", go)
+        self.assertIn("func call_via_animal(a AnimalLike) string {", go)
+        self.assertIn("var a AnimalLike = NewLoudDog()", go)
+        self.assertIn('return __pytra_str(("loud-" + self.Dog.speak()))', go)
+
     def test_go_native_emitter_emits_math_import_only_when_used(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")

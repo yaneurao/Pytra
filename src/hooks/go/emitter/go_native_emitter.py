@@ -35,6 +35,13 @@ _GO_KEYWORDS = {
 }
 
 _CLASS_NAMES: set[str] = set()
+_CLASS_BASE_MAP: dict[str, str] = {}
+_CURRENT_RECEIVER_CLASS: str = ""
+_CURRENT_RECEIVER_VAR: str = "self"
+
+
+def _class_iface_name(class_name: str) -> str:
+    return _safe_ident(class_name, "PytraClass") + "Like"
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -156,6 +163,8 @@ def _go_type(type_name: Any, *, allow_void: bool) -> str:
         return "[]any"
     if type_name in {"unknown", "object", "any"}:
         return "any"
+    if type_name in _CLASS_NAMES:
+        return _class_iface_name(type_name)
     if type_name.isidentifier():
         return "*" + _safe_ident(type_name, "Any")
     return "any"
@@ -582,9 +591,21 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
-        if attr_name == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) == "super":
-                return "__pytra_noop()"
+                base_name = _CLASS_BASE_MAP.get(_CURRENT_RECEIVER_CLASS, "")
+                recv = _CURRENT_RECEIVER_VAR if _CURRENT_RECEIVER_VAR != "" else "self"
+                rendered_super_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_super_args.append(_render_expr(args[i]))
+                    i += 1
+                if attr_name == "__init__":
+                    if base_name != "":
+                        return recv + "." + base_name + ".Init(" + ", ".join(rendered_super_args) + ")"
+                    return "__pytra_noop()"
+                if base_name != "":
+                    return recv + "." + base_name + "." + attr_name + "(" + ", ".join(rendered_super_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
             if owner == "math":
@@ -1566,6 +1587,7 @@ def _block_guarantees_return(body: list[Any]) -> bool:
 
 
 def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None = None) -> list[str]:
+    global _CURRENT_RECEIVER_CLASS, _CURRENT_RECEIVER_VAR
     name = _safe_ident(fn.get("name"), "func")
     is_init = receiver_name is not None and name == "__init__"
     if is_init:
@@ -1577,8 +1599,8 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
 
     receiver = ""
     drop_self = False
+    recv_var = "self"
     if isinstance(receiver_name, str):
-        recv_var = "self"
         arg_order_any = fn.get("arg_order")
         arg_order = arg_order_any if isinstance(arg_order_any, list) else []
         if len(arg_order) > 0 and isinstance(arg_order[0], str):
@@ -1613,9 +1635,16 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
         i += 1
 
     i = 0
+    prev_receiver_class = _CURRENT_RECEIVER_CLASS
+    prev_receiver_var = _CURRENT_RECEIVER_VAR
+    if isinstance(receiver_name, str):
+        _CURRENT_RECEIVER_CLASS = receiver_name
+        _CURRENT_RECEIVER_VAR = recv_var
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
         i += 1
+    _CURRENT_RECEIVER_CLASS = prev_receiver_class
+    _CURRENT_RECEIVER_VAR = prev_receiver_var
 
     if return_type != "" and not _block_guarantees_return(body):
         lines.append(indent + "    return " + _default_return_expr(return_type))
@@ -1704,6 +1733,76 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     return lines
 
 
+def _collect_class_base_map(classes: list[dict[str, Any]]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    i = 0
+    while i < len(classes):
+        cls = classes[i]
+        class_name = _safe_ident(cls.get("name"), "PytraClass")
+        base_any = cls.get("base")
+        base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+        if class_name != "" and base_name != "":
+            out[class_name] = base_name
+        i += 1
+    return out
+
+
+def _method_signature_for_interface(fn: dict[str, Any]) -> str:
+    method_name = _safe_ident(fn.get("name"), "method")
+    params = _function_params(fn, drop_self=True)
+    ret = _go_type(fn.get("return_type"), allow_void=True)
+    sig = method_name + "(" + ", ".join(params) + ")"
+    if ret != "":
+        sig += " " + ret
+    return sig
+
+
+def _collect_class_method_sig_map(classes: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    i = 0
+    while i < len(classes):
+        cls = classes[i]
+        class_name = _safe_ident(cls.get("name"), "PytraClass")
+        body_any = cls.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        sigs: dict[str, str] = {}
+        j = 0
+        while j < len(body):
+            node = body[j]
+            if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+                method_raw = _safe_ident(node.get("name"), "")
+                if method_raw != "" and method_raw != "__init__":
+                    sigs[method_raw] = _method_signature_for_interface(node)
+            j += 1
+        out[class_name] = sigs
+        i += 1
+    return out
+
+
+def _resolve_interface_method_sigs(
+    class_name: str,
+    base_map: dict[str, str],
+    method_sig_map: dict[str, dict[str, str]],
+) -> list[str]:
+    merged: dict[str, str] = {}
+    chain: list[str] = []
+    cur = class_name
+    while cur != "":
+        chain.append(cur)
+        cur = base_map.get(cur, "")
+    chain.reverse()
+    i = 0
+    while i < len(chain):
+        sigs = method_sig_map.get(chain[i], {})
+        for name, sig in sigs.items():
+            merged[name] = sig
+        i += 1
+    out: list[str] = []
+    for _, sig in merged.items():
+        out.append(sig)
+    return out
+
+
 def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     """Emit Go native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
@@ -1729,12 +1828,14 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
                 functions.append(node)
         i += 1
 
-    global _CLASS_NAMES
+    global _CLASS_NAMES, _CLASS_BASE_MAP
     _CLASS_NAMES = set()
     i = 0
     while i < len(classes):
         _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
         i += 1
+    _CLASS_BASE_MAP = _collect_class_base_map(classes)
+    class_method_sig_map = _collect_class_method_sig_map(classes)
 
     lines: list[str] = []
     lines.append("package main")
@@ -1752,6 +1853,20 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     if len(module_comments) > 0:
         lines.extend(module_comments)
         lines.append("")
+
+    i = 0
+    while i < len(classes):
+        cname = _safe_ident(classes[i].get("name"), "PytraClass")
+        iface_name = _class_iface_name(cname)
+        method_sigs = _resolve_interface_method_sigs(cname, _CLASS_BASE_MAP, class_method_sig_map)
+        lines.append("type " + iface_name + " interface {")
+        j = 0
+        while j < len(method_sigs):
+            lines.append("    " + method_sigs[j])
+            j += 1
+        lines.append("}")
+        lines.append("")
+        i += 1
 
     i = 0
     while i < len(classes):
