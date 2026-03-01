@@ -60,14 +60,14 @@
 
 文脈: [docs/ja/plans/p0-multilang-downcount-range-regression.md](../plans/p0-multilang-downcount-range-regression.md)
 
-1. [ ] [ID: P0-MULTILANG-DOWNRANGE-01] `range(len-1, -1, -1)` の共通回帰テストを追加し、全backendで通過させる。
-2. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S1-01] `range(len-1, -1, -1)` の最小 fixture を `test/fixtures` に追加し、期待出力を固定する。
-3. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S1-02] 現状の失敗バックエンド（`cs/js/ts/rs`）と成功バックエンドを再現ログとして記録する。
-4. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S2-01] `ForCore(StaticRangeForPlan)` の range mode 解決を共通化し、`iter_plan` 非保持時は `step` から descending/ascending/dynamic を導出する。
-5. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S2-02] `cs/js/rs` emitter の `ForCore -> ForRange` 変換で `range_mode='ascending'` 固定フォールバックを撤去し、共通解決結果を使う。
-6. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S2-03] `ts`（JS preview経路）に同ケース回帰を追加し、`js` 修正が確実に反映されることを固定する。
-7. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S3-01] 各 backend smoke/transpile テストへ当該 fixture ケースを追加し、再発検知を常時化する。
-8. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S3-02] runtime parity（実行可能ターゲット）で期待値一致を確認し、結果を決定ログへ記録する。
+1. [x] [ID: P0-MULTILANG-DOWNRANGE-01] `range(len-1, -1, -1)` の共通回帰テストを追加し、全backendで通過させる。
+2. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-01] `range(len-1, -1, -1)` の最小 fixture を `test/fixtures` に追加し、期待出力を固定する。
+3. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-02] 現状の失敗バックエンド（`cs/js/ts/rs`）と成功バックエンドを再現ログとして記録する。
+4. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-01] `ForCore(StaticRangeForPlan)` の range mode 解決を共通化し、`iter_plan` 非保持時は `step` から descending/ascending/dynamic を導出する。
+5. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-02] `cs/js/rs` emitter の `ForCore -> ForRange` 変換で `range_mode='ascending'` 固定フォールバックを撤去し、共通解決結果を使う。
+6. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-03] `ts`（JS preview経路）に同ケース回帰を追加し、`js` 修正が確実に反映されることを固定する。
+7. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S3-01] 各 backend smoke/transpile テストへ当該 fixture ケースを追加し、再発検知を常時化する。
+8. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S3-02] runtime parity（実行可能ターゲット）で期待値一致を確認し、結果を決定ログへ記録する。
 
 ### P0: Lua parity 完走（test/fixture + sample）
 
