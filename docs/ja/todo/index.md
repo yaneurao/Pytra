@@ -60,6 +60,19 @@
 8. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` の品質指標を固定する。
 9. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-02] Scala transpile/smoke/parity を実行し、非退行を確認する。
 
+### P0: EAST3主導 `reserve` 件数式正規化（C++ emitter文字列組み立て撤去）
+
+文脈: [docs/ja/plans/p0-east3-reserve-trip-count-normalization.md](../plans/p0-east3-reserve-trip-count-normalization.md)
+
+1. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01] `reserve` 件数式の正規化責務を EAST3 側へ移し、C++ emitter の文字列組み立て依存を解消する。
+2. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints` 拡張仕様（`count_expr` 形式 / fail-closed 条件 / 互換扱い）を定義する。
+3. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` 件数式の正規化ルール（`start=0,step=1` 等の簡約規則）を仕様化する。
+4. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] EAST3 optimizer で正規化済み `count_expr` を生成し、`reserve_hints` へ付与する。
+5. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切り替え、文字列組み立て依存を撤去する。
+6. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr` 欠落/不正時の fail-closed 挙動を実装し、不正 `reserve` 出力を防止する。
+7. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト（optimizer + emitter）を追加し、旧式冗長 `reserve` 式の再発を検知可能にする。
+8. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成と transpile チェックを実行し、非退行を確認する。
+
 ### P1: sample/ruby/01 品質改善（C++品質との差分縮小）
 
 文脈: [docs/ja/plans/p1-ruby-sample01-quality-uplift.md](../plans/p1-ruby-sample01-quality-uplift.md)
