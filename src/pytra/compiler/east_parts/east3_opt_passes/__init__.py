@@ -11,6 +11,7 @@ from pytra.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pas
 from pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
 from pytra.compiler.east_parts.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
 from pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
+from pytra.compiler.east_parts.east3_opt_passes.safe_reserve_hint_pass import SafeReserveHintPass
 from pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
 from pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
 from pytra.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
@@ -26,6 +27,7 @@ def build_default_passes() -> list[object]:
         IdentityPyToElisionPass(),
         NumericCastChainReductionPass(),
         RangeForCanonicalizationPass(),
+        SafeReserveHintPass(),
         TypedEnumerateNormalizationPass(),
         TypedRepeatMaterializationPass(),
         DictStrKeyNormalizationPass(),

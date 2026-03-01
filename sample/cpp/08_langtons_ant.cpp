@@ -32,7 +32,6 @@ void run_08_langtons_ant() {
     int64 capture_every = 3000;
     list<bytes> frames = list<bytes>{};
     
-    frames.reserve((steps_total + capture_every - 1) / capture_every);
     int64 __next_capture_1 = 0;
     for (int64 i = 0; i < steps_total; ++i) {
         if (grid[y][x] == 0) {

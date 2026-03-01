@@ -311,11 +311,11 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
     list<str> lines = list<str>{};
     
     // Declare initial variables.
+    lines.reserve(((var_count) <= (0) ? 0 : (var_count) - (0)));
     for (int64 i = 0; i < var_count; ++i) {
         lines.append(str("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
     }
     // Force evaluation of many arithmetic expressions.
-    lines.reserve((loops + 97 - 1) / 97);
     int64 __next_capture_2 = 0;
     for (int64 i = 0; i < loops; ++i) {
         int64 x = i % var_count;

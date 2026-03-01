@@ -39,12 +39,15 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`reserve` は「無条件 append + ループ回数事前確定」条件でのみ有効化し、判定責務を EAST3 側へ移す `P0` 計画を起票した。
+- 2026-03-01: S1-01/S1-02 として `SafeReserveHintPass` の適格条件を「StaticRangeForPlan + 単純不変境界 + top-level 無条件 append 1件 + 制御フローなし」に固定し、ヒント形を stmt-level `reserve_hints`（kind/owner/count_kind/safe/safety）へ確定した。
+- 2026-03-01: S2-01/S2-02 として EAST3 optimizer に `SafeReserveHintPass` を追加し、C++ emitter の capture 由来 `reserve` 自動挿入を撤去して `reserve_hints` 依存へ切り替えた。
+- 2026-03-01: S3-01/S3-02 として sample/cpp 08/18 再生成、`test_east3_optimizer.py`・`test_py2cpp_codegen_issues.py`・`check_py2cpp_transpile.py` を通過させ、条件付き append 由来 `reserve` 非出力を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S1-01] EAST3 で `reserve` 対象とする ForCore 条件（無条件 append / 静的 range / loop内で stop不変）を仕様化する。
-- [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S1-02] `reserve` ヒントのデータ形（owner名・推定件数式・安全性フラグ）を EAST3 ノードに定義する。
-- [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S2-01] EAST3 optimizer pass を追加し、適格ループにのみ `reserve` ヒントを付与する。
-- [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S2-02] C++ emitter の現行 `capture` 由来 `reserve` 推定を撤去し、EAST3 ヒント参照に切り替える。
-- [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S3-01] `sample/18` の再生成で不適切 `reserve` 非出力を固定し、回帰テストを更新する。
-- [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S3-02] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` で非退行を確認する。
+- [x] [ID: P0-EAST3-SAFE-RESERVE-01-S1-01] EAST3 で `reserve` 対象とする ForCore 条件（無条件 append / 静的 range / loop内で stop不変）を仕様化する。
+- [x] [ID: P0-EAST3-SAFE-RESERVE-01-S1-02] `reserve` ヒントのデータ形（owner名・推定件数式・安全性フラグ）を EAST3 ノードに定義する。
+- [x] [ID: P0-EAST3-SAFE-RESERVE-01-S2-01] EAST3 optimizer pass を追加し、適格ループにのみ `reserve` ヒントを付与する。
+- [x] [ID: P0-EAST3-SAFE-RESERVE-01-S2-02] C++ emitter の現行 `capture` 由来 `reserve` 推定を撤去し、EAST3 ヒント参照に切り替える。
+- [x] [ID: P0-EAST3-SAFE-RESERVE-01-S3-01] `sample/18` の再生成で不適切 `reserve` 非出力を固定し、回帰テストを更新する。
+- [x] [ID: P0-EAST3-SAFE-RESERVE-01-S3-02] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` で非退行を確認する。

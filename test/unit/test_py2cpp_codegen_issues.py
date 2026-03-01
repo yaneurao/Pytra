@@ -615,11 +615,27 @@ def f() -> float:
         self.assertIn("__next_capture_", cpp)
         self.assertNotIn("if (i % capture_every == 0)", cpp)
 
-    def test_sample08_frames_reserve_is_emitted_from_capture_rate(self) -> None:
+    def test_sample08_frames_reserve_is_not_emitted_for_conditional_append(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("frames.reserve((steps_total + capture_every - 1) / capture_every);", cpp)
+        self.assertNotIn("frames.reserve(", cpp)
+
+    def test_static_range_unconditional_append_emits_reserve_via_east3_hint(self) -> None:
+        src = """def collect(n: int) -> list[int]:
+    xs: list[int] = []
+    for i in range(n):
+        xs.append(i)
+    return xs
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "reserve_hint_collect.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+
+        self.assertIn("xs.reserve(", cpp)
+        self.assertIn("(n) <= (0) ? 0 : (n) - (0)", cpp)
 
     def test_typed_list_len_zero_compare_uses_empty_fastpath(self) -> None:
         src = """def has_items(xs: list[int]) -> bool:

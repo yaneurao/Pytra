@@ -11,6 +11,7 @@ from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pa
 from src.pytra.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
 from src.pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
+from src.pytra.compiler.east_parts.east3_opt_passes.safe_reserve_hint_pass import SafeReserveHintPass
 from src.pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
 from src.pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
@@ -165,7 +166,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -176,6 +177,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("IdentityPyToElisionPass", True))
         self.assertFalse(by_name.get("NumericCastChainReductionPass", True))
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
+        self.assertFalse(by_name.get("SafeReserveHintPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
         self.assertFalse(by_name.get("TypedRepeatMaterializationPass", True))
         self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
@@ -191,6 +193,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("IdentityPyToElisionPass", trace_text)
         self.assertIn("NumericCastChainReductionPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
+        self.assertIn("SafeReserveHintPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
         self.assertIn("TypedRepeatMaterializationPass", trace_text)
         self.assertIn("DictStrKeyNormalizationPass", trace_text)
@@ -820,6 +823,79 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertTrue(result.changed)
         self.assertEqual(result.change_count, 1)
         self.assertEqual(for_stmt.get("target_plan", {}).get("id"), "_")
+
+    def test_safe_reserve_hint_pass_marks_static_loop_with_unconditional_append(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {
+                "kind": "StaticRangeForPlan",
+                "start": _const_i(0),
+                "stop": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                "step": _const_i(1),
+                "range_mode": "ascending",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Attribute", "value": {"kind": "Name", "id": "xs"}, "attr": "append"},
+                        "args": [{"kind": "Name", "id": "i", "resolved_type": "int64"}],
+                        "keywords": [],
+                    },
+                }
+            ],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = SafeReserveHintPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        hints = for_stmt.get("reserve_hints")
+        self.assertIsInstance(hints, list)
+        self.assertEqual(len(hints), 1)
+        self.assertEqual(hints[0].get("owner"), "xs")
+        self.assertTrue(bool(hints[0].get("safe")))
+
+    def test_safe_reserve_hint_pass_skips_conditional_append(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {
+                "kind": "StaticRangeForPlan",
+                "start": _const_i(0),
+                "stop": _const_i(8),
+                "step": _const_i(1),
+                "range_mode": "ascending",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [
+                {
+                    "kind": "If",
+                    "test": {"kind": "Name", "id": "pred", "resolved_type": "bool"},
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Attribute", "value": {"kind": "Name", "id": "xs"}, "attr": "append"},
+                                "args": [_const_i(1)],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                    "orelse": [],
+                }
+            ],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = SafeReserveHintPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertIsNone(for_stmt.get("reserve_hints"))
 
     def test_unused_loop_var_elision_pass_keeps_target_when_read_later(self) -> None:
         doc = _module_doc()

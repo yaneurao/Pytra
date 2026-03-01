@@ -873,6 +873,72 @@ class CppStatementEmitter:
                 return "descending"
         return "dynamic"
 
+    def _render_static_range_trip_count_expr(
+        self,
+        *,
+        start_txt: str,
+        stop_txt: str,
+        step_value: int,
+        range_mode: str,
+    ) -> str:
+        """`StaticRangeForPlan` の反復回数式を C++ 文字列で返す。"""
+        if step_value == 0:
+            return ""
+        start_expr = self._trim_ws(start_txt)
+        stop_expr = self._trim_ws(stop_txt)
+        if start_expr == "" or stop_expr == "":
+            return ""
+        step_abs = abs(int(step_value))
+        if range_mode == "ascending":
+            if step_abs == 1:
+                return f"(({stop_expr}) <= ({start_expr}) ? 0 : ({stop_expr}) - ({start_expr}))"
+            return (
+                f"(({stop_expr}) <= ({start_expr}) ? 0 : "
+                f"(({stop_expr}) - ({start_expr}) + {step_abs - 1}) / {step_abs})"
+            )
+        if range_mode == "descending":
+            if step_abs == 1:
+                return f"(({stop_expr}) >= ({start_expr}) ? 0 : ({start_expr}) - ({stop_expr}))"
+            return (
+                f"(({stop_expr}) >= ({start_expr}) ? 0 : "
+                f"(({start_expr}) - ({stop_expr}) + {step_abs - 1}) / {step_abs})"
+            )
+        return ""
+
+    def _emit_forcore_reserve_hints(
+        self,
+        stmt: dict[str, Any],
+        *,
+        iter_plan: dict[str, Any],
+        start_txt: str,
+        stop_txt: str,
+        range_mode: str,
+    ) -> None:
+        """EAST3 `reserve_hints` に基づいて `reserve(...)` を出力する。"""
+        step_val = self._const_int_literal(iter_plan.get("step"))
+        if step_val is None:
+            return
+        trip_count_expr = self._render_static_range_trip_count_expr(
+            start_txt=start_txt,
+            stop_txt=stop_txt,
+            step_value=int(step_val),
+            range_mode=range_mode,
+        )
+        if trip_count_expr == "":
+            return
+        hints_obj = stmt.get("reserve_hints")
+        hints = hints_obj if isinstance(hints_obj, list) else []
+        for hint_obj in hints:
+            hint = self.any_to_dict_or_empty(hint_obj)
+            if self.any_dict_get_str(hint, "kind", "") != "StaticRangeReserveHint":
+                continue
+            if not bool(hint.get("safe", False)):
+                continue
+            owner = self.any_dict_get_str(hint, "owner", "")
+            if owner == "":
+                continue
+            self.emit(f"{owner}.reserve({trip_count_expr});")
+
     def _forcore_capture_mod_guard_rewrite(
         self,
         body_stmts: list[dict[str, Any]],
@@ -893,14 +959,17 @@ class CppStatementEmitter:
         append_stmt = self.any_to_dict_or_empty(guard_body[0])
         if self._node_kind_from_dict(append_stmt) != "Expr":
             return None
-        append_owner = ""
         append_call = self.any_to_dict_or_empty(append_stmt.get("value"))
-        if self._node_kind_from_dict(append_call) == "Call":
-            append_func = self.any_to_dict_or_empty(append_call.get("func"))
-            if self._node_kind_from_dict(append_func) == "Attribute" and self.any_dict_get_str(append_func, "attr", "") == "append":
-                owner_node = self.any_to_dict_or_empty(append_func.get("value"))
-                if self._node_kind_from_dict(owner_node) == "Name":
-                    append_owner = self.any_dict_get_str(owner_node, "id", "")
+        if self._node_kind_from_dict(append_call) != "Call":
+            return None
+        append_func = self.any_to_dict_or_empty(append_call.get("func"))
+        if self._node_kind_from_dict(append_func) != "Attribute":
+            return None
+        if self.any_dict_get_str(append_func, "attr", "") != "append":
+            return None
+        owner_node = self.any_to_dict_or_empty(append_func.get("value"))
+        if self._node_kind_from_dict(owner_node) != "Name":
+            return None
         test = self.any_to_dict_or_empty(guard_if.get("test"))
         if self._node_kind_from_dict(test) != "Compare":
             return None
@@ -923,7 +992,6 @@ class CppStatementEmitter:
             "prefix_body": body_stmts[:-1],
             "append_stmt": append_stmt,
             "capture_step": capture_step,
-            "append_owner": append_owner,
         }
 
     def _forcore_runtime_iter_item_type(
@@ -1124,18 +1192,21 @@ class CppStatementEmitter:
             next_capture_var = ""
             capture_step = ""
             append_stmt: dict[str, Any] = {}
-            append_owner = ""
             if capture_guard_rewrite is not None:
                 next_capture_var = self.next_tmp("__next_capture")
                 capture_step = self.any_to_str(capture_guard_rewrite.get("capture_step"))
                 append_stmt = self.any_to_dict_or_empty(capture_guard_rewrite.get("append_stmt"))
-                append_owner = self.any_to_str(capture_guard_rewrite.get("append_owner"))
                 loop_body_stmts = self._dict_stmt_list(capture_guard_rewrite.get("prefix_body"))
                 loop_omit_braces = False
-                if append_owner != "":
-                    self.emit(f"{append_owner}.reserve(({stop_txt} + {capture_step} - 1) / {capture_step});")
                 self.emit(f"int64 {next_capture_var} = 0;")
                 self.declared_var_types[next_capture_var] = "int64"
+            self._emit_forcore_reserve_hints(
+                stmt,
+                iter_plan=iter_plan,
+                start_txt=start_txt,
+                stop_txt=stop_txt,
+                range_mode=range_mode_txt,
+            )
             self.declared_var_types[target_id] = target_type
             self._emit_for_body_open(hdr, {target_id}, loop_omit_braces)
             if capture_guard_rewrite is None:
