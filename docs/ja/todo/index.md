@@ -48,11 +48,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-samecast-chain-reduction.md](../plans/p0-cpp-s18-samecast-chain-reduction.md)
 
-1. [ ] [ID: P0-CPP-S18-SAMECAST-02] sample/18 の `int64(py_to<int64>(...))` など同型 cast 連鎖を削減する。
-2. [ ] [ID: P0-CPP-S18-SAMECAST-02-S1-01] 冗長 cast 発生点（dict取得/補助関数戻り値）を棚卸しし、削減対象を固定する。
-3. [ ] [ID: P0-CPP-S18-SAMECAST-02-S2-01] EAST3 cast cleanup / C++ emitter 条件を更新し、同型 cast 連鎖を縮退する。
-4. [ ] [ID: P0-CPP-S18-SAMECAST-02-S2-02] 回帰テストを追加し、`int64(py_to<int64>(...))` 再発を検知する。
-5. [ ] [ID: P0-CPP-S18-SAMECAST-02-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
+1. [x] [ID: P0-CPP-S18-SAMECAST-02] sample/18 の `int64(py_to<int64>(...))` など同型 cast 連鎖を削減する。
+2. [x] [ID: P0-CPP-S18-SAMECAST-02-S1-01] 冗長 cast 発生点（dict取得/補助関数戻り値）を棚卸しし、削減対象を固定する。
+3. [x] [ID: P0-CPP-S18-SAMECAST-02-S2-01] EAST3 cast cleanup / C++ emitter 条件を更新し、同型 cast 連鎖を縮退する。
+4. [x] [ID: P0-CPP-S18-SAMECAST-02-S2-02] 回帰テストを追加し、`int64(py_to<int64>(...))` 再発を検知する。
+5. [x] [ID: P0-CPP-S18-SAMECAST-02-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
 
 ### P0: sample/18 C++ `rc` 不要コピー削減
 

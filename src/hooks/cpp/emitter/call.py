@@ -113,6 +113,8 @@ class CppCallEmitter:
             if target in {"float64", "float32"} and arg_t == "str":
                 return f"py_to_float64({arg_expr})"
             if target == "int64" and arg_t in numeric_t:
+                if self.should_skip_same_type_cast(arg_expr, "int64") or arg_expr.startswith("py_to<int64>("):
+                    return arg_expr
                 return f"int64({arg_expr})"
             if target == "int64" and self.is_any_like_type(arg_t):
                 return f"py_to_int64({arg_expr})"

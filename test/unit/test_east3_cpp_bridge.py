@@ -86,7 +86,7 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
         self.assertIn("for (object __itobj", text)
-        self.assertIn("int64 v = int64(py_to<int64>(__itobj", text)
+        self.assertIn("int64 v = py_to<int64>(__itobj", text)
 
     def test_emit_stmt_forcore_runtime_name_target_typed_iter_uses_typed_loop_header(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -136,7 +136,7 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
         self.assertIn("for (object __itobj", text)
-        self.assertIn("int64 line_index = int64(py_to<int64>(py_at(", text)
+        self.assertIn("int64 line_index = py_to<int64>(py_at(", text)
         self.assertIn("str source = py_to_string(py_at(", text)
 
     def test_emit_stmt_forcore_runtime_tuple_target_typed_iter_uses_typed_loop_header(self) -> None:
@@ -167,7 +167,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertIn("for (::std::tuple<int64, str> __itobj", text)
         self.assertNotIn("for (object __itobj", text)
         self.assertNotIn("py_dyn_range(pairs)", text)
-        self.assertIn("int64 line_index = int64(py_to<int64>(py_at(", text)
+        self.assertIn("int64 line_index = py_to<int64>(py_at(", text)
         self.assertIn("str source = py_to_string(py_at(", text)
 
     def test_emit_stmt_forcore_runtime_tuple_target_uses_iter_item_hint_when_resolved_type_unknown(self) -> None:
@@ -347,7 +347,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(obj_next), "py_next_or_stop(v)")
         self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_type_id(v)")
         self.assertEqual(emitter.render_expr(box_expr), "make_object(1)")
-        self.assertEqual(emitter.render_expr(unbox_expr), "int64(py_to<int64>(v))")
+        self.assertEqual(emitter.render_expr(unbox_expr), "py_to<int64>(v)")
         self.assertEqual(
             emitter.render_expr(is_instance),
             "py_isinstance(v, PYTRA_TID_INT)",
@@ -468,7 +468,7 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter._coerce_any_expr_to_target = lambda *_args, **_kwargs: "LEGACY_PATH_USED"  # type: ignore[method-assign]
         self.assertEqual(
             emitter._coerce_any_expr_to_target_via_unbox("v", any_name, "int64", "assign:x"),
-            "int64(py_to<int64>(v))",
+            "py_to<int64>(v)",
         )
 
     def test_emit_return_stmt_prefers_unbox_ir_over_legacy_coerce(self) -> None:
@@ -481,7 +481,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter._emit_return_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("return int64(py_to<int64>(v));", text)
+        self.assertIn("return py_to<int64>(v);", text)
         self.assertNotIn("LEGACY_PATH_USED", text)
 
     def test_box_any_target_value_handles_none_and_plain_values(self) -> None:

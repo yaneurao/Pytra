@@ -17,8 +17,18 @@ class CppExpressionEmitter:
         if self.should_skip_same_type_cast(rendered_expr, norm_t):
             return rendered_expr
         if norm_t in {"float32", "float64"}:
+            if norm_t == "float64" and (
+                rendered_expr.startswith("py_to<float64>(") or rendered_expr.startswith("py_to_float64(")
+            ):
+                return rendered_expr
             return f"py_to<float64>({rendered_expr})"
         if norm_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+            if norm_t == "int64" and (
+                rendered_expr.startswith("py_to<int64>(") or rendered_expr.startswith("py_to_int64(")
+            ):
+                return rendered_expr
+            if norm_t == "int64":
+                return f"py_to<int64>({rendered_expr})"
             return f"{norm_t}(py_to<int64>({rendered_expr}))"
         if norm_t == "bool":
             return f"py_to<bool>({rendered_expr})"

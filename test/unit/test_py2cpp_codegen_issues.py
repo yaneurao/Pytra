@@ -466,7 +466,7 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("int64 single_tag = int64(py_to<int64>(single_char_token_tags.get(ch, 0)));", cpp)
+        self.assertIn("int64 single_tag = py_to<int64>(single_char_token_tags.get(ch, 0));", cpp)
         self.assertIn("single_char_token_kinds[single_tag - 1]", cpp)
         self.assertNotIn('if (ch == "+")', cpp)
         self.assertNotIn('if (ch == "-")', cpp)
@@ -774,6 +774,7 @@ def new_nodes() -> list[Node]:
 
         self.assertTrue(
             ('int64 x = dict_get_node(d, "k", 0);' in cpp)
+            or ('int64 x = py_to<int64>(dict_get_node(d, "k", ::std::nullopt));' in cpp)
             or ('int64 x = int64(py_to<int64>(dict_get_node(d, "k", ::std::nullopt)));' in cpp)
         )
 

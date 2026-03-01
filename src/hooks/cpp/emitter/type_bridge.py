@@ -138,8 +138,14 @@ class CppTypeBridgeEmitter:
             ctx_safe = ctx.replace("\\", "\\\\").replace('"', '\\"')
             return f'obj_to_rc_or_raise<{ref_inner}>({expr_txt}, "{ctx_safe}")'
         if t_norm in {"float32", "float64"}:
+            if t_norm == "float64" and (expr_txt.startswith("py_to<float64>(") or expr_txt.startswith("py_to_float64(")):
+                return expr_txt
             return f"py_to<float64>({expr_txt})"
         if t_norm in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+            if t_norm == "int64" and (expr_txt.startswith("py_to<int64>(") or expr_txt.startswith("py_to_int64(")):
+                return expr_txt
+            if t_norm == "int64":
+                return f"py_to<int64>({expr_txt})"
             return f"{t_norm}(py_to<int64>({expr_txt}))"
         if t_norm == "bool":
             return f"py_to<bool>({expr_txt})"

@@ -73,7 +73,7 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 i++;
                 continue;
             }
-            int64 single_tag = int64(py_to<int64>(single_char_token_tags.get(ch, 0)));
+            int64 single_tag = py_to<int64>(single_char_token_tags.get(ch, 0));
             if (single_tag > 0) {
                 tokens.append(::rc_new<Token>(single_char_token_kinds[single_tag - 1], ch, i, 0));
                 i++;
