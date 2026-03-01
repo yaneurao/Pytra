@@ -12,9 +12,9 @@ bytearray render_orbit_trap_julia(int64 width, int64 height, int64 max_iter, flo
     float64 __hoisted_cast_3 = static_cast<float64>(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -1.3 + 2.6 * (py_div(py_to<float64>(y), __hoisted_cast_1));
+        float64 zy0 = -1.3 + 2.6 * (py_to<float64>(y) / __hoisted_cast_1);
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.9 + 3.8 * (py_div(py_to<float64>(x), __hoisted_cast_2));
+            float64 zx = -1.9 + 3.8 * (py_to<float64>(x) / __hoisted_cast_2);
             float64 zy = zy0;
             
             float64 trap = 1.0e9;
@@ -56,7 +56,7 @@ bytearray render_orbit_trap_julia(int64 width, int64 height, int64 max_iter, flo
                     trap_scaled = 1.0;
                 if (trap_scaled < 0.0)
                     trap_scaled = 0.0;
-                float64 t = py_div(py_to<float64>(i), __hoisted_cast_3);
+                float64 t = py_to<float64>(i) / __hoisted_cast_3;
                 int64 tone = int64(255.0 * (1.0 - trap_scaled));
                 r = int64(py_to<float64>(tone) * (0.35 + 0.65 * t));
                 g = int64(py_to<float64>(tone) * (0.15 + 0.85 * (1.0 - t)));

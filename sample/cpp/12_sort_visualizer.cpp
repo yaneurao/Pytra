@@ -8,7 +8,7 @@
 bytes render(const object& values, int64 w, int64 h) {
     bytearray frame = bytearray(w * h);
     int64 n = py_len(values);
-    float64 bar_w = py_div(py_to<float64>(w), py_to<float64>(n));
+    float64 bar_w = py_to<float64>(w) / py_to<float64>(n);
     float64 __hoisted_cast_1 = static_cast<float64>(n);
     float64 __hoisted_cast_2 = static_cast<float64>(h);
     for (int64 i = 0; i < n; ++i) {
@@ -16,7 +16,7 @@ bytes render(const object& values, int64 w, int64 h) {
         int64 x1 = int64((py_to<float64>(i + 1)) * bar_w);
         if (x1 <= x0)
             x1 = x0 + 1;
-        int64 bh = int64((py_div(py_to<float64>(int64(py_to<int64>(py_at(values, py_to<int64>(i))))), __hoisted_cast_1)) * __hoisted_cast_2);
+        int64 bh = int64((py_to<float64>(int64(py_to<int64>(py_at(values, py_to<int64>(i))))) / __hoisted_cast_1) * __hoisted_cast_2);
         int64 y = h - bh;
         for (int64 y = y; y < h; ++y) {
             for (int64 x = x0; x < x1; ++x) {

@@ -31,7 +31,7 @@ int64 scene(float64 x, float64 y, float64 light_x, float64 light_y) {
     float64 lx = x - light_x;
     float64 ly = y - light_y;
     float64 l = pytra::std::math::sqrt(lx * lx + ly * ly);
-    float64 lit = py_div(1.0, (1.0 + 3.5 * l * l));
+    float64 lit = 1.0 / (1.0 + 3.5 * l * l);
     
     int64 v = int64(255.0 * blob * lit * 5.0);
     return ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(::std::max<int64>(static_cast<int64>(0), static_cast<int64>(v))));
@@ -44,26 +44,26 @@ void run_14_raymarching_light_cycle() {
     str out_path = "sample/out/14_raymarching_light_cycle.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    object frames = make_object(list<object>{});
+    list<bytes> frames = list<bytes>{};
     float64 __hoisted_cast_1 = static_cast<float64>(frames_n);
     float64 __hoisted_cast_2 = static_cast<float64>(h - 1);
     float64 __hoisted_cast_3 = static_cast<float64>(w - 1);
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        auto a = (py_div(py_to<float64>(t), __hoisted_cast_1)) * pytra::std::math::pi * 2.0;
+        auto a = (py_to<float64>(t) / __hoisted_cast_1) * pytra::std::math::pi * 2.0;
         float64 light_x = 0.75 * pytra::std::math::cos(a);
         float64 light_y = 0.55 * pytra::std::math::sin(a * 1.2);
         
         for (int64 y = 0; y < h; ++y) {
             int64 row_base = y * w;
-            float64 py = (py_div(py_to<float64>(y), __hoisted_cast_2)) * 2.0 - 1.0;
+            float64 py = (py_to<float64>(y) / __hoisted_cast_2) * 2.0 - 1.0;
             for (int64 x = 0; x < w; ++x) {
-                float64 px = (py_div(py_to<float64>(x), __hoisted_cast_3)) * 2.0 - 1.0;
+                float64 px = (py_to<float64>(x) / __hoisted_cast_3) * 2.0 - 1.0;
                 frame[row_base + x] = scene(px, py, light_x, light_y);
             }
         }
-        py_append(frames, make_object(bytes(frame)));
+        frames.append(bytes(frame));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

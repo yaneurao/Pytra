@@ -26,7 +26,7 @@ float64 length(float64 x, float64 y, float64 z) {
     float64 l = length(x, y, z);
     if (l < 1e-9)
         return ::std::make_tuple(0.0, 0.0, 0.0);
-    return ::std::make_tuple(py_div(x, l), py_div(y, l), py_div(z, l));
+    return ::std::make_tuple(x / l, y / l, z / l);
 }
 
 ::std::tuple<float64, float64, float64> reflect(float64 ix, float64 iy, float64 iz, float64 nx, float64 ny, float64 nz) {
@@ -91,9 +91,9 @@ bytes palette_332() {
         int64 r = i >> 5 & 7;
         int64 g = i >> 2 & 7;
         int64 b = i & 3;
-        p[i * 3 + 0] = int64(py_div(py_to<float64>(255 * r), __hoisted_cast_1));
-        p[i * 3 + 1] = int64(py_div(py_to<float64>(255 * g), __hoisted_cast_1));
-        p[i * 3 + 2] = int64(py_div(py_to<float64>(255 * b), __hoisted_cast_2));
+        p[i * 3 + 0] = int64(py_to<float64>(255 * r) / __hoisted_cast_1);
+        p[i * 3 + 1] = int64(py_to<float64>(255 * g) / __hoisted_cast_1);
+        p[i * 3 + 2] = int64(py_to<float64>(255 * b) / __hoisted_cast_2);
     }
     return bytes(p);
 }
@@ -106,7 +106,7 @@ int64 quantize_332(float64 r, float64 g, float64 b) {
 }
 
 bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
-    float64 t = py_div(py_to<float64>(frame_id), py_to<float64>(frames_n));
+    float64 t = py_to<float64>(frame_id) / py_to<float64>(frames_n);
     auto tphase = 2.0 * pytra::std::math::pi * t;
     
     // Camera slowly orbits.
@@ -147,16 +147,16 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     float64 lz = 2.4 * pytra::std::math::sin(tphase * 1.8);
     
     bytearray frame = bytearray(width * height);
-    float64 aspect = py_div(py_to<float64>(width), py_to<float64>(height));
+    float64 aspect = py_to<float64>(width) / py_to<float64>(height);
     float64 fov = 1.25;
     float64 __hoisted_cast_3 = static_cast<float64>(height);
     float64 __hoisted_cast_4 = static_cast<float64>(width);
     
     for (int64 py = 0; py < height; ++py) {
         int64 row_base = py * width;
-        float64 sy = 1.0 - py_div(2.0 * (py_to<float64>(py) + 0.5), __hoisted_cast_3);
+        float64 sy = 1.0 - 2.0 * (py_to<float64>(py) + 0.5) / __hoisted_cast_3;
         for (int64 px = 0; px < width; ++px) {
-            float64 sx = (py_div(2.0 * (py_to<float64>(px) + 0.5), __hoisted_cast_4) - 1.0) * aspect;
+            float64 sx = (2.0 * (py_to<float64>(px) + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
             float64 rx = fwd_x + fov * (sx * right_x + sy * up_x);
             float64 ry = fwd_y + fov * (sx * right_y + sy * up_y);
             float64 rz = fwd_z + fov * (sx * right_z + sy * up_z);
@@ -174,7 +174,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
             
             // Floor plane y=-1.2
             if (dy < -1e-6) {
-                float64 tf = py_div((-1.2 - cam_y), dy);
+                float64 tf = (-1.2 - cam_y) / dy;
                 if ((tf > 1e-4) && (tf < best_t)) {
                     best_t = tf;
                     hit_kind = 1;
@@ -232,7 +232,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     ldz = ::std::get<2>(__tuple_6);
                     ndotl = ::std::max<float64>(static_cast<float64>(ldy), static_cast<float64>(0.0));
                     float64 ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
-                    glow = py_div(8.0, (1.0 + ldist2));
+                    glow = 8.0 / (1.0 + ldist2);
                     r = py_to<float64>(base_r + 0.8 * glow + 0.20 * ndotl);
                     g = py_to<float64>(base_g + 0.5 * glow + 0.18 * ndotl);
                     b = py_to<float64>(base_b + 1.0 * glow + 0.24 * ndotl);
@@ -262,7 +262,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     hx = cam_x + best_t * dx;
                     float64 hy = cam_y + best_t * dy;
                     hz = cam_z + best_t * dz;
-                    auto __tuple_7 = normalize(py_div((hx - cx), rad), py_div((hy - cy), rad), py_div((hz - cz), rad));
+                    auto __tuple_7 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
                     float64 nx = ::std::get<0>(__tuple_7);
                     float64 ny = ::std::get<1>(__tuple_7);
                     float64 nz = ::std::get<2>(__tuple_7);
@@ -272,7 +272,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     float64 rdx = ::std::get<0>(__tuple_8);
                     float64 rdy = ::std::get<1>(__tuple_8);
                     float64 rdz = ::std::get<2>(__tuple_8);
-                    auto __tuple_9 = refract(dx, dy, dz, nx, ny, nz, py_div(1.0, 1.45));
+                    auto __tuple_9 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
                     float64 tdx = ::std::get<0>(__tuple_9);
                     float64 tdy = ::std::get<1>(__tuple_9);
                     float64 tdz = ::std::get<2>(__tuple_9);
@@ -307,7 +307,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     spec = spec * spec;
                     spec = spec * spec;
                     spec = spec * spec;
-                    glow = py_div(10.0, (1.0 + lxv * lxv + lyv * lyv + lzv * lzv));
+                    glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
                     r += 0.20 * ndotl + 0.80 * spec + 0.45 * glow;
                     g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow;
                     b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow;
@@ -347,9 +347,9 @@ void run_16_glass_sculpture_chaos() {
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    object frames = make_object(list<object>{});
+    list<bytes> frames = list<bytes>{};
     for (int64 i = 0; i < frames_n; ++i) {
-        py_append(frames, make_object(render_frame(width, height, i, frames_n)));
+        frames.append(render_frame(width, height, i, frames_n));
     }
     pytra::utils::gif::save_gif(out_path, width, height, frames, palette_332(), 6, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
