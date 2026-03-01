@@ -48,6 +48,7 @@
 - 2026-03-02: `// TODO: unsupported ...` の出力経路を fail-closed（`RuntimeError`）へ切り替え、実ケースで必要な `Try` / `Swap` / `Yield` lowering を追加した。`yield_generator_min` 向けに generator 収集バッファ経路を導入し、`check_py2scala_transpile.py` を `checked=135 ok=135 fail=0 skipped=6` へ復帰させた。
 - 2026-03-02: `sample/18` の `run_failed` を調査し、`Dict.entries` literal の出力欠落と `dict.get(key, default)` の lowering 誤り（Scala 側で tuple key lookup 化）を修正した。`python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples` は `SUMMARY cases=18 pass=18 fail=0` を確認。
 - 2026-03-02: 継承メソッドの override 判定を class hierarchy 解析で導入し、継承先メソッドを `override def` で出力するよう修正した。`super().method()` の出力も `super.method()` へ補正し、`inheritance_virtual_dispatch_multilang` の Scala parity を `ok` で通過させた。
+- 2026-03-02: `runtime_parity_check` の `ARTIFACT_OPTIONAL_TARGETS` から Scala を撤去し、artifact 比較を必須化した。`test_runtime_parity_check_cli.py` の Scala 前提テストを新契約（artifact presence を検証）へ更新し、`--all-samples` 実行で `cases=18 pass=18 fail=0` を再確認した。
 
 ## 分解
 
@@ -57,6 +58,6 @@
 - [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装（未対応は fail-closed）する。
 - [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースで不足する builtin/container 操作を補完し、run_failed を解消する。
 - [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-04] 継承先で上書きされるメソッドに `override def` を出力し、継承メソッド契約を Scala3 コンパイラ規約へ一致させる。
-- [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-01] `runtime_parity_check` の Scala artifact optional を撤去し、関連 unit テストを新契約へ更新する。
+- [x] [ID: P0-SCALA3-PARITY-ALL-01-S3-01] `runtime_parity_check` の Scala artifact optional を撤去し、関連 unit テストを新契約へ更新する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-02] Scala parity 専用チェック導線（スクリプトまたは既存コマンド束）を追加し、再実行手順を固定する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-03] sample/fixture parity 実行結果を確認し、`docs/ja/how-to-use.md` / `docs/en/how-to-use.md` / `docs/ja/spec/spec-tools.md` を同期する。

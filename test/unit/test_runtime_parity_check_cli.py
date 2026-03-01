@@ -146,7 +146,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(records[0].category, "artifact_size_mismatch")
         self.assertEqual(records[0].target, "ruby")
 
-    def test_check_case_scala_skips_artifact_size_comparison(self) -> None:
+    def test_check_case_scala_enforces_artifact_presence(self) -> None:
         records: list = []
         target = self.rpc.Target(name="scala", transpile_cmd="noop", run_cmd="noop", needs=())
         call_index = {"value": 0}
@@ -168,7 +168,6 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
             elif idx == 1:
                 cp = subprocess.CompletedProcess(args="python src/py2scala.py ...", returncode=0, stdout="", stderr="")
             else:
-                # Scala currently validates compile/run; artifact parity is optional.
                 cp = subprocess.CompletedProcess(
                     args="scala run out.scala",
                     returncode=0,
@@ -183,9 +182,9 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         ), patch.object(self.rpc, "build_targets", return_value=[target]), patch.object(self.rpc, "can_run", return_value=True):
             code = self.rpc.check_case("01_mandelbrot", {"scala"}, case_root="sample", ignore_stdout=True, east3_opt_level="1", records=records)
 
-        self.assertEqual(code, 0)
+        self.assertEqual(code, 1)
         self.assertEqual(len(records), 1)
-        self.assertEqual(records[0].category, "ok")
+        self.assertEqual(records[0].category, "artifact_missing")
         self.assertEqual(records[0].target, "scala")
 
 

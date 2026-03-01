@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
 SAMPLE_ROOT = ROOT / "sample" / "py"
-ARTIFACT_OPTIONAL_TARGETS = {"scala"}
+ARTIFACT_OPTIONAL_TARGETS: set[str] = set()
 
 
 @dataclass
