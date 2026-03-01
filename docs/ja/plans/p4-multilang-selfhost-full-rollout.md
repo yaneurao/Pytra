@@ -95,6 +95,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# runtime へ `std/json.cs` を追加し、`json.loads/json.dumps` を emitter から runtime 呼び出しへ切り替えた。`load_east_document` の JSON 受け口（`payload_any`）と `dict_any_get_dict` selfhost パッチを `dict(value)` 経路へ整合させ、stage2 の `Unhandled Exception (Invalid EAST JSON format)` を解消した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] 再計測で `stage1` は `cs: stage2 output is empty skeleton`、`multistage` は `cs: stage2=pass / stage3=fail (stage2_compile_fail)` へ遷移し、先頭失敗を `py2cs_stage2.cs(671): error CS1525 Unexpected symbol 'base'` に更新した。次ブロッカーは selfhost 2段目生成物の予約語（`base`/`out`）混入を含む compile-safe 出力整備。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `base/out` 予約語衝突を source 側（`CodeEmitter` / `transpile_cli` / `CSharpEmitter`）で解消し、C# using alias（`str/int64/float64/Any`）を追加した。これにより `CS1525` は解消し、multistage の先頭失敗は `CS0161: not all code paths return a value`（skeleton 化した non-void 関数群）へ前進した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `dump-east3-after-opt` 入力に対して `--east-stage 3` を明示した再検証を実施したが、`py2cs_stage2.cs` の先頭失敗は継続して `CS0161`。`east-stage` 指定漏れは主因ではなく、stage2 生成物自体が多数の empty/skeleton 関数本体を出力している点が次の実装焦点と確定した。
 
 ## 現状固定（S1-01）
 
