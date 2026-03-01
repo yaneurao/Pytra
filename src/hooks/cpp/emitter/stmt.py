@@ -222,7 +222,7 @@ class CppStatementEmitter:
             if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
                 val = f"py_to<int64>({val})"
             elif target_t in {"float32", "float64"}:
-                val = f"static_cast<float64>(py_to<int64>({val}))"
+                val = f"float64(py_to<int64>({val}))"
         op_name = str(stmt.get("op"))
         op_txt = str(AUG_OPS.get(op_name, ""))
         if op_txt != "":

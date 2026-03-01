@@ -122,6 +122,8 @@ class CppCallEmitter:
                 return f"py_to_bool({arg_expr})"
             if target == "int64":
                 return f"py_to_int64({arg_expr})"
+            if target in {"float64", "float32"}:
+                return f"{target}({arg_expr})"
             return f"static_cast<{target}>({arg_expr})"
         return None
 

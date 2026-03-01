@@ -164,7 +164,10 @@ class CppExpressionEmitter:
             if self.is_any_like_type(at):
                 casted.append(self.apply_cast(a, t))
             else:
-                casted.append(f"static_cast<{t}>({a})")
+                if t in {"float64", "float32"}:
+                    casted.append(f"{t}({a})")
+                else:
+                    casted.append(f"static_cast<{t}>({a})")
         call = f"::std::{fn}<{t}>({casted[0]}, {casted[1]})"
         for a in casted[2:]:
             call = f"::std::{fn}<{t}>({call}, {a})"

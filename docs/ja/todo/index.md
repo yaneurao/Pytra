@@ -151,11 +151,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-float-cast-style-unification.md](../plans/p0-cpp-float-cast-style-unification.md)
 
-1. [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01] C++ backend の `float64` cast 出力を `static_cast<float64>` から `float64(...)` へ統一する。
-2. [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S1-01] C++ emitter の `float64` cast 出力箇所を棚卸しし、統一対象/除外対象を固定する。
-3. [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-01] `apply_cast` と直接出力箇所を `float64(expr)` 優先へ変更し、`static_cast<float64>` を排除する。
-4. [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-02] `object/Any/unknown` 経路で `py_to<float64>` 維持を確認する回帰テストを追加する。
-5. [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認し、`sample/16` の該当出力差分を固定する。
+1. [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01] C++ backend の `float64` cast 出力を `static_cast<float64>` から `float64(...)` へ統一する。
+2. [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S1-01] C++ emitter の `float64` cast 出力箇所を棚卸しし、統一対象/除外対象を固定する。
+3. [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-01] `apply_cast` と直接出力箇所を `float64(expr)` 優先へ変更し、`static_cast<float64>` を排除する。
+4. [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-02] `object/Any/unknown` 経路で `py_to<float64>` 維持を確認する回帰テストを追加する。
+5. [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認し、`sample/16` の該当出力差分を固定する。
 
 ### P0: EAST3 同型 `py_to<T>` 縮退（最優先）
 

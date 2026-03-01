@@ -57,9 +57,9 @@ float64 schlick(float64 cos_theta, float64 f0) {
     float64 g = 0.10 + 0.25 * t;
     float64 b = 0.16 + 0.45 * t;
     float64 band = 0.5 + 0.5 * pytra::std::math::sin(8.0 * dx + 6.0 * dz + tphase);
-    r += py_to<float64>(0.08 * band);
-    g += py_to<float64>(0.05 * band);
-    b += py_to<float64>(0.12 * band);
+    r += 0.08 * band;
+    g += 0.05 * band;
+    b += 0.12 * band;
     return ::std::make_tuple(clamp01(r), clamp01(g), clamp01(b));
 }
 
@@ -85,8 +85,8 @@ float64 sphere_intersect(float64 ox, float64 oy, float64 oz, float64 dx, float64
 bytes palette_332() {
     // 3-3-2 quantized palette. Lightweight quantization that stays fast after transpilation.
     bytearray p = bytearray(256 * 3);
-    float64 __hoisted_cast_1 = static_cast<float64>(7);
-    float64 __hoisted_cast_2 = static_cast<float64>(3);
+    float64 __hoisted_cast_1 = float64(7);
+    float64 __hoisted_cast_2 = float64(3);
     for (int64 i = 0; i < 256; ++i) {
         int64 r = i >> 5 & 7;
         int64 g = i >> 2 & 7;
@@ -149,8 +149,8 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     bytearray frame = bytearray(width * height);
     float64 aspect = py_to<float64>(width) / py_to<float64>(height);
     float64 fov = 1.25;
-    float64 __hoisted_cast_3 = static_cast<float64>(height);
-    float64 __hoisted_cast_4 = static_cast<float64>(width);
+    float64 __hoisted_cast_3 = float64(height);
+    float64 __hoisted_cast_4 = float64(width);
     
     for (int64 py = 0; py < height; ++py) {
         int64 row_base = py * width;
@@ -230,12 +230,12 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     ldx = ::std::get<0>(__tuple_6);
                     ldy = ::std::get<1>(__tuple_6);
                     ldz = ::std::get<2>(__tuple_6);
-                    ndotl = ::std::max<float64>(static_cast<float64>(ldy), static_cast<float64>(0.0));
+                    ndotl = ::std::max<float64>(float64(ldy), float64(0.0));
                     float64 ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
                     glow = 8.0 / (1.0 + ldist2);
-                    r = py_to<float64>(base_r + 0.8 * glow + 0.20 * ndotl);
-                    g = py_to<float64>(base_g + 0.5 * glow + 0.18 * ndotl);
-                    b = py_to<float64>(base_b + 1.0 * glow + 0.24 * ndotl);
+                    r = base_r + 0.8 * glow + 0.20 * ndotl;
+                    g = base_g + 0.5 * glow + 0.18 * ndotl;
+                    b = base_b + 1.0 * glow + 0.24 * ndotl;
                 } else {
                     cx = 0.0;
                     float64 cy = 0.0;
@@ -284,11 +284,11 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     float64 tr = ::std::get<0>(__tuple_11);
                     float64 tg = ::std::get<1>(__tuple_11);
                     float64 tb = ::std::get<2>(__tuple_11);
-                    float64 cosi = ::std::max<float64>(static_cast<float64>(-dx * nx + dy * ny + dz * nz), static_cast<float64>(0.0));
+                    float64 cosi = ::std::max<float64>(float64(-dx * nx + dy * ny + dz * nz), float64(0.0));
                     float64 fr = schlick(cosi, 0.04);
-                    r = py_to<float64>(tr * (1.0 - fr) + sr * fr);
-                    g = py_to<float64>(tg * (1.0 - fr) + sg * fr);
-                    b = py_to<float64>(tb * (1.0 - fr) + sb * fr);
+                    r = tr * (1.0 - fr) + sr * fr;
+                    g = tg * (1.0 - fr) + sg * fr;
+                    b = tb * (1.0 - fr) + sb * fr;
                     
                     lxv = lx - hx;
                     lyv = ly - hy;
@@ -297,12 +297,12 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                     ldx = ::std::get<0>(__tuple_12);
                     ldy = ::std::get<1>(__tuple_12);
                     ldz = ::std::get<2>(__tuple_12);
-                    ndotl = ::std::max<float64>(static_cast<float64>(nx * ldx + ny * ldy + nz * ldz), static_cast<float64>(0.0));
+                    ndotl = ::std::max<float64>(float64(nx * ldx + ny * ldy + nz * ldz), float64(0.0));
                     auto __tuple_13 = normalize(ldx - dx, ldy - dy, ldz - dz);
                     float64 hvx = ::std::get<0>(__tuple_13);
                     float64 hvy = ::std::get<1>(__tuple_13);
                     float64 hvz = ::std::get<2>(__tuple_13);
-                    float64 ndoth = ::std::max<float64>(static_cast<float64>(nx * hvx + ny * hvy + nz * hvz), static_cast<float64>(0.0));
+                    float64 ndoth = ::std::max<float64>(float64(nx * hvx + ny * hvy + nz * hvz), float64(0.0));
                     float64 spec = ndoth * ndoth;
                     spec = spec * spec;
                     spec = spec * spec;
@@ -331,9 +331,9 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                 }
             }
             // Slightly stronger tone mapping.
-            r = py_to<float64>(pytra::std::math::sqrt(clamp01(r)));
-            g = py_to<float64>(pytra::std::math::sqrt(clamp01(g)));
-            b = py_to<float64>(pytra::std::math::sqrt(clamp01(b)));
+            r = pytra::std::math::sqrt(clamp01(r));
+            g = pytra::std::math::sqrt(clamp01(g));
+            b = pytra::std::math::sqrt(clamp01(b));
             frame[row_base + px] = quantize_332(r, g, b);
         }
     }
