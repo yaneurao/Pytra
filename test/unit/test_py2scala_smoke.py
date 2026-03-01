@@ -84,6 +84,17 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_save_gif(out_path, width, height, frames, julia_palette())", scala)
         self.assertNotIn("__pytra_noop(out_path, width, height, frames, julia_palette())", scala)
 
+    def test_sample_01_quality_fastpaths_reduce_redundant_wrappers(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertNotIn("__pytra_float(__pytra_float(", scala)
+        self.assertNotIn("__pytra_int(__pytra_int(", scala)
+        self.assertIn("while (y < __pytra_int(height)) {", scala)
+        self.assertIn("while (x < __pytra_int(width)) {", scala)
+        self.assertIn("pixels.append(r)", scala)
+        self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.append(", scala)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
