@@ -109,6 +109,7 @@
 - 進捗メモ: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] bool確定ノードの条件式から `__pytra_truthy` を抑制し、`if (it >= max_iter)` など Ruby ネイティブ条件へ縮退。
 - 進捗メモ: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-04] scalar型 `AnnAssign(value=None)` の `nil` 初期化を省略する fastpath を導入し、`sample/ruby/01` の `r/g/b = nil` を撤去。
 - 進捗メモ: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] `sample01` の断片回帰テストを拡張し、`runtime_parity_check --targets ruby 01_mandelbrot` pass で品質固定を完了。
+- 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長断片（runtime依存/nil初期化/loop冗長）を計画書へ固定し、実装優先順を確定。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
@@ -142,7 +143,7 @@
 文脈: [docs/ja/plans/p1-lua-sample01-quality-uplift.md](../plans/p1-lua-sample01-quality-uplift.md)
 
 1. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01] `sample/lua/01` の可読性/冗長性を改善し、C++ 出力との差を縮小する。
-2. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。
+2. [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。
 3. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray` など runtime 依存の出力を明示化し、自己完結性を改善する。
 4. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] typed 経路で `r/g/b` の不要な `nil` 初期化を削減する。
 5. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループの step/括弧出力を簡素化する fastpath を追加する。

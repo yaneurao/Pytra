@@ -39,7 +39,7 @@
 - `python3 tools/regenerate_samples.py --langs lua --force`
 
 分解:
-- [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。
+- [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。
 - [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray` など runtime 依存の出力を明示化し、自己完結性を改善する。
 - [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] typed 経路で `r/g/b` の不要な `nil` 初期化を削減する。
 - [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループの step/括弧出力を簡素化する fastpath を追加する。
@@ -47,3 +47,29 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/lua/01` の可読性/冗長性改善を `P1` として計画化した。
+- 2026-03-02: [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] 現行 `sample/lua/01_mandelbrot.lua` の冗長断片を固定し、実装優先順を `runtime依存明示 -> nil初期化削減 -> loop簡素化` に確定。
+
+## S1-01 棚卸し結果
+
+固定断片（`sample/lua/01_mandelbrot.lua`）:
+
+- 暗黙 runtime 依存:
+  - `local perf_counter = __pytra_perf_counter`
+  - `local png = __pytra_png_module()`
+  - `png.write_rgb_png(out_path, width, height, pixels)`
+  - 生成物冒頭に runtime helper 群が直接展開される（自己説明性が低い）。
+- 不要 `nil` 初期化:
+  - `local r = nil`
+  - `local g = nil`
+  - `local b = nil`
+- ループ冗長:
+  - `for y = 0, (height) - 1, 1 do`
+  - `for x = 0, (width) - 1, 1 do`
+  - `for i = 0, (max_iter) - 1, 1 do`
+  - `::__pytra_continue_2::` / `::__pytra_continue_3::` が単純ループにも出力される。
+
+実装優先順:
+
+1. `S2-01`: runtime 依存 API の明示化（呼び出し面の自己完結性改善）
+2. `S2-02`: typed 経路の `nil` 初期化撤去
+3. `S2-03`: loop の `, 1` / 過剰括弧 / 不要 continue label の簡素化
