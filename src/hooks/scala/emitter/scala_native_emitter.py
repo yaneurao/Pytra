@@ -121,6 +121,23 @@ def _list_scala_type(type_name: str) -> str:
     return "mutable.ArrayBuffer[" + elem_t + "]"
 
 
+def _tuple_scala_type(type_name: str) -> str:
+    if not type_name.startswith("tuple[") or not type_name.endswith("]"):
+        return "mutable.ArrayBuffer[Any]"
+    elems = _tuple_element_types(type_name)
+    if len(elems) == 0:
+        return "mutable.ArrayBuffer[Any]"
+    first_t = _arraybuffer_elem_scala_type(elems[0])
+    if first_t == "Any":
+        return "mutable.ArrayBuffer[Any]"
+    i = 1
+    while i < len(elems):
+        if _arraybuffer_elem_scala_type(elems[i]) != first_t:
+            return "mutable.ArrayBuffer[Any]"
+        i += 1
+    return "mutable.ArrayBuffer[" + first_t + "]"
+
+
 def _scala_string_literal(text: str) -> str:
     out = text.replace("\\", "\\\\")
     out = out.replace('"', '\\"')
@@ -196,7 +213,7 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
     if type_name.startswith("list["):
         return _list_scala_type(type_name)
     if type_name.startswith("tuple["):
-        return "mutable.ArrayBuffer[Any]"
+        return _tuple_scala_type(type_name)
     if type_name.startswith("dict["):
         return "mutable.LinkedHashMap[Any, Any]"
     if type_name in {"bytes", "bytearray"}:
@@ -975,6 +992,8 @@ def _render_expr(expr: Any) -> str:
         resolved = resolved_any if isinstance(resolved_any, str) else ""
         if kind == "List" and resolved.startswith("list["):
             list_type = _list_scala_type(resolved)
+        if kind == "Tuple" and resolved.startswith("tuple["):
+            list_type = _tuple_scala_type(resolved)
         if len(rendered) == 0:
             return list_type + "()"
         return list_type + "(" + ", ".join(rendered) + ")"
