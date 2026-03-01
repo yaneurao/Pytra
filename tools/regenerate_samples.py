@@ -33,6 +33,7 @@ LANG_CONFIGS: dict[str, dict[str, str]] = {
     "java": {"cli": "src/py2java.py", "out_dir": "sample/java", "ext": ".java"},
     "swift": {"cli": "src/py2swift.py", "out_dir": "sample/swift", "ext": ".swift"},
     "kotlin": {"cli": "src/py2kotlin.py", "out_dir": "sample/kotlin", "ext": ".kt"},
+    "scala": {"cli": "src/py2scala.py", "out_dir": "sample/scala", "ext": ".scala"},
     "lua": {"cli": "src/py2lua.py", "out_dir": "sample/lua", "ext": ".lua"},
     "ruby": {"cli": "src/py2rb.py", "out_dir": "sample/ruby", "ext": ".rb"},
 }
@@ -47,6 +48,7 @@ LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
     "java": ["java", "cs"],
     "swift": ["swift", "cs"],
     "kotlin": ["kotlin", "cs"],
+    "scala": ["scala"],
     "lua": ["lua"],
     "ruby": ["ruby"],
 }
@@ -207,7 +209,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Regenerate sample outputs with version-gated skip")
     ap.add_argument(
         "--langs",
-        default="cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby",
+        default="cpp,rs,cs,js,ts,go,java,swift,kotlin,scala,ruby",
         help="comma-separated target languages",
     )
     ap.add_argument(

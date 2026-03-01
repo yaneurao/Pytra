@@ -52,12 +52,13 @@
 
 文脈: [docs/ja/plans/p0-regenerate-samples-scala-support.md](../plans/p0-regenerate-samples-scala-support.md)
 
-1. [ ] [ID: P0-REGEN-SCALA-SUPPORT-01] `tools/regenerate_samples.py` で `--langs scala` を正式サポートし、`sample/scala` 再生成導線を統合する。
-2. [ ] [ID: P0-REGEN-SCALA-SUPPORT-01-S1-01] `LANG_CONFIGS` / `LANG_VERSION_DEPENDENCIES` / `--langs` default を棚卸しし、Scala 追加方針を確定する。
-3. [ ] [ID: P0-REGEN-SCALA-SUPPORT-01-S2-01] `tools/regenerate_samples.py` に `scala` 設定を追加し、CLI から `--langs scala` を受理できるようにする。
-4. [ ] [ID: P0-REGEN-SCALA-SUPPORT-01-S2-02] version token 判定に `scala` を接続し、cache ベースの skip/regen 判定を有効化する。
-5. [ ] [ID: P0-REGEN-SCALA-SUPPORT-01-S3-01] `sample/scala` を再生成し、生成差分が期待どおり更新されることを確認する。
-6. [ ] [ID: P0-REGEN-SCALA-SUPPORT-01-S3-02] smoke/check を実行し、非退行を確認する。
+1. [x] [ID: P0-REGEN-SCALA-SUPPORT-01] `tools/regenerate_samples.py` で `--langs scala` を正式サポートし、`sample/scala` 再生成導線を統合する。
+2. [x] [ID: P0-REGEN-SCALA-SUPPORT-01-S1-01] `LANG_CONFIGS` / `LANG_VERSION_DEPENDENCIES` / `--langs` default を棚卸しし、Scala 追加方針を確定する。
+3. [x] [ID: P0-REGEN-SCALA-SUPPORT-01-S2-01] `tools/regenerate_samples.py` に `scala` 設定を追加し、CLI から `--langs scala` を受理できるようにする。
+4. [x] [ID: P0-REGEN-SCALA-SUPPORT-01-S2-02] version token 判定に `scala` を接続し、cache ベースの skip/regen 判定を有効化する。
+5. [x] [ID: P0-REGEN-SCALA-SUPPORT-01-S3-01] `sample/scala` を再生成し、生成差分が期待どおり更新されることを確認する。
+6. [x] [ID: P0-REGEN-SCALA-SUPPORT-01-S3-02] smoke/check を実行し、非退行を確認する。
+進捗メモ: [ID: P0-REGEN-SCALA-SUPPORT-01] `--langs scala` を正式対応し、`--force` 再生成（18件）・dry-run skip（18件）・`cpp/go` dry-run 非退行・Scala smoke（17件）を確認。
 
 ### P1: sample/kotlin/01 品質改善（C++品質との差分縮小）
 
