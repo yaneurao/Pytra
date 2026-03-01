@@ -40,12 +40,46 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、import 依存確定を「EAST 解決情報 + CodeEmitter 基底集約」で行う `P2` 計画を起票した。
+- 2026-03-01: `meta.import_resolution`（`schema_version=1`）を導入し、`bindings` / `qualified_refs` を正本化した（既存 `import_bindings` / `qualified_symbol_refs` は互換維持）。
+- 2026-03-01: `CodeEmitter.load_import_bindings_from_meta()` / `_resolve_imported_symbol()` は `import_resolution` を優先し、欠落時に legacy key へ fallback する fail-closed 方針へ更新した。
+- 2026-03-01: parser からの記録値は欠落・不正値を解決対象へ昇格しない（空文字/欠落は解決不能として扱う）条件を固定し、既存挙動と互換にした。
 
 ## 分解
 
-- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-01] EAST3 で識別子/呼び出しの import 解決情報（module/symbol）を保持する仕様を定義する。
-- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-02] parser/lowering で解決情報を `meta` もしくはノード属性へ記録し、欠落時 fail-closed 条件を決める。
+- [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-01] EAST3 で識別子/呼び出しの import 解決情報（module/symbol）を保持する仕様を定義する。
+- [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-02] parser/lowering で解決情報を `meta` もしくはノード属性へ記録し、欠落時 fail-closed 条件を決める。
 - [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-01] CodeEmitter 基底に `require_dep` / `finalize_deps` 等の依存収集 API を追加する。
 - [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-02] backend 側で import 直書きを撤去し、基底の依存収集 API 経由へ段階移行する（先行: Go）。
 - [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-03] 先行 backend（Go）で `var _ = math.Pi` など未使用回避ダミーを撤去し、必要 import のみ出力する。
 - [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S3-01] import 回帰テスト（必要最小/未使用禁止/依存欠落禁止）を追加し、CI 導線へ固定する。
+
+## S1 仕様（確定）
+
+`Module.meta.import_resolution`（`schema_version=1`）:
+
+- `schema_version: int`  
+  現在は `1` 固定。
+- `bindings: list[ImportBinding]`  
+  parser/lowering が収集した import 束縛の正本。
+- `qualified_refs: list[QualifiedSymbolRef]`  
+  `from ... import ...` の解決済み参照（local 名を含む）。
+
+`ImportBinding`:
+
+- `module_id: str`（必須）
+- `export_name: str`（`binding_kind="module"` の場合は空文字許容）
+- `local_name: str`（必須）
+- `binding_kind: "module" | "symbol"`（必須）
+- `source_file: str`（任意）
+- `source_line: int`（任意）
+
+`QualifiedSymbolRef`:
+
+- `module_id: str`（必須）
+- `symbol: str`（必須）
+- `local_name: str`（必須）
+
+fail-closed ルール:
+
+- `module_id` / `local_name` / `symbol` / `export_name` の必要値が空文字または欠落のエントリは、解決テーブルに登録しない。
+- `import_resolution` がない、または `bindings` / `qualified_refs` が空の場合のみ、legacy キー（`import_bindings` / `qualified_symbol_refs` / `import_symbols` / `import_modules`）へ fallback する。
