@@ -508,14 +508,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_for_super = func_any.get("value")
-        if attr_name == "__init__" and isinstance(owner_for_super, dict) and owner_for_super.get("kind") == "Call":
+        if isinstance(owner_for_super, dict) and owner_for_super.get("kind") == "Call":
             if _call_name(owner_for_super) == "super":
                 rendered_super_args: list[str] = []
                 i = 0
                 while i < len(args):
                     rendered_super_args.append(_render_expr(args[i]))
                     i += 1
-                return "super(" + ", ".join(rendered_super_args) + ")"
+                if attr_name == "__init__":
+                    return "super(" + ", ".join(rendered_super_args) + ")"
+                return "super." + attr_name + "(" + ", ".join(rendered_super_args) + ")"
         owner_any = func_any.get("value")
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
