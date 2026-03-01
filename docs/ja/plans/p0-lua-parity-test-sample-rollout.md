@@ -44,12 +44,24 @@
 - `python3 tools/regenerate_samples.py --langs lua --force`
 
 分解:
-- [ ] [ID: P0-LUA-PARITY-ALL-01-S1-01] Lua parity 対象範囲（fixture 対象ケース / sample 全18件）を確定し、実行手順を固定する。
-- [ ] [ID: P0-LUA-PARITY-ALL-01-S1-02] 依存タスク `P0-LUA-SAMPLE01-RUNTIME-01` の未解決項目を解消し、sample parity blocker を除去する。
-- [ ] [ID: P0-LUA-PARITY-ALL-01-S2-01] `runtime_parity_check --case-root fixture --targets lua` を実行し、不一致を修正して全 pass にする。
+- [x] [ID: P0-LUA-PARITY-ALL-01-S1-01] Lua parity 対象範囲（fixture 対象ケース / sample 全18件）を確定し、実行手順を固定する。
+- [x] [ID: P0-LUA-PARITY-ALL-01-S1-02] 依存タスク `P0-LUA-SAMPLE01-RUNTIME-01` の未解決項目を解消し、sample parity blocker を除去する。
+- [x] [ID: P0-LUA-PARITY-ALL-01-S2-01] `runtime_parity_check --case-root fixture --targets lua` を実行し、不一致を修正して全 pass にする。
 - [ ] [ID: P0-LUA-PARITY-ALL-01-S2-02] `runtime_parity_check --case-root sample --targets lua --all-samples` を実行し、不一致を修正して全 pass にする。
 - [ ] [ID: P0-LUA-PARITY-ALL-01-S2-03] 画像ケースの artifact サイズ一致（`artifact_size_mismatch=0`）を確認し、必要な runtime/emitter 修正を完了する。
 - [ ] [ID: P0-LUA-PARITY-ALL-01-S3-01] parity 実行結果を決定ログへ記録し、unit/CLI 回帰（必要時）を追加して再発検知を固定する。
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、Lua parity を `test/`（fixture）と `sample/` の双方で一致確認するタスクを P0 として起票した。
+- 2026-03-01: 対象範囲を `fixture: math_extended/pathlib_extended`（runtime_parity が現在扱うケース）および `sample: 01..18 全件` として確定した。
+- 2026-03-01: 依存タスク（sample/01 runtime mapping）が完了済みであることを確認し、sample parity の runtime 欠落 blocker（`perf_counter/png`）は解消済みと判断した。
+- 2026-03-01: fixture parity の不一致を修正:
+  - `py_assert_all/py_assert_eq/py_assert_true` import を Lua runtime mapping に追加。
+  - `math` モジュール互換 helper（`fabs/log10/pow`）を追加。
+  - `pathlib.Path` 最小 runtime（`/`, `mkdir`, `exists`, `write_text`, `read_text`, `name/stem/parent`）を追加。
+  - `print` を Python 互換表記（`True/False/None`）へ調整。
+  - `break/continue` lowering（`break` / `goto continue_label`）と属性 `AnnAssign` 修正、`main` guard 呼び出し補正を追加。
+- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` は pass（2/2）。
+- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は未達（pass=3, fail=15）。
+  - 未達内訳: `pytra.runtime/pytra.utils gif` 未実装に起因する transpile failed（12件）、
+    `18_mini_language_interpreter` の Lua 機能不足（`enumerate` 等）による run failed。
