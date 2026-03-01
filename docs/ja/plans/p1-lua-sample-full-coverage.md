@@ -1,6 +1,6 @@
 # P1: Lua sample 全18件対応（残り14件解消）
 
-最終更新: 2026-02-28
+最終更新: 2026-03-01
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-LUA-SAMPLE-FULL-01`
@@ -40,11 +40,23 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、Lua 残件14ケースを `P1` で回収する計画を新規起票した。
+- 2026-03-01: `sample/py` 残件14ケースを個別実行し、失敗要因を4カテゴリへ分類した（assignment target / Tuple / ListComp / Slice）。
 
 ## 分解
 
-- [ ] [ID: P1-LUA-SAMPLE-FULL-01-S1-01] `sample/py` 残件14ケースの失敗要因を分類し、機能ギャップ一覧を固定する。
+- [x] [ID: P1-LUA-SAMPLE-FULL-01-S1-01] `sample/py` 残件14ケースの失敗要因を分類し、機能ギャップ一覧を固定する。
 - [ ] [ID: P1-LUA-SAMPLE-FULL-01-S2-01] 優先度順に未対応 lower（例: comprehension / lambda / tuple assign / stdlib 呼び出し差分）を実装する。
 - [ ] [ID: P1-LUA-SAMPLE-FULL-01-S2-02] `tools/check_py2lua_transpile.py` の `DEFAULT_EXPECTED_FAILS` から sample 対象を段階削除し、スキップ依存を解消する。
 - [ ] [ID: P1-LUA-SAMPLE-FULL-01-S3-01] `sample/lua` 全18件を再生成し、欠落ファイルゼロを確認する。
 - [ ] [ID: P1-LUA-SAMPLE-FULL-01-S3-02] Lua smoke/parity を再実行し、非退行を固定する。
+
+## S1-01 失敗要因分類（sample 残14件）
+
+1. `lang=lua unsupported assignment target`（10件）
+対象: `05,06,07,08,10,11,12,13,14,15`
+2. `lang=lua unsupported expr kind: Tuple`（2件）
+対象: `01,16`
+3. `lang=lua unsupported expr kind: ListComp`（1件）
+対象: `09`
+4. `lang=lua unsupported expr kind: Slice`（1件）
+対象: `18`
