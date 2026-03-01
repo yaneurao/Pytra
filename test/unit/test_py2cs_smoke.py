@@ -269,6 +269,27 @@ class Child(Base):
         self.assertIn(".Value;", cs)
         self.assertNotIn("System.Collections.IEnumerable)(((System.Collections.Generic.Dictionary<string, object>)d))", cs)
 
+    def test_sorted_builtin_is_lowered(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "sorted"},
+                        "args": [{"kind": "Name", "id": "xs"}],
+                        "keywords": [],
+                    },
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("System.Linq.Enumerable.OrderBy(xs, __x => System.Convert.ToString(__x)).ToList()", cs)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",
