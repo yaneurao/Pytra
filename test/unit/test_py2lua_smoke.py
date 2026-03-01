@@ -81,6 +81,13 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("for i = 0, (n) - 1, 1 do", lua)
         self.assertIn("total = total + i", lua)
 
+    def test_transpile_downcount_range_fixture_uses_descending_upper_bound(self) -> None:
+        fixture = find_fixture_case("range_downcount_len_minus1")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("for i = (#(xs) - 1), ((-1)) + 1, (-1) do", lua)
+        self.assertNotIn("for i = (#(xs) - 1), ((-1)) - 1, (-1) do", lua)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

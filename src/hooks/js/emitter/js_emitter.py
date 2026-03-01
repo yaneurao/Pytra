@@ -633,6 +633,8 @@ class JsEmitter(CodeEmitter):
         inc = target + " += " + step
         if range_mode == "descending":
             cond = target + " > " + stop
+        elif range_mode == "dynamic":
+            cond = "((" + step + ") > 0 && " + target + " < " + stop + ") || ((" + step + ") < 0 && " + target + " > " + stop + ")"
         body = self._dict_stmt_list(stmt.get("body"))
         scope = set()
         scope.add(target_name)
@@ -708,7 +710,7 @@ class JsEmitter(CodeEmitter):
                     "start": iter_plan.get("start"),
                     "stop": iter_plan.get("stop"),
                     "step": iter_plan.get("step"),
-                    "range_mode": self.any_dict_get_str(iter_plan, "range_mode", "ascending"),
+                    "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
                     "body": body,
                     "orelse": orelse,
                 }

@@ -1639,6 +1639,8 @@ class CSharpEmitter(CodeEmitter):
         cond = target + " < " + stop
         if range_mode == "descending":
             cond = target + " > " + stop
+        elif range_mode == "dynamic":
+            cond = "((" + step + ") > 0 && " + target + " < " + stop + ") || ((" + step + ") < 0 && " + target + " > " + stop + ")"
         body = self._dict_stmt_list(stmt.get("body"))
         if not self.is_declared(target_name):
             self.declare_in_current_scope(target_name)
@@ -1738,7 +1740,7 @@ class CSharpEmitter(CodeEmitter):
                     "start": iter_plan.get("start"),
                     "stop": iter_plan.get("stop"),
                     "step": iter_plan.get("step"),
-                    "range_mode": self.any_dict_get_str(iter_plan, "range_mode", "ascending"),
+                    "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
                     "body": body,
                     "orelse": orelse,
                 }

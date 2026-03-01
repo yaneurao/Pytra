@@ -2300,6 +2300,8 @@ class RustEmitter(CodeEmitter):
         cond = f"{target} < {stop}"
         if range_mode == "descending":
             cond = f"{target} > {stop}"
+        elif range_mode == "dynamic":
+            cond = f"(({step}) > 0 && {target} < {stop}) || (({step}) < 0 && {target} > {stop})"
         body_scope: set[str] = set()
         body_scope.add(self.any_dict_get_str(target_node, "id", target))
         body = self._dict_stmt_list(stmt.get("body"))
@@ -2420,7 +2422,7 @@ class RustEmitter(CodeEmitter):
                     "start": iter_plan.get("start"),
                     "stop": iter_plan.get("stop"),
                     "step": iter_plan.get("step"),
-                    "range_mode": self.any_dict_get_str(iter_plan, "range_mode", "ascending"),
+                    "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
                     "body": body,
                     "orelse": orelse,
                 }

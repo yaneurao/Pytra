@@ -189,6 +189,13 @@ class Child(Base):
         self.assertIn("var v = __it_", cs)
         self.assertIn(".Item2;", cs)
 
+    def test_for_core_downcount_range_uses_descending_condition(self) -> None:
+        fixture = find_fixture_case("range_downcount_len_minus1")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("for (i = (xs).Count - 1; i > -1; i += -1)", cs)
+        self.assertNotIn("for (i = (xs).Count - 1; i < -1; i += -1)", cs)
+
     def test_dict_literal_widens_to_object_for_mixed_value_types(self) -> None:
         east = {
             "kind": "Module",

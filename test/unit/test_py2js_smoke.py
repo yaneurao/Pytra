@@ -150,6 +150,13 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("for (const [k, v] of pairs) {", js)
         self.assertIn("console.log(k, v);", js)
 
+    def test_for_core_downcount_range_uses_descending_condition(self) -> None:
+        fixture = find_fixture_case("range_downcount_len_minus1")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn("for (let i = __start_1; i > -1; i += -1)", js)
+        self.assertNotIn("for (let i = __start_1; i < -1; i += -1)", js)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

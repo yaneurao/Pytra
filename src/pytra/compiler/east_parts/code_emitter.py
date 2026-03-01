@@ -487,6 +487,32 @@ class CodeEmitter:
                 return v_text
         return mode
 
+    def resolve_forcore_static_range_mode(
+        self,
+        iter_plan: dict[str, Any],
+        default_mode: str = "dynamic",
+    ) -> str:
+        """ForCore(StaticRangeForPlan) の mode を `iter_plan.range_mode` または `step` から解決する。"""
+        mode = self.any_dict_get_str(iter_plan, "range_mode", "")
+        step_node = self.any_to_dict_or_empty(iter_plan.get("step"))
+        step_const = self._const_int_literal(step_node)
+        if isinstance(step_const, int):
+            # step が定数で mode と矛盾する場合は step を優先する。
+            if step_const > 0:
+                if mode in {"ascending", "dynamic"}:
+                    return mode if mode != "" else "ascending"
+                return "ascending"
+            if step_const < 0:
+                if mode in {"descending", "dynamic"}:
+                    return mode if mode != "" else "descending"
+                return "descending"
+            return "dynamic"
+        if mode in {"ascending", "descending", "dynamic"}:
+            return mode
+        if default_mode in {"ascending", "descending", "dynamic"}:
+            return default_mode
+        return "dynamic"
+
     def hook_on_render_call(
         self,
         call_node: dict[str, Any],
