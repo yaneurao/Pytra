@@ -452,11 +452,15 @@ class CppEmitter(
         expr_t = self.normalize_type_name(self.get_expr_type(node))
         if expr_t in {"", "unknown"}:
             expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        if self._is_pyobj_forced_typed_list_type(expr_t):
+            return False
         if expr_t in {"", "unknown"} or self.is_any_like_type(expr_t):
             return True
         if self._contains_text(expr_t, "|"):
             for part in self.split_union(expr_t):
                 part_norm = self.normalize_type_name(part)
+                if self._is_pyobj_forced_typed_list_type(part_norm):
+                    continue
                 if part_norm in {"", "unknown"} or self.is_any_like_type(part_norm):
                     return True
                 if part_norm.startswith("list[") and part_norm.endswith("]") and self._is_pyobj_runtime_list_type(part_norm):
@@ -477,6 +481,8 @@ class CppEmitter(
             return "list<object>"
         if elem == "uint8":
             return "bytearray"
+        if elem.startswith("list[") and elem.endswith("]"):
+            return f"list<{self._cpp_list_value_model_type_text(elem)}>"
         return f"list<{self._cpp_type_text(elem)}>"
 
     def _collect_name_reads(self, node: Any, out: set[str]) -> None:
@@ -1831,12 +1837,13 @@ class CppEmitter(
         """`set/list/dict` コンストラクタ呼び出しの型依存分岐を共通化する。"""
         if raw not in {"set", "list", "dict"}:
             return None
+        resolved_t = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
+        if resolved_t in {"", "unknown"}:
+            resolved_t = self.normalize_type_name(self.get_expr_type(expr))
         if raw == "list" and self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
-            resolved_t = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
-            if resolved_t in {"", "unknown"}:
-                resolved_t = self.normalize_type_name(self.get_expr_type(expr))
-            runtime_list_ctor = resolved_t in {"", "unknown", "Any", "object"} or self._is_pyobj_runtime_list_type(
-                resolved_t
+            runtime_list_ctor = resolved_t in {"", "unknown", "Any", "object"} or (
+                self._is_pyobj_runtime_list_type(resolved_t)
+                and (not self._is_pyobj_forced_typed_list_type(resolved_t))
             )
             if runtime_list_ctor:
                 if len(args) == 0:
@@ -1851,6 +1858,8 @@ class CppEmitter(
                     return f"make_object(list<object>({args[0]}))"
                 return f"make_object(list<object>({args[0]}))"
         t = self.cpp_type(expr.get("resolved_type"))
+        if raw == "list" and self._is_pyobj_forced_typed_list_type(resolved_t):
+            t = self._cpp_list_value_model_type_text(resolved_t)
         if len(args) == 0:
             return f"{t}{{}}"
         if len(args) != 1:
@@ -2363,6 +2372,7 @@ class CppEmitter(
             return f"py_at({val}, py_to<int64>({idx}))"
         if (
             self._is_pyobj_runtime_list_type(val_ty)
+            and (not self._is_pyobj_forced_typed_list_type(val_ty))
             and not self._expr_is_stack_list_local(expr.get("value"))
         ):
             at_expr = f"py_at({val}, py_to<int64>({idx}))"

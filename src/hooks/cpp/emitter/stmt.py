@@ -79,8 +79,9 @@ class CppStatementEmitter:
         ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
         ann_t_norm = self.normalize_type_name(ann_t_str)
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        force_typed_list_str = list_model == "pyobj" and ann_t_norm == "list[str]"
-        if force_typed_list_str:
+        force_typed_list_ann = list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(ann_t_norm)
+        force_typed_list_str = force_typed_list_ann and ann_t_norm == "list[str]"
+        if force_typed_list_ann:
             t = self._cpp_list_value_model_type_text(ann_t_norm)
         if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
             t = self._cpp_list_value_model_type_text(ann_t_str)
@@ -106,7 +107,7 @@ class CppStatementEmitter:
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
             if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                if force_typed_list_str:
+                if force_typed_list_ann:
                     rendered_val = f"{t}{{}}"
                 elif stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
                     rendered_val = f"{t}{{}}"
@@ -116,18 +117,19 @@ class CppStatementEmitter:
                     rendered_val = "make_object(list<object>{})"
                 else:
                     rendered_val = f"{t}{{}}"
-            elif force_typed_list_str and vkind == "List":
+            elif force_typed_list_ann and vkind == "List":
                 list_items: list[str] = []
                 for elem in self._dict_stmt_list(val.get("elements")):
                     item_txt = self.render_expr(elem)
-                    elem_t = self.normalize_type_name(self.get_expr_type(elem))
-                    if self.is_any_like_type(elem_t):
-                        item_txt = self._coerce_any_expr_to_target_via_unbox(
-                            item_txt,
-                            elem,
-                            "str",
-                            "annassign:list[str]",
-                        )
+                    if ann_t_norm == "list[str]":
+                        elem_t = self.normalize_type_name(self.get_expr_type(elem))
+                        if self.is_any_like_type(elem_t):
+                            item_txt = self._coerce_any_expr_to_target_via_unbox(
+                                item_txt,
+                                elem,
+                                "str",
+                                "annassign:list[str]",
+                            )
                     list_items.append(item_txt)
                 rendered_val = f"{t}{{{', '.join(list_items)}}}"
             elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
@@ -1266,7 +1268,7 @@ class CppStatementEmitter:
         ret = self.cpp_type(stmt.get("return_type"))
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        if (not is_generator) and list_model == "pyobj" and ret_t_norm == "list[str]":
+        if (not is_generator) and list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(ret_t_norm):
             ret = self._cpp_list_value_model_type_text(ret_t_norm)
         if is_generator:
             elem_type_for_cpp = yield_value_type
@@ -1295,9 +1297,10 @@ class CppStatementEmitter:
             skip_self = in_class and idx == 0 and n == "self"
             ct = self._cpp_type_text(t)
             t_norm = self.normalize_type_name(t)
-            if (not skip_self) and list_model == "pyobj" and t_norm == "list[str]":
+            if (not skip_self) and list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(t_norm):
                 ct = self._cpp_list_value_model_type_text(t_norm)
-                typed_list_str_params.add(n)
+                if t_norm == "list[str]":
+                    typed_list_str_params.add(n)
             usage = self.any_to_str(arg_usage.get(n))
             usage = usage if usage != "" else "readonly"
             if usage != "mutable" and n in mutated_params:

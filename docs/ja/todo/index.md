@@ -86,10 +86,10 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-typed-list-expansion.md](../plans/p0-cpp-s13-typed-list-expansion.md)
 
-1. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01] sample/13 の `grid/stack/dirs/frames` の object 退化を抑制し、typed list 経路を拡張する。
-2. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S1-01] `cpp_list_model=pyobj` の typed list 判定拡張条件（concrete 要素型）を仕様化する。
-3. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S2-01] emitter 実装を更新し、sample/13 の `grid/stack/dirs/frames` を typed list へ寄せる。
-4. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S3-01] sample/13 断片回帰を追加し、transpile/check を通す。
+1. [x] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01] sample/13 の `grid/stack/dirs/frames` の object 退化を抑制し、typed list 経路を拡張する。
+2. [x] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S1-01] `cpp_list_model=pyobj` の typed list 判定拡張条件（concrete 要素型）を仕様化する。
+3. [x] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S2-01] emitter 実装を更新し、sample/13 の `grid/stack/dirs/frames` を typed list へ寄せる。
+4. [x] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S3-01] sample/13 断片回帰を追加し、transpile/check を通す。
 
 ### P0: sample/13 `candidates` 選択式の CSE/hoist（最優先）
 
