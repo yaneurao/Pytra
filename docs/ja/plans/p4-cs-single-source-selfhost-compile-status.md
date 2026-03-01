@@ -13,13 +13,13 @@ python3 tools/check_cs_single_source_selfhost_compile.py
 - prepare: `python3 tools/prepare_selfhost_source_cs.py`
 - transpile selfhost source: `rc=0`
 - mcs compile: `rc=1`
-- compile note: `/tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(7438,63): error CS1503: Argument `#3' cannot convert `object' expression to type `string'`
+- compile note: `/tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(7460,63): error CS1503: Argument `#3' cannot convert `object' expression to type `string'`
 
 ## Error Code Counts
 
 | code | count |
 |---|---:|
-| CS0019 | 21 |
+| CS0019 | 20 |
 | CS0021 | 3 |
 | CS0029 | 18 |
 | CS0030 | 4 |
@@ -45,24 +45,24 @@ python3 tools/check_cs_single_source_selfhost_compile.py
 
 ## Top Errors (first 20)
 
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(278,24): error CS0019: Operator `*' cannot be applied to operands of type `string' and `long'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(448,21): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(456,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `bool?'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(460,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `object'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(475,13): error CS0029: Cannot implicitly convert type `System.Collections.Generic.Dictionary<string,object>' to `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(483,20): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(496,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(505,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(514,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(523,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(532,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(541,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(557,18): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(560,51): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(561,40): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(568,31): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(569,31): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(584,23): error CS1502: The best overloaded method match for `System.Collections.Generic.List<string>.Add(string)' has some invalid arguments
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(584,27): error CS1503: Argument `#1' cannot convert `object' expression to type `string'
-- /tmp/tmpgbch4pu8/cs_selfhost_full_stage1.cs(606,21): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(448,21): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(456,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `bool?'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(460,13): error CS0019: Operator `&&' cannot be applied to operands of type `bool' and `object'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(475,13): error CS0029: Cannot implicitly convert type `System.Collections.Generic.Dictionary<string,object>' to `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(483,20): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(496,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(505,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(514,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(523,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(532,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(541,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(557,18): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(560,51): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(561,40): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(568,31): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(569,31): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(584,23): error CS1502: The best overloaded method match for `System.Collections.Generic.List<string>.Add(string)' has some invalid arguments
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(584,27): error CS1503: Argument `#1' cannot convert `object' expression to type `string'
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(606,21): error CS0266: Cannot implicitly convert type `object' to `bool'. An explicit conversion exists (are you missing a cast?)
+- /tmp/tmpx1wprm2p/cs_selfhost_full_stage1.cs(633,20): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?)
 
