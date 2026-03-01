@@ -46,11 +46,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-enumerate-direct-typed.md](../plans/p0-cpp-s18-enumerate-direct-typed.md)
 
-1. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01] `enumerate(lines)` を object 中継なしの direct typed unpack へ統一する。
-2. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S1-01] `For` lower の適用条件（iterable/list/tuple 型既知）を整理し、適用外は fail-closed に固定する。
-3. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-01] `for` header 出力を direct structured binding 優先へ更新する。
-4. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-02] sample/18 回帰を追加し、`object __itobj` + `py_at` 非出力を固定する。
-5. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
+1. [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01] `enumerate(lines)` を object 中継なしの direct typed unpack へ統一する。
+2. [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S1-01] `For` lower の適用条件（iterable/list/tuple 型既知）を整理し、適用外は fail-closed に固定する。
+3. [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-01] `for` header 出力を direct structured binding 優先へ更新する。
+4. [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-02] sample/18 回帰を追加し、`object __itobj` + `py_at` 非出力を固定する。
+5. [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
 
 ### P0: sample/18 `str -> str` 同型変換の撤去（最優先）
 

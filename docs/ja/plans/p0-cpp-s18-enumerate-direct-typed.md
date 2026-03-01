@@ -36,11 +36,14 @@
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として `enumerate(lines)` direct unpack 固定を P0 で起票。
+- 2026-03-01: `ForCore` typed enumerate 復元で、typed `list[str]` パラメータ名は `py_enumerate(lines)` を優先し、`object __itobj` + `py_at` 経路へ後退しない条件を固定した。
+- 2026-03-01: `test_py2cpp_codegen_issues.py` の sample/18 回帰を `for (const auto& [line_index, source] : py_enumerate(lines))` 期待へ更新し、`object __itobj` と `py_at(__itobj, ...)` 非出力を固定した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）と `python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）で非退行を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01] `enumerate(lines)` を object 中継なしの direct typed unpack へ統一する。
-- [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S1-01] `For` lower の適用条件（iterable/list/tuple 型既知）を整理し、適用外は fail-closed に固定する。
-- [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-01] `for` header 出力を direct structured binding 優先へ更新する。
-- [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-02] sample/18 回帰を追加し、`object __itobj` + `py_at` 非出力を固定する。
-- [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
+- [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01] `enumerate(lines)` を object 中継なしの direct typed unpack へ統一する。
+- [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S1-01] `For` lower の適用条件（iterable/list/tuple 型既知）を整理し、適用外は fail-closed に固定する。
+- [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-01] `for` header 出力を direct structured binding 優先へ更新する。
+- [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-02] sample/18 回帰を追加し、`object __itobj` + `py_at` 非出力を固定する。
+- [x] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
