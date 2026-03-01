@@ -28,7 +28,7 @@ from hooks.cpp.emitter import CppEmitter  # noqa: E402
 @dataclass
 class ModelResult:
     elapsed_runs: list[float]
-    elapsed_median: float
+    elapsed_avg: float
     binary_size: int
     source_size: int
     source_lines: int
@@ -43,9 +43,9 @@ class CaseResult:
 
     @property
     def elapsed_ratio(self) -> float:
-        if self.value.elapsed_median == 0.0:
+        if self.value.elapsed_avg == 0.0:
             return 0.0
-        return self.pyobj.elapsed_median / self.value.elapsed_median
+        return self.pyobj.elapsed_avg / self.value.elapsed_avg
 
     @property
     def binary_size_ratio(self) -> float:
@@ -177,7 +177,7 @@ def _build_and_measure_one(
     runs = _run_repeated(shlex.quote(out_bin.relative_to(work).as_posix()), work, warmup, repeat)
     result = ModelResult(
         elapsed_runs=runs,
-        elapsed_median=float(statistics.median(runs)),
+        elapsed_avg=float(statistics.fmean(runs)),
         binary_size=int(out_bin.stat().st_size),
         source_size=len(cpp_text.encode("utf-8")),
         source_lines=len(cpp_text.splitlines()),
@@ -196,7 +196,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Benchmark C++ list models (value vs pyobj) on sample cases")
     parser.add_argument("cases", nargs="*", help="sample case stems (default: all sample/py cases)")
     parser.add_argument("--warmup", type=int, default=1, help="warmup runs per model")
-    parser.add_argument("--repeat", type=int, default=3, help="measured runs per model")
+    parser.add_argument("--repeat", type=int, default=2, help="measured runs per model (average over repeats)")
     parser.add_argument("--emit-json", default="", help="optional JSON output path (repo-relative)")
     parser.add_argument(
         "--allow-failures",
@@ -236,12 +236,12 @@ def main() -> int:
     if len(results) > 0:
         print("")
         print(
-            "| case | value(sec) | pyobj(sec) | pyobj/value | value(bin) | pyobj(bin) | pyobj/value(bin) | changed_lines |"
+            "| case | value_avg(sec) | pyobj_avg(sec) | pyobj/value | value(bin) | pyobj(bin) | pyobj/value(bin) | changed_lines |"
         )
         print("|---|---:|---:|---:|---:|---:|---:|---:|")
         for row in results:
             print(
-                f"| {row.case} | {row.value.elapsed_median:.3f} | {row.pyobj.elapsed_median:.3f} | {row.elapsed_ratio:.2f}x "
+                f"| {row.case} | {row.value.elapsed_avg:.3f} | {row.pyobj.elapsed_avg:.3f} | {row.elapsed_ratio:.2f}x "
                 f"| {row.value.binary_size} | {row.pyobj.binary_size} | {row.binary_size_ratio:.2f}x | {row.changed_lines} |"
             )
 
@@ -252,9 +252,9 @@ def main() -> int:
         print("")
         print(
             "summary: "
-            + f"elapsed_median(pyobj/value)={statistics.median(elapsed_ratios):.3f}x, "
-            + f"bin_median(pyobj/value)={statistics.median(bin_ratios):.3f}x, "
-            + f"src_median(pyobj/value)={statistics.median(src_ratios):.3f}x"
+            + f"elapsed_avg(pyobj/value)={statistics.fmean(elapsed_ratios):.3f}x, "
+            + f"bin_avg(pyobj/value)={statistics.fmean(bin_ratios):.3f}x, "
+            + f"src_avg(pyobj/value)={statistics.fmean(src_ratios):.3f}x"
         )
 
     if len(failures) > 0:
@@ -276,14 +276,18 @@ def main() -> int:
                     "case": r.case,
                     "value": {
                         "elapsed_runs": r.value.elapsed_runs,
-                        "elapsed_median": r.value.elapsed_median,
+                        "elapsed_avg": r.value.elapsed_avg,
+                        # Backward-compatible key (same numeric value as elapsed_avg).
+                        "elapsed_median": r.value.elapsed_avg,
                         "binary_size": r.value.binary_size,
                         "source_size": r.value.source_size,
                         "source_lines": r.value.source_lines,
                     },
                     "pyobj": {
                         "elapsed_runs": r.pyobj.elapsed_runs,
-                        "elapsed_median": r.pyobj.elapsed_median,
+                        "elapsed_avg": r.pyobj.elapsed_avg,
+                        # Backward-compatible key (same numeric value as elapsed_avg).
+                        "elapsed_median": r.pyobj.elapsed_avg,
                         "binary_size": r.pyobj.binary_size,
                         "source_size": r.pyobj.source_size,
                         "source_lines": r.pyobj.source_lines,
