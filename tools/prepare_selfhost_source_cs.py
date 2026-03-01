@@ -332,11 +332,19 @@ def _patch_selfhost_hooks(text: str, prepare_base) -> str:
 
 def _patch_main_guard_for_cs_entry(text: str) -> str:
     """C# selfhost entry 互換のため __main__ ガードの argv 参照を簡約する。"""
-    old = 'if __name__ == "__main__":\n    sys.exit(main(sys.argv[1:]))\n'
+    olds = [
+        'if __name__ == "__main__":\n    sys.exit(main(sys.argv[1:]))\n',
+        'if __name__ == "__main__":\n    sys.exit(main(list(sys.argv)))\n',
+        'if __name__ == "__main__":\n    sys.exit(main([str(x) for x in sys.argv]))\n',
+        'if __name__ == "__main__":\n    sys.exit(main(args))\n',
+    ]
     new = 'if __name__ == "__main__":\n    main([str(x) for x in args])\n'
-    if old not in text:
-        raise RuntimeError("failed to patch __main__ guard for selfhost cs entry")
-    return text.replace(old, new, 1)
+    if new in text:
+        return text
+    for old in olds:
+        if old in text:
+            return text.replace(old, new, 1)
+    raise RuntimeError("failed to patch __main__ guard for selfhost cs entry")
 
 
 def main() -> int:

@@ -2099,6 +2099,8 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.gif_helper." + attr
             if owner_kind == "Name" and owner_name == "time":
                 return "Pytra.CsModule.time." + attr
+            if owner_kind == "Name" and owner_name == "sys" and attr == "argv":
+                return "args"
             owner_type = self.get_expr_type(owner_node)
             if owner_type == "Path":
                 if attr == "parent":

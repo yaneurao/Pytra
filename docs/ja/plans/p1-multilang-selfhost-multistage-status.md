@@ -1,6 +1,6 @@
 # P1-MQ-05 Multistage Selfhost Status
 
-計測日: 2026-02-27
+計測日: 2026-03-01
 
 実行コマンド:
 
@@ -11,9 +11,9 @@ python3 tools/check_multilang_selfhost_multistage.py
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
 | rs | pass | fail | skip | compile_fail | For more information about an error, try `rustc --explain E0061`. |
-| cs | pass | fail | skip | compile_fail | /tmp/tmpgrzoxx7n/cs_stage1.cs(83,22): error CS0103: The name `transpile_to_csharp' does not exist in the current context |
+| cs | pass | pass | fail | sample_transpile_fail | stage3 sample output missing |
 | js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: RuntimeError: unsupported_syntax: object receiver attribute/method access is forbidden by language constraints at 90:39 hint=Cast or assign to a concrete type before attribute/method access. |
-| ts | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
+| ts | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | go | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | java | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | swift | pass | skip | skip | runner_not_defined | multistage runner is not defined |

@@ -14,6 +14,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PREPARE_CS_SELFHOST = ROOT / "tools" / "prepare_selfhost_source_cs.py"
+CS_SELFHOST_ENTRY = ROOT / "selfhost" / "py2cs.py"
 
 
 @dataclass
@@ -202,10 +204,19 @@ def _cs_compile(src_cs: Path, out_exe: Path) -> tuple[bool, str]:
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
     ]
-    compile_cmd = ["mcs", "-warn:0", "-out:" + str(out_exe), str(src_cs)]
+    compile_cmd = ["mcs", "-langversion:latest", "-warn:0", "-out:" + str(out_exe), str(src_cs)]
     for runtime_file in runtime_files:
         compile_cmd.append(str(runtime_file))
     return _run(compile_cmd)
+
+
+def _prepare_cs_selfhost_source() -> tuple[bool, str]:
+    ok_prepare, msg_prepare = _run(["python3", str(PREPARE_CS_SELFHOST)])
+    if not ok_prepare:
+        return False, msg_prepare
+    if not CS_SELFHOST_ENTRY.exists():
+        return False, "selfhost/py2cs.py missing after prepare"
+    return True, ""
 
 
 def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_py: Path) -> tuple[str, str, str, str]:
@@ -301,6 +312,12 @@ def main() -> int:
         for spec in LANGS:
             cli = ROOT / spec.cli
             src = ROOT / spec.src
+            if spec.lang == "cs":
+                ok_prepare_cs, msg_prepare_cs = _prepare_cs_selfhost_source()
+                if not ok_prepare_cs:
+                    rows.append(StatusRow(spec.lang, "fail", "skip", "skip", "stage1_transpile_fail", msg_prepare_cs))
+                    continue
+                src = CS_SELFHOST_ENTRY
             stage1_out = tmp / f"{spec.lang}_stage1{spec.ext}"
 
             ok_stage1, msg_stage1 = _run(["python3", str(cli), str(src), "-o", str(stage1_out)])
