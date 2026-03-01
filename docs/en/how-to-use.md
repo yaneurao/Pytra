@@ -61,6 +61,13 @@ Notes:
 - See [Tools Guide](./spec/spec-tools.md) for helper script purposes.
 - For normative constraint definitions, see [User Specification](./spec/spec-user.md).
 
+## Runtime Measurement Protocol (sample)
+
+- For runtime measurements from `sample/py`, measure after fresh transpile.
+- Default measurement count is `warmup=1` + `repeat=2`.
+- Use the **arithmetic mean (average)** of the two measured runs as the representative value (do not use median).
+- Exclude compile time from runtime numbers.
+
 ## Transpiler Usage
 
 Use only the target language section you need.

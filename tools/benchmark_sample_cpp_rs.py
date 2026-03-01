@@ -25,16 +25,16 @@ ELAPSED_RE = re.compile(r"elapsed(?:_sec)?:\s*([0-9]+(?:\.[0-9]+)?)", re.IGNOREC
 @dataclass
 class CaseResult:
     case: str
-    cpp_median: float
-    rs_median: float
+    cpp_avg: float
+    rs_avg: float
     cpp_runs: list[float]
     rs_runs: list[float]
 
     @property
     def rs_over_cpp(self) -> float:
-        if self.cpp_median == 0.0:
+        if self.cpp_avg == 0.0:
             return 0.0
-        return self.rs_median / self.cpp_median
+        return self.rs_avg / self.cpp_avg
 
 
 def _run(cmd: str, cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -133,8 +133,8 @@ def benchmark_case(case: str, work: Path, warmup: int, repeat: int, runtime_cpp:
 
     return CaseResult(
         case=case,
-        cpp_median=float(statistics.median(cpp_runs)),
-        rs_median=float(statistics.median(rs_runs)),
+        cpp_avg=float(statistics.fmean(cpp_runs)),
+        rs_avg=float(statistics.fmean(rs_runs)),
         cpp_runs=cpp_runs,
         rs_runs=rs_runs,
     )
@@ -144,7 +144,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Benchmark transpiled C++ and Rust sample cases")
     parser.add_argument("cases", nargs="*", help="sample case stems (default: all sample/py cases)")
     parser.add_argument("--warmup", type=int, default=1, help="warmup runs per target")
-    parser.add_argument("--repeat", type=int, default=5, help="measured runs per target")
+    parser.add_argument("--repeat", type=int, default=2, help="measured runs per target (average over repeats)")
     parser.add_argument("--emit-json", default="", help="optional JSON output path (repo-relative)")
     args = parser.parse_args()
 
@@ -167,14 +167,14 @@ def main() -> int:
             result = benchmark_case(case, work, args.warmup, args.repeat, runtime_cpp)
             results.append(result)
             print(
-                f"[OK] {case} cpp={result.cpp_median:.3f}s rs={result.rs_median:.3f}s rs/cpp={result.rs_over_cpp:.2f}x"
+                f"[OK] {case} cpp={result.cpp_avg:.3f}s rs={result.rs_avg:.3f}s rs/cpp={result.rs_over_cpp:.2f}x"
             )
 
     print("")
-    print("| case | cpp_median | rs_median | rs/cpp |")
+    print("| case | cpp_avg | rs_avg | rs/cpp |")
     print("|---|---:|---:|---:|")
     for row in results:
-        print(f"| {row.case} | {row.cpp_median:.3f} | {row.rs_median:.3f} | {row.rs_over_cpp:.2f}x |")
+        print(f"| {row.case} | {row.cpp_avg:.3f} | {row.rs_avg:.3f} | {row.rs_over_cpp:.2f}x |")
 
     if args.emit_json != "":
         out_path = ROOT / args.emit_json
@@ -185,8 +185,11 @@ def main() -> int:
             "cases": [
                 {
                     "case": r.case,
-                    "cpp_median": r.cpp_median,
-                    "rs_median": r.rs_median,
+                    "cpp_avg": r.cpp_avg,
+                    "rs_avg": r.rs_avg,
+                    # Backward-compatible keys (same numeric values as *_avg).
+                    "cpp_median": r.cpp_avg,
+                    "rs_median": r.rs_avg,
                     "rs_over_cpp": r.rs_over_cpp,
                     "cpp_runs": r.cpp_runs,
                     "rs_runs": r.rs_runs,
