@@ -42,11 +42,13 @@
 
 決定ログ:
 - 2026-03-01: Scala3 parity を「stdout のみ暫定一致」から「artifact 含む完全一致」へ引き上げる方針で P0 起票。
+- 2026-03-02: `python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples --summary-json out/scala_parity_sample_summary.json` と `python3 tools/runtime_parity_check.py --case-root fixture --targets scala math_extended pathlib_extended inheritance_virtual_dispatch_multilang --summary-json out/scala_parity_fixture_summary.json` を実行し、現環境 baseline は `sample: toolchain_missing=18`, `fixture: toolchain_missing=3` で固定した（Scala toolchain 未導入のため run フェーズ未到達）。
+- 2026-03-02: Scala fixture 正例マニフェストを `test/fixtures/scala_positive_manifest.txt` として固定し、負例（`signature/ng_*`, `typing/any_class_alias.py`）を別タスク管理する境界を分離した。
 
 ## 分解
 
-- [ ] [ID: P0-SCALA3-PARITY-ALL-01-S1-01] Scala parity の現状失敗を baseline 取得（sample 全件 + fixture 正例群）し、失敗カテゴリを固定する。
-- [ ] [ID: P0-SCALA3-PARITY-ALL-01-S1-02] Scala fixture parity の対象マニフェスト（正例のみ）を定義し、負例タスク（P2）と境界を明文化する。
+- [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-01] Scala parity の現状失敗を baseline 取得（sample 全件 + fixture 正例群）し、失敗カテゴリを固定する。
+- [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-02] Scala fixture parity の対象マニフェスト（正例のみ）を定義し、負例タスク（P2）と境界を明文化する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-01] `save_gif` / `write_rgb_png` の `__pytra_noop` 経路を撤去し、Scala runtime 実装へ接続する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装（未対応は fail-closed）する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースで不足する builtin/container 操作を補完し、run_failed を解消する。

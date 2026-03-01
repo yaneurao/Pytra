@@ -1,0 +1,5 @@
+# Scala parity positive fixture manifest (P0-SCALA3-PARITY-ALL-01-S1-02)
+# One case stem per line.
+math_extended
+pathlib_extended
+inheritance_virtual_dispatch_multilang
