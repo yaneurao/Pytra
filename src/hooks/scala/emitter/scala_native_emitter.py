@@ -55,6 +55,22 @@ _SCALA_KEYWORDS = {
 
 _CLASS_NAMES: set[str] = set()
 _FUNCTION_NAMES: set[str] = set()
+_CLASS_BASES: dict[str, str] = {}
+_CLASS_METHODS: dict[str, set[str]] = {}
+
+
+def _method_overrides_base(class_name: str, method_name: str) -> bool:
+    base = _CLASS_BASES.get(class_name, "")
+    seen: set[str] = set()
+    while base != "":
+        if base in seen:
+            break
+        seen.add(base)
+        methods = _CLASS_METHODS.get(base)
+        if isinstance(methods, set) and method_name in methods:
+            return True
+        base = _CLASS_BASES.get(base, "")
+    return False
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -528,6 +544,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args = args_any if isinstance(args_any, list) else []
 
     callee_name = _call_name(expr)
+    if callee_name == "super":
+        if len(args) == 0:
+            return "super"
+        rendered_super_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_super_args.append(_render_expr(args[i]))
+            i += 1
+        return "super(" + ", ".join(rendered_super_args) + ")"
     if callee_name.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0
@@ -1705,7 +1730,7 @@ def _block_contains_yield(body: list[Any]) -> bool:
     return False
 
 
-def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
+def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool, is_override: bool = False) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     is_init = in_class and name == "__init__"
 
@@ -1723,7 +1748,8 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
             lines.append(indent + "def this(" + ", ".join(params) + ") = {")
             lines.append(indent + "    this()")
     else:
-        sig = indent + "def " + name + "(" + ", ".join(params) + "): " + return_type + " = {"
+        override_prefix = "override " if in_class and is_override else ""
+        sig = indent + override_prefix + "def " + name + "(" + ", ".join(params) + "): " + return_type + " = {"
         lines.append(sig)
 
     body_any = fn.get("body")
@@ -1825,8 +1851,10 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     while i < len(body):
         node = body[i]
         if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+            method_name = _safe_ident(node.get("name"), "")
+            is_override = method_name != "__init__" and _method_overrides_base(class_name, method_name)
             lines.append("")
-            lines.extend(_emit_function(node, indent=indent + "    ", in_class=True))
+            lines.extend(_emit_function(node, indent=indent + "    ", in_class=True, is_override=is_override))
         i += 1
 
     lines.append(indent + "}")
@@ -2421,9 +2449,30 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
     _CLASS_NAMES = set()
     global _FUNCTION_NAMES
     _FUNCTION_NAMES = set()
+    global _CLASS_BASES
+    _CLASS_BASES = {}
+    global _CLASS_METHODS
+    _CLASS_METHODS = {}
     i = 0
     while i < len(classes):
-        _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
+        class_node = classes[i]
+        class_name = _safe_ident(class_node.get("name"), "PytraClass")
+        _CLASS_NAMES.add(class_name)
+        base_any = class_node.get("base")
+        base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+        _CLASS_BASES[class_name] = base_name
+        methods: set[str] = set()
+        class_body_any = class_node.get("body")
+        class_body = class_body_any if isinstance(class_body_any, list) else []
+        j = 0
+        while j < len(class_body):
+            member = class_body[j]
+            if isinstance(member, dict) and member.get("kind") == "FunctionDef":
+                method_name = _safe_ident(member.get("name"), "")
+                if method_name != "":
+                    methods.add(method_name)
+            j += 1
+        _CLASS_METHODS[class_name] = methods
         i += 1
     i = 0
     while i < len(functions):

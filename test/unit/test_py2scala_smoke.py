@@ -51,6 +51,13 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("class Dog() extends Animal()", scala)
         self.assertIn("def _case_main(): Unit =", scala)
 
+    def test_scala_native_emitter_emits_override_and_super_for_dispatch_fixture(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("override def speak(): String = {", scala)
+        self.assertIn("super.speak()", scala)
+
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
