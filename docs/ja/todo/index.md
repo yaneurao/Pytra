@@ -104,10 +104,10 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-samecast-reduction.md](../plans/p0-cpp-s13-samecast-reduction.md)
 
-1. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01] sample/13 の型既知経路に残る `int64(py_to<int64>(...))` 等の同型 cast 連鎖を縮退する。
-2. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S1-01] sample/13 の同型 cast パターンと縮退適用条件を固定する。
-3. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S2-01] EAST3 または C++ emitter で同型 cast 縮退を実装する。
-4. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S3-01] 回帰を追加し、transpile/check を通す。
+1. [x] [ID: P0-CPP-S13-SAMECAST-CUT-01] sample/13 の型既知経路に残る `int64(py_to<int64>(...))` 等の同型 cast 連鎖を縮退する。
+2. [x] [ID: P0-CPP-S13-SAMECAST-CUT-01-S1-01] sample/13 の同型 cast パターンと縮退適用条件を固定する。
+3. [x] [ID: P0-CPP-S13-SAMECAST-CUT-01-S2-01] EAST3 または C++ emitter で同型 cast 縮退を実装する。
+4. [x] [ID: P0-CPP-S13-SAMECAST-CUT-01-S3-01] 回帰を追加し、transpile/check を通す。
 
 ### P0: sample/13 `grid` 行アクセス hoist（最優先）
 
