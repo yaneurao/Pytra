@@ -419,7 +419,7 @@ class CodeEmitter:
         """`on_emit_stmt` フック。既定では何もしない。"""
         v = self._call_hook1("on_emit_stmt", stmt)
         if isinstance(v, bool):
-            return True if v else False
+            return self.any_to_bool(v)
         return None
 
     def hook_on_emit_stmt_kind(
@@ -429,15 +429,15 @@ class CodeEmitter:
     ) -> bool | None:
         """`on_emit_stmt_kind` を解決し、未処理時は fallback へ委譲する。"""
         handled_specific = self.hook_on_emit_stmt_kind_specific(kind, stmt)
-        if isinstance(handled_specific, bool) and handled_specific:
+        if isinstance(handled_specific, bool) and self.any_to_bool(handled_specific):
             return True
         v = self._call_hook2("on_emit_stmt_kind", kind, stmt)
-        if isinstance(v, bool) and v:
+        if isinstance(v, bool) and self.any_to_bool(v):
             return True
         if self._emit_stmt_kind_fallback(kind, stmt):
             return True
         if isinstance(v, bool):
-            return False
+            return self.any_to_bool(v)
         return handled_specific
 
     def _emit_stmt_kind_fallback(
