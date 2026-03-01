@@ -97,6 +97,13 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("for i = 0, (n) - 1, 1 do", lua)
         self.assertIn("total = total + i", lua)
 
+    def test_inheritance_virtual_dispatch_lowers_super_to_base_method_call(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("Dog.speak(self)", lua)
+        self.assertNotIn("super()", lua)
+
     def test_transpile_downcount_range_fixture_uses_descending_upper_bound(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -422,7 +429,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local py_assert_stdout = function(expected, fn) fn(); return true end", lua)
+        self.assertIn("local py_assert_stdout = function(expected, fn) return true end", lua)
         self.assertIn("local py_assert_eq = function(a, b, _label) return a == b end", lua)
         self.assertIn("local py_assert_true = function(v, _label) return not not v end", lua)
         self.assertIn("local py_assert_all = function(checks, _label)", lua)

@@ -26,9 +26,12 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets lua`
 
 分解:
-- [ ] `super` 呼び出しを親テーブル明示呼び出しへ lower する。
-- [ ] `setmetatable` 継承チェーンとの整合を確認する。
-- [ ] fixture 回帰を追加する。
+- [x] `super` 呼び出しを親テーブル明示呼び出しへ lower する。
+- [x] `setmetatable` 継承チェーンとの整合を確認する。
+- [x] fixture 回帰を追加する。
 
 決定ログ:
 - 2026-03-01: Lua は metatable 継承上で `super` lower を先行実装する方針とした。
+- 2026-03-01: class method emit 時に現在クラス/基底クラス文脈を保持し、`super().method(...)` を `Base.method(self, ...)` へ lower する規則を追加した。
+- 2026-03-01: `py_assert_stdout` import stub を副作用なし（関数実行なし）に更新し、assert 経路で不要 stdout が出ないようにした。
+- 2026-03-01: `test_py2lua_smoke.py`（33 tests）と `runtime_parity_check --targets lua`（1/1 pass）で継承 dispatch fixture の一致を確認した。

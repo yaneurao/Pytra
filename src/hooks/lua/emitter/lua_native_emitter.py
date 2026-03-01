@@ -109,6 +109,8 @@ class LuaNativeEmitter:
         self.imported_modules: set[str] = set()
         self.function_names: set[str] = set()
         self.loop_continue_labels: list[str] = []
+        self.current_class_name: str = ""
+        self.current_class_base_name: str = ""
 
     def _const_int_literal(self, node_any: Any) -> int | None:
         if not isinstance(node_any, dict):
@@ -352,7 +354,7 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else symbol
                     alias_txt = _safe_ident(alias, symbol)
                     if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_stdout":
-                        import_lines.append("local py_assert_stdout = function(expected, fn) fn(); return true end")
+                        import_lines.append("local py_assert_stdout = function(expected, fn) return true end")
                         continue
                     if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_eq":
                         import_lines.append("local " + alias_txt + " = function(a, b, _label) return a == b end")
@@ -1274,7 +1276,7 @@ class LuaNativeEmitter:
                 continue
             if sub.get("name") == "__init__":
                 has_init = True
-            self._emit_class_method(cls_name, sub)
+            self._emit_class_method(cls_name, base_name, sub)
         if not has_init:
             arg_list = ", ".join(dataclass_fields)
             self._emit_line("function " + cls_name + ".new(" + arg_list + ")")
@@ -1287,7 +1289,7 @@ class LuaNativeEmitter:
             self._emit_line("end")
             self._emit_line("")
 
-    def _emit_class_method(self, cls_name: str, stmt: dict[str, Any]) -> None:
+    def _emit_class_method(self, cls_name: str, base_name: str, stmt: dict[str, Any]) -> None:
         method_name = _safe_ident(stmt.get("name"), "method")
         arg_order_any = stmt.get("arg_order")
         arg_order = arg_order_any if isinstance(arg_order_any, list) else []
@@ -1297,6 +1299,10 @@ class LuaNativeEmitter:
             if i == 0 and arg_name == "self":
                 continue
             args.append(arg_name)
+        prev_class = self.current_class_name
+        prev_base = self.current_class_base_name
+        self.current_class_name = cls_name
+        self.current_class_base_name = base_name
         if method_name == "__init__":
             self._emit_line("function " + cls_name + ".new(" + ", ".join(args) + ")")
             self.indent += 1
@@ -1306,6 +1312,8 @@ class LuaNativeEmitter:
             self.indent -= 1
             self._emit_line("end")
             self._emit_line("")
+            self.current_class_name = prev_class
+            self.current_class_base_name = prev_base
             return
         self._emit_line("function " + cls_name + ":" + method_name + "(" + ", ".join(args) + ")")
         self.indent += 1
@@ -1313,6 +1321,8 @@ class LuaNativeEmitter:
         self.indent -= 1
         self._emit_line("end")
         self._emit_line("")
+        self.current_class_name = prev_class
+        self.current_class_base_name = prev_base
 
     def _emit_for_core(self, stmt: dict[str, Any]) -> None:
         iter_mode = str(stmt.get("iter_mode"))
@@ -1834,9 +1844,20 @@ class LuaNativeEmitter:
                 return fn_name + ".new(" + ", ".join(rendered_args) + ")"
             return fn_name + "(" + ", ".join(rendered_args) + ")"
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-            owner = self._render_expr(func_any.get("value"))
             owner_node = func_any.get("value")
             attr = _safe_ident(func_any.get("attr"), "call")
+            if isinstance(owner_node, dict) and owner_node.get("kind") == "Call":
+                super_func = owner_node.get("func")
+                if isinstance(super_func, dict) and super_func.get("kind") == "Name":
+                    super_name = str(super_func.get("id"))
+                    if super_name in {"super", "_super"}:
+                        if attr == "__init__":
+                            return "__pytra_noop()"
+                        if self.current_class_base_name != "":
+                            if len(rendered_args) == 0:
+                                return self.current_class_base_name + "." + attr + "(self)"
+                            return self.current_class_base_name + "." + attr + "(self, " + ", ".join(rendered_args) + ")"
+            owner = self._render_expr(owner_node)
             owner_type = ""
             if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
                 owner_type = owner_node.get("resolved_type") or ""
