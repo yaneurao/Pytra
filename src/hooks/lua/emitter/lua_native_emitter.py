@@ -107,6 +107,8 @@ class LuaNativeEmitter:
         self.tmp_seq = 0
         self.class_names: set[str] = set()
         self.imported_modules: set[str] = set()
+        self.function_names: set[str] = set()
+        self.loop_continue_labels: list[str] = []
 
     def _const_int_literal(self, node_any: Any) -> int | None:
         if not isinstance(node_any, dict):
@@ -206,10 +208,14 @@ class LuaNativeEmitter:
     def _scan_module_symbols(self, body: list[dict[str, Any]]) -> None:
         self.class_names = set()
         self.imported_modules = set()
+        self.function_names = set()
         for stmt in body:
             kind = stmt.get("kind")
             if kind == "ClassDef":
                 self.class_names.add(_safe_ident(stmt.get("name"), "Class"))
+                continue
+            if kind == "FunctionDef":
+                self.function_names.add(_safe_ident(stmt.get("name"), "fn"))
                 continue
             if kind == "Import":
                 names_any = stmt.get("names")
@@ -245,6 +251,8 @@ class LuaNativeEmitter:
         import_lines: list[str] = []
         needs_perf_counter = False
         needs_png_runtime = False
+        needs_math_runtime = False
+        needs_path_runtime = False
         self._emit_print_helper()
         self._emit_line("")
         for stmt in body:
@@ -262,7 +270,12 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
                     if module_name == "math":
-                        import_lines.append("local " + alias_txt + " = math")
+                        needs_math_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_math_module()")
+                        continue
+                    if module_name == "pathlib":
+                        needs_path_runtime = True
+                        import_lines.append("local " + alias_txt + " = { Path = __pytra_path_new }")
                         continue
                     if module_name == "time":
                         needs_perf_counter = True
@@ -296,12 +309,30 @@ class LuaNativeEmitter:
                     if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_stdout":
                         import_lines.append("local py_assert_stdout = function(expected, fn) fn(); return true end")
                         continue
+                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_eq":
+                        import_lines.append("local " + alias_txt + " = function(a, b, _label) return a == b end")
+                        continue
+                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_true":
+                        import_lines.append("local " + alias_txt + " = function(v, _label) return not not v end")
+                        continue
+                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_all":
+                        import_lines.append(
+                            "local "
+                            + alias_txt
+                            + " = function(checks, _label) if checks == nil then return false end; for i = 1, #checks do if not checks[i] then return false end end; return true end"
+                        )
+                        continue
                     if module_name == "time" and symbol == "perf_counter":
                         needs_perf_counter = True
                         import_lines.append("local " + alias_txt + " = __pytra_perf_counter")
                         continue
                     if module_name == "math":
-                        import_lines.append("local " + alias_txt + " = math." + _safe_ident(symbol, symbol))
+                        needs_math_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_math_module()." + _safe_ident(symbol, symbol))
+                        continue
+                    if module_name == "pathlib" and symbol == "Path":
+                        needs_path_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_path_new")
                         continue
                     if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "png":
                         needs_png_runtime = True
@@ -328,6 +359,12 @@ class LuaNativeEmitter:
         if needs_perf_counter:
             self._emit_perf_counter_helper()
             self._emit_line("")
+        if needs_math_runtime:
+            self._emit_math_runtime_helpers()
+            self._emit_line("")
+        if needs_path_runtime:
+            self._emit_path_runtime_helpers()
+            self._emit_line("")
         if needs_png_runtime:
             self._emit_png_runtime_helpers()
             self._emit_line("")
@@ -349,7 +386,24 @@ class LuaNativeEmitter:
         self._emit_line("local parts = {}")
         self._emit_line("for i = 1, argc do")
         self.indent += 1
-        self._emit_line("parts[i] = tostring(select(i, ...))")
+        self._emit_line("local v = select(i, ...)")
+        self._emit_line("if v == true then")
+        self.indent += 1
+        self._emit_line('parts[i] = "True"')
+        self.indent -= 1
+        self._emit_line("elseif v == false then")
+        self.indent += 1
+        self._emit_line('parts[i] = "False"')
+        self.indent -= 1
+        self._emit_line("elseif v == nil then")
+        self.indent += 1
+        self._emit_line('parts[i] = "None"')
+        self.indent -= 1
+        self._emit_line("else")
+        self.indent += 1
+        self._emit_line("parts[i] = tostring(v)")
+        self.indent -= 1
+        self._emit_line("end")
         self.indent -= 1
         self._emit_line("end")
         self._emit_line("io.write(table.concat(parts, \" \") .. \"\\n\")")
@@ -360,6 +414,135 @@ class LuaNativeEmitter:
         self._emit_line("local function __pytra_perf_counter()")
         self.indent += 1
         self._emit_line("return os.clock()")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_math_runtime_helpers(self) -> None:
+        self._emit_line("local function __pytra_math_module()")
+        self.indent += 1
+        self._emit_line("local m = {}")
+        self._emit_line("for k, v in pairs(math) do")
+        self.indent += 1
+        self._emit_line("m[k] = v")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("if m.fabs == nil then m.fabs = math.abs end")
+        self._emit_line("if m.log10 == nil then m.log10 = function(x) return math.log(x, 10) end end")
+        self._emit_line("if m.pow == nil then m.pow = function(a, b) return (a ^ b) end end")
+        self._emit_line("return m")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_path_runtime_helpers(self) -> None:
+        self._emit_line("local function __pytra_path_basename(path)")
+        self.indent += 1
+        self._emit_line('local name = string.match(path, "([^/]+)$")')
+        self._emit_line("if name == nil or name == \"\" then return path end")
+        self._emit_line("return name")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_path_parent_text(path)")
+        self.indent += 1
+        self._emit_line('local parent = string.match(path, \"^(.*)/[^/]*$\")')
+        self._emit_line("if parent == nil or parent == \"\" then return \".\" end")
+        self._emit_line("return parent")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_path_stem(path)")
+        self.indent += 1
+        self._emit_line("local name = __pytra_path_basename(path)")
+        self._emit_line('local stem = string.match(name, "^(.*)%.")')
+        self._emit_line("if stem == nil or stem == \"\" then return name end")
+        self._emit_line("return stem")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local __pytra_path_mt = {}")
+        self._emit_line("__pytra_path_mt.__index = __pytra_path_mt")
+        self._emit_line("")
+        self._emit_line("local function __pytra_path_join(left, right)")
+        self.indent += 1
+        self._emit_line("if left == \"\" or left == \".\" then return right end")
+        self._emit_line('if string.sub(left, -1) == "/" then return left .. right end')
+        self._emit_line('return left .. "/" .. right')
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_path_new(path)")
+        self.indent += 1
+        self._emit_line("local text = tostring(path)")
+        self._emit_line("local obj = { path = text }")
+        self._emit_line("setmetatable(obj, __pytra_path_mt)")
+        self._emit_line("obj.name = __pytra_path_basename(text)")
+        self._emit_line("obj.stem = __pytra_path_stem(text)")
+        self._emit_line("local parent_text = __pytra_path_parent_text(text)")
+        self._emit_line("if parent_text ~= text then")
+        self.indent += 1
+        self._emit_line("obj.parent = setmetatable({ path = parent_text }, __pytra_path_mt)")
+        self._emit_line("obj.parent.name = __pytra_path_basename(parent_text)")
+        self._emit_line("obj.parent.stem = __pytra_path_stem(parent_text)")
+        self._emit_line("obj.parent.parent = nil")
+        self.indent -= 1
+        self._emit_line("else")
+        self.indent += 1
+        self._emit_line("obj.parent = nil")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return obj")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("function __pytra_path_mt.__div(lhs, rhs)")
+        self.indent += 1
+        self._emit_line("local left = lhs.path")
+        self._emit_line("local right = tostring(rhs)")
+        self._emit_line("if type(rhs) == \"table\" and rhs.path ~= nil then")
+        self.indent += 1
+        self._emit_line("right = rhs.path")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return __pytra_path_new(__pytra_path_join(left, right))")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("function __pytra_path_mt:exists()")
+        self.indent += 1
+        self._emit_line('local f = io.open(self.path, "rb")')
+        self._emit_line("if f ~= nil then")
+        self.indent += 1
+        self._emit_line("f:close()")
+        self._emit_line("return true")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local ok = os.execute('test -e \"' .. self.path .. '\"')")
+        self._emit_line("if type(ok) == \"boolean\" then return ok end")
+        self._emit_line("if type(ok) == \"number\" then return ok == 0 end")
+        self._emit_line("return false")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("function __pytra_path_mt:mkdir()")
+        self.indent += 1
+        self._emit_line("os.execute('mkdir -p \"' .. self.path .. '\"')")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("function __pytra_path_mt:write_text(text)")
+        self.indent += 1
+        self._emit_line('local f = assert(io.open(self.path, "wb"))')
+        self._emit_line("f:write(tostring(text))")
+        self._emit_line("f:close()")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("function __pytra_path_mt:read_text()")
+        self.indent += 1
+        self._emit_line('local f = assert(io.open(self.path, "rb"))')
+        self._emit_line('local data = f:read("*a")')
+        self._emit_line("f:close()")
+        self._emit_line("return data")
         self.indent -= 1
         self._emit_line("end")
 
@@ -584,9 +767,13 @@ class LuaNativeEmitter:
             self._emit_line("return " + val)
             return
         if kind == "AnnAssign":
-            target = self._render_target(stmt.get("target"))
+            target_node = stmt.get("target")
+            target = self._render_target(target_node)
             value = self._render_expr(stmt.get("value")) if isinstance(stmt.get("value"), dict) else "nil"
-            self._emit_line("local " + target + " = " + value)
+            if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                self._emit_line("local " + target + " = " + value)
+            else:
+                self._emit_line(target + " = " + value)
             return
         if kind == "Assign":
             target_any = stmt.get("target")
@@ -615,7 +802,18 @@ class LuaNativeEmitter:
             self._emit_line(target + " = " + target + " " + _binop_symbol(op) + " " + value)
             return
         if kind == "Expr":
-            self._emit_line(self._render_expr(stmt.get("value")))
+            value_any = stmt.get("value")
+            if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+                loop_kw = str(value_any.get("id"))
+                if loop_kw == "break":
+                    self._emit_line("break")
+                    return
+                if loop_kw == "continue":
+                    if len(self.loop_continue_labels) == 0:
+                        raise RuntimeError("lang=lua continue outside loop is unsupported")
+                    self._emit_line("goto " + self.loop_continue_labels[-1])
+                    return
+            self._emit_line(self._render_expr(value_any))
             return
         if kind == "Raise":
             exc_any = stmt.get("exc")
@@ -738,6 +936,7 @@ class LuaNativeEmitter:
         target_name = "it"
         if isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
             target_name = _safe_ident(target_plan.get("id"), "it")
+        continue_label = self._next_tmp_name("__pytra_continue")
         if iter_mode == "static_fastpath":
             iter_plan = stmt.get("iter_plan")
             if not isinstance(iter_plan, dict) or iter_plan.get("kind") != "StaticRangeForPlan":
@@ -762,7 +961,10 @@ class LuaNativeEmitter:
                 upper = "(" + stop + ") - 1"
                 self._emit_line("for " + target_name + " = " + start + ", " + upper + ", " + step + " do")
                 self.indent += 1
+                self.loop_continue_labels.append(continue_label)
                 self._emit_block(stmt.get("body"))
+                self.loop_continue_labels.pop()
+                self._emit_line("::" + continue_label + "::")
                 self.indent -= 1
                 self._emit_line("end")
                 return
@@ -771,7 +973,10 @@ class LuaNativeEmitter:
                 lower = "(" + stop + ") + 1"
                 self._emit_line("for " + target_name + " = " + start + ", " + lower + ", " + step + " do")
                 self.indent += 1
+                self.loop_continue_labels.append(continue_label)
                 self._emit_block(stmt.get("body"))
+                self.loop_continue_labels.pop()
+                self._emit_line("::" + continue_label + "::")
                 self.indent -= 1
                 self._emit_line("end")
                 return
@@ -787,7 +992,10 @@ class LuaNativeEmitter:
                 "for " + target_name + " = " + start_tmp + ", (" + stop_tmp + ") - 1, " + step_tmp + " do"
             )
             self.indent += 1
+            self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
+            self.loop_continue_labels.pop()
+            self._emit_line("::" + continue_label + "::")
             self.indent -= 1
             self._emit_line("end")
             self.indent -= 1
@@ -797,7 +1005,10 @@ class LuaNativeEmitter:
                 "for " + target_name + " = " + start_tmp + ", (" + stop_tmp + ") + 1, " + step_tmp + " do"
             )
             self.indent += 1
+            self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
+            self.loop_continue_labels.pop()
+            self._emit_line("::" + continue_label + "::")
             self.indent -= 1
             self._emit_line("end")
             self.indent -= 1
@@ -810,7 +1021,10 @@ class LuaNativeEmitter:
             iter_expr = self._render_expr(iter_plan.get("iter_expr"))
             self._emit_line("for _, " + target_name + " in ipairs(" + iter_expr + ") do")
             self.indent += 1
+            self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
+            self.loop_continue_labels.pop()
+            self._emit_line("::" + continue_label + "::")
             self.indent -= 1
             self._emit_line("end")
             return
@@ -818,9 +1032,13 @@ class LuaNativeEmitter:
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         test = self._render_expr(stmt.get("test"))
+        continue_label = self._next_tmp_name("__pytra_continue")
         self._emit_line("while " + test + " do")
         self.indent += 1
+        self.loop_continue_labels.append(continue_label)
         self._emit_block(stmt.get("body"))
+        self.loop_continue_labels.pop()
+        self._emit_line("::" + continue_label + "::")
         self.indent -= 1
         self._emit_line("end")
 
@@ -1091,6 +1309,8 @@ class LuaNativeEmitter:
             rendered_args.append(self._render_expr(arg))
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             fn_name = _safe_ident(func_any.get("id"), "fn")
+            if fn_name == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
+                fn_name = "__pytra_main"
             if fn_name == "print":
                 return "__pytra_print(" + ", ".join(rendered_args) + ")"
             if fn_name == "int":

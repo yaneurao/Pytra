@@ -72,6 +72,22 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("-- leading comment 1", lua)
         self.assertIn("-- leading comment 2", lua)
 
+    def test_main_guard_calls_renamed_pytra_main_function(self) -> None:
+        src = (
+            "def main() -> None:\n"
+            "    print(1)\n"
+            "if __name__ == '__main__':\n"
+            "    main()\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "main_guard.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("function __pytra_main()", lua)
+        self.assertIn("__pytra_main()", lua)
+        self.assertNotIn("\nmain()\n", lua)
+
     def test_transpile_for_range_fixture_contains_static_for(self) -> None:
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -212,6 +228,23 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("return (self:sound() + \"-bark\")", lua)
         self.assertIn("print(d:bark())", lua)
 
+    def test_annassign_on_attribute_inside_init_is_not_local(self) -> None:
+        src = (
+            "class C:\n"
+            "    def __init__(self, x: int):\n"
+            "        self.value: int = x\n"
+            "def f() -> int:\n"
+            "    c = C(7)\n"
+            "    return c.value\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "annassign_attr.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("self.value = x", lua)
+        self.assertNotIn("local self.value = x", lua)
+
     def test_lowering_supports_isinstance_node_for_classes(self) -> None:
         fixture = find_fixture_case("is_instance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -223,12 +256,15 @@ class Py2LuaSmokeTest(unittest.TestCase):
     def test_import_lowering_maps_assertions_perf_counter_and_png_runtime(self) -> None:
         src = (
             "from pytra.utils.assertions import py_assert_stdout\n"
+            "from pytra.utils.assertions import py_assert_eq, py_assert_true, py_assert_all\n"
             "from time import perf_counter\n"
             "from pytra.utils import png\n"
             "def f() -> None:\n"
             "    _ = perf_counter()\n"
             "    png.write_rgb_png('x.png', 1, 1, b'')\n"
             "def g() -> None:\n"
+            "    checks = [py_assert_eq(1, 1), py_assert_true(True)]\n"
+            "    print(py_assert_all(checks, 'case'))\n"
             "    print(py_assert_stdout(['ok'], f))\n"
         )
         with tempfile.TemporaryDirectory() as td:
@@ -237,6 +273,9 @@ class Py2LuaSmokeTest(unittest.TestCase):
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
         self.assertIn("local py_assert_stdout = function(expected, fn) fn(); return true end", lua)
+        self.assertIn("local py_assert_eq = function(a, b, _label) return a == b end", lua)
+        self.assertIn("local py_assert_true = function(v, _label) return not not v end", lua)
+        self.assertIn("local py_assert_all = function(checks, _label)", lua)
         self.assertIn("local function __pytra_perf_counter()", lua)
         self.assertIn("local perf_counter = __pytra_perf_counter", lua)
         self.assertIn("local function __pytra_write_rgb_png(path, width, height, pixels)", lua)
