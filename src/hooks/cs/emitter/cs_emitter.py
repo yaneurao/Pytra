@@ -362,6 +362,73 @@ class CSharpEmitter(CodeEmitter):
             return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
         return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + "> { " + ", ".join(pairs) + " }"
 
+    def _dict_literal_key_value_nodes(self, expr_d: dict[str, Any]) -> tuple[list[Any], list[Any]]:
+        key_nodes: list[Any] = []
+        value_nodes: list[Any] = []
+        entries = self.any_to_list(expr_d.get("entries"))
+        if len(entries) > 0:
+            for entry in entries:
+                ent = self.any_to_dict_or_empty(entry)
+                key_nodes.append(ent.get("key"))
+                value_nodes.append(ent.get("value"))
+            return key_nodes, value_nodes
+        keys = self.any_to_list(expr_d.get("keys"))
+        vals = self.any_to_list(expr_d.get("values"))
+        i = 0
+        while i < len(keys) and i < len(vals):
+            key_nodes.append(keys[i])
+            value_nodes.append(vals[i])
+            i += 1
+        return key_nodes, value_nodes
+
+    def _node_can_flow_to_cs_type(self, node_obj: Any, cs_t: str) -> bool:
+        if cs_t == "" or cs_t == "object":
+            return True
+        node = self.any_to_dict_or_empty(node_obj)
+        east_t = self.normalize_type_name(self.get_expr_type(node))
+        if east_t != "" and east_t != "unknown":
+            src_cs = self._cs_type(east_t)
+            if src_cs == cs_t:
+                return True
+            if cs_t in {"float", "double"} and src_cs in {
+                "byte",
+                "sbyte",
+                "short",
+                "ushort",
+                "int",
+                "uint",
+                "long",
+                "ulong",
+                "float",
+                "double",
+            }:
+                return True
+            if cs_t in {"byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong"} and src_cs in {
+                "byte",
+                "sbyte",
+                "short",
+                "ushort",
+                "int",
+                "uint",
+                "long",
+                "ulong",
+            }:
+                return True
+            return False
+        if self.any_dict_get_str(node, "kind", "") == "Constant":
+            value = node.get("value")
+            if value is None:
+                return cs_t not in {"bool", "byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "char"}
+            if isinstance(value, bool):
+                return cs_t == "bool"
+            if isinstance(value, str):
+                return cs_t == "string"
+            if isinstance(value, int):
+                return cs_t in {"byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double"}
+            if isinstance(value, float):
+                return cs_t in {"float", "double"}
+        return False
+
     def _typed_dict_literal(self, expr_d: dict[str, Any]) -> str:
         """Dict リテラルを C# 式へ描画する。"""
         dict_t = self.get_expr_type(expr_d)
@@ -372,6 +439,17 @@ class CSharpEmitter(CodeEmitter):
             if len(parts) == 2:
                 key_t = self._cs_type(parts[0])
                 val_t = self._cs_type(parts[1])
+        key_nodes, value_nodes = self._dict_literal_key_value_nodes(expr_d)
+        if key_t != "object":
+            for key_node in key_nodes:
+                if not self._node_can_flow_to_cs_type(key_node, key_t):
+                    key_t = "object"
+                    break
+        if val_t != "object":
+            for value_node in value_nodes:
+                if not self._node_can_flow_to_cs_type(value_node, val_t):
+                    val_t = "object"
+                    break
         return self._render_dict_literal_with_types(expr_d, key_t, val_t)
 
     def _render_expr_with_type_hint(self, value_obj: Any, east_type_hint: str) -> str:

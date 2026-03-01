@@ -168,6 +168,45 @@ class Child(Base):
         self.assertIn("var v = __it_", cs)
         self.assertIn(".Item2;", cs)
 
+    def test_dict_literal_widens_to_object_for_mixed_value_types(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "print"},
+                        "args": [
+                            {
+                                "kind": "Dict",
+                                "resolved_type": "dict[str,str]",
+                                "entries": [
+                                    {
+                                        "key": {"kind": "Constant", "value": "kind"},
+                                        "value": {"kind": "Constant", "value": "For"},
+                                    },
+                                    {
+                                        "key": {"kind": "Constant", "value": "target"},
+                                        "value": {"kind": "Name", "id": "target", "resolved_type": "dict[str,object]"},
+                                    },
+                                ],
+                            }
+                        ],
+                        "keywords": [],
+                    },
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn(
+            "new System.Collections.Generic.Dictionary<string, object> { { \"kind\", \"For\" }, { \"target\", target } }",
+            cs,
+        )
+
     def test_try_with_multiple_except_handlers_is_emitted(self) -> None:
         east = {
             "kind": "Module",
