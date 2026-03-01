@@ -47,7 +47,7 @@
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] 比較式/論理式の `__pytra_truthy` 挿入条件を最適化し、Ruby ネイティブ条件式を優先する。
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-04] `sample/01` の `r/g/b` 等で不要な `nil` 初期化を削減する typed 代入 fastpath を追加する。
-- [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片 + parity）を追加し、`sample/ruby/01` 再生成差分を固定する。
+- [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片 + parity）を追加し、`sample/ruby/01` 再生成差分を固定する。
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/ruby/01` 品質改善を P1 として計画化し、TODO へ積む方針を確定した。
@@ -56,6 +56,7 @@
 - 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-01] 型既知の `int/float/bool` 変換を省略する cast helper を Ruby emitter に追加し、`sample/ruby/01` の loop 初期化/境界で `__pytra_int` 連鎖を削減（`while y < height` などへ縮退）。
 - 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] bool確定ノードの条件式で `__pytra_truthy` を抑制し、`if (it >= max_iter)` など Ruby ネイティブ条件へ縮退。
 - 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-04] `declare=true` かつ `decl_type` が scalar の `AnnAssign(value=None)` は `nil` 初期化を出力せず、`sample/ruby/01` の `r/g/b = nil` を撤去。
+- 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] `test_py2rb_smoke.py` の `sample01` 断片検証を拡張し（loop/cast/truthy/nil 初期化）、`runtime_parity_check --targets ruby 01_mandelbrot` pass で回帰固定を完了。
 
 ## S1-01 棚卸し結果
 
