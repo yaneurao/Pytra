@@ -87,7 +87,7 @@
 
 1. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01] 非C++ backend で継承メソッド動的ディスパッチと `super()` を Python 互換へ揃える。
 2. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S1-01] 追加 fixture `test/fixtures/oop/inheritance_virtual_dispatch_multilang.py` を backend smoke/parity 導線へ接続する。
-3. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-CS] C# 改善計画 [p0-cs-inheritance-dispatch-uplift.md](../plans/p0-cs-inheritance-dispatch-uplift.md) を実施する。
+3. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-CS] C# 改善計画 [p0-cs-inheritance-dispatch-uplift.md](../plans/p0-cs-inheritance-dispatch-uplift.md) を実施する。
 4. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-GO] Go 改善計画 [p0-go-inheritance-dispatch-uplift.md](../plans/p0-go-inheritance-dispatch-uplift.md) を実施する。
 5. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java 改善計画 [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md) を実施する。
 6. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS 改善計画 [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md) を実施する。
