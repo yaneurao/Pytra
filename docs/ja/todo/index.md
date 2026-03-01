@@ -65,7 +65,7 @@
 文脈: [docs/ja/plans/p1-kotlin-sample01-quality-uplift.md](../plans/p1-kotlin-sample01-quality-uplift.md)
 
 1. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01] Kotlin backend の `sample/01` 出力品質を改善し、C++ 出力との差を縮小する。
-2. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] `sample/kotlin/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
+2. [x] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] `sample/kotlin/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
 3. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-01] Kotlin emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 4. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
 5. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-03] `write_rgb_png` 経路を no-op から native runtime 呼び出しへ接続し、未解決時は fail-closed にする。
