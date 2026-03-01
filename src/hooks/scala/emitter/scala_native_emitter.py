@@ -404,6 +404,8 @@ def _cast_from_any(expr: str, scala_type: str) -> str:
         return _to_str_expr(expr)
     if scala_type == "mutable.ArrayBuffer[Any]":
         return _to_list_expr(expr)
+    if scala_type.startswith("mutable.ArrayBuffer[") and scala_type.endswith("]"):
+        return _to_list_expr(expr) + ".asInstanceOf[" + scala_type + "]"
     if scala_type == "mutable.LinkedHashMap[Any, Any]":
         return _to_dict_expr(expr)
     if scala_type == "Any":
@@ -1318,7 +1320,8 @@ def _stmt_uses_loop_control(stmt_any: Any) -> bool:
     if kind == "Expr":
         value_any = stmt_any.get("value")
         if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-            ident = _safe_ident(value_any.get("id"), "")
+            ident_any = value_any.get("id")
+            ident = ident_any if isinstance(ident_any, str) else ""
             return ident in {"break", "continue"}
         return False
     if kind in {"ForCore", "While", "FunctionDef", "ClassDef"}:

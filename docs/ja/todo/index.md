@@ -102,13 +102,13 @@
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala でも `ForCore` 条件式の `normalized_exprs.for_cond_expr` 参照経路を pilot 導入。
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時の fallback/fail-closed 条件（`for_cond_expr` fallback, `reserve_hints` fail-closed）を固定。
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト追加で `ExpressionNormalizationPass` と C++ 条件式描画の回帰を固定。
-- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 代表3件の parity 実行で `scala` の `ArrayBuffer[Any]` 型不整合（08/18 compile fail）を確認、未完了として継続。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 代表3件（01/08/18）の `cpp/rs/scala` parity を実施し `cases=3 pass=3 fail=0` を確認（`scala` の `ArrayBuffer[Any]` 型不整合と `continue` 誤判定を修正）。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
 文脈: [docs/ja/plans/p0-east3-expression-normalization-rollout.md](../plans/p0-east3-expression-normalization-rollout.md)
 
-1. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01] backend 共通で扱える式の意味決定を EAST3 側へ寄せ、emitter の文字列組み立て責務を段階縮小する。
+1. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01] backend 共通で扱える式の意味決定を EAST3 側へ寄せ、emitter の文字列組み立て責務を段階縮小する。
 2. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務（BinOp/Compare/ForRange/trip_count）を棚卸しし、EAST3移管対象を確定する。
 3. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
 4. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
@@ -117,7 +117,7 @@
 7. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala を pilot として同一正規形を参照する描画経路へ切替える。
 8. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時の fail-closed / fallback 条件を固定する。
 9. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト（optimizer + emitter）を追加し、冗長式再発を検知可能にする。
-10. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 再生成と transpile/parity を実行し、代表ケースでの品質改善と非退行を確認する。
+10. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 再生成と transpile/parity を実行し、代表ケースでの品質改善と非退行を確認する。
 
 ### P1: sample/ruby/01 品質改善（C++品質との差分縮小）
 
