@@ -224,7 +224,7 @@
 2. [x] [ID: P4-MULTILANG-SH-01-S1-01] 現状の stage1/stage2/stage3 未達要因を言語別に固定化し、優先順（blocking chain）を明文化する。
 3. [x] [ID: P4-MULTILANG-SH-01-S1-02] multistage runner 未定義言語（go/java/swift/kotlin）の runner 契約を定義し、`runner_not_defined` を解消する実装方針を確定する。
 4. [x] [ID: P4-MULTILANG-SH-01-S2-01] Rust selfhost の stage1 失敗（from-import 受理）を解消し、stage2 へ進める。
-5. [ ] [ID: P4-MULTILANG-SH-01-S2-02] C# selfhost の stage2 compile 失敗を解消し、stage3 変換を通す。
+5. [x] [ID: P4-MULTILANG-SH-01-S2-02] C# selfhost の stage2 compile 失敗を解消し、stage3 変換を通す。
 6. [x] [ID: P4-MULTILANG-SH-01-S2-02-S1] C# emitter の selfhost 互換ギャップ（`Path`/`str.endswith|startswith`/定数デフォルト引数）を埋め、先頭 compile エラーを前進させる。
 7. [x] [ID: P4-MULTILANG-SH-01-S2-02-S2] `py2cs.py` selfhost 生成物の import 依存解決方針（単体 selfhost source 生成 or モジュール連結）を確定し、`sys/argparse/transpile_cli` 未解決を解消する。
 8. [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S1] C# selfhost 先頭エラーの足切り（`sys.exit` / docstring式）を解消し、import 依存未解決の先頭シンボルを確定する。
@@ -240,7 +240,7 @@
 18. [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S5] 残存上位エラー（`CS0103 set/list/json` と `CS0019 char/string`）を対象に emitter lower を追加し、stage2 compile 失敗件数をさらに縮退させる。
 19. [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6] 残存の主要失敗（`json` 未解決、`dict.get/items` 未lower、`CodeEmitter` static参照不整合）を段階解消し、stage2 compile の上位エラー構成を更新する。
 20. [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7] 残存上位エラー（`_add`/`item_expr` の未定義、`object` 由来の `CS1503/CS0266`）を対象に nested helper/型縮約を補強し、stage2 compile 件数をさらに削減する。
-21. [ ] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
+21. [x] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
 22. [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 23. [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。
 24. [ ] [ID: P4-MULTILANG-SH-01-S3-02] Go/Java/Swift/Kotlin の native backend 化タスクと接続し、selfhost 実行チェーンを有効化する。
@@ -297,3 +297,5 @@
 - `P4-MULTILANG-SH-01-S2-02-S3` `--east-stage 3` を明示した再検証でも `CS0161` は継続した。現ブロッカーは stage 指定ではなく、stage2 生成物そのものが empty/skeleton 関数本体を大量出力している点にあることを確認した。
 - `P4-MULTILANG-SH-01-S2-02-S3` C# empty-skeleton 判定を `__pytra_main` 欠落依存から「Program 配下の `public static` メソッド本体が全空か」を検査する方式へ更新し、通常 sample 出力の誤検知余地を除去した。
 - `P4-MULTILANG-SH-01-S2-02-S3` C# selfhost の scoped emit を `CSharpEmitter` 側実装へ寄せて基底非virtualディスパッチ由来の空ボディ化を解消し、`check_multilang_selfhost_stage1.py` の `cs stage2` を `pass` まで前進させた（multistage 先頭は `CS0136 safe_doc shadow` へ更新）。
+- `P4-MULTILANG-SH-01-S2-02-S3` `CodeEmitter.is_declared()` の降順走査を `while` へ置換し、C# selfhost 2段目で再発していた shadow 誤判定（`CS0136`）を解消した。合わせて `CSharpEmitter` の selfhost 向け helper 直結（`render_truthy_cond_common` / `render_boolop_chain_common` / `_prepare_call_parts` / `render_augassign_basic`）と profile 非依存 fallback（演算子マップ・予約語）を追加し、stage2 生成物の空式・予約語衝突を除去した。
+- `P4-MULTILANG-SH-01-S2-02-S3` `CodeEmitter._load_json_dict()` の dict 返却経路を selfhost compile-safe に再整理し、`_const_int_literal()` 戻り型を `Any` 化して `null -> long` 失敗（`CS0037`）を解消した。`python3 tools/check_multilang_selfhost_stage1.py` / `python3 tools/check_multilang_selfhost_multistage.py` の最新結果で `cs` は `stage1=pass` / `stage2=pass` / `stage3=pass`（`stage2/stage3 sample transpile ok`）を確認した。

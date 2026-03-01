@@ -11,7 +11,7 @@ python3 tools/check_multilang_selfhost_multistage.py
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
 | rs | pass | fail | skip | compile_fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
-| cs | pass | pass | fail | stage2_compile_fail | /tmp/tmp_vo4odb6/py2cs_stage2.cs(71,61): error CS0136: A local variable named `safe_doc' cannot be declared in this scope because it would give a different meaning to `safe_doc', which is already used in a `parent or current' scope to denote something else |
+| cs | pass | pass | pass | pass | stage2/stage3 sample transpile ok |
 | js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: raise _make_east_build_error( |
 | ts | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | go | pass | skip | skip | runner_not_defined | multistage runner is not defined |

@@ -33,16 +33,76 @@ class CSharpEmitter(CodeEmitter):
         hooks: dict[str, Any] = {}
         self.init_base_state(east_doc, profile, hooks)
         self.type_map = CodeEmitter.load_type_map(profile)
+
+        default_bin_ops: dict[str, str] = {
+            "Add": "+",
+            "Sub": "-",
+            "Mult": "*",
+            "Div": "/",
+            "FloorDiv": "/",
+            "Mod": "%",
+            "Pow": "*",
+            "BitAnd": "&",
+            "BitOr": "|",
+            "BitXor": "^",
+            "LShift": "<<",
+            "RShift": ">>",
+        }
+        default_cmp_ops: dict[str, str] = {
+            "Eq": "==",
+            "NotEq": "!=",
+            "Lt": "<",
+            "LtE": "<=",
+            "Gt": ">",
+            "GtE": ">=",
+            "Is": "==",
+            "IsNot": "!=",
+        }
+        default_aug_ops: dict[str, str] = {
+            "Add": "+=",
+            "Sub": "-=",
+            "Mult": "*=",
+            "Div": "/=",
+            "FloorDiv": "/=",
+            "Mod": "%=",
+            "BitAnd": "&=",
+            "BitOr": "|=",
+            "BitXor": "^=",
+            "LShift": "<<=",
+            "RShift": ">>=",
+        }
         operators = self.any_to_dict_or_empty(profile.get("operators"))
-        self.bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
-        self.cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))
-        self.aug_ops = self.any_to_str_dict_or_empty(operators.get("aug"))
+        self.bin_ops: dict[str, str] = default_bin_ops
+        self.cmp_ops: dict[str, str] = default_cmp_ops
+        self.aug_ops: dict[str, str] = default_aug_ops
+        prof_bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
+        prof_cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))
+        prof_aug_ops = self.any_to_str_dict_or_empty(operators.get("aug"))
+        for key, val in prof_bin_ops.items():
+            if key != "" and val != "":
+                self.bin_ops[key] = val
+        for key, val in prof_cmp_ops.items():
+            if key != "" and val != "":
+                self.cmp_ops[key] = val
+        for key, val in prof_aug_ops.items():
+            if key != "" and val != "":
+                self.aug_ops[key] = val
         syntax = self.any_to_dict_or_empty(profile.get("syntax"))
         identifiers = self.any_to_dict_or_empty(syntax.get("identifiers"))
         self.reserved_words: set[str] = set(self.any_to_str_list(identifiers.get("reserved_words")))
-        # profile 未設定時でも C# compile を壊す最小予約語は常に保護する。
-        self.reserved_words.add("base")
-        self.reserved_words.add("out")
+        # profile 未設定時でも C# compile を壊さないよう、主要予約語は常に保護する。
+        for kw in [
+            "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class",
+            "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",
+            "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", "if",
+            "implicit", "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new",
+            "null", "object", "operator", "out", "override", "params", "private", "protected", "public",
+            "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static",
+            "string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong",
+            "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while", "yield",
+            "var", "dynamic",
+        ]:
+            self.reserved_words.add(kw)
         self.rename_prefix = self.any_to_str(identifiers.get("rename_prefix"))
         if self.rename_prefix == "":
             self.rename_prefix = "py_"
@@ -149,6 +209,116 @@ class CSharpEmitter(CodeEmitter):
         self.emit(self.syntax_line("while_open", while_open_default, {"cond": cond_expr}))
         self.emit_scoped_stmt_list(body_stmts, b_scope)
         self.emit(self.syntax_text("block_close", "}"))
+
+    # NOTE:
+    # C# selfhost generated code may dispatch to CodeEmitter methods statically.
+    # Keep render/call helpers that depend on render_expr in this class so they
+    # consistently invoke CSharpEmitter.render_expr.
+    def render_boolop_chain_common(
+        self,
+        values: list[Any],
+        op: str,
+        and_token: str = "&&",
+        or_token: str = "||",
+        empty_literal: str = "false",
+        wrap_each: bool = False,
+        wrap_whole: bool = True,
+    ) -> str:
+        mapped = and_token
+        if op == "Or":
+            mapped = or_token
+        rendered: list[str] = []
+        for val in values:
+            txt = self.render_expr(val)
+            if wrap_each:
+                txt = "(" + txt + ")"
+            rendered.append(txt)
+        if len(rendered) == 0:
+            return empty_literal
+        out = (" " + mapped + " ").join(rendered)
+        if wrap_whole:
+            return "(" + out + ")"
+        return out
+
+    def render_truthy_cond_common(
+        self,
+        expr: Any,
+        str_non_empty_pattern: str,
+        collection_non_empty_pattern: str,
+        number_non_zero_pattern: str = "{expr} != 0",
+    ) -> str:
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
+            return "false"
+        t = self.get_expr_type(expr)
+        rendered = self._strip_outer_parens(self.render_expr(expr))
+        if rendered == "":
+            return "false"
+        if t == "bool":
+            return rendered
+        if t == "str":
+            return str_non_empty_pattern.replace("{expr}", rendered)
+        if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+            return collection_non_empty_pattern.replace("{expr}", rendered)
+        if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
+            return number_non_zero_pattern.replace("{expr}", rendered)
+        return rendered
+
+    def render_augassign_basic(
+        self,
+        stmt: dict[str, Any],
+        aug_ops: dict[str, str],
+        default_op: str = "+=",
+    ) -> tuple[str, str, str]:
+        target = self.render_expr(stmt.get("target"))
+        value = self.render_expr(stmt.get("value"))
+        op = self.any_to_str(stmt.get("op"))
+        mapped = aug_ops.get(op, default_op)
+        if mapped == "":
+            mapped = default_op
+        return target, value, mapped
+
+    def _prepare_call_parts(self, expr: dict[str, Any]) -> dict[str, Any]:
+        fn_obj: object = expr.get("func")
+        fn_name = self.render_expr(fn_obj)
+        arg_nodes_obj: object = self.any_dict_get_list(expr, "args")
+        arg_nodes = self.any_to_list(arg_nodes_obj)
+        args: list[str] = []
+        for arg_node in arg_nodes:
+            args.append(self.render_expr(arg_node))
+        keywords_obj: object = self.any_dict_get_list(expr, "keywords")
+        keywords = self.any_to_list(keywords_obj)
+        first_arg: object = None
+        if len(arg_nodes) > 0:
+            first_arg = arg_nodes[0]
+        else:
+            first_arg = expr
+        kw: dict[str, str] = {}
+        kw_values: list[str] = []
+        kw_nodes: list[Any] = []
+        for k in keywords:
+            kd = self.any_to_dict_or_empty(k)
+            if len(kd) > 0:
+                kw_name = self.any_to_str(kd.get("arg"))
+                if kw_name != "":
+                    kw_val_node: Any = kd.get("value")
+                    kw_val = self.render_expr(kw_val_node)
+                    kw[kw_name] = kw_val
+                    kw_values.append(kw_val)
+                    kw_nodes.append(kw_val_node)
+        out: dict[str, Any] = {}
+        out["fn"] = fn_obj
+        out["fn_name"] = fn_name
+        out["arg_nodes"] = arg_nodes
+        out["args"] = args
+        out["kw"] = kw
+        out["kw_values"] = kw_values
+        out["kw_nodes"] = kw_nodes
+        out["first_arg"] = first_arg
+        return out
+
+    def prepare_call_context(self, expr: dict[str, Any]) -> dict[str, Any]:
+        return self.unpack_prepared_call_parts(self._prepare_call_parts(expr))
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
@@ -633,7 +803,7 @@ class CSharpEmitter(CodeEmitter):
                             val_t = "object"
                         if len(rendered_args) == 0:
                             return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
-                        if key_t == "string" and val_t == "object":
+                        if key_t in {"string", "str"} and val_t in {"object", "Any"}:
                             self.needs_dict_str_object_helper = True
                             return "Program.PytraDictStringObjectFromAny(" + rendered_args[0] + ")"
                         return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">(" + rendered_args[0] + ")"

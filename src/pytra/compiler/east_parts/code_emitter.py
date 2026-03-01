@@ -1788,10 +1788,12 @@ class CodeEmitter:
 
     def is_declared(self, name: str) -> bool:
         """指定名がどこかの有効スコープで宣言済みか判定する。"""
-        for i in range(len(self.scope_stack) - 1, -1, -1):
+        i = len(self.scope_stack) - 1
+        while i >= 0:
             scope: set[str] = self.scope_stack[i]
             if name in scope:
                 return True
+            i -= 1
         return False
 
     def primary_assign_target(self, stmt: dict[str, Any]) -> dict[str, Any]:
@@ -2482,7 +2484,7 @@ class CodeEmitter:
             return ""
         return ""
 
-    def _const_int_literal(self, node: Any) -> int | None:
+    def _const_int_literal(self, node: Any) -> Any:
         """整数定数ノードを `int` として返す（取得できない場合は None）。"""
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0:
