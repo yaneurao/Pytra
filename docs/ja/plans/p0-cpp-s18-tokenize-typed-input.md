@@ -34,11 +34,15 @@
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として `tokenize` 境界の `object` 退化撤去を P0 で起票。
+- 2026-03-01: `emit_function` に `pyobj + list[str]` 引数の typed 署名出力（`const list<str>&`）を追加し、`tokenize` 引数を `object` から `list<str>` へ変更した。
+- 2026-03-01: `ForCore` の typed enumerate 復元で「typed `list[str]` パラメータ名」のときは `py_enumerate(lines)` を優先し、`py_to_str_list_from_object(lines)` を関数内から撤去した。
+- 2026-03-01: callsite coercion に `list[str]` 専用の `py_to_str_list_from_object(...)` 変換を追加し、`pyobj` 由来 `object` 変数（`demo_lines`/`source_lines`）から typed `tokenize` へ安全に接続する方針へ固定した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`（PASS）で非退行を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01] `tokenize` 引数の `object` 退化を撤去し、`list[str]` 型を境界越しに維持する。
-- [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S1-01] 現在 `object` に落ちる型決定経路（関数定義/呼び出し）を棚卸しし、fail-closed 条件を固定する。
-- [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-01] C++ emitter の型橋渡しを更新し、`tokenize(lines)` を typed 署名へ出力する。
-- [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-02] sample/18 回帰を追加し、`py_to_str_list_from_object(lines)` 非出力を固定する。
-- [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S3-01] transpile/unit/sample 再生成を実行し、非退行を確認する。
+- [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01] `tokenize` 引数の `object` 退化を撤去し、`list[str]` 型を境界越しに維持する。
+- [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S1-01] 現在 `object` に落ちる型決定経路（関数定義/呼び出し）を棚卸しし、fail-closed 条件を固定する。
+- [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-01] C++ emitter の型橋渡しを更新し、`tokenize(lines)` を typed 署名へ出力する。
+- [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-02] sample/18 回帰を追加し、`py_to_str_list_from_object(lines)` 非出力を固定する。
+- [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S3-01] transpile/unit/sample 再生成を実行し、非退行を確認する。

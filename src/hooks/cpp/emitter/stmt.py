@@ -930,6 +930,14 @@ class CppStatementEmitter:
         src_expr = self.render_expr(src_node)
         if src_expr == "":
             return ""
+        typed_param_names = getattr(self, "current_function_typed_list_str_params", set())
+        if src_name in typed_param_names:
+            if len(args) >= 2:
+                start_expr = self.render_expr(args[1])
+                if start_expr == "":
+                    return ""
+                return f"py_enumerate({src_expr}, py_to<int64>({start_expr}))"
+            return f"py_enumerate({src_expr})"
         if len(args) >= 2:
             start_expr = self.render_expr(args[1])
             if start_expr == "":
@@ -1248,6 +1256,8 @@ class CppStatementEmitter:
         params: list[str] = []
         fn_scope: set[str] = set()
         arg_names: list[str] = []
+        typed_list_str_params: set[str] = set()
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "":
@@ -1259,6 +1269,10 @@ class CppStatementEmitter:
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
             ct = self._cpp_type_text(t)
+            t_norm = self.normalize_type_name(t)
+            if (not skip_self) and list_model == "pyobj" and t_norm == "list[str]":
+                ct = self._cpp_list_value_model_type_text(t_norm)
+                typed_list_str_params.add(n)
             usage = self.any_to_str(arg_usage.get(n))
             usage = usage if usage != "" else "readonly"
             if usage != "mutable" and n in mutated_params:
@@ -1312,12 +1326,14 @@ class CppStatementEmitter:
         prev_fn_symbol = self.current_function_symbol
         prev_fn_non_escape = self.current_function_non_escape_summary
         prev_stack_list_locals = self.current_function_stack_list_locals
+        prev_typed_list_str_params = getattr(self, "current_function_typed_list_str_params", set())
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
         self.current_function_symbol = function_symbol
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         self.current_function_stack_list_locals = set(stack_list_locals)
+        self.current_function_typed_list_str_params = set(typed_list_str_params)
         for i, an in enumerate(arg_names):
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
@@ -1345,6 +1361,7 @@ class CppStatementEmitter:
         self.current_function_symbol = prev_fn_symbol
         self.current_function_non_escape_summary = prev_fn_non_escape
         self.current_function_stack_list_locals = prev_stack_list_locals
+        self.current_function_typed_list_str_params = set(prev_typed_list_str_params)
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1

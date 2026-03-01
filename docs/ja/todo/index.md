@@ -36,11 +36,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-tokenize-typed-input.md](../plans/p0-cpp-s18-tokenize-typed-input.md)
 
-1. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01] `tokenize` 引数の `object` 退化を撤去し、`list[str]` 型を境界越しに維持する。
-2. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S1-01] 現在 `object` に落ちる型決定経路（関数定義/呼び出し）を棚卸しし、fail-closed 条件を固定する。
-3. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-01] C++ emitter の型橋渡しを更新し、`tokenize(lines)` を typed 署名へ出力する。
-4. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-02] sample/18 回帰を追加し、`py_to_str_list_from_object(lines)` 非出力を固定する。
-5. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S3-01] transpile/unit/sample 再生成を実行し、非退行を確認する。
+1. [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01] `tokenize` 引数の `object` 退化を撤去し、`list[str]` 型を境界越しに維持する。
+2. [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S1-01] 現在 `object` に落ちる型決定経路（関数定義/呼び出し）を棚卸しし、fail-closed 条件を固定する。
+3. [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-01] C++ emitter の型橋渡しを更新し、`tokenize(lines)` を typed 署名へ出力する。
+4. [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-02] sample/18 回帰を追加し、`py_to_str_list_from_object(lines)` 非出力を固定する。
+5. [x] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S3-01] transpile/unit/sample 再生成を実行し、非退行を確認する。
 
 ### P0: sample/18 `enumerate(lines)` の direct typed unpack 化（最優先）
 

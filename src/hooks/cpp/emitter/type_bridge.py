@@ -101,6 +101,8 @@ class CppTypeBridgeEmitter:
             return f"py_to<bool>({expr_txt})"
         if t_norm == "str":
             return f"py_to_string({expr_txt})"
+        if t_norm == "list[str]":
+            return f"py_to_str_list_from_object({expr_txt})"
         if t_norm.startswith("tuple[") and t_norm.endswith("]"):
             elems = self.split_generic(t_norm[6:-1])
             if len(elems) == 0:
@@ -149,7 +151,7 @@ class CppTypeBridgeEmitter:
         t_norm = self.normalize_type_name(target_t)
         # `cpp_list_model=pyobj` でも list[RefClass] は typed container として扱う。
         # それ以外の list[...] は callsite coercion の target を object へ寄せる。
-        if self._is_pyobj_runtime_list_type(t_norm):
+        if self._is_pyobj_runtime_list_type(t_norm) and t_norm != "list[str]":
             t_norm = "object"
         arg_node_dict = self.any_to_dict_or_empty(arg_node)
         if self.is_any_like_type(t_norm):
@@ -181,6 +183,11 @@ class CppTypeBridgeEmitter:
             return f"make_object({arg_txt})"
         if not self._can_runtime_cast_target(target_t):
             return arg_txt
+        if t_norm == "list[str]" and self._is_pyobj_runtime_list_type(at):
+            if len(arg_node_dict) == 0:
+                return f"py_to_str_list_from_object({arg_txt})"
+            if not self._expr_is_stack_list_local(arg_node_dict):
+                return f"py_to_str_list_from_object({arg_txt})"
         if not self.is_any_like_type(at):
             return arg_txt
         if len(arg_node_dict) > 0:

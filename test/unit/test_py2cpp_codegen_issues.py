@@ -458,9 +458,10 @@ def f() -> float:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn(
-            "for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines))) {",
+            "for (const auto& [line_index, source] : py_enumerate(lines)) {",
             cpp,
         )
+        self.assertNotIn("py_to_str_list_from_object(lines)", cpp)
         self.assertNotIn("for (object __itobj_1 : py_dyn_range(py_enumerate(lines))) {", cpp)
         self.assertNotIn("line_index = int64(py_to<int64>(py_at(__itobj_1, 0)))", cpp)
         self.assertNotIn("source = py_to_string(py_at(__itobj_1, 1))", cpp)
@@ -478,7 +479,7 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("list<rc<Token>> tokenize(const object& lines) {", cpp)
+        self.assertIn("list<rc<Token>> tokenize(const list<str>& lines) {", cpp)
         self.assertIn("list<rc<Token>> tokens = list<rc<Token>>{};", cpp)
         self.assertIn("list<rc<Token>> tokens;", cpp)
         self.assertIn("return this->tokens[this->pos];", cpp)
