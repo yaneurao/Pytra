@@ -188,7 +188,7 @@
 文脈: [docs/ja/plans/p1-lua-sample-full-coverage.md](../plans/p1-lua-sample-full-coverage.md)
 
 1. [ ] [ID: P1-LUA-SAMPLE-FULL-01] Lua backend を `sample/py` 18件へ拡張し、`sample/lua` の欠落（現状4件のみ）を解消する。
-2. [ ] [ID: P1-LUA-SAMPLE-FULL-01-S1-01] `sample/py` 残件14ケースの失敗要因を分類し、機能ギャップ一覧を固定する。
+2. [x] [ID: P1-LUA-SAMPLE-FULL-01-S1-01] `sample/py` 残件14ケースの失敗要因を分類し、機能ギャップ一覧を固定する。
 3. [ ] [ID: P1-LUA-SAMPLE-FULL-01-S2-01] 優先度順に未対応 lower（例: comprehension / lambda / tuple assign / stdlib 呼び出し差分）を実装する。
 4. [ ] [ID: P1-LUA-SAMPLE-FULL-01-S2-02] `tools/check_py2lua_transpile.py` の `DEFAULT_EXPECTED_FAILS` から sample 対象を段階削除し、スキップ依存を解消する。
 5. [ ] [ID: P1-LUA-SAMPLE-FULL-01-S3-01] `sample/lua` 全18件を再生成し、欠落ファイルゼロを確認する。
