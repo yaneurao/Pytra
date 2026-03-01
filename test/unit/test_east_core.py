@@ -200,6 +200,15 @@ def main() -> float:
         self.assertNotIn('owner_t == "Path"', src)
         self.assertNotIn("owner_t == 'Path'", src)
 
+    def test_core_semantic_tag_mapping_is_adapter_driven(self) -> None:
+        core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
+        src = core_path.read_text(encoding="utf-8")
+        self.assertIn("lookup_builtin_semantic_tag", src)
+        self.assertIn("lookup_stdlib_function_semantic_tag", src)
+        self.assertIn("lookup_stdlib_symbol_semantic_tag", src)
+        self.assertIn("lookup_stdlib_method_semantic_tag", src)
+        self.assertNotIn('payload["semantic_tag"] = "', src)
+
     def test_path_constructor_is_resolved_via_import_binding(self) -> None:
         src = """
 from pathlib import Path as P
