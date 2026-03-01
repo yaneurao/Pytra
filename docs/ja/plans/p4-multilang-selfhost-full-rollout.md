@@ -87,6 +87,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `prepare_selfhost_source_cs.py` で `dict_any_get_dict()` を compile-safe 版へ置換し、`object` index 経路を selfhost 生成物から撤去した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 1 -> 0`, `CS1502: 1 -> 0`, `CS0021: 1 -> 0` を確認した（先頭は `CS0029`）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `transpile_cli.py` の `graph_adj[cur_key]` 初期化を typed 化し、`build_module_type_schema` の辞書リテラルを型明示エントリへ分解した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 3 -> 0` を確認し、compile 先頭は `CS0019` へ遷移した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter._prepare_call_parts` / `CSharpEmitter._legacy_target_from_for_core_plan` / `transpile_cli.normalize/load` の object 直代入を撤去し、`prepare_selfhost_source_cs.py` のパッチ適用条件を後方互換化した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0266: 7 -> 0`, `CS0246: 1 -> 0`, `CS0150: 1 -> 0`, `CS1061: 1 -> 0` を確認した（先頭は `CS0019`）。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CSharpEmitter._emit_annassign` の attribute 代入経路で `v` をブロックスコープ外へ事前宣言し、C# 生成物の未定義シンボルを解消した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0103: 1 -> 0` を確認し、残存カテゴリを `CS0019/CS0030/CS0173/CS0411/CS1729/CS8135` に絞り込んだ。
 
 ## 現状固定（S1-01）
 
