@@ -66,6 +66,8 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter の `Try` lower を拡張し、複数 `except` ハンドラを `catch(System.Exception ex)` + 分岐へ変換可能にした。`python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（36件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で selfhost の失敗モードを `transpile fail` から `compile fail` に前進させた（`transpile rc=0`, 先頭 note は `CS1579`）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter の `for-in` で `object/unknown` 反復対象を `System.Collections.IEnumerable` へ明示キャストする補正を追加し、`foreach on object`（`CS1579`）を解消した。`python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（37件）通過のうえ、`python3 tools/check_cs_single_source_selfhost_compile.py` の上位エラーを `CS1061/CS1503/CS0266` 主体へ更新した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `dict.items()` 反復時は `IEnumerable` キャストを抑止して `KeyValuePair` 形を維持する補正を追加し、`object.Key/object.Value` 起因の `CS1061/CS0131` 群を解消した。`python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（38件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` の先頭失敗は `CS1503`（`object -> string`）へ遷移した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.require_dep_any()` の string 化経路を明示し、selfhost C# 生成物の `require_dep(object)` 呼び出し由来 `CS1502/CS1503` を縮退した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter に `sorted()` lower（`OrderBy(...).ToList()`）を追加し、selfhost compile の先頭エラーを `sorted` 未解決から次段（`string * long`）へ前進させた。`test_py2cs_smoke.py` は 39 件で通過。
 
 ## 現状固定（S1-01）
 
