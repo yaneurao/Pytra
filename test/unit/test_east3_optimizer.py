@@ -4,6 +4,7 @@ import copy
 import unittest
 
 from src.pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from src.pytra.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
@@ -164,7 +165,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -172,6 +173,7 @@ class East3OptimizerTest(unittest.TestCase):
         by_name = {str(item.get("name", "")): bool(item.get("enabled")) for item in trace if isinstance(item, dict)}
         self.assertFalse(by_name.get("NoOpCastCleanupPass", True))
         self.assertFalse(by_name.get("LiteralCastFoldPass", True))
+        self.assertFalse(by_name.get("IdentityPyToElisionPass", True))
         self.assertFalse(by_name.get("NumericCastChainReductionPass", True))
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
@@ -186,6 +188,7 @@ class East3OptimizerTest(unittest.TestCase):
         trace_text = render_east3_opt_trace(report)
         self.assertIn("NoOpCastCleanupPass", trace_text)
         self.assertIn("LiteralCastFoldPass", trace_text)
+        self.assertIn("IdentityPyToElisionPass", trace_text)
         self.assertIn("NumericCastChainReductionPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
@@ -221,6 +224,66 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(len(casts), 2)
         self.assertEqual(casts[0].get("to"), "float64")
         self.assertEqual(casts[1].get("to"), "unknown")
+
+    def test_identity_py_to_elision_pass_folds_py_to_string_on_typed_str(self) -> None:
+        doc = _module_doc()
+        to_string_call = {
+            "kind": "Call",
+            "resolved_type": "str",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "str(s)",
+            "func": {"kind": "Name", "id": "str"},
+            "args": [{"kind": "Name", "id": "s", "resolved_type": "str", "borrow_kind": "value", "casts": []}],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_to_string",
+        }
+        doc["body"] = [{"kind": "Expr", "value": to_string_call}]
+        result = IdentityPyToElisionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        folded_value = doc.get("body")[0].get("value")
+        self.assertEqual(folded_value.get("kind"), "Name")
+        self.assertEqual(folded_value.get("id"), "s")
+
+    def test_identity_py_to_elision_pass_skips_py_to_string_on_any_like_source(self) -> None:
+        doc = _module_doc()
+        to_string_call = {
+            "kind": "Call",
+            "resolved_type": "str",
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": "str(v)",
+            "func": {"kind": "Name", "id": "str"},
+            "args": [{"kind": "Name", "id": "v", "resolved_type": "object", "borrow_kind": "value", "casts": []}],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "py_to_string",
+        }
+        doc["body"] = [{"kind": "Expr", "value": to_string_call}]
+        result = IdentityPyToElisionPass().run(doc, PassContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertEqual(doc.get("body")[0].get("value", {}).get("kind"), "Call")
+
+    def test_identity_py_to_elision_pass_folds_typed_unbox(self) -> None:
+        doc = _module_doc()
+        unbox_expr = {
+            "kind": "Unbox",
+            "target": "str",
+            "resolved_type": "str",
+            "borrow_kind": "value",
+            "casts": [],
+            "value": {"kind": "Name", "id": "s", "resolved_type": "str", "borrow_kind": "value", "casts": []},
+        }
+        doc["body"] = [{"kind": "Expr", "value": unbox_expr}]
+        result = IdentityPyToElisionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 1)
+        folded_value = doc.get("body")[0].get("value")
+        self.assertEqual(folded_value.get("kind"), "Name")
+        self.assertEqual(folded_value.get("id"), "s")
 
     def test_literal_cast_fold_pass_folds_constant_static_cast(self) -> None:
         doc = _module_doc()

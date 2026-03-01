@@ -26,8 +26,8 @@ bytes julia_palette() {
 
 bytes render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 max_iter, int64 phase) {
     bytearray frame = bytearray(width * height);
-    float64 __hoisted_cast_1 = static_cast<float64>(height - 1);
-    float64 __hoisted_cast_2 = static_cast<float64>(width - 1);
+    float64 __hoisted_cast_1 = float64(height - 1);
+    float64 __hoisted_cast_2 = float64(width - 1);
     for (int64 y = 0; y < height; ++y) {
         int64 row_base = y * width;
         float64 zy0 = -1.2 + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
@@ -74,7 +74,7 @@ void run_06_julia_parameter_sweep() {
     // Tune it to start in a red-leaning color range.
     int64 start_offset = 20;
     int64 phase_offset = 180;
-    float64 __hoisted_cast_3 = static_cast<float64>(frames_n);
+    float64 __hoisted_cast_3 = float64(frames_n);
     for (int64 i = 0; i < frames_n; ++i) {
         float64 t = py_to<float64>((i + start_offset) % frames_n) / __hoisted_cast_3;
         auto angle = 2.0 * pytra::std::math::pi * t;

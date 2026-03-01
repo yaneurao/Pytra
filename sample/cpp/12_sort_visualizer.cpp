@@ -5,18 +5,18 @@
 
 // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
-bytes render(const object& values, int64 w, int64 h) {
+bytes render(const list<int64>& values, int64 w, int64 h) {
     bytearray frame = bytearray(w * h);
     int64 n = py_len(values);
     float64 bar_w = py_to<float64>(w) / py_to<float64>(n);
-    float64 __hoisted_cast_1 = static_cast<float64>(n);
-    float64 __hoisted_cast_2 = static_cast<float64>(h);
+    float64 __hoisted_cast_1 = float64(n);
+    float64 __hoisted_cast_2 = float64(h);
     for (int64 i = 0; i < n; ++i) {
         int64 x0 = int64(py_to<float64>(i) * bar_w);
         int64 x1 = int64((py_to<float64>(i + 1)) * bar_w);
         if (x1 <= x0)
             x1 = x0 + 1;
-        int64 bh = int64((py_to<float64>(int64(py_to<int64>(py_at(values, py_to<int64>(i))))) / __hoisted_cast_1) * __hoisted_cast_2);
+        int64 bh = int64((py_to<float64>(values[i]) / __hoisted_cast_1) * __hoisted_cast_2);
         int64 y = h - bh;
         for (int64 y = y; y < h; ++y) {
             for (int64 x = x0; x < x1; ++x) {
@@ -38,7 +38,7 @@ void run_12_sort_visualizer() {
     for (int64 i = 0; i < n; ++i) {
         values.append(int64((i * 37 + 19) % n));
     }
-    object frames = make_object(list<bytes>{render(make_object(values), w, h)});
+    list<bytes> frames = list<bytes>{render(values, w, h)};
     int64 frame_stride = 16;
     
     int64 op = 0;
@@ -50,13 +50,13 @@ void run_12_sort_visualizer() {
                 swapped = true;
             }
             if (op % frame_stride == 0)
-                py_append(frames, make_object(render(make_object(values), w, h)));
+                frames.append(render(values, w, h));
             op++;
         }
         if (!(swapped))
             break;
     }
-    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), int64(py_to<int64>(3)), int64(py_to<int64>(0)));
+    pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", py_len(frames));

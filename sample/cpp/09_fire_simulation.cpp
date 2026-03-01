@@ -40,31 +40,31 @@ void run_09_fire_simulation() {
     str out_path = "sample/out/09_fire_simulation.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    object heat = [&]() -> object {     list<object> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>(make_object(list<int64>{0})), w)));     }     return make_object(__out); }();
+    list<list<int64>> heat = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>(list<int64>{0}), w));     }     return __out; }();
     list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
             int64 val = 170 + (x * 13 + t * 17) % 86;
-            py_set_at(object(py_at(heat, py_to<int64>(h - 1))), x, make_object(val));
+            heat[h - 1][x] = val;
         }
         for (int64 y = 1; y < h; ++y) {
             for (int64 x = 0; x < w; ++x) {
-                int64 a = int64(py_to<int64>(py_at(object(py_at(heat, py_to<int64>(y))), py_to<int64>(x))));
-                int64 b = int64(py_to<int64>(py_at(object(py_at(heat, py_to<int64>(y))), py_to<int64>((x - 1 + w) % w))));
-                int64 c = int64(py_to<int64>(py_at(object(py_at(heat, py_to<int64>(y))), py_to<int64>((x + 1) % w))));
-                int64 d = int64(py_to<int64>(py_at(object(py_at(heat, py_to<int64>((y + 1) % h))), py_to<int64>(x))));
+                int64 a = heat[y][x];
+                int64 b = heat[y][(x - 1 + w) % w];
+                int64 c = heat[y][(x + 1) % w];
+                int64 d = heat[(y + 1) % h][x];
                 int64 v = (a + b + c + d) / 4;
                 int64 cool = 1 + (x + y + t) % 3;
                 int64 nv = v - cool;
-                py_set_at(object(py_at(heat, py_to<int64>(y - 1))), x, make_object((nv > 0 ? nv : 0)));
+                heat[y - 1][x] = (nv > 0 ? nv : 0);
             }
         }
         bytearray frame = bytearray(w * h);
         for (int64 yy = 0; yy < h; ++yy) {
             int64 row_base = yy * w;
             for (int64 xx = 0; xx < w; ++xx) {
-                frame[row_base + xx] = int64(py_to<int64>(py_at(object(py_at(heat, py_to<int64>(yy))), py_to<int64>(xx))));
+                frame[row_base + xx] = heat[yy][xx];
             }
         }
         frames.append(bytes(frame));

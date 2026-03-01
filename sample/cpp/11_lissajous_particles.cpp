@@ -31,7 +31,7 @@ void run_11_lissajous_particles() {
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        float64 __hoisted_cast_1 = static_cast<float64>(t);
+        float64 __hoisted_cast_1 = float64(t);
         
         for (int64 p = 0; p < particles; ++p) {
             float64 phase = py_to<float64>(p) * 0.261799;
@@ -48,7 +48,7 @@ void run_11_lissajous_particles() {
                         if (d2 <= 4) {
                             int64 idx = yy * w + xx;
                             int64 v = color - d2 * 20;
-                            v = int64(py_to<int64>(::std::max<int64>(static_cast<int64>(0), static_cast<int64>(v))));
+                            v = ::std::max<int64>(static_cast<int64>(0), static_cast<int64>(v));
                             if (v > frame[idx])
                                 frame[idx] = uint8(py_to<int64>(v));
                         }

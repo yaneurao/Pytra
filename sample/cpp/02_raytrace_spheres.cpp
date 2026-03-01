@@ -28,7 +28,7 @@ float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, f
     float64 d = b * b - 4.0 * a * c;
     if (d < 0.0)
         return -1.0;
-    float64 sd = py_to<float64>(pytra::std::math::sqrt(d));
+    float64 sd = pytra::std::math::sqrt(d);
     float64 t0 = (-b - sd) / (2.0 * a);
     float64 t1 = (-b + sd) / (2.0 * a);
     
@@ -51,10 +51,10 @@ bytearray render(int64 width, int64 height, int64 aa) {
     float64 lx = -0.4;
     float64 ly = 0.8;
     float64 lz = -0.45;
-    float64 __hoisted_cast_1 = static_cast<float64>(aa);
-    float64 __hoisted_cast_2 = static_cast<float64>(height - 1);
-    float64 __hoisted_cast_3 = static_cast<float64>(width - 1);
-    float64 __hoisted_cast_4 = static_cast<float64>(height);
+    float64 __hoisted_cast_1 = float64(aa);
+    float64 __hoisted_cast_2 = float64(height - 1);
+    float64 __hoisted_cast_3 = float64(width - 1);
+    float64 __hoisted_cast_4 = float64(height);
     
     for (int64 y = 0; y < height; ++y) {
         for (int64 x = 0; x < width; ++x) {
@@ -72,7 +72,7 @@ bytearray render(int64 width, int64 height, int64 aa) {
                     float64 dx = sx;
                     float64 dy = sy;
                     float64 dz = 1.0;
-                    float64 inv_len = py_to<float64>(1.0 / pytra::std::math::sqrt(dx * dx + dy * dy + dz * dz));
+                    float64 inv_len = 1.0 / pytra::std::math::sqrt(dx * dx + dy * dy + dz * dz);
                     dx *= inv_len;
                     dy *= inv_len;
                     dz *= inv_len;

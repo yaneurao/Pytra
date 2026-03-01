@@ -45,9 +45,9 @@ void run_14_raymarching_light_cycle() {
     
     float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
-    float64 __hoisted_cast_1 = static_cast<float64>(frames_n);
-    float64 __hoisted_cast_2 = static_cast<float64>(h - 1);
-    float64 __hoisted_cast_3 = static_cast<float64>(w - 1);
+    float64 __hoisted_cast_1 = float64(frames_n);
+    float64 __hoisted_cast_2 = float64(h - 1);
+    float64 __hoisted_cast_3 = float64(w - 1);
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);

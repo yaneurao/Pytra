@@ -7,7 +7,7 @@
 
 bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
     bytearray frame = bytearray(width * height);
-    float64 __hoisted_cast_1 = static_cast<float64>(max_iter);
+    float64 __hoisted_cast_1 = float64(max_iter);
     for (int64 y = 0; y < height; ++y) {
         int64 row_base = y * width;
         float64 cy = center_y + (py_to<float64>(y) - py_to<float64>(height) * 0.5) * scale;

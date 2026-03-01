@@ -35,9 +35,9 @@ int64 escape_count(float64 cx, float64 cy, int64 max_iter) {
 bytearray render_mandelbrot(int64 width, int64 height, int64 max_iter, float64 x_min, float64 x_max, float64 y_min, float64 y_max) {
     /* Generate RGB bytes for a Mandelbrot image. */
     bytearray pixels = bytearray{};
-    float64 __hoisted_cast_1 = static_cast<float64>(height - 1);
-    float64 __hoisted_cast_2 = static_cast<float64>(width - 1);
-    float64 __hoisted_cast_3 = static_cast<float64>(max_iter);
+    float64 __hoisted_cast_1 = float64(height - 1);
+    float64 __hoisted_cast_2 = float64(width - 1);
+    float64 __hoisted_cast_3 = float64(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
         float64 py = y_min + (y_max - y_min) * (py_to<float64>(y) / __hoisted_cast_1);
