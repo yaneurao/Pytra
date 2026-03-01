@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 15: Sample that renders wave interference animation and writes a GIF.
 

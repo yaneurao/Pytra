@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
 // Dependencies are kept minimal (time only) for transpilation compatibility.

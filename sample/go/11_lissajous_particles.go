@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 11: Sample that outputs Lissajous-motion particles as a GIF.
 

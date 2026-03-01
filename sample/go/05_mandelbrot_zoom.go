@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 

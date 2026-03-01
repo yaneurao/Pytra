@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 10: Sample that outputs a plasma effect as a GIF.
 

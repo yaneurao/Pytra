@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
 // It avoids floating-point error effects, making cross-language comparisons easier.

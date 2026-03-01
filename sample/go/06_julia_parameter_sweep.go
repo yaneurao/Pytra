@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 

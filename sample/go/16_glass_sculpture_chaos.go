@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
 

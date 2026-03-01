@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
+from pytra.compiler.east_parts.code_emitter import CodeEmitter
 
 
 _GO_KEYWORDS = {
@@ -56,6 +57,23 @@ def _safe_ident(name: Any, fallback: str) -> str:
     if out in _GO_KEYWORDS:
         out = out + "_"
     return out
+
+
+def _collect_go_deps(collector: CodeEmitter, node_any: Any) -> None:
+    if isinstance(node_any, dict):
+        kind = node_any.get("kind")
+        if kind == "Attribute":
+            owner_any = node_any.get("value")
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner = _safe_ident(owner_any.get("id"), "")
+                if owner == "math":
+                    collector.require_dep("math")
+        for child_any in node_any.values():
+            _collect_go_deps(collector, child_any)
+        return
+    if isinstance(node_any, list):
+        for item_any in node_any:
+            _collect_go_deps(collector, item_any)
 
 
 def _go_string_literal(text: str) -> str:
@@ -1721,12 +1739,15 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.append("package main")
     lines.append("")
-    lines.append("import (")
-    lines.append('    "math"')
-    lines.append(")")
-    lines.append("")
-    lines.append("var _ = math.Pi")
-    lines.append("")
+    dep_collector = CodeEmitter({})
+    _collect_go_deps(dep_collector, east_doc)
+    deps = dep_collector.finalize_deps()
+    if len(deps) > 0:
+        lines.append("import (")
+        for dep in deps:
+            lines.append('    "' + dep + '"')
+        lines.append(")")
+        lines.append("")
     module_comments = _module_leading_comment_lines(east_doc, "// ")
     if len(module_comments) > 0:
         lines.extend(module_comments)

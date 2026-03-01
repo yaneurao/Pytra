@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 07: Sample that outputs Game of Life evolution as a GIF.
 

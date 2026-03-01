@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 

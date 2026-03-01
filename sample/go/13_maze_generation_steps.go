@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 13: Sample that outputs DFS maze-generation progress as a GIF.
 

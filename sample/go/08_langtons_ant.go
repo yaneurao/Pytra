@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 

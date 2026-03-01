@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
 

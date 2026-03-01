@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 09: Sample that outputs a simple fire effect as a GIF.
 

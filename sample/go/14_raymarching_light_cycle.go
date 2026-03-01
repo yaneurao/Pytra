@@ -4,8 +4,6 @@ import (
     "math"
 )
 
-var _ = math.Pi
-
 
 // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
 

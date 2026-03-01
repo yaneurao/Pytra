@@ -1,11 +1,5 @@
 package main
 
-import (
-    "math"
-)
-
-var _ = math.Pi
-
 
 // 03: Sample that outputs a Julia set as a PNG image.
 // Implemented with simple loop-centric logic for transpilation compatibility.

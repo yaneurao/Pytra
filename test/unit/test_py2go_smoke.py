@@ -53,6 +53,15 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("type Animal struct {", go)
         self.assertIn("type Dog struct {", go)
         self.assertIn("func _case_main()", go)
+        self.assertNotIn('    "math"', go)
+        self.assertNotIn("var _ = math.Pi", go)
+
+    def test_go_native_emitter_emits_math_import_only_when_used(self) -> None:
+        sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        self.assertIn('    "math"', go)
+        self.assertNotIn("var _ = math.Pi", go)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
