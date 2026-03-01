@@ -168,6 +168,50 @@ class Child(Base):
         self.assertIn("var v = __it_", cs)
         self.assertIn(".Item2;", cs)
 
+    def test_try_with_multiple_except_handlers_is_emitted(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Try",
+                    "body": [
+                        {
+                            "kind": "Raise",
+                            "exc": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "Exception"},
+                                "args": [{"kind": "Constant", "value": "boom"}],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                    "handlers": [
+                        {
+                            "kind": "ExceptHandler",
+                            "type": {"kind": "Name", "id": "ValueError"},
+                            "name": "ve",
+                            "body": [{"kind": "Expr", "value": {"kind": "Name", "id": "ve"}}],
+                        },
+                        {
+                            "kind": "ExceptHandler",
+                            "type": {"kind": "Name", "id": "Exception"},
+                            "name": "ex",
+                            "body": [{"kind": "Expr", "value": {"kind": "Name", "id": "ex"}}],
+                        },
+                    ],
+                    "orelse": [],
+                    "finalbody": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("catch (System.Exception ex)", cs)
+        self.assertIn("if (true) {", cs)
+        self.assertIn("} else if (true) {", cs)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

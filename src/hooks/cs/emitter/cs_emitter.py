@@ -1083,18 +1083,65 @@ class CSharpEmitter(CodeEmitter):
         handlers = self._dict_stmt_list(stmt.get("handlers"))
         finalbody = self._dict_stmt_list(stmt.get("finalbody"))
         if len(handlers) > 0:
-            first = handlers[0]
-            ex_name = self.any_to_str(first.get("name"))
-            if ex_name == "":
-                ex_name = "ex"
-            self.emit("} catch (System.Exception " + self._safe_name(ex_name) + ") {")
-            self.emit_scoped_stmt_list(self._dict_stmt_list(first.get("body")), {ex_name})
-            if len(handlers) > 1:
-                raise RuntimeError("csharp emitter: multiple except handlers are unsupported")
+            base_ex = "ex"
+            self.emit("} catch (System.Exception " + base_ex + ") {")
+            if len(handlers) == 1:
+                first = handlers[0]
+                alias_raw = self.any_to_str(first.get("name"))
+                alias = self._safe_name(alias_raw) if alias_raw != "" else base_ex
+                local_set = {base_ex}
+                if alias != base_ex:
+                    self.emit("System.Exception " + alias + " = " + base_ex + ";")
+                    local_set.add(alias)
+                self.emit_scoped_stmt_list(self._dict_stmt_list(first.get("body")), local_set)
+            else:
+                i = 0
+                while i < len(handlers):
+                    handler = handlers[i]
+                    cond = self._render_except_match_cond(handler.get("type"), base_ex)
+                    if i == 0:
+                        self.emit("if (" + cond + ") {")
+                    else:
+                        self.emit("} else if (" + cond + ") {")
+                    alias_raw = self.any_to_str(handler.get("name"))
+                    alias = self._safe_name(alias_raw) if alias_raw != "" else base_ex
+                    local_set = {base_ex}
+                    if alias != base_ex:
+                        self.emit("System.Exception " + alias + " = " + base_ex + ";")
+                        local_set.add(alias)
+                    self.emit_scoped_stmt_list(self._dict_stmt_list(handler.get("body")), local_set)
+                    i += 1
+                self.emit("} else {")
+                self.emit("throw;")
+                self.emit("}")
         if len(finalbody) > 0:
             self.emit("} finally {")
             self.emit_scoped_stmt_list(finalbody, set())
         self.emit("}")
+
+    def _render_except_match_cond(self, type_node: Any, ex_name: str) -> str:
+        """except 型注釈を C# 条件式へ変換する（fail-closed で broad catch）。"""
+        t = self.any_to_dict_or_empty(type_node)
+        kind = self._node_kind_from_dict(t)
+        if kind == "":
+            return "true"
+        if kind == "Name":
+            nm = self.any_dict_get_str(t, "id", "")
+            if nm in {"", "Exception", "BaseException", "RuntimeError", "ValueError", "TypeError", "KeyError", "IndexError", "AssertionError"}:
+                return "true"
+            return ex_name + " is " + self._safe_name(nm)
+        if kind == "Tuple":
+            elems_any = t.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            parts: list[str] = []
+            for elem in elems:
+                parts.append(self._render_except_match_cond(elem, ex_name))
+            if len(parts) == 0:
+                return "true"
+            if len(parts) == 1:
+                return parts[0]
+            return "(" + " || ".join(parts) + ")"
+        return "true"
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
         cond = self.render_cond(stmt.get("test"))
