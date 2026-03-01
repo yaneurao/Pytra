@@ -31,14 +31,14 @@
 
 ## Latest News
 
+> **2026-03-02 | v0.6.0 Released**  
+> Version 0.6.0 was released, adding Scala as a supported target language.
+
 > **2026-03-01 | v0.5.0 Released**  
 > Version 0.5.0 was released, adding Lua as a supported target language.
 
 > **2026-02-28 | v0.4.0 Released**  
 > Version 0.4.0 was released, adding Ruby as a supported target language.
-
-> **2026-02-27 | v0.3.0 Released**  
-> Version 0.3.0 reorganizes EAST (intermediate representation) into staged processing (`EAST1 -> EAST2 -> EAST3`) and performs a large-scale split/slimming of the C++ CodeEmitter.
 
 - Past News: [docs/en/news/index.md](docs/en/news/index.md)
 
