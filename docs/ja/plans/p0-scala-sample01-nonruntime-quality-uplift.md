@@ -43,7 +43,7 @@
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-01] `pixels` などホットパスで `Any` 退化を抑制する typed container 出力規則を実装する。
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-02] break/continue を含まない単純ループで `boundary` 出力を省略する fastpath を実装する。
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] 型既知経路の identity cast（`__pytra_int(0L)` 等）を削減する emit 規則を実装する。
-- [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-04] `color_map` 相当の小戻り値経路で `ArrayBuffer[Any]` 依存を縮小する戻り値表現最適化を実装する。
+- [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-04] `color_map` 相当の小戻り値経路で `ArrayBuffer[Any]` 依存を縮小する戻り値表現最適化を実装する。
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` の品質指標を固定する。
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-02] Scala transpile/smoke/parity を実行し、非退行を確認する。
 
@@ -54,6 +54,7 @@
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-01] `bytearray/list[int] -> mutable.ArrayBuffer[Long]` を導入し、`sample/01` の `pixels` を `Any` から typed container へ縮退した。
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-02] ループ本体に `break/continue` が存在しない場合、`ForCore/While` で `boundary` 生成を省略する fastpath を追加した。
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] `int/float` の型既知引数と `StaticRange` の start/stop/step に対して identity cast を省略し、`sample/01` の冗長 `__pytra_int(...)` を削減した。
+- 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-04] `tuple[int,int,int]` を `mutable.ArrayBuffer[Long]` へ縮退し、`color_map` の戻り値経路から `ArrayBuffer[Any]` 依存を縮小した。
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-01] `check_py2scala_transpile.py` に `sample/01` の品質断片チェック（`boundary`/identity cast 再発検知）を追加した。
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-02] `check_py2scala_transpile.py`（135件）と sample parity（`--targets scala 01_mandelbrot`）を実行し、非退行を確認した。
 
