@@ -209,9 +209,9 @@ QualifiedSymbolRef
   - collision detection results (success/failure)
 - Test criterion should be identity of resolution results, not syntax-level similarity.
 
-## Addendum: Concrete Per-language Implementation Policy (Aligned with `README.md` / `docs/en/plans/pytra-wip.md`)
+## Addendum: Concrete Per-language Implementation Policy (Aligned with `README.md` / `docs/ja/plans/pytra-wip.md`)
 
-Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin`.
+Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swift / Kotlin / Ruby / Lua`.
 
 ### 1. C++ (`src/py2cpp.py`)
 
@@ -328,7 +328,27 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Kotlin code generation.
 
-### 10. Recommended Integration Order Across Languages
+### 10. Ruby (`src/py2rb.py` + `src/hooks/ruby/emitter/ruby_native_emitter.py`)
+
+- Implementation style:
+  - EAST3 conversion. `py2rb.py` is a thin CLI and the default output is handled by the Ruby native emitter.
+- Concrete implementation:
+  - Import resolution treats EAST `meta.import_bindings` as the source of truth and does not re-emit Python import lines in native output.
+  - Generated code is standalone native Ruby output.
+- Error policy:
+  - Unsupported syntax must fail on the frontend/EAST side and must not proceed to Ruby output.
+
+### 11. Lua (`src/py2lua.py` + `src/hooks/lua/emitter/lua_native_emitter.py`)
+
+- Implementation style:
+  - EAST3 conversion. `py2lua.py` is a thin CLI and the default output is handled by the Lua native emitter.
+- Concrete implementation:
+  - Import resolution treats EAST `meta.import_bindings` as the source of truth and does not re-emit Python import lines in native output.
+  - `math` maps to Lua standard `math`; `pytra.utils png/gif` maps to the staged runtime stubs.
+- Error policy:
+  - Unsupported syntax must fail closed and must not proceed to Lua output.
+
+### 12. Recommended Integration Order Across Languages
 
 - Step 1: complete `ImportBinding` / `QualifiedSymbolRef` in C++ implementation (EAST path).
 - Step 2: port the same resolver to JS/TS shared base.

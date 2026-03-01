@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-02-27
+Last updated: 2026-03-01
 
 ## Context Rules
 
@@ -17,7 +17,7 @@ Last updated: 2026-02-27
 - Before starting, confirm `Background` / `Out of scope` / `Acceptance criteria` in the context file.
 - Progress notes and commit messages must include the same `ID` (example: `[ID: P0-XXX-01] ...`).
 - Keep progress memo in `docs/ja/todo/index.md` to one line; detailed judgment/verification logs belong in the context file (`docs/ja/plans/*.md`) `Decision log`.
-- If one `ID` is large, split into child tasks (`-S1`, `-S2`, ...) in the context file while keeping parent checkbox open until parent is done.
+- If one `ID` is large, split into child tasks (`-S1` / `-S2`, etc.) in the context file while keeping parent checkbox open until parent is done.
 - If uncommitted changes remain due to interruption, do not start another `ID` until completing the same `ID` or reverting diffs.
 - When updating `docs/ja/todo/index.md` / `docs/ja/plans/*.md`, run `python3 tools/check_todo_priority.py` and confirm new progress `ID` matches top unfinished `ID` (or its child).
 - Append work-time decisions to the context file `Decision log`.
@@ -31,124 +31,130 @@ Last updated: 2026-02-27
 
 ## Unfinished Tasks
 
-### P3: Java backend direct EAST3 native generation (sidecar removal) (Low)
+### P0: Improve non-C++ inheritance method dynamic dispatch (all backends)
 
-Context: [docs/ja/plans/p3-java-native-rollout.md](../plans/p3-java-native-rollout.md)
+Context: [docs/ja/plans/p0-multilang-inheritance-dispatch-rollout.md](../plans/p0-multilang-inheritance-dispatch-rollout.md)
 
-1. [ ] [ID: P3-JAVA-NATIVE-01] Migrate Java backend to direct `EAST3 -> Java native emitter`, removing sidecar JS dependency from the default path.
-2. [x] [ID: P3-JAVA-NATIVE-01-S1-01] Document Java backend contract (input EAST3 responsibilities, fail-closed behavior for unsupported nodes, runtime boundary) and clarify diffs from preview output.
-3. [x] [ID: P3-JAVA-NATIVE-01-S1-02] Add native emitter skeleton under `src/hooks/java/emitter` and pass minimal executable path for module/function/class.
-4. [x] [ID: P3-JAVA-NATIVE-01-S1-03] Add backend switch wiring in `py2java.py`; make native default and isolate old sidecar as compatibility mode.
-5. [x] [ID: P3-JAVA-NATIVE-01-S2-01] Implement native expression/statement coverage (arithmetic, conditionals, loops, function calls, basic built-ins) and pass early `sample/py` cases.
-6. [x] [ID: P3-JAVA-NATIVE-01-S2-02] Connect class/instance/isinstance paths and runtime hooks in native route and pass OOP cases.
-7. [x] [ID: P3-JAVA-NATIVE-01-S2-03] Add minimal compatibility for `import math` and image runtime calls (`png`/`gif`) for practical sample cases.
-8. [ ] [ID: P3-JAVA-NATIVE-01-S3-01] Pass `check_py2java_transpile` / unit smoke / parity with native as default and lock regression detection.
-9. [ ] [ID: P3-JAVA-NATIVE-01-S3-02] Regenerate `sample/java` and replace preview summary output with native implementation output.
-10. [ ] [ID: P3-JAVA-NATIVE-01-S3-03] Update Java descriptions in `docs/ja/how-to-use.md` / `docs/ja/spec/spec-import.md` from sidecar assumptions and sync operation steps.
-- `P3-JAVA-NATIVE-01-S1-01` Added `docs/ja/spec/spec-java-native-backend.md` (translation: `docs/en/spec/spec-java-native-backend.md`) to define input EAST3 contract, fail-closed behavior, runtime boundary, and preview-vs-native differences.
-- `P3-JAVA-NATIVE-01-S1-02` Added `src/hooks/java/emitter/java_native_emitter.py` with native scaffold emission for `Module/FunctionDef/ClassDef`, and added minimal-route tests to `test_py2java_smoke.py`.
-- `P3-JAVA-NATIVE-01-S1-03` Added `--java-backend {native,sidecar}` to `py2java.py`, switched default to native, and isolated sidecar generation to explicit compatibility mode.
-- `P3-JAVA-NATIVE-01-S2-01` Extended `java_native_emitter` body lowering and wired `Return/Expr/AnnAssign/Assign/AugAssign/If/ForCore` plus core expressions (constants/arithmetic/comparison/print+normal calls) to Java output.
-- `P3-JAVA-NATIVE-01-S2-01` Preserved class type annotations instead of collapsing to `Object`, and added `self -> this` plus constructor-call lowering (`Dog() -> new Dog()`) for basic OOP route correctness.
-- `P3-JAVA-NATIVE-01-S2-01` Added simple return-flow analysis to suppress unreachable fallback `return` insertion when both `if/else` branches return, fixing the `if_else` compile failure.
-- `P3-JAVA-NATIVE-01-S2-01` Wired `main_guard_body` into generated `main()`, added minimal lowers for `py_assert_*` and `perf_counter`, and prevented re-declaration on reassignment via a declared-name set. Verified passes on `fixture: add/if_else/for_range/inheritance` and `sample:17_monte_carlo_pi` with `runtime_parity_check --targets java`.
-- `P3-JAVA-NATIVE-01-S2-01` Added basic lowers for `bytearray`/`append`/`int()` and image-runtime call no-op mapping, and locked `03_julia_set` generation patterns (`ArrayList<Long>`, `.add()`, `((long)(...))`, `__pytra_noop(...)`) via smoke tests.
-- `P3-JAVA-NATIVE-01-S2-01` Extended unknown-type inference, `len()`, `List/Subscript`, and subscript-assignment lowering, and verified `compile_ok 9/9` for early `sample/py` cases (01–09) via `py2java -> javac`.
-- `P3-JAVA-NATIVE-01-S2-02` Completed native lowering for `super().__init__`, `IsInstance`, and `isinstance(...)`; switched Java `instanceof` checks to `((Object)(lhs)) instanceof ...` to avoid static-type rejection on sibling classes. Verified OOP parity with `runtime_parity_check --case-root fixture --targets java class_instance class_member inheritance inheritance_polymorphic_dispatch is_instance instance_member super_init stateless_value` (`pass=8/8`).
-- `P3-JAVA-NATIVE-01-S2-03` Added `__pytra_bytearray(Object)` lowering for `bytearray(n)` zero-filled buffers and treated `Import/ImportFrom` as explicit no-op in native emission. Verified practical sample compatibility with `runtime_parity_check --case-root sample --targets java 01_mandelbrot 02_raytrace_spheres 03_julia_set 04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep 10_plasma_effect --ignore-unstable-stdout` (`pass=7/7`).
-- `P3-JAVA-NATIVE-01-S3-01` Strengthened native parity with list-comp(range) assignment lowering, `min/max`, tuple destructuring/swap assignment, list truthiness, negative-index handling, and `IfExp` lowering. `runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` improved to `pass=16/18` (remaining: `16_glass_sculpture_chaos`, `18_mini_language_interpreter`).
-- `P3-JAVA-NATIVE-01-S3-01` Added local type tracking (`ctx.types`) and loop-scope declaration handling, which resolved `16_glass_sculpture_chaos`. `runtime_parity_check --case-root sample --targets java --all-samples --ignore-unstable-stdout` now reaches `pass=17/18` (remaining: `18_mini_language_interpreter`).
+1. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01] Align inheritance method dynamic dispatch and `super()` behavior to Python compatibility across non-C++ backends.
+2. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Execute the Java uplift plan [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md).
+3. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] Execute the JS uplift plan [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md).
+4. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] Execute the TS uplift plan [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md).
+5. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Execute the Kotlin uplift plan [p0-kotlin-inheritance-dispatch-uplift.md](../plans/p0-kotlin-inheritance-dispatch-uplift.md).
+6. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Execute the Swift uplift plan [p0-swift-inheritance-dispatch-uplift.md](../plans/p0-swift-inheritance-dispatch-uplift.md).
+7. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Execute the Rust uplift plan [p0-rs-inheritance-dispatch-uplift.md](../plans/p0-rs-inheritance-dispatch-uplift.md).
+8. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Execute the Ruby uplift plan [p0-ruby-inheritance-dispatch-uplift.md](../plans/p0-ruby-inheritance-dispatch-uplift.md).
+9. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Execute the Lua uplift plan [p0-lua-inheritance-dispatch-uplift.md](../plans/p0-lua-inheritance-dispatch-uplift.md).
+10. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] Aggregate parity/smoke results across all backends and separate unresolved blockers.
 
-### P0: Implement common EAST3 optimizer layer (Highest)
+### P1: Improve `sample/go/01` output quality (reduce gap vs C++)
 
-Context: [docs/ja/plans/p0-east3-optimizer-rollout.md](../plans/p0-east3-optimizer-rollout.md)
+Context: [docs/ja/plans/p1-go-sample01-quality-uplift.md](../plans/p1-go-sample01-quality-uplift.md)
 
-1. [x] [ID: P0-EAST3-OPT-01] Introduce common `EAST3 -> EAST3` optimizer and reflect pass manager / opt-level / fail-closed contract into implementation.
-2. [x] [ID: P0-EAST3-OPT-01-S1-01] Add optimizer entry (`east3_optimizer.py`) and pass manager skeleton (`PassContext`/`PassResult`).
-3. [x] [ID: P0-EAST3-OPT-01-S1-02] Implement CLI options (`--east3-opt-level`, `--east3-opt-pass`, dump/trace`) and lock `O0/O1/O2` contract.
-4. [x] [ID: P0-EAST3-OPT-01-S2-01] Implement `NoOpCastCleanupPass` / `LiteralCastFoldPass` and establish default `O1` set.
-5. [x] [ID: P0-EAST3-OPT-01-S2-02] Implement `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` and reflect `for ... in range(...)` boundary.
-6. [x] [ID: P0-EAST3-OPT-01-S2-03] Add `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only.
-7. [x] [ID: P0-EAST3-OPT-01-S3-01] Add pass unit tests (input/output EAST3 diff, non-application guards, semantics preservation).
-8. [x] [ID: P0-EAST3-OPT-01-S3-02] Run sample regressions + parity checks and verify compatibility under `O0`/`O1`/`O2` switching.
-9. [x] [ID: P0-EAST3-OPT-01-S3-03] Sync implementation diffs to `spec-east3-optimizer` and document operations (trace checks / troubleshooting).
-- `P0-EAST3-OPT-01-S1-01` Added `east3_optimizer.py`, `east3_opt_passes/noop_pass.py`, and `test_east3_optimizer.py`, fixing the minimal pass-manager + trace-output path.
-- `P0-EAST3-OPT-01-S1-02` Wired optimizer CLI options through common/non-C++/`py2cpp` routes and fixed the end-to-end entry path with `test_east3_optimizer_cli.py` plus parser-wrapper tests.
-- `P0-EAST3-OPT-01-S2-01` Implemented `NoOpCastCleanupPass` / `LiteralCastFoldPass`, updated `build_default_passes()` to the `O1` default set, and synchronized pass-unit tests plus CLI trace expectations.
-- `P0-EAST3-OPT-01-S2-02` Added `RangeForCanonicalizationPass` / `UnusedLoopVarElisionPass` with fail-closed guards for constant `range(...)` canonicalization (`StaticRangeForPlan`) and underscore elision of provably unused loop vars.
-- `P0-EAST3-OPT-01-S2-03` Added `LoopInvariantHoistLitePass` / `StrengthReductionFloatLoopPass` as `O2`-only passes with conservative guards for non-empty static-range preheader hoist and power-of-two float-division strength reduction.
-- `P0-EAST3-OPT-01-S3-01` Expanded pass unit coverage to 21 cases, locking O2 gating, dynamic-name-resolution guards, and non-application behavior (zero-step, non-power-of-two divisors, and post-loop variable reads).
-- `P0-EAST3-OPT-01-S3-02` Added `--east3-opt-level` to `runtime_parity_check.py` and reran `sample/py` 18 cases × `cpp,rs,cs,js,ts` under `O0/O1/O2`; all levels produced `17 pass / 1 fail` with no inter-level diff (existing `18_mini_language_interpreter:cpp` compile failure), logs at `work/logs/east3_opt_parity_o{0,1,2}.json`.
-- `P0-EAST3-OPT-01-S3-03` Synced `docs/ja/spec/spec-east3-optimizer.md` / `docs/en/spec/spec-east3-optimizer.md` to implementation status, adding pass-status matrix, fail-closed guard notes, and operations for `trace`, pass isolation, and `runtime_parity_check --east3-opt-level`.
+1. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01] Improve `sample/01` output quality in Go backend and reduce the gap vs C++ output.
+2. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S1-01] Inventory quality gaps in `sample/go/01` (redundant casts / loop shape / no-op / `any` fallback) and lock implementation priority.
+3. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-01] Reduce same-type conversion chains in Go emitter numeric output and prioritize typed paths.
+4. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-02] Add fastpath that lowers `range(stop)` / `range(start, stop, 1)` into canonical `for`.
+5. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-03] Route `write_rgb_png` from no-op to native runtime call and fail closed when unresolved.
+6. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-04] Add typed container fastpath to suppress `[]any` fallback in `sample/01` `pixels` hot path.
+7. [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S3-01] Add regression tests (code fragments + parity) and lock `sample/go/01` regenerated diff.
 
-### P0: Introduce C++ post-lowering optimizer layer (`CppOptimizer`) (Highest)
+### P1: Improve `sample/kotlin/01` output quality (reduce gap vs C++)
 
-Context: [docs/ja/plans/p0-cpp-optimizer-rollout.md](../plans/p0-cpp-optimizer-rollout.md)
+Context: [docs/ja/plans/p1-kotlin-sample01-quality-uplift.md](../plans/p1-kotlin-sample01-quality-uplift.md)
 
-1. [x] [ID: P0-CPP-OPT-01] Introduce `CppOptimizer` after `EAST3 -> C++ lowering` and separate optimization responsibilities from `CppEmitter`.
-2. [x] [ID: P0-CPP-OPT-01-S1-01] Add skeleton (`optimizer/context/trace/passes`) under `src/hooks/cpp/optimizer/` and no-op wiring.
-3. [x] [ID: P0-CPP-OPT-01-S1-02] Add `CppOptimizer` call path in `py2cpp` and wire `--cpp-opt-level` / `--cpp-opt-pass` / dump options.
-4. [x] [ID: P0-CPP-OPT-01-S2-01] Implement `CppDeadTempPass` / `CppNoOpCastPass` and migrate equivalent emitter logic.
-5. [x] [ID: P0-CPP-OPT-01-S2-02] Add `CppConstConditionPass` / `CppRangeForShapePass` and lock pre-structuring IR normalization.
-6. [x] [ID: P0-CPP-OPT-01-S2-03] Add limited `CppRuntimeFastPathPass` within runtime-contract-equivalent boundaries.
-7. [x] [ID: P0-CPP-OPT-01-S3-01] Reduce optimization branching in `CppEmitter` and align boundary with `spec-cpp-optimizer`.
-8. [x] [ID: P0-CPP-OPT-01-S3-02] Lock C++ regressions (`test_py2cpp_*`, `check_py2cpp_transpile.py`, `runtime_parity_check --targets cpp`).
-9. [x] [ID: P0-CPP-OPT-01-S3-03] Measure speed/size/generated-diff baselines and record adoption effects in context docs.
-- `P0-CPP-OPT-01-S1-01` Added `src/hooks/cpp/optimizer/` scaffold (`context/trace/passes/cpp_optimizer`) plus no-op wiring in `emit_cpp_from_east`, and locked skeleton regressions with `test_cpp_optimizer.py`.
-- `P0-CPP-OPT-01-S1-02` Added `--cpp-opt-level/--cpp-opt-pass/--dump-cpp-*` wiring in `py2cpp` and connected single/multi-file paths; locked CLI acceptance and dump outputs with `test_cpp_optimizer_cli.py` and `test_east3_cpp_bridge.py`.
-- `P0-CPP-OPT-01-S2-01` Added `CppDeadTempPass`/`CppNoOpCastPass` for unused-temp elimination and no-op cast cleanup (`casts` metadata and `static_cast` nodes), registered them in `build_default_cpp_passes()`, and expanded `test_cpp_optimizer.py`.
-- `P0-CPP-OPT-01-S2-02` Added `CppConstConditionPass`/`CppRangeForShapePass` for constant-branch pruning and runtime `range(...)` loop normalization to `StaticRangeForPlan`, then wired them into the default pass set and `test_cpp_optimizer.py`.
-- `P0-CPP-OPT-01-S2-03` Added `CppRuntimeFastPathPass` (O2-only) for contract-equivalent fast paths (`Unbox` same-type fold, `Box(object)` fold, `ObjBool(bool)` fold), then wired it into default passes and added O1/O2 behavior checks in `test_cpp_optimizer.py`.
-- `P0-CPP-OPT-01-S3-01` Removed char-compare optimization branching (`_try_optimize_char_compare`) from `CppEmitter._render_compare_expr` to keep compare optimization on the optimizer side; validated with `test_py2cpp_features::test_str_index_char_compare_optimized_and_runtime`.
+1. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01] Improve `sample/01` output quality in Kotlin backend and reduce the gap vs C++ output.
+2. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] Inventory quality gaps in `sample/kotlin/01` (redundant casts / loop shape / no-op / `Any?` fallback) and lock implementation priority.
+3. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-01] Reduce same-type conversion chains in Kotlin emitter numeric output and prioritize typed paths.
+4. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-02] Add fastpath that lowers simple `range` loops into canonical loops.
+5. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-03] Route `write_rgb_png` from no-op to native runtime call and fail closed when unresolved.
+6. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-04] Add typed container fastpath in `sample/01` `pixels` path to suppress `MutableList<Any?>` fallback.
+7. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S3-01] Add regression tests (code fragments + parity) and lock `sample/kotlin/01` regenerated diff.
 
-### P3: Go/Swift/Kotlin backend direct EAST3 native generation (sidecar removal) (Low)
+### P1: Improve `sample/swift/01` output quality (reduce gap vs C++)
 
-Context: [docs/ja/plans/p3-go-swift-kotlin-native-rollout.md](../plans/p3-go-swift-kotlin-native-rollout.md)
+Context: [docs/ja/plans/p1-swift-sample01-quality-uplift.md](../plans/p1-swift-sample01-quality-uplift.md)
 
-1. [ ] [ID: P3-GSK-NATIVE-01] Migrate Go/Swift/Kotlin backends to direct `EAST3 -> <lang> native emitter` and remove default sidecar JS dependency.
-2. [ ] [ID: P3-GSK-NATIVE-01-S1-01] Define common migration contract (EAST3 node coverage, fail-closed behavior, runtime boundary).
-3. [ ] [ID: P3-GSK-NATIVE-01-S1-02] Finalize isolation policy for 3-language sidecar compatibility mode (default native / opt-in legacy).
-4. [ ] [ID: P3-GSK-NATIVE-01-S2-01] Implement Go native emitter skeleton and default switch in `py2go.py`.
-5. [ ] [ID: P3-GSK-NATIVE-01-S2-02] Implement Go basic expression/statement/class coverage and pass early `sample/py` cases.
-6. [ ] [ID: P3-GSK-NATIVE-01-S3-01] Implement Swift native emitter skeleton and default switch in `py2swift.py`.
-7. [ ] [ID: P3-GSK-NATIVE-01-S3-02] Implement Swift basic expression/statement/class coverage and pass early `sample/py` cases.
-8. [ ] [ID: P3-GSK-NATIVE-01-S4-01] Implement Kotlin native emitter skeleton and default switch in `py2kotlin.py`.
-9. [ ] [ID: P3-GSK-NATIVE-01-S4-02] Implement Kotlin basic expression/statement/class coverage and pass early `sample/py` cases.
-10. [ ] [ID: P3-GSK-NATIVE-01-S5-01] Pass transpile/smoke/parity regressions for all 3 languages in native-default mode and update CI path.
-11. [ ] [ID: P3-GSK-NATIVE-01-S5-02] Regenerate `sample/go` / `sample/swift` / `sample/kotlin` and sync docs.
+1. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01] Improve `sample/01` output quality in Swift backend and reduce the gap vs C++ output.
+2. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S1-01] Inventory quality gaps in `sample/swift/01` (redundant casts / loop shape / no-op / `[Any]` fallback) and lock implementation priority.
+3. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-01] Reduce same-type conversion chains in Swift emitter numeric output and prioritize typed paths.
+4. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-02] Add fastpath that lowers simple `range` loops into canonical loops.
+5. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-03] Route `write_rgb_png` from no-op to native runtime call and fail closed when unresolved.
+6. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-04] Add typed container fastpath in `sample/01` `pixels` path to suppress `[Any]` fallback.
+7. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S3-01] Add regression tests (code fragments + parity) and lock `sample/swift/01` regenerated diff.
 
-### P3: Resume microgpt source-preservation tasks (Low)
+### P1: Improve `sample/ruby/01` output quality (reduce gap vs C++)
 
-Context: [docs/ja/plans/p3-microgpt-revival.md](../plans/p3-microgpt-revival.md)
+Context: [docs/ja/plans/p1-ruby-sample01-quality-uplift.md](../plans/p1-ruby-sample01-quality-uplift.md)
 
-1. [ ] [ID: P3-MSP-REVIVE-01] Resume archived `microgpt` preservation tasks under new IDs and restore them to active TODO monitoring.
-2. [ ] [ID: P3-MSP-REVIVE-01-S1-01] Create mapping table between archived `P3-MSP-*` history and resumed scope.
-3. [ ] [ID: P3-MSP-REVIVE-01-S1-02] Reconfirm current transpile/syntax-check/run procedure for original `microgpt` input and lock expected outcomes.
-4. [ ] [ID: P3-MSP-REVIVE-01-S2-01] Revisit `check_microgpt_original_py2cpp_regression.py` and update recurrence-detection conditions.
-5. [ ] [ID: P3-MSP-REVIVE-01-S2-02] Prepare logging template for failure reclassification into parser/lower/runtime responsibilities.
-6. [ ] [ID: P3-MSP-REVIVE-01-S3-01] Add fixture/smoke reinforcement for `microgpt` if needed and stabilize CI monitoring.
-7. [ ] [ID: P3-MSP-REVIVE-01-S3-02] Document migration-back conditions (completion definition) for returning resumed tasks to archive.
+1. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01] Improve `sample/01` output quality in Ruby backend and reduce the gap vs C++ output.
+2. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] Inventory quality gaps in `sample/ruby/01` (redundant casts / loop / truthy path / temporary initialization) and lock implementation priority.
+3. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-01] Reduce same-type conversion chains in Ruby emitter numeric output and prioritize typed paths.
+4. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-02] Add fastpath that lowers simple `range` loops into canonical loops.
+5. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] Optimize insertion conditions for `__pytra_truthy` in comparisons/logical expressions and prioritize native Ruby conditions.
+6. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-04] Add typed-assignment fastpath to remove unnecessary `nil` initialization for `r/g/b` and similar locals in `sample/01`.
+7. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] Add regression tests (code fragments + parity) and lock `sample/ruby/01` regenerated diff.
 
-### P1: Add Rust target to unified CLI `./pytra`
+### P1: Improve `sample/lua/01` output quality (readability and redundancy reduction)
 
-Context: [docs/ja/plans/p1-pytra-cli-rs-target.md](../plans/p1-pytra-cli-rs-target.md)
+Context: [docs/ja/plans/p1-lua-sample01-quality-uplift.md](../plans/p1-lua-sample01-quality-uplift.md)
 
-1. [ ] [ID: P1-PYTRA-CLI-RS-01] Add `--target rs` to unified CLI `./pytra`, so Rust transpilation can be run from the same entrypoint as C++.
-2. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-01] Extend target dispatch in `src/pytra/cli.py` so `--target rs` can invoke `py2rs.py`.
-3. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-02] Define `--output` / `--output-dir` behavior for Rust output and handle extension/path collisions.
-4. [ ] [ID: P1-PYTRA-CLI-RS-01-S1-03] Add Rust examples to the unified CLI section in `docs/ja/how-to-use.md`, including temporary-output operation (`out/` / `/tmp`).
+1. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01] Improve readability/redundancy of `sample/lua/01` and reduce the gap vs C++ output.
+2. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] Lock redundant points in `sample/lua/01` (implicit runtime dependency / nil initialization / loop shape) with code fragments.
+3. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] Make runtime-dependent outputs explicit (`int/float/bytearray` etc.) to improve self-contained output quality.
+4. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] Remove unnecessary `nil` initialization for `r/g/b` on typed paths.
+5. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] Add fastpath that simplifies step/parenthesis output for simple `range` loops.
+6. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] Add regression tests and lock `sample/lua/01` regenerated diff.
+
+### P1: Improve `sample/rs/08` output quality (readability + hot-path slimming)
+
+Context: [docs/ja/plans/p1-rs-s08-quality-uplift.md](../plans/p1-rs-s08-quality-uplift.md)
+
+1. [ ] [ID: P1-RS-S08-QUALITY-01] Improve generation quality of `sample/rs/08` and raise readability/hot-path efficiency.
+2. [ ] [ID: P1-RS-S08-QUALITY-01-S1-01] Lock redundant points in `sample/rs/08` (clone/index normalization/loop/branch/capture condition/capacity) with code fragments.
+3. [ ] [ID: P1-RS-S08-QUALITY-01-S2-01] Introduce emission rule that removes unnecessary `clone` on `capture` return path.
+4. [ ] [ID: P1-RS-S08-QUALITY-01-S2-02] Add fastpath that omits index-normalization expressions where non-negative indexes are guaranteed.
+5. [ ] [ID: P1-RS-S08-QUALITY-01-S2-03] Add fastpath that lowers simple range-derived loops to Rust `for`.
+6. [ ] [ID: P1-RS-S08-QUALITY-01-S2-04] Add emission rule that simplifies `if/elif` chains into `else if` / `match` equivalents.
+7. [ ] [ID: P1-RS-S08-QUALITY-01-S2-05] Add fastpath replacing `%`-based capture condition with a next-capture counter.
+8. [ ] [ID: P1-RS-S08-QUALITY-01-S2-06] Add `reserve` emission rule for `frames` when size can be estimated.
+9. [ ] [ID: P1-RS-S08-QUALITY-01-S3-01] Add regression tests and lock `sample/rs/08` regenerated diff.
+10. [ ] [ID: P1-RS-S08-QUALITY-01-S3-02] Run transpile/smoke/parity and confirm non-regression.
+
+### P3: Roll out container reference-management model to non-C++ backends
+
+Context: [docs/ja/plans/p3-multilang-container-ref-model-rollout.md](../plans/p3-multilang-container-ref-model-rollout.md)
+
+1. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01] Roll out the common policy to non-C++ backends: "dynamic boundaries use reference management, while type-known non-escape paths stay value-typed."
+2. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] Inventory current container ownership model per backend (value/reference/GC/ARC) and build a gap matrix.
+3. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] Specify common terms and rules for "reference-management boundary", "typed/non-escape reduction", and "escape conditions".
+4. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] Design minimal EAST3 extension to retain/propagate container ownership hints in node metadata.
+5. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] Define backend-neutral ownership decision API used by the `CodeEmitter` base.
+6. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Implement pilot in Rust backend and add split between `object` boundary and typed value path.
+7. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] Implement pilot in a GC backend (Java or Kotlin) and validate reduction under the same rule set.
+8. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] Add regression tests for two pilot backends (unit + sample fragments) and lock recurrence detection.
+9. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] Roll out sequentially to `cs/js/ts/go/swift/ruby/lua` and absorb backend-specific differences.
+10. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] Run parity/smoke checks to confirm non-regression; record unresolved items separately as blockers.
+11. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] Add operation rules (reference-management boundary / rollback) to `docs/ja/how-to-use.md` and backend specs.
+
+### P3: Isolate C# selfhost-originated fixes from `CodeEmitter`
+
+Context: [docs/ja/plans/p3-codeemitter-cs-isolation.md](../plans/p3-codeemitter-cs-isolation.md)
+
+1. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01] Isolate C# selfhost-originated fixes from `CodeEmitter` and restore common-layer responsibilities to backend-neutral form.
+2. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-01] Inventory `CodeEmitter` diffs since `v0.4.0` and classify into three groups: "common-required / C#-specific / pending judgment".
+3. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-02] Document the judgment criteria for "common-required" (backend neutrality / usage in other languages / fail-closed necessity).
+4. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] Move "C#-specific" changes into `CSharpEmitter` / C# runtime / selfhost-preparation layers.
+5. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] Remove C#-specific workaround code from `CodeEmitter` and restore common implementation.
+6. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] Run unit/selfhost regressions and confirm C# pass is maintained with no regression in other backends.
 
 ### P4: Full multi-language selfhost completion (Very low)
 
 Context: [docs/ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)
 
-1. [ ] [ID: P4-MULTILANG-SH-01] Gradually establish selfhost for `cpp/rs/cs/js/ts/go/java/swift/kotlin` and make full multistage monitoring passable.
-2. [ ] [ID: P4-MULTILANG-SH-01-S1-01] Fix and document unfinished stage1/stage2/stage3 causes per language, with blocking-chain priority.
-3. [ ] [ID: P4-MULTILANG-SH-01-S1-02] Define runner contracts for languages without multistage runners (go/java/swift/kotlin) and settle implementation policy for `runner_not_defined` removal.
-4. [ ] [ID: P4-MULTILANG-SH-01-S2-01] Resolve Rust stage1 selfhost failure (from-import acceptance) and move to stage2.
-5. [ ] [ID: P4-MULTILANG-SH-01-S2-02] Resolve C# stage2 compile failure and pass stage3 conversion.
-6. [ ] [ID: P4-MULTILANG-SH-01-S2-03] Resolve JS stage2 dependency transpile failure and pass multistage.
-7. [ ] [ID: P4-MULTILANG-SH-01-S3-01] Resolve TypeScript preview-only status and move to selfhost-executable generation mode.
-8. [ ] [ID: P4-MULTILANG-SH-01-S3-02] Connect with Go/Java/Swift/Kotlin native-backend tasks and enable selfhost execution chains.
-9. [ ] [ID: P4-MULTILANG-SH-01-S4-01] Integrate all-language multistage regressions into CI and continuously detect failure-category recurrence.
-10. [ ] [ID: P4-MULTILANG-SH-01-S4-02] Document completion template (stage pass/exclusion conditions per language) and lock operation rules.
+1. [ ] [ID: P4-MULTILANG-SH-01] Gradually establish selfhost for `cpp/rs/cs/js/ts/go/java/swift/kotlin` and make full multistage monitoring passable across all languages.
+2. [ ] [ID: P4-MULTILANG-SH-01-S2-03] Resolve JS selfhost stage2 dependency-transpile failure and pass multistage.
+3. [ ] [ID: P4-MULTILANG-SH-01-S3-01] Resolve TypeScript preview-only status and move to a selfhost-executable generation mode.
+4. [ ] [ID: P4-MULTILANG-SH-01-S3-02] Link with Go/Java/Swift/Kotlin native-backend tasks and enable selfhost execution chain.
+5. [ ] [ID: P4-MULTILANG-SH-01-S4-01] Integrate all-language multistage regressions into CI path to continuously detect failure-category recurrence.
+6. [ ] [ID: P4-MULTILANG-SH-01-S4-02] Document completion-judgment template (stage-pass and exclusion conditions per language) and lock operation rules.
+- Completed child tasks (`S1-01` to `S2-02-S3`) and past progress notes were moved to `docs/ja/todo/archive/20260301.md`.
