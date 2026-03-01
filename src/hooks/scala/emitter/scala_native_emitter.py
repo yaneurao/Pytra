@@ -1253,6 +1253,58 @@ def _needs_cast(value_expr: Any, target_type: str, type_map: dict[str, str] | No
     return not _expr_emits_target_type(value_expr, target_type, type_map)
 
 
+def _stmt_uses_loop_control(stmt_any: Any) -> bool:
+    if not isinstance(stmt_any, dict):
+        return False
+    kind = stmt_any.get("kind")
+    if kind in {"Break", "Continue"}:
+        return True
+    if kind == "Expr":
+        value_any = stmt_any.get("value")
+        if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+            ident = _safe_ident(value_any.get("id"), "")
+            return ident in {"break", "continue"}
+        return False
+    if kind in {"ForCore", "While", "FunctionDef", "ClassDef"}:
+        # break/continue inside nested loops/functions do not require boundary for this loop.
+        return False
+
+    for key in ("body", "orelse", "finalbody"):
+        block_any = stmt_any.get(key)
+        if isinstance(block_any, list):
+            i = 0
+            while i < len(block_any):
+                if _stmt_uses_loop_control(block_any[i]):
+                    return True
+                i += 1
+
+    handlers_any = stmt_any.get("handlers")
+    handlers = handlers_any if isinstance(handlers_any, list) else []
+    i = 0
+    while i < len(handlers):
+        handler_any = handlers[i]
+        if isinstance(handler_any, dict):
+            h_body_any = handler_any.get("body")
+            h_body = h_body_any if isinstance(h_body_any, list) else []
+            j = 0
+            while j < len(h_body):
+                if _stmt_uses_loop_control(h_body[j]):
+                    return True
+                j += 1
+        i += 1
+    return False
+
+
+def _body_uses_loop_control(body_any: Any) -> bool:
+    body = body_any if isinstance(body_any, list) else []
+    i = 0
+    while i < len(body):
+        if _stmt_uses_loop_control(body[i]):
+            return True
+        i += 1
+    return False
+
+
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
@@ -1266,8 +1318,6 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         target_name = _safe_ident(target_plan_any.get("id"), "i")
         if target_name == "_":
             target_name = _fresh_tmp(ctx, "loop")
-        break_label = _fresh_tmp(ctx, "breakLabel")
-        continue_label = _fresh_tmp(ctx, "continueLabel")
         start_node = iter_plan_any.get("start")
         stop_node = iter_plan_any.get("stop")
         step_node = iter_plan_any.get("step")
@@ -1276,6 +1326,11 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         step = _to_int_expr(_render_expr(step_node))
         step_is_one = _is_int_literal(step_node, 1)
         step_tmp = _fresh_tmp(ctx, "step")
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        loop_uses_control = _body_uses_loop_control(body)
+        break_label = _fresh_tmp(ctx, "breakLabel") if loop_uses_control else ""
+        continue_label = _fresh_tmp(ctx, "continueLabel") if loop_uses_control else ""
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
         if target_name in declared:
@@ -1285,15 +1340,19 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + "var " + target_name + ": Long = " + start)
             declared.add(target_name)
             type_map[target_name] = "Long"
-        lines.append(indent + "boundary:")
-        lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+        if loop_uses_control:
+            lines.append(indent + "boundary:")
+            lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
         if step_is_one:
-            lines.append(indent + "    while (" + target_name + " < " + stop + ") {")
+            while_prefix = indent + "    " if loop_uses_control else indent
+            lines.append(while_prefix + "while (" + target_name + " < " + stop + ") {")
         else:
-            lines.append(indent + "    val " + step_tmp + " = " + step)
+            step_prefix = indent + "    " if loop_uses_control else indent
+            lines.append(step_prefix + "val " + step_tmp + " = " + step)
+            while_prefix = indent + "    " if loop_uses_control else indent
             lines.append(
-                indent
-                + "    while (("
+                while_prefix
+                + "while (("
                 + step_tmp
                 + " >= 0L && "
                 + target_name
@@ -1307,40 +1366,48 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                 + stop
                 + ")) {"
             )
-        lines.append(indent + "        boundary:")
-        lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
-        body_any = stmt.get("body")
-        body = body_any if isinstance(body_any, list) else []
+        if loop_uses_control:
+            lines.append(indent + "        boundary:")
+            lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+            body_indent = indent + "            "
+            step_indent = indent + "        "
+        else:
+            body_indent = indent + "    "
+            step_indent = indent + "    "
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": target_name + (" += 1L" if step_is_one else " += " + step_tmp),
-            "break_label": break_label,
-            "continue_label": continue_label,
+            "break_label": break_label if loop_uses_control else "",
+            "continue_label": continue_label if loop_uses_control else "",
             "yield_buffer": ctx.get("yield_buffer", ""),
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = "Long"
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "            ", ctx=body_ctx))
+            lines.extend(_emit_stmt(body[i], indent=body_indent, ctx=body_ctx))
             i += 1
         if step_is_one:
-            lines.append(indent + "        " + target_name + " += 1L")
+            lines.append(step_indent + target_name + " += 1L")
         else:
-            lines.append(indent + "        " + target_name + " += " + step_tmp)
+            lines.append(step_indent + target_name + " += " + step_tmp)
         ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
-        lines.append(indent + "    }")
+        while_end_prefix = indent + "    " if loop_uses_control else indent
+        lines.append(while_end_prefix + "}")
         return lines
 
     if iter_plan_any.get("kind") == "RuntimeIterForPlan" and target_plan_any.get("kind") == "NameTarget":
         iter_expr = _render_expr(iter_plan_any.get("iter_expr"))
         iter_tmp = _fresh_tmp(ctx, "iter")
         idx_tmp = _fresh_tmp(ctx, "i")
-        break_label = _fresh_tmp(ctx, "breakLabel")
-        continue_label = _fresh_tmp(ctx, "continueLabel")
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        loop_uses_control = _body_uses_loop_control(body)
+        break_label = _fresh_tmp(ctx, "breakLabel") if loop_uses_control else ""
+        continue_label = _fresh_tmp(ctx, "continueLabel") if loop_uses_control else ""
         target_name = _safe_ident(target_plan_any.get("id"), "item")
         if target_name == "_":
             target_name = _fresh_tmp(ctx, "item")
@@ -1353,76 +1420,101 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                 if isinstance(iter_elem_t_any, str) and iter_elem_t_any not in {"", "unknown"}:
                     target_type_txt = iter_elem_t_any
         target_scala_type = _scala_type(target_type_txt, allow_void=False)
-        lines.append(indent + "boundary:")
-        lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
-        lines.append(indent + "    val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
-        lines.append(indent + "    var " + idx_tmp + ": Long = 0L")
-        lines.append(indent + "    while (" + idx_tmp + " < " + iter_tmp + ".size.toLong) {")
-        lines.append(indent + "        boundary:")
-        lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+        if loop_uses_control:
+            lines.append(indent + "boundary:")
+            lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+            while_prefix = indent + "    "
+            value_prefix = indent + "            "
+            body_indent = indent + "            "
+            inc_prefix = indent + "        "
+            lines.append(indent + "    val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
+            lines.append(indent + "    var " + idx_tmp + ": Long = 0L")
+            lines.append(indent + "    while (" + idx_tmp + " < " + iter_tmp + ".size.toLong) {")
+            lines.append(indent + "        boundary:")
+            lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+        else:
+            while_prefix = indent
+            value_prefix = indent + "    "
+            body_indent = indent + "    "
+            inc_prefix = indent + "    "
+            lines.append(indent + "val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
+            lines.append(indent + "var " + idx_tmp + ": Long = 0L")
+            lines.append(indent + "while (" + idx_tmp + " < " + iter_tmp + ".size.toLong) {")
         if target_scala_type == "Any":
-            lines.append(indent + "            val " + target_name + " = " + iter_tmp + "(" + idx_tmp + ".toInt)")
+            lines.append(value_prefix + "val " + target_name + " = " + iter_tmp + "(" + idx_tmp + ".toInt)")
         else:
             lines.append(
-                indent
-                + "            val "
+                value_prefix
+                + "val "
                 + target_name
                 + ": "
                 + target_scala_type
                 + " = "
                 + _cast_from_any(iter_tmp + "(" + idx_tmp + ".toInt)", target_scala_type)
             )
-        body_any = stmt.get("body")
-        body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": idx_tmp + " += 1L",
-            "break_label": break_label,
-            "continue_label": continue_label,
+            "break_label": break_label if loop_uses_control else "",
+            "continue_label": continue_label if loop_uses_control else "",
             "yield_buffer": ctx.get("yield_buffer", ""),
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = target_scala_type
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "            ", ctx=body_ctx))
+            lines.extend(_emit_stmt(body[i], indent=body_indent, ctx=body_ctx))
             i += 1
-        lines.append(indent + "        " + idx_tmp + " += 1L")
+        lines.append(inc_prefix + idx_tmp + " += 1L")
         ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
-        lines.append(indent + "    }")
+        lines.append(while_prefix + "}")
         return lines
 
     if iter_plan_any.get("kind") == "RuntimeIterForPlan" and target_plan_any.get("kind") == "TupleTarget":
         iter_expr = _render_expr(iter_plan_any.get("iter_expr"))
         iter_tmp = _fresh_tmp(ctx, "iter")
         idx_tmp = _fresh_tmp(ctx, "i")
-        break_label = _fresh_tmp(ctx, "breakLabel")
-        continue_label = _fresh_tmp(ctx, "continueLabel")
-        item_tmp = _fresh_tmp(ctx, "it")
-        tuple_tmp = _fresh_tmp(ctx, "tuple")
-        lines.append(indent + "boundary:")
-        lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
-        lines.append(indent + "    val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
-        lines.append(indent + "    var " + idx_tmp + ": Long = 0L")
-        lines.append(indent + "    while (" + idx_tmp + " < " + iter_tmp + ".size.toLong) {")
-        lines.append(indent + "        boundary:")
-        lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
-        lines.append(indent + "            val " + item_tmp + " = " + iter_tmp + "(" + idx_tmp + ".toInt)")
-        lines.append(indent + "            val " + tuple_tmp + " = __pytra_as_list(" + item_tmp + ")")
-
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
+        loop_uses_control = _body_uses_loop_control(body)
+        break_label = _fresh_tmp(ctx, "breakLabel") if loop_uses_control else ""
+        continue_label = _fresh_tmp(ctx, "continueLabel") if loop_uses_control else ""
+        item_tmp = _fresh_tmp(ctx, "it")
+        tuple_tmp = _fresh_tmp(ctx, "tuple")
+        if loop_uses_control:
+            lines.append(indent + "boundary:")
+            lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+            while_prefix = indent + "    "
+            value_prefix = indent + "            "
+            body_indent = indent + "            "
+            inc_prefix = indent + "        "
+            lines.append(indent + "    val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
+            lines.append(indent + "    var " + idx_tmp + ": Long = 0L")
+            lines.append(indent + "    while (" + idx_tmp + " < " + iter_tmp + ".size.toLong) {")
+            lines.append(indent + "        boundary:")
+            lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
+        else:
+            while_prefix = indent
+            value_prefix = indent + "    "
+            body_indent = indent + "    "
+            inc_prefix = indent + "    "
+            lines.append(indent + "val " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
+            lines.append(indent + "var " + idx_tmp + ": Long = 0L")
+            lines.append(indent + "while (" + idx_tmp + " < " + iter_tmp + ".size.toLong) {")
+        lines.append(value_prefix + "val " + item_tmp + " = " + iter_tmp + "(" + idx_tmp + ".toInt)")
+        lines.append(value_prefix + "val " + tuple_tmp + " = __pytra_as_list(" + item_tmp + ")")
+
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": idx_tmp + " += 1L",
-            "break_label": break_label,
-            "continue_label": continue_label,
+            "break_label": break_label if loop_uses_control else "",
+            "continue_label": continue_label if loop_uses_control else "",
             "yield_buffer": ctx.get("yield_buffer", ""),
         }
         declared = _declared_set(body_ctx)
@@ -1452,20 +1544,20 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             scala_t = _scala_type(target_t, allow_void=False)
             casted = _cast_from_any(rhs, scala_t)
             if name not in declared:
-                lines.append(indent + "            var " + name + ": " + scala_t + " = " + casted)
+                lines.append(value_prefix + "var " + name + ": " + scala_t + " = " + casted)
                 declared.add(name)
             else:
-                lines.append(indent + "            " + name + " = " + casted)
+                lines.append(value_prefix + name + " = " + casted)
             type_map[name] = scala_t
             i += 1
 
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "            ", ctx=body_ctx))
+            lines.extend(_emit_stmt(body[i], indent=body_indent, ctx=body_ctx))
             i += 1
-        lines.append(indent + "        " + idx_tmp + " += 1L")
+        lines.append(inc_prefix + idx_tmp + " += 1L")
         ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
-        lines.append(indent + "    }")
+        lines.append(while_prefix + "}")
         return lines
 
     raise RuntimeError("scala native emitter: unsupported ForCore plan")
@@ -1841,33 +1933,41 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
     if kind == "While":
         test_expr = _render_truthy_expr(stmt.get("test"))
-        break_label = _fresh_tmp(ctx, "breakLabel")
-        continue_label = _fresh_tmp(ctx, "continueLabel")
-        lines = [
-            indent + "boundary:",
-            indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]",
-            indent + "    while (" + test_expr + ") {",
-            indent + "        boundary:",
-            indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]",
-        ]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
+        loop_uses_control = _body_uses_loop_control(body)
+        break_label = _fresh_tmp(ctx, "breakLabel") if loop_uses_control else ""
+        continue_label = _fresh_tmp(ctx, "continueLabel") if loop_uses_control else ""
+        if loop_uses_control:
+            lines = [
+                indent + "boundary:",
+                indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]",
+                indent + "    while (" + test_expr + ") {",
+                indent + "        boundary:",
+                indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]",
+            ]
+            body_indent = indent + "            "
+            while_end = indent + "    }"
+        else:
+            lines = [indent + "while (" + test_expr + ") {"]
+            body_indent = indent + "    "
+            while_end = indent + "}"
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": "",
-            "break_label": break_label,
-            "continue_label": continue_label,
+            "break_label": break_label if loop_uses_control else "",
+            "continue_label": continue_label if loop_uses_control else "",
             "yield_buffer": ctx.get("yield_buffer", ""),
         }
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "            ", ctx=body_ctx))
+            lines.extend(_emit_stmt(body[i], indent=body_indent, ctx=body_ctx))
             i += 1
         ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
-        lines.append(indent + "    }")
+        lines.append(while_end)
         return lines
 
     if kind == "Pass":
