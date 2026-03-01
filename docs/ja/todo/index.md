@@ -36,11 +36,11 @@
 
 文脈: [docs/ja/plans/p0-lua-sample01-runtime-mapping.md](../plans/p0-lua-sample01-runtime-mapping.md)
 
-1. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01] `sample/lua/01` の runtime マッピング欠落（time/png no-op）を是正し、機能欠落を解消する。
-2. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
-3. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-01] `pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく実 runtime 呼び出しへ接続する。
-4. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-02] 未解決 import の no-op フォールバックを撤去し、fail-closed（明示エラー）へ変更する。
-5. [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成 + parity で非退行を固定する。
+1. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01] `sample/lua/01` の runtime マッピング欠落（time/png no-op）を是正し、機能欠落を解消する。
+2. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
+3. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-01] `pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく実 runtime 呼び出しへ接続する。
+4. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-02] 未解決 import の no-op フォールバックを撤去し、fail-closed（明示エラー）へ変更する。
+5. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成 + parity で非退行を固定する。
 
 ### P0: sample/cpp/08 出力品質改善（可読性 + ホットパス縮退）
 

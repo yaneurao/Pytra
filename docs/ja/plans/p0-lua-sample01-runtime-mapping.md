@@ -41,10 +41,14 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets lua 01_mandelbrot`
 
 分解:
-- [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
-- [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-01] `pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく実 runtime 呼び出しへ接続する。
-- [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-02] 未解決 import の no-op フォールバックを撤去し、fail-closed（明示エラー）へ変更する。
-- [ ] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成 + parity で非退行を固定する。
+- [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
+- [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-01] `pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく実 runtime 呼び出しへ接続する。
+- [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-02] 未解決 import の no-op フォールバックを撤去し、fail-closed（明示エラー）へ変更する。
+- [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成 + parity で非退行を固定する。
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/lua/01` の runtime 機能欠落（time/png no-op）を `P0` で先行是正する方針を確定した。
+- 2026-03-01: `src/hooks/lua/emitter/lua_native_emitter.py` で `time.perf_counter` を `__pytra_perf_counter` へ接続し、`pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく `__pytra_write_rgb_png` ベース実装へ接続した。未解決 `pytra.*`（特に `gif`）は fail-closed（`RuntimeError`）へ変更した。
+- 2026-03-01: `print` の Lua 既定区切り（タブ）による `output_mismatch` を確認し、`__pytra_print` helper を導入して Python 互換の空白区切り出力に統一した。
+- 2026-03-01: 回帰として `test/unit/test_py2lua_smoke.py` を更新し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v`（18 tests, OK）を確認した。
+- 2026-03-01: `python3 src/py2lua.py sample/py/01_mandelbrot.py -o sample/lua/01_mandelbrot.lua && lua sample/lua/01_mandelbrot.lua` で実行確認し、`python3 tools/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 01_mandelbrot` を PASS（`cases=1 pass=1 fail=0`）で確認した。
