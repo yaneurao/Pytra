@@ -213,19 +213,130 @@ def _tuple_element_types(type_name: Any) -> list[str]:
     return out
 
 
+def _strip_outer_parens(expr: str) -> str:
+    cur = expr.strip()
+    while len(cur) >= 2 and cur[0] == "(" and cur[-1] == ")":
+        depth = 0
+        ok = True
+        i = 0
+        while i < len(cur):
+            ch = cur[i]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0 and i != len(cur) - 1:
+                    ok = False
+                    break
+                if depth < 0:
+                    ok = False
+                    break
+            i += 1
+        if not ok or depth != 0:
+            break
+        cur = cur[1:-1].strip()
+    return cur
+
+
+def _is_direct_call(expr: str, fn_name: str) -> bool:
+    txt = _strip_outer_parens(expr)
+    prefix = fn_name + "("
+    if not txt.startswith(prefix) or not txt.endswith(")"):
+        return False
+    depth = 0
+    i = len(fn_name)
+    while i < len(txt):
+        ch = txt[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0 and i != len(txt) - 1:
+                return False
+            if depth < 0:
+                return False
+        i += 1
+    return depth == 0
+
+
+def _wrap_runtime_call(expr: str, fn_name: str) -> str:
+    inner = _strip_outer_parens(expr)
+    if _is_direct_call(inner, fn_name):
+        return inner
+    return fn_name + "(" + inner + ")"
+
+
+def _to_int_expr(expr: str) -> str:
+    return _wrap_runtime_call(expr, "__pytra_int")
+
+
+def _to_float_expr(expr: str) -> str:
+    return _wrap_runtime_call(expr, "__pytra_float")
+
+
+def _to_truthy_expr(expr: str) -> str:
+    return _wrap_runtime_call(expr, "__pytra_truthy")
+
+
+def _to_str_expr(expr: str) -> str:
+    return _wrap_runtime_call(expr, "__pytra_str")
+
+
+def _to_list_expr(expr: str) -> str:
+    return _wrap_runtime_call(expr, "__pytra_as_list")
+
+
+def _to_dict_expr(expr: str) -> str:
+    return _wrap_runtime_call(expr, "__pytra_as_dict")
+
+
+def _has_resolved_type(node: Any, expected: set[str]) -> bool:
+    if not isinstance(node, dict):
+        return False
+    resolved_any = node.get("resolved_type")
+    if not isinstance(resolved_any, str):
+        return False
+    return resolved_any in expected
+
+
+def _int_operand(expr: str, node: Any) -> str:
+    if _has_resolved_type(node, {"int", "int64", "uint8"}):
+        return expr
+    return _to_int_expr(expr)
+
+
+def _float_operand(expr: str, node: Any) -> str:
+    if _has_resolved_type(node, {"float", "float64"}):
+        return expr
+    return _to_float_expr(expr)
+
+
+def _is_int_literal(node: Any, expected: int) -> bool:
+    if isinstance(node, int) and not isinstance(node, bool):
+        return node == expected
+    if not isinstance(node, dict):
+        return False
+    if node.get("kind") != "Constant":
+        return False
+    value = node.get("value")
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, int) and value == expected
+
+
 def _cast_from_any(expr: str, kotlin_type: str) -> str:
     if kotlin_type == "Long":
-        return "__pytra_int(" + expr + ")"
+        return _to_int_expr(expr)
     if kotlin_type == "Double":
-        return "__pytra_float(" + expr + ")"
+        return _to_float_expr(expr)
     if kotlin_type == "Boolean":
-        return "__pytra_truthy(" + expr + ")"
+        return _to_truthy_expr(expr)
     if kotlin_type == "String":
-        return "__pytra_str(" + expr + ")"
+        return _to_str_expr(expr)
     if kotlin_type == "MutableList<Any?>":
-        return "__pytra_as_list(" + expr + ")"
+        return _to_list_expr(expr)
     if kotlin_type == "MutableMap<Any, Any?>":
-        return "__pytra_as_dict(" + expr + ")"
+        return _to_dict_expr(expr)
     if kotlin_type == "Any?":
         return expr
     if kotlin_type in _CLASS_NAMES:
@@ -334,29 +445,31 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             if len(elems) == 1:
                 return "__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
 
-    left_expr = _render_expr(expr.get("left"))
-    right_expr = _render_expr(expr.get("right"))
+    left_node = expr.get("left")
+    right_node = expr.get("right")
+    left_expr = _render_expr(left_node)
+    right_expr = _render_expr(right_node)
     resolved = expr.get("resolved_type")
 
     if op == "Div":
-        return "(__pytra_float(" + left_expr + ") / __pytra_float(" + right_expr + "))"
+        return "(" + _float_operand(left_expr, left_node) + " / " + _float_operand(right_expr, right_node) + ")"
 
     if op == "FloorDiv":
-        return "(__pytra_int(__pytra_int(" + left_expr + ") / __pytra_int(" + right_expr + ")))"
+        return "(" + _int_operand(left_expr, left_node) + " / " + _int_operand(right_expr, right_node) + ")"
 
     if op == "Mod":
-        return "(__pytra_int(" + left_expr + ") % __pytra_int(" + right_expr + "))"
+        return "(" + _int_operand(left_expr, left_node) + " % " + _int_operand(right_expr, right_node) + ")"
 
     if resolved == "str" and op == "Add":
-        return "(__pytra_str(" + left_expr + ") + __pytra_str(" + right_expr + "))"
+        return "(" + _to_str_expr(left_expr) + " + " + _to_str_expr(right_expr) + ")"
 
     if resolved in {"int", "int64", "uint8"}:
         sym = _bin_op_symbol(op)
-        return "(__pytra_int(" + left_expr + ") " + sym + " __pytra_int(" + right_expr + "))"
+        return "(" + _int_operand(left_expr, left_node) + " " + sym + " " + _int_operand(right_expr, right_node) + ")"
 
     if resolved in {"float", "float64"}:
         sym = _bin_op_symbol(op)
-        return "(__pytra_float(" + left_expr + ") " + sym + " __pytra_float(" + right_expr + "))"
+        return "(" + _float_operand(left_expr, left_node) + " " + sym + " " + _float_operand(right_expr, right_node) + ")"
 
     sym = _bin_op_symbol(op)
     return "(" + left_expr + " " + sym + " " + right_expr + ")"
@@ -418,25 +531,25 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
 
         symbol = _compare_op_symbol(op)
         if left_type == "str" or right_type == "str":
-            lhs = "__pytra_str(" + cur_left + ")"
-            rhs = "__pytra_str(" + right + ")"
+            lhs = _to_str_expr(cur_left)
+            rhs = _to_str_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"int", "int64", "uint8"} or right_type in {"int", "int64", "uint8"}:
-            lhs = "__pytra_int(" + cur_left + ")"
-            rhs = "__pytra_int(" + right + ")"
+            lhs = _to_int_expr(cur_left)
+            rhs = _to_int_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"float", "float64"} or right_type in {"float", "float64"}:
-            lhs = "__pytra_float(" + cur_left + ")"
-            rhs = "__pytra_float(" + right + ")"
+            lhs = _to_float_expr(cur_left)
+            rhs = _to_float_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         else:
             if op in {"Eq", "NotEq"}:
-                lhs = "__pytra_str(" + cur_left + ")"
-                rhs = "__pytra_str(" + right + ")"
+                lhs = _to_str_expr(cur_left)
+                rhs = _to_str_expr(right)
                 parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
             else:
-                lhs = "__pytra_float(" + cur_left + ")"
-                rhs = "__pytra_float(" + right + ")"
+                lhs = _to_float_expr(cur_left)
+                rhs = _to_float_expr(right)
                 parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
 
         cur_left = right
@@ -538,19 +651,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "int":
         if len(args) == 0:
             return "0L"
-        return "__pytra_int(" + _render_expr(args[0]) + ")"
+        return _to_int_expr(_render_expr(args[0]))
     if callee_name == "float":
         if len(args) == 0:
             return "0.0"
-        return "__pytra_float(" + _render_expr(args[0]) + ")"
+        return _to_float_expr(_render_expr(args[0]))
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
-        return "__pytra_truthy(" + _render_expr(args[0]) + ")"
+        return _to_truthy_expr(_render_expr(args[0]))
     if callee_name == "str":
         if len(args) == 0:
             return '""'
-        return "__pytra_str(" + _render_expr(args[0]) + ")"
+        return _to_str_expr(_render_expr(args[0]))
     if callee_name == "len":
         if len(args) == 0:
             return "0L"
@@ -577,7 +690,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name in {"save_gif", "write_rgb_png"}:
+    if callee_name == "write_rgb_png":
+        rendered_png_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_png_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
+    if callee_name == "save_gif":
         rendered_noop_args: list[str] = []
         i = 0
         while i < len(args):
@@ -618,7 +738,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_math_args: list[str] = []
                 i = 0
                 while i < len(args):
-                    rendered_math_args.append("__pytra_float(" + _render_expr(args[i]) + ")")
+                    rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
                     i += 1
                 if attr_name == "pow" and len(rendered_math_args) == 2:
                     return rendered_math_args[0] + ".pow(" + rendered_math_args[1] + ")"
@@ -628,7 +748,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
         owner_expr = _render_expr(owner_any)
-        if attr_name in {"write_rgb_png", "save_gif"}:
+        if attr_name == "write_rgb_png":
+            rendered_png_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_png_args.append(_render_expr(args[i]))
+                i += 1
+            return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
+        if attr_name == "save_gif":
             rendered_noop_args: list[str] = []
             i = 0
             while i < len(args):
@@ -992,6 +1119,56 @@ def _infer_kotlin_type(expr: Any, type_map: dict[str, str] | None = None) -> str
     return _kotlin_type(resolved, allow_void=False)
 
 
+def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[str, str] | None = None) -> bool:
+    if not isinstance(value_expr, dict):
+        return False
+    kind = value_expr.get("kind")
+    if kind == "Name":
+        if isinstance(type_map, dict):
+            ident = _safe_ident(value_expr.get("id"), "")
+            mapped_any = type_map.get(ident)
+            mapped = mapped_any if isinstance(mapped_any, str) else ""
+            return mapped == target_type
+        return False
+    if kind == "Constant":
+        value = value_expr.get("value")
+        if target_type == "Long":
+            return isinstance(value, int) and not isinstance(value, bool)
+        if target_type == "Double":
+            return isinstance(value, float)
+        if target_type == "Boolean":
+            return isinstance(value, bool)
+        if target_type == "String":
+            return isinstance(value, str)
+        return False
+    if kind == "BinOp":
+        resolved = _kotlin_type(value_expr.get("resolved_type"), allow_void=False)
+        return resolved == target_type
+    if kind in {"Compare", "BoolOp", "IsInstance"}:
+        return target_type == "Boolean"
+    if kind == "Call":
+        callee = _call_name(value_expr)
+        if callee == "int":
+            return target_type == "Long"
+        if callee == "float":
+            return target_type == "Double"
+        if callee == "bool":
+            return target_type == "Boolean"
+        if callee == "str":
+            return target_type == "String"
+        if callee == "perf_counter":
+            return target_type == "Double"
+        if callee == "len":
+            return target_type == "Long"
+    return False
+
+
+def _needs_cast(value_expr: Any, target_type: str, type_map: dict[str, str] | None = None) -> bool:
+    if target_type in {"", "Any?"}:
+        return False
+    return not _expr_emits_target_type(value_expr, target_type, type_map)
+
+
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
@@ -1005,35 +1182,42 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         target_name = _safe_ident(target_plan_any.get("id"), "i")
         if target_name == "_":
             target_name = _fresh_tmp(ctx, "loop")
-        start = "__pytra_int(" + _render_expr(iter_plan_any.get("start")) + ")"
-        stop = "__pytra_int(" + _render_expr(iter_plan_any.get("stop")) + ")"
-        step = "__pytra_int(" + _render_expr(iter_plan_any.get("step")) + ")"
+        start_node = iter_plan_any.get("start")
+        stop_node = iter_plan_any.get("stop")
+        step_node = iter_plan_any.get("step")
+        start = _to_int_expr(_render_expr(start_node))
+        stop = _to_int_expr(_render_expr(stop_node))
+        step = _to_int_expr(_render_expr(step_node))
+        step_is_one = _is_int_literal(step_node, 1)
         step_tmp = _fresh_tmp(ctx, "step")
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
-        lines.append(indent + "val " + step_tmp + " = " + step)
         if target_name in declared:
             lines.append(indent + target_name + " = " + start)
         else:
             lines.append(indent + "var " + target_name + " = " + start)
             declared.add(target_name)
             type_map[target_name] = "Long"
-        lines.append(
-            indent
-            + "while (("
-            + step_tmp
-            + " >= 0L && "
-            + target_name
-            + " < "
-            + stop
-            + ") || ("
-            + step_tmp
-            + " < 0L && "
-            + target_name
-            + " > "
-            + stop
-            + ")) {"
-        )
+        if step_is_one:
+            lines.append(indent + "while (" + target_name + " < " + stop + ") {")
+        else:
+            lines.append(indent + "val " + step_tmp + " = " + step)
+            lines.append(
+                indent
+                + "while (("
+                + step_tmp
+                + " >= 0L && "
+                + target_name
+                + " < "
+                + stop
+                + ") || ("
+                + step_tmp
+                + " < 0L && "
+                + target_name
+                + " > "
+                + stop
+                + ")) {"
+            )
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
@@ -1041,7 +1225,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
             "return_type": ctx.get("return_type", ""),
-            "continue_prefix": target_name + " += " + step_tmp,
+            "continue_prefix": target_name + (" += 1L" if step_is_one else " += " + step_tmp),
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = "Long"
@@ -1049,7 +1233,10 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
             i += 1
-        lines.append(indent + "    " + target_name + " += " + step_tmp)
+        if step_is_one:
+            lines.append(indent + "    " + target_name + " += 1L")
+        else:
+            lines.append(indent + "    " + target_name + " += " + step_tmp)
         ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
         lines.append(indent + "}")
         return lines
@@ -1237,7 +1424,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             value = _render_expr(stmt.get("value"))
             return_type_any = ctx.get("return_type")
             return_type = return_type_any if isinstance(return_type_any, str) else ""
-            if return_type not in {"", "Any?"}:
+            if return_type not in {"", "Any?"} and _needs_cast(stmt.get("value"), return_type, _type_map(ctx)):
                 value = _cast_from_any(value, return_type)
             return [indent + "return " + value]
         return [indent + "return"]
@@ -1259,10 +1446,18 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
                 attr = _safe_ident(func_any.get("attr"), "")
                 if attr == "append":
-                    owner = _render_expr(func_any.get("value"))
+                    owner_any = func_any.get("value")
+                    owner = _render_expr(owner_any)
+                    owner_type = ""
+                    if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                        owner_name = _safe_ident(owner_any.get("id"), "")
+                        type_hint_any = _type_map(ctx).get(owner_name)
+                        owner_type = type_hint_any if isinstance(type_hint_any, str) else ""
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 1:
+                        if owner_type == "MutableList<Any?>":
+                            return [indent + owner + ".add(" + _render_expr(args[0]) + ")"]
                         return [indent + owner + " = __pytra_as_list(" + owner + "); " + owner + ".add(" + _render_expr(args[0]) + ")"]
                 if attr == "pop":
                     owner = _render_expr(func_any.get("value"))
@@ -1302,7 +1497,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             value = _default_return_expr(kotlin_type)
         else:
             value = _render_expr(stmt_value)
-            if kotlin_type != "Any?":
+            if kotlin_type != "Any?" and _needs_cast(stmt_value, kotlin_type, _type_map(ctx)):
                 value = _cast_from_any(value, kotlin_type)
         if stmt.get("declare") is False or target in declared:
             if target not in declared:
@@ -1312,7 +1507,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if target in type_map and type_map[target] != "Any?":
                 if stmt_value is None:
                     return [indent + target + " = " + _default_return_expr(type_map[target])]
-                return [indent + target + " = " + _cast_from_any(_render_expr(stmt_value), type_map[target])]
+                reassigned = _render_expr(stmt_value)
+                if _needs_cast(stmt_value, type_map[target], _type_map(ctx)):
+                    reassigned = _cast_from_any(reassigned, type_map[target])
+                return [indent + target + " = " + reassigned]
             return [indent + target + " = " + value]
 
         declared.add(target)
@@ -1358,14 +1556,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if stmt.get("declare"):
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "Any?":
-                    return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+                    if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
+                        return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
                 return [indent + lhs + " = " + value]
             kotlin_type = _kotlin_type(stmt.get("decl_type"), allow_void=False)
             if kotlin_type == "Any?":
                 inferred = _infer_kotlin_type(stmt.get("value"), _type_map(ctx))
                 if inferred != "Any?":
                     kotlin_type = inferred
-            if kotlin_type != "Any?":
+            if kotlin_type != "Any?" and _needs_cast(stmt.get("value"), kotlin_type, _type_map(ctx)):
                 value = _cast_from_any(value, kotlin_type)
             declared.add(lhs)
             type_map[lhs] = kotlin_type
@@ -1375,11 +1574,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             inferred = _infer_kotlin_type(stmt.get("value"), _type_map(ctx))
             declared.add(lhs)
             type_map[lhs] = inferred
-            if inferred != "Any?":
+            if inferred != "Any?" and _needs_cast(stmt.get("value"), inferred, _type_map(ctx)):
                 value = _cast_from_any(value, inferred)
             return [indent + "var " + lhs + ": " + inferred + " = " + value]
         if lhs in type_map and type_map[lhs] != "Any?":
-            return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+            if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
+                return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":

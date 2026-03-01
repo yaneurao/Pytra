@@ -60,7 +60,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         kotlin = transpile_to_kotlin_native(east)
         self.assertIn("open fun speak()", kotlin)
         self.assertIn("override fun speak()", kotlin)
-        self.assertIn('return __pytra_str(("loud-" + super.speak()))', kotlin)
+        self.assertIn('return __pytra_str("loud-" + super.speak())', kotlin)
         self.assertNotIn("super().speak()", kotlin)
 
     def test_module_leading_comments_are_emitted(self) -> None:
@@ -69,6 +69,21 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         kotlin = transpile_to_kotlin_native(east)
         assert_no_generated_comments(self, kotlin)
         assert_sample01_module_comments(self, kotlin, prefix="//")
+
+    def test_sample_01_quality_fastpaths_reduce_redundant_wrappers(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("__pytra_write_rgb_png(out_path, width, height, pixels)", kotlin)
+        self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", kotlin)
+        self.assertNotIn("__pytra_float(__pytra_float(", kotlin)
+        self.assertNotIn("__pytra_int(__pytra_int(", kotlin)
+        self.assertIn("while (y < __pytra_int(height))", kotlin)
+        self.assertIn("while (x < __pytra_int(width))", kotlin)
+        self.assertIn("pixels.add(r)", kotlin)
+        self.assertIn("pixels.add(g)", kotlin)
+        self.assertIn("pixels.add(b)", kotlin)
+        self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.add", kotlin)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
