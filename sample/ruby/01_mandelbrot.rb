@@ -44,9 +44,6 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
     while x < width
       px = (x_min + ((x_max - x_min) * __pytra_div(x, __hoisted_cast_2)))
       it = escape_count(px, py, max_iter)
-      r = nil
-      g = nil
-      b = nil
       if (it >= max_iter)
         r = 0
         g = 0
