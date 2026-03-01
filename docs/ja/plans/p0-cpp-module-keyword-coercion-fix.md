@@ -41,10 +41,13 @@
 決定ログ:
 - 2026-03-01: ユーザー報告（sample/15 の `int64(py_to<int64>(4))`）を受け、原因を「module import 関数 keyword 引数の AST ノード未伝播」と特定し、P0 タスクとして起票した。
 - 2026-03-01: まずは callsite の args/kw ノード整合を修正し、補助的な文字列リテラル推論は後続最適化として切り分ける方針を確定した。
+- 2026-03-01: module 関数向けに `args/kw` だけでなく `arg_nodes/kw_nodes` も同順序でマージする経路へ統一し、`_coerce_args_for_module_function()` に merged nodes を渡すよう更新した。
+- 2026-03-01: module シグネチャ抽出に `arg_names` を追加し、`loop=0, delay_cs=4` のような keyword 順序入替でも `save_gif(..., delay_cs, loop)` 順へ再配置する方針を採用した。
+- 2026-03-01: `test_py2cpp_codegen_issues.py` に sample/15 回帰と keyword 順序入替ケースを追加し、`check_py2cpp_transpile` / unit（`py2cpp_codegen_issues`・`east3_cpp_bridge`）を通過した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S1-01] module import 関数呼び出しで `args` と `kw` をマージする際、`arg_nodes` と `kw_nodes` も同順序でマージする。
-- [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-01] `_coerce_args_for_module_function()` に正しい merged nodes を渡し、keyword リテラルの型既知経路で冗長 cast を抑止する。
-- [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-02] sample/15 と keyword 順序入替ケースの回帰テストを追加し、`..., 4, 0)` 形を固定する。
-- [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認する。
+- [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S1-01] module import 関数呼び出しで `args` と `kw` をマージする際、`arg_nodes` と `kw_nodes` も同順序でマージする。
+- [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-01] `_coerce_args_for_module_function()` に正しい merged nodes を渡し、keyword リテラルの型既知経路で冗長 cast を抑止する。
+- [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-02] sample/15 と keyword 順序入替ケースの回帰テストを追加し、`..., 4, 0)` 形を固定する。
+- [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認する。

@@ -43,6 +43,7 @@ class CppCallEmitter:
         args: list[str],
         kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
     ) -> tuple[str | None, str]:
         """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
         raw = raw_name
@@ -64,22 +65,33 @@ class CppCallEmitter:
         )
         if route_runtime_call:
             call_args = self.merge_call_args(args, kw)
+            call_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+            module_arg_names = self._module_function_arg_names(imported_module, raw)
+            if len(module_arg_names) > 0 and len(kw) > 0:
+                call_args = self._merge_args_with_kw_by_name(args, kw, module_arg_names)
+                call_arg_nodes = self._merge_arg_nodes_with_kw_by_name(arg_nodes, kw, kw_nodes, module_arg_names)
             if self._contains_text(mapped_runtime_txt, "::"):
-                call_args = self._coerce_args_for_module_function(imported_module, raw, call_args, arg_nodes)
+                call_args = self._coerce_args_for_module_function(imported_module, raw, call_args, call_arg_nodes)
             if raw.startswith("py_assert_"):
-                call_args = self._coerce_py_assert_args(raw, call_args, arg_nodes)
+                call_args = self._coerce_py_assert_args(raw, call_args, call_arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
         has_namespace_map = imported_module in self.module_namespace_map
         target_ns = ""
         if has_namespace_map:
             target_ns = self.module_namespace_map[imported_module]
         if has_namespace_map and target_ns != "":
+            call_args = self.merge_call_args(args, kw)
+            call_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+            module_arg_names = self._module_function_arg_names(imported_module, raw)
+            if len(module_arg_names) > 0 and len(kw) > 0:
+                call_args = self._merge_args_with_kw_by_name(args, kw, module_arg_names)
+                call_arg_nodes = self._merge_arg_nodes_with_kw_by_name(arg_nodes, kw, kw_nodes, module_arg_names)
             namespaced = self._render_namespaced_module_call(
                 imported_module,
                 target_ns,
                 raw,
-                args,
-                arg_nodes,
+                call_args,
+                call_arg_nodes,
             )
             if namespaced is not None:
                 return namespaced, raw
@@ -269,6 +281,7 @@ class CppCallEmitter:
         args: list[str],
         kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
         first_arg: Any,
     ) -> str | None:
         """Call の Name/Attribute 分岐を処理する。"""
@@ -279,7 +292,7 @@ class CppCallEmitter:
         if fn_kind == "Name":
             raw = self.any_dict_get_str(fn, "id", "")
             name_call_kind = self._type_id_name_call_kind(raw)
-            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes)
+            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes, kw_nodes)
             if imported_rendered is not None:
                 return imported_rendered
             if raw.startswith("py_assert_"):
@@ -304,7 +317,7 @@ class CppCallEmitter:
                     return self.render_expr(type_id_expr)
         if fn_kind == "Attribute":
             attr_rendered_txt = ""
-            attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes)
+            attr_rendered = self._render_call_attribute(expr, fn, args, kw, arg_nodes, kw_nodes)
             if isinstance(attr_rendered, str):
                 attr_rendered_txt = str(attr_rendered)
             if attr_rendered_txt != "":
@@ -318,12 +331,18 @@ class CppCallEmitter:
         args: list[str],
         kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
     ) -> str | None:
         """module.method(...) 呼び出しを処理する。"""
         hook_rendered = self.hook_on_render_module_method(owner_mod, attr, args, kw, arg_nodes)
         if isinstance(hook_rendered, str) and hook_rendered != "":
             return hook_rendered
         merged_args = self.merge_call_args(args, kw)
+        merged_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+        module_arg_names = self._module_function_arg_names(owner_mod, attr)
+        if len(module_arg_names) > 0 and len(kw) > 0:
+            merged_args = self._merge_args_with_kw_by_name(args, kw, module_arg_names)
+            merged_arg_nodes = self._merge_arg_nodes_with_kw_by_name(arg_nodes, kw, kw_nodes, module_arg_names)
         owner_mod_norm = owner_mod
         if owner_mod_norm in self.module_namespace_map:
             mapped = self._render_call_module_method_with_namespace(
@@ -331,7 +350,7 @@ class CppCallEmitter:
                 attr,
                 self.module_namespace_map[owner_mod_norm],
                 merged_args,
-                arg_nodes,
+                merged_arg_nodes,
             )
             if mapped is not None:
                 return mapped
@@ -340,7 +359,7 @@ class CppCallEmitter:
             attr,
             self._module_name_to_cpp_namespace(owner_mod_norm),
             merged_args,
-            arg_nodes,
+            merged_arg_nodes,
         )
         if fallback is not None:
             return fallback
@@ -497,6 +516,7 @@ class CppCallEmitter:
         args: list[str],
         kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
     ) -> str | None:
         """Attribute 形式の呼び出しを module/object/fallback の順で処理する。"""
         _ = expr
@@ -509,11 +529,12 @@ class CppCallEmitter:
         attr = self.any_dict_get_str(call_ctx, "attr", "")
         if attr == "":
             return None
-        super_rendered = self._render_super_attribute_call(owner_obj, attr, args, kw, arg_nodes)
+        merged_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+        super_rendered = self._render_super_attribute_call(owner_obj, attr, args, kw, merged_arg_nodes)
         if super_rendered is not None and super_rendered != "":
             return super_rendered
         if owner_mod != "":
-            module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes)
+            module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes, kw_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
         if self._requires_builtin_method_call_lowering(owner_t, attr):
@@ -521,7 +542,7 @@ class CppCallEmitter:
             if owner_label == "":
                 owner_label = "unknown"
             raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
-        return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes)
+        return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, merged_arg_nodes)
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
         """`from-import` 束縛名の module 参照エラーを生成する（C++ 向け）。"""
@@ -652,6 +673,41 @@ class CppCallEmitter:
                 out.append(val)
         return out
 
+    def _merge_arg_nodes_with_kw_by_name(
+        self,
+        arg_nodes: list[Any],
+        kw: dict[str, str],
+        kw_nodes: list[Any],
+        arg_names: list[str],
+    ) -> list[Any]:
+        """位置引数+キーワード値ノードを、引数名順で 1 本化する。"""
+        out: list[Any] = []
+        for node in arg_nodes:
+            out.append(node)
+        if len(kw) == 0:
+            return out
+        kw_name_list: list[str] = []
+        for key, _ in kw.items():
+            kw_name_list.append(key)
+        kw_node_map: dict[str, Any] = {}
+        i = 0
+        while i < len(kw_name_list):
+            kw_name = kw_name_list[i]
+            kw_node_map[kw_name] = kw_nodes[i] if i < len(kw_nodes) else {}
+            i += 1
+        used_kw: set[str] = set()
+        positional_count = len(out)
+        for j, name in enumerate(arg_names):
+            if j < positional_count:
+                continue
+            if name in kw_node_map:
+                out.append(kw_node_map[name])
+                used_kw.add(name)
+        for kw_name in kw_name_list:
+            if kw_name not in used_kw:
+                out.append(kw_node_map.get(kw_name, {}))
+        return out
+
     def _coerce_args_for_class_method(
         self,
         owner_t: str,
@@ -726,7 +782,7 @@ class CppCallEmitter:
                 + ", builtin_name="
                 + builtin_name_txt
             )
-        name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, first_arg)
+        name_or_attr = self._render_call_name_or_attr(expr_d, fn, fn_name, args, kw, arg_nodes, kw_nodes, first_arg)
         name_or_attr_txt = ""
         if isinstance(name_or_attr, str):
             name_or_attr_txt = str(name_or_attr)

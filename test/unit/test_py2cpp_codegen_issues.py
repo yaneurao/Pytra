@@ -601,6 +601,32 @@ def is_empty(xs: list[int]) -> bool:
         self.assertNotIn("return py_len(xs) != 0;", cpp)
         self.assertNotIn("return py_len(xs) == 0;", cpp)
 
+    def test_sample15_module_keyword_literals_do_not_emit_redundant_int_cast(self) -> None:
+        src_py = ROOT / "sample" / "py" / "15_wave_interference_loop.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("pytra::utils::gif::save_gif(", cpp)
+        self.assertIn("pytra::utils::gif::grayscale_palette(), 4, 0);", cpp)
+        self.assertNotIn("int64(py_to<int64>(4))", cpp)
+        self.assertNotIn("int64(py_to<int64>(0))", cpp)
+
+    def test_module_keyword_reordered_call_keeps_signature_order_for_nodes_and_values(self) -> None:
+        src = """from pytra.utils.gif import save_gif, grayscale_palette
+
+def f(frames: list[bytes]) -> None:
+    save_gif("x.gif", 1, 1, frames, grayscale_palette(), loop=0, delay_cs=4)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "module_kw_order.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+
+        self.assertIn("pytra::utils::gif::save_gif(\"x.gif\", 1, 1, frames, pytra::utils::gif::grayscale_palette(), 4, 0);", cpp)
+        self.assertNotIn("pytra::utils::gif::save_gif(\"x.gif\", 1, 1, frames, pytra::utils::gif::grayscale_palette(), 0, 4);", cpp)
+        self.assertNotIn("int64(py_to<int64>(4))", cpp)
+        self.assertNotIn("int64(py_to<int64>(0))", cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass

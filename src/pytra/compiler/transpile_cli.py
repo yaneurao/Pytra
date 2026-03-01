@@ -575,6 +575,7 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
             if p1 < 0:
                 continue
             params = sig0[p0 + 1 : p1]
+            arg_names: list[str] = []
             arg_types: list[str] = []
             arg_defaults: list[str] = []
             parts = split_top_level_csv(params)
@@ -588,6 +589,10 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
                     default_txt = prm[eq_top + 1 :].strip()
                     prm = prm[:eq_top].strip()
                 colon = prm.find(":")
+                if colon >= 0:
+                    arg_names.append(prm[:colon].strip())
+                else:
+                    arg_names.append(prm.strip())
                 if colon < 0:
                     arg_types.append("unknown")
                     arg_defaults.append(default_txt)
@@ -596,6 +601,7 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
                 arg_types.append(normalize_param_annotation(ann))
                 arg_defaults.append(default_txt)
             sig_map[name] = {
+                "arg_names": arg_names,
                 "arg_types": arg_types,
                 "arg_defaults": arg_defaults,
             }

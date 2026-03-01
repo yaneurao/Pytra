@@ -131,11 +131,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-module-keyword-coercion-fix.md](../plans/p0-cpp-module-keyword-coercion-fix.md)
 
-1. [ ] [ID: P0-CPP-MODULE-KW-COERCE-01] module import 関数の keyword 引数で AST ノードを正しく型強制へ伝播し、冗長 `int64(py_to<int64>(...))` を削減する。
-2. [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S1-01] module import 関数呼び出しで `args`/`kw` マージ時に `arg_nodes`/`kw_nodes` も同順序でマージする。
-3. [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-01] `_coerce_args_for_module_function()` に merged nodes を渡し、keyword リテラルの型既知経路で冗長 cast を抑止する。
-4. [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-02] sample/15 と keyword 順序入替ケースの回帰テストを追加し、`..., 4, 0)` 形を固定する。
-5. [ ] [ID: P0-CPP-MODULE-KW-COERCE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認する。
+1. [x] [ID: P0-CPP-MODULE-KW-COERCE-01] module import 関数の keyword 引数で AST ノードを正しく型強制へ伝播し、冗長 `int64(py_to<int64>(...))` を削減する。
+2. [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S1-01] module import 関数呼び出しで `args`/`kw` マージ時に `arg_nodes`/`kw_nodes` も同順序でマージする。
+3. [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-01] `_coerce_args_for_module_function()` に merged nodes を渡し、keyword リテラルの型既知経路で冗長 cast を抑止する。
+4. [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S2-02] sample/15 と keyword 順序入替ケースの回帰テストを追加し、`..., 4, 0)` 形を固定する。
+5. [x] [ID: P0-CPP-MODULE-KW-COERCE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認する。
 
 ### P0: C++ `py_enumerate_list_as<T>()` 導入（最優先）
 

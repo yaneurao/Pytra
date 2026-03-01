@@ -13,6 +13,7 @@ from pytra.compiler.transpile_cli import (
     dict_any_get_dict_list,
     dict_any_get_str,
     extract_function_arg_types_from_python_source,
+    extract_function_signatures_from_python_source,
     python_module_exists_under,
     sort_str_list_copy,
 )
@@ -241,6 +242,31 @@ class CppModuleEmitter:
         if isinstance(sig, list):
             return sig
         return []
+
+    def _module_function_arg_names(self, module_name: str, fn_name: str) -> list[str]:
+        """モジュール関数の引数名列を返す（不明時は空 list）。"""
+        module_name_norm = module_name
+        cached = self._module_fn_signature_cache.get(module_name_norm)
+        if not isinstance(cached, dict):
+            sig_map: dict[str, dict[str, list[str]]] = {}
+            src_path: Path = self._module_source_path_for_name(module_name_norm)
+            if str(src_path) != "":
+                sig_map = extract_function_signatures_from_python_source(src_path)
+            self._module_fn_signature_cache[module_name_norm] = sig_map
+            cached = sig_map
+        sig = cached.get(fn_name)
+        if not isinstance(sig, dict):
+            return []
+        names = sig.get("arg_names")
+        if not isinstance(names, list):
+            return []
+        out: list[str] = []
+        for name_obj in names:
+            if isinstance(name_obj, str):
+                name_txt = name_obj.strip()
+                if name_txt != "":
+                    out.append(name_txt)
+        return out
 
     def _coerce_args_for_module_function(
         self,

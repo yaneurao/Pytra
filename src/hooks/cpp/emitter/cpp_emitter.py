@@ -240,6 +240,7 @@ class CppEmitter(
         self.current_function_typed_list_str_locals: set[str] = set()
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
+        self._module_fn_signature_cache: dict[str, dict[str, dict[str, list[str]]]] = {}
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_stack_list_locals_map: dict[str, list[str]] = {}
