@@ -1174,6 +1174,19 @@ func __pytra_as_dict(v any) map[any]any {
     return map[any]any{}
 }
 
+func __pytra_grayscale_palette() []any {
+    raw := pyGrayscalePalette()
+    return __pytra_bytes(raw)
+}
+
+func __pytra_write_rgb_png(path any, width any, height any, pixels any) {
+    pyWriteRGBPNG(path, width, height, pixels)
+}
+
+func __pytra_save_gif(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
+    pySaveGIF(path, width, height, frames, palette, delayCS, loop)
+}
+
 func __pytra_pop_last(v []any) []any {
     if len(v) == 0 {
         return v
