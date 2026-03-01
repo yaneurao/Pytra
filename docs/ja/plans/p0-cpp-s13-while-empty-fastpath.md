@@ -33,9 +33,12 @@
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 の `while stack` 表現縮退を独立 P0 として起票。
+- 2026-03-01: `render_cond` に typed list truthy fastpath（`!list.empty()`）を追加し、`while stack:` が `while (!(stack.empty()))` へ縮退することを固定。
+- 2026-03-01: `_render_compare_expr` に `len(list) ==/!= 0` fastpath を追加し、typed list 限定で `list.empty()` / `!(list.empty())` を優先するよう更新。
+- 2026-03-01: `test_py2cpp_codegen_issues.py` に sample/13 と `len(xs)==/!=0` の回帰を追加し、`check_py2cpp_transpile` / unit を通過。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S1-01] typed list 条件式の fastpath 適用条件（`py_len(list) ==/!= 0`）を定義する。
-- [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S2-01] 条件式描画へ `.empty()` fastpath を実装する。
-- [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
+- [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S1-01] typed list 条件式の fastpath 適用条件（`py_len(list) ==/!= 0`）を定義する。
+- [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S2-01] 条件式描画へ `.empty()` fastpath を実装する。
+- [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。

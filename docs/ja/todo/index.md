@@ -122,10 +122,10 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-while-empty-fastpath.md](../plans/p0-cpp-s13-while-empty-fastpath.md)
 
-1. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01] typed list 経路の `while py_len(list) != 0` / `== 0` を `.empty()` 判定へ縮退する。
-2. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S1-01] typed list 条件式の fastpath 適用条件（`py_len(list) ==/!= 0`）を定義する。
-3. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S2-01] 条件式描画へ `.empty()` fastpath を実装する。
-4. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
+1. [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01] typed list 経路の `while py_len(list) != 0` / `== 0` を `.empty()` 判定へ縮退する。
+2. [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S1-01] typed list 条件式の fastpath 適用条件（`py_len(list) ==/!= 0`）を定義する。
+3. [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S2-01] 条件式描画へ `.empty()` fastpath を実装する。
+4. [x] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
 
 ### P0: C++ module import 関数の keyword 引数型伝播修正（最優先）
 

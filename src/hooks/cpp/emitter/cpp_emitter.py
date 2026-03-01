@@ -2242,6 +2242,9 @@ class CppEmitter(
             if self.any_to_bool(expr.get("negated")):
                 return f"!({base})"
             return base
+        empty_fastpath = self._render_typed_list_len_compare_as_empty(expr)
+        if empty_fastpath != "":
+            return empty_fastpath
         left = self.render_expr(expr.get("left"))
         ops = self.any_to_str_list(expr.get("ops"))
         if len(ops) == 0:
@@ -2296,6 +2299,94 @@ class CppEmitter(
             cur = rhs
             cur_node = rhs_node
         return join_str_list(" && ", parts) if len(parts) > 0 else "true"
+
+    def _extract_len_target_expr(self, expr_node: Any) -> Any | None:
+        """`len(x)`/`ObjLen(x)` から `x` を返す。該当しない場合は None。"""
+        node = self.any_to_dict_or_empty(expr_node)
+        if len(node) == 0:
+            return None
+        kind = self._node_kind_from_dict(node)
+        if kind == "ObjLen":
+            return node.get("value")
+        if kind != "Call":
+            return None
+        fn = self.any_to_dict_or_empty(node.get("func"))
+        if self._node_kind_from_dict(fn) != "Name":
+            return None
+        if self.any_dict_get_str(fn, "id", "") != "len":
+            return None
+        args = self.any_to_list(node.get("args"))
+        if len(args) != 1:
+            return None
+        kws = self.any_to_list(node.get("keywords"))
+        if len(kws) != 0:
+            return None
+        return args[0]
+
+    def _typed_list_empty_fastpath_target(self, list_expr_node: Any) -> bool:
+        """`.empty()` fastpath を適用可能な typed list 式かを判定する。"""
+        node = self.any_to_dict_or_empty(list_expr_node)
+        if len(node) == 0:
+            return False
+        list_t = self.normalize_type_name(self.get_expr_type(list_expr_node))
+        if list_t in {"", "unknown"}:
+            list_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        if not (list_t.startswith("list[") and list_t.endswith("]")):
+            return False
+        if self._uses_pyobj_runtime_list_expr(list_expr_node):
+            return False
+        return True
+
+    def _render_container_empty_expr(self, container_expr: str) -> str:
+        """コンテナ式を `.empty()` 判定へ変換する。"""
+        base = self._trim_ws(container_expr)
+        if base == "":
+            return ""
+        if self._is_identifier_expr(base):
+            return f"{base}.empty()"
+        return f"({base}).empty()"
+
+    def _render_typed_list_len_compare_as_empty(self, expr: dict[str, Any]) -> str:
+        """`py_len(list) ==/!= 0` を `list.empty()` へ縮退する。"""
+        ops = self.any_to_str_list(expr.get("ops"))
+        cmps = self._dict_stmt_list(expr.get("comparators"))
+        if len(ops) != 1 or len(cmps) != 1:
+            return ""
+        op_name = ops[0]
+        if op_name not in {"Eq", "NotEq"}:
+            return ""
+        left_node = expr.get("left")
+        right_node = cmps[0]
+        left_target = self._extract_len_target_expr(left_node)
+        right_target = self._extract_len_target_expr(right_node)
+        left_is_zero = self._const_int_literal(left_node) == 0
+        right_is_zero = self._const_int_literal(right_node) == 0
+        list_node: Any = None
+        if left_target is not None and right_is_zero:
+            list_node = left_target
+        elif right_target is not None and left_is_zero:
+            list_node = right_target
+        if list_node is None or not self._typed_list_empty_fastpath_target(list_node):
+            return ""
+        list_expr = self.render_expr(list_node)
+        empty_expr = self._render_container_empty_expr(list_expr)
+        if empty_expr == "":
+            return ""
+        if op_name == "Eq":
+            return empty_expr
+        return f"!({empty_expr})"
+
+    def _render_typed_list_truthy_cond(self, expr_node: Any) -> str:
+        """typed list の truthy 条件を `!list.empty()` へ縮退する。"""
+        if not self._typed_list_empty_fastpath_target(expr_node):
+            return ""
+        body = self._strip_outer_parens(self.render_expr(expr_node))
+        if body == "":
+            return ""
+        empty_expr = self._render_container_empty_expr(body)
+        if empty_expr == "":
+            return ""
+        return f"!({empty_expr})"
 
     def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
         """Any/object 向けの boxing を必要時のみ適用する。"""
@@ -2733,6 +2824,9 @@ class CppEmitter(
             return "false"
         expr_t = self.normalize_type_name(self.get_expr_type(expr))
         if not self.is_any_like_type(expr_t):
+            typed_list_cond = self._render_typed_list_truthy_cond(expr)
+            if typed_list_cond != "":
+                return typed_list_cond
             return super().render_cond(expr)
         body_raw = self.render_expr(expr)
         body = self._strip_outer_parens(body_raw)

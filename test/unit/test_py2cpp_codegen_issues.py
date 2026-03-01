@@ -557,6 +557,8 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "13_maze_generation_steps.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("while (!(stack.empty())) {", cpp)
+        self.assertNotIn("while (py_len(stack) != 0)", cpp)
         self.assertIn("bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale)", cpp)
         self.assertIn("list<list<int64>> grid = [&]() -> list<list<int64>> {", cpp)
         self.assertIn(
@@ -580,6 +582,24 @@ def f() -> float:
         self.assertNotIn("object stack = ", cpp)
         self.assertNotIn("object dirs = ", cpp)
         self.assertNotIn("object frames = ", cpp)
+
+    def test_typed_list_len_zero_compare_uses_empty_fastpath(self) -> None:
+        src = """def has_items(xs: list[int]) -> bool:
+    return len(xs) != 0
+
+def is_empty(xs: list[int]) -> bool:
+    return len(xs) == 0
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_list_len_zero_compare.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+
+        self.assertIn("return !(xs.empty());", cpp)
+        self.assertIn("return xs.empty();", cpp)
+        self.assertNotIn("return py_len(xs) != 0;", cpp)
+        self.assertNotIn("return py_len(xs) == 0;", cpp)
 
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:

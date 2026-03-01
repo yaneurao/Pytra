@@ -40,7 +40,7 @@ void run_13_maze_generation_steps() {
     list<bytes> frames = list<bytes>{};
     int64 step = 0;
     
-    while (py_len(stack) != 0) {
+    while (!(stack.empty())) {
         auto __tuple_2 = py_at(stack, -1);
         int64 x = ::std::get<0>(__tuple_2);
         int64 y = ::std::get<1>(__tuple_2);
@@ -66,7 +66,7 @@ void run_13_maze_generation_steps() {
                 }
             }
         }
-        if (py_len(candidates) == 0) {
+        if (candidates.empty()) {
             stack.pop();
         } else {
             ::std::tuple<int64, int64, int64, int64> sel = candidates[(x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates)];
