@@ -244,6 +244,26 @@ def _bin_op_symbol(op: Any) -> str:
     return "+"
 
 
+def _bin_op_precedence(op: Any) -> int:
+    if op in {"Mult", "Div", "FloorDiv", "Mod"}:
+        return 20
+    if op in {"Add", "Sub"}:
+        return 10
+    return 0
+
+
+def _maybe_parenthesize_binop_child(child: Any, child_expr: str, parent_prec: int, is_right: bool) -> str:
+    if not isinstance(child, dict) or child.get("kind") != "BinOp":
+        return child_expr
+    child_prec = _bin_op_precedence(child.get("op"))
+    if child_prec < parent_prec:
+        return "(" + child_expr + ")"
+    if is_right and child_prec == parent_prec:
+        # Keep RHS grouping fail-closed: `a - (b - c)` / `a + (b - c)` etc.
+        return "(" + child_expr + ")"
+    return child_expr
+
+
 def _render_binop_expr(expr: dict[str, Any]) -> str:
     op_name = expr.get("op")
     if op_name == "Mult":
@@ -259,8 +279,10 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             elems = elems_any if isinstance(elems_any, list) else []
             if len(elems) == 1:
                 return "PyRuntime.__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
-    left = _render_expr(expr.get("left"))
-    right = _render_expr(expr.get("right"))
+    left_any = expr.get("left")
+    right_any = expr.get("right")
+    left = _render_expr(left_any)
+    right = _render_expr(right_any)
     casts_any = expr.get("casts")
     casts = casts_any if isinstance(casts_any, list) else []
     i = 0
@@ -275,7 +297,10 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
                 right = "((double)(" + right + "))"
         i += 1
     op = _bin_op_symbol(op_name)
-    return "(" + left + " " + op + " " + right + ")"
+    parent_prec = _bin_op_precedence(op_name)
+    left = _maybe_parenthesize_binop_child(left_any, left, parent_prec, is_right=False)
+    right = _maybe_parenthesize_binop_child(right_any, right, parent_prec, is_right=True)
+    return left + " " + op + " " + right
 
 
 def _compare_op_symbol(op: Any) -> str:

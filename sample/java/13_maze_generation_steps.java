@@ -6,9 +6,9 @@ public final class Pytra_13_maze_generation_steps {
     // 13: Sample that outputs DFS maze-generation progress as a GIF.
 
     public static java.util.ArrayList<Long> capture(java.util.ArrayList<Object> grid, long w, long h, long scale) {
-        long width = (w * scale);
-        long height = (h * scale);
-        java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray((width * height));
+        long width = w * scale;
+        long height = h * scale;
+        java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(width * height);
         long __step_0 = 1L;
         for (long y = 0L; (__step_0 >= 0L) ? (y < h) : (y > h); y += __step_0) {
             long __step_1 = 1L;
@@ -16,10 +16,10 @@ public final class Pytra_13_maze_generation_steps {
                 long v = (((((Long)(((java.util.ArrayList<Object>)(grid.get((int)((((y) < 0L) ? (((long)(grid.size())) + (y)) : (y)))))).get((int)((((x) < 0L) ? (((long)(((java.util.ArrayList<Object>)(grid.get((int)((((y) < 0L) ? (((long)(grid.size())) + (y)) : (y)))))).size())) + (x)) : (x)))))) == 0L)) ? (255L) : (40L));
                 long __step_2 = 1L;
                 for (long yy = 0L; (__step_2 >= 0L) ? (yy < scale) : (yy > scale); yy += __step_2) {
-                    long base = ((((y * scale) + yy) * width) + (x * scale));
+                    long base = (y * scale + yy) * width + x * scale;
                     long __step_3 = 1L;
                     for (long xx = 0L; (__step_3 >= 0L) ? (xx < scale) : (xx > scale); xx += __step_3) {
-                        frame.set((int)(((((base + xx)) < 0L) ? (((long)(frame.size())) + ((base + xx))) : ((base + xx)))), v);
+                        frame.set((int)((((base + xx) < 0L) ? (((long)(frame.size())) + (base + xx)) : (base + xx))), v);
                     }
                 }
             }
@@ -54,19 +54,19 @@ public final class Pytra_13_maze_generation_steps {
                 java.util.ArrayList<Object> __tuple_3 = ((java.util.ArrayList<Object>)(dirs.get((int)((((k) < 0L) ? (((long)(dirs.size())) + (k)) : (k))))));
                 long dx = ((Long)(__tuple_3.get(0)));
                 long dy = ((Long)(__tuple_3.get(1)));
-                long nx = (x + dx);
-                long ny = (y + dy);
-                if (((nx >= 1L) && (nx < (cell_w - 1L)) && (ny >= 1L) && (ny < (cell_h - 1L)) && (((Long)(((java.util.ArrayList<Object>)(grid.get((int)((((ny) < 0L) ? (((long)(grid.size())) + (ny)) : (ny)))))).get((int)((((nx) < 0L) ? (((long)(((java.util.ArrayList<Object>)(grid.get((int)((((ny) < 0L) ? (((long)(grid.size())) + (ny)) : (ny)))))).size())) + (nx)) : (nx)))))) == 1L))) {
+                long nx = x + dx;
+                long ny = y + dy;
+                if (((nx >= 1L) && (nx < cell_w - 1L) && (ny >= 1L) && (ny < cell_h - 1L) && (((Long)(((java.util.ArrayList<Object>)(grid.get((int)((((ny) < 0L) ? (((long)(grid.size())) + (ny)) : (ny)))))).get((int)((((nx) < 0L) ? (((long)(((java.util.ArrayList<Object>)(grid.get((int)((((ny) < 0L) ? (((long)(grid.size())) + (ny)) : (ny)))))).size())) + (nx)) : (nx)))))) == 1L))) {
                     if ((dx == 2L)) {
-                        candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, (x + 1L), y)));
+                        candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, x + 1L, y)));
                     } else {
                         if ((dx == (-2L))) {
-                            candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, (x - 1L), y)));
+                            candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, x - 1L, y)));
                         } else {
                             if ((dy == 2L)) {
-                                candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, x, (y + 1L))));
+                                candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, x, y + 1L)));
                             } else {
-                                candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, x, (y - 1L))));
+                                candidates.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny, x, y - 1L)));
                             }
                         }
                     }
@@ -75,7 +75,7 @@ public final class Pytra_13_maze_generation_steps {
             if ((((long)(candidates.size())) == 0L)) {
                 stack.remove(stack.size() - 1);
             } else {
-                Object sel = candidates.get((int)((((((((x * 17L) + (y * 29L)) + (((long)(stack.size())) * 13L)) % ((long)(candidates.size())))) < 0L) ? (((long)(candidates.size())) + (((((x * 17L) + (y * 29L)) + (((long)(stack.size())) * 13L)) % ((long)(candidates.size()))))) : (((((x * 17L) + (y * 29L)) + (((long)(stack.size())) * 13L)) % ((long)(candidates.size())))))));
+                Object sel = candidates.get((int)(((((x * 17L + y * 29L + ((long)(stack.size())) * 13L) % ((long)(candidates.size()))) < 0L) ? (((long)(candidates.size())) + ((x * 17L + y * 29L + ((long)(stack.size())) * 13L) % ((long)(candidates.size())))) : ((x * 17L + y * 29L + ((long)(stack.size())) * 13L) % ((long)(candidates.size()))))));
                 java.util.ArrayList<Object> __tuple_4 = ((java.util.ArrayList<Object>)(sel));
                 long nx = ((Long)(__tuple_4.get(0)));
                 long ny = ((Long)(__tuple_4.get(1)));
@@ -85,14 +85,14 @@ public final class Pytra_13_maze_generation_steps {
                 ((java.util.ArrayList<Object>)(grid.get((int)((((ny) < 0L) ? (((long)(grid.size())) + (ny)) : (ny)))))).set((int)((((nx) < 0L) ? (((long)(((java.util.ArrayList<Object>)(grid.get((int)((((ny) < 0L) ? (((long)(grid.size())) + (ny)) : (ny)))))).size())) + (nx)) : (nx))), 0L);
                 stack.add(new java.util.ArrayList<Object>(java.util.Arrays.asList(nx, ny)));
             }
-            if (((step % capture_every) == 0L)) {
+            if ((step % capture_every == 0L)) {
                 frames.add(capture(grid, cell_w, cell_h, scale));
             }
             step += 1L;
         }
         frames.add(capture(grid, cell_w, cell_h, scale));
-        PyRuntime.__pytra_noop(out_path, (cell_w * scale), (cell_h * scale), frames, new java.util.ArrayList<Long>());
-        double elapsed = ((System.nanoTime() / 1000000000.0) - start);
+        PyRuntime.__pytra_noop(out_path, cell_w * scale, cell_h * scale, frames, new java.util.ArrayList<Long>());
+        double elapsed = (System.nanoTime() / 1000000000.0) - start;
         System.out.println(String.valueOf("output:") + " " + String.valueOf(out_path));
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(((long)(frames.size()))));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));

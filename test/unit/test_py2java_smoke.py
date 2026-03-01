@@ -17,7 +17,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.py2java import load_east, load_java_profile, transpile_to_java
-from hooks.java.emitter.java_native_emitter import transpile_to_java_native
+from hooks.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
 from src.pytra.compiler.east_parts.core import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
@@ -119,7 +119,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("public final class Main", java)
         self.assertIn("public static class Animal", java)
         self.assertIn("public static class Dog extends Animal", java)
-        self.assertIn('return (this.sound() + "-bark");', java)
+        self.assertIn('return this.sound() + "-bark";', java)
         self.assertIn("public static void _case_main()", java)
         self.assertIn("Dog d = new Dog();", java)
         self.assertIn('System.out.println("True");', java)
@@ -129,7 +129,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn("public static long add(long a, long b)", java)
-        self.assertIn("return (a + b);", java)
+        self.assertIn("return a + b;", java)
         self.assertIn('System.out.println("True");', java)
 
     def test_module_leading_comments_are_emitted(self) -> None:
@@ -179,16 +179,38 @@ class Py2JavaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("PyRuntime.__pytra_bytearray((width * height))", java)
+        self.assertIn("PyRuntime.__pytra_bytearray(width * height)", java)
         self.assertIn("frame.set((int)(", java)
 
     def test_java_native_emitter_maps_math_calls_to_java_math(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("double angle = ((2.0 * Math.PI) * t);", java)
+        self.assertIn("double angle = 2.0 * Math.PI * t;", java)
         self.assertIn("Math.cos(angle)", java)
         self.assertIn("Math.sin(angle)", java)
+
+    def test_java_binop_minimal_parentheses_and_rhs_grouping(self) -> None:
+        simple_expr = {
+            "kind": "BinOp",
+            "op": "Mult",
+            "left": {"kind": "Name", "id": "x"},
+            "right": {"kind": "Name", "id": "y"},
+        }
+        self.assertEqual(_render_expr(simple_expr), "x * y")
+
+        grouped_rhs = {
+            "kind": "BinOp",
+            "op": "Sub",
+            "left": {"kind": "Name", "id": "a"},
+            "right": {
+                "kind": "BinOp",
+                "op": "Sub",
+                "left": {"kind": "Name", "id": "b"},
+                "right": {"kind": "Name", "id": "c"},
+            },
+        }
+        self.assertEqual(_render_expr(grouped_rhs), "a - (b - c)")
 
     def test_java_native_emitter_lowers_listcomp_and_repeat_list_init(self) -> None:
         sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"

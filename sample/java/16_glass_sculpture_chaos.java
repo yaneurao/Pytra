@@ -16,11 +16,11 @@ public final class Pytra_16_glass_sculpture_chaos {
     }
 
     public static double dot(double ax, double ay, double az, double bx, double by, double bz) {
-        return (((ax * bx) + (ay * by)) + (az * bz));
+        return ax * bx + ay * by + az * bz;
     }
 
     public static double length(double x, double y, double z) {
-        return Math.sqrt((((x * x) + (y * y)) + (z * z)));
+        return Math.sqrt(x * x + y * y + z * z);
     }
 
     public static Object normalize(double x, double y, double z) {
@@ -28,58 +28,58 @@ public final class Pytra_16_glass_sculpture_chaos {
         if ((l < 1e-09)) {
             return new java.util.ArrayList<Object>(java.util.Arrays.asList(0.0, 0.0, 0.0));
         }
-        return new java.util.ArrayList<Object>(java.util.Arrays.asList((x / l), (y / l), (z / l)));
+        return new java.util.ArrayList<Object>(java.util.Arrays.asList(x / l, y / l, z / l));
     }
 
     public static Object reflect(double ix, double iy, double iz, double nx, double ny, double nz) {
-        double d = (dot(ix, iy, iz, nx, ny, nz) * 2.0);
-        return new java.util.ArrayList<Object>(java.util.Arrays.asList((ix - (d * nx)), (iy - (d * ny)), (iz - (d * nz))));
+        double d = dot(ix, iy, iz, nx, ny, nz) * 2.0;
+        return new java.util.ArrayList<Object>(java.util.Arrays.asList(ix - d * nx, iy - d * ny, iz - d * nz));
     }
 
     public static Object refract(double ix, double iy, double iz, double nx, double ny, double nz, double eta) {
         double cosi = (-dot(ix, iy, iz, nx, ny, nz));
-        double sint2 = ((eta * eta) * (1.0 - (cosi * cosi)));
+        double sint2 = eta * eta * (1.0 - cosi * cosi);
         if ((sint2 > 1.0)) {
             return reflect(ix, iy, iz, nx, ny, nz);
         }
-        double cost = Math.sqrt((1.0 - sint2));
-        double k = ((eta * cosi) - cost);
-        return new java.util.ArrayList<Object>(java.util.Arrays.asList(((eta * ix) + (k * nx)), ((eta * iy) + (k * ny)), ((eta * iz) + (k * nz))));
+        double cost = Math.sqrt(1.0 - sint2);
+        double k = eta * cosi - cost;
+        return new java.util.ArrayList<Object>(java.util.Arrays.asList(eta * ix + k * nx, eta * iy + k * ny, eta * iz + k * nz));
     }
 
     public static double schlick(double cos_theta, double f0) {
-        double m = (1.0 - cos_theta);
-        return (f0 + ((1.0 - f0) * ((((m * m) * m) * m) * m)));
+        double m = 1.0 - cos_theta;
+        return f0 + (1.0 - f0) * (m * m * m * m * m);
     }
 
     public static Object sky_color(double dx, double dy, double dz, double tphase) {
-        double t = (0.5 * (dy + 1.0));
-        double r = (0.06 + (0.2 * t));
-        double g = (0.1 + (0.25 * t));
-        double b = (0.16 + (0.45 * t));
-        double band = (0.5 + (0.5 * Math.sin((((8.0 * dx) + (6.0 * dz)) + tphase))));
-        r += (0.08 * band);
-        g += (0.05 * band);
-        b += (0.12 * band);
+        double t = 0.5 * (dy + 1.0);
+        double r = 0.06 + 0.2 * t;
+        double g = 0.1 + 0.25 * t;
+        double b = 0.16 + 0.45 * t;
+        double band = 0.5 + 0.5 * Math.sin(8.0 * dx + 6.0 * dz + tphase);
+        r += 0.08 * band;
+        g += 0.05 * band;
+        b += 0.12 * band;
         return new java.util.ArrayList<Object>(java.util.Arrays.asList(clamp01(r), clamp01(g), clamp01(b)));
     }
 
     public static double sphere_intersect(double ox, double oy, double oz, double dx, double dy, double dz, double cx, double cy, double cz, double radius) {
-        double lx = (ox - cx);
-        double ly = (oy - cy);
-        double lz = (oz - cz);
-        double b = (((lx * dx) + (ly * dy)) + (lz * dz));
-        double c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (radius * radius));
-        double h = ((b * b) - c);
+        double lx = ox - cx;
+        double ly = oy - cy;
+        double lz = oz - cz;
+        double b = lx * dx + ly * dy + lz * dz;
+        double c = lx * lx + ly * ly + lz * lz - radius * radius;
+        double h = b * b - c;
         if ((h < 0.0)) {
             return (-1.0);
         }
         double s = Math.sqrt(h);
-        double t0 = ((-b) - s);
+        double t0 = (-b) - s;
         if ((t0 > 0.0001)) {
             return t0;
         }
-        double t1 = ((-b) + s);
+        double t1 = (-b) + s;
         if ((t1 > 0.0001)) {
             return t1;
         }
@@ -87,39 +87,39 @@ public final class Pytra_16_glass_sculpture_chaos {
     }
 
     public static java.util.ArrayList<Long> palette_332() {
-        java.util.ArrayList<Long> p = PyRuntime.__pytra_bytearray((256L * 3L));
+        java.util.ArrayList<Long> p = PyRuntime.__pytra_bytearray(256L * 3L);
         double __hoisted_cast_1 = ((double)(7L));
         double __hoisted_cast_2 = ((double)(3L));
         long __step_0 = 1L;
         for (long i = 0L; (__step_0 >= 0L) ? (i < 256L) : (i > 256L); i += __step_0) {
-            long r = ((i + 5L) + 7L);
-            long g = ((i + 2L) + 7L);
-            long b = (i + 3L);
-            p.set((int)((((((i * 3L) + 0L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 0L))) : (((i * 3L) + 0L)))), PyRuntime.__pytra_int((((double)((255L * r))) / __hoisted_cast_1)));
-            p.set((int)((((((i * 3L) + 1L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 1L))) : (((i * 3L) + 1L)))), PyRuntime.__pytra_int((((double)((255L * g))) / __hoisted_cast_1)));
-            p.set((int)((((((i * 3L) + 2L)) < 0L) ? (((long)(p.size())) + (((i * 3L) + 2L))) : (((i * 3L) + 2L)))), PyRuntime.__pytra_int((((double)((255L * b))) / __hoisted_cast_2)));
+            long r = i + 5L + 7L;
+            long g = i + 2L + 7L;
+            long b = i + 3L;
+            p.set((int)((((i * 3L + 0L) < 0L) ? (((long)(p.size())) + (i * 3L + 0L)) : (i * 3L + 0L))), PyRuntime.__pytra_int(((double)(255L * r)) / __hoisted_cast_1));
+            p.set((int)((((i * 3L + 1L) < 0L) ? (((long)(p.size())) + (i * 3L + 1L)) : (i * 3L + 1L))), PyRuntime.__pytra_int(((double)(255L * g)) / __hoisted_cast_1));
+            p.set((int)((((i * 3L + 2L) < 0L) ? (((long)(p.size())) + (i * 3L + 2L)) : (i * 3L + 2L))), PyRuntime.__pytra_int(((double)(255L * b)) / __hoisted_cast_2));
         }
         return new java.util.ArrayList<Long>(p);
     }
 
     public static long quantize_332(double r, double g, double b) {
-        long rr = PyRuntime.__pytra_int((clamp01(r) * 255.0));
-        long gg = PyRuntime.__pytra_int((clamp01(g) * 255.0));
-        long bb = PyRuntime.__pytra_int((clamp01(b) * 255.0));
-        return ((((rr + 5L) + 5L) + ((gg + 5L) + 2L)) + (bb + 6L));
+        long rr = PyRuntime.__pytra_int(clamp01(r) * 255.0);
+        long gg = PyRuntime.__pytra_int(clamp01(g) * 255.0);
+        long bb = PyRuntime.__pytra_int(clamp01(b) * 255.0);
+        return (rr + 5L + 5L) + (gg + 5L + 2L) + (bb + 6L);
     }
 
     public static java.util.ArrayList<Long> render_frame(long width, long height, long frame_id, long frames_n) {
-        double t = (((double)(frame_id)) / ((double)(frames_n)));
-        double tphase = ((2.0 * Math.PI) * t);
+        double t = ((double)(frame_id)) / ((double)(frames_n));
+        double tphase = 2.0 * Math.PI * t;
         double cam_r = 3.0;
-        double cam_x = (cam_r * Math.cos((tphase * 0.9)));
-        double cam_y = (1.1 + (0.25 * Math.sin((tphase * 0.6))));
-        double cam_z = (cam_r * Math.sin((tphase * 0.9)));
+        double cam_x = cam_r * Math.cos(tphase * 0.9);
+        double cam_y = 1.1 + 0.25 * Math.sin(tphase * 0.6);
+        double cam_z = cam_r * Math.sin(tphase * 0.9);
         double look_x = 0.0;
         double look_y = 0.35;
         double look_z = 0.0;
-        java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(normalize((look_x - cam_x), (look_y - cam_y), (look_z - cam_z))));
+        java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z)));
         double fwd_x = ((Double)(__tuple_0.get(0)));
         double fwd_y = ((Double)(__tuple_0.get(1)));
         double fwd_z = ((Double)(__tuple_0.get(2)));
@@ -127,38 +127,38 @@ public final class Pytra_16_glass_sculpture_chaos {
         double right_x = ((Double)(__tuple_1.get(0)));
         double right_y = ((Double)(__tuple_1.get(1)));
         double right_z = ((Double)(__tuple_1.get(2)));
-        java.util.ArrayList<Object> __tuple_2 = ((java.util.ArrayList<Object>)(normalize(((right_y * fwd_z) - (right_z * fwd_y)), ((right_z * fwd_x) - (right_x * fwd_z)), ((right_x * fwd_y) - (right_y * fwd_x)))));
+        java.util.ArrayList<Object> __tuple_2 = ((java.util.ArrayList<Object>)(normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x)));
         double up_x = ((Double)(__tuple_2.get(0)));
         double up_y = ((Double)(__tuple_2.get(1)));
         double up_z = ((Double)(__tuple_2.get(2)));
-        double s0x = (0.9 * Math.cos((1.3 * tphase)));
-        double s0y = (0.15 + (0.35 * Math.sin((1.7 * tphase))));
-        double s0z = (0.9 * Math.sin((1.3 * tphase)));
-        double s1x = (1.2 * Math.cos(((1.3 * tphase) + 2.094)));
-        double s1y = (0.1 + (0.4 * Math.sin(((1.1 * tphase) + 0.8))));
-        double s1z = (1.2 * Math.sin(((1.3 * tphase) + 2.094)));
-        double s2x = (1.0 * Math.cos(((1.3 * tphase) + 4.188)));
-        double s2y = (0.2 + (0.3 * Math.sin(((1.5 * tphase) + 1.9))));
-        double s2z = (1.0 * Math.sin(((1.3 * tphase) + 4.188)));
+        double s0x = 0.9 * Math.cos(1.3 * tphase);
+        double s0y = 0.15 + 0.35 * Math.sin(1.7 * tphase);
+        double s0z = 0.9 * Math.sin(1.3 * tphase);
+        double s1x = 1.2 * Math.cos(1.3 * tphase + 2.094);
+        double s1y = 0.1 + 0.4 * Math.sin(1.1 * tphase + 0.8);
+        double s1z = 1.2 * Math.sin(1.3 * tphase + 2.094);
+        double s2x = 1.0 * Math.cos(1.3 * tphase + 4.188);
+        double s2y = 0.2 + 0.3 * Math.sin(1.5 * tphase + 1.9);
+        double s2z = 1.0 * Math.sin(1.3 * tphase + 4.188);
         double lr = 0.35;
-        double lx = (2.4 * Math.cos((tphase * 1.8)));
-        double ly = (1.8 + (0.8 * Math.sin((tphase * 1.2))));
-        double lz = (2.4 * Math.sin((tphase * 1.8)));
-        java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray((width * height));
-        double aspect = (((double)(width)) / ((double)(height)));
+        double lx = 2.4 * Math.cos(tphase * 1.8);
+        double ly = 1.8 + 0.8 * Math.sin(tphase * 1.2);
+        double lz = 2.4 * Math.sin(tphase * 1.8);
+        java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(width * height);
+        double aspect = ((double)(width)) / ((double)(height));
         double fov = 1.25;
         double __hoisted_cast_3 = ((double)(height));
         double __hoisted_cast_4 = ((double)(width));
         long __step_3 = 1L;
         for (long py = 0L; (__step_3 >= 0L) ? (py < height) : (py > height); py += __step_3) {
-            long row_base = (py * width);
-            double sy = (1.0 - ((2.0 * (((double)(py)) + 0.5)) / __hoisted_cast_3));
+            long row_base = py * width;
+            double sy = 1.0 - 2.0 * (((double)(py)) + 0.5) / __hoisted_cast_3;
             long __step_4 = 1L;
             for (long px = 0L; (__step_4 >= 0L) ? (px < width) : (px > width); px += __step_4) {
-                double sx = ((((2.0 * (((double)(px)) + 0.5)) / __hoisted_cast_4) - 1.0) * aspect);
-                double rx = (fwd_x + (fov * ((sx * right_x) + (sy * up_x))));
-                double ry = (fwd_y + (fov * ((sx * right_y) + (sy * up_y))));
-                double rz = (fwd_z + (fov * ((sx * right_z) + (sy * up_z))));
+                double sx = (2.0 * (((double)(px)) + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
+                double rx = fwd_x + fov * (sx * right_x + sy * up_x);
+                double ry = fwd_y + fov * (sx * right_y + sy * up_y);
+                double rz = fwd_z + fov * (sx * right_z + sy * up_z);
                 java.util.ArrayList<Object> __tuple_5 = ((java.util.ArrayList<Object>)(normalize(rx, ry, rz)));
                 double dx = ((Double)(__tuple_5.get(0)));
                 double dy = ((Double)(__tuple_5.get(1)));
@@ -169,7 +169,7 @@ public final class Pytra_16_glass_sculpture_chaos {
                 double g = 0.0;
                 double b = 0.0;
                 if ((dy < (-1e-06))) {
-                    double tf = (((-1.2) - cam_y) / dy);
+                    double tf = ((-1.2) - cam_y) / dy;
                     if (((tf > 0.0001) && (tf < best_t))) {
                         best_t = tf;
                         hit_kind = 1L;
@@ -197,27 +197,27 @@ public final class Pytra_16_glass_sculpture_chaos {
                     b = ((Double)(__tuple_6.get(2)));
                 } else {
                     if ((hit_kind == 1L)) {
-                        double hx = (cam_x + (best_t * dx));
-                        double hz = (cam_z + (best_t * dz));
-                        long cx = PyRuntime.__pytra_int(Math.floor((hx * 2.0)));
-                        long cz = PyRuntime.__pytra_int(Math.floor((hz * 2.0)));
-                        long checker = (((((cx + cz) % 2L) == 0L)) ? (0L) : (1L));
+                        double hx = cam_x + best_t * dx;
+                        double hz = cam_z + best_t * dz;
+                        long cx = PyRuntime.__pytra_int(Math.floor(hx * 2.0));
+                        long cz = PyRuntime.__pytra_int(Math.floor(hz * 2.0));
+                        long checker = ((((cx + cz) % 2L == 0L)) ? (0L) : (1L));
                         double base_r = (((checker == 0L)) ? (0.1) : (0.04));
                         double base_g = (((checker == 0L)) ? (0.11) : (0.05));
                         double base_b = (((checker == 0L)) ? (0.13) : (0.08));
-                        double lxv = (lx - hx);
-                        double lyv = (ly - (-1.2));
-                        double lzv = (lz - hz);
+                        double lxv = lx - hx;
+                        double lyv = ly - (-1.2);
+                        double lzv = lz - hz;
                         java.util.ArrayList<Object> __tuple_7 = ((java.util.ArrayList<Object>)(normalize(lxv, lyv, lzv)));
                         double ldx = ((Double)(__tuple_7.get(0)));
                         double ldy = ((Double)(__tuple_7.get(1)));
                         double ldz = ((Double)(__tuple_7.get(2)));
                         double ndotl = Math.max(ldy, 0.0);
-                        double ldist2 = (((lxv * lxv) + (lyv * lyv)) + (lzv * lzv));
-                        double glow = (8.0 / (1.0 + ldist2));
-                        r = ((base_r + (0.8 * glow)) + (0.2 * ndotl));
-                        g = ((base_g + (0.5 * glow)) + (0.18 * ndotl));
-                        b = ((base_b + (1.0 * glow)) + (0.24 * ndotl));
+                        double ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
+                        double glow = 8.0 / (1.0 + ldist2);
+                        r = base_r + 0.8 * glow + 0.2 * ndotl;
+                        g = base_g + 0.5 * glow + 0.18 * ndotl;
+                        b = base_b + 1.0 * glow + 0.24 * ndotl;
                     } else {
                         double cx = 0.0;
                         double cy = 0.0;
@@ -241,10 +241,10 @@ public final class Pytra_16_glass_sculpture_chaos {
                                 rad = 0.58;
                             }
                         }
-                        double hx = (cam_x + (best_t * dx));
-                        double hy = (cam_y + (best_t * dy));
-                        double hz = (cam_z + (best_t * dz));
-                        java.util.ArrayList<Object> __tuple_8 = ((java.util.ArrayList<Object>)(normalize(((hx - cx) / rad), ((hy - cy) / rad), ((hz - cz) / rad))));
+                        double hx = cam_x + best_t * dx;
+                        double hy = cam_y + best_t * dy;
+                        double hz = cam_z + best_t * dz;
+                        java.util.ArrayList<Object> __tuple_8 = ((java.util.ArrayList<Object>)(normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad)));
                         double nx = ((Double)(__tuple_8.get(0)));
                         double ny = ((Double)(__tuple_8.get(1)));
                         double nz = ((Double)(__tuple_8.get(2)));
@@ -252,7 +252,7 @@ public final class Pytra_16_glass_sculpture_chaos {
                         double rdx = ((Double)(__tuple_9.get(0)));
                         double rdy = ((Double)(__tuple_9.get(1)));
                         double rdz = ((Double)(__tuple_9.get(2)));
-                        java.util.ArrayList<Object> __tuple_10 = ((java.util.ArrayList<Object>)(refract(dx, dy, dz, nx, ny, nz, (1.0 / 1.45))));
+                        java.util.ArrayList<Object> __tuple_10 = ((java.util.ArrayList<Object>)(refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45)));
                         double tdx = ((Double)(__tuple_10.get(0)));
                         double tdy = ((Double)(__tuple_10.get(1)));
                         double tdz = ((Double)(__tuple_10.get(2)));
@@ -260,36 +260,36 @@ public final class Pytra_16_glass_sculpture_chaos {
                         double sr = ((Double)(__tuple_11.get(0)));
                         double sg = ((Double)(__tuple_11.get(1)));
                         double sb = ((Double)(__tuple_11.get(2)));
-                        java.util.ArrayList<Object> __tuple_12 = ((java.util.ArrayList<Object>)(sky_color(tdx, tdy, tdz, (tphase + 0.8))));
+                        java.util.ArrayList<Object> __tuple_12 = ((java.util.ArrayList<Object>)(sky_color(tdx, tdy, tdz, tphase + 0.8)));
                         double tr = ((Double)(__tuple_12.get(0)));
                         double tg = ((Double)(__tuple_12.get(1)));
                         double tb = ((Double)(__tuple_12.get(2)));
-                        double cosi = Math.max((-(((dx * nx) + (dy * ny)) + (dz * nz))), 0.0);
+                        double cosi = Math.max((-dx * nx + dy * ny + dz * nz), 0.0);
                         double fr = schlick(cosi, 0.04);
-                        r = ((tr * (1.0 - fr)) + (sr * fr));
-                        g = ((tg * (1.0 - fr)) + (sg * fr));
-                        b = ((tb * (1.0 - fr)) + (sb * fr));
-                        double lxv = (lx - hx);
-                        double lyv = (ly - hy);
-                        double lzv = (lz - hz);
+                        r = tr * (1.0 - fr) + sr * fr;
+                        g = tg * (1.0 - fr) + sg * fr;
+                        b = tb * (1.0 - fr) + sb * fr;
+                        double lxv = lx - hx;
+                        double lyv = ly - hy;
+                        double lzv = lz - hz;
                         java.util.ArrayList<Object> __tuple_13 = ((java.util.ArrayList<Object>)(normalize(lxv, lyv, lzv)));
                         double ldx = ((Double)(__tuple_13.get(0)));
                         double ldy = ((Double)(__tuple_13.get(1)));
                         double ldz = ((Double)(__tuple_13.get(2)));
-                        double ndotl = Math.max((((nx * ldx) + (ny * ldy)) + (nz * ldz)), 0.0);
-                        java.util.ArrayList<Object> __tuple_14 = ((java.util.ArrayList<Object>)(normalize((ldx - dx), (ldy - dy), (ldz - dz))));
+                        double ndotl = Math.max(nx * ldx + ny * ldy + nz * ldz, 0.0);
+                        java.util.ArrayList<Object> __tuple_14 = ((java.util.ArrayList<Object>)(normalize(ldx - dx, ldy - dy, ldz - dz)));
                         double hvx = ((Double)(__tuple_14.get(0)));
                         double hvy = ((Double)(__tuple_14.get(1)));
                         double hvz = ((Double)(__tuple_14.get(2)));
-                        double ndoth = Math.max((((nx * hvx) + (ny * hvy)) + (nz * hvz)), 0.0);
-                        double spec = (ndoth * ndoth);
-                        spec = (spec * spec);
-                        spec = (spec * spec);
-                        spec = (spec * spec);
-                        double glow = (10.0 / (((1.0 + (lxv * lxv)) + (lyv * lyv)) + (lzv * lzv)));
-                        r += (((0.2 * ndotl) + (0.8 * spec)) + (0.45 * glow));
-                        g += (((0.18 * ndotl) + (0.6 * spec)) + (0.35 * glow));
-                        b += (((0.26 * ndotl) + (1.0 * spec)) + (0.65 * glow));
+                        double ndoth = Math.max(nx * hvx + ny * hvy + nz * hvz, 0.0);
+                        double spec = ndoth * ndoth;
+                        spec = spec * spec;
+                        spec = spec * spec;
+                        spec = spec * spec;
+                        double glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                        r += 0.2 * ndotl + 0.8 * spec + 0.45 * glow;
+                        g += 0.18 * ndotl + 0.6 * spec + 0.35 * glow;
+                        b += 0.26 * ndotl + 1.0 * spec + 0.65 * glow;
                         if ((hit_kind == 2L)) {
                             r *= 0.95;
                             g *= 1.05;
@@ -310,7 +310,7 @@ public final class Pytra_16_glass_sculpture_chaos {
                 r = Math.sqrt(clamp01(r));
                 g = Math.sqrt(clamp01(g));
                 b = Math.sqrt(clamp01(b));
-                frame.set((int)(((((row_base + px)) < 0L) ? (((long)(frame.size())) + ((row_base + px))) : ((row_base + px)))), quantize_332(r, g, b));
+                frame.set((int)((((row_base + px) < 0L) ? (((long)(frame.size())) + (row_base + px)) : (row_base + px))), quantize_332(r, g, b));
             }
         }
         return new java.util.ArrayList<Long>(frame);
@@ -328,7 +328,7 @@ public final class Pytra_16_glass_sculpture_chaos {
             frames.add(render_frame(width, height, i, frames_n));
         }
         PyRuntime.__pytra_noop(out_path, width, height, frames, palette_332());
-        double elapsed = ((System.nanoTime() / 1000000000.0) - start);
+        double elapsed = (System.nanoTime() / 1000000000.0) - start;
         System.out.println(String.valueOf("output:") + " " + String.valueOf(out_path));
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
