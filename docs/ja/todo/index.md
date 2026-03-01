@@ -82,7 +82,7 @@
 1. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01] 非C++ backend で継承メソッド動的ディスパッチと `super()` を Python 互換へ揃える。
 2. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java 改善計画 [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md) を実施する。
 3. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS 改善計画 [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md) を実施する。
-4. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS 改善計画 [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md) を実施する。
+4. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS 改善計画 [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md) を実施する。
 5. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin 改善計画 [p0-kotlin-inheritance-dispatch-uplift.md](../plans/p0-kotlin-inheritance-dispatch-uplift.md) を実施する。
 6. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift 改善計画 [p0-swift-inheritance-dispatch-uplift.md](../plans/p0-swift-inheritance-dispatch-uplift.md) を実施する。
 7. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust 改善計画 [p0-rs-inheritance-dispatch-uplift.md](../plans/p0-rs-inheritance-dispatch-uplift.md) を実施する。
