@@ -27,6 +27,7 @@
     <img alt="Ruby" src="https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white">
     <img alt="Lua" src="https://img.shields.io/badge/-Lua%C2%A0%C2%A0%C2%A0-4C6EF5?style=flat-square&logo=lua&logoColor=white">
     <img alt="PHP" src="https://img.shields.io/badge/-PHP%C2%A0%C2%A0%C2%A0-777BB4?style=flat-square&logo=php&logoColor=white">
+    <img alt="Scala3" src="https://img.shields.io/badge/-Scala3-BD1A2F?style=flat-square&logo=scala&logoColor=white">
 </div>
 </div>
 
@@ -50,7 +51,7 @@
 Pytraの特徴
 
 - Pythonから各言語への変換器
-  - C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, Ruby に変換可能。
+  - C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, Ruby, Lua, PHP, Scala3 に変換可能。
   - 元のソースコードに極めて近い形のまま変換
 
 - C++で書くのと同等のコードをPythonで書けることが目標

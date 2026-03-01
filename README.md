@@ -26,6 +26,7 @@
     <img alt="Ruby" src="https://img.shields.io/badge/-Ruby%C2%A0%C2%A0-BB1200?style=flat-square&logo=ruby&logoColor=white">
     <img alt="Lua" src="https://img.shields.io/badge/-Lua%C2%A0%C2%A0%C2%A0-4C6EF5?style=flat-square&logo=lua&logoColor=white">
     <img alt="PHP" src="https://img.shields.io/badge/-PHP%C2%A0%C2%A0%C2%A0-777BB4?style=flat-square&logo=php&logoColor=white">
+    <img alt="Scala3" src="https://img.shields.io/badge/-Scala3-BD1A2F?style=flat-square&logo=scala&logoColor=white">
 </div>
 
 ## Latest News
@@ -46,7 +47,7 @@
 Pytra's features
 
 - Python to multi-language transpiler
-  - Supports conversion to C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, and Ruby.
+  - Supports conversion to C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, Ruby, Lua, PHP, and Scala3.
   - Converts code to output in a form extremely close to the original source.
 
 - Write Python code that targets C++-level output quality
