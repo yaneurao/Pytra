@@ -7,6 +7,50 @@ from pytra.compiler.transpile_cli import dict_any_get_str, join_str_list
 class CppTypeBridgeEmitter:
     """Type conversion and Any-boundary helpers extracted from CppEmitter."""
 
+    def _is_concrete_type_for_typed_list(self, east_type: str) -> bool:
+        """typed list 判定向けに Any/unknown/None を含まない concrete 型か判定する。"""
+        t_norm = self.normalize_type_name(east_type)
+        if t_norm in {"", "unknown", "Any", "object", "None"}:
+            return False
+        if self._contains_text(t_norm, "|"):
+            for part in self.split_union(t_norm):
+                if not self._is_concrete_type_for_typed_list(part):
+                    return False
+            return True
+        list_inner = self.type_generic_args(t_norm, "list")
+        if len(list_inner) == 1:
+            return self._is_concrete_type_for_typed_list(list_inner[0])
+        tuple_inner = self.type_generic_args(t_norm, "tuple")
+        if len(tuple_inner) > 0:
+            for part in tuple_inner:
+                if not self._is_concrete_type_for_typed_list(part):
+                    return False
+            return True
+        dict_inner = self.type_generic_args(t_norm, "dict")
+        if len(dict_inner) == 2:
+            return self._is_concrete_type_for_typed_list(dict_inner[0]) and self._is_concrete_type_for_typed_list(
+                dict_inner[1]
+            )
+        set_inner = self.type_generic_args(t_norm, "set")
+        if len(set_inner) == 1:
+            return self._is_concrete_type_for_typed_list(set_inner[0])
+        return True
+
+    def _is_pyobj_forced_typed_list_type(self, east_type: str) -> bool:
+        """`pyobj` でも value-model list を優先する型か判定する（段階拡張）。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        t_norm = self.normalize_type_name(east_type)
+        if not (t_norm.startswith("list[") and t_norm.endswith("]")):
+            return False
+        list_inner = self.type_generic_args(t_norm, "list")
+        if len(list_inner) != 1:
+            return False
+        elem_t = self.normalize_type_name(list_inner[0])
+        if not self._is_concrete_type_for_typed_list(elem_t):
+            return False
+        return True
+
     def _is_pyobj_runtime_list_type(self, east_type: str) -> bool:
         """`cpp_list_model=pyobj` で object runtime 経路を使う list 型か判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -151,7 +195,11 @@ class CppTypeBridgeEmitter:
         t_norm = self.normalize_type_name(target_t)
         # `cpp_list_model=pyobj` でも list[RefClass] は typed container として扱う。
         # それ以外の list[...] は callsite coercion の target を object へ寄せる。
-        if self._is_pyobj_runtime_list_type(t_norm) and t_norm != "list[str]":
+        if (
+            self._is_pyobj_runtime_list_type(t_norm)
+            and (not self._is_pyobj_forced_typed_list_type(t_norm))
+            and t_norm != "list[str]"
+        ):
             t_norm = "object"
         arg_node_dict = self.any_to_dict_or_empty(arg_node)
         if self.is_any_like_type(t_norm):
@@ -159,7 +207,11 @@ class CppTypeBridgeEmitter:
                 return arg_txt
             if arg_txt == "*this":
                 return "object(static_cast<PyObj*>(this), true)"
-            if self._is_pyobj_runtime_list_type(at) and len(arg_node_dict) > 0:
+            if (
+                self._is_pyobj_runtime_list_type(at)
+                and (not self._is_pyobj_forced_typed_list_type(at))
+                and len(arg_node_dict) > 0
+            ):
                 if not self._expr_is_stack_list_local(arg_node_dict):
                     return arg_txt
             if self.is_any_like_type(at):

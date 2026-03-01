@@ -467,7 +467,7 @@ def f() -> float:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("int64 single_tag = int64(py_to<int64>(single_char_token_tags.get(ch, 0)));", cpp)
-        self.assertIn("py_at(single_char_token_kinds, py_to<int64>(single_tag - 1))", cpp)
+        self.assertIn("single_char_token_kinds[single_tag - 1]", cpp)
         self.assertNotIn('if (ch == "+")', cpp)
         self.assertNotIn('if (ch == "-")', cpp)
         self.assertNotIn('if (ch == "*")', cpp)
@@ -552,6 +552,28 @@ def f() -> float:
         self.assertNotIn('if (node->kind == "lit")', cpp)
         self.assertNotIn('if (node->op == "+")', cpp)
         self.assertNotIn('if (stmt->kind == "let")', cpp)
+
+    def test_sample13_pyobj_expands_typed_lists_for_grid_stack_dirs_frames(self) -> None:
+        src_py = ROOT / "sample" / "py" / "13_maze_generation_steps.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale)", cpp)
+        self.assertIn("list<list<int64>> grid = [&]() -> list<list<int64>> {", cpp)
+        self.assertIn(
+            "list<::std::tuple<int64, int64>> stack = list<::std::tuple<int64, int64>>{::std::make_tuple(1, 1)};",
+            cpp,
+        )
+        self.assertIn(
+            "list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-2, 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -2)};",
+            cpp,
+        )
+        self.assertIn("list<bytes> frames = list<bytes>{};", cpp)
+        self.assertIn("list<::std::tuple<int64, int64, int64, int64>> candidates = list<::std::tuple<int64, int64, int64, int64>>{};", cpp)
+        self.assertIn("frames.append(capture(grid, cell_w, cell_h, scale));", cpp)
+        self.assertNotIn("object grid = ", cpp)
+        self.assertNotIn("object stack = ", cpp)
+        self.assertNotIn("object dirs = ", cpp)
+        self.assertNotIn("object frames = ", cpp)
 
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
@@ -1204,11 +1226,11 @@ def f(x: object) -> bool:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("object xs = make_object(list<int64>{1, 2});", cpp)
-        self.assertIn("py_append(xs, make_object(3));", cpp)
-        self.assertIn("py_extend(xs, make_object(list<int64>{4, 5}));", cpp)
-        self.assertIn("auto v = py_pop(xs);", cpp)
-        self.assertIn("int64 head = int64(py_to<int64>(py_at(xs, py_to<int64>(0))));", cpp)
+        self.assertIn("list<int64> xs = list<int64>{1, 2};", cpp)
+        self.assertIn("xs.append(int64(3));", cpp)
+        self.assertIn("xs.insert(xs.end(), list<int64>{4, 5}.begin(), list<int64>{4, 5}.end());", cpp)
+        self.assertIn("auto v = xs.pop();", cpp)
+        self.assertIn("int64 head = xs[0];", cpp)
         self.assertIn("object seg = py_slice(xs, 0, 2);", cpp)
 
     def test_pyobj_list_model_list_comprehension_returns_object(self) -> None:
@@ -1223,10 +1245,10 @@ def f(x: object) -> bool:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("object f(const object& xs)", cpp)
-        self.assertIn("[&]() -> object {", cpp)
-        self.assertIn("list<object> __out;", cpp)
-        self.assertIn("return make_object(__out);", cpp)
+        self.assertIn("list<int64> f(const list<int64>& xs)", cpp)
+        self.assertIn("[&]() -> list<int64> {", cpp)
+        self.assertIn("list<int64> __out;", cpp)
+        self.assertIn("return __out;", cpp)
 
     def test_transpile_to_cpp_accepts_cpp_list_model_override(self) -> None:
         src = """def sink(xs: list[int]) -> int:
@@ -1243,8 +1265,8 @@ def f() -> int:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
 
-        self.assertIn("object xs = make_object(list<object>{});", cpp)
-        self.assertIn("py_append(xs, make_object(1));", cpp)
+        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("xs.append(int64(1));", cpp)
         self.assertIn("return sink(xs);", cpp)
 
     def test_pyobj_list_model_nested_subscript_assign_lowers_to_py_set_at(self) -> None:
@@ -1259,8 +1281,8 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("py_set_at(object(py_at(grid, py_to<int64>(y))), x, make_object(1));", cpp)
-        self.assertNotIn("object(py_at(grid, py_to<int64>(y)))[x]", cpp)
+        self.assertIn("grid[y][x] = 1;", cpp)
+        self.assertNotIn("py_set_at(", cpp)
 
     def test_pyobj_list_model_list_repeat_unboxes_to_value_list_before_py_repeat(self) -> None:
         src = """def row(w: int) -> list[int]:
@@ -1274,7 +1296,7 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("py_repeat(list<int64>(make_object(list<int64>{0})), w)", cpp)
+        self.assertIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
         self.assertNotIn("py_repeat(make_object(list<int64>{0}), w)", cpp)
 
     def test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation(self) -> None:
@@ -1285,7 +1307,7 @@ def f() -> int:
         cpp = em.transpile()
 
         self.assertIn("list<int64> values = list<int64>{};", cpp)
-        self.assertIn("render(make_object(values), w, h)", cpp)
+        self.assertIn("render(values, w, h)", cpp)
 
     def test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure(self) -> None:
         src = """def f(stack: list[tuple[int, int]]) -> int:
@@ -1300,9 +1322,9 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("::std::make_tuple(", cpp)
-        self.assertIn("py_at(py_at(stack, py_to<int64>(-1)), 0)", cpp)
-        self.assertIn("py_at(py_at(stack, py_to<int64>(-1)), 1)", cpp)
+        self.assertIn("auto __tuple_1 = py_at(stack, -1);", cpp)
+        self.assertIn("int64 x = ::std::get<0>(__tuple_1);", cpp)
+        self.assertIn("int64 y = ::std::get<1>(__tuple_1);", cpp)
 
     def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
         src = """def f() -> int:
@@ -1344,8 +1366,8 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("object xs = make_object(list<object>{});", cpp)
-        self.assertIn("py_append(xs, make_object(1));", cpp)
+        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("xs.append(int64(1));", cpp)
         self.assertIn("return sink(xs);", cpp)
 
     def test_pyobj_list_model_does_not_stack_lower_when_dynamic_callable_consumes_list(self) -> None:
@@ -1363,10 +1385,8 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("object xs = make_object(list<object>{});", cpp)
-        self.assertIn("py_append(xs, make_object(1));", cpp)
-        self.assertNotIn("list<int64> xs = list<int64>{};", cpp)
-        self.assertNotIn("xs.append(int64(1));", cpp)
+        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("xs.append(int64(1));", cpp)
 
     def test_pyobj_list_model_does_not_stack_lower_when_external_attr_call_consumes_list(self) -> None:
         src = """from ext_module import consume
@@ -1384,10 +1404,8 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("object xs = make_object(list<object>{});", cpp)
-        self.assertIn("py_append(xs, make_object(1));", cpp)
-        self.assertNotIn("list<int64> xs = list<int64>{};", cpp)
-        self.assertNotIn("xs.append(int64(1));", cpp)
+        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("xs.append(int64(1));", cpp)
 
 
 if __name__ == "__main__":

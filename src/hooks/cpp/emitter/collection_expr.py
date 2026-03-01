@@ -17,10 +17,16 @@ class CppCollectionExprEmitter:
         rt_norm = self.normalize_type_name(rt)
         if rt_norm in {"", "unknown"}:
             rt_norm = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+        if self._is_pyobj_forced_typed_list_type(rt_norm):
+            t = self._cpp_list_value_model_type_text(rt_norm)
         if rt_norm.startswith("list[") and rt_norm.endswith("]"):
             elem_t = rt_norm[5:-1].strip()
         pyobj_runtime_list_mode = pyobj_list_mode and (
-            rt_norm in {"", "unknown", "Any", "object"} or self._is_pyobj_runtime_list_type(rt_norm)
+            rt_norm in {"", "unknown", "Any", "object"}
+            or (
+                self._is_pyobj_runtime_list_type(rt_norm)
+                and (not self._is_pyobj_forced_typed_list_type(rt_norm))
+            )
         )
         parts: list[str] = []
         ctor_elem = ""
@@ -189,14 +195,24 @@ class CppCollectionExprEmitter:
         out_east_t = self.normalize_type_name(out_east_t0 if isinstance(out_east_t0, str) else "")
         if out_east_t in {"", "unknown"}:
             out_east_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
+        forced_typed_out = self._is_pyobj_forced_typed_list_type(out_east_t)
+        if forced_typed_out:
+            out_t = self._cpp_list_value_model_type_text(out_east_t)
         pyobj_runtime_list_mode = pyobj_list_mode and (
-            out_east_t in {"", "unknown", "Any", "object"} or self._is_pyobj_runtime_list_type(out_east_t)
+            out_east_t in {"", "unknown", "Any", "object"}
+            or (
+                self._is_pyobj_runtime_list_type(out_east_t)
+                and (not self._is_pyobj_forced_typed_list_type(out_east_t))
+            )
         )
         elt_t0 = self.get_expr_type(expr_d.get("elt"))
         elt_t = elt_t0 if isinstance(elt_t0, str) else ""
         expected_out_t = ""
         if elt_t != "" and elt_t != "unknown":
-            expected_out_t = self._cpp_type_text(f"list[{elt_t}]")
+            if forced_typed_out:
+                expected_out_t = self._cpp_list_value_model_type_text(f"list[{elt_t}]")
+            else:
+                expected_out_t = self._cpp_type_text(f"list[{elt_t}]")
         out_is_dynamic = out_t == "list<object>" or out_t == "object" or out_t == "auto"
         if out_is_dynamic:
             if elt_t != "" and elt_t != "unknown":
