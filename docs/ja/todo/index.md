@@ -56,6 +56,18 @@
 6. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-04] `sample/01` の `pixels` 経路で typed container fastpath を追加し、`MutableList<Any?>` 退化を抑制する。
 7. [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片 + parity）を追加し、`sample/kotlin/01` 再生成差分を固定する。
 
+### P1: sample/swift/01 品質改善（C++品質との差分縮小）
+
+文脈: [docs/ja/plans/p1-swift-sample01-quality-uplift.md](../plans/p1-swift-sample01-quality-uplift.md)
+
+1. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01] Swift backend の `sample/01` 出力品質を改善し、C++ 出力との差を縮小する。
+2. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S1-01] `sample/swift/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
+3. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-01] Swift emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
+4. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
+5. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-03] `write_rgb_png` 経路を no-op から native runtime 呼び出しへ接続し、未解決時は fail-closed にする。
+6. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S2-04] `sample/01` の `pixels` 経路で typed container fastpath を追加し、`[Any]` 退化を抑制する。
+7. [ ] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片 + parity）を追加し、`sample/swift/01` 再生成差分を固定する。
+
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 
 文脈: [docs/ja/plans/p3-codeemitter-cs-isolation.md](../plans/p3-codeemitter-cs-isolation.md)
