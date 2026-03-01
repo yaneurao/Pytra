@@ -50,6 +50,7 @@ _CLASS_NAMES: set[str] = set()
 _FUNCTION_NAMES: set[str] = set()
 _INT_TYPES = {"int", "int64"}
 _FLOAT_TYPES = {"float", "float64"}
+_NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -893,8 +894,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         tuple_lines = _emit_tuple_assign(target_any, stmt.get("value"), indent=indent, ctx=ctx)
         if tuple_lines is not None:
             return tuple_lines
-        target = _render_expr(target_any)
         value_any = stmt.get("value")
+        if value_any is None:
+            decl_type_any = stmt.get("decl_type")
+            decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+            if bool(stmt.get("declare")) and decl_type in _NIL_FREE_DECL_TYPES:
+                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                    return []
+        target = _render_expr(target_any)
         value = "nil" if value_any is None else _render_expr(value_any)
         return [indent + target + " = " + value]
 
