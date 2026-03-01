@@ -8,18 +8,18 @@ import java.nio.file.{Files, Paths}
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 def capture(grid: mutable.ArrayBuffer[Any], w: Long, h: Long): mutable.ArrayBuffer[Long] = {
-    var frame: mutable.ArrayBuffer[Long] = __pytra_bytearray((w * h))
+    var frame: mutable.ArrayBuffer[Long] = __pytra_as_list(__pytra_bytearray((w * h))).asInstanceOf[mutable.ArrayBuffer[Long]]
     var y: Long = 0L
     while ((y < h)) {
         var row_base: Long = (y * w)
         var x: Long = 0L
         while ((x < w)) {
-            __pytra_set_index(frame, (row_base + x), __pytra_ifexp((__pytra_int(__pytra_get_index(__pytra_get_index(grid, y), x)) != 0L), 255L, 0L))
+            __pytra_set_index(frame, (row_base + x), __pytra_ifexp((__pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(grid, y)).asInstanceOf[mutable.ArrayBuffer[Long]], x)) != 0L), 255L, 0L))
             x += 1L
         }
         y += 1L
     }
-    return __pytra_bytes(frame)
+    return __pytra_as_list(__pytra_bytes(frame)).asInstanceOf[mutable.ArrayBuffer[Long]]
 }
 
 def run_08_langtons_ant(): Unit = {
@@ -36,12 +36,12 @@ def run_08_langtons_ant(): Unit = {
     var frames: mutable.ArrayBuffer[Any] = __pytra_as_list(mutable.ArrayBuffer[Any]())
     var i: Long = 0L
     while ((i < steps_total)) {
-        if ((__pytra_int(__pytra_get_index(__pytra_get_index(grid, y), x)) == 0L)) {
+        if ((__pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(grid, y)).asInstanceOf[mutable.ArrayBuffer[Long]], x)) == 0L)) {
             d = ((d + 1L) % 4L)
-            __pytra_set_index(__pytra_get_index(grid, y), x, 1L)
+            __pytra_set_index(__pytra_as_list(__pytra_get_index(grid, y)).asInstanceOf[mutable.ArrayBuffer[Long]], x, 1L)
         } else {
             d = ((d + 3L) % 4L)
-            __pytra_set_index(__pytra_get_index(grid, y), x, 0L)
+            __pytra_set_index(__pytra_as_list(__pytra_get_index(grid, y)).asInstanceOf[mutable.ArrayBuffer[Long]], x, 0L)
         }
         if ((d == 0L)) {
             y = (((y - 1L) + h) % h)

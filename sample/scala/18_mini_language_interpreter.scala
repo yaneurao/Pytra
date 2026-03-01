@@ -192,37 +192,45 @@ class Parser() {
 
     def parse_add(): Long = {
         var left: Long = __pytra_int(this.parse_mul())
-        while (true) {
-            if (this.py_match("PLUS")) {
-                var right: Long = __pytra_int(this.parse_mul())
-                left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "+", left, right, 3L, 1L)))
-                throw new RuntimeException("pytra continue outside loop")
+        boundary:
+            given __breakLabel_0: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+            while (true) {
+                boundary:
+                    given __continueLabel_1: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+                    if (this.py_match("PLUS")) {
+                        var right: Long = __pytra_int(this.parse_mul())
+                        left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "+", left, right, 3L, 1L)))
+                        break(())(using __continueLabel_1)
+                    }
+                    if (this.py_match("MINUS")) {
+                        var right: Long = __pytra_int(this.parse_mul())
+                        left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "-", left, right, 3L, 2L)))
+                        break(())(using __continueLabel_1)
+                    }
+                    break(())(using __breakLabel_0)
             }
-            if (this.py_match("MINUS")) {
-                var right: Long = __pytra_int(this.parse_mul())
-                left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "-", left, right, 3L, 2L)))
-                throw new RuntimeException("pytra continue outside loop")
-            }
-            throw new RuntimeException("pytra break outside loop")
-        }
         return left
     }
 
     def parse_mul(): Long = {
         var left: Long = __pytra_int(this.parse_unary())
-        while (true) {
-            if (this.py_match("STAR")) {
-                var right: Long = __pytra_int(this.parse_unary())
-                left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "*", left, right, 3L, 3L)))
-                throw new RuntimeException("pytra continue outside loop")
+        boundary:
+            given __breakLabel_0: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+            while (true) {
+                boundary:
+                    given __continueLabel_1: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+                    if (this.py_match("STAR")) {
+                        var right: Long = __pytra_int(this.parse_unary())
+                        left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "*", left, right, 3L, 3L)))
+                        break(())(using __continueLabel_1)
+                    }
+                    if (this.py_match("SLASH")) {
+                        var right: Long = __pytra_int(this.parse_unary())
+                        left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "/", left, right, 3L, 4L)))
+                        break(())(using __continueLabel_1)
+                    }
+                    break(())(using __breakLabel_0)
             }
-            if (this.py_match("SLASH")) {
-                var right: Long = __pytra_int(this.parse_unary())
-                left = __pytra_int(this.add_expr(new ExprNode("bin", 0L, "", "/", left, right, 3L, 4L)))
-                throw new RuntimeException("pytra continue outside loop")
-            }
-            throw new RuntimeException("pytra break outside loop")
-        }
         return left
     }
 
@@ -256,7 +264,7 @@ class Parser() {
 
 def tokenize(lines: mutable.ArrayBuffer[String]): mutable.ArrayBuffer[Any] = {
     var single_char_token_tags: mutable.LinkedHashMap[Any, Any] = __pytra_as_dict(mutable.LinkedHashMap[Any, Any]((__pytra_str("+"), 1L), (__pytra_str("-"), 2L), (__pytra_str("*"), 3L), (__pytra_str("/"), 4L), (__pytra_str("("), 5L), (__pytra_str(")"), 6L), (__pytra_str("="), 7L)))
-    var single_char_token_kinds: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[String]("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL")
+    var single_char_token_kinds: mutable.ArrayBuffer[String] = __pytra_as_list(mutable.ArrayBuffer[String]("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL")).asInstanceOf[mutable.ArrayBuffer[String]]
     var tokens: mutable.ArrayBuffer[Any] = __pytra_as_list(mutable.ArrayBuffer[Any]())
     val __iter_0 = __pytra_as_list(__pytra_enumerate(lines))
     var __i_1: Long = 0L
@@ -267,46 +275,50 @@ def tokenize(lines: mutable.ArrayBuffer[String]): mutable.ArrayBuffer[Any] = {
         var source: String = __pytra_str(__tuple_3(1))
         var i: Long = 0L
         var n: Long = __pytra_len(source)
-        while ((i < n)) {
-            var ch: String = __pytra_str(__pytra_get_index(source, i))
-            if ((__pytra_str(ch) == __pytra_str(" "))) {
-                i += 1L
-                throw new RuntimeException("pytra continue outside loop")
-            }
-            var single_tag: Long = __pytra_int(__pytra_as_dict(single_char_token_tags).getOrElse(__pytra_str(ch), 0L))
-            if ((single_tag > 0L)) {
-                tokens.append(new Token(__pytra_str(__pytra_get_index(single_char_token_kinds, (single_tag - 1L))), ch, i, 0L))
-                i += 1L
-                throw new RuntimeException("pytra continue outside loop")
-            }
-            if (__pytra_truthy(__pytra_isdigit(ch))) {
-                var start: Long = i
-                while (((i < n) && __pytra_truthy(__pytra_isdigit(__pytra_str(__pytra_get_index(source, i)))))) {
-                    i += 1L
-                }
-                var text: String = __pytra_str(__pytra_slice(source, start, i))
-                tokens.append(new Token("NUMBER", text, start, __pytra_int(text)))
-                throw new RuntimeException("pytra continue outside loop")
-            }
-            if ((__pytra_truthy(__pytra_isalpha(ch)) || (__pytra_str(ch) == __pytra_str("_")))) {
-                var start: Long = i
-                while (((i < n) && ((__pytra_truthy(__pytra_isalpha(__pytra_str(__pytra_get_index(source, i)))) || (__pytra_str(__pytra_get_index(source, i)) == __pytra_str("_"))) || __pytra_truthy(__pytra_isdigit(__pytra_str(__pytra_get_index(source, i))))))) {
-                    i += 1L
-                }
-                var text: String = __pytra_str(__pytra_slice(source, start, i))
-                if ((__pytra_str(text) == __pytra_str("let"))) {
-                    tokens.append(new Token("LET", text, start, 0L))
-                } else {
-                    if ((__pytra_str(text) == __pytra_str("print"))) {
-                        tokens.append(new Token("PRINT", text, start, 0L))
-                    } else {
-                        tokens.append(new Token("IDENT", text, start, 0L))
+        boundary:
+            given __breakLabel_4: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+            while ((i < n)) {
+                boundary:
+                    given __continueLabel_5: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+                    var ch: String = __pytra_str(__pytra_get_index(source, i))
+                    if ((__pytra_str(ch) == __pytra_str(" "))) {
+                        i += 1L
+                        break(())(using __continueLabel_5)
                     }
-                }
-                throw new RuntimeException("pytra continue outside loop")
+                    var single_tag: Long = __pytra_int(__pytra_as_dict(single_char_token_tags).getOrElse(__pytra_str(ch), 0L))
+                    if ((single_tag > 0L)) {
+                        tokens.append(new Token(__pytra_str(__pytra_get_index(single_char_token_kinds, (single_tag - 1L))), ch, i, 0L))
+                        i += 1L
+                        break(())(using __continueLabel_5)
+                    }
+                    if (__pytra_truthy(__pytra_isdigit(ch))) {
+                        var start: Long = i
+                        while (((i < n) && __pytra_truthy(__pytra_isdigit(__pytra_str(__pytra_get_index(source, i)))))) {
+                            i += 1L
+                        }
+                        var text: String = __pytra_str(__pytra_slice(source, start, i))
+                        tokens.append(new Token("NUMBER", text, start, __pytra_int(text)))
+                        break(())(using __continueLabel_5)
+                    }
+                    if ((__pytra_truthy(__pytra_isalpha(ch)) || (__pytra_str(ch) == __pytra_str("_")))) {
+                        var start: Long = i
+                        while (((i < n) && ((__pytra_truthy(__pytra_isalpha(__pytra_str(__pytra_get_index(source, i)))) || (__pytra_str(__pytra_get_index(source, i)) == __pytra_str("_"))) || __pytra_truthy(__pytra_isdigit(__pytra_str(__pytra_get_index(source, i))))))) {
+                            i += 1L
+                        }
+                        var text: String = __pytra_str(__pytra_slice(source, start, i))
+                        if ((__pytra_str(text) == __pytra_str("let"))) {
+                            tokens.append(new Token("LET", text, start, 0L))
+                        } else {
+                            if ((__pytra_str(text) == __pytra_str("print"))) {
+                                tokens.append(new Token("PRINT", text, start, 0L))
+                            } else {
+                                tokens.append(new Token("IDENT", text, start, 0L))
+                            }
+                        }
+                        break(())(using __continueLabel_5)
+                    }
+                    throw new RuntimeException(__pytra_str((__pytra_str(__pytra_str(__pytra_str(__pytra_str(__pytra_str("tokenize error at line=") + __pytra_str(line_index)) + __pytra_str(" pos=")) + __pytra_str(i)) + __pytra_str(" ch=")) + __pytra_str(ch))))
             }
-            throw new RuntimeException(__pytra_str((__pytra_str(__pytra_str(__pytra_str(__pytra_str(__pytra_str("tokenize error at line=") + __pytra_str(line_index)) + __pytra_str(" pos=")) + __pytra_str(i)) + __pytra_str(" ch=")) + __pytra_str(ch))))
-        }
         tokens.append(new Token("NEWLINE", "", n, 0L))
         __i_1 += 1L
     }
@@ -356,33 +368,37 @@ def execute(stmts: mutable.ArrayBuffer[Any], expr_nodes: mutable.ArrayBuffer[Any
     var env: mutable.LinkedHashMap[Any, Any] = __pytra_as_dict(mutable.LinkedHashMap[Any, Any]())
     var checksum: Long = 0L
     var printed: Long = 0L
-    val __iter_0 = __pytra_as_list(stmts)
-    var __i_1: Long = 0L
-    while (__i_1 < __iter_0.size.toLong) {
-        val stmt: StmtNode = __pytra_as_StmtNode(__iter_0(__i_1.toInt))
-        if ((__pytra_int(stmt.kind_tag) == 1L)) {
-            __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
-            throw new RuntimeException("pytra continue outside loop")
+    boundary:
+        given __breakLabel_2: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+        val __iter_0 = __pytra_as_list(stmts)
+        var __i_1: Long = 0L
+        while (__i_1 < __iter_0.size.toLong) {
+            boundary:
+                given __continueLabel_3: boundary.Label[Unit] = summon[boundary.Label[Unit]]
+                val stmt: StmtNode = __pytra_as_StmtNode(__iter_0(__i_1.toInt))
+                if ((__pytra_int(stmt.kind_tag) == 1L)) {
+                    __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
+                    break(())(using __continueLabel_3)
+                }
+                if ((__pytra_int(stmt.kind_tag) == 2L)) {
+                    if ((!(__pytra_contains(env, stmt.name)))) {
+                        throw new RuntimeException(__pytra_str(("assign to undefined variable: " + stmt.name)))
+                    }
+                    __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
+                    break(())(using __continueLabel_3)
+                }
+                var value: Long = __pytra_int(eval_expr(stmt.expr_index, expr_nodes, env))
+                if (trace) {
+                    __pytra_print(value)
+                }
+                var norm: Long = (value % 1000000007L)
+                if ((norm < 0L)) {
+                    norm += 1000000007L
+                }
+                checksum = (((checksum * 131L) + norm) % 1000000007L)
+                printed += 1L
+            __i_1 += 1L
         }
-        if ((__pytra_int(stmt.kind_tag) == 2L)) {
-            if ((!(__pytra_contains(env, stmt.name)))) {
-                throw new RuntimeException(__pytra_str(("assign to undefined variable: " + stmt.name)))
-            }
-            __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
-            throw new RuntimeException("pytra continue outside loop")
-        }
-        var value: Long = __pytra_int(eval_expr(stmt.expr_index, expr_nodes, env))
-        if (trace) {
-            __pytra_print(value)
-        }
-        var norm: Long = (value % 1000000007L)
-        if ((norm < 0L)) {
-            norm += 1000000007L
-        }
-        checksum = (((checksum * 131L) + norm) % 1000000007L)
-        printed += 1L
-        __i_1 += 1L
-    }
     if (trace) {
         __pytra_print("printed:", printed)
     }
@@ -390,7 +406,7 @@ def execute(stmts: mutable.ArrayBuffer[Any], expr_nodes: mutable.ArrayBuffer[Any
 }
 
 def build_benchmark_source(var_count: Long, loops: Long): mutable.ArrayBuffer[String] = {
-    var lines: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[Any]()
+    var lines: mutable.ArrayBuffer[String] = __pytra_as_list(mutable.ArrayBuffer[Any]()).asInstanceOf[mutable.ArrayBuffer[String]]
     var i: Long = 0L
     while ((i < var_count)) {
         lines.append((__pytra_str(__pytra_str(__pytra_str("let v") + __pytra_str(i)) + __pytra_str(" = ")) + __pytra_str(i + 1L)))
@@ -413,7 +429,7 @@ def build_benchmark_source(var_count: Long, loops: Long): mutable.ArrayBuffer[St
 }
 
 def run_demo(): Unit = {
-    var demo_lines: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[Any]()
+    var demo_lines: mutable.ArrayBuffer[String] = __pytra_as_list(mutable.ArrayBuffer[Any]()).asInstanceOf[mutable.ArrayBuffer[String]]
     demo_lines.append("let a = 10")
     demo_lines.append("let b = 3")
     demo_lines.append("a = (a + b) * 2")
@@ -427,7 +443,7 @@ def run_demo(): Unit = {
 }
 
 def run_benchmark(): Unit = {
-    var source_lines: mutable.ArrayBuffer[String] = build_benchmark_source(32L, 120000L)
+    var source_lines: mutable.ArrayBuffer[String] = __pytra_as_list(build_benchmark_source(32L, 120000L)).asInstanceOf[mutable.ArrayBuffer[String]]
     var start: Double = __pytra_perf_counter()
     var tokens: mutable.ArrayBuffer[Any] = __pytra_as_list(tokenize(source_lines))
     var parser: Parser = __pytra_as_Parser(new Parser(tokens))

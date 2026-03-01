@@ -137,6 +137,13 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             scala,
         )
 
+    def test_sample_18_scala_output_preserves_continue_inside_loop(self) -> None:
+        sample = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertNotIn("pytra continue outside loop", scala)
+        self.assertIn("break(())(using __continueLabel_", scala)
+
     def test_pathlib_fixture_uses_path_runtime_helpers(self) -> None:
         fixture = find_fixture_case("pathlib_extended")
         east = load_east(fixture, parser_backend="self_hosted")

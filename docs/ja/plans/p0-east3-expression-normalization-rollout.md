@@ -49,7 +49,7 @@
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala を次段 pilot として同一正規形を参照する描画経路へ切替える。
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 旧経路との併存期間を最小化し、正規形欠落時の fail-closed / fallback 条件を固定する。
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト（optimizer + emitter）を追加し、冗長式再発を検知可能にする。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 再生成と transpile/parity を実施し、代表ケースでの品質改善と非退行を確認する。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 再生成と transpile/parity を実施し、代表ケースでの品質改善と非退行を確認する。
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`reserve` 限定でなく式正規化全体を EAST3 側へ寄せる P0 計画を新規起票。
@@ -61,7 +61,7 @@
 - 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala `ForCore` でも `normalized_exprs.for_cond_expr` 参照経路を導入し、pilot backend へ展開。
 - 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時は従来条件式へ fallback、`reserve_hints` は既存 fail-closed を維持する条件を固定。
 - 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] optimizer/unit と C++ codegen 回帰テストを拡張し、正規化メタ再発検知を追加。
-- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample(01/08/18)` の `cpp/rs/scala` parity を実行。`scala` で `ArrayBuffer[Any]` 型不整合により `08/18` が compile fail（継続課題）。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample(01/08/18)` の `cpp/rs/scala` parity を実行し、`cases=3 pass=3 fail=0` を確認（`scala` の `ArrayBuffer[Any]` 型不整合と `continue` 誤判定を修正）。
 
 ## S1-01 棚卸し結果（backend横断）
 
