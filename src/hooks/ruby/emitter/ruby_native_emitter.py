@@ -300,6 +300,13 @@ def _render_bool_cast(node: Any) -> str:
     return "__pytra_truthy(" + rendered + ")"
 
 
+def _render_condition_expr(node: Any) -> str:
+    rendered = _render_expr(node)
+    if _is_bool_like_expr(node):
+        return rendered
+    return "__pytra_truthy(" + rendered + ")"
+
+
 def _render_name_expr(expr: dict[str, Any]) -> str:
     raw = expr.get("id")
     if raw == "self":
@@ -366,7 +373,7 @@ def _render_unary_expr(expr: dict[str, Any]) -> str:
     if op == "UAdd":
         return "(+" + operand + ")"
     if op == "Not":
-        return "(!__pytra_truthy(" + operand + "))"
+        return "(!" + _render_condition_expr(expr.get("operand")) + ")"
     return operand
 
 
@@ -407,7 +414,7 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
     rendered: list[str] = []
     i = 0
     while i < len(values):
-        rendered.append("__pytra_truthy(" + _render_expr(values[i]) + ")")
+        rendered.append(_render_condition_expr(values[i]))
         i += 1
     op = expr.get("op")
     delim = " && " if op == "And" else " || "
@@ -428,10 +435,10 @@ def _render_subscript_expr(expr: dict[str, Any]) -> str:
 
 
 def _render_ifexp_expr(expr: dict[str, Any]) -> str:
-    test = _render_expr(expr.get("test"))
+    test = _render_condition_expr(expr.get("test"))
     body = _render_expr(expr.get("body"))
     orelse = _render_expr(expr.get("orelse"))
-    return "(__pytra_truthy(" + test + ") ? " + body + " : " + orelse + ")"
+    return "(" + test + " ? " + body + " : " + orelse + ")"
 
 
 def _render_list_expr(expr: dict[str, Any]) -> str:
@@ -918,7 +925,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + lhs + " " + symbol + "= " + rhs]
 
     if kind == "If":
-        test_expr = "__pytra_truthy(" + _render_expr(stmt.get("test")) + ")"
+        test_expr = _render_condition_expr(stmt.get("test"))
         lines = [indent + "if " + test_expr]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
@@ -941,7 +948,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_for_core(stmt, indent=indent, ctx=ctx)
 
     if kind == "While":
-        test_expr = "__pytra_truthy(" + _render_expr(stmt.get("test")) + ")"
+        test_expr = _render_condition_expr(stmt.get("test"))
         lines = [indent + "while " + test_expr]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []

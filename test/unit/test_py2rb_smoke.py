@@ -186,6 +186,10 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("y = 0", ruby)
         self.assertIn("x = 0", ruby)
         self.assertIn("i = 0", ruby)
+        self.assertIn("if ((x2 + y2) > 4.0)", ruby)
+        self.assertIn("if (it >= max_iter)", ruby)
+        self.assertNotIn("if __pytra_truthy(((x2 + y2) > 4.0))", ruby)
+        self.assertNotIn("if __pytra_truthy((it >= max_iter))", ruby)
 
     def test_sample18_enumerate_and_slice_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")
