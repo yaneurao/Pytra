@@ -154,12 +154,15 @@ class CodeEmitter:
                 out_parts.append(ch)
         return "".join(out_parts)
 
-    def quote_string_literal(self, text: str, quote: str = "\"") -> str:
+    def quote_string_literal(self, text: Any, quote: str = "\"") -> str:
         """エスケープ済み文字列を引用符で囲んで返す。"""
+        txt = self.any_to_str(text)
+        if txt == "" and text is not None:
+            txt = str(text)
         q = quote
         if q == "":
             q = "\""
-        return q + CodeEmitter.escape_string_for_literal(text) + q
+        return q + CodeEmitter.escape_string_for_literal(txt) + q
 
     @staticmethod
     def _load_json_dict(path: Path) -> dict[str, Any]:
@@ -697,12 +700,13 @@ class CodeEmitter:
         self,
         key: str,
         default_value: str,
-        values: dict[str, str],
+        values: Any,
     ) -> str:
         """profile.syntax のテンプレートを format 展開して返す。"""
         text = self.syntax_text(key, default_value)
         out = text
-        for k, v in values.items():
+        rendered_values = self.any_to_str_dict_or_empty(values)
+        for k, v in rendered_values.items():
             out = out.replace("{" + str(k) + "}", str(v))
         return out
 
@@ -855,11 +859,12 @@ class CodeEmitter:
         name: str,
         reserved_words: set[str],
         rename_prefix: str,
-        renamed_symbols: dict[str, str],
+        renamed_symbols: Any,
     ) -> str:
         """予約語衝突時のリネーム結果を返し、必要ならキャッシュへ保存する。"""
-        if name in renamed_symbols:
-            return renamed_symbols[name]
+        renamed = self.any_to_str_dict_or_empty(renamed_symbols)
+        if name in renamed:
+            return renamed[name]
         if name in reserved_words:
             return f"{rename_prefix}{name}"
         return name

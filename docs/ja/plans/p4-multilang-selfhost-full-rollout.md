@@ -77,6 +77,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter の dict literal 型推論に fail-closed widening を追加し、値が混在/unknown を含む場合は `Dictionary<string, object>` へ自動拡張するよう補正した。`test_py2cs_smoke.py` に回帰（42件）を追加して通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 37 -> 22`, `CS1502: 24 -> 22`, `CS0029: 17 -> 16` まで縮退させた。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.any_dict_get*` の受け口を `Any` 化し、実装本体を `any_to_dict_or_empty()` 経由へ統一して object 直接メンバアクセスを排除した。`test_code_emitter.py`（47件）/`test_py2cs_smoke.py`（42件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 22 -> 18`, `CS1502: 22 -> 18` まで縮退させた（`CS1929/CS0021` は各1件で維持）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `_emit_annassign` の `Attribute` 経路でも型ヒントを使って `_render_expr_with_type_hint` を適用するよう補強し、`self.x: set[str] = ...` / `self.y: dict[str, str] = ...` の初期化を typed 出力へ揃えた。`test_py2cs_smoke.py` に回帰（43件）を追加して通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 16 -> 10` を確認した（`CS1502/CS1503=18` 維持）。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.quote_string_literal` / `syntax_line` / `rename_if_reserved` の受け口を object-safe 化し、`dict[str,str]` 固定引数や `str` 固定引数への過剰依存を縮退した。`test_code_emitter.py`（47件）/`test_py2cs_smoke.py`（43件）通過のうえ `python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 18 -> 15`, `CS1502: 18 -> 15` へ縮退させた。
 
 ## 現状固定（S1-01）
 
