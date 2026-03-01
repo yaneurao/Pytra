@@ -1787,7 +1787,7 @@ class CppEmitter(
             return f"static_cast<{cast_t}>(dict_get_int({owner_expr}, {key_expr}, py_to<int64>({default_expr})))"
         if objectish_owner and out_t in float_out_types:
             cast_t = self._cpp_type_text(out_t)
-            return f"static_cast<{cast_t}>(dict_get_float({owner_expr}, {key_expr}, py_to<float64>({default_expr})))"
+            return f"{cast_t}(dict_get_float({owner_expr}, {key_expr}, py_to<float64>({default_expr})))"
         if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
             return f"dict_get_bool({owner_expr}, {key_expr}, {default_expr})"
         if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":

@@ -41,10 +41,13 @@
 決定ログ:
 - 2026-02-28: ユーザー指示により、`static_cast<float64>(x)` の出力表記を `float64(x)` に統一する P0 タスクを起票した。
 - 2026-02-28: 対象は「表記統一」であり、`float64` 変換そのもの（`int64 -> float64`）は維持する方針を確定した。
+- 2026-03-01: `call.py`（Builtin `static_cast`）, `expr.py`（`min/max` 事前 cast）, `stmt.py`（AugAssign Any→float）, `cpp_emitter.py`（dict.get float 経路）の `float64` cast 出力を `float64(...)` へ統一した。
+- 2026-03-01: Any/object 境界は `py_to_float64` / `py_to<float64>` を維持し、`test_float_cast_on_any_like_keeps_runtime_conversion` で回帰固定した。
+- 2026-03-01: `sample/16` 回帰を追加し、`static_cast<float64>` 非出力と `float64(width)` / `::std::max<float64>(float64(...), float64(...))` を固定。unit/transpile check を通過した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S1-01] C++ emitter の `float64` cast 出力箇所を棚卸しし、統一対象/除外対象を固定する。
-- [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-01] `apply_cast` と直接出力箇所を `float64(expr)` 優先へ変更し、`static_cast<float64>` を排除する。
-- [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-02] `object/Any/unknown` 経路で `py_to<float64>` 維持を確認する回帰テストを追加する。
-- [ ] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認し、`sample/16` の該当出力差分を固定する。
+- [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S1-01] C++ emitter の `float64` cast 出力箇所を棚卸しし、統一対象/除外対象を固定する。
+- [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-01] `apply_cast` と直接出力箇所を `float64(expr)` 優先へ変更し、`static_cast<float64>` を排除する。
+- [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S2-02] `object/Any/unknown` 経路で `py_to<float64>` 維持を確認する回帰テストを追加する。
+- [x] [ID: P0-CPP-FLOAT-CAST-STYLE-01-S3-01] transpile check / unit / sample 再生成で非退行を確認し、`sample/16` の該当出力差分を固定する。

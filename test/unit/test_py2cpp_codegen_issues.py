@@ -627,6 +627,27 @@ def f(frames: list[bytes]) -> None:
         self.assertNotIn("int64(py_to<int64>(4))", cpp)
         self.assertNotIn("int64(py_to<int64>(0))", cpp)
 
+    def test_sample16_float64_cast_style_uses_function_form(self) -> None:
+        src_py = ROOT / "sample" / "py" / "16_glass_sculpture_chaos.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("float64 __hoisted_cast_4 = float64(width);", cpp)
+        self.assertIn("::std::max<float64>(float64(ldy), float64(0.0));", cpp)
+        self.assertNotIn("static_cast<float64>(", cpp)
+
+    def test_float_cast_on_any_like_keeps_runtime_conversion(self) -> None:
+        src = """def f(v: object) -> float:
+    return float(v)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "float_any_cast.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return py_to_float64(v);", cpp)
+        self.assertNotIn("return float64(v);", cpp)
+
     def test_typed_list_return_empty_literal_uses_return_type_not_object_list(self) -> None:
         src = """class Node:
     pass
