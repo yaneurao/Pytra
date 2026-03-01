@@ -4,8 +4,6 @@ import scala.util.boundary, boundary.break
 import scala.math.*
 import java.nio.file.{Files, Paths}
 
-def __pytra_noop(args: Any*): Unit = { }
-
 def __pytra_to_byte(v: Any): Int = {
     (__pytra_int(v) & 0xFFL).toInt
 }
@@ -26,136 +24,11 @@ def __pytra_append_u16le(out: mutable.ArrayBuffer[Byte], value: Int): Unit = {
     out.append(((value >>> 8) & 0xFF).toByte)
 }
 
-def __pytra_append_u32be(out: mutable.ArrayBuffer[Byte], value: Int): Unit = {
-    out.append(((value >>> 24) & 0xFF).toByte)
-    out.append(((value >>> 16) & 0xFF).toByte)
-    out.append(((value >>> 8) & 0xFF).toByte)
-    out.append((value & 0xFF).toByte)
-}
-
-def __pytra_crc32(data: mutable.ArrayBuffer[Byte]): Int = {
-    var crc = 0xFFFFFFFFL
-    val poly = 0xEDB88320L
-    var i = 0
-    while (i < data.size) {
-        crc ^= (data(i) & 0xFF).toLong
-        var j = 0
-        while (j < 8) {
-            if ((crc & 1L) != 0L) crc = (crc >>> 1) ^ poly
-            else crc = crc >>> 1
-            j += 1
-        }
-        i += 1
-    }
-    (crc ^ 0xFFFFFFFFL).toInt
-}
-
-def __pytra_adler32(data: mutable.ArrayBuffer[Byte]): Int = {
-    val mod = 65521
-    var s1 = 1
-    var s2 = 0
-    var i = 0
-    while (i < data.size) {
-        s1 += (data(i) & 0xFF)
-        if (s1 >= mod) s1 -= mod
-        s2 += s1
-        s2 %= mod
-        i += 1
-    }
-    ((s2 << 16) | s1) & 0xFFFFFFFF
-}
-
-def __pytra_zlib_deflate_store(data: mutable.ArrayBuffer[Byte]): mutable.ArrayBuffer[Byte] = {
-    val out = mutable.ArrayBuffer[Byte](0x78.toByte, 0x01.toByte)
-    val n = data.size
-    var pos = 0
-    while (pos < n) {
-        val remain = n - pos
-        val chunkLen = if (remain > 65535) 65535 else remain
-        val finalFlag = if ((pos + chunkLen) >= n) 1 else 0
-        out.append(finalFlag.toByte)
-        __pytra_append_u16le(out, chunkLen)
-        __pytra_append_u16le(out, 0xFFFF ^ chunkLen)
-        var i = 0
-        while (i < chunkLen) {
-            out.append(data(pos + i))
-            i += 1
-        }
-        pos += chunkLen
-    }
-    __pytra_append_u32be(out, __pytra_adler32(data))
-    out
-}
-
-def __pytra_png_chunk(chunkType: String, data: mutable.ArrayBuffer[Byte]): mutable.ArrayBuffer[Byte] = {
-    val out = mutable.ArrayBuffer[Byte]()
-    __pytra_append_u32be(out, data.size)
-    val ct = chunkType.getBytes("US-ASCII")
-    val crcData = mutable.ArrayBuffer[Byte]()
-    var i = 0
-    while (i < ct.length) {
-        out.append(ct(i))
-        crcData.append(ct(i))
-        i += 1
-    }
-    i = 0
-    while (i < data.size) {
-        out.append(data(i))
-        crcData.append(data(i))
-        i += 1
-    }
-    __pytra_append_u32be(out, __pytra_crc32(crcData))
-    out
-}
-
 def __pytra_write_file_bytes(path: Any, data: mutable.ArrayBuffer[Byte]): Unit = {
     val p = Paths.get(__pytra_str(path))
     val parent = p.getParent
     if (parent != null) Files.createDirectories(parent)
     Files.write(p, data.toArray)
-}
-
-def __pytra_path_new(path: Any): String = {
-    Paths.get(__pytra_str(path)).toString
-}
-
-def __pytra_path_join(base: Any, child: Any): String = {
-    Paths.get(__pytra_str(base)).resolve(__pytra_str(child)).toString
-}
-
-def __pytra_path_parent(path: Any): String = {
-    val parent = Paths.get(__pytra_str(path)).getParent
-    if (parent == null) "" else parent.toString
-}
-
-def __pytra_path_name(path: Any): String = {
-    val name = Paths.get(__pytra_str(path)).getFileName
-    if (name == null) "" else name.toString
-}
-
-def __pytra_path_stem(path: Any): String = {
-    val name = __pytra_path_name(path)
-    val idx = name.lastIndexOf('.')
-    if (idx <= 0) name else name.substring(0, idx)
-}
-
-def __pytra_path_exists(path: Any): Boolean = {
-    Files.exists(Paths.get(__pytra_str(path)))
-}
-
-def __pytra_path_mkdir(path: Any): Unit = {
-    Files.createDirectories(Paths.get(__pytra_str(path)))
-}
-
-def __pytra_path_write_text(path: Any, text: Any): Unit = {
-    val p = Paths.get(__pytra_str(path))
-    val parent = p.getParent
-    if (parent != null) Files.createDirectories(parent)
-    Files.writeString(p, __pytra_str(text))
-}
-
-def __pytra_path_read_text(path: Any): String = {
-    Files.readString(Paths.get(__pytra_str(path)))
 }
 
 def __pytra_grayscale_palette(): mutable.ArrayBuffer[Any] = {
@@ -168,43 +41,6 @@ def __pytra_grayscale_palette(): mutable.ArrayBuffer[Any] = {
         i += 1L
     }
     p
-}
-
-def __pytra_write_rgb_png(path: Any, width: Any, height: Any, pixels: Any): Unit = {
-    val w = __pytra_int(width).toInt
-    val h = __pytra_int(height).toInt
-    val raw = __pytra_to_byte_buffer(pixels)
-    val expected = w * h * 3
-    if (raw.size != expected) {
-        throw new RuntimeException("pixels length mismatch")
-    }
-    val scanlines = mutable.ArrayBuffer[Byte]()
-    val rowBytes = w * 3
-    var y = 0
-    while (y < h) {
-        scanlines.append(0.toByte)
-        val start = y * rowBytes
-        var x = 0
-        while (x < rowBytes) {
-            scanlines.append(raw(start + x))
-            x += 1
-        }
-        y += 1
-    }
-    val ihdr = mutable.ArrayBuffer[Byte]()
-    __pytra_append_u32be(ihdr, w)
-    __pytra_append_u32be(ihdr, h)
-    ihdr.append(8.toByte)
-    ihdr.append(2.toByte)
-    ihdr.append(0.toByte)
-    ihdr.append(0.toByte)
-    ihdr.append(0.toByte)
-    val idat = __pytra_zlib_deflate_store(scanlines)
-    val png = mutable.ArrayBuffer[Byte](0x89.toByte, 'P'.toByte, 'N'.toByte, 'G'.toByte, 0x0D.toByte, 0x0A.toByte, 0x1A.toByte, 0x0A.toByte)
-    png ++= __pytra_png_chunk("IHDR", ihdr)
-    png ++= __pytra_png_chunk("IDAT", idat)
-    png ++= __pytra_png_chunk("IEND", mutable.ArrayBuffer[Byte]())
-    __pytra_write_file_bytes(path, png)
 }
 
 def __pytra_gif_lzw_encode(data: mutable.ArrayBuffer[Byte], minCodeSize: Int = 8): mutable.ArrayBuffer[Byte] = {
@@ -308,27 +144,8 @@ def __pytra_any_default(): Any = {
     0L
 }
 
-def __pytra_assert(args: Any*): String = {
-    "True"
-}
-
 def __pytra_perf_counter(): Double = {
     System.nanoTime().toDouble / 1_000_000_000.0
-}
-
-def __pytra_truthy(v: Any): Boolean = {
-    if (v == null) return false
-    v match {
-        case b: Boolean => b
-        case l: Long => l != 0L
-        case i: Int => i != 0
-        case d: Double => d != 0.0
-        case f: Float => f != 0.0f
-        case s: String => s.nonEmpty
-        case xs: scala.collection.Seq[?] => xs.nonEmpty
-        case m: scala.collection.Map[?, ?] => m.nonEmpty
-        case _ => true
-    }
 }
 
 def __pytra_int(v: Any): Long = {
@@ -343,21 +160,6 @@ def __pytra_int(v: Any): Long = {
             try s.toLong
             catch { case _: NumberFormatException => 0L }
         case _ => 0L
-    }
-}
-
-def __pytra_float(v: Any): Double = {
-    if (v == null) return 0.0
-    v match {
-        case d: Double => d
-        case f: Float => f.toDouble
-        case l: Long => l.toDouble
-        case i: Int => i.toDouble
-        case b: Boolean => if (b) 1.0 else 0.0
-        case s: String =>
-            try s.toDouble
-            catch { case _: NumberFormatException => 0.0 }
-        case _ => 0.0
     }
 }
 
@@ -424,66 +226,6 @@ def __pytra_set_index(container: Any, index: Any, value: Any): Unit = {
     map(__pytra_str(index)) = value
 }
 
-def __pytra_slice(container: Any, lower: Any, upper: Any): Any = {
-    container match {
-        case s: String =>
-            val n = s.length.toLong
-            var lo = __pytra_index(__pytra_int(lower), n)
-            var hi = __pytra_index(__pytra_int(upper), n)
-            if (lo < 0L) lo = 0L
-            if (hi < 0L) hi = 0L
-            if (lo > n) lo = n
-            if (hi > n) hi = n
-            if (hi < lo) hi = lo
-            s.substring(lo.toInt, hi.toInt)
-        case _ =>
-            val list = __pytra_as_list(container)
-            val n = list.size.toLong
-            var lo = __pytra_index(__pytra_int(lower), n)
-            var hi = __pytra_index(__pytra_int(upper), n)
-            if (lo < 0L) lo = 0L
-            if (hi < 0L) hi = 0L
-            if (lo > n) lo = n
-            if (hi > n) hi = n
-            if (hi < lo) hi = lo
-            val out = mutable.ArrayBuffer[Any]()
-            var i = lo
-            while (i < hi) {
-                out.append(list(i.toInt))
-                i += 1L
-            }
-            out
-    }
-}
-
-def __pytra_isdigit(v: Any): Boolean = {
-    val s = __pytra_str(v)
-    if (s.isEmpty) return false
-    s.forall(_.isDigit)
-}
-
-def __pytra_isalpha(v: Any): Boolean = {
-    val s = __pytra_str(v)
-    if (s.isEmpty) return false
-    s.forall(_.isLetter)
-}
-
-def __pytra_contains(container: Any, value: Any): Boolean = {
-    val needle = __pytra_str(value)
-    container match {
-        case s: String => s.contains(needle)
-        case m: scala.collection.Map[?, ?] => m.asInstanceOf[scala.collection.Map[Any, Any]].contains(needle)
-        case _ =>
-            val list = __pytra_as_list(container)
-            var i = 0
-            while (i < list.size) {
-                if (__pytra_str(list(i)) == needle) return true
-                i += 1
-            }
-            false
-    }
-}
-
 def __pytra_ifexp(cond: Boolean, a: Any, b: Any): Any = {
     if (cond) a else b
 }
@@ -525,17 +267,6 @@ def __pytra_list_repeat(value: Any, count: Any): mutable.ArrayBuffer[Any] = {
     out
 }
 
-def __pytra_enumerate(v: Any): mutable.ArrayBuffer[Any] = {
-    val items = __pytra_as_list(v)
-    val out = mutable.ArrayBuffer[Any]()
-    var i = 0L
-    while (i < items.size.toLong) {
-        out.append(mutable.ArrayBuffer[Any](i, items(i.toInt)))
-        i += 1L
-    }
-    out
-}
-
 def __pytra_as_list(v: Any): mutable.ArrayBuffer[Any] = {
     v match {
         case xs: mutable.ArrayBuffer[?] => xs.asInstanceOf[mutable.ArrayBuffer[Any]]
@@ -560,11 +291,6 @@ def __pytra_as_dict(v: Any): mutable.LinkedHashMap[Any, Any] = {
     }
 }
 
-def __pytra_pop_last(v: mutable.ArrayBuffer[Any]): mutable.ArrayBuffer[Any] = {
-    if (v.nonEmpty) v.remove(v.size - 1)
-    v
-}
-
 def __pytra_print(args: Any*): Unit = {
     if (args.isEmpty) {
         println()
@@ -573,37 +299,6 @@ def __pytra_print(args: Any*): Unit = {
     println(args.map(__pytra_str).mkString(" "))
 }
 
-def __pytra_min(a: Any, b: Any): Any = {
-    val af = __pytra_float(a)
-    val bf = __pytra_float(b)
-    if (af < bf) {
-        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
-        return __pytra_int(a)
-    }
-    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
-    __pytra_int(b)
-}
-
-def __pytra_max(a: Any, b: Any): Any = {
-    val af = __pytra_float(a)
-    val bf = __pytra_float(b)
-    if (af > bf) {
-        if (__pytra_is_float(a) || __pytra_is_float(b)) return af
-        return __pytra_int(a)
-    }
-    if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
-    __pytra_int(b)
-}
-
-def __pytra_is_int(v: Any): Boolean = v.isInstanceOf[Long] || v.isInstanceOf[Int]
-
-def __pytra_is_float(v: Any): Boolean = v.isInstanceOf[Double] || v.isInstanceOf[Float]
-
-def __pytra_is_bool(v: Any): Boolean = v.isInstanceOf[Boolean]
-
-def __pytra_is_str(v: Any): Boolean = v.isInstanceOf[String]
-
-def __pytra_is_list(v: Any): Boolean = v.isInstanceOf[scala.collection.Seq[?]]
 
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 

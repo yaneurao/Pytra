@@ -94,6 +94,8 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("while (x < __pytra_int(width)) {", scala)
         self.assertIn("pixels.append(r)", scala)
         self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.append(", scala)
+        self.assertIn("def __pytra_write_rgb_png(path: Any, width: Any, height: Any, pixels: Any): Unit = {", scala)
+        self.assertNotIn("def __pytra_save_gif(", scala)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
