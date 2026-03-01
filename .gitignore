@@ -17,6 +17,7 @@ __pycache__/
 # legacy output paths (avoid accidental tracking if recreated)
 /out/
 /selfhost/
+/tmp/
 
 # user materials (read-only for Codex)
 /materials/
