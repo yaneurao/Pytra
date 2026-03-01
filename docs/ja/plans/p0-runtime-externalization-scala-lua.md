@@ -49,7 +49,7 @@
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] Scala runtime 正本（`src/runtime/scala/pytra/py_runtime.scala`）を整備する。
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-02] Scala emitter の inline helper 出力を撤去し、`py2scala.py` で runtime 配置を実装する。
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-03] Lua runtime 正本（`src/runtime/lua/pytra/py_runtime.lua`）を整備する。
-- [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の inline helper 出力を撤去し、`py2lua.py` で runtime 配置と読み込み導線を実装する。
+- [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の inline helper 出力を撤去し、`py2lua.py` で runtime 配置と読み込み導線を実装する。
 - [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S3-01] transpile チェック/smoke/parity を更新し、runtime 分離の回帰検知を固定する。
 
 ## S1実施結果（2026-03-02）
@@ -90,3 +90,4 @@
 - 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] `src/runtime/scala/pytra/py_runtime.scala` を追加し、現行 `_emit_runtime_helpers()` の helper 群を正本ファイルへ切り出した。
 - 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-02] Scala emitter の runtime inline 挿入を廃止し、`py2scala.py` が `py_runtime.scala` を出力先へ配置する契約へ切替えた。
 - 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-03] `src/runtime/lua/pytra/py_runtime.lua` を追加し、Lua emitter の helper 本体（11系統）を正本ファイルへ切り出した。
+- 2026-03-02: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の helper 直展開を廃止し、`dofile(.../py_runtime.lua)` 読み込み + `py2lua.py` runtime 配置へ移行した。

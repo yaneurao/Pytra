@@ -1,7 +1,7 @@
 -- Auto-generated canonical Lua runtime for Pytra native backend.
 -- Source of truth: src/runtime/lua/pytra/py_runtime.lua
 
-local function __pytra_print(...)
+function __pytra_print(...)
     local argc = select("#", ...)
     if argc == 0 then
         io.write("\n")
@@ -23,7 +23,7 @@ local function __pytra_print(...)
     io.write(table.concat(parts, " ") .. "\n")
 end
 
-local function __pytra_repeat_seq(a, b)
+function __pytra_repeat_seq(a, b)
     local seq = a
     local count = b
     if type(a) == "number" and type(b) ~= "number" then
@@ -50,7 +50,7 @@ local function __pytra_repeat_seq(a, b)
     return out
 end
 
-local function __pytra_truthy(v)
+function __pytra_truthy(v)
     if v == nil then return false end
     local t = type(v)
     if t == "boolean" then return v end
@@ -60,7 +60,7 @@ local function __pytra_truthy(v)
     return true
 end
 
-local function __pytra_contains(container, value)
+function __pytra_contains(container, value)
     local t = type(container)
     if t == "table" then
         if container[value] ~= nil then return true end
@@ -76,7 +76,7 @@ local function __pytra_contains(container, value)
     return false
 end
 
-local function __pytra_str_isdigit(s)
+function __pytra_str_isdigit(s)
     if type(s) ~= "string" or #s == 0 then return false end
     for i = 1, #s do
         local b = string.byte(s, i)
@@ -85,7 +85,7 @@ local function __pytra_str_isdigit(s)
     return true
 end
 
-local function __pytra_str_isalpha(s)
+function __pytra_str_isalpha(s)
     if type(s) ~= "string" or #s == 0 then return false end
     for i = 1, #s do
         local b = string.byte(s, i)
@@ -96,7 +96,7 @@ local function __pytra_str_isalpha(s)
     return true
 end
 
-local function __pytra_str_isalnum(s)
+function __pytra_str_isalnum(s)
     if type(s) ~= "string" or #s == 0 then return false end
     for i = 1, #s do
         local b = string.byte(s, i)
@@ -108,11 +108,11 @@ local function __pytra_str_isalnum(s)
     return true
 end
 
-local function __pytra_perf_counter()
+function __pytra_perf_counter()
     return os.clock()
 end
 
-local function __pytra_math_module()
+function __pytra_math_module()
     local m = {}
     for k, v in pairs(math) do
         m[k] = v
@@ -123,19 +123,19 @@ local function __pytra_math_module()
     return m
 end
 
-local function __pytra_path_basename(path)
+function __pytra_path_basename(path)
     local name = string.match(path, "([^/]+)$")
     if name == nil or name == "" then return path end
     return name
 end
 
-local function __pytra_path_parent_text(path)
+function __pytra_path_parent_text(path)
     local parent = string.match(path, "^(.*)/[^/]*$")
     if parent == nil or parent == "" then return "." end
     return parent
 end
 
-local function __pytra_path_stem(path)
+function __pytra_path_stem(path)
     local name = __pytra_path_basename(path)
     local stem = string.match(name, "^(.*)%.")
     if stem == nil or stem == "" then return name end
@@ -145,13 +145,13 @@ end
 local __pytra_path_mt = {}
 __pytra_path_mt.__index = __pytra_path_mt
 
-local function __pytra_path_join(left, right)
+function __pytra_path_join(left, right)
     if left == "" or left == "." then return right end
     if string.sub(left, -1) == "/" then return left .. right end
     return left .. "/" .. right
 end
 
-local function __pytra_path_new(path)
+function __pytra_path_new(path)
     local text = tostring(path)
     local obj = { path = text }
     setmetatable(obj, __pytra_path_mt)
@@ -207,12 +207,12 @@ function __pytra_path_mt:read_text()
     return data
 end
 
-local function __pytra_u16le(n)
+function __pytra_u16le(n)
     local v = math.floor(tonumber(n) or 0) & 0xFFFF
     return string.char(v & 0xFF, (v >> 8) & 0xFF)
 end
 
-local function __pytra_to_byte_table(data)
+function __pytra_to_byte_table(data)
     if type(data) == "string" then
         local out = {}
         for i = 1, #data do
@@ -233,7 +233,7 @@ local function __pytra_to_byte_table(data)
     return {}
 end
 
-local function __pytra_bytes_from_table(data)
+function __pytra_bytes_from_table(data)
     local parts = {}
     for i = 1, #data do
         parts[#parts + 1] = string.char(data[i])
@@ -241,7 +241,7 @@ local function __pytra_bytes_from_table(data)
     return table.concat(parts)
 end
 
-local function __pytra_gif_lzw_encode(data, min_code_size)
+function __pytra_gif_lzw_encode(data, min_code_size)
     if #data == 0 then return "" end
     local clear_code = 1 << min_code_size
     local end_code = clear_code + 1
@@ -272,7 +272,7 @@ local function __pytra_gif_lzw_encode(data, min_code_size)
     return table.concat(out)
 end
 
-local function __pytra_grayscale_palette()
+function __pytra_grayscale_palette()
     local out = {}
     for i = 0, 255 do
         out[#out + 1] = i
@@ -282,7 +282,7 @@ local function __pytra_grayscale_palette()
     return out
 end
 
-local function __pytra_save_gif(path, width, height, frames, palette, delay_cs, loop)
+function __pytra_save_gif(path, width, height, frames, palette, delay_cs, loop)
     local w = math.floor(tonumber(width) or 0)
     local h = math.floor(tonumber(height) or 0)
     local delay = math.floor(tonumber(delay_cs) or 4)
@@ -338,7 +338,7 @@ local function __pytra_save_gif(path, width, height, frames, palette, delay_cs, 
     f:close()
 end
 
-local function __pytra_gif_module()
+function __pytra_gif_module()
     return {
         grayscale_palette = __pytra_grayscale_palette,
         save_gif = function(...)
@@ -348,13 +348,13 @@ local function __pytra_gif_module()
     }
 end
 
-local function __pytra_u32be(n)
+function __pytra_u32be(n)
     local v = math.floor(tonumber(n) or 0) & 0xFFFFFFFF
     return string.char((v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF)
 end
 
 local __pytra_crc_table = nil
-local function __pytra_init_crc_table()
+function __pytra_init_crc_table()
     if __pytra_crc_table ~= nil then
         return
     end
@@ -373,7 +373,7 @@ local function __pytra_init_crc_table()
     __pytra_crc_table = tbl
 end
 
-local function __pytra_png_crc32(data)
+function __pytra_png_crc32(data)
     __pytra_init_crc_table()
     local c = 0xFFFFFFFF
     for i = 1, #data do
@@ -384,7 +384,7 @@ local function __pytra_png_crc32(data)
     return (~c) & 0xFFFFFFFF
 end
 
-local function __pytra_png_adler32(data)
+function __pytra_png_adler32(data)
     local s1 = 1
     local s2 = 0
     for i = 1, #data do
@@ -394,13 +394,13 @@ local function __pytra_png_adler32(data)
     return ((s2 << 16) | s1) & 0xFFFFFFFF
 end
 
-local function __pytra_png_chunk(kind, data)
+function __pytra_png_chunk(kind, data)
     local payload = data or ""
     local crc = __pytra_png_crc32(kind .. payload)
     return __pytra_u32be(#payload) .. kind .. payload .. __pytra_u32be(crc)
 end
 
-local function __pytra_zlib_store(raw)
+function __pytra_zlib_store(raw)
     local out = { string.char(0x78, 0x01) }
     local pos = 1
     while pos <= #raw do
@@ -415,7 +415,7 @@ local function __pytra_zlib_store(raw)
     return table.concat(out)
 end
 
-local function __pytra_write_rgb_png(path, width, height, pixels)
+function __pytra_write_rgb_png(path, width, height, pixels)
     local out_path = tostring(path)
     local w = math.floor(tonumber(width) or 0)
     local h = math.floor(tonumber(height) or 0)
@@ -450,7 +450,7 @@ local function __pytra_write_rgb_png(path, width, height, pixels)
     fh:close()
 end
 
-local function __pytra_png_module()
+function __pytra_png_module()
     return {
         write_rgb_png = function(...)
             local argc = select("#", ...)
@@ -467,7 +467,7 @@ local function __pytra_png_module()
     }
 end
 
-local function __pytra_isinstance(obj, class_tbl)
+function __pytra_isinstance(obj, class_tbl)
     if type(obj) ~= "table" then
         return false
     end

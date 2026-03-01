@@ -62,6 +62,20 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _lua_runtime_source_path() -> Path:
+    """Lua runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "lua" / "pytra" / "py_runtime.lua"
+
+
+def _copy_lua_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Lua runtime を配置する。"""
+    runtime_src = _lua_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("lua runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "py_runtime.lua"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Lua transpiler")
@@ -112,6 +126,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     lua_src = transpile_to_lua_native(east)
     output_path.write_text(lua_src, encoding="utf-8")
+    _copy_lua_runtime(output_path)
     return 0
 
 
@@ -119,4 +134,3 @@ if __name__ == "__main__":
     _ = load_lua_profile
     _ = transpile_to_lua
     sys.exit(main())
-

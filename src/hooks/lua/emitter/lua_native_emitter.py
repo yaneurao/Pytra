@@ -285,20 +285,7 @@ class LuaNativeEmitter:
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         import_lines: list[str] = []
-        needs_perf_counter = False
-        needs_png_runtime = False
-        needs_gif_runtime = False
-        needs_math_runtime = False
-        needs_path_runtime = False
-        self._emit_print_helper()
-        self._emit_line("")
-        self._emit_repeat_helper()
-        self._emit_line("")
-        self._emit_truthy_helper()
-        self._emit_line("")
-        self._emit_contains_helper()
-        self._emit_line("")
-        self._emit_string_predicate_helpers()
+        self._emit_line('dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\\\/])") or "") .. "py_runtime.lua")')
         self._emit_line("")
         for stmt in body:
             kind = stmt.get("kind")
@@ -315,23 +302,18 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
                     if module_name == "math":
-                        needs_math_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_math_module()")
                         continue
                     if module_name == "pathlib":
-                        needs_path_runtime = True
                         import_lines.append("local " + alias_txt + " = { Path = __pytra_path_new }")
                         continue
                     if module_name == "time":
-                        needs_perf_counter = True
                         import_lines.append("local " + alias_txt + " = { perf_counter = __pytra_perf_counter }")
                         continue
                     if module_name in {"pytra.utils.png", "pytra.runtime.png"}:
-                        needs_png_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")
                         continue
                     if module_name in {"pytra.utils.gif", "pytra.runtime.gif"}:
-                        needs_gif_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
                         continue
                     if module_name.startswith("pytra."):
@@ -354,7 +336,9 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else symbol
                     alias_txt = _safe_ident(alias, symbol)
                     if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_stdout":
-                        import_lines.append("local py_assert_stdout = function(expected, fn) return true end")
+                        import_lines.append(
+                            "local py_assert_stdout = function(_expected, _fn) return true end"
+                        )
                         continue
                     if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_eq":
                         import_lines.append("local " + alias_txt + " = function(a, b, _label) return a == b end")
@@ -370,35 +354,27 @@ class LuaNativeEmitter:
                         )
                         continue
                     if module_name == "time" and symbol == "perf_counter":
-                        needs_perf_counter = True
                         import_lines.append("local " + alias_txt + " = __pytra_perf_counter")
                         continue
                     if module_name == "math":
-                        needs_math_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_math_module()." + _safe_ident(symbol, symbol))
                         continue
                     if module_name == "pathlib" and symbol == "Path":
-                        needs_path_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_path_new")
                         continue
                     if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "png":
-                        needs_png_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")
                         continue
                     if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "gif":
-                        needs_gif_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
                         continue
                     if module_name in {"pytra.utils.png", "pytra.runtime.png"} and symbol == "write_rgb_png":
-                        needs_png_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_write_rgb_png")
                         continue
                     if module_name in {"pytra.utils.gif", "pytra.runtime.gif"} and symbol == "save_gif":
-                        needs_gif_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_save_gif")
                         continue
                     if module_name in {"pytra.utils.gif", "pytra.runtime.gif"} and symbol == "grayscale_palette":
-                        needs_gif_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_grayscale_palette")
                         continue
                     if (
@@ -412,21 +388,6 @@ class LuaNativeEmitter:
                     import_lines.append(
                         "-- from " + module_name + " import " + symbol + " as " + alias_txt + " (not yet mapped)"
                     )
-        if needs_perf_counter:
-            self._emit_perf_counter_helper()
-            self._emit_line("")
-        if needs_math_runtime:
-            self._emit_math_runtime_helpers()
-            self._emit_line("")
-        if needs_path_runtime:
-            self._emit_path_runtime_helpers()
-            self._emit_line("")
-        if needs_gif_runtime:
-            self._emit_gif_runtime_helpers()
-            self._emit_line("")
-        if needs_png_runtime:
-            self._emit_png_runtime_helpers()
-            self._emit_line("")
         for line in import_lines:
             self._emit_line(line)
         if len(import_lines) > 0:

@@ -43,13 +43,14 @@
 4. [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] Scala runtime 正本（`src/runtime/scala/pytra/py_runtime.scala`）を整備する。
 5. [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-02] Scala emitter の inline helper 出力を撤去し、`py2scala.py` で runtime 配置を実装する。
 6. [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-03] Lua runtime 正本（`src/runtime/lua/pytra/py_runtime.lua`）を整備する。
-7. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の inline helper 出力を撤去し、`py2lua.py` で runtime 配置と読み込み導線を実装する。
+7. [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の inline helper 出力を撤去し、`py2lua.py` で runtime 配置と読み込み導線を実装する。
 8. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S3-01] transpile チェック/smoke/parity を更新し、runtime 分離の回帰検知を固定する。
 - 進捗メモ: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-01] Scala/Lua の inline helper 出力点・依存APIを棚卸しし、外出し境界を `p0-runtime-externalization-scala-lua.md` に記録。
 - 進捗メモ: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-02] runtime 配置規約を「`src/runtime/<lang>/pytra/py_runtime.*` 正本 + `output_path.parent/py_runtime.*` コピー」に確定。
 - 進捗メモ: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] Scala runtime 正本 `src/runtime/scala/pytra/py_runtime.scala` を追加。
 - 進捗メモ: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-02] Scala emitter の runtime inline 挿入を撤去し、`py2scala.py` で `py_runtime.scala` 配置を実装。
 - 進捗メモ: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-03] Lua runtime 正本 `src/runtime/lua/pytra/py_runtime.lua` を追加。
+- 進捗メモ: [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter を runtime 読み込み型（`dofile(.../py_runtime.lua)`）へ切替え、`py2lua.py` で runtime 配置を実装。
 
 ### P0: sample/01 Scala品質改善（runtime外出し除く）
 
