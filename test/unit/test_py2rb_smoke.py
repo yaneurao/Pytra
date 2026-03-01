@@ -172,6 +172,18 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("frame = __pytra_bytearray(", ruby)
         self.assertNotIn("grid = nil", ruby)
 
+    def test_sample01_static_range_loops_use_canonical_while_fastpath(self) -> None:
+        sample = find_sample_case("01_mandelbrot")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("while y < __pytra_int(height)", ruby)
+        self.assertIn("while x < __pytra_int(width)", ruby)
+        self.assertIn("while i < __pytra_int(max_iter)", ruby)
+        self.assertIn("y += 1", ruby)
+        self.assertIn("x += 1", ruby)
+        self.assertIn("i += 1", ruby)
+        self.assertNotIn("__step_", ruby)
+
     def test_sample18_enumerate_and_slice_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")
         east = load_east(sample, parser_backend="self_hosted")

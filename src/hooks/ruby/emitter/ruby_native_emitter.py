@@ -222,6 +222,19 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
     return "nil"
 
 
+def _const_int_literal(node: Any) -> int | None:
+    if not isinstance(node, dict):
+        return None
+    if node.get("kind") != "Constant":
+        return None
+    value_any = node.get("value")
+    if isinstance(value_any, bool):
+        return None
+    if isinstance(value_any, int):
+        return int(value_any)
+    return None
+
+
 def _render_name_expr(expr: dict[str, Any]) -> str:
     raw = expr.get("id")
     if raw == "self":
@@ -679,18 +692,34 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             target = _fresh_tmp(ctx, "loop")
         start = "__pytra_int(" + _render_expr(iter_plan_any.get("start")) + ")"
         stop = "__pytra_int(" + _render_expr(iter_plan_any.get("stop")) + ")"
-        step = "__pytra_int(" + _render_expr(iter_plan_any.get("step")) + ")"
-        step_tmp = _fresh_tmp(ctx, "step")
-        lines.append(indent + step_tmp + " = " + step)
+        step_node = iter_plan_any.get("step")
+        step = "__pytra_int(" + _render_expr(step_node) + ")"
+        step_const = _const_int_literal(step_node)
+
+        # Fastpath: canonical single-direction loops for common range forms.
+        cond = ""
+        inc = ""
+        if step_const == 1:
+            cond = target + " < " + stop
+            inc = target + " += 1"
+        elif step_const == -1:
+            cond = target + " > " + stop
+            inc = target + " -= 1"
+
         lines.append(indent + target + " = " + start)
-        lines.append(indent + "while ((" + step_tmp + " >= 0 && " + target + " < " + stop + ") || (" + step_tmp + " < 0 && " + target + " > " + stop + "))")
+        if cond == "":
+            step_tmp = _fresh_tmp(ctx, "step")
+            lines.append(indent + step_tmp + " = " + step)
+            cond = "((" + step_tmp + " >= 0 && " + target + " < " + stop + ") || (" + step_tmp + " < 0 && " + target + " > " + stop + "))"
+            inc = target + " += " + step_tmp
+        lines.append(indent + "while " + cond)
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
             i += 1
-        lines.append(indent + "  " + target + " += " + step_tmp)
+        lines.append(indent + "  " + inc)
         lines.append(indent + "end")
         return lines
 

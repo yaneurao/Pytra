@@ -7,9 +7,8 @@ require_relative "py_runtime"
 def escape_count(cx, cy, max_iter)
   x = 0.0
   y = 0.0
-  __step_0 = __pytra_int(1)
   i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(max_iter)) || (__step_0 < 0 && i > __pytra_int(max_iter)))
+  while i < __pytra_int(max_iter)
     x2 = (x * x)
     y2 = (y * y)
     if __pytra_truthy(((x2 + y2) > 4.0))
@@ -17,7 +16,7 @@ def escape_count(cx, cy, max_iter)
     end
     y = (((2.0 * x) * y) + cy)
     x = ((x2 - y2) + cx)
-    i += __step_0
+    i += 1
   end
   return max_iter
 end
@@ -38,13 +37,11 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
   __hoisted_cast_1 = __pytra_float((height - 1))
   __hoisted_cast_2 = __pytra_float((width - 1))
   __hoisted_cast_3 = __pytra_float(max_iter)
-  __step_0 = __pytra_int(1)
   y = __pytra_int(0)
-  while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
+  while y < __pytra_int(height)
     py = (y_min + ((y_max - y_min) * __pytra_div(y, __hoisted_cast_1)))
-    __step_1 = __pytra_int(1)
     x = __pytra_int(0)
-    while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
+    while x < __pytra_int(width)
       px = (x_min + ((x_max - x_min) * __pytra_div(x, __hoisted_cast_2)))
       it = escape_count(px, py, max_iter)
       r = nil
@@ -63,9 +60,9 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
       pixels.append(r)
       pixels.append(g)
       pixels.append(b)
-      x += __step_1
+      x += 1
     end
-    y += __step_0
+    y += 1
   end
   return pixels
 end
