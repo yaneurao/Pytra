@@ -483,8 +483,8 @@ class CodeEmitter:
         self,
         call_node: dict[str, Any],
         func_node: dict[str, Any],
-        rendered_args: list[str],
-        rendered_kwargs: dict[str, str],
+        rendered_args: Any,
+        rendered_kwargs: Any,
     ) -> str:
         """`on_render_call` フック。既定では何もしない。"""
         v = self._call_hook4("on_render_call", call_node, func_node, rendered_args, rendered_kwargs)

@@ -620,10 +620,13 @@ class CSharpEmitter(CodeEmitter):
             return "null"
         return ""
 
-    def _escape_interpolated_literal_text(self, text: str) -> str:
+    def _escape_interpolated_literal_text(self, text: Any) -> str:
         """C# 補間文字列で安全に使えるようリテラルをエスケープする。"""
+        txt = self.any_to_str(text)
+        if txt == "" and text is not None:
+            txt = str(text)
         return (
-            text.replace("\\", "\\\\")
+            txt.replace("\\", "\\\\")
             .replace("\"", "\\\"")
             .replace("{", "{{")
             .replace("}", "}}")
