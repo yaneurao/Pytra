@@ -41,7 +41,7 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot`
 
 分解:
-- [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S1-01] `sample/go/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
+- [x] [ID: P1-GO-SAMPLE01-QUALITY-01-S1-01] `sample/go/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
 - [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-01] Go emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 - [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-02] `range(stop)` / `range(start, stop, 1)` 系を canonical `for` へ lower する fastpath を追加する。
 - [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-03] `write_rgb_png` 経路を no-op から native runtime 呼び出しへ接続し、未解決時は fail-closed にする。
@@ -50,3 +50,8 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/go/01` 品質改善を P1 として計画化し、TODO へ積む方針を確定した。
+- 2026-03-01: `sample/go/01_mandelbrot.go` と `sample/cpp/01_mandelbrot.cpp` を比較し、以下を優先順で固定した。
+  - P1: `write_rgb_png` が `__pytra_noop(...)` へ落ちる機能欠落（実行品質の本丸）。
+  - P2: `pixels` が `[]any` 退化し append ごとに `__pytra_as_list` を挟むホットパス劣化。
+  - P3: `__pytra_float/__pytra_int` の同型 cast 連鎖（`__pytra_float(float64(...))` など）による冗長化。
+  - P4: `range(..., step=1)` でも汎用 step 分岐ループ（`(__step>=0 && ...) || ...`）を生成する冗長 lower。
