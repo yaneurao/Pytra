@@ -134,6 +134,21 @@
 - 正規化情報が欠落/不正な場合は fail-closed とし、当該最適化出力を抑止する（不正な `reserve` / 条件式生成を許容しない）。
 - 方針: 「意味の決定は EAST3、表記の決定は emitter」。
 
+### 8.3 `normalized_expr` 構造化契約（v1）
+
+EAST3 側で正規化済み式を渡すときは、次を推奨契約とする。
+
+- `normalized_expr_version: "east3_expr_v1"`
+- `normalized_expr: <EAST3式ノード>`
+  - 許容サブセット（v1）: `Constant` / `Name` / `BinOp` / `Compare` / `IfExp`
+  - `resolved_type` / `borrow_kind` / `casts` を保持する。
+
+運用規約:
+
+- `trip_count` など既存のカテゴリ特化メタ（例: `reserve_hints[*].count_expr`）も `east3_expr_v1` を満たすこと。
+- emitter は `normalized_expr_version` が未知、または `normalized_expr` が欠落/不正な場合、当該正規化経路を無効化する（fail-closed）。
+- fail-closed 時に意味が変わる生成を行ってはならない。必要なら従来経路へ戻すか、対象最適化を非適用にする。
+
 ## 9. 言語別最適化層
 
 - 共通層の後段に `east3_optimizer_<lang>.py` を任意で追加できる。

@@ -94,15 +94,18 @@
 - 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr_version` 不一致/`count_expr` 欠落時は `reserve` 非出力（fail-closed）を実装。
 - 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト更新で新契約と fail-closed の回帰検知を追加。
 - 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成で `lines.reserve(((var_count <= 0) ? 0 : var_count));` を確認し、`check_py2cpp_transpile` 通過。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend横断棚卸しを実施し、`BinOp/Compare/ForRange/trip_count` の移管対象を計画書に固定。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] `normalized_expr_version/east3_expr_v1` 契約と fail-closed 条件を計画書・specへ追記。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化カテゴリ優先順位（range/trip_count -> cast -> compare -> 括弧）を固定。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
 文脈: [docs/ja/plans/p0-east3-expression-normalization-rollout.md](../plans/p0-east3-expression-normalization-rollout.md)
 
 1. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01] backend 共通で扱える式の意味決定を EAST3 側へ寄せ、emitter の文字列組み立て責務を段階縮小する。
-2. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務（BinOp/Compare/ForRange/trip_count）を棚卸しし、EAST3移管対象を確定する。
-3. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
-4. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
+2. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務（BinOp/Compare/ForRange/trip_count）を棚卸しし、EAST3移管対象を確定する。
+3. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
+4. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
 5. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] EAST3 に共通式正規化パスを追加し、正規化結果を構造化メタとして保持する。
 6. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ emitter で `reserve` 以外の式カテゴリも EAST3正規形優先へ切替え、文字列組み立て依存を縮小する。
 7. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala を pilot として同一正規形を参照する描画経路へ切替える。

@@ -41,9 +41,9 @@
 - `python3 tools/regenerate_samples.py --langs cpp,rs,scala --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`
 
 分解:
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務の棚卸し（BinOp/Compare/ForRange/trip_count）を行い、EAST3移管対象を確定する。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務の棚卸し（BinOp/Compare/ForRange/trip_count）を行い、EAST3移管対象を確定する。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
 - [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] EAST3に共通式正規化パスを追加し、正規化結果を構造化メタ（`normalized_expr` 系）として保持する。
 - [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ emitter で `reserve` 以外の式カテゴリも EAST3正規形優先に切替え、文字列組み立て依存を縮小する。
 - [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala を次段 pilot として同一正規形を参照する描画経路へ切替える。
@@ -53,3 +53,50 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`reserve` 限定でなく式正規化全体を EAST3 側へ寄せる P0 計画を新規起票。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断棚卸しを実施し、`BinOp/Compare/ForRange/trip_count` のEAST3移管対象を確定。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「意味はEAST3、表記はemitter」の fail-closed 境界を `normalized_expr` 契約として固定。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化カテゴリの優先順位を `trip_count/range条件 -> identity cast -> 比較連鎖 -> 括弧` の順で固定。
+
+## S1-01 棚卸し結果（backend横断）
+
+`rg` で `kind == "BinOp" / "Compare" / StaticRangeForPlan / range_mode / reserve_hints` を横断確認した結果、以下を移管対象に確定した。
+
+| backend | 現状の式組み立て責務（代表箇所） | EAST3移管対象 |
+| --- | --- | --- |
+| C++ | `src/hooks/cpp/emitter/cpp_emitter.py` の `BinOp/Compare`、`src/hooks/cpp/emitter/stmt.py` の range 条件/`reserve_hints` | `BinOp/Compare` の正規形、`StaticRange` 条件式、trip count |
+| Rust | `src/hooks/rs/emitter/rs_emitter.py` の `render_expr`、`_emit_for_range` | `BinOp/Compare` の正規形、range 条件式 |
+| Scala | `src/hooks/scala/emitter/scala_native_emitter.py` の `render_expr` / `emit ForCore` | `BinOp/Compare` の正規形、range 条件式 |
+| C#/JS/Go/Java/Swift/Kotlin/Ruby/Lua | 各 `*_emitter` の `BinOp/Compare` 分岐と `StaticRangeForPlan` 条件組み立て | 共通正規形参照へ段階移行（phase 2以降） |
+
+補足:
+- `trip_count` は先行で `reserve_hints[*].count_expr` を導入済み（`P0-EAST3-RESERVE-COUNT-NORM-01`）。
+- 本計画では `trip_count` の方式を他カテゴリへ横展開し、emitter 内の式再計算を減らす。
+
+## S1-02 責務境界（意味 vs 表記）
+
+契約:
+- EAST3 optimizer は backend 非依存で意味を決める。
+  - `normalized_expr_version = "east3_expr_v1"` を付与する。
+  - `normalized_expr` に EAST3式ノード（`Constant/BinOp/Compare/IfExp/Name` など）を保持する。
+- emitter は言語固有表記へ描画する。
+  - 演算子トークン、優先順位に基づく最小括弧、標準API名（`Math.*`, `std::*` 等）の選択のみ担当。
+  - 同等意味の式を emitter 側で再合成しない。
+
+fail-closed 条件:
+- `normalized_expr_version` 不一致。
+- `normalized_expr` 欠落。
+- `normalized_expr` の `kind` が backend 実装の許容サブセット外。
+- 上記いずれかの場合、当該最適化経路を無効化して従来経路へフォールバックする（不正コード生成を優先回避）。
+
+## S1-03 正規化対象の優先順位
+
+優先順位（高 -> 低）:
+1. `trip_count` / `range条件`（`StaticRange` の境界式）  
+2. identity cast（`py_to<T>(T)` / `static_cast<T>(T)` の同型連鎖）  
+3. 比較連鎖（`Compare` の正規形、不要な中間 truthy 変換の抑制）  
+4. 不要括弧（正規形で演算優先を保持できる箇所）
+
+導入順:
+1. C++ を first adopter として `reserve` 以外へ展開。
+2. Rust/Scala を pilot backend として同一正規形を参照。
+3. 残り backend を追従導入し、legacy 文字列組み立て責務を段階縮小。
