@@ -5,6 +5,9 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 
+_LEGACY_COMPAT_BRIDGE_ENABLED = True
+
+
 def _normalize_dispatch_mode(value: Any) -> str:
     if isinstance(value, str):
         mode = value.strip()
@@ -372,6 +375,8 @@ def _lower_type_id_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) ->
     fn_name_obj = func_obj.get("id")
     fn_name = fn_name_obj if isinstance(fn_name_obj, str) else ""
     # Legacy fallback for stage2 payloads that still rely on Python function names.
+    if not _LEGACY_COMPAT_BRIDGE_ENABLED:
+        return out_call
     if fn_name == "isinstance":
         return _lower_isinstance_call_expr(out_call, dispatch_mode=dispatch_mode)
     if fn_name == "issubclass":
@@ -723,6 +728,8 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
         return out
 
     # Legacy fallback for stage2 payloads that still encode builtin identity.
+    if not _LEGACY_COMPAT_BRIDGE_ENABLED:
+        return out
     builtin_name = out.get("builtin_name")
     if builtin_name == "bool":
         return _make_boundary_expr(
@@ -818,7 +825,18 @@ def lower_east2_to_east3(east_module: dict[str, Any], object_dispatch_mode: str 
     elif isinstance(meta_obj, dict):
         dispatch_mode = _normalize_dispatch_mode(meta_obj.get("dispatch_mode"))
 
-    lowered = _lower_node(east_module, dispatch_mode=dispatch_mode)
+    global _LEGACY_COMPAT_BRIDGE_ENABLED
+    prev_legacy_compat = _LEGACY_COMPAT_BRIDGE_ENABLED
+    _LEGACY_COMPAT_BRIDGE_ENABLED = True
+    if isinstance(meta_obj, dict):
+        legacy_obj = meta_obj.get("legacy_compat_bridge")
+        if isinstance(legacy_obj, bool):
+            _LEGACY_COMPAT_BRIDGE_ENABLED = legacy_obj
+
+    try:
+        lowered = _lower_node(east_module, dispatch_mode=dispatch_mode)
+    finally:
+        _LEGACY_COMPAT_BRIDGE_ENABLED = prev_legacy_compat
     if not isinstance(lowered, dict):
         return east_module
     if lowered.get("kind") != "Module":

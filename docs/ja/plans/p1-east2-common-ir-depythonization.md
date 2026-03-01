@@ -47,6 +47,8 @@
 - 2026-03-01: `core.py` は `semantic_tag` 付与を adapter 経由へ切り替え、`east2_to_east3_lowering.py` は `semantic_tag` 優先で Obj* / type predicate lower するよう更新した（`runtime_call` は互換保持）。
 - 2026-03-01: 回帰として `test_stdlib_signature_registry.py`, `test_east_core.py`, `test_east2_to_east3_lowering.py` の semantic-tag 系テストを追加/更新し、該当テスト pass を確認した。
 - 2026-03-01: `core.py` の `isinstance/issubclass` を `lowered_kind=TypePredicateCall + builtin_name` で中立表現化し、`east2_to_east3_lowering.py` は `semantic_tag` / `TypePredicateCall` 優先で type predicate を lower するよう更新した（関数名直参照は legacy fallback へ縮退）。
+- 2026-03-01: `meta.legacy_compat_bridge`（既定 `true`）を `east2_to_east3_lowering.py` へ導入し、legacy name/builtin fallback を段階的に停止可能な互換ブリッジを明示化した。
+- 2026-03-01: 回帰として `legacy_compat_bridge=false` 時に legacy fallback が無効化されるテスト（builtin/type-predicate）を追加し、既存 semantic-tag 経路と両立することを確認した。
 
 ## 分解
 
@@ -54,7 +56,7 @@
 - [x] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 契約（ノード種別、演算子、メタ情報、診断と fail-closed 条件）を仕様化する。
 - [x] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移管し、EAST2 契約から分離する。
 - [x] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ更新し、Python 名称分岐を縮小・除去する。
-- [ ] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存入力非退行のための移行ブリッジ（暫定互換）を導入し、段階移行できる状態にする。
+- [x] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存入力非退行のための移行ブリッジ（暫定互換）を導入し、段階移行できる状態にする。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S3-01] EAST2 への Python 依存再混入を検知する unit 回帰を追加する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S3-02] transpile/smoke/parity 代表ケースで非退行を確認し、決定ログへ記録する。
 

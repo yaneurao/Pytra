@@ -99,7 +99,7 @@
 3. [x] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 仕様（ノード/演算/メタ/診断/fail-closed）を文書化する。
 4. [x] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移し、EAST2 契約から切り離す。
 5. [x] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ再配線し、Python 名称分岐を縮小・除去する。
-6. [ ] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存 Python 入力非退行のため、段階移行ブリッジ（暫定互換）を導入する。
+6. [x] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存 Python 入力非退行のため、段階移行ブリッジ（暫定互換）を導入する。
 7. [ ] [ID: P1-EAST2-COMMON-IR-01-S3-01] EAST2 へ Python 依存契約が再混入した場合の回帰テストを追加する。
 8. [ ] [ID: P1-EAST2-COMMON-IR-01-S3-02] transpile/smoke/parity の代表ケースで非退行を確認し、移行結果を文書化する。
 

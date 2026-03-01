@@ -560,6 +560,31 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(body[0].get("value", {}).get("kind"), "ObjBool")
         self.assertEqual(body[1].get("value", {}).get("kind"), "ObjIterInit")
 
+    def test_lower_any_boundary_legacy_builtin_fallback_can_be_disabled(self) -> None:
+        any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native", "legacy_compat_bridge": False},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "bool"},
+                        "args": [any_name],
+                        "keywords": [],
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "bool",
+                        "runtime_call": "static_cast",
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "Call")
+
     def test_lower_any_boundary_builtin_calls_prefers_semantic_tag(self) -> None:
         any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}
         east2 = {
@@ -811,6 +836,30 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         body = out.get("body", [])
         self.assertEqual(body[0].get("value", {}).get("kind"), "IsInstance")
         self.assertEqual(body[1].get("value", {}).get("kind"), "IsSubclass")
+
+    def test_lower_type_predicate_legacy_name_fallback_can_be_disabled(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "type_id", "legacy_compat_bridge": False},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "isinstance"},
+                        "args": [
+                            {"kind": "Name", "id": "x", "resolved_type": "object"},
+                            {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "Call")
 
     def test_lower_runtime_type_id_and_subtype_calls_to_core_nodes(self) -> None:
         east2 = {
