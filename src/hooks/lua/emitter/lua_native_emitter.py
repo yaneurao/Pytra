@@ -108,6 +108,24 @@ class LuaNativeEmitter:
         self.class_names: set[str] = set()
         self.imported_modules: set[str] = set()
 
+    def _const_int_literal(self, node_any: Any) -> int | None:
+        if not isinstance(node_any, dict):
+            return None
+        kind = node_any.get("kind")
+        if kind == "Constant":
+            value = node_any.get("value")
+            if isinstance(value, bool):
+                return None
+            if isinstance(value, int):
+                return value
+            return None
+        if kind == "UnaryOp" and str(node_any.get("op")) == "USub":
+            operand = self._const_int_literal(node_any.get("operand"))
+            if operand is None:
+                return None
+            return -operand
+        return None
+
     def transpile(self) -> str:
         module_comments = self._module_leading_comment_lines(prefix="-- ")
         if len(module_comments) > 0:
@@ -727,11 +745,61 @@ class LuaNativeEmitter:
             start = self._render_expr(iter_plan.get("start"))
             stop = self._render_expr(iter_plan.get("stop"))
             step = self._render_expr(iter_plan.get("step"))
-            # Python range(stop) semantics: Lua for upper bound is inclusive.
-            upper = "(" + stop + ") - 1"
-            self._emit_line("for " + target_name + " = " + start + ", " + upper + ", " + step + " do")
+            range_mode = str(iter_plan.get("range_mode") or "")
+            if range_mode not in {"ascending", "descending", "dynamic"}:
+                step_const = self._const_int_literal(iter_plan.get("step"))
+                if isinstance(step_const, int):
+                    if step_const > 0:
+                        range_mode = "ascending"
+                    elif step_const < 0:
+                        range_mode = "descending"
+                    else:
+                        range_mode = "dynamic"
+                else:
+                    range_mode = "dynamic"
+            if range_mode == "ascending":
+                # Python range stop is exclusive, Lua numeric-for upper bound is inclusive.
+                upper = "(" + stop + ") - 1"
+                self._emit_line("for " + target_name + " = " + start + ", " + upper + ", " + step + " do")
+                self.indent += 1
+                self._emit_block(stmt.get("body"))
+                self.indent -= 1
+                self._emit_line("end")
+                return
+            if range_mode == "descending":
+                # Descending range: exclusive stop must shift toward +1 for Lua inclusive bound.
+                lower = "(" + stop + ") + 1"
+                self._emit_line("for " + target_name + " = " + start + ", " + lower + ", " + step + " do")
+                self.indent += 1
+                self._emit_block(stmt.get("body"))
+                self.indent -= 1
+                self._emit_line("end")
+                return
+            start_tmp = self._next_tmp_name("__pytra_range_start")
+            stop_tmp = self._next_tmp_name("__pytra_range_stop")
+            step_tmp = self._next_tmp_name("__pytra_range_step")
+            self._emit_line("local " + start_tmp + " = " + start)
+            self._emit_line("local " + stop_tmp + " = " + stop)
+            self._emit_line("local " + step_tmp + " = " + step)
+            self._emit_line("if " + step_tmp + " > 0 then")
+            self.indent += 1
+            self._emit_line(
+                "for " + target_name + " = " + start_tmp + ", (" + stop_tmp + ") - 1, " + step_tmp + " do"
+            )
             self.indent += 1
             self._emit_block(stmt.get("body"))
+            self.indent -= 1
+            self._emit_line("end")
+            self.indent -= 1
+            self._emit_line("elseif " + step_tmp + " < 0 then")
+            self.indent += 1
+            self._emit_line(
+                "for " + target_name + " = " + start_tmp + ", (" + stop_tmp + ") + 1, " + step_tmp + " do"
+            )
+            self.indent += 1
+            self._emit_block(stmt.get("body"))
+            self.indent -= 1
+            self._emit_line("end")
             self.indent -= 1
             self._emit_line("end")
             return

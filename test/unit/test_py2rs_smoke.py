@@ -170,6 +170,13 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("for (k, v) in pairs {", rust)
         self.assertIn("println!(", rust)
 
+    def test_for_core_downcount_range_uses_descending_condition(self) -> None:
+        fixture = find_fixture_case("range_downcount_len_minus1")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("while i > -1 {", rust)
+        self.assertNotIn("while i < -1 {", rust)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

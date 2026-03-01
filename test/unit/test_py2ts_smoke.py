@@ -200,6 +200,13 @@ def f(x: object) -> bool:
         self.assertIn("pyIsInstance(x, PY_TYPE_SET)", ts)
         self.assertNotIn("isinstance(", ts)
 
+    def test_ts_preview_downcount_range_uses_descending_condition(self) -> None:
+        fixture = find_fixture_case("range_downcount_len_minus1")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ts = transpile_to_typescript(east)
+        self.assertIn("for (let i = __start_1; i > -1; i += -1)", ts)
+        self.assertNotIn("for (let i = __start_1; i < -1; i += -1)", ts)
+
 
 if __name__ == "__main__":
     unittest.main()
