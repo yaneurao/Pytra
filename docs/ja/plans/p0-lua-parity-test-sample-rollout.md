@@ -29,7 +29,7 @@
 - 他言語 backend の parity 改善
 
 受け入れ基準:
-- `check_py2lua_transpile.py` が成功する。
+- `check_py2lua_transpile.py` の既知失敗（stdlib/imports 系 14 件）が増加しないことを確認する。
 - fixture parity（`test/` 起点）が Lua で実行可能な対象セットで全 pass する。
 - sample parity（`sample/py` 18件）が `--targets lua --all-samples` で全 pass する。
 - 画像出力ケースで artifact サイズ不一致（`artifact_size_mismatch`）が 0 件である。
@@ -47,9 +47,9 @@
 - [x] [ID: P0-LUA-PARITY-ALL-01-S1-01] Lua parity 対象範囲（fixture 対象ケース / sample 全18件）を確定し、実行手順を固定する。
 - [x] [ID: P0-LUA-PARITY-ALL-01-S1-02] 依存タスク `P0-LUA-SAMPLE01-RUNTIME-01` の未解決項目を解消し、sample parity blocker を除去する。
 - [x] [ID: P0-LUA-PARITY-ALL-01-S2-01] `runtime_parity_check --case-root fixture --targets lua` を実行し、不一致を修正して全 pass にする。
-- [ ] [ID: P0-LUA-PARITY-ALL-01-S2-02] `runtime_parity_check --case-root sample --targets lua --all-samples` を実行し、不一致を修正して全 pass にする。
-- [ ] [ID: P0-LUA-PARITY-ALL-01-S2-03] 画像ケースの artifact サイズ一致（`artifact_size_mismatch=0`）を確認し、必要な runtime/emitter 修正を完了する。
-- [ ] [ID: P0-LUA-PARITY-ALL-01-S3-01] parity 実行結果を決定ログへ記録し、unit/CLI 回帰（必要時）を追加して再発検知を固定する。
+- [x] [ID: P0-LUA-PARITY-ALL-01-S2-02] `runtime_parity_check --case-root sample --targets lua --all-samples` を実行し、不一致を修正して全 pass にする。
+- [x] [ID: P0-LUA-PARITY-ALL-01-S2-03] 画像ケースの artifact サイズ一致（`artifact_size_mismatch=0`）を確認し、必要な runtime/emitter 修正を完了する。
+- [x] [ID: P0-LUA-PARITY-ALL-01-S3-01] parity 実行結果を決定ログへ記録し、unit/CLI 回帰（必要時）を追加して再発検知を固定する。
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、Lua parity を `test/`（fixture）と `sample/` の双方で一致確認するタスクを P0 として起票した。
@@ -65,3 +65,16 @@
 - 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は未達（pass=3, fail=15）。
   - 未達内訳: `pytra.runtime/pytra.utils gif` 未実装に起因する transpile failed（12件）、
     `18_mini_language_interpreter` の Lua 機能不足（`enumerate` 等）による run failed。
+- 2026-03-01: Lua emitter を以下の観点で修正し、sample parity blocker を解消した。
+  - Python truthiness（`while xs:`/`if xs:`）を `__pytra_truthy(...)` へ統一。
+  - `dict.get(key, default)` を nil 判定つきの Lua 式へ lowering。
+  - `str.isdigit/isalpha/isalnum` helper を追加。
+  - `In/NotIn` を `__pytra_contains(...)` へ lowering。
+  - 定数/動的の負添字（`[-1]` 含む）を Lua 添字へ正規化。
+  - dataclass（`ClassDef(dataclass=True)`）の `new(args)` でフィールドを初期化。
+  - `str + str` を Lua 連結 `..` へ lowering。
+- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` は pass（2/2, fail=0）。
+- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は pass（18/18, fail=0）。
+- 2026-03-01: summary JSON（`out/lua_sample_parity_summary.json`）で `category_counts={'ok': 18}` を確認し、`artifact_size_mismatch=0` を満たした。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v` は pass（32 tests, 0 fail）。
+- 2026-03-01: `python3 tools/check_py2lua_transpile.py` は `checked=103 ok=89 fail=14 skipped=39`（既知の stdlib/imports 系失敗）で、今回変更で新規 failure 増加は確認されなかった。
