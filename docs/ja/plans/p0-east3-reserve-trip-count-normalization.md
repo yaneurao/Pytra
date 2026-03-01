@@ -40,8 +40,8 @@
 - `python3 tools/check_py2cpp_transpile.py`
 
 分解:
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints` 拡張仕様（`count_expr` 形式 / fail-closed 条件 / 互換扱い）を定義する。
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` 件数式の正規化ルール（`start=0,step=1` 等の簡約規則）を仕様化する。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints` 拡張仕様（`count_expr` 形式 / fail-closed 条件 / 互換扱い）を定義する。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` 件数式の正規化ルール（`start=0,step=1` 等の簡約規則）を仕様化する。
 - [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] EAST3 optimizer で正規化済み `count_expr` を生成し、`reserve_hints` へ付与する。
 - [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切り替え、文字列組み立て依存を撤去する。
 - [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr` 欠落/不正時の fail-closed 挙動を実装し、不正 `reserve` 出力を防止する。
@@ -50,3 +50,35 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`reserve` 件数式の正規化責務を C++ emitter から EAST3 側へ移す P0 計画を起票。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints[*].count_expr` を EAST3式ノードで保持する契約と fail-closed 条件を確定した。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` trip count の正規化ルール（ascending/descending + step簡約）を固定した。
+
+## S1実施結果（2026-03-02）
+
+### S1-01: `reserve_hints` 拡張仕様（`count_expr`）
+
+- 追加キー:
+  - `reserve_hints[*].count_expr`: EAST3式ノード（`Constant/Name/BinOp/Compare/IfExp` の最小部分集合）で trip count を保持する。
+  - `reserve_hints[*].count_expr_version`: 文字列 `"east3_expr_v1"`。
+- 互換扱い:
+  - 既存 `count_kind` は残しつつ、emitter は `count_expr` 優先で読む。
+  - `count_expr` 欠落時は `reserve` を出力しない（fail-closed）。旧文字列組み立てへ戻さない。
+- fail-closed 条件:
+  - `count_expr` が dict でない / `kind` 不正 / 必須子ノード欠落 / 未対応演算子を含む場合は `reserve` 出力を抑止する。
+  - `safe != true` / `owner` 空 / hint kind 不一致でも同様に抑止。
+
+### S1-02: `StaticRange` 件数式正規化ルール
+
+- 前提:
+  - 適用対象は既存仕様どおり「無条件 append + `StaticRangeForPlan` + 安全判定成立」のみ。
+- 正規化:
+  - `step == 0` は不正として `count_expr` 生成なし。
+  - `range_mode=ascending`:
+    - `step_abs == 1`: `stop <= start ? 0 : stop - start`
+    - `step_abs > 1`: `stop <= start ? 0 : (stop - start + (step_abs - 1)) / step_abs`
+  - `range_mode=descending`:
+    - `step_abs == 1`: `stop >= start ? 0 : start - stop`
+    - `step_abs > 1`: `stop >= start ? 0 : (start - stop + (step_abs - 1)) / step_abs`
+- 簡約:
+  - `start=0` / `step=1` は上式から自然に `stop <= 0 ? 0 : stop` へ簡約。
+  - 不要な `- (0)` や過剰括弧は emitter 側描画規則で抑制する。
