@@ -91,6 +91,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.load_type_map` / `transpile_cli` / `CSharpEmitter` の型縮約を追加補強し、`python3 tools/check_cs_single_source_selfhost_compile.py` を `transpile rc=0 / mcs rc=0`（エラー 0 件）まで到達させた。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（43件）と `... -p 'test_code_emitter.py' -v`（48件）も通過を確認した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` の C# 経路を selfhost source 生成（`prepare_selfhost_source_cs.py`）前提に更新し、`mcs` へ `-langversion:latest` を適用した。これにより C# は `compile_fail` を脱し、`stage1: pass` / `multistage stage2: pass` まで前進した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `src/py2cs.py` の argv 取り回しを `sys.argv[1:]` ベースへ戻し、selfhost 置換後の `args` 入力と衝突しないよう調整した。現状の先頭未達は `stage3 sample output missing`（stage2 生成物が空 Program に縮退）で、次ブロッカーは selfhost parser stub（`convert_path` / `convert_source_to_east_with_backend` が空 dict 返却）由来の機能不足に固定された。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] stage1/multistage checker に C# 生成物の空 skeleton 判定（`__pytra_main` 欠落）を追加し、`output missing` だった曖昧な失敗分類を `stage2 output is empty skeleton` / `stage2 transpiler output is empty skeleton` へ更新した。これにより次の実装焦点を「selfhost parser stub の実動化」に固定した。
 
 ## 現状固定（S1-01）
 

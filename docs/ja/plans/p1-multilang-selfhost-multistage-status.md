@@ -10,9 +10,9 @@ python3 tools/check_multilang_selfhost_multistage.py
 
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
-| rs | pass | fail | skip | compile_fail | For more information about an error, try `rustc --explain E0061`. |
-| cs | pass | pass | fail | sample_transpile_fail | stage3 sample output missing |
-| js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: RuntimeError: unsupported_syntax: object receiver attribute/method access is forbidden by language constraints at 90:39 hint=Cast or assign to a concrete type before attribute/method access. |
+| rs | pass | fail | skip | compile_fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
+| cs | pass | fail | skip | self_retranspile_fail | stage2 transpiler output is empty skeleton |
+| js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: raise _make_east_build_error( |
 | ts | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | go | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | java | pass | skip | skip | runner_not_defined | multistage runner is not defined |

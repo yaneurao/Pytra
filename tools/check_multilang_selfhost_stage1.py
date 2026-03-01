@@ -56,10 +56,14 @@ def _run(cmd: list[str], cwd: Path | None = None) -> tuple[bool, str]:
     if msg == "":
         msg = f"exit={cp.returncode}"
     parts = [ln.strip() for ln in msg.splitlines() if ln.strip() != ""]
+    err_pat = re.compile(
+        r"(error\s+CS\d+|Error|unsupported_|not_implemented|SyntaxError|TypeError|ReferenceError|RuntimeError|Exception)",
+        re.IGNORECASE,
+    )
     i = 0
     while i < len(parts):
         line = parts[i]
-        if re.search(r"(Error|unsupported_|not_implemented|SyntaxError|TypeError|ReferenceError|RuntimeError|Exception)", line):
+        if err_pat.search(line):
             return False, line
         i += 1
     if len(parts) > 0:
@@ -200,6 +204,9 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
     out2 = stage2_tmp_dir / "cs_stage2_out.cs"
     ok_run, msg_run = _run(["mono", str(out_exe), str(sample_py), "-o", str(out2)])
     if ok_run and out2.exists():
+        out2_text = out2.read_text(encoding="utf-8")
+        if "public static void Main(string[] args)" in out2_text and "__pytra_main" not in out2_text:
+            return "fail", "stage2 output is empty skeleton"
         return "pass", "sample/py/01 transpile ok"
     if msg_run != "":
         return "fail", msg_run

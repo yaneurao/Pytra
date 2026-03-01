@@ -57,10 +57,14 @@ def _run(cmd: list[str], cwd: Path | None = None) -> tuple[bool, str]:
     if msg == "":
         msg = f"exit={cp.returncode}"
     parts = [ln.strip() for ln in msg.splitlines() if ln.strip() != ""]
+    err_pat = re.compile(
+        r"(error\s+CS\d+|Error|unsupported_|not_implemented|SyntaxError|TypeError|ReferenceError|RuntimeError|Exception)",
+        re.IGNORECASE,
+    )
     i = 0
     while i < len(parts):
         line = parts[i]
-        if re.search(r"(Error|unsupported_|not_implemented|SyntaxError|TypeError|ReferenceError|RuntimeError|Exception)", line):
+        if err_pat.search(line):
             return False, line
         i += 1
     if len(parts) > 0:
@@ -234,6 +238,9 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         return "fail", "skip", "self_retranspile_fail", msg_stage2
     if not stage2_src.exists():
         return "fail", "skip", "self_retranspile_fail", "stage2 transpiler output missing"
+    stage2_text = stage2_src.read_text(encoding="utf-8")
+    if "public static void Main(string[] args)" in stage2_text and "__pytra_main" not in stage2_text:
+        return "fail", "skip", "self_retranspile_fail", "stage2 transpiler output is empty skeleton"
 
     stage2_exe = stage_tmp / "py2cs_stage2.exe"
     ok_build2, msg_build2 = _cs_compile(stage2_src, stage2_exe)
@@ -246,6 +253,9 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         return "pass", "fail", "sample_transpile_fail", msg_stage3
     if not stage3_out.exists():
         return "pass", "fail", "sample_transpile_fail", "stage3 sample output missing"
+    stage3_text = stage3_out.read_text(encoding="utf-8")
+    if "public static void Main(string[] args)" in stage3_text and "__pytra_main" not in stage3_text:
+        return "pass", "fail", "sample_transpile_fail", "stage3 sample output is empty skeleton"
 
     return "pass", "pass", "pass", "stage2/stage3 sample transpile ok"
 
