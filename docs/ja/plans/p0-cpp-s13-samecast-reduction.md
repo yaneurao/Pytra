@@ -33,9 +33,10 @@
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 同型 cast 縮退を独立 P0 として起票。
+- 2026-03-01: concrete typed-list 拡張後の sample/13 では `int64(py_to<int64>(...))` / `float64(py_to<float64>(...))` の同型 cast 連鎖が消えていたため、追加 pass 実装は行わず回帰テストで固定した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S1-01] sample/13 の同型 cast パターンと縮退適用条件を固定する。
-- [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S2-01] EAST3 または C++ emitter で同型 cast 縮退を実装する。
-- [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S3-01] 回帰を追加し、transpile/check を通す。
+- [x] [ID: P0-CPP-S13-SAMECAST-CUT-01-S1-01] sample/13 の同型 cast パターンと縮退適用条件を固定する。
+- [x] [ID: P0-CPP-S13-SAMECAST-CUT-01-S2-01] EAST3 または C++ emitter で同型 cast 縮退を実装する。
+- [x] [ID: P0-CPP-S13-SAMECAST-CUT-01-S3-01] 回帰を追加し、transpile/check を通す。
