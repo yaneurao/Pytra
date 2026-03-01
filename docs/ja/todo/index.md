@@ -81,6 +81,24 @@
 6. [ ] [ID: P0-LUA-PARITY-ALL-01-S2-03] 画像ケースの artifact サイズ一致（`artifact_size_mismatch=0`）を確認し、必要な runtime/emitter 修正を完了する。
 7. [ ] [ID: P0-LUA-PARITY-ALL-01-S3-01] parity 実行結果を決定ログへ記録し、unit/CLI 回帰（必要時）を追加して再発検知を固定する。
 
+### P0: 非C++ 継承メソッド動的ディスパッチ改善（全backend）
+
+文脈: [docs/ja/plans/p0-multilang-inheritance-dispatch-rollout.md](../plans/p0-multilang-inheritance-dispatch-rollout.md)
+
+1. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01] 非C++ backend で継承メソッド動的ディスパッチと `super()` を Python 互換へ揃える。
+2. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S1-01] 追加 fixture `test/fixtures/oop/inheritance_virtual_dispatch_multilang.py` を backend smoke/parity 導線へ接続する。
+3. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-CS] C# 改善計画 [p0-cs-inheritance-dispatch-uplift.md](../plans/p0-cs-inheritance-dispatch-uplift.md) を実施する。
+4. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-GO] Go 改善計画 [p0-go-inheritance-dispatch-uplift.md](../plans/p0-go-inheritance-dispatch-uplift.md) を実施する。
+5. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java 改善計画 [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md) を実施する。
+6. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS 改善計画 [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md) を実施する。
+7. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS 改善計画 [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md) を実施する。
+8. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin 改善計画 [p0-kotlin-inheritance-dispatch-uplift.md](../plans/p0-kotlin-inheritance-dispatch-uplift.md) を実施する。
+9. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift 改善計画 [p0-swift-inheritance-dispatch-uplift.md](../plans/p0-swift-inheritance-dispatch-uplift.md) を実施する。
+10. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust 改善計画 [p0-rs-inheritance-dispatch-uplift.md](../plans/p0-rs-inheritance-dispatch-uplift.md) を実施する。
+11. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Ruby 改善計画 [p0-ruby-inheritance-dispatch-uplift.md](../plans/p0-ruby-inheritance-dispatch-uplift.md) を実施する。
+12. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Lua 改善計画 [p0-lua-inheritance-dispatch-uplift.md](../plans/p0-lua-inheritance-dispatch-uplift.md) を実施する。
+13. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離管理する。
+
 ### P1: sample/go/01 品質改善（C++品質との差分縮小）
 
 文脈: [docs/ja/plans/p1-go-sample01-quality-uplift.md](../plans/p1-go-sample01-quality-uplift.md)
