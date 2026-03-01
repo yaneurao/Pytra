@@ -251,7 +251,7 @@ def build_targets(
                 f"python src/py2scala.py {shlex.quote(case_src)} "
                 f"-o test/transpile/scala/{case_stem}.scala {opt_arg}"
             ),
-            run_cmd=f"scala run test/transpile/scala/{case_stem}.scala",
+            run_cmd=f"scala run test/transpile/scala/py_runtime.scala test/transpile/scala/{case_stem}.scala",
             needs=("python", "scala"),
         ),
     ]
