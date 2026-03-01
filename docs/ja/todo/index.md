@@ -69,6 +69,18 @@
 7. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S3-01] 各 backend smoke/transpile テストへ当該 fixture ケースを追加し、再発検知を常時化する。
 8. [ ] [ID: P0-MULTILANG-DOWNRANGE-01-S3-02] runtime parity（実行可能ターゲット）で期待値一致を確認し、結果を決定ログへ記録する。
 
+### P0: Lua parity 完走（test/fixture + sample）
+
+文脈: [docs/ja/plans/p0-lua-parity-test-sample-rollout.md](../plans/p0-lua-parity-test-sample-rollout.md)
+
+1. [ ] [ID: P0-LUA-PARITY-ALL-01] Lua parity を fixture と sample の両方で完走させ、一致を固定する。
+2. [ ] [ID: P0-LUA-PARITY-ALL-01-S1-01] Lua parity 対象範囲（fixture 対象ケース / sample 全18件）を確定し、実行手順を固定する。
+3. [ ] [ID: P0-LUA-PARITY-ALL-01-S1-02] 依存タスク `P0-LUA-SAMPLE01-RUNTIME-01` の未解決項目を解消し、sample parity blocker を除去する。
+4. [ ] [ID: P0-LUA-PARITY-ALL-01-S2-01] `runtime_parity_check --case-root fixture --targets lua` を実行し、不一致を修正して全 pass にする。
+5. [ ] [ID: P0-LUA-PARITY-ALL-01-S2-02] `runtime_parity_check --case-root sample --targets lua --all-samples` を実行し、不一致を修正して全 pass にする。
+6. [ ] [ID: P0-LUA-PARITY-ALL-01-S2-03] 画像ケースの artifact サイズ一致（`artifact_size_mismatch=0`）を確認し、必要な runtime/emitter 修正を完了する。
+7. [ ] [ID: P0-LUA-PARITY-ALL-01-S3-01] parity 実行結果を決定ログへ記録し、unit/CLI 回帰（必要時）を追加して再発検知を固定する。
+
 ### P1: sample/go/01 品質改善（C++品質との差分縮小）
 
 文脈: [docs/ja/plans/p1-go-sample01-quality-uplift.md](../plans/p1-go-sample01-quality-uplift.md)
