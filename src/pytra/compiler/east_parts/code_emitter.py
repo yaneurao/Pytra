@@ -1057,31 +1057,28 @@ class CodeEmitter:
             return f"{base}->{attr}"
         return f"{base}.{attr}"
 
-    def any_dict_get(self, obj: dict[str, Any], key: str, default_value: Any) -> Any:
+    def any_dict_get(self, obj: Any, key: str, default_value: Any) -> Any:
         """dict 風入力から key を取得し、失敗時は既定値を返す。"""
-        if not isinstance(obj, dict):
-            return default_value
-        if key in obj:
-            return obj[key]
+        d = self.any_to_dict_or_empty(obj)
+        if key in d:
+            return d[key]
         return default_value
 
-    def any_dict_has(self, obj: dict[str, Any], key: str) -> bool:
+    def any_dict_has(self, obj: Any, key: str) -> bool:
         """dict 風入力が key を持つか判定する。"""
-        if not isinstance(obj, dict):
-            return False
-        return key in obj
+        d = self.any_to_dict_or_empty(obj)
+        return key in d
 
     def _is_empty_dynamic_text(self, txt: str) -> bool:
         """動的値から得た文字列が有効値かどうかを判定する。"""
         return txt in {"", "None", "{}", "[]"}
 
-    def any_dict_get_str(self, obj: dict[str, Any], key: str, default_value: str = "") -> str:
+    def any_dict_get_str(self, obj: Any, key: str, default_value: str = "") -> str:
         """dict 風入力から文字列を取得し、失敗時は既定値を返す。"""
-        if not isinstance(obj, dict):
+        d = self.any_to_dict_or_empty(obj)
+        if key not in d:
             return default_value
-        if key not in obj:
-            return default_value
-        v = obj[key]
+        v = d[key]
         if isinstance(v, str):
             s = self.any_to_str(v)
             if s != "":
@@ -1098,13 +1095,12 @@ class CodeEmitter:
             return default_value
         return s2
 
-    def any_dict_get_int(self, obj: dict[str, Any], key: str, default_value: int = 0) -> int:
+    def any_dict_get_int(self, obj: Any, key: str, default_value: int = 0) -> int:
         """dict 風入力から整数を取得し、失敗時は既定値を返す。"""
-        if not isinstance(obj, dict):
+        d = self.any_to_dict_or_empty(obj)
+        if key not in d:
             return default_value
-        if key not in obj:
-            return default_value
-        v = obj[key]
+        v = d[key]
         if isinstance(v, bool):
             if bool(v):
                 return 1
@@ -1113,35 +1109,32 @@ class CodeEmitter:
             return int(v)
         return default_value
 
-    def any_dict_get_bool(self, obj: dict[str, Any], key: str, default_value: bool = False) -> bool:
+    def any_dict_get_bool(self, obj: Any, key: str, default_value: bool = False) -> bool:
         """dict 風入力から真偽値を取得し、失敗時は既定値を返す。"""
-        if not isinstance(obj, dict):
+        d = self.any_to_dict_or_empty(obj)
+        if key not in d:
             return default_value
-        if key not in obj:
-            return default_value
-        v = obj[key]
+        v = d[key]
         if isinstance(v, bool):
             return bool(v)
         return default_value
 
-    def any_dict_get_list(self, obj: dict[str, Any], key: str) -> list[Any]:
+    def any_dict_get_list(self, obj: Any, key: str) -> list[Any]:
         """dict 風入力から list を取得し、失敗時は空 list を返す。"""
-        if not isinstance(obj, dict):
+        d = self.any_to_dict_or_empty(obj)
+        if key not in d:
             return []
-        if key not in obj:
-            return []
-        v = obj[key]
+        v = d[key]
         if not isinstance(v, list):
             return []
         return self.any_to_list(v)
 
-    def any_dict_get_dict(self, obj: dict[str, Any], key: str) -> dict[str, Any]:
+    def any_dict_get_dict(self, obj: Any, key: str) -> dict[str, Any]:
         """dict 風入力から dict を取得し、失敗時は空 dict を返す。"""
-        if not isinstance(obj, dict):
+        d = self.any_to_dict_or_empty(obj)
+        if key not in d:
             return {}
-        if key not in obj:
-            return {}
-        v = obj[key]
+        v = d[key]
         if not isinstance(v, dict):
             return {}
         return self.any_to_dict_or_empty(v)

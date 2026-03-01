@@ -75,6 +75,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter に `Program.PytraDictStringObjectFromAny(object)` helper を追加し、`dict(...)`（typed hint 含む）を object-safe 変換経路へ切替えた。helper 出力タイミングを `Main` 生成後へ移し、`test_py2cs_smoke.py` に dict-helper 回帰（41件）を追加。`python3 tools/check_cs_single_source_selfhost_compile.py` 再計測で `CS1502: 26 -> 24`, `CS1503: 39 -> 37` まで縮退した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter の代入出力で `var x = null;` を `object x = null;` へ切替え、selfhost compile で発生していた `CS0815`（null 初期化 var）を解消した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（41件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0815/CS0411` が 0 件であることを確認した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter の dict literal 型推論に fail-closed widening を追加し、値が混在/unknown を含む場合は `Dictionary<string, object>` へ自動拡張するよう補正した。`test_py2cs_smoke.py` に回帰（42件）を追加して通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 37 -> 22`, `CS1502: 24 -> 22`, `CS0029: 17 -> 16` まで縮退させた。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.any_dict_get*` の受け口を `Any` 化し、実装本体を `any_to_dict_or_empty()` 経由へ統一して object 直接メンバアクセスを排除した。`test_code_emitter.py`（47件）/`test_py2cs_smoke.py`（42件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 22 -> 18`, `CS1502: 22 -> 18` まで縮退させた（`CS1929/CS0021` は各1件で維持）。
 
 ## 現状固定（S1-01）
 
