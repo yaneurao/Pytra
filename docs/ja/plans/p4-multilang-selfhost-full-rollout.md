@@ -84,6 +84,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.hook_on_render_call` と `CSharpEmitter._escape_interpolated_literal_text` の引数型を object-safe 化し、hook/補間文字列経路の `string` 固定シグネチャ依存を削減した。`test_code_emitter.py`（48件）/`test_py2cs_smoke.py`（43件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 8 -> 6`, `CS1502: 8 -> 6` へ縮退させた。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `transpile_cli.py` の `dict_any_get*` / `collect_symbols_from_stmt` / `collect_import_modules` を object-safe 再構築寄りへ更新し、helper 戻り値/`append` 引数に混入する `object` を縮退した。`test_py2cs_smoke.py`（43件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 6 -> 2`, `CS1502: 6 -> 2`, `CS0266: 10 -> 7` へ縮退させた（先頭は `CS0119`）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `prepare_selfhost_source_cs.py` の support block パッチに dynamic callable 経路の固定化（`stage_fn_any`/`load_east_fn`）と typed 空リスト/空dict 補正を追加し、selfhost 生成物の method-group 失敗を解消した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0119: 3 -> 0`, `CS1503: 2 -> 1`, `CS1502: 2 -> 1`, `CS0030: 4 -> 2` を確認した（`CS0266=7` は継続）。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `prepare_selfhost_source_cs.py` で `dict_any_get_dict()` を compile-safe 版へ置換し、`object` index 経路を selfhost 生成物から撤去した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 1 -> 0`, `CS1502: 1 -> 0`, `CS0021: 1 -> 0` を確認した（先頭は `CS0029`）。
 
 ## 現状固定（S1-01）
 

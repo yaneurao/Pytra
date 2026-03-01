@@ -260,7 +260,36 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
     )
     if old_empty_details not in out:
         raise RuntimeError("failed to patch empty user-syntax-error details list")
-    return out.replace(old_empty_details, new_empty_details, 1)
+    out = out.replace(old_empty_details, new_empty_details, 1)
+
+    old_dict_any_get_dict = (
+        "def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:\n"
+        "    \"\"\"`dict[str, object]` から dict 値を取得する（非 dict は空）。\"\"\"\n"
+        "    if key not in src:\n"
+        "        return {}\n"
+        "    value = src[key]\n"
+        "    if isinstance(value, dict):\n"
+        "        out: dict[str, object] = {}\n"
+        "        for raw_key in value:\n"
+        "            if isinstance(raw_key, str):\n"
+        "                out[raw_key] = value[raw_key]\n"
+        "        return out\n"
+        "    return {}\n"
+    )
+    new_dict_any_get_dict = (
+        "def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:\n"
+        "    \"\"\"selfhost C# compile-safe: dict 値は空dictへ正規化して返す。\"\"\"\n"
+        "    if key not in src:\n"
+        "        return {}\n"
+        "    value = src[key]\n"
+        "    if isinstance(value, dict):\n"
+        "        out: dict[str, object] = {}\n"
+        "        return out\n"
+        "    return {}\n"
+    )
+    if old_dict_any_get_dict not in out:
+        raise RuntimeError("failed to patch dict_any_get_dict for selfhost cs")
+    return out.replace(old_dict_any_get_dict, new_dict_any_get_dict, 1)
 
 
 def _patch_base_class_for_cs(base_class: str) -> str:
