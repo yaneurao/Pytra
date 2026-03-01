@@ -86,6 +86,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `prepare_selfhost_source_cs.py` の support block パッチに dynamic callable 経路の固定化（`stage_fn_any`/`load_east_fn`）と typed 空リスト/空dict 補正を追加し、selfhost 生成物の method-group 失敗を解消した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0119: 3 -> 0`, `CS1503: 2 -> 1`, `CS1502: 2 -> 1`, `CS0030: 4 -> 2` を確認した（`CS0266=7` は継続）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `prepare_selfhost_source_cs.py` で `dict_any_get_dict()` を compile-safe 版へ置換し、`object` index 経路を selfhost 生成物から撤去した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 1 -> 0`, `CS1502: 1 -> 0`, `CS0021: 1 -> 0` を確認した（先頭は `CS0029`）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `transpile_cli.py` の `graph_adj[cur_key]` 初期化を typed 化し、`build_module_type_schema` の辞書リテラルを型明示エントリへ分解した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 3 -> 0` を確認し、compile 先頭は `CS0019` へ遷移した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter._prepare_call_parts` / `CSharpEmitter._legacy_target_from_for_core_plan` / `transpile_cli.normalize/load` の object 直代入を撤去し、`prepare_selfhost_source_cs.py` のパッチ適用条件を後方互換化した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0266: 7 -> 0`, `CS0246: 1 -> 0`, `CS0150: 1 -> 0`, `CS1061: 1 -> 0` を確認した（先頭は `CS0019`）。
 
 ## 現状固定（S1-01）
 

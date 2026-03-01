@@ -1424,8 +1424,9 @@ class CSharpEmitter(CodeEmitter):
             return {"kind": "Tuple", "elements": legacy_elements}
         if kind == "ExprTarget":
             target_any = plan.get("target")
-            if isinstance(target_any, dict):
-                return target_any
+            target = self.any_to_dict_or_empty(target_any)
+            if len(target) > 0:
+                return target
         return {"kind": "Name", "id": "_"}
 
     def _emit_for_core(self, stmt: dict[str, Any]) -> None:

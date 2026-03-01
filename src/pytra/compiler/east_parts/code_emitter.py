@@ -2536,9 +2536,11 @@ class CodeEmitter:
             args.append(self.render_expr(arg_node))
         keywords_obj: object = self.any_dict_get_list(expr, "keywords")
         keywords = self.any_to_list(keywords_obj)
-        first_arg: object = expr
+        first_arg: object = None
         if len(arg_nodes) > 0:
             first_arg = arg_nodes[0]
+        else:
+            first_arg = expr
         kw: dict[str, str] = {}
         kw_values: list[str] = []
         kw_nodes: list[Any] = []

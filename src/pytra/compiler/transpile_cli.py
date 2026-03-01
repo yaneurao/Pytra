@@ -173,19 +173,16 @@ def normalize_east_root_document(doc: dict[str, object]) -> dict[str, object]:
     stage_obj = dict_any_get(doc, "east_stage")
     stage = 2
     if isinstance(stage_obj, int) and (stage_obj == 1 or stage_obj == 2 or stage_obj == 3):
-        stage = stage_obj
+        stage = int(stage_obj)
     doc["east_stage"] = stage
 
     schema_obj = dict_any_get(doc, "schema_version")
     schema_version = 1
     if isinstance(schema_obj, int) and schema_obj > 0:
-        schema_version = schema_obj
+        schema_version = int(schema_obj)
     doc["schema_version"] = schema_version
 
-    meta_obj = dict_any_get(doc, "meta")
-    meta: dict[str, object] = {}
-    if isinstance(meta_obj, dict):
-        meta = meta_obj
+    meta = dict_any_get_dict(doc, "meta")
     doc["meta"] = meta
 
     mode = dict_any_get_str(meta, "dispatch_mode")
@@ -205,7 +202,7 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             ok_obj = dict_any_get(payload, "ok")
             east_obj = dict_any_get(payload, "east")
             if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
-                east_obj_dict: dict[str, object] = east_obj
+                east_obj_dict = dict_any_get_dict(payload, "east")
                 east_doc = normalize_east_root_document(east_obj_dict)
                 return normalize_east1_to_east2_document(east_doc)
             if dict_any_kind(payload) == "Module":
@@ -226,30 +223,30 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             if parser_backend == "self_hosted"
             else convert_source_to_east_with_backend(source_text, input_txt, parser_backend)
         )
-    except SyntaxError as ex:
-        msg = str(ex)
-        raise make_user_error(
-            "user_syntax_error",
-            "Python syntax error.",
-            [msg],
-        ) from ex
     except Exception as ex:
-        parsed_err = parse_user_error(str(ex))
+        msg = str(ex)
+        if ("SyntaxError" in msg) or ("invalid syntax" in msg) or ("Invalid syntax" in msg):
+            raise make_user_error(
+                "user_syntax_error",
+                "Python syntax error.",
+                [msg],
+            ) from ex
+        parsed_err = parse_user_error(msg)
         ex_cat = dict_any_get_str(parsed_err, "category")
         ex_details = dict_any_get_str_list(parsed_err, "details")
         if ex_cat != "":
             if ex_cat == "not_implemented":
                 first = ""
-                if len(ex_details) > 0 and isinstance(ex_details[0], str):
+                if len(ex_details) > 0:
                     first = ex_details[0]
                 if first == "":
+                    empty_details: list[str] = []
                     raise make_user_error(
                         "user_syntax_error",
                         "Python syntax error.",
-                        [],
+                        empty_details,
                     ) from ex
             raise ex
-        msg = str(ex)
         if "from-import wildcard is not supported" in msg:
             label = first_import_detail_line(source_text, "wildcard")
             raise make_user_error(
@@ -283,7 +280,8 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             summary = "This syntax is unsupported by language design."
         raise make_user_error(category, summary, [msg]) from ex
     if isinstance(east_any, dict):
-        east_any_dict: dict[str, object] = east_any
+        east_any_wrap: dict[str, object] = {"east": east_any}
+        east_any_dict = dict_any_get_dict(east_any_wrap, "east")
         east_doc = normalize_east_root_document(east_any_dict)
         return normalize_east1_to_east2_document(east_doc)
     raise make_user_error(

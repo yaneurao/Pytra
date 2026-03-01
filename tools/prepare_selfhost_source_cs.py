@@ -258,9 +258,10 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
         "                        empty_details,\n"
         "                    ) from ex\n"
     )
-    if old_empty_details not in out:
+    if old_empty_details in out:
+        out = out.replace(old_empty_details, new_empty_details, 1)
+    elif new_empty_details not in out:
         raise RuntimeError("failed to patch empty user-syntax-error details list")
-    out = out.replace(old_empty_details, new_empty_details, 1)
 
     old_dict_any_get_dict = (
         "def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:\n"
