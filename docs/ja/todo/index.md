@@ -208,13 +208,13 @@
 
 文脈: [docs/ja/plans/p2-east-import-resolution-and-codeemitter-dep-collection.md](../plans/p2-east-import-resolution-and-codeemitter-dep-collection.md)
 
-1. [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01] EAST の import 解決情報と CodeEmitter 基底の依存収集を接続し、各 backend の import を必要最小へ統一する。
+1. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01] EAST の import 解決情報と CodeEmitter 基底の依存収集を接続し、各 backend の import を必要最小へ統一する。
 2. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-01] EAST3 で識別子/呼び出しの import 解決情報（module/symbol）を保持する仕様を定義する。
 3. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-02] parser/lowering で解決情報を `meta` もしくはノード属性へ記録し、欠落時 fail-closed 条件を決める。
 4. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-01] CodeEmitter 基底に `require_dep` / `finalize_deps` 等の依存収集 API を追加する。
 5. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-02] backend 側で import 直書きを撤去し、基底の依存収集 API 経由へ段階移行する（先行: Go）。
 6. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-03] 先行 backend（Go）で `var _ = math.Pi` など未使用回避ダミーを撤去し、必要 import のみ出力する。
-7. [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S3-01] import 回帰テスト（必要最小/未使用禁止/依存欠落禁止）を追加し、CI 導線へ固定する。
+7. [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S3-01] import 回帰テスト（必要最小/未使用禁止/依存欠落禁止）を追加し、CI 導線へ固定する。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
