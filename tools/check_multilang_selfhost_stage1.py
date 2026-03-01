@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PREPARE_CS_SELFHOST = ROOT / "tools" / "prepare_selfhost_source_cs.py"
 CS_SELFHOST_ENTRY = ROOT / "selfhost" / "py2cs.py"
+PY2CS_CLI = ROOT / "src" / "py2cs.py"
 
 
 @dataclass
@@ -193,6 +194,7 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "png_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "json.cs",
     ]
     compile_cmd = ["mcs", "-langversion:latest", "-warn:0", "-out:" + str(out_exe), str(stage1_out)]
     for runtime_file in runtime_files:
@@ -201,8 +203,29 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
     if not ok_build:
         return "fail", msg_build
 
+    sample_input = sample_py
+    if sample_py.suffix == ".py":
+        sample_json = stage2_tmp_dir / "sample_stage2_input.east3.json"
+        host_tmp = stage2_tmp_dir / "sample_stage2_host_tmp.cs"
+        ok_json, msg_json = _run(
+            [
+                "python3",
+                str(PY2CS_CLI),
+                str(sample_py),
+                "-o",
+                str(host_tmp),
+                "--dump-east3-after-opt",
+                str(sample_json),
+            ]
+        )
+        if not ok_json:
+            return "fail", "stage2 east3 dump failed: " + msg_json
+        if not sample_json.exists():
+            return "fail", "stage2 east3 dump missing"
+        sample_input = sample_json
+
     out2 = stage2_tmp_dir / "cs_stage2_out.cs"
-    ok_run, msg_run = _run(["mono", str(out_exe), str(sample_py), "-o", str(out2)])
+    ok_run, msg_run = _run(["mono", str(out_exe), str(sample_input), "-o", str(out2)])
     if ok_run and out2.exists():
         out2_text = out2.read_text(encoding="utf-8")
         if "public static void Main(string[] args)" in out2_text and "__pytra_main" not in out2_text:

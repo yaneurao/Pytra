@@ -277,7 +277,7 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
         "        return out\n"
         "    return {}\n"
     )
-    new_dict_any_get_dict = (
+    old_compile_safe_dict_any_get_dict = (
         "def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:\n"
         "    \"\"\"selfhost C# compile-safe: dict 値は空dictへ正規化して返す。\"\"\"\n"
         "    if key not in src:\n"
@@ -288,9 +288,23 @@ def _patch_support_blocks_for_cs(support_blocks: str) -> str:
         "        return out\n"
         "    return {}\n"
     )
-    if old_dict_any_get_dict not in out:
+    target_dict_any_get_dict = (
+        "def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:\n"
+        "    \"\"\"`dict[str, object]` から dict 値を取得する（非 dict は空）。\"\"\"\n"
+        "    if key not in src:\n"
+        "        return {}\n"
+        "    value = src[key]\n"
+        "    if isinstance(value, dict):\n"
+        "        return dict(value)\n"
+        "    return {}\n"
+    )
+    if old_dict_any_get_dict in out:
+        out = out.replace(old_dict_any_get_dict, target_dict_any_get_dict, 1)
+    elif old_compile_safe_dict_any_get_dict in out:
+        out = out.replace(old_compile_safe_dict_any_get_dict, target_dict_any_get_dict, 1)
+    elif target_dict_any_get_dict not in out:
         raise RuntimeError("failed to patch dict_any_get_dict for selfhost cs")
-    return out.replace(old_dict_any_get_dict, new_dict_any_get_dict, 1)
+    return out
 
 
 def _patch_base_class_for_cs(base_class: str) -> str:

@@ -202,7 +202,8 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     if input_txt.endswith(".json"):
         payload_any = json.loads(input_path.read_text(encoding="utf-8"))
         if isinstance(payload_any, dict):
-            payload: dict[str, object] = payload_any
+            payload_wrap: dict[str, object] = {"__payload__": payload_any}
+            payload = dict_any_get_dict(payload_wrap, "__payload__")
             ok_obj = dict_any_get(payload, "ok")
             east_obj = dict_any_get(payload, "east")
             ok = isinstance(ok_obj, bool) and bool(ok_obj)
@@ -1264,11 +1265,7 @@ def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:
         return {}
     value = src[key]
     if isinstance(value, dict):
-        out: dict[str, object] = {}
-        for raw_key in value:
-            if isinstance(raw_key, str):
-                out[raw_key] = value[raw_key]
-        return out
+        return dict(value)
     return {}
 
 

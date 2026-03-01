@@ -1887,9 +1887,9 @@ class CSharpEmitter(CodeEmitter):
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "json":
             if attr_raw == "loads" and len(rendered_args) >= 1:
-                return "new System.Collections.Generic.Dictionary<string, object>()"
+                return "Pytra.CsModule.json.loads(" + rendered_args[0] + ")"
             if attr_raw == "dumps" and len(rendered_args) >= 1:
-                return "\"\""
+                return "Pytra.CsModule.json.dumps(" + rendered_args[0] + ")"
         if owner_name == "sys" and attr_raw == "exit":
             if len(rendered_args) >= 1:
                 return "System.Environment.Exit(System.Convert.ToInt32(" + rendered_args[0] + "))"

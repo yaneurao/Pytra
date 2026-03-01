@@ -795,7 +795,7 @@ def f(s: str):
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("new System.Collections.Generic.Dictionary<string, object>()", cs)
+        self.assertIn("Pytra.CsModule.json.loads(s)", cs)
 
     def test_string_methods_find_rfind_strip_replace_are_lowered(self) -> None:
         src = """def f(s: str) -> int:

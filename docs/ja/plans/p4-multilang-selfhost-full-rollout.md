@@ -92,6 +92,8 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` の C# 経路を selfhost source 生成（`prepare_selfhost_source_cs.py`）前提に更新し、`mcs` へ `-langversion:latest` を適用した。これにより C# は `compile_fail` を脱し、`stage1: pass` / `multistage stage2: pass` まで前進した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `src/py2cs.py` の argv 取り回しを `sys.argv[1:]` ベースへ戻し、selfhost 置換後の `args` 入力と衝突しないよう調整した。現状の先頭未達は `stage3 sample output missing`（stage2 生成物が空 Program に縮退）で、次ブロッカーは selfhost parser stub（`convert_path` / `convert_source_to_east_with_backend` が空 dict 返却）由来の機能不足に固定された。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] stage1/multistage checker に C# 生成物の空 skeleton 判定（`__pytra_main` 欠落）を追加し、`output missing` だった曖昧な失敗分類を `stage2 output is empty skeleton` / `stage2 transpiler output is empty skeleton` へ更新した。これにより次の実装焦点を「selfhost parser stub の実動化」に固定した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# runtime へ `std/json.cs` を追加し、`json.loads/json.dumps` を emitter から runtime 呼び出しへ切り替えた。`load_east_document` の JSON 受け口（`payload_any`）と `dict_any_get_dict` selfhost パッチを `dict(value)` 経路へ整合させ、stage2 の `Unhandled Exception (Invalid EAST JSON format)` を解消した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] 再計測で `stage1` は `cs: stage2 output is empty skeleton`、`multistage` は `cs: stage2=pass / stage3=fail (stage2_compile_fail)` へ遷移し、先頭失敗を `py2cs_stage2.cs(671): error CS1525 Unexpected symbol 'base'` に更新した。次ブロッカーは selfhost 2段目生成物の予約語（`base`/`out`）混入を含む compile-safe 出力整備。
 
 ## 現状固定（S1-01）
 

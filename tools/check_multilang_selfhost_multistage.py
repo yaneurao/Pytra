@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PREPARE_CS_SELFHOST = ROOT / "tools" / "prepare_selfhost_source_cs.py"
 CS_SELFHOST_ENTRY = ROOT / "selfhost" / "py2cs.py"
+PY2CS_CLI = ROOT / "src" / "py2cs.py"
 
 
 @dataclass
@@ -207,6 +208,7 @@ def _cs_compile(src_cs: Path, out_exe: Path) -> tuple[bool, str]:
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "png_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "json.cs",
     ]
     compile_cmd = ["mcs", "-langversion:latest", "-warn:0", "-out:" + str(out_exe), str(src_cs)]
     for runtime_file in runtime_files:
@@ -232,8 +234,29 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
     if not ok_build1:
         return "fail", "skip", "compile_fail", msg_build1
 
+    src_input = src_py
+    if src_py.suffix == ".py":
+        src_json = stage_tmp / "cs_stage2_input.east3.json"
+        src_host_tmp = stage_tmp / "cs_stage2_host_tmp.cs"
+        ok_src_json, msg_src_json = _run(
+            [
+                "python3",
+                str(PY2CS_CLI),
+                str(src_py),
+                "-o",
+                str(src_host_tmp),
+                "--dump-east3-after-opt",
+                str(src_json),
+            ]
+        )
+        if not ok_src_json:
+            return "fail", "skip", "self_retranspile_fail", "stage2 east3 dump failed: " + msg_src_json
+        if not src_json.exists():
+            return "fail", "skip", "self_retranspile_fail", "stage2 east3 dump missing"
+        src_input = src_json
+
     stage2_src = stage_tmp / "py2cs_stage2.cs"
-    ok_stage2, msg_stage2 = _run(["mono", str(stage1_exe), str(src_py), "-o", str(stage2_src)])
+    ok_stage2, msg_stage2 = _run(["mono", str(stage1_exe), str(src_input), "-o", str(stage2_src)])
     if not ok_stage2:
         return "fail", "skip", "self_retranspile_fail", msg_stage2
     if not stage2_src.exists():
@@ -247,8 +270,29 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
     if not ok_build2:
         return "pass", "fail", "stage2_compile_fail", msg_build2
 
+    sample_input = sample_py
+    if sample_py.suffix == ".py":
+        sample_json = stage_tmp / "cs_stage3_input.east3.json"
+        sample_host_tmp = stage_tmp / "cs_stage3_host_tmp.cs"
+        ok_sample_json, msg_sample_json = _run(
+            [
+                "python3",
+                str(PY2CS_CLI),
+                str(sample_py),
+                "-o",
+                str(sample_host_tmp),
+                "--dump-east3-after-opt",
+                str(sample_json),
+            ]
+        )
+        if not ok_sample_json:
+            return "pass", "fail", "sample_transpile_fail", "stage3 east3 dump failed: " + msg_sample_json
+        if not sample_json.exists():
+            return "pass", "fail", "sample_transpile_fail", "stage3 east3 dump missing"
+        sample_input = sample_json
+
     stage3_out = stage_tmp / "cs_stage3_sample.cs"
-    ok_stage3, msg_stage3 = _run(["mono", str(stage2_exe), str(sample_py), "-o", str(stage3_out)])
+    ok_stage3, msg_stage3 = _run(["mono", str(stage2_exe), str(sample_input), "-o", str(stage3_out)])
     if not ok_stage3:
         return "pass", "fail", "sample_transpile_fail", msg_stage3
     if not stage3_out.exists():

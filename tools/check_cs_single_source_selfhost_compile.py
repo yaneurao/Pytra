@@ -23,6 +23,7 @@ RUNTIME_FILES = [
     ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "png_helper.cs",
     ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
     ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
+    ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "json.cs",
 ]
 
 
@@ -194,4 +195,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
