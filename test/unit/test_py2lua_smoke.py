@@ -213,11 +213,13 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_isinstance(cat, Dog)", lua)
         self.assertIn("__pytra_isinstance(cat, Animal)", lua)
 
-    def test_import_lowering_maps_assertions_and_png_stub(self) -> None:
+    def test_import_lowering_maps_assertions_perf_counter_and_png_runtime(self) -> None:
         src = (
             "from pytra.utils.assertions import py_assert_stdout\n"
+            "from time import perf_counter\n"
             "from pytra.utils import png\n"
             "def f() -> None:\n"
+            "    _ = perf_counter()\n"
             "    png.write_rgb_png('x.png', 1, 1, b'')\n"
             "def g() -> None:\n"
             "    print(py_assert_stdout(['ok'], f))\n"
@@ -228,8 +230,36 @@ class Py2LuaSmokeTest(unittest.TestCase):
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
         self.assertIn("local py_assert_stdout = function(expected, fn) fn(); return true end", lua)
-        self.assertIn("local png = { write_rgb_png = function(...) end, write_gif = function(...) end }", lua)
-        self.assertIn('png:write_rgb_png("x.png", 1, 1, "")', lua)
+        self.assertIn("local function __pytra_perf_counter()", lua)
+        self.assertIn("local perf_counter = __pytra_perf_counter", lua)
+        self.assertIn("local function __pytra_write_rgb_png(path, width, height, pixels)", lua)
+        self.assertIn("local png = __pytra_png_module()", lua)
+        self.assertIn('png.write_rgb_png("x.png", 1, 1, "")', lua)
+        self.assertNotIn("write_rgb_png = function(...) end", lua)
+        self.assertNotIn("not yet mapped", lua)
+
+    def test_sample01_uses_runtime_mapped_perf_counter_and_png(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_perf_counter()", lua)
+        self.assertIn("local perf_counter = __pytra_perf_counter", lua)
+        self.assertIn("local png = __pytra_png_module()", lua)
+        self.assertNotIn("write_rgb_png = function(...) end", lua)
+        self.assertNotIn("from time import perf_counter", lua)
+
+    def test_import_lowering_fails_closed_for_unmapped_pytra_gif(self) -> None:
+        src = (
+            "from pytra.runtime import gif\n"
+            "def f() -> None:\n"
+            "    _ = gif\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "imports_gif_unmapped.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            with self.assertRaises(RuntimeError):
+                _ = transpile_to_lua_native(east)
 
 
 if __name__ == "__main__":

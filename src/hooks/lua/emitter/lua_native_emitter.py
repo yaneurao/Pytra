@@ -205,9 +205,30 @@ class LuaNativeEmitter:
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
                     self.imported_modules.add(_safe_ident(alias, "mod"))
+                continue
+            if kind == "ImportFrom":
+                module_name = stmt.get("module")
+                if not isinstance(module_name, str):
+                    continue
+                names_any = stmt.get("names")
+                names = names_any if isinstance(names_any, list) else []
+                for ent in names:
+                    if not isinstance(ent, dict):
+                        continue
+                    symbol = ent.get("name")
+                    if not isinstance(symbol, str) or symbol == "":
+                        continue
+                    asname = ent.get("asname")
+                    alias = asname if isinstance(asname, str) and asname != "" else symbol
+                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol in {"png", "gif"}:
+                        self.imported_modules.add(_safe_ident(alias, "mod"))
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
-        emitted = False
+        import_lines: list[str] = []
+        needs_perf_counter = False
+        needs_png_runtime = False
+        self._emit_print_helper()
+        self._emit_line("")
         for stmt in body:
             kind = stmt.get("kind")
             if kind == "Import":
@@ -223,19 +244,21 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
                     if module_name == "math":
-                        self._emit_line("local " + alias_txt + " = math")
-                        emitted = True
+                        import_lines.append("local " + alias_txt + " = math")
                         continue
-                    if module_name in {"pytra.utils.png", "pytra.runtime.png", "pytra.utils.gif", "pytra.runtime.gif"}:
-                        self._emit_line(
-                            "local "
-                            + alias_txt
-                            + " = { write_rgb_png = function(...) end, write_gif = function(...) end }"
-                        )
-                        emitted = True
+                    if module_name == "time":
+                        needs_perf_counter = True
+                        import_lines.append("local " + alias_txt + " = { perf_counter = __pytra_perf_counter }")
                         continue
-                    self._emit_line("-- import " + module_name + " as " + alias_txt + " (not yet mapped)")
-                    emitted = True
+                    if module_name in {"pytra.utils.png", "pytra.runtime.png"}:
+                        needs_png_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_png_module()")
+                        continue
+                    if module_name in {"pytra.utils.gif", "pytra.runtime.gif"}:
+                        raise RuntimeError("lang=lua unresolved import module: " + module_name + " (gif runtime is not implemented)")
+                    if module_name.startswith("pytra."):
+                        raise RuntimeError("lang=lua unresolved import module: " + module_name)
+                    import_lines.append("-- import " + module_name + " as " + alias_txt + " (not yet mapped)")
                 continue
             if kind == "ImportFrom":
                 module_name = stmt.get("module")
@@ -253,29 +276,246 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else symbol
                     alias_txt = _safe_ident(alias, symbol)
                     if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_stdout":
-                        self._emit_line(
-                            "local py_assert_stdout = function(expected, fn) fn(); return true end"
-                        )
-                        emitted = True
+                        import_lines.append("local py_assert_stdout = function(expected, fn) fn(); return true end")
+                        continue
+                    if module_name == "time" and symbol == "perf_counter":
+                        needs_perf_counter = True
+                        import_lines.append("local " + alias_txt + " = __pytra_perf_counter")
                         continue
                     if module_name == "math":
-                        self._emit_line("local " + alias_txt + " = math." + _safe_ident(symbol, symbol))
-                        emitted = True
+                        import_lines.append("local " + alias_txt + " = math." + _safe_ident(symbol, symbol))
                         continue
-                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol in {"png", "gif"}:
-                        self._emit_line(
-                            "local "
-                            + alias_txt
-                            + " = { write_rgb_png = function(...) end, write_gif = function(...) end }"
+                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "png":
+                        needs_png_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_png_module()")
+                        continue
+                    if module_name in {"pytra.utils.png", "pytra.runtime.png"} and symbol == "write_rgb_png":
+                        needs_png_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_write_rgb_png")
+                        continue
+                    if (
+                        (module_name in {"pytra.utils", "pytra.runtime"} and symbol == "gif")
+                        or (module_name in {"pytra.utils.gif", "pytra.runtime.gif"})
+                    ):
+                        raise RuntimeError(
+                            "lang=lua unresolved import symbol: " + module_name + "." + symbol + " (gif runtime is not implemented)"
                         )
-                        emitted = True
-                        continue
-                    self._emit_line(
+                    if module_name.startswith("pytra."):
+                        raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)
+                    if module_name == "time":
+                        raise RuntimeError("lang=lua unresolved import symbol: time." + symbol)
+                    import_lines.append(
                         "-- from " + module_name + " import " + symbol + " as " + alias_txt + " (not yet mapped)"
                     )
-                    emitted = True
-        if emitted:
+        if needs_perf_counter:
+            self._emit_perf_counter_helper()
             self._emit_line("")
+        if needs_png_runtime:
+            self._emit_png_runtime_helpers()
+            self._emit_line("")
+        for line in import_lines:
+            self._emit_line(line)
+        if len(import_lines) > 0:
+            self._emit_line("")
+
+    def _emit_print_helper(self) -> None:
+        self._emit_line("local function __pytra_print(...)")
+        self.indent += 1
+        self._emit_line("local argc = select(\"#\", ...)")
+        self._emit_line("if argc == 0 then")
+        self.indent += 1
+        self._emit_line("io.write(\"\\n\")")
+        self._emit_line("return")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local parts = {}")
+        self._emit_line("for i = 1, argc do")
+        self.indent += 1
+        self._emit_line("parts[i] = tostring(select(i, ...))")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("io.write(table.concat(parts, \" \") .. \"\\n\")")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_perf_counter_helper(self) -> None:
+        self._emit_line("local function __pytra_perf_counter()")
+        self.indent += 1
+        self._emit_line("return os.clock()")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_png_runtime_helpers(self) -> None:
+        self._emit_line("local function __pytra_u32be(n)")
+        self.indent += 1
+        self._emit_line("local v = math.floor(tonumber(n) or 0) & 0xFFFFFFFF")
+        self._emit_line("return string.char((v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local __pytra_crc_table = nil")
+        self._emit_line("local function __pytra_init_crc_table()")
+        self.indent += 1
+        self._emit_line("if __pytra_crc_table ~= nil then")
+        self.indent += 1
+        self._emit_line("return")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local tbl = {}")
+        self._emit_line("for i = 0, 255 do")
+        self.indent += 1
+        self._emit_line("local c = i")
+        self._emit_line("for _ = 1, 8 do")
+        self.indent += 1
+        self._emit_line("if (c & 1) ~= 0 then")
+        self.indent += 1
+        self._emit_line("c = ((c >> 1) ~ 0xEDB88320) & 0xFFFFFFFF")
+        self.indent -= 1
+        self._emit_line("else")
+        self.indent += 1
+        self._emit_line("c = (c >> 1) & 0xFFFFFFFF")
+        self.indent -= 1
+        self._emit_line("end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("tbl[i] = c")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("__pytra_crc_table = tbl")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_png_crc32(data)")
+        self.indent += 1
+        self._emit_line("__pytra_init_crc_table()")
+        self._emit_line("local c = 0xFFFFFFFF")
+        self._emit_line("for i = 1, #data do")
+        self.indent += 1
+        self._emit_line("local b = string.byte(data, i)")
+        self._emit_line("local idx = (c ~ b) & 0xFF")
+        self._emit_line("c = ((c >> 8) ~ __pytra_crc_table[idx]) & 0xFFFFFFFF")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return (~c) & 0xFFFFFFFF")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_png_adler32(data)")
+        self.indent += 1
+        self._emit_line("local s1 = 1")
+        self._emit_line("local s2 = 0")
+        self._emit_line("for i = 1, #data do")
+        self.indent += 1
+        self._emit_line("s1 = (s1 + string.byte(data, i)) % 65521")
+        self._emit_line("s2 = (s2 + s1) % 65521")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return ((s2 << 16) | s1) & 0xFFFFFFFF")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_png_chunk(kind, data)")
+        self.indent += 1
+        self._emit_line("local payload = data or \"\"")
+        self._emit_line("local crc = __pytra_png_crc32(kind .. payload)")
+        self._emit_line("return __pytra_u32be(#payload) .. kind .. payload .. __pytra_u32be(crc)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_zlib_store(raw)")
+        self.indent += 1
+        self._emit_line("local out = { string.char(0x78, 0x01) }")
+        self._emit_line("local pos = 1")
+        self._emit_line("while pos <= #raw do")
+        self.indent += 1
+        self._emit_line("local block_len = math.min(65535, #raw - pos + 1)")
+        self._emit_line("local final_block = ((pos + block_len - 1) >= #raw) and 1 or 0")
+        self._emit_line("local nlen = 65535 - block_len")
+        self._emit_line("out[#out + 1] = string.char(final_block, block_len & 0xFF, (block_len >> 8) & 0xFF, nlen & 0xFF, (nlen >> 8) & 0xFF)")
+        self._emit_line("out[#out + 1] = string.sub(raw, pos, pos + block_len - 1)")
+        self._emit_line("pos = pos + block_len")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("out[#out + 1] = __pytra_u32be(__pytra_png_adler32(raw))")
+        self._emit_line("return table.concat(out)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_write_rgb_png(path, width, height, pixels)")
+        self.indent += 1
+        self._emit_line("local out_path = tostring(path)")
+        self._emit_line("local w = math.floor(tonumber(width) or 0)")
+        self._emit_line("local h = math.floor(tonumber(height) or 0)")
+        self._emit_line("if w <= 0 or h <= 0 then")
+        self.indent += 1
+        self._emit_line("error(\"write_rgb_png: width/height must be positive\")")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("if type(pixels) ~= \"table\" then")
+        self.indent += 1
+        self._emit_line("error(\"write_rgb_png: pixels must be table\")")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local expected = w * h * 3")
+        self._emit_line("if #pixels ~= expected then")
+        self.indent += 1
+        self._emit_line("error(\"write_rgb_png: pixels length mismatch\")")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local scan = {}")
+        self._emit_line("local idx = 1")
+        self._emit_line("for _y = 1, h do")
+        self.indent += 1
+        self._emit_line("scan[#scan + 1] = string.char(0)")
+        self._emit_line("for _x = 1, w * 3 do")
+        self.indent += 1
+        self._emit_line("local n = math.floor(tonumber(pixels[idx]) or 0)")
+        self._emit_line("if n < 0 then n = 0 end")
+        self._emit_line("if n > 255 then n = 255 end")
+        self._emit_line("scan[#scan + 1] = string.char(n)")
+        self._emit_line("idx = idx + 1")
+        self.indent -= 1
+        self._emit_line("end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local raw = table.concat(scan)")
+        self._emit_line("local ihdr = __pytra_u32be(w) .. __pytra_u32be(h) .. string.char(8, 2, 0, 0, 0)")
+        self._emit_line("local idat = __pytra_zlib_store(raw)")
+        self._emit_line(
+            "local png_data = string.char(137, 80, 78, 71, 13, 10, 26, 10) .. __pytra_png_chunk(\"IHDR\", ihdr) .. __pytra_png_chunk(\"IDAT\", idat) .. __pytra_png_chunk(\"IEND\", \"\")"
+        )
+        self._emit_line("local fh = assert(io.open(out_path, \"wb\"))")
+        self._emit_line("fh:write(png_data)")
+        self._emit_line("fh:close()")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_png_module()")
+        self.indent += 1
+        self._emit_line("return {")
+        self.indent += 1
+        self._emit_line("write_rgb_png = function(...)")
+        self.indent += 1
+        self._emit_line("local argc = select(\"#\", ...)")
+        self._emit_line("if argc == 5 then")
+        self.indent += 1
+        self._emit_line("local _, path, width, height, pixels = ...")
+        self._emit_line("return __pytra_write_rgb_png(path, width, height, pixels)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local path, width, height, pixels = ...")
+        self._emit_line("return __pytra_write_rgb_png(path, width, height, pixels)")
+        self.indent -= 1
+        self._emit_line("end,")
+        self._emit_line("write_gif = function(...)")
+        self.indent += 1
+        self._emit_line("error(\"lua runtime: write_gif is not implemented\")")
+        self.indent -= 1
+        self._emit_line("end,")
+        self.indent -= 1
+        self._emit_line("}")
+        self.indent -= 1
+        self._emit_line("end")
 
     def _emit_isinstance_helper(self) -> None:
         self._emit_line("local function __pytra_isinstance(obj, class_tbl)")
@@ -784,7 +1024,38 @@ class LuaNativeEmitter:
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             fn_name = _safe_ident(func_any.get("id"), "fn")
             if fn_name == "print":
-                return "print(" + ", ".join(rendered_args) + ")"
+                return "__pytra_print(" + ", ".join(rendered_args) + ")"
+            if fn_name == "int":
+                if len(rendered_args) == 0:
+                    return "0"
+                return "(math.floor(tonumber(" + rendered_args[0] + ") or 0))"
+            if fn_name == "float":
+                if len(rendered_args) == 0:
+                    return "0.0"
+                return "(tonumber(" + rendered_args[0] + ") or 0.0)"
+            if fn_name == "bool":
+                if len(rendered_args) == 0:
+                    return "false"
+                return "((" + rendered_args[0] + ") and true or false)"
+            if fn_name == "str":
+                if len(rendered_args) == 0:
+                    return '""'
+                return "tostring(" + rendered_args[0] + ")"
+            if fn_name == "len":
+                if len(rendered_args) == 0:
+                    return "0"
+                return "#(" + rendered_args[0] + ")"
+            if fn_name == "bytearray":
+                if len(rendered_args) == 0:
+                    return "{}"
+                return (
+                    "(function(__v) "
+                    + "if type(__v) == \"number\" then local __n = math.max(0, math.floor(tonumber(__v) or 0)); local __out = {}; for __i = 1, __n do __out[#__out + 1] = 0 end; return __out "
+                    + "elseif type(__v) == \"table\" then local __out = {}; for __i = 1, #__v do __out[#__out + 1] = __v[__i] end; return __out "
+                    + "else return {} end end)("
+                    + rendered_args[0]
+                    + ")"
+                )
             if fn_name in self.class_names:
                 return fn_name + ".new(" + ", ".join(rendered_args) + ")"
             return fn_name + "(" + ", ".join(rendered_args) + ")"
@@ -796,6 +1067,12 @@ class LuaNativeEmitter:
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:
                     return owner + "." + attr + "(" + ", ".join(rendered_args) + ")"
+            if attr == "append" and len(rendered_args) == 1:
+                return "table.insert(" + owner + ", " + rendered_args[0] + ")"
+            if attr == "pop":
+                if len(rendered_args) == 0:
+                    return "table.remove(" + owner + ")"
+                return "table.remove(" + owner + ", (" + rendered_args[0] + ") + 1)"
             return owner + ":" + attr + "(" + ", ".join(rendered_args) + ")"
         raise RuntimeError("lang=lua unsupported call target")
 
