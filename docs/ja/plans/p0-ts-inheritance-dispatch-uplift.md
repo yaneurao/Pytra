@@ -27,9 +27,11 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets ts`
 
 分解:
-- [ ] JS 委譲経路で継承ディスパッチ要件を満たす最小修正を導入する。
-- [ ] TS 出力固有の破綻（構文/型）を回帰で固定する。
-- [ ] fixture parity を確認する。
+- [x] JS 委譲経路で継承ディスパッチ要件を満たす最小修正を導入する。
+- [x] TS 出力固有の破綻（構文/型）を回帰で固定する。
+- [x] fixture parity を確認する。
 
 決定ログ:
 - 2026-03-01: TS は JS 修正に追従させつつ専用課題を切り出す方針とした。
+- 2026-03-01: JS 側の `extends/super` 修正を取り込んだ状態で `test_py2ts_smoke.py`（15 tests）を実行し、回帰がないことを確認した。
+- 2026-03-01: `runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets ts --ignore-unstable-stdout` を実行し、fixture parity（1/1 pass）を確認した。
