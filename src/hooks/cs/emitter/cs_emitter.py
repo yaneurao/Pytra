@@ -50,6 +50,7 @@ class CSharpEmitter(CodeEmitter):
         self.current_class_field_types: dict[str, str] = {}
         self.in_method_scope: bool = False
         self.needs_enumerate_helper: bool = False
+        self.needs_dict_str_object_helper: bool = False
         self.current_return_east_type: str = ""
         self.top_function_names: set[str] = set()
 
@@ -420,6 +421,9 @@ class CSharpEmitter(CodeEmitter):
                             val_t = "object"
                         if len(rendered_args) == 0:
                             return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">()"
+                        if key_t == "string" and val_t == "object":
+                            self.needs_dict_str_object_helper = True
+                            return "Program.PytraDictStringObjectFromAny(" + rendered_args[0] + ")"
                         return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">(" + rendered_args[0] + ")"
         return self.render_expr(value_obj)
 
@@ -668,6 +672,7 @@ class CSharpEmitter(CodeEmitter):
         self.scope_stack = [set()]
         self.declared_var_types = {}
         self.needs_enumerate_helper = False
+        self.needs_dict_str_object_helper = False
         self.in_method_scope = False
 
         module = self.doc
@@ -728,10 +733,6 @@ class CSharpEmitter(CodeEmitter):
             self._emit_function(fn, None)
             self.emit("")
 
-        if self.needs_enumerate_helper:
-            self._emit_enumerate_helper()
-            self.emit("")
-
         main_body = list(top_level_stmts) + main_guard_body
         self.emit("public static void Main(string[] args)")
         self.emit("{")
@@ -739,6 +740,13 @@ class CSharpEmitter(CodeEmitter):
         self.emit_scoped_stmt_list(main_body, {"args"})
         self.indent -= 1
         self.emit("}")
+
+        if self.needs_enumerate_helper:
+            self.emit("")
+            self._emit_enumerate_helper()
+        if self.needs_dict_str_object_helper:
+            self.emit("")
+            self._emit_dict_str_object_helper()
 
         self.indent -= 1
         self.emit("}")
@@ -761,6 +769,45 @@ class CSharpEmitter(CodeEmitter):
         self.emit("i += 1;")
         self.indent -= 1
         self.emit("}")
+        self.indent -= 1
+        self.emit("}")
+
+    def _emit_dict_str_object_helper(self) -> None:
+        """object から `Dictionary<string, object>` へ安全に複製する helper。"""
+        self.emit(
+            "public static System.Collections.Generic.Dictionary<string, object> "
+            + "PytraDictStringObjectFromAny(object source)"
+        )
+        self.emit("{")
+        self.indent += 1
+        self.emit("if (source is System.Collections.Generic.Dictionary<string, object> typed)")
+        self.emit("{")
+        self.indent += 1
+        self.emit("return new System.Collections.Generic.Dictionary<string, object>(typed);")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("var outv = new System.Collections.Generic.Dictionary<string, object>();")
+        self.emit("var dictRaw = source as System.Collections.IDictionary;")
+        self.emit("if (dictRaw == null)")
+        self.emit("{")
+        self.indent += 1
+        self.emit("return outv;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("foreach (System.Collections.DictionaryEntry ent in dictRaw)")
+        self.emit("{")
+        self.indent += 1
+        self.emit("string key = System.Convert.ToString(ent.Key);")
+        self.emit("if (key == null || key == \"\")")
+        self.emit("{")
+        self.indent += 1
+        self.emit("continue;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("outv[key] = ent.Value;")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("return outv;")
         self.indent -= 1
         self.emit("}")
 
@@ -1635,6 +1682,8 @@ class CSharpEmitter(CodeEmitter):
         if fn_name_raw == "dict":
             if len(rendered_args) == 0:
                 return "new System.Collections.Generic.Dictionary<object, object>()"
+            self.needs_dict_str_object_helper = True
+            return "Program.PytraDictStringObjectFromAny(" + rendered_args[0] + ")"
         if fn_name_raw == "callable" and len(rendered_args) == 1:
             return "(" + rendered_args[0] + " is System.Delegate)"
         if fn_name_raw == "globals" and len(rendered_args) == 0:

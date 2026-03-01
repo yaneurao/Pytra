@@ -290,6 +290,30 @@ class Child(Base):
         cs = transpile_to_csharp(east)
         self.assertIn("System.Linq.Enumerable.OrderBy(xs, __x => System.Convert.ToString(__x)).ToList()", cs)
 
+    def test_dict_builtin_with_hint_uses_dict_any_helper(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "d", "resolved_type": "dict[str, object]"},
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "dict"},
+                        "args": [{"kind": "Name", "id": "src", "resolved_type": "object"}],
+                        "keywords": [],
+                        "resolved_type": "dict[str, object]",
+                    },
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("Program.PytraDictStringObjectFromAny(src)", cs)
+        self.assertIn("PytraDictStringObjectFromAny(object source)", cs)
+
     def test_string_multiply_is_lowered(self) -> None:
         east = {
             "kind": "Module",
