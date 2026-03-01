@@ -77,7 +77,7 @@ func run_06_julia_parameter_sweep() {
         var cr float64 = (center_cr + (radius_cr * math.Cos(__pytra_float(angle))))
         var ci float64 = (center_ci + (radius_ci * math.Sin(__pytra_float(angle))))
         var phase int64 = ((phase_offset + (i * int64(5))) % int64(255))
-        frames = append(__pytra_as_list(frames), render_frame(width, height, cr, ci, max_iter, phase))
+        frames = append(frames, render_frame(width, height, cr, ci, max_iter, phase))
     }
     __pytra_save_gif(out_path, width, height, frames, julia_palette(), int64(8), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)

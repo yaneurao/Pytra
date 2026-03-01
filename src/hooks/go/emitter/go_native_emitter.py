@@ -1492,16 +1492,24 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
                 attr = _safe_ident(func_any.get("attr"), "")
                 if attr == "append":
-                    owner = _render_expr(func_any.get("value"))
+                    owner_any = func_any.get("value")
+                    owner = _render_expr(owner_any)
+                    owner_go_type = _infer_go_type(owner_any, _type_map(ctx))
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 1:
+                        if owner_go_type == "[]any":
+                            return [indent + owner + " = append(" + owner + ", " + _render_expr(args[0]) + ")"]
                         return [indent + owner + " = append(__pytra_as_list(" + owner + "), " + _render_expr(args[0]) + ")"]
                 if attr == "pop":
-                    owner = _render_expr(func_any.get("value"))
+                    owner_any = func_any.get("value")
+                    owner = _render_expr(owner_any)
+                    owner_go_type = _infer_go_type(owner_any, _type_map(ctx))
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 0:
+                        if owner_go_type == "[]any":
+                            return [indent + owner + " = __pytra_pop_last(" + owner + ")"]
                         return [indent + owner + " = __pytra_pop_last(__pytra_as_list(" + owner + "))"]
         return [indent + _render_expr(value_any)]
 

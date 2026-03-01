@@ -190,7 +190,7 @@ func (self *Parser) skip_newlines() {
 }
 
 func (self *Parser) add_expr(node ExprNodeLike) int64 {
-    self.expr_nodes = append(__pytra_as_list(self.expr_nodes), node)
+    self.expr_nodes = append(self.expr_nodes, node)
     return (__pytra_len(self.expr_nodes) - int64(1))
 }
 
@@ -199,7 +199,7 @@ func (self *Parser) parse_program() []any {
     self.skip_newlines()
     for (__pytra_str(self.peek_kind()) != __pytra_str("EOF")) {
         var stmt StmtNodeLike = self.parse_stmt()
-        stmts = append(__pytra_as_list(stmts), stmt)
+        stmts = append(stmts, stmt)
         self.skip_newlines()
     }
     return __pytra_as_list(stmts)
@@ -311,7 +311,7 @@ func tokenize(lines []any) []any {
             }
             var single_tag int64 = single_char_token_tags.get(ch, int64(0))
             if (single_tag > int64(0)) {
-                tokens = append(__pytra_as_list(tokens), NewToken(__pytra_str(__pytra_get_index(single_char_token_kinds, (single_tag - int64(1)))), ch, i, int64(0)))
+                tokens = append(tokens, NewToken(__pytra_str(__pytra_get_index(single_char_token_kinds, (single_tag - int64(1)))), ch, i, int64(0)))
                 i += int64(1)
                 continue
             }
@@ -321,7 +321,7 @@ func tokenize(lines []any) []any {
                     i += int64(1)
                 }
                 var text string = __pytra_str(__pytra_slice(source, start, i))
-                tokens = append(__pytra_as_list(tokens), NewToken("NUMBER", text, start, __pytra_int(text)))
+                tokens = append(tokens, NewToken("NUMBER", text, start, __pytra_int(text)))
                 continue
             }
             if (__pytra_truthy(__pytra_isalpha(ch)) || (__pytra_str(ch) == __pytra_str("_"))) {
@@ -331,21 +331,21 @@ func tokenize(lines []any) []any {
                 }
                 var text string = __pytra_str(__pytra_slice(source, start, i))
                 if (__pytra_str(text) == __pytra_str("let")) {
-                    tokens = append(__pytra_as_list(tokens), NewToken("LET", text, start, int64(0)))
+                    tokens = append(tokens, NewToken("LET", text, start, int64(0)))
                 } else {
                     if (__pytra_str(text) == __pytra_str("print")) {
-                        tokens = append(__pytra_as_list(tokens), NewToken("PRINT", text, start, int64(0)))
+                        tokens = append(tokens, NewToken("PRINT", text, start, int64(0)))
                     } else {
-                        tokens = append(__pytra_as_list(tokens), NewToken("IDENT", text, start, int64(0)))
+                        tokens = append(tokens, NewToken("IDENT", text, start, int64(0)))
                     }
                 }
                 continue
             }
             panic(__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str("tokenize error at line=") + __pytra_str(__pytra_str(line_index)))) + __pytra_str(" pos="))) + __pytra_str(__pytra_str(i)))) + __pytra_str(" ch="))) + __pytra_str(ch))))
         }
-        tokens = append(__pytra_as_list(tokens), NewToken("NEWLINE", "", n, int64(0)))
+        tokens = append(tokens, NewToken("NEWLINE", "", n, int64(0)))
     }
-    tokens = append(__pytra_as_list(tokens), NewToken("EOF", "", __pytra_len(lines), int64(0)))
+    tokens = append(tokens, NewToken("EOF", "", __pytra_len(lines), int64(0)))
     return __pytra_as_list(tokens)
 }
 
@@ -425,29 +425,29 @@ func execute(stmts []any, expr_nodes []any, trace bool) int64 {
 func build_benchmark_source(var_count int64, loops int64) []any {
     var lines []any = __pytra_as_list([]any{})
     for i := int64(0); i < var_count; i += 1 {
-        lines = append(__pytra_as_list(lines), (__pytra_str((__pytra_str((__pytra_str("let v") + __pytra_str(__pytra_str(i)))) + __pytra_str(" = "))) + __pytra_str(__pytra_str((i + int64(1))))))
+        lines = append(lines, (__pytra_str((__pytra_str((__pytra_str("let v") + __pytra_str(__pytra_str(i)))) + __pytra_str(" = "))) + __pytra_str(__pytra_str((i + int64(1))))))
     }
     for i := int64(0); i < loops; i += 1 {
         var x int64 = (i % var_count)
         var y int64 = ((i + int64(3)) % var_count)
         var c1 int64 = ((i % int64(7)) + int64(1))
         var c2 int64 = ((i % int64(11)) + int64(2))
-        lines = append(__pytra_as_list(lines), (__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str("v") + __pytra_str(__pytra_str(x)))) + __pytra_str(" = (v"))) + __pytra_str(__pytra_str(x)))) + __pytra_str(" * "))) + __pytra_str(__pytra_str(c1)))) + __pytra_str(" + v"))) + __pytra_str(__pytra_str(y)))) + __pytra_str(" + 10000) / "))) + __pytra_str(__pytra_str(c2))))
+        lines = append(lines, (__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str((__pytra_str("v") + __pytra_str(__pytra_str(x)))) + __pytra_str(" = (v"))) + __pytra_str(__pytra_str(x)))) + __pytra_str(" * "))) + __pytra_str(__pytra_str(c1)))) + __pytra_str(" + v"))) + __pytra_str(__pytra_str(y)))) + __pytra_str(" + 10000) / "))) + __pytra_str(__pytra_str(c2))))
         if ((i % int64(97)) == int64(0)) {
-            lines = append(__pytra_as_list(lines), (__pytra_str("print v") + __pytra_str(__pytra_str(x))))
+            lines = append(lines, (__pytra_str("print v") + __pytra_str(__pytra_str(x))))
         }
     }
-    lines = append(__pytra_as_list(lines), "print (v0 + v1 + v2 + v3)")
+    lines = append(lines, "print (v0 + v1 + v2 + v3)")
     return __pytra_as_list(lines)
 }
 
 func run_demo() {
     var demo_lines []any = __pytra_as_list([]any{})
-    demo_lines = append(__pytra_as_list(demo_lines), "let a = 10")
-    demo_lines = append(__pytra_as_list(demo_lines), "let b = 3")
-    demo_lines = append(__pytra_as_list(demo_lines), "a = (a + b) * 2")
-    demo_lines = append(__pytra_as_list(demo_lines), "print a")
-    demo_lines = append(__pytra_as_list(demo_lines), "print a / b")
+    demo_lines = append(demo_lines, "let a = 10")
+    demo_lines = append(demo_lines, "let b = 3")
+    demo_lines = append(demo_lines, "a = (a + b) * 2")
+    demo_lines = append(demo_lines, "print a")
+    demo_lines = append(demo_lines, "print a / b")
     var tokens []any = __pytra_as_list(tokenize(demo_lines))
     var parser ParserLike = NewParser(tokens)
     var stmts []any = __pytra_as_list(parser.parse_program())

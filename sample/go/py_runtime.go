@@ -695,7 +695,7 @@ func pyWriteRGBPNG(path any, width any, height any, pixels any) {
     }
 
     var zbuf bytes.Buffer
-    zw, _ := zlib.NewWriterLevel(&zbuf, 6)
+    zw, _ := zlib.NewWriterLevel(&zbuf, zlib.NoCompression)
     _, _ = zw.Write(scan)
     _ = zw.Close()
     idat := zbuf.Bytes()

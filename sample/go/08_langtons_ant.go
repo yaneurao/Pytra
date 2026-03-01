@@ -48,7 +48,7 @@ func run_08_langtons_ant() {
             }
         }
         if ((i % capture_every) == int64(0)) {
-            frames = append(__pytra_as_list(frames), capture(grid, w, h))
+            frames = append(frames, capture(grid, w, h))
         }
     }
     __pytra_save_gif(out_path, w, h, frames, __pytra_grayscale_palette(), int64(5), int64(0))

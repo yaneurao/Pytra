@@ -13,9 +13,9 @@ func palette() []any {
         var r int64 = __pytra_min(int64(255), __pytra_int((float64(int64(20)) + (float64(i) * float64(0.9)))))
         var g int64 = __pytra_min(int64(255), __pytra_int((float64(int64(10)) + (float64(i) * float64(0.7)))))
         var b int64 = __pytra_min(int64(255), (int64(30) + i))
-        p = append(__pytra_as_list(p), r)
-        p = append(__pytra_as_list(p), g)
-        p = append(__pytra_as_list(p), b)
+        p = append(p, r)
+        p = append(p, g)
+        p = append(p, b)
     }
     return __pytra_as_list(__pytra_bytes(p))
 }
@@ -59,7 +59,7 @@ func run_14_raymarching_light_cycle() {
                 __pytra_set_index(frame, (row_base + x), scene(px, py, light_x, light_y))
             }
         }
-        frames = append(__pytra_as_list(frames), __pytra_bytes(frame))
+        frames = append(frames, __pytra_bytes(frame))
     }
     __pytra_save_gif(out_path, w, h, frames, palette(), int64(3), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)

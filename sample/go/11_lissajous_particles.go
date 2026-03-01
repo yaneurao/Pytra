@@ -13,9 +13,9 @@ func color_palette() []any {
         var r int64 = i
         var g int64 = ((i * int64(3)) % int64(256))
         var b int64 = (int64(255) - i)
-        p = append(__pytra_as_list(p), r)
-        p = append(__pytra_as_list(p), g)
-        p = append(__pytra_as_list(p), b)
+        p = append(p, r)
+        p = append(p, g)
+        p = append(p, b)
     }
     return __pytra_as_list(__pytra_bytes(p))
 }
@@ -54,7 +54,7 @@ func run_11_lissajous_particles() {
                 }
             }
         }
-        frames = append(__pytra_as_list(frames), __pytra_bytes(frame))
+        frames = append(frames, __pytra_bytes(frame))
     }
     __pytra_save_gif(out_path, w, h, frames, color_palette(), int64(3), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)

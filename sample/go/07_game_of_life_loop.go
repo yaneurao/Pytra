@@ -20,16 +20,16 @@ func next_state(grid []any, w int64, h int64) []any {
             }
             var alive int64 = __pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(grid, y)), x))
             if ((alive == int64(1)) && ((cnt == int64(2)) || (cnt == int64(3)))) {
-                row = append(__pytra_as_list(row), int64(1))
+                row = append(row, int64(1))
             } else {
                 if ((alive == int64(0)) && (cnt == int64(3))) {
-                    row = append(__pytra_as_list(row), int64(1))
+                    row = append(row, int64(1))
                 } else {
-                    row = append(__pytra_as_list(row), int64(0))
+                    row = append(row, int64(0))
                 }
             }
         }
-        nxt = append(__pytra_as_list(nxt), row)
+        nxt = append(nxt, row)
     }
     return __pytra_as_list(nxt)
 }
@@ -113,7 +113,7 @@ func run_07_game_of_life_loop() {
     }
     var frames []any = __pytra_as_list([]any{})
     for __loop_2 := int64(0); __loop_2 < steps; __loop_2 += 1 {
-        frames = append(__pytra_as_list(frames), render(grid, w, h, cell))
+        frames = append(frames, render(grid, w, h, cell))
         grid = __pytra_as_list(next_state(grid, w, h))
     }
     __pytra_save_gif(out_path, (w * cell), (h * cell), frames, __pytra_grayscale_palette(), int64(4), int64(0))

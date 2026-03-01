@@ -359,7 +359,7 @@ func run_16_glass_sculpture_chaos() {
     var start float64 = __pytra_perf_counter()
     var frames []any = __pytra_as_list([]any{})
     for i := int64(0); i < frames_n; i += 1 {
-        frames = append(__pytra_as_list(frames), render_frame(width, height, i, frames_n))
+        frames = append(frames, render_frame(width, height, i, frames_n))
     }
     __pytra_save_gif(out_path, width, height, frames, palette_332(), int64(6), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)

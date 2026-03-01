@@ -156,9 +156,9 @@ func render(width int64, height int64, aa int64) []any {
                 }
             }
             var samples int64 = (aa * aa)
-            pixels = append(__pytra_as_list(pixels), __pytra_int((ar / samples)))
-            pixels = append(__pytra_as_list(pixels), __pytra_int((ag / samples)))
-            pixels = append(__pytra_as_list(pixels), __pytra_int((ab / samples)))
+            pixels = append(pixels, __pytra_int((ar / samples)))
+            pixels = append(pixels, __pytra_int((ag / samples)))
+            pixels = append(pixels, __pytra_int((ab / samples)))
         }
     }
     return __pytra_as_list(pixels)

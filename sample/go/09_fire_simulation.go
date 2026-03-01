@@ -24,9 +24,9 @@ func fire_palette() []any {
                 b = ((i - int64(170)) * int64(3))
             }
         }
-        p = append(__pytra_as_list(p), r)
-        p = append(__pytra_as_list(p), g)
-        p = append(__pytra_as_list(p), b)
+        p = append(p, r)
+        p = append(p, g)
+        p = append(p, b)
     }
     return __pytra_as_list(__pytra_bytes(p))
 }
@@ -63,7 +63,7 @@ func run_09_fire_simulation() {
                 __pytra_set_index(frame, (row_base + xx), __pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(heat, yy)), xx)))
             }
         }
-        frames = append(__pytra_as_list(frames), __pytra_bytes(frame))
+        frames = append(frames, __pytra_bytes(frame))
     }
     __pytra_save_gif(out_path, w, h, frames, fire_palette(), int64(4), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)

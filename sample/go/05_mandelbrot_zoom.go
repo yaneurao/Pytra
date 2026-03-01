@@ -44,7 +44,7 @@ func run_05_mandelbrot_zoom() {
     var frames []any = __pytra_as_list([]any{})
     var scale float64 = base_scale
     for __loop_0 := int64(0); __loop_0 < frame_count; __loop_0 += 1 {
-        frames = append(__pytra_as_list(frames), render_frame(width, height, center_x, center_y, scale, max_iter))
+        frames = append(frames, render_frame(width, height, center_x, center_y, scale, max_iter))
         scale *= zoom_per_frame
     }
     __pytra_save_gif(out_path, width, height, frames, __pytra_grayscale_palette(), int64(5), int64(0))

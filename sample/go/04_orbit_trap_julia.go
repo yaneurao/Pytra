@@ -76,9 +76,9 @@ func render_orbit_trap_julia(width int64, height int64, max_iter int64, cx float
                     b = int64(255)
                 }
             }
-            pixels = append(__pytra_as_list(pixels), r)
-            pixels = append(__pytra_as_list(pixels), g)
-            pixels = append(__pytra_as_list(pixels), b)
+            pixels = append(pixels, r)
+            pixels = append(pixels, g)
+            pixels = append(pixels, b)
         }
     }
     return __pytra_as_list(pixels)

@@ -34,7 +34,7 @@ func run_12_sort_visualizer() {
     var start float64 = __pytra_perf_counter()
     var values []any = __pytra_as_list([]any{})
     for i := int64(0); i < n; i += 1 {
-        values = append(__pytra_as_list(values), (((i * int64(37)) + int64(19)) % n))
+        values = append(values, (((i * int64(37)) + int64(19)) % n))
     }
     var frames []any = __pytra_as_list([]any{render(values, w, h)})
     var frame_stride int64 = int64(16)
@@ -49,7 +49,7 @@ func run_12_sort_visualizer() {
                 swapped = __pytra_truthy(true)
             }
             if ((op % frame_stride) == int64(0)) {
-                frames = append(__pytra_as_list(frames), render(values, w, h))
+                frames = append(frames, render(values, w, h))
             }
             op += int64(1)
         }

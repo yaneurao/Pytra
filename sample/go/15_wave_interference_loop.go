@@ -33,7 +33,7 @@ func run_15_wave_interference_loop() {
                 __pytra_set_index(frame, (row_base + x), c)
             }
         }
-        frames = append(__pytra_as_list(frames), __pytra_bytes(frame))
+        frames = append(frames, __pytra_bytes(frame))
     }
     __pytra_save_gif(out_path, w, h, frames, __pytra_grayscale_palette(), int64(4), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)

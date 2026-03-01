@@ -51,22 +51,22 @@ func run_13_maze_generation_steps() {
             var ny int64 = (y + dy)
             if ((__pytra_int(nx) >= int64(1)) && (__pytra_int(nx) < (cell_w - int64(1))) && (__pytra_int(ny) >= int64(1)) && (__pytra_int(ny) < (cell_h - int64(1))) && (__pytra_int(__pytra_get_index(__pytra_as_list(__pytra_get_index(grid, ny)), nx)) == int64(1))) {
                 if (__pytra_int(dx) == int64(2)) {
-                    candidates = append(__pytra_as_list(candidates), []any{nx, ny, (x + int64(1)), y})
+                    candidates = append(candidates, []any{nx, ny, (x + int64(1)), y})
                 } else {
                     if (__pytra_int(dx) == (-int64(2))) {
-                        candidates = append(__pytra_as_list(candidates), []any{nx, ny, (x - int64(1)), y})
+                        candidates = append(candidates, []any{nx, ny, (x - int64(1)), y})
                     } else {
                         if (__pytra_int(dy) == int64(2)) {
-                            candidates = append(__pytra_as_list(candidates), []any{nx, ny, x, (y + int64(1))})
+                            candidates = append(candidates, []any{nx, ny, x, (y + int64(1))})
                         } else {
-                            candidates = append(__pytra_as_list(candidates), []any{nx, ny, x, (y - int64(1))})
+                            candidates = append(candidates, []any{nx, ny, x, (y - int64(1))})
                         }
                     }
                 }
             }
         }
         if (__pytra_len(candidates) == int64(0)) {
-            stack = __pytra_pop_last(__pytra_as_list(stack))
+            stack = __pytra_pop_last(stack)
         } else {
             var sel []any = __pytra_as_list(__pytra_as_list(__pytra_get_index(candidates, (__pytra_int((((x * int64(17)) + (y * int64(29))) + (__pytra_len(stack) * int64(13)))) % __pytra_len(candidates)))))
             __tuple_2 := __pytra_as_list(sel)
@@ -80,14 +80,14 @@ func run_13_maze_generation_steps() {
             _ = wy
             __pytra_set_index(__pytra_as_list(__pytra_get_index(grid, wy)), wx, int64(0))
             __pytra_set_index(__pytra_as_list(__pytra_get_index(grid, ny)), nx, int64(0))
-            stack = append(__pytra_as_list(stack), []any{nx, ny})
+            stack = append(stack, []any{nx, ny})
         }
         if ((step % capture_every) == int64(0)) {
-            frames = append(__pytra_as_list(frames), capture(grid, cell_w, cell_h, scale))
+            frames = append(frames, capture(grid, cell_w, cell_h, scale))
         }
         step += int64(1)
     }
-    frames = append(__pytra_as_list(frames), capture(grid, cell_w, cell_h, scale))
+    frames = append(frames, capture(grid, cell_w, cell_h, scale))
     __pytra_save_gif(out_path, (cell_w * scale), (cell_h * scale), frames, __pytra_grayscale_palette(), int64(4), int64(0))
     var elapsed float64 = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)
