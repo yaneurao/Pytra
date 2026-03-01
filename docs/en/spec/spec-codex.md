@@ -102,7 +102,7 @@ This document defines the operational rules Codex follows while working.
 ## 8. External Release Version Operations
 
 - The source of truth for external release version is `docs/VERSION`, using `MAJOR.MINOR.PATCH` (SemVer).
-- The current external release version is `0.4.0`.
+- The current external release version is `0.5.0`.
 - `PATCH` updates may be performed by Codex.
 - `MAJOR` / `MINOR` updates may be performed only under explicit user instruction.
 - `src/pytra/compiler/transpiler_versions.json` is an internal version for regeneration triggers and is managed separately from the external release version (`docs/VERSION`).

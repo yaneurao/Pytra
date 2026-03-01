@@ -1,5 +1,9 @@
 # v0 Release Series (Past News)
 
+## 2026-03-01 | v0.5.0 Released
+
+> Version 0.5.0 was released, adding Lua as a supported target language.
+
 ## 2026-02-28 | v0.4.0 Released
 
 > Version 0.4.0 was released, adding Ruby as a supported target language.
