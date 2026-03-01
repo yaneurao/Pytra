@@ -95,7 +95,7 @@
 文脈: [docs/ja/plans/p1-east2-common-ir-depythonization.md](../plans/p1-east2-common-ir-depythonization.md)
 
 1. [ ] [ID: P1-EAST2-COMMON-IR-01] EAST2 を最初の共通 IR として再定義し、Python 固有契約を frontend 境界へ隔離する。
-2. [ ] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 lower の Python 依存箇所（`py_*` runtime call、builtin 名直参照）を棚卸しする。
+2. [x] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 lower の Python 依存箇所（`py_*` runtime call、builtin 名直参照）を棚卸しする。
 3. [ ] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 仕様（ノード/演算/メタ/診断/fail-closed）を文書化する。
 4. [ ] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移し、EAST2 契約から切り離す。
 5. [ ] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ再配線し、Python 名称分岐を縮小・除去する。

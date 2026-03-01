@@ -41,13 +41,51 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、「EAST2 を最初の共通 IR として運用するための Python 依存排除」を P1 で分割着手する方針を確定した。
+- 2026-03-01: `S1-01` として `core.py` / `east2_to_east3_lowering.py` の Python 依存契約（`py_*` runtime call、builtin 名直参照、`py_tid_*` 互換分岐）を棚卸しし、S2 実装入力を固定した。
 
 ## 分解
 
-- [ ] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 に残る Python 依存契約（`py_*` runtime call、builtin 名直参照、型メタ前提）を棚卸しする。
+- [x] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 に残る Python 依存契約（`py_*` runtime call、builtin 名直参照、型メタ前提）を棚卸しする。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 契約（ノード種別、演算子、メタ情報、診断と fail-closed 条件）を仕様化する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移管し、EAST2 契約から分離する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ更新し、Python 名称分岐を縮小・除去する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存入力非退行のための移行ブリッジ（暫定互換）を導入し、段階移行できる状態にする。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S3-01] EAST2 への Python 依存再混入を検知する unit 回帰を追加する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S3-02] transpile/smoke/parity 代表ケースで非退行を確認し、決定ログへ記録する。
+
+## S1-01 棚卸し結果（2026-03-01）
+
+### `core.py`（frontend 境界）
+
+- `src/pytra/compiler/east_parts/core.py:2455-2637`
+  - `print/len/range/str/int/float/bool/min/max/open/iter/next/reversed/enumerate/any/all/ord/chr/list/set/dict/bytes/bytearray` を `BuiltinCall + runtime_call` へ直接 lower。
+  - `runtime_call` が `py_*`（例: `py_len`, `py_to_string`, `py_iter_or_raise`）へ固定され、Python 組み込み識別子に強く依存。
+- `src/pytra/compiler/east_parts/core.py:2528-2533,2642-2646`
+  - `lookup_stdlib_*` により stdlib 関数/メソッドを runtime 名へ直接解決（frontend で言語固有契約を保持）。
+- `src/pytra/compiler/east_parts/core.py:3674-3700`
+  - `any/all(generator)` 正規化で `runtime_call=py_any/py_all` を直出し。
+- `src/pytra/compiler/east_parts/core.py:2940`
+  - `Path` を直接型名として扱う分岐が残存（`Path` 固有契約の混入）。
+
+### `east2_to_east3_lowering.py`（EAST2->EAST3）
+
+- `src/pytra/compiler/east_parts/east2_to_east3_lowering.py:142-151`
+  - `_builtin_type_id_symbol` が `None/bool/int/float/str/list/dict/set/object` を固定テーブルで解決。
+- `src/pytra/compiler/east_parts/east2_to_east3_lowering.py:351-368`
+  - `isinstance/issubclass` と `py_isinstance/py_tid_*` 系を関数名直参照で分岐。
+- `src/pytra/compiler/east_parts/east2_to_east3_lowering.py:620-657`
+  - `runtime_call` 文字列（`py_to_bool`, `py_len`, `py_to_string`, `py_iter_or_raise`, `py_next_or_stop`）に依存して Obj* 境界ノードへ lower。
+- `src/pytra/compiler/east_parts/east2_to_east3_lowering.py:664-687`
+  - `builtin_name`（`bool/len/str`）の stage2 互換フォールバックが残存。
+- `src/pytra/compiler/east_parts/east2_to_east3_lowering.py:692-708`
+  - `iter/next` を関数名直参照で Obj* 境界へ lower。
+
+### `east2.py`
+
+- `src/pytra/compiler/east_parts/east2.py` は stage 正規化のみで Python 固有契約は確認されず。
+
+### S2 への入力（優先順）
+
+1. `core.py` の `builtin_name/runtime_call` 直書き分岐を frontend adapter 化し、EAST2 には中立 opcode/semantic tag のみ渡す。
+2. `east2_to_east3_lowering.py` の `py_*` / `builtin_name` フォールバックを段階撤去し、中立タグ解釈へ置換する。
+3. `isinstance/issubclass` など名前直参照分岐を「型述語ノード契約」に寄せ、関数名依存を境界外へ隔離する。
