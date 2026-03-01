@@ -601,9 +601,63 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(func_any.get("id"), "")
 
 
+def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: Any) -> str:
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if call_name == "write_rgb_png":
+        if len(keywords) != 0:
+            raise RuntimeError("go native emitter: write_rgb_png keyword args are unsupported")
+        if len(args) != 4:
+            raise RuntimeError("go native emitter: write_rgb_png expects 4 positional args")
+        rendered_png: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_png.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_write_rgb_png(" + ", ".join(rendered_png) + ")"
+
+    if call_name == "save_gif":
+        if len(args) < 5 or len(args) > 7:
+            raise RuntimeError("go native emitter: save_gif expects 5-7 positional args")
+        rendered_gif: list[str] = []
+        i = 0
+        while i < 5:
+            rendered_gif.append(_render_expr(args[i]))
+            i += 1
+        delay_expr = _render_expr(args[5]) if len(args) >= 6 else "int64(4)"
+        loop_expr = _render_expr(args[6]) if len(args) >= 7 else "int64(0)"
+        i = 0
+        while i < len(keywords):
+            kw_any = keywords[i]
+            if not isinstance(kw_any, dict):
+                i += 1
+                continue
+            kw_name_any = kw_any.get("arg")
+            if not isinstance(kw_name_any, str):
+                raise RuntimeError("go native emitter: save_gif keyword must be a name")
+            kw_name = _safe_ident(kw_name_any, "")
+            kw_val = _render_expr(kw_any.get("value"))
+            if kw_name == "delay_cs":
+                if len(args) >= 6:
+                    raise RuntimeError("go native emitter: save_gif duplicate delay_cs argument")
+                delay_expr = kw_val
+            elif kw_name == "loop":
+                if len(args) >= 7:
+                    raise RuntimeError("go native emitter: save_gif duplicate loop argument")
+                loop_expr = kw_val
+            else:
+                raise RuntimeError("go native emitter: unsupported save_gif keyword: " + kw_name)
+            i += 1
+        rendered_gif.append(delay_expr)
+        rendered_gif.append(loop_expr)
+        return "__pytra_save_gif(" + ", ".join(rendered_gif) + ")"
+
+    raise RuntimeError("go native emitter: unsupported image runtime call: " + call_name)
+
+
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
+    keywords_any = expr.get("keywords")
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
@@ -666,14 +720,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return cur
     if callee_name in {"save_gif", "write_rgb_png"}:
-        rendered_noop_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_noop_args.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        return _render_image_runtime_call(callee_name, args, keywords_any)
     if callee_name == "grayscale_palette":
-        return "[]any{}"
+        if len(args) != 0:
+            raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
+        return "__pytra_grayscale_palette()"
     if callee_name == "print":
         rendered_args: list[str] = []
         i = 0
@@ -720,12 +771,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
         owner_expr = _render_expr(owner_any)
         if attr_name in {"write_rgb_png", "save_gif"}:
-            rendered_noop_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_noop_args.append(_render_expr(args[i]))
-                i += 1
-            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+            return _render_image_runtime_call(attr_name, args, keywords_any)
+        if attr_name == "grayscale_palette":
+            if len(args) != 0:
+                raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
+            return "__pytra_grayscale_palette()"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):

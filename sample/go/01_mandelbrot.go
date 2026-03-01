@@ -68,7 +68,7 @@ func run_mandelbrot() {
     var out_path string = __pytra_str("sample/out/01_mandelbrot.png")
     var start float64 = __pytra_perf_counter()
     var pixels []any = __pytra_as_list(render_mandelbrot(width, height, max_iter, (-float64(2.2)), float64(1.0), (-float64(1.2)), float64(1.2)))
-    __pytra_noop(out_path, width, height, pixels)
+    __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed float64 = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)

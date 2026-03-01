@@ -93,6 +93,20 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("for i := int64(0); i < max_iter; i += 1 {", go)
         self.assertNotIn(">= 0 && i <", go)
 
+    def test_image_writers_use_native_runtime_hooks_not_noop(self) -> None:
+        sample_png = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east_png = load_east(sample_png, parser_backend="self_hosted")
+        go_png = transpile_to_go_native(east_png)
+        self.assertIn("__pytra_write_rgb_png(out_path, width, height, pixels)", go_png)
+        self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", go_png)
+
+        sample_gif = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
+        east_gif = load_east(sample_gif, parser_backend="self_hosted")
+        go_gif = transpile_to_go_native(east_gif)
+        self.assertIn("__pytra_grayscale_palette()", go_gif)
+        self.assertIn("__pytra_save_gif(", go_gif)
+        self.assertNotIn("__pytra_noop(out_path, width, height, frames", go_gif)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
