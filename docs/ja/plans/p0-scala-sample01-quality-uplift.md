@@ -45,7 +45,7 @@
 - [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-01] 数値演算出力の同型 cast 連鎖を削減し、typed 経路を優先する。
 - [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-02] `range(stop)` / `range(start, stop, 1)` を canonical loop へ lower する fastpath を追加する。
 - [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-03] `pixels` append ホットパスで `mutable.ArrayBuffer[Any]` typed 経路を優先し、再ラップを削減する。
-- [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-04] runtime/helper 埋め込みの縮退方針（外出しまたは最小埋込）を実装し、`sample/01` の見通しを改善する。
+- [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-04] runtime/helper 埋め込みの縮退方針（外出しまたは最小埋込）を実装し、`sample/01` の見通しを改善する。
 - [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` 差分を固定する。
 - [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-02] `sample/scala` 再生成 + smoke/parity を実行して非退行を確認する。
 
@@ -83,3 +83,4 @@ S1 優先順（可読性インパクト × 実装難易度）:
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-03] `append` 文で typed local（`mutable.ArrayBuffer[Any]`）を検出した場合、`__pytra_as_list` 再ラップなしで `pixels.append(...)` を直接出力する fastpath を追加した。
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-01] `test_py2scala_smoke.py` に `test_sample_01_quality_fastpaths_reduce_redundant_wrappers` を追加し、cast/loop/append の断片を回帰固定した。
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-02] `sample/py/*.py -> sample/scala/*.scala` を全件再生成し、`test_py2scala_smoke`（17件）と `runtime_parity_check --all-samples --targets scala`（18/18 pass）を確認した。`tools/regenerate_samples.py --langs scala` は未対応（`unknown language(s): scala`）のため別 P0 で継続管理。
+- 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-04] runtime helper を「全埋め込み」から「生成コードで実際に参照される helper のみを依存閉包で埋め込む」方式へ変更した。`sample/scala/01` は 703 行 -> 310 行へ縮小し、`__pytra_save_gif` など未使用 helper の混入を解消した。smoke（17件）/parity（18件）ともに pass。

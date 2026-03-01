@@ -2703,6 +2703,97 @@ def _emit_runtime_helpers() -> list[str]:
     ]
 
 
+def _extract_pytra_refs(text: str) -> set[str]:
+    out: set[str] = set()
+    marker = "__pytra_"
+    i = 0
+    while True:
+        pos = text.find(marker, i)
+        if pos < 0:
+            break
+        j = pos + len(marker)
+        while j < len(text):
+            ch = text[j]
+            if ch.isalnum() or ch == "_":
+                j += 1
+                continue
+            break
+        out.add(text[pos:j])
+        i = j
+    return out
+
+
+def _runtime_helper_blocks() -> tuple[list[str], dict[str, list[str]]]:
+    raw_lines = _emit_runtime_helpers()
+    order: list[str] = []
+    blocks: dict[str, list[str]] = {}
+    current_name = ""
+    current_lines: list[str] = []
+    i = 0
+    while i < len(raw_lines):
+        line = raw_lines[i]
+        if line.startswith("def __pytra_"):
+            if current_name != "":
+                while len(current_lines) > 0 and current_lines[-1] == "":
+                    current_lines.pop()
+                blocks[current_name] = current_lines
+            header = line[4:]
+            fn_name = header.split("(", 1)[0].strip()
+            current_name = fn_name
+            order.append(fn_name)
+            current_lines = [line]
+        elif current_name != "":
+            current_lines.append(line)
+        i += 1
+    if current_name != "":
+        while len(current_lines) > 0 and current_lines[-1] == "":
+            current_lines.pop()
+        blocks[current_name] = current_lines
+    return order, blocks
+
+
+def _emit_runtime_helpers_minimal(program_lines: list[str]) -> list[str]:
+    order, blocks = _runtime_helper_blocks()
+    needed: set[str] = set()
+
+    i = 0
+    while i < len(program_lines):
+        refs = _extract_pytra_refs(program_lines[i])
+        for ref in refs:
+            if ref in blocks:
+                needed.add(ref)
+        i += 1
+
+    queue: list[str] = list(needed)
+    while len(queue) > 0:
+        name = queue.pop()
+        block = blocks.get(name)
+        if not isinstance(block, list):
+            continue
+        j = 0
+        while j < len(block):
+            refs = _extract_pytra_refs(block[j])
+            for ref in refs:
+                if ref in blocks and ref not in needed:
+                    needed.add(ref)
+                    queue.append(ref)
+            j += 1
+
+    out: list[str] = []
+    i = 0
+    while i < len(order):
+        name = order[i]
+        if name in needed:
+            block = blocks.get(name)
+            if isinstance(block, list):
+                out.extend(block)
+                out.append("")
+        i += 1
+    while len(out) > 0 and out[-1] == "":
+        out.pop()
+    return out
+
+
 def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
     """Emit Scala 3 native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
@@ -2773,7 +2864,7 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
     if len(module_comments) > 0:
         lines.extend(module_comments)
         lines.append("")
-    lines.extend(_emit_runtime_helpers())
+    runtime_insert_idx = len(lines)
 
     i = 0
     while i < len(classes):
@@ -2855,4 +2946,7 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
             lines.append("    _case_main()")
     lines.append("}")
     lines.append("")
+    runtime_lines = _emit_runtime_helpers_minimal(lines[runtime_insert_idx:])
+    if len(runtime_lines) > 0:
+        lines[runtime_insert_idx:runtime_insert_idx] = runtime_lines + [""]
     return "\n".join(lines)
