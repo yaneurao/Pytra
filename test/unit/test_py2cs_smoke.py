@@ -72,6 +72,8 @@ class Child(Base):
     def __init__(self):
         self.names: set[str] = set(["a"])
         self.mapping: dict[str, str] = {}
+        self.lines: list[str] = []
+        self.scopes: list[set[str]] = [set()]
 """
         with tempfile.TemporaryDirectory() as td:
             case = Path(td) / "attr_annassign.py"
@@ -80,6 +82,11 @@ class Child(Base):
             cs = transpile_to_csharp(east)
         self.assertIn("this.names = new System.Collections.Generic.HashSet<string>(", cs)
         self.assertIn("this.mapping = new System.Collections.Generic.Dictionary<string, string>();", cs)
+        self.assertIn("this.lines = new System.Collections.Generic.List<string>();", cs)
+        self.assertIn(
+            "this.scopes = new System.Collections.Generic.List<System.Collections.Generic.HashSet<string>> { new System.Collections.Generic.HashSet<string>() };",
+            cs,
+        )
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

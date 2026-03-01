@@ -315,7 +315,7 @@ class CSharpEmitter(CodeEmitter):
             return "void"
         return t
 
-    def _render_list_literal_with_elem_type(self, expr_d: dict[str, Any], elem_t: str) -> str:
+    def _render_list_literal_with_elem_type(self, expr_d: dict[str, Any], elem_t: str, elem_hint_east: str = "") -> str:
         if elem_t == "" or elem_t == "unknown":
             elem_t = "object"
         elts = self.any_to_list(expr_d.get("elts"))
@@ -325,16 +325,21 @@ class CSharpEmitter(CodeEmitter):
             return "new System.Collections.Generic.List<" + elem_t + ">()"
         rendered: list[str] = []
         for elt in elts:
-            rendered.append(self.render_expr(elt))
+            if elem_hint_east != "":
+                rendered.append(self._render_expr_with_type_hint(elt, elem_hint_east))
+            else:
+                rendered.append(self.render_expr(elt))
         return "new System.Collections.Generic.List<" + elem_t + "> { " + ", ".join(rendered) + " }"
 
     def _typed_list_literal(self, expr_d: dict[str, Any]) -> str:
         """List リテラルを C# 式へ描画する。"""
         list_t = self.get_expr_type(expr_d)
         elem_t = "object"
+        elem_hint_east = ""
         if list_t.startswith("list[") and list_t.endswith("]"):
-            elem_t = self._cs_type(list_t[5:-1].strip())
-        return self._render_list_literal_with_elem_type(expr_d, elem_t)
+            elem_hint_east = list_t[5:-1].strip()
+            elem_t = self._cs_type(elem_hint_east)
+        return self._render_list_literal_with_elem_type(expr_d, elem_t, elem_hint_east)
 
     def _render_dict_literal_with_types(self, expr_d: dict[str, Any], key_t: str, val_t: str) -> str:
         if key_t == "" or key_t == "unknown":
@@ -458,8 +463,9 @@ class CSharpEmitter(CodeEmitter):
         kind = self.any_dict_get_str(node, "kind", "")
         hint = self.normalize_type_name(east_type_hint)
         if kind == "List" and hint.startswith("list[") and hint.endswith("]"):
-            elem_t = self._cs_type(hint[5:-1].strip())
-            return self._render_list_literal_with_elem_type(node, elem_t)
+            elem_hint_east = hint[5:-1].strip()
+            elem_t = self._cs_type(elem_hint_east)
+            return self._render_list_literal_with_elem_type(node, elem_t, elem_hint_east)
         if kind == "Dict" and hint.startswith("dict[") and hint.endswith("]"):
             parts = self.split_generic(hint[5:-1].strip())
             if len(parts) == 2:
@@ -746,8 +752,8 @@ class CSharpEmitter(CodeEmitter):
 
     def transpile(self) -> str:
         """モジュール全体を C# ソースへ変換する。"""
-        self.lines = []
-        self.scope_stack = [set()]
+        self.lines: list[str] = []
+        self.scope_stack: list[set[str]] = [set()]
         self.declared_var_types = {}
         self.needs_enumerate_helper = False
         self.needs_dict_str_object_helper = False
