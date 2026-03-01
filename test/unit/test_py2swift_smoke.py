@@ -59,7 +59,7 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         swift = transpile_to_swift_native(east)
         self.assertIn("override func speak() -> String {", swift)
-        self.assertIn('return ("loud-" + super.speak())', swift)
+        self.assertIn('return __pytra_str("loud-" + super.speak())', swift)
         self.assertNotIn("super().speak()", swift)
 
     def test_module_leading_comments_are_emitted(self) -> None:
@@ -68,6 +68,21 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         swift = transpile_to_swift_native(east)
         assert_no_generated_comments(self, swift)
         assert_sample01_module_comments(self, swift, prefix="//")
+
+    def test_sample_01_quality_fastpaths_reduce_redundant_wrappers(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        self.assertIn("__pytra_write_rgb_png(out_path, width, height, pixels)", swift)
+        self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", swift)
+        self.assertNotIn("__pytra_float(__pytra_float(", swift)
+        self.assertNotIn("__pytra_int(__pytra_int(", swift)
+        self.assertIn("while (y < __pytra_int(height)) {", swift)
+        self.assertIn("while (x < __pytra_int(width)) {", swift)
+        self.assertIn("pixels.append(r)", swift)
+        self.assertIn("pixels.append(g)", swift)
+        self.assertIn("pixels.append(b)", swift)
+        self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.append", swift)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")

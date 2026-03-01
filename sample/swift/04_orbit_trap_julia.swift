@@ -5,100 +5,98 @@ import Foundation
 
 func render_orbit_trap_julia(width: Int64, height: Int64, max_iter: Int64, cx: Double, cy: Double) -> [Any] {
     var pixels: [Any] = __pytra_as_list([])
-    var __hoisted_cast_1: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(Int64(1)))))
-    var __hoisted_cast_2: Double = __pytra_float(__pytra_float((__pytra_int(width) - __pytra_int(Int64(1)))))
-    var __hoisted_cast_3: Double = __pytra_float(__pytra_float(max_iter))
-    let __step_0 = __pytra_int(Int64(1))
+    var __hoisted_cast_1: Double = __pytra_float(height - Int64(1))
+    var __hoisted_cast_2: Double = __pytra_float(width - Int64(1))
+    var __hoisted_cast_3: Double = __pytra_float(max_iter)
     var y = __pytra_int(Int64(0))
-    while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height))) {
-        var zy0: Double = __pytra_float((__pytra_float((-Double(1.3))) + __pytra_float((__pytra_float(Double(2.6)) * __pytra_float((__pytra_float(y) / __pytra_float(__hoisted_cast_1)))))))
-        let __step_1 = __pytra_int(Int64(1))
+    while (y < __pytra_int(height)) {
+        var zy0: Double = ((-Double(1.3)) + (Double(2.6) * (__pytra_float(y) / __hoisted_cast_1)))
         var x = __pytra_int(Int64(0))
-        while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width))) {
-            var zx: Double = __pytra_float((__pytra_float((-Double(1.9))) + __pytra_float((__pytra_float(Double(3.8)) * __pytra_float((__pytra_float(x) / __pytra_float(__hoisted_cast_2)))))))
-            var zy: Double = __pytra_float(zy0)
-            var trap: Double = __pytra_float(Double(1000000000.0))
-            var i: Int64 = __pytra_int(Int64(0))
+        while (x < __pytra_int(width)) {
+            var zx: Double = ((-Double(1.9)) + (Double(3.8) * (__pytra_float(x) / __hoisted_cast_2)))
+            var zy: Double = zy0
+            var trap: Double = Double(1000000000.0)
+            var i: Int64 = Int64(0)
             while (__pytra_int(i) < __pytra_int(max_iter)) {
-                var ax: Double = __pytra_float(zx)
+                var ax: Double = zx
                 if (__pytra_float(ax) < __pytra_float(Double(0.0))) {
-                    ax = __pytra_float((-ax))
+                    ax = __pytra_float(-ax)
                 }
-                var ay: Double = __pytra_float(zy)
+                var ay: Double = zy
                 if (__pytra_float(ay) < __pytra_float(Double(0.0))) {
-                    ay = __pytra_float((-ay))
+                    ay = __pytra_float(-ay)
                 }
-                var dxy: Double = __pytra_float((__pytra_float(zx) - __pytra_float(zy)))
+                var dxy: Double = (zx - zy)
                 if (__pytra_float(dxy) < __pytra_float(Double(0.0))) {
-                    dxy = __pytra_float((-dxy))
+                    dxy = __pytra_float(-dxy)
                 }
                 if (__pytra_float(ax) < __pytra_float(trap)) {
-                    trap = __pytra_float(ax)
+                    trap = ax
                 }
                 if (__pytra_float(ay) < __pytra_float(trap)) {
-                    trap = __pytra_float(ay)
+                    trap = ay
                 }
                 if (__pytra_float(dxy) < __pytra_float(trap)) {
-                    trap = __pytra_float(dxy)
+                    trap = dxy
                 }
-                var zx2: Double = __pytra_float((__pytra_float(zx) * __pytra_float(zx)))
-                var zy2: Double = __pytra_float((__pytra_float(zy) * __pytra_float(zy)))
-                if (__pytra_float((__pytra_float(zx2) + __pytra_float(zy2))) > __pytra_float(Double(4.0))) {
+                var zx2: Double = (zx * zx)
+                var zy2: Double = (zy * zy)
+                if (__pytra_float(zx2 + zy2) > __pytra_float(Double(4.0))) {
                     break
                 }
-                zy = __pytra_float((__pytra_float((__pytra_float((__pytra_float(Double(2.0)) * __pytra_float(zx))) * __pytra_float(zy))) + __pytra_float(cy)))
-                zx = __pytra_float((__pytra_float((__pytra_float(zx2) - __pytra_float(zy2))) + __pytra_float(cx)))
+                zy = (((Double(2.0) * zx) * zy) + cy)
+                zx = ((zx2 - zy2) + cx)
                 i += Int64(1)
             }
-            var r: Int64 = __pytra_int(Int64(0))
-            var g: Int64 = __pytra_int(Int64(0))
-            var b: Int64 = __pytra_int(Int64(0))
+            var r: Int64 = Int64(0)
+            var g: Int64 = Int64(0)
+            var b: Int64 = Int64(0)
             if (__pytra_int(i) >= __pytra_int(max_iter)) {
-                r = __pytra_int(Int64(0))
-                g = __pytra_int(Int64(0))
-                b = __pytra_int(Int64(0))
+                r = Int64(0)
+                g = Int64(0)
+                b = Int64(0)
             } else {
-                var trap_scaled: Double = __pytra_float((__pytra_float(trap) * __pytra_float(Double(3.2))))
+                var trap_scaled: Double = (trap * Double(3.2))
                 if (__pytra_float(trap_scaled) > __pytra_float(Double(1.0))) {
-                    trap_scaled = __pytra_float(Double(1.0))
+                    trap_scaled = Double(1.0)
                 }
                 if (__pytra_float(trap_scaled) < __pytra_float(Double(0.0))) {
-                    trap_scaled = __pytra_float(Double(0.0))
+                    trap_scaled = Double(0.0)
                 }
-                var t: Double = __pytra_float((__pytra_float(i) / __pytra_float(__hoisted_cast_3)))
-                var tone: Int64 = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(1.0)) - __pytra_float(trap_scaled))))))
-                r = __pytra_int(__pytra_int((__pytra_float(tone) * __pytra_float((__pytra_float(Double(0.35)) + __pytra_float((__pytra_float(Double(0.65)) * __pytra_float(t))))))))
-                g = __pytra_int(__pytra_int((__pytra_float(tone) * __pytra_float((__pytra_float(Double(0.15)) + __pytra_float((__pytra_float(Double(0.85)) * __pytra_float((__pytra_float(Double(1.0)) - __pytra_float(t))))))))))
-                b = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(0.25)) + __pytra_float((__pytra_float(Double(0.75)) * __pytra_float(t))))))))
+                var t: Double = (__pytra_float(i) / __hoisted_cast_3)
+                var tone: Int64 = __pytra_int(Double(255.0) * (Double(1.0) - trap_scaled))
+                r = __pytra_int(__pytra_float(tone) * (Double(0.35) + (Double(0.65) * t)))
+                g = __pytra_int(__pytra_float(tone) * (Double(0.15) + (Double(0.85) * (Double(1.0) - t))))
+                b = __pytra_int(Double(255.0) * (Double(0.25) + (Double(0.75) * t)))
                 if (__pytra_int(r) > __pytra_int(Int64(255))) {
-                    r = __pytra_int(Int64(255))
+                    r = Int64(255)
                 }
                 if (__pytra_int(g) > __pytra_int(Int64(255))) {
-                    g = __pytra_int(Int64(255))
+                    g = Int64(255)
                 }
                 if (__pytra_int(b) > __pytra_int(Int64(255))) {
-                    b = __pytra_int(Int64(255))
+                    b = Int64(255)
                 }
             }
-            pixels = __pytra_as_list(pixels); pixels.append(r)
-            pixels = __pytra_as_list(pixels); pixels.append(g)
-            pixels = __pytra_as_list(pixels); pixels.append(b)
-            x += __step_1
+            pixels.append(r)
+            pixels.append(g)
+            pixels.append(b)
+            x += 1
         }
-        y += __step_0
+        y += 1
     }
     return pixels
 }
 
 func run_04_orbit_trap_julia() {
-    var width: Int64 = __pytra_int(Int64(1920))
-    var height: Int64 = __pytra_int(Int64(1080))
-    var max_iter: Int64 = __pytra_int(Int64(1400))
-    var out_path: String = __pytra_str("sample/out/04_orbit_trap_julia.png")
-    var start: Double = __pytra_float(__pytra_perf_counter())
+    var width: Int64 = Int64(1920)
+    var height: Int64 = Int64(1080)
+    var max_iter: Int64 = Int64(1400)
+    var out_path: String = "sample/out/04_orbit_trap_julia.png"
+    var start: Double = __pytra_perf_counter()
     var pixels: [Any] = __pytra_as_list(render_orbit_trap_julia(width, height, max_iter, (-Double(0.7269)), Double(0.1889)))
-    __pytra_noop(out_path, width, height, pixels)
-    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
+    __pytra_write_rgb_png(out_path, width, height, pixels)
+    var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)
     __pytra_print("max_iter:", max_iter)

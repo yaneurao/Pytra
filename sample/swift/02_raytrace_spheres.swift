@@ -15,172 +15,168 @@ func clamp01(v: Double) -> Double {
 }
 
 func hit_sphere(ox: Double, oy: Double, oz: Double, dx: Double, dy: Double, dz: Double, cx: Double, cy: Double, cz: Double, r: Double) -> Double {
-    var lx: Double = __pytra_float((__pytra_float(ox) - __pytra_float(cx)))
-    var ly: Double = __pytra_float((__pytra_float(oy) - __pytra_float(cy)))
-    var lz: Double = __pytra_float((__pytra_float(oz) - __pytra_float(cz)))
-    var a: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(dx) * __pytra_float(dx))) + __pytra_float((__pytra_float(dy) * __pytra_float(dy))))) + __pytra_float((__pytra_float(dz) * __pytra_float(dz)))))
-    var b: Double = __pytra_float((__pytra_float(Double(2.0)) * __pytra_float((__pytra_float((__pytra_float((__pytra_float(lx) * __pytra_float(dx))) + __pytra_float((__pytra_float(ly) * __pytra_float(dy))))) + __pytra_float((__pytra_float(lz) * __pytra_float(dz)))))))
-    var c: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float((__pytra_float(lx) * __pytra_float(lx))) + __pytra_float((__pytra_float(ly) * __pytra_float(ly))))) + __pytra_float((__pytra_float(lz) * __pytra_float(lz))))) - __pytra_float((__pytra_float(r) * __pytra_float(r)))))
-    var d: Double = __pytra_float((__pytra_float((__pytra_float(b) * __pytra_float(b))) - __pytra_float((__pytra_float((__pytra_float(Double(4.0)) * __pytra_float(a))) * __pytra_float(c)))))
+    var lx: Double = (ox - cx)
+    var ly: Double = (oy - cy)
+    var lz: Double = (oz - cz)
+    var a: Double = (((dx * dx) + (dy * dy)) + (dz * dz))
+    var b: Double = (Double(2.0) * (((lx * dx) + (ly * dy)) + (lz * dz)))
+    var c: Double = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r))
+    var d: Double = ((b * b) - ((Double(4.0) * a) * c))
     if (__pytra_float(d) < __pytra_float(Double(0.0))) {
-        return (-Double(1.0))
+        return __pytra_float(-Double(1.0))
     }
     var sd: Double = __pytra_float(sqrt(__pytra_float(d)))
-    var t0: Double = __pytra_float((__pytra_float((__pytra_float((-b)) - __pytra_float(sd))) / __pytra_float((__pytra_float(Double(2.0)) * __pytra_float(a)))))
-    var t1: Double = __pytra_float((__pytra_float((__pytra_float((-b)) + __pytra_float(sd))) / __pytra_float((__pytra_float(Double(2.0)) * __pytra_float(a)))))
+    var t0: Double = (((-b) - sd) / (Double(2.0) * a))
+    var t1: Double = (((-b) + sd) / (Double(2.0) * a))
     if (__pytra_float(t0) > __pytra_float(Double(0.001))) {
         return t0
     }
     if (__pytra_float(t1) > __pytra_float(Double(0.001))) {
         return t1
     }
-    return (-Double(1.0))
+    return __pytra_float(-Double(1.0))
 }
 
 func render(width: Int64, height: Int64, aa: Int64) -> [Any] {
     var pixels: [Any] = __pytra_as_list([])
-    var ox: Double = __pytra_float(Double(0.0))
-    var oy: Double = __pytra_float(Double(0.0))
-    var oz: Double = __pytra_float((-Double(3.0)))
-    var lx: Double = __pytra_float((-Double(0.4)))
-    var ly: Double = __pytra_float(Double(0.8))
-    var lz: Double = __pytra_float((-Double(0.45)))
-    var __hoisted_cast_1: Double = __pytra_float(__pytra_float(aa))
-    var __hoisted_cast_2: Double = __pytra_float(__pytra_float((__pytra_int(height) - __pytra_int(Int64(1)))))
-    var __hoisted_cast_3: Double = __pytra_float(__pytra_float((__pytra_int(width) - __pytra_int(Int64(1)))))
-    var __hoisted_cast_4: Double = __pytra_float(__pytra_float(height))
-    let __step_0 = __pytra_int(Int64(1))
+    var ox: Double = Double(0.0)
+    var oy: Double = Double(0.0)
+    var oz: Double = __pytra_float(-Double(3.0))
+    var lx: Double = __pytra_float(-Double(0.4))
+    var ly: Double = Double(0.8)
+    var lz: Double = __pytra_float(-Double(0.45))
+    var __hoisted_cast_1: Double = __pytra_float(aa)
+    var __hoisted_cast_2: Double = __pytra_float(height - Int64(1))
+    var __hoisted_cast_3: Double = __pytra_float(width - Int64(1))
+    var __hoisted_cast_4: Double = __pytra_float(height)
     var y = __pytra_int(Int64(0))
-    while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height))) {
-        let __step_1 = __pytra_int(Int64(1))
+    while (y < __pytra_int(height)) {
         var x = __pytra_int(Int64(0))
-        while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width))) {
-            var ar: Int64 = __pytra_int(Int64(0))
-            var ag: Int64 = __pytra_int(Int64(0))
-            var ab: Int64 = __pytra_int(Int64(0))
-            let __step_2 = __pytra_int(Int64(1))
+        while (x < __pytra_int(width)) {
+            var ar: Int64 = Int64(0)
+            var ag: Int64 = Int64(0)
+            var ab: Int64 = Int64(0)
             var ay = __pytra_int(Int64(0))
-            while ((__step_2 >= 0 && ay < __pytra_int(aa)) || (__step_2 < 0 && ay > __pytra_int(aa))) {
-                let __step_3 = __pytra_int(Int64(1))
+            while (ay < __pytra_int(aa)) {
                 var ax = __pytra_int(Int64(0))
-                while ((__step_3 >= 0 && ax < __pytra_int(aa)) || (__step_3 < 0 && ax > __pytra_int(aa))) {
-                    var fy: Double = __pytra_float((__pytra_float((__pytra_float(y) + __pytra_float((__pytra_float((__pytra_float(ay) + __pytra_float(Double(0.5)))) / __pytra_float(__hoisted_cast_1))))) / __pytra_float(__hoisted_cast_2)))
-                    var fx: Double = __pytra_float((__pytra_float((__pytra_float(x) + __pytra_float((__pytra_float((__pytra_float(ax) + __pytra_float(Double(0.5)))) / __pytra_float(__hoisted_cast_1))))) / __pytra_float(__hoisted_cast_3)))
-                    var sy: Double = __pytra_float((__pytra_float(Double(1.0)) - __pytra_float((__pytra_float(Double(2.0)) * __pytra_float(fy)))))
-                    var sx: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(Double(2.0)) * __pytra_float(fx))) - __pytra_float(Double(1.0)))) * __pytra_float((__pytra_float(width) / __pytra_float(__hoisted_cast_4)))))
-                    var dx: Double = __pytra_float(sx)
-                    var dy: Double = __pytra_float(sy)
-                    var dz: Double = __pytra_float(Double(1.0))
-                    var inv_len: Double = __pytra_float((__pytra_float(Double(1.0)) / __pytra_float(sqrt(__pytra_float((__pytra_float((__pytra_float((__pytra_float(dx) * __pytra_float(dx))) + __pytra_float((__pytra_float(dy) * __pytra_float(dy))))) + __pytra_float((__pytra_float(dz) * __pytra_float(dz)))))))))
+                while (ax < __pytra_int(aa)) {
+                    var fy: Double = ((__pytra_float(y) + ((__pytra_float(ay) + Double(0.5)) / __hoisted_cast_1)) / __hoisted_cast_2)
+                    var fx: Double = ((__pytra_float(x) + ((__pytra_float(ax) + Double(0.5)) / __hoisted_cast_1)) / __hoisted_cast_3)
+                    var sy: Double = (Double(1.0) - (Double(2.0) * fy))
+                    var sx: Double = (((Double(2.0) * fx) - Double(1.0)) * (__pytra_float(width) / __hoisted_cast_4))
+                    var dx: Double = sx
+                    var dy: Double = sy
+                    var dz: Double = Double(1.0)
+                    var inv_len: Double = __pytra_float(Double(1.0) / __pytra_float(sqrt(__pytra_float(((dx * dx) + (dy * dy)) + (dz * dz)))))
                     dx *= inv_len
                     dy *= inv_len
                     dz *= inv_len
-                    var t_min: Double = __pytra_float(Double(1e+30))
-                    var hit_id: Int64 = __pytra_int((-Int64(1)))
+                    var t_min: Double = Double(1e+30)
+                    var hit_id: Int64 = __pytra_int(-Int64(1))
                     var t: Double = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, (-Double(0.8)), (-Double(0.2)), Double(2.2), Double(0.8)))
                     if ((__pytra_float(t) > __pytra_float(Double(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
-                        t_min = __pytra_float(t)
-                        hit_id = __pytra_int(Int64(0))
+                        t_min = t
+                        hit_id = Int64(0)
                     }
                     t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, Double(0.9), Double(0.1), Double(2.9), Double(0.95)))
                     if ((__pytra_float(t) > __pytra_float(Double(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
-                        t_min = __pytra_float(t)
-                        hit_id = __pytra_int(Int64(1))
+                        t_min = t
+                        hit_id = Int64(1)
                     }
                     t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, Double(0.0), (-Double(1001.0)), Double(3.0), Double(1000.0)))
                     if ((__pytra_float(t) > __pytra_float(Double(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
-                        t_min = __pytra_float(t)
-                        hit_id = __pytra_int(Int64(2))
+                        t_min = t
+                        hit_id = Int64(2)
                     }
-                    var r: Int64 = __pytra_int(Int64(0))
-                    var g: Int64 = __pytra_int(Int64(0))
-                    var b: Int64 = __pytra_int(Int64(0))
+                    var r: Int64 = Int64(0)
+                    var g: Int64 = Int64(0)
+                    var b: Int64 = Int64(0)
                     if (__pytra_int(hit_id) >= __pytra_int(Int64(0))) {
-                        var px: Double = __pytra_float((__pytra_float(ox) + __pytra_float((__pytra_float(dx) * __pytra_float(t_min)))))
-                        var py: Double = __pytra_float((__pytra_float(oy) + __pytra_float((__pytra_float(dy) * __pytra_float(t_min)))))
-                        var pz: Double = __pytra_float((__pytra_float(oz) + __pytra_float((__pytra_float(dz) * __pytra_float(t_min)))))
-                        var nx: Double = __pytra_float(Double(0.0))
-                        var ny: Double = __pytra_float(Double(0.0))
-                        var nz: Double = __pytra_float(Double(0.0))
+                        var px: Double = (ox + (dx * t_min))
+                        var py: Double = (oy + (dy * t_min))
+                        var pz: Double = (oz + (dz * t_min))
+                        var nx: Double = Double(0.0)
+                        var ny: Double = Double(0.0)
+                        var nz: Double = Double(0.0)
                         if (__pytra_int(hit_id) == __pytra_int(Int64(0))) {
-                            nx = __pytra_float((__pytra_float((__pytra_float(px) + __pytra_float(Double(0.8)))) / __pytra_float(Double(0.8))))
-                            ny = __pytra_float((__pytra_float((__pytra_float(py) + __pytra_float(Double(0.2)))) / __pytra_float(Double(0.8))))
-                            nz = __pytra_float((__pytra_float((__pytra_float(pz) - __pytra_float(Double(2.2)))) / __pytra_float(Double(0.8))))
+                            nx = ((px + Double(0.8)) / Double(0.8))
+                            ny = ((py + Double(0.2)) / Double(0.8))
+                            nz = ((pz - Double(2.2)) / Double(0.8))
                         } else {
                             if (__pytra_int(hit_id) == __pytra_int(Int64(1))) {
-                                nx = __pytra_float((__pytra_float((__pytra_float(px) - __pytra_float(Double(0.9)))) / __pytra_float(Double(0.95))))
-                                ny = __pytra_float((__pytra_float((__pytra_float(py) - __pytra_float(Double(0.1)))) / __pytra_float(Double(0.95))))
-                                nz = __pytra_float((__pytra_float((__pytra_float(pz) - __pytra_float(Double(2.9)))) / __pytra_float(Double(0.95))))
+                                nx = ((px - Double(0.9)) / Double(0.95))
+                                ny = ((py - Double(0.1)) / Double(0.95))
+                                nz = ((pz - Double(2.9)) / Double(0.95))
                             } else {
-                                nx = __pytra_float(Double(0.0))
-                                ny = __pytra_float(Double(1.0))
-                                nz = __pytra_float(Double(0.0))
+                                nx = Double(0.0)
+                                ny = Double(1.0)
+                                nz = Double(0.0)
                             }
                         }
-                        var diff: Double = __pytra_float((__pytra_float((__pytra_float((__pytra_float(nx) * __pytra_float((-lx)))) + __pytra_float((__pytra_float(ny) * __pytra_float((-ly)))))) + __pytra_float((__pytra_float(nz) * __pytra_float((-lz))))))
+                        var diff: Double = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)))
                         diff = __pytra_float(clamp01(diff))
-                        var base_r: Double = __pytra_float(Double(0.0))
-                        var base_g: Double = __pytra_float(Double(0.0))
-                        var base_b: Double = __pytra_float(Double(0.0))
+                        var base_r: Double = Double(0.0)
+                        var base_g: Double = Double(0.0)
+                        var base_b: Double = Double(0.0)
                         if (__pytra_int(hit_id) == __pytra_int(Int64(0))) {
-                            base_r = __pytra_float(Double(0.95))
-                            base_g = __pytra_float(Double(0.35))
-                            base_b = __pytra_float(Double(0.25))
+                            base_r = Double(0.95)
+                            base_g = Double(0.35)
+                            base_b = Double(0.25)
                         } else {
                             if (__pytra_int(hit_id) == __pytra_int(Int64(1))) {
-                                base_r = __pytra_float(Double(0.25))
-                                base_g = __pytra_float(Double(0.55))
-                                base_b = __pytra_float(Double(0.95))
+                                base_r = Double(0.25)
+                                base_g = Double(0.55)
+                                base_b = Double(0.95)
                             } else {
-                                var checker: Int64 = __pytra_int((__pytra_int(__pytra_int((__pytra_float((__pytra_float(px) + __pytra_float(Double(50.0)))) * __pytra_float(Double(0.8))))) + __pytra_int(__pytra_int((__pytra_float((__pytra_float(pz) + __pytra_float(Double(50.0)))) * __pytra_float(Double(0.8)))))))
-                                if (__pytra_int((__pytra_int(checker) % __pytra_int(Int64(2)))) == __pytra_int(Int64(0))) {
-                                    base_r = __pytra_float(Double(0.85))
-                                    base_g = __pytra_float(Double(0.85))
-                                    base_b = __pytra_float(Double(0.85))
+                                var checker: Int64 = (__pytra_int((px + Double(50.0)) * Double(0.8)) + __pytra_int((pz + Double(50.0)) * Double(0.8)))
+                                if (__pytra_int(checker % Int64(2)) == __pytra_int(Int64(0))) {
+                                    base_r = Double(0.85)
+                                    base_g = Double(0.85)
+                                    base_b = Double(0.85)
                                 } else {
-                                    base_r = __pytra_float(Double(0.2))
-                                    base_g = __pytra_float(Double(0.2))
-                                    base_b = __pytra_float(Double(0.2))
+                                    base_r = Double(0.2)
+                                    base_g = Double(0.2)
+                                    base_b = Double(0.2)
                                 }
                             }
                         }
-                        var shade: Double = __pytra_float((__pytra_float(Double(0.12)) + __pytra_float((__pytra_float(Double(0.88)) * __pytra_float(diff)))))
-                        r = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float(clamp01((__pytra_float(base_r) * __pytra_float(shade)))))))
-                        g = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float(clamp01((__pytra_float(base_g) * __pytra_float(shade)))))))
-                        b = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float(clamp01((__pytra_float(base_b) * __pytra_float(shade)))))))
+                        var shade: Double = (Double(0.12) + (Double(0.88) * diff))
+                        r = __pytra_int(Double(255.0) * clamp01((base_r * shade)))
+                        g = __pytra_int(Double(255.0) * clamp01((base_g * shade)))
+                        b = __pytra_int(Double(255.0) * clamp01((base_b * shade)))
                     } else {
-                        var tsky: Double = __pytra_float((__pytra_float(Double(0.5)) * __pytra_float((__pytra_float(dy) + __pytra_float(Double(1.0))))))
-                        r = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(0.65)) + __pytra_float((__pytra_float(Double(0.2)) * __pytra_float(tsky))))))))
-                        g = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(0.75)) + __pytra_float((__pytra_float(Double(0.18)) * __pytra_float(tsky))))))))
-                        b = __pytra_int(__pytra_int((__pytra_float(Double(255.0)) * __pytra_float((__pytra_float(Double(0.9)) + __pytra_float((__pytra_float(Double(0.08)) * __pytra_float(tsky))))))))
+                        var tsky: Double = (Double(0.5) * (dy + Double(1.0)))
+                        r = __pytra_int(Double(255.0) * (Double(0.65) + (Double(0.2) * tsky)))
+                        g = __pytra_int(Double(255.0) * (Double(0.75) + (Double(0.18) * tsky)))
+                        b = __pytra_int(Double(255.0) * (Double(0.9) + (Double(0.08) * tsky)))
                     }
                     ar += r
                     ag += g
                     ab += b
-                    ax += __step_3
+                    ax += 1
                 }
-                ay += __step_2
+                ay += 1
             }
-            var samples: Int64 = __pytra_int((__pytra_int(aa) * __pytra_int(aa)))
-            pixels = __pytra_as_list(pixels); pixels.append((__pytra_int(__pytra_int(ar) / __pytra_int(samples))))
-            pixels = __pytra_as_list(pixels); pixels.append((__pytra_int(__pytra_int(ag) / __pytra_int(samples))))
-            pixels = __pytra_as_list(pixels); pixels.append((__pytra_int(__pytra_int(ab) / __pytra_int(samples))))
-            x += __step_1
+            var samples: Int64 = (aa * aa)
+            pixels.append((ar / samples))
+            pixels.append((ag / samples))
+            pixels.append((ab / samples))
+            x += 1
         }
-        y += __step_0
+        y += 1
     }
     return pixels
 }
 
 func run_raytrace() {
-    var width: Int64 = __pytra_int(Int64(1600))
-    var height: Int64 = __pytra_int(Int64(900))
-    var aa: Int64 = __pytra_int(Int64(2))
-    var out_path: String = __pytra_str("sample/out/02_raytrace_spheres.png")
-    var start: Double = __pytra_float(__pytra_perf_counter())
+    var width: Int64 = Int64(1600)
+    var height: Int64 = Int64(900)
+    var aa: Int64 = Int64(2)
+    var out_path: String = "sample/out/02_raytrace_spheres.png"
+    var start: Double = __pytra_perf_counter()
     var pixels: [Any] = __pytra_as_list(render(width, height, aa))
-    __pytra_noop(out_path, width, height, pixels)
-    var elapsed: Double = __pytra_float((__pytra_float(__pytra_perf_counter()) - __pytra_float(start)))
+    __pytra_write_rgb_png(out_path, width, height, pixels)
+    var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)
     __pytra_print("elapsed_sec:", elapsed)
