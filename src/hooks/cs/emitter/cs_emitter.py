@@ -1385,7 +1385,10 @@ class CSharpEmitter(CodeEmitter):
             else:
                 value = self._render_expr_with_type_hint(value_obj, t_east)
                 if use_var_decl or t_cs == "" or t_cs == "object":
-                    self.emit("var " + name + " = " + value + ";")
+                    if value == "null":
+                        self.emit("object " + name + " = null;")
+                    else:
+                        self.emit("var " + name + " = " + value + ";")
                 else:
                     self.emit(t_cs + " " + name + " = " + value + ";")
             return
@@ -1409,7 +1412,10 @@ class CSharpEmitter(CodeEmitter):
                 t_cs = self._cs_type(t_east)
                 init_value = self._render_expr_with_type_hint(value_obj, t_east)
                 if t_cs.startswith("(") or t_cs == "" or t_cs == "object":
-                    self.emit("var " + name + " = " + init_value + ";")
+                    if init_value == "null":
+                        self.emit("object " + name + " = null;")
+                    else:
+                        self.emit("var " + name + " = " + init_value + ";")
                 else:
                     self.emit(t_cs + " " + name + " = " + init_value + ";")
                 return
