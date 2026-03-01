@@ -48,6 +48,8 @@ _RUBY_KEYWORDS = {
 
 _CLASS_NAMES: set[str] = set()
 _FUNCTION_NAMES: set[str] = set()
+_INT_TYPES = {"int", "int64"}
+_FLOAT_TYPES = {"float", "float64"}
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -235,6 +237,69 @@ def _const_int_literal(node: Any) -> int | None:
     return None
 
 
+def _resolved_type_name(node: Any) -> str:
+    if not isinstance(node, dict):
+        return ""
+    resolved = node.get("resolved_type")
+    if not isinstance(resolved, str):
+        return ""
+    return resolved.strip()
+
+
+def _is_int_like_expr(node: Any) -> bool:
+    if isinstance(node, bool):
+        return False
+    if isinstance(node, int):
+        return True
+    if not isinstance(node, dict):
+        return False
+    if node.get("kind") == "Constant":
+        value_any = node.get("value")
+        return isinstance(value_any, int) and not isinstance(value_any, bool)
+    return _resolved_type_name(node) in _INT_TYPES
+
+
+def _is_float_like_expr(node: Any) -> bool:
+    if isinstance(node, float):
+        return True
+    if not isinstance(node, dict):
+        return False
+    if node.get("kind") == "Constant":
+        return isinstance(node.get("value"), float)
+    return _resolved_type_name(node) in _FLOAT_TYPES
+
+
+def _is_bool_like_expr(node: Any) -> bool:
+    if isinstance(node, bool):
+        return True
+    if not isinstance(node, dict):
+        return False
+    if node.get("kind") == "Constant":
+        return isinstance(node.get("value"), bool)
+    return _resolved_type_name(node) == "bool"
+
+
+def _render_int_cast(node: Any) -> str:
+    rendered = _render_expr(node)
+    if _is_int_like_expr(node):
+        return rendered
+    return "__pytra_int(" + rendered + ")"
+
+
+def _render_float_cast(node: Any) -> str:
+    rendered = _render_expr(node)
+    if _is_float_like_expr(node):
+        return rendered
+    return "__pytra_float(" + rendered + ")"
+
+
+def _render_bool_cast(node: Any) -> str:
+    rendered = _render_expr(node)
+    if _is_bool_like_expr(node):
+        return rendered
+    return "__pytra_truthy(" + rendered + ")"
+
+
 def _render_name_expr(expr: dict[str, Any]) -> str:
     raw = expr.get("id")
     if raw == "self":
@@ -312,7 +377,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     if op == "Div":
         return "__pytra_div(" + left + ", " + right + ")"
     if op == "FloorDiv":
-        return "(__pytra_int(" + left + ") / __pytra_int(" + right + "))"
+        return "(" + _render_int_cast(expr.get("left")) + " / " + _render_int_cast(expr.get("right")) + ")"
     return "(" + left + " " + _bin_op_symbol(op) + " " + right + ")"
 
 
@@ -479,15 +544,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "int":
         if len(args) == 0:
             return "0"
-        return "__pytra_int(" + _render_expr(args[0]) + ")"
+        return _render_int_cast(args[0])
     if callee_name == "float":
         if len(args) == 0:
             return "0.0"
-        return "__pytra_float(" + _render_expr(args[0]) + ")"
+        return _render_float_cast(args[0])
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
-        return "__pytra_truthy(" + _render_expr(args[0]) + ")"
+        return _render_bool_cast(args[0])
     if callee_name == "str":
         if len(args) == 0:
             return '""'
@@ -561,7 +626,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_math: list[str] = []
                 i = 0
                 while i < len(args):
-                    rendered_math.append("__pytra_float(" + _render_expr(args[i]) + ")")
+                    rendered_math.append(_render_float_cast(args[i]))
                     i += 1
                 if attr_name == "sqrt":
                     return "Math.sqrt(" + ", ".join(rendered_math) + ")"
@@ -690,10 +755,10 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         target = _safe_ident(target_plan_any.get("id"), "i")
         if target == "_":
             target = _fresh_tmp(ctx, "loop")
-        start = "__pytra_int(" + _render_expr(iter_plan_any.get("start")) + ")"
-        stop = "__pytra_int(" + _render_expr(iter_plan_any.get("stop")) + ")"
+        start = _render_int_cast(iter_plan_any.get("start"))
+        stop = _render_int_cast(iter_plan_any.get("stop"))
         step_node = iter_plan_any.get("step")
-        step = "__pytra_int(" + _render_expr(step_node) + ")"
+        step = _render_int_cast(step_node)
         step_const = _const_int_literal(step_node)
 
         # Fastpath: canonical single-direction loops for common range forms.

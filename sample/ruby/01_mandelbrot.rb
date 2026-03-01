@@ -7,8 +7,8 @@ require_relative "py_runtime"
 def escape_count(cx, cy, max_iter)
   x = 0.0
   y = 0.0
-  i = __pytra_int(0)
-  while i < __pytra_int(max_iter)
+  i = 0
+  while i < max_iter
     x2 = (x * x)
     y2 = (y * y)
     if __pytra_truthy(((x2 + y2) > 4.0))
@@ -37,11 +37,11 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
   __hoisted_cast_1 = __pytra_float((height - 1))
   __hoisted_cast_2 = __pytra_float((width - 1))
   __hoisted_cast_3 = __pytra_float(max_iter)
-  y = __pytra_int(0)
-  while y < __pytra_int(height)
+  y = 0
+  while y < height
     py = (y_min + ((y_max - y_min) * __pytra_div(y, __hoisted_cast_1)))
-    x = __pytra_int(0)
-    while x < __pytra_int(width)
+    x = 0
+    while x < width
       px = (x_min + ((x_max - x_min) * __pytra_div(x, __hoisted_cast_2)))
       it = escape_count(px, py, max_iter)
       r = nil
