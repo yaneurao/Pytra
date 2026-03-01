@@ -770,6 +770,48 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(body[0].get("value", {}).get("kind"), "IsInstance")
         self.assertEqual(body[1].get("value", {}).get("kind"), "IsSubclass")
 
+    def test_lower_type_predicate_calls_accept_type_predicate_call_kind(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "type_id"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "wrapped_type_check"},
+                        "args": [
+                            {"kind": "Name", "id": "x", "resolved_type": "object"},
+                            {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                        "lowered_kind": "TypePredicateCall",
+                        "builtin_name": "isinstance",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "wrapped_type_check2"},
+                        "args": [
+                            {"kind": "Name", "id": "Child", "resolved_type": "unknown"},
+                            {"kind": "Name", "id": "Base", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                        "lowered_kind": "TypePredicateCall",
+                        "builtin_name": "issubclass",
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "IsInstance")
+        self.assertEqual(body[1].get("value", {}).get("kind"), "IsSubclass")
+
     def test_lower_runtime_type_id_and_subtype_calls_to_core_nodes(self) -> None:
         east2 = {
             "kind": "Module",
