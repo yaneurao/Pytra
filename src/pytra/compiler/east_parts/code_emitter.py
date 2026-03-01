@@ -1149,10 +1149,10 @@ class CodeEmitter:
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""
         if isinstance(v, dict):
+            v_dict: dict[str, Any] = dict(v)
             out: dict[str, Any] = {}
-            for key in v:
+            for key, val in v_dict.items():
                 if isinstance(key, str):
-                    val = v[key]
                     out[key] = val
             return out
         return None
@@ -1160,10 +1160,10 @@ class CodeEmitter:
     def any_to_dict_or_empty(self, v: Any) -> dict[str, Any]:
         """動的値を dict に安全に変換する。変換不能なら空 dict。"""
         if isinstance(v, dict):
+            v_dict: dict[str, Any] = dict(v)
             out: dict[str, Any] = {}
-            for key in v:
+            for key, val in v_dict.items():
                 if isinstance(key, str):
-                    val = v[key]
                     out[key] = val
             return out
         return {}
@@ -1274,7 +1274,7 @@ class CodeEmitter:
             lhs_txt = stmt_repr[:eq_pos]
         if lhs_txt == "":
             return fallback_names
-        pseudo_target = {"repr": lhs_txt}
+        pseudo_target: dict[str, Any] = {"repr": lhs_txt}
         lhs_names = self.fallback_tuple_target_names_from_repr(pseudo_target)
         if len(lhs_names) == 0:
             return fallback_names
