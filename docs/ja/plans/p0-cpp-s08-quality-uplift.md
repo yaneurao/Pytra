@@ -45,7 +45,7 @@
 
 分解:
 - [x] [ID: P0-CPP-S08-QUALITY-01-S1-01] `sample/cpp/08` の品質差分（初期化/変換/分岐/ループ/capacity）をコード断片で固定する。
-- [ ] [ID: P0-CPP-S08-QUALITY-01-S2-01] `grid` 初期化を IIFE + `py_repeat` から typed 直接初期化へ縮退する。
+- [x] [ID: P0-CPP-S08-QUALITY-01-S2-01] `grid` 初期化を IIFE + `py_repeat` から typed 直接初期化へ縮退する。
 - [x] [ID: P0-CPP-S08-QUALITY-01-S2-02] `capture` 返却時の `bytes(frame)` を不要変換削減ルールで簡素化する。
 - [ ] [ID: P0-CPP-S08-QUALITY-01-S2-03] capture 判定の `%` を next-capture カウンタ方式へ置換する fastpath を導入する。
 - [x] [ID: P0-CPP-S08-QUALITY-01-S2-04] `if/elif/elif/else` 由来の入れ子分岐を `else if`/`switch` 相当の出力へ縮退する。
@@ -58,5 +58,6 @@
 - 2026-03-01: S1-01 として `sample/cpp/08_langtons_ant.cpp` の品質差分を固定した。主要断片: `grid` 初期化は `list<list<int64>> grid = [&]() -> ... py_repeat(...)`（冗長）、`capture` は `return bytes(frame);`（不要変換）、方向分岐は `else { if (...) { ... } else { if (...) ... } }`（入れ子）、`frames` は `list<bytes> frames = list<bytes>{};`（reserveなし）。
 - 2026-03-01: S2-02 として `src/hooks/cpp/emitter/runtime_expr.py` の `bytes_ctor` に `bytes/bytearray` 既知経路の縮退を追加し、`bytes(x)` を `x` に簡素化した。
 - 2026-03-01: S2-04 として `src/hooks/cpp/emitter/stmt.py` の If 出力を改善し、`else: if ...` 連鎖を `else if (...)` へ平坦化した。
+- 2026-03-01: S2-01 として `src/hooks/cpp/emitter/collection_expr.py` に `[[seed] * cols for _ in range(rows)]` の typed fill ctor fastpath を追加し、`sample/cpp/08` の `grid` 初期化を `list<list<int64>>(h, list<int64>(w, 0))` へ縮退した（`sample13` の同型初期化にも適用）。
 - 2026-03-01: S3-01 として `test/unit/test_py2cpp_codegen_issues.py` に `sample08` 回帰2件（`else if` 連鎖、`return frame;`）を追加した。
 - 2026-03-01: S3-02 として `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（91 tests, OK）、`python3 tools/check_py2cpp_transpile.py`（checked=135, ok=135）を確認した。

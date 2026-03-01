@@ -48,7 +48,7 @@
 
 1. [ ] [ID: P0-CPP-S08-QUALITY-01] `sample/cpp/08` の生成品質を改善し、可読性とホットパス効率を同時に引き上げる。
 2. [x] [ID: P0-CPP-S08-QUALITY-01-S1-01] `sample/cpp/08` の品質差分（初期化/変換/分岐/ループ/capacity）をコード断片で固定する。
-3. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-01] `grid` 初期化を IIFE + `py_repeat` から typed 直接初期化へ縮退する。
+3. [x] [ID: P0-CPP-S08-QUALITY-01-S2-01] `grid` 初期化を IIFE + `py_repeat` から typed 直接初期化へ縮退する。
 4. [x] [ID: P0-CPP-S08-QUALITY-01-S2-02] `capture` 返却時の `bytes(frame)` を不要変換削減ルールで簡素化する。
 5. [ ] [ID: P0-CPP-S08-QUALITY-01-S2-03] capture 判定の `%` を next-capture カウンタ方式へ置換する fastpath を導入する。
 6. [x] [ID: P0-CPP-S08-QUALITY-01-S2-04] `if/elif/elif/else` 由来の入れ子分岐を `else if`/`switch` 相当の出力へ縮退する。
