@@ -7,8 +7,7 @@ package main
 func escape_count(cx float64, cy float64, max_iter int64) int64 {
     var x float64 = float64(0.0)
     var y float64 = float64(0.0)
-    __step_0 := __pytra_int(int64(1))
-    for i := __pytra_int(int64(0)); (__step_0 >= 0 && i < __pytra_int(max_iter)) || (__step_0 < 0 && i > __pytra_int(max_iter)); i += __step_0 {
+    for i := int64(0); i < max_iter; i += 1 {
         var x2 float64 = (x * x)
         var y2 float64 = (y * y)
         if ((x2 + y2) > float64(4.0)) {
@@ -36,11 +35,9 @@ func render_mandelbrot(width int64, height int64, max_iter int64, x_min float64,
     var __hoisted_cast_1 float64 = __pytra_float((height - int64(1)))
     var __hoisted_cast_2 float64 = __pytra_float((width - int64(1)))
     var __hoisted_cast_3 float64 = __pytra_float(max_iter)
-    __step_0 := __pytra_int(int64(1))
-    for y := __pytra_int(int64(0)); (__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)); y += __step_0 {
+    for y := int64(0); y < height; y += 1 {
         var py float64 = (y_min + ((y_max - y_min) * (float64(y) / __hoisted_cast_1)))
-        __step_1 := __pytra_int(int64(1))
-        for x := __pytra_int(int64(0)); (__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)); x += __step_1 {
+        for x := int64(0); x < width; x += 1 {
             var px float64 = (x_min + ((x_max - x_min) * (float64(x) / __hoisted_cast_2)))
             var it int64 = escape_count(px, py, max_iter)
             var r int64 = 0

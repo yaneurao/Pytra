@@ -86,6 +86,13 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertNotIn("__pytra_float(__pytra_float(", go)
         self.assertNotIn("__pytra_int(__pytra_int(", go)
 
+    def test_sample01_prefers_canonical_range_loops_for_step_one(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        self.assertIn("for i := int64(0); i < max_iter; i += 1 {", go)
+        self.assertNotIn(">= 0 && i <", go)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

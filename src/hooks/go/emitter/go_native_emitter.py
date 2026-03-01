@@ -127,6 +127,25 @@ def _coerce_float_expr(expr_any: Any, rendered: str) -> str:
     return "__pytra_float(" + rendered + ")"
 
 
+def _int_constant_value(expr_any: Any) -> int | None:
+    if not isinstance(expr_any, dict):
+        return None
+    kind = expr_any.get("kind")
+    if kind == "Constant":
+        value = expr_any.get("value")
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return int(value)
+        return None
+    if kind == "UnaryOp" and expr_any.get("op") == "USub":
+        inner = _int_constant_value(expr_any.get("operand"))
+        if inner is None:
+            return None
+        return -inner
+    return None
+
+
 def _collect_go_deps(collector: CodeEmitter, node_any: Any) -> None:
     if isinstance(node_any, dict):
         kind = node_any.get("kind")
@@ -1160,35 +1179,44 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         target_name = _safe_ident(target_plan_any.get("id"), "i")
         if target_name == "_":
             target_name = _fresh_tmp(ctx, "loop")
-        start = "__pytra_int(" + _render_expr(iter_plan_any.get("start")) + ")"
-        stop = "__pytra_int(" + _render_expr(iter_plan_any.get("stop")) + ")"
-        step = "__pytra_int(" + _render_expr(iter_plan_any.get("step")) + ")"
-        step_tmp = _fresh_tmp(ctx, "step")
-        lines.append(indent + step_tmp + " := " + step)
-        lines.append(
-            indent
-            + "for "
-            + target_name
-            + " := "
-            + start
-            + "; ("
-            + step_tmp
-            + " >= 0 && "
-            + target_name
-            + " < "
-            + stop
-            + ") || ("
-            + step_tmp
-            + " < 0 && "
-            + target_name
-            + " > "
-            + stop
-            + "); "
-            + target_name
-            + " += "
-            + step_tmp
-            + " {"
-        )
+        start_any = iter_plan_any.get("start")
+        stop_any = iter_plan_any.get("stop")
+        step_any = iter_plan_any.get("step")
+        start = _coerce_int_expr(start_any, _render_expr(start_any))
+        stop = _coerce_int_expr(stop_any, _render_expr(stop_any))
+        step = _coerce_int_expr(step_any, _render_expr(step_any))
+        step_const = _int_constant_value(step_any)
+        if step_const == 1:
+            lines.append(indent + "for " + target_name + " := " + start + "; " + target_name + " < " + stop + "; " + target_name + " += 1 {")
+        elif step_const == -1:
+            lines.append(indent + "for " + target_name + " := " + start + "; " + target_name + " > " + stop + "; " + target_name + " -= 1 {")
+        else:
+            step_tmp = _fresh_tmp(ctx, "step")
+            lines.append(indent + step_tmp + " := " + step)
+            lines.append(
+                indent
+                + "for "
+                + target_name
+                + " := "
+                + start
+                + "; ("
+                + step_tmp
+                + " >= 0 && "
+                + target_name
+                + " < "
+                + stop
+                + ") || ("
+                + step_tmp
+                + " < 0 && "
+                + target_name
+                + " > "
+                + stop
+                + "); "
+                + target_name
+                + " += "
+                + step_tmp
+                + " {"
+            )
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
