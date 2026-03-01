@@ -124,6 +124,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("Dog d = new Dog();", java)
         self.assertIn('System.out.println("True");', java)
 
+    def test_java_native_emitter_lowers_super_method_call_without_super_constructor_syntax(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn('return "loud-" + super.speak();', java)
+        self.assertNotIn("super().speak()", java)
+
     def test_java_native_emitter_skeleton_maps_simple_int_signature(self) -> None:
         fixture = find_fixture_case("add")
         east = load_east(fixture, parser_backend="self_hosted")

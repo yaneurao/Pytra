@@ -36,7 +36,7 @@
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S1-01] 追加 fixture を backend smoke/parity 導線へ接続し、回帰検知対象へ昇格する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-CS] C# backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-GO] Go backend の継承メソッド dispatch/`super()` 対応を完了する。
-- [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java backend の継承メソッド dispatch/`super()` 対応を完了する。
+- [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin backend の継承メソッド dispatch/`super()` 対応を完了する。
@@ -53,3 +53,4 @@
 - 2026-03-01: `python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --ignore-unstable-stdout --summary-json out/inherit_dispatch_multilang_summary.json` を実行し、S2 実装前のベースラインを固定した（`run_failed=10`, `toolchain_missing=1`）。
 - 2026-03-01: C#（`S2-CS`）を実施し、`virtual/override` 付与・`super` lower・assertion 関数マッピングを追加。`--targets cs` の fixture parity は pass（1/1）。
 - 2026-03-01: Go（`S2-GO`）を実施し、class interface 導入 + `super` lower を追加。`--targets go` の fixture parity は pass（1/1）。
+- 2026-03-01: Java（`S2-JAVA`）を実施し、`super().method(...)` を `super.method(...)` へ lower 修正。`test_py2java_smoke.py`（23 tests）と `runtime_parity_check --targets java`（1/1 pass）を確認した。

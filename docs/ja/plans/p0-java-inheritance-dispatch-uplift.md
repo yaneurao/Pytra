@@ -26,9 +26,12 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets java`
 
 分解:
-- [ ] `super` lower 条件を整理し、`__init__` 以外のメソッド経路も検証する。
-- [ ] fixture 断片の回帰テストを追加する。
-- [ ] parity で期待出力一致を確認する。
+- [x] `super` lower 条件を整理し、`__init__` 以外のメソッド経路も検証する。
+- [x] fixture 断片の回帰テストを追加する。
+- [x] parity で期待出力一致を確認する。
 
 決定ログ:
 - 2026-03-01: Java は既存基盤を利用しつつ回帰固定を強化する方針とした。
+- 2026-03-01: `super().method(...)` が `super().method(...)` のまま出力され Java コンパイルエラーになる不具合を確認し、`super.method(...)` へ lower するよう修正した。
+- 2026-03-01: `test_py2java_smoke.py` に `inheritance_virtual_dispatch_multilang` 向け回帰テストを追加し、`super.speak()` 出力を固定した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java_smoke.py' -v`（23 tests, pass）と `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets java --ignore-unstable-stdout`（1/1 pass）を確認した。
