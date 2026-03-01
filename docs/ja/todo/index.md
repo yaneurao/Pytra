@@ -32,6 +32,51 @@
 
 ## 未完了タスク
 
+### P0: sample/13 向け `cpp_list_model=pyobj` の typed list 拡張（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s13-typed-list-expansion.md](../plans/p0-cpp-s13-typed-list-expansion.md)
+
+1. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01] sample/13 の `grid/stack/dirs/frames` の object 退化を抑制し、typed list 経路を拡張する。
+2. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S1-01] `cpp_list_model=pyobj` の typed list 判定拡張条件（concrete 要素型）を仕様化する。
+3. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S2-01] emitter 実装を更新し、sample/13 の `grid/stack/dirs/frames` を typed list へ寄せる。
+4. [ ] [ID: P0-CPP-S13-TYPED-LIST-EXPAND-01-S3-01] sample/13 断片回帰を追加し、transpile/check を通す。
+
+### P0: sample/13 `candidates` 選択式の CSE/hoist（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s13-candidate-index-cse.md](../plans/p0-cpp-s13-candidate-index-cse.md)
+
+1. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01] sample/13 の `sel` 抽出で重複する index 計算と要素取得を hoist し、同一式の再評価を削減する。
+2. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S1-01] `sel` 周辺の重複式パターンと適用条件（fail-closed）を定義する。
+3. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S2-01] index/要素取得の hoist を実装し、重複出力を削減する。
+4. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
+
+### P0: sample/13 同型 cast 連鎖の縮退（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s13-samecast-reduction.md](../plans/p0-cpp-s13-samecast-reduction.md)
+
+1. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01] sample/13 の型既知経路に残る `int64(py_to<int64>(...))` 等の同型 cast 連鎖を縮退する。
+2. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S1-01] sample/13 の同型 cast パターンと縮退適用条件を固定する。
+3. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S2-01] EAST3 または C++ emitter で同型 cast 縮退を実装する。
+4. [ ] [ID: P0-CPP-S13-SAMECAST-CUT-01-S3-01] 回帰を追加し、transpile/check を通す。
+
+### P0: sample/13 `grid` 行アクセス hoist（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s13-grid-row-hoist.md](../plans/p0-cpp-s13-grid-row-hoist.md)
+
+1. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01] sample/13 の 2 次元 `grid` アクセスで同一行取得を hoist し、繰り返し `py_at(grid, idx)` を削減する。
+2. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S1-01] row hoist 対象パターン（同一 index の `grid` 再参照）を定義する。
+3. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S2-01] emitter/optimizer に row hoist を実装し、sample/13 出力を縮退する。
+4. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S3-01] 回帰を追加し、transpile/check を通す。
+
+### P0: sample/13 `while stack` の `.empty()` fastpath（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s13-while-empty-fastpath.md](../plans/p0-cpp-s13-while-empty-fastpath.md)
+
+1. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01] typed list 経路の `while py_len(list) != 0` / `== 0` を `.empty()` 判定へ縮退する。
+2. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S1-01] typed list 条件式の fastpath 適用条件（`py_len(list) ==/!= 0`）を定義する。
+3. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S2-01] 条件式描画へ `.empty()` fastpath を実装する。
+4. [ ] [ID: P0-CPP-S13-WHILE-EMPTY-FASTPATH-01-S3-01] sample/13 回帰を追加し、transpile/check を通す。
+
 ### P0: C++ module import 関数の keyword 引数型伝播修正（最優先）
 
 文脈: [docs/ja/plans/p0-cpp-module-keyword-coercion-fix.md](../plans/p0-cpp-module-keyword-coercion-fix.md)
