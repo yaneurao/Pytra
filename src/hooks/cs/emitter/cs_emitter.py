@@ -274,10 +274,9 @@ class CSharpEmitter(CodeEmitter):
         t = self.normalize_type_name(east_type)
         if t == "" or t == "unknown":
             return "object"
-        if t in self.type_map:
-            mapped = self.type_map[t]
-            if mapped != "":
-                return mapped
+        mapped = self.any_dict_get_str(self.type_map, t, "")
+        if mapped != "":
+            return mapped
         if t.startswith("list[") and t.endswith("]"):
             inner = t[5:-1].strip()
             return "System.Collections.Generic.List<" + self._cs_type(inner) + ">"
@@ -340,6 +339,31 @@ class CSharpEmitter(CodeEmitter):
             elem_hint_east = list_t[5:-1].strip()
             elem_t = self._cs_type(elem_hint_east)
         return self._render_list_literal_with_elem_type(expr_d, elem_t, elem_hint_east)
+
+    def _render_set_literal_with_elem_type(self, expr_d: dict[str, Any], elem_t: str, elem_hint_east: str = "") -> str:
+        if elem_t == "" or elem_t == "unknown":
+            elem_t = "object"
+        elts = self.any_to_list(expr_d.get("elts"))
+        if len(elts) == 0:
+            elts = self.any_to_list(expr_d.get("elements"))
+        if len(elts) == 0:
+            return "new System.Collections.Generic.HashSet<" + elem_t + ">()"
+        rendered: list[str] = []
+        for elt in elts:
+            if elem_hint_east != "":
+                rendered.append(self._render_expr_with_type_hint(elt, elem_hint_east))
+            else:
+                rendered.append(self.render_expr(elt))
+        return "new System.Collections.Generic.HashSet<" + elem_t + "> { " + ", ".join(rendered) + " }"
+
+    def _typed_set_literal(self, expr_d: dict[str, Any]) -> str:
+        set_t = self.get_expr_type(expr_d)
+        elem_t = "object"
+        elem_hint_east = ""
+        if set_t.startswith("set[") and set_t.endswith("]"):
+            elem_hint_east = set_t[4:-1].strip()
+            elem_t = self._cs_type(elem_hint_east)
+        return self._render_set_literal_with_elem_type(expr_d, elem_t, elem_hint_east)
 
     def _render_dict_literal_with_types(self, expr_d: dict[str, Any], key_t: str, val_t: str) -> str:
         if key_t == "" or key_t == "unknown":
@@ -470,6 +494,9 @@ class CSharpEmitter(CodeEmitter):
             parts = self.split_generic(hint[5:-1].strip())
             if len(parts) == 2:
                 return self._render_dict_literal_with_types(node, self._cs_type(parts[0]), self._cs_type(parts[1]))
+        if kind == "Set" and hint.startswith("set[") and hint.endswith("]"):
+            elem_hint_east = hint[4:-1].strip()
+            return self._render_set_literal_with_elem_type(node, self._cs_type(elem_hint_east), elem_hint_east)
         if kind == "ListComp" and hint.startswith("list[") and hint.endswith("]"):
             return self._render_list_comp_expr(node, hint[5:-1].strip())
         if kind == "Call":
@@ -900,7 +927,7 @@ class CSharpEmitter(CodeEmitter):
         class_name_raw = self.any_to_str(stmt.get("name"))
         class_name = self._safe_name(class_name_raw)
         prev_class = self.current_class_name
-        prev_class_field_types = dict(self.current_class_field_types)
+        prev_class_field_types: dict[str, str] = dict(self.current_class_field_types)
         prev_method_scope = self.in_method_scope
         self.current_class_name = class_name_raw
 
@@ -1056,7 +1083,7 @@ class CSharpEmitter(CodeEmitter):
 
     def _emit_function(self, fn: dict[str, Any], in_class: str | None) -> None:
         """FunctionDef を C# メソッドとして出力する。"""
-        prev_declared = dict(self.declared_var_types)
+        prev_declared: dict[str, str] = dict(self.declared_var_types)
         prev_method_scope = self.in_method_scope
         prev_return_type = self.current_return_east_type
         self.in_method_scope = in_class is not None
@@ -2204,15 +2231,7 @@ class CSharpEmitter(CodeEmitter):
             return self._typed_list_literal(expr_d)
 
         if kind == "Set":
-            elts = self.any_to_list(expr_d.get("elts"))
-            if len(elts) == 0:
-                elts = self.any_to_list(expr_d.get("elements"))
-            rendered: list[str] = []
-            for elt in elts:
-                rendered.append(self.render_expr(elt))
-            if len(rendered) == 0:
-                return "new System.Collections.Generic.HashSet<object>()"
-            return "new System.Collections.Generic.HashSet<object> { " + ", ".join(rendered) + " }"
+            return self._typed_set_literal(expr_d)
 
         if kind == "Tuple":
             elts = self.tuple_elements(expr_d)

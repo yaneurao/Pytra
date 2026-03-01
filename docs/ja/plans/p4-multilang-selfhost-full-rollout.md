@@ -79,6 +79,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `_emit_annassign` の `Attribute` 経路でも型ヒントを使って `_render_expr_with_type_hint` を適用するよう補強し、`self.x: set[str] = ...` / `self.y: dict[str, str] = ...` の初期化を typed 出力へ揃えた。`test_py2cs_smoke.py` に回帰（43件）を追加して通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 16 -> 10` を確認した（`CS1502/CS1503=18` 維持）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.quote_string_literal` / `syntax_line` / `rename_if_reserved` の受け口を object-safe 化し、`dict[str,str]` 固定引数や `str` 固定引数への過剰依存を縮退した。`test_code_emitter.py`（47件）/`test_py2cs_smoke.py`（43件）通過のうえ `python3 tools/check_cs_single_source_selfhost_compile.py` で `CS1503: 18 -> 15`, `CS1502: 18 -> 15` へ縮退させた。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `transpile()` 冒頭の `self.lines` / `self.scope_stack` を属性注釈付き代入へ更新し、`list[set[str]]` の内側要素へ型ヒントが伝播するよう `List` リテラル描画を補強した。`test_py2cs_smoke.py`（43件）回帰を維持し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 10 -> 8` を確認した（`CS1502/CS1503=15` 維持）。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `Set` リテラルの typed 描画（要素ヒント伝播）と `_cs_type` の type_map 参照を object-safe 化し、`prev_* = dict(...)` のローカル型注釈を補強した。`test_py2cs_smoke.py`（43件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 8 -> 3`, `CS1503: 15 -> 11`, `CS1502: 15 -> 11` へ縮退させた。
 
 ## 現状固定（S1-01）
 

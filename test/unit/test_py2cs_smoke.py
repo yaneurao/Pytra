@@ -726,7 +726,7 @@ def stop() -> None:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("new System.Collections.Generic.HashSet<object>", cs)
+        self.assertIn("new System.Collections.Generic.HashSet<string>", cs)
         self.assertIn(".Contains(k)", cs)
 
     def test_joinedstr_is_lowered_to_csharp_interpolated_string(self) -> None:
