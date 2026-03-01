@@ -44,6 +44,36 @@
 6. [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S3-01] `sample/18` 再生成で不適切 `reserve` 非出力を固定し、回帰テストを更新する。
 7. [ ] [ID: P0-EAST3-SAFE-RESERVE-01-S3-02] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` で非退行を確認する。
 
+### P0: sample/18 C++ 同型 cast 連鎖の追加削減
+
+文脈: [docs/ja/plans/p0-cpp-s18-samecast-chain-reduction.md](../plans/p0-cpp-s18-samecast-chain-reduction.md)
+
+1. [ ] [ID: P0-CPP-S18-SAMECAST-02] sample/18 の `int64(py_to<int64>(...))` など同型 cast 連鎖を削減する。
+2. [ ] [ID: P0-CPP-S18-SAMECAST-02-S1-01] 冗長 cast 発生点（dict取得/補助関数戻り値）を棚卸しし、削減対象を固定する。
+3. [ ] [ID: P0-CPP-S18-SAMECAST-02-S2-01] EAST3 cast cleanup / C++ emitter 条件を更新し、同型 cast 連鎖を縮退する。
+4. [ ] [ID: P0-CPP-S18-SAMECAST-02-S2-02] 回帰テストを追加し、`int64(py_to<int64>(...))` 再発を検知する。
+5. [ ] [ID: P0-CPP-S18-SAMECAST-02-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
+
+### P0: sample/18 C++ `rc` 不要コピー削減
+
+文脈: [docs/ja/plans/p0-cpp-s18-rc-copy-reduction.md](../plans/p0-cpp-s18-rc-copy-reduction.md)
+
+1. [ ] [ID: P0-CPP-S18-RC-COPY-02] sample/18 の読み取り専用 `rc` 経路を参照受けへ寄せ、不要コピーを削減する。
+2. [ ] [ID: P0-CPP-S18-RC-COPY-02-S1-01] `rc` コピー発生点（range-for / 添字一時束縛）を棚卸しし、参照化条件を定義する。
+3. [ ] [ID: P0-CPP-S18-RC-COPY-02-S2-01] C++ emitter 出力を更新し、読み取り専用経路を `const` 参照へ縮退する。
+4. [ ] [ID: P0-CPP-S18-RC-COPY-02-S2-02] 回帰テストを追加し、`rc` 値コピー再発を検知する。
+5. [ ] [ID: P0-CPP-S18-RC-COPY-02-S3-01] sample/18 再生成と transpile 回帰で非退行を確認する。
+
+### P0: sample/18 C++ クラス生成の初期化リスト化
+
+文脈: [docs/ja/plans/p0-cpp-s18-ctor-initlist.md](../plans/p0-cpp-s18-ctor-initlist.md)
+
+1. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01] sample/18 生成クラスの合成コンストラクタを初期化リスト形式へ移行する。
+2. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S1-01] 現行 constructor 出力を棚卸しし、初期化リスト化対象と除外条件を固定する。
+3. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-01] class emitter の合成コンストラクタ出力を初期化リスト形式へ変更する。
+4. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-02] 回帰テストを追加し、本文代入形式の再発を検知する。
+5. [ ] [ID: P0-CPP-S18-CTOR-INITLIST-01-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
+
 ### P0: 非C++ 継承メソッド動的ディスパッチ改善（全backend）
 
 文脈: [docs/ja/plans/p0-multilang-inheritance-dispatch-rollout.md](../plans/p0-multilang-inheritance-dispatch-rollout.md)
@@ -145,6 +175,17 @@
 6. [ ] [ID: P2-WILDCARD-IMPORT-01-S2-03] CLI の wildcard 例外分岐とテスト期待値を正式対応契約へ更新する。
 7. [ ] [ID: P2-WILDCARD-IMPORT-01-S3-01] unit/統合テスト（正常系 + 衝突/失敗系）を追加して再発検知を固定する。
 8. [ ] [ID: P2-WILDCARD-IMPORT-01-S3-02] `spec-user.md` / `spec-import.md` / TODO の記述を実装契約に同期する。
+
+### P2: sample/18 C++ AST コンテナ値型化
+
+文脈: [docs/ja/plans/p2-cpp-s18-value-container.md](../plans/p2-cpp-s18-value-container.md)
+
+1. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01] sample/18 の AST コンテナ値型化（`list<rc<T>> -> list<T>`）を段階導入する。
+2. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-01] AST コンテナ利用点を棚卸しし、値型化可能な non-escape 条件を定義する。
+3. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-02] EAST3 メタと C++ emitter 連携仕様（ownership hint / fail-closed）を設計する。
+4. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-01] sample/18 先行で `expr_nodes` / `stmts` の値型出力を実装する。
+5. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-02] 逸脱ケースで `rc` へフォールバックする条件を実装する。
+6. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S3-01] 回帰テスト（型出力断片 + 実行整合）を追加して再発検知を固定する。
 
 ### P3: 非C++ backend へのコンテナ参照管理モデル展開
 
