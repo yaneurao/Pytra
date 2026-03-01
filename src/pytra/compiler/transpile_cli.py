@@ -172,14 +172,18 @@ def normalize_east_root_document(doc: dict[str, object]) -> dict[str, object]:
         return doc
     stage_obj = dict_any_get(doc, "east_stage")
     stage = 2
-    if isinstance(stage_obj, int) and (stage_obj == 1 or stage_obj == 2 or stage_obj == 3):
-        stage = int(stage_obj)
+    if isinstance(stage_obj, int):
+        stage_num = int(stage_obj)
+        if stage_num == 1 or stage_num == 2 or stage_num == 3:
+            stage = stage_num
     doc["east_stage"] = stage
 
     schema_obj = dict_any_get(doc, "schema_version")
     schema_version = 1
-    if isinstance(schema_obj, int) and schema_obj > 0:
-        schema_version = int(schema_obj)
+    if isinstance(schema_obj, int):
+        schema_num = int(schema_obj)
+        if schema_num > 0:
+            schema_version = schema_num
     doc["schema_version"] = schema_version
 
     meta = dict_any_get_dict(doc, "meta")
@@ -201,7 +205,8 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             payload: dict[str, object] = payload_any
             ok_obj = dict_any_get(payload, "ok")
             east_obj = dict_any_get(payload, "east")
-            if isinstance(ok_obj, bool) and ok_obj and isinstance(east_obj, dict):
+            ok = isinstance(ok_obj, bool) and bool(ok_obj)
+            if ok and isinstance(east_obj, dict):
                 east_obj_dict = dict_any_get_dict(payload, "east")
                 east_doc = normalize_east_root_document(east_obj_dict)
                 return normalize_east1_to_east2_document(east_doc)
@@ -301,8 +306,10 @@ def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, 
             return out_doc
     if isinstance(east_doc, dict) and dict_any_kind(east_doc) == "Module":
         stage_obj = dict_any_get(east_doc, "east_stage")
-        if isinstance(stage_obj, int) and stage_obj == 1:
-            east_doc["east_stage"] = 2
+        if isinstance(stage_obj, int):
+            stage_num = int(stage_obj)
+            if stage_num == 1:
+                east_doc["east_stage"] = 2
     return east_doc
 
 
@@ -610,14 +617,10 @@ def extract_function_arg_types_from_python_source(src_path: Path) -> dict[str, l
     """EAST 化に失敗するモジュール用の関数シグネチャ簡易抽出。"""
     sigs = extract_function_signatures_from_python_source(src_path)
     out: dict[str, list[str]] = {}
-    for fn_name_obj, sig_obj in sigs.items():
-        if not isinstance(fn_name_obj, str):
-            continue
-        if not isinstance(sig_obj, dict):
-            continue
-        arg_types_obj = sig_obj.get("arg_types")
-        if isinstance(arg_types_obj, list):
-            out[fn_name_obj] = arg_types_obj
+    for fn_name in sigs:
+        sig = sigs[fn_name]
+        if "arg_types" in sig:
+            out[fn_name] = sig["arg_types"]
     return out
 
 
@@ -1338,14 +1341,25 @@ def sanitize_module_label(text: str) -> str:
     """モジュール識別子向けに英数字/`_` のみ残す。"""
     out_chars: list[str] = []
     for ch in text:
-        ok = ((ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == "_")
+        ok = ch == "_" or ch.isalpha() or ch.isdigit()
         if ok:
             out_chars.append(ch)
         else:
             out_chars.append("_")
     out = "".join(out_chars)
     out = out if out != "" else "module"
-    if out[0] >= "0" and out[0] <= "9":
+    if (
+        out.find("0") == 0
+        or out.find("1") == 0
+        or out.find("2") == 0
+        or out.find("3") == 0
+        or out.find("4") == 0
+        or out.find("5") == 0
+        or out.find("6") == 0
+        or out.find("7") == 0
+        or out.find("8") == 0
+        or out.find("9") == 0
+    ):
         out = "_" + out
     return out
 
@@ -1940,7 +1954,23 @@ def sort_str_list_copy(items: list[str]) -> list[str]:
         key = out[i]
         insert_at = i
         for j in range(i - 1, -1, -1):
-            if out[j] > key:
+            greater = False
+            left = out[j]
+            limit = len(left) if len(left) < len(key) else len(key)
+            decided = False
+            for pos in range(limit):
+                lcode = ord(left[pos : pos + 1])
+                rcode = ord(key[pos : pos + 1])
+                if lcode > rcode:
+                    greater = True
+                    decided = True
+                    break
+                if lcode < rcode:
+                    decided = True
+                    break
+            if not decided and len(left) > len(key):
+                greater = True
+            if greater:
                 out[j + 1] = out[j]
                 insert_at = j
             else:

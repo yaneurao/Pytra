@@ -56,12 +56,21 @@ class CodeEmitter:
 
     def __init__(
         self,
-        east_doc: dict[str, Any] = {},
-        profile: dict[str, Any] = {},
-        hooks: dict[str, Any] = {},
+        east_doc: dict[str, Any] | None = None,
+        profile: dict[str, Any] | None = None,
+        hooks: dict[str, Any] | None = None,
     ) -> None:
         """共通の出力状態と一時変数カウンタを初期化する。"""
-        self.init_base_state(east_doc, profile, hooks)
+        safe_doc: dict[str, Any] = {}
+        if isinstance(east_doc, dict):
+            safe_doc = east_doc
+        safe_profile: dict[str, Any] = {}
+        if isinstance(profile, dict):
+            safe_profile = profile
+        safe_hooks: dict[str, Any] = {}
+        if isinstance(hooks, dict):
+            safe_hooks = hooks
+        self.init_base_state(safe_doc, safe_profile, safe_hooks)
 
     def init_base_state(
         self,
@@ -1450,6 +1459,18 @@ class CodeEmitter:
         return out
 
     @staticmethod
+    def _dict_copy_str_object(value: Any) -> dict[str, Any]:
+        """`dict` 値を `dict[str, Any]` へ正規化コピーする。"""
+        out: dict[str, Any] = {}
+        value_dict: dict[str, Any] = {}
+        if isinstance(value, dict):
+            value_dict = dict(value)
+        for raw_key, raw_val in value_dict.items():
+            if isinstance(raw_key, str):
+                out[str(raw_key)] = raw_val
+        return out
+
+    @staticmethod
     def load_type_map(
         profile: dict[str, Any],
         defaults: dict[str, str] | None = None,
@@ -1458,14 +1479,19 @@ class CodeEmitter:
         out: dict[str, str] = {}
         if isinstance(defaults, dict):
             for key, val in defaults.items():
-                if isinstance(key, str) and isinstance(val, str) and key != "" and val != "":
-                    out[key] = val
+                key_txt = str(key)
+                val_txt = str(val)
+                if key_txt != "" and val_txt != "":
+                    out[key_txt] = val_txt
         if not isinstance(profile, dict):
             return out
         raw_types = profile.get("types")
-        type_section = raw_types if isinstance(raw_types, dict) else {}
-        nested_types = type_section.get("types")
-        source = nested_types if isinstance(nested_types, dict) and len(nested_types) > 0 else type_section
+        type_section = CodeEmitter._dict_copy_str_object(raw_types)
+        nested_types_obj = type_section.get("types")
+        nested_types = CodeEmitter._dict_copy_str_object(nested_types_obj)
+        source: dict[str, Any] = type_section
+        if len(nested_types) > 0:
+            source = nested_types
         for key, val in source.items():
             if isinstance(key, str) and isinstance(val, str) and key != "" and val != "":
                 out[key] = val
@@ -1490,11 +1516,12 @@ class CodeEmitter:
     def split_union_non_none(self, union_type: str) -> tuple[list[str], bool]:
         """Union 型を `None` とそれ以外（重複除去）へ分解する。"""
         t = self.normalize_type_name(union_type)
+        empty: list[str] = []
         if t == "":
-            return [], False
+            return empty, False
         if t.find("|") < 0:
             if t == "None":
-                return [], True
+                return empty, True
             return [t], False
         parts = self.split_union(t)
         non_none: list[str] = []
@@ -1833,7 +1860,7 @@ class CodeEmitter:
         if isinstance(raw, bool):
             return bool(raw)
         if isinstance(raw, int):
-            return raw != 0
+            return int(raw) != 0
         return default_declare
 
     def render_augassign_basic(
@@ -1856,10 +1883,10 @@ class CodeEmitter:
         if len(text) == 0:
             return False
         c0 = text[0:1]
-        if not (c0 == "_" or (c0 >= "a" and c0 <= "z") or (c0 >= "A" and c0 <= "Z")):
+        if not (c0 == "_" or self._is_ascii_lower(c0) or self._is_ascii_upper(c0)):
             return False
         for ch in text[1:]:
-            if not (ch == "_" or (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
+            if not (ch == "_" or self._is_ascii_lower(ch) or self._is_ascii_upper(ch) or self._is_ascii_digit(ch)):
                 return False
         return True
 
@@ -2591,7 +2618,7 @@ class CodeEmitter:
     ) -> str:
         """IfExp の式組み立てを共通化する。"""
         if fold_bool_literal:
-            node = test_node if isinstance(test_node, dict) else {}
+            node = self.any_to_dict_or_empty(test_node)
             if self._node_kind_from_dict(node) == "Constant" and isinstance(node.get("value"), bool):
                 return body_expr if bool(node.get("value")) else orelse_expr
             if self._node_kind_from_dict(node) == "Name":

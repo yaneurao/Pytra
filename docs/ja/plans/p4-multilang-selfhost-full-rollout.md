@@ -88,6 +88,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `transpile_cli.py` の `graph_adj[cur_key]` 初期化を typed 化し、`build_module_type_schema` の辞書リテラルを型明示エントリへ分解した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0029: 3 -> 0` を確認し、compile 先頭は `CS0019` へ遷移した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter._prepare_call_parts` / `CSharpEmitter._legacy_target_from_for_core_plan` / `transpile_cli.normalize/load` の object 直代入を撤去し、`prepare_selfhost_source_cs.py` のパッチ適用条件を後方互換化した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0266: 7 -> 0`, `CS0246: 1 -> 0`, `CS0150: 1 -> 0`, `CS1061: 1 -> 0` を確認した（先頭は `CS0019`）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CSharpEmitter._emit_annassign` の attribute 代入経路で `v` をブロックスコープ外へ事前宣言し、C# 生成物の未定義シンボルを解消した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0103: 1 -> 0` を確認し、残存カテゴリを `CS0019/CS0030/CS0173/CS0411/CS1729/CS8135` に絞り込んだ。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.load_type_map` / `transpile_cli` / `CSharpEmitter` の型縮約を追加補強し、`python3 tools/check_cs_single_source_selfhost_compile.py` を `transpile rc=0 / mcs rc=0`（エラー 0 件）まで到達させた。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（43件）と `... -p 'test_code_emitter.py' -v`（48件）も通過を確認した。
 
 ## 現状固定（S1-01）
 
@@ -149,18 +150,18 @@
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S1] C# emitter の selfhost 互換ギャップ（`Path`/`str.endswith|startswith`/定数デフォルト引数）を埋め、先頭 compile エラーを前進させる。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2] `py2cs.py` selfhost 生成物の import 依存解決方針（単体 selfhost source 生成 or モジュール連結）を確定し、`sys/argparse/transpile_cli` 未解決を解消する。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S1] C# selfhost 先頭エラーの足切り（`sys.exit` / docstring式）を解消し、import 依存未解決の先頭シンボルを確定する。
-- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2] C# selfhost 用の import 依存閉包方式（単体 selfhost source 生成 or モジュール連結）を実装し、`transpile_to_csharp` 未解決を解消する。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2] C# selfhost 用の import 依存閉包方式（単体 selfhost source 生成 or モジュール連結）を実装し、`transpile_to_csharp` 未解決を解消する。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S1] 単体 selfhost source 方式の PoC（`prepare_selfhost_source_cs.py`）を実装し、変換可否を実測で確認する。
-- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2] PoC 失敗要因（C# object receiver 制約）を解消するか、モジュール連結方式へ pivot して import 依存閉包を成立させる。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2] PoC 失敗要因（C# object receiver 制約）を解消するか、モジュール連結方式へ pivot して import 依存閉包を成立させる。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S1] 単体 selfhost source PoC の parse 制約（object receiver access）を解消し、`selfhost/py2cs.py` の C# 変換を通す。
-- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2] 単体 selfhost source 生成物（`cs_selfhost_full_stage1.cs`）の compile 失敗を分類し、mcs 通過に必要な emit/runtime 互換ギャップを埋める。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2] 単体 selfhost source 生成物（`cs_selfhost_full_stage1.cs`）の compile 失敗を分類し、mcs 通過に必要な emit/runtime 互換ギャップを埋める。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S1] compile 失敗の機械分類ツールを追加し、エラーコード/カテゴリの現状値をレポート化する。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S2] 分類結果（テンプレート断片混入 / 呼び出し形状崩れ / shadowed local）に対応する修正を実装し、`CS1525/CS1002` を段階的に削減する。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S3] `mcs` 内部例外（`tuples > 7`）を回避する emit 方針を実装し、stage2 compile を次段検証可能な状態へ戻す。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S4] `mcs` で顕在化した通常 compile エラー（`CS1061/CS0103/CS1503` 上位群）の先頭カテゴリを削減し、stage2 失敗件数を継続的に縮退させる。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S5] 残存上位エラー（`CS0103 set/list/json` と `CS0019 char/string`）を対象に emitter lower を追加し、stage2 compile 失敗件数をさらに縮退させる。
 - [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S6] 残存の主要失敗（`json` 未解決、`dict.get/items` 未lower、`CodeEmitter` static参照不整合）を段階解消し、stage2 compile の上位エラー構成を更新する。
-- [ ] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7] 残存上位エラー（`_add`/`item_expr` の未定義、`object` 由来の `CS1503/CS0266`）を対象に nested helper/型縮約を補強し、stage2 compile 件数をさらに削減する。
+- [x] [ID: P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7] 残存上位エラー（`_add`/`item_expr` の未定義、`object` 由来の `CS1503/CS0266`）を対象に nested helper/型縮約を補強し、stage2 compile 件数をさらに削減する。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-02-S3] C# selfhost の stage2/stage3 を通し、`compile_fail` から `pass` へ到達させる。
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。

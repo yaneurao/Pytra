@@ -847,7 +847,11 @@ class CSharpEmitter(CodeEmitter):
             self._emit_function(fn, None)
             self.emit("")
 
-        main_body = list(top_level_stmts) + main_guard_body
+        main_body: list[dict[str, Any]] = []
+        for stmt in top_level_stmts:
+            main_body.append(stmt)
+        for stmt in main_guard_body:
+            main_body.append(stmt)
         self.emit("public static void Main(string[] args)")
         self.emit("{")
         self.indent += 1
