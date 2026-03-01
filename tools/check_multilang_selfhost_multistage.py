@@ -77,6 +77,37 @@ def _is_preview_output(text: str) -> bool:
     return ("プレビュー出力" in text) or ("TODO: 専用" in text) or ("preview backend" in text)
 
 
+def _strip_cs_single_line_comments(text: str) -> str:
+    lines = text.splitlines()
+    kept: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        idx = line.find("//")
+        if idx >= 0:
+            line = line[:idx]
+        kept.append(line)
+        i += 1
+    return "\n".join(kept)
+
+
+def _is_cs_empty_skeleton(text: str) -> bool:
+    if "public static class Program" not in text:
+        return False
+    method_pat = re.compile(r"public\s+static\s+[^{;]+\)\s*\{(?P<body>.*?)\n\s*\}", re.DOTALL)
+    bodies = [m.group("body") for m in method_pat.finditer(text)]
+    if len(bodies) == 0:
+        return False
+    non_empty = 0
+    i = 0
+    while i < len(bodies):
+        body = _strip_cs_single_line_comments(bodies[i]).strip()
+        if body != "":
+            non_empty += 1
+        i += 1
+    return non_empty == 0
+
+
 def _extract_js_relative_imports(js_src: str) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
@@ -262,7 +293,7 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
     if not stage2_src.exists():
         return "fail", "skip", "self_retranspile_fail", "stage2 transpiler output missing"
     stage2_text = stage2_src.read_text(encoding="utf-8")
-    if "public static void Main(string[] args)" in stage2_text and "__pytra_main" not in stage2_text:
+    if _is_cs_empty_skeleton(stage2_text):
         return "fail", "skip", "self_retranspile_fail", "stage2 transpiler output is empty skeleton"
 
     stage2_exe = stage_tmp / "py2cs_stage2.exe"
@@ -298,7 +329,7 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
     if not stage3_out.exists():
         return "pass", "fail", "sample_transpile_fail", "stage3 sample output missing"
     stage3_text = stage3_out.read_text(encoding="utf-8")
-    if "public static void Main(string[] args)" in stage3_text and "__pytra_main" not in stage3_text:
+    if _is_cs_empty_skeleton(stage3_text):
         return "pass", "fail", "sample_transpile_fail", "stage3 sample output is empty skeleton"
 
     return "pass", "pass", "pass", "stage2/stage3 sample transpile ok"

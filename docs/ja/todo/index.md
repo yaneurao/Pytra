@@ -295,3 +295,5 @@
 - `P4-MULTILANG-SH-01-S2-02-S3` C# runtime `std/json.cs` を追加し、`json.loads/json.dumps` を runtime 呼び出しへ統一した。`load_east_document` と `dict_any_get_dict` selfhost パッチを `dict(value)` 経路へ整合させ、`Unhandled Exception (Invalid EAST JSON format)` を解消。最新計測の先頭未達は `stage2_compile_fail`（`py2cs_stage2.cs: Unexpected symbol 'base'`）。
 - `P4-MULTILANG-SH-01-S2-02-S3` `base/out` 予約語衝突を source 側で解消し、C# using alias（`str/int64/float64/Any`）を追加。`CS1525` は解消したが、最新 multistage は `stage2_compile_fail` の先頭が `CS0161`（skeleton 化した non-void 関数の return 欠落）へ遷移した。
 - `P4-MULTILANG-SH-01-S2-02-S3` `--east-stage 3` を明示した再検証でも `CS0161` は継続した。現ブロッカーは stage 指定ではなく、stage2 生成物そのものが empty/skeleton 関数本体を大量出力している点にあることを確認した。
+- `P4-MULTILANG-SH-01-S2-02-S3` C# empty-skeleton 判定を `__pytra_main` 欠落依存から「Program 配下の `public static` メソッド本体が全空か」を検査する方式へ更新し、通常 sample 出力の誤検知余地を除去した。
+- `P4-MULTILANG-SH-01-S2-02-S3` C# selfhost の scoped emit を `CSharpEmitter` 側実装へ寄せて基底非virtualディスパッチ由来の空ボディ化を解消し、`check_multilang_selfhost_stage1.py` の `cs stage2` を `pass` まで前進させた（multistage 先頭は `CS0136 safe_doc shadow` へ更新）。

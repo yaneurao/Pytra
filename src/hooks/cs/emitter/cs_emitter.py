@@ -40,6 +40,9 @@ class CSharpEmitter(CodeEmitter):
         syntax = self.any_to_dict_or_empty(profile.get("syntax"))
         identifiers = self.any_to_dict_or_empty(syntax.get("identifiers"))
         self.reserved_words: set[str] = set(self.any_to_str_list(identifiers.get("reserved_words")))
+        # profile 未設定時でも C# compile を壊す最小予約語は常に保護する。
+        self.reserved_words.add("base")
+        self.reserved_words.add("out")
         self.rename_prefix = self.any_to_str(identifiers.get("rename_prefix"))
         if self.rename_prefix == "":
             self.rename_prefix = "py_"
@@ -53,6 +56,99 @@ class CSharpEmitter(CodeEmitter):
         self.needs_dict_str_object_helper: bool = False
         self.current_return_east_type: str = ""
         self.top_function_names: set[str] = set()
+
+    # NOTE:
+    # C# selfhost generated code does not use virtual dispatch by default.
+    # Keep these scoped emit helpers in CSharpEmitter so internal calls route
+    # to this class's emit_stmt implementation instead of CodeEmitter.emit_stmt.
+    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
+        for stmt in stmts:
+            self.emit_stmt(stmt)
+
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: Any) -> None:
+        stack: list[set[str]] = self.scope_stack
+        self.indent += 1
+        stack.append(self._normalize_scope_names(scope_names))
+        self.emit_stmt_list(stmts)
+        if len(stack) > 0:
+            stack.pop()
+        self.scope_stack = stack
+        self.indent -= 1
+
+    def emit_with_scope(self, scope_names: Any, body_fn: list[dict[str, Any]]) -> None:
+        stack: list[set[str]] = self.scope_stack
+        self.indent += 1
+        stack.append(self._normalize_scope_names(scope_names))
+        for stmt in body_fn:
+            self.emit_stmt(stmt)
+        if len(stack) > 0:
+            stack.pop()
+        self.scope_stack = stack
+        self.indent -= 1
+
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: Any) -> None:
+        self.emit(open_line)
+        self.emit_scoped_stmt_list(stmts, scope_names)
+        self.emit_block_close()
+
+    def emit_scoped_block_with_tail_lines(
+        self,
+        open_line: str,
+        stmts: list[dict[str, Any]],
+        scope_names: Any,
+        tail_lines: list[str],
+    ) -> None:
+        stack: list[set[str]] = self.scope_stack
+        self.emit(open_line)
+        self.indent += 1
+        stack.append(self._normalize_scope_names(scope_names))
+        self.emit_stmt_list(stmts)
+        for line in tail_lines:
+            self.emit(line)
+        if len(stack) > 0:
+            stack.pop()
+        self.scope_stack = stack
+        self.indent -= 1
+        self.emit_block_close()
+
+    def emit_if_stmt_skeleton(
+        self,
+        cond_expr: str,
+        body_stmts: list[dict[str, Any]],
+        else_stmts: list[dict[str, Any]],
+        if_open_default: str = "if ({cond}) {",
+        else_open_default: str = "} else {",
+        body_scope: set[str] | None = None,
+        else_scope: set[str] | None = None,
+    ) -> None:
+        b_scope: set[str] = set()
+        if body_scope is not None:
+            b_scope = body_scope
+        e_scope: set[str] = set()
+        if else_scope is not None:
+            e_scope = else_scope
+        self.emit(self.syntax_line("if_open", if_open_default, {"cond": cond_expr}))
+        self.emit_scoped_stmt_list(body_stmts, b_scope)
+        if len(else_stmts) == 0:
+            self.emit(self.syntax_text("block_close", "}"))
+            return
+        self.emit(self.syntax_text("else_open", else_open_default))
+        self.emit_scoped_stmt_list(else_stmts, e_scope)
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def emit_while_stmt_skeleton(
+        self,
+        cond_expr: str,
+        body_stmts: list[dict[str, Any]],
+        while_open_default: str = "while ({cond}) {",
+        body_scope: set[str] | None = None,
+    ) -> None:
+        b_scope: set[str] = set()
+        if body_scope is not None:
+            b_scope = body_scope
+        self.emit(self.syntax_line("while_open", while_open_default, {"cond": cond_expr}))
+        self.emit_scoped_stmt_list(body_stmts, b_scope)
+        self.emit(self.syntax_text("block_close", "}"))
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
