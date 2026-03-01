@@ -1381,6 +1381,14 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         stop = _int_operand(_render_expr(stop_node), stop_node)
         step = _int_operand(_render_expr(step_node), step_node)
         step_is_one = _is_int_literal(step_node, 1)
+        normalized_cond = ""
+        normalized_version_any = stmt.get("normalized_expr_version")
+        if isinstance(normalized_version_any, str) and normalized_version_any == "east3_expr_v1":
+            normalized_exprs_any = stmt.get("normalized_exprs")
+            if isinstance(normalized_exprs_any, dict):
+                for_cond_any = normalized_exprs_any.get("for_cond_expr")
+                if isinstance(for_cond_any, dict):
+                    normalized_cond = _render_expr(for_cond_any)
         step_tmp = _fresh_tmp(ctx, "step")
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
@@ -1401,27 +1409,34 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
         if step_is_one:
             while_prefix = indent + "    " if loop_uses_control else indent
-            lines.append(while_prefix + "while (" + target_name + " < " + stop + ") {")
+            cond_text = normalized_cond if normalized_cond != "" else target_name + " < " + stop
+            lines.append(while_prefix + "while (" + cond_text + ") {")
         else:
             step_prefix = indent + "    " if loop_uses_control else indent
             lines.append(step_prefix + "val " + step_tmp + " = " + step)
             while_prefix = indent + "    " if loop_uses_control else indent
-            lines.append(
-                while_prefix
-                + "while (("
-                + step_tmp
-                + " >= 0L && "
-                + target_name
-                + " < "
-                + stop
-                + ") || ("
-                + step_tmp
-                + " < 0L && "
-                + target_name
-                + " > "
-                + stop
-                + ")) {"
-            )
+            cond_text = ""
+            range_mode_any = iter_plan_any.get("range_mode")
+            range_mode = range_mode_any if isinstance(range_mode_any, str) else ""
+            if normalized_cond != "" and range_mode in {"ascending", "descending"}:
+                cond_text = normalized_cond
+            if cond_text == "":
+                cond_text = (
+                    "("
+                    + step_tmp
+                    + " >= 0L && "
+                    + target_name
+                    + " < "
+                    + stop
+                    + ") || ("
+                    + step_tmp
+                    + " < 0L && "
+                    + target_name
+                    + " > "
+                    + stop
+                    + ")"
+                )
+            lines.append(while_prefix + "while (" + cond_text + ") {")
         if loop_uses_control:
             lines.append(indent + "        boundary:")
             lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")

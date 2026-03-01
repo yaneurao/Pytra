@@ -2330,6 +2330,13 @@ class RustEmitter(CodeEmitter):
             cond = f"{target} > {stop}"
         elif range_mode == "dynamic":
             cond = f"(({step}) > 0 && {target} < {stop}) || (({step}) < 0 && {target} > {stop})"
+        normalized_exprs = self.any_to_dict_or_empty(stmt.get("normalized_exprs"))
+        if self.any_to_str(stmt.get("normalized_expr_version")) == "east3_expr_v1":
+            cond_expr = self.any_to_dict_or_empty(normalized_exprs.get("for_cond_expr"))
+            if self.any_dict_get_str(cond_expr, "kind", "") == "Compare":
+                cond_rendered = self._strip_outer_parens(self.render_expr(cond_expr))
+                if cond_rendered != "":
+                    cond = cond_rendered
         body_scope: set[str] = set()
         body_scope.add(self.any_dict_get_str(target_node, "id", target))
         body = self._dict_stmt_list(stmt.get("body"))
@@ -2451,6 +2458,8 @@ class RustEmitter(CodeEmitter):
                     "stop": iter_plan.get("stop"),
                     "step": iter_plan.get("step"),
                     "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
+                    "normalized_expr_version": self.any_to_str(stmt.get("normalized_expr_version")),
+                    "normalized_exprs": stmt.get("normalized_exprs"),
                     "body": body,
                     "orelse": orelse,
                 }

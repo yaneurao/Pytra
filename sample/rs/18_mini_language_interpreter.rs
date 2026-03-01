@@ -22,6 +22,7 @@ impl Token {
     }
 }
 
+
 #[derive(Clone, Debug)]
 struct ExprNode {
     kind: String,
@@ -48,6 +49,7 @@ impl ExprNode {
     }
 }
 
+
 #[derive(Clone, Debug)]
 struct StmtNode {
     kind: String,
@@ -66,7 +68,10 @@ impl StmtNode {
     }
 }
 
+
 fn tokenize(lines: &Vec<String>) -> Vec<Token> {
+    let single_char_token_tags: ::std::collections::BTreeMap<String, i64> = ::std::collections::BTreeMap::from([(("+").to_string(), 1), (("-").to_string(), 2), (("*").to_string(), 3), (("/").to_string(), 4), (("(").to_string(), 5), ((")").to_string(), 6), (("=").to_string(), 7)]);
+    let single_char_token_kinds: Vec<String> = vec![("PLUS").to_string(), ("MINUS").to_string(), ("STAR").to_string(), ("SLASH").to_string(), ("LPAREN").to_string(), ("RPAREN").to_string(), ("EQUAL").to_string()];
     let mut tokens: Vec<Token> = vec![];
     for (line_index, source) in (lines).iter().enumerate().map(|(i, v)| (i as i64, v)) {
         let mut i: i64 = 0;
@@ -78,38 +83,9 @@ fn tokenize(lines: &Vec<String>) -> Vec<Token> {
                 i += 1;
                 continue;
             }
-            if ch == "+" {
-                tokens.push(Token::new(("PLUS").to_string(), ((ch).to_string()), i, 0));
-                i += 1;
-                continue;
-            }
-            if ch == "-" {
-                tokens.push(Token::new(("MINUS").to_string(), ((ch).to_string()), i, 0));
-                i += 1;
-                continue;
-            }
-            if ch == "*" {
-                tokens.push(Token::new(("STAR").to_string(), ((ch).to_string()), i, 0));
-                i += 1;
-                continue;
-            }
-            if ch == "/" {
-                tokens.push(Token::new(("SLASH").to_string(), ((ch).to_string()), i, 0));
-                i += 1;
-                continue;
-            }
-            if ch == "(" {
-                tokens.push(Token::new(("LPAREN").to_string(), ((ch).to_string()), i, 0));
-                i += 1;
-                continue;
-            }
-            if ch == ")" {
-                tokens.push(Token::new(("RPAREN").to_string(), ((ch).to_string()), i, 0));
-                i += 1;
-                continue;
-            }
-            if ch == "=" {
-                tokens.push(Token::new(("EQUAL").to_string(), ((ch).to_string()), i, 0));
+            let single_tag: i64 = py_any_to_i64(&single_char_token_tags.get(&ch).cloned().unwrap_or(0));
+            if single_tag > 0 {
+                tokens.push(Token::new((((single_char_token_kinds[((if ((single_tag - 1) as i64) < 0 { (single_char_token_kinds.len() as i64 + ((single_tag - 1) as i64)) } else { ((single_tag - 1) as i64) }) as usize)]).clone()).to_string()), ((ch).to_string()), i, 0));
                 i += 1;
                 continue;
             }
@@ -300,6 +276,7 @@ impl Parser {
         panic!("{}", format!("{}{}", format!("{}{}", format!("{}{}", ("primary parse error at pos=").to_string(), py_any_to_string(&t.pos)), (" got=").to_string()), t.kind));
     }
 }
+
 
 fn eval_expr(expr_index: i64, expr_nodes: &Vec<ExprNode>, env: &::std::collections::BTreeMap<String, i64>) -> i64 {
     let node: ExprNode = (expr_nodes[((if ((expr_index) as i64) < 0 { (expr_nodes.len() as i64 + ((expr_index) as i64)) } else { ((expr_index) as i64) }) as usize)]).clone();

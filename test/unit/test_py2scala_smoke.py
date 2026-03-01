@@ -161,6 +161,51 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertEqual(loaded.get("kind"), "Module")
         self.assertEqual(loaded.get("east_stage"), 3)
 
+    def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "ForCore",
+                            "normalized_expr_version": "east3_expr_v1",
+                            "normalized_exprs": {
+                                "for_cond_expr": {
+                                    "kind": "Compare",
+                                    "left": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                                    "ops": ["Gt"],
+                                    "comparators": [{"kind": "Constant", "value": 3, "resolved_type": "int64"}],
+                                    "resolved_type": "bool",
+                                }
+                            },
+                            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+                            "iter_plan": {
+                                "kind": "StaticRangeForPlan",
+                                "start": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                                "stop": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                                "step": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                                "range_mode": "ascending",
+                            },
+                            "body": [{"kind": "Pass"}],
+                            "orelse": [],
+                        }
+                    ],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        scala = transpile_to_scala_native(east)
+        self.assertIn("while ((i > 3L)) {", scala)
+        self.assertNotIn("while ((i < 3L)) {", scala)
+
     def test_cli_smoke_defaults_to_native_without_sidecar(self) -> None:
         fixture = find_fixture_case("if_else")
         with tempfile.TemporaryDirectory() as td:
