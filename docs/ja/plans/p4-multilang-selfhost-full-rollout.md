@@ -89,6 +89,8 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter._prepare_call_parts` / `CSharpEmitter._legacy_target_from_for_core_plan` / `transpile_cli.normalize/load` の object 直代入を撤去し、`prepare_selfhost_source_cs.py` のパッチ適用条件を後方互換化した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0266: 7 -> 0`, `CS0246: 1 -> 0`, `CS0150: 1 -> 0`, `CS1061: 1 -> 0` を確認した（先頭は `CS0019`）。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CSharpEmitter._emit_annassign` の attribute 代入経路で `v` をブロックスコープ外へ事前宣言し、C# 生成物の未定義シンボルを解消した。`python3 tools/check_cs_single_source_selfhost_compile.py` で `CS0103: 1 -> 0` を確認し、残存カテゴリを `CS0019/CS0030/CS0173/CS0411/CS1729/CS8135` に絞り込んだ。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.load_type_map` / `transpile_cli` / `CSharpEmitter` の型縮約を追加補強し、`python3 tools/check_cs_single_source_selfhost_compile.py` を `transpile rc=0 / mcs rc=0`（エラー 0 件）まで到達させた。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（43件）と `... -p 'test_code_emitter.py' -v`（48件）も通過を確認した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` の C# 経路を selfhost source 生成（`prepare_selfhost_source_cs.py`）前提に更新し、`mcs` へ `-langversion:latest` を適用した。これにより C# は `compile_fail` を脱し、`stage1: pass` / `multistage stage2: pass` まで前進した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `src/py2cs.py` の argv 取り回しを `sys.argv[1:]` ベースへ戻し、selfhost 置換後の `args` 入力と衝突しないよう調整した。現状の先頭未達は `stage3 sample output missing`（stage2 生成物が空 Program に縮退）で、次ブロッカーは selfhost parser stub（`convert_path` / `convert_source_to_east_with_backend` が空 dict 返却）由来の機能不足に固定された。
 
 ## 現状固定（S1-01）
 
