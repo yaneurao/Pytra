@@ -24,13 +24,25 @@ class CppStatementEmitter:
                 self.emit_scoped_stmt_list([else_stmts[0]], set())
             return
 
-        self.emit_if_stmt_skeleton(
-            cond_txt,
-            body_stmts,
-            else_stmts,
-            if_open_default="if ({cond}) {",
-            else_open_default="} else {",
-        )
+        # Flatten `else: if ...` chain into `else if (...)` for readability.
+        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": cond_txt}))
+        self.emit_scoped_stmt_list(body_stmts, set())
+        cur_else = else_stmts
+        while len(cur_else) == 1:
+            nested = self.any_to_dict_or_empty(cur_else[0])
+            if self._node_kind_from_dict(nested) != "If":
+                break
+            n_cond, n_body, n_else = self.prepare_if_stmt_parts(nested, cond_empty_default="false")
+            self._predeclare_if_join_names(n_body, n_else)
+            self.emit(f"}} else if ({n_cond}) {{")
+            self.emit_scoped_stmt_list(n_body, set())
+            cur_else = n_else
+        if len(cur_else) == 0:
+            self.emit(self.syntax_text("block_close", "}"))
+            return
+        self.emit(self.syntax_text("else_open", "} else {"))
+        self.emit_scoped_stmt_list(cur_else, set())
+        self.emit(self.syntax_text("block_close", "}"))
 
     def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
         """While ノードを出力する。"""

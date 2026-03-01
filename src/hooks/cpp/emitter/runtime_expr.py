@@ -197,12 +197,17 @@ class CppRuntimeExprEmitter:
             return f"py_int_to_bytes({owner_expr}, {length_expr}, {byteorder_expr})"
         if op == "bytes_ctor":
             bytes_args: list[str] = []
+            arg_nodes: list[Any] = []
             if self.any_dict_has(expr_d, "args"):
                 arg_nodes = self.any_to_list(expr_d.get("args"))
                 for arg_node in arg_nodes:
                     bytes_args.append(self.render_expr(arg_node))
             if len(bytes_args) == 0:
                 return "bytes{}"
+            if len(bytes_args) == 1 and len(arg_nodes) == 1:
+                src_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0]))
+                if src_t in {"bytes", "bytearray"}:
+                    return bytes_args[0]
             return f"bytes({join_str_list(', ', bytes_args)})"
         if op == "bytearray_ctor":
             bytearray_args: list[str] = []

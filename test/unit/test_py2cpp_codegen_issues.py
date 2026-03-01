@@ -583,6 +583,21 @@ def f() -> float:
         self.assertNotIn("object dirs = ", cpp)
         self.assertNotIn("object frames = ", cpp)
 
+    def test_sample08_else_if_chain_is_flattened(self) -> None:
+        src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("else if (d == 1) {", cpp)
+        self.assertIn("else if (d == 2) {", cpp)
+        self.assertNotIn("else {\n                if (d == 1)", cpp)
+
+    def test_sample08_capture_return_avoids_redundant_bytes_ctor(self) -> None:
+        src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("return frame;", cpp)
+        self.assertNotIn("return bytes(frame);", cpp)
+
     def test_typed_list_len_zero_compare_uses_empty_fastpath(self) -> None:
         src = """def has_items(xs: list[int]) -> bool:
     return len(xs) != 0

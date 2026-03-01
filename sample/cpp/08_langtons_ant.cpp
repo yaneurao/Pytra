@@ -13,7 +13,7 @@ bytes capture(const list<list<int64>>& grid, int64 w, int64 h) {
             frame[row_base + x] = (grid[y][x] ? 255 : 0);
         }
     }
-    return bytes(frame);
+    return frame;
 }
 
 void run_08_langtons_ant() {
@@ -42,15 +42,12 @@ void run_08_langtons_ant() {
         }
         if (d == 0) {
             y = (y - 1 + h) % h;
+        } else if (d == 1) {
+            x = (x + 1) % w;
+        } else if (d == 2) {
+            y = (y + 1) % h;
         } else {
-            if (d == 1) {
-                x = (x + 1) % w;
-            } else {
-                if (d == 2)
-                    y = (y + 1) % h;
-                else
-                    x = (x - 1 + w) % w;
-            }
+            x = (x - 1 + w) % w;
         }
         if (i % capture_every == 0)
             frames.append(capture(grid, w, h));
