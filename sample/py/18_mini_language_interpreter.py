@@ -33,6 +33,24 @@ class StmtNode:
     kind_tag: int    # STMT_KIND_*
 
 def tokenize(lines: list[str]) -> list[Token]:
+    single_char_token_tags: dict[str, int] = {
+        "+": 1,
+        "-": 2,
+        "*": 3,
+        "/": 4,
+        "(": 5,
+        ")": 6,
+        "=": 7,
+    }
+    single_char_token_kinds: list[str] = [
+        "PLUS",
+        "MINUS",
+        "STAR",
+        "SLASH",
+        "LPAREN",
+        "RPAREN",
+        "EQUAL",
+    ]
     tokens: list[Token] = []
     for line_index, source in enumerate(lines):
         i: int = 0
@@ -44,38 +62,9 @@ def tokenize(lines: list[str]) -> list[Token]:
                 i += 1
                 continue
 
-            if ch == "+":
-                tokens.append(Token("PLUS", ch, i, 0))
-                i += 1
-                continue
-
-            if ch == "-":
-                tokens.append(Token("MINUS", ch, i, 0))
-                i += 1
-                continue
-
-            if ch == "*":
-                tokens.append(Token("STAR", ch, i, 0))
-                i += 1
-                continue
-
-            if ch == "/":
-                tokens.append(Token("SLASH", ch, i, 0))
-                i += 1
-                continue
-
-            if ch == "(":
-                tokens.append(Token("LPAREN", ch, i, 0))
-                i += 1
-                continue
-
-            if ch == ")":
-                tokens.append(Token("RPAREN", ch, i, 0))
-                i += 1
-                continue
-
-            if ch == "=":
-                tokens.append(Token("EQUAL", ch, i, 0))
+            single_tag: int = single_char_token_tags.get(ch, 0)
+            if single_tag > 0:
+                tokens.append(Token(single_char_token_kinds[single_tag - 1], ch, i, 0))
                 i += 1
                 continue
 

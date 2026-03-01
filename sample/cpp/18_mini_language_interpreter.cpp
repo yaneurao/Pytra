@@ -78,6 +78,8 @@ struct StmtNode : public PyObj {
 };
 
 list<rc<Token>> tokenize(const list<str>& lines) {
+    dict<str, int64> single_char_token_tags = dict<str, int64>{{"+", 1}, {"-", 2}, {"*", 3}, {"/", 4}, {"(", 5}, {")", 6}, {"=", 7}};
+    object single_char_token_kinds = make_object(list<str>{"PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"});
     list<rc<Token>> tokens = list<rc<Token>>{};
     for (const auto& [line_index, source] : py_enumerate(lines)) {
         int64 i = 0;
@@ -89,38 +91,9 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 i++;
                 continue;
             }
-            if (ch == "+") {
-                tokens.append(::rc_new<Token>("PLUS", ch, i, 0));
-                i++;
-                continue;
-            }
-            if (ch == "-") {
-                tokens.append(::rc_new<Token>("MINUS", ch, i, 0));
-                i++;
-                continue;
-            }
-            if (ch == "*") {
-                tokens.append(::rc_new<Token>("STAR", ch, i, 0));
-                i++;
-                continue;
-            }
-            if (ch == "/") {
-                tokens.append(::rc_new<Token>("SLASH", ch, i, 0));
-                i++;
-                continue;
-            }
-            if (ch == "(") {
-                tokens.append(::rc_new<Token>("LPAREN", ch, i, 0));
-                i++;
-                continue;
-            }
-            if (ch == ")") {
-                tokens.append(::rc_new<Token>("RPAREN", ch, i, 0));
-                i++;
-                continue;
-            }
-            if (ch == "=") {
-                tokens.append(::rc_new<Token>("EQUAL", ch, i, 0));
+            int64 single_tag = int64(py_to<int64>(single_char_token_tags.get(ch, 0)));
+            if (single_tag > 0) {
+                tokens.append(::rc_new<Token>(py_to_string(py_at(single_char_token_kinds, py_to<int64>(single_tag - 1))), ch, i, 0));
                 i++;
                 continue;
             }

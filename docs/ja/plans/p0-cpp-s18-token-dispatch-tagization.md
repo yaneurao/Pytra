@@ -35,11 +35,15 @@
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として tokenizer 分岐の tag 化を P0 で起票。
+- 2026-03-01: `sample/18` の single-char token 判定を `dict[str,int]` tag lookup + kind 配列参照へ変更し、`if (ch == "+")` 連鎖を縮退した。
+- 2026-03-01: module-level 定数の初期化順問題（global 未初期化 + `__pytra_main` 内 shadow）で `=` 判定が失敗する退行を確認し、tag/kind 定数を `tokenize` ローカルへ移して解消した。
+- 2026-03-01: `test_py2cpp_codegen_issues.py` に tokenizer tag-dispatch 回帰を追加し、single-char 分岐連鎖の再発を防止した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（82件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`runtime_parity_check`（sample/18 cpp PASS）で非退行を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01] tokenizer の kind 判定を文字列比較連鎖から tag/enum 中心へ移行する。
-- [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S1-01] 現在の分岐列を棚卸しし、tag マップ（1文字->kind_tag）仕様を固定する。
-- [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-01] emitter 出力を tag 判定優先へ変更し、同値な kind 文字列は必要箇所のみ残す。
-- [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-02] sample/18 回帰を追加し、`if (ch == "...")` 連鎖の再発を防止する。
-- [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S3-01] transpile/unit/parity で非退行を確認する。
+- [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01] tokenizer の kind 判定を文字列比較連鎖から tag/enum 中心へ移行する。
+- [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S1-01] 現在の分岐列を棚卸しし、tag マップ（1文字->kind_tag）仕様を固定する。
+- [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-01] emitter 出力を tag 判定優先へ変更し、同値な kind 文字列は必要箇所のみ残す。
+- [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-02] sample/18 回帰を追加し、`if (ch == "...")` 連鎖の再発を防止する。
+- [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S3-01] transpile/unit/parity で非退行を確認する。

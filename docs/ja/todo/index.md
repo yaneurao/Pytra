@@ -66,11 +66,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-token-dispatch-tagization.md](../plans/p0-cpp-s18-token-dispatch-tagization.md)
 
-1. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01] tokenizer の kind 判定を文字列比較連鎖から tag/enum 中心へ移行する。
-2. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S1-01] 現在の分岐列を棚卸しし、tag マップ（1文字->kind_tag）仕様を固定する。
-3. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-01] emitter 出力を tag 判定優先へ変更し、同値な kind 文字列は必要箇所のみ残す。
-4. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-02] sample/18 回帰を追加し、`if (ch == \"...\")` 連鎖の再発を防止する。
-5. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S3-01] transpile/unit/parity で非退行を確認する。
+1. [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01] tokenizer の kind 判定を文字列比較連鎖から tag/enum 中心へ移行する。
+2. [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S1-01] 現在の分岐列を棚卸しし、tag マップ（1文字->kind_tag）仕様を固定する。
+3. [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-01] emitter 出力を tag 判定優先へ変更し、同値な kind 文字列は必要箇所のみ残す。
+4. [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-02] sample/18 回帰を追加し、`if (ch == \"...\")` 連鎖の再発を防止する。
+5. [x] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S3-01] transpile/unit/parity で非退行を確認する。
 
 ### P0: sample/18 benchmark ソース構築の typed list 化（最優先）
 

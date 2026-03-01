@@ -458,8 +458,23 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east)
-        self.assertIn('tokens.append(::rc_new<Token>("PLUS", ch, i, 0));', cpp)
+        self.assertIn("tokens.append(::rc_new<Token>(", cpp)
+        self.assertIn("single_char_token_kinds[single_tag - 1]", cpp)
         self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
+
+    def test_sample18_tokenize_single_char_dispatch_uses_tag_lookup(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("int64 single_tag = int64(py_to<int64>(single_char_token_tags.get(ch, 0)));", cpp)
+        self.assertIn("py_at(single_char_token_kinds, py_to<int64>(single_tag - 1))", cpp)
+        self.assertNotIn('if (ch == "+")', cpp)
+        self.assertNotIn('if (ch == "-")', cpp)
+        self.assertNotIn('if (ch == "*")', cpp)
+        self.assertNotIn('if (ch == "/")', cpp)
+        self.assertNotIn('if (ch == "(")', cpp)
+        self.assertNotIn('if (ch == ")")', cpp)
+        self.assertNotIn('if (ch == "=")', cpp)
 
     def test_sample18_pyobj_enumerate_list_str_uses_typed_direct_unpack(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
