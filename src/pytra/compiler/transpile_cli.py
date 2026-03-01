@@ -1135,8 +1135,13 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                 name_txt = dict_any_get_str(st, "name")
                 if name_txt != "":
                     fields = dict_any_get_dict(st, "field_types")
-                    cls_schema[name_txt] = {"field_types": fields}
-        out[mod_path] = {"functions": fn_schema, "classes": cls_schema}
+                    cls_ent: dict[str, Any] = {}
+                    cls_ent["field_types"] = fields
+                    cls_schema[name_txt] = cls_ent
+        mod_ent: dict[str, Any] = {}
+        mod_ent["functions"] = fn_schema
+        mod_ent["classes"] = cls_schema
+        out[mod_path] = mod_ent
     return out
 
 
@@ -2045,7 +2050,8 @@ def analyze_import_graph(
 
         mods = collect_import_modules(east_cur)
         if cur_key not in graph_adj:
-            graph_adj[cur_key] = []
+            empty_deps: list[str] = []
+            graph_adj[cur_key] = empty_deps
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
         search_root = Path(path_parent_text(cur_path))
