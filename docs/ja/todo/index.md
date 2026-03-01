@@ -103,6 +103,7 @@
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時の fallback/fail-closed 条件（`for_cond_expr` fallback, `reserve_hints` fail-closed）を固定。
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト追加で `ExpressionNormalizationPass` と C++ 条件式描画の回帰を固定。
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 代表3件（01/08/18）の `cpp/rs/scala` parity を実施し `cases=3 pass=3 fail=0` を確認（`scala` の `ArrayBuffer[Any]` 型不整合と `continue` 誤判定を修正）。
+- 進捗メモ: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` と `sample/cpp/01` の差分棚卸しを完了し、改善実装順（loop -> cast -> init -> truthy）を固定。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
@@ -124,7 +125,7 @@
 文脈: [docs/ja/plans/p1-ruby-sample01-quality-uplift.md](../plans/p1-ruby-sample01-quality-uplift.md)
 
 1. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01] Ruby backend の `sample/01` 出力品質を改善し、C++ 出力との差を縮小する。
-2. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` の品質差分（冗長 cast / loop / truthy / 一時初期化）を棚卸しし、改善優先順を固定する。
+2. [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` の品質差分（冗長 cast / loop / truthy / 一時初期化）を棚卸しし、改善優先順を固定する。
 3. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-01] Ruby emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 4. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
 5. [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] 比較式/論理式の `__pytra_truthy` 挿入条件を最適化し、Ruby ネイティブ条件式を優先する。

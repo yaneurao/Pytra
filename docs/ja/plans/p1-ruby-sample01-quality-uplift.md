@@ -1,6 +1,6 @@
 # P1: sample/ruby/01 品質改善（C++品質との差分縮小）
 
-最終更新: 2026-03-01
+最終更新: 2026-03-02
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-RUBY-SAMPLE01-QUALITY-01`
@@ -42,7 +42,7 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets ruby 01_mandelbrot`
 
 分解:
-- [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` の品質差分（冗長 cast / loop / truthy / 一時初期化）を棚卸しし、改善優先順を固定する。
+- [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` の品質差分（冗長 cast / loop / truthy / 一時初期化）を棚卸しし、改善優先順を固定する。
 - [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-01] Ruby emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 - [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
 - [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] 比較式/論理式の `__pytra_truthy` 挿入条件を最適化し、Ruby ネイティブ条件式を優先する。
@@ -51,3 +51,25 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/ruby/01` 品質改善を P1 として計画化し、TODO へ積む方針を確定した。
+- 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` と `sample/cpp/01` の棚卸しを実施し、改善優先順を固定。
+
+## S1-01 棚卸し結果
+
+計測断片（`sample/01`）:
+
+- Ruby 出力: `__pytra_int` 18箇所 / `__pytra_float` 3箇所 / `__pytra_div` 4箇所 / `__pytra_truthy` 3箇所 / `__step_*` 12箇所。
+- C++ 出力: `py_to<float64>` 5箇所、`py_div` 0箇所、`py_truthy` 0箇所、単純 `for` に縮退済み。
+
+差分カテゴリと優先順:
+
+1. ループ形状: Ruby は `__step_* + while` へ退化（`for i in range(...)` の可読性低下が最も大きい）。
+2. 数値演算ラッパ: `__pytra_int/__pytra_div` の同型変換連鎖がホットパスに残存。
+3. 一時初期化: `r/g/b = nil` が typed 分岐前に残る。
+4. truthy 過剰: 比較式でも `__pytra_truthy(...)` を経由する経路がある。
+
+実装順:
+
+1. `S2-02`（loop canonicalization）
+2. `S2-01`（同型数値 cast 削減）
+3. `S2-04`（typed 初期化縮退）
+4. `S2-03`（truthy 挿入条件最適化）
