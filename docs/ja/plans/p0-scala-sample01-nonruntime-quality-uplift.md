@@ -38,8 +38,8 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot --ignore-unstable-stdout`
 
 分解:
-- [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` と `sample/scala/01` を比較し、runtime外の品質差分（型退化/冗長cast/制御構文）を断片で固定する。
-- [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] runtime外タスク境界（本計画で扱う改善 / runtime外出しへ委譲する改善）を明文化する。
+- [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` と `sample/scala/01` を比較し、runtime外の品質差分（型退化/冗長cast/制御構文）を断片で固定する。
+- [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] runtime外タスク境界（本計画で扱う改善 / runtime外出しへ委譲する改善）を明文化する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-01] `pixels` などホットパスで `Any` 退化を抑制する typed container 出力規則を実装する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-02] break/continue を含まない単純ループで `boundary` 出力を省略する fastpath を実装する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] 型既知経路の identity cast（`__pytra_int(0L)` 等）を削減する emit 規則を実装する。
@@ -49,3 +49,32 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、runtime外出しとは独立した `sample/01` Scala品質改善を P0 として起票。
+- 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` 比較で「typed container不足」「boundary過多」「identity cast残存」を優先改善差分として固定した。
+- 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] runtime本体定義/配置は P0-RUNTIME-EXT-SCALA-LUA-01 側へ委譲し、本計画は `// 01:` 以降の生成本体品質のみを対象に確定した。
+
+## S1実施結果（2026-03-02）
+
+### S1-01: `sample/cpp/01` vs `sample/scala/01` 品質差分固定
+
+- 差分A: container 型退化
+  - Scala: `color_map(...): mutable.ArrayBuffer[Any]` / `pixels: mutable.ArrayBuffer[Any]`
+  - C++: `std::tuple<int64,int64,int64>` / `bytearray`
+  - 影響: 画素ループが `Any` ベースになり、型情報と可読性が低下。
+- 差分B: 制御構文の冗長化
+  - Scala: `while` ごとに `boundary` + `Label` が多重に挿入される。
+  - C++: `for/while` が素直な構文で出力される。
+  - 影響: `break/continue` 非使用のホットループでもノイズが増える。
+- 差分C: identity cast / helper 連鎖
+  - Scala: `__pytra_int(0L)`, `y < __pytra_int(height)`, `__pytra_int(escape_count(...))`
+  - C++: `int64` 既知経路では直接式（`0`, `y < height`, `escape_count(...)`）。
+  - 影響: 同型変換で式が長くなり、レビュー時の追跡コストが増える。
+
+### S1-02: runtime外タスク境界の明文化
+
+- 本計画で扱う:
+  - `// 01:` コメント以降の関数本体出力（`escape_count/color_map/render_mandelbrot/run_mandelbrot`）。
+  - emitter の typed container / cast / loop fastpath 規則。
+- 本計画で扱わない:
+  - `def __pytra_*` runtime helper 実装そのもの。
+  - runtime ファイル配置・読み込み導線・parity 実行時の runtime 同梱規約。
+  - これらは P0-RUNTIME-EXT-SCALA-LUA-01 の責務として維持する。

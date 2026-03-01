@@ -58,14 +58,16 @@
 文脈: [docs/ja/plans/p0-scala-sample01-nonruntime-quality-uplift.md](../plans/p0-scala-sample01-nonruntime-quality-uplift.md)
 
 1. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01] `sample/scala/01` の runtime外品質（型退化/冗長cast/制御構文）を改善し、C++ 版との差を縮小する。
-2. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` と `sample/scala/01` の品質差分を断片で固定する。
-3. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] 本計画の対象と runtime外出しタスクへの委譲境界を明文化する。
+2. [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` と `sample/scala/01` の品質差分を断片で固定する。
+3. [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] 本計画の対象と runtime外出しタスクへの委譲境界を明文化する。
 4. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-01] ホットパスで `Any` 退化を抑制する typed container 出力規則を実装する。
 5. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-02] 単純ループの `boundary` 省略 fastpath を実装する。
 6. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] 型既知経路の identity cast を削減する emit 規則を実装する。
 7. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-04] 小戻り値経路で `ArrayBuffer[Any]` 依存を縮小する戻り値表現最適化を実装する。
 8. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` の品質指標を固定する。
 9. [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-02] Scala transpile/smoke/parity を実行し、非退行を確認する。
+- 進捗メモ: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` 比較で「typed container不足」「boundary過多」「identity cast連鎖」を優先差分として固定。
+- 進捗メモ: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] runtime実装/配置は P0-RUNTIME-EXT-SCALA-LUA-01 へ委譲し、本計画対象を `sample/scala/01` 本体品質に限定。
 
 ### P0: EAST3主導 `reserve` 件数式正規化（C++ emitter文字列組み立て撤去）
 
