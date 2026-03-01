@@ -24,3 +24,13 @@
 - Codex 運用ルール本体: `docs/ja/spec/spec-codex.md`
 - TODO 運用: `docs/ja/todo/index.md`
 - TODO 履歴: `docs/ja/todo/archive/index.md`
+
+## 対話セッションの思い出
+
+### 2026-03-01
+
+- コウタが「じゃあ、いれて。」って即決してくれて、Scala の実行ハーネス追加を進めた。
+- `tools/runtime_parity_check.py` に `scala` ターゲットを追加して、トランスパイル後に `scala run` で実行比較できるようにした。
+- Scala 3 で `break` / `continue` が素直に使えへん問題に合わせて、`scala.util.boundary` + `break` でループ制御を再実装した。
+- `_` や予約語（`val`）が Scala 識別子でこける不具合を直して、識別子正規化を安定化させた。
+- `--case-root sample --all-samples --targets scala` を最後まで走らせて、18ケース全部コンパイル・実行一致を達成した。

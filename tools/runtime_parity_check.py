@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
 SAMPLE_ROOT = ROOT / "sample" / "py"
+ARTIFACT_OPTIONAL_TARGETS = {"scala"}
 
 
 @dataclass
@@ -240,6 +241,15 @@ def build_targets(
             ),
             needs=("python", "kotlinc", "java"),
         ),
+        Target(
+            name="scala",
+            transpile_cmd=(
+                f"python src/py2scala.py {shlex.quote(case_src)} "
+                f"-o test/transpile/scala/{case_stem}.scala {opt_arg}"
+            ),
+            run_cmd=f"scala run test/transpile/scala/{case_stem}.scala",
+            needs=("python", "scala"),
+        ),
     ]
 
 
@@ -267,7 +277,10 @@ def check_case(
         (work / "src").symlink_to(ROOT / "src", target_is_directory=True)
         (work / "test").symlink_to(ROOT / "test", target_is_directory=True)
         if case_root == "sample":
-            (work / "sample").symlink_to(ROOT / "sample", target_is_directory=True)
+            # Keep outputs isolated in temp dir while reusing sample sources.
+            (work / "sample").mkdir(parents=True, exist_ok=True)
+            (work / "sample" / "py").symlink_to(ROOT / "sample" / "py", target_is_directory=True)
+            (work / "sample" / "out").mkdir(parents=True, exist_ok=True)
 
         run_expr = f"python {shlex.quote(case_path.as_posix())}"
         run_env = {"PYTHONPATH": "src"}
@@ -325,6 +338,11 @@ def check_case(
                     f"  expected: {expected!r}\n"
                     f"  actual  : {actual!r}"
                 )
+                continue
+
+            if target.name in ARTIFACT_OPTIONAL_TARGETS:
+                print(f"[OK] {case_stem}:{target.name}")
+                _record(target.name, "ok", "")
                 continue
 
             actual_out_txt = _parse_output_path(rr.stdout)
