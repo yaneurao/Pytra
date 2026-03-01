@@ -219,6 +219,65 @@ class CppCollectionExprEmitter:
                 out_t = self._cpp_type_text(f"list[{elt_t}]")
         elif expected_out_t != "" and out_t != expected_out_t:
             out_t = expected_out_t
+        rg = self.any_to_dict_or_empty(g.get("iter"))
+        # Fastpath: [[seed] * cols for _ in range(rows)] -> list<list<T>>(rows, list<T>(cols, seed))
+        # This avoids IIFE + append/py_repeat boilerplate for typed 2D zero-fill initialization.
+        if (
+            self._node_kind_from_dict(g_target) == "Name"
+            and self.any_dict_get_str(g_target, "id", "") == "_"
+            and len(self.any_to_list(g.get("ifs"))) == 0
+            and self._node_kind_from_dict(rg) == "RangeExpr"
+        ):
+            start_const = self._const_int_literal(rg.get("start"))
+            step_const = self._const_int_literal(rg.get("step"))
+            mode = self.any_to_str(rg.get("range_mode"))
+            if start_const == 0 and step_const == 1 and mode in {"", "ascending"}:
+                elt_node = self.any_to_dict_or_empty(expr_d.get("elt"))
+                if self._node_kind_from_dict(elt_node) == "BinOp" and self.any_dict_get_str(elt_node, "op", "") == "Mult":
+                    left_node = self.any_to_dict_or_empty(elt_node.get("left"))
+                    right_node = self.any_to_dict_or_empty(elt_node.get("right"))
+                    seed_list_node: dict[str, Any] = {}
+                    repeat_node: Any = {}
+                    if self._node_kind_from_dict(left_node) == "List" and len(self._dict_stmt_list(left_node.get("elements"))) == 1:
+                        seed_list_node = left_node
+                        repeat_node = right_node
+                    elif self._node_kind_from_dict(right_node) == "List" and len(self._dict_stmt_list(right_node.get("elements"))) == 1:
+                        seed_list_node = right_node
+                        repeat_node = left_node
+                    if len(seed_list_node) > 0:
+                        outer_t = self.normalize_type_name(out_east_t)
+                        if outer_t.startswith("list[") and outer_t.endswith("]"):
+                            outer_parts = self.split_generic(outer_t[5:-1])
+                            if len(outer_parts) == 1:
+                                inner_list_t = self.normalize_type_name(outer_parts[0])
+                                if inner_list_t.startswith("list[") and inner_list_t.endswith("]"):
+                                    outer_cpp_t = out_t
+                                    if not outer_cpp_t.startswith("list<"):
+                                        if self._is_pyobj_forced_typed_list_type(outer_t):
+                                            outer_cpp_t = self._cpp_list_value_model_type_text(outer_t)
+                                        else:
+                                            outer_cpp_t = self._cpp_type_text(outer_t)
+                                    if self._is_pyobj_forced_typed_list_type(inner_list_t):
+                                        inner_cpp_t = self._cpp_list_value_model_type_text(inner_list_t)
+                                    else:
+                                        inner_cpp_t = self._cpp_type_text(inner_list_t)
+                                    if outer_cpp_t.startswith("list<") and inner_cpp_t.startswith("list<"):
+                                        rows_expr = self.render_expr(rg.get("stop"))
+                                        cols_expr = self.render_expr(repeat_node)
+                                        seed_node = self._dict_stmt_list(seed_list_node.get("elements"))[0]
+                                        seed_expr = self.render_expr(seed_node)
+                                        inner_parts = self.split_generic(inner_list_t[5:-1])
+                                        if len(inner_parts) == 1:
+                                            seed_t = self.normalize_type_name(self.get_expr_type(seed_node))
+                                            inner_elem_t = self.normalize_type_name(inner_parts[0])
+                                            if self.is_any_like_type(seed_t) and inner_elem_t not in {"", "unknown"}:
+                                                seed_expr = self._coerce_any_expr_to_target_via_unbox(
+                                                    seed_expr,
+                                                    seed_node,
+                                                    inner_elem_t,
+                                                    "listcomp:fill_seed",
+                                                )
+                                        return f"{outer_cpp_t}({rows_expr}, {inner_cpp_t}({cols_expr}, {seed_expr}))"
         brace_pos = elt.find("{")
         if brace_pos > 0:
             elt_ctor = elt[:brace_pos].strip()
@@ -236,7 +295,6 @@ class CppCollectionExprEmitter:
         lines = [f"[&]() -> {lambda_ret_t} {{", f"    {emit_out_t} __out;"]
         tuple_unpack = self._node_kind_from_dict(g_target) == "Tuple"
         iter_tmp = self.next_for_iter_name()
-        rg = self.any_to_dict_or_empty(g.get("iter"))
         if self._node_kind_from_dict(rg) == "RangeExpr":
             start = self.render_expr(rg.get("start"))
             stop = self.render_expr(rg.get("stop"))

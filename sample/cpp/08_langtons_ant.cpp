@@ -23,7 +23,7 @@ void run_08_langtons_ant() {
     
     float64 start = pytra::std::time::perf_counter();
     
-    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>(list<int64>{0}), w));     }     return __out; }();
+    list<list<int64>> grid = list<list<int64>>(h, list<int64>(w, 0));
     int64 x = w / 2;
     int64 y = h / 2;
     int64 d = 0;

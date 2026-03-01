@@ -560,7 +560,7 @@ def f() -> float:
         self.assertIn("while (!(stack.empty())) {", cpp)
         self.assertNotIn("while (py_len(stack) != 0)", cpp)
         self.assertIn("bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale)", cpp)
-        self.assertIn("list<list<int64>> grid = [&]() -> list<list<int64>> {", cpp)
+        self.assertIn("list<list<int64>> grid = list<list<int64>>(cell_h, list<int64>(cell_w, 1));", cpp)
         self.assertIn(
             "list<::std::tuple<int64, int64>> stack = list<::std::tuple<int64, int64>>{::std::make_tuple(1, 1)};",
             cpp,
@@ -597,6 +597,14 @@ def f() -> float:
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("return frame;", cpp)
         self.assertNotIn("return bytes(frame);", cpp)
+
+    def test_sample08_grid_init_uses_typed_fill_ctor(self) -> None:
+        src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("list<list<int64>> grid = list<list<int64>>(h, list<int64>(w, 0));", cpp)
+        self.assertNotIn("grid = [&]() -> list<list<int64>>", cpp)
+        self.assertNotIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
 
     def test_typed_list_len_zero_compare_uses_empty_fastpath(self) -> None:
         src = """def has_items(xs: list[int]) -> bool:
