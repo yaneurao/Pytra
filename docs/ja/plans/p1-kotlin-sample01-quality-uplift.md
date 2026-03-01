@@ -41,7 +41,7 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin 01_mandelbrot`
 
 分解:
-- [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] `sample/kotlin/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
+- [x] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] `sample/kotlin/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
 - [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-01] Kotlin emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 - [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
 - [ ] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S2-03] `write_rgb_png` 経路を no-op から native runtime 呼び出しへ接続し、未解決時は fail-closed にする。
@@ -50,3 +50,4 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/kotlin/01` 品質改善を P1 として計画化し、TODO へ積む方針を確定した。
+- 2026-03-02: [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] `sample/kotlin/01_mandelbrot.kt` を棚卸しし、主要ボトルネックを `__pytra_float` 78回 / `__pytra_int` 41回 / `__pytra_noop(write_rgb_png)` 1回 / `while ((...))` 3箇所 / `pixels` 再ラップ3箇所と確定。優先順は `S2-03(write_rgb_png) -> S2-01(cast縮退) -> S2-02(canonical loop) -> S2-04(append typed fastpath)` とした。
