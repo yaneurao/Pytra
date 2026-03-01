@@ -130,6 +130,7 @@ if __name__ == "__main__":
         east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
         runtime_calls = {str(n.get("runtime_call")) for n in calls if n.get("lowered_kind") == "BuiltinCall"}
+        semantic_tags = {str(n.get("semantic_tag")) for n in calls if n.get("lowered_kind") == "BuiltinCall"}
         self.assertIn("py_strip", runtime_calls)
         self.assertIn("py_lstrip", runtime_calls)
         self.assertIn("py_find", runtime_calls)
@@ -156,6 +157,14 @@ if __name__ == "__main__":
         self.assertIn("std::filesystem::exists", runtime_calls)
         self.assertIn("py_len", runtime_calls)
         self.assertIn("py_print", runtime_calls)
+        self.assertIn("core.len", semantic_tags)
+        self.assertIn("core.print", semantic_tags)
+        self.assertIn("cast.bool", semantic_tags)
+        self.assertIn("cast.int", semantic_tags)
+        self.assertIn("iter.init", semantic_tags)
+        self.assertIn("iter.next", semantic_tags)
+        self.assertIn("logic.any", semantic_tags)
+        self.assertIn("logic.all", semantic_tags)
 
     def test_perf_counter_resolved_type_comes_from_stdlib_signature(self) -> None:
         src = """

@@ -43,12 +43,15 @@
 - 2026-03-01: ユーザー指示により、「EAST2 を最初の共通 IR として運用するための Python 依存排除」を P1 で分割着手する方針を確定した。
 - 2026-03-01: `S1-01` として `core.py` / `east2_to_east3_lowering.py` の Python 依存契約（`py_*` runtime call、builtin 名直参照、`py_tid_*` 互換分岐）を棚卸しし、S2 実装入力を固定した。
 - 2026-03-01: `docs/ja/spec/spec-east.md` に「EAST2 共通 IR 契約（Depythonization Draft）」を追記し、ノード種別/演算子/メタ/診断/fail-closed 条件を明文化した。
+- 2026-03-01: `src/pytra/compiler/stdlib/frontend_semantics.py` を追加し、Python builtin/std の semantic tag 解決を frontend adapter へ分離した。
+- 2026-03-01: `core.py` は `semantic_tag` 付与を adapter 経由へ切り替え、`east2_to_east3_lowering.py` は `semantic_tag` 優先で Obj* / type predicate lower するよう更新した（`runtime_call` は互換保持）。
+- 2026-03-01: 回帰として `test_stdlib_signature_registry.py`, `test_east_core.py`, `test_east2_to_east3_lowering.py` の semantic-tag 系テストを追加/更新し、該当テスト pass を確認した。
 
 ## 分解
 
 - [x] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 に残る Python 依存契約（`py_*` runtime call、builtin 名直参照、型メタ前提）を棚卸しする。
 - [x] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 契約（ノード種別、演算子、メタ情報、診断と fail-closed 条件）を仕様化する。
-- [ ] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移管し、EAST2 契約から分離する。
+- [x] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移管し、EAST2 契約から分離する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ更新し、Python 名称分岐を縮小・除去する。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存入力非退行のための移行ブリッジ（暫定互換）を導入し、段階移行できる状態にする。
 - [ ] [ID: P1-EAST2-COMMON-IR-01-S3-01] EAST2 への Python 依存再混入を検知する unit 回帰を追加する。

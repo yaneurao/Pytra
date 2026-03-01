@@ -560,6 +560,78 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(body[0].get("value", {}).get("kind"), "ObjBool")
         self.assertEqual(body[1].get("value", {}).get("kind"), "ObjIterInit")
 
+    def test_lower_any_boundary_builtin_calls_prefers_semantic_tag(self) -> None:
+        any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "wrapped_bool"},
+                        "args": [any_name],
+                        "keywords": [],
+                        "runtime_call": "static_cast",
+                        "semantic_tag": "cast.bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {"kind": "Name", "id": "wrapped_len"},
+                        "args": [any_name],
+                        "keywords": [],
+                        "semantic_tag": "core.len",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "str",
+                        "func": {"kind": "Name", "id": "wrapped_str"},
+                        "args": [any_name],
+                        "keywords": [],
+                        "semantic_tag": "cast.str",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "object",
+                        "func": {"kind": "Name", "id": "wrapped_iter"},
+                        "args": [any_name],
+                        "keywords": [],
+                        "semantic_tag": "iter.init",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "object",
+                        "func": {"kind": "Name", "id": "wrapped_next"},
+                        "args": [any_name],
+                        "keywords": [],
+                        "semantic_tag": "iter.next",
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "ObjBool")
+        self.assertEqual(body[1].get("value", {}).get("kind"), "ObjLen")
+        self.assertEqual(body[2].get("value", {}).get("kind"), "ObjStr")
+        self.assertEqual(body[3].get("value", {}).get("kind"), "ObjIterInit")
+        self.assertEqual(body[4].get("value", {}).get("kind"), "ObjIterNext")
+
     def test_lower_any_boundary_does_not_reinterpret_plain_call_by_name(self) -> None:
         any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}
         east2 = {
@@ -657,6 +729,46 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(third.get("actual_type_id", {}).get("id"), "Child")
         self.assertEqual(third.get("expected_type_id", {}).get("kind"), "Name")
         self.assertEqual(third.get("expected_type_id", {}).get("id"), "Base")
+
+    def test_lower_type_predicate_calls_accept_semantic_tag(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "type_id"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "wrapped_isinstance"},
+                        "args": [
+                            {"kind": "Name", "id": "x", "resolved_type": "object"},
+                            {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                        "semantic_tag": "type.isinstance",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "wrapped_issubclass"},
+                        "args": [
+                            {"kind": "Name", "id": "Child", "resolved_type": "unknown"},
+                            {"kind": "Name", "id": "Base", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                        "semantic_tag": "type.issubclass",
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        self.assertEqual(body[0].get("value", {}).get("kind"), "IsInstance")
+        self.assertEqual(body[1].get("value", {}).get("kind"), "IsSubclass")
 
     def test_lower_runtime_type_id_and_subtype_calls_to_core_nodes(self) -> None:
         east2 = {

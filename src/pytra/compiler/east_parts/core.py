@@ -18,6 +18,10 @@ from pytra.compiler.stdlib.signature_registry import lookup_stdlib_imported_symb
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_runtime_call
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
 from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_return_type
+from pytra.compiler.stdlib.frontend_semantics import lookup_builtin_semantic_tag
+from pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_function_semantic_tag
+from pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_method_semantic_tag
+from pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_symbol_semantic_tag
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
@@ -2531,26 +2535,41 @@ class _ShExprParser:
                     if fn_name != ""
                     else ""
                 )
+                builtin_semantic_tag = lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""
+                stdlib_fn_semantic_tag = lookup_stdlib_function_semantic_tag(fn_name) if fn_name != "" else ""
+                stdlib_symbol_semantic_tag = (
+                    lookup_stdlib_symbol_semantic_tag(fn_name) if fn_name != "" else ""
+                )
                 if fn_name == "print":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "print"
                     payload["runtime_call"] = "py_print"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "len":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "len"
                     payload["runtime_call"] = "py_len"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "range":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "range"
                     payload["runtime_call"] = "py_range"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "zip":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "zip"
                     payload["runtime_call"] = "zip"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "str":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "str"
                     payload["runtime_call"] = "py_to_string"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name in {"int", "float", "bool"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
@@ -2564,14 +2583,20 @@ class _ShExprParser:
                             if self._is_forbidden_object_receiver_type(arg0_t):
                                 runtime_call = "py_to_bool"
                     payload["runtime_call"] = runtime_call
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name in {"min", "max"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = "py_min" if fn_name == "min" else "py_max"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif stdlib_fn_runtime_call != "":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = stdlib_fn_runtime_call
+                    if stdlib_fn_semantic_tag != "":
+                        payload["semantic_tag"] = stdlib_fn_semantic_tag
                     sig_ret = lookup_stdlib_function_return_type(fn_name)
                     if sig_ret != "":
                         payload["resolved_type"] = sig_ret
@@ -2579,30 +2604,44 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = stdlib_symbol_runtime_call
+                    if stdlib_symbol_semantic_tag != "":
+                        payload["semantic_tag"] = stdlib_symbol_semantic_tag
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = "std::runtime_error"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "open":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "open"
                     payload["runtime_call"] = "open"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "iter":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "iter"
                     payload["runtime_call"] = "py_iter_or_raise"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "next":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "next"
                     payload["runtime_call"] = "py_next_or_stop"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "reversed":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "reversed"
                     payload["runtime_call"] = "py_reversed"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "enumerate":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "enumerate"
                     payload["runtime_call"] = "py_enumerate"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                     elem_t = "unknown"
                     if len(args) >= 1 and isinstance(args[0], dict):
                         elem_t = self._iter_item_type(args[0])
@@ -2615,26 +2654,44 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "any"
                     payload["runtime_call"] = "py_any"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "all":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "all"
                     payload["runtime_call"] = "py_all"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "ord":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "ord"
                     payload["runtime_call"] = "py_ord"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "chr":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "chr"
                     payload["runtime_call"] = "py_chr"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name in {"bytes", "bytearray"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = "bytes_ctor" if fn_name == "bytes" else "bytearray_ctor"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name in {"list", "set", "dict"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     payload["runtime_call"] = fn_name + "_ctor"
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
+                elif fn_name == "isinstance":
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
+                elif fn_name == "issubclass":
+                    if builtin_semantic_tag != "":
+                        payload["semantic_tag"] = builtin_semantic_tag
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
@@ -2645,6 +2702,9 @@ class _ShExprParser:
                         payload["builtin_name"] = attr
                         payload["runtime_call"] = rc
                         payload["runtime_owner"] = owner
+                        method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
+                        if method_semantic_tag != "":
+                            payload["semantic_tag"] = method_semantic_tag
                 node = payload
                 continue
             if tok["k"] == "[":
@@ -3676,6 +3736,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             lc = _sh_parse_expr_lowered(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
             lowered_kind = "BuiltinCall" if fn_name in {"any", "all"} else None
             runtime_call = "py_any" if fn_name == "any" else ("py_all" if fn_name == "all" else "")
+            semantic_tag = lookup_builtin_semantic_tag(fn_name)
             return {
                 "kind": "Call",
                 "source_span": _sh_span(ln_no, col, col + len(raw)),
@@ -3697,6 +3758,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                 "lowered_kind": lowered_kind,
                 "builtin_name": fn_name if lowered_kind is not None else None,
                 "runtime_call": runtime_call if lowered_kind is not None else None,
+                "semantic_tag": semantic_tag if lowered_kind is not None else None,
             }
 
     # Normalize single generator-argument calls into list-comp argument form.

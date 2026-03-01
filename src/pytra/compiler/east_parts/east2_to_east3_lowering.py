@@ -349,6 +349,13 @@ def _lower_py_runtime_type_id_call_expr(out_call: dict[str, Any]) -> dict[str, A
 
 
 def _lower_type_id_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
+    semantic_tag_obj = out_call.get("semantic_tag")
+    semantic_tag = semantic_tag_obj.strip() if isinstance(semantic_tag_obj, str) else ""
+    if semantic_tag == "type.isinstance":
+        return _lower_isinstance_call_expr(out_call, dispatch_mode=dispatch_mode)
+    if semantic_tag == "type.issubclass":
+        return _lower_issubclass_call_expr(out_call, dispatch_mode=dispatch_mode)
+
     func_obj = out_call.get("func")
     if not isinstance(func_obj, dict) or func_obj.get("kind") != "Name":
         return out_call
@@ -615,6 +622,49 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
     arg0_type = _expr_type_name(arg0)
     if not _is_any_like_type(arg0_type):
         return out
+
+    semantic_tag_obj = out.get("semantic_tag")
+    semantic_tag = semantic_tag_obj.strip() if isinstance(semantic_tag_obj, str) else ""
+    if semantic_tag == "cast.bool":
+        return _make_boundary_expr(
+            kind="ObjBool",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="bool",
+            source_expr=out,
+        )
+    if semantic_tag == "core.len":
+        return _make_boundary_expr(
+            kind="ObjLen",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="int64",
+            source_expr=out,
+        )
+    if semantic_tag == "cast.str":
+        return _make_boundary_expr(
+            kind="ObjStr",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="str",
+            source_expr=out,
+        )
+    if semantic_tag == "iter.init":
+        return _make_boundary_expr(
+            kind="ObjIterInit",
+            value_key="value",
+            value_node=arg0,
+            resolved_type="object",
+            source_expr=out,
+        )
+    if semantic_tag == "iter.next":
+        return _make_boundary_expr(
+            kind="ObjIterNext",
+            value_key="iter",
+            value_node=arg0,
+            resolved_type="object",
+            source_expr=out,
+        )
 
     runtime_call = out.get("runtime_call")
     if runtime_call == "py_to_bool":

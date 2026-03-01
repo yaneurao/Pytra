@@ -16,6 +16,10 @@ from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_attribute
 from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
 from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_return_type
 from src.pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_call
+from src.pytra.compiler.stdlib.frontend_semantics import lookup_builtin_semantic_tag
+from src.pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_function_semantic_tag
+from src.pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_method_semantic_tag
+from src.pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_symbol_semantic_tag
 
 
 class StdlibSignatureRegistryTest(unittest.TestCase):
@@ -43,6 +47,14 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
         self.assertEqual(lookup_stdlib_attribute_type("Path", "parent"), "Path")
         self.assertEqual(lookup_stdlib_attribute_type("Path", "name"), "str")
         self.assertEqual(lookup_stdlib_attribute_type("str", "name"), "")
+
+    def test_lookup_frontend_semantic_tags(self) -> None:
+        self.assertEqual(lookup_builtin_semantic_tag("len"), "core.len")
+        self.assertEqual(lookup_builtin_semantic_tag("isinstance"), "type.isinstance")
+        self.assertEqual(lookup_builtin_semantic_tag("unknown"), "")
+        self.assertEqual(lookup_stdlib_function_semantic_tag("perf_counter"), "stdlib.fn.perf_counter")
+        self.assertEqual(lookup_stdlib_symbol_semantic_tag("Path"), "stdlib.symbol.Path")
+        self.assertEqual(lookup_stdlib_method_semantic_tag("exists"), "stdlib.method.exists")
 
 
 if __name__ == "__main__":
