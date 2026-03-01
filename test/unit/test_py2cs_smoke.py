@@ -290,6 +290,27 @@ class Child(Base):
         cs = transpile_to_csharp(east)
         self.assertIn("System.Linq.Enumerable.OrderBy(xs, __x => System.Convert.ToString(__x)).ToList()", cs)
 
+    def test_string_multiply_is_lowered(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "BinOp",
+                        "op": "Mult",
+                        "left": {"kind": "Constant", "value": "ab"},
+                        "right": {"kind": "Constant", "value": 3},
+                    },
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("string.Concat(System.Linq.Enumerable.Repeat(\"ab\", System.Convert.ToInt32(3)))", cs)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

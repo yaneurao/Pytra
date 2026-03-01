@@ -471,6 +471,18 @@ class CSharpEmitter(CodeEmitter):
             + "; }))()"
         )
 
+    def _is_string_expr_node(self, node: dict[str, Any]) -> bool:
+        """式ノードが文字列値として扱えるかを返す。"""
+        if self.get_expr_type(node) == "str":
+            return True
+        if self.any_dict_get_str(node, "kind", "") == "Constant":
+            return isinstance(node.get("value"), str)
+        return False
+
+    def _render_string_repeat(self, text_expr: str, count_expr: str) -> str:
+        """Python の文字列乗算（`\"a\" * n`）を C# 式へ lower する。"""
+        return "string.Concat(System.Linq.Enumerable.Repeat(" + text_expr + ", System.Convert.ToInt32(" + count_expr + ")))"
+
     def _render_optional_default_value(self, default_node: Any) -> str:
         """C# optional parameter の既定値リテラルを描画する。"""
         node = self.any_to_dict_or_empty(default_node)
@@ -1939,6 +1951,10 @@ class CSharpEmitter(CodeEmitter):
             if op == "FloorDiv":
                 return "System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(" + left + ") / System.Convert.ToDouble(" + right + ")))"
             if op == "Mult":
+                if self._is_string_expr_node(left_node):
+                    return self._render_string_repeat(left, right)
+                if self._is_string_expr_node(right_node):
+                    return self._render_string_repeat(right, left)
                 if left_kind == "List" and right_kind != "List":
                     return self._render_list_repeat(left_node, left, right)
                 if right_kind == "List" and left_kind != "List":
