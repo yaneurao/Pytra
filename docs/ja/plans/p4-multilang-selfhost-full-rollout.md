@@ -96,6 +96,8 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] 再計測で `stage1` は `cs: stage2 output is empty skeleton`、`multistage` は `cs: stage2=pass / stage3=fail (stage2_compile_fail)` へ遷移し、先頭失敗を `py2cs_stage2.cs(671): error CS1525 Unexpected symbol 'base'` に更新した。次ブロッカーは selfhost 2段目生成物の予約語（`base`/`out`）混入を含む compile-safe 出力整備。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `base/out` 予約語衝突を source 側（`CodeEmitter` / `transpile_cli` / `CSharpEmitter`）で解消し、C# using alias（`str/int64/float64/Any`）を追加した。これにより `CS1525` は解消し、multistage の先頭失敗は `CS0161: not all code paths return a value`（skeleton 化した non-void 関数群）へ前進した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `dump-east3-after-opt` 入力に対して `--east-stage 3` を明示した再検証を実施したが、`py2cs_stage2.cs` の先頭失敗は継続して `CS0161`。`east-stage` 指定漏れは主因ではなく、stage2 生成物自体が多数の empty/skeleton 関数本体を出力している点が次の実装焦点と確定した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# empty-skeleton 判定を `__pytra_main` 欠落依存から「Program 配下の `public static` メソッド本体が全空か」を検査する方式へ更新した。`sample/cs/01_mandelbrot.cs` は非skeleton、stage2 実出力（空ボディ5件）は skeleton と判定されることを確認した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# selfhost の空ボディ主因を「CodeEmitter 基底ヘルパ内の非virtual呼び出しで `emit_stmt` が基底実装へ固定される」点と特定し、`CSharpEmitter` 側へ scoped emit ヘルパ（`emit_stmt_list`/`emit_scoped_stmt_list`/`emit_scoped_block` など）を明示実装した。これにより `check_multilang_selfhost_stage1.py` の `cs stage2` は `fail(empty skeleton)` から `pass` へ前進し、multistage 先頭失敗は `CS0161` から `CS0136 (safe_doc shadow)` へ遷移した。
 
 ## 現状固定（S1-01）
 

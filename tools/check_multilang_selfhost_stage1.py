@@ -76,6 +76,37 @@ def _is_preview_output(text: str) -> bool:
     return ("プレビュー出力" in text) or ("TODO: 専用" in text) or ("preview backend" in text)
 
 
+def _strip_cs_single_line_comments(text: str) -> str:
+    lines = text.splitlines()
+    kept: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        idx = line.find("//")
+        if idx >= 0:
+            line = line[:idx]
+        kept.append(line)
+        i += 1
+    return "\n".join(kept)
+
+
+def _is_cs_empty_skeleton(text: str) -> bool:
+    if "public static class Program" not in text:
+        return False
+    method_pat = re.compile(r"public\s+static\s+[^{;]+\)\s*\{(?P<body>.*?)\n\s*\}", re.DOTALL)
+    bodies = [m.group("body") for m in method_pat.finditer(text)]
+    if len(bodies) == 0:
+        return False
+    non_empty = 0
+    i = 0
+    while i < len(bodies):
+        body = _strip_cs_single_line_comments(bodies[i]).strip()
+        if body != "":
+            non_empty += 1
+        i += 1
+    return non_empty == 0
+
+
 def _extract_js_relative_imports(js_src: str) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
@@ -228,7 +259,7 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
     ok_run, msg_run = _run(["mono", str(out_exe), str(sample_input), "-o", str(out2)])
     if ok_run and out2.exists():
         out2_text = out2.read_text(encoding="utf-8")
-        if "public static void Main(string[] args)" in out2_text and "__pytra_main" not in out2_text:
+        if _is_cs_empty_skeleton(out2_text):
             return "fail", "stage2 output is empty skeleton"
         return "pass", "sample/py/01 transpile ok"
     if msg_run != "":

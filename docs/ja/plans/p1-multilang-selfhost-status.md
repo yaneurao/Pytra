@@ -11,7 +11,7 @@ python3 tools/check_multilang_selfhost_stage1.py
 | lang | stage1 (self-transpile) | generated_mode | stage2 (selfhost run) | note |
 |---|---|---|---|---|
 | rs | pass | native | fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
-| cs | pass | native | fail | stage2 output is empty skeleton |
+| cs | pass | native | pass | sample/py/01 transpile ok |
 | js | pass | native | fail | js stage2 emit failed at hooks/js/emitter/js_emitter.py: raise _make_east_build_error( |
 | ts | pass | native | skip | stage2 scope is rs/cs/js only |
 | go | pass | native | skip | stage2 scope is rs/cs/js only |
