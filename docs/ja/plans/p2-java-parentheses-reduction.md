@@ -36,10 +36,15 @@
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、Java 生成コードの過剰括弧削減を `P2` として起票した。
+- 2026-03-01: 最小括弧化ルールを `BinOp` に限定して適用し、`RHS` が同一優先順位の `BinOp` の場合は必ず括弧を維持する fail-closed 方針とした（`a - (b - c)` 等のグルーピング保持）。
+- 2026-03-01: `java_native_emitter.py` の `BinOp` 出力を優先順位ベースへ変更し、不要な全体括弧を削減した。
+- 2026-03-01: `test_py2java_smoke.py` に `BinOp` 最小括弧化と `RHS` グルーピング保持の回帰を追加し、既存期待値も新表記へ更新した。
+- 2026-03-01: `tools/regenerate_samples.py --langs java --force` を実行し、`sample/java` 18件へ反映した。`rg` で `"(x * x)"` と `"(2.0 * Math.PI)"` の残存がないことを確認した。
+- 2026-03-01: `check_py2java_transpile.py` は既知の `Try/Yield/Swap` 未対応4件で fail のまま（本タスク非対象）を確認した。
 
 ## 分解
 
-- [ ] [ID: P2-JAVA-PARENS-01-S1-01] Java emitter の括弧出力契約（最小括弧化ルールと fail-closed 条件）を文書化する。
-- [ ] [ID: P2-JAVA-PARENS-01-S2-01] `BinOp` 出力を優先順位ベースへ変更し、不要な全体括弧を削減する。
-- [ ] [ID: P2-JAVA-PARENS-01-S2-02] `Compare/BoolOp/IfExp` など周辺式との組み合わせで意味保存を担保する回帰ケースを追加する。
-- [ ] [ID: P2-JAVA-PARENS-01-S3-01] `sample/java` を再生成して縮退結果を確認し、回帰テストを固定する。
+- [x] [ID: P2-JAVA-PARENS-01-S1-01] Java emitter の括弧出力契約（最小括弧化ルールと fail-closed 条件）を文書化する。
+- [x] [ID: P2-JAVA-PARENS-01-S2-01] `BinOp` 出力を優先順位ベースへ変更し、不要な全体括弧を削減する。
+- [x] [ID: P2-JAVA-PARENS-01-S2-02] `Compare/BoolOp/IfExp` など周辺式との組み合わせで意味保存を担保する回帰ケースを追加する。
+- [x] [ID: P2-JAVA-PARENS-01-S3-01] `sample/java` を再生成して縮退結果を確認し、回帰テストを固定する。

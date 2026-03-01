@@ -198,11 +198,11 @@
 
 文脈: [docs/ja/plans/p2-java-parentheses-reduction.md](../plans/p2-java-parentheses-reduction.md)
 
-1. [ ] [ID: P2-JAVA-PARENS-01] Java backend の式出力を意味保存を維持した最小括弧へ移行し、`sample/java` の冗長括弧を縮退する。
-2. [ ] [ID: P2-JAVA-PARENS-01-S1-01] Java emitter の括弧出力契約（最小括弧化ルールと fail-closed 条件）を文書化する。
-3. [ ] [ID: P2-JAVA-PARENS-01-S2-01] `BinOp` 出力を優先順位ベースへ変更し、不要な全体括弧を削減する。
-4. [ ] [ID: P2-JAVA-PARENS-01-S2-02] `Compare/BoolOp/IfExp` など周辺式との組み合わせで意味保存を担保する回帰ケースを追加する。
-5. [ ] [ID: P2-JAVA-PARENS-01-S3-01] `sample/java` を再生成して縮退結果を確認し、回帰テストを固定する。
+1. [x] [ID: P2-JAVA-PARENS-01] Java backend の式出力を意味保存を維持した最小括弧へ移行し、`sample/java` の冗長括弧を縮退する。
+2. [x] [ID: P2-JAVA-PARENS-01-S1-01] Java emitter の括弧出力契約（最小括弧化ルールと fail-closed 条件）を文書化する。
+3. [x] [ID: P2-JAVA-PARENS-01-S2-01] `BinOp` 出力を優先順位ベースへ変更し、不要な全体括弧を削減する。
+4. [x] [ID: P2-JAVA-PARENS-01-S2-02] `Compare/BoolOp/IfExp` など周辺式との組み合わせで意味保存を担保する回帰ケースを追加する。
+5. [x] [ID: P2-JAVA-PARENS-01-S3-01] `sample/java` を再生成して縮退結果を確認し、回帰テストを固定する。
 
 ### P2: EAST 解決情報 + CodeEmitter 依存収集による最小 import 生成
 
