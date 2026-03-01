@@ -282,7 +282,7 @@ int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_no
     int64 checksum = 0;
     int64 printed = 0;
     
-    for (rc<StmtNode> stmt : stmts) {
+    for (const rc<StmtNode>& stmt : stmts) {
         if (stmt->kind_tag == 1) {
             env[stmt->name] = eval_expr(stmt->expr_index, expr_nodes, env);
             continue;

@@ -1275,10 +1275,13 @@ class CppStatementEmitter:
                     self._emit_for_body_close(omit_braces)
                     return
                 if typed_iter:
+                    typed_loop_type = self._cpp_type_text(target_type)
+                    if typed_loop_type.startswith("rc<") and typed_loop_type.endswith(">"):
+                        typed_loop_type = f"const {typed_loop_type}&"
                     hdr = self.syntax_line(
                         "for_each_typed_open",
                         "for ({type} {target} : {iter})",
-                        {"type": self._cpp_type_text(target_type), "target": target_id, "iter": typed_iter_expr},
+                        {"type": typed_loop_type, "target": target_id, "iter": typed_iter_expr},
                     )
                     self.declared_var_types[target_id] = target_type
                     self._emit_for_body_open(hdr, {target_id}, omit_braces)

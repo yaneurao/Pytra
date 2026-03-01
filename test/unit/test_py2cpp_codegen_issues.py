@@ -493,7 +493,7 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("for (rc<StmtNode> stmt : stmts) {", cpp)
+        self.assertIn("for (const rc<StmtNode>& stmt : stmts) {", cpp)
         self.assertNotIn("for (object __itobj_2 : py_dyn_range(stmts)) {", cpp)
         self.assertNotIn('obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt")', cpp)
         self.assertNotIn('py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")', cpp)

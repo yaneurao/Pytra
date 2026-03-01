@@ -59,10 +59,11 @@
 文脈: [docs/ja/plans/p0-cpp-s18-rc-copy-reduction.md](../plans/p0-cpp-s18-rc-copy-reduction.md)
 
 1. [ ] [ID: P0-CPP-S18-RC-COPY-02] sample/18 の読み取り専用 `rc` 経路を参照受けへ寄せ、不要コピーを削減する。
-2. [ ] [ID: P0-CPP-S18-RC-COPY-02-S1-01] `rc` コピー発生点（range-for / 添字一時束縛）を棚卸しし、参照化条件を定義する。
-3. [ ] [ID: P0-CPP-S18-RC-COPY-02-S2-01] C++ emitter 出力を更新し、読み取り専用経路を `const` 参照へ縮退する。
-4. [ ] [ID: P0-CPP-S18-RC-COPY-02-S2-02] 回帰テストを追加し、`rc` 値コピー再発を検知する。
-5. [ ] [ID: P0-CPP-S18-RC-COPY-02-S3-01] sample/18 再生成と transpile 回帰で非退行を確認する。
+2. [x] [ID: P0-CPP-S18-RC-COPY-02-S1-01] `rc` コピー発生点（range-for / 添字一時束縛）を棚卸しし、参照化条件を定義する。
+3. [x] [ID: P0-CPP-S18-RC-COPY-02-S2-01] C++ emitter 出力を更新し、読み取り専用経路を `const` 参照へ縮退する。
+4. [ ] [ID: P0-CPP-S18-RC-COPY-02-S2-03] 添字アクセス由来の一時 `rc` 束縛を、安全条件付きで `const` 参照へ縮退する。
+5. [x] [ID: P0-CPP-S18-RC-COPY-02-S2-02] 回帰テストを追加し、`rc` 値コピー再発を検知する。
+6. [x] [ID: P0-CPP-S18-RC-COPY-02-S3-01] sample/18 再生成と transpile 回帰で非退行を確認する。
 
 ### P0: sample/18 C++ クラス生成の初期化リスト化
 
