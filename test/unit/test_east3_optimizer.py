@@ -858,6 +858,10 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(len(hints), 1)
         self.assertEqual(hints[0].get("owner"), "xs")
         self.assertTrue(bool(hints[0].get("safe")))
+        self.assertEqual(hints[0].get("count_expr_version"), "east3_expr_v1")
+        count_expr = hints[0].get("count_expr")
+        self.assertIsInstance(count_expr, dict)
+        self.assertEqual(count_expr.get("kind"), "IfExp")
 
     def test_safe_reserve_hint_pass_skips_conditional_append(self) -> None:
         doc = _module_doc()

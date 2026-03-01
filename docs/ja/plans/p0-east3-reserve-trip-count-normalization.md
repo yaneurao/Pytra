@@ -42,16 +42,21 @@
 分解:
 - [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints` 拡張仕様（`count_expr` 形式 / fail-closed 条件 / 互換扱い）を定義する。
 - [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` 件数式の正規化ルール（`start=0,step=1` 等の簡約規則）を仕様化する。
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] EAST3 optimizer で正規化済み `count_expr` を生成し、`reserve_hints` へ付与する。
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切り替え、文字列組み立て依存を撤去する。
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr` 欠落/不正時の fail-closed 挙動を実装し、不正 `reserve` 出力を防止する。
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト（optimizer + emitter）を追加し、旧式冗長 `reserve` 式の再発を検知可能にする。
-- [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成と transpile チェックを実行し、非退行を確認する。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] EAST3 optimizer で正規化済み `count_expr` を生成し、`reserve_hints` へ付与する。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切り替え、文字列組み立て依存を撤去する。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr` 欠落/不正時の fail-closed 挙動を実装し、不正 `reserve` 出力を防止する。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト（optimizer + emitter）を追加し、旧式冗長 `reserve` 式の再発を検知可能にする。
+- [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成と transpile チェックを実行し、非退行を確認する。
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`reserve` 件数式の正規化責務を C++ emitter から EAST3 側へ移す P0 計画を起票。
 - 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints[*].count_expr` を EAST3式ノードで保持する契約と fail-closed 条件を確定した。
 - 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` trip count の正規化ルール（ascending/descending + step簡約）を固定した。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] `SafeReserveHintPass` で `count_expr`（`IfExp/Compare/BinOp`）を生成し、hintへ格納する実装を追加した。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `reserve_hints[*].count_expr` 描画へ切り替え、start/stop/step 文字列組み立て経路を削除した。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr_version` 不一致や `count_expr` 不正時は `reserve` を出力しない fail-closed に固定した。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] optimizer/codegen unit テストを更新・追加し、旧式 `(n) - (0)` 断片と欠落 `count_expr` の再発を検知可能にした。
+- 2026-03-02: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` を再生成し、`check_py2cpp_transpile` と unit を通して非退行を確認した。
 
 ## S1実施結果（2026-03-02）
 

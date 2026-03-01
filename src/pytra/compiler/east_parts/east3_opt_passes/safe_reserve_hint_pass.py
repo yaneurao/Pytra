@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+
 from pytra.std.typing import Any
 
 from pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
@@ -88,6 +90,112 @@ def _collect_name_refs(node: Any, out: set[str]) -> None:
             out.add(ident)
     for value in node.values():
         _collect_name_refs(value, out)
+
+
+def _const_int_expr(value: int) -> dict[str, Any]:
+    return {
+        "kind": "Constant",
+        "resolved_type": "int64",
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": str(value),
+        "value": int(value),
+    }
+
+
+def _binop_expr(op: str, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "kind": "BinOp",
+        "op": op,
+        "left": left,
+        "right": right,
+        "resolved_type": "int64",
+        "borrow_kind": "value",
+        "casts": [],
+    }
+
+
+def _compare_expr(op: str, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "kind": "Compare",
+        "left": left,
+        "ops": [op],
+        "comparators": [right],
+        "resolved_type": "bool",
+        "borrow_kind": "value",
+        "casts": [],
+    }
+
+
+def _ifexp_expr(test: dict[str, Any], body: dict[str, Any], orelse: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "kind": "IfExp",
+        "test": test,
+        "body": body,
+        "orelse": orelse,
+        "resolved_type": "int64",
+        "borrow_kind": "value",
+        "casts": [],
+    }
+
+
+def _is_const_int_expr(expr: Any, expected: int) -> bool:
+    return _const_int_value(expr) == expected
+
+
+def _clone_expr(node: Any) -> dict[str, Any] | None:
+    if not isinstance(node, dict):
+        return None
+    cloned = copy.deepcopy(node)
+    return cloned if isinstance(cloned, dict) else None
+
+
+def _build_static_range_trip_count_expr(
+    *,
+    start_expr: Any,
+    stop_expr: Any,
+    step_value: int,
+    range_mode: str,
+) -> dict[str, Any] | None:
+    if step_value == 0:
+        return None
+    start = _clone_expr(start_expr)
+    stop = _clone_expr(stop_expr)
+    if not isinstance(start, dict) or not isinstance(stop, dict):
+        return None
+
+    step_abs = abs(int(step_value))
+    zero_expr = _const_int_expr(0)
+    if range_mode == "ascending":
+        test = _compare_expr("LtE", _clone_expr(stop) or stop, _clone_expr(start) or start)
+        if step_abs == 1:
+            if _is_const_int_expr(start, 0):
+                positive = _clone_expr(stop)
+            else:
+                positive = _binop_expr("Sub", _clone_expr(stop) or stop, _clone_expr(start) or start)
+        else:
+            diff = _binop_expr("Sub", _clone_expr(stop) or stop, _clone_expr(start) or start)
+            numer = _binop_expr("Add", diff, _const_int_expr(step_abs - 1))
+            positive = _binop_expr("Div", numer, _const_int_expr(step_abs))
+        if not isinstance(positive, dict):
+            return None
+        return _ifexp_expr(test, zero_expr, positive)
+
+    if range_mode == "descending":
+        test = _compare_expr("GtE", _clone_expr(stop) or stop, _clone_expr(start) or start)
+        if step_abs == 1:
+            if _is_const_int_expr(stop, 0):
+                positive = _clone_expr(start)
+            else:
+                positive = _binop_expr("Sub", _clone_expr(start) or start, _clone_expr(stop) or stop)
+        else:
+            diff = _binop_expr("Sub", _clone_expr(start) or start, _clone_expr(stop) or stop)
+            numer = _binop_expr("Add", diff, _const_int_expr(step_abs - 1))
+            positive = _binop_expr("Div", numer, _const_int_expr(step_abs))
+        if not isinstance(positive, dict):
+            return None
+        return _ifexp_expr(test, zero_expr, positive)
+    return None
 
 
 def _is_simple_invariant_expr(expr: Any, mutated_names: set[str]) -> bool:
@@ -207,12 +315,22 @@ class SafeReserveHintPass(East3OptimizerPass):
         owner = _top_level_unconditional_append_owner(body)
         if owner == "":
             return self._set_hints(stmt, [])
+        count_expr = _build_static_range_trip_count_expr(
+            start_expr=start_expr,
+            stop_expr=stop_expr,
+            step_value=int(step_val),
+            range_mode=range_mode,
+        )
+        if not isinstance(count_expr, dict):
+            return self._set_hints(stmt, [])
 
         hints = [
             {
                 "kind": "StaticRangeReserveHint",
                 "owner": owner,
                 "count_kind": "static_range_trip_count",
+                "count_expr_version": "east3_expr_v1",
+                "count_expr": count_expr,
                 "safe": True,
                 "safety": "proven_unconditional_append",
             }

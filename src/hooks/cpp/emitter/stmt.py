@@ -909,59 +909,74 @@ class CppStatementEmitter:
                 return "descending"
         return "dynamic"
 
-    def _render_static_range_trip_count_expr(
-        self,
-        *,
-        start_txt: str,
-        stop_txt: str,
-        step_value: int,
-        range_mode: str,
-    ) -> str:
-        """`StaticRangeForPlan` の反復回数式を C++ 文字列で返す。"""
-        if step_value == 0:
+    def _render_reserve_count_expr(self, expr: Any) -> str:
+        """`reserve_hints[*].count_expr`（east3_expr_v1）を C++ 式へ描画する。"""
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
             return ""
-        start_expr = self._trim_ws(start_txt)
-        stop_expr = self._trim_ws(stop_txt)
-        if start_expr == "" or stop_expr == "":
+        kind = self._node_kind_from_dict(node)
+        if kind == "Constant":
+            value = node.get("value")
+            if isinstance(value, bool):
+                return ""
+            if isinstance(value, int):
+                return str(value)
             return ""
-        step_abs = abs(int(step_value))
-        if range_mode == "ascending":
-            if step_abs == 1:
-                return f"(({stop_expr}) <= ({start_expr}) ? 0 : ({stop_expr}) - ({start_expr}))"
-            return (
-                f"(({stop_expr}) <= ({start_expr}) ? 0 : "
-                f"(({stop_expr}) - ({start_expr}) + {step_abs - 1}) / {step_abs})"
-            )
-        if range_mode == "descending":
-            if step_abs == 1:
-                return f"(({stop_expr}) >= ({start_expr}) ? 0 : ({start_expr}) - ({stop_expr}))"
-            return (
-                f"(({stop_expr}) >= ({start_expr}) ? 0 : "
-                f"(({start_expr}) - ({stop_expr}) + {step_abs - 1}) / {step_abs})"
-            )
+        if kind == "Name":
+            ident = self.any_dict_get_str(node, "id", "")
+            if ident == "":
+                return ""
+            return self.render_expr(node)
+        if kind == "BinOp":
+            op = self.any_dict_get_str(node, "op", "")
+            op_txt = ""
+            if op == "Add":
+                op_txt = "+"
+            elif op == "Sub":
+                op_txt = "-"
+            elif op == "Div":
+                op_txt = "/"
+            if op_txt == "":
+                return ""
+            left = self._render_reserve_count_expr(node.get("left"))
+            right = self._render_reserve_count_expr(node.get("right"))
+            if left == "" or right == "":
+                return ""
+            return f"({left} {op_txt} {right})"
+        if kind == "Compare":
+            left = self._render_reserve_count_expr(node.get("left"))
+            if left == "":
+                return ""
+            ops = self.any_to_str_list(node.get("ops"))
+            cmps = self._dict_stmt_list(node.get("comparators"))
+            if len(ops) != 1 or len(cmps) != 1:
+                return ""
+            op = ops[0]
+            op_txt = ""
+            if op == "LtE":
+                op_txt = "<="
+            elif op == "GtE":
+                op_txt = ">="
+            if op_txt == "":
+                return ""
+            right = self._render_reserve_count_expr(cmps[0])
+            if right == "":
+                return ""
+            return f"({left} {op_txt} {right})"
+        if kind == "IfExp":
+            test_txt = self._render_reserve_count_expr(node.get("test"))
+            body_txt = self._render_reserve_count_expr(node.get("body"))
+            else_txt = self._render_reserve_count_expr(node.get("orelse"))
+            if test_txt == "" or body_txt == "" or else_txt == "":
+                return ""
+            return f"({test_txt} ? {body_txt} : {else_txt})"
         return ""
 
     def _emit_forcore_reserve_hints(
         self,
         stmt: dict[str, Any],
-        *,
-        iter_plan: dict[str, Any],
-        start_txt: str,
-        stop_txt: str,
-        range_mode: str,
     ) -> None:
         """EAST3 `reserve_hints` に基づいて `reserve(...)` を出力する。"""
-        step_val = self._const_int_literal(iter_plan.get("step"))
-        if step_val is None:
-            return
-        trip_count_expr = self._render_static_range_trip_count_expr(
-            start_txt=start_txt,
-            stop_txt=stop_txt,
-            step_value=int(step_val),
-            range_mode=range_mode,
-        )
-        if trip_count_expr == "":
-            return
         hints_obj = stmt.get("reserve_hints")
         hints = hints_obj if isinstance(hints_obj, list) else []
         for hint_obj in hints:
@@ -972,6 +987,11 @@ class CppStatementEmitter:
                 continue
             owner = self.any_dict_get_str(hint, "owner", "")
             if owner == "":
+                continue
+            if self.any_dict_get_str(hint, "count_expr_version", "") != "east3_expr_v1":
+                continue
+            trip_count_expr = self._render_reserve_count_expr(hint.get("count_expr"))
+            if trip_count_expr == "":
                 continue
             self.emit(f"{owner}.reserve({trip_count_expr});")
 
@@ -1236,13 +1256,7 @@ class CppStatementEmitter:
                 loop_omit_braces = False
                 self.emit(f"int64 {next_capture_var} = 0;")
                 self.declared_var_types[next_capture_var] = "int64"
-            self._emit_forcore_reserve_hints(
-                stmt,
-                iter_plan=iter_plan,
-                start_txt=start_txt,
-                stop_txt=stop_txt,
-                range_mode=range_mode_txt,
-            )
+            self._emit_forcore_reserve_hints(stmt)
             self.declared_var_types[target_id] = target_type
             self._emit_for_body_open(hdr, {target_id}, loop_omit_braces)
             if capture_guard_rewrite is None:

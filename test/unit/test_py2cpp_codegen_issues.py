@@ -660,7 +660,39 @@ def f() -> float:
             cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
 
         self.assertIn("xs.reserve(", cpp)
-        self.assertIn("(n) <= (0) ? 0 : (n) - (0)", cpp)
+        self.assertIn("(n <= 0) ? 0 : n", cpp)
+        self.assertNotIn("(n) - (0)", cpp)
+
+    def test_static_range_reserve_hint_missing_count_expr_is_fail_closed(self) -> None:
+        src = """def collect(n: int) -> list[int]:
+    xs: list[int] = []
+    for i in range(n):
+        xs.append(i)
+    return xs
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "reserve_hint_fail_closed.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            body = east.get("body")
+            self.assertIsInstance(body, list)
+            fn = body[0]
+            self.assertIsInstance(fn, dict)
+            fn_body = fn.get("body")
+            self.assertIsInstance(fn_body, list)
+            for_stmt = fn_body[1]
+            self.assertIsInstance(for_stmt, dict)
+            for_stmt["reserve_hints"] = [
+                {
+                    "kind": "StaticRangeReserveHint",
+                    "owner": "xs",
+                    "safe": True,
+                    "count_expr_version": "east3_expr_v1",
+                }
+            ]
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+
+        self.assertNotIn("xs.reserve(", cpp)
 
     def test_typed_list_len_zero_compare_uses_empty_fastpath(self) -> None:
         src = """def has_items(xs: list[int]) -> bool:

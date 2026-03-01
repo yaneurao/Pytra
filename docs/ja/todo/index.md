@@ -79,16 +79,21 @@
 
 文脈: [docs/ja/plans/p0-east3-reserve-trip-count-normalization.md](../plans/p0-east3-reserve-trip-count-normalization.md)
 
-1. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01] `reserve` 件数式の正規化責務を EAST3 側へ移し、C++ emitter の文字列組み立て依存を解消する。
+1. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01] `reserve` 件数式の正規化責務を EAST3 側へ移し、C++ emitter の文字列組み立て依存を解消する。
 2. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints` 拡張仕様（`count_expr` 形式 / fail-closed 条件 / 互換扱い）を定義する。
 3. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` 件数式の正規化ルール（`start=0,step=1` 等の簡約規則）を仕様化する。
-4. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] EAST3 optimizer で正規化済み `count_expr` を生成し、`reserve_hints` へ付与する。
-5. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切り替え、文字列組み立て依存を撤去する。
-6. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr` 欠落/不正時の fail-closed 挙動を実装し、不正 `reserve` 出力を防止する。
-7. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト（optimizer + emitter）を追加し、旧式冗長 `reserve` 式の再発を検知可能にする。
-8. [ ] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成と transpile チェックを実行し、非退行を確認する。
+4. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] EAST3 optimizer で正規化済み `count_expr` を生成し、`reserve_hints` へ付与する。
+5. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切り替え、文字列組み立て依存を撤去する。
+6. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr` 欠落/不正時の fail-closed 挙動を実装し、不正 `reserve` 出力を防止する。
+7. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト（optimizer + emitter）を追加し、旧式冗長 `reserve` 式の再発を検知可能にする。
+8. [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成と transpile チェックを実行し、非退行を確認する。
 - 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints[*].count_expr`（`east3_expr_v1`）の契約と fail-closed 条件を計画書へ定義。
 - 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-02] `StaticRange` trip count 正規化（ascending/descending + step簡約）の式ルールを固定。
+- 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-01] `SafeReserveHintPass` で `count_expr` を生成し、`reserve_hints` へ付与する実装を追加。
+- 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-02] C++ emitter を `count_expr` 描画方式へ切替え、旧文字列組み立て経路を撤去。
+- 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S2-03] `count_expr_version` 不一致/`count_expr` 欠落時は `reserve` 非出力（fail-closed）を実装。
+- 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-01] unit テスト更新で新契約と fail-closed の回帰検知を追加。
+- 進捗メモ: [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S3-02] `sample/cpp/18` 再生成で `lines.reserve(((var_count <= 0) ? 0 : var_count));` を確認し、`check_py2cpp_transpile` 通過。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
