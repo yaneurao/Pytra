@@ -112,6 +112,10 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         east = load_east(sample, parser_backend="self_hosted")
         scala = transpile_to_scala_native(east)
         self.assertNotIn("TODO: unsupported", scala)
+        self.assertIn(
+            "__pytra_as_dict(single_char_token_tags).getOrElse(__pytra_str(ch), 0L)",
+            scala,
+        )
 
     def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
         fixture = find_fixture_case("for_range")

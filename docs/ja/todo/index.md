@@ -42,7 +42,7 @@
 3. [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-02] Scala fixture parity の対象マニフェストを定義し、負例（P2）との境界を固定する。
 4. [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-01] `save_gif` / `write_rgb_png` の `__pytra_noop` 経路を撤去して runtime 実装へ接続する。
 5. [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装する（未対応は fail-closed）。
-6. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースの builtin/container 不足を補完し、`run_failed` を解消する。
+6. [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースの builtin/container 不足を補完し、`run_failed` を解消する。
 7. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-04] 継承先で上書きされるメソッドに `override def` を出力し、Scala3 の継承契約へ一致させる。
 8. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-01] `runtime_parity_check` の Scala artifact optional を撤去し、関連 unit テストを更新する。
 9. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-02] Scala parity の再実行導線（専用チェック）を追加し、CI/ローカル手順を固定する。
