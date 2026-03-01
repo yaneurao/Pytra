@@ -873,6 +873,59 @@ class CppStatementEmitter:
                 return "descending"
         return "dynamic"
 
+    def _forcore_capture_mod_guard_rewrite(
+        self,
+        body_stmts: list[dict[str, Any]],
+        loop_var: str,
+        start_txt: str,
+    ) -> dict[str, Any] | None:
+        """`if i % k == 0: ...` 末尾ガードを next-capture カウンタ方式に置換する情報を返す。"""
+        if start_txt != "0" or len(body_stmts) == 0:
+            return None
+        guard_if = self.any_to_dict_or_empty(body_stmts[-1])
+        if self._node_kind_from_dict(guard_if) != "If":
+            return None
+        if len(self._dict_stmt_list(guard_if.get("orelse"))) != 0:
+            return None
+        guard_body = self._dict_stmt_list(guard_if.get("body"))
+        if len(guard_body) != 1:
+            return None
+        append_stmt = self.any_to_dict_or_empty(guard_body[0])
+        if self._node_kind_from_dict(append_stmt) != "Expr":
+            return None
+        append_owner = ""
+        append_call = self.any_to_dict_or_empty(append_stmt.get("value"))
+        if self._node_kind_from_dict(append_call) == "Call":
+            append_func = self.any_to_dict_or_empty(append_call.get("func"))
+            if self._node_kind_from_dict(append_func) == "Attribute" and self.any_dict_get_str(append_func, "attr", "") == "append":
+                owner_node = self.any_to_dict_or_empty(append_func.get("value"))
+                if self._node_kind_from_dict(owner_node) == "Name":
+                    append_owner = self.any_dict_get_str(owner_node, "id", "")
+        test = self.any_to_dict_or_empty(guard_if.get("test"))
+        if self._node_kind_from_dict(test) != "Compare":
+            return None
+        ops = self.any_to_list(test.get("ops"))
+        comparators = self.any_to_list(test.get("comparators"))
+        if len(ops) != 1 or len(comparators) != 1 or self.any_to_str(ops[0]) != "Eq":
+            return None
+        if self._const_int_literal(comparators[0]) != 0:
+            return None
+        mod_expr = self.any_to_dict_or_empty(test.get("left"))
+        if self._node_kind_from_dict(mod_expr) != "BinOp" or self.any_dict_get_str(mod_expr, "op", "") != "Mod":
+            return None
+        mod_lhs = self.any_to_dict_or_empty(mod_expr.get("left"))
+        if self._node_kind_from_dict(mod_lhs) != "Name" or self.any_dict_get_str(mod_lhs, "id", "") != loop_var:
+            return None
+        capture_step = self.render_expr(mod_expr.get("right"))
+        if capture_step in {"", "0"}:
+            return None
+        return {
+            "prefix_body": body_stmts[:-1],
+            "append_stmt": append_stmt,
+            "capture_step": capture_step,
+            "append_owner": append_owner,
+        }
+
     def _forcore_runtime_iter_item_type(
         self, iter_expr: dict[str, Any], iter_plan: dict[str, Any] | None = None
     ) -> str:
@@ -1065,10 +1118,37 @@ class CppStatementEmitter:
                     "inc": inc,
                 },
             )
+            capture_guard_rewrite = self._forcore_capture_mod_guard_rewrite(body_stmts, target_id, start_txt)
+            loop_body_stmts = body_stmts
+            loop_omit_braces = omit_braces
+            next_capture_var = ""
+            capture_step = ""
+            append_stmt: dict[str, Any] = {}
+            append_owner = ""
+            if capture_guard_rewrite is not None:
+                next_capture_var = self.next_tmp("__next_capture")
+                capture_step = self.any_to_str(capture_guard_rewrite.get("capture_step"))
+                append_stmt = self.any_to_dict_or_empty(capture_guard_rewrite.get("append_stmt"))
+                append_owner = self.any_to_str(capture_guard_rewrite.get("append_owner"))
+                loop_body_stmts = self._dict_stmt_list(capture_guard_rewrite.get("prefix_body"))
+                loop_omit_braces = False
+                if append_owner != "":
+                    self.emit(f"{append_owner}.reserve(({stop_txt} + {capture_step} - 1) / {capture_step});")
+                self.emit(f"int64 {next_capture_var} = 0;")
+                self.declared_var_types[next_capture_var] = "int64"
             self.declared_var_types[target_id] = target_type
-            self._emit_for_body_open(hdr, {target_id}, omit_braces)
-            self._emit_for_body_stmts(body_stmts, omit_braces)
-            self._emit_for_body_close(omit_braces)
+            self._emit_for_body_open(hdr, {target_id}, loop_omit_braces)
+            if capture_guard_rewrite is None:
+                self._emit_for_body_stmts(loop_body_stmts, loop_omit_braces)
+            else:
+                self._emit_for_body_stmts(loop_body_stmts, False)
+                self.emit(f"if ({target_id} == {next_capture_var}) {{")
+                self.indent += 1
+                self.emit_stmt(append_stmt)
+                self.emit(f"{next_capture_var} += {capture_step};")
+                self.indent -= 1
+                self.emit("}")
+            self._emit_for_body_close(loop_omit_braces)
             return
 
         if plan_kind == "RuntimeIterForPlan":

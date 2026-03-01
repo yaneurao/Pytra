@@ -32,6 +32,8 @@ void run_08_langtons_ant() {
     int64 capture_every = 3000;
     list<bytes> frames = list<bytes>{};
     
+    frames.reserve((steps_total + capture_every - 1) / capture_every);
+    int64 __next_capture_1 = 0;
     for (int64 i = 0; i < steps_total; ++i) {
         if (grid[y][x] == 0) {
             d = (d + 1) % 4;
@@ -49,8 +51,10 @@ void run_08_langtons_ant() {
         } else {
             x = (x - 1 + w) % w;
         }
-        if (i % capture_every == 0)
+        if (i == __next_capture_1) {
             frames.append(capture(grid, w, h));
+            __next_capture_1 += capture_every;
+        }
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 5, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

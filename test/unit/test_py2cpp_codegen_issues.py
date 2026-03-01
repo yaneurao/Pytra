@@ -606,6 +606,21 @@ def f() -> float:
         self.assertNotIn("grid = [&]() -> list<list<int64>>", cpp)
         self.assertNotIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
 
+    def test_sample08_capture_guard_uses_next_capture_counter(self) -> None:
+        src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("int64 __next_capture_", cpp)
+        self.assertIn("if (i == __next_capture_", cpp)
+        self.assertIn("__next_capture_", cpp)
+        self.assertNotIn("if (i % capture_every == 0)", cpp)
+
+    def test_sample08_frames_reserve_is_emitted_from_capture_rate(self) -> None:
+        src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("frames.reserve((steps_total + capture_every - 1) / capture_every);", cpp)
+
     def test_typed_list_len_zero_compare_uses_empty_fastpath(self) -> None:
         src = """def has_items(xs: list[int]) -> bool:
     return len(xs) != 0
