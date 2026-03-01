@@ -45,7 +45,7 @@
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` の品質差分（冗長 cast / loop / truthy / 一時初期化）を棚卸しし、改善優先順を固定する。
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-01] Ruby emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-02] 単純 `range` ループを canonical loop へ lower する fastpath を追加する。
-- [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] 比較式/論理式の `__pytra_truthy` 挿入条件を最適化し、Ruby ネイティブ条件式を優先する。
+- [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] 比較式/論理式の `__pytra_truthy` 挿入条件を最適化し、Ruby ネイティブ条件式を優先する。
 - [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-04] `sample/01` の `r/g/b` 等で不要な `nil` 初期化を削減する typed 代入 fastpath を追加する。
 - [ ] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片 + parity）を追加し、`sample/ruby/01` 再生成差分を固定する。
 
@@ -54,6 +54,7 @@
 - 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] `sample/ruby/01` と `sample/cpp/01` の棚卸しを実施し、改善優先順を固定。
 - 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-02] `ForCore(StaticRange)` に `step=1/-1` canonical while fastpath を追加し、`sample/ruby/01` の `__step_*` を 12 -> 0 へ削減。
 - 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-01] 型既知の `int/float/bool` 変換を省略する cast helper を Ruby emitter に追加し、`sample/ruby/01` の loop 初期化/境界で `__pytra_int` 連鎖を削減（`while y < height` などへ縮退）。
+- 2026-03-02: [ID: P1-RUBY-SAMPLE01-QUALITY-01-S2-03] bool確定ノードの条件式で `__pytra_truthy` を抑制し、`if (it >= max_iter)` など Ruby ネイティブ条件へ縮退。
 
 ## S1-01 棚卸し結果
 

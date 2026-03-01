@@ -11,7 +11,7 @@ def escape_count(cx, cy, max_iter)
   while i < max_iter
     x2 = (x * x)
     y2 = (y * y)
-    if __pytra_truthy(((x2 + y2) > 4.0))
+    if ((x2 + y2) > 4.0)
       return i
     end
     y = (((2.0 * x) * y) + cy)
@@ -22,7 +22,7 @@ def escape_count(cx, cy, max_iter)
 end
 
 def color_map(iter_count, max_iter)
-  if __pytra_truthy((iter_count >= max_iter))
+  if (iter_count >= max_iter)
     return [0, 0, 0]
   end
   t = __pytra_div(iter_count, max_iter)
@@ -47,7 +47,7 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
       r = nil
       g = nil
       b = nil
-      if __pytra_truthy((it >= max_iter))
+      if (it >= max_iter)
         r = 0
         g = 0
         b = 0
