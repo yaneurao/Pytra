@@ -1434,24 +1434,37 @@ class CSharpEmitter(CodeEmitter):
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))
         target_kind = self.any_dict_get_str(target, "kind", "")
+        ann = self.any_to_str(stmt.get("annotation"))
+        decl = self.any_to_str(stmt.get("decl_type"))
+        t_hint = ann
+        if t_hint == "":
+            t_hint = decl
+        value_obj = stmt.get("value")
         if target_kind != "Name":
+            if target_kind == "Attribute" and self.in_method_scope and t_hint != "":
+                owner_node = self.any_to_dict_or_empty(target.get("value"))
+                owner_kind = self.any_dict_get_str(owner_node, "kind", "")
+                owner_name = self.any_dict_get_str(owner_node, "id", "")
+                attr_name = self.any_dict_get_str(target, "attr", "")
+                if owner_kind == "Name" and owner_name == "self" and attr_name != "":
+                    self.current_class_field_types[attr_name] = self.normalize_type_name(t_hint)
+            if value_obj is None:
+                return
             t = self.render_expr(target)
-            v = self.render_expr(stmt.get("value"))
+            if t_hint != "":
+                v = self._render_expr_with_type_hint(value_obj, t_hint)
+            else:
+                v = self.render_expr(value_obj)
             self.emit(self.syntax_line("annassign_assign", "{target} = {value};", {"target": t, "value": v}))
             return
 
         name_raw = self.any_dict_get_str(target, "id", "_")
         name = self._safe_name(name_raw)
-        ann = self.any_to_str(stmt.get("annotation"))
-        decl = self.any_to_str(stmt.get("decl_type"))
-        t_east = ann
+        t_east = t_hint
         if t_east == "":
-            t_east = decl
-        if t_east == "":
-            t_east = self.get_expr_type(stmt.get("value"))
+            t_east = self.get_expr_type(value_obj)
         t_cs = self._cs_type(t_east)
         use_var_decl = t_cs.startswith("(")
-        value_obj = stmt.get("value")
         if self.should_declare_name_binding(stmt, name_raw, True):
             self.declare_in_current_scope(name_raw)
             self.declared_var_types[name_raw] = self.normalize_type_name(t_east)

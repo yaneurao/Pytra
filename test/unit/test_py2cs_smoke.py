@@ -67,6 +67,20 @@ class Child(Base):
             cs = transpile_to_csharp(east)
         self.assertIn("public class Child : Base", cs)
 
+    def test_attribute_annassign_uses_type_hint_for_set_and_dict_literals(self) -> None:
+        src = """class Holder:
+    def __init__(self):
+        self.names: set[str] = set(["a"])
+        self.mapping: dict[str, str] = {}
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "attr_annassign.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+        self.assertIn("this.names = new System.Collections.Generic.HashSet<string>(", cs)
+        self.assertIn("this.mapping = new System.Collections.Generic.Dictionary<string, string>();", cs)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
