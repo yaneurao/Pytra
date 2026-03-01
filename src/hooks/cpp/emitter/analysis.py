@@ -130,6 +130,55 @@ class CppAnalysisEmitter:
             self.declared_var_types = saved_decl_types
         return out
 
+    def _collect_assigned_name_counts(self, stmts: list[dict[str, Any]]) -> dict[str, int]:
+        """文リスト中で `Name` に代入される回数を再帰収集する。"""
+        out: dict[str, int] = {}
+
+        def _inc(name: str) -> None:
+            if name == "":
+                return
+            out[name] = int(out.get(name, 0)) + 1
+
+        def _collect_target(target_obj: Any) -> None:
+            target = self.any_to_dict_or_empty(target_obj)
+            kind = self._node_kind_from_dict(target)
+            if kind == "Name":
+                _inc(self.any_to_str(target.get("id")))
+                return
+            if kind == "Tuple":
+                for elem in self.any_to_list(target.get("elements")):
+                    _collect_target(elem)
+
+        def _collect_target_plan(target_plan_obj: Any) -> None:
+            target_plan = self.any_to_dict_or_empty(target_plan_obj)
+            kind = self._node_kind_from_dict(target_plan)
+            if kind == "NameTarget":
+                _inc(self.any_to_str(target_plan.get("id")))
+                return
+            if kind == "TupleTarget":
+                for elem in self.any_to_list(target_plan.get("elements")):
+                    _collect_target_plan(elem)
+
+        def _visit(node: Any) -> None:
+            if isinstance(node, list):
+                for item in node:
+                    _visit(item)
+                return
+            if not isinstance(node, dict):
+                return
+            kind = self._node_kind_from_dict(node)
+            if kind in {"Assign", "AnnAssign", "AugAssign"}:
+                _collect_target(node.get("target"))
+            elif kind in {"For", "ForRange"}:
+                _collect_target(node.get("target"))
+            elif kind == "ForCore":
+                _collect_target_plan(node.get("target_plan"))
+            for value in node.values():
+                _visit(value)
+
+        _visit(stmts)
+        return out
+
     def _mark_mutated_param_from_target(self, target_obj: Any, params: set[str], out: set[str]) -> None:
         """代入ターゲットから、破壊的変更対象の引数名を再帰的に抽出する。"""
         tgt = self.any_to_dict_or_empty(target_obj)

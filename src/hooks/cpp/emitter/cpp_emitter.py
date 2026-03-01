@@ -238,6 +238,7 @@ class CppEmitter(
         self.current_function_stack_list_locals: set[str] = set()
         self.current_function_typed_list_str_params: set[str] = set()
         self.current_function_typed_list_str_locals: set[str] = set()
+        self.current_function_reassigned_names: set[str] = set()
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self._module_fn_signature_cache: dict[str, dict[str, dict[str, list[str]]]] = {}
@@ -1538,6 +1539,9 @@ class CppEmitter(
         self.scope_stack.append(set(fn_scope))
         prev_ret = self.current_function_return_type
         prev_decl_types = self.declared_var_types
+        prev_reassigned_names = self.current_function_reassigned_names
+        assign_counts = self._collect_assigned_name_counts(body_stmts)
+        self.current_function_reassigned_names = {name for name, count in assign_counts.items() if int(count) > 1}
         self.declared_var_types = {}
         for an in arg_names:
             at = self.any_to_str(arg_types.get(an))
@@ -1550,6 +1554,7 @@ class CppEmitter(
         self.emit_stmt_list(body_stmts)
         self.current_function_return_type = prev_ret
         self.declared_var_types = prev_decl_types
+        self.current_function_reassigned_names = set(prev_reassigned_names)
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("};")
