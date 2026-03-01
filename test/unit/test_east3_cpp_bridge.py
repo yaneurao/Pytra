@@ -172,6 +172,7 @@ class East3CppBridgeTest(unittest.TestCase):
 
     def test_emit_stmt_forcore_runtime_tuple_target_uses_iter_item_hint_when_resolved_type_unknown(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
         stmt = {
             "kind": "ForCore",
             "iter_mode": "runtime_protocol",
@@ -180,12 +181,12 @@ class East3CppBridgeTest(unittest.TestCase):
                 "iter_expr": {
                     "kind": "Call",
                     "func": {"kind": "Name", "id": "enumerate", "resolved_type": "unknown"},
-                    "args": [{"kind": "Name", "id": "lines", "resolved_type": "list[str]"}],
+                    "args": [{"kind": "Name", "id": "lines", "resolved_type": "list[str]|list[object]"}],
                     "keywords": [],
                     "lowered_kind": "BuiltinCall",
                     "builtin_name": "enumerate",
                     "runtime_call": "py_enumerate",
-                    "resolved_type": "unknown",
+                    "resolved_type": "list[object]",
                     "iter_element_type": "tuple[int64, str]",
                 },
                 "iter_item_type": "tuple[int64, str]",
@@ -207,6 +208,8 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
         self.assertIn("for (::std::tuple<int64, str> __itobj", text)
+        self.assertIn("py_enumerate_list_as<str>(lines)", text)
+        self.assertNotIn("py_to_str_list_from_object(lines)", text)
         self.assertNotIn("for (object __itobj", text)
         self.assertNotIn("py_dyn_range(", text)
 

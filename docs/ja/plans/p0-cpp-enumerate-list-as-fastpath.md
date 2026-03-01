@@ -41,10 +41,13 @@
 決定ログ:
 - 2026-03-01: ユーザー指示により、`py_to_str_list_from_object` による中間 list 構築を避けるため、`py_enumerate_list_as<T>()` を導入する P0 タスクを起票した。
 - 2026-03-01: API 名は list 専用であることを明示するため `py_enumerate_list_as<T>` を採用し、汎用 `py_enumerate_as<T>` は非対象とした。
+- 2026-03-01: runtime に `py_enumerate_list_as<T>(const object&, int64)` / `py_enumerate_list_as<T>(const object&)` を追加し、`obj_to_list_ptr` 直列挙 + `py_to<T>` 変換で typed tuple list を生成する方針を採用した。
+- 2026-03-01: `stmt.py` の typed enumerate 復元で `py_to_str_list_from_object(...)` を `py_enumerate_list_as<str>(...)` へ置換し、中間 `list<str>` 再構築を撤去した。
+- 2026-03-01: `test_east3_cpp_bridge.py` に pyobj runtime list 条件の回帰を追加し、`py_enumerate_list_as<str>(lines)` 出力を固定。`check_py2cpp_transpile` / unit を通過した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S1-01] runtime に `py_enumerate_list_as<T>(object[, start])` を追加し、`object(list<object>)` から typed tuple 列挙を生成する。
-- [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S2-01] `stmt.py` の typed enumerate fastpath を `py_enumerate_list_as<str>(...)` 出力へ切替える。
-- [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S2-02] sample/18 回帰テストの期待値を更新し、`py_to_str_list_from_object` 非依存を固定する。
-- [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S3-01] unit/transpile/sample 再生成を実行し、非退行を確認する。
+- [x] [ID: P0-CPP-ENUM-LIST-AS-01-S1-01] runtime に `py_enumerate_list_as<T>(object[, start])` を追加し、`object(list<object>)` から typed tuple 列挙を生成する。
+- [x] [ID: P0-CPP-ENUM-LIST-AS-01-S2-01] `stmt.py` の typed enumerate fastpath を `py_enumerate_list_as<str>(...)` 出力へ切替える。
+- [x] [ID: P0-CPP-ENUM-LIST-AS-01-S2-02] sample/18 回帰テストの期待値を更新し、`py_to_str_list_from_object` 非依存を固定する。
+- [x] [ID: P0-CPP-ENUM-LIST-AS-01-S3-01] unit/transpile/sample 再生成を実行し、非退行を確認する。

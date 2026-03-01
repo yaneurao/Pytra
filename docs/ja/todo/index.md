@@ -141,11 +141,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-enumerate-list-as-fastpath.md](../plans/p0-cpp-enumerate-list-as-fastpath.md)
 
-1. [ ] [ID: P0-CPP-ENUM-LIST-AS-01] `cpp_list_model=pyobj` の typed enumerate 復元で中間 list コピーを除去し、`py_enumerate_list_as<T>()` 経路へ移行する。
-2. [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S1-01] runtime に `py_enumerate_list_as<T>(object[, start])` を追加し、`object(list<object>)` から typed tuple 列挙を生成する。
-3. [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S2-01] `stmt.py` の typed enumerate fastpath を `py_enumerate_list_as<str>(...)` 出力へ切替える。
-4. [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S2-02] sample/18 回帰テストの期待値を更新し、`py_to_str_list_from_object` 非依存を固定する。
-5. [ ] [ID: P0-CPP-ENUM-LIST-AS-01-S3-01] unit/transpile/sample 再生成を実行し、非退行を確認する。
+1. [x] [ID: P0-CPP-ENUM-LIST-AS-01] `cpp_list_model=pyobj` の typed enumerate 復元で中間 list コピーを除去し、`py_enumerate_list_as<T>()` 経路へ移行する。
+2. [x] [ID: P0-CPP-ENUM-LIST-AS-01-S1-01] runtime に `py_enumerate_list_as<T>(object[, start])` を追加し、`object(list<object>)` から typed tuple 列挙を生成する。
+3. [x] [ID: P0-CPP-ENUM-LIST-AS-01-S2-01] `stmt.py` の typed enumerate fastpath を `py_enumerate_list_as<str>(...)` 出力へ切替える。
+4. [x] [ID: P0-CPP-ENUM-LIST-AS-01-S2-02] sample/18 回帰テストの期待値を更新し、`py_to_str_list_from_object` 非依存を固定する。
+5. [x] [ID: P0-CPP-ENUM-LIST-AS-01-S3-01] unit/transpile/sample 再生成を実行し、非退行を確認する。
 
 ### P0: C++ `float64` cast 表記統一（最優先）
 

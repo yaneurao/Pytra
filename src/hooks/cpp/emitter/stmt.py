@@ -966,8 +966,8 @@ class CppStatementEmitter:
             start_expr = self.render_expr(args[1])
             if start_expr == "":
                 return ""
-            return f"py_enumerate(py_to_str_list_from_object({src_expr}), py_to<int64>({start_expr}))"
-        return f"py_enumerate(py_to_str_list_from_object({src_expr}))"
+            return f"py_enumerate_list_as<str>({src_expr}, py_to<int64>({start_expr}))"
+        return f"py_enumerate_list_as<str>({src_expr})"
 
     def _render_forcore_typed_refclass_list_iter_expr(
         self,
