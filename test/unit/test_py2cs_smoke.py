@@ -231,6 +231,44 @@ class Child(Base):
         cs = transpile_to_csharp(east)
         self.assertIn("foreach (var x in ((System.Collections.IEnumerable)(src))) {", cs)
 
+    def test_for_dict_items_unknown_keeps_keyvalue_iteration(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {
+                        "kind": "Tuple",
+                        "elements": [
+                            {"kind": "Name", "id": "k"},
+                            {"kind": "Name", "id": "v"},
+                        ],
+                    },
+                    "iter": {
+                        "kind": "Call",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "d", "resolved_type": "object"},
+                            "attr": "items",
+                        },
+                        "args": [],
+                        "keywords": [],
+                        "resolved_type": "object",
+                    },
+                    "body": [{"kind": "Expr", "value": {"kind": "Name", "id": "k"}}],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("foreach (var __it", cs)
+        self.assertIn(".Key;", cs)
+        self.assertIn(".Value;", cs)
+        self.assertNotIn("System.Collections.IEnumerable)(((System.Collections.Generic.Dictionary<string, object>)d))", cs)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",
