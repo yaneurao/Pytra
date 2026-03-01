@@ -446,8 +446,6 @@ class CodeEmitter:
         stmt: dict[str, Any],
     ) -> bool:
         """文 kind の既定 fallback。基底では未処理。"""
-        _ = kind
-        _ = stmt
         return False
 
     def hook_on_stmt_omit_braces(
@@ -459,7 +457,7 @@ class CodeEmitter:
         """制御構文の brace 省略可否を hook で上書きする。"""
         v = self._call_hook3("on_stmt_omit_braces", kind, stmt, default_value)
         if isinstance(v, bool):
-            return v
+            return self.any_to_bool(v)
         return default_value
 
     def hook_on_for_range_mode(
@@ -472,8 +470,10 @@ class CodeEmitter:
         if mode == "":
             mode = "dynamic"
         v = self._call_hook2("on_for_range_mode", stmt, mode)
-        if isinstance(v, str) and v != "":
-            return v
+        if isinstance(v, str):
+            v_text = self.any_to_str(v)
+            if v_text != "":
+                return v_text
         return mode
 
     def hook_on_render_call(
@@ -486,7 +486,7 @@ class CodeEmitter:
         """`on_render_call` フック。既定では何もしない。"""
         v = self._call_hook4("on_render_call", call_node, func_node, rendered_args, rendered_kwargs)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def hook_on_render_module_method(
@@ -500,7 +500,7 @@ class CodeEmitter:
         """`on_render_module_method` フック。既定では何もしない。"""
         v = self._call_hook5("on_render_module_method", module_name, attr, rendered_args, rendered_kwargs, arg_nodes)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def hook_on_render_object_method(
@@ -513,7 +513,7 @@ class CodeEmitter:
         """`on_render_object_method` フック。既定では何もしない。"""
         v = self._call_hook4("on_render_object_method", owner_type, owner_expr, attr, rendered_args)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def hook_on_render_class_method(
@@ -528,7 +528,7 @@ class CodeEmitter:
         """`on_render_class_method` フック。既定では何もしない。"""
         v = self._call_hook6("on_render_class_method", owner_type, attr, func_node, rendered_args, rendered_kwargs, arg_nodes)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def hook_on_render_binop(
@@ -540,8 +540,27 @@ class CodeEmitter:
         """`on_render_binop` フック。既定では何もしない。"""
         v = self._call_hook3("on_render_binop", binop_node, left, right)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
+
+    def _is_ascii_between(self, ch: str, lower: str, upper: str) -> bool:
+        """ASCII 1 文字範囲判定。範囲外や多文字入力は False。"""
+        if len(ch) != 1 or len(lower) != 1 or len(upper) != 1:
+            return False
+        ch_code = ord(ch)
+        return ord(lower) <= ch_code and ch_code <= ord(upper)
+
+    def _is_ascii_upper(self, ch: str) -> bool:
+        """ASCII 大文字判定。"""
+        return self._is_ascii_between(ch, "A", "Z")
+
+    def _is_ascii_lower(self, ch: str) -> bool:
+        """ASCII 小文字判定。"""
+        return self._is_ascii_between(ch, "a", "z")
+
+    def _is_ascii_digit(self, ch: str) -> bool:
+        """ASCII 数字判定。"""
+        return self._is_ascii_between(ch, "0", "9")
 
     def _kind_hook_suffix(self, kind: str) -> str:
         """`Name` / `IfExp` などを hook 名 suffix 用 snake_case へ正規化する。"""
@@ -551,26 +570,25 @@ class CodeEmitter:
         raw: list[str] = []
         n = len(text)
         for i, ch in enumerate(text):
-            if ("A" <= ch) and (ch <= "Z"):
+            if self._is_ascii_upper(ch):
                 prev_ch = text[i - 1] if i > 0 else ""
                 next_ch = text[i + 1] if i + 1 < n else ""
-                prev_is_lower_or_digit = (("a" <= prev_ch) and (prev_ch <= "z")) or (
-                    ("0" <= prev_ch) and (prev_ch <= "9")
-                )
-                next_is_lower = ("a" <= next_ch) and (next_ch <= "z")
+                prev_is_lower_or_digit = self._is_ascii_lower(prev_ch) or self._is_ascii_digit(prev_ch)
+                next_is_lower = self._is_ascii_lower(next_ch)
                 if len(raw) > 0 and raw[-1] != "_" and (prev_is_lower_or_digit or next_is_lower):
                     raw.append("_")
                 raw.append(chr(ord(ch) + 32))
                 continue
-            is_lower = ("a" <= ch) and (ch <= "z")
-            is_digit = ("0" <= ch) and (ch <= "9")
+            is_lower = self._is_ascii_lower(ch)
+            is_digit = self._is_ascii_digit(ch)
             if is_lower or is_digit:
                 raw.append(ch)
             elif len(raw) > 0 and raw[-1] != "_":
                 raw.append("_")
-        joined = "".join(raw).strip("_")
+        joined: str = "".join(raw).strip("_")
         out_chars: list[str] = []
-        for ch in joined:
+        for j in range(len(joined)):
+            ch = joined[j]
             if ch == "_" and len(out_chars) > 0 and out_chars[-1] == "_":
                 continue  # 連続したアンダースコアを除去
             out_chars.append(ch)
@@ -594,7 +612,7 @@ class CodeEmitter:
             return None
         v = self._call_hook2(hook_name, kind, stmt)
         if isinstance(v, bool):
-            return True if v else False
+            return self.any_to_bool(v)
         return None
 
     def _render_expr_kind_hook_suffix(self, kind: str) -> str:
@@ -619,7 +637,7 @@ class CodeEmitter:
             return ""
         v = self._call_hook2(hook_name, kind, expr_node)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def hook_on_render_expr_kind(
@@ -632,8 +650,10 @@ class CodeEmitter:
         if rendered_specific != "":
             return rendered_specific
         v = self._call_hook2("on_render_expr_kind", kind, expr_node)
-        if isinstance(v, str) and v != "":
-            return v
+        if isinstance(v, str):
+            v_text = self.any_to_str(v)
+            if v_text != "":
+                return v_text
         if kind in {"JoinedStr", "Lambda", "ListComp", "SetComp", "DictComp"}:
             rendered_complex = self.hook_on_render_expr_complex(expr_node)
             if rendered_complex != "":
@@ -652,7 +672,7 @@ class CodeEmitter:
         """`Name/Constant/Attribute` などの leaf 式向けフック。"""
         v = self._call_hook2("on_render_expr_leaf", kind, expr_node)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def hook_on_render_expr_complex(
@@ -662,7 +682,7 @@ class CodeEmitter:
         """複雑式（JoinedStr/Lambda/Comp 系）用フック。既定では何もしない。"""
         v = self._call_hook1("on_render_expr_complex", expr_node)
         if isinstance(v, str):
-            return v
+            return self.any_to_str(v)
         return ""
 
     def syntax_text(self, key: str, default_value: str) -> str:
@@ -768,8 +788,12 @@ class CodeEmitter:
         else_scope: set[str] | None = None,
     ) -> None:
         """`if/else` の開閉ブロックとスコープ処理を共通出力する。"""
-        b_scope = body_scope if body_scope is not None else set()
-        e_scope = else_scope if else_scope is not None else set()
+        b_scope: set[str] = set()
+        if body_scope is not None:
+            b_scope = body_scope
+        e_scope: set[str] = set()
+        if else_scope is not None:
+            e_scope = else_scope
         self.emit(self.syntax_line("if_open", if_open_default, {"cond": cond_expr}))
         self.emit_scoped_stmt_list(body_stmts, b_scope)
         if len(else_stmts) == 0:
@@ -787,7 +811,9 @@ class CodeEmitter:
         body_scope: set[str] | None = None,
     ) -> None:
         """`while` の開閉ブロックとスコープ処理を共通出力する。"""
-        b_scope = body_scope if body_scope is not None else set()
+        b_scope: set[str] = set()
+        if body_scope is not None:
+            b_scope = body_scope
         self.emit(self.syntax_line("while_open", while_open_default, {"cond": cond_expr}))
         self.emit_scoped_stmt_list(body_stmts, b_scope)
         self.emit(self.syntax_text("block_close", "}"))
@@ -923,8 +949,8 @@ class CodeEmitter:
             none_non_any_literal,
             none_any_literal,
         )
-        common_handled = str(common_pair[0]) == "1"
-        common_non_str = str(common_pair[1])
+        common_handled_tag, common_non_str = common_pair
+        common_handled = common_handled_tag == "1"
         if common_handled:
             return common_non_str
         if isinstance(v, str):
@@ -1123,20 +1149,31 @@ class CodeEmitter:
     def any_to_dict(self, v: Any) -> dict[str, Any] | None:
         """動的値を dict に安全に変換する。変換不能なら None。"""
         if isinstance(v, dict):
-            return v
+            out: dict[str, Any] = {}
+            for key in v:
+                if isinstance(key, str):
+                    val = v[key]
+                    out[key] = val
+            return out
         return None
 
     def any_to_dict_or_empty(self, v: Any) -> dict[str, Any]:
         """動的値を dict に安全に変換する。変換不能なら空 dict。"""
         if isinstance(v, dict):
-            return v
+            out: dict[str, Any] = {}
+            for key in v:
+                if isinstance(key, str):
+                    val = v[key]
+                    out[key] = val
+            return out
         return {}
 
     def any_to_list(self, v: Any) -> list[Any]:
         """動的値を list に安全に変換する。変換不能なら空 list。"""
         out: list[Any] = []
         if isinstance(v, list):
-            out = v
+            for item in v:
+                out.append(item)
         return out
 
     def any_to_str_list(self, v: Any) -> list[str]:
@@ -1164,7 +1201,7 @@ class CodeEmitter:
         out: list[dict[str, Any]] = []
         for item in self.any_to_list(v):
             if isinstance(item, dict):
-                out.append(item)
+                out.append(self.any_to_dict_or_empty(item))
         return out
 
     def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
@@ -1172,7 +1209,7 @@ class CodeEmitter:
         out: list[dict[str, Any]] = []
         for item in self.any_to_list(raw):
             if isinstance(item, dict):
-                out.append(item)
+                out.append(self.any_to_dict_or_empty(item))
         return out
 
     def tuple_elements(self, tuple_node: dict[str, Any]) -> list[Any]:
@@ -1203,16 +1240,16 @@ class CodeEmitter:
             ok = True
             for i, ch in enumerate(nm):
                 if i == 0:
-                    is_head_ok = ch == "_" or (("a" <= ch) and (ch <= "z")) or (("A" <= ch) and (ch <= "Z"))
+                    is_head_ok = ch == "_" or self._is_ascii_lower(ch) or self._is_ascii_upper(ch)
                     if not is_head_ok:
                         ok = False
                         break
                 else:
                     is_body_ok = (
                         ch == "_"
-                        or (("a" <= ch) and (ch <= "z"))
-                        or (("A" <= ch) and (ch <= "Z"))
-                        or (("0" <= ch) and (ch <= "9"))
+                        or self._is_ascii_lower(ch)
+                        or self._is_ascii_upper(ch)
+                        or self._is_ascii_digit(ch)
                     )
                     if not is_body_ok:
                         ok = False
@@ -1277,7 +1314,7 @@ class CodeEmitter:
     def any_to_str(self, v: Any) -> str:
         """動的値を str に安全に変換する。変換不能なら空文字。"""
         if isinstance(v, str):
-            return v
+            return str(v)
         if v is None:
             return ""
         if isinstance(v, bool) or isinstance(v, int) or isinstance(v, float):
@@ -1708,7 +1745,8 @@ class CodeEmitter:
     def declare_in_current_scope(self, name: str) -> None:
         """現在スコープへ宣言済み名を追加する。"""
         if len(self.scope_stack) == 0:
-            self.scope_stack.append(set())
+            empty_scope: set[str] = set()
+            self.scope_stack.append(empty_scope)
         self.scope_stack[-1].add(name)
 
     def is_declared(self, name: str) -> bool:

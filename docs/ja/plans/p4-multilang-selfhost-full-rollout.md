@@ -70,6 +70,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter に `sorted()` lower（`OrderBy(...).ToList()`）を追加し、selfhost compile の先頭エラーを `sorted` 未解決から次段（`string * long`）へ前進させた。`test_py2cs_smoke.py` は 39 件で通過。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter に文字列乗算（`\"...\" * n`）lower を追加し、selfhost compile の `CS0019 string * long` を先頭ブロッカーから除去した。`test_py2cs_smoke.py` は 40 件で通過し、先頭エラーは `CS0266 object -> bool` へ遷移した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter` の hook 真偽判定を `any_to_bool(...)` 経由へ統一し、selfhost C# 生成物で `object` を直接 bool 評価していた経路を縮退した。`test_code_emitter.py`（47件）/`test_py2cs_smoke.py`（40件）通過のうえ、compile 先頭エラーは `CS0266` から `CS0029 (Dictionary<string,object> -> string)` へ遷移した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter` の hook 戻り値型正規化（`str/bool`）、ASCII 判定 helper 化、`any_to_dict/any_to_list/_dict_stmt_list` の object 直返し撤去、`declare_in_current_scope` の `set[str]` 初期化を実装した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_code_emitter.py' -v`（47件）と `... -p 'test_py2cs_smoke.py' -v`（40件）を通過し、`python3 tools/check_cs_single_source_selfhost_compile.py` 再計測で `CS0266: 25 -> 9`, `CS0019: 18 -> 11`, `CS0029: 18 -> 17`, `CS1502: 29 -> 27`, `CS1503: 42 -> 40` へ縮退させた（先頭は `CS1503 object -> string`）。
 
 ## 現状固定（S1-01）
 
