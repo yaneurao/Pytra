@@ -32,6 +32,56 @@
 
 ## 未完了タスク
 
+### P0: sample/18 `tokenize` 入力の typed 化（`object` 退化撤去）（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s18-tokenize-typed-input.md](../plans/p0-cpp-s18-tokenize-typed-input.md)
+
+1. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01] `tokenize` 引数の `object` 退化を撤去し、`list[str]` 型を境界越しに維持する。
+2. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S1-01] 現在 `object` に落ちる型決定経路（関数定義/呼び出し）を棚卸しし、fail-closed 条件を固定する。
+3. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-01] C++ emitter の型橋渡しを更新し、`tokenize(lines)` を typed 署名へ出力する。
+4. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S2-02] sample/18 回帰を追加し、`py_to_str_list_from_object(lines)` 非出力を固定する。
+5. [ ] [ID: P0-CPP-S18-TOKENIZE-TYPED-IN-01-S3-01] transpile/unit/sample 再生成を実行し、非退行を確認する。
+
+### P0: sample/18 `enumerate(lines)` の direct typed unpack 化（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s18-enumerate-direct-typed.md](../plans/p0-cpp-s18-enumerate-direct-typed.md)
+
+1. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01] `enumerate(lines)` を object 中継なしの direct typed unpack へ統一する。
+2. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S1-01] `For` lower の適用条件（iterable/list/tuple 型既知）を整理し、適用外は fail-closed に固定する。
+3. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-01] `for` header 出力を direct structured binding 優先へ更新する。
+4. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S2-02] sample/18 回帰を追加し、`object __itobj` + `py_at` 非出力を固定する。
+5. [ ] [ID: P0-CPP-S18-ENUM-DIRECT-TYPED-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
+
+### P0: sample/18 `str -> str` 同型変換の撤去（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s18-str-identity-cast-elimination.md](../plans/p0-cpp-s18-str-identity-cast-elimination.md)
+
+1. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01] `str` 既知経路の `py_to_string` 同型変換を縮退する。
+2. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S1-01] `str` 同型変換の現状箇所を棚卸しし、適用条件/除外条件を固定する。
+3. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S2-01] emitter（必要なら EAST3 pass）へ縮退実装を追加し、`object` 経路は維持する。
+4. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S2-02] sample/18 回帰を追加し、`py_to_string` 不要出力の再発を防止する。
+5. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
+
+### P0: sample/18 tokenizer の文字列分岐 tag 化（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s18-token-dispatch-tagization.md](../plans/p0-cpp-s18-token-dispatch-tagization.md)
+
+1. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01] tokenizer の kind 判定を文字列比較連鎖から tag/enum 中心へ移行する。
+2. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S1-01] 現在の分岐列を棚卸しし、tag マップ（1文字->kind_tag）仕様を固定する。
+3. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-01] emitter 出力を tag 判定優先へ変更し、同値な kind 文字列は必要箇所のみ残す。
+4. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S2-02] sample/18 回帰を追加し、`if (ch == \"...\")` 連鎖の再発を防止する。
+5. [ ] [ID: P0-CPP-S18-TOKEN-DISPATCH-TAG-01-S3-01] transpile/unit/parity で非退行を確認する。
+
+### P0: sample/18 benchmark ソース構築の typed list 化（最優先）
+
+文脈: [docs/ja/plans/p0-cpp-s18-benchmark-source-typed-list.md](../plans/p0-cpp-s18-benchmark-source-typed-list.md)
+
+1. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01] `build_benchmark_source` と下流呼び出しを typed list へ寄せ、`object + py_append` を縮退する。
+2. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S1-01] `build_benchmark_source` から `tokenize`/`parse_program` までの型境界を棚卸しし、`list[str]` 維持条件を固定する。
+3. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-01] emitter を更新し、list 初期化/append/return を typed 経路で出力する。
+4. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-02] sample/18 回帰を追加し、`object lines` と `py_append(lines, ...)` の再発を防止する。
+5. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S3-01] transpile/unit/parity を再実行し、非退行を確認する。
+
 ### P0: sample/13 向け `cpp_list_model=pyobj` の typed list 拡張（最優先）
 
 文脈: [docs/ja/plans/p0-cpp-s13-typed-list-expansion.md](../plans/p0-cpp-s13-typed-list-expansion.md)
