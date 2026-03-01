@@ -189,7 +189,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         east = load_east(sample, parser_backend="self_hosted")
         ruby = transpile_to_ruby_native(east)
         self.assertIn("attr_accessor :kind, :text, :pos", ruby)
-        self.assertIn("def initialize(kind, text, pos)", ruby)
+        self.assertIn("def initialize(kind, text, pos, number_value)", ruby)
         self.assertIn("def initialize(tokens)", ruby)
         self.assertNotIn("def initialize(self_, tokens)", ruby)
         self.assertIn("self.tokens = tokens", ruby)
@@ -222,6 +222,13 @@ class Py2RbSmokeTest(unittest.TestCase):
         ruby = transpile_to_ruby_native(east)
         self.assertIn("cat.is_a?(Dog)", ruby)
         self.assertIn("cat.is_a?(Animal)", ruby)
+
+    def test_inheritance_virtual_dispatch_lowers_super_method_without_super_keyword_rename(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("self.class.superclass.instance_method(:speak).bind(self).call()", ruby)
+        self.assertNotIn("super_()", ruby)
 
     def test_true_division_binop_uses_pytra_div_helper(self) -> None:
         with tempfile.TemporaryDirectory() as td:

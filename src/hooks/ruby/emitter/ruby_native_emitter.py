@@ -422,12 +422,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     callee_name = _call_name(expr)
 
     if callee_name.startswith("py_assert_"):
-        rendered: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_assert(" + ", ".join(rendered) + ")"
+        return "__pytra_assert()"
     if callee_name == "py_assert_stdout":
         return "true"
     if callee_name == "perf_counter":
@@ -530,6 +525,22 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
+            if _call_name(owner_any) in {"super", "super_"}:
+                rendered_super_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_super_args.append(_render_expr(args[i]))
+                    i += 1
+                if attr_name == "__init__":
+                    return "super(" + ", ".join(rendered_super_args) + ")"
+                return (
+                    "self.class.superclass.instance_method(:"
+                    + attr_name
+                    + ").bind(self).call("
+                    + ", ".join(rendered_super_args)
+                    + ")"
+                )
         owner = _render_expr(owner_any)
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_name = _safe_ident(owner_any.get("id"), "")

@@ -26,9 +26,12 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets ruby`
 
 分解:
-- [ ] call lower に `super` 専用分岐を追加する。
-- [ ] `initialize` 系の引数転送を検証する。
-- [ ] fixture 回帰を追加する。
+- [x] call lower に `super` 専用分岐を追加する。
+- [x] `initialize` 系の引数転送を検証する。
+- [x] fixture 回帰を追加する。
 
 決定ログ:
 - 2026-03-01: Ruby は `super` lower 欠落を第一優先で補完する方針とした。
+- 2026-03-01: `super().method` を `self.class.superclass.instance_method(:method).bind(self).call(...)` へ lower する分岐を追加し、`super_()` への誤変換を解消した。
+- 2026-03-01: `py_assert_*` 呼び出しを `__pytra_assert()` へ縮退し、引数評価による `_case_main` 実行副作用を抑制した。
+- 2026-03-01: `test_py2rb_smoke.py`（20 tests）と `runtime_parity_check --targets ruby`（1/1 pass）で継承 dispatch fixture の一致を確認した。
