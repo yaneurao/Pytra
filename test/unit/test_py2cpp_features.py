@@ -1720,6 +1720,12 @@ from pytra.std.json import loads as json_loads
             },
             refs,
         )
+        import_resolution_obj = meta.get("import_resolution")
+        import_resolution = import_resolution_obj if isinstance(import_resolution_obj, dict) else {}
+        self.assertEqual(import_resolution.get("schema_version"), 1)
+        bindings_v1_obj = import_resolution.get("bindings")
+        bindings_v1 = bindings_v1_obj if isinstance(bindings_v1_obj, list) else []
+        self.assertGreaterEqual(len(bindings_v1), 2)
 
     def test_cli_dump_deps_includes_user_module_graph(self) -> None:
         src_main = """import helper

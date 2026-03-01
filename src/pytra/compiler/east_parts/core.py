@@ -6281,6 +6281,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
     meta: dict[str, Any] = {}
     meta["parser_backend"] = "self_hosted"
+    import_resolution: dict[str, Any] = {}
+    import_resolution["schema_version"] = 1
+    import_resolution["bindings"] = import_bindings
+    import_resolution["qualified_refs"] = qualified_symbol_refs
+    meta["import_resolution"] = import_resolution
     meta["import_bindings"] = import_bindings
     meta["qualified_symbol_refs"] = qualified_symbol_refs
     meta["import_modules"] = import_module_bindings

@@ -1011,7 +1011,7 @@ class CodeEmitter:
             return False
         return key in obj
 
-    def _is_empty_dynamic_text(txt: str) -> bool:
+    def _is_empty_dynamic_text(self, txt: str) -> bool:
         """動的値から得た文字列が有効値かどうかを判定する。"""
         return txt in {"", "None", "{}", "[]"}
 
@@ -1194,8 +1194,6 @@ class CodeEmitter:
     ) -> list[str]:
         """`target` と `stmt` の `repr` を使ってタプル代入名の復元を試みる。"""
         fallback_names = self.fallback_tuple_target_names_from_repr(target)
-        if len(fallback_names) > 0:
-            return fallback_names
         stmt_repr = self.any_dict_get_str(stmt, "repr", "")
         if stmt_repr == "":
             return fallback_names
@@ -1206,7 +1204,24 @@ class CodeEmitter:
         if lhs_txt == "":
             return fallback_names
         pseudo_target = {"repr": lhs_txt}
-        return self.fallback_tuple_target_names_from_repr(pseudo_target)
+        lhs_names = self.fallback_tuple_target_names_from_repr(pseudo_target)
+        if len(lhs_names) == 0:
+            return fallback_names
+        if len(fallback_names) == 0:
+            return lhs_names
+        merged: list[str] = []
+        seen: set[str] = set()
+        for nm in fallback_names:
+            if nm in seen:
+                continue
+            merged.append(nm)
+            seen.add(nm)
+        for nm in lhs_names:
+            if nm in seen:
+                continue
+            merged.append(nm)
+            seen.add(nm)
+        return merged
 
     def target_bound_names(self, target: dict[str, Any]) -> set[str]:
         """for ターゲットが束縛する識別子名を収集する。"""
@@ -1888,13 +1903,18 @@ class CodeEmitter:
         return ""
 
     def load_import_bindings_from_meta(self, meta: dict[str, Any]) -> None:
-        """`meta.import_bindings`（+ legacy メタ）から import 解決テーブルを初期化する。"""
+        """`meta.import_resolution`（fallback: `meta.import_bindings`）から import 解決テーブルを初期化する。"""
         self.import_modules = {}
         self.import_symbols = {}
         self.import_symbol_modules = set()
 
-        binds = self.any_to_dict_list(meta.get("import_bindings"))
-        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
+        resolution = self.any_to_dict_or_empty(meta.get("import_resolution"))
+        binds = self.any_to_dict_list(resolution.get("bindings"))
+        refs = self.any_to_dict_list(resolution.get("qualified_refs"))
+        if len(binds) == 0:
+            binds = self.any_to_dict_list(meta.get("import_bindings"))
+        if len(refs) == 0:
+            refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
 
         if len(binds) > 0:
             for ref in refs:
@@ -1979,7 +1999,10 @@ class CodeEmitter:
             return out0
 
         meta = self.any_to_dict_or_empty(self.doc.get("meta"))
-        refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
+        resolution = self.any_to_dict_or_empty(meta.get("import_resolution"))
+        refs = self.any_to_dict_list(resolution.get("qualified_refs"))
+        if len(refs) == 0:
+            refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
         for ref in refs:
             local_name = self.any_to_str(ref.get("local_name"))
             if local_name == name:
@@ -1991,7 +2014,9 @@ class CodeEmitter:
                     out_ref["name"] = symbol
                     return out_ref
 
-        binds = self.any_to_dict_list(meta.get("import_bindings"))
+        binds = self.any_to_dict_list(resolution.get("bindings"))
+        if len(binds) == 0:
+            binds = self.any_to_dict_list(meta.get("import_bindings"))
         for ent in binds:
             if self.any_to_str(ent.get("binding_kind")) == "symbol":
                 local_name = self.any_to_str(ent.get("local_name"))

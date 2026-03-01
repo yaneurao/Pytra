@@ -431,6 +431,39 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
         self.assertEqual(em._resolve_imported_module_name("sqrt"), "pytra.std.math.sqrt")
 
+    def test_load_import_bindings_from_import_resolution_meta(self) -> None:
+        em = CodeEmitter({})
+        meta = {
+            "import_resolution": {
+                "schema_version": 1,
+                "bindings": [
+                    {
+                        "binding_kind": "module",
+                        "local_name": "m",
+                        "module_id": "pytra.std.math",
+                    },
+                    {
+                        "binding_kind": "symbol",
+                        "local_name": "sqrt",
+                        "module_id": "pytra.std.math",
+                        "export_name": "sqrt",
+                    },
+                ],
+                "qualified_refs": [
+                    {
+                        "module_id": "pytra.std.math",
+                        "symbol": "sqrt",
+                        "local_name": "sqrt",
+                    }
+                ],
+            }
+        }
+        em.load_import_bindings_from_meta(meta)
+        self.assertEqual(em.import_modules, {"m": "pytra.std.math"})
+        self.assertEqual(em.import_symbols, {"sqrt": {"module": "pytra.std.math", "name": "sqrt"}})
+        self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
+        self.assertEqual(em._resolve_imported_module_name("sqrt"), "pytra.std.math.sqrt")
+
     def test_imported_module_name_fallback_via_meta(self) -> None:
         em = CodeEmitter(
             {
