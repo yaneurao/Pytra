@@ -60,6 +60,19 @@
 6. [x] [ID: P0-REGEN-SCALA-SUPPORT-01-S3-02] smoke/check を実行し、非退行を確認する。
 進捗メモ: [ID: P0-REGEN-SCALA-SUPPORT-01] `--langs scala` を正式対応し、`--force` 再生成（18件）・dry-run skip（18件）・`cpp/go` dry-run 非退行・Scala smoke（17件）を確認。
 
+### P0: Scala/Lua runtime 外出し（inline helper 撤去）
+
+文脈: [docs/ja/plans/p0-runtime-externalization-scala-lua.md](../plans/p0-runtime-externalization-scala-lua.md)
+
+1. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01] Scala/Lua の generated source から inline runtime helper を撤去し、runtime 別ファイル参照へ統一する。
+2. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-01] Scala/Lua の inline helper 出力箇所と runtime API 依存を棚卸しし、外出し境界を確定する。
+3. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-02] runtime ファイル配置規約（パス/ファイル名/読み込み方式）を仕様化する。
+4. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-01] Scala runtime 正本（`src/runtime/scala/pytra/py_runtime.scala`）を整備する。
+5. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-02] Scala emitter の inline helper 出力を撤去し、`py2scala.py` で runtime 配置を実装する。
+6. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-03] Lua runtime 正本（`src/runtime/lua/pytra/py_runtime.lua`）を整備する。
+7. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S2-04] Lua emitter の inline helper 出力を撤去し、`py2lua.py` で runtime 配置と読み込み導線を実装する。
+8. [ ] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S3-01] transpile チェック/smoke/parity を更新し、runtime 分離の回帰検知を固定する。
+
 ### P1: sample/kotlin/01 品質改善（C++品質との差分縮小）
 
 文脈: [docs/ja/plans/p1-kotlin-sample01-quality-uplift.md](../plans/p1-kotlin-sample01-quality-uplift.md)
