@@ -40,8 +40,8 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot`
 
 分解:
-- [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] `sample/scala/01` と `sample/cpp/01` を比較し、冗長項目（cast/loop/runtime埋込/typed退化）を断片で固定する。
-- [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-02] Scala emitter 改善の優先順（可読性インパクト × 実装難易度）を確定する。
+- [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] `sample/scala/01` と `sample/cpp/01` を比較し、冗長項目（cast/loop/runtime埋込/typed退化）を断片で固定する。
+- [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-02] Scala emitter 改善の優先順（可読性インパクト × 実装難易度）を確定する。
 - [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-01] 数値演算出力の同型 cast 連鎖を削減し、typed 経路を優先する。
 - [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-02] `range(stop)` / `range(start, stop, 1)` を canonical loop へ lower する fastpath を追加する。
 - [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-03] `pixels` append ホットパスで `mutable.ArrayBuffer[Any]` typed 経路を優先し、再ラップを削減する。
@@ -49,5 +49,32 @@
 - [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` 差分を固定する。
 - [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-02] `sample/scala` 再生成 + smoke/parity を実行して非退行を確認する。
 
+S1 棚卸し（2026-03-02）:
+- 規模差分: `sample/scala/01_mandelbrot.scala` は 706 行、`sample/cpp/01_mandelbrot.cpp` は 91 行で、主因は runtime/helper の単一ファイル埋め込み。
+- cast 連鎖（同型）:
+```scala
+var __hoisted_cast_3: Double = __pytra_float(__pytra_float(max_iter))
+r = __pytra_int(__pytra_int((__pytra_float(255.0) * __pytra_float((__pytra_float(t) * __pytra_float(t))))))
+```
+- loop 退化（step 汎用分岐）:
+```scala
+val __step_2 = __pytra_int(1L)
+while ((__step_2 >= 0L && y < __pytra_int(height)) || (__step_2 < 0L && y > __pytra_int(height))) {
+```
+- append ホットパス再ラップ:
+```scala
+pixels = __pytra_as_list(pixels); pixels.append(r)
+pixels = __pytra_as_list(pixels); pixels.append(g)
+pixels = __pytra_as_list(pixels); pixels.append(b)
+```
+
+S1 優先順（可読性インパクト × 実装難易度）:
+1. `S2-01` cast 同型連鎖削減（高インパクト / 低〜中難易度）
+2. `S2-03` append ホットパス typed fastpath（高インパクト / 中難易度）
+3. `S2-02` canonical loop fastpath（中インパクト / 中難易度）
+4. `S2-04` runtime/helper 縮退（高インパクト / 高難易度）
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、`sample/scala/01` の品質改善を P0 として計画化し、TODO へ細分化登録する方針を確定した。
+- 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] `sample/scala/01` と `sample/cpp/01` を比較し、冗長断片（cast 連鎖 / step 汎用 loop / append 再ラップ / runtime 埋め込み）を固定した。
+- 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-02] 実装優先順を `cast -> append -> loop -> runtime 縮退` に確定した。

@@ -38,14 +38,15 @@
 文脈: [docs/ja/plans/p0-scala-sample01-quality-uplift.md](../plans/p0-scala-sample01-quality-uplift.md)
 
 1. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01] `sample/scala/01` の生成品質を改善し、C++ 出力との差を縮小する。
-2. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] `sample/scala/01` と `sample/cpp/01` を比較し、冗長項目（cast/loop/runtime埋込/typed退化）を断片で固定する。
-3. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-02] Scala emitter 改善の優先順（可読性インパクト × 実装難易度）を確定する。
+2. [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] `sample/scala/01` と `sample/cpp/01` を比較し、冗長項目（cast/loop/runtime埋込/typed退化）を断片で固定する。
+3. [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-02] Scala emitter 改善の優先順（可読性インパクト × 実装難易度）を確定する。
 4. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-01] 数値演算出力の同型 cast 連鎖を削減し、typed 経路を優先する。
 5. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-02] `range(stop)` / `range(start, stop, 1)` を canonical loop へ lower する fastpath を追加する。
 6. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-03] `pixels` append ホットパスで `mutable.ArrayBuffer[Any]` typed 経路を優先し、再ラップを削減する。
 7. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-04] runtime/helper 埋め込みの縮退方針（外出しまたは最小埋込）を実装し、`sample/01` の見通しを改善する。
 8. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` 差分を固定する。
 9. [ ] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-02] `sample/scala` 再生成 + smoke/parity を実行して非退行を確認する。
+進捗メモ: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] `sample/scala/01` と `sample/cpp/01` の差分断片（cast/loop/append/runtime）を計画書へ固定し、改善優先順を確定。
 
 ### P0: `regenerate_samples.py` への Scala 追加（最優先）
 
