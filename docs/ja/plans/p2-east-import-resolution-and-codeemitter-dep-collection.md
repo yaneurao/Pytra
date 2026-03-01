@@ -44,14 +44,17 @@
 - 2026-03-01: `CodeEmitter.load_import_bindings_from_meta()` / `_resolve_imported_symbol()` は `import_resolution` を優先し、欠落時に legacy key へ fallback する fail-closed 方針へ更新した。
 - 2026-03-01: parser からの記録値は欠落・不正値を解決対象へ昇格しない（空文字/欠落は解決不能として扱う）条件を固定し、既存挙動と互換にした。
 - 2026-03-01: `CodeEmitter` 基底へ依存収集 API（`require_dep` / `require_dep_any` / `require_deps` / `finalize_deps`）を追加し、重複排除と安定順序化（既定ソート）を共通化した。
+- 2026-03-01: Go native emitter を `CodeEmitter` 依存収集 API に接続し、`math` import を AST 走査で必要時のみ登録する方式へ移行した。
+- 2026-03-01: Go 出力から `var _ = math.Pi` を撤去し、`sample/go` 再生成で残存ゼロを確認した。
+- 2026-03-01: `test_py2go_smoke.py`（11件）を通過。`check_py2go_transpile.py` は既知の `Try/Yield/Swap` 4件 fail を維持（本タスク非対象）。
 
 ## 分解
 
 - [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-01] EAST3 で識別子/呼び出しの import 解決情報（module/symbol）を保持する仕様を定義する。
 - [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S1-02] parser/lowering で解決情報を `meta` もしくはノード属性へ記録し、欠落時 fail-closed 条件を決める。
 - [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-01] CodeEmitter 基底に `require_dep` / `finalize_deps` 等の依存収集 API を追加する。
-- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-02] backend 側で import 直書きを撤去し、基底の依存収集 API 経由へ段階移行する（先行: Go）。
-- [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-03] 先行 backend（Go）で `var _ = math.Pi` など未使用回避ダミーを撤去し、必要 import のみ出力する。
+- [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-02] backend 側で import 直書きを撤去し、基底の依存収集 API 経由へ段階移行する（先行: Go）。
+- [x] [ID: P2-EAST-IMPORT-RESOLUTION-01-S2-03] 先行 backend（Go）で `var _ = math.Pi` など未使用回避ダミーを撤去し、必要 import のみ出力する。
 - [ ] [ID: P2-EAST-IMPORT-RESOLUTION-01-S3-01] import 回帰テスト（必要最小/未使用禁止/依存欠落禁止）を追加し、CI 導線へ固定する。
 
 ## S1 仕様（確定）
