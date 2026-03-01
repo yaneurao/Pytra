@@ -128,6 +128,40 @@ class LuaNativeEmitter:
             return -operand
         return None
 
+    def _is_sequence_expr(self, node_any: Any) -> bool:
+        if not isinstance(node_any, dict):
+            return False
+        kind = node_any.get("kind")
+        if kind in {"List", "Tuple", "JoinedStr", "Dict", "Set"}:
+            return True
+        if kind == "Constant" and isinstance(node_any.get("value"), str):
+            return True
+        resolved = node_any.get("resolved_type")
+        if isinstance(resolved, str):
+            if (
+                resolved == "str"
+                or resolved.startswith("list[")
+                or resolved.startswith("tuple[")
+                or resolved.startswith("dict[")
+                or resolved.startswith("set[")
+            ):
+                return True
+        return False
+
+    def _render_cond_expr(self, test_any: Any) -> str:
+        test = self._render_expr(test_any)
+        if self._is_sequence_expr(test_any):
+            return "__pytra_truthy(" + test + ")"
+        return test
+
+    def _is_str_expr(self, node_any: Any) -> bool:
+        if not isinstance(node_any, dict):
+            return False
+        if node_any.get("kind") == "Constant" and isinstance(node_any.get("value"), str):
+            return True
+        resolved = node_any.get("resolved_type")
+        return isinstance(resolved, str) and resolved == "str"
+
     def transpile(self) -> str:
         module_comments = self._module_leading_comment_lines(prefix="-- ")
         if len(module_comments) > 0:
@@ -251,9 +285,18 @@ class LuaNativeEmitter:
         import_lines: list[str] = []
         needs_perf_counter = False
         needs_png_runtime = False
+        needs_gif_runtime = False
         needs_math_runtime = False
         needs_path_runtime = False
         self._emit_print_helper()
+        self._emit_line("")
+        self._emit_repeat_helper()
+        self._emit_line("")
+        self._emit_truthy_helper()
+        self._emit_line("")
+        self._emit_contains_helper()
+        self._emit_line("")
+        self._emit_string_predicate_helpers()
         self._emit_line("")
         for stmt in body:
             kind = stmt.get("kind")
@@ -286,7 +329,9 @@ class LuaNativeEmitter:
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")
                         continue
                     if module_name in {"pytra.utils.gif", "pytra.runtime.gif"}:
-                        raise RuntimeError("lang=lua unresolved import module: " + module_name + " (gif runtime is not implemented)")
+                        needs_gif_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
+                        continue
                     if module_name.startswith("pytra."):
                         raise RuntimeError("lang=lua unresolved import module: " + module_name)
                     import_lines.append("-- import " + module_name + " as " + alias_txt + " (not yet mapped)")
@@ -338,17 +383,26 @@ class LuaNativeEmitter:
                         needs_png_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")
                         continue
+                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "gif":
+                        needs_gif_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
+                        continue
                     if module_name in {"pytra.utils.png", "pytra.runtime.png"} and symbol == "write_rgb_png":
                         needs_png_runtime = True
                         import_lines.append("local " + alias_txt + " = __pytra_write_rgb_png")
                         continue
+                    if module_name in {"pytra.utils.gif", "pytra.runtime.gif"} and symbol == "save_gif":
+                        needs_gif_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_save_gif")
+                        continue
+                    if module_name in {"pytra.utils.gif", "pytra.runtime.gif"} and symbol == "grayscale_palette":
+                        needs_gif_runtime = True
+                        import_lines.append("local " + alias_txt + " = __pytra_grayscale_palette")
+                        continue
                     if (
-                        (module_name in {"pytra.utils", "pytra.runtime"} and symbol == "gif")
-                        or (module_name in {"pytra.utils.gif", "pytra.runtime.gif"})
+                        (module_name in {"pytra.utils.gif", "pytra.runtime.gif"})
                     ):
-                        raise RuntimeError(
-                            "lang=lua unresolved import symbol: " + module_name + "." + symbol + " (gif runtime is not implemented)"
-                        )
+                        raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)
                     if module_name.startswith("pytra."):
                         raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)
                     if module_name == "time":
@@ -364,6 +418,9 @@ class LuaNativeEmitter:
             self._emit_line("")
         if needs_path_runtime:
             self._emit_path_runtime_helpers()
+            self._emit_line("")
+        if needs_gif_runtime:
+            self._emit_gif_runtime_helpers()
             self._emit_line("")
         if needs_png_runtime:
             self._emit_png_runtime_helpers()
@@ -407,6 +464,131 @@ class LuaNativeEmitter:
         self.indent -= 1
         self._emit_line("end")
         self._emit_line("io.write(table.concat(parts, \" \") .. \"\\n\")")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_repeat_helper(self) -> None:
+        self._emit_line("local function __pytra_repeat_seq(a, b)")
+        self.indent += 1
+        self._emit_line("local seq = a")
+        self._emit_line("local count = b")
+        self._emit_line("if type(a) == \"number\" and type(b) ~= \"number\" then")
+        self.indent += 1
+        self._emit_line("seq = b")
+        self._emit_line("count = a")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local n = math.floor(tonumber(count) or 0)")
+        self._emit_line("if n <= 0 then")
+        self.indent += 1
+        self._emit_line("if type(seq) == \"string\" then return \"\" end")
+        self._emit_line("return {}")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("if type(seq) == \"string\" then")
+        self.indent += 1
+        self._emit_line("return string.rep(seq, n)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("if type(seq) ~= \"table\" then")
+        self.indent += 1
+        self._emit_line("return (tonumber(a) or 0) * (tonumber(b) or 0)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local out = {}")
+        self._emit_line("for _ = 1, n do")
+        self.indent += 1
+        self._emit_line("for i = 1, #seq do")
+        self.indent += 1
+        self._emit_line("out[#out + 1] = seq[i]")
+        self.indent -= 1
+        self._emit_line("end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return out")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_truthy_helper(self) -> None:
+        self._emit_line("local function __pytra_truthy(v)")
+        self.indent += 1
+        self._emit_line("if v == nil then return false end")
+        self._emit_line("local t = type(v)")
+        self._emit_line("if t == \"boolean\" then return v end")
+        self._emit_line("if t == \"number\" then return v ~= 0 end")
+        self._emit_line("if t == \"string\" then return #v ~= 0 end")
+        self._emit_line("if t == \"table\" then return next(v) ~= nil end")
+        self._emit_line("return true")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_contains_helper(self) -> None:
+        self._emit_line("local function __pytra_contains(container, value)")
+        self.indent += 1
+        self._emit_line("local t = type(container)")
+        self._emit_line("if t == \"table\" then")
+        self.indent += 1
+        self._emit_line("if container[value] ~= nil then return true end")
+        self._emit_line("for i = 1, #container do")
+        self.indent += 1
+        self._emit_line("if container[i] == value then return true end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return false")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("if t == \"string\" then")
+        self.indent += 1
+        self._emit_line("if type(value) ~= \"string\" then value = tostring(value) end")
+        self._emit_line("return string.find(container, value, 1, true) ~= nil")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return false")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_string_predicate_helpers(self) -> None:
+        self._emit_line("local function __pytra_str_isdigit(s)")
+        self.indent += 1
+        self._emit_line("if type(s) ~= \"string\" or #s == 0 then return false end")
+        self._emit_line("for i = 1, #s do")
+        self.indent += 1
+        self._emit_line("local b = string.byte(s, i)")
+        self._emit_line("if b < 48 or b > 57 then return false end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return true")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_str_isalpha(s)")
+        self.indent += 1
+        self._emit_line("if type(s) ~= \"string\" or #s == 0 then return false end")
+        self._emit_line("for i = 1, #s do")
+        self.indent += 1
+        self._emit_line("local b = string.byte(s, i)")
+        self._emit_line("local is_upper = (b >= 65 and b <= 90)")
+        self._emit_line("local is_lower = (b >= 97 and b <= 122)")
+        self._emit_line("if not (is_upper or is_lower) then return false end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return true")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_str_isalnum(s)")
+        self.indent += 1
+        self._emit_line("if type(s) ~= \"string\" or #s == 0 then return false end")
+        self._emit_line("for i = 1, #s do")
+        self.indent += 1
+        self._emit_line("local b = string.byte(s, i)")
+        self._emit_line("local is_digit = (b >= 48 and b <= 57)")
+        self._emit_line("local is_upper = (b >= 65 and b <= 90)")
+        self._emit_line("local is_lower = (b >= 97 and b <= 122)")
+        self._emit_line("if not (is_digit or is_upper or is_lower) then return false end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return true")
         self.indent -= 1
         self._emit_line("end")
 
@@ -543,6 +725,196 @@ class LuaNativeEmitter:
         self._emit_line('local data = f:read("*a")')
         self._emit_line("f:close()")
         self._emit_line("return data")
+        self.indent -= 1
+        self._emit_line("end")
+
+    def _emit_gif_runtime_helpers(self) -> None:
+        self._emit_line("local function __pytra_u16le(n)")
+        self.indent += 1
+        self._emit_line("local v = math.floor(tonumber(n) or 0) & 0xFFFF")
+        self._emit_line("return string.char(v & 0xFF, (v >> 8) & 0xFF)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_to_byte_table(data)")
+        self.indent += 1
+        self._emit_line("if type(data) == \"string\" then")
+        self.indent += 1
+        self._emit_line("local out = {}")
+        self._emit_line("for i = 1, #data do")
+        self.indent += 1
+        self._emit_line("out[#out + 1] = string.byte(data, i)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return out")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("if type(data) == \"table\" then")
+        self.indent += 1
+        self._emit_line("local out = {}")
+        self._emit_line("for i = 1, #data do")
+        self.indent += 1
+        self._emit_line("local n = math.floor(tonumber(data[i]) or 0)")
+        self._emit_line("if n < 0 then n = 0 end")
+        self._emit_line("if n > 255 then n = 255 end")
+        self._emit_line("out[#out + 1] = n")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return out")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return {}")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_bytes_from_table(data)")
+        self.indent += 1
+        self._emit_line("local parts = {}")
+        self._emit_line("for i = 1, #data do")
+        self.indent += 1
+        self._emit_line("parts[#parts + 1] = string.char(data[i])")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return table.concat(parts)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_gif_lzw_encode(data, min_code_size)")
+        self.indent += 1
+        self._emit_line("if #data == 0 then return \"\" end")
+        self._emit_line("local clear_code = 1 << min_code_size")
+        self._emit_line("local end_code = clear_code + 1")
+        self._emit_line("local code_size = min_code_size + 1")
+        self._emit_line("local out = {}")
+        self._emit_line("local bit_buffer = 0")
+        self._emit_line("local bit_count = 0")
+        self._emit_line("local function emit_code(code)")
+        self.indent += 1
+        self._emit_line("bit_buffer = bit_buffer | (code << bit_count)")
+        self._emit_line("bit_count = bit_count + code_size")
+        self._emit_line("while bit_count >= 8 do")
+        self.indent += 1
+        self._emit_line("out[#out + 1] = string.char(bit_buffer & 0xFF)")
+        self._emit_line("bit_buffer = bit_buffer >> 8")
+        self._emit_line("bit_count = bit_count - 8")
+        self.indent -= 1
+        self._emit_line("end")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("emit_code(clear_code)")
+        self._emit_line("code_size = min_code_size + 1")
+        self._emit_line("for i = 1, #data do")
+        self.indent += 1
+        self._emit_line("emit_code(data[i])")
+        self._emit_line("emit_code(clear_code)")
+        self._emit_line("code_size = min_code_size + 1")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("emit_code(end_code)")
+        self._emit_line("if bit_count > 0 then")
+        self.indent += 1
+        self._emit_line("out[#out + 1] = string.char(bit_buffer & 0xFF)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return table.concat(out)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_grayscale_palette()")
+        self.indent += 1
+        self._emit_line("local out = {}")
+        self._emit_line("for i = 0, 255 do")
+        self.indent += 1
+        self._emit_line("out[#out + 1] = i")
+        self._emit_line("out[#out + 1] = i")
+        self._emit_line("out[#out + 1] = i")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return out")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_save_gif(path, width, height, frames, palette, delay_cs, loop)")
+        self.indent += 1
+        self._emit_line("local w = math.floor(tonumber(width) or 0)")
+        self._emit_line("local h = math.floor(tonumber(height) or 0)")
+        self._emit_line("local delay = math.floor(tonumber(delay_cs) or 4)")
+        self._emit_line("local loop_count = math.floor(tonumber(loop) or 0)")
+        self._emit_line("local palette_tbl = __pytra_to_byte_table(palette)")
+        self._emit_line("if #palette_tbl ~= (256 * 3) then")
+        self.indent += 1
+        self._emit_line('error("palette must be 256*3 bytes")')
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local norm_frames = {}")
+        self._emit_line("for i = 1, #frames do")
+        self.indent += 1
+        self._emit_line("local fr = __pytra_to_byte_table(frames[i])")
+        self._emit_line("if #fr ~= (w * h) then")
+        self.indent += 1
+        self._emit_line('error("frame size mismatch")')
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("norm_frames[#norm_frames + 1] = fr")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local out = {}")
+        self._emit_line('out[#out + 1] = "GIF89a"')
+        self._emit_line("out[#out + 1] = __pytra_u16le(w)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(h)")
+        self._emit_line("out[#out + 1] = string.char(0xF7, 0, 0)")
+        self._emit_line("out[#out + 1] = __pytra_bytes_from_table(palette_tbl)")
+        self._emit_line("out[#out + 1] = string.char(0x21, 0xFF, 0x0B)")
+        self._emit_line('out[#out + 1] = "NETSCAPE2.0"')
+        self._emit_line("out[#out + 1] = string.char(0x03, 0x01)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(loop_count)")
+        self._emit_line("out[#out + 1] = string.char(0x00)")
+        self._emit_line("for i = 1, #norm_frames do")
+        self.indent += 1
+        self._emit_line("local fr = norm_frames[i]")
+        self._emit_line("out[#out + 1] = string.char(0x21, 0xF9, 0x04, 0x00)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(delay)")
+        self._emit_line("out[#out + 1] = string.char(0x00, 0x00)")
+        self._emit_line("out[#out + 1] = string.char(0x2C)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(0)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(0)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(w)")
+        self._emit_line("out[#out + 1] = __pytra_u16le(h)")
+        self._emit_line("out[#out + 1] = string.char(0x00)")
+        self._emit_line("out[#out + 1] = string.char(8)")
+        self._emit_line("local compressed = __pytra_gif_lzw_encode(fr, 8)")
+        self._emit_line("local pos = 1")
+        self._emit_line("while pos <= #compressed do")
+        self.indent += 1
+        self._emit_line("local chunk = string.sub(compressed, pos, pos + 254)")
+        self._emit_line("out[#out + 1] = string.char(#chunk)")
+        self._emit_line("out[#out + 1] = chunk")
+        self._emit_line("pos = pos + #chunk")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("out[#out + 1] = string.char(0x00)")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("out[#out + 1] = string.char(0x3B)")
+        self._emit_line('local f = assert(io.open(tostring(path), "wb"))')
+        self._emit_line("f:write(table.concat(out))")
+        self._emit_line("f:close()")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+        self._emit_line("local function __pytra_gif_module()")
+        self.indent += 1
+        self._emit_line("return {")
+        self.indent += 1
+        self._emit_line("grayscale_palette = __pytra_grayscale_palette,")
+        self._emit_line("save_gif = function(...)")
+        self.indent += 1
+        self._emit_line("local path, width, height, frames, palette, delay_cs, loop = ...")
+        self._emit_line("return __pytra_save_gif(path, width, height, frames, palette, delay_cs, loop)")
+        self.indent -= 1
+        self._emit_line("end,")
+        self.indent -= 1
+        self._emit_line("}")
         self.indent -= 1
         self._emit_line("end")
 
@@ -863,7 +1235,7 @@ class LuaNativeEmitter:
         self._emit_line("")
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
-        test = self._render_expr(stmt.get("test"))
+        test = self._render_cond_expr(stmt.get("test"))
         self._emit_line("if " + test + " then")
         self.indent += 1
         self._emit_block(stmt.get("body"))
@@ -888,6 +1260,14 @@ class LuaNativeEmitter:
         self._emit_line(cls_name + ".__index = " + cls_name)
         self._emit_line("")
         body = self._dict_list(stmt.get("body"))
+        dataclass_fields: list[str] = []
+        if bool(stmt.get("dataclass")):
+            for sub in body:
+                if sub.get("kind") != "AnnAssign":
+                    continue
+                target_any = sub.get("target")
+                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                    dataclass_fields.append(_safe_ident(target_any.get("id"), "field"))
         has_init = False
         for sub in body:
             if sub.get("kind") != "FunctionDef":
@@ -896,9 +1276,13 @@ class LuaNativeEmitter:
                 has_init = True
             self._emit_class_method(cls_name, sub)
         if not has_init:
-            self._emit_line("function " + cls_name + ".new()")
+            arg_list = ", ".join(dataclass_fields)
+            self._emit_line("function " + cls_name + ".new(" + arg_list + ")")
             self.indent += 1
-            self._emit_line("return setmetatable({}, " + cls_name + ")")
+            self._emit_line("local self = setmetatable({}, " + cls_name + ")")
+            for field_name in dataclass_fields:
+                self._emit_line("self." + field_name + " = " + field_name)
+            self._emit_line("return self")
             self.indent -= 1
             self._emit_line("end")
             self._emit_line("")
@@ -1019,8 +1403,33 @@ class LuaNativeEmitter:
             if not isinstance(iter_plan, dict):
                 raise RuntimeError("lang=lua unsupported forcore runtime shape")
             iter_expr = self._render_expr(iter_plan.get("iter_expr"))
-            self._emit_line("for _, " + target_name + " in ipairs(" + iter_expr + ") do")
+            tuple_target = isinstance(target_plan, dict) and target_plan.get("kind") == "TupleTarget"
+            iter_name = target_name
+            if tuple_target:
+                iter_name = self._next_tmp_name("__it")
+            self._emit_line("for _, " + iter_name + " in ipairs(" + iter_expr + ") do")
             self.indent += 1
+            if tuple_target and isinstance(target_plan, dict):
+                direct_names_any = target_plan.get("direct_unpack_names")
+                direct_names = direct_names_any if isinstance(direct_names_any, list) else []
+                if len(direct_names) > 0:
+                    i = 0
+                    while i < len(direct_names):
+                        name_any = direct_names[i]
+                        if isinstance(name_any, str) and name_any != "":
+                            local_name = _safe_ident(name_any, "it")
+                            self._emit_line("local " + local_name + " = " + iter_name + "[" + str(i + 1) + "]")
+                        i += 1
+                else:
+                    elems_any = target_plan.get("elements")
+                    elems = elems_any if isinstance(elems_any, list) else []
+                    i = 0
+                    while i < len(elems):
+                        elem = elems[i]
+                        if isinstance(elem, dict) and elem.get("kind") == "NameTarget":
+                            local_name = _safe_ident(elem.get("id"), "it")
+                            self._emit_line("local " + local_name + " = " + iter_name + "[" + str(i + 1) + "]")
+                        i += 1
             self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
             self.loop_continue_labels.pop()
@@ -1031,7 +1440,7 @@ class LuaNativeEmitter:
         raise RuntimeError("lang=lua unsupported forcore iter_mode: " + iter_mode)
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
-        test = self._render_expr(stmt.get("test"))
+        test = self._render_cond_expr(stmt.get("test"))
         continue_label = self._next_tmp_name("__pytra_continue")
         self._emit_line("while " + test + " do")
         self.indent += 1
@@ -1081,7 +1490,12 @@ class LuaNativeEmitter:
                 owner_type = owner_node.get("resolved_type") or ""
             if owner_type.startswith("dict["):
                 return owner + "[" + index + "]"
-            return owner + "[(" + index + ") + 1]"
+            idx_const = self._const_int_literal(index_node)
+            if isinstance(idx_const, int):
+                if idx_const >= 0:
+                    return owner + "[" + str(idx_const + 1) + "]"
+                return owner + "[(#(" + owner + ") + (" + str(idx_const) + ") + 1)]"
+            return owner + "[(((" + index + ") < 0) and (#(" + owner + ") + (" + index + ") + 1) or ((" + index + ") + 1))]"
         target_kind = target_any.get("kind") if isinstance(target_any, dict) else type(target_any).__name__
         raise RuntimeError("lang=lua unsupported assignment target: " + str(target_kind))
 
@@ -1094,9 +1508,22 @@ class LuaNativeEmitter:
         if kind == "Name":
             return _safe_ident(expr_any.get("id"), "value")
         if kind == "BinOp":
+            left_node = expr_any.get("left")
+            right_node = expr_any.get("right")
             left = self._render_expr(expr_any.get("left"))
             right = self._render_expr(expr_any.get("right"))
-            op = _binop_symbol(str(expr_any.get("op")))
+            op_raw = str(expr_any.get("op"))
+            op = _binop_symbol(op_raw)
+            if op_raw == "Add":
+                expr_resolved = expr_any.get("resolved_type")
+                if (
+                    (isinstance(expr_resolved, str) and expr_resolved == "str")
+                    or self._is_str_expr(left_node)
+                    or self._is_str_expr(right_node)
+                ):
+                    return "(" + left + " .. " + right + ")"
+            if op_raw == "Mult" and (self._is_sequence_expr(left_node) or self._is_sequence_expr(right_node)):
+                return "__pytra_repeat_seq(" + left + ", " + right + ")"
             return "(" + left + " " + op + " " + right + ")"
         if kind == "UnaryOp":
             operand = self._render_expr(expr_any.get("operand"))
@@ -1115,7 +1542,12 @@ class LuaNativeEmitter:
                 return "false"
             left = self._render_expr(expr_any.get("left"))
             right = self._render_expr(comps[0])
-            return "(" + left + " " + _cmp_symbol(str(ops[0])) + " " + right + ")"
+            op0 = str(ops[0])
+            if op0 == "In":
+                return "__pytra_contains(" + right + ", " + left + ")"
+            if op0 == "NotIn":
+                return "(not __pytra_contains(" + right + ", " + left + "))"
+            return "(" + left + " " + _cmp_symbol(op0) + " " + right + ")"
         if kind == "BoolOp":
             values_any = expr_any.get("values")
             values = values_any if isinstance(values_any, list) else []
@@ -1245,7 +1677,21 @@ class LuaNativeEmitter:
             index = self._render_expr(index_node)
             if owner_type.startswith("dict["):
                 return owner + "[" + index + "]"
-            return owner + "[(" + index + ") + 1]"
+            idx_const = self._const_int_literal(index_node)
+            if isinstance(idx_const, int):
+                if owner_type == "str":
+                    if idx_const >= 0:
+                        pos = str(idx_const + 1)
+                        return "string.sub(" + owner + ", " + pos + ", " + pos + ")"
+                    pos = "(#(" + owner + ") + (" + str(idx_const) + ") + 1)"
+                    return "string.sub(" + owner + ", " + pos + ", " + pos + ")"
+                if idx_const >= 0:
+                    return owner + "[" + str(idx_const + 1) + "]"
+                return owner + "[(#(" + owner + ") + (" + str(idx_const) + ") + 1)]"
+            if owner_type == "str":
+                pos = "(((" + index + ") < 0) and (#(" + owner + ") + (" + index + ") + 1) or ((" + index + ") + 1))"
+                return "string.sub(" + owner + ", " + pos + ", " + pos + ")"
+            return owner + "[(((" + index + ") < 0) and (#(" + owner + ") + (" + index + ") + 1) or ((" + index + ") + 1))]"
         if kind == "Attribute":
             owner = self._render_expr(expr_any.get("value"))
             attr = _safe_ident(expr_any.get("attr"), "field")
@@ -1295,7 +1741,17 @@ class LuaNativeEmitter:
             return "tostring(" + self._render_expr(expr_any.get("value")) + ")"
         if kind == "ObjBool":
             val = self._render_expr(expr_any.get("value"))
-            return "((" + val + ") and true or false)"
+            resolved = expr_any.get("resolved_type")
+            if isinstance(resolved, str):
+                if resolved in {"bool"}:
+                    return "__pytra_truthy(" + val + ")"
+                if resolved in {"int", "int64", "float", "float64"}:
+                    return "((" + val + ") ~= 0)"
+                if resolved == "str":
+                    return "(#(" + val + ") ~= 0)"
+                if resolved.startswith("list[") or resolved.startswith("tuple[") or resolved.startswith("dict[") or resolved.startswith("set["):
+                    return "(next(" + val + ") ~= nil)"
+            return "__pytra_truthy(" + val + ")"
         if kind == "ObjLen":
             return "#(" + self._render_expr(expr_any.get("value")) + ")"
         raise RuntimeError("lang=lua unsupported expr kind: " + str(kind))
@@ -1324,7 +1780,7 @@ class LuaNativeEmitter:
             if fn_name == "bool":
                 if len(rendered_args) == 0:
                     return "false"
-                return "((" + rendered_args[0] + ") and true or false)"
+                return "__pytra_truthy(" + rendered_args[0] + ")"
             if fn_name == "str":
                 if len(rendered_args) == 0:
                     return '""'
@@ -1333,6 +1789,24 @@ class LuaNativeEmitter:
                 if len(rendered_args) == 0:
                     return "0"
                 return "#(" + rendered_args[0] + ")"
+            if fn_name == "max":
+                if len(rendered_args) == 0:
+                    return "0"
+                return "math.max(" + ", ".join(rendered_args) + ")"
+            if fn_name == "min":
+                if len(rendered_args) == 0:
+                    return "0"
+                return "math.min(" + ", ".join(rendered_args) + ")"
+            if fn_name == "enumerate":
+                if len(rendered_args) == 0:
+                    return "{}"
+                return (
+                    "(function(__v) local __out = {}; "
+                    + "for __i = 1, #__v do table.insert(__out, { __i - 1, __v[__i] }) end; "
+                    + "return __out end)("
+                    + rendered_args[0]
+                    + ")"
+                )
             if fn_name == "bytearray":
                 if len(rendered_args) == 0:
                     return "{}"
@@ -1344,6 +1818,18 @@ class LuaNativeEmitter:
                     + rendered_args[0]
                     + ")"
                 )
+            if fn_name == "bytes":
+                if len(rendered_args) == 0:
+                    return "{}"
+                return (
+                    "(function(__v) "
+                    + "if type(__v) == \"number\" then local __n = math.max(0, math.floor(tonumber(__v) or 0)); local __out = {}; for __i = 1, __n do __out[#__out + 1] = 0 end; return __out "
+                    + "elseif type(__v) == \"table\" then local __out = {}; for __i = 1, #__v do __out[#__out + 1] = __v[__i] end; return __out "
+                    + "elseif type(__v) == \"string\" then local __out = {}; for __i = 1, #__v do __out[#__out + 1] = string.byte(__v, __i) end; return __out "
+                    + "else return {} end end)("
+                    + rendered_args[0]
+                    + ")"
+                )
             if fn_name in self.class_names:
                 return fn_name + ".new(" + ", ".join(rendered_args) + ")"
             return fn_name + "(" + ", ".join(rendered_args) + ")"
@@ -1351,10 +1837,35 @@ class LuaNativeEmitter:
             owner = self._render_expr(func_any.get("value"))
             owner_node = func_any.get("value")
             attr = _safe_ident(func_any.get("attr"), "call")
+            owner_type = ""
+            if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
+                owner_type = owner_node.get("resolved_type") or ""
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:
                     return owner + "." + attr + "(" + ", ".join(rendered_args) + ")"
+            if attr == "get":
+                key = rendered_args[0] if len(rendered_args) >= 1 else "nil"
+                default = rendered_args[1] if len(rendered_args) >= 2 else "nil"
+                return (
+                    "(function(__tbl, __key, __default) "
+                    + "local __val = __tbl[__key]; "
+                    + "if __val == nil then return __default end; "
+                    + "return __val end)("
+                    + owner
+                    + ", "
+                    + key
+                    + ", "
+                    + default
+                    + ")"
+                )
+            if owner_type == "str" or attr in {"isdigit", "isalpha", "isalnum"}:
+                if attr == "isdigit":
+                    return "__pytra_str_isdigit(" + owner + ")"
+                if attr == "isalpha":
+                    return "__pytra_str_isalpha(" + owner + ")"
+                if attr == "isalnum":
+                    return "__pytra_str_isalnum(" + owner + ")"
             if attr == "append" and len(rendered_args) == 1:
                 return "table.insert(" + owner + ", " + rendered_args[0] + ")"
             if attr == "pop":

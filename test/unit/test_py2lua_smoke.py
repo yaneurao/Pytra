@@ -198,7 +198,125 @@ class Py2LuaSmokeTest(unittest.TestCase):
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
         self.assertIn('d = { ["x"] = 7 }', lua)
-        self.assertIn('return (d["x"] + a[(1) + 1])', lua)
+        self.assertIn('return (d["x"] + a[2])', lua)
+
+    def test_lowering_supports_negative_subscript(self) -> None:
+        src = (
+            "def f(xs: list[int]) -> int:\n"
+            "    return xs[-1]\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "negative_subscript.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("return xs[(#(xs) + (-1) + 1)]", lua)
+
+    def test_lowering_supports_dict_get_and_str_predicates(self) -> None:
+        src = (
+            "def f(d: dict[str, int], s: str) -> bool:\n"
+            "    x = d.get(s, 0)\n"
+            "    return s.isdigit() or (s.isalpha() and x >= 0)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "dict_get_str_pred.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_str_isdigit(s)", lua)
+        self.assertIn("local function __pytra_str_isalpha(s)", lua)
+        self.assertIn("(function(__tbl, __key, __default) local __val = __tbl[__key]; if __val == nil then return __default end; return __val end)(d, s, 0)", lua)
+        self.assertIn("__pytra_str_isdigit(s)", lua)
+        self.assertIn("__pytra_str_isalpha(s)", lua)
+
+    def test_lowering_supports_in_notin_via_contains_helper(self) -> None:
+        src = (
+            "def f(d: dict[str, int], xs: list[int], k: str, v: int) -> bool:\n"
+            "    return (k in d) and (v in xs) and (k not in 'abc')\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "contains_ops.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_contains(container, value)", lua)
+        self.assertIn("__pytra_contains(d, k)", lua)
+        self.assertIn("__pytra_contains(xs, v)", lua)
+        self.assertIn("(not __pytra_contains(\"abc\", k))", lua)
+
+    def test_while_on_typed_list_uses_python_truthiness(self) -> None:
+        src = (
+            "def f(xs: list[int]) -> int:\n"
+            "    c = 0\n"
+            "    while xs:\n"
+            "        xs.pop()\n"
+            "        c += 1\n"
+            "    return c\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "while_truthy_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("while __pytra_truthy(xs) do", lua)
+
+    def test_lowering_supports_bytes_constructor(self) -> None:
+        src = (
+            "def f() -> int:\n"
+            "    b = bytes([1, 2, 3])\n"
+            "    return len(b)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "bytes_ctor.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("string.byte(__v, __i)", lua)
+
+    def test_lowering_supports_sequence_repeat(self) -> None:
+        src = (
+            "def f(n: int) -> list[int]:\n"
+            "    return [0] * n\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "seq_repeat.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_repeat_seq(a, b)", lua)
+        self.assertIn("__pytra_repeat_seq({ 0 }, n)", lua)
+
+    def test_lowering_supports_enumerate_and_max(self) -> None:
+        src = (
+            "def f(xs: list[int]) -> int:\n"
+            "    best = 0\n"
+            "    for i, v in enumerate(xs):\n"
+            "        best = max(best, i + v)\n"
+            "    return best\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "enumerate_max.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("ipairs((function(__v) local __out = {}; for __i = 1, #__v do table.insert(__out, { __i - 1, __v[__i] }) end; return __out end)(xs))", lua)
+        self.assertIn("local i = __it_", lua)
+        self.assertIn("local v = __it_", lua)
+        self.assertIn("best = math.max(best, (i + v))", lua)
+
+    def test_objbool_on_typed_list_checks_emptiness(self) -> None:
+        src = (
+            "def f() -> bool:\n"
+            "    xs: list[int] = []\n"
+            "    return bool(xs)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "objbool_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_truthy(v)", lua)
+        self.assertIn("return __pytra_truthy(xs)", lua)
 
     def test_lowering_supports_ifexp_joinedstr_and_attribute_call(self) -> None:
         src = (
@@ -217,6 +335,18 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("z = math.sqrt(9)", lua)
         self.assertIn('return ("v=" .. tostring(y) .. ":" .. tostring(z))', lua)
 
+    def test_string_add_uses_lua_concat_operator(self) -> None:
+        src = (
+            "def f(a: str, b: str) -> str:\n"
+            "    return a + b\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "str_add.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("return (a .. b)", lua)
+
     def test_lowering_supports_class_constructor_and_method_dispatch(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -225,8 +355,28 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("Dog = setmetatable({}, { __index = Animal })", lua)
         self.assertIn("function Dog.new()", lua)
         self.assertIn("d = Dog.new()", lua)
-        self.assertIn("return (self:sound() + \"-bark\")", lua)
+        self.assertIn("return (self:sound() .. \"-bark\")", lua)
         self.assertIn("print(d:bark())", lua)
+
+    def test_dataclass_default_constructor_assigns_fields(self) -> None:
+        src = (
+            "from dataclasses import dataclass\n"
+            "@dataclass\n"
+            "class Pair:\n"
+            "    x: int\n"
+            "    y: int\n"
+            "def f() -> int:\n"
+            "    p = Pair(3, 4)\n"
+            "    return p.x + p.y\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "dataclass_pair.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("function Pair.new(x, y)", lua)
+        self.assertIn("self.x = x", lua)
+        self.assertIn("self.y = y", lua)
 
     def test_annassign_on_attribute_inside_init_is_not_local(self) -> None:
         src = (
@@ -294,7 +444,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertNotIn("write_rgb_png = function(...) end", lua)
         self.assertNotIn("from time import perf_counter", lua)
 
-    def test_import_lowering_fails_closed_for_unmapped_pytra_gif(self) -> None:
+    def test_import_lowering_maps_pytra_gif_runtime(self) -> None:
         src = (
             "from pytra.runtime import gif\n"
             "def f() -> None:\n"
@@ -302,6 +452,20 @@ class Py2LuaSmokeTest(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as td:
             src_py = Path(td) / "imports_gif_unmapped.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local function __pytra_gif_module()", lua)
+        self.assertIn("local gif = __pytra_gif_module()", lua)
+
+    def test_import_lowering_fails_closed_for_unknown_pytra_symbol(self) -> None:
+        src = (
+            "from pytra.runtime import unknown_symbol\n"
+            "def f() -> None:\n"
+            "    _ = unknown_symbol\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "imports_unknown_unmapped.py"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             with self.assertRaises(RuntimeError):
