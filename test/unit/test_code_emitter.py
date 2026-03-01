@@ -359,6 +359,17 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(em.quote_string_literal("abc"), "\"abc\"")
         self.assertEqual(em.quote_string_literal("a\nb"), "\"a\\nb\"")
 
+    def test_dep_collection_helpers(self) -> None:
+        em = CodeEmitter({})
+        em.require_dep("math")
+        em.require_dep("json")
+        em.require_dep("math")
+        em.require_dep_any("time")
+        em.require_dep_any(42)
+        em.require_deps(["pathlib", "json", ""])
+        self.assertEqual(em.finalize_deps(), ["json", "math", "pathlib", "time"])
+        self.assertEqual(em.finalize_deps(stable_sort=False), ["math", "json", "time", "pathlib"])
+
     def test_load_profile_with_includes(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

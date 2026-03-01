@@ -51,6 +51,8 @@ class CodeEmitter:
     class_method_owner_unique: dict[str, str]
     ref_classes: set[str]
     dynamic_hooks_enabled: bool
+    dep_keys: list[str]
+    dep_seen: set[str]
 
     def __init__(
         self,
@@ -91,6 +93,8 @@ class CodeEmitter:
         self.class_method_owner_unique = {}
         self.ref_classes = set()
         self.dynamic_hooks_enabled = True
+        self.dep_keys = []
+        self.dep_seen = set()
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -100,6 +104,33 @@ class CodeEmitter:
         """最上位 1 スコープだけを持つ初期スコープスタックを返す。"""
         root_scope: set[str] = set()
         return [root_scope]
+
+    def require_dep(self, dep_key: str) -> None:
+        """依存キーを登録する。空値や重複は無視する。"""
+        key = dep_key.strip()
+        if key == "":
+            return
+        if key in self.dep_seen:
+            return
+        self.dep_seen.add(key)
+        self.dep_keys.append(key)
+
+    def require_dep_any(self, dep_key: Any) -> None:
+        """動的値を依存キーとして登録する（非文字列は無視）。"""
+        if not isinstance(dep_key, str):
+            return
+        self.require_dep(dep_key)
+
+    def require_deps(self, dep_keys: list[str]) -> None:
+        """依存キー配列を一括登録する。"""
+        for dep_key in dep_keys:
+            self.require_dep(dep_key)
+
+    def finalize_deps(self, stable_sort: bool = True) -> list[str]:
+        """登録済み依存キー一覧を返す。既定は安定順序化のためソートする。"""
+        if stable_sort:
+            return sorted(self.dep_keys)
+        return list(self.dep_keys)
 
     @staticmethod
     def escape_string_for_literal(text: str) -> str:
