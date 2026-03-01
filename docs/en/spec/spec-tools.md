@@ -49,6 +49,7 @@ Its goals are:
 
 - `tools/runtime_parity_check.py`
   - Purpose: Run runtime normalization/parity checks across multiple target languages.
+  - Note: Unstable timing lines such as `elapsed_sec` / `elapsed` / `time_sec` are excluded from compare by default.
 
 ## 4. Update Rules
 

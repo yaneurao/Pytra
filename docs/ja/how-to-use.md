@@ -174,7 +174,7 @@ ruby test/transpile/ruby/iterable.rb
 - `py2rb.py` は EAST3 から Ruby native emitter（`src/hooks/ruby/emitter/ruby_native_emitter.py`）で直接コード生成します。
 - 画像出力 API（`png.write_rgb_png` / `save_gif`）は現状 no-op runtime hook で受けるため、まずは出力一致よりも構文/実行導線の回帰監視に使ってください。
 - 変換回帰は `python3 tools/check_py2rb_transpile.py` で確認できます。
-- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --ignore-unstable-stdout` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
+- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets ruby` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。`elapsed_sec` など不安定行はデフォルトで比較から除外されます。
 
 </details>
 
@@ -190,7 +190,7 @@ lua test/transpile/lua/iterable.lua
 - `py2lua.py` は EAST3 から Lua native emitter（`src/hooks/lua/emitter/lua_native_emitter.py`）で直接コード生成します。
 - 画像 API（`png.write_rgb_png` / `save_gif`）は現状 stub/no-op runtime で受けます。
 - 変換回帰は `python3 tools/check_py2lua_transpile.py` で確認できます（現状は expected-fail を除外して監視）。
-- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets lua 17_monte_carlo_pi --ignore-unstable-stdout` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
+- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets lua 17_monte_carlo_pi` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。`elapsed_sec` など不安定行はデフォルトで比較から除外されます。
 - `sample/lua` は現時点で `02_raytrace_spheres` / `03_julia_set` / `04_orbit_trap_julia` / `17_monte_carlo_pi` を再生成済みです。
 
 </details>

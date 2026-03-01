@@ -266,6 +266,11 @@ def check_case(
     east3_opt_level: str,
     records: list[CheckRecord] | None = None,
 ) -> int:
+    # Compatibility note:
+    # parity compare always ignores unstable timing lines (elapsed_sec / elapsed / time_sec).
+    # This parameter remains for backward compatibility with old callers.
+    _ = ignore_stdout
+
     def _record(target: str, category: str, detail: str) -> None:
         if records is None:
             return
@@ -295,7 +300,7 @@ def check_case(
             print(py.stderr.strip())
             _record("python", "python_failed", py.stderr.strip())
             return 1
-        expected = _normalize_output_for_compare(py.stdout) if ignore_stdout else py.stdout
+        expected = _normalize_output_for_compare(py.stdout)
         expected_artifact_size: int | None = None
         expected_artifact_path: Path | None = None
         expected_out_txt = _parse_output_path(py.stdout)
@@ -334,7 +339,7 @@ def check_case(
                 _record(target.name, "run_failed", msg)
                 continue
 
-            actual = _normalize_output_for_compare(rr.stdout) if ignore_stdout else rr.stdout
+            actual = _normalize_output_for_compare(rr.stdout)
             if actual != expected:
                 _record(target.name, "output_mismatch", "stdout mismatch")
                 mismatches.append(
@@ -418,7 +423,7 @@ def main() -> int:
     parser.add_argument(
         "--ignore-unstable-stdout",
         action="store_true",
-        help="ignore timing lines for output compare (elapsed_sec/time_sec)",
+        help="deprecated compatibility flag; unstable timing lines are always ignored",
     )
     parser.add_argument(
         "--targets",
