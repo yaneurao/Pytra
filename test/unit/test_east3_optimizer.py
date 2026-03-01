@@ -4,6 +4,7 @@ import copy
 import unittest
 
 from src.pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from src.pytra.compiler.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
 from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
@@ -166,7 +167,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -177,6 +178,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("IdentityPyToElisionPass", True))
         self.assertFalse(by_name.get("NumericCastChainReductionPass", True))
         self.assertFalse(by_name.get("RangeForCanonicalizationPass", True))
+        self.assertFalse(by_name.get("ExpressionNormalizationPass", True))
         self.assertFalse(by_name.get("SafeReserveHintPass", True))
         self.assertFalse(by_name.get("TypedEnumerateNormalizationPass", True))
         self.assertFalse(by_name.get("TypedRepeatMaterializationPass", True))
@@ -193,6 +195,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("IdentityPyToElisionPass", trace_text)
         self.assertIn("NumericCastChainReductionPass", trace_text)
         self.assertIn("RangeForCanonicalizationPass", trace_text)
+        self.assertIn("ExpressionNormalizationPass", trace_text)
         self.assertIn("SafeReserveHintPass", trace_text)
         self.assertIn("TypedEnumerateNormalizationPass", trace_text)
         self.assertIn("TypedRepeatMaterializationPass", trace_text)
@@ -555,6 +558,80 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 0)
         self.assertEqual(for_stmt.get("iter_mode"), "runtime_protocol")
         self.assertEqual(for_stmt.get("iter_plan", {}).get("kind"), "RuntimeIterForPlan")
+
+    def test_expression_normalization_pass_tags_static_range_condition_and_binop(self) -> None:
+        doc = _module_doc()
+        binop = {
+            "kind": "BinOp",
+            "op": "Add",
+            "left": {"kind": "Name", "id": "a", "resolved_type": "int64", "borrow_kind": "value", "casts": []},
+            "right": {"kind": "Name", "id": "b", "resolved_type": "int64", "borrow_kind": "value", "casts": []},
+            "resolved_type": "int64",
+            "borrow_kind": "value",
+            "casts": [],
+        }
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_range",
+            "iter_plan": {
+                "kind": "StaticRangeForPlan",
+                "start": _const_i(0),
+                "stop": {"kind": "Name", "id": "n", "resolved_type": "int64", "borrow_kind": "value", "casts": []},
+                "step": _const_i(1),
+                "range_mode": "ascending",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [{"kind": "Expr", "value": binop}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+
+        result = ExpressionNormalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertGreaterEqual(result.change_count, 2)
+        self.assertEqual(for_stmt.get("normalized_expr_version"), "east3_expr_v1")
+        exprs = for_stmt.get("normalized_exprs", {})
+        self.assertIsInstance(exprs, dict)
+        cond_expr = exprs.get("for_cond_expr")
+        self.assertIsInstance(cond_expr, dict)
+        self.assertEqual(cond_expr.get("kind"), "Compare")
+        self.assertEqual(cond_expr.get("ops"), ["Lt"])
+        self.assertEqual(cond_expr.get("left", {}).get("id"), "i")
+        self.assertEqual(cond_expr.get("comparators", [{}])[0].get("id"), "n")
+        self.assertEqual(binop.get("normalized_expr_version"), "east3_expr_v1")
+        normalized_binop = binop.get("normalized_expr", {})
+        self.assertIsInstance(normalized_binop, dict)
+        self.assertEqual(normalized_binop.get("kind"), "BinOp")
+        self.assertNotIn("normalized_expr", normalized_binop)
+
+    def test_expression_normalization_pass_builds_dynamic_for_range_condition(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_range",
+            "iter_plan": {
+                "kind": "StaticRangeForPlan",
+                "start": _const_i(0),
+                "stop": {"kind": "Name", "id": "limit", "resolved_type": "int64", "borrow_kind": "value", "casts": []},
+                "step": {"kind": "Name", "id": "step", "resolved_type": "int64", "borrow_kind": "value", "casts": []},
+                "range_mode": "dynamic",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+
+        result = ExpressionNormalizationPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        exprs = for_stmt.get("normalized_exprs", {})
+        self.assertIsInstance(exprs, dict)
+        cond_expr = exprs.get("for_cond_expr")
+        self.assertIsInstance(cond_expr, dict)
+        self.assertEqual(cond_expr.get("kind"), "IfExp")
+        test_expr = cond_expr.get("test", {})
+        self.assertEqual(test_expr.get("kind"), "Compare")
+        self.assertEqual(test_expr.get("ops"), ["Gt"])
 
     def test_typed_enumerate_normalization_pass_populates_metadata_from_list_arg(self) -> None:
         doc = _module_doc()

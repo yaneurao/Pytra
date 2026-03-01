@@ -910,7 +910,7 @@ class CppStatementEmitter:
         return "dynamic"
 
     def _render_reserve_count_expr(self, expr: Any) -> str:
-        """`reserve_hints[*].count_expr`（east3_expr_v1）を C++ 式へ描画する。"""
+        """`east3_expr_v1` の正規化式を C++ 式へ描画する。"""
         node = self.any_to_dict_or_empty(expr)
         if len(node) == 0:
             return ""
@@ -942,7 +942,7 @@ class CppStatementEmitter:
             right = self._render_reserve_count_expr(node.get("right"))
             if left == "" or right == "":
                 return ""
-            return f"({left} {op_txt} {right})"
+            return f"{left} {op_txt} {right}"
         if kind == "Compare":
             left = self._render_reserve_count_expr(node.get("left"))
             if left == "":
@@ -957,19 +957,27 @@ class CppStatementEmitter:
                 op_txt = "<="
             elif op == "GtE":
                 op_txt = ">="
+            elif op == "Lt":
+                op_txt = "<"
+            elif op == "Gt":
+                op_txt = ">"
+            elif op == "Eq":
+                op_txt = "=="
+            elif op == "NotEq":
+                op_txt = "!="
             if op_txt == "":
                 return ""
             right = self._render_reserve_count_expr(cmps[0])
             if right == "":
                 return ""
-            return f"({left} {op_txt} {right})"
+            return f"{left} {op_txt} {right}"
         if kind == "IfExp":
             test_txt = self._render_reserve_count_expr(node.get("test"))
             body_txt = self._render_reserve_count_expr(node.get("body"))
             else_txt = self._render_reserve_count_expr(node.get("orelse"))
             if test_txt == "" or body_txt == "" or else_txt == "":
                 return ""
-            return f"({test_txt} ? {body_txt} : {else_txt})"
+            return f"({test_txt}) ? {body_txt} : {else_txt}"
         return ""
 
     def _emit_forcore_reserve_hints(
@@ -1217,15 +1225,20 @@ class CppStatementEmitter:
             range_mode_txt = self.any_dict_get_str(iter_plan, "range_mode", "")
             if range_mode_txt == "":
                 range_mode_txt = self._range_mode_from_step_expr(step_expr)
-            cond = (
-                f"{target_id} < {stop_txt}"
-                if range_mode_txt == "ascending"
-                else (
-                    f"{target_id} > {stop_txt}"
-                    if range_mode_txt == "descending"
-                    else f"{step_txt} > 0 ? {target_id} < {stop_txt} : {target_id} > {stop_txt}"
+            cond = ""
+            normalized_exprs = self.any_to_dict_or_empty(stmt.get("normalized_exprs"))
+            if self.any_dict_get_str(stmt, "normalized_expr_version", "") == "east3_expr_v1":
+                cond = self._render_reserve_count_expr(normalized_exprs.get("for_cond_expr"))
+            if cond == "":
+                cond = (
+                    f"{target_id} < {stop_txt}"
+                    if range_mode_txt == "ascending"
+                    else (
+                        f"{target_id} > {stop_txt}"
+                        if range_mode_txt == "descending"
+                        else f"{step_txt} > 0 ? {target_id} < {stop_txt} : {target_id} > {stop_txt}"
+                    )
                 )
-            )
             inc = (
                 f"++{target_id}"
                 if self._opt_ge(2) and step_txt == "1"

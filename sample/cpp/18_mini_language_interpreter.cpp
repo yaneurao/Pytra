@@ -295,7 +295,7 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
     list<str> lines = list<str>{};
     
     // Declare initial variables.
-    lines.reserve(((var_count <= 0) ? 0 : var_count));
+    lines.reserve((var_count <= 0) ? 0 : var_count);
     for (int64 i = 0; i < var_count; ++i) {
         lines.append(str("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
     }

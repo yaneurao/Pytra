@@ -44,11 +44,11 @@
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務の棚卸し（BinOp/Compare/ForRange/trip_count）を行い、EAST3移管対象を確定する。
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] EAST3に共通式正規化パスを追加し、正規化結果を構造化メタ（`normalized_expr` 系）として保持する。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ emitter で `reserve` 以外の式カテゴリも EAST3正規形優先に切替え、文字列組み立て依存を縮小する。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] EAST3に共通式正規化パスを追加し、正規化結果を構造化メタ（`normalized_expr` 系）として保持する。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ emitter で `reserve` 以外の式カテゴリも EAST3正規形優先に切替え、文字列組み立て依存を縮小する。
 - [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala を次段 pilot として同一正規形を参照する描画経路へ切替える。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 旧経路との併存期間を最小化し、正規形欠落時の fail-closed / fallback 条件を固定する。
-- [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト（optimizer + emitter）を追加し、冗長式再発を検知可能にする。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 旧経路との併存期間を最小化し、正規形欠落時の fail-closed / fallback 条件を固定する。
+- [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト（optimizer + emitter）を追加し、冗長式再発を検知可能にする。
 - [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 再生成と transpile/parity を実施し、代表ケースでの品質改善と非退行を確認する。
 
 決定ログ:
@@ -56,6 +56,10 @@
 - 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断棚卸しを実施し、`BinOp/Compare/ForRange/trip_count` のEAST3移管対象を確定。
 - 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「意味はEAST3、表記はemitter」の fail-closed 境界を `normalized_expr` 契約として固定。
 - 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化カテゴリの優先順位を `trip_count/range条件 -> identity cast -> 比較連鎖 -> 括弧` の順で固定。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] `ExpressionNormalizationPass` を追加し、`BinOp/Compare` と `ForCore(StaticRange)` 条件式へ `normalized_expr_version=east3_expr_v1` を付与。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ `ForCore` の条件式を `normalized_exprs.for_cond_expr` 優先へ切替え、`reserve` 以外カテゴリへ適用開始。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時は従来条件式へ fallback、`reserve_hints` は既存 fail-closed を維持する条件を固定。
+- 2026-03-02: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] optimizer/unit と C++ codegen 回帰テストを拡張し、正規化メタ再発検知を追加。
 
 ## S1-01 棚卸し結果（backend横断）
 

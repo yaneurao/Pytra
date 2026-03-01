@@ -102,6 +102,7 @@
 | `NoOpCastCleanupPass` | `O1` | 実装済み | `from == to` の cast エントリ除去 | 型一致が静的に証明できる場合のみ |
 | `LiteralCastFoldPass` | `O1` | 実装済み | `static_cast` なリテラル呼び出しを `Constant` へ畳み込み | リテラル + 無損失（同一型）変換のみ |
 | `RangeForCanonicalizationPass` | `O1` | 実装済み | `RuntimeIterForPlan(py_range)` -> `StaticRangeForPlan` | 現行は定数 int 引数（1〜3引数）かつ `step != 0` に限定 |
+| `ExpressionNormalizationPass` | `O1` | 実装済み | `BinOp/Compare` と `ForCore(StaticRange)` 条件式を `normalized_expr(_version)` へ構造化保持 | `normalized_expr_version=east3_expr_v1` を満たさない経路は backend 側で fallback/fail-closed |
 | `UnusedLoopVarElisionPass` | `O1` | 実装済み | 未使用 `NameTarget` を `_` へ置換 | ループ本体/`orelse`/後続参照と動的名前解決（`locals` 等）を検出した場合は不適用 |
 | `LoopInvariantHoistLitePass` | `O2` | 実装済み | 非空 `StaticRangeForPlan` の先頭不変代入を preheader へ hoist | 非空ループの静的証明・副作用なし・再代入なしが条件 |
 | `StrengthReductionFloatLoopPass` | `O2` | 実装済み | `float` の `x / C` を `x * (1/C)` へ変換 | `C` が有限・非0・2冪絶対値の定数のときのみ |

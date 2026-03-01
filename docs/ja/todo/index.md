@@ -97,6 +97,10 @@
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend横断棚卸しを実施し、`BinOp/Compare/ForRange/trip_count` の移管対象を計画書に固定。
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] `normalized_expr_version/east3_expr_v1` 契約と fail-closed 条件を計画書・specへ追記。
 - 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化カテゴリ優先順位（range/trip_count -> cast -> compare -> 括弧）を固定。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] `ExpressionNormalizationPass` を導入し、`BinOp/Compare` と `ForCore` 条件式へ `normalized_expr` メタを付与。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ `ForCore` 条件式を `normalized_exprs.for_cond_expr` 優先描画へ切替え（`reserve` 以外へ展開開始）。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時の fallback/fail-closed 条件（`for_cond_expr` fallback, `reserve_hints` fail-closed）を固定。
+- 進捗メモ: [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト追加で `ExpressionNormalizationPass` と C++ 条件式描画の回帰を固定。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
@@ -106,11 +110,11 @@
 2. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務（BinOp/Compare/ForRange/trip_count）を棚卸しし、EAST3移管対象を確定する。
 3. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-02] 「EAST3が決める意味」と「emitterが決める表記」の境界仕様を策定する（fail-closed 条件含む）。
 4. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-03] 正規化対象カテゴリ（identity cast、不要括弧、range条件、trip_count、比較連鎖）の優先順位を固定する。
-5. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] EAST3 に共通式正規化パスを追加し、正規化結果を構造化メタとして保持する。
-6. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ emitter で `reserve` 以外の式カテゴリも EAST3正規形優先へ切替え、文字列組み立て依存を縮小する。
+5. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-01] EAST3 に共通式正規化パスを追加し、正規化結果を構造化メタとして保持する。
+6. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-02] C++ emitter で `reserve` 以外の式カテゴリも EAST3正規形優先へ切替え、文字列組み立て依存を縮小する。
 7. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-03] Rust/Scala を pilot として同一正規形を参照する描画経路へ切替える。
-8. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時の fail-closed / fallback 条件を固定する。
-9. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト（optimizer + emitter）を追加し、冗長式再発を検知可能にする。
+8. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S2-04] 正規形欠落時の fail-closed / fallback 条件を固定する。
+9. [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-01] unit テスト（optimizer + emitter）を追加し、冗長式再発を検知可能にする。
 10. [ ] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S3-02] `sample` 再生成と transpile/parity を実行し、代表ケースでの品質改善と非退行を確認する。
 
 ### P1: sample/ruby/01 品質改善（C++品質との差分縮小）
