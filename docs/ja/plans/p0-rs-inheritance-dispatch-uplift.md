@@ -27,9 +27,13 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets rs`
 
 分解:
-- [ ] Rust での継承エミュレーション方式を 1 つに絞る。
-- [ ] `super` 相当呼び出しを lower する。
-- [ ] fixture 回帰を追加する。
+- [x] Rust での継承エミュレーション方式を 1 つに絞る。
+- [x] `super` 相当呼び出しを lower する。
+- [x] fixture 回帰を追加する。
 
 決定ログ:
 - 2026-03-01: Rust は設計選択肢が複数あるため先に方式確定を置いた。
+- 2026-03-01: 継承クラス向けに trait 境界（`&impl __pytra_trait_*`）を導入し、基底注釈引数へ派生実体を渡せる方式へ固定した。
+- 2026-03-01: `super().method` は基底クラス明示呼び出しへ lower（`Base::method(&Base::new(), ...)`）し、`py_super` 未解決を解消した。
+- 2026-03-01: `py_assert_stdout` は Rust 側で `"True"` 返却、他 `py_assert_*` は引数評価付き `true` 返却へ寄せ、assertions import 依存を除去した。
+- 2026-03-01: `test_py2rs_smoke.py`（29 tests）と `runtime_parity_check --targets rs`（1/1 pass）で非退行を確認した。

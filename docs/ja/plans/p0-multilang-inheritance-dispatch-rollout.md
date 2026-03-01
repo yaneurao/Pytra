@@ -40,11 +40,11 @@
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin backend の継承メソッド dispatch/`super()` 対応を完了する。
-- [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift backend の継承メソッド dispatch/`super()` 対応を完了する。
-- [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust backend の継承メソッド dispatch/`super()` 対応を完了する。
+- [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift backend の継承メソッド dispatch/`super()` 対応を完了する。
+- [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Ruby backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Lua backend の継承メソッド dispatch/`super()` 対応を完了する。
-- [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離する。
+- [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離する。
 
 決定ログ:
 - 2026-03-01: 非C++ backend の継承メソッド動的ディスパッチ改善を P0 で計画化した。
@@ -59,3 +59,6 @@
 - 2026-03-01: Kotlin（`S2-KOTLIN`）を実施し、`open/override` 解析と `super().method` の `super.method` lower を追加。`test_py2kotlin_smoke.py`（13 tests）と `runtime_parity_check --targets kotlin`（1/1 pass）を確認した。
 - 2026-03-01: Ruby（`S2-RUBY`）を実施し、`super().method` を superclass method bind 呼び出しへ lower、`py_assert_*` の副作用評価を抑制。`test_py2rb_smoke.py`（20 tests）と `runtime_parity_check --targets ruby`（1/1 pass）を確認した。
 - 2026-03-01: Lua（`S2-LUA`）を実施し、`super().method` を基底テーブル明示呼び出し（`Base.method(self, ...)`）へ lower。`py_assert_stdout` import stub を副作用なしに更新し、`test_py2lua_smoke.py`（33 tests）と `runtime_parity_check --targets lua`（1/1 pass）を確認した。
+- 2026-03-01: Swift（`S2-SWIFT`）を実施し、`final` 既定撤去・`override` 付与・`super` lower（`super.init` / `super.method`）を追加。`test_py2swift_smoke.py`（11 tests）は pass、`runtime_parity_check --targets swift` は `toolchain_missing` で skip を確認した。
+- 2026-03-01: Rust（`S2-RS`）を実施し、継承クラス trait 境界導入・`super` lower・assertions import 依存除去を実装。`test_py2rs_smoke.py`（29 tests）と `runtime_parity_check --targets rs`（1/1 pass）を確認した。
+- 2026-03-01: `S3-01` 集約として `runtime_parity_check ... --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --summary-json out/inherit_dispatch_multilang_summary_after_s2.json` を実行。`ok=9 / toolchain_missing=1(swift) / run_failed=1(cpp)` を確認し、未達を blocker（Swift toolchain, C++ super-call 回帰）として分離記録した。

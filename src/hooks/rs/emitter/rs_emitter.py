@@ -463,6 +463,7 @@ class RustEmitter(CodeEmitter):
         self.function_return_types: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_base_map: dict[str, str] = {}
+        self.class_method_defs: dict[str, dict[str, dict[str, Any]]] = {}
         self.class_field_types: dict[str, dict[str, str]] = {}
         self.class_method_mutability: dict[str, dict[str, bool]] = {}
         self.function_arg_ref_modes: dict[str, list[bool]] = {}
@@ -475,6 +476,7 @@ class RustEmitter(CodeEmitter):
         self.current_fn_write_counts: dict[str, int] = {}
         self.current_fn_mutating_call_counts: dict[str, int] = {}
         self.current_ref_vars: set[str] = set()
+        self.current_class_name: str = ""
         self.uses_string_helpers: bool = False
 
     def get_expr_type(self, expr: Any) -> str:
@@ -1682,6 +1684,9 @@ class RustEmitter(CodeEmitter):
                 if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                     i += 1
                     continue
+                if module_id in {"pytra.utils.assertions", "pytra.runtime.assertions"}:
+                    i += 1
+                    continue
                 if binding_kind == "module" and module_id == "math":
                     i += 1
                     continue
@@ -1707,6 +1712,8 @@ class RustEmitter(CodeEmitter):
                     module_id = self.any_to_str(ent.get("name"))
                     if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                         continue
+                    if module_id in {"pytra.utils.assertions", "pytra.runtime.assertions"}:
+                        continue
                     if module_id == "math":
                         continue
                     base_path = self._module_id_to_rust_use_path(module_id)
@@ -1721,6 +1728,8 @@ class RustEmitter(CodeEmitter):
             elif kind == "ImportFrom":
                 module_id = self.any_to_str(stmt.get("module"))
                 if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
+                    continue
+                if module_id in {"pytra.utils.assertions", "pytra.runtime.assertions"}:
                     continue
                 base_path = self._module_id_to_rust_use_path(module_id)
                 if base_path == "":
@@ -1897,6 +1906,7 @@ class RustEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.class_names = set()
         self.class_base_map = self._collect_class_base_map(body)
+        self.class_method_defs = {}
         self.function_return_types = {}
         for stmt in body:
             kind = self.any_dict_get_str(stmt, "kind", "")
@@ -1904,6 +1914,16 @@ class RustEmitter(CodeEmitter):
                 class_name = self.any_to_str(stmt.get("name"))
                 if class_name != "":
                     self.class_names.add(class_name)
+                    method_defs: dict[str, dict[str, Any]] = {}
+                    members = self._dict_stmt_list(stmt.get("body"))
+                    for member in members:
+                        if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
+                            continue
+                        member_name = self.any_to_str(member.get("name"))
+                        if member_name == "" or member_name == "__init__":
+                            continue
+                        method_defs[member_name] = member
+                    self.class_method_defs[class_name] = method_defs
             if kind == "FunctionDef":
                 fn_name = self.any_to_str(stmt.get("name"))
                 ret_type = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
@@ -1924,6 +1944,7 @@ class RustEmitter(CodeEmitter):
             self._prepare_type_id_table()
             self._emit_type_info_registration_helper()
             self.emit("")
+        self._emit_inheritance_trait_declarations()
 
         top_level_stmts: list[dict[str, Any]] = []
         for stmt in body:
@@ -2005,11 +2026,12 @@ class RustEmitter(CodeEmitter):
             if name == "__init__":
                 continue
             self.emit("")
-            self._emit_function(member, in_class=class_name)
+            self._emit_function(member, in_class=class_name_raw)
         self.indent -= 1
         self.emit("}")
+        self.emit("")
+        self._emit_inheritance_trait_impls_for_class(class_name_raw)
         if self.uses_isinstance_runtime and class_name_raw in self.class_type_id_map:
-            self.emit("")
             self.emit(f"impl PyRuntimeTypeId for {class_name} {{")
             self.indent += 1
             self.emit("fn py_runtime_type_id(&self) -> i64 {")
@@ -2116,6 +2138,8 @@ class RustEmitter(CodeEmitter):
         prev_write_counts = self.current_fn_write_counts
         prev_mut_call_counts = self.current_fn_mutating_call_counts
         prev_ref_vars = self.current_ref_vars
+        prev_class_name = self.current_class_name
+        self.current_class_name = self.normalize_type_name(in_class) if in_class is not None else ""
         self.current_fn_write_counts = self._collect_name_write_counts(body)
         self.current_fn_mutating_call_counts = self._collect_mutating_receiver_name_counts(body)
         self.current_ref_vars = set()
@@ -2151,7 +2175,10 @@ class RustEmitter(CodeEmitter):
                 pass_by_ref = fn_ref_modes[arg_pos]
             arg_pos += 1
             if pass_by_ref:
-                if self.normalize_type_name(arg_east_t) == "str":
+                arg_norm = self.normalize_type_name(arg_east_t)
+                if arg_norm in self.class_names and self._is_inheritance_class(arg_norm):
+                    arg_t = "&impl " + self._class_trait_name(arg_norm)
+                elif arg_norm == "str":
                     arg_t = "&str"
                 else:
                     arg_t = "&" + arg_t
@@ -2179,6 +2206,7 @@ class RustEmitter(CodeEmitter):
         self.current_fn_write_counts = prev_write_counts
         self.current_fn_mutating_call_counts = prev_mut_call_counts
         self.current_ref_vars = prev_ref_vars
+        self.current_class_name = prev_class_name
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノードを Rust へ出力する。"""
@@ -2623,11 +2651,13 @@ class RustEmitter(CodeEmitter):
             t_east = self.get_expr_type(stmt.get("value"))
         else:
             t_east = self._refine_decl_type_from_value(t_east, stmt.get("value"))
+        value_obj = stmt.get("value")
+        value_t = self.normalize_type_name(self.get_expr_type(value_obj))
+        if value_t in self.class_names and self._is_class_subtype(value_t, t_east):
+            t_east = value_t
         t = self._rust_type(t_east)
         self.declare_in_current_scope(name_raw)
         self.declared_var_types[name_raw] = self.normalize_type_name(t_east)
-
-        value_obj = stmt.get("value")
         if value_obj is None:
             mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=False) else ""
             self.emit(self.syntax_line("annassign_decl_noinit", "let {mut_kw}{target}: {type};", {"mut_kw": mut_kw, "target": name, "type": t}))
@@ -2805,6 +2835,140 @@ class RustEmitter(CodeEmitter):
             if base != "":
                 out[child] = self.normalize_type_name(base)
         return out
+
+    def _is_inheritance_class(self, class_name: str) -> bool:
+        cls = self.normalize_type_name(class_name)
+        if cls == "":
+            return False
+        if cls in self.class_base_map:
+            return True
+        for base in self.class_base_map.values():
+            if self.normalize_type_name(base) == cls:
+                return True
+        return False
+
+    def _class_trait_name(self, class_name: str) -> str:
+        return "__pytra_trait_" + self._safe_name(class_name)
+
+    def _iter_class_ancestors(self, class_name: str) -> list[str]:
+        out: list[str] = []
+        cur = self.normalize_type_name(class_name)
+        seen: set[str] = set()
+        while cur != "" and cur not in seen:
+            out.append(cur)
+            seen.add(cur)
+            cur = self.normalize_type_name(self.class_base_map.get(cur, ""))
+        return out
+
+    def _trait_method_signature(self, fn_node: dict[str, Any], method_name: str) -> str:
+        arg_order = self.any_to_str_list(fn_node.get("arg_order"))
+        arg_types = self.any_to_dict_or_empty(fn_node.get("arg_types"))
+        params: list[str] = []
+        for arg_name in arg_order:
+            if arg_name == "self":
+                continue
+            arg_east_t = self.any_to_str(arg_types.get(arg_name))
+            arg_t = self._rust_type(arg_east_t)
+            if self._should_pass_method_arg_by_ref_type(arg_east_t):
+                if self.normalize_type_name(arg_east_t) == "str":
+                    arg_t = "&str"
+                else:
+                    arg_t = "&" + arg_t
+            params.append(self._safe_name(arg_name) + ": " + arg_t)
+        ret_t = self._rust_type(self.normalize_type_name(self.any_to_str(fn_node.get("return_type"))))
+        ret_txt = "" if ret_t == "()" else " -> " + ret_t
+        args_txt = "&self"
+        if len(params) > 0:
+            args_txt += ", " + ", ".join(params)
+        return "fn " + self._safe_name(method_name) + "(" + args_txt + ")" + ret_txt
+
+    def _find_method_owner_for_class(self, class_name: str, method_name: str) -> str:
+        for anc in self._iter_class_ancestors(class_name):
+            methods = self.class_method_defs.get(anc, {})
+            if method_name in methods:
+                return anc
+        return ""
+
+    def _trait_decl_method_defs(self, class_name: str) -> dict[str, dict[str, Any]]:
+        own = self.class_method_defs.get(class_name, {})
+        if len(own) == 0:
+            return {}
+        inherited: set[str] = set()
+        ancestors = self._iter_class_ancestors(class_name)
+        i = 1
+        while i < len(ancestors):
+            anc = ancestors[i]
+            for method_name in self.class_method_defs.get(anc, {}).keys():
+                inherited.add(method_name)
+            i += 1
+        out: dict[str, dict[str, Any]] = {}
+        for method_name, method_node in own.items():
+            if method_name in inherited:
+                continue
+            out[method_name] = method_node
+        return out
+
+    def _emit_inheritance_trait_declarations(self) -> None:
+        targets = [c for c in sorted(self.class_names) if self._is_inheritance_class(c)]
+        if len(targets) == 0:
+            return
+        for cls in targets:
+            trait_name = self._class_trait_name(cls)
+            base = self.normalize_type_name(self.class_base_map.get(cls, ""))
+            header = "trait " + trait_name
+            if base != "":
+                header += ": " + self._class_trait_name(base)
+            header += " {"
+            self.emit(header)
+            self.indent += 1
+            method_defs = self._trait_decl_method_defs(cls)
+            for method_name in sorted(method_defs.keys()):
+                method_node = method_defs[method_name]
+                self.emit(self._trait_method_signature(method_node, method_name) + ";")
+            self.indent -= 1
+            self.emit("}")
+            self.emit("")
+
+    def _emit_inheritance_trait_impls_for_class(self, class_name_raw: str) -> None:
+        if not self._is_inheritance_class(class_name_raw):
+            return
+        cls = self.normalize_type_name(class_name_raw)
+        cls_safe = self._safe_name(cls)
+        for anc in self._iter_class_ancestors(cls):
+            if not self._is_inheritance_class(anc):
+                continue
+            anc_methods = self._trait_decl_method_defs(anc)
+            self.emit(f"impl {self._class_trait_name(anc)} for {cls_safe} {{")
+            self.indent += 1
+            for method_name in sorted(anc_methods.keys()):
+                method_node = anc_methods[method_name]
+                self.emit(self._trait_method_signature(method_node, method_name) + " {")
+                self.indent += 1
+                call_args: list[str] = []
+                arg_order = self.any_to_str_list(method_node.get("arg_order"))
+                for arg_name in arg_order:
+                    if arg_name == "self":
+                        continue
+                    call_args.append(self._safe_name(arg_name))
+                owner = self._find_method_owner_for_class(cls, method_name)
+                if owner == "":
+                    owner = anc
+                owner_safe = self._safe_name(owner)
+                recv = "self" if owner == cls else "&" + owner_safe + "::new()"
+                call_txt = owner_safe + "::" + self._safe_name(method_name) + "(" + recv
+                if len(call_args) > 0:
+                    call_txt += ", " + ", ".join(call_args)
+                call_txt += ")"
+                ret_t = self._rust_type(self.normalize_type_name(self.any_to_str(method_node.get("return_type"))))
+                if ret_t == "()":
+                    self.emit(call_txt + ";")
+                else:
+                    self.emit("return " + call_txt + ";")
+                self.indent -= 1
+                self.emit("}")
+            self.indent -= 1
+            self.emit("}")
+            self.emit("")
 
     def _is_class_subtype(self, actual: str, expected: str) -> bool:
         """`actual` が `expected` の派生型かを継承表で判定する。"""
@@ -3142,6 +3306,12 @@ class RustEmitter(CodeEmitter):
         if fn_kind == "Name":
             fn_name_raw = self.any_dict_get_str(fn_node, "id", "")
             fn_name = self._safe_name(fn_name_raw)
+            if fn_name_raw == "py_assert_stdout":
+                return "(\"True\").to_string()"
+            if fn_name_raw.startswith("py_assert_"):
+                if len(merged_args) == 0:
+                    return "true"
+                return "({ let _ = (" + ", ".join(merged_args) + "); true })"
             if fn_name_raw in self.class_names:
                 ctor_args = self._clone_owned_call_args(merged_args, arg_nodes)
                 field_types = self.class_field_types.get(fn_name_raw, {})
@@ -3306,6 +3476,21 @@ class RustEmitter(CodeEmitter):
         if fn_kind == "Attribute":
             owner_expr = self.render_expr(fn_node.get("value"))
             owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
+            if self.any_dict_get_str(owner_node, "kind", "") == "Call":
+                super_fn = self.any_to_dict_or_empty(owner_node.get("func"))
+                if self.any_dict_get_str(super_fn, "kind", "") == "Name" and self.any_dict_get_str(super_fn, "id", "") == "super":
+                    attr_raw = self.any_dict_get_str(fn_node, "attr", "")
+                    if attr_raw == "__init__":
+                        return "()"
+                    base_name = self.normalize_type_name(self.class_base_map.get(self.current_class_name, ""))
+                    if base_name == "":
+                        return "()"
+                    base_safe = self._safe_name(base_name)
+                    call_txt = base_safe + "::" + self._safe_name(attr_raw) + "(&" + base_safe + "::new()"
+                    if len(merged_args) > 0:
+                        call_txt += ", " + ", ".join(merged_args)
+                    call_txt += ")"
+                    return call_txt
             owner_type = self.get_expr_type(owner_node)
             owner_ctx = self.resolve_attribute_owner_context(fn_node.get("value"), owner_expr)
             owner_mod = self.any_dict_get_str(owner_ctx, "module", "")

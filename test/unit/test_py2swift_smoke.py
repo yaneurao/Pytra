@@ -50,9 +50,17 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         swift = transpile_to_swift_native(east)
         self.assertIn("@main", swift)
-        self.assertIn("final class Animal", swift)
-        self.assertIn("final class Dog: Animal", swift)
+        self.assertIn("class Animal", swift)
+        self.assertIn("class Dog: Animal", swift)
         self.assertIn("func _case_main()", swift)
+
+    def test_swift_native_emitter_lowers_override_and_super_method_dispatch(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        self.assertIn("override func speak() -> String {", swift)
+        self.assertIn('return ("loud-" + super.speak())', swift)
+        self.assertNotIn("super().speak()", swift)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"

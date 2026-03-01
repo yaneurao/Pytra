@@ -47,6 +47,8 @@ _SWIFT_KEYWORDS = {
 }
 
 _CLASS_NAMES: set[str] = set()
+_CLASS_BASES: dict[str, str] = {}
+_CLASS_METHODS: dict[str, set[str]] = {}
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -495,6 +497,18 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(func_any.get("id"), "")
 
 
+def _class_has_base_method(class_name: str, method_name: str) -> bool:
+    seen: set[str] = set()
+    cur = _CLASS_BASES.get(class_name, "")
+    while cur != "" and cur not in seen:
+        seen.add(cur)
+        methods = _CLASS_METHODS.get(cur)
+        if isinstance(methods, set) and method_name in methods:
+            return True
+        cur = _CLASS_BASES.get(cur, "")
+    return False
+
+
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
@@ -576,9 +590,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
-        if attr_name == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
-            if _call_name(owner_any) == "super":
-                return "__pytra_noop()"
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
+            rendered_super_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_super_args.append(_render_expr(args[i]))
+                i += 1
+            if attr_name == "__init__":
+                return "super.init(" + ", ".join(rendered_super_args) + ")"
+            return "super." + attr_name + "(" + ", ".join(rendered_super_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
             if owner == "math":
@@ -1337,7 +1357,13 @@ def _block_guarantees_return(body: list[Any]) -> bool:
     return False
 
 
-def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None = None) -> list[str]:
+def _emit_function(
+    fn: dict[str, Any],
+    *,
+    indent: str,
+    receiver_name: str | None = None,
+    in_class_name: str | None = None,
+) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     is_init = receiver_name is not None and name == "__init__"
 
@@ -1352,7 +1378,10 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
     if is_init:
         lines.append(indent + "init(" + ", ".join(params) + ") {")
     else:
-        sig = indent + "func " + name + "(" + ", ".join(params) + ")"
+        fn_prefix = ""
+        if receiver_name is not None and in_class_name is not None and _class_has_base_method(in_class_name, name):
+            fn_prefix = "override "
+        sig = indent + fn_prefix + "func " + name + "(" + ", ".join(params) + ")"
         if return_type != "Void":
             sig += " -> " + return_type
         lines.append(sig + " {")
@@ -1396,7 +1425,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     extends = ": " + base_name if base_name != "" else ""
 
     lines: list[str] = []
-    lines.append(indent + "final class " + class_name + extends + " {")
+    lines.append(indent + "class " + class_name + extends + " {")
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
@@ -1421,13 +1450,22 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             if _safe_ident(node.get("name"), "") == "__init__":
                 has_init = True
             lines.append("")
-            lines.extend(_emit_function(node, indent=indent + "    ", receiver_name=class_name))
+            lines.extend(
+                _emit_function(
+                    node,
+                    indent=indent + "    ",
+                    receiver_name=class_name,
+                    in_class_name=class_name,
+                )
+            )
         i += 1
 
     if not has_init:
         if len(body) > 0:
             lines.append("")
         lines.append(indent + "    init() {")
+        if base_name != "":
+            lines.append(indent + "        super.init()")
         lines.append(indent + "    }")
 
     lines.append(indent + "}")
@@ -1734,10 +1772,29 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         i += 1
 
     global _CLASS_NAMES
+    global _CLASS_BASES
+    global _CLASS_METHODS
     _CLASS_NAMES = set()
+    _CLASS_BASES = {}
+    _CLASS_METHODS = {}
     i = 0
     while i < len(classes):
-        _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
+        cls = classes[i]
+        cls_name = _safe_ident(cls.get("name"), "PytraClass")
+        _CLASS_NAMES.add(cls_name)
+        base_any = cls.get("base")
+        base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+        _CLASS_BASES[cls_name] = base_name
+        method_names: set[str] = set()
+        cls_body_any = cls.get("body")
+        cls_body = cls_body_any if isinstance(cls_body_any, list) else []
+        j = 0
+        while j < len(cls_body):
+            cls_node = cls_body[j]
+            if isinstance(cls_node, dict) and cls_node.get("kind") == "FunctionDef":
+                method_names.add(_safe_ident(cls_node.get("name"), "func"))
+            j += 1
+        _CLASS_METHODS[cls_name] = method_names
         i += 1
 
     lines: list[str] = []
