@@ -421,3 +421,47 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 - `borrow_kind` は現状 `value | readonly_ref | mutable_ref` を使用し、`move` は未使用。
 - 将来的には Rust 向けの参照注釈（`&` / `&mut` 相当）へ接続可能な表現を維持する。
   - ただし、Rust 固有の最終判断（所有権・ライフタイム詳細）はバックエンド責務とする。
+
+## 24. EAST2 共通 IR 契約（Depythonization Draft）
+
+目的:
+- EAST2 を「複数 frontend 共有の最初の共通 IR」として扱うため、Python 固有名（builtin 名、`py_*` runtime 名）への直接依存を境界外へ隔離する。
+
+### 24.1 ノード種別（EAST2 で保持する情報）
+
+- 構文ノード:
+  - `Module`, `FunctionDef`, `ClassDef`, `If`, `While`, `For`, `ForRange`, `Assign`, `AnnAssign`, `AugAssign`, `Return`, `Expr`, `Import`, `ImportFrom`, `Raise`, `Try`, `Pass`, `Break`, `Continue`
+- 式ノード:
+  - `Name`, `Constant`, `Attribute`, `Call`, `Subscript`, `Slice`, `Tuple`, `List`, `Dict`, `Set`, `ListComp`, `GeneratorExp`, `IfExp`, `Lambda`, `BinOp`, `BoolOp`, `Compare`, `UnaryOp`, `RangeExpr`
+- 補助ノード:
+  - `ForCore` への変換前段として `For` / `ForRange` の正規化情報（`iter_mode`, `target_type`, `range_mode`）を保持
+
+### 24.2 演算子・型・メタの中立契約
+
+- 演算子:
+  - `BinOp.op` は `Add/Sub/Mult/Div/FloorDiv/Mod/BitAnd/BitOr/BitXor/LShift/RShift` を文字列列挙で保持。
+  - `Compare.ops` は `Eq/NotEq/Lt/LtE/Gt/GtE/In/NotIn/Is/IsNot` を保持。
+  - `BoolOp.op` は `And/Or` を保持。
+- 型:
+  - `resolved_type` は論理型名（`int64`, `float64`, `list[T]`, `dict[K,V]`, `tuple[...]`, `Any`, `unknown`）のみを保持し、backend 固有表現は持たない。
+- メタ:
+  - `meta.dispatch_mode` は `native | type_id` のコンパイル方針値として保持し、意味適用は `EAST2 -> EAST3` の 1 回のみで実施する。
+  - import 正規化情報（`import_bindings`, `qualified_symbol_refs`, `import_modules`, `import_symbols`）は frontend 解決結果として保持する。
+
+### 24.3 禁止事項（EAST2 境界）
+
+- `builtin_name` を Python 組み込み識別子（`len`, `str`, `range` など）で意味解釈する契約を backend 側へ漏らさない。
+- `runtime_call` に `py_*` 文字列を固定して意味付けしない（`py_len`, `py_to_string`, `py_iter_or_raise` など）。
+- `py_tid_*` 互換名を EAST2 公開契約として扱わない（互換ブリッジ内部に閉じる）。
+
+### 24.4 診断・fail-closed 契約
+
+- 解決不能ノード/型は `ok=false` + `error.kind`（`inference_failure` / `unsupported_syntax` / `semantic_conflict`）で停止する。
+- 中立契約外の入力（不正 `dispatch_mode`, 未対応ノード形、必要メタ欠落）は暗黙救済せず fail-closed で終了する。
+- 互換フォールバックは段階移行中のみ許可し、`legacy` 明示フラグとともにログへ記録する。
+
+### 24.5 EAST2 -> EAST3 への接続原則
+
+- EAST2 は「何をしたいか（意味タグ）」のみを持ち、`EAST3` で object 境界命令（`Obj*`, `ForCore.iter_plan`）へ確定する。
+- frontend 固有（Python builtins/std）の解決は adapter 層で中立タグへ変換してから EAST2 へ渡す。
+- backend/hook は EAST3 以降で言語固有写像のみを担当し、EAST2 契約の再解釈をしない。
