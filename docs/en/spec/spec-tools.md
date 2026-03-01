@@ -17,6 +17,8 @@ Its goals are:
   - Purpose: Run minimal local CI in one pass (transpile regressions + unit tests + selfhost build + diff).
 - `tools/check_py2cpp_transpile.py`
   - Purpose: Batch-transpile `test/fixtures/` with `py2cpp.py` and detect failures.
+- `tools/check_py2scala_transpile.py`
+  - Purpose: Batch-transpile `test/fixtures/` and `sample/py` with `py2scala.py` and detect failures.
 - `tools/verify_sample_outputs.py`
   - Purpose: Compare C++ execution results (`stdout`/artifacts) against the golden baseline in `sample/golden/manifest.json`, so normal verification does not run Python every time.
   - Main options: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`
@@ -50,6 +52,9 @@ Its goals are:
 - `tools/runtime_parity_check.py`
   - Purpose: Run runtime normalization/parity checks across multiple target languages.
   - Note: Unstable timing lines such as `elapsed_sec` / `elapsed` / `time_sec` are excluded from compare by default.
+- `tools/check_scala_parity.py`
+  - Purpose: Run Scala3 parity in one command for all `sample` cases and the positive fixture manifest.
+  - Main options: `--skip-fixture`, `--fixture-manifest`, `--east3-opt-level`, `--summary-dir`
 
 ## 4. Update Rules
 

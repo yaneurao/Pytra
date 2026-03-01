@@ -169,6 +169,8 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
         return "Boolean"
     if type_name == "str":
         return "String"
+    if type_name == "Path":
+        return "String"
     if type_name.startswith("list[") or type_name.startswith("tuple["):
         return "mutable.ArrayBuffer[Any]"
     if type_name.startswith("dict["):
@@ -363,6 +365,19 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     left_expr = _render_expr(expr.get("left"))
     right_expr = _render_expr(expr.get("right"))
     resolved = expr.get("resolved_type")
+    left_type = ""
+    right_type = ""
+    left_any = expr.get("left")
+    right_any = expr.get("right")
+    if isinstance(left_any, dict):
+        left_resolved_any = left_any.get("resolved_type")
+        left_type = left_resolved_any if isinstance(left_resolved_any, str) else ""
+    if isinstance(right_any, dict):
+        right_resolved_any = right_any.get("resolved_type")
+        right_type = right_resolved_any if isinstance(right_resolved_any, str) else ""
+
+    if op == "Div" and (resolved == "Path" or left_type == "Path" or right_type == "Path"):
+        return "__pytra_path_join(" + left_expr + ", " + right_expr + ")"
 
     if op == "Div":
         return "(__pytra_float(" + left_expr + ") / __pytra_float(" + right_expr + "))"
@@ -509,12 +524,18 @@ def _math_call_name(attr: str) -> str:
         return "scala.math.ceil"
     if attr == "abs":
         return "scala.math.abs"
+    if attr == "fabs":
+        return "scala.math.abs"
     return _safe_ident(attr, "call")
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
+    owner_type = ""
+    if isinstance(value_any, dict):
+        owner_type_any = value_any.get("resolved_type")
+        owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
@@ -522,6 +543,12 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         if owner == "math" and attr == "e":
             return "Math.E"
     value = _render_expr(value_any)
+    if owner_type == "Path" and attr == "name":
+        return "__pytra_path_name(" + value + ")"
+    if owner_type == "Path" and attr == "stem":
+        return "__pytra_path_stem(" + value + ")"
+    if owner_type == "Path" and attr == "parent":
+        return "__pytra_path_parent(" + value + ")"
     return value + "." + attr
 
 
@@ -562,6 +589,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
     if callee_name == "perf_counter":
         return "__pytra_perf_counter()"
+    if callee_name == "Path":
+        if len(args) == 0:
+            return "__pytra_path_new(\"\")"
+        return "__pytra_path_new(" + _render_expr(args[0]) + ")"
     if callee_name == "bytearray":
         if len(args) == 0:
             return "mutable.ArrayBuffer[Any]()"
@@ -671,7 +702,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 default_expr = _render_expr(args[1])
             owner_expr = _render_expr(owner_any)
             return "__pytra_as_dict(" + owner_expr + ").getOrElse(__pytra_str(" + key_expr + "), " + default_expr + ")"
+        owner_type = ""
+        if isinstance(owner_any, dict):
+            owner_type_any = owner_any.get("resolved_type")
+            owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
         owner_expr = _render_expr(owner_any)
+        if owner_type == "Path" and attr_name == "exists" and len(args) == 0:
+            return "__pytra_path_exists(" + owner_expr + ")"
+        if owner_type == "Path" and attr_name == "mkdir":
+            return "__pytra_path_mkdir(" + owner_expr + ")"
+        if owner_type == "Path" and attr_name == "write_text" and len(args) >= 1:
+            return "__pytra_path_write_text(" + owner_expr + ", " + _render_expr(args[0]) + ")"
+        if owner_type == "Path" and attr_name == "read_text" and len(args) == 0:
+            return "__pytra_path_read_text(" + owner_expr + ")"
         if attr_name == "write_rgb_png":
             rendered_args_png: list[str] = []
             i = 0
@@ -978,6 +1021,8 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
             return "Boolean"
         if name == "str":
             return "String"
+        if name == "Path":
+            return "String"
         if name == "bytearray" or name == "bytes":
             return "mutable.ArrayBuffer[Any]"
         if name == "len":
@@ -1007,7 +1052,7 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
                 owner_name = _safe_ident(owner_any.get("id"), "")
             attr_name = _safe_ident(func_any.get("attr"), "")
             if owner_name == "math":
-                if attr_name in {"sqrt", "sin", "cos", "tan", "exp", "log", "pow", "floor", "ceil", "abs"}:
+                if attr_name in {"sqrt", "sin", "cos", "tan", "exp", "log", "pow", "floor", "ceil", "abs", "fabs"}:
                     return "Double"
             if attr_name in {"isdigit", "isalpha"}:
                 return "Boolean"
@@ -1974,6 +2019,49 @@ def _emit_runtime_helpers() -> list[str]:
         "    Files.write(p, data.toArray)",
         "}",
         "",
+        "def __pytra_path_new(path: Any): String = {",
+        "    Paths.get(__pytra_str(path)).toString",
+        "}",
+        "",
+        "def __pytra_path_join(base: Any, child: Any): String = {",
+        "    Paths.get(__pytra_str(base)).resolve(__pytra_str(child)).toString",
+        "}",
+        "",
+        "def __pytra_path_parent(path: Any): String = {",
+        "    val parent = Paths.get(__pytra_str(path)).getParent",
+        "    if (parent == null) \"\" else parent.toString",
+        "}",
+        "",
+        "def __pytra_path_name(path: Any): String = {",
+        "    val name = Paths.get(__pytra_str(path)).getFileName",
+        "    if (name == null) \"\" else name.toString",
+        "}",
+        "",
+        "def __pytra_path_stem(path: Any): String = {",
+        "    val name = __pytra_path_name(path)",
+        "    val idx = name.lastIndexOf('.')",
+        "    if (idx <= 0) name else name.substring(0, idx)",
+        "}",
+        "",
+        "def __pytra_path_exists(path: Any): Boolean = {",
+        "    Files.exists(Paths.get(__pytra_str(path)))",
+        "}",
+        "",
+        "def __pytra_path_mkdir(path: Any): Unit = {",
+        "    Files.createDirectories(Paths.get(__pytra_str(path)))",
+        "}",
+        "",
+        "def __pytra_path_write_text(path: Any, text: Any): Unit = {",
+        "    val p = Paths.get(__pytra_str(path))",
+        "    val parent = p.getParent",
+        "    if (parent != null) Files.createDirectories(parent)",
+        "    Files.writeString(p, __pytra_str(text))",
+        "}",
+        "",
+        "def __pytra_path_read_text(path: Any): String = {",
+        "    Files.readString(Paths.get(__pytra_str(path)))",
+        "}",
+        "",
         "def __pytra_grayscale_palette(): mutable.ArrayBuffer[Any] = {",
         "    val p = mutable.ArrayBuffer[Any]()",
         "    var i = 0L",
@@ -2178,8 +2266,11 @@ def _emit_runtime_helpers() -> list[str]:
         "}",
         "",
         "def __pytra_str(v: Any): String = {",
-        "    if (v == null) return \"\"",
-        "    v.toString",
+        "    if (v == null) return \"None\"",
+        "    v match {",
+        "        case b: Boolean => if (b) \"True\" else \"False\"",
+        "        case _ => v.toString",
+        "    }",
         "}",
         "",
         "def __pytra_len(v: Any): Long = {",

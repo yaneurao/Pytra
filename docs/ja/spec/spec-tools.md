@@ -39,6 +39,8 @@
   - 目的: `test/fixtures/` と `sample/py` を `py2swift.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2kotlin_transpile.py`
   - 目的: `test/fixtures/` と `sample/py` を `py2kotlin.py` で一括変換し、失敗ケースを検出する。
+- `tools/check_py2scala_transpile.py`
+  - 目的: `test/fixtures/` と `sample/py` を `py2scala.py` で一括変換し、失敗ケースを検出する。
 - `tools/check_yanesdk_py2cpp_smoke.py`
   - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
 - `tools/check_microgpt_original_py2cpp_regression.py`
@@ -129,6 +131,9 @@ selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発�
 - `tools/runtime_parity_check.py`
   - 目的: 複数ターゲット言語でのランタイム平準化チェックを実行する。
   - 補足: `elapsed_sec` / `elapsed` / `time_sec` のような不安定な時間行は、既定で比較対象から除外する。
+- `tools/check_scala_parity.py`
+  - 目的: Scala3 向けに `sample` 全件 + fixture 正例マニフェストの parity を一括実行し、再実行導線を固定する。
+  - 主要オプション: `--skip-fixture`, `--fixture-manifest`, `--east3-opt-level`, `--summary-dir`
 
 ## 4. 更新ルール
 

@@ -124,6 +124,23 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             scala,
         )
 
+    def test_pathlib_fixture_uses_path_runtime_helpers(self) -> None:
+        fixture = find_fixture_case("pathlib_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("__pytra_path_new(", scala)
+        self.assertIn("__pytra_path_join(", scala)
+        self.assertIn("__pytra_path_exists(", scala)
+        self.assertIn("__pytra_path_read_text(", scala)
+        self.assertNotIn("var root: Path", scala)
+
+    def test_math_fixture_maps_fabs_to_scala_abs(self) -> None:
+        fixture = find_fixture_case("math_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("scala.math.abs", scala)
+        self.assertNotIn("fabs(", scala)
+
     def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
         fixture = find_fixture_case("for_range")
         loaded = load_east(fixture, parser_backend="self_hosted")

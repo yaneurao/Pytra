@@ -283,6 +283,23 @@ Notes:
 </details>
 
 <details>
+<summary>Scala3</summary>
+
+```bash
+python src/py2scala.py test/fixtures/collections/iterable.py -o test/transpile/scala/iterable.scala
+scala run test/transpile/scala/iterable.scala
+```
+
+Notes:
+- `py2scala.py` generates Scala3 code directly from EAST3 via the native emitter (`src/hooks/scala/emitter/scala_native_emitter.py`).
+- Check transpile regressions with `python3 tools/check_py2scala_transpile.py`.
+- Run full parity (sample + positive fixture manifest) with `python3 tools/check_scala_parity.py`.
+- To run sample-only parity first, use `python3 tools/check_scala_parity.py --skip-fixture`.
+- `runtime_parity_check` excludes unstable timing lines such as `elapsed_sec` from comparison by default.
+
+</details>
+
+<details>
 <summary>EAST (Python -> EAST -> C++)</summary>
 
 ```bash
