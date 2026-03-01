@@ -4,7 +4,6 @@ package main
 
 import (
     "bytes"
-    "compress/zlib"
     "fmt"
     "hash/crc32"
     "math"
@@ -676,6 +675,48 @@ func pyChunk(chunkType []byte, data []byte) []byte {
     return out.Bytes()
 }
 
+func pyAdler32(data []byte) uint32 {
+    const mod uint32 = 65521
+    var s1 uint32 = 1
+    var s2 uint32 = 0
+    for _, b := range data {
+        s1 += uint32(b)
+        if s1 >= mod {
+            s1 -= mod
+        }
+        s2 += s1
+        s2 %= mod
+    }
+    return ((s2 << 16) | s1) & 0xFFFFFFFF
+}
+
+func pyZlibDeflateStore(data []byte) []byte {
+    out := make([]byte, 0, len(data)+16)
+    out = append(out, 0x78, 0x01)
+    n := len(data)
+    pos := 0
+    for pos < n {
+        remain := n - pos
+        chunkLen := remain
+        if chunkLen > 65535 {
+            chunkLen = 65535
+        }
+        final := byte(0)
+        if pos+chunkLen >= n {
+            final = 1
+        }
+        out = append(out, final)
+        out = append(out, byte(chunkLen&0xFF), byte((chunkLen>>8)&0xFF))
+        nlen := 0xFFFF ^ chunkLen
+        out = append(out, byte(nlen&0xFF), byte((nlen>>8)&0xFF))
+        out = append(out, data[pos:pos+chunkLen]...)
+        pos += chunkLen
+    }
+    adler := pyAdler32(data)
+    out = append(out, byte((adler>>24)&0xFF), byte((adler>>16)&0xFF), byte((adler>>8)&0xFF), byte(adler&0xFF))
+    return out
+}
+
 func pyWriteRGBPNG(path any, width any, height any, pixels any) {
     w := pyToInt(width)
     h := pyToInt(height)
@@ -694,11 +735,7 @@ func pyWriteRGBPNG(path any, width any, height any, pixels any) {
         scan = append(scan, raw[start:end]...)
     }
 
-    var zbuf bytes.Buffer
-    zw, _ := zlib.NewWriterLevel(&zbuf, zlib.NoCompression)
-    _, _ = zw.Write(scan)
-    _ = zw.Close()
-    idat := zbuf.Bytes()
+    idat := pyZlibDeflateStore(scan)
 
     ihdr := []byte{
         byte(uint32(w) >> 24), byte(uint32(w) >> 16), byte(uint32(w) >> 8), byte(uint32(w)),
