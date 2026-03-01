@@ -29,8 +29,8 @@ float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, f
     if (d < 0.0)
         return -1.0;
     float64 sd = py_to<float64>(pytra::std::math::sqrt(d));
-    float64 t0 = py_div((-b - sd), (2.0 * a));
-    float64 t1 = py_div((-b + sd), (2.0 * a));
+    float64 t0 = (-b - sd) / (2.0 * a);
+    float64 t1 = (-b + sd) / (2.0 * a);
     
     if (t0 > 0.001)
         return t0;
@@ -64,15 +64,15 @@ bytearray render(int64 width, int64 height, int64 aa) {
             
             for (int64 ay = 0; ay < aa; ++ay) {
                 for (int64 ax = 0; ax < aa; ++ax) {
-                    float64 fy = py_div((py_to<float64>(y) + py_div((py_to<float64>(ay) + 0.5), __hoisted_cast_1)), __hoisted_cast_2);
-                    float64 fx = py_div((py_to<float64>(x) + py_div((py_to<float64>(ax) + 0.5), __hoisted_cast_1)), __hoisted_cast_3);
+                    float64 fy = (py_to<float64>(y) + (py_to<float64>(ay) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
+                    float64 fx = (py_to<float64>(x) + (py_to<float64>(ax) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
                     float64 sy = 1.0 - 2.0 * fy;
-                    float64 sx = (2.0 * fx - 1.0) * (py_div(py_to<float64>(width), __hoisted_cast_4));
+                    float64 sx = (2.0 * fx - 1.0) * (py_to<float64>(width) / __hoisted_cast_4);
                     
                     float64 dx = sx;
                     float64 dy = sy;
                     float64 dz = 1.0;
-                    float64 inv_len = py_to<float64>(py_div(1.0, pytra::std::math::sqrt(dx * dx + dy * dy + dz * dz)));
+                    float64 inv_len = py_to<float64>(1.0 / pytra::std::math::sqrt(dx * dx + dy * dy + dz * dz));
                     dx *= inv_len;
                     dy *= inv_len;
                     dz *= inv_len;
@@ -109,14 +109,14 @@ bytearray render(int64 width, int64 height, int64 aa) {
                         float64 nz = 0.0;
                         
                         if (hit_id == 0) {
-                            nx = py_div((px + 0.8), 0.8);
-                            ny = py_div((py + 0.2), 0.8);
-                            nz = py_div((pz - 2.2), 0.8);
+                            nx = (px + 0.8) / 0.8;
+                            ny = (py + 0.2) / 0.8;
+                            nz = (pz - 2.2) / 0.8;
                         } else {
                             if (hit_id == 1) {
-                                nx = py_div((px - 0.9), 0.95);
-                                ny = py_div((py - 0.1), 0.95);
-                                nz = py_div((pz - 2.9), 0.95);
+                                nx = (px - 0.9) / 0.95;
+                                ny = (py - 0.1) / 0.95;
+                                nz = (pz - 2.9) / 0.95;
                             } else {
                                 nx = 0.0;
                                 ny = 1.0;

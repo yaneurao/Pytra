@@ -13,10 +13,10 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
     float64 __hoisted_cast_3 = static_cast<float64>(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -1.2 + 2.4 * (py_div(py_to<float64>(y), __hoisted_cast_1));
+        float64 zy0 = -1.2 + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
         
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.8 + 3.6 * (py_div(py_to<float64>(x), __hoisted_cast_2));
+            float64 zx = -1.8 + 3.6 * (py_to<float64>(x) / __hoisted_cast_2);
             float64 zy = zy0;
             
             int64 i = 0;
@@ -37,7 +37,7 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
                 g = 0;
                 b = 0;
             } else {
-                float64 t = py_div(py_to<float64>(i), __hoisted_cast_3);
+                float64 t = py_to<float64>(i) / __hoisted_cast_3;
                 r = int64(255.0 * (0.2 + 0.8 * t));
                 g = int64(255.0 * (0.1 + 0.9 * t * t));
                 b = int64(255.0 * (1.0 - t));

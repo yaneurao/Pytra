@@ -25,7 +25,7 @@ bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y
                 zx = zx2 - zy2 + cx;
                 i++;
             }
-            frame[row_base + x] = int64(py_div(255.0 * py_to<float64>(i), __hoisted_cast_1));
+            frame[row_base + x] = int64(255.0 * py_to<float64>(i) / __hoisted_cast_1);
         }
     }
     return bytes(frame);
@@ -38,7 +38,7 @@ void run_05_mandelbrot_zoom() {
     int64 max_iter = 110;
     float64 center_x = -0.743643887037151;
     float64 center_y = 0.13182590420533;
-    float64 base_scale = py_div(3.2, py_to<float64>(width));
+    float64 base_scale = 3.2 / py_to<float64>(width);
     float64 zoom_per_frame = 0.93;
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     

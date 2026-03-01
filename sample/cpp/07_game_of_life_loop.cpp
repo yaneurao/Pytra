@@ -113,9 +113,9 @@ void run_07_game_of_life_loop() {
             }
         }
     }
-    object frames = make_object(list<object>{});
+    list<bytes> frames = list<bytes>{};
     for (int64 _ = 0; _ < steps; ++_) {
-        py_append(frames, make_object(render(grid, w, h, cell)));
+        frames.append(render(grid, w, h, cell));
         grid = next_state(grid, w, h);
     }
     pytra::utils::gif::save_gif(out_path, w * cell, h * cell, frames, pytra::utils::gif::grayscale_palette(), int64(py_to<int64>(4)), int64(py_to<int64>(0)));

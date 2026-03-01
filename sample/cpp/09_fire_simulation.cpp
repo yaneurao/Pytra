@@ -41,7 +41,7 @@ void run_09_fire_simulation() {
     
     float64 start = pytra::std::time::perf_counter();
     object heat = [&]() -> object {     list<object> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(make_object(py_repeat(list<int64>(make_object(list<int64>{0})), w)));     }     return make_object(__out); }();
-    object frames = make_object(list<object>{});
+    list<bytes> frames = list<bytes>{};
     
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
@@ -67,7 +67,7 @@ void run_09_fire_simulation() {
                 frame[row_base + xx] = int64(py_to<int64>(py_at(object(py_at(heat, py_to<int64>(yy))), py_to<int64>(xx))));
             }
         }
-        py_append(frames, make_object(bytes(frame)));
+        frames.append(bytes(frame));
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
