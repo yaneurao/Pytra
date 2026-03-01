@@ -20,6 +20,8 @@ Pytra is a set of transpilers that converts type-annotated Python code into the 
 - Python -> Java (`src/py2java.py`)
 - Python -> Swift (`src/py2swift.py`)
 - Python -> Kotlin (`src/py2kotlin.py`)
+- Python -> Ruby (`src/py2rb.py`)
+- Python -> Lua (`src/py2lua.py`)
 
 ## 2. Python Input Specification
 
@@ -47,7 +49,7 @@ Pytra is a set of transpilers that converts type-annotated Python code into the 
 ## 3. Test Case Policy
 
 - Place input Python cases under `test/fixtures/` (category-based subdirectories).
-- Per-language transpilation outputs go to `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/`.
+- Per-language transpilation outputs go to `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/`, `test/transpile/ruby/`, `test/transpile/lua/`.
 - Do not modify `test/fixtures/` input cases for transpiler convenience. If transpilation fails, fix the transpiler implementation.
 - Use descriptive `snake_case` for case naming (e.g., `dict_get_items.py`).
 
@@ -75,7 +77,7 @@ test/
 ## 4. Sample Program Policy
 
 - Place practical samples under `sample/py/`.
-- Per-language transpilation outputs go to `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/`.
+- Per-language transpilation outputs go to `sample/cpp/`, `sample/rs/`, `sample/cs/`, `sample/js/`, `sample/ts/`, `sample/go/`, `sample/java/`, `sample/swift/`, `sample/kotlin/`, `sample/ruby/`, `sample/lua/`.
 - Use `sample/obj/` and `sample/out/` for binaries/intermediate artifacts (not tracked by Git).
 - For user libraries imported from Python, use modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`).
   - Images: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`

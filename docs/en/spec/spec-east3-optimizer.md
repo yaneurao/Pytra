@@ -62,6 +62,12 @@ Use an ordered pass pipeline.
   - `opt_level`
   - `target_lang` (optional)
   - `debug_flags`
+  - `non_escape_policy`
+    - `unknown_call_escape` (treat unresolved calls as escape)
+    - `unknown_attr_call_escape` (treat dynamic attribute calls as escape)
+    - `global_write_escape` (treat global/nonlocal writes as escape)
+    - `return_escape_by_default` (treat return boundaries as escape by default)
+    - `yield_escape_by_default` (treat yield boundaries as escape by default)
 - `PassResult`
   - `changed: bool`
   - `change_count: int`
