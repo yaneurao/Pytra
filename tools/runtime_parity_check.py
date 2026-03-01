@@ -127,7 +127,7 @@ def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool) -> t
         return cases, ""
     if case_root == "sample":
         return collect_sample_case_stems(), ""
-    return ["math_extended", "pathlib_extended"], ""
+    return ["math_extended", "pathlib_extended", "inheritance_virtual_dispatch_multilang"], ""
 
 
 def runtime_cpp_sources_shell() -> str:

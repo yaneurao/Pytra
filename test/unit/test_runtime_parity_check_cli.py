@@ -37,7 +37,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
     def test_resolve_case_stems_defaults(self) -> None:
         stems_fixture, err_fixture = self.rpc.resolve_case_stems([], "fixture", False)
         self.assertEqual(err_fixture, "")
-        self.assertEqual(stems_fixture, ["math_extended", "pathlib_extended"])
+        self.assertEqual(stems_fixture, ["math_extended", "pathlib_extended", "inheritance_virtual_dispatch_multilang"])
 
         stems_sample, err_sample = self.rpc.resolve_case_stems([], "sample", False)
         self.assertEqual(err_sample, "")
