@@ -212,6 +212,25 @@ class Child(Base):
         self.assertIn("if (true) {", cs)
         self.assertIn("} else if (true) {", cs)
 
+    def test_for_unknown_iterable_casts_to_ienumerable(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x"},
+                    "iter": {"kind": "Name", "id": "src", "resolved_type": "object"},
+                    "body": [{"kind": "Expr", "value": {"kind": "Name", "id": "x"}}],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        cs = transpile_to_csharp(east)
+        self.assertIn("foreach (var x in ((System.Collections.IEnumerable)(src))) {", cs)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

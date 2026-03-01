@@ -1205,6 +1205,8 @@ class CSharpEmitter(CodeEmitter):
             iter_expr = "(" + iter_expr + ").Keys"
         if iter_type == "str":
             iter_expr = "(" + iter_expr + ").Select(__ch => __ch.ToString())"
+        if iter_type in {"", "unknown", "Any", "any", "object"}:
+            iter_expr = "((System.Collections.IEnumerable)(" + iter_expr + "))"
 
         if target_kind == "Tuple":
             elts = self.tuple_elements(target_node)
