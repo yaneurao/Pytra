@@ -87,6 +87,17 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(ruby_target.run_cmd, "ruby test/transpile/ruby/01_mandelbrot.rb")
         self.assertEqual(ruby_target.needs, ("python", "ruby"))
 
+    def test_build_targets_includes_scala_entry(self) -> None:
+        case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
+        names = {t.name for t in targets}
+        self.assertIn("scala", names)
+        scala_target = next(t for t in targets if t.name == "scala")
+        self.assertIn("src/py2scala.py", scala_target.transpile_cmd)
+        self.assertIn("test/transpile/scala/01_mandelbrot.scala", scala_target.transpile_cmd)
+        self.assertEqual(scala_target.run_cmd, "scala run test/transpile/scala/01_mandelbrot.scala")
+        self.assertEqual(scala_target.needs, ("python", "scala"))
+
     def test_normalize_output_keeps_artifact_size_line(self) -> None:
         raw = "output: sample/out/x.png\nartifact_size: 123\nelapsed_sec: 0.12\n"
         norm = self.rpc._normalize_output_for_compare(raw)
@@ -134,6 +145,48 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0].category, "artifact_size_mismatch")
         self.assertEqual(records[0].target, "ruby")
+
+    def test_check_case_scala_skips_artifact_size_comparison(self) -> None:
+        records: list = []
+        target = self.rpc.Target(name="scala", transpile_cmd="noop", run_cmd="noop", needs=())
+        call_index = {"value": 0}
+
+        def _side_effect(cmd: str, cwd: Path, *, env: dict[str, str] | None = None):
+            _ = cmd
+            _ = env
+            out_path = cwd / "tmp" / "out.bin"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            idx = call_index["value"]
+            if idx == 0:
+                out_path.write_bytes(b"a" * 100)
+                cp = subprocess.CompletedProcess(
+                    args="python fake.py",
+                    returncode=0,
+                    stdout="output: tmp/out.bin\nelapsed_sec: 0.1\n",
+                    stderr="",
+                )
+            elif idx == 1:
+                cp = subprocess.CompletedProcess(args="python src/py2scala.py ...", returncode=0, stdout="", stderr="")
+            else:
+                # Scala currently validates compile/run; artifact parity is optional.
+                cp = subprocess.CompletedProcess(
+                    args="scala run out.scala",
+                    returncode=0,
+                    stdout="output: tmp/out.bin\nelapsed_sec: 0.2\n",
+                    stderr="",
+                )
+            call_index["value"] = idx + 1
+            return cp
+
+        with patch.object(self.rpc, "find_case_path", return_value=ROOT / "sample" / "py" / "01_mandelbrot.py"), patch.object(
+            self.rpc, "run_shell", side_effect=_side_effect
+        ), patch.object(self.rpc, "build_targets", return_value=[target]), patch.object(self.rpc, "can_run", return_value=True):
+            code = self.rpc.check_case("01_mandelbrot", {"scala"}, case_root="sample", ignore_stdout=True, east3_opt_level="1", records=records)
+
+        self.assertEqual(code, 0)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].category, "ok")
+        self.assertEqual(records[0].target, "scala")
 
 
 if __name__ == "__main__":
