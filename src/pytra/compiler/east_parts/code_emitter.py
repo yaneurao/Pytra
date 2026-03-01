@@ -119,7 +119,10 @@ class CodeEmitter:
         """動的値を依存キーとして登録する（非文字列は無視）。"""
         if not isinstance(dep_key, str):
             return
-        self.require_dep(dep_key)
+        dep_key_str = self.any_to_str(dep_key)
+        if dep_key_str == "":
+            return
+        self.require_dep(dep_key_str)
 
     def require_deps(self, dep_keys: list[str]) -> None:
         """依存キー配列を一括登録する。"""

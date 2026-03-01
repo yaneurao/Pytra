@@ -1613,6 +1613,9 @@ class CSharpEmitter(CodeEmitter):
             if len(rendered_args) == 0:
                 return "new System.Collections.Generic.List<object>()"
             return "new System.Collections.Generic.List<object>(" + rendered_args[0] + ")"
+        if fn_name_raw == "sorted":
+            src = rendered_args[0] if len(rendered_args) > 0 else "new System.Collections.Generic.List<object>()"
+            return "System.Linq.Enumerable.OrderBy(" + src + ", __x => System.Convert.ToString(__x)).ToList()"
         if fn_name_raw == "set":
             if len(rendered_args) == 0:
                 return "new System.Collections.Generic.HashSet<object>()"
