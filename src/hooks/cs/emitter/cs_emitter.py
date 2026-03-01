@@ -1488,6 +1488,7 @@ class CSharpEmitter(CodeEmitter):
             if value_obj is None:
                 return
             t = self.render_expr(target)
+            v = ""
             if t_hint != "":
                 v = self._render_expr_with_type_hint(value_obj, t_hint)
             else:
