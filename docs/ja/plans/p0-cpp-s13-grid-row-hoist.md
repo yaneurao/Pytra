@@ -33,9 +33,10 @@
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 の row hoist を独立 P0 として起票。
+- 2026-03-01: concrete typed-list 拡張後の sample/13 では `grid` アクセスが `grid[y][x]` 直参照へ落ち、`py_at(grid, ...)` / `object(py_at(grid, ...))` が消えていたため、専用 hoist 実装は追加せず回帰テストで固定した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S1-01] row hoist 対象パターン（同一 index の `grid` 再参照）を定義する。
-- [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S2-01] emitter/optimizer に row hoist を実装し、sample/13 出力を縮退する。
-- [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S3-01] 回帰を追加し、transpile/check を通す。
+- [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S1-01] row hoist 対象パターン（同一 index の `grid` 再参照）を定義する。
+- [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S2-01] emitter/optimizer に row hoist を実装し、sample/13 出力を縮退する。
+- [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S3-01] 回帰を追加し、transpile/check を通す。

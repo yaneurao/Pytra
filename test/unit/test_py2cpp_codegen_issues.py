@@ -573,6 +573,8 @@ def f() -> float:
         self.assertNotIn("py_at(py_at(candidates, ", cpp)
         self.assertNotIn("int64(py_to<int64>(", cpp)
         self.assertNotIn("float64(py_to<float64>(", cpp)
+        self.assertNotIn("py_at(grid, ", cpp)
+        self.assertNotIn("object(py_at(grid, ", cpp)
         self.assertIn("frames.append(capture(grid, cell_w, cell_h, scale));", cpp)
         self.assertNotIn("object grid = ", cpp)
         self.assertNotIn("object stack = ", cpp)

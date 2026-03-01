@@ -113,10 +113,10 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-grid-row-hoist.md](../plans/p0-cpp-s13-grid-row-hoist.md)
 
-1. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01] sample/13 の 2 次元 `grid` アクセスで同一行取得を hoist し、繰り返し `py_at(grid, idx)` を削減する。
-2. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S1-01] row hoist 対象パターン（同一 index の `grid` 再参照）を定義する。
-3. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S2-01] emitter/optimizer に row hoist を実装し、sample/13 出力を縮退する。
-4. [ ] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S3-01] 回帰を追加し、transpile/check を通す。
+1. [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01] sample/13 の 2 次元 `grid` アクセスで同一行取得を hoist し、繰り返し `py_at(grid, idx)` を削減する。
+2. [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S1-01] row hoist 対象パターン（同一 index の `grid` 再参照）を定義する。
+3. [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S2-01] emitter/optimizer に row hoist を実装し、sample/13 出力を縮退する。
+4. [x] [ID: P0-CPP-S13-GRID-ROW-HOIST-01-S3-01] 回帰を追加し、transpile/check を通す。
 
 ### P0: sample/13 `while stack` の `.empty()` fastpath（最優先）
 
