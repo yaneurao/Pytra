@@ -32,72 +32,20 @@
 
 ## 未完了タスク
 
-### P0: sample/lua/01 runtime マッピング是正（最優先）
-
-文脈: [docs/ja/plans/p0-lua-sample01-runtime-mapping.md](../plans/p0-lua-sample01-runtime-mapping.md)
-
-1. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01] `sample/lua/01` の runtime マッピング欠落（time/png no-op）を是正し、機能欠落を解消する。
-2. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
-3. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-01] `pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく実 runtime 呼び出しへ接続する。
-4. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S2-02] 未解決 import の no-op フォールバックを撤去し、fail-closed（明示エラー）へ変更する。
-5. [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成 + parity で非退行を固定する。
-
-### P0: sample/cpp/08 出力品質改善（可読性 + ホットパス縮退）
-
-文脈: [docs/ja/plans/p0-cpp-s08-quality-uplift.md](../plans/p0-cpp-s08-quality-uplift.md)
-
-1. [x] [ID: P0-CPP-S08-QUALITY-01] `sample/cpp/08` の生成品質を改善し、可読性とホットパス効率を同時に引き上げる。
-2. [x] [ID: P0-CPP-S08-QUALITY-01-S1-01] `sample/cpp/08` の品質差分（初期化/変換/分岐/ループ/capacity）をコード断片で固定する。
-3. [x] [ID: P0-CPP-S08-QUALITY-01-S2-01] `grid` 初期化を IIFE + `py_repeat` から typed 直接初期化へ縮退する。
-4. [x] [ID: P0-CPP-S08-QUALITY-01-S2-02] `capture` 返却時の `bytes(frame)` を不要変換削減ルールで簡素化する。
-5. [x] [ID: P0-CPP-S08-QUALITY-01-S2-03] capture 判定の `%` を next-capture カウンタ方式へ置換する fastpath を導入する。
-6. [x] [ID: P0-CPP-S08-QUALITY-01-S2-04] `if/elif/elif/else` 由来の入れ子分岐を `else if`/`switch` 相当の出力へ縮退する。
-7. [x] [ID: P0-CPP-S08-QUALITY-01-S2-05] 事前に推定可能な `list` に `reserve` を出力する最小規則を追加し、`frames` へ適用する。
-8. [x] [ID: P0-CPP-S08-QUALITY-01-S3-01] 回帰テストを追加し、`sample/cpp/08` 再生成差分を固定する。
-9. [x] [ID: P0-CPP-S08-QUALITY-01-S3-02] transpile / unit / sample再生成確認を実施し、非退行を確認する。
-
-### P0: `range(len-1, -1, -1)` 多言語回帰（test追加 + 全backend通過）
-
-文脈: [docs/ja/plans/p0-multilang-downcount-range-regression.md](../plans/p0-multilang-downcount-range-regression.md)
-
-1. [x] [ID: P0-MULTILANG-DOWNRANGE-01] `range(len-1, -1, -1)` の共通回帰テストを追加し、全backendで通過させる。
-2. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-01] `range(len-1, -1, -1)` の最小 fixture を `test/fixtures` に追加し、期待出力を固定する。
-3. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-02] 現状の失敗バックエンド（`cs/js/ts/rs`）と成功バックエンドを再現ログとして記録する。
-4. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-01] `ForCore(StaticRangeForPlan)` の range mode 解決を共通化し、`iter_plan` 非保持時は `step` から descending/ascending/dynamic を導出する。
-5. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-02] `cs/js/rs` emitter の `ForCore -> ForRange` 変換で `range_mode='ascending'` 固定フォールバックを撤去し、共通解決結果を使う。
-6. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-03] `ts`（JS preview経路）に同ケース回帰を追加し、`js` 修正が確実に反映されることを固定する。
-7. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S3-01] 各 backend smoke/transpile テストへ当該 fixture ケースを追加し、再発検知を常時化する。
-8. [x] [ID: P0-MULTILANG-DOWNRANGE-01-S3-02] runtime parity（実行可能ターゲット）で期待値一致を確認し、結果を決定ログへ記録する。
-
-### P0: Lua parity 完走（test/fixture + sample）
-
-文脈: [docs/ja/plans/p0-lua-parity-test-sample-rollout.md](../plans/p0-lua-parity-test-sample-rollout.md)
-
-1. [x] [ID: P0-LUA-PARITY-ALL-01] Lua parity を fixture と sample の両方で完走させ、一致を固定する。
-2. [x] [ID: P0-LUA-PARITY-ALL-01-S1-01] Lua parity 対象範囲（fixture 対象ケース / sample 全18件）を確定し、実行手順を固定する。
-3. [x] [ID: P0-LUA-PARITY-ALL-01-S1-02] 依存タスク（sample/01 runtime mapping）の未解決項目を解消し、sample parity blocker を除去する。
-4. [x] [ID: P0-LUA-PARITY-ALL-01-S2-01] `runtime_parity_check --case-root fixture --targets lua` を実行し、不一致を修正して全 pass にする。
-5. [x] [ID: P0-LUA-PARITY-ALL-01-S2-02] `runtime_parity_check --case-root sample --targets lua --all-samples` を実行し、不一致を修正して全 pass にする。
-6. [x] [ID: P0-LUA-PARITY-ALL-01-S2-03] 画像ケースの artifact サイズ一致（`artifact_size_mismatch=0`）を確認し、必要な runtime/emitter 修正を完了する。
-7. [x] [ID: P0-LUA-PARITY-ALL-01-S3-01] parity 実行結果を決定ログへ記録し、unit/CLI 回帰（必要時）を追加して再発検知を固定する。
-
 ### P0: 非C++ 継承メソッド動的ディスパッチ改善（全backend）
 
 文脈: [docs/ja/plans/p0-multilang-inheritance-dispatch-rollout.md](../plans/p0-multilang-inheritance-dispatch-rollout.md)
 
 1. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01] 非C++ backend で継承メソッド動的ディスパッチと `super()` を Python 互換へ揃える。
-2. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S1-01] 追加 fixture `test/fixtures/oop/inheritance_virtual_dispatch_multilang.py` を backend smoke/parity 導線へ接続する。
-3. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-CS] C# 改善計画 [p0-cs-inheritance-dispatch-uplift.md](../plans/p0-cs-inheritance-dispatch-uplift.md) を実施する。
-4. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-GO] Go 改善計画 [p0-go-inheritance-dispatch-uplift.md](../plans/p0-go-inheritance-dispatch-uplift.md) を実施する。
-5. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java 改善計画 [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md) を実施する。
-6. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS 改善計画 [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md) を実施する。
-7. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS 改善計画 [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md) を実施する。
-8. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin 改善計画 [p0-kotlin-inheritance-dispatch-uplift.md](../plans/p0-kotlin-inheritance-dispatch-uplift.md) を実施する。
-9. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift 改善計画 [p0-swift-inheritance-dispatch-uplift.md](../plans/p0-swift-inheritance-dispatch-uplift.md) を実施する。
-10. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust 改善計画 [p0-rs-inheritance-dispatch-uplift.md](../plans/p0-rs-inheritance-dispatch-uplift.md) を実施する。
-11. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Ruby 改善計画 [p0-ruby-inheritance-dispatch-uplift.md](../plans/p0-ruby-inheritance-dispatch-uplift.md) を実施する。
-12. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Lua 改善計画 [p0-lua-inheritance-dispatch-uplift.md](../plans/p0-lua-inheritance-dispatch-uplift.md) を実施する。
-13. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離管理する。
+2. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java 改善計画 [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md) を実施する。
+3. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS 改善計画 [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md) を実施する。
+4. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS 改善計画 [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md) を実施する。
+5. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin 改善計画 [p0-kotlin-inheritance-dispatch-uplift.md](../plans/p0-kotlin-inheritance-dispatch-uplift.md) を実施する。
+6. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift 改善計画 [p0-swift-inheritance-dispatch-uplift.md](../plans/p0-swift-inheritance-dispatch-uplift.md) を実施する。
+7. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust 改善計画 [p0-rs-inheritance-dispatch-uplift.md](../plans/p0-rs-inheritance-dispatch-uplift.md) を実施する。
+8. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Ruby 改善計画 [p0-ruby-inheritance-dispatch-uplift.md](../plans/p0-ruby-inheritance-dispatch-uplift.md) を実施する。
+9. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Lua 改善計画 [p0-lua-inheritance-dispatch-uplift.md](../plans/p0-lua-inheritance-dispatch-uplift.md) を実施する。
+10. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離管理する。
 
 ### P1: sample/go/01 品質改善（C++品質との差分縮小）
 
