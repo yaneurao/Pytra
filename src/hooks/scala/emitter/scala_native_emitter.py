@@ -2864,7 +2864,6 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
     if len(module_comments) > 0:
         lines.extend(module_comments)
         lines.append("")
-    runtime_insert_idx = len(lines)
 
     i = 0
     while i < len(classes):
@@ -2945,8 +2944,4 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
         if has_case_main:
             lines.append("    _case_main()")
     lines.append("}")
-    lines.append("")
-    runtime_lines = _emit_runtime_helpers_minimal(lines[runtime_insert_idx:])
-    if len(runtime_lines) > 0:
-        lines[runtime_insert_idx:runtime_insert_idx] = runtime_lines + [""]
     return "\n".join(lines)

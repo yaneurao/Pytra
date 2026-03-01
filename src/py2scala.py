@@ -62,6 +62,20 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
+def _scala_runtime_source_path() -> Path:
+    """Scala runtime 正本のソースファイルパスを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "scala" / "pytra" / "py_runtime.scala"
+
+
+def _copy_scala_runtime(output_path: Path) -> None:
+    """生成先ディレクトリへ Scala runtime を配置する。"""
+    runtime_src = _scala_runtime_source_path()
+    if not runtime_src.exists():
+        raise RuntimeError("scala runtime source not found: " + str(runtime_src))
+    runtime_dst = output_path.parent / "py_runtime.scala"
+    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     """CLI 入口。"""
     parser = argparse.ArgumentParser(description="Pytra EAST -> Scala transpiler")
@@ -112,6 +126,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     scala_src = transpile_to_scala_native(east)
     output_path.write_text(scala_src, encoding="utf-8")
+    _copy_scala_runtime(output_path)
     return 0
 
 
