@@ -8,13 +8,7 @@ struct Token : public PyObj {
     str text;
     int64 pos;
     int64 number_value;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
-    uint32 py_type_id() const noexcept override {
-        return PYTRA_TYPE_ID;
-    }
-    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
-        return expected_type_id == PYTRA_TYPE_ID;
-    }
+    PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
     Token(str kind, str text, int64 pos, int64 number_value) {
         this->kind = kind;
@@ -34,13 +28,7 @@ struct ExprNode : public PyObj {
     int64 right;
     int64 kind_tag;
     int64 op_tag;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
-    uint32 py_type_id() const noexcept override {
-        return PYTRA_TYPE_ID;
-    }
-    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
-        return expected_type_id == PYTRA_TYPE_ID;
-    }
+    PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
     ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) {
         this->kind = kind;
@@ -60,13 +48,7 @@ struct StmtNode : public PyObj {
     str name;
     int64 expr_index;
     int64 kind_tag;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
-    uint32 py_type_id() const noexcept override {
-        return PYTRA_TYPE_ID;
-    }
-    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
-        return expected_type_id == PYTRA_TYPE_ID;
-    }
+    PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
     StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) {
         this->kind = kind;
@@ -114,11 +96,10 @@ list<rc<Token>> tokenize(const list<str>& lines) {
                 str text = py_slice(source, start, i);
                 if (text == "let") {
                     tokens.append(::rc_new<Token>("LET", text, start, 0));
+                } else if (text == "print") {
+                    tokens.append(::rc_new<Token>("PRINT", text, start, 0));
                 } else {
-                    if (text == "print")
-                        tokens.append(::rc_new<Token>("PRINT", text, start, 0));
-                    else
-                        tokens.append(::rc_new<Token>("IDENT", text, start, 0));
+                    tokens.append(::rc_new<Token>("IDENT", text, start, 0));
                 }
                 continue;
             }
@@ -134,13 +115,7 @@ struct Parser : public PyObj {
     list<rc<ExprNode>> expr_nodes;
     int64 pos;
     list<rc<Token>> tokens;
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type(PYTRA_TID_OBJECT);
-    uint32 py_type_id() const noexcept override {
-        return PYTRA_TYPE_ID;
-    }
-    virtual bool py_isinstance_of(uint32 expected_type_id) const override {
-        return expected_type_id == PYTRA_TYPE_ID;
-    }
+    PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
     list<rc<ExprNode>> new_expr_nodes() {
         return list<rc<ExprNode>>{};
@@ -340,14 +315,18 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
         lines.append(str("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
     }
     // Force evaluation of many arithmetic expressions.
+    lines.reserve((loops + 97 - 1) / 97);
+    int64 __next_capture_2 = 0;
     for (int64 i = 0; i < loops; ++i) {
         int64 x = i % var_count;
         int64 y = (i + 3) % var_count;
         int64 c1 = i % 7 + 1;
         int64 c2 = i % 11 + 2;
         lines.append(str("v" + ::std::to_string(x) + " = (v" + ::std::to_string(x) + " * " + ::std::to_string(c1) + " + v" + ::std::to_string(y) + " + 10000) / " + ::std::to_string(c2)));
-        if (i % 97 == 0)
+        if (i == __next_capture_2) {
             lines.append(str("print v" + ::std::to_string(x)));
+            __next_capture_2 += 97;
+        }
     }
     // Print final values together.
     lines.append(str("print (v0 + v1 + v2 + v3)"));
