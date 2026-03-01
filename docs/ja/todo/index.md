@@ -56,11 +56,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-str-identity-cast-elimination.md](../plans/p0-cpp-s18-str-identity-cast-elimination.md)
 
-1. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01] `str` 既知経路の `py_to_string` 同型変換を縮退する。
-2. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S1-01] `str` 同型変換の現状箇所を棚卸しし、適用条件/除外条件を固定する。
-3. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S2-01] emitter（必要なら EAST3 pass）へ縮退実装を追加し、`object` 経路は維持する。
-4. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S2-02] sample/18 回帰を追加し、`py_to_string` 不要出力の再発を防止する。
-5. [ ] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
+1. [x] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01] `str` 既知経路の `py_to_string` 同型変換を縮退する。
+2. [x] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S1-01] `str` 同型変換の現状箇所を棚卸しし、適用条件/除外条件を固定する。
+3. [x] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S2-01] emitter（必要なら EAST3 pass）へ縮退実装を追加し、`object` 経路は維持する。
+4. [x] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S2-02] sample/18 回帰を追加し、`py_to_string` 不要出力の再発を防止する。
+5. [x] [ID: P0-CPP-S18-STR-IDENTITY-CAST-01-S3-01] transpile/unit/sample 再生成で非退行を確認する。
 
 ### P0: sample/18 tokenizer の文字列分岐 tag 化（最優先）
 

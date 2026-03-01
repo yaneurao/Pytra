@@ -446,6 +446,14 @@ def f() -> float:
         self.assertNotIn("str(ch).isdigit()", cpp)
         self.assertNotIn("str(source[i]).isdigit()", cpp)
 
+    def test_sample18_ident_text_avoids_redundant_py_to_string(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn('str let_name = this->expect("IDENT")->text;', cpp)
+        self.assertIn('str assign_name = this->expect("IDENT")->text;', cpp)
+        self.assertNotIn('py_to_string(this->expect("IDENT")->text)', cpp)
+
     def test_sample18_rc_new_avoids_redundant_rc_cast(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)

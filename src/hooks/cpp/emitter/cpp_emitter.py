@@ -205,11 +205,13 @@ class CppEmitter(
         self.class_method_virtual: dict[str, set[str]] = {}
         self.class_method_arg_types: dict[str, dict[str, list[str]]] = {}
         self.class_method_arg_names: dict[str, dict[str, list[str]]] = {}
+        self.class_method_return_types: dict[str, dict[str, str]] = {}
         self.class_base: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_storage_hints: dict[str, str] = {}
         self.ref_classes: set[str] = set()
         self.value_classes: set[str] = set()
+        self.class_field_types: dict[str, dict[str, str]] = {}
         self.class_field_owner_unique: dict[str, str] = {}
         self.class_method_owner_unique: dict[str, str] = {}
         self.type_map: dict[str, str] = load_cpp_type_map(self.profile)
@@ -234,6 +236,7 @@ class CppEmitter(
         self.current_function_symbol: str = ""
         self.current_function_non_escape_summary: dict[str, Any] = {}
         self.current_function_stack_list_locals: set[str] = set()
+        self.current_function_typed_list_str_params: set[str] = set()
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
@@ -309,6 +312,9 @@ class CppEmitter(
             call_t = self.normalize_type_name(self._infer_numeric_call_expr_type(node_for_base))
             if call_t != "":
                 return call_t
+            call_ret_t = self.normalize_type_name(self._infer_call_expr_type(node_for_base))
+            if call_ret_t not in {"", "unknown"}:
+                return call_ret_t
         if kind == "BinOp":
             numeric_t = self.normalize_type_name(self._infer_numeric_expr_type(node_for_base))
             if numeric_t != "":
@@ -325,9 +331,17 @@ class CppEmitter(
                 return self.normalize_type_name(self.declared_var_types[nm])
         if kind == "Attribute":
             owner = self.any_to_dict_or_empty(node_for_base.get("value"))
+            owner_t0 = self.get_expr_type(node_for_base.get("value"))
+            owner_t = self._strip_rc_wrapper(self.normalize_type_name(owner_t0 if isinstance(owner_t0, str) else ""))
+            attr = self.any_to_str(node_for_base.get("attr"))
+            if owner_t in self.class_field_types:
+                owner_fields = self.class_field_types.get(owner_t, {})
+                if isinstance(owner_fields, dict):
+                    field_t = self.normalize_type_name(self.any_to_str(owner_fields.get(attr)))
+                    if field_t not in {"", "unknown"}:
+                        return field_t
             if self._node_kind_from_dict(owner) == "Name":
                 owner_name = self.any_to_str(owner.get("id"))
-                attr = self.any_to_str(node_for_base.get("attr"))
                 if owner_name == "self" and attr in self.current_class_fields:
                     return self.normalize_type_name(self.current_class_fields[attr])
         if kind == "Subscript":
@@ -644,9 +658,11 @@ class CppEmitter(
                 cls_name = self.any_dict_get_str(stmt, "name", "")
                 if cls_name != "":
                     self.class_names.add(cls_name)
+                    cls_field_types: dict[str, str] = {}
                     mset: set[str] = set()
                     marg: dict[str, list[str]] = {}
                     marg_names: dict[str, list[str]] = {}
+                    mret: dict[str, str] = {}
                     class_body: list[dict[str, Any]] = []
                     raw_class_body = self.any_dict_get_list(stmt, "body")
                     if isinstance(raw_class_body, list):
@@ -657,6 +673,7 @@ class CppEmitter(
                         if self._node_kind_from_dict(s) == "FunctionDef":
                             fn_name = self.any_dict_get_str(s, "name", "")
                             mset.add(fn_name)
+                            mret[fn_name] = self.normalize_type_name(self.any_to_str(s.get("return_type")))
                             arg_types = self.any_to_dict_or_empty(s.get("arg_types"))
                             arg_order = self.any_dict_get_list(s, "arg_order")
                             ordered: list[str] = []
@@ -673,6 +690,18 @@ class CppEmitter(
                     self.class_method_names[cls_name] = mset
                     self.class_method_arg_types[cls_name] = marg
                     self.class_method_arg_names[cls_name] = marg_names
+                    self.class_method_return_types[cls_name] = mret
+                    field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
+                    for raw_attr, raw_ft in field_types.items():
+                        if not isinstance(raw_attr, str):
+                            continue
+                        attr = raw_attr
+                        if attr == "":
+                            continue
+                        ft = self.normalize_type_name(self.any_to_str(raw_ft))
+                        if ft != "":
+                            cls_field_types[attr] = ft
+                    self.class_field_types[cls_name] = cls_field_types
                     base_raw = stmt.get("base")
                     base = str(base_raw) if isinstance(base_raw, str) else ""
                     self.class_base[cls_name] = base
@@ -994,6 +1023,36 @@ class CppEmitter(
                     saw_float = True
             return "float64" if saw_float else "int64"
         return ""
+
+    def _infer_call_expr_type(self, call_node: dict[str, Any]) -> str:
+        """Call ノードの一般返り値型（非数値含む）を推定する。"""
+        if len(call_node) == 0:
+            return ""
+        fn_node = self.any_to_dict_or_empty(call_node.get("func"))
+        fn_kind = self._node_kind_from_dict(fn_node)
+        if fn_kind == "Name":
+            fn_name = self.any_to_str(fn_node.get("id"))
+            if fn_name == "":
+                return ""
+            return self.normalize_type_name(self.function_return_types.get(fn_name, ""))
+        if fn_kind != "Attribute":
+            return ""
+        owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
+        attr = self.any_to_str(fn_node.get("attr"))
+        if attr == "":
+            return ""
+        owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
+        owner_t = self._strip_rc_wrapper(owner_t)
+        if owner_t == "" and self._node_kind_from_dict(owner_node) == "Name":
+            owner_name = self.any_to_str(owner_node.get("id"))
+            if owner_name == "self" and self.current_class_name is not None:
+                owner_t = self.current_class_name
+        if owner_t == "":
+            return ""
+        owner_methods = self.class_method_return_types.get(owner_t, {})
+        if not isinstance(owner_methods, dict):
+            return ""
+        return self.normalize_type_name(self.any_to_str(owner_methods.get(attr)))
 
     def _byte_from_str_expr(self, node: Any) -> str:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
@@ -2573,12 +2632,17 @@ class CppEmitter(
 
     def _render_expr_kind_unbox(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
-        value_expr = self.render_expr(expr_d.get("value"))
+        value_node = expr_d.get("value")
+        value_expr = self.render_expr(value_node)
         target_t = self.normalize_type_name(self.any_to_str(expr_d.get("target")))
         if target_t == "" or target_t == "unknown":
             target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
         if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
             return value_expr
+        source_t = self.normalize_type_name(self.get_expr_type(value_node))
+        if source_t not in {"", "unknown"} and (not self.is_any_like_type(source_t)):
+            if self._strip_rc_wrapper(source_t) == self._strip_rc_wrapper(target_t):
+                return value_expr
         ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
         return self._render_unbox_target_cast(value_expr, target_t, ctx)
 
@@ -2606,7 +2670,11 @@ class CppEmitter(
 
     def _render_expr_kind_obj_str(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
-        value_expr = self.render_expr(expr_d.get("value"))
+        value_node = expr_d.get("value")
+        value_expr = self.render_expr(value_node)
+        value_t = self.normalize_type_name(self.get_expr_type(value_node))
+        if value_t == "str":
+            return value_expr
         return f"py_to_string({value_expr})"
 
     def _render_expr_kind_obj_iter_init(self, expr: Any, expr_d: dict[str, Any]) -> str:

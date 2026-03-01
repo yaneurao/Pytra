@@ -221,7 +221,7 @@ struct Parser : public PyObj {
     }
     rc<StmtNode> parse_stmt() {
         if (this->match("LET")) {
-            str let_name = py_to_string(this->expect("IDENT")->text);
+            str let_name = this->expect("IDENT")->text;
             this->expect("EQUAL");
             int64 let_expr_index = this->parse_expr();
             return ::rc_new<StmtNode>("let", let_name, let_expr_index, 1);
@@ -230,7 +230,7 @@ struct Parser : public PyObj {
             int64 print_expr_index = this->parse_expr();
             return ::rc_new<StmtNode>("print", "", print_expr_index, 3);
         }
-        str assign_name = py_to_string(this->expect("IDENT")->text);
+        str assign_name = this->expect("IDENT")->text;
         this->expect("EQUAL");
         int64 assign_expr_index = this->parse_expr();
         return ::rc_new<StmtNode>("assign", assign_name, assign_expr_index, 2);
