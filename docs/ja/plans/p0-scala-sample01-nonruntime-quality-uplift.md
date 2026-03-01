@@ -42,7 +42,7 @@
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] runtime外タスク境界（本計画で扱う改善 / runtime外出しへ委譲する改善）を明文化する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-01] `pixels` などホットパスで `Any` 退化を抑制する typed container 出力規則を実装する。
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-02] break/continue を含まない単純ループで `boundary` 出力を省略する fastpath を実装する。
-- [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] 型既知経路の identity cast（`__pytra_int(0L)` 等）を削減する emit 規則を実装する。
+- [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] 型既知経路の identity cast（`__pytra_int(0L)` 等）を削減する emit 規則を実装する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-04] `color_map` 相当の小戻り値経路で `ArrayBuffer[Any]` 依存を縮小する戻り値表現最適化を実装する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-01] 回帰テスト（コード断片）を追加し、`sample/scala/01` の品質指標を固定する。
 - [ ] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S3-02] Scala transpile/smoke/parity を実行し、非退行を確認する。
@@ -52,6 +52,7 @@
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` 比較で「typed container不足」「boundary過多」「identity cast残存」を優先改善差分として固定した。
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-02] runtime本体定義/配置は P0-RUNTIME-EXT-SCALA-LUA-01 側へ委譲し、本計画は `// 01:` 以降の生成本体品質のみを対象に確定した。
 - 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-02] ループ本体に `break/continue` が存在しない場合、`ForCore/While` で `boundary` 生成を省略する fastpath を追加した。
+- 2026-03-02: [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S2-03] `int/float` の型既知引数と `StaticRange` の start/stop/step に対して identity cast を省略し、`sample/01` の冗長 `__pytra_int(...)` を削減した。
 
 ## S1実施結果（2026-03-02）
 

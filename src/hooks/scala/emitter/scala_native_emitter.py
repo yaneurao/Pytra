@@ -721,11 +721,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "int":
         if len(args) == 0:
             return "0L"
-        return _to_int_expr(_render_expr(args[0]))
+        arg0 = args[0]
+        rendered_arg0 = _render_expr(arg0)
+        if _has_resolved_type(arg0, {"int", "int64", "uint8"}):
+            return rendered_arg0
+        return _to_int_expr(rendered_arg0)
     if callee_name == "float":
         if len(args) == 0:
             return "0.0"
-        return _to_float_expr(_render_expr(args[0]))
+        arg0 = args[0]
+        rendered_arg0 = _render_expr(arg0)
+        if _has_resolved_type(arg0, {"float", "float64"}):
+            return rendered_arg0
+        return _to_float_expr(rendered_arg0)
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
@@ -1321,9 +1329,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         start_node = iter_plan_any.get("start")
         stop_node = iter_plan_any.get("stop")
         step_node = iter_plan_any.get("step")
-        start = _to_int_expr(_render_expr(start_node))
-        stop = _to_int_expr(_render_expr(stop_node))
-        step = _to_int_expr(_render_expr(step_node))
+        start = _int_operand(_render_expr(start_node), start_node)
+        stop = _int_operand(_render_expr(stop_node), stop_node)
+        step = _int_operand(_render_expr(step_node), step_node)
         step_is_one = _is_int_literal(step_node, 1)
         step_tmp = _fresh_tmp(ctx, "step")
         body_any = stmt.get("body")
