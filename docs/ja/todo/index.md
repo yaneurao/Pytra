@@ -89,6 +89,19 @@
 9. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Lua 改善計画 [p0-lua-inheritance-dispatch-uplift.md](../plans/p0-lua-inheritance-dispatch-uplift.md) を実施する。
 10. [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離管理する。
 
+### P1: EAST2 を最初の共通 IR へ再定義（Python 依存排除）
+
+文脈: [docs/ja/plans/p1-east2-common-ir-depythonization.md](../plans/p1-east2-common-ir-depythonization.md)
+
+1. [ ] [ID: P1-EAST2-COMMON-IR-01] EAST2 を最初の共通 IR として再定義し、Python 固有契約を frontend 境界へ隔離する。
+2. [ ] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 lower の Python 依存箇所（`py_*` runtime call、builtin 名直参照）を棚卸しする。
+3. [ ] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 仕様（ノード/演算/メタ/診断/fail-closed）を文書化する。
+4. [ ] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移し、EAST2 契約から切り離す。
+5. [ ] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ再配線し、Python 名称分岐を縮小・除去する。
+6. [ ] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存 Python 入力非退行のため、段階移行ブリッジ（暫定互換）を導入する。
+7. [ ] [ID: P1-EAST2-COMMON-IR-01-S3-01] EAST2 へ Python 依存契約が再混入した場合の回帰テストを追加する。
+8. [ ] [ID: P1-EAST2-COMMON-IR-01-S3-02] transpile/smoke/parity の代表ケースで非退行を確認し、移行結果を文書化する。
+
 ### P1: sample/go/01 品質改善（C++品質との差分縮小）
 
 文脈: [docs/ja/plans/p1-go-sample01-quality-uplift.md](../plans/p1-go-sample01-quality-uplift.md)
