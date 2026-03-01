@@ -2218,7 +2218,7 @@ class CodeEmitter:
 
     def render_attribute_self_or_class_access(
         self,
-        base: str,
+        base_expr: str,
         attr: str,
         current_class_name: str | None,
         current_class_static_fields: set[str],
@@ -2226,12 +2226,12 @@ class CodeEmitter:
         class_method_names: dict[str, set[str]],
     ) -> str:
         """`self.x` / `Class.x` の基本変換を共通処理する。"""
-        if base == "self" or base == "*this":
+        if base_expr == "self" or base_expr == "*this":
             if current_class_name is not None and attr in current_class_static_fields:
                 return f"{current_class_name}::{attr}"
             return f"this->{attr}"
-        if base in class_base or base in class_method_names:
-            return f"{base}::{attr}"
+        if base_expr in class_base or base_expr in class_method_names:
+            return f"{base_expr}::{attr}"
         return ""
 
     def render_attribute_module_access(

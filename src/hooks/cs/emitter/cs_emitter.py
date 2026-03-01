@@ -110,7 +110,7 @@ class CSharpEmitter(CodeEmitter):
             return ""
         return ""
 
-    def _walk_node_names(self, node: Any, out: set[str]) -> None:
+    def _walk_node_names(self, node: Any, out_names: set[str]) -> None:
         """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
         if isinstance(node, dict):
             node_dict = self.any_to_dict_or_empty(node)
@@ -120,16 +120,16 @@ class CSharpEmitter(CodeEmitter):
             if kind == "Name":
                 name = self.any_dict_get_str(node_dict, "id", "")
                 if name != "":
-                    out.add(name)
+                    out_names.add(name)
                 return
             for key in node_dict:
                 if key == "comments":
                     continue
-                self._walk_node_names(node_dict[key], out)
+                self._walk_node_names(node_dict[key], out_names)
             return
         if isinstance(node, list):
             for item in node:
-                self._walk_node_names(item, out)
+                self._walk_node_names(item, out_names)
 
     def _collect_used_names(self, body: list[dict[str, Any]], main_guard_body: list[dict[str, Any]]) -> set[str]:
         """モジュール全体で実際に参照される識別子名を収集する。"""
@@ -140,12 +140,12 @@ class CSharpEmitter(CodeEmitter):
             self._walk_node_names(stmt, used)
         return used
 
-    def _add_unique_using_line(self, out: list[str], seen: set[str], line: str) -> None:
+    def _add_unique_using_line(self, using_lines: list[str], seen: set[str], line: str) -> None:
         """using 行を重複排除しつつ追加する。"""
         if line == "" or line in seen:
             return
         seen.add(line)
-        out.append(line)
+        using_lines.append(line)
 
     def _collect_using_lines(
         self,
@@ -160,6 +160,11 @@ class CSharpEmitter(CodeEmitter):
         self._add_unique_using_line(out, seen, "using System;")
         self._add_unique_using_line(out, seen, "using System.Collections.Generic;")
         self._add_unique_using_line(out, seen, "using System.Linq;")
+        # Keep Python-ish type aliases available for selfhost skeleton outputs.
+        self._add_unique_using_line(out, seen, "using Any = System.Object;")
+        self._add_unique_using_line(out, seen, "using int64 = System.Int64;")
+        self._add_unique_using_line(out, seen, "using float64 = System.Double;")
+        self._add_unique_using_line(out, seen, "using str = System.String;")
         self._add_unique_using_line(out, seen, "using Pytra.CsModule;")
 
         bindings = self.any_to_dict_list(meta.get("import_bindings"))
@@ -1107,6 +1112,7 @@ class CSharpEmitter(CodeEmitter):
         is_constructor = in_class is not None and fn_name_raw == "__init__"
         has_static_decorator = "staticmethod" in decorators or "classmethod" in decorators
         emit_static = in_class is None or has_static_decorator
+        method_return_cs = "void"
 
         if in_class is not None:
             if has_static_decorator:
@@ -1156,12 +1162,27 @@ class CSharpEmitter(CodeEmitter):
             ret_cs = self._cs_type(ret_east)
             if ret_cs == "":
                 ret_cs = "void"
+            method_return_cs = ret_cs
             static_kw = "static " if emit_static else ""
             self.emit("public " + static_kw + ret_cs + " " + fn_name + "(" + ", ".join(args) + ")")
 
         self.emit("{")
         body = self._dict_stmt_list(fn.get("body"))
-        self.emit_scoped_stmt_list(body, scope_names)
+        has_return_stmt = False
+        has_non_pass_stmt = False
+        for st in body:
+            kind = self.any_dict_get_str(st, "kind", "")
+            if kind == "Return":
+                has_return_stmt = True
+            if kind != "Pass":
+                has_non_pass_stmt = True
+
+        if len(body) > 0:
+            self.emit_scoped_stmt_list(body, scope_names)
+        if (not is_constructor) and method_return_cs != "void":
+            # selfhost skeleton や pass-only 本体でも compile を維持するため末尾 fallback を補う。
+            if (len(body) == 0) or (not has_return_stmt) or (not has_non_pass_stmt):
+                self.emit("return default(" + method_return_cs + ");")
         self.emit("}")
 
         self.declared_var_types = prev_declared
