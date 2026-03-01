@@ -32,6 +32,20 @@
 
 ## 未完了タスク
 
+### P0: Scala3 parity 全通過化（sample + fixture）
+
+文脈: [docs/ja/plans/p0-scala3-full-parity-rollout.md](../plans/p0-scala3-full-parity-rollout.md)
+
+1. [ ] [ID: P0-SCALA3-PARITY-ALL-01] Scala3 backend で parity（stdout + artifact）を sample/fixture ともに全通過させる。
+2. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S1-01] sample 全件 + fixture 正例群の baseline を取得し、失敗カテゴリを固定する。
+3. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S1-02] Scala fixture parity の対象マニフェストを定義し、負例（P2）との境界を固定する。
+4. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-01] `save_gif` / `write_rgb_png` の `__pytra_noop` 経路を撤去して runtime 実装へ接続する。
+5. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装する（未対応は fail-closed）。
+6. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースの builtin/container 不足を補完し、`run_failed` を解消する。
+7. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-01] `runtime_parity_check` の Scala artifact optional を撤去し、関連 unit テストを更新する。
+8. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-02] Scala parity の再実行導線（専用チェック）を追加し、CI/ローカル手順を固定する。
+9. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-03] parity 実行結果を確認し、`how-to-use` と `spec-tools` の Scala 手順を同期する。
+
 ### P0: EAST3主導の安全 `reserve` 最適化（無条件append限定）
 
 文脈: [docs/ja/plans/p0-east3-safe-reserve-hint.md](../plans/p0-east3-safe-reserve-hint.md)
@@ -200,6 +214,18 @@
 4. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-01] sample/18 先行で `expr_nodes` / `stmts` の値型出力を実装する。
 5. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-02] 逸脱ケースで `rc` へフォールバックする条件を実装する。
 6. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S3-01] 回帰テスト（型出力断片 + 実行整合）を追加して再発検知を固定する。
+
+### P2: Scala 負例fixtureの skip 撤廃（失敗期待テスト化）
+
+文脈: [docs/ja/plans/p2-scala-negative-fixture-fail-assertion.md](../plans/p2-scala-negative-fixture-fail-assertion.md)
+
+1. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01] Scala 負例 fixture を skip 運用から「失敗期待の明示テスト」へ移行する。
+2. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S1-01] 負例 fixture の現行失敗理由を棚卸しし、期待する失敗分類を固定する。
+3. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S1-02] `DEFAULT_EXPECTED_FAILS` の stale エントリを除去し、負例集合を最新化する。
+4. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S2-01] `check_py2scala_transpile.py` を正例成功 + 負例失敗期待の両検証モードへ再構成する。
+5. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S2-02] `unexpected pass` / `unexpected error category` を fail-closed で検知する。
+6. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S3-01] unit テストを追加し、skip 再流入を回帰検知する。
+7. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S3-02] `how-to-use` 文書へ Scala の正例/負例検証手順を追記する。
 
 ### P3: 非C++ backend へのコンテナ参照管理モデル展開
 
