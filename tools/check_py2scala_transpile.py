@@ -21,6 +21,8 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/typing/any_class_alias.py",
 }
 
+SAMPLE01_REL = "sample/py/01_mandelbrot.py"
+
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
@@ -43,6 +45,19 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"
     return False, first
+
+
+def _sample01_quality_error(rel: str, out: Path) -> str:
+    if rel != SAMPLE01_REL:
+        return ""
+    text = out.read_text(encoding="utf-8")
+    if "boundary:" in text or "__breakLabel_" in text or "__continueLabel_" in text:
+        return "sample/01 quality regression: boundary labels reintroduced"
+    if "__pytra_int(0L)" in text:
+        return "sample/01 quality regression: identity int cast reintroduced"
+    if "__pytra_int(height)" in text or "__pytra_int(width)" in text or "__pytra_int(max_iter)" in text:
+        return "sample/01 quality regression: typed range bound cast reintroduced"
+    return ""
 
 
 def main() -> int:
@@ -69,6 +84,10 @@ def main() -> int:
             total += 1
             good, msg = _run_one(src, out)
             if good:
+                quality_err = _sample01_quality_error(rel, out)
+                if quality_err != "":
+                    fails.append((rel, quality_err))
+                    continue
                 ok += 1
                 if args.verbose:
                     print("OK", rel)
