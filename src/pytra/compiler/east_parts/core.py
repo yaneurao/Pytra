@@ -2687,9 +2687,13 @@ class _ShExprParser:
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "isinstance":
+                    payload["lowered_kind"] = "TypePredicateCall"
+                    payload["builtin_name"] = fn_name
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "issubclass":
+                    payload["lowered_kind"] = "TypePredicateCall"
+                    payload["builtin_name"] = fn_name
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":

@@ -356,11 +356,22 @@ def _lower_type_id_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) ->
     if semantic_tag == "type.issubclass":
         return _lower_issubclass_call_expr(out_call, dispatch_mode=dispatch_mode)
 
+    lowered_kind_obj = out_call.get("lowered_kind")
+    lowered_kind = lowered_kind_obj.strip() if isinstance(lowered_kind_obj, str) else ""
+    builtin_name_obj = out_call.get("builtin_name")
+    builtin_name = builtin_name_obj.strip() if isinstance(builtin_name_obj, str) else ""
+    if lowered_kind == "TypePredicateCall":
+        if builtin_name == "isinstance":
+            return _lower_isinstance_call_expr(out_call, dispatch_mode=dispatch_mode)
+        if builtin_name == "issubclass":
+            return _lower_issubclass_call_expr(out_call, dispatch_mode=dispatch_mode)
+
     func_obj = out_call.get("func")
     if not isinstance(func_obj, dict) or func_obj.get("kind") != "Name":
         return out_call
     fn_name_obj = func_obj.get("id")
     fn_name = fn_name_obj if isinstance(fn_name_obj, str) else ""
+    # Legacy fallback for stage2 payloads that still rely on Python function names.
     if fn_name == "isinstance":
         return _lower_isinstance_call_expr(out_call, dispatch_mode=dispatch_mode)
     if fn_name == "issubclass":
