@@ -220,14 +220,7 @@ class CppClassEmitter:
             self.emit(f"{self._cpp_type_text(fty)} {fname};")
         if gc_managed:
             base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
-            self.emit(f"inline static uint32 PYTRA_TYPE_ID = py_register_class_type({base_type_id_expr});")
-
-            self.emit("uint32 py_type_id() const noexcept override {")
-            self.emit("    return PYTRA_TYPE_ID;")
-            self.emit("}")
-            self.emit("virtual bool py_isinstance_of(uint32 expected_type_id) const override {")
-            self.emit("    return expected_type_id == PYTRA_TYPE_ID;")
-            self.emit("}")
+            self.emit(f"PYTRA_DECLARE_CLASS_TYPE({base_type_id_expr});")
 
         if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:
             self.emit("")

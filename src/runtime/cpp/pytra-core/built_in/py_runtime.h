@@ -2432,6 +2432,14 @@ static inline uint32 py_register_class_type(const list<uint32>& bases) {
     throw ValueError("multiple inheritance is not supported");
 }
 
+// Generated user classes share this exact type-id boilerplate.
+// Keep it in runtime so backend output stays compact and consistent.
+#define PYTRA_DECLARE_CLASS_TYPE(BASE_TYPE_ID_EXPR)                                                     \
+    inline static uint32 PYTRA_TYPE_ID = py_register_class_type((BASE_TYPE_ID_EXPR));                   \
+    uint32 py_type_id() const noexcept override {                                                        \
+        return PYTRA_TYPE_ID;                                                                            \
+    }
+
 static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
     return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
