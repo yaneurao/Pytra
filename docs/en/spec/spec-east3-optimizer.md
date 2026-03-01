@@ -114,6 +114,17 @@ Notes:
   - dynamic name-introspection paths (`locals`/`globals`/`vars`/`eval`) may observe it.
 - Backend syntax materialization (for example, C++ `for (i = 0; i < n; ++i)`) belongs to `EAST3 -> <lang>` lowering / emitter, not to the common optimizer.
 
+### 8.2 Responsibility Boundary for Expression Normalization (`EAST3` vs emitter)
+
+- Expression normalizations that are semantically shared across backends (for example, identity-cast elimination, `StaticRange` trip-count/condition simplification, comparison-chain normalization) must be performed in `EAST3 -> EAST3`.
+- Normalization outputs must be kept as structured form (node or metadata) so emitters can consume them without re-deriving semantics.
+- Emitter responsibility is limited to target-language rendering:
+  - operator/token spelling, runtime/API symbol choice, and minimal precedence-safe parentheses;
+  - target-language surface constraints (for example, `Math.floor`-style mapping).
+- For expression categories with normalized data, emitters must not rebuild equivalent semantics by ad-hoc string construction.
+- If normalized data is missing/invalid, use fail-closed behavior and suppress the optimization output (no unsafe `reserve`/condition emission).
+- Policy: semantics are decided in `EAST3`; syntax is decided in emitters.
+
 ## 9. Language-specific Layer
 
 - Optional `east3_optimizer_<lang>.py` runs after common layer.
