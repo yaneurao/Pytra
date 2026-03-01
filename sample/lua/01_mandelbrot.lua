@@ -6,9 +6,103 @@ local function __pytra_print(...)
     end
     local parts = {}
     for i = 1, argc do
-        parts[i] = tostring(select(i, ...))
+        local v = select(i, ...)
+        if v == true then
+            parts[i] = "True"
+        elseif v == false then
+            parts[i] = "False"
+        elseif v == nil then
+            parts[i] = "None"
+        else
+            parts[i] = tostring(v)
+        end
     end
     io.write(table.concat(parts, " ") .. "\n")
+end
+
+local function __pytra_repeat_seq(a, b)
+    local seq = a
+    local count = b
+    if type(a) == "number" and type(b) ~= "number" then
+        seq = b
+        count = a
+    end
+    local n = math.floor(tonumber(count) or 0)
+    if n <= 0 then
+        if type(seq) == "string" then return "" end
+        return {}
+    end
+    if type(seq) == "string" then
+        return string.rep(seq, n)
+    end
+    if type(seq) ~= "table" then
+        return (tonumber(a) or 0) * (tonumber(b) or 0)
+    end
+    local out = {}
+    for _ = 1, n do
+        for i = 1, #seq do
+            out[#out + 1] = seq[i]
+        end
+    end
+    return out
+end
+
+local function __pytra_truthy(v)
+    if v == nil then return false end
+    local t = type(v)
+    if t == "boolean" then return v end
+    if t == "number" then return v ~= 0 end
+    if t == "string" then return #v ~= 0 end
+    if t == "table" then return next(v) ~= nil end
+    return true
+end
+
+local function __pytra_contains(container, value)
+    local t = type(container)
+    if t == "table" then
+        if container[value] ~= nil then return true end
+        for i = 1, #container do
+            if container[i] == value then return true end
+        end
+        return false
+    end
+    if t == "string" then
+        if type(value) ~= "string" then value = tostring(value) end
+        return string.find(container, value, 1, true) ~= nil
+    end
+    return false
+end
+
+local function __pytra_str_isdigit(s)
+    if type(s) ~= "string" or #s == 0 then return false end
+    for i = 1, #s do
+        local b = string.byte(s, i)
+        if b < 48 or b > 57 then return false end
+    end
+    return true
+end
+
+local function __pytra_str_isalpha(s)
+    if type(s) ~= "string" or #s == 0 then return false end
+    for i = 1, #s do
+        local b = string.byte(s, i)
+        local is_upper = (b >= 65 and b <= 90)
+        local is_lower = (b >= 97 and b <= 122)
+        if not (is_upper or is_lower) then return false end
+    end
+    return true
+end
+
+local function __pytra_str_isalnum(s)
+    if type(s) ~= "string" or #s == 0 then return false end
+    for i = 1, #s do
+        local b = string.byte(s, i)
+        local is_digit = (b >= 48 and b <= 57)
+        local is_upper = (b >= 65 and b <= 90)
+        local is_lower = (b >= 97 and b <= 122)
+        if not (is_digit or is_upper or is_lower) then return false end
+    end
+    return true
 end
 
 local function __pytra_perf_counter()
@@ -151,6 +245,7 @@ function escape_count(cx, cy, max_iter)
         end
         y = (((2.0 * x) * y) + cy)
         x = ((x2 - y2) + cx)
+        ::__pytra_continue_1::
     end
     return max_iter
 end
@@ -194,7 +289,9 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
             table.insert(pixels, r)
             table.insert(pixels, g)
             table.insert(pixels, b)
+            ::__pytra_continue_3::
         end
+        ::__pytra_continue_2::
     end
     return pixels
 end
