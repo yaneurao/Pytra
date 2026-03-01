@@ -52,20 +52,6 @@ DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/typing/any_list_mixed.py",
     "test/fixtures/typing/any_none.py",
     "test/fixtures/typing/bytearray_basic.py",
-    "sample/py/01_mandelbrot.py",
-    "sample/py/05_mandelbrot_zoom.py",
-    "sample/py/06_julia_parameter_sweep.py",
-    "sample/py/07_game_of_life_loop.py",
-    "sample/py/08_langtons_ant.py",
-    "sample/py/09_fire_simulation.py",
-    "sample/py/10_plasma_effect.py",
-    "sample/py/11_lissajous_particles.py",
-    "sample/py/12_sort_visualizer.py",
-    "sample/py/13_maze_generation_steps.py",
-    "sample/py/14_raymarching_light_cycle.py",
-    "sample/py/15_wave_interference_loop.py",
-    "sample/py/16_glass_sculpture_chaos.py",
-    "sample/py/18_mini_language_interpreter.py",
 }
 
 STAGE2_REMOVED_FRAGMENT = "--east-stage 2 is no longer supported; use EAST3 (default)."
@@ -157,4 +143,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
