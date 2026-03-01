@@ -995,9 +995,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore iter_plan"]
+        raise RuntimeError("scala native emitter: unsupported ForCore iter_plan")
     if not isinstance(target_plan_any, dict):
-        return [indent + "// TODO: unsupported ForCore target_plan"]
+        raise RuntimeError("scala native emitter: unsupported ForCore target_plan")
 
     lines: list[str] = []
     if iter_plan_any.get("kind") == "StaticRangeForPlan" and target_plan_any.get("kind") == "NameTarget":
@@ -1050,6 +1050,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "continue_prefix": target_name + " += " + step_tmp,
             "break_label": break_label,
             "continue_label": continue_label,
+            "yield_buffer": ctx.get("yield_buffer", ""),
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = "Long"
@@ -1109,6 +1110,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "continue_prefix": idx_tmp + " += 1L",
             "break_label": break_label,
             "continue_label": continue_label,
+            "yield_buffer": ctx.get("yield_buffer", ""),
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = target_scala_type
@@ -1149,6 +1151,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "continue_prefix": idx_tmp + " += 1L",
             "break_label": break_label,
             "continue_label": continue_label,
+            "yield_buffer": ctx.get("yield_buffer", ""),
         }
         declared = _declared_set(body_ctx)
         type_map = _type_map(body_ctx)
@@ -1164,9 +1167,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         while i < len(elems):
             elem = elems[i]
             if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
-                lines.append(indent + "    // TODO: unsupported tuple target element")
-                i += 1
-                continue
+                raise RuntimeError("scala native emitter: unsupported tuple target element")
             name = _safe_ident(elem.get("id"), "item_" + str(i))
             if name == "_":
                 i += 1
@@ -1195,7 +1196,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "    }")
         return lines
 
-    return [indent + "// TODO: unsupported ForCore plan"]
+    raise RuntimeError("scala native emitter: unsupported ForCore plan")
 
 
 def _emit_tuple_assign(
@@ -1255,7 +1256,7 @@ def _emit_tuple_assign(
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
-        return [indent + "// TODO: unsupported statement"]
+        raise RuntimeError("scala native emitter: unsupported statement node")
     kind = stmt.get("kind")
 
     if kind == "Return":
@@ -1355,7 +1356,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if len(targets) == 0 and isinstance(stmt.get("target"), dict):
             targets = [stmt.get("target")]
         if len(targets) == 0:
-            return [indent + "// TODO: Assign without target"]
+            raise RuntimeError("scala native emitter: Assign without target")
 
         tuple_lines = _emit_tuple_assign(
             targets[0],
@@ -1428,6 +1429,80 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + lhs + " %= " + rhs]
         return [indent + lhs + " += " + rhs]
 
+    if kind == "Swap":
+        left = _target_name(stmt.get("left"))
+        right = _target_name(stmt.get("right"))
+        tmp = _fresh_tmp(ctx, "swap")
+        return [
+            indent + "val " + tmp + " = " + left,
+            indent + left + " = " + right,
+            indent + right + " = " + tmp,
+        ]
+
+    if kind == "Yield":
+        yield_buffer_any = ctx.get("yield_buffer")
+        yield_buffer = yield_buffer_any if isinstance(yield_buffer_any, str) else ""
+        if yield_buffer == "":
+            raise RuntimeError("scala native emitter: unsupported yield outside generator")
+        value_any = stmt.get("value")
+        if value_any is None:
+            return [indent + yield_buffer + ".append(__pytra_any_default())"]
+        return [indent + yield_buffer + ".append(" + _render_expr(value_any) + ")"]
+
+    if kind == "Try":
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        handlers_any = stmt.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        final_any = stmt.get("finalbody")
+        finalbody = final_any if isinstance(final_any, list) else []
+        orelse_any = stmt.get("orelse")
+        orelse = orelse_any if isinstance(orelse_any, list) else []
+
+        lines: list[str] = [indent + "try {"]
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+            i += 1
+        i = 0
+        while i < len(orelse):
+            lines.extend(_emit_stmt(orelse[i], indent=indent + "    ", ctx=ctx))
+            i += 1
+
+        if len(handlers) > 0:
+            if len(handlers) > 1:
+                raise RuntimeError("scala native emitter: multiple except handlers are unsupported")
+            lines.append(indent + "} catch {")
+            base_ex = _fresh_tmp(ctx, "ex")
+            lines.append(indent + "    case " + base_ex + ": Throwable =>")
+            first = handlers[0]
+            if not isinstance(first, dict):
+                raise RuntimeError("scala native emitter: invalid except handler node")
+            alias_any = first.get("name")
+            alias_raw = alias_any if isinstance(alias_any, str) else ""
+            alias = _safe_ident(alias_raw, "") if alias_raw != "" else ""
+            if alias != "" and alias != base_ex:
+                lines.append(indent + "        val " + alias + " = " + base_ex)
+            h_body_any = first.get("body")
+            h_body = h_body_any if isinstance(h_body_any, list) else []
+            i = 0
+            while i < len(h_body):
+                lines.extend(_emit_stmt(h_body[i], indent=indent + "        ", ctx=ctx))
+                i += 1
+
+        if len(finalbody) > 0:
+            if len(handlers) == 0:
+                lines.append(indent + "} finally {")
+            else:
+                lines.append(indent + "} finally {")
+            i = 0
+            while i < len(finalbody):
+                lines.extend(_emit_stmt(finalbody[i], indent=indent + "    ", ctx=ctx))
+                i += 1
+
+        lines.append(indent + "}")
+        return lines
+
     if kind == "If":
         test_expr = _render_truthy_expr(stmt.get("test"))
         lines: list[str] = [indent + "if (" + test_expr + ") {"]
@@ -1441,6 +1516,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "continue_prefix": ctx.get("continue_prefix", ""),
             "break_label": ctx.get("break_label", ""),
             "continue_label": ctx.get("continue_label", ""),
+            "yield_buffer": ctx.get("yield_buffer", ""),
         }
         i = 0
         while i < len(body):
@@ -1463,6 +1539,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "continue_prefix": ctx.get("continue_prefix", ""),
             "break_label": ctx.get("break_label", ""),
             "continue_label": ctx.get("continue_label", ""),
+            "yield_buffer": ctx.get("yield_buffer", ""),
         }
         i = 0
         while i < len(orelse):
@@ -1496,6 +1573,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "continue_prefix": "",
             "break_label": break_label,
             "continue_label": continue_label,
+            "yield_buffer": ctx.get("yield_buffer", ""),
         }
         i = 0
         while i < len(body):
@@ -1531,7 +1609,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "throw new RuntimeException(\"pytra raise\")"]
         return [indent + "throw new RuntimeException(__pytra_str(" + _render_expr(exc_any) + "))"]
 
-    return [indent + "// TODO: unsupported stmt kind " + str(kind)]
+    raise RuntimeError("scala native emitter: unsupported stmt kind " + str(kind))
 
 
 def _stmt_guarantees_return(stmt: Any) -> bool:
@@ -1560,6 +1638,48 @@ def _block_guarantees_return(body: list[Any]) -> bool:
     return False
 
 
+def _stmt_contains_yield(stmt: Any) -> bool:
+    if not isinstance(stmt, dict):
+        return False
+    kind = stmt.get("kind")
+    if kind == "Yield":
+        return True
+    body_any = stmt.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    if _block_contains_yield(body):
+        return True
+    orelse_any = stmt.get("orelse")
+    orelse = orelse_any if isinstance(orelse_any, list) else []
+    if _block_contains_yield(orelse):
+        return True
+    if kind == "Try":
+        handlers_any = stmt.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        i = 0
+        while i < len(handlers):
+            handler = handlers[i]
+            if isinstance(handler, dict):
+                h_body_any = handler.get("body")
+                h_body = h_body_any if isinstance(h_body_any, list) else []
+                if _block_contains_yield(h_body):
+                    return True
+            i += 1
+        final_any = stmt.get("finalbody")
+        finalbody = final_any if isinstance(final_any, list) else []
+        if _block_contains_yield(finalbody):
+            return True
+    return False
+
+
+def _block_contains_yield(body: list[Any]) -> bool:
+    i = 0
+    while i < len(body):
+        if _stmt_contains_yield(body[i]):
+            return True
+        i += 1
+    return False
+
+
 def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     is_init = in_class and name == "__init__"
@@ -1583,10 +1703,15 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
 
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
+    is_generator = (not is_init) and _block_contains_yield(body)
 
     ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type}
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
+    if is_generator:
+        yield_buffer = _fresh_tmp(ctx, "yielded")
+        ctx["yield_buffer"] = yield_buffer
+        lines.append(indent + "    val " + yield_buffer + " = mutable.ArrayBuffer[Any]()")
 
     param_names = _function_param_names(fn, drop_self=in_class)
     arg_types_any = fn.get("arg_types")
@@ -1606,7 +1731,13 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
     if len(body) == 0:
         lines.append(indent + "    // empty body")
 
-    if not is_init and return_type != "Unit" and not _block_guarantees_return(body):
+    if is_generator:
+        yield_buffer_any = ctx.get("yield_buffer")
+        yield_buffer = yield_buffer_any if isinstance(yield_buffer_any, str) else ""
+        if yield_buffer == "":
+            raise RuntimeError("scala native emitter: missing yield buffer")
+        lines.append(indent + "    return " + yield_buffer)
+    elif not is_init and return_type != "Unit" and not _block_guarantees_return(body):
         lines.append(indent + "    return " + _default_return_expr(return_type))
 
     lines.append(indent + "}")

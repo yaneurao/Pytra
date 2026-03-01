@@ -45,13 +45,14 @@
 - 2026-03-02: `python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples --summary-json out/scala_parity_sample_summary.json` と `python3 tools/runtime_parity_check.py --case-root fixture --targets scala math_extended pathlib_extended inheritance_virtual_dispatch_multilang --summary-json out/scala_parity_fixture_summary.json` を実行し、現環境 baseline は `sample: toolchain_missing=18`, `fixture: toolchain_missing=3` で固定した（Scala toolchain 未導入のため run フェーズ未到達）。
 - 2026-03-02: Scala fixture 正例マニフェストを `test/fixtures/scala_positive_manifest.txt` として固定し、負例（`signature/ng_*`, `typing/any_class_alias.py`）を別タスク管理する境界を分離した。
 - 2026-03-02: `save_gif` / `write_rgb_png` の Scala 出力を `__pytra_noop` から `__pytra_save_gif` / `__pytra_write_rgb_png` へ接続し、`__pytra_grayscale_palette` と PNG/GIF 書き出し helper を runtime helper 群へ追加した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v` と `python3 tools/check_py2scala_transpile.py` を実行し非退行を確認した。
+- 2026-03-02: `// TODO: unsupported ...` の出力経路を fail-closed（`RuntimeError`）へ切り替え、実ケースで必要な `Try` / `Swap` / `Yield` lowering を追加した。`yield_generator_min` 向けに generator 収集バッファ経路を導入し、`check_py2scala_transpile.py` を `checked=135 ok=135 fail=0 skipped=6` へ復帰させた。
 
 ## 分解
 
 - [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-01] Scala parity の現状失敗を baseline 取得（sample 全件 + fixture 正例群）し、失敗カテゴリを固定する。
 - [x] [ID: P0-SCALA3-PARITY-ALL-01-S1-02] Scala fixture parity の対象マニフェスト（正例のみ）を定義し、負例タスク（P2）と境界を明文化する。
 - [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-01] `save_gif` / `write_rgb_png` の `__pytra_noop` 経路を撤去し、Scala runtime 実装へ接続する。
-- [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装（未対応は fail-closed）する。
+- [x] [ID: P0-SCALA3-PARITY-ALL-01-S2-02] `// TODO: unsupported ...` 出力経路を縮小し、必要ノードの lowering を実装（未対応は fail-closed）する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-03] sample/18 を含む高難度ケースで不足する builtin/container 操作を補完し、run_failed を解消する。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S2-04] 継承先で上書きされるメソッドに `override def` を出力し、継承メソッド契約を Scala3 コンパイラ規約へ一致させる。
 - [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-01] `runtime_parity_check` の Scala artifact optional を撤去し、関連 unit テストを新契約へ更新する。

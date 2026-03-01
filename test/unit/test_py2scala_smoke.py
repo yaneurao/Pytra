@@ -87,6 +87,32 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             scala = transpile_to_scala_native(loaded)
         self.assertIn("def main(args: Array[String]): Unit", scala)
 
+    def test_scala_native_emitter_fail_closed_on_unsupported_stmt_kind(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [{"kind": "UnsupportedStmt"}],
+                }
+            ],
+            "main_guard_body": [],
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            transpile_to_scala_native(east)
+        self.assertIn("unsupported stmt kind", str(cm.exception))
+
+    def test_sample_18_scala_output_has_no_unsupported_todo_marker(self) -> None:
+        sample = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertNotIn("TODO: unsupported", scala)
+
     def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
         fixture = find_fixture_case("for_range")
         loaded = load_east(fixture, parser_backend="self_hosted")
