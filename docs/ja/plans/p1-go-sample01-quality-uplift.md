@@ -1,6 +1,6 @@
 # P1: sample/go/01 品質改善（C++品質との差分縮小）
 
-最終更新: 2026-03-01
+最終更新: 2026-03-02
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-GO-SAMPLE01-QUALITY-01`
@@ -42,7 +42,7 @@
 
 分解:
 - [x] [ID: P1-GO-SAMPLE01-QUALITY-01-S1-01] `sample/go/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
-- [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-01] Go emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
+- [x] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-01] Go emitter の数値演算出力で同型変換連鎖を削減し、typed 経路を優先する。
 - [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-02] `range(stop)` / `range(start, stop, 1)` 系を canonical `for` へ lower する fastpath を追加する。
 - [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-03] `write_rgb_png` 経路を no-op から native runtime 呼び出しへ接続し、未解決時は fail-closed にする。
 - [ ] [ID: P1-GO-SAMPLE01-QUALITY-01-S2-04] `sample/01` の `pixels` ホットパスで `[]any` 退化を抑制する typed container fastpath を追加する。
@@ -55,3 +55,4 @@
   - P2: `pixels` が `[]any` 退化し append ごとに `__pytra_as_list` を挟むホットパス劣化。
   - P3: `__pytra_float/__pytra_int` の同型 cast 連鎖（`__pytra_float(float64(...))` など）による冗長化。
   - P4: `range(..., step=1)` でも汎用 step 分岐ループ（`(__step>=0 && ...) || ...`）を生成する冗長 lower。
+- 2026-03-02: `S2-01` として、型既知の numeric cast fastpath（`_render_binop_expr` / `_render_compare_expr` / math 呼び出し / 代入 cast）を導入し、二重 `__pytra_float/__pytra_int` を削減した。`sample/go/01_mandelbrot.go` 再生成で `var x2 float64 = (x * x)` 等の縮退を確認。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` は pass。`python3 tools/check_py2go_transpile.py` の fail 4件（Try/Yield/Swap 未対応）は既知カテゴリで本タスク外と記録した。

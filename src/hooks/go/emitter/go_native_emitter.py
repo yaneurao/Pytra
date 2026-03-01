@@ -38,6 +38,8 @@ _CLASS_NAMES: set[str] = set()
 _CLASS_BASE_MAP: dict[str, str] = {}
 _CURRENT_RECEIVER_CLASS: str = ""
 _CURRENT_RECEIVER_VAR: str = "self"
+_INT_RESOLVED_TYPES = {"int", "int64", "uint8"}
+_FLOAT_RESOLVED_TYPES = {"float", "float64"}
 
 
 def _class_iface_name(class_name: str) -> str:
@@ -64,6 +66,65 @@ def _safe_ident(name: Any, fallback: str) -> str:
     if out in _GO_KEYWORDS:
         out = out + "_"
     return out
+
+
+def _resolved_type(expr_any: Any) -> str:
+    if not isinstance(expr_any, dict):
+        return ""
+    resolved_any = expr_any.get("resolved_type")
+    if isinstance(resolved_any, str):
+        return resolved_any
+    return ""
+
+
+def _is_wrapped_call(expr: str, callee: str) -> bool:
+    text = expr.strip()
+    head = callee + "("
+    if not text.startswith(head) or not text.endswith(")"):
+        return False
+    depth = 0
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0 and i != len(text) - 1:
+                return False
+            if depth < 0:
+                return False
+        i += 1
+    return depth == 0
+
+
+def _is_int_cast_expr(expr: str) -> bool:
+    text = expr.strip()
+    return _is_wrapped_call(text, "int64") or _is_wrapped_call(text, "__pytra_int")
+
+
+def _is_float_cast_expr(expr: str) -> bool:
+    text = expr.strip()
+    return _is_wrapped_call(text, "float64") or _is_wrapped_call(text, "__pytra_float")
+
+
+def _coerce_int_expr(expr_any: Any, rendered: str) -> str:
+    if _resolved_type(expr_any) in _INT_RESOLVED_TYPES:
+        return rendered
+    if _is_int_cast_expr(rendered):
+        return rendered
+    return "__pytra_int(" + rendered + ")"
+
+
+def _coerce_float_expr(expr_any: Any, rendered: str) -> str:
+    resolved = _resolved_type(expr_any)
+    if resolved in _FLOAT_RESOLVED_TYPES:
+        return rendered
+    if _is_float_cast_expr(rendered):
+        return rendered
+    if resolved in _INT_RESOLVED_TYPES or _is_int_cast_expr(rendered):
+        return "float64(" + rendered + ")"
+    return "__pytra_float(" + rendered + ")"
 
 
 def _collect_go_deps(collector: CodeEmitter, node_any: Any) -> None:
@@ -219,10 +280,18 @@ def _tuple_element_types(type_name: Any) -> list[str]:
     return out
 
 
-def _cast_from_any(expr: str, go_type: str) -> str:
+def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dict[str, str] | None = None) -> str:
     if go_type == "int64":
+        if isinstance(value_any, dict) and _infer_go_type(value_any, type_map) == "int64":
+            return expr
+        if _is_int_cast_expr(expr):
+            return expr
         return "__pytra_int(" + expr + ")"
     if go_type == "float64":
+        if isinstance(value_any, dict) and _infer_go_type(value_any, type_map) == "float64":
+            return expr
+        if _is_float_cast_expr(expr):
+            return expr
         return "__pytra_float(" + expr + ")"
     if go_type == "bool":
         return "__pytra_truthy(" + expr + ")"
@@ -322,9 +391,9 @@ def _render_unary_expr(expr: dict[str, Any]) -> str:
 
 def _render_binop_expr(expr: dict[str, Any]) -> str:
     op = expr.get("op")
+    left_any = expr.get("left")
+    right_any = expr.get("right")
     if op == "Mult":
-        left_any = expr.get("left")
-        right_any = expr.get("right")
         if isinstance(left_any, dict) and left_any.get("kind") == "List":
             elems_any = left_any.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
@@ -335,29 +404,39 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             elems = elems_any if isinstance(elems_any, list) else []
             if len(elems) == 1:
                 return "__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
-    left_expr = _render_expr(expr.get("left"))
-    right_expr = _render_expr(expr.get("right"))
+    left_expr = _render_expr(left_any)
+    right_expr = _render_expr(right_any)
     resolved = expr.get("resolved_type")
 
     if op == "Div":
-        return "(__pytra_float(" + left_expr + ") / __pytra_float(" + right_expr + "))"
+        left_num = _coerce_float_expr(left_any, left_expr)
+        right_num = _coerce_float_expr(right_any, right_expr)
+        return "(" + left_num + " / " + right_num + ")"
 
     if op == "FloorDiv":
-        return "(__pytra_int(__pytra_int(" + left_expr + ") / __pytra_int(" + right_expr + ")))"
+        left_num = _coerce_int_expr(left_any, left_expr)
+        right_num = _coerce_int_expr(right_any, right_expr)
+        return "__pytra_int((" + left_num + " / " + right_num + "))"
 
     if op == "Mod":
-        return "(__pytra_int(" + left_expr + ") % __pytra_int(" + right_expr + "))"
+        left_num = _coerce_int_expr(left_any, left_expr)
+        right_num = _coerce_int_expr(right_any, right_expr)
+        return "(" + left_num + " % " + right_num + ")"
 
     if resolved == "str" and op == "Add":
         return "(__pytra_str(" + left_expr + ") + __pytra_str(" + right_expr + "))"
 
     if resolved in {"int", "int64", "uint8"}:
         sym = _bin_op_symbol(op)
-        return "(__pytra_int(" + left_expr + ") " + sym + " __pytra_int(" + right_expr + "))"
+        left_num = _coerce_int_expr(left_any, left_expr)
+        right_num = _coerce_int_expr(right_any, right_expr)
+        return "(" + left_num + " " + sym + " " + right_num + ")"
 
     if resolved in {"float", "float64"}:
         sym = _bin_op_symbol(op)
-        return "(__pytra_float(" + left_expr + ") " + sym + " __pytra_float(" + right_expr + "))"
+        left_num = _coerce_float_expr(left_any, left_expr)
+        right_num = _coerce_float_expr(right_any, right_expr)
+        return "(" + left_num + " " + sym + " " + right_num + ")"
 
     sym = _bin_op_symbol(op)
     return "(" + left_expr + " " + sym + " " + right_expr + ")"
@@ -418,17 +497,18 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
             right_type = right_any if isinstance(right_any, str) else ""
 
         symbol = _compare_op_symbol(op)
+        left_node = expr.get("left") if i == 0 else (comps[i - 1] if i - 1 < len(comps) else None)
         if left_type == "str" or right_type == "str":
             lhs = "__pytra_str(" + cur_left + ")"
             rhs = "__pytra_str(" + right + ")"
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"int", "int64", "uint8"} or right_type in {"int", "int64", "uint8"}:
-            lhs = "__pytra_int(" + cur_left + ")"
-            rhs = "__pytra_int(" + right + ")"
+            lhs = _coerce_int_expr(left_node, cur_left)
+            rhs = _coerce_int_expr(comp_node, right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"float", "float64"} or right_type in {"float", "float64"}:
-            lhs = "__pytra_float(" + cur_left + ")"
-            rhs = "__pytra_float(" + right + ")"
+            lhs = _coerce_float_expr(left_node, cur_left)
+            rhs = _coerce_float_expr(comp_node, right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         else:
             parts.append("(" + cur_left + " " + symbol + " " + right + ")")
@@ -612,7 +692,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_math_args: list[str] = []
                 i = 0
                 while i < len(args):
-                    rendered_math_args.append("__pytra_float(" + _render_expr(args[i]) + ")")
+                    rendered_math_args.append(_coerce_float_expr(args[i], _render_expr(args[i])))
                     i += 1
                 return "math." + _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
         if attr_name == "isdigit" and len(args) == 0:
@@ -1317,7 +1397,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return_type_any = ctx.get("return_type")
             return_type = return_type_any if isinstance(return_type_any, str) else ""
             if return_type not in {"", "any"}:
-                value = _cast_from_any(value, return_type)
+                value = _cast_from_any(value, return_type, stmt.get("value"), _type_map(ctx))
             return [indent + "return " + value]
         return [indent + "return"]
 
@@ -1380,7 +1460,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         else:
             value = _render_expr(stmt_value)
             if go_type != "any":
-                value = _cast_from_any(value, go_type)
+                value = _cast_from_any(value, go_type, stmt_value, _type_map(ctx))
         if target_is_name and target not in used_names:
             if stmt_value is None:
                 return []
@@ -1393,7 +1473,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if target in type_map and type_map[target] != "any":
                 if stmt_value is None:
                     return [indent + target + " = " + _default_return_expr(type_map[target])]
-                return [indent + target + " = " + _cast_from_any(_render_expr(stmt_value), type_map[target])]
+                return [indent + target + " = " + _cast_from_any(_render_expr(stmt_value), type_map[target], stmt_value, _type_map(ctx))]
             return [indent + target + " = " + value]
 
         declared.add(target)
@@ -1444,7 +1524,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if stmt.get("declare"):
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "any":
-                    return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+                    return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs], stmt.get("value"), _type_map(ctx))]
                 return [indent + lhs + " = " + value]
             go_type = _go_type(stmt.get("decl_type"), allow_void=False)
             if go_type == "any":
@@ -1452,7 +1532,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 if inferred != "any":
                     go_type = inferred
             if go_type != "any":
-                value = _cast_from_any(value, go_type)
+                value = _cast_from_any(value, go_type, stmt.get("value"), _type_map(ctx))
             declared.add(lhs)
             type_map[lhs] = go_type
             return [indent + "var " + lhs + " " + go_type + " = " + value]
@@ -1462,10 +1542,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             declared.add(lhs)
             type_map[lhs] = inferred
             if inferred != "any":
-                value = _cast_from_any(value, inferred)
+                value = _cast_from_any(value, inferred, stmt.get("value"), _type_map(ctx))
             return [indent + "var " + lhs + " " + inferred + " = " + value]
         if lhs in type_map and type_map[lhs] != "any":
-            return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+            return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs], stmt.get("value"), _type_map(ctx))]
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":

@@ -79,6 +79,13 @@ class Py2GoSmokeTest(unittest.TestCase):
         assert_no_generated_comments(self, go)
         assert_sample01_module_comments(self, go, prefix="//")
 
+    def test_sample01_reduces_redundant_numeric_cast_chains(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        self.assertNotIn("__pytra_float(__pytra_float(", go)
+        self.assertNotIn("__pytra_int(__pytra_int(", go)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
