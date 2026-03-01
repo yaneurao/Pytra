@@ -69,6 +69,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter.require_dep_any()` の string 化経路を明示し、selfhost C# 生成物の `require_dep(object)` 呼び出し由来 `CS1502/CS1503` を縮退した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter に `sorted()` lower（`OrderBy(...).ToList()`）を追加し、selfhost compile の先頭エラーを `sorted` 未解決から次段（`string * long`）へ前進させた。`test_py2cs_smoke.py` は 39 件で通過。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] C# emitter に文字列乗算（`\"...\" * n`）lower を追加し、selfhost compile の `CS0019 string * long` を先頭ブロッカーから除去した。`test_py2cs_smoke.py` は 40 件で通過し、先頭エラーは `CS0266 object -> bool` へ遷移した。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7`] `CodeEmitter` の hook 真偽判定を `any_to_bool(...)` 経由へ統一し、selfhost C# 生成物で `object` を直接 bool 評価していた経路を縮退した。`test_code_emitter.py`（47件）/`test_py2cs_smoke.py`（40件）通過のうえ、compile 先頭エラーは `CS0266` から `CS0029 (Dictionary<string,object> -> string)` へ遷移した。
 
 ## 現状固定（S1-01）
 
