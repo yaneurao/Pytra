@@ -742,7 +742,7 @@ def dict_any_get_str(src: dict[str, object], key: str, default_value: str = "") 
     if key in src:
         value = src[key]
         if isinstance(value, str):
-            return value
+            return str(value)
     return default_value
 
 
@@ -871,8 +871,10 @@ def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:
         if fn_name != "":
             symbols.add(fn_name)
         for arg_any in dict_any_get_list(stmt, "arg_order"):
-            if isinstance(arg_any, str) and arg_any != "":
-                symbols.add(arg_any)
+            if isinstance(arg_any, str):
+                arg_txt = dict_any_get_str({"_": arg_any}, "_")
+                if arg_txt != "":
+                    symbols.add(arg_txt)
     elif kind == "ClassDef":
         cls_name = dict_any_get_str(stmt, "name")
         if cls_name != "":
@@ -1233,7 +1235,7 @@ def dict_any_get_str_list(src: dict[str, object], key: str) -> list[str]:
         return out
     for item in value:
         if isinstance(item, str):
-            out.append(item)
+            out.append(dict_any_get_str({"_": item}, "_"))
     return out
 
 
@@ -1243,7 +1245,10 @@ def dict_any_get_list(src: dict[str, object], key: str) -> list[object]:
         return []
     value = src[key]
     if isinstance(value, list):
-        return value
+        out: list[object] = []
+        for item in value:
+            out.append(item)
+        return out
     return []
 
 
@@ -1253,7 +1258,11 @@ def dict_any_get_dict(src: dict[str, object], key: str) -> dict[str, object]:
         return {}
     value = src[key]
     if isinstance(value, dict):
-        return value
+        out: dict[str, object] = {}
+        for raw_key in value:
+            if isinstance(raw_key, str):
+                out[raw_key] = value[raw_key]
+        return out
     return {}
 
 
@@ -1267,7 +1276,7 @@ def dict_any_get_dict_list(src: dict[str, object], key: str) -> list[dict[str, o
         return out
     for item in value:
         if isinstance(item, dict):
-            out.append(item)
+            out.append(dict_any_get_dict({"_": item}, "_"))
     return out
 
 
@@ -1702,11 +1711,11 @@ def collect_import_modules(east_module: dict[str, object]) -> list[str]:
                     continue
                 name_any = ent_any.get("name")
                 if isinstance(name_any, str):
-                    append_unique_non_empty(out, seen, name_any)
+                    append_unique_non_empty(out, seen, dict_any_get_str({"_": name_any}, "_"))
         elif kind == "ImportFrom":
             module_any = stmt_any.get("module")
             if isinstance(module_any, str):
-                append_unique_non_empty(out, seen, module_any)
+                append_unique_non_empty(out, seen, dict_any_get_str({"_": module_any}, "_"))
     return out
 
 
