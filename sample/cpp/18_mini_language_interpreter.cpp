@@ -79,7 +79,7 @@ struct StmtNode : public PyObj {
 
 list<rc<Token>> tokenize(const list<str>& lines) {
     dict<str, int64> single_char_token_tags = dict<str, int64>{{"+", 1}, {"-", 2}, {"*", 3}, {"/", 4}, {"(", 5}, {")", 6}, {"=", 7}};
-    object single_char_token_kinds = make_object(list<str>{"PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"});
+    list<str> single_char_token_kinds = list<str>{"PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"};
     list<rc<Token>> tokens = list<rc<Token>>{};
     for (const auto& [line_index, source] : py_enumerate(lines)) {
         int64 i = 0;
@@ -332,12 +332,12 @@ int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_no
     return checksum;
 }
 
-object build_benchmark_source(int64 var_count, int64 loops) {
-    object lines = make_object(list<object>{});
+list<str> build_benchmark_source(int64 var_count, int64 loops) {
+    list<str> lines = list<str>{};
     
     // Declare initial variables.
     for (int64 i = 0; i < var_count; ++i) {
-        py_append(lines, make_object("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
+        lines.append(str("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
     }
     // Force evaluation of many arithmetic expressions.
     for (int64 i = 0; i < loops; ++i) {
@@ -345,24 +345,24 @@ object build_benchmark_source(int64 var_count, int64 loops) {
         int64 y = (i + 3) % var_count;
         int64 c1 = i % 7 + 1;
         int64 c2 = i % 11 + 2;
-        py_append(lines, make_object("v" + ::std::to_string(x) + " = (v" + ::std::to_string(x) + " * " + ::std::to_string(c1) + " + v" + ::std::to_string(y) + " + 10000) / " + ::std::to_string(c2)));
+        lines.append(str("v" + ::std::to_string(x) + " = (v" + ::std::to_string(x) + " * " + ::std::to_string(c1) + " + v" + ::std::to_string(y) + " + 10000) / " + ::std::to_string(c2)));
         if (i % 97 == 0)
-            py_append(lines, make_object("print v" + ::std::to_string(x)));
+            lines.append(str("print v" + ::std::to_string(x)));
     }
     // Print final values together.
-    py_append(lines, make_object("print (v0 + v1 + v2 + v3)"));
+    lines.append(str("print (v0 + v1 + v2 + v3)"));
     return lines;
 }
 
 void run_demo() {
-    object demo_lines = make_object(list<object>{});
-    py_append(demo_lines, make_object("let a = 10"));
-    py_append(demo_lines, make_object("let b = 3"));
-    py_append(demo_lines, make_object("a = (a + b) * 2"));
-    py_append(demo_lines, make_object("print a"));
-    py_append(demo_lines, make_object("print a / b"));
+    list<str> demo_lines = list<str>{};
+    demo_lines.append(str("let a = 10"));
+    demo_lines.append(str("let b = 3"));
+    demo_lines.append(str("a = (a + b) * 2"));
+    demo_lines.append(str("print a"));
+    demo_lines.append(str("print a / b"));
     
-    list<rc<Token>> tokens = tokenize(py_to_str_list_from_object(demo_lines));
+    list<rc<Token>> tokens = tokenize(demo_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);
     list<rc<StmtNode>> stmts = parser->parse_program();
     int64 checksum = execute(stmts, parser->expr_nodes, true);
@@ -370,9 +370,9 @@ void run_demo() {
 }
 
 void run_benchmark() {
-    object source_lines = build_benchmark_source(32, 120000);
+    list<str> source_lines = build_benchmark_source(32, 120000);
     float64 start = pytra::std::time::perf_counter();
-    list<rc<Token>> tokens = tokenize(py_to_str_list_from_object(source_lines));
+    list<rc<Token>> tokens = tokenize(source_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);
     list<rc<StmtNode>> stmts = parser->parse_program();
     int64 checksum = execute(stmts, parser->expr_nodes, false);

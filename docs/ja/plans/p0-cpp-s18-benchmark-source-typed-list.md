@@ -36,11 +36,12 @@
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として benchmark ソース構築の typed list 化を P0 で起票。
+- 2026-03-01: `list[str]` value-model トラッキング（関数 return / AnnAssign local / call coercion）を追加し、`build_benchmark_source`/`run_demo`/`run_benchmark` の `object + py_append + py_to_str_list_from_object` を除去した。`test_east3_cpp_bridge`（90件）・`test_py2cpp_codegen_issues`（83件）・`check_py2cpp_transpile`（134/134）・sample/18 parity（cpp）を通過。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01] `build_benchmark_source` と下流呼び出しを typed list へ寄せ、`object + py_append` を縮退する。
-- [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S1-01] `build_benchmark_source` から `tokenize`/`parse_program` までの型境界を棚卸しし、`list[str]` 維持条件を固定する。
-- [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-01] emitter を更新し、list 初期化/append/return を typed 経路で出力する。
-- [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-02] sample/18 回帰を追加し、`object lines` と `py_append(lines, ...)` の再発を防止する。
-- [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S3-01] transpile/unit/parity を再実行し、非退行を確認する。
+- [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01] `build_benchmark_source` と下流呼び出しを typed list へ寄せ、`object + py_append` を縮退する。
+- [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S1-01] `build_benchmark_source` から `tokenize`/`parse_program` までの型境界を棚卸しし、`list[str]` 維持条件を固定する。
+- [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-01] emitter を更新し、list 初期化/append/return を typed 経路で出力する。
+- [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-02] sample/18 回帰を追加し、`object lines` と `py_append(lines, ...)` の再発を防止する。
+- [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S3-01] transpile/unit/parity を再実行し、非退行を確認する。

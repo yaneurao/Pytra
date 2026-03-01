@@ -186,6 +186,10 @@ class CppTypeBridgeEmitter:
         if t_norm == "list[str]" and self._is_pyobj_runtime_list_type(at):
             if len(arg_node_dict) == 0:
                 return f"py_to_str_list_from_object({arg_txt})"
+            if self._node_kind_from_dict(arg_node_dict) == "Name":
+                arg_name = dict_any_get_str(arg_node_dict, "id", "")
+                if self._is_typed_list_str_name(arg_name):
+                    return arg_txt
             if not self._expr_is_stack_list_local(arg_node_dict):
                 return f"py_to_str_list_from_object({arg_txt})"
         if not self.is_any_like_type(at):

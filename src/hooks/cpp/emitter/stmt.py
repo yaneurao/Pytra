@@ -77,6 +77,11 @@ class CppStatementEmitter:
         ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
         ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
         ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
+        ann_t_norm = self.normalize_type_name(ann_t_str)
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+        force_typed_list_str = list_model == "pyobj" and ann_t_norm == "list[str]"
+        if force_typed_list_str:
+            t = self._cpp_list_value_model_type_text(ann_t_norm)
         if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
             t = self._cpp_list_value_model_type_text(ann_t_str)
         if rendered_val != "" and ann_t_str != "":
@@ -101,7 +106,9 @@ class CppStatementEmitter:
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
             if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
+                if force_typed_list_str:
+                    rendered_val = f"{t}{{}}"
+                elif stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
                     rendered_val = f"{t}{{}}"
                 elif (
                     self._is_pyobj_runtime_list_type(ann_t_str)
@@ -109,6 +116,20 @@ class CppStatementEmitter:
                     rendered_val = "make_object(list<object>{})"
                 else:
                     rendered_val = f"{t}{{}}"
+            elif force_typed_list_str and vkind == "List":
+                list_items: list[str] = []
+                for elem in self._dict_stmt_list(val.get("elements")):
+                    item_txt = self.render_expr(elem)
+                    elem_t = self.normalize_type_name(self.get_expr_type(elem))
+                    if self.is_any_like_type(elem_t):
+                        item_txt = self._coerce_any_expr_to_target_via_unbox(
+                            item_txt,
+                            elem,
+                            "str",
+                            "annassign:list[str]",
+                        )
+                    list_items.append(item_txt)
+                rendered_val = f"{t}{{{', '.join(list_items)}}}"
             elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
                 rendered_val = f"{t}{{}}"
             elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
@@ -166,6 +187,8 @@ class CppStatementEmitter:
                 picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(target_node))
             )
             self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
+            if force_typed_list_str and target_name_raw != "" and len(self.scope_stack) >= 2:
+                self.current_function_typed_list_str_locals.add(target_name_raw)
         if declare_stmt and not already_declared:
             self.emit(f"{t} {target} = {rendered_val};")
         else:
@@ -930,8 +953,7 @@ class CppStatementEmitter:
         src_expr = self.render_expr(src_node)
         if src_expr == "":
             return ""
-        typed_param_names = getattr(self, "current_function_typed_list_str_params", set())
-        if src_name in typed_param_names:
+        if self._is_typed_list_str_name(src_name):
             if len(args) >= 2:
                 start_expr = self.render_expr(args[1])
                 if start_expr == "":
@@ -1242,6 +1264,10 @@ class CppStatementEmitter:
         is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
         yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
         ret = self.cpp_type(stmt.get("return_type"))
+        ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
+        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
+        if (not is_generator) and list_model == "pyobj" and ret_t_norm == "list[str]":
+            ret = self._cpp_list_value_model_type_text(ret_t_norm)
         if is_generator:
             elem_type_for_cpp = yield_value_type
             if elem_type_for_cpp in {"", "unknown"}:
@@ -1257,7 +1283,6 @@ class CppStatementEmitter:
         fn_scope: set[str] = set()
         arg_names: list[str] = []
         typed_list_str_params: set[str] = set()
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "":
@@ -1327,6 +1352,7 @@ class CppStatementEmitter:
         prev_fn_non_escape = self.current_function_non_escape_summary
         prev_stack_list_locals = self.current_function_stack_list_locals
         prev_typed_list_str_params = getattr(self, "current_function_typed_list_str_params", set())
+        prev_typed_list_str_locals = getattr(self, "current_function_typed_list_str_locals", set())
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
@@ -1334,6 +1360,7 @@ class CppStatementEmitter:
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         self.current_function_stack_list_locals = set(stack_list_locals)
         self.current_function_typed_list_str_params = set(typed_list_str_params)
+        self.current_function_typed_list_str_locals = set()
         for i, an in enumerate(arg_names):
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
@@ -1362,6 +1389,7 @@ class CppStatementEmitter:
         self.current_function_non_escape_summary = prev_fn_non_escape
         self.current_function_stack_list_locals = prev_stack_list_locals
         self.current_function_typed_list_str_params = set(prev_typed_list_str_params)
+        self.current_function_typed_list_str_locals = set(prev_typed_list_str_locals)
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1

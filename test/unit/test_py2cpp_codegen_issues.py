@@ -508,6 +508,22 @@ def f() -> float:
         self.assertIn("return this->tokens[this->pos];", cpp)
         self.assertNotIn('obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")', cpp)
 
+    def test_sample18_pyobj_benchmark_source_lines_stay_typed_list_str(self) -> None:
+        src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("list<str> build_benchmark_source(int64 var_count, int64 loops) {", cpp)
+        self.assertIn("list<str> lines = list<str>{};", cpp)
+        self.assertIn("list<str> demo_lines = list<str>{};", cpp)
+        self.assertIn("list<str> source_lines = build_benchmark_source(32, 120000);", cpp)
+        self.assertIn("list<rc<Token>> tokens = tokenize(demo_lines);", cpp)
+        self.assertIn("list<rc<Token>> tokens = tokenize(source_lines);", cpp)
+        self.assertNotIn("object lines = make_object(list<object>{});", cpp)
+        self.assertNotIn("py_append(lines, ", cpp)
+        self.assertNotIn("object demo_lines = make_object(list<object>{});", cpp)
+        self.assertNotIn("py_to_str_list_from_object(demo_lines)", cpp)
+        self.assertNotIn("py_to_str_list_from_object(source_lines)", cpp)
+
     def test_sample18_parser_expect_uses_current_token_helper(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)

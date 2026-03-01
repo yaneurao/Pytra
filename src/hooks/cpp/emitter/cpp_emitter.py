@@ -237,6 +237,7 @@ class CppEmitter(
         self.current_function_non_escape_summary: dict[str, Any] = {}
         self.current_function_stack_list_locals: set[str] = set()
         self.current_function_typed_list_str_params: set[str] = set()
+        self.current_function_typed_list_str_locals: set[str] = set()
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
@@ -428,6 +429,14 @@ class CppEmitter(
         name = self.any_dict_get_str(node, "id", "")
         return self._is_stack_list_local_name(name)
 
+    def _is_typed_list_str_name(self, name: str) -> bool:
+        """現在関数で `list[str]` を value-model 扱いする識別子か判定する。"""
+        if name == "":
+            return False
+        if name in self.current_function_typed_list_str_params:
+            return True
+        return name in self.current_function_typed_list_str_locals
+
     def _uses_pyobj_runtime_list_expr(self, expr_node: Any) -> bool:
         """list 式が pyobj runtime list 経路（`py_*` 操作）を使うべきか判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -437,6 +446,9 @@ class CppEmitter(
             return False
         if self._expr_is_stack_list_local(node):
             return False
+        if self._node_kind_from_dict(node) == "Name":
+            if self._is_typed_list_str_name(self.any_dict_get_str(node, "id", "")):
+                return False
         expr_t = self.normalize_type_name(self.get_expr_type(node))
         if expr_t in {"", "unknown"}:
             expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))

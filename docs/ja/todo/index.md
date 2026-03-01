@@ -76,11 +76,11 @@
 
 文脈: [docs/ja/plans/p0-cpp-s18-benchmark-source-typed-list.md](../plans/p0-cpp-s18-benchmark-source-typed-list.md)
 
-1. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01] `build_benchmark_source` と下流呼び出しを typed list へ寄せ、`object + py_append` を縮退する。
-2. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S1-01] `build_benchmark_source` から `tokenize`/`parse_program` までの型境界を棚卸しし、`list[str]` 維持条件を固定する。
-3. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-01] emitter を更新し、list 初期化/append/return を typed 経路で出力する。
-4. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-02] sample/18 回帰を追加し、`object lines` と `py_append(lines, ...)` の再発を防止する。
-5. [ ] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S3-01] transpile/unit/parity を再実行し、非退行を確認する。
+1. [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01] `build_benchmark_source` と下流呼び出しを typed list へ寄せ、`object + py_append` を縮退する。
+2. [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S1-01] `build_benchmark_source` から `tokenize`/`parse_program` までの型境界を棚卸しし、`list[str]` 維持条件を固定する。
+3. [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-01] emitter を更新し、list 初期化/append/return を typed 経路で出力する。
+4. [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S2-02] sample/18 回帰を追加し、`object lines` と `py_append(lines, ...)` の再発を防止する。
+5. [x] [ID: P0-CPP-S18-BENCH-TYPED-LIST-01-S3-01] transpile/unit/parity を再実行し、非退行を確認する。
 
 ### P0: sample/13 向け `cpp_list_model=pyobj` の typed list 拡張（最優先）
 
