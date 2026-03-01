@@ -99,6 +99,28 @@ def _safe_ident(name: Any, fallback: str) -> str:
     return out
 
 
+def _arraybuffer_elem_scala_type(py_type_name: str) -> str:
+    if py_type_name in {"int", "int64", "uint8"}:
+        return "Long"
+    if py_type_name in {"float", "float64"}:
+        return "Double"
+    if py_type_name == "bool":
+        return "Boolean"
+    if py_type_name in {"str", "Path"}:
+        return "String"
+    return "Any"
+
+
+def _list_scala_type(type_name: str) -> str:
+    if not type_name.startswith("list[") or not type_name.endswith("]"):
+        return "mutable.ArrayBuffer[Any]"
+    inner = type_name[5:-1].strip()
+    elem_t = _arraybuffer_elem_scala_type(inner)
+    if elem_t == "Any":
+        return "mutable.ArrayBuffer[Any]"
+    return "mutable.ArrayBuffer[" + elem_t + "]"
+
+
 def _scala_string_literal(text: str) -> str:
     out = text.replace("\\", "\\\\")
     out = out.replace('"', '\\"')
@@ -171,12 +193,14 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
         return "String"
     if type_name == "Path":
         return "String"
-    if type_name.startswith("list[") or type_name.startswith("tuple["):
+    if type_name.startswith("list["):
+        return _list_scala_type(type_name)
+    if type_name.startswith("tuple["):
         return "mutable.ArrayBuffer[Any]"
     if type_name.startswith("dict["):
         return "mutable.LinkedHashMap[Any, Any]"
     if type_name in {"bytes", "bytearray"}:
-        return "mutable.ArrayBuffer[Any]"
+        return "mutable.ArrayBuffer[Long]"
     if type_name in {"unknown", "object", "any"}:
         return "Any"
     if type_name.isidentifier():
@@ -193,8 +217,8 @@ def _default_return_expr(scala_type: str) -> str:
         return "false"
     if scala_type == "String":
         return '""'
-    if scala_type == "mutable.ArrayBuffer[Any]":
-        return "mutable.ArrayBuffer[Any]()"
+    if scala_type.startswith("mutable.ArrayBuffer[") and scala_type.endswith("]"):
+        return scala_type + "()"
     if scala_type == "mutable.LinkedHashMap[Any, Any]":
         return "mutable.LinkedHashMap[Any, Any]()"
     if scala_type == "Unit":
@@ -712,11 +736,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "__pytra_path_new(" + _render_expr(args[0]) + ")"
     if callee_name == "bytearray":
         if len(args) == 0:
-            return "mutable.ArrayBuffer[Any]()"
+            return "mutable.ArrayBuffer[Long]()"
         return "__pytra_bytearray(" + _render_expr(args[0]) + ")"
     if callee_name == "bytes":
         if len(args) == 0:
-            return "mutable.ArrayBuffer[Any]()"
+            return "mutable.ArrayBuffer[Long]()"
         return "__pytra_bytes(" + _render_expr(args[0]) + ")"
     if callee_name == "int":
         if len(args) == 0:
@@ -946,9 +970,14 @@ def _render_expr(expr: Any) -> str:
         while i < len(elements):
             rendered.append(_render_expr(elements[i]))
             i += 1
+        list_type = "mutable.ArrayBuffer[Any]"
+        resolved_any = expr.get("resolved_type")
+        resolved = resolved_any if isinstance(resolved_any, str) else ""
+        if kind == "List" and resolved.startswith("list["):
+            list_type = _list_scala_type(resolved)
         if len(rendered) == 0:
-            return "mutable.ArrayBuffer[Any]()"
-        return "mutable.ArrayBuffer[Any](" + ", ".join(rendered) + ")"
+            return list_type + "()"
+        return list_type + "(" + ", ".join(rendered) + ")"
 
     if kind == "Dict":
         keys_any = expr.get("keys")
@@ -1149,7 +1178,7 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         if name == "Path":
             return "String"
         if name == "bytearray" or name == "bytes":
-            return "mutable.ArrayBuffer[Any]"
+            return "mutable.ArrayBuffer[Long]"
         if name == "len":
             return "Long"
         if name in {"min", "max"}:
@@ -1672,7 +1701,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 1:
-                        if owner_type == "mutable.ArrayBuffer[Any]":
+                        if owner_type.startswith("mutable.ArrayBuffer["):
                             return [indent + owner + ".append(" + _render_expr(args[0]) + ")"]
                         return [indent + owner + " = " + _to_list_expr(owner) + "; " + owner + ".append(" + _render_expr(args[0]) + ")"]
                 if attr == "pop":
