@@ -67,6 +67,31 @@ class Child(Base):
             cs = transpile_to_csharp(east)
         self.assertIn("public class Child : Base", cs)
 
+    def test_inheritance_virtual_dispatch_fixture_emits_override_and_base_call(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("public virtual string speak()", cs)
+        self.assertIn("public override string speak()", cs)
+        self.assertIn('return "loud-" + base.speak();', cs)
+        self.assertIn("System.Console.WriteLine(true);", cs)
+
+    def test_super_init_lowers_to_base_constructor_initializer(self) -> None:
+        src = """class Base:
+    def __init__(self, x: int):
+        self.x = x
+
+class Child(Base):
+    def __init__(self, x: int):
+        super().__init__(x)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "super_init.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+        self.assertIn("public Child(long x) : base(x)", cs)
+
     def test_attribute_annassign_uses_type_hint_for_set_and_dict_literals(self) -> None:
         src = """class Holder:
     def __init__(self):

@@ -109,6 +109,8 @@ class CSharpEmitter(CodeEmitter):
         self.declared_var_types: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_base_map: dict[str, str] = {}
+        self.class_method_map: dict[str, set[str]] = {}
+        self.class_children_map: dict[str, list[str]] = {}
         self.current_class_name: str = ""
         self.current_class_field_types: dict[str, str] = {}
         self.in_method_scope: bool = False
@@ -1051,6 +1053,66 @@ class CSharpEmitter(CodeEmitter):
                 out[child] = base
         return out
 
+    def _collect_class_method_map(self, body: list[dict[str, Any]]) -> dict[str, set[str]]:
+        """ClassDef ごとのインスタンスメソッド名集合を抽出する。"""
+        out: dict[str, set[str]] = {}
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") != "ClassDef":
+                continue
+            class_name = self.any_to_str(stmt.get("name"))
+            if class_name == "":
+                continue
+            method_names: set[str] = set()
+            for member in self._dict_stmt_list(stmt.get("body")):
+                if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
+                    continue
+                method_name = self.any_to_str(member.get("name"))
+                if method_name == "" or method_name == "__init__":
+                    continue
+                decorators = set(self.any_to_str_list(member.get("decorators")))
+                if "staticmethod" in decorators or "classmethod" in decorators:
+                    continue
+                method_names.add(method_name)
+            out[class_name] = method_names
+        return out
+
+    def _collect_class_children_map(self) -> dict[str, list[str]]:
+        """`base -> [children]` の逆引き継承表を構築する。"""
+        out: dict[str, list[str]] = {}
+        for child, base in self.class_base_map.items():
+            if base == "":
+                continue
+            if base not in out:
+                out[base] = []
+            out[base].append(child)
+        return out
+
+    def _method_overrides_base(self, class_name: str, method_name: str) -> bool:
+        """クラスメソッドが基底クラス定義を override するか判定する。"""
+        cur = self.class_base_map.get(class_name, "")
+        while cur != "":
+            if method_name in self.class_method_map.get(cur, set()):
+                return True
+            cur = self.class_base_map.get(cur, "")
+        return False
+
+    def _method_overridden_in_descendants(self, class_name: str, method_name: str) -> bool:
+        """クラスメソッドが派生側で再定義されるか判定する。"""
+        stack: list[str] = []
+        seen: set[str] = set()
+        for child in self.class_children_map.get(class_name, []):
+            stack.append(child)
+        while len(stack) > 0:
+            cur = stack.pop()
+            if cur in seen:
+                continue
+            seen.add(cur)
+            if method_name in self.class_method_map.get(cur, set()):
+                return True
+            for child in self.class_children_map.get(cur, []):
+                stack.append(child)
+        return False
+
     def transpile(self) -> str:
         """モジュール全体を C# ソースへ変換する。"""
         self.lines: list[str] = []
@@ -1076,12 +1138,16 @@ class CSharpEmitter(CodeEmitter):
 
         self.class_names = set()
         self.class_base_map = {}
+        self.class_method_map = {}
+        self.class_children_map = {}
         for stmt in body:
             if self.any_dict_get_str(stmt, "kind", "") == "ClassDef":
                 name = self.any_to_str(stmt.get("name"))
                 if name != "":
                     self.class_names.add(name)
         self.class_base_map = self._collect_class_base_map(body)
+        self.class_method_map = self._collect_class_method_map(body)
+        self.class_children_map = self._collect_class_children_map()
 
         top_level_stmts: list[dict[str, Any]] = []
         function_stmts: list[dict[str, Any]] = []
@@ -1359,6 +1425,31 @@ class CSharpEmitter(CodeEmitter):
             cs_t = "object"
         return "public static " + cs_t + " " + self._safe_name(name_raw) + " = " + self.render_expr(value_obj) + ";"
 
+    def _extract_super_init_ctor_args(self, stmt: dict[str, Any]) -> list[str] | None:
+        """`super().__init__(...)` 形の文から base ctor 引数を抽出する。"""
+        if self.any_dict_get_str(stmt, "kind", "") != "Expr":
+            return None
+        value = self.any_to_dict_or_empty(stmt.get("value"))
+        if self.any_dict_get_str(value, "kind", "") != "Call":
+            return None
+        func = self.any_to_dict_or_empty(value.get("func"))
+        if self.any_dict_get_str(func, "kind", "") != "Attribute":
+            return None
+        if self.any_dict_get_str(func, "attr", "") != "__init__":
+            return None
+        owner_call = self.any_to_dict_or_empty(func.get("value"))
+        if self.any_dict_get_str(owner_call, "kind", "") != "Call":
+            return None
+        owner_fn = self.any_to_dict_or_empty(owner_call.get("func"))
+        if self.any_dict_get_str(owner_fn, "kind", "") != "Name":
+            return None
+        if self.any_dict_get_str(owner_fn, "id", "") != "super":
+            return None
+        out: list[str] = []
+        for arg in self.any_to_list(value.get("args")):
+            out.append(self.render_expr(arg))
+        return out
+
     def _emit_function(self, fn: dict[str, Any], in_class: str | None) -> None:
         """FunctionDef を C# メソッドとして出力する。"""
         prev_declared: dict[str, str] = dict(self.declared_var_types)
@@ -1379,6 +1470,7 @@ class CSharpEmitter(CodeEmitter):
         has_static_decorator = "staticmethod" in decorators or "classmethod" in decorators
         emit_static = in_class is None or has_static_decorator
         method_return_cs = "void"
+        body = self._dict_stmt_list(fn.get("body"))
 
         if in_class is not None:
             if has_static_decorator:
@@ -1421,7 +1513,14 @@ class CSharpEmitter(CodeEmitter):
         if is_constructor:
             class_name = self._safe_name(in_class if in_class is not None else "")
             self.current_return_east_type = "None"
-            self.emit("public " + class_name + "(" + ", ".join(args) + ")")
+            ctor_sig = "public " + class_name + "(" + ", ".join(args) + ")"
+            base_ctor_args: list[str] | None = None
+            if len(body) > 0:
+                base_ctor_args = self._extract_super_init_ctor_args(body[0])
+            if base_ctor_args is not None:
+                ctor_sig += " : base(" + ", ".join(base_ctor_args) + ")"
+                body = body[1:]
+            self.emit(ctor_sig)
         else:
             ret_east = self.normalize_type_name(self.any_to_str(fn.get("return_type")))
             self.current_return_east_type = ret_east
@@ -1430,10 +1529,15 @@ class CSharpEmitter(CodeEmitter):
                 ret_cs = "void"
             method_return_cs = ret_cs
             static_kw = "static " if emit_static else ""
-            self.emit("public " + static_kw + ret_cs + " " + fn_name + "(" + ", ".join(args) + ")")
+            method_kw = ""
+            if in_class is not None and not emit_static:
+                if self._method_overrides_base(in_class, fn_name_raw):
+                    method_kw = "override "
+                elif self._method_overridden_in_descendants(in_class, fn_name_raw):
+                    method_kw = "virtual "
+            self.emit("public " + method_kw + static_kw + ret_cs + " " + fn_name + "(" + ", ".join(args) + ")")
 
         self.emit("{")
-        body = self._dict_stmt_list(fn.get("body"))
         has_return_stmt = False
         has_non_pass_stmt = False
         for st in body:
@@ -2082,6 +2186,20 @@ class CSharpEmitter(CodeEmitter):
             if len(rendered_args) == 1:
                 return "System.Console.WriteLine(" + rendered_args[0] + ")"
             return "System.Console.WriteLine(string.Join(\" \", new object[] { " + ", ".join(rendered_args) + " }))"
+        if fn_name_raw == "py_assert_stdout":
+            return "true"
+        if fn_name_raw == "py_assert_eq":
+            if len(rendered_args) >= 2:
+                return "System.Object.Equals(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+            return "false"
+        if fn_name_raw == "py_assert_true":
+            if len(rendered_args) >= 1:
+                return "Pytra.CsModule.py_runtime.py_bool(" + rendered_args[0] + ")"
+            return "false"
+        if fn_name_raw == "py_assert_all":
+            if len(rendered_args) >= 1:
+                return "System.Linq.Enumerable.All(" + rendered_args[0] + ", __x => System.Convert.ToBoolean(__x))"
+            return "false"
         if fn_name_raw == "len" and len(rendered_args) == 1:
             return self._render_len_call(rendered_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None)
         if fn_name_raw == "ord" and len(rendered_args) == 1:
@@ -2166,6 +2284,12 @@ class CSharpEmitter(CodeEmitter):
         owner_name = ""
         if owner_kind == "Name":
             owner_name = self.any_dict_get_str(owner_node, "id", "")
+        if owner_kind == "Call":
+            super_fn = self.any_to_dict_or_empty(owner_node.get("func"))
+            if self.any_dict_get_str(super_fn, "kind", "") == "Name" and self.any_dict_get_str(super_fn, "id", "") == "super":
+                if attr_raw == "__init__":
+                    return "base(" + ", ".join(rendered_args) + ")"
+                return "base." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "math":
             return "Pytra.CsModule.math." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "png":
