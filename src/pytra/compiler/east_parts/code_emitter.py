@@ -740,24 +740,37 @@ class CodeEmitter:
         """汎用ブロック終端行を出力する。"""
         self.emit(self.syntax_text("block_close", "}"))
 
-    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
+    def _normalize_scope_names(self, scope_names: Any) -> set[str]:
+        out: set[str] = set()
+        raw_scope = scope_names
+        if not isinstance(raw_scope, set):
+            return out
+        for item in raw_scope:
+            txt = self.any_to_str(item)
+            if txt == "" and item is not None:
+                txt = str(item)
+            if txt != "":
+                out.add(txt)
+        return out
+
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: Any) -> None:
         """現在 indent 位置でスコープを1段積み、文リストを出力する。"""
         self.indent += 1
-        self.scope_stack.append(scope_names)
+        self.scope_stack.append(self._normalize_scope_names(scope_names))
         self.emit_stmt_list(stmts)
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_with_scope(self, scope_names: set[str], body_fn: list[dict[str, Any]]) -> None:
+    def emit_with_scope(self, scope_names: Any, body_fn: list[dict[str, Any]]) -> None:
         """現在 indent 位置でスコープを1段積み、文リスト本体を出力する。"""
         self.indent += 1
-        self.scope_stack.append(scope_names)
+        self.scope_stack.append(self._normalize_scope_names(scope_names))
         for stmt in body_fn:
             self.emit_stmt(stmt)
         self.scope_stack.pop()
         self.indent -= 1
 
-    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: Any) -> None:
         """`open_line` を出力し、スコープ付きで文リストを出して block を閉じる。"""
         self.emit(open_line)
         self.emit_scoped_stmt_list(stmts, scope_names)
@@ -767,13 +780,13 @@ class CodeEmitter:
         self,
         open_line: str,
         stmts: list[dict[str, Any]],
-        scope_names: set[str],
+        scope_names: Any,
         tail_lines: list[str],
     ) -> None:
         """スコープ付き block の末尾へ生テキスト行を挿入して閉じる。"""
         self.emit(open_line)
         self.indent += 1
-        self.scope_stack.append(scope_names)
+        self.scope_stack.append(self._normalize_scope_names(scope_names))
         self.emit_stmt_list(stmts)
         for line in tail_lines:
             self.emit(line)
