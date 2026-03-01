@@ -158,3 +158,17 @@ class PytraCliTest(unittest.TestCase):
             self.assertIn(str(pytra_cli_mod.PY2RS), " ".join(calls[0][0]))
             out_idx = calls[0][0].index("--output")
             self.assertEqual(Path(calls[0][0][out_idx + 1]), out_dir / "my_case.rs")
+
+    def test_transpile_scala_uses_output_dir_with_input_stem(self) -> None:
+        calls: list[tuple[list[str], str | None]] = []
+        runner = self._fake_run(calls)
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "my_case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            out_dir = Path(work) / "out_scala"
+            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+                rc = pytra_cli_mod.main([str(src), "--target", "scala", "--output-dir", str(out_dir)])
+            self.assertEqual(rc, 0)
+            self.assertIn(str(pytra_cli_mod.PY2SCALA), " ".join(calls[0][0]))
+            out_idx = calls[0][0].index("--output")
+            self.assertEqual(Path(calls[0][0][out_idx + 1]), out_dir / "my_case.scala")
