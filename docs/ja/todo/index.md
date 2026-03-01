@@ -32,6 +32,7 @@
 
 ## 未完了タスク
 
+
 ### P0: Scala3 parity 全通過化（sample + fixture）
 
 文脈: [docs/ja/plans/p0-scala3-full-parity-rollout.md](../plans/p0-scala3-full-parity-rollout.md)
@@ -46,77 +47,6 @@
 8. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-01] `runtime_parity_check` の Scala artifact optional を撤去し、関連 unit テストを更新する。
 9. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-02] Scala parity の再実行導線（専用チェック）を追加し、CI/ローカル手順を固定する。
 10. [ ] [ID: P0-SCALA3-PARITY-ALL-01-S3-03] parity 実行結果を確認し、`how-to-use` と `spec-tools` の Scala 手順を同期する。
-
-### P0: EAST3主導の安全 `reserve` 最適化（無条件append限定）
-
-文脈: [docs/ja/plans/p0-east3-safe-reserve-hint.md](../plans/p0-east3-safe-reserve-hint.md)
-
-1. [x] [ID: P0-EAST3-SAFE-RESERVE-01] `reserve` は「無条件 append かつループ回数事前確定」時のみ有効化し、判定責務を EAST3 側へ移す。
-2. [x] [ID: P0-EAST3-SAFE-RESERVE-01-S1-01] EAST3 で `reserve` 対象とする ForCore 条件（無条件 append / 静的 range / stop不変）を仕様化する。
-3. [x] [ID: P0-EAST3-SAFE-RESERVE-01-S1-02] EAST3 `reserve` ヒントのデータ形（owner・件数式・安全性フラグ）を定義する。
-4. [x] [ID: P0-EAST3-SAFE-RESERVE-01-S2-01] EAST3 optimizer pass を追加し、適格ループにのみ `reserve` ヒントを付与する。
-5. [x] [ID: P0-EAST3-SAFE-RESERVE-01-S2-02] C++ emitter の `capture` 由来 `reserve` 推定を撤去し、EAST3 ヒント参照に切り替える。
-6. [x] [ID: P0-EAST3-SAFE-RESERVE-01-S3-01] `sample/18` 再生成で不適切 `reserve` 非出力を固定し、回帰テストを更新する。
-7. [x] [ID: P0-EAST3-SAFE-RESERVE-01-S3-02] `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` で非退行を確認する。
-
-### P0: sample/18 C++ 同型 cast 連鎖の追加削減
-
-文脈: [docs/ja/plans/p0-cpp-s18-samecast-chain-reduction.md](../plans/p0-cpp-s18-samecast-chain-reduction.md)
-
-1. [x] [ID: P0-CPP-S18-SAMECAST-02] sample/18 の `int64(py_to<int64>(...))` など同型 cast 連鎖を削減する。
-2. [x] [ID: P0-CPP-S18-SAMECAST-02-S1-01] 冗長 cast 発生点（dict取得/補助関数戻り値）を棚卸しし、削減対象を固定する。
-3. [x] [ID: P0-CPP-S18-SAMECAST-02-S2-01] EAST3 cast cleanup / C++ emitter 条件を更新し、同型 cast 連鎖を縮退する。
-4. [x] [ID: P0-CPP-S18-SAMECAST-02-S2-02] 回帰テストを追加し、`int64(py_to<int64>(...))` 再発を検知する。
-5. [x] [ID: P0-CPP-S18-SAMECAST-02-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
-
-### P0: sample/18 C++ `rc` 不要コピー削減
-
-文脈: [docs/ja/plans/p0-cpp-s18-rc-copy-reduction.md](../plans/p0-cpp-s18-rc-copy-reduction.md)
-
-1. [x] [ID: P0-CPP-S18-RC-COPY-02] sample/18 の読み取り専用 `rc` 経路を参照受けへ寄せ、不要コピーを削減する。
-2. [x] [ID: P0-CPP-S18-RC-COPY-02-S1-01] `rc` コピー発生点（range-for / 添字一時束縛）を棚卸しし、参照化条件を定義する。
-3. [x] [ID: P0-CPP-S18-RC-COPY-02-S2-01] C++ emitter 出力を更新し、読み取り専用経路を `const` 参照へ縮退する。
-4. [x] [ID: P0-CPP-S18-RC-COPY-02-S2-03] 添字アクセス由来の一時 `rc` 束縛を、安全条件付きで `const` 参照へ縮退する。
-5. [x] [ID: P0-CPP-S18-RC-COPY-02-S2-02] 回帰テストを追加し、`rc` 値コピー再発を検知する。
-6. [x] [ID: P0-CPP-S18-RC-COPY-02-S3-01] sample/18 再生成と transpile 回帰で非退行を確認する。
-
-### P0: sample/18 C++ クラス生成の初期化リスト化
-
-文脈: [docs/ja/plans/p0-cpp-s18-ctor-initlist.md](../plans/p0-cpp-s18-ctor-initlist.md)
-
-1. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01] sample/18 生成クラスの合成コンストラクタを初期化リスト形式へ移行する。
-2. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S1-01] 現行 constructor 出力を棚卸しし、初期化リスト化対象と除外条件を固定する。
-3. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-01] class emitter の合成コンストラクタ出力を初期化リスト形式へ変更する。
-4. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S2-02] 回帰テストを追加し、本文代入形式の再発を検知する。
-5. [x] [ID: P0-CPP-S18-CTOR-INITLIST-01-S3-01] sample/18 再生成差分と transpile 回帰で非退行を確認する。
-
-### P0: 非C++ 継承メソッド動的ディスパッチ改善（全backend）
-
-文脈: [docs/ja/plans/p0-multilang-inheritance-dispatch-rollout.md](../plans/p0-multilang-inheritance-dispatch-rollout.md)
-
-1. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01] 非C++ backend で継承メソッド動的ディスパッチと `super()` を Python 互換へ揃える。
-2. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java 改善計画 [p0-java-inheritance-dispatch-uplift.md](../plans/p0-java-inheritance-dispatch-uplift.md) を実施する。
-3. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS 改善計画 [p0-js-inheritance-dispatch-uplift.md](../plans/p0-js-inheritance-dispatch-uplift.md) を実施する。
-4. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS 改善計画 [p0-ts-inheritance-dispatch-uplift.md](../plans/p0-ts-inheritance-dispatch-uplift.md) を実施する。
-5. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin 改善計画 [p0-kotlin-inheritance-dispatch-uplift.md](../plans/p0-kotlin-inheritance-dispatch-uplift.md) を実施する。
-6. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift 改善計画 [p0-swift-inheritance-dispatch-uplift.md](../plans/p0-swift-inheritance-dispatch-uplift.md) を実施する。
-7. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust 改善計画 [p0-rs-inheritance-dispatch-uplift.md](../plans/p0-rs-inheritance-dispatch-uplift.md) を実施する。
-8. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Ruby 改善計画 [p0-ruby-inheritance-dispatch-uplift.md](../plans/p0-ruby-inheritance-dispatch-uplift.md) を実施する。
-9. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-LUA] Lua 改善計画 [p0-lua-inheritance-dispatch-uplift.md](../plans/p0-lua-inheritance-dispatch-uplift.md) を実施する。
-10. [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] 全 backend の parity/smoke 結果を集約し、未達 blocker を分離管理する。
-
-### P1: EAST2 を最初の共通 IR へ再定義（Python 依存排除）
-
-文脈: [docs/ja/plans/p1-east2-common-ir-depythonization.md](../plans/p1-east2-common-ir-depythonization.md)
-
-1. [x] [ID: P1-EAST2-COMMON-IR-01] EAST2 を最初の共通 IR として再定義し、Python 固有契約を frontend 境界へ隔離する。
-2. [x] [ID: P1-EAST2-COMMON-IR-01-S1-01] EAST2/EAST2->EAST3 lower の Python 依存箇所（`py_*` runtime call、builtin 名直参照）を棚卸しする。
-3. [x] [ID: P1-EAST2-COMMON-IR-01-S1-02] EAST2 共通 IR 仕様（ノード/演算/メタ/診断/fail-closed）を文書化する。
-4. [x] [ID: P1-EAST2-COMMON-IR-01-S2-01] Python 固有の builtins/std 解決を frontend adapter 層へ移し、EAST2 契約から切り離す。
-5. [x] [ID: P1-EAST2-COMMON-IR-01-S2-02] `east2_to_east3_lowering.py` を中立契約ベースへ再配線し、Python 名称分岐を縮小・除去する。
-6. [x] [ID: P1-EAST2-COMMON-IR-01-S2-03] 既存 Python 入力非退行のため、段階移行ブリッジ（暫定互換）を導入する。
-7. [x] [ID: P1-EAST2-COMMON-IR-01-S3-01] EAST2 へ Python 依存契約が再混入した場合の回帰テストを追加する。
-8. [x] [ID: P1-EAST2-COMMON-IR-01-S3-02] transpile/smoke/parity の代表ケースで非退行を確認し、移行結果を文書化する。
 
 ### P1: sample/go/01 品質改善（C++品質との差分縮小）
 
