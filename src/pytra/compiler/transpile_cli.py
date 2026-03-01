@@ -806,35 +806,35 @@ def stmt_child_stmt_lists(stmt: dict[str, object]) -> list[list[dict[str, object
     return out
 
 
-def collect_store_names_from_target(target: dict[str, object], out: set[str]) -> None:
+def collect_store_names_from_target(target: dict[str, object], out_names: set[str]) -> None:
     """代入先 target から束縛名を抽出する。"""
     kind = dict_any_kind(target)
     if kind == "Name":
         ident = dict_any_get_str(target, "id")
         if ident != "":
-            out.add(ident)
+            out_names.add(ident)
         return
     if kind == "Tuple" or kind == "List":
         for ent in dict_any_get_dict_list(target, "elements"):
-            collect_store_names_from_target(ent, out)
+            collect_store_names_from_target(ent, out_names)
 
 
-def collect_store_names_from_target_plan(target_plan: dict[str, object], out: set[str]) -> None:
+def collect_store_names_from_target_plan(target_plan: dict[str, object], out_names: set[str]) -> None:
     """EAST3 `target_plan` から束縛名を抽出する。"""
     kind = dict_any_kind(target_plan)
     if kind == "NameTarget":
         ident = dict_any_get_str(target_plan, "id")
         if ident != "":
-            out.add(ident)
+            out_names.add(ident)
         return
     if kind == "TupleTarget":
         for ent in dict_any_get_dict_list(target_plan, "elements"):
-            collect_store_names_from_target_plan(ent, out)
+            collect_store_names_from_target_plan(ent, out_names)
         return
     if kind == "ExprTarget":
         target = dict_any_get_dict(target_plan, "target")
         if len(target) > 0:
-            collect_store_names_from_target(target, out)
+            collect_store_names_from_target(target, out_names)
 
 
 def stmt_list_parse_metrics(body: list[dict[str, object]], depth: int) -> tuple[int, int]:
@@ -1322,9 +1322,9 @@ def path_key_for_graph(p: Path) -> str:
     return str(p)
 
 
-def rel_disp_for_graph(base: Path, p: Path) -> str:
-    """表示用に `base` からの相対パス文字列を返す。"""
-    base_txt = str(base)
+def rel_disp_for_graph(base_path: Path, p: Path) -> str:
+    """表示用に `base_path` からの相対パス文字列を返す。"""
+    base_txt = str(base_path)
     p_txt = str(p)
     base_prefix = base_txt if base_txt.endswith("/") else base_txt + "/"
     if p_txt.startswith(base_prefix):
@@ -1577,9 +1577,9 @@ def collect_reserved_import_conflicts(root: Path) -> list[str]:
     return out
 
 
-def format_graph_list_section(out: str, label: str, items: list[str]) -> str:
+def format_graph_list_section(section_text: str, label: str, items: list[str]) -> str:
     """依存解析レポートの1セクションを追記して返す。"""
-    out2 = out + label + ":\n"
+    out2 = section_text + label + ":\n"
     if len(items) == 0:
         out2 += "  (none)\n"
         return out2

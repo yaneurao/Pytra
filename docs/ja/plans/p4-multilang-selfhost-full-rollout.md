@@ -94,6 +94,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] stage1/multistage checker に C# 生成物の空 skeleton 判定（`__pytra_main` 欠落）を追加し、`output missing` だった曖昧な失敗分類を `stage2 output is empty skeleton` / `stage2 transpiler output is empty skeleton` へ更新した。これにより次の実装焦点を「selfhost parser stub の実動化」に固定した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# runtime へ `std/json.cs` を追加し、`json.loads/json.dumps` を emitter から runtime 呼び出しへ切り替えた。`load_east_document` の JSON 受け口（`payload_any`）と `dict_any_get_dict` selfhost パッチを `dict(value)` 経路へ整合させ、stage2 の `Unhandled Exception (Invalid EAST JSON format)` を解消した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] 再計測で `stage1` は `cs: stage2 output is empty skeleton`、`multistage` は `cs: stage2=pass / stage3=fail (stage2_compile_fail)` へ遷移し、先頭失敗を `py2cs_stage2.cs(671): error CS1525 Unexpected symbol 'base'` に更新した。次ブロッカーは selfhost 2段目生成物の予約語（`base`/`out`）混入を含む compile-safe 出力整備。
+- 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `base/out` 予約語衝突を source 側（`CodeEmitter` / `transpile_cli` / `CSharpEmitter`）で解消し、C# using alias（`str/int64/float64/Any`）を追加した。これにより `CS1525` は解消し、multistage の先頭失敗は `CS0161: not all code paths return a value`（skeleton 化した non-void 関数群）へ前進した。
 
 ## 現状固定（S1-01）
 
