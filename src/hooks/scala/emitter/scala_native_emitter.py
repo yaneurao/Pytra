@@ -637,6 +637,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
+        if attr_name == "get":
+            if len(args) == 0:
+                return "__pytra_any_default()"
+            key_expr = _render_expr(args[0])
+            default_expr = "__pytra_any_default()"
+            if len(args) >= 2:
+                default_expr = _render_expr(args[1])
+            owner_expr = _render_expr(owner_any)
+            return "__pytra_as_dict(" + owner_expr + ").getOrElse(__pytra_str(" + key_expr + "), " + default_expr + ")"
         owner_expr = _render_expr(owner_any)
         if attr_name == "write_rgb_png":
             rendered_args_png: list[str] = []
@@ -753,6 +762,22 @@ def _render_expr(expr: Any) -> str:
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
+        if len(keys) == 0 or len(vals) == 0:
+            entries_any = expr.get("entries")
+            entries = entries_any if isinstance(entries_any, list) else []
+            parts: list[str] = []
+            i = 0
+            while i < len(entries):
+                entry = entries[i]
+                if isinstance(entry, dict):
+                    key_any = entry.get("key")
+                    value_any = entry.get("value")
+                    if isinstance(key_any, dict):
+                        parts.append("(__pytra_str(" + _render_expr(key_any) + "), " + _render_expr(value_any) + ")")
+                i += 1
+            if len(parts) == 0:
+                return "mutable.LinkedHashMap[Any, Any]()"
+            return "mutable.LinkedHashMap[Any, Any](" + ", ".join(parts) + ")"
         if len(keys) == 0 or len(vals) == 0:
             return "mutable.LinkedHashMap[Any, Any]()"
         parts: list[str] = []
