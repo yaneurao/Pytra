@@ -39,7 +39,7 @@
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JAVA] Java backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-JS] JS backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-TS] TS backend の継承メソッド dispatch/`super()` 対応を完了する。
-- [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin backend の継承メソッド dispatch/`super()` 対応を完了する。
+- [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-KOTLIN] Kotlin backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-SWIFT] Swift backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RS] Rust backend の継承メソッド dispatch/`super()` 対応を完了する。
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S2-RUBY] Ruby backend の継承メソッド dispatch/`super()` 対応を完了する。
@@ -56,3 +56,4 @@
 - 2026-03-01: Java（`S2-JAVA`）を実施し、`super().method(...)` を `super.method(...)` へ lower 修正。`test_py2java_smoke.py`（23 tests）と `runtime_parity_check --targets java`（1/1 pass）を確認した。
 - 2026-03-01: JS（`S2-JS`）を実施し、`class ... extends ...` と `super` lower（`super().__init__` / `super().method`）を追加。`test_py2js_smoke.py`（23 tests）と `runtime_parity_check --targets js`（1/1 pass）を確認した。
 - 2026-03-01: TS（`S2-TS`）は JS 委譲経路のため、JS 修正追従後に `test_py2ts_smoke.py`（15 tests）と `runtime_parity_check --targets ts`（1/1 pass）を確認して完了扱いとした。
+- 2026-03-01: Kotlin（`S2-KOTLIN`）を実施し、`open/override` 解析と `super().method` の `super.method` lower を追加。`test_py2kotlin_smoke.py`（13 tests）と `runtime_parity_check --targets kotlin`（1/1 pass）を確認した。

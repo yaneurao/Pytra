@@ -37,6 +37,8 @@ _KOTLIN_KEYWORDS = {
 
 _CLASS_NAMES: set[str] = set()
 _FUNCTION_NAMES: set[str] = set()
+_CLASS_BASES: dict[str, str] = {}
+_CLASS_METHODS: dict[str, set[str]] = {}
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -162,6 +164,16 @@ def _default_return_expr(kotlin_type: str) -> str:
     if kotlin_type == "Any?":
         return "null"
     return kotlin_type + "()"
+
+
+def _class_has_base_method(class_name: str, method_name: str) -> bool:
+    base = _CLASS_BASES.get(class_name, "")
+    while base != "":
+        methods = _CLASS_METHODS.get(base, set())
+        if method_name in methods:
+            return True
+        base = _CLASS_BASES.get(base, "")
+    return False
 
 
 def _tuple_element_types(type_name: Any) -> list[str]:
@@ -590,9 +602,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
-        if attr_name == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) in {"super", "super_"}:
-                return "__pytra_noop()"
+                rendered_super_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_super_args.append(_render_expr(args[i]))
+                    i += 1
+                if attr_name == "__init__":
+                    return "__pytra_noop()"
+                return "super." + attr_name + "(" + ", ".join(rendered_super_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
             if owner == "math":
@@ -1493,8 +1512,9 @@ def _block_guarantees_return(body: list[Any]) -> bool:
     return False
 
 
-def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
+def _emit_function(fn: dict[str, Any], *, indent: str, in_class_name: str | None) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
+    in_class = in_class_name is not None
     is_init = in_class and name == "__init__"
 
     return_type = _kotlin_type(fn.get("return_type"), allow_void=True)
@@ -1510,7 +1530,13 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
         else:
             lines.append(indent + "constructor(" + ", ".join(params) + ") : this() {")
     else:
-        sig = indent + "fun " + name + "(" + ", ".join(params) + ")"
+        sig_prefix = ""
+        if in_class and isinstance(in_class_name, str) and in_class_name != "":
+            if _class_has_base_method(in_class_name, name):
+                sig_prefix = "override "
+            else:
+                sig_prefix = "open "
+        sig = indent + sig_prefix + "fun " + name + "(" + ", ".join(params) + ")"
         if return_type != "Unit":
             sig += ": " + return_type
         lines.append(sig + " {")
@@ -1603,7 +1629,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         node = body[i]
         if isinstance(node, dict) and node.get("kind") == "FunctionDef":
             lines.append("")
-            lines.extend(_emit_function(node, indent=indent + "    ", in_class=True))
+            lines.extend(_emit_function(node, indent=indent + "    ", in_class_name=class_name))
         i += 1
 
     lines.append(indent + "}")
@@ -1952,9 +1978,35 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
     _CLASS_NAMES = set()
     global _FUNCTION_NAMES
     _FUNCTION_NAMES = set()
+    global _CLASS_BASES
+    _CLASS_BASES = {}
+    global _CLASS_METHODS
+    _CLASS_METHODS = {}
     i = 0
     while i < len(classes):
         _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
+        i += 1
+    i = 0
+    while i < len(classes):
+        class_node = classes[i]
+        cname = _safe_ident(class_node.get("name"), "PytraClass")
+        raw_base = class_node.get("base")
+        base_name = _safe_ident(raw_base, "") if isinstance(raw_base, str) else ""
+        if base_name not in _CLASS_NAMES:
+            base_name = ""
+        _CLASS_BASES[cname] = base_name
+        methods: set[str] = set()
+        class_body_any = class_node.get("body")
+        class_body = class_body_any if isinstance(class_body_any, list) else []
+        j = 0
+        while j < len(class_body):
+            member = class_body[j]
+            if isinstance(member, dict) and member.get("kind") == "FunctionDef":
+                mname = _safe_ident(member.get("name"), "func")
+                if mname != "__init__":
+                    methods.add(mname)
+            j += 1
+        _CLASS_METHODS[cname] = methods
         i += 1
     i = 0
     while i < len(functions):
@@ -1999,7 +2051,7 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
             lines.append("")
             lines.extend(fn_comments)
         lines.append("")
-        lines.extend(_emit_function(functions[i], indent="", in_class=False))
+        lines.extend(_emit_function(functions[i], indent="", in_class_name=None))
         i += 1
 
     lines.append("")

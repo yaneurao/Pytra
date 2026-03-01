@@ -54,6 +54,15 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("open class Dog() : Animal()", kotlin)
         self.assertIn("fun _case_main()", kotlin)
 
+    def test_kotlin_native_emitter_lowers_override_and_super_method_dispatch(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("open fun speak()", kotlin)
+        self.assertIn("override fun speak()", kotlin)
+        self.assertIn('return __pytra_str(("loud-" + super.speak()))', kotlin)
+        self.assertNotIn("super().speak()", kotlin)
+
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
