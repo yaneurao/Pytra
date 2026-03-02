@@ -3292,6 +3292,11 @@ class RustEmitter(CodeEmitter):
             return arg_txt
         return "&(" + arg_txt + ")"
 
+    def _call_is_in_return_expr(self, expr: dict[str, Any]) -> bool:
+        meta = self.any_to_dict_or_empty(expr.get("meta"))
+        non_escape = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
+        return bool(non_escape.get("in_return_expr"))
+
     def _render_call(self, expr: dict[str, Any]) -> str:
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
@@ -3368,6 +3373,8 @@ class RustEmitter(CodeEmitter):
                 arg0_t = self.normalize_type_name(self.get_expr_type(arg0_node))
                 if arg0_t == "str":
                     return "(" + merged_args[0] + ").as_bytes().to_vec()"
+                if self._call_is_in_return_expr(expr) and arg0_t in {"bytes", "bytearray"}:
+                    return merged_args[0]
                 return "(" + merged_args[0] + ").clone()"
             if fn_name_raw == "print":
                 if len(merged_args) == 0:

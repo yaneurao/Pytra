@@ -22,7 +22,7 @@ fn capture(grid: &Vec<Vec<i64>>, w: i64, h: i64) -> Vec<u8> {
         }
         y += 1;
     }
-    return (frame).clone();
+    return frame;
 }
 
 fn run_08_langtons_ant() {

@@ -213,6 +213,13 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("while i > -1 {", rust)
         self.assertNotIn("while i < -1 {", rust)
 
+    def test_sample08_capture_return_avoids_clone_on_bytes_ctor_in_return(self) -> None:
+        sample = ROOT / "sample" / "py" / "08_langtons_ant.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("return frame;", rust)
+        self.assertNotIn("return (frame).clone();", rust)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

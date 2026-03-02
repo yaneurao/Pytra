@@ -47,7 +47,7 @@
 
 分解:
 - [x] [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長箇所（clone/添字正規化/loop/分岐/capture判定/capacity）をコード断片で固定する。
-- [ ] [ID: P1-RS-S08-QUALITY-01-S2-01] `capture` 返却の不要 `clone` を削減する出力規則を導入する。
+- [x] [ID: P1-RS-S08-QUALITY-01-S2-01] `capture` 返却の不要 `clone` を削減する出力規則を導入する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-02] 非負添字が保証される経路で index 正規化式を省略する fastpath を追加する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-03] 単純 `range` 由来ループを Rust `for` へ縮退する fastpath を追加する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-04] `if/elif` 連鎖を `else if` / `match` 相当へ簡素化する出力規則を追加する。
@@ -59,6 +59,7 @@
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/rs/08` の出力品質改善を `P1` で計画化し TODO へ追加する方針を確定した。
 - 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長断片を固定し、実装優先順を `clone -> index正規化 -> loop縮退 -> 分岐簡素化 -> capture判定 -> reserve` に確定。
+- 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S2-01] `bytes()` call が return 式上で `bytearray/bytes` を受ける場合は move 優先にし、`sample/rs/08` の `return (frame).clone();` を `return frame;` へ縮退。
 
 ## S1-01 棚卸し結果
 

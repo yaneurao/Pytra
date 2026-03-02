@@ -115,6 +115,7 @@
 - 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` で `, 1` を省略し、`continue` 非使用ループの `::__pytra_continue_*::` を非出力化。
 - 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] `sample01` 品質断片の smoke 回帰を固定し、`check_py2lua_transpile` + `runtime_parity_check --targets lua 01_mandelbrot` pass を確認。
 - 進捗メモ: [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長断片（clone/添字正規化/loop/分岐/%判定/reserve不足）を固定し、実装優先順を確定。
+- 進捗メモ: [ID: P1-RS-S08-QUALITY-01-S2-01] return式上の `bytes(bytearray)` は move 優先で clone を省略し、`sample/rs/08` の `return (frame).clone();` を除去。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
@@ -160,7 +161,7 @@
 
 1. [ ] [ID: P1-RS-S08-QUALITY-01] `sample/rs/08` の生成品質を改善し、可読性とホットパス効率を引き上げる。
 2. [x] [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長箇所（clone/添字正規化/loop/分岐/capture判定/capacity）をコード断片で固定する。
-3. [ ] [ID: P1-RS-S08-QUALITY-01-S2-01] `capture` 返却の不要 `clone` を削減する出力規則を導入する。
+3. [x] [ID: P1-RS-S08-QUALITY-01-S2-01] `capture` 返却の不要 `clone` を削減する出力規則を導入する。
 4. [ ] [ID: P1-RS-S08-QUALITY-01-S2-02] 非負添字が保証される経路で index 正規化式を省略する fastpath を追加する。
 5. [ ] [ID: P1-RS-S08-QUALITY-01-S2-03] 単純 `range` 由来ループを Rust `for` へ縮退する fastpath を追加する。
 6. [ ] [ID: P1-RS-S08-QUALITY-01-S2-04] `if/elif` 連鎖を `else if` / `match` 相当へ簡素化する出力規則を追加する。
