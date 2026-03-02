@@ -54,11 +54,11 @@
 - [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-01] `src/hooks` を `src/backends` へ一括移動し、パッケージ初期化ファイルを維持する。
 - [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-02] `src/py2*.py` と compiler/utility 側 import を `hooks.*` から `backends.*` へ一括更新する。
 - [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-03] `tools/**` / `test/**` の import を `backends.*` へ一括更新し、テスト実行導線を復旧する。
-- [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-04] 必要最小限の互換層（`src/hooks` re-export）を設置し、当面の外部参照破断を防ぐ（不要なら設置しない）。
+- [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-04] 必要最小限の互換層（`src/hooks` re-export）を設置し、当面の外部参照破断を防ぐ（不要なら設置しない）。
 - [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-01] `docs/ja` / `docs/en` の仕様・手順書で `src/hooks` 表記を `src/backends` へ更新する。
 - [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-02] `spec-folder` / `spec-dev` の責務記述を `backends` 名へ更新し、`hooks` を互換・退役扱いへ明記する。
-- [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-01] 全 target の transpile チェックを再実行し、改名起因の import 崩れがないことを確認する。
-- [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-02] `rg` による残存 `hooks.*` 参照監査を実施し、残存理由を明示して収束させる。
+- [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-01] 全 target の transpile チェックを再実行し、改名起因の import 崩れがないことを確認する。
+- [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-02] `rg` による残存 `hooks.*` 参照監査を実施し、残存理由を明示して収束させる。
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`src/hooks` 名称の不整合を解消するため、`src/backends` への一括改名を「最優先の最優先（P0最上位）」として起票。
@@ -66,3 +66,6 @@
 - 2026-03-03: 一括置換で `hooks.to_dict()` が `backends.to_dict()` 化された副作用を `cpp/cs/rs hooks` 実装と `code_emitter.py` で修正した。
 - 2026-03-03: 現行ドキュメント（`docs/ja|en/spec/*.md`, `docs/ja|en/how-to-use.md`）の `src/hooks` 表記を `src/backends` に更新した（archiveは対象外）。
 - 2026-03-03: 主要チェック結果は `check_py2cpp_transpile: checked=136 ok=136 fail=0 skipped=6`、`check_py2rs_transpile: checked=131 ok=131 fail=0 skipped=10`。`check_py2cs_transpile` は `checked=135 ok=133 fail=2 skipped=6`（`yield_generator_min.py`, `tuple_assign.py` の既知失敗）で、改名起因の import 崩れは観測されなかった。
+- 2026-03-03: `check_py2go/swift/kotlin/lua/scala/php` は通過。`check_py2js/check_py2ts` の失敗は `test_east3_cpp_bridge` の既存アサーション失敗（tuple loop header）、`check_py2java/check_py2rb` の失敗は `control/finally` 系既知失敗で、いずれも `hooks -> backends` 改名由来の import エラーではないことを確認した。
+- 2026-03-03: 互換層（`src/hooks` re-export）は設置しない方針を採用。理由は、リポジトリ内参照を `backends.*` へ一括更新済みであり、互換層が残ると `src/backends` 正規化の収束を遅らせるため。
+- 2026-03-03: `src/test/tools` 監査で `from hooks.` / `import hooks.` / `src/hooks/` / `src.hooks.` の残存は 0 件。`docs/*/spec/archive` の `src/hooks` は履歴保持のため意図的に残置。

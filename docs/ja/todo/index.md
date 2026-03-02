@@ -36,17 +36,17 @@
 
 文脈: [docs/ja/plans/p0-hooks-to-backends-oneshot-rename.md](../plans/p0-hooks-to-backends-oneshot-rename.md)
 
-1. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01] backend 実装ルートを `src/hooks` から `src/backends` へ一括改名し、import/ドキュメント/検証導線を同時収束させる。
-2. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S1-01] `src/hooks/**` の現行構成を棚卸しし、`src/backends/**` への 1:1 移動マップを確定する。
-3. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S1-02] 改名時に影響する import 参照点（`src/`, `tools/`, `test/`）を全列挙し、更新順序を固定する。
-4. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-01] `src/hooks` を `src/backends` へ一括移動し、パッケージ初期化ファイルを維持する。
-5. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-02] `src/py2*.py` と compiler/utility 側 import を `hooks.*` から `backends.*` へ一括更新する。
-6. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-03] `tools/**` / `test/**` の import を `backends.*` へ一括更新し、テスト実行導線を復旧する。
-7. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-04] 必要最小限の互換層（`src/hooks` re-export）を設置し、当面の外部参照破断を防ぐ（不要なら設置しない）。
-8. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-01] `docs/ja` / `docs/en` の仕様・手順書で `src/hooks` 表記を `src/backends` へ更新する。
-9. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-02] `spec-folder` / `spec-dev` の責務記述を `backends` 名へ更新し、`hooks` を互換・退役扱いへ明記する。
-10. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-01] 全 target の transpile チェックを再実行し、改名起因の import 崩れがないことを確認する。
-11. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-02] `rg` による残存 `hooks.*` 参照監査を実施し、残存理由を明示して収束させる。
+1. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01] backend 実装ルートを `src/hooks` から `src/backends` へ一括改名し、import/ドキュメント/検証導線を同時収束させる。
+2. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S1-01] `src/hooks/**` の現行構成を棚卸しし、`src/backends/**` への 1:1 移動マップを確定する。
+3. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S1-02] 改名時に影響する import 参照点（`src/`, `tools/`, `test/`）を全列挙し、更新順序を固定する。
+4. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-01] `src/hooks` を `src/backends` へ一括移動し、パッケージ初期化ファイルを維持する。
+5. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-02] `src/py2*.py` と compiler/utility 側 import を `hooks.*` から `backends.*` へ一括更新する。
+6. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-03] `tools/**` / `test/**` の import を `backends.*` へ一括更新し、テスト実行導線を復旧する。
+7. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-04] 必要最小限の互換層（`src/hooks` re-export）を設置し、当面の外部参照破断を防ぐ（不要なら設置しない）。
+8. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-01] `docs/ja` / `docs/en` の仕様・手順書で `src/hooks` 表記を `src/backends` へ更新する。
+9. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-02] `spec-folder` / `spec-dev` の責務記述を `backends` 名へ更新し、`hooks` を互換・退役扱いへ明記する。
+10. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-01] 全 target の transpile チェックを再実行し、改名起因の import 崩れがないことを確認する。
+11. [x] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-02] `rg` による残存 `hooks.*` 参照監査を実施し、残存理由を明示して収束させる。
 - 進捗メモ: [ID: P0-HOOKS-TO-BACKENDS-RENAME-01] `src/hooks` を `src/backends` へ移動し、`src/test/tools` の import を `backends.*` へ更新。`check_py2cpp_transpile`/`check_py2rs_transpile` は通過、`check_py2cs_transpile` は既知2件失敗（`yield_generator_min.py`, `tuple_assign.py`）を確認。
 
 ### P0: C++ 3段構成移行（案1: `CppLower` / `CppIrOptimizer` / `CppEmitter`）
