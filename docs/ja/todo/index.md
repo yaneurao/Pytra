@@ -48,7 +48,7 @@
 10. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] Nim 対象 test/check を実行して pass を確認し、結果を記録する。
 11. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] 既存主要チェック（`check_py2cpp_transpile` など）で非退行を確認する。
 - 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] Nim 1.6.10 を `apt-get install -y nim` で導入し、`nim` コマンドを有効化。
-- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] `src/backends/nim/emitter` を新設し、`src/hooks/nim` は `backends.nim` 参照の互換ラッパーへ整理。
+- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] `src/backends/nim/emitter` を新設し、`src/hooks/nim` 依存を撤去（旧 `src/hooks/nim` は削除）。
 - 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py`（EAST3 only / runtime 分離）を実装し、`--east-stage 2` を明示拒否。
 - 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] `check_py2nim_transpile` と `test_py2nim_smoke` を pass、`py2nim -> nim c` の最小 compile 成功を確認。
 - 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] `python3 tools/check_py2cpp_transpile.py` は `checked=140 ok=140 fail=0 skipped=6` で非退行を確認。

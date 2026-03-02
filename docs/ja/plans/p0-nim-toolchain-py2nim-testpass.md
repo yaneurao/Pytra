@@ -47,7 +47,7 @@
 - 2026-03-02: 既存 `src/hooks/nim/` 雛形は流用可能だが、import 崩れを避けるため `src/backends/nim/` 基準で責務を再整理する方針を採用。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] `apt-get install -y nim` で Nim 1.6.10 を導入し、環境に `nim` コマンドを追加。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-02] `nim --version` と `/tmp/pytra_nim_smoke.nim` の `nim c -r` で toolchain 稼働を確認。
-- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] `src/backends/nim/emitter` を新設し、`src/hooks/nim/emitter/*` は `backends.nim` 参照の互換ラッパーへ変更して `hooks.js` 依存を除去。
+- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] `src/backends/nim/emitter` を新設し、`src/hooks/nim` 依存を除去（最終的に `src/hooks/nim` 自体を削除）。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py` を実装（EAST3 only / runtime 分離コピー / stage2 明示拒否）。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Nim native emitter を `backends.nim` 配下へ接続し、生成コード先頭へ `include \"py_runtime.nim\"` を追加。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] `src/runtime/nim/pytra/py_runtime.nim` を追加し、`py_int/py_float/py_truthy/py_mod/write_rgb_png` を提供。
