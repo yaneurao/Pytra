@@ -32,6 +32,42 @@
 
 ## 未完了タスク
 
+### P0: sample 多言語出力の正しさ修正（Scala/C#）
+
+文脈: [docs/ja/plans/p0-sample-multilang-output-correctness-fixes.md](../plans/p0-sample-multilang-output-correctness-fixes.md)
+
+1. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01] sample 出力の正しさ不備（Scala 演算子優先順位 / C# typed 除算）を修正する。
+2. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Scala emitter で算術式の優先順位保持を修正し、`sample/scala/01` の崩れ式を解消する。
+3. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-02] C# emitter の typed 除算出力を修正し、整数除算経路を除去する。
+4. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-01] Scala/C# の回帰テストを追加し、同種退行を固定する。
+5. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-02] `sample/01` 再生成 + parity で非退行を確認する。
+
+### P1: sample 多言語出力の型既知 fastpath 強化（品質改善）
+
+文脈: [docs/ja/plans/p1-sample-multilang-output-quality-uplift.md](../plans/p1-sample-multilang-output-quality-uplift.md)
+
+1. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01] 多言語 sample 出力の型既知 fastpath を強化し、`Any/Object` 退化と helper/cast 過多を削減する。
+2. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-01] `go/java` の `Any/Object` 退化 hotspot（`sample/18`）を棚卸しし、typed fastpath の適用境界を固定する。
+3. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-02] `kotlin/swift/scala` の helper/cast 連鎖（`__pytra_int/float`, `asInstanceOf`）を棚卸しし、削減優先順を確定する。
+4. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-03] `rs/js/ts` のループ冗長パターン（`__for_i` 再代入、`__start_N`）の縮退規則を仕様化する。
+5. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] `go/java` emitter に typed container/typed access fastpath を実装する。
+6. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
+7. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
+8. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
+9. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
+
+### P2: sample 多言語出力の可読性縮退（冗長構文整理）
+
+文脈: [docs/ja/plans/p2-sample-multilang-output-readability-uplift.md](../plans/p2-sample-multilang-output-readability-uplift.md)
+
+1. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01] sample 出力の冗長構文（不要括弧/補助変数/append連鎖）を整理し、可読性を改善する。
+2. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 各言語の冗長構文パターンを棚卸しし、適用境界を定義する。
+3. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-01] `js/ts` の loop 補助変数（`__start_N`）を簡約する出力規則を実装する。
+4. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] `ruby/lua` の append 連鎖を簡約する出力規則を実装する。
+5. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
+6. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰テストを追加して可読性退行を検知可能にする。
+7. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] 対象 sample を再生成し、transpile/parity で非退行を確認する。
+
 ### P4: 全言語 selfhost 完全化（低低優先）
 
 文脈: [docs/ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)
