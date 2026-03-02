@@ -32,6 +32,22 @@
 
 ## 未完了タスク
 
+### P0: Nim toolchain 導入 + py2nim 実装 + test 通過
+
+文脈: [docs/ja/plans/p0-nim-toolchain-py2nim-testpass.md](../plans/p0-nim-toolchain-py2nim-testpass.md)
+
+1. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01] この環境に Nim コンパイラを導入し、`py2nim.py` の実装と Nim 対象 `test/` 通過までを完了する。
+2. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] Nim コンパイラ導入方式（パッケージマネージャ/バージョン固定）を決定し、この環境へ導入する。
+3. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-02] `nim --version` と最小 compile 実行で toolchain 稼働を確認し、再現手順を残す。
+4. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] Nim backend の実装配置を `src/backends/nim/emitter/` 基準へ整理し、`src/hooks/nim` 依存を解消する。
+5. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py` を実装し、EAST3 only・runtime 分離コピー・fail-closed を満たす CLI 導線を作る。
+6. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Nim native emitter の最小対応（関数/分岐/ループ/主要式）を整備し、既知 fixture を変換可能にする。
+7. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] `src/runtime/nim/pytra/py_runtime.nim` を整備し、生成コードからの参照契約を固定する。
+8. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] `test/unit/test_py2nim_smoke.py` と必要 fixture を整備し、Nim 導線の最小回帰を固定する。
+9. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] `tools/check_py2nim_transpile.py` を整備して transpile 一括回帰を追加する。
+10. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] Nim 対象 test/check を実行して pass を確認し、結果を記録する。
+11. [ ] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] 既存主要チェック（`check_py2cpp_transpile` など）で非退行を確認する。
+
 ### P0: C++ backend ディレクトリ再整列（5フォルダ -> `lower/optimizer/emitter`）
 
 文脈: [docs/ja/plans/p0-cpp-backend-dir-realign.md](../plans/p0-cpp-backend-dir-realign.md)
