@@ -12,7 +12,7 @@ python3 tools/check_multilang_selfhost_stage1.py
 |---|---|---|---|---|
 | rs | pass | native | fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
 | cs | pass | native | pass | sample/py/01 transpile ok |
-| js | pass | native | fail | js stage2 emit failed at hooks/js/emitter/js_emitter.py: raise _make_east_build_error( |
+| js | pass | native | fail | Error [ERR_MODULE_NOT_FOUND]: Cannot find module './pytra/std.js' (imported by stage1 `py2js.js`) |
 | ts | pass | native | skip | stage2 scope is rs/cs/js only |
 | go | pass | native | skip | stage2 scope is rs/cs/js only |
 | java | pass | native | skip | stage2 scope is rs/cs/js only |

@@ -126,18 +126,25 @@ class JsEmitter(CodeEmitter):
             return runtime_map[module_id]
         return "./" + module_id.replace(".", "/") + ".js"
 
+    def _module_symbol_to_js_path(self, module_id: str, symbol_name: str) -> str:
+        """from-import の symbol 単位で JS import パスを解決する。"""
+        if module_id == "pytra.std" and symbol_name != "":
+            return "./pytra/std/" + symbol_name + ".js"
+        return self._module_id_to_js_path(module_id)
+
     def _walk_node_names(self, node: Any, out: set[str]) -> None:
         """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
-        if isinstance(node, dict):
-            kind = self.any_dict_get_str(node, "kind", "")
+        node_dict = self.any_to_dict(node)
+        if node_dict is not None:
+            kind = self.any_dict_get_str(node_dict, "kind", "")
             if kind == "Import" or kind == "ImportFrom":
                 return
             if kind == "Name":
-                name = self.any_to_str(node.get("id"))
+                name = self.any_dict_get_str(node_dict, "id", "")
                 if name != "":
                     out.add(name)
                 return
-            for key, value in node.items():
+            for key, value in node_dict.items():
                 if key == "comments":
                     continue
                 self._walk_node_names(value, out)
@@ -210,8 +217,9 @@ class JsEmitter(CodeEmitter):
 
     def _walk_runtime_requirements(self, node: Any, required: set[str]) -> None:
         """ノード配下から py_runtime シンボル依存を収集する。"""
-        if isinstance(node, dict):
-            kind = self.any_dict_get_str(node, "kind", "")
+        node_dict = self.any_to_dict(node)
+        if node_dict is not None:
+            kind = self.any_dict_get_str(node_dict, "kind", "")
             if kind == "ClassDef":
                 required.add("PYTRA_TYPE_ID")
                 required.add("PY_TYPE_OBJECT")
@@ -229,19 +237,19 @@ class JsEmitter(CodeEmitter):
                 required.add("PY_TYPE_MAP")
             elif kind == "IsInstance":
                 required.add("pyIsInstance")
-                self._collect_type_id_expr_symbols(node.get("expected_type_id"), required)
+                self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "expected_type_id", None), required)
             elif kind == "IsSubtype" or kind == "IsSubclass":
                 required.add("pyIsSubtype")
-                self._collect_type_id_expr_symbols(node.get("actual_type_id"), required)
-                self._collect_type_id_expr_symbols(node.get("expected_type_id"), required)
+                self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "actual_type_id", None), required)
+                self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "expected_type_id", None), required)
             elif kind == "Call":
-                fn = self.any_to_dict_or_empty(node.get("func"))
+                fn = self.any_dict_get_dict(node_dict, "func")
                 if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
                     required.add("pyIsInstance")
-                    args = self.any_to_list(node.get("args"))
+                    args = self.any_dict_get_list(node_dict, "args")
                     if len(args) >= 2:
                         self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(args[1]), required)
-            for key, value in node.items():
+            for key, value in node_dict.items():
                 if key == "comments":
                     continue
                 self._walk_runtime_requirements(value, required)
@@ -336,6 +344,10 @@ class JsEmitter(CodeEmitter):
                     if local_name == "" or local_name not in used_names:
                         i += 1
                         continue
+                    module_path = self._module_symbol_to_js_path(module_id, export_name)
+                    if module_path == "":
+                        i += 1
+                        continue
                     if local_name != "" and local_name != export_name:
                         _add(
                             "import { "
@@ -385,7 +397,7 @@ class JsEmitter(CodeEmitter):
                         if asname != "" and asname != name:
                             self.browser_symbol_aliases[asname] = name
                         continue
-                    module_path = self._module_id_to_js_path(module_id)
+                    module_path = self._module_symbol_to_js_path(module_id, name)
                     if module_path == "":
                         continue
                     alias_name = asname if asname != "" else name
@@ -552,6 +564,7 @@ class JsEmitter(CodeEmitter):
         args: list[str] = []
         scope_names: set[str] = set()
         prev_ref_vars = self.current_ref_vars
+        prev_in_method_scope = self.in_method_scope
         self.current_ref_vars = set()
         self.in_method_scope = in_class is not None
 
@@ -582,7 +595,7 @@ class JsEmitter(CodeEmitter):
         if in_class is not None and fn_name_raw == "__init__":
             self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
         self.emit("}")
-        self.in_method_scope = False
+        self.in_method_scope = prev_in_method_scope
         self.current_ref_vars = prev_ref_vars
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -661,6 +674,9 @@ class JsEmitter(CodeEmitter):
             self._emit_for_core(stmt)
             return
         if kind == "Import" or kind == "ImportFrom":
+            return
+        if kind == "FunctionDef":
+            self._emit_function(stmt, in_class=None)
             return
         raise RuntimeError("js emitter: unsupported stmt kind: " + kind)
 

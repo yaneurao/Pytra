@@ -99,6 +99,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# empty-skeleton 判定を `__pytra_main` 欠落依存から「Program 配下の `public static` メソッド本体が全空か」を検査する方式へ更新した。`sample/cs/01_mandelbrot.cs` は非skeleton、stage2 実出力（空ボディ5件）は skeleton と判定されることを確認した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] C# selfhost の空ボディ主因を「CodeEmitter 基底ヘルパ内の非virtual呼び出しで `emit_stmt` が基底実装へ固定される」点と特定し、`CSharpEmitter` 側へ scoped emit ヘルパ（`emit_stmt_list`/`emit_scoped_stmt_list`/`emit_scoped_block` など）を明示実装した。これにより `check_multilang_selfhost_stage1.py` の `cs stage2` は `fail(empty skeleton)` から `pass` へ前進し、multistage 先頭失敗は `CS0161` から `CS0136 (safe_doc shadow)` へ遷移した。
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `CodeEmitter.is_declared()` の降順走査を `while` 化して selfhost 2段目の shadow 誤判定（`CS0136`）を解消し、`CSharpEmitter` に selfhost 向け helper 直結（`render_truthy_cond_common` / `render_boolop_chain_common` / `_prepare_call_parts` / `render_augassign_basic`）と fallback（演算子 map / 予約語）を追加した。`_const_int_literal()` 戻り型も object-safe 化して `CS0037` を除去し、`check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` 最新結果で `cs stage1/stage2/stage3 = pass` を確認した。
+- 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `src/hooks/js/emitter/js_emitter.py` の selfhost parser 制約違反（`Any` 受け `node.get()/node.items()`）を object-safe helper 経由へ置換し、関数内 `FunctionDef` 文の emit 未対応を local function 出力へ拡張した。再計測で `js` の先頭失敗は `stage1_dependency_transpile_fail` から `self_retranspile_fail (ERR_MODULE_NOT_FOUND: ./pytra/std.js)` に遷移した。
 
 ## 現状固定（S1-01）
 
