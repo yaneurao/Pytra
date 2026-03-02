@@ -81,6 +81,20 @@
 6. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰テストを追加して可読性退行を検知可能にする。
 7. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] 対象 sample を再生成し、transpile/parity で非退行を確認する。
 
+### P3: PHP backend 追加（EAST3 -> PHP native）
+
+文脈: [docs/ja/plans/p3-php-backend-rollout.md](../plans/p3-php-backend-rollout.md)
+
+1. [ ] [ID: P3-PHP-BACKEND-01] 変換対象言語として PHP を追加し、`EAST3 -> PHP native` 生成経路を成立させる。
+2. [ ] [ID: P3-PHP-BACKEND-01-S1-01] 対応構文・非対応構文・runtime 分離契約を仕様化する。
+3. [ ] [ID: P3-PHP-BACKEND-01-S1-02] `src/py2php.py` と profile loader を追加し、CLI 導線を確立する。
+4. [ ] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格（関数・分岐・ループ・基本式）を実装する。
+5. [ ] [ID: P3-PHP-BACKEND-01-S2-02] class/inheritance と container 操作の最低限 lower を実装する。
+6. [ ] [ID: P3-PHP-BACKEND-01-S2-03] runtime helper を `src/runtime/php/pytra/` へ分離し、生成コードから参照する方式へ統一する。
+7. [ ] [ID: P3-PHP-BACKEND-01-S3-01] `test_py2php_smoke.py` と `check_py2php_transpile.py` を追加し、回帰導線を整備する。
+8. [ ] [ID: P3-PHP-BACKEND-01-S3-02] `runtime_parity_check` / `regenerate_samples` に PHP を統合し、`sample/php` を再生成する。
+9. [ ] [ID: P3-PHP-BACKEND-01-S3-03] docs（how-to-use/spec/README 系）の PHP backend 記載を更新する。
+
 ### P4: 全言語 selfhost 完全化（低低優先）
 
 文脈: [docs/ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)
