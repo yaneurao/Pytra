@@ -128,6 +128,41 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertNotIn("i = __for_i_", rust)
         self.assertNotIn("while i < 3 {", rust)
 
+    def test_for_core_static_range_keeps_bridge_when_target_is_used_later(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Constant", "value": 0},
+                        "stop": {"kind": "Constant", "value": 3},
+                        "step": {"kind": "Constant", "value": 1},
+                        "range_mode": "ascending",
+                    },
+                    "body": [{"kind": "Pass"}],
+                    "orelse": [],
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "print"},
+                        "args": [{"kind": "Name", "id": "i"}],
+                        "keywords": [],
+                    },
+                },
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        rust = transpile_to_rust(east)
+        self.assertIn("for __for_i_", rust)
+        self.assertIn("i = __for_i_", rust)
+
     def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
         east = {
             "kind": "Module",

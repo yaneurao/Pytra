@@ -495,6 +495,20 @@ class RustEmitter(CodeEmitter):
         self.current_hashmap_dict_names: set[str] = set()
         self.current_class_name: str = ""
         self.uses_string_helpers: bool = False
+        self._stmt_list_stack: list[list[dict[str, Any]]] = []
+        self._stmt_index_stack: list[int] = []
+
+    def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
+        """現在ブロック文脈を保持しつつ文リストを出力する。"""
+        self._stmt_list_stack.append(stmts)
+        self._stmt_index_stack.append(0)
+        i = 0
+        while i < len(stmts):
+            self._stmt_index_stack[-1] = i
+            self.emit_stmt(stmts[i])
+            i += 1
+        self._stmt_index_stack.pop()
+        self._stmt_list_stack.pop()
 
     def get_expr_type(self, expr: Any) -> str:
         """解決済み型 + ローカル宣言テーブルで式型を返す。"""
@@ -671,53 +685,20 @@ class RustEmitter(CodeEmitter):
                     return True
         return False
 
-    def _loop_target_name_from_stmt(self, stmt: dict[str, Any]) -> str:
-        """`For*` 文から Name target を抽出する（非 Name target は空文字）。"""
-        kind = self.any_dict_get_str(stmt, "kind", "")
-        if kind == "For" or kind == "ForRange":
-            target = self.any_to_dict_or_empty(stmt.get("target"))
-            if self.any_dict_get_str(target, "kind", "") == "Name":
-                return self.any_dict_get_str(target, "id", "")
-            return ""
-        if kind == "ForCore":
-            target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
-            if self.any_dict_get_str(target_plan, "kind", "") == "NameTarget":
-                return self.any_dict_get_str(target_plan, "id", "")
-        return ""
-
-    def _ensure_stmt_meta_dict(self, stmt: dict[str, Any]) -> dict[str, Any]:
-        meta = self.any_to_dict(stmt.get("meta"))
-        if meta is None:
-            meta = {}
-            stmt["meta"] = meta
-        return meta
-
-    def _annotate_loop_target_usage_in_stmt(self, stmt: dict[str, Any]) -> None:
-        """文内の子ブロックへ loop target 後続参照注釈を再帰付与する。"""
-        self._annotate_loop_target_usage_in_block(self._dict_stmt_list(stmt.get("body")))
-        self._annotate_loop_target_usage_in_block(self._dict_stmt_list(stmt.get("orelse")))
-        self._annotate_loop_target_usage_in_block(self._dict_stmt_list(stmt.get("finalbody")))
-        handlers = self._dict_stmt_list(stmt.get("handlers"))
-        for handler in handlers:
-            self._annotate_loop_target_usage_in_block(self._dict_stmt_list(handler.get("body")))
-
-    def _annotate_loop_target_usage_in_block(self, stmts: list[dict[str, Any]]) -> None:
-        """同一ブロック後続での loop target 参照有無を `meta` に注釈する。"""
-        total = len(stmts)
-        for i in range(total):
-            stmt = self.any_to_dict_or_empty(stmts[i])
-            if len(stmt) == 0:
-                continue
-            target_name = self._loop_target_name_from_stmt(stmt)
-            if target_name != "":
-                used_after = False
-                for j in range(i + 1, total):
-                    if self._expr_mentions_name(stmts[j], target_name):
-                        used_after = True
-                        break
-                meta = self._ensure_stmt_meta_dict(stmt)
-                meta["rust_loop_target_used_after_stmt"] = used_after
-            self._annotate_loop_target_usage_in_stmt(stmt)
+    def _current_stmt_uses_name_later(self, name: str) -> bool:
+        """現在ブロックの後続文で `name` が参照される場合に True。"""
+        if name == "":
+            return False
+        if len(self._stmt_list_stack) == 0 or len(self._stmt_index_stack) == 0:
+            return False
+        stmts = self._stmt_list_stack[-1]
+        idx = self._stmt_index_stack[-1]
+        j = idx + 1
+        while j < len(stmts):
+            if self._expr_mentions_name(stmts[j], name):
+                return True
+            j += 1
+        return False
 
     def _mutating_method_names(self) -> set[str]:
         return {
@@ -2664,7 +2645,6 @@ class RustEmitter(CodeEmitter):
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(fn.get("arg_usage"))
         body = self._dict_stmt_list(fn.get("body"))
-        self._annotate_loop_target_usage_in_block(body)
         prev_write_counts = self.current_fn_write_counts
         prev_mut_call_counts = self.current_fn_mutating_call_counts
         prev_ref_vars = self.current_ref_vars
@@ -3029,10 +3009,7 @@ class RustEmitter(CodeEmitter):
                 if cond_rendered != "":
                     cond = cond_rendered
                     has_normalized_cond = True
-        target_used_after = False
-        meta = self.any_to_dict_or_empty(stmt.get("meta"))
-        if target_raw != "":
-            target_used_after = meta.get("rust_loop_target_used_after_stmt") is True
+        target_used_after = target_raw != "" and self._current_stmt_uses_name_later(target_raw)
 
         # Fastpath: canonical ascending step=1 range uses Rust for-loop.
         is_ascending_mode = range_mode == "ascending" or range_mode == ""
@@ -3223,7 +3200,6 @@ class RustEmitter(CodeEmitter):
                     "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
                     "normalized_expr_version": self.any_to_str(stmt.get("normalized_expr_version")),
                     "normalized_exprs": stmt.get("normalized_exprs"),
-                    "meta": stmt.get("meta"),
                     "body": body,
                     "orelse": orelse,
                 }

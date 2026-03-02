@@ -105,6 +105,58 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("i < 3", js)
         self.assertIn("i += 1", js)
 
+    def test_for_core_static_range_inlines_start_when_safe(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Constant", "value": 0},
+                        "stop": {"kind": "Constant", "value": 3},
+                        "step": {"kind": "Constant", "value": 1},
+                        "range_mode": "ascending",
+                    },
+                    "body": [{"kind": "Pass"}],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        js = transpile_to_js(east)
+        self.assertIn("for (let i = 0; i < 3; i += 1)", js)
+        self.assertNotIn("const __start_", js)
+
+    def test_for_core_static_range_keeps_start_tmp_when_start_mentions_target(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Name", "id": "i"},
+                        "stop": {"kind": "Name", "id": "n"},
+                        "step": {"kind": "Constant", "value": 1},
+                        "range_mode": "ascending",
+                    },
+                    "body": [{"kind": "Pass"}],
+                    "orelse": [],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        js = transpile_to_js(east)
+        self.assertIn("const __start_", js)
+        self.assertIn("for (let i = __start_", js)
+
     def test_for_core_runtime_iter_tuple_target_is_emitted(self) -> None:
         east = {
             "kind": "Module",
