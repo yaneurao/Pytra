@@ -220,6 +220,8 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_slice(source, start, i)", ruby)
         self.assertIn("__pytra_contains(env, stmt.name)", ruby)
         self.assertIn("__pytra_contains(env, node.name)", ruby)
+        self.assertIn("__pytra_as_dict(single_char_token_tags).fetch(ch, 0)", ruby)
+        self.assertNotIn("single_char_token_tags.get(", ruby)
         self.assertNotIn("stmt.name == env", ruby)
         self.assertNotIn("node.name == env", ruby)
         self.assertIn("__pytra_main()", ruby)
@@ -296,6 +298,23 @@ class Py2RbSmokeTest(unittest.TestCase):
             ruby = transpile_to_ruby_native(east)
         self.assertIn("__pytra_float(a) / 2.0", ruby)
         self.assertNotIn("__pytra_div(a, 2)", ruby)
+
+    def test_ref_container_args_materialize_value_path_with_dup_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ref_materialize.py"
+            src_py.write_text(
+                "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+                "    a: list[int] = xs\n"
+                "    b: dict[str, int] = ys\n"
+                "    a.append(1)\n"
+                "    b['k'] = 2\n"
+                "    return len(a) + len(b)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            ruby = transpile_to_ruby_native(east)
+        self.assertIn("a = __pytra_as_list(xs).dup", ruby)
+        self.assertIn("b = __pytra_as_dict(ys).dup", ruby)
 
     def test_sample06_uses_true_division_helper(self) -> None:
         sample = find_sample_case("06_julia_parameter_sweep")

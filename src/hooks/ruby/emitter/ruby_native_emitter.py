@@ -785,6 +785,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_isdigit(" + owner + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + owner + ")"
+        owner_type = _resolved_type_name(owner_any)
+        if attr_name == "get" and owner_type.startswith("dict[") and len(args) in {1, 2}:
+            key_expr = _render_expr(args[0])
+            default_expr = "nil" if len(args) == 1 else _render_expr(args[1])
+            return "__pytra_as_dict(" + owner + ").fetch(" + key_expr + ", " + default_expr + ")"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -862,6 +867,65 @@ def _fresh_tmp(ctx: dict[str, Any], prefix: str) -> str:
         idx = 0
     ctx["tmp"] = idx + 1
     return "__" + prefix + "_" + str(idx)
+
+
+def _type_map(ctx: dict[str, Any]) -> dict[str, str]:
+    types = ctx.get("types")
+    if isinstance(types, dict):
+        return types
+    out: dict[str, str] = {}
+    ctx["types"] = out
+    return out
+
+
+def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
+    ref_vars = ctx.get("ref_vars")
+    if isinstance(ref_vars, set):
+        return ref_vars
+    out: set[str] = set()
+    ctx["ref_vars"] = out
+    return out
+
+
+def _container_kind_from_decl_type(type_name: Any) -> str:
+    if not isinstance(type_name, str):
+        return ""
+    if type_name.startswith("dict["):
+        return "dict"
+    if type_name.startswith("list[") or type_name.startswith("tuple["):
+        return "list"
+    if type_name in {"bytes", "bytearray"}:
+        return "list"
+    return ""
+
+
+def _is_container_east_type(type_name: Any) -> bool:
+    return _container_kind_from_decl_type(type_name) != ""
+
+
+def _materialize_container_value_from_ref(
+    value_any: Any,
+    *,
+    target_name: str,
+    target_decl_type: Any,
+    ctx: dict[str, Any],
+) -> str | None:
+    if target_name == "":
+        return None
+    if not isinstance(value_any, dict) or value_any.get("kind") != "Name":
+        return None
+    source_name = _safe_ident(value_any.get("id"), "")
+    if source_name == "" or source_name == target_name:
+        return None
+    if source_name not in _ref_var_set(ctx):
+        return None
+    container_kind = _container_kind_from_decl_type(target_decl_type)
+    if container_kind == "":
+        return None
+    source_expr = _render_expr(value_any)
+    if container_kind == "dict":
+        return "__pytra_as_dict(" + source_expr + ").dup"
+    return "__pytra_as_list(" + source_expr + ").dup"
 
 
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
@@ -1162,14 +1226,31 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if tuple_lines is not None:
             return tuple_lines
         value_any = stmt.get("value")
+        target_name = _safe_ident(target_any.get("id"), "") if isinstance(target_any, dict) and target_any.get("kind") == "Name" else ""
+        decl_type_any = stmt.get("decl_type")
+        decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+        if decl_type == "":
+            annotation_any = stmt.get("annotation")
+            if isinstance(annotation_any, str):
+                decl_type = annotation_any.strip()
         if value_any is None:
-            decl_type_any = stmt.get("decl_type")
-            decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
             if bool(stmt.get("declare")) and decl_type in _NIL_FREE_DECL_TYPES:
                 if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                    if target_name != "" and decl_type != "":
+                        _type_map(ctx)[target_name] = decl_type
                     return []
         target = _render_expr(target_any)
         value = "nil" if value_any is None else _render_expr(value_any)
+        materialized = _materialize_container_value_from_ref(
+            value_any,
+            target_name=target_name,
+            target_decl_type=decl_type,
+            ctx=ctx,
+        )
+        if materialized is not None:
+            value = materialized
+        if target_name != "" and decl_type != "":
+            _type_map(ctx)[target_name] = decl_type
         return [indent + target + " = " + value]
 
     if kind == "Assign":
@@ -1189,6 +1270,22 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "__pytra_set_index(" + owner + ", " + index + ", " + value + ")"]
         target = _render_expr(targets[0])
         value = _render_expr(stmt.get("value"))
+        target_name = _safe_ident(targets[0].get("id"), "") if isinstance(targets[0], dict) and targets[0].get("kind") == "Name" else ""
+        decl_type_any = stmt.get("decl_type")
+        decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+        if decl_type == "" and target_name != "":
+            mapped_decl = _type_map(ctx).get(target_name)
+            decl_type = mapped_decl.strip() if isinstance(mapped_decl, str) else ""
+        materialized_assign = _materialize_container_value_from_ref(
+            stmt.get("value"),
+            target_name=target_name,
+            target_decl_type=decl_type,
+            ctx=ctx,
+        )
+        if materialized_assign is not None:
+            value = materialized_assign
+        if target_name != "" and isinstance(decl_type_any, str) and decl_type != "":
+            _type_map(ctx)[target_name] = decl_type
         return [indent + target + " = " + value]
 
     if kind == "AugAssign":
@@ -1273,7 +1370,20 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
     lines: list[str] = [indent + "def " + name + "(" + ", ".join(params) + ")"]
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
-    ctx: dict[str, Any] = {"tmp": 0}
+    ctx: dict[str, Any] = {"tmp": 0, "types": {}, "ref_vars": set()}
+    type_map = _type_map(ctx)
+    ref_vars = _ref_var_set(ctx)
+    arg_types_any = fn.get("arg_types")
+    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+    i = 0
+    while i < len(params):
+        param_name = params[i]
+        param_type = arg_types.get(param_name)
+        if isinstance(param_type, str) and param_type != "":
+            type_map[param_name] = param_type
+            if _is_container_east_type(param_type):
+                ref_vars.add(param_name)
+        i += 1
     lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
     if len(body) == 0:
         lines.append(indent + "  nil")

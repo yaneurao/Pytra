@@ -258,7 +258,7 @@
 11. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend へ展開し、動的 helper 境界で同一判定規則を適用する。
 12. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go backend へ展開し、`any` 境界と typed 値型経路を分離する。
 13. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
-14. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
+14. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
 15. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
 16. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
 17. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様へ運用ルール（参照管理境界・rollback）を追記する。
@@ -271,6 +271,7 @@
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS emitter に ref-container 材料化（`slice/Array.from`・object spread・`new Set`）を導入し、JS/TS smoke と sample parity(case18) を通過（`check_py2js/ts` は共通 east3-contract blocker を分離記録）。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go emitter に ref-container 材料化（slice copy + map copy IIFE）を導入し、`test_py2go_smoke`/`check_py2go_transpile` は通過（sample/18 parity(go) は既存 compile blocker を S4-02 に分離）。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift emitter に `ref_vars` 追跡 + container 材料化（`Array(__pytra_as_list(...))` / `Dictionary(uniqueKeysWithValues: __pytra_as_dict(...).map { ... })`）を導入し、`test_py2swift_smoke`/`check_py2swift_transpile` を通過（sample parity は toolchain_missing skip）。
+- 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby emitter に `ref_vars` + `decl_type` 材料化（`__pytra_as_list/__pytra_as_dict` + `.dup`）と `dict.get -> fetch` lower を導入し、`test_py2rb_smoke` は通過（sample/18 parity は既存 run_failed を S4-02 blocker へ分離）。
 
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 
