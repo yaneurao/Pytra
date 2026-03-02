@@ -39,11 +39,13 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`sample/ruby/03` の改善項目を P1 計画として起票。
+- 2026-03-02: `sample/ruby/03_julia_set.rb` の棚卸しで、優先度を `1) hot path 除算 helper 2) 画素 append 3連 3) r/g/b 初期化 4) 過剰括弧 5) 同型 cast helper` の順に固定。
+- 2026-03-02: fail-closed 境界を「型既知 numeric（`int/float/bool`）かつ副作用なし式のみ fastpath 適用、`Any/object/union/呼び出し副作用` は既存 helper 経路維持」に確定。
 
 ## 分解
 
-- [ ] [ID: P1-RUBY-S03-QUALITY-01-S1-01] `sample/ruby/03` の冗長断片（`__pytra_div` / append / 初期化 / 括弧 / cast）を棚卸しし、優先順を固定する。
-- [ ] [ID: P1-RUBY-S03-QUALITY-01-S1-02] fail-closed 適用境界（型既知条件、演算意味維持条件）を仕様化する。
+- [x] [ID: P1-RUBY-S03-QUALITY-01-S1-01] `sample/ruby/03` の冗長断片（`__pytra_div` / append / 初期化 / 括弧 / cast）を棚卸しし、優先順を固定する。
+- [x] [ID: P1-RUBY-S03-QUALITY-01-S1-02] fail-closed 適用境界（型既知条件、演算意味維持条件）を仕様化する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-01] 型既知の割り算経路で `__pytra_div` 依存を削減する emitter fastpath を追加する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-02] `pixels.append` 周辺の冗長呼び出しを削減する出力規則を追加する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-03] `r/g/b` 初期化の冗長代入を削減する分岐出力へ更新する。
@@ -51,3 +53,19 @@
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-05] 同型変換 helper（`__pytra_float/__pytra_int`）の不要呼び出しを抑制する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長パターンの再発を検知可能にする。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-02] `sample/ruby/03` 再生成と transpile/parity で非退行を確認する。
+
+## 棚卸し結果（S1-01）
+
+- `__pytra_div` hot path: `zy0/zx/t` 計算で `__pytra_div(y, __hoisted_cast_1)` / `__pytra_div(x, __hoisted_cast_2)` / `__pytra_div(i, __hoisted_cast_3)` が残る。
+- append 3 連: `pixels.append(r); pixels.append(g); pixels.append(b);` が各画素ごとに 3 call 発生。
+- 初期化冗長: `r=g=b=0` 相当を `r=0; g=0; b=0;` + `if` 内で再代入している。
+- 過剰括弧: `if (i >= max_iter)`, `zx2 = (zx * zx)`, `zy = (((2.0 * zx) * zy) + cy)` 等で括弧が過多。
+- 同型 cast helper: `__pytra_float((height - 1))` や `__pytra_int((255.0 * ...))` で明らかな同型/単純式 helper が残る。
+
+## 適用境界（S1-02）
+
+- 数値演算 fastpath は `resolved_type` が `int/int64/float/float64/bool` のみ適用。
+- `Any/object/union/unknown` を含む式は helper 維持（`__pytra_div`, `__pytra_float`, `__pytra_int`）。
+- function call/attribute call を含む式は副作用順序を壊さないため括弧・helper 縮退を抑制。
+- 除算は `Div` のみ対象。`FloorDiv`/`Mod` は Python 互換優先で既存 helper 維持。
+- append 縮退は bytearray/list の要素型が確定するケースだけ適用し、未確定時は従来経路を維持。
