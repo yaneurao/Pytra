@@ -51,6 +51,7 @@
 - 2026-03-02: `Div` で「右辺が非ゼロ数値定数」のみ direct `/` fastpath を追加し、ゼロ除算契約を壊さない境界で `__pytra_div` 依存を削減（S2-01）。
 - 2026-03-02: `sample/ruby/06` の `t = __pytra_div((i - 1), 254.0)` が `(__pytra_float(i - 1)) / 254.0` へ縮退。`03/06` parity 通過を確認。
 - 2026-03-02: `_render_float_cast` の数値定数 fastpath（`int -> <n>.0`, `float -> literal`）を追加し、同型 cast helper 呼び出しを抑制（S2-05）。
+- 2026-03-02: `Assign*` 連鎖 + `If` の保守的 peephole を追加し、`if` 真分岐が pre-init と同値な場合のみ pre-init を削除（S2-03）。
 
 ## 分解
 
@@ -58,7 +59,7 @@
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S1-02] fail-closed 適用境界（型既知条件、演算意味維持条件）を仕様化する。
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S2-01] 型既知の割り算経路で `__pytra_div` 依存を削減する emitter fastpath を追加する。
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S2-02] `pixels.append` 周辺の冗長呼び出しを削減する出力規則を追加する。
-- [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-03] `r/g/b` 初期化の冗長代入を削減する分岐出力へ更新する。
+- [x] [ID: P1-RUBY-S03-QUALITY-01-S2-03] `r/g/b` 初期化の冗長代入を削減する分岐出力へ更新する。
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S2-04] Ruby 出力の過剰括弧を削減する正規化規則を追加する。
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S2-05] 同型変換 helper（`__pytra_float/__pytra_int`）の不要呼び出しを抑制する。
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長パターンの再発を検知可能にする。

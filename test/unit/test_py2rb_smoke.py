@@ -210,6 +210,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertNotIn("pixels.append(r)", ruby)
         self.assertNotIn("pixels.append(g)", ruby)
         self.assertNotIn("pixels.append(b)", ruby)
+        self.assertNotIn("r = 0\n      g = 0\n      b = 0\n      if i >= max_iter", ruby)
 
     def test_sample18_enumerate_and_slice_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")
