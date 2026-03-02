@@ -54,7 +54,7 @@
 ## 分解
 
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
@@ -92,7 +92,53 @@
 3. C++ 固有の多量 CLI は段階移行し、初期フェーズは `py2cpp.py` 互換ラッパを維持する。  
 4. Java の `class_name` 導出など backend 固有 post-process は `backend extension hook` で管理する。  
 
+## S1-02 共通 CLI 仕様（2026-03-03）
+
+### 基本形
+
+```bash
+python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
+```
+
+- `--target` は必須（初期対応: `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`）。
+- `INPUT` は `.py` または `.json`（EAST3 JSON）を許可する。
+- `-o/--output` は従来どおり明示指定を推奨（未指定時規約は wrapper 互換を踏襲）。
+
+### 共通オプション
+
+- `--parser-backend`（`.py` 入力時の EAST 生成 backend 選択）
+- `--east-stage`（受理値は `3` のみ、`2` は fail-fast）
+- `--object-dispatch-mode`（`native|type_id`）
+- EAST3 optimizer 共通:
+  - `--east3-opt-level`
+  - `--east3-opt-pass`
+  - `--dump-east3-before-opt`
+  - `--dump-east3-after-opt`
+  - `--dump-east3-opt-trace`
+
+### 層別 option pass-through
+
+- `--lower-option key=value`（複数指定可）
+- `--optimizer-option key=value`（複数指定可）
+- `--emitter-option key=value`（複数指定可）
+- 受理した key/value は `backend registry` の schema で検証する（S1-03 で定義）。
+
+### 互換オプション方針
+
+- 既存 `py2*.py` は当面 thin wrapper として残し、既存 CLI を `py2x` へ変換して委譲する。
+- C++ 固有大規模 CLI（`--single-file/--multi-file`、`--emit-runtime-cpp` 等）は初期段階では wrapper 側で保持し、段階移行する。
+- Java の `class_name` 導出など backend 固有 post-process は frontend 固有分岐ではなく backend hook へ移管する。
+
+### fail-fast 規約
+
+1. `--target` 未指定・未知 target は即時エラー。  
+2. `--east-stage 2` は即時エラー（互換モード廃止）。  
+3. 層別 option の書式不正（`key=value` でない）は即時エラー。  
+4. backend schema にない key、型不一致値は即時エラー。  
+5. `.json` 入力で parser 系 option が指定された場合は警告ではなく無視不可エラー（明示的に不整合を止める）。  
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通化で残す差分を「runtime hook」「backend post-process」「C++互換ラッパ維持」に分類して確定した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様（基本形、共通オプション、層別 pass-through、互換方針、fail-fast 規約）を確定した。
