@@ -9,7 +9,7 @@ local png = __pytra_png_module()
 function escape_count(cx, cy, max_iter)
     local x = 0.0
     local y = 0.0
-    for i = 0, (max_iter) - 1, 1 do
+    for i = 0, max_iter - 1 do
         local x2 = (x * x)
         local y2 = (y * y)
         if ((x2 + y2) > 4.0) then
@@ -17,7 +17,6 @@ function escape_count(cx, cy, max_iter)
         end
         y = (((2.0 * x) * y) + cy)
         x = ((x2 - y2) + cx)
-        ::__pytra_continue_1::
     end
     return max_iter
 end
@@ -39,10 +38,10 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
     local __hoisted_cast_2 = __pytra_float((width - 1))
     local __hoisted_cast_3 = __pytra_float(max_iter)
     
-    for y = 0, (height) - 1, 1 do
+    for y = 0, height - 1 do
         local py = (y_min + ((y_max - y_min) * (y / __hoisted_cast_1)))
         
-        for x = 0, (width) - 1, 1 do
+        for x = 0, width - 1 do
             local px = (x_min + ((x_max - x_min) * (x / __hoisted_cast_2)))
             local it = escape_count(px, py, max_iter)
             local r
@@ -61,9 +60,7 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
             table.insert(pixels, r)
             table.insert(pixels, g)
             table.insert(pixels, b)
-            ::__pytra_continue_3::
         end
-        ::__pytra_continue_2::
     end
     return pixels
 end
