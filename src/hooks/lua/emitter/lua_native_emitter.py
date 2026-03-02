@@ -1743,11 +1743,11 @@ class LuaNativeEmitter:
             if fn_name == "int":
                 if len(rendered_args) == 0:
                     return "0"
-                return "(math.floor(tonumber(" + rendered_args[0] + ") or 0))"
+                return "__pytra_int(" + rendered_args[0] + ")"
             if fn_name == "float":
                 if len(rendered_args) == 0:
                     return "0.0"
-                return "(tonumber(" + rendered_args[0] + ") or 0.0)"
+                return "__pytra_float(" + rendered_args[0] + ")"
             if fn_name == "bool":
                 if len(rendered_args) == 0:
                     return "false"
@@ -1780,27 +1780,12 @@ class LuaNativeEmitter:
                 )
             if fn_name == "bytearray":
                 if len(rendered_args) == 0:
-                    return "{}"
-                return (
-                    "(function(__v) "
-                    + "if type(__v) == \"number\" then local __n = math.max(0, math.floor(tonumber(__v) or 0)); local __out = {}; for __i = 1, __n do __out[#__out + 1] = 0 end; return __out "
-                    + "elseif type(__v) == \"table\" then local __out = {}; for __i = 1, #__v do __out[#__out + 1] = __v[__i] end; return __out "
-                    + "else return {} end end)("
-                    + rendered_args[0]
-                    + ")"
-                )
+                    return "__pytra_bytearray()"
+                return "__pytra_bytearray(" + rendered_args[0] + ")"
             if fn_name == "bytes":
                 if len(rendered_args) == 0:
-                    return "{}"
-                return (
-                    "(function(__v) "
-                    + "if type(__v) == \"number\" then local __n = math.max(0, math.floor(tonumber(__v) or 0)); local __out = {}; for __i = 1, __n do __out[#__out + 1] = 0 end; return __out "
-                    + "elseif type(__v) == \"table\" then local __out = {}; for __i = 1, #__v do __out[#__out + 1] = __v[__i] end; return __out "
-                    + "elseif type(__v) == \"string\" then local __out = {}; for __i = 1, #__v do __out[#__out + 1] = string.byte(__v, __i) end; return __out "
-                    + "else return {} end end)("
-                    + rendered_args[0]
-                    + ")"
-                )
+                    return "__pytra_bytes()"
+                return "__pytra_bytes(" + rendered_args[0] + ")"
             if fn_name in self.class_names:
                 return fn_name + ".new(" + ", ".join(rendered_args) + ")"
             return fn_name + "(" + ", ".join(rendered_args) + ")"

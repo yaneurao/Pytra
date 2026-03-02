@@ -278,7 +278,21 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("string.byte(__v, __i)", lua)
+        self.assertIn("__pytra_bytes({ 1, 2, 3 })", lua)
+        self.assertNotIn("string.byte(__v, __i)", lua)
+
+    def test_sample01_prefers_runtime_numeric_and_bytearray_helpers(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("local pixels = __pytra_bytearray()", lua)
+        self.assertIn("local __hoisted_cast_1 = __pytra_float((height - 1))", lua)
+        self.assertIn("local __hoisted_cast_2 = __pytra_float((width - 1))", lua)
+        self.assertIn("local __hoisted_cast_3 = __pytra_float(max_iter)", lua)
+        self.assertIn("local r = __pytra_int((255.0 * (t * t)))", lua)
+        self.assertIn("local g = __pytra_int((255.0 * t))", lua)
+        self.assertIn("local b = __pytra_int((255.0 * (1.0 - t)))", lua)
+        self.assertNotIn("math.floor(tonumber((255.0 * (t * t))) or 0)", lua)
 
     def test_lowering_supports_sequence_repeat(self) -> None:
         src = (
