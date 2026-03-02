@@ -32,53 +32,6 @@
 
 ## 未完了タスク
 
-### P0: Nim toolchain 導入 + py2nim 実装 + test 通過
-
-文脈: [docs/ja/plans/p0-nim-toolchain-py2nim-testpass.md](../plans/p0-nim-toolchain-py2nim-testpass.md)
-
-1. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01] この環境に Nim コンパイラを導入し、`py2nim.py` の実装と Nim 対象 `test/` 通過までを完了する。
-2. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] Nim コンパイラ導入方式（パッケージマネージャ/バージョン固定）を決定し、この環境へ導入する。
-3. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-02] `nim --version` と最小 compile 実行で toolchain 稼働を確認し、再現手順を残す。
-4. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] Nim backend の実装配置を `src/backends/nim/emitter/` 基準へ整理し、`src/hooks/nim` 依存を解消する。
-5. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py` を実装し、EAST3 only・runtime 分離コピー・fail-closed を満たす CLI 導線を作る。
-6. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Nim native emitter の最小対応（関数/分岐/ループ/主要式）を整備し、既知 fixture を変換可能にする。
-7. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] `src/runtime/nim/pytra/py_runtime.nim` を整備し、生成コードからの参照契約を固定する。
-8. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] `test/unit/test_py2nim_smoke.py` と必要 fixture を整備し、Nim 導線の最小回帰を固定する。
-9. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] `tools/check_py2nim_transpile.py` を整備して transpile 一括回帰を追加する。
-10. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] Nim 対象 test/check を実行して pass を確認し、結果を記録する。
-11. [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] 既存主要チェック（`check_py2cpp_transpile` など）で非退行を確認する。
-- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] Nim 1.6.10 を `apt-get install -y nim` で導入し、`nim` コマンドを有効化。
-- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] `src/backends/nim/emitter` を新設し、`src/hooks/nim` 依存を撤去（旧 `src/hooks/nim` は削除）。
-- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py`（EAST3 only / runtime 分離）を実装し、`--east-stage 2` を明示拒否。
-- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] `check_py2nim_transpile` と `test_py2nim_smoke` を pass、`py2nim -> nim c` の最小 compile 成功を確認。
-- 進捗メモ: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] `python3 tools/check_py2cpp_transpile.py` は `checked=140 ok=140 fail=0 skipped=6` で非退行を確認。
-
-### P0: C++ backend ディレクトリ再整列（5フォルダ -> `lower/optimizer/emitter`）
-
-文脈: [docs/ja/plans/p0-cpp-backend-dir-realign.md](../plans/p0-cpp-backend-dir-realign.md)
-
-1. [x] [ID: P0-CPP-DIR-REALIGN-01] `src/backends/cpp/` 直下の `hooks/header/multifile/profile/runtime_emit` を責務境界に沿って再配置し、構成を `lower/optimizer/emitter` 中心へ整理する。
-2. [x] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元を棚卸しし、移設先を確定する。
-3. [x] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新配置の命名規約と import 境界を文書化する。
-4. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` を `emitter` 配下へ移設し、`py2cpp`/`CppEmitter` の参照を更新する。
-5. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` を `emitter` 配下へ移設し、hook factory 導線を更新する。
-6. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` を `emitter` 配下へ移設し、runtime path/include 解決を更新する。
-7. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-04] `header` を `emitter` 配下へ移設し、header 生成導線を更新する。
-8. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-05] `multifile` を `emitter` 配下へ移設し、multi-file 出力導線を更新する。
-9. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-06] 旧 5 フォルダを削除し、旧 import を全面撤去する。
-10. [x] [ID: P0-CPP-DIR-REALIGN-01-S3-01] 旧 import 再発防止チェックを追加する。
-11. [x] [ID: P0-CPP-DIR-REALIGN-01-S3-02] unit/transpile/sample 回帰で非退行を確認する。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S1-01] 5 フォルダの責務/参照元を棚卸しし、移設先を `emitter` 配下へ確定。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S1-02] `src/backends/cpp/` 直下を `lower/optimizer/emitter` 限定とする命名・import 規約を文書化。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` 実体を `emitter/profile_loader.py` へ移設し、`py2cpp`/`CppEmitter` 側 import を新パスへ切り替え。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` 実体を `emitter/hooks_registry.py` へ移設し、hook factory 参照（`py2cpp`/profile/profile.json）を更新。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` 実体を `emitter/runtime_paths.py` へ移設し、`py2cpp`/`CppModuleEmitter` の runtime path/include 解決参照を更新。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-04] `header/cpp_header.py` を `emitter/header_builder.py` へ移設し、`py2cpp` の header 生成 import を `backends.cpp.emitter.header_builder` へ更新。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-05] `multifile/cpp_multifile.py` を `emitter/multifile_writer.py` へ移設し、`py2cpp` の multi-file 出力 import を新パスへ更新。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-06] `src/backends/cpp/{hooks,header,multifile,profile,runtime_emit}` の Python 実体を削除し、`src/backends/cpp/` 直下を `lower/optimizer/emitter` のみに整理。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S3-01] `tools/check_cpp_backend_layout.py` を追加し、旧ディレクトリ残存と旧 import（`backends.cpp.{hooks,header,multifile,profile,runtime_emit}`）を検査可能にした。
-- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S3-02] `check_cpp_backend_layout` / `check_py2cpp_boundary` / `check_py2cpp_transpile` / `sample/py/01 -> py2cpp` を実行し、移設範囲の非退行を確認。
-
 ### P0: Nim runtime 整備で `sample/` parity 全件通過
 
 文脈: [docs/ja/plans/p0-nim-sample-parity-runtime-hardening.md](../plans/p0-nim-sample-parity-runtime-hardening.md)
@@ -92,26 +45,6 @@
 7. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、transpile/compile/runtime エラーを全件解消する。
 8. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認する。
 9. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰で非退行を確認する。
-
-### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
-
-文脈: [docs/ja/plans/p1-php-s18-codegen-quality-uplift.md](../plans/p1-php-s18-codegen-quality-uplift.md)
-
-1. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01] `sample/php/18_mini_language_interpreter.php` のコード生成品質を改善し、実行可能性と意味互換を回復する。
-2. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S1-01] `sample/18` の失敗断片（dict literal / membership / ctor / entrypoint）を棚卸しし、改善境界を固定する。
-3. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-01] PHP emitter の dict literal 出力を修正し、キー付き連想配列を正しく生成する。
-4. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `in` / `not in` の lower を型別に修正し、dict membership を `array_key_exists` 系へ統一する。
-5. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass 由来クラス（`Token/ExprNode/StmtNode`）のフィールド/コンストラクタ出力を整合させる。
-6. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] `main_guard` 出力の entrypoint 名衝突回避を一般化し、`sample/18` で衝突しないことを保証する。
-7. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] unit/smoke 回帰を追加し、同種崩れ（dict/in/ctor/entrypoint）の再発検知を固定する。
-8. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` 再生成と parity 実行で非退行を確認する。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S1-01] 旧 `sample/php/18` で `dict` 空配列化・`in` 崩れ・dataclass ctor 不整合・entrypoint 衝突余地を再現し、改善境界を固定。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-01] `php_native_emitter` の `Dict` 出力を `entries` 対応へ拡張し、`single_char_token_tags` を連想配列として正しく生成。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `Compare(In/NotIn)` を型別 membership へ変更し、`dict` では `array_key_exists` を用いる lower に修正。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass クラスの field 宣言と自動 `__construct` 生成を追加し、`Token/ExprNode/StmtNode` の呼び出し契約を整合。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] entrypoint 名決定時に class 名も衝突候補へ含め、`main_guard` 出力の名衝突回避を一般化。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] `tools/check_py2php_transpile.py` に `sample/18` 品質断片チェックを追加し、dict/in/ctor/entrypoint 崩れの再発検知を固定。
-- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` を再生成し、`tools/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 18_mini_language_interpreter` を pass。
 
 ### P1: 非C++ backend 3層再整列（`Lower` / `Optimizer` / `Emitter`）
 
