@@ -2,15 +2,75 @@
 
 from __future__ import annotations
 
+from pytra.std import json
+from pytra.std.pathlib import Path
 from pytra.std.typing import Any
 
 from hooks.js.hooks.js_hooks import build_js_hooks
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
 
+_JS_EMITTER_BASE = CodeEmitter
+
+
+def _load_json_dict(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        raw_obj = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if isinstance(raw_obj, dict):
+        return raw_obj
+    return {}
+
+
+def _resolve_src_root(anchor_file: str) -> str:
+    if not isinstance(anchor_file, str):
+        return ""
+    if anchor_file.startswith("src/") or anchor_file.startswith("src\\"):
+        return "src"
+    pos = anchor_file.rfind("/src/")
+    if pos < 0:
+        return ""
+    return anchor_file[: pos + 4]
+
+
+def _load_profile_with_includes(profile_rel_path: str, anchor_file: str = "") -> dict[str, Any]:
+    profile_path = Path(profile_rel_path)
+    if not profile_path.exists() and anchor_file != "":
+        src_root = _resolve_src_root(anchor_file)
+        if src_root != "":
+            rel = profile_rel_path
+            if rel.startswith("src/"):
+                rel = rel[4:]
+            profile_path = Path(src_root) / rel
+    meta = _load_json_dict(profile_path)
+    if len(meta) == 0:
+        return {}
+
+    profile_root = profile_path.parent
+    out: dict[str, Any] = {}
+    includes_obj = meta.get("include")
+    includes: list[str] = []
+    if isinstance(includes_obj, list):
+        for item_obj in includes_obj:
+            if isinstance(item_obj, str) and item_obj != "":
+                includes.append(item_obj)
+
+    for rel in includes:
+        piece = _load_json_dict(profile_root / rel)
+        for key, val in piece.items():
+            out[key] = val
+
+    for key, val in meta.items():
+        if key != "include":
+            out[key] = val
+    return out
+
 
 def load_js_profile() -> dict[str, Any]:
     """JavaScript 用 profile を読み込む。"""
-    return CodeEmitter.load_profile_with_includes(
+    return _load_profile_with_includes(
         "src/profiles/js/profile.json",
         anchor_file=__file__,
     )

@@ -1,6 +1,6 @@
 # P4: 全言語 selfhost 完全化（低低優先）
 
-最終更新: 2026-03-01
+最終更新: 2026-03-02
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P4-MULTILANG-SH-01`
@@ -101,6 +101,7 @@
 - 2026-03-01: [ID: `P4-MULTILANG-SH-01-S2-02-S3`] `CodeEmitter.is_declared()` の降順走査を `while` 化して selfhost 2段目の shadow 誤判定（`CS0136`）を解消し、`CSharpEmitter` に selfhost 向け helper 直結（`render_truthy_cond_common` / `render_boolop_chain_common` / `_prepare_call_parts` / `render_augassign_basic`）と fallback（演算子 map / 予約語）を追加した。`_const_int_literal()` 戻り型も object-safe 化して `CS0037` を除去し、`check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` 最新結果で `cs stage1/stage2/stage3 = pass` を確認した。
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `src/hooks/js/emitter/js_emitter.py` の selfhost parser 制約違反（`Any` 受け `node.get()/node.items()`）を object-safe helper 経由へ置換し、関数内 `FunctionDef` 文の emit 未対応を local function 出力へ拡張した。再計測で `js` の先頭失敗は `stage1_dependency_transpile_fail` から `self_retranspile_fail (ERR_MODULE_NOT_FOUND: ./pytra/std.js)` に遷移した。
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` の JS 準備経路を拡張し、selfhost 用 shim 生成・import 相対パス正規化・named export 注入・`in {..}`/単純 f-string の構文置換を追加した。再計測で `js` は `ERR_MODULE_NOT_FOUND` を解消し、先頭失敗が `SyntaxError: Unexpected token ':'`（`raw[qpos:]` 由来の Python slice 構文）へ前進した。
+- 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `raw[qpos:]`/`txt in {"",...}` の source 側縮退、JS selfhost shim の ESM 化と runtime 再適用、`argparse` map-tag 互換、`.py -> EAST3(JSON)` 入力切替、`JsEmitter` の profile loader selfhost 互換化（`EmitterHooks`/`__file__`/`CodeEmitter` 依存の段階緩和）を実施した。`ReferenceError/SyntaxError` 系を解消して実行は深く進行し、先頭失敗は `TypeError: CodeEmitter._dict_copy_str_object is not a function` まで遷移した。
 
 ## 現状固定（S1-01）
 

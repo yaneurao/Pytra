@@ -25,6 +25,8 @@ def load_east(
     dump_east3_opt_trace: str = "",
 ) -> dict[str, Any]:
     """`.py` / `.json` を EAST ドキュメントへ読み込む。"""
+    if not isinstance(east_stage, str) or east_stage == "":
+        east_stage = "3"
     if east_stage != "3":
         raise RuntimeError("unsupported east_stage: " + east_stage)
     doc3 = load_east3_document(

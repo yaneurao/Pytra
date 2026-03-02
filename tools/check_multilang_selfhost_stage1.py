@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PREPARE_CS_SELFHOST = ROOT / "tools" / "prepare_selfhost_source_cs.py"
 CS_SELFHOST_ENTRY = ROOT / "selfhost" / "py2cs.py"
 PY2CS_CLI = ROOT / "src" / "py2cs.py"
+PY2JS_CLI = ROOT / "src" / "py2js.py"
 
 
 @dataclass
@@ -136,7 +137,14 @@ def _normalize_js_module_import_paths(js_src: str, src_file: Path, stage_src_roo
             continue
         rel_path = m.group("path")
         if rel_path.startswith("./"):
-            target_abs = (stage_src_root / rel_path[2:]).resolve()
+            root_candidate = (stage_src_root / rel_path[2:]).resolve()
+            local_candidate = (src_file.parent / rel_path).resolve()
+            if rel_path.startswith("./pytra/") or rel_path.startswith("./runtime/"):
+                target_abs = root_candidate
+            elif local_candidate.exists():
+                target_abs = local_candidate
+            else:
+                target_abs = root_candidate
             rel = os.path.relpath(target_abs, src_file.parent.resolve()).replace("\\", "/")
             if not rel.startswith("."):
                 rel = "./" + rel
@@ -158,6 +166,57 @@ def _rewrite_js_selfhost_syntax(js_src: str) -> str:
     out = pat_in.sub(lambda m: "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
     out = pat_f_dq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
     out = pat_f_sq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
+    if (
+        "class JsEmitter {" in out
+        and "CodeEmitter" in out
+        and "Object.setPrototypeOf(JsEmitter.prototype, CodeEmitter.prototype);" not in out
+    ):
+        out = out.replace(
+            "function transpile_to_js(",
+            "Object.setPrototypeOf(JsEmitter.prototype, CodeEmitter.prototype);\n"
+            "Object.setPrototypeOf(JsEmitter, CodeEmitter);\n\n"
+            "function transpile_to_js(",
+            1,
+        )
+    helper_chunks: list[str] = []
+    if "set(" in out and "function set(" not in out:
+        helper_chunks.append(
+            "function _pytra_make_set() {\n"
+            "  const out = Object.create(null);\n"
+            "  Object.defineProperty(out, 'add', { value: function(v) { this[String(v)] = true; return this; }, enumerable: false });\n"
+            "  Object.defineProperty(out, Symbol.iterator, { value: function*() { for (const k of Object.keys(this)) { yield k; } }, enumerable: false });\n"
+            "  return out;\n"
+            "}\n"
+            "function set(items = []) {\n"
+            "  const out = _pytra_make_set();\n"
+            "  if (items !== null && items !== undefined) {\n"
+            "    if (Array.isArray(items) || typeof items[Symbol.iterator] === 'function') {\n"
+            "      for (const v of items) { out.add(v); }\n"
+            "    }\n"
+            "  }\n"
+            "  return out;\n"
+            "}\n"
+        )
+    if "list(" in out and "function list(" not in out:
+        helper_chunks.append(
+            "function list(items = []) {\n"
+            "  if (Array.isArray(items)) { return items.slice(); }\n"
+            "  if (items === null || items === undefined) { return []; }\n"
+            "  if (typeof items[Symbol.iterator] === 'function') { return Array.from(items); }\n"
+            "  return [];\n"
+            "}\n"
+        )
+    if len(helper_chunks) > 0:
+        out = "".join(helper_chunks) + out
+    if "class CodeEmitter {" in out and "Object.getOwnPropertyNames(CodeEmitter.prototype)" not in out:
+        out += (
+            "\nfor (const __name of Object.getOwnPropertyNames(CodeEmitter.prototype)) {\n"
+            "  if (__name === 'constructor') { continue; }\n"
+            "  if (Object.prototype.hasOwnProperty.call(CodeEmitter, __name)) { continue; }\n"
+            "  const __fn = CodeEmitter.prototype[__name];\n"
+            "  if (typeof __fn === 'function') { CodeEmitter[__name] = __fn; }\n"
+            "}\n"
+        )
     return out
 
 
@@ -244,66 +303,75 @@ def _inject_js_named_exports(stage_src_root: Path) -> None:
 def _write_js_selfhost_shims(stage_src_root: Path) -> None:
     files: dict[str, str] = {
         "pytra/py_runtime.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/py_runtime.js');\n"
-            "exports.PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"
-            "exports.PY_TYPE_BOOL = rt.PY_TYPE_BOOL;\n"
-            "exports.PY_TYPE_NUMBER = rt.PY_TYPE_NUMBER;\n"
-            "exports.PY_TYPE_STRING = rt.PY_TYPE_STRING;\n"
-            "exports.PY_TYPE_ARRAY = rt.PY_TYPE_ARRAY;\n"
-            "exports.PY_TYPE_MAP = rt.PY_TYPE_MAP;\n"
-            "exports.PY_TYPE_SET = rt.PY_TYPE_SET;\n"
-            "exports.PY_TYPE_OBJECT = rt.PY_TYPE_OBJECT;\n"
-            "exports.PYTRA_TYPE_ID = rt.PYTRA_TYPE_ID;\n"
-            "exports.pyRegisterType = rt.pyRegisterType;\n"
-            "exports.pyRegisterClassType = rt.pyRegisterClassType;\n"
-            "exports.pyIsSubtype = rt.pyIsSubtype;\n"
-            "exports.pyIsInstance = rt.pyIsInstance;\n"
-            "exports.pyTypeId = rt.pyTypeId;\n"
-            "exports.pyTruthy = rt.pyTruthy;\n"
-            "exports.pyTryLen = rt.pyTryLen;\n"
-            "exports.pyStr = rt.pyStr;\n"
-            "exports.pyToString = rt.pyToString;\n"
-            "exports.pyPrint = rt.pyPrint;\n"
-            "exports.pyLen = rt.pyLen;\n"
-            "exports.pyBool = rt.pyBool;\n"
-            "exports.pyRange = rt.pyRange;\n"
-            "exports.pyFloorDiv = rt.pyFloorDiv;\n"
-            "exports.pyMod = rt.pyMod;\n"
-            "exports.pyIn = rt.pyIn;\n"
-            "exports.pySlice = rt.pySlice;\n"
-            "exports.pyOrd = rt.pyOrd;\n"
-            "exports.pyChr = rt.pyChr;\n"
-            "exports.pyBytearray = rt.pyBytearray;\n"
-            "exports.pyBytes = rt.pyBytes;\n"
-            "exports.pyIsDigit = rt.pyIsDigit;\n"
-            "exports.pyIsAlpha = rt.pyIsAlpha;\n"
+            "import { createRequire } from 'node:module';\n"
+            "const require = createRequire(import.meta.url);\n"
+            "const rt = require('../runtime/js/pytra/py_runtime.js');\n"
+            "export const PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"
+            "export const PY_TYPE_BOOL = rt.PY_TYPE_BOOL;\n"
+            "export const PY_TYPE_NUMBER = rt.PY_TYPE_NUMBER;\n"
+            "export const PY_TYPE_STRING = rt.PY_TYPE_STRING;\n"
+            "export const PY_TYPE_ARRAY = rt.PY_TYPE_ARRAY;\n"
+            "export const PY_TYPE_MAP = rt.PY_TYPE_MAP;\n"
+            "export const PY_TYPE_SET = rt.PY_TYPE_SET;\n"
+            "export const PY_TYPE_OBJECT = rt.PY_TYPE_OBJECT;\n"
+            "export const PYTRA_TYPE_ID = rt.PYTRA_TYPE_ID;\n"
+            "export const pyRegisterType = rt.pyRegisterType;\n"
+            "export const pyRegisterClassType = rt.pyRegisterClassType;\n"
+            "export const pyIsSubtype = rt.pyIsSubtype;\n"
+            "export const pyIsInstance = rt.pyIsInstance;\n"
+            "export const pyTypeId = rt.pyTypeId;\n"
+            "export const pyTruthy = rt.pyTruthy;\n"
+            "export const pyTryLen = rt.pyTryLen;\n"
+            "export const pyStr = rt.pyStr;\n"
+            "export const pyToString = rt.pyToString;\n"
+            "export const pyPrint = rt.pyPrint;\n"
+            "export const pyLen = rt.pyLen;\n"
+            "export const pyBool = rt.pyBool;\n"
+            "export const pyRange = rt.pyRange;\n"
+            "export const pyFloorDiv = rt.pyFloorDiv;\n"
+            "export const pyMod = rt.pyMod;\n"
+            "export const pyIn = rt.pyIn;\n"
+            "export const pySlice = rt.pySlice;\n"
+            "export const pyOrd = rt.pyOrd;\n"
+            "export const pyChr = rt.pyChr;\n"
+            "export const pyBytearray = rt.pyBytearray;\n"
+            "export const pyBytes = rt.pyBytes;\n"
+            "export const pyIsDigit = rt.pyIsDigit;\n"
+            "export const pyIsAlpha = rt.pyIsAlpha;\n"
         ),
         "pytra/std/pathlib.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/pathlib.js');\n"
-            "exports.Path = rt.Path;\n"
-            "exports.pathJoin = rt.pathJoin;\n"
+            "import { createRequire } from 'node:module';\n"
+            "const require = createRequire(import.meta.url);\n"
+            "const rt = require('../../runtime/js/pytra/pathlib.js');\n"
+            "function Path(value = '') { return new rt.Path(value); }\n"
+            "export { Path };\n"
+            "export const pathJoin = rt.pathJoin;\n"
         ),
         "pytra/std/math.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/math.js');\n"
-            "exports.pi = rt.pi;\n"
-            "exports.e = rt.e;\n"
-            "exports.sin = rt.sin;\n"
-            "exports.cos = rt.cos;\n"
-            "exports.tan = rt.tan;\n"
-            "exports.sqrt = rt.sqrt;\n"
-            "exports.exp = rt.exp;\n"
-            "exports.log = rt.log;\n"
-            "exports.log10 = rt.log10;\n"
-            "exports.fabs = rt.fabs;\n"
-            "exports.floor = rt.floor;\n"
-            "exports.ceil = rt.ceil;\n"
-            "exports.pow = rt.pow;\n"
+            "import { createRequire } from 'node:module';\n"
+            "const require = createRequire(import.meta.url);\n"
+            "const rt = require('../../runtime/js/pytra/math.js');\n"
+            "export const pi = rt.pi;\n"
+            "export const e = rt.e;\n"
+            "export const sin = rt.sin;\n"
+            "export const cos = rt.cos;\n"
+            "export const tan = rt.tan;\n"
+            "export const sqrt = rt.sqrt;\n"
+            "export const exp = rt.exp;\n"
+            "export const log = rt.log;\n"
+            "export const log10 = rt.log10;\n"
+            "export const fabs = rt.fabs;\n"
+            "export const floor = rt.floor;\n"
+            "export const ceil = rt.ceil;\n"
+            "export const pow = rt.pow;\n"
         ),
         "pytra/std/time.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/time.js');\n"
+            "import { createRequire } from 'node:module';\n"
+            "const require = createRequire(import.meta.url);\n"
+            "const rt = require('../../runtime/js/pytra/time.js');\n"
             "const perf_counter = typeof rt.perf_counter === 'function' ? rt.perf_counter : rt.perfCounter;\n"
-            "exports.perf_counter = perf_counter;\n"
-            "exports.perfCounter = perf_counter;\n"
+            "export { perf_counter };\n"
+            "export const perfCounter = perf_counter;\n"
         ),
         "pytra/std/sys.js": (
             "const sys = {\n"
@@ -319,7 +387,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "  write_stderr: function(text) { process.stderr.write(String(text)); },\n"
             "  write_stdout: function(text) { process.stdout.write(String(text)); },\n"
             "};\n"
-            "exports.sys = sys;\n"
+            "export { sys };\n"
         ),
         "pytra/std/json.js": (
             "function _escape_non_ascii(text) {\n"
@@ -338,10 +406,11 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "    return out;\n"
             "  },\n"
             "};\n"
-            "exports.json = json;\n"
+            "export { json };\n"
         ),
         "pytra/std/argparse.js": (
-            "const { sys } = require('./sys.js');\n"
+            "import { sys } from './sys.js';\n"
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../py_runtime.js';\n"
             "class _ArgumentParser {\n"
             "  constructor(description = '') { this.description = String(description || ''); this._specs = []; }\n"
             "  add_argument() {\n"
@@ -355,6 +424,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "  parse_args(argv = null) {\n"
             "    const tokens = Array.isArray(argv) ? Array.from(argv).map((x) => String(x)) : Array.from(process.argv.slice(2));\n"
             "    const values = {};\n"
+            "    values[PYTRA_TYPE_ID] = PY_TYPE_MAP;\n"
             "    const specsPos = this._specs.filter((s) => !s.is_optional);\n"
             "    const byName = {};\n"
             "    for (const spec of this._specs) {\n"
@@ -382,15 +452,16 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "  }\n"
             "}\n"
             "const argparse = { ArgumentParser: function(description = '') { return new _ArgumentParser(description); } };\n"
-            "exports.argparse = argparse;\n"
+            "export { argparse };\n"
         ),
         "pytra/std.js": (
-            "exports.argparse = require('./std/argparse.js').argparse;\n"
-            "exports.sys = require('./std/sys.js').sys;\n"
-            "exports.json = require('./std/json.js').json;\n"
-            "exports.pathlib = require('./std/pathlib.js');\n"
-            "exports.math = require('./std/math.js');\n"
-            "exports.time = require('./std/time.js');\n"
+            "import { argparse } from './std/argparse.js';\n"
+            "import { sys } from './std/sys.js';\n"
+            "import { json } from './std/json.js';\n"
+            "import * as pathlib from './std/pathlib.js';\n"
+            "import * as math from './std/math.js';\n"
+            "import * as time from './std/time.js';\n"
+            "export { argparse, sys, json, pathlib, math, time };\n"
         ),
         "pytra/compiler/transpile_cli.js": (
             "import fs from 'node:fs';\n"
@@ -479,6 +550,8 @@ def _prepare_js_stage2_tree(stage2_root: Path, entry_py: Path) -> tuple[bool, st
             if dep_py.exists():
                 queue.append(dep_py)
 
+    # host transpile が書き戻す runtime shim を selfhost 用に再適用する。
+    _write_js_selfhost_shims(stage2_src_root)
     _inject_js_named_exports(stage2_src_root)
     return True, "", entry_js
 
@@ -493,8 +566,29 @@ def _run_js_stage2(sample_py: Path, stage2_tmp_dir: Path, entry_py: Path) -> tup
     if not ok_prepare:
         return "fail", msg_prepare
 
+    sample_input = sample_py
+    if sample_py.suffix == ".py":
+        sample_json = stage2_tmp_dir / "sample_stage2_input.east3.json"
+        host_tmp = stage2_tmp_dir / "sample_stage2_host_tmp.js"
+        ok_json, msg_json = _run(
+            [
+                "python3",
+                str(PY2JS_CLI),
+                str(sample_py),
+                "-o",
+                str(host_tmp),
+                "--dump-east3-after-opt",
+                str(sample_json),
+            ]
+        )
+        if not ok_json:
+            return "fail", "js stage2 sample east3 dump failed: " + msg_json
+        if not sample_json.exists():
+            return "fail", "js stage2 sample east3 dump missing"
+        sample_input = sample_json
+
     out2 = js_root / "js_stage2_out.js"
-    ok_run, msg_run = _run(["node", str(entry_js), str(sample_py), "-o", str(out2)], cwd=js_root)
+    ok_run, msg_run = _run(["node", str(entry_js), str(sample_input), "-o", str(out2)], cwd=js_root)
     if ok_run and out2.exists():
         return "pass", "sample/py/01 transpile ok"
     if msg_run != "":

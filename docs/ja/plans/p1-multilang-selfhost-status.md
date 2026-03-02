@@ -12,7 +12,7 @@ python3 tools/check_multilang_selfhost_stage1.py
 |---|---|---|---|---|
 | rs | pass | native | fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
 | cs | pass | native | pass | sample/py/01 transpile ok |
-| js | pass | native | fail | SyntaxError: Unexpected token ':' |
+| js | pass | native | fail | TypeError: CodeEmitter._dict_copy_str_object is not a function |
 | ts | pass | native | skip | stage2 scope is rs/cs/js only |
 | go | pass | native | skip | stage2 scope is rs/cs/js only |
 | java | pass | native | skip | stage2 scope is rs/cs/js only |

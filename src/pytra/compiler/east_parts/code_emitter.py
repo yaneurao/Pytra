@@ -1017,7 +1017,11 @@ class CodeEmitter:
                             qpos = i
                             break
                     if qpos >= 0:
-                        return f"{bytes_lit_fn_name}({raw[qpos:]})"
+                        raw_tail = ""
+                        for i, ch in enumerate(raw):
+                            if i >= qpos:
+                                raw_tail += ch
+                        return f"{bytes_lit_fn_name}({raw_tail})"
                 return f"{bytes_ctor_name}({self.quote_string_literal(v_txt)})"
             return self.quote_string_literal(v_txt)
         return str(v)
@@ -1111,7 +1115,7 @@ class CodeEmitter:
 
     def _is_empty_dynamic_text(self, txt: str) -> bool:
         """動的値から得た文字列が有効値かどうかを判定する。"""
-        return txt in {"", "None", "{}", "[]"}
+        return txt == "" or txt == "None" or txt == "{}" or txt == "[]"
 
     def any_dict_get_str(self, obj: Any, key: str, default_value: str = "") -> str:
         """dict 風入力から文字列を取得し、失敗時は既定値を返す。"""
