@@ -65,6 +65,7 @@
 10. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
 11. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppLower` / `CppIrOptimizer` を新設し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` へ配線。`test_cpp_optimizer*` と `check_py2cpp_transpile`（136/136, skip6）を通過。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppBraceOmitHintPass` を追加して `If/ForCore` の brace 省略判定を optimizer 側へ移し、emitter は `cpp_omit_braces_v1` ヒント優先で描画するように更新。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 

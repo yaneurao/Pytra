@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
 from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
 from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
 from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
@@ -18,5 +19,6 @@ def build_default_cpp_passes() -> list[object]:
         CppNoOpCastPass(),
         CppConstConditionPass(),
         CppRangeForShapePass(),
+        CppBraceOmitHintPass(),
         CppRuntimeFastPathPass(),
     ]

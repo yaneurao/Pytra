@@ -1356,6 +1356,13 @@ class CppEmitter(
             return self._can_omit_braces_for_single_stmt(body_stmts)
         return default_value
 
+    def _stmt_omit_braces_default(self, kind: str, stmt: dict[str, Any], fallback: bool = False) -> bool:
+        """Prefer optimizer-provided hint and fallback to emitter local default."""
+        hint_any = stmt.get("cpp_omit_braces_v1")
+        if isinstance(hint_any, bool):
+            return hint_any
+        return self._default_stmt_omit_braces(kind, stmt, fallback)
+
     def _default_for_range_mode(self, stmt: dict[str, Any], default_mode: str, step_expr: str) -> str:
         """hooks 無効時の ForRange mode を C++ 既定方針で解決する。"""
         mode = self.any_to_str(stmt.get("range_mode"))

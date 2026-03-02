@@ -14,7 +14,7 @@ class CppStatementEmitter:
             cond_empty_default="false",
         )
         self._predeclare_if_join_names(body_stmts, else_stmts)
-        omit_default = self._default_stmt_omit_braces("If", stmt, False)
+        omit_default = self._stmt_omit_braces_default("If", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("If", stmt, omit_default)
         if omit_braces and len(body_stmts) == 1 and len(else_stmts) <= 1:
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": cond_txt}))
@@ -743,7 +743,7 @@ class CppStatementEmitter:
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_default = self._default_stmt_omit_braces("ForRange", stmt, False)
+        omit_default = self._stmt_omit_braces_default("ForRange", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("ForRange", stmt, omit_default)
         if len(body_stmts) != 1:
             omit_braces = False
@@ -799,7 +799,7 @@ class CppStatementEmitter:
             )
             return
         body_stmts = self._dict_stmt_list(stmt.get("body"))
-        omit_default = self._default_stmt_omit_braces("For", stmt, False)
+        omit_default = self._stmt_omit_braces_default("For", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("For", stmt, omit_default)
         if len(body_stmts) != 1:
             omit_braces = False
@@ -1363,7 +1363,7 @@ class CppStatementEmitter:
         target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
         body_stmts = self.any_dict_get_list(stmt, "body")
         _ = self.any_dict_get_list(stmt, "orelse")
-        omit_default = self._default_stmt_omit_braces("ForCore", stmt, False)
+        omit_default = self._stmt_omit_braces_default("ForCore", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("ForCore", stmt, omit_default)
         if len(body_stmts) != 1:
             omit_braces = False
