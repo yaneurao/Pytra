@@ -103,6 +103,7 @@
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` の JS 準備経路を拡張し、selfhost 用 shim 生成・import 相対パス正規化・named export 注入・`in {..}`/単純 f-string の構文置換を追加した。再計測で `js` は `ERR_MODULE_NOT_FOUND` を解消し、先頭失敗が `SyntaxError: Unexpected token ':'`（`raw[qpos:]` 由来の Python slice 構文）へ前進した。
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `raw[qpos:]`/`txt in {"",...}` の source 側縮退、JS selfhost shim の ESM 化と runtime 再適用、`argparse` map-tag 互換、`.py -> EAST3(JSON)` 入力切替、`JsEmitter` の profile loader selfhost 互換化（`EmitterHooks`/`__file__`/`CodeEmitter` 依存の段階緩和）を実施した。`ReferenceError/SyntaxError` 系を解消して実行は深く進行し、先頭失敗は `TypeError: CodeEmitter._dict_copy_str_object is not a function` まで遷移した。
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] `CodeEmitter.load_type_map` の `.get` 経路と `JsEmitter.__init__` の `profile/operators/syntax` 参照を object-safe 化し、selfhost rewrite へ `set/list/dict` polyfill と `CodeEmitter` static alias 補完を追加した。`dict is not defined` を解消し、先頭失敗を `TypeError: module.get is not a function` へ更新した。
+- 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] selfhost rewrite で `.get(...)` を `__pytra_dict_get(...)` へ統一し、`Object.prototype.get` 由来の descriptor 衝突を解消。加えて `Path` shim に `parent/name/stem` property 互換と `mkdir` 既定冪等化を導入した。再計測で `js` は `stage1 pass / stage2 pass` まで到達し、multistage 先頭失敗は `sample_transpile_fail: stage3 sample output missing` へ前進した。
 
 ## 現状固定（S1-01）
 

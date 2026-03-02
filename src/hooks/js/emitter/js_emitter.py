@@ -530,7 +530,14 @@ class JsEmitter(CodeEmitter):
             self.emit_stmt_list(main_guard_body)
         elif len(top_level_stmts) > 0:
             self.emit_stmt_list(top_level_stmts)
-        return "\n".join(self.lines) + ("\n" if len(self.lines) > 0 else "")
+        out_text = ""
+        for i, line in enumerate(self.lines):
+            if i > 0:
+                out_text += "\n"
+            out_text += line
+        if len(self.lines) > 0:
+            out_text += "\n"
+        return out_text
 
     def _emit_class(self, stmt: dict[str, Any]) -> None:
         """ClassDef を JavaScript class として出力する。"""

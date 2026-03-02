@@ -162,10 +162,12 @@ def _rewrite_js_selfhost_syntax(js_src: str) -> str:
     pat_in = re.compile(r"(?P<lhs>[A-Za-z_][A-Za-z0-9_\.]*)\s+in\s+\{(?P<items>[^{}]+)\}")
     pat_f_dq = re.compile(r'(?<![A-Za-z0-9_"\'])f"(?P<body>[^"\n]*)"')
     pat_f_sq = re.compile(r"(?<![A-Za-z0-9_\"'])f'(?P<body>[^'\n]*)'")
+    pat_get = re.compile(r"(?P<obj>[A-Za-z_][A-Za-z0-9_\.]*)\.get\(")
     out = pat_not_in.sub(lambda m: "!" + "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
     out = pat_in.sub(lambda m: "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
     out = pat_f_dq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
     out = pat_f_sq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
+    out = pat_get.sub(lambda m: "__pytra_dict_get(" + m.group("obj") + ", ", out)
     if (
         "class JsEmitter {" in out
         and "CodeEmitter" in out
@@ -179,6 +181,39 @@ def _rewrite_js_selfhost_syntax(js_src: str) -> str:
             1,
         )
     helper_chunks: list[str] = []
+    if "__pytra_dict_get(" in out and "function __pytra_dict_get(" not in out:
+        helper_chunks.append(
+            "function __pytra_dict_get(obj, key, default_value = null) {\n"
+            "  if (obj instanceof Map) {\n"
+            "    return obj.has(key) ? obj.get(key) : default_value;\n"
+            "  }\n"
+            "  if (obj === null || obj === undefined) {\n"
+            "    return default_value;\n"
+            "  }\n"
+            "  return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : default_value;\n"
+            "}\n"
+        )
+    if "Object.prototype.items" not in out:
+        helper_chunks.append(
+            "if (typeof Object.prototype.items !== 'function') {\n"
+            "  Object.defineProperty(Object.prototype, 'items', {\n"
+            "    value: function() { return Object.entries(this); },\n"
+            "    enumerable: false,\n"
+            "  });\n"
+            "}\n"
+            "if (typeof Object.prototype.keys !== 'function') {\n"
+            "  Object.defineProperty(Object.prototype, 'keys', {\n"
+            "    value: function() { return Object.keys(this); },\n"
+            "    enumerable: false,\n"
+            "  });\n"
+            "}\n"
+            "if (typeof Object.prototype.values !== 'function') {\n"
+            "  Object.defineProperty(Object.prototype, 'values', {\n"
+            "    value: function() { return Object.values(this); },\n"
+            "    enumerable: false,\n"
+            "  });\n"
+            "}\n"
+        )
     if "set(" in out and "function set(" not in out:
         helper_chunks.append(
             "function _pytra_make_set() {\n"
@@ -370,9 +405,44 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "import { createRequire } from 'node:module';\n"
             "const require = createRequire(import.meta.url);\n"
             "const rt = require('../../runtime/js/pytra/pathlib.js');\n"
-            "function Path(value = '') { return new rt.Path(value); }\n"
+            "function _wrap_path_obj(obj) {\n"
+            "  if (obj === null || obj === undefined || typeof obj !== 'object') { return obj; }\n"
+            "  if (typeof obj.parent === 'function' && !Object.prototype.hasOwnProperty.call(obj, '__pytra_parent_wrapped')) {\n"
+            "    const parent_fn = obj.parent.bind(obj);\n"
+            "    Object.defineProperty(obj, 'parent', { get: function() { return _wrap_path_obj(parent_fn()); }, configurable: true });\n"
+            "    Object.defineProperty(obj, '__pytra_parent_wrapped', { value: true, enumerable: false, configurable: true });\n"
+            "  }\n"
+            "  if (typeof obj.name === 'function' && !Object.prototype.hasOwnProperty.call(obj, '__pytra_name_wrapped')) {\n"
+            "    const name_fn = obj.name.bind(obj);\n"
+            "    Object.defineProperty(obj, 'name', { get: function() { return name_fn(); }, configurable: true });\n"
+            "    Object.defineProperty(obj, '__pytra_name_wrapped', { value: true, enumerable: false, configurable: true });\n"
+            "  }\n"
+            "  if (typeof obj.stem === 'function' && !Object.prototype.hasOwnProperty.call(obj, '__pytra_stem_wrapped')) {\n"
+            "    const stem_fn = obj.stem.bind(obj);\n"
+            "    Object.defineProperty(obj, 'stem', { get: function() { return stem_fn(); }, configurable: true });\n"
+            "    Object.defineProperty(obj, '__pytra_stem_wrapped', { value: true, enumerable: false, configurable: true });\n"
+            "  }\n"
+            "  if (typeof obj.mkdir === 'function' && !Object.prototype.hasOwnProperty.call(obj, '__pytra_mkdir_wrapped')) {\n"
+            "    const mkdir_fn = obj.mkdir.bind(obj);\n"
+            "    Object.defineProperty(obj, 'mkdir', {\n"
+            "      value: function(parents = true, exist_ok = true) {\n"
+            "        try { return mkdir_fn(parents, exist_ok); }\n"
+            "        catch (err) {\n"
+            "          if (err && err.code === 'EEXIST') { return; }\n"
+            "          throw err;\n"
+            "        }\n"
+            "      },\n"
+            "      configurable: true,\n"
+            "      enumerable: false,\n"
+            "      writable: true,\n"
+            "    });\n"
+            "    Object.defineProperty(obj, '__pytra_mkdir_wrapped', { value: true, enumerable: false, configurable: true });\n"
+            "  }\n"
+            "  return obj;\n"
+            "}\n"
+            "function Path(value = '') { return _wrap_path_obj(new rt.Path(value)); }\n"
             "export { Path };\n"
-            "export const pathJoin = rt.pathJoin;\n"
+            "export const pathJoin = function(base, child) { return _wrap_path_obj(rt.pathJoin(base, child)); };\n"
         ),
         "pytra/std/math.js": (
             "import { createRequire } from 'node:module';\n"
