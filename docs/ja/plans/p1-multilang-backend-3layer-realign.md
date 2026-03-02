@@ -1,6 +1,6 @@
 # P1: 非C++ backend の 3層再整列（`Lower` / `Optimizer` / `Emitter`）
 
-最終更新: 2026-03-02
+最終更新: 2026-03-03
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-MULTILANG-BACKEND-3LAYER-01`
@@ -60,9 +60,9 @@
 
 ## 分解
 
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend 現状の責務棚卸し（どこで意味決定/正規化/描画しているか）を作成する。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約、失敗時 fail-closed、層ごとの禁止事項）を定義する。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ・命名規約（`lower/*`, `optimizer/*`, `emitter/*`）と import 規約を文書化する。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend 現状の責務棚卸し（どこで意味決定/正規化/描画しているか）を作成する。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約、失敗時 fail-closed、層ごとの禁止事項）を定義する。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ・命名規約（`lower/*`, `optimizer/*`, `emitter/*`）と import 規約を文書化する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave 1（`rs`）で `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave 1（`scala`）で `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave 1の回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
@@ -72,6 +72,78 @@
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec` / `docs/en/spec` を更新し、3層を backend 標準構成として明文化する。
 
+## S1-01 棚卸し結果（2026-03-03）
+
+| backend | 現構成 | 意味決定/正規化の主位置 | 描画の主位置 | 備考 |
+| --- | --- | --- | --- | --- |
+| `rs` | `emitter/rs_emitter.py` + `hooks/rs_hooks.py` | `rs_emitter.py`（`kind ==` 分岐多数、`ForCore` 展開） | `rs_emitter.py` | `CodeEmitter` 継承。runtime import/補助関数生成も同居。 |
+| `cs` | `emitter/cs_emitter.py` + `hooks/cs_hooks.py` | `cs_emitter.py`（型判定・isinstance lower・range 展開） | `cs_emitter.py` | `CodeEmitter` 継承。runtime呼び出し選択が emitter 内に集中。 |
+| `js` | `emitter/js_emitter.py` + `hooks/js_hooks.py` | `js_emitter.py`（import/runtime symbol 収集含む） | `js_emitter.py` | `CodeEmitter` 継承。意味決定とレンダリングの混在が顕著。 |
+| `ts` | `emitter/ts_emitter.py` | ほぼ `js` へ委譲 | `js` 出力の薄いラッパ | TS 専用 Lower/Optimizer 不在。 |
+| `go` | `emitter/go_native_emitter.py` | `go_native_emitter.py`（`ForCore` / compare / call lower） | `go_native_emitter.py` | 単一 native emitter に集約。 |
+| `java` | `emitter/java_native_emitter.py` | `java_native_emitter.py` | `java_native_emitter.py` | 単一 native emitter。 |
+| `kotlin` | `emitter/kotlin_native_emitter.py` | `kotlin_native_emitter.py` | `kotlin_native_emitter.py` | 単一 native emitter。 |
+| `swift` | `emitter/swift_native_emitter.py` | `swift_native_emitter.py` | `swift_native_emitter.py` | 単一 native emitter。 |
+| `ruby` | `emitter/ruby_native_emitter.py` | `ruby_native_emitter.py` | `ruby_native_emitter.py` | 単一 native emitter。 |
+| `lua` | `emitter/lua_native_emitter.py` | `lua_native_emitter.py` | `lua_native_emitter.py` | 単一 native emitter。 |
+| `scala` | `emitter/scala_native_emitter.py` | `scala_native_emitter.py` | `scala_native_emitter.py` | 単一 native emitter。 |
+| `php` | `emitter/php_native_emitter.py` | `php_native_emitter.py`（dict/in/ctor/entrypoint lower を内包） | `php_native_emitter.py` | 単一 native emitter。 |
+| `nim` | `emitter/nim_native_emitter.py` | `nim_native_emitter.py` | `nim_native_emitter.py` | 新規導入 backend。最初から3層化対象に含める。 |
+
+棚卸しまとめ:
+- 非C++ backend は全て「実質 emitter 1層」で、意味決定・正規化・描画が混在している。
+- `rs/cs/js` は `CodeEmitter` 継承 + hooks 構造だが、Lower/Optimizer 分離には未到達。
+- `go/java/kotlin/swift/ruby/lua/scala/php/nim` は native emitter 単体で、3層化の導線が未整備。
+
+## S1-02 3層契約（2026-03-03）
+
+### Lower 契約
+- 入力: EAST3 Module。
+- 出力: LangIR Module（言語固有だが意味保存、テキスト未生成）。
+- 責務: 言語構文へ必要な決定（range 展開、membership 方式、entrypoint 形）を LangIR ノードへ正規化。
+- 禁止: 文字列連結でのソース直接生成、runtime ファイル配置、I/O。
+
+### Optimizer 契約
+- 入力/出力: LangIR Module -> LangIR Module。
+- 責務: 意味保存の局所変換（冗長 cast 除去、単純化、依存収集補助）。
+- 禁止: EAST 再解釈、テキスト生成、副作用を伴う最適化。
+
+### Emitter 契約
+- 入力: LangIR Module。
+- 出力: 言語ソース文字列。
+- 責務: フォーマット・字句整形・最終レンダリング。
+- 禁止: 新規の意味決定（`in/not in` 判定方式選択など）、型解決の再推論。
+
+### fail-closed ルール
+- Lower/Optimizer/Emitter いずれも未知ノード/未知属性は黙ってスキップせず `RuntimeError` を返す。
+- Layer 境界を跨ぐ暗黙フォールバック（例: Emitter が EAST3 を直接再走査して補正）は禁止。
+- CI では `check_py2<lang>_transpile` 失敗を許容しない（既知失敗は明示リスト管理）。
+
+## S1-03 命名・import 規約（2026-03-03）
+
+ディレクトリ規約:
+- `src/backends/<lang>/lower/`:
+  - `ir.py`（LangIR node 定義）
+  - `from_east3.py`（EAST3 -> LangIR）
+- `src/backends/<lang>/optimizer/`:
+  - `pipeline.py`（pass 合成）
+  - `passes/*.py`（個別最適化）
+- `src/backends/<lang>/emitter/`:
+  - `<lang>_emitter.py` または `<lang>_native_emitter.py`（LangIR -> text）
+  - `runtime_paths.py` / `profile_loader.py` 等の描画補助
+
+import 規約:
+- `py2<lang>.py` は `backends.<lang>.lower` -> `optimizer` -> `emitter` の順でのみ参照する。
+- `emitter` から `lower` を直接 import しない（循環依存を禁止）。
+- 他言語 backend への直接依存を禁止（例: `ts` が `js` emitter 実体へ委譲する構造は段階解消対象）。
+- 共通化が必要な場合は `pytra/compiler/*` の共通層へ抽出して参照する。
+
+移行単位:
+- Wave1（`rs`, `scala`）で規約適用テンプレートを確定し、Wave2 以降はテンプレート踏襲で展開。
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、「C++以外も `Lower/Optimizer/Emitter` に統一」を P1 として起票。
 - 2026-03-02: 一括同時移行は避け、Wave 方式（2言語パイロット -> 横展開）を前提にする方針を採用。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務棚卸しを完了し、混在点を明文化。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Lower/Optimizer/Emitter 契約と fail-closed 規約を確定。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ命名/import 規約を確定し、Wave1 テンプレート方針を記録。
