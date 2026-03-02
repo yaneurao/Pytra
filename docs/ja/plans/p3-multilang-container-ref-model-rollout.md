@@ -72,11 +72,48 @@
   - 共通IRは「境界判定メタ」を供給し、具体的メモリ管理（GC/ARC/borrow）は各 backend が担当する。
   - 目的は `rc` の移植ではなく、同一境界判定で各言語の自然な参照表現へ落とすこと。
 
+## S2-01 EAST3 ownership hint 最小拡張設計（v1）
+
+- 追加メタ:
+  - `module.meta.container_ownership_hints_v1`（dict）
+  - key: 安定シンボル名（`<scope>::<name>`）
+  - value:
+    - `container_type`: 例 `list[Token]`, `dict[str, int64]`
+    - `element_type`: 例 `Token`, `int64`
+    - `boundary_mode`: `"value_path" | "ref_boundary"`
+    - `escape`: `true | false`
+    - `reason_codes`: 例 `["unknown_call_escape", "any_flow"]`
+    - `source_pass`: 例 `"non_escape_interprocedural_pass"`
+- ノード参照:
+  - `AnnAssign` / `Assign` / `FunctionDef(args, return)` の `meta.container_ownership_hint_ref` に key を保存し、emit 側はここから参照する。
+- 伝播規則:
+  - alias（`b = a`）は key を引き継ぐが、escape 条件が1つでも成立した時点で `boundary_mode=ref_boundary` に昇格。
+  - Call 引数は callee summary が不明なら fail-closed で `escape=true`。
+  - 戻り値に載るコンテナは原則 `escape=true`（明示 non-escape 条件がある場合のみ例外）。
+- fail-closed 契約:
+  - key 未解決、型不整合、`reason_codes` 不明値はすべて `ref_boundary` として扱う。
+
+## S2-02 CodeEmitter 基底 API 設計（backend 中立）
+
+- `CodeEmitter` へ追加する最小 API（案）:
+  - `resolve_container_ownership_hint(symbol: str, east_type: str) -> dict[str, Any]`
+  - `classify_container_boundary(hint: dict[str, Any], east_type: str) -> str`
+  - `should_emit_typed_value_container(hint: dict[str, Any], east_type: str, backend_caps: dict[str, bool]) -> bool`
+- backend capability フラグ（例）:
+  - `supports_typed_container_value_path`
+  - `supports_dynamic_ref_boundary`
+  - `supports_zero_copy_container_iter`
+- 基底の責務:
+  - hint 解決、fail-closed 判定、境界分類（`value_path` or `ref_boundary`）まで。
+- backend の責務:
+  - 分類結果を自言語表現へ写像（`Vec<T>` / `List<T>` / `Any` / table など）。
+  - 既存 runtime helper との接続（boxing/unboxing/cast）を保持。
+
 分解:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播するための最小拡張設計を作成する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] CodeEmitter 基底で利用可能な ownership 判定 API（backend 中立）を定義する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播するための最小拡張設計を作成する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] CodeEmitter 基底で利用可能な ownership 判定 API（backend 中立）を定義する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend へ pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] GC 系 backend（Java or Kotlin）へ pilot 実装し、同一判定規則での縮退を確認する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
@@ -89,3 +126,5 @@
 - 2026-03-01: 方針は「各言語に `rc` を強制移植」ではなく、「動的境界は参照管理、型既知 non-escape は値型」の抽象ルール統一を採用した。
 - 2026-03-02: S1-01 として非C++ backend の現行モデルを棚卸しし、`rs/cs/go/java/kotlin/swift` は「型付きコンテナ + Any/Object fallback」、`js/ts/ruby/lua` は「動的コンテナ + runtime helper」中心であると整理した。
 - 2026-03-02: S1-02 として `container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` を v1 用語として定義し、判定不能時は escape 扱いに倒す fail-closed 方針を固定した。
+- 2026-03-02: S2-01 として EAST3 `container_ownership_hints_v1` スキーマとノード参照キー（`meta.container_ownership_hint_ref`）を定義し、伝播/昇格/fail-closed 規則を固定した。
+- 2026-03-02: S2-02 として CodeEmitter 基底の ownership 判定 API 案を定義し、基底責務（判定）と backend 責務（表現写像）の境界を明文化した。
