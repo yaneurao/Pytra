@@ -292,7 +292,7 @@ scala run test/transpile/scala/iterable.scala
 
 Notes:
 - `py2scala.py` generates Scala3 code directly from EAST3 via the native emitter (`src/hooks/scala/emitter/scala_native_emitter.py`).
-- Check transpile regressions with `python3 tools/check_py2scala_transpile.py`.
+- Check transpile regressions with `python3 tools/check_py2scala_transpile.py` (it validates both positive success and expected-negative error categories).
 - Run full parity (sample + positive fixture manifest) with `python3 tools/check_scala_parity.py`.
 - To run sample-only parity first, use `python3 tools/check_scala_parity.py --skip-fixture`.
 - `runtime_parity_check` excludes unstable timing lines such as `elapsed_sec` from comparison by default.

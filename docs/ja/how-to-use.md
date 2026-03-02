@@ -316,7 +316,7 @@ scala run test/transpile/scala/iterable.scala
 
 補足:
 - `py2scala.py` は EAST3 から Scala3 native emitter（`src/hooks/scala/emitter/scala_native_emitter.py`）で直接コード生成します。
-- 変換回帰は `python3 tools/check_py2scala_transpile.py` で確認できます。
+- 変換回帰は `python3 tools/check_py2scala_transpile.py` で確認できます（正例成功 + 既知負例の失敗カテゴリ一致を同時に検証）。
 - parity（sample + fixture 正例マニフェスト）は `python3 tools/check_scala_parity.py` で一括確認できます。
 - `sample` のみを先に確認する場合は `python3 tools/check_scala_parity.py --skip-fixture` を使用してください。
 - `runtime_parity_check` は `elapsed_sec` など不安定行を既定で比較対象から除外します。

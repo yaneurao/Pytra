@@ -232,13 +232,14 @@
 
 文脈: [docs/ja/plans/p2-scala-negative-fixture-fail-assertion.md](../plans/p2-scala-negative-fixture-fail-assertion.md)
 
-1. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01] Scala 負例 fixture を skip 運用から「失敗期待の明示テスト」へ移行する。
-2. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S1-01] 負例 fixture の現行失敗理由を棚卸しし、期待する失敗分類を固定する。
-3. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S1-02] `DEFAULT_EXPECTED_FAILS` の stale エントリを除去し、負例集合を最新化する。
-4. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S2-01] `check_py2scala_transpile.py` を正例成功 + 負例失敗期待の両検証モードへ再構成する。
-5. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S2-02] `unexpected pass` / `unexpected error category` を fail-closed で検知する。
-6. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S3-01] unit テストを追加し、skip 再流入を回帰検知する。
-7. [ ] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S3-02] `how-to-use` 文書へ Scala の正例/負例検証手順を追記する。
+1. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01] Scala 負例 fixture を skip 運用から「失敗期待の明示テスト」へ移行する。
+2. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S1-01] 負例 fixture の現行失敗理由を棚卸しし、期待する失敗分類を固定する。
+3. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S1-02] `DEFAULT_EXPECTED_FAILS` の stale エントリを除去し、負例集合を最新化する。
+4. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S2-01] `check_py2scala_transpile.py` を正例成功 + 負例失敗期待の両検証モードへ再構成する。
+5. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S2-02] `unexpected pass` / `unexpected error category` を fail-closed で検知する。
+6. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S3-01] unit テストを追加し、skip 再流入を回帰検知する。
+7. [x] [ID: P2-SCALA-NEGATIVE-ASSERT-01-S3-02] `how-to-use` 文書へ Scala の正例/負例検証手順を追記する。
+- 進捗メモ: [ID: P2-SCALA-NEGATIVE-ASSERT-01] `check_py2scala_transpile.py` を skip 廃止の fail-closed 検証へ更新し、負例5件のカテゴリ一致 (`user_syntax_error` / `unsupported_by_design`) を固定。`ng_untyped_param` stale 除去・unit追加・ja/en how-to 反映まで完了。
 
 ### P3: 非C++ backend へのコンテナ参照管理モデル展開
 
