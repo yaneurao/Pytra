@@ -36,6 +36,7 @@ LANG_CONFIGS: dict[str, dict[str, str]] = {
     "scala": {"cli": "src/py2scala.py", "out_dir": "sample/scala", "ext": ".scala"},
     "lua": {"cli": "src/py2lua.py", "out_dir": "sample/lua", "ext": ".lua"},
     "ruby": {"cli": "src/py2rb.py", "out_dir": "sample/ruby", "ext": ".rb"},
+    "php": {"cli": "src/py2php.py", "out_dir": "sample/php", "ext": ".php"},
 }
 
 LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
@@ -51,6 +52,7 @@ LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
     "scala": ["scala"],
     "lua": ["lua"],
     "ruby": ["ruby"],
+    "php": ["php"],
 }
 
 SEMVER_PARTS = 3
@@ -209,7 +211,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Regenerate sample outputs with version-gated skip")
     ap.add_argument(
         "--langs",
-        default="cpp,rs,cs,js,ts,go,java,swift,kotlin,scala,ruby",
+        default="cpp,rs,cs,js,ts,go,java,swift,kotlin,scala,lua,ruby,php",
         help="comma-separated target languages",
     )
     ap.add_argument(
