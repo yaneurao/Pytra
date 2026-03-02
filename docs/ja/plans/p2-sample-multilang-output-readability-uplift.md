@@ -37,7 +37,7 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
 
 分解:
-- [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 各言語の冗長構文パターン（不要括弧/補助変数/append連鎖）を棚卸しし、適用境界を定義する。
+- [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 各言語の冗長構文パターン（不要括弧/補助変数/append連鎖）を棚卸しし、適用境界を定義する。
 - [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-01] `js/ts` の loop 補助変数（`__start_N`）を簡約する出力規則を実装する。
 - [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] `ruby/lua` の append 連鎖を簡約する出力規則を実装する。
 - [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
@@ -46,3 +46,5 @@
 
 決定ログ:
 - 2026-03-02: sample 多言語品質調査の「可読性のみ改善」項目を P2 として分離し、正しさ修正（P0）と混線しない実施順を確定した。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 棚卸し結果（`sample/01,18`）: `js/ts` は `__start_N`（一部は TDZ 回避で必要）と `Number(...)`/cast 周辺、`ruby/lua` は `append` 連鎖・enumerate 展開時の tuple/unpack 一時変数、`java` は `__step_N` 条件付き for と過剰括弧が主要ノイズ。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 適用境界を固定: `js/ts` は「start 式が loop target を参照しない」場合のみ `__start_N` 削減、`ruby/lua` は「単一要素 push 連鎖 + 副作用なし rhs」に限定して連鎖簡約、`java` は「定数 `step=1` かつ範囲比較が単純」な for で `__step_N` を直接化し、dynamic/descending 判定式は維持（fail-closed）。
