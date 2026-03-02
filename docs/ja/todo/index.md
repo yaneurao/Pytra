@@ -57,22 +57,27 @@
 
 文脈: [docs/ja/plans/p0-cpp-backend-dir-realign.md](../plans/p0-cpp-backend-dir-realign.md)
 
-1. [ ] [ID: P0-CPP-DIR-REALIGN-01] `src/backends/cpp/` 直下の `hooks/header/multifile/profile/runtime_emit` を責務境界に沿って再配置し、構成を `lower/optimizer/emitter` 中心へ整理する。
+1. [x] [ID: P0-CPP-DIR-REALIGN-01] `src/backends/cpp/` 直下の `hooks/header/multifile/profile/runtime_emit` を責務境界に沿って再配置し、構成を `lower/optimizer/emitter` 中心へ整理する。
 2. [x] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元を棚卸しし、移設先を確定する。
 3. [x] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新配置の命名規約と import 境界を文書化する。
 4. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` を `emitter` 配下へ移設し、`py2cpp`/`CppEmitter` の参照を更新する。
 5. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` を `emitter` 配下へ移設し、hook factory 導線を更新する。
 6. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` を `emitter` 配下へ移設し、runtime path/include 解決を更新する。
-7. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-04] `header` を `emitter` 配下へ移設し、header 生成導線を更新する。
-8. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-05] `multifile` を `emitter` 配下へ移設し、multi-file 出力導線を更新する。
-9. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-06] 旧 5 フォルダを削除し、旧 import を全面撤去する。
-10. [ ] [ID: P0-CPP-DIR-REALIGN-01-S3-01] 旧 import 再発防止チェックを追加する。
-11. [ ] [ID: P0-CPP-DIR-REALIGN-01-S3-02] unit/transpile/sample 回帰で非退行を確認する。
+7. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-04] `header` を `emitter` 配下へ移設し、header 生成導線を更新する。
+8. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-05] `multifile` を `emitter` 配下へ移設し、multi-file 出力導線を更新する。
+9. [x] [ID: P0-CPP-DIR-REALIGN-01-S2-06] 旧 5 フォルダを削除し、旧 import を全面撤去する。
+10. [x] [ID: P0-CPP-DIR-REALIGN-01-S3-01] 旧 import 再発防止チェックを追加する。
+11. [x] [ID: P0-CPP-DIR-REALIGN-01-S3-02] unit/transpile/sample 回帰で非退行を確認する。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S1-01] 5 フォルダの責務/参照元を棚卸しし、移設先を `emitter` 配下へ確定。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S1-02] `src/backends/cpp/` 直下を `lower/optimizer/emitter` 限定とする命名・import 規約を文書化。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` 実体を `emitter/profile_loader.py` へ移設し、`py2cpp`/`CppEmitter` 側 import を新パスへ切り替え。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` 実体を `emitter/hooks_registry.py` へ移設し、hook factory 参照（`py2cpp`/profile/profile.json）を更新。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` 実体を `emitter/runtime_paths.py` へ移設し、`py2cpp`/`CppModuleEmitter` の runtime path/include 解決参照を更新。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-04] `header/cpp_header.py` を `emitter/header_builder.py` へ移設し、`py2cpp` の header 生成 import を `backends.cpp.emitter.header_builder` へ更新。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-05] `multifile/cpp_multifile.py` を `emitter/multifile_writer.py` へ移設し、`py2cpp` の multi-file 出力 import を新パスへ更新。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-06] `src/backends/cpp/{hooks,header,multifile,profile,runtime_emit}` の Python 実体を削除し、`src/backends/cpp/` 直下を `lower/optimizer/emitter` のみに整理。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S3-01] `tools/check_cpp_backend_layout.py` を追加し、旧ディレクトリ残存と旧 import（`backends.cpp.{hooks,header,multifile,profile,runtime_emit}`）を検査可能にした。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S3-02] `check_cpp_backend_layout` / `check_py2cpp_boundary` / `check_py2cpp_transpile` / `sample/py/01 -> py2cpp` を実行し、移設範囲の非退行を確認。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
