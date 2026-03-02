@@ -32,6 +32,19 @@
 
 ## 未完了タスク
 
+### P0: EAST3 変数 lifetime 解析基盤の導入（backend 共通）
+
+文脈: [docs/ja/plans/p0-east3-lifetime-analysis-foundation.md](../plans/p0-east3-lifetime-analysis-foundation.md)
+
+1. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01] EAST3 に backend 非依存の lifetime 注釈（def/use・live-range・last-use）を導入し、non-escape 解析と統合する。
+2. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-01] lifetime 注釈スキーマと fail-closed 規則を仕様化する。
+3. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-02] block-local CFG と def-use index 生成基盤を追加する。
+4. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-01] backward data-flow で liveness 固定点計算を実装する。
+5. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-02] last-use / live-range 注釈をノード `meta` へ付与する。
+6. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-03] non-escape summary と lifetime 判定を統合し、escape 値を候補から除外する。
+7. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S3-01] 分岐・ループ・tuple unpack・call を含む unit テストで回帰を固定する。
+8. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S3-02] optimizer 回帰 + transpile smoke（`cpp/rs`）で非退行を確認する。
+
 ### P0: sample 多言語出力の正しさ修正（Scala/C#）
 
 文脈: [docs/ja/plans/p0-sample-multilang-output-correctness-fixes.md](../plans/p0-sample-multilang-output-correctness-fixes.md)
