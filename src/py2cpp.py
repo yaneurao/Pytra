@@ -49,8 +49,8 @@ from backends.cpp.emitter.profile_loader import load_cpp_bin_ops as _load_cpp_bi
 from backends.cpp.emitter.profile_loader import load_cpp_cmp_ops as _load_cpp_cmp_ops
 from backends.cpp.emitter.profile_loader import load_cpp_aug_ops as _load_cpp_aug_ops
 from backends.cpp.emitter.profile_loader import load_cpp_aug_bin as _load_cpp_aug_bin
-from backends.cpp.header import build_cpp_header_from_east as _build_cpp_header_from_east
-from backends.cpp.multifile import write_multi_file_cpp as _write_multi_file_cpp_impl
+from backends.cpp.emitter.header_builder import build_cpp_header_from_east as _build_cpp_header_from_east
+from backends.cpp.emitter.multifile_writer import write_multi_file_cpp as _write_multi_file_cpp_impl
 from backends.cpp.optimizer import parse_cpp_opt_pass_overrides
 
 build_module_symbol_index = East1BuildHelpers.build_module_symbol_index
@@ -441,7 +441,7 @@ def _write_multi_file_cpp(
     max_generated_lines: int = 0,
     cpp_list_model: str = "",
 ) -> dict[str, Any]:
-    """Delegate multi-file output generation to backends.cpp.multifile."""
+    """Delegate multi-file output generation to backends.cpp.emitter.multifile_writer."""
     return _write_multi_file_cpp_impl(
         entry_path,
         module_east_map,

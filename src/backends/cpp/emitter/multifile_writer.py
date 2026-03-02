@@ -22,7 +22,7 @@ from pytra.compiler.transpile_cli import (
     write_text_file,
 )
 
-from backends.cpp.emitter import CppEmitter
+from backends.cpp.emitter.cpp_emitter import CppEmitter
 from backends.cpp.optimizer import optimize_cpp_ir
 from backends.cpp.optimizer import render_cpp_opt_trace
 
