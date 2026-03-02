@@ -119,10 +119,10 @@ class JsEmitter(CodeEmitter):
     def _is_container_east_type(self, east_type_name: str) -> bool:
         t = self.normalize_type_name(east_type_name)
         return (
-            t.startswith("list[")
-            or t.startswith("tuple[")
-            or t.startswith("dict[")
-            or t.startswith("set[")
+            self._text_has_prefix(t, "list[")
+            or self._text_has_prefix(t, "tuple[")
+            or self._text_has_prefix(t, "dict[")
+            or self._text_has_prefix(t, "set[")
             or t == "bytes"
             or t == "bytearray"
         )
@@ -144,11 +144,11 @@ class JsEmitter(CodeEmitter):
         if src_raw not in self.current_ref_vars:
             return rendered_value
         hint = self.normalize_type_name(east_type_hint)
-        if hint.startswith("list[") or hint.startswith("tuple[") or hint == "bytes" or hint == "bytearray":
+        if self._text_has_prefix(hint, "list[") or self._text_has_prefix(hint, "tuple[") or hint == "bytes" or hint == "bytearray":
             return "(Array.isArray(" + rendered_value + ") ? " + rendered_value + ".slice() : Array.from(" + rendered_value + "))"
-        if hint.startswith("dict["):
+        if self._text_has_prefix(hint, "dict["):
             return "((" + rendered_value + " && typeof " + rendered_value + " === \"object\") ? { ..." + rendered_value + " } : {})"
-        if hint.startswith("set["):
+        if self._text_has_prefix(hint, "set["):
             return "(" + rendered_value + " instanceof Set ? new Set(" + rendered_value + ") : new Set())"
         return rendered_value
 
@@ -161,12 +161,24 @@ class JsEmitter(CodeEmitter):
             target_name_raw=target_name_raw,
         )
 
-    def _is_browser_module(self, module_id: str) -> bool:
+    def _is_browser_module(self, module_id: Any) -> bool:
         """browser 外部参照モジュールかを判定する。"""
-        return module_id == "browser" or module_id.startswith("browser.")
+        module_text = f"{module_id}"
+        if module_text == "":
+            return False
+        return module_text == "browser" or (len(module_text) >= 8 and module_text[0:8] == "browser.")
+
+    def _is_ignored_import_module(self, module_id_raw: Any) -> bool:
+        """selfhost でも安全に無視対象 import か判定する。"""
+        module_text = f"{module_id_raw}"
+        if module_text == "typing" or module_text == "pytra.std.typing":
+            return True
+        return len(module_text) >= 10 and module_text[0:10] == "__future__"
 
     def _module_id_to_js_path(self, module_id: str) -> str:
         """Python 形式モジュール名を JS import パスへ変換する。"""
+        if not isinstance(module_id, str):
+            return ""
         if module_id == "":
             return ""
         runtime_map = {
@@ -371,16 +383,16 @@ class JsEmitter(CodeEmitter):
             seen.add(line)
             out.append(line)
 
-        bindings = self.any_to_dict_list(meta.get("import_bindings"))
+        bindings = self.any_to_dict_list(self.any_dict_get_list(meta, "import_bindings"))
         if len(bindings) > 0:
             i = 0
             while i < len(bindings):
                 ent = bindings[i]
-                binding_kind = self.any_to_str(ent.get("binding_kind"))
-                module_id = self.any_to_str(ent.get("module_id"))
-                local_name = self.any_to_str(ent.get("local_name"))
-                export_name = self.any_to_str(ent.get("export_name"))
-                if module_id.startswith("__future__") or module_id == "typing" or module_id == "pytra.std.typing":
+                binding_kind = self.any_dict_get_str(ent, "binding_kind", "")
+                module_id = self.any_dict_get_str(ent, "module_id", "")
+                local_name = self.any_dict_get_str(ent, "local_name", "")
+                export_name = self.any_dict_get_str(ent, "export_name", "")
+                if self._is_ignored_import_module(module_id):
                     i += 1
                     continue
                 if self._is_browser_module(module_id):
@@ -427,31 +439,31 @@ class JsEmitter(CodeEmitter):
         for stmt in body:
             kind = self.any_dict_get_str(stmt, "kind", "")
             if kind == "Import":
-                for ent in self._dict_stmt_list(stmt.get("names")):
-                    module_id = self.any_to_str(ent.get("name"))
-                    if module_id == "" or module_id.startswith("__future__") or module_id == "typing" or module_id == "pytra.std.typing":
+                for ent in self.any_to_dict_list(self.any_dict_get_list(stmt, "names")):
+                    module_id = self.any_dict_get_str(ent, "name", "")
+                    if module_id == "" or self._is_ignored_import_module(module_id):
                         continue
                     if self._is_browser_module(module_id):
-                        asname = self.any_to_str(ent.get("asname"))
+                        asname = self.any_dict_get_str(ent, "asname", "")
                         if asname != "":
                             self.browser_module_aliases[asname] = module_id
                         continue
                     module_path = self._module_id_to_js_path(module_id)
                     if module_path == "":
                         continue
-                    asname = self.any_to_str(ent.get("asname"))
+                    asname = self.any_dict_get_str(ent, "asname", "")
                     leaf = self._last_dotted_name(module_id)
                     alias = asname if asname != "" else leaf
                     if alias not in used_names:
                         continue
                     _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
             elif kind == "ImportFrom":
-                module_id = self.any_to_str(stmt.get("module"))
-                if module_id == "" or module_id.startswith("__future__") or module_id == "typing" or module_id == "pytra.std.typing":
+                module_id = self.any_dict_get_str(stmt, "module", "")
+                if module_id == "" or self._is_ignored_import_module(module_id):
                     continue
-                for ent in self._dict_stmt_list(stmt.get("names")):
-                    name = self.any_to_str(ent.get("name"))
-                    asname = self.any_to_str(ent.get("asname"))
+                for ent in self.any_to_dict_list(self.any_dict_get_list(stmt, "names")):
+                    name = self.any_dict_get_str(ent, "name", "")
+                    asname = self.any_dict_get_str(ent, "asname", "")
                     if name == "":
                         continue
                     if self._is_browser_module(module_id):
@@ -837,7 +849,7 @@ class JsEmitter(CodeEmitter):
         iter_node = stmt.get("iter")
         iter_expr = self.render_expr(iter_node)
         iter_type = self.get_expr_type(iter_node)
-        if iter_type.startswith("dict[") and target_kind != "Tuple":
+        if self._text_has_prefix(iter_type, "dict[") and target_kind != "Tuple":
             iter_expr = "Object.keys(" + iter_expr + ")"
         body = self._dict_stmt_list(stmt.get("body"))
         self.emit_scoped_block(
@@ -1008,9 +1020,9 @@ class JsEmitter(CodeEmitter):
             right_t = self.get_expr_type(right_node)
             term = ""
             if op == "In" or op == "NotIn":
-                if right_t.startswith("dict["):
+                if self._text_has_prefix(right_t, "dict["):
                     term = "Object.prototype.hasOwnProperty.call(" + right + ", " + cur_left + ")"
-                elif right_t.startswith("list[") or right_t == "bytes" or right_t == "bytearray" or right_t == "str":
+                elif self._text_has_prefix(right_t, "list[") or right_t == "bytes" or right_t == "bytearray" or right_t == "str":
                     term = "(" + right + ").includes(" + cur_left + ")"
                 else:
                     term = "(" + cur_left + " in " + right + ")"
@@ -1165,7 +1177,7 @@ class JsEmitter(CodeEmitter):
     def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
-        if fn_name_raw.startswith("py_assert_"):
+        if self._text_has_prefix(fn_name_raw, "py_assert_"):
             return '"True"'
         if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
             fn_name = "__pytra_main"
@@ -1245,7 +1257,7 @@ class JsEmitter(CodeEmitter):
         owner_expr = self.render_expr(owner_node)
         owner_type = self.get_expr_type(owner_node)
 
-        if owner_type.startswith("list[") or owner_type == "bytes" or owner_type == "bytearray":
+        if self._text_has_prefix(owner_type, "list[") or owner_type == "bytes" or owner_type == "bytearray":
             if attr_raw == "append" and len(rendered_args) == 1:
                 return owner_expr + ".push(" + rendered_args[0] + ")"
             if attr_raw == "clear" and len(rendered_args) == 0:
@@ -1261,7 +1273,7 @@ class JsEmitter(CodeEmitter):
             if attr_raw == "isalpha" and len(rendered_args) == 0:
                 return "((typeof " + owner_expr + " === \"string\") && (" + owner_expr + ").length > 0 && (/^[A-Za-z]+$/.test(" + owner_expr + ")))"
 
-        if owner_type.startswith("dict["):
+        if self._text_has_prefix(owner_type, "dict["):
             if attr_raw == "get":
                 if len(rendered_args) == 1:
                     k = rendered_args[0]

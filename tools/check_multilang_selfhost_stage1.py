@@ -163,11 +163,19 @@ def _rewrite_js_selfhost_syntax(js_src: str) -> str:
     pat_f_dq = re.compile(r'(?<![A-Za-z0-9_"\'])f"(?P<body>[^"\n]*)"')
     pat_f_sq = re.compile(r"(?<![A-Za-z0-9_\"'])f'(?P<body>[^'\n]*)'")
     pat_get = re.compile(r"(?P<obj>[A-Za-z_][A-Za-z0-9_\.]*)\.get\(")
+    pat_items = re.compile(r"(?P<obj>[A-Za-z_][A-Za-z0-9_\.]*)\.items\(")
+    pat_keys = re.compile(r"(?P<obj>[A-Za-z_][A-Za-z0-9_\.]*)\.keys\(")
+    pat_values = re.compile(r"(?P<obj>[A-Za-z_][A-Za-z0-9_\.]*)\.values\(")
+    pat_join = re.compile(r"(?P<sep>\"[^\"\n]*\"|'[^'\n]*')\.join\((?P<items>[^)\n]+)\)")
     out = pat_not_in.sub(lambda m: "!" + "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
     out = pat_in.sub(lambda m: "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
     out = pat_f_dq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
     out = pat_f_sq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
     out = pat_get.sub(lambda m: "__pytra_dict_get(" + m.group("obj") + ", ", out)
+    out = pat_items.sub(lambda m: "__pytra_dict_items(" + m.group("obj") + ", ", out)
+    out = pat_keys.sub(lambda m: "__pytra_dict_keys(" + m.group("obj") + ", ", out)
+    out = pat_values.sub(lambda m: "__pytra_dict_values(" + m.group("obj") + ", ", out)
+    out = pat_join.sub(lambda m: "__pytra_join(" + m.group("sep") + ", " + m.group("items") + ")", out)
     if (
         "class JsEmitter {" in out
         and "CodeEmitter" in out
@@ -193,25 +201,68 @@ def _rewrite_js_selfhost_syntax(js_src: str) -> str:
             "  return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : default_value;\n"
             "}\n"
         )
-    if "Object.prototype.items" not in out:
+    if "__pytra_dict_items(" in out and "function __pytra_dict_items(" not in out:
         helper_chunks.append(
-            "if (typeof Object.prototype.items !== 'function') {\n"
-            "  Object.defineProperty(Object.prototype, 'items', {\n"
-            "    value: function() { return Object.entries(this); },\n"
-            "    enumerable: false,\n"
-            "  });\n"
+            "function __pytra_dict_items(obj) {\n"
+            "  if (obj instanceof Map) { return Array.from(obj.entries()); }\n"
+            "  if (obj === null || obj === undefined) { return []; }\n"
+            "  return Object.entries(obj);\n"
             "}\n"
-            "if (typeof Object.prototype.keys !== 'function') {\n"
-            "  Object.defineProperty(Object.prototype, 'keys', {\n"
-            "    value: function() { return Object.keys(this); },\n"
-            "    enumerable: false,\n"
-            "  });\n"
+        )
+    if "__pytra_dict_keys(" in out and "function __pytra_dict_keys(" not in out:
+        helper_chunks.append(
+            "function __pytra_dict_keys(obj) {\n"
+            "  if (obj instanceof Map) { return Array.from(obj.keys()); }\n"
+            "  if (obj === null || obj === undefined) { return []; }\n"
+            "  return Object.keys(obj);\n"
             "}\n"
-            "if (typeof Object.prototype.values !== 'function') {\n"
-            "  Object.defineProperty(Object.prototype, 'values', {\n"
-            "    value: function() { return Object.values(this); },\n"
-            "    enumerable: false,\n"
-            "  });\n"
+        )
+    if "__pytra_dict_values(" in out and "function __pytra_dict_values(" not in out:
+        helper_chunks.append(
+            "function __pytra_dict_values(obj) {\n"
+            "  if (obj instanceof Map) { return Array.from(obj.values()); }\n"
+            "  if (obj === null || obj === undefined) { return []; }\n"
+            "  return Object.values(obj);\n"
+            "}\n"
+        )
+    if "__pytra_join(" in out and "function __pytra_join(" not in out:
+        helper_chunks.append(
+            "function __pytra_join(sep, items) {\n"
+            "  const s = String(sep);\n"
+            "  if (Array.isArray(items)) { return items.join(s); }\n"
+            "  if (items === null || items === undefined) { return ''; }\n"
+            "  if (typeof items[Symbol.iterator] === 'function') { return Array.from(items).join(s); }\n"
+            "  return String(items);\n"
+            "}\n"
+        )
+    if "String.prototype.strip" not in out:
+        helper_chunks.append(
+            "if (typeof String.prototype.strip !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'strip', { value: function() { return this.trim(); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.lstrip !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'lstrip', { value: function() { return this.replace(/^\\s+/, ''); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.rstrip !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'rstrip', { value: function() { return this.replace(/\\s+$/, ''); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.startswith !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'startswith', { value: function(prefix) { return this.startsWith(String(prefix)); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.endswith !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'endswith', { value: function(suffix) { return this.endsWith(String(suffix)); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.find !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'find', { value: function(sub) { return this.indexOf(String(sub)); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.lower !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'lower', { value: function() { return this.toLowerCase(); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.upper !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'upper', { value: function() { return this.toUpperCase(); }, enumerable: false });\n"
+            "}\n"
+            "if (typeof String.prototype.map !== 'function') {\n"
+            "  Object.defineProperty(String.prototype, 'map', { value: function(fn) { return Array.from(this).map(fn); }, enumerable: false });\n"
             "}\n"
         )
     if "set(" in out and "function set(" not in out:
@@ -562,6 +613,20 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         ),
         "pytra/compiler/transpile_cli.js": (
             "import fs from 'node:fs';\n"
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../py_runtime.js';\n"
+            "function _tag_map_like(value) {\n"
+            "  if (value === null || value === undefined) { return value; }\n"
+            "  if (Array.isArray(value)) {\n"
+            "    for (let i = 0; i < value.length; i += 1) { value[i] = _tag_map_like(value[i]); }\n"
+            "    return value;\n"
+            "  }\n"
+            "  if (typeof value === 'object') {\n"
+            "    for (const [k, v] of Object.entries(value)) { value[k] = _tag_map_like(v); }\n"
+            "    value[PYTRA_TYPE_ID] = PY_TYPE_MAP;\n"
+            "    return value;\n"
+            "  }\n"
+            "  return value;\n"
+            "}\n"
             "function add_common_transpile_args(parser, enable_negative_index_mode = true, enable_object_dispatch_mode = true, parser_backends = null) {\n"
             "  parser.add_argument('input');\n"
             "  parser.add_argument('-o', '--output');\n"
@@ -576,7 +641,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "}\n"
             "function load_east3_document(input_path) {\n"
             "  const payload = fs.readFileSync(String(input_path), 'utf8');\n"
-            "  return JSON.parse(payload);\n"
+            "  return _tag_map_like(JSON.parse(payload));\n"
             "}\n"
             "export { add_common_transpile_args, load_east3_document };\n"
         ),

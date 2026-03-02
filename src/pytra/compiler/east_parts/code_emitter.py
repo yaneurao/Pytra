@@ -116,7 +116,7 @@ class CodeEmitter:
 
     def require_dep(self, dep_key: str) -> None:
         """依存キーを登録する。空値や重複は無視する。"""
-        key = dep_key.strip()
+        key = self._trim_ws(dep_key)
         if key == "":
             return
         if key in self.dep_seen:
@@ -585,8 +585,7 @@ class CodeEmitter:
         """ASCII 1 文字範囲判定。範囲外や多文字入力は False。"""
         if len(ch) != 1 or len(lower) != 1 or len(upper) != 1:
             return False
-        ch_code = ord(ch)
-        return ord(lower) <= ch_code and ch_code <= ord(upper)
+        return lower <= ch and ch <= upper
 
     def _is_ascii_upper(self, ch: str) -> bool:
         """ASCII 大文字判定。"""
@@ -602,12 +601,14 @@ class CodeEmitter:
 
     def _kind_hook_suffix(self, kind: str) -> str:
         """`Name` / `IfExp` などを hook 名 suffix 用 snake_case へ正規化する。"""
-        text = kind.strip()
+        text = self._trim_ws(kind)
         if text == "":
             return ""
         raw: list[str] = []
         n = len(text)
-        for i, ch in enumerate(text):
+        i = 0
+        while i < n:
+            ch = text[i]
             if self._is_ascii_upper(ch):
                 prev_ch = text[i - 1] if i > 0 else ""
                 next_ch = text[i + 1] if i + 1 < n else ""
@@ -615,7 +616,8 @@ class CodeEmitter:
                 next_is_lower = self._is_ascii_lower(next_ch)
                 if len(raw) > 0 and raw[-1] != "_" and (prev_is_lower_or_digit or next_is_lower):
                     raw.append("_")
-                raw.append(chr(ord(ch) + 32))
+                raw.append(ch.lower())
+                i += 1
                 continue
             is_lower = self._is_ascii_lower(ch)
             is_digit = self._is_ascii_digit(ch)
@@ -623,7 +625,15 @@ class CodeEmitter:
                 raw.append(ch)
             elif len(raw) > 0 and raw[-1] != "_":
                 raw.append("_")
-        joined: str = "".join(raw).strip("_")
+            i += 1
+        joined_raw = "".join(raw)
+        left = 0
+        right = len(joined_raw)
+        while left < right and joined_raw[left] == "_":
+            left += 1
+        while right > left and joined_raw[right - 1] == "_":
+            right -= 1
+        joined = joined_raw[left:right]
         out_chars: list[str] = []
         for j in range(len(joined)):
             ch = joined[j]
@@ -887,7 +897,7 @@ class CodeEmitter:
     def next_tmp(self, prefix: str = "__tmp") -> str:
         """衝突しない一時変数名を生成する。"""
         self.tmp_id += 1
-        return f"{prefix}_{self.tmp_id}"
+        return prefix + "_" + str(self.tmp_id)
 
     def rename_if_reserved(
         self,
@@ -1266,11 +1276,11 @@ class CodeEmitter:
         cur = ""
         for ch in repr_txt:
             if ch == ",":
-                parts.append(cur.strip())
+                parts.append(self._trim_ws(cur))
                 cur = ""
             else:
                 cur += ch
-        parts.append(cur.strip())
+        parts.append(self._trim_ws(cur))
         for nm in parts:
             if nm == "":
                 continue
@@ -1305,7 +1315,7 @@ class CodeEmitter:
         stmt_repr = self.any_dict_get_str(stmt, "repr", "")
         if stmt_repr == "":
             return fallback_names
-        eq_pos = stmt_repr.find("=")
+        eq_pos = self._text_find(stmt_repr, "=")
         lhs_txt = stmt_repr
         if eq_pos >= 0:
             lhs_txt = stmt_repr[:eq_pos]
@@ -1451,9 +1461,9 @@ class CodeEmitter:
             elif ch == "]":
                 depth -= 1
             elif ch == "," and depth == 0:
-                out.append(s[start:i].strip())
+                out.append(self._trim_ws(s[start:i]))
                 start = i + 1
-        out.append(s[start:].strip())
+        out.append(self._trim_ws(s[start:]))
         return out
 
     def split_union(self, s: str) -> list[str]:
@@ -1466,11 +1476,11 @@ class CodeEmitter:
             elif ch == "]" or ch == ")":
                 depth -= 1
             elif ch == "|" and depth == 0:
-                part: str = s[start:i].strip()
+                part: str = self._trim_ws(s[start:i])
                 if part != "":
                     out.append(part)
                 start = i + 1
-        tail: str = s[start:].strip()
+        tail: str = self._trim_ws(s[start:])
         if tail != "":
             out.append(tail)
         return out
@@ -1540,7 +1550,7 @@ class CodeEmitter:
         empty: list[str] = []
         if t == "":
             return empty, False
-        if t.find("|") < 0:
+        if self._text_find(t, "|") < 0:
             if t == "None":
                 return empty, True
             return [t], False
@@ -1567,9 +1577,9 @@ class CodeEmitter:
         if t == "":
             return []
         prefix = base_name + "["
-        if not t.startswith(prefix) or not t.endswith("]"):
+        if (not self._text_has_prefix(t, prefix)) or (not self._text_has_suffix(t, "]")):
             return []
-        inner = t[len(prefix):-1].strip()
+        inner = self._trim_ws(t[len(prefix) : len(t) - 1])
         if inner == "":
             return []
         return self.split_generic(inner)
@@ -1697,11 +1707,9 @@ class CodeEmitter:
             return "(" + out + ")"
         return out
 
-    def normalize_type_name(self, t: str) -> str:
+    def normalize_type_name(self, t: Any) -> str:
         """型名エイリアスを内部表現へ正規化する。"""
-        if not isinstance(t, str):
-            return ""
-        s = str(t).strip()
+        s = self._trim_ws(t)
         if s == "":
             return ""
         if s == "int":
@@ -1714,29 +1722,29 @@ class CodeEmitter:
             return "Any"
         if s == "object":
             return "object"
-        if s.find("|") != -1:
+        if self._text_find(s, "|") != -1:
             parts = self.split_union(s)
             if len(parts) > 1:
                 out_parts: list[str] = []
                 for part in parts:
                     out_parts.append(self.normalize_type_name(part))
                 return "|".join(out_parts)
-        if s.startswith("list[") and s.endswith("]"):
+        if self._text_has_prefix(s, "list[") and self._text_has_suffix(s, "]"):
             inner = s[5:-1]
             inner_norm = self.normalize_type_name(inner)
             return "list[" + inner_norm + "]"
-        if s.startswith("set[") and s.endswith("]"):
+        if self._text_has_prefix(s, "set[") and self._text_has_suffix(s, "]"):
             inner = s[4:-1]
             inner_norm = self.normalize_type_name(inner)
             return "set[" + inner_norm + "]"
-        if s.startswith("tuple[") and s.endswith("]"):
+        if self._text_has_prefix(s, "tuple[") and self._text_has_suffix(s, "]"):
             inner = s[6:-1]
             elems = self.split_generic(inner)
             out_elems: list[str] = []
             for elem in elems:
                 out_elems.append(self.normalize_type_name(elem))
             return "tuple[" + ", ".join(out_elems) + "]"
-        if s.startswith("dict[") and s.endswith("]"):
+        if self._text_has_prefix(s, "dict[") and self._text_has_suffix(s, "]"):
             inner = s[5:-1]
             elems = self.split_generic(inner)
             if len(elems) == 2:
@@ -1750,7 +1758,7 @@ class CodeEmitter:
             return False
         if s == "Any" or s == "object" or s == "unknown":
             return True
-        if s.find("|") != -1:
+        if self._text_find(s, "|") != -1:
             parts = self.split_union(s)
             if len(parts) == 1 and parts[0] == s:
                 return False
@@ -1764,25 +1772,25 @@ class CodeEmitter:
 
     def is_list_type(self, t: str) -> bool:
         """型文字列が list[...] かを返す。"""
-        return t.startswith("list[")
+        return self._text_has_prefix(t, "list[")
 
     def is_set_type(self, t: str) -> bool:
         """型文字列が set[...] かを返す。"""
-        return t.startswith("set[")
+        return self._text_has_prefix(t, "set[")
 
     def is_dict_type(self, t: str) -> bool:
         """型文字列が dict[...] かを返す。"""
-        return t.startswith("dict[")
+        return self._text_has_prefix(t, "dict[")
 
     def is_indexable_sequence_type(self, t: str) -> bool:
         """添字アクセス可能なシーケンス型か判定する。"""
-        return t.startswith("list[") or t.startswith("tuple[") or t == "str" or t == "bytes" or t == "bytearray"
+        return self._text_has_prefix(t, "list[") or self._text_has_prefix(t, "tuple[") or t == "str" or t == "bytes" or t == "bytearray"
 
     def _is_forbidden_object_receiver_type_text(self, s: str) -> bool:
         """object レシーバ禁止ルールに抵触する型文字列か判定する。"""
         if s == "Any" or s == "object" or s == "any":
             return True
-        if s.find("|") != -1:
+        if self._text_find(s, "|") != -1:
             parts = self.split_union(s)
             for p in parts:
                 if p == "None":
@@ -1915,7 +1923,7 @@ class CodeEmitter:
         """式全体を囲う不要な最外括弧を安全に取り除く。"""
         s: str = self._trim_ws(text)
 
-        while len(s) >= 2 and s.startswith("(") and s.endswith(")"):
+        while len(s) >= 2 and self._text_has_prefix(s, "(") and self._text_has_suffix(s, ")"):
             depth = 0
             in_str = False
             esc = False
@@ -1963,15 +1971,69 @@ class CodeEmitter:
         rb = self.any_dict_get_str(db, "repr", "")
         return self._trim_ws(ra) == self._trim_ws(rb)
 
-    def _trim_ws(self, text: str) -> str:
+    def _trim_ws(self, text: Any) -> str:
         """先頭末尾の空白を除いた文字列を返す。"""
-        return text.strip()
+        if not isinstance(text, str):
+            return ""
+        s = text
+        start = 0
+        end = len(s)
+        while start < end:
+            ch = s[start]
+            if ch != " " and ch != "\t" and ch != "\n" and ch != "\r":
+                break
+            start += 1
+        while end > start:
+            ch2 = s[end - 1]
+            if ch2 != " " and ch2 != "\t" and ch2 != "\n" and ch2 != "\r":
+                break
+            end -= 1
+        return s[start:end]
+
+    def _text_has_prefix(self, text: Any, prefix: str) -> bool:
+        """動的値を含む入力で prefix 一致を安全に判定する。"""
+        if prefix == "":
+            return True
+        if not isinstance(text, str):
+            return False
+        s = text
+        if len(s) < len(prefix):
+            return False
+        i = 0
+        while i < len(prefix):
+            if s[i] != prefix[i]:
+                return False
+            i += 1
+        return True
+
+    def _text_has_suffix(self, text: Any, suffix: str) -> bool:
+        """動的値を含む入力で suffix 一致を安全に判定する。"""
+        if suffix == "":
+            return True
+        if not isinstance(text, str):
+            return False
+        s = text
+        if len(s) < len(suffix):
+            return False
+        offset = len(s) - len(suffix)
+        i = 0
+        while i < len(suffix):
+            if s[offset + i] != suffix[i]:
+                return False
+            i += 1
+        return True
+
+    def _text_find(self, text: Any, needle: Any) -> int:
+        """動的値を含む入力で `needle` の先頭位置を返す（未検出は -1）。"""
+        text_s = self._trim_ws(text)
+        needle_s = self._trim_ws(needle)
+        if needle_s == "":
+            return 0
+        return text_s.find(needle_s)
 
     def _contains_text(self, text: str, needle: str) -> bool:
         """`needle in text` 相当を selfhost でも安全に判定する。"""
-        if needle == "":
-            return True
-        return text.find(needle) >= 0
+        return self._text_find(text, needle) >= 0
 
     def render_truthy_cond_common(
         self,
@@ -1992,7 +2054,7 @@ class CodeEmitter:
             return rendered
         if t == "str":
             return str_non_empty_pattern.replace("{expr}", rendered)
-        if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+        if self._text_has_prefix(t, "list[") or self._text_has_prefix(t, "dict[") or self._text_has_prefix(t, "set[") or self._text_has_prefix(t, "tuple["):
             return collection_non_empty_pattern.replace("{expr}", rendered)
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
             return number_non_zero_pattern.replace("{expr}", rendered)
@@ -2208,7 +2270,7 @@ class CodeEmitter:
         owner_module = ""
         if owner_kind in {"Name", "Attribute"}:
             owner_module = self._resolve_imported_module_name(owner_expr)
-            if owner_module == "" and owner_expr.startswith("pytra."):
+            if owner_module == "" and self._text_has_prefix(owner_expr, "pytra."):
                 owner_module = owner_expr
         out: dict[str, Any] = {}
         out["node"] = owner_node
@@ -2282,7 +2344,7 @@ class CodeEmitter:
 
     def is_boxed_object_expr(self, expr_txt: str) -> bool:
         """式が既に object boxing 済みなら True を返す。"""
-        if expr_txt.startswith("make_object("):
+        if self._text_has_prefix(expr_txt, "make_object("):
             return True
         if expr_txt == "object{}":
             return True
@@ -2297,15 +2359,15 @@ class CodeEmitter:
         """ノード型が unknown のとき、描画済み式から型ヒントを補完する。"""
         if arg_type not in {"", "unknown"}:
             return arg_type
-        text = self._strip_outer_parens(rendered_arg.strip())
+        text = self._strip_outer_parens(self._trim_ws(rendered_arg))
         if text in declared_var_types:
             declared_t = self.normalize_type_name(declared_var_types[text])
             if declared_t != "":
                 return declared_t
         rc_new_prefix = ""
-        if text.startswith("::rc_new<"):
+        if self._text_has_prefix(text, "::rc_new<"):
             rc_new_prefix = "::rc_new<"
-        elif text.startswith("rc_new<"):
+        elif self._text_has_prefix(text, "rc_new<"):
             rc_new_prefix = "rc_new<"
         if rc_new_prefix != "":
             start = len(rc_new_prefix)
@@ -2318,9 +2380,9 @@ class CodeEmitter:
                 elif ch == ">":
                     depth -= 1
                     if depth == 0:
-                        ctor_t = self.normalize_type_name(text[start:i].strip())
-                        tail = text[i + 1 :].lstrip()
-                        if ctor_t != "" and tail.startswith("("):
+                        ctor_t = self.normalize_type_name(self._trim_ws(text[start:i]))
+                        tail = self._trim_ws(text[i + 1 : len(text)])
+                        if ctor_t != "" and self._text_has_prefix(tail, "("):
                             return ctor_t
                         break
                 i += 1
@@ -2332,7 +2394,7 @@ class CodeEmitter:
 
     def _cpp_expr_to_module_name(self, expr: str) -> str:
         """`pytra::std::x` 形式の C++ 式を `pytra.std.x` へ戻す。"""
-        if expr.startswith("pytra::"):
+        if self._text_has_prefix(expr, "pytra::"):
             return expr.replace("::", ".")
         return ""
 
@@ -2367,15 +2429,15 @@ class CodeEmitter:
         out: dict[str, Any] = {}
         raw = self._trim_ws(text)
         prefix = ""
-        if raw.startswith("Pytra::cpp"):
+        if self._text_has_prefix(raw, "Pytra::cpp"):
             prefix = "Pytra::cpp"
-        elif raw.startswith("Pytra::pass"):
+        elif self._text_has_prefix(raw, "Pytra::pass"):
             prefix = "Pytra::pass"
         if prefix == "":
             return out
         rest = raw[len(prefix) :]
-        if rest.startswith(":"):
-            rest = rest[1:]
+        if self._text_has_prefix(rest, ":"):
+            rest = rest[1:len(rest)]
         rest = self._trim_ws(rest)
         if rest == "begin":
             out["kind"] = "begin"
@@ -2648,7 +2710,7 @@ class CodeEmitter:
                     return body_expr
                 if ident == "False":
                     return orelse_expr
-            t = test_expr.strip()
+            t = self._trim_ws(test_expr)
             if t == "true":
                 return body_expr
             if t == "false":
@@ -2718,6 +2780,6 @@ class CodeEmitter:
             return "false"
         if t == "bool":
             return body
-        if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+        if t == "str" or self._text_has_prefix(t, "list[") or self._text_has_prefix(t, "dict[") or self._text_has_prefix(t, "set[") or self._text_has_prefix(t, "tuple["):
             return self.truthy_len_expr(body)
         return body
