@@ -43,13 +43,20 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、backend 側個別最適化より先に EAST3 で変数 lifetime 解析を共通化する方針を P0 で確定。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S1-01`] `docs/ja/spec/spec-east3-optimizer.md` に `east3_lifetime_v1` 契約（`cfg/def_use/variables` と `fail_closed` 規則）を追記し、lifetime 注釈スキーマを固定した。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S1-02`] `LifetimeAnalysisPass` を追加し、`FunctionDef/ClassDef method` 単位で block-local CFG と def-use index を生成して `meta.lifetime_analysis` へ注釈する基盤を実装した。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S2-01`] 同 pass に backward data-flow（`live_in/live_out` 固定点）を実装し、分岐・ループを含む CFG で決定的に収束することを確認した。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S2-02`] 文ノード `meta` へ `lifetime_node_id/defs/uses/live_in/live_out/last_use_vars` を注釈し、変数 summary（`last_use_nodes` 含む）を出力するようにした。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S2-03`] `escape_summary.arg_escape` と `Return/Yield` 使用を lifetime class 判定に統合し、`escape_or_unknown` と `local_non_escape_candidate` を自動分類する実装を追加した。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S3-01`] `test_east3_lifetime_analysis_pass.py` を新規追加し、分岐・ループ・tuple unpack・call（dynamic含む）・決定性・non_escape連携の回帰を固定した。
+- 2026-03-02: [ID: `P0-EAST3-LIFETIME-ANALYSIS-01-S3-02`] `test_east3_optimizer*.py` / `test_east3_lifetime_analysis_pass.py` / `check_py2cpp_transpile.py` / `check_py2rs_transpile.py` を再実行し、非退行（`py2cpp: checked=136 ok=136 fail=0`, `py2rs: checked=131 ok=131 fail=0`）を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-01] lifetime 注釈スキーマ（`def/use`, `live_in/live_out`, `last_use`, `lifetime_class`）と fail-closed 規則を仕様化する。
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-02] EAST3 の関数/メソッド本体から block-local CFG と def-use index を生成する基盤を追加する。
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-01] backward data-flow で liveness（`live_in/live_out`）を求め、ループを含む固定点収束を実装する。
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-02] 使用列から last-use 点を確定し、ノード `meta` へ `last_use` / `live_range` を注釈する。
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-03] non-escape summary と結合し、`escape` 値を lifetime 最適化候補から除外する統合判定を実装する。
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S3-01] 分岐/ループ/tuple unpack/call を含む unit テストを追加し、決定性と fail-closed を固定する。
-- [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S3-02] optimizer 回帰 + `check_py2cpp_transpile`/`check_py2rs_transpile` を実行し、非退行を確認する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-01] lifetime 注釈スキーマ（`def/use`, `live_in/live_out`, `last_use`, `lifetime_class`）と fail-closed 規則を仕様化する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-02] EAST3 の関数/メソッド本体から block-local CFG と def-use index を生成する基盤を追加する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-01] backward data-flow で liveness（`live_in/live_out`）を求め、ループを含む固定点収束を実装する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-02] 使用列から last-use 点を確定し、ノード `meta` へ `last_use` / `live_range` を注釈する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-03] non-escape summary と結合し、`escape` 値を lifetime 最適化候補から除外する統合判定を実装する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S3-01] 分岐/ループ/tuple unpack/call を含む unit テストを追加し、決定性と fail-closed を固定する。
+- [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S3-02] optimizer 回帰 + `check_py2cpp_transpile`/`check_py2rs_transpile` を実行し、非退行を確認する。
