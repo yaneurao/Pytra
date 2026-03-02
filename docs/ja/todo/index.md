@@ -59,7 +59,7 @@
 4. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-01] `cpp_lower.py` を新設し、EAST3 Module から C++ IR Module へ lower する骨格を実装する。
 5. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-02] `cpp_ir_optimizer.py` を新設し、既存 optimizer pass の移設/再配線方針を実装する。
 6. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
-7. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
+7. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
 8. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
 9. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
 10. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
@@ -71,6 +71,7 @@
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppCastCallNormalizePass` を追加し、`py_to_*` 入れ子と `static_cast` 重複の式正規化を optimizer 側へ移設した。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppCompareNormalizePass` を追加し、bool 比較（`== True/False`, `!= True/False`）の冗長形を optimizer 側で正規化した。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppBinOpNormalizePass` を追加し、数値 `+0/-0/*1` の冗長 binop を optimizer 側へ移し、S3-02 を完了に更新した。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppForcoreDirectUnpackHintPass` を追加し、`ForCore` tuple unpack 判定を optimizer 側へ移して S3-01 を完了に更新した。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
