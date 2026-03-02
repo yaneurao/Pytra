@@ -83,6 +83,27 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 - Allowed: backend-specific hook implementations.
 - Not allowed: language-agnostic semantic lowering.
 
+#### 3.2.1 Standard backend pipeline directories
+
+- The standard backend layout is `src/backends/<lang>/{lower,optimizer,emitter}/`.
+- Responsibilities are fixed as:
+  - `lower/`: language-specific lowering from `EAST3 -> <LangIR>`
+  - `optimizer/`: language-specific optimization on `<LangIR> -> <LangIR>`
+  - `emitter/`: final rendering from `<LangIR> -> source text`
+- New implementation work must be placed in these three layers, and must not add semantic lowering or optimizer-equivalent logic into `emitter/`.
+- Existing backends may migrate in phases, but the target shape must converge to this same directory contract.
+- The canonical guard for non-C++ 3-layer wiring and reverse-import prevention is `python3 tools/check_noncpp_east3_contract.py`.
+
+#### 3.2.2 Extension directories (plan-2) and final target shape (plan-3)
+
+- Current operation uses plan-2 (`core + extensions`).
+  - core (required): `lower/`, `optimizer/`, `emitter/`
+  - extension (optional): `extensions/<topic>/`
+- Use fixed feature names under `extensions/`.
+  - Examples: `extensions/runtime/`, `extensions/packaging/`, `extensions/integration/`
+- Language-specific ad-hoc directory names such as `header/`, `multifile/`, `runtime_emit/`, `hooks/` are disallowed for new additions and should be migrated gradually into `extensions/<topic>/`.
+- In a later plan-3 phase, extension features are moved out of `src/backends/<lang>/` and each backend converges toward a `lower/optimizer/emitter`-centric shape.
+
 ### 3.3 `src/profiles/`
 
 - Purpose: declarative language-difference profiles.
@@ -127,8 +148,8 @@ When adding a new file, verify:
 
 ## 6. Related Specifications
 
-- Implementation: `docs/ja/spec/spec-dev.md`
-- EAST staged architecture: `docs/ja/spec/spec-east123.md`
-- EAST migration responsibility map: `docs/ja/spec/spec-east123-migration.md`
-- Runtime: `docs/ja/spec/spec-runtime.md`
-- Codex operations: `docs/ja/spec/spec-codex.md`
+- Implementation: `docs/en/spec/spec-dev.md`
+- EAST staged architecture: `docs/en/spec/spec-east.md#east-stages`
+- EAST migration responsibility map: `docs/en/spec/spec-east.md#east-file-mapping`
+- Runtime: `docs/en/spec/spec-runtime.md`
+- Codex operations: `docs/en/spec/spec-codex.md`

@@ -12,7 +12,7 @@
 ## 1. リポジトリ構成
 
 - `src/`
-  - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
+  - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
   - backend 段階実装の標準ディレクトリは `src/backends/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
@@ -25,7 +25,15 @@
 - `sample/`: 実用サンプル入力と各言語変換結果
 - `docs/ja/`: 仕様・使い方・実装状況
 
-### 1.1 `src/pytra/` 公開API（実装基準）
+### 1.1 backend 3層標準（非C++）
+
+- 非C++ backend の標準パイプラインは `Lower -> Optimizer -> Emitter` とする。
+- 現行の3層適用 backend は `rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`。
+- `py2<lang>.py` は `load_east3_document -> lower_east3_to_<lang>_ir -> optimize_<lang>_ir -> transpile` の順序を固定し、層を飛び越える処理を追加しない。
+- `lower/optimizer` から `emitter` を import しない。`emitter` から `lower/optimizer` を import しない。
+- 再発防止の正本チェックは `python3 tools/check_noncpp_east3_contract.py` とする。
+
+### 1.2 `src/pytra/` 公開API（実装基準）
 
 `src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
