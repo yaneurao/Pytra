@@ -1502,9 +1502,13 @@ class CodeEmitter:
                     out[key_txt] = val_txt
         if not isinstance(profile, dict):
             return out
-        raw_types = profile.get("types")
+        raw_types: Any = None
+        if "types" in profile:
+            raw_types = profile["types"]
         type_section = CodeEmitter._dict_copy_str_object(raw_types)
-        nested_types_obj = type_section.get("types")
+        nested_types_obj: Any = None
+        if "types" in type_section:
+            nested_types_obj = type_section["types"]
         nested_types = CodeEmitter._dict_copy_str_object(nested_types_obj)
         source: dict[str, Any] = type_section
         if len(nested_types) > 0:
@@ -1525,7 +1529,7 @@ class CodeEmitter:
             return "", ""
         mapped = ""
         if norm in type_map:
-            mapped = self.any_to_str(type_map.get(norm))
+            mapped = self.any_to_str(type_map[norm])
         if mapped == "":
             return norm, ""
         return norm, mapped

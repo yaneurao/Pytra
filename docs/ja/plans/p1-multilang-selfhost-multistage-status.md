@@ -11,8 +11,8 @@ python3 tools/check_multilang_selfhost_multistage.py
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
 | rs | pass | fail | skip | compile_fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
-| cs | pass | pass | pass | pass | stage2/stage3 sample transpile ok |
-| js | pass | fail | skip | self_retranspile_fail | TypeError: CodeEmitter._dict_copy_str_object is not a function |
+| cs | pass | fail | skip | compile_fail | /tmp/tmp5yc7t7p_/cs_stage1.cs(1657,28): error CS1929: Type `System.Collections.Generic.Dictionary<string,object>' does not contain a member `Contains' and the best extension method overload `System.Linq.ParallelEnumerable.Contains<string>(this System.Linq.ParallelQuery<string>, string)' requires an instance of type `System.Linq.ParallelQuery<string>' |
+| js | pass | fail | skip | self_retranspile_fail | TypeError: module.get is not a function |
 | ts | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | go | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | java | pass | skip | skip | runner_not_defined | multistage runner is not defined |

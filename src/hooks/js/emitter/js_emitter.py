@@ -93,14 +93,14 @@ class JsEmitter(CodeEmitter):
         hooks = load_js_hooks(profile)
         self.init_base_state(east_doc, profile, hooks)
         self.type_map = self.load_type_map(profile)
-        operators = self.any_to_dict_or_empty(profile.get("operators"))
-        self.bin_ops = self.any_to_str_dict_or_empty(operators.get("binop"))
-        self.cmp_ops = self.any_to_str_dict_or_empty(operators.get("cmp"))
-        self.aug_ops = self.any_to_str_dict_or_empty(operators.get("aug"))
-        syntax = self.any_to_dict_or_empty(profile.get("syntax"))
-        identifiers = self.any_to_dict_or_empty(syntax.get("identifiers"))
-        self.reserved_words: set[str] = set(self.any_to_str_list(identifiers.get("reserved_words")))
-        self.rename_prefix = self.any_to_str(identifiers.get("rename_prefix"))
+        operators = self.any_dict_get_dict(profile, "operators")
+        self.bin_ops = self.any_to_str_dict_or_empty(self.any_dict_get_dict(operators, "binop"))
+        self.cmp_ops = self.any_to_str_dict_or_empty(self.any_dict_get_dict(operators, "cmp"))
+        self.aug_ops = self.any_to_str_dict_or_empty(self.any_dict_get_dict(operators, "aug"))
+        syntax = self.any_dict_get_dict(profile, "syntax")
+        identifiers = self.any_dict_get_dict(syntax, "identifiers")
+        self.reserved_words: set[str] = set(self.any_to_str_list(self.any_dict_get_list(identifiers, "reserved_words")))
+        self.rename_prefix = self.any_dict_get_str(identifiers, "rename_prefix", "")
         if self.rename_prefix == "":
             self.rename_prefix = "py_"
         self.declared_var_types: dict[str, str] = {}

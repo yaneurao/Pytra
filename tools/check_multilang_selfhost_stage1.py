@@ -206,6 +206,33 @@ def _rewrite_js_selfhost_syntax(js_src: str) -> str:
             "  return [];\n"
             "}\n"
         )
+    if "dict(" in out and "function dict(" not in out:
+        helper_chunks.append(
+            "function _pytra_tag_map(out) {\n"
+            "  if (typeof PYTRA_TYPE_ID !== 'undefined' && typeof PY_TYPE_MAP !== 'undefined') {\n"
+            "    out[PYTRA_TYPE_ID] = PY_TYPE_MAP;\n"
+            "  }\n"
+            "  return out;\n"
+            "}\n"
+            "function dict(items = null) {\n"
+            "  const out = _pytra_tag_map({});\n"
+            "  if (items === null || items === undefined) { return out; }\n"
+            "  if (items instanceof Map) {\n"
+            "    for (const [k, v] of items.entries()) { out[String(k)] = v; }\n"
+            "    return out;\n"
+            "  }\n"
+            "  if (Array.isArray(items) || typeof items[Symbol.iterator] === 'function') {\n"
+            "    for (const ent of items) {\n"
+            "      if (Array.isArray(ent) && ent.length >= 2) { out[String(ent[0])] = ent[1]; }\n"
+            "    }\n"
+            "    return out;\n"
+            "  }\n"
+            "  if (typeof items === 'object') {\n"
+            "    for (const [k, v] of Object.entries(items)) { out[String(k)] = v; }\n"
+            "  }\n"
+            "  return out;\n"
+            "}\n"
+        )
     if len(helper_chunks) > 0:
         out = "".join(helper_chunks) + out
     if "class CodeEmitter {" in out and "Object.getOwnPropertyNames(CodeEmitter.prototype)" not in out:
