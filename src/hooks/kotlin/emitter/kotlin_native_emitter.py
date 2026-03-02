@@ -651,11 +651,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "int":
         if len(args) == 0:
             return "0L"
-        return _to_int_expr(_render_expr(args[0]))
+        arg0 = args[0]
+        rendered_arg0 = _render_expr(arg0)
+        if _has_resolved_type(arg0, {"int", "int64", "uint8"}):
+            return rendered_arg0
+        return _to_int_expr(rendered_arg0)
     if callee_name == "float":
         if len(args) == 0:
             return "0.0"
-        return _to_float_expr(_render_expr(args[0]))
+        arg0 = args[0]
+        rendered_arg0 = _render_expr(arg0)
+        if _has_resolved_type(arg0, {"float", "float64"}):
+            return rendered_arg0
+        return _to_float_expr(rendered_arg0)
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
@@ -1204,6 +1212,17 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             return target_type == "Double"
         if callee == "len":
             return target_type == "Long"
+        resolved = _kotlin_type(value_expr.get("resolved_type"), allow_void=False)
+        func_any = value_expr.get("func")
+        if isinstance(func_any, dict):
+            f_kind = func_any.get("kind")
+            if f_kind == "Name":
+                if callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
+                    return True
+            if f_kind == "Attribute":
+                attr = _safe_ident(func_any.get("attr"), "")
+                if attr not in {"get", "getOrElse"} and not attr.startswith("__pytra_") and resolved == target_type:
+                    return True
     return False
 
 

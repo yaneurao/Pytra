@@ -87,7 +87,7 @@ class Parser {
     }
 
     func expect(kind: String) -> Token {
-        var token: Token = (self.current_token() as? Token) ?? Token()
+        var token: Token = self.current_token()
         if (__pytra_str(token.kind) != __pytra_str(kind)) {
             fatalError("pytra raise")
         }
@@ -110,7 +110,7 @@ class Parser {
         var stmts: [Any] = __pytra_as_list([])
         self.skip_newlines()
         while (__pytra_str(self.peek_kind()) != __pytra_str("EOF")) {
-            var stmt: StmtNode = (self.parse_stmt() as? StmtNode) ?? StmtNode()
+            var stmt: StmtNode = self.parse_stmt()
             stmts.append(stmt)
             self.skip_newlines()
         }
@@ -121,34 +121,34 @@ class Parser {
         if self.match("LET") {
             var let_name: String = __pytra_str(self.expect("IDENT").text)
             self.expect("EQUAL")
-            var let_expr_index: Int64 = __pytra_int(self.parse_expr())
-            return (StmtNode("let", let_name, let_expr_index, Int64(1)) as? StmtNode) ?? StmtNode()
+            var let_expr_index: Int64 = self.parse_expr()
+            return StmtNode("let", let_name, let_expr_index, Int64(1))
         }
         if self.match("PRINT") {
-            var print_expr_index: Int64 = __pytra_int(self.parse_expr())
-            return (StmtNode("print", "", print_expr_index, Int64(3)) as? StmtNode) ?? StmtNode()
+            var print_expr_index: Int64 = self.parse_expr()
+            return StmtNode("print", "", print_expr_index, Int64(3))
         }
         var assign_name: String = __pytra_str(self.expect("IDENT").text)
         self.expect("EQUAL")
-        var assign_expr_index: Int64 = __pytra_int(self.parse_expr())
-        return (StmtNode("assign", assign_name, assign_expr_index, Int64(2)) as? StmtNode) ?? StmtNode()
+        var assign_expr_index: Int64 = self.parse_expr()
+        return StmtNode("assign", assign_name, assign_expr_index, Int64(2))
     }
 
     func parse_expr() -> Int64 {
-        return __pytra_int(self.parse_add())
+        return self.parse_add()
     }
 
     func parse_add() -> Int64 {
-        var left: Int64 = __pytra_int(self.parse_mul())
+        var left: Int64 = self.parse_mul()
         while true {
             if self.match("PLUS") {
-                var right: Int64 = __pytra_int(self.parse_mul())
-                left = __pytra_int(self.add_expr(ExprNode("bin", Int64(0), "", "+", left, right, Int64(3), Int64(1))))
+                var right: Int64 = self.parse_mul()
+                left = self.add_expr(ExprNode("bin", Int64(0), "", "+", left, right, Int64(3), Int64(1)))
                 continue
             }
             if self.match("MINUS") {
-                var right: Int64 = __pytra_int(self.parse_mul())
-                left = __pytra_int(self.add_expr(ExprNode("bin", Int64(0), "", "-", left, right, Int64(3), Int64(2))))
+                var right: Int64 = self.parse_mul()
+                left = self.add_expr(ExprNode("bin", Int64(0), "", "-", left, right, Int64(3), Int64(2)))
                 continue
             }
             break
@@ -157,16 +157,16 @@ class Parser {
     }
 
     func parse_mul() -> Int64 {
-        var left: Int64 = __pytra_int(self.parse_unary())
+        var left: Int64 = self.parse_unary()
         while true {
             if self.match("STAR") {
-                var right: Int64 = __pytra_int(self.parse_unary())
-                left = __pytra_int(self.add_expr(ExprNode("bin", Int64(0), "", "*", left, right, Int64(3), Int64(3))))
+                var right: Int64 = self.parse_unary()
+                left = self.add_expr(ExprNode("bin", Int64(0), "", "*", left, right, Int64(3), Int64(3)))
                 continue
             }
             if self.match("SLASH") {
-                var right: Int64 = __pytra_int(self.parse_unary())
-                left = __pytra_int(self.add_expr(ExprNode("bin", Int64(0), "", "/", left, right, Int64(3), Int64(4))))
+                var right: Int64 = self.parse_unary()
+                left = self.add_expr(ExprNode("bin", Int64(0), "", "/", left, right, Int64(3), Int64(4)))
                 continue
             }
             break
@@ -176,27 +176,27 @@ class Parser {
 
     func parse_unary() -> Int64 {
         if self.match("MINUS") {
-            var child: Int64 = __pytra_int(self.parse_unary())
-            return __pytra_int(self.add_expr(ExprNode("neg", Int64(0), "", "", child, (-Int64(1)), Int64(4), Int64(0))))
+            var child: Int64 = self.parse_unary()
+            return self.add_expr(ExprNode("neg", Int64(0), "", "", child, (-Int64(1)), Int64(4), Int64(0)))
         }
-        return __pytra_int(self.parse_primary())
+        return self.parse_primary()
     }
 
     func parse_primary() -> Int64 {
         if self.match("NUMBER") {
-            var token_num: Token = (self.previous_token() as? Token) ?? Token()
-            return __pytra_int(self.add_expr(ExprNode("lit", token_num.number_value, "", "", (-Int64(1)), (-Int64(1)), Int64(1), Int64(0))))
+            var token_num: Token = self.previous_token()
+            return self.add_expr(ExprNode("lit", token_num.number_value, "", "", (-Int64(1)), (-Int64(1)), Int64(1), Int64(0)))
         }
         if self.match("IDENT") {
-            var token_ident: Token = (self.previous_token() as? Token) ?? Token()
-            return __pytra_int(self.add_expr(ExprNode("var", Int64(0), token_ident.text, "", (-Int64(1)), (-Int64(1)), Int64(2), Int64(0))))
+            var token_ident: Token = self.previous_token()
+            return self.add_expr(ExprNode("var", Int64(0), token_ident.text, "", (-Int64(1)), (-Int64(1)), Int64(2), Int64(0)))
         }
         if self.match("LPAREN") {
-            var expr_index: Int64 = __pytra_int(self.parse_expr())
+            var expr_index: Int64 = self.parse_expr()
             self.expect("RPAREN")
             return expr_index
         }
-        var t: Token = (self.current_token() as? Token) ?? Token()
+        var t: Token = self.current_token()
         fatalError("pytra raise")
         return 0
     }
@@ -276,8 +276,8 @@ func eval_expr(expr_index: Int64, expr_nodes: [Any], env: [AnyHashable: Any]) ->
         return __pytra_int(-eval_expr(node.left, expr_nodes, env))
     }
     if (__pytra_int(node.kind_tag) == __pytra_int(Int64(3))) {
-        var lhs: Int64 = __pytra_int(eval_expr(node.left, expr_nodes, env))
-        var rhs: Int64 = __pytra_int(eval_expr(node.right, expr_nodes, env))
+        var lhs: Int64 = eval_expr(node.left, expr_nodes, env)
+        var rhs: Int64 = eval_expr(node.right, expr_nodes, env)
         if (__pytra_int(node.op_tag) == __pytra_int(Int64(1))) {
             return (lhs + rhs)
         }
@@ -320,7 +320,7 @@ func execute(stmts: [Any], expr_nodes: [Any], trace: Bool) -> Int64 {
             __i_1 += 1
             continue
         }
-        var value: Int64 = __pytra_int(eval_expr(stmt.expr_index, expr_nodes, env))
+        var value: Int64 = eval_expr(stmt.expr_index, expr_nodes, env)
         if trace {
             __pytra_print(value)
         }
@@ -368,20 +368,20 @@ func run_demo() {
     demo_lines.append("a = (a + b) * 2")
     demo_lines.append("print a")
     demo_lines.append("print a / b")
-    var tokens: [Any] = __pytra_as_list(tokenize(demo_lines))
-    var parser: Parser = (Parser(tokens) as? Parser) ?? Parser()
-    var stmts: [Any] = __pytra_as_list(parser.parse_program())
-    var checksum: Int64 = __pytra_int(execute(stmts, parser.expr_nodes, true))
+    var tokens: [Any] = tokenize(demo_lines)
+    var parser: Parser = Parser(tokens)
+    var stmts: [Any] = parser.parse_program()
+    var checksum: Int64 = execute(stmts, parser.expr_nodes, true)
     __pytra_print("demo_checksum:", checksum)
 }
 
 func run_benchmark() {
-    var source_lines: [Any] = __pytra_as_list(build_benchmark_source(Int64(32), Int64(120000)))
+    var source_lines: [Any] = build_benchmark_source(Int64(32), Int64(120000))
     var start: Double = __pytra_perf_counter()
-    var tokens: [Any] = __pytra_as_list(tokenize(source_lines))
-    var parser: Parser = (Parser(tokens) as? Parser) ?? Parser()
-    var stmts: [Any] = __pytra_as_list(parser.parse_program())
-    var checksum: Int64 = __pytra_int(execute(stmts, parser.expr_nodes, false))
+    var tokens: [Any] = tokenize(source_lines)
+    var parser: Parser = Parser(tokens)
+    var stmts: [Any] = parser.parse_program()
+    var checksum: Int64 = execute(stmts, parser.expr_nodes, false)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("token_count:", __pytra_len(tokens))
     __pytra_print("expr_count:", __pytra_len(parser.expr_nodes))

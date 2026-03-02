@@ -119,7 +119,7 @@ open class Parser() {
     }
 
     open fun expect(kind: String): Token {
-        var token: Token = __pytra_as_Token(this.current_token())
+        var token: Token = this.current_token()
         if ((__pytra_str(token.kind) != __pytra_str(kind))) {
             throw RuntimeException(__pytra_str(((__pytra_str(__pytra_str(__pytra_str(__pytra_str("parse error at pos=") + __pytra_str(token.pos)) + __pytra_str(", expected=")) + __pytra_str(kind)) + __pytra_str(", got=")) + token.kind)))
         }
@@ -142,7 +142,7 @@ open class Parser() {
         var stmts: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
         this.skip_newlines()
         while ((__pytra_str(this.peek_kind()) != __pytra_str("EOF"))) {
-            var stmt: StmtNode = __pytra_as_StmtNode(this.parse_stmt())
+            var stmt: StmtNode = this.parse_stmt()
             stmts.add(stmt)
             this.skip_newlines()
         }
@@ -153,34 +153,34 @@ open class Parser() {
         if (this.match("LET")) {
             var let_name: String = __pytra_str(this.expect("IDENT").text)
             this.expect("EQUAL")
-            var let_expr_index: Long = __pytra_int(this.parse_expr())
-            return __pytra_as_StmtNode(StmtNode("let", let_name, let_expr_index, 1L))
+            var let_expr_index: Long = this.parse_expr()
+            return StmtNode("let", let_name, let_expr_index, 1L)
         }
         if (this.match("PRINT")) {
-            var print_expr_index: Long = __pytra_int(this.parse_expr())
-            return __pytra_as_StmtNode(StmtNode("print", "", print_expr_index, 3L))
+            var print_expr_index: Long = this.parse_expr()
+            return StmtNode("print", "", print_expr_index, 3L)
         }
         var assign_name: String = __pytra_str(this.expect("IDENT").text)
         this.expect("EQUAL")
-        var assign_expr_index: Long = __pytra_int(this.parse_expr())
-        return __pytra_as_StmtNode(StmtNode("assign", assign_name, assign_expr_index, 2L))
+        var assign_expr_index: Long = this.parse_expr()
+        return StmtNode("assign", assign_name, assign_expr_index, 2L)
     }
 
     open fun parse_expr(): Long {
-        return __pytra_int(this.parse_add())
+        return this.parse_add()
     }
 
     open fun parse_add(): Long {
-        var left: Long = __pytra_int(this.parse_mul())
+        var left: Long = this.parse_mul()
         while (true) {
             if (this.match("PLUS")) {
-                var right: Long = __pytra_int(this.parse_mul())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "+", left, right, 3L, 1L)))
+                var right: Long = this.parse_mul()
+                left = this.add_expr(ExprNode("bin", 0L, "", "+", left, right, 3L, 1L))
                 continue
             }
             if (this.match("MINUS")) {
-                var right: Long = __pytra_int(this.parse_mul())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "-", left, right, 3L, 2L)))
+                var right: Long = this.parse_mul()
+                left = this.add_expr(ExprNode("bin", 0L, "", "-", left, right, 3L, 2L))
                 continue
             }
             break
@@ -189,16 +189,16 @@ open class Parser() {
     }
 
     open fun parse_mul(): Long {
-        var left: Long = __pytra_int(this.parse_unary())
+        var left: Long = this.parse_unary()
         while (true) {
             if (this.match("STAR")) {
-                var right: Long = __pytra_int(this.parse_unary())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "*", left, right, 3L, 3L)))
+                var right: Long = this.parse_unary()
+                left = this.add_expr(ExprNode("bin", 0L, "", "*", left, right, 3L, 3L))
                 continue
             }
             if (this.match("SLASH")) {
-                var right: Long = __pytra_int(this.parse_unary())
-                left = __pytra_int(this.add_expr(ExprNode("bin", 0L, "", "/", left, right, 3L, 4L)))
+                var right: Long = this.parse_unary()
+                left = this.add_expr(ExprNode("bin", 0L, "", "/", left, right, 3L, 4L))
                 continue
             }
             break
@@ -208,27 +208,27 @@ open class Parser() {
 
     open fun parse_unary(): Long {
         if (this.match("MINUS")) {
-            var child: Long = __pytra_int(this.parse_unary())
-            return __pytra_int(this.add_expr(ExprNode("neg", 0L, "", "", child, (-1L), 4L, 0L)))
+            var child: Long = this.parse_unary()
+            return this.add_expr(ExprNode("neg", 0L, "", "", child, (-1L), 4L, 0L))
         }
-        return __pytra_int(this.parse_primary())
+        return this.parse_primary()
     }
 
     open fun parse_primary(): Long {
         if (this.match("NUMBER")) {
-            var token_num: Token = __pytra_as_Token(this.previous_token())
-            return __pytra_int(this.add_expr(ExprNode("lit", token_num.number_value, "", "", (-1L), (-1L), 1L, 0L)))
+            var token_num: Token = this.previous_token()
+            return this.add_expr(ExprNode("lit", token_num.number_value, "", "", (-1L), (-1L), 1L, 0L))
         }
         if (this.match("IDENT")) {
-            var token_ident: Token = __pytra_as_Token(this.previous_token())
-            return __pytra_int(this.add_expr(ExprNode("var", 0L, token_ident.text, "", (-1L), (-1L), 2L, 0L)))
+            var token_ident: Token = this.previous_token()
+            return this.add_expr(ExprNode("var", 0L, token_ident.text, "", (-1L), (-1L), 2L, 0L))
         }
         if (this.match("LPAREN")) {
-            var expr_index: Long = __pytra_int(this.parse_expr())
+            var expr_index: Long = this.parse_expr()
             this.expect("RPAREN")
             return expr_index
         }
-        var t: Token = __pytra_as_Token(this.current_token())
+        var t: Token = this.current_token()
         throw RuntimeException(__pytra_str(((__pytra_str(__pytra_str("primary parse error at pos=") + __pytra_str(t.pos)) + __pytra_str(" got=")) + t.kind)))
         return 0L
     }
@@ -309,8 +309,8 @@ fun eval_expr(expr_index: Long, expr_nodes: MutableList<Any?>, env: MutableMap<A
         return __pytra_int(-eval_expr(node.left, expr_nodes, env))
     }
     if ((__pytra_int(node.kind_tag) == __pytra_int(3L))) {
-        var lhs: Long = __pytra_int(eval_expr(node.left, expr_nodes, env))
-        var rhs: Long = __pytra_int(eval_expr(node.right, expr_nodes, env))
+        var lhs: Long = eval_expr(node.left, expr_nodes, env)
+        var rhs: Long = eval_expr(node.right, expr_nodes, env)
         if ((__pytra_int(node.op_tag) == __pytra_int(1L))) {
             return (lhs + rhs)
         }
@@ -353,7 +353,7 @@ fun execute(stmts: MutableList<Any?>, expr_nodes: MutableList<Any?>, trace: Bool
             __i_1 += 1L
             continue
         }
-        var value: Long = __pytra_int(eval_expr(stmt.expr_index, expr_nodes, env))
+        var value: Long = eval_expr(stmt.expr_index, expr_nodes, env)
         if (trace) {
             __pytra_print(value)
         }
@@ -401,20 +401,20 @@ fun run_demo() {
     demo_lines.add("a = (a + b) * 2")
     demo_lines.add("print a")
     demo_lines.add("print a / b")
-    var tokens: MutableList<Any?> = __pytra_as_list(tokenize(demo_lines))
-    var parser: Parser = __pytra_as_Parser(Parser(tokens))
-    var stmts: MutableList<Any?> = __pytra_as_list(parser.parse_program())
-    var checksum: Long = __pytra_int(execute(stmts, parser.expr_nodes, true))
+    var tokens: MutableList<Any?> = tokenize(demo_lines)
+    var parser: Parser = Parser(tokens)
+    var stmts: MutableList<Any?> = parser.parse_program()
+    var checksum: Long = execute(stmts, parser.expr_nodes, true)
     __pytra_print("demo_checksum:", checksum)
 }
 
 fun run_benchmark() {
-    var source_lines: MutableList<Any?> = __pytra_as_list(build_benchmark_source(32L, 120000L))
+    var source_lines: MutableList<Any?> = build_benchmark_source(32L, 120000L)
     var start: Double = __pytra_perf_counter()
-    var tokens: MutableList<Any?> = __pytra_as_list(tokenize(source_lines))
-    var parser: Parser = __pytra_as_Parser(Parser(tokens))
-    var stmts: MutableList<Any?> = __pytra_as_list(parser.parse_program())
-    var checksum: Long = __pytra_int(execute(stmts, parser.expr_nodes, false))
+    var tokens: MutableList<Any?> = tokenize(source_lines)
+    var parser: Parser = Parser(tokens)
+    var stmts: MutableList<Any?> = parser.parse_program()
+    var checksum: Long = execute(stmts, parser.expr_nodes, false)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("token_count:", __pytra_len(tokens))
     __pytra_print("expr_count:", __pytra_len(parser.expr_nodes))
