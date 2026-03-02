@@ -33,7 +33,8 @@ from backends.cpp.profile import (
     load_cpp_profile,
     load_cpp_type_map,
 )
-from backends.cpp.optimizer import optimize_cpp_ir
+from backends.cpp.lower import lower_cpp_from_east3
+from backends.cpp.optimizer import optimize_cpp_ir_module
 from backends.cpp.optimizer import render_cpp_opt_trace
 
 
@@ -78,28 +79,45 @@ def emit_cpp_from_east(
     """Emit C++ text from EAST module via CppEmitter (public bridge)."""
     cpp_ir = east_module
     if isinstance(east_module, dict):
-        if dump_cpp_ir_before_opt != "":
-            _dump_json_file(dump_cpp_ir_before_opt, east_module)
-        optimized_ir, report = optimize_cpp_ir(
+        lower_debug_flags: dict[str, object] = {
+            "negative_index_mode": negative_index_mode,
+            "bounds_check_mode": bounds_check_mode,
+            "floor_div_mode": floor_div_mode,
+            "mod_mode": mod_mode,
+            "int_width": int_width,
+            "str_index_mode": str_index_mode,
+            "str_slice_mode": str_slice_mode,
+            "opt_level": opt_level,
+        }
+        lowered_ir, lower_report = lower_cpp_from_east3(
             east_module,
+            debug_flags=lower_debug_flags,
+        )
+        cpp_ir = lowered_ir
+        if dump_cpp_ir_before_opt != "":
+            _dump_json_file(dump_cpp_ir_before_opt, cpp_ir)
+        optimized_ir, report = optimize_cpp_ir_module(
+            cpp_ir,
             opt_level=cpp_opt_level,
             opt_pass_spec=cpp_opt_pass,
-            debug_flags={
-                "negative_index_mode": negative_index_mode,
-                "bounds_check_mode": bounds_check_mode,
-                "floor_div_mode": floor_div_mode,
-                "mod_mode": mod_mode,
-                "int_width": int_width,
-                "str_index_mode": str_index_mode,
-                "str_slice_mode": str_slice_mode,
-                "opt_level": opt_level,
-            },
+            debug_flags=lower_debug_flags,
         )
         cpp_ir = optimized_ir
         if dump_cpp_ir_after_opt != "":
             _dump_json_file(dump_cpp_ir_after_opt, cpp_ir)
         if dump_cpp_opt_trace != "":
-            _write_text_file(dump_cpp_opt_trace, render_cpp_opt_trace(report))
+            trace_text = (
+                "cpp_lower_trace:\n"
+                + "- mode="
+                + str(lower_report.get("mode", "unknown"))
+                + " changed="
+                + str(lower_report.get("changed", False)).lower()
+                + " change_count="
+                + str(lower_report.get("change_count", 0))
+                + "\n"
+                + render_cpp_opt_trace(report)
+            )
+            _write_text_file(dump_cpp_opt_trace, trace_text)
     emitter = CppEmitter(
         cpp_ir,
         module_namespace_map,

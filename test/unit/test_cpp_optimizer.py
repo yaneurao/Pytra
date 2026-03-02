@@ -13,6 +13,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from backends.cpp.emitter.cpp_emitter import emit_cpp_from_east
+from backends.cpp.lower import lower_cpp_from_east3
 from backends.cpp.optimizer.context import CppOptContext
 from backends.cpp.optimizer.context import CppOptimizerPass
 from backends.cpp.optimizer.context import CppOptResult
@@ -20,6 +21,7 @@ from backends.cpp.optimizer.cpp_optimizer import CppPassManager
 from backends.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
 from backends.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
 from backends.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
+from backends.cpp.optimizer.cpp_ir_optimizer import optimize_cpp_ir_module
 from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
 from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
 from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
@@ -46,6 +48,18 @@ class _TouchPass(CppOptimizerPass):
 
 
 class CppOptimizerTest(unittest.TestCase):
+    def test_cpp_lower_accepts_module_and_is_pass_through(self) -> None:
+        doc = _module_doc()
+        out_doc, report = lower_cpp_from_east3(doc, debug_flags={"x": "1"})
+        self.assertIs(out_doc, doc)
+        self.assertEqual(report.get("stage"), "cpp_lower")
+        self.assertEqual(report.get("mode"), "pass_through_v0")
+        self.assertFalse(bool(report.get("changed")))
+
+    def test_cpp_lower_rejects_non_module_kind(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "kind must be Module"):
+            lower_cpp_from_east3({"kind": "Expr"})
+
     def test_resolve_cpp_opt_level(self) -> None:
         self.assertEqual(resolve_cpp_opt_level(""), 1)
         self.assertEqual(resolve_cpp_opt_level("0"), 0)
@@ -104,6 +118,18 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertIn("CppConstConditionPass enabled=false", trace_text)
         self.assertIn("CppRangeForShapePass enabled=false", trace_text)
         self.assertIn("CppRuntimeFastPathPass enabled=false", trace_text)
+
+    def test_optimize_cpp_ir_module_delegates_existing_optimizer(self) -> None:
+        doc = _module_doc()
+        out_doc, report = optimize_cpp_ir_module(
+            doc,
+            opt_level="1",
+            opt_pass_spec="-CppNoOpPass",
+            debug_flags={"k": "v"},
+        )
+        self.assertIs(out_doc, doc)
+        self.assertEqual(report.get("opt_level"), 1)
+        self.assertIn("CppNoOpPass", report.get("disabled_passes", []))
 
     def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
         doc = _module_doc()
@@ -265,7 +291,7 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertEqual(o2_value.get("kind"), "Name")
         self.assertEqual(o2_value.get("id"), "x")
 
-    def test_emit_cpp_from_east_runs_cpp_optimizer_hook(self) -> None:
+    def test_emit_cpp_from_east_runs_cpp_lower_and_optimizer_hooks(self) -> None:
         east_doc = _module_doc()
         optimized_doc = _module_doc()
         optimized_doc["meta"] = {"optimized": "1"}
@@ -281,9 +307,20 @@ class CppOptimizerTest(unittest.TestCase):
                 meta = meta_any if isinstance(meta_any, dict) else {}
                 return "dummy-cpp:" + str(meta.get("optimized", "0"))
 
-        with patch("backends.cpp.emitter.cpp_emitter.optimize_cpp_ir", return_value=(optimized_doc, {"trace": []})) as opt_mock:
-            with patch("backends.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
-                out = emit_cpp_from_east(east_doc, {})
+        with patch(
+            "backends.cpp.emitter.cpp_emitter.lower_cpp_from_east3",
+            return_value=(east_doc, {"mode": "pass_through_v0", "changed": False, "change_count": 0}),
+        ) as lower_mock:
+            with patch(
+                "backends.cpp.emitter.cpp_emitter.optimize_cpp_ir_module",
+                return_value=(optimized_doc, {"trace": []}),
+            ) as opt_mock:
+                with patch("backends.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
+                    out = emit_cpp_from_east(east_doc, {})
+        self.assertEqual(lower_mock.call_count, 1)
+        lower_call_args = lower_mock.call_args
+        self.assertIsNotNone(lower_call_args)
+        self.assertIs(lower_call_args.args[0], east_doc)
         self.assertEqual(opt_mock.call_count, 1)
         call_args = opt_mock.call_args
         self.assertIsNotNone(call_args)
