@@ -107,7 +107,7 @@
 2. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務（意味決定/正規化/描画）の棚卸しを作成する。
 3. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約・fail-closed・層別禁止事項）を定義する。
 4. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ/命名/import 規約を文書化する。
-5. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave1: `rs` に `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
+5. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave1: `rs` に `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
 6. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave1: `scala` に `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 7. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
 8. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2: `js/ts/cs` に同テンプレートを展開する。
@@ -118,6 +118,7 @@
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] `src/backends/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim}` の責務棚卸しを完了し、全backendで意味決定/正規化/描画が emitter 側へ混在している事実を整理。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Lower/Optimizer/Emitter の入出力契約・禁止事項・fail-closed ルールを計画書へ明文化。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] `lower/optimizer/emitter` の命名規約と import 規約（`py2<lang>.py` は3層配線のみ）を確定。
+- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `backends/rs/lower`・`backends/rs/optimizer` を追加し、`py2rs.py` を `lower -> optimizer -> emitter` 配線へ切替。1ケース smoke と `check_py2rs_transpile` pass で非退行を確認。
 
 ### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
 

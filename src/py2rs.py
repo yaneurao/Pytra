@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.rs.emitter.rs_emitter import load_rs_profile, transpile_to_rust
+from backends.rs.lower import lower_east3_to_rs_ir
+from backends.rs.optimizer import optimize_rs_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,7 +125,9 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
-    rust_src = transpile_to_rust(east)
+    rs_ir = lower_east3_to_rs_ir(east)
+    rs_ir = optimize_rs_ir(rs_ir)
+    rust_src = transpile_to_rust(rs_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(rust_src, encoding="utf-8")
     _copy_rust_runtime(output_path)

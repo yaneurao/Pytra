@@ -63,7 +63,7 @@
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend 現状の責務棚卸し（どこで意味決定/正規化/描画しているか）を作成する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約、失敗時 fail-closed、層ごとの禁止事項）を定義する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ・命名規約（`lower/*`, `optimizer/*`, `emitter/*`）と import 規約を文書化する。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave 1（`rs`）で `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave 1（`rs`）で `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave 1（`scala`）で `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave 1の回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2（`js/ts/cs`）へ同テンプレートを展開する。
@@ -147,3 +147,4 @@ import 規約:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務棚卸しを完了し、混在点を明文化。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Lower/Optimizer/Emitter 契約と fail-closed 規約を確定。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ命名/import 規約を確定し、Wave1 テンプレート方針を記録。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `backends/rs/lower` と `backends/rs/optimizer` を導入し、`py2rs.py` を 3層配線へ切替。`check_py2rs_transpile` を pass。
