@@ -43,7 +43,7 @@
 - [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray` など runtime 依存の出力を明示化し、自己完結性を改善する。
 - [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] typed 経路で `r/g/b` の不要な `nil` 初期化を削減する。
 - [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループの step/括弧出力を簡素化する fastpath を追加する。
-- [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成差分を固定する。
+- [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成差分を固定する。
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/lua/01` の可読性/冗長性改善を `P1` として計画化した。
@@ -51,6 +51,7 @@
 - 2026-03-02: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray/bytes` を inline 展開から `__pytra_*` runtime helper 呼び出しへ統一し、`sample/lua/01` を runtime 別ファイル参照 + 明示 helper 依存へ更新。
 - 2026-03-02: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] scalar型 `AnnAssign(value=None)` を `local name` 出力へ縮退し、`sample/lua/01` の `local r/g/b = nil` を撤去。
 - 2026-03-02: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループで `step=1` を省略し、simple bound は `n - 1` 形式へ簡素化。`continue` 非使用ループの `::__pytra_continue_*::` も非出力化。
+- 2026-03-02: [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] `test_py2lua_smoke.py` に `sample01` 品質回帰断片（runtime helper利用/nil撤去/loop簡素化）を固定し、`check_py2lua_transpile` と `runtime_parity_check --targets lua 01_mandelbrot` pass を確認。
 
 ## S1-01 棚卸し結果
 
