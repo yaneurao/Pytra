@@ -26,6 +26,7 @@ from backends.cpp.optimizer.passes.const_condition_pass import CppConstCondition
 from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
 from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
 from backends.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNormalizePass
+from backends.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
 from backends.cpp.optimizer.passes.for_iter_mode_hint_pass import CppForIterModeHintPass
 from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from backends.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
@@ -97,7 +98,7 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = optimize_cpp_ir(
             doc,
             opt_level="1",
-            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppCastCallNormalizePass,-CppConstConditionPass,-CppRangeForShapePass,-CppForIterModeHintPass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppCastCallNormalizePass,-CppCompareNormalizePass,-CppConstConditionPass,-CppRangeForShapePass,-CppForIterModeHintPass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -110,21 +111,24 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertFalse(bool(trace[2].get("enabled")))
         self.assertEqual(trace[3].get("name"), "CppCastCallNormalizePass")
         self.assertFalse(bool(trace[3].get("enabled")))
-        self.assertEqual(trace[4].get("name"), "CppConstConditionPass")
+        self.assertEqual(trace[4].get("name"), "CppCompareNormalizePass")
         self.assertFalse(bool(trace[4].get("enabled")))
-        self.assertEqual(trace[5].get("name"), "CppRangeForShapePass")
+        self.assertEqual(trace[5].get("name"), "CppConstConditionPass")
         self.assertFalse(bool(trace[5].get("enabled")))
-        self.assertEqual(trace[6].get("name"), "CppForIterModeHintPass")
+        self.assertEqual(trace[6].get("name"), "CppRangeForShapePass")
         self.assertFalse(bool(trace[6].get("enabled")))
-        self.assertEqual(trace[7].get("name"), "CppBraceOmitHintPass")
+        self.assertEqual(trace[7].get("name"), "CppForIterModeHintPass")
         self.assertFalse(bool(trace[7].get("enabled")))
-        self.assertEqual(trace[8].get("name"), "CppRuntimeFastPathPass")
+        self.assertEqual(trace[8].get("name"), "CppBraceOmitHintPass")
         self.assertFalse(bool(trace[8].get("enabled")))
+        self.assertEqual(trace[9].get("name"), "CppRuntimeFastPathPass")
+        self.assertFalse(bool(trace[9].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
         self.assertIn("CppDeadTempPass enabled=false", trace_text)
         self.assertIn("CppNoOpCastPass enabled=false", trace_text)
         self.assertIn("CppCastCallNormalizePass enabled=false", trace_text)
+        self.assertIn("CppCompareNormalizePass enabled=false", trace_text)
         self.assertIn("CppConstConditionPass enabled=false", trace_text)
         self.assertIn("CppRangeForShapePass enabled=false", trace_text)
         self.assertIn("CppForIterModeHintPass enabled=false", trace_text)
@@ -269,6 +273,40 @@ class CppOptimizerTest(unittest.TestCase):
         value = doc.get("body")[0].get("value")
         self.assertEqual(value.get("kind"), "Call")
         self.assertEqual(value.get("runtime_call"), "py_to_int64")
+
+    def test_cpp_compare_normalize_pass_folds_eq_true_to_left(self) -> None:
+        doc = _module_doc()
+        compare = {
+            "kind": "Compare",
+            "left": {"kind": "Name", "id": "flag", "resolved_type": "bool"},
+            "ops": ["Eq"],
+            "comparators": [{"kind": "Constant", "value": True, "resolved_type": "bool"}],
+            "resolved_type": "bool",
+        }
+        doc["body"] = [{"kind": "Expr", "value": compare}]
+        result = CppCompareNormalizePass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        value = doc.get("body")[0].get("value")
+        self.assertEqual(value.get("kind"), "Name")
+        self.assertEqual(value.get("id"), "flag")
+
+    def test_cpp_compare_normalize_pass_folds_eq_false_to_not(self) -> None:
+        doc = _module_doc()
+        compare = {
+            "kind": "Compare",
+            "left": {"kind": "Name", "id": "flag", "resolved_type": "bool"},
+            "ops": ["Eq"],
+            "comparators": [{"kind": "Constant", "value": False, "resolved_type": "bool"}],
+            "resolved_type": "bool",
+        }
+        doc["body"] = [{"kind": "Expr", "value": compare}]
+        result = CppCompareNormalizePass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        value = doc.get("body")[0].get("value")
+        self.assertEqual(value.get("kind"), "UnaryOp")
+        self.assertEqual(value.get("op"), "Not")
 
     def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
         doc = _module_doc()
