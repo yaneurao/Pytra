@@ -51,9 +51,54 @@ class JsEmitter(CodeEmitter):
         self.browser_symbol_aliases: dict[str, str] = {}
         self.browser_module_aliases: dict[str, str] = {}
         self.top_function_names: set[str] = set()
+        self.current_ref_vars: set[str] = set()
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
+
+    def _is_container_east_type(self, east_type_name: str) -> bool:
+        t = self.normalize_type_name(east_type_name)
+        return (
+            t.startswith("list[")
+            or t.startswith("tuple[")
+            or t.startswith("dict[")
+            or t.startswith("set[")
+            or t in {"bytes", "bytearray"}
+        )
+
+    def _materialize_container_value_from_ref(
+        self,
+        value_obj: Any,
+        rendered_value: str,
+        east_type_hint: str,
+        *,
+        target_name_raw: str,
+    ) -> str:
+        node = self.any_to_dict_or_empty(value_obj)
+        if self.any_dict_get_str(node, "kind", "") != "Name":
+            return rendered_value
+        src_raw = self.any_dict_get_str(node, "id", "")
+        if src_raw == "" or src_raw == target_name_raw:
+            return rendered_value
+        if src_raw not in self.current_ref_vars:
+            return rendered_value
+        hint = self.normalize_type_name(east_type_hint)
+        if hint.startswith("list[") or hint.startswith("tuple[") or hint in {"bytes", "bytearray"}:
+            return "(Array.isArray(" + rendered_value + ") ? " + rendered_value + ".slice() : Array.from(" + rendered_value + "))"
+        if hint.startswith("dict["):
+            return "((" + rendered_value + " && typeof " + rendered_value + " === \"object\") ? { ..." + rendered_value + " } : {})"
+        if hint.startswith("set["):
+            return "(" + rendered_value + " instanceof Set ? new Set(" + rendered_value + ") : new Set())"
+        return rendered_value
+
+    def _render_assignment_value_with_hint(self, value_obj: Any, east_type_hint: str, *, target_name_raw: str) -> str:
+        rendered = self.render_expr(value_obj)
+        return self._materialize_container_value_from_ref(
+            value_obj,
+            rendered,
+            east_type_hint,
+            target_name_raw=target_name_raw,
+        )
 
     def _is_browser_module(self, module_id: str) -> bool:
         """browser 外部参照モジュールかを判定する。"""
@@ -503,8 +548,11 @@ class JsEmitter(CodeEmitter):
         """FunctionDef を JavaScript 関数/メソッドとして出力する。"""
         fn_name_raw = self.any_to_str(fn.get("name"))
         arg_order = self.any_to_str_list(fn.get("arg_order"))
+        arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
         args: list[str] = []
         scope_names: set[str] = set()
+        prev_ref_vars = self.current_ref_vars
+        self.current_ref_vars = set()
         self.in_method_scope = in_class is not None
 
         if in_class is not None:
@@ -514,12 +562,16 @@ class JsEmitter(CodeEmitter):
             for arg_name in arg_order:
                 args.append(self._safe_name(arg_name))
                 scope_names.add(arg_name)
+                if self._is_container_east_type(self.any_to_str(arg_types.get(arg_name))):
+                    self.current_ref_vars.add(arg_name)
             self.emit(method_name + "(" + ", ".join(args) + ") {")
         else:
             fn_name = self._safe_name(fn_name_raw)
             for arg_name in arg_order:
                 args.append(self._safe_name(arg_name))
                 scope_names.add(arg_name)
+                if self._is_container_east_type(self.any_to_str(arg_types.get(arg_name))):
+                    self.current_ref_vars.add(arg_name)
             self.emit("function " + fn_name + "(" + ", ".join(args) + ") {")
 
         body = self._dict_stmt_list(fn.get("body"))
@@ -531,6 +583,7 @@ class JsEmitter(CodeEmitter):
             self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
         self.emit("}")
         self.in_method_scope = False
+        self.current_ref_vars = prev_ref_vars
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノードを JavaScript へ出力する。"""
@@ -768,36 +821,52 @@ class JsEmitter(CodeEmitter):
 
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))
+        ann = self.any_to_str(stmt.get("annotation"))
+        decl = self.any_to_str(stmt.get("decl_type"))
+        t_hint = ann if ann != "" else decl
+        value_obj = stmt.get("value")
+        if t_hint == "" and value_obj is not None:
+            t_hint = self.get_expr_type(value_obj)
         if self.any_dict_get_str(target, "kind", "") != "Name":
             t = self.render_expr(target)
-            v = self.render_expr(stmt.get("value"))
+            v = self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw="")
             self.emit(self.syntax_line("annassign_assign", "{target} = {value};", {"target": t, "value": v}))
             return
         name_raw = self.any_dict_get_str(target, "id", "_")
         name = self._safe_name(name_raw)
-        value_obj = stmt.get("value")
         if self.should_declare_name_binding(stmt, name_raw, True):
             self.declare_in_current_scope(name_raw)
+            if t_hint != "":
+                self.declared_var_types[name_raw] = self.normalize_type_name(t_hint)
             if value_obj is None:
                 self.emit("let " + name + ";")
             else:
-                self.emit("let " + name + " = " + self.render_expr(value_obj) + ";")
+                self.emit("let " + name + " = " + self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw=name_raw) + ";")
             return
         if value_obj is not None:
-            self.emit(name + " = " + self.render_expr(value_obj) + ";")
+            hint = self.declared_var_types.get(name_raw, t_hint)
+            self.emit(name + " = " + self._render_assignment_value_with_hint(value_obj, hint, target_name_raw=name_raw) + ";")
 
     def _emit_assign(self, stmt: dict[str, Any]) -> None:
         target = self.primary_assign_target(stmt)
-        value = self.render_expr(stmt.get("value"))
+        value_obj = stmt.get("value")
+        value = self.render_expr(value_obj)
         target_kind = self.any_dict_get_str(target, "kind", "")
         if target_kind == "Name":
             name_raw = self.any_dict_get_str(target, "id", "_")
             name = self._safe_name(name_raw)
             if self.should_declare_name_binding(stmt, name_raw, False):
                 self.declare_in_current_scope(name_raw)
-                self.emit("let " + name + " = " + value + ";")
+                t_hint = self.get_expr_type(value_obj)
+                if t_hint != "":
+                    self.declared_var_types[name_raw] = self.normalize_type_name(t_hint)
+                self.emit("let " + name + " = " + self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw=name_raw) + ";")
             else:
-                self.emit(name + " = " + value + ";")
+                hint = self.declared_var_types.get(name_raw, "")
+                if hint != "":
+                    self.emit(name + " = " + self._render_assignment_value_with_hint(value_obj, hint, target_name_raw=name_raw) + ";")
+                else:
+                    self.emit(name + " = " + value + ";")
             return
         if target_kind == "Tuple":
             items = self.tuple_elements(target)

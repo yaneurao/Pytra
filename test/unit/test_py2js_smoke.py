@@ -150,6 +150,25 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("for (const [k, v] of pairs) {", js)
         self.assertIn("console.log(k, v);", js)
 
+    def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "ref_container_args.py"
+            src.write_text(
+                "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+                "    a: list[int] = xs\n"
+                "    b: dict[str, int] = ys\n"
+                "    a.append(1)\n"
+                "    b['k'] = 2\n"
+                "    return len(a) + len(b)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+        self.assertIn("let a = (Array.isArray(xs) ? xs.slice() : Array.from(xs));", js)
+        self.assertIn("let b = ((ys && typeof ys === \"object\") ? { ...ys } : {});", js)
+        self.assertNotIn("let a = xs;", js)
+        self.assertNotIn("let b = ys;", js)
+
     def test_for_core_downcount_range_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")

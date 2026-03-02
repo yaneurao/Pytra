@@ -255,7 +255,7 @@
 8. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
 9. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] `cs/js/ts/go/swift/ruby/lua` へ順次展開し、backend ごとの差分を吸収する。
 10. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S1-01] C# backend へ展開し、ref境界引数コンテナの copy ctor 材料化を導入する。
-11. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend へ展開し、動的 helper 境界で同一判定規則を適用する。
+11. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend へ展開し、動的 helper 境界で同一判定規則を適用する。
 12. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go backend へ展開し、`any` 境界と typed 値型経路を分離する。
 13. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
 14. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
@@ -268,6 +268,7 @@
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] `test_py2kotlin_smoke` 回帰を追加し、`check_py2kotlin_transpile` と sample parity(case18) を再通過して再発検知を固定。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust pilot として、参照引数（`&[T]` など）を値型ローカルへ初期化する際の `to_vec()/clone()` 材料化を追加し、`test_py2rs_smoke` 新規回帰 + `check_py2rs_transpile` + sample/18 parity(rs) を再通過。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S1-01] C# emitter に `current_ref_vars` と copy ctor 材料化（`new List/Dictionary/HashSet(... )`）を導入し、`test_py2cs_smoke` と sample parity(case18) を通過。
+- 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS emitter に ref-container 材料化（`slice/Array.from`・object spread・`new Set`）を導入し、JS/TS smoke と sample parity(case18) を通過（`check_py2js/ts` は共通 east3-contract blocker を分離記録）。
 
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 

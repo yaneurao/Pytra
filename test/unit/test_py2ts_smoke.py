@@ -207,6 +207,23 @@ def f(x: object) -> bool:
         self.assertIn("for (let i = __start_1; i > -1; i += -1)", ts)
         self.assertNotIn("for (let i = __start_1; i < -1; i += -1)", ts)
 
+    def test_ts_preview_materializes_ref_container_args_to_value_path(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "ref_container_args.py"
+            src.write_text(
+                "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+                "    a: list[int] = xs\n"
+                "    b: dict[str, int] = ys\n"
+                "    a.append(1)\n"
+                "    b['k'] = 2\n"
+                "    return len(a) + len(b)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            ts = transpile_to_typescript(east)
+        self.assertIn("let a = (Array.isArray(xs) ? xs.slice() : Array.from(xs));", ts)
+        self.assertIn("let b = ((ys && typeof ys === \"object\") ? { ...ys } : {});", ts)
+
 
 if __name__ == "__main__":
     unittest.main()

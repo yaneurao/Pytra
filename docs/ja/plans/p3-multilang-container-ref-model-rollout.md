@@ -163,6 +163,22 @@
   - `python3 tools/runtime_parity_check.py --case-root sample --targets cs --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
   - `python3 tools/check_py2cs_transpile.py` は既存未対応 fixture（`Yield` / `Swap`）2件で fail 継続（今回変更の新規退行なし）。
 
+## S4-01 JS/TS 展開メモ（S4-01-S2-01）
+
+- 変更点:
+  - `js_emitter` に `current_ref_vars` と container 判定 helper を追加し、関数引数のコンテナ型を `container_ref_boundary` として追跡する。
+  - `AnnAssign/Assign` の初期化・再代入で、右辺が ref 境界 `Name` かつ左辺ヒントがコンテナ型のとき、
+    - `list/tuple/bytes/bytearray`: `Array.isArray(src) ? src.slice() : Array.from(src)`
+    - `dict`: `{ ...src }`（非 object は `{}` fallback）
+    - `set`: `new Set(src)`（非 Set は空 set fallback）
+    を適用して値経路へ materialize する。
+  - `test_py2js_smoke` / `test_py2ts_smoke` に ref-container 回帰を追加し、TS preview（JS pipeline）でも同じ出力を固定した。
+- 検証:
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2js_smoke.py' -v`（PASS）
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2ts_smoke.py' -v`（PASS）
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
+  - `python3 tools/check_py2js_transpile.py` / `check_py2ts_transpile.py` は `east3-contract` 前段が `FAIL cs: src/py2cs.py missing ['choices=[\"2\", \"3\"]']` で停止（JS/TS実装差分外の共通 blocker）。
+
 分解:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
@@ -173,7 +189,7 @@
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] `cs/js/ts/go/swift/ruby/lua` へ順次展開し、backend ごとの runtime 依存差を吸収する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S1-01] C# backend へ展開し、ref境界引数のコンテナを copy ctor で value path 材料化する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend の動的コンテナ helper 境界へ同一判定規則を展開する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend の動的コンテナ helper 境界へ同一判定規則を展開する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go backend へ展開し、`any` 境界と typed 値型経路を分離する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
@@ -192,3 +208,4 @@
 - 2026-03-02: S3-02 として Kotlin emitter に `ref_vars` 追跡と `AnnAssign/Assign` の `toMutableList()/toMutableMap()` 材料化を実装し、GC backend でも同一境界規則の pilot を追加した。
 - 2026-03-02: S3-03 として Kotlin smoke に回帰テストを追加し、`check_py2kotlin_transpile` + sample parity(case18) まで通過を確認した。
 - 2026-03-02: S4-01 の分割を追加し、S4-01-S1-01 として C# backend に copy ctor 材料化を実装。`test_py2cs_smoke` と sample parity(case18) を通過、`check_py2cs_transpile` の `Yield/Swap` 失敗は既存既知として継続確認。
+- 2026-03-02: S4-01-S2-01 として JS emitter に ref-container 材料化（`slice/Array.from`・`{...src}`・`new Set(src)`）を追加し、TS preview も同時反映。JS/TS smoke と sample parity(case18) は通過し、`check_py2js/ts_transpile` の失敗は共通 `east3-contract`（C# CLI 契約）由来 blocker と分離した。
