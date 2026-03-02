@@ -66,7 +66,7 @@
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave 1（`rs`）で `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave 1（`scala`）で `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave 1の回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2（`js/ts/cs`）へ同テンプレートを展開する。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2（`js/ts/cs`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3（`go/java/kotlin/swift`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave 4（`ruby/lua/php`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
@@ -151,3 +151,5 @@ import 規約:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] `backends/scala/lower` と `backends/scala/optimizer` を導入し、`py2scala.py` を 3層配線へ切替。`check_py2scala_transpile`（`checked=141 ok=141 fail=0`）を pass。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰の初回実行で `SUMMARY cases=18 pass=6 fail=12`（`scala` の `run_failed=12`）を確認し、主因を `__pytra_bytearray/__pytra_bytes` 戻り型不整合と `ForCore` 条件式の不正正規化（`value` 混入）に特定。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] `src/runtime/scala/pytra/py_runtime.scala` の `bytearray/bytes` を `ArrayBuffer[Long]` 返却へ是正し、`scala_native_emitter` に正規化条件式の識別子検証フォールバックを追加。`check_py2scala_transpile`（141/141）、`check_py2rs_transpile`（131/131, skipped=10）、`runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout`（18/18）で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `backends/{js,ts,cs}/lower`・`optimizer` を追加し、`py2{js,ts,cs}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{js,ts,cs}_transpile` は各 `checked=133 ok=133 fail=0 skipped=8` で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2 sample parity（`runtime_parity_check --case-root sample --targets js,ts,cs --ignore-unstable-stdout`）は `cases=18 pass=14 fail=4`、`artifact_size_mismatch=8`（`js/ts` の `01-04`）を確認。3層配線変更に起因する transpile 崩れはなく、artifact差は既知課題として次 wave へ持ち越す。

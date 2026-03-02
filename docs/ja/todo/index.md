@@ -58,7 +58,7 @@
 5. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave1: `rs` に `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
 6. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave1: `scala` に `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 7. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
-8. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2: `js/ts/cs` に同テンプレートを展開する。
+8. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2: `js/ts/cs` に同テンプレートを展開する。
 9. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave3: `go/java/kotlin/swift` に同テンプレートを展開する。
 10. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave4: `ruby/lua/php` に同テンプレートを展開する。
 11. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
@@ -69,6 +69,7 @@
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `backends/rs/lower`・`backends/rs/optimizer` を追加し、`py2rs.py` を `lower -> optimizer -> emitter` 配線へ切替。1ケース smoke と `check_py2rs_transpile` pass で非退行を確認。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] `backends/scala/lower`・`backends/scala/optimizer` を追加し、`py2scala.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2scala_transpile` は `checked=141 ok=141 fail=0` で通過。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] `scala` の `bytearray/bytes` 戻り型と `ForCore` 条件式フォールバックを修正し、Wave1 回帰（`check_py2{rs,scala}_transpile` と `runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout`）を全通過。
+- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `js/ts/cs` へ `lower/optimizer` 骨格を追加し `py2{js,ts,cs}` を3層配線へ切替。`check_py2{js,ts,cs}_transpile` は全通過（各 `checked=133 ok=133 fail=0 skipped=8`）。
 
 ### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
 

@@ -1,2 +1,1 @@
-"""JavaScript 用 hooks パッケージ。"""
-
+"""JavaScript backend package."""

@@ -1,2 +1,1 @@
-"""TypeScript backend hooks package."""
-
+"""TypeScript backend package."""

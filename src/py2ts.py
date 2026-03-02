@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
+from backends.ts.lower import lower_east3_to_ts_ir
+from backends.ts.optimizer import optimize_ts_ir
 from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
@@ -110,7 +112,9 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
-    ts_src = transpile_to_typescript(east)
+    ts_ir = lower_east3_to_ts_ir(east)
+    ts_ir = optimize_ts_ir(ts_ir)
+    ts_src = transpile_to_typescript(ts_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(ts_src, encoding="utf-8")
     write_js_runtime_shims(output_path.parent)

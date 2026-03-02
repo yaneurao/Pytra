@@ -1,2 +1,1 @@
-"""C# hooks/emitter package."""
-
+"""C# backend package."""

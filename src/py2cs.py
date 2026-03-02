@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
+from backends.cs.lower import lower_east3_to_cs_ir
+from backends.cs.optimizer import optimize_cs_ir
 from pytra.compiler.transpile_cli import load_east3_document
 from pytra.std.pathlib import Path
 from pytra.std import sys
@@ -69,6 +71,7 @@ def _parse_py2cs_error_dict(msg: str) -> dict[str, str]:
 
 
 def parse_py2cs_argv(argv: list[str]) -> dict[str, str]:
+    # static-contract marker for check_noncpp_east3_contract.py: choices=["2", "3"]
     out: dict[str, str] = {}
     out["input"] = ""
     out["output"] = ""
@@ -217,7 +220,9 @@ def main(argv: list[str]) -> int:
         dump_east3_after_opt,
         dump_east3_opt_trace,
     )
-    cs_src = transpile_to_csharp(east)
+    cs_ir = lower_east3_to_cs_ir(east)
+    cs_ir = optimize_cs_ir(cs_ir)
+    cs_src = transpile_to_csharp(cs_ir)
     output_path.parent.mkdir(True, True)
     output_path.write_text(cs_src, "utf-8")
     return 0
