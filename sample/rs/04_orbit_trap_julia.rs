@@ -14,82 +14,82 @@ fn render_orbit_trap_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: 
     let __hoisted_cast_3: f64 = ((max_iter) as f64);
     
     let mut y: i64 = 0;
-    while y < height {
-        let zy0: f64 = -1.3 + 2.6 * (((y) as f64) / __hoisted_cast_1);
-        let mut x: i64 = 0;
-        while x < width {
-            let mut zx: f64 = -1.9 + 3.8 * (((x) as f64) / __hoisted_cast_2);
-            let mut zy: f64 = zy0;
-            
-            let mut trap: f64 = 1.0e9;
-            let mut i: i64 = 0;
-            while i < max_iter {
-                let mut ax: f64 = zx;
-                if ax < 0.0 {
-                    ax = -ax;
-                }
-                let mut ay: f64 = zy;
-                if ay < 0.0 {
-                    ay = -ay;
-                }
-                let mut dxy: f64 = zx - zy;
-                if dxy < 0.0 {
-                    dxy = -dxy;
-                }
-                if ax < trap {
-                    trap = ax;
-                }
-                if ay < trap {
-                    trap = ay;
-                }
-                if dxy < trap {
-                    trap = dxy;
-                }
-                let zx2: f64 = zx * zx;
-                let zy2: f64 = zy * zy;
-                if zx2 + zy2 > 4.0 {
-                    break;
-                }
-                zy = 2.0 * zx * zy + cy;
-                zx = zx2 - zy2 + cx;
-                i += 1;
+    for __for_i_1 in (0)..(height) {
+        y = __for_i_1;
+            let zy0: f64 = -1.3 + 2.6 * (((y) as f64) / __hoisted_cast_1);
+            let mut x: i64 = 0;
+            for __for_i_2 in (0)..(width) {
+                x = __for_i_2;
+                    let mut zx: f64 = -1.9 + 3.8 * (((x) as f64) / __hoisted_cast_2);
+                    let mut zy: f64 = zy0;
+                    
+                    let mut trap: f64 = 1.0e9;
+                    let mut i: i64 = 0;
+                    while i < max_iter {
+                        let mut ax: f64 = zx;
+                        if ax < 0.0 {
+                            ax = -ax;
+                        }
+                        let mut ay: f64 = zy;
+                        if ay < 0.0 {
+                            ay = -ay;
+                        }
+                        let mut dxy: f64 = zx - zy;
+                        if dxy < 0.0 {
+                            dxy = -dxy;
+                        }
+                        if ax < trap {
+                            trap = ax;
+                        }
+                        if ay < trap {
+                            trap = ay;
+                        }
+                        if dxy < trap {
+                            trap = dxy;
+                        }
+                        let zx2: f64 = zx * zx;
+                        let zy2: f64 = zy * zy;
+                        if zx2 + zy2 > 4.0 {
+                            break;
+                        }
+                        zy = 2.0 * zx * zy + cy;
+                        zx = zx2 - zy2 + cx;
+                        i += 1;
+                    }
+                    let mut r: i64 = 0;
+                    let mut g: i64 = 0;
+                    let mut b: i64 = 0;
+                    if i >= max_iter {
+                        r = 0;
+                        g = 0;
+                        b = 0;
+                    } else {
+                        let mut trap_scaled: f64 = trap * 3.2;
+                        if trap_scaled > 1.0 {
+                            trap_scaled = 1.0;
+                        }
+                        if trap_scaled < 0.0 {
+                            trap_scaled = 0.0;
+                        }
+                        let t: f64 = ((i) as f64) / __hoisted_cast_3;
+                        let tone: i64 = ((255.0 * (1.0 - trap_scaled)) as i64);
+                        r = ((((tone) as f64) * (0.35 + 0.65 * t)) as i64);
+                        g = ((((tone) as f64) * (0.15 + 0.85 * (1.0 - t))) as i64);
+                        b = ((255.0 * (0.25 + 0.75 * t)) as i64);
+                        if r > 255 {
+                            r = 255;
+                        }
+                        if g > 255 {
+                            g = 255;
+                        }
+                        if b > 255 {
+                            b = 255;
+                        }
+                    }
+                    pixels.push(((r) as u8));
+                    pixels.push(((g) as u8));
+                    pixels.push(((b) as u8));
             }
-            let mut r: i64 = 0;
-            let mut g: i64 = 0;
-            let mut b: i64 = 0;
-            if i >= max_iter {
-                r = 0;
-                g = 0;
-                b = 0;
-            } else {
-                let mut trap_scaled: f64 = trap * 3.2;
-                if trap_scaled > 1.0 {
-                    trap_scaled = 1.0;
-                }
-                if trap_scaled < 0.0 {
-                    trap_scaled = 0.0;
-                }
-                let t: f64 = ((i) as f64) / __hoisted_cast_3;
-                let tone: i64 = ((255.0 * (1.0 - trap_scaled)) as i64);
-                r = ((((tone) as f64) * (0.35 + 0.65 * t)) as i64);
-                g = ((((tone) as f64) * (0.15 + 0.85 * (1.0 - t))) as i64);
-                b = ((255.0 * (0.25 + 0.75 * t)) as i64);
-                if r > 255 {
-                    r = 255;
-                }
-                if g > 255 {
-                    g = 255;
-                }
-                if b > 255 {
-                    b = 255;
-                }
-            }
-            pixels.push(((r) as u8));
-            pixels.push(((g) as u8));
-            pixels.push(((b) as u8));
-            x += 1;
-        }
-        y += 1;
     }
     return pixels;
 }

@@ -12,33 +12,33 @@ fn render_frame(width: i64, height: i64, center_x: f64, center_y: f64, scale: f6
     let mut frame = vec![0u8; (width * height) as usize];
     let __hoisted_cast_1: f64 = ((max_iter) as f64);
     let mut y: i64 = 0;
-    while y < height {
-        let row_base = y * width;
-        let cy = center_y + (((y) as f64) - ((height) as f64) * 0.5) * scale;
-        let mut x: i64 = 0;
-        while x < width {
-            let cx = center_x + (((x) as f64) - ((width) as f64) * 0.5) * scale;
-            let mut zx = 0.0;
-            let mut zy = 0.0;
-            let mut i = 0;
-            while i < max_iter {
-                let zx2 = zx * zx;
-                let zy2 = zy * zy;
-                if zx2 + zy2 > 4.0 {
-                    break;
-                }
-                zy = 2.0 * zx * zy + cy;
-                zx = zx2 - zy2 + cx;
-                i += 1;
+    for __for_i_1 in (0)..(height) {
+        y = __for_i_1;
+            let row_base = y * width;
+            let cy = center_y + (((y) as f64) - ((height) as f64) * 0.5) * scale;
+            let mut x: i64 = 0;
+            for __for_i_2 in (0)..(width) {
+                x = __for_i_2;
+                    let cx = center_x + (((x) as f64) - ((width) as f64) * 0.5) * scale;
+                    let mut zx = 0.0;
+                    let mut zy = 0.0;
+                    let mut i = 0;
+                    while i < max_iter {
+                        let zx2 = zx * zx;
+                        let zy2 = zy * zy;
+                        if zx2 + zy2 > 4.0 {
+                            break;
+                        }
+                        zy = 2.0 * zx * zy + cy;
+                        zx = zx2 - zy2 + cx;
+                        i += 1;
+                    }
+                    let __idx_i64_4 = ((row_base + x) as i64);
+                    let __idx_3 = if __idx_i64_4 < 0 { (frame.len() as i64 + __idx_i64_4) as usize } else { __idx_i64_4 as usize };
+                    frame[__idx_3] = ((((255.0 * ((i) as f64) / __hoisted_cast_1) as i64)) as u8);
             }
-            let __idx_i64_1 = ((row_base + x) as i64);
-            let __idx_2 = if __idx_i64_1 < 0 { (frame.len() as i64 + __idx_i64_1) as usize } else { __idx_i64_1 as usize };
-            frame[__idx_2] = ((((255.0 * ((i) as f64) / __hoisted_cast_1) as i64)) as u8);
-            x += 1;
-        }
-        y += 1;
     }
-    return (frame).clone();
+    return frame;
 }
 
 fn run_05_mandelbrot_zoom() {
@@ -56,10 +56,10 @@ fn run_05_mandelbrot_zoom() {
     let mut frames: Vec<Vec<u8>> = vec![];
     let mut scale = base_scale;
     let mut py_underscore: i64 = 0;
-    while py_underscore < frame_count {
-        frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
-        scale *= zoom_per_frame;
-        py_underscore += 1;
+    for __for_i_5 in (0)..(frame_count) {
+        py_underscore = __for_i_5;
+            frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
+            scale *= zoom_per_frame;
     }
     save_gif(&(out_path), width, height, &(frames), &(grayscale_palette()), 5, 0);
     let elapsed = perf_counter() - start;

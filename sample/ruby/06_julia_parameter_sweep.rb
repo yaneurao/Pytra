@@ -8,9 +8,8 @@ def julia_palette()
   __pytra_set_index(palette, 0, 0)
   __pytra_set_index(palette, 1, 0)
   __pytra_set_index(palette, 2, 0)
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(1)
-  while ((__step_0 >= 0 && i < __pytra_int(256)) || (__step_0 < 0 && i > __pytra_int(256)))
+  i = 1
+  while i < 256
     t = __pytra_div((i - 1), 254.0)
     r = __pytra_int((255.0 * ((((9.0 * (1.0 - t)) * t) * t) * t)))
     g = __pytra_int((255.0 * ((((15.0 * (1.0 - t)) * (1.0 - t)) * t) * t)))
@@ -18,7 +17,7 @@ def julia_palette()
     __pytra_set_index(palette, ((i * 3) + 0), r)
     __pytra_set_index(palette, ((i * 3) + 1), g)
     __pytra_set_index(palette, ((i * 3) + 2), b)
-    i += __step_0
+    i += 1
   end
   return __pytra_bytes(palette)
 end
@@ -27,36 +26,34 @@ def render_frame(width, height, cr, ci, max_iter, phase)
   frame = __pytra_bytearray((width * height))
   __hoisted_cast_1 = __pytra_float((height - 1))
   __hoisted_cast_2 = __pytra_float((width - 1))
-  __step_0 = __pytra_int(1)
-  y = __pytra_int(0)
-  while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
+  y = 0
+  while y < height
     row_base = (y * width)
     zy0 = ((-1.2) + (2.4 * __pytra_div(y, __hoisted_cast_1)))
-    __step_1 = __pytra_int(1)
-    x = __pytra_int(0)
-    while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
+    x = 0
+    while x < width
       zx = ((-1.8) + (3.6 * __pytra_div(x, __hoisted_cast_2)))
       zy = zy0
       i = 0
-      while __pytra_truthy((i < max_iter))
+      while (i < max_iter)
         zx2 = (zx * zx)
         zy2 = (zy * zy)
-        if __pytra_truthy(((zx2 + zy2) > 4.0))
+        if ((zx2 + zy2) > 4.0)
           break
         end
         zy = (((2.0 * zx) * zy) + ci)
         zx = ((zx2 - zy2) + cr)
         i += 1
       end
-      if __pytra_truthy((i >= max_iter))
+      if (i >= max_iter)
         __pytra_set_index(frame, (row_base + x), 0)
       else
-        color_index = (1 + (((__pytra_int((i * 224)) / __pytra_int(max_iter)) + phase) % 255))
+        color_index = (1 + ((((i * 224) / max_iter) + phase) % 255))
         __pytra_set_index(frame, (row_base + x), color_index)
       end
-      x += __step_1
+      x += 1
     end
-    y += __step_0
+    y += 1
   end
   return __pytra_bytes(frame)
 end
@@ -76,16 +73,15 @@ def run_06_julia_parameter_sweep()
   start_offset = 20
   phase_offset = 180
   __hoisted_cast_3 = __pytra_float(frames_n)
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(frames_n)) || (__step_0 < 0 && i > __pytra_int(frames_n)))
+  i = 0
+  while i < frames_n
     t = __pytra_div(((i + start_offset) % frames_n), __hoisted_cast_3)
     angle = ((2.0 * Math::PI) * t)
     cr = (center_cr + (radius_cr * Math.cos(__pytra_float(angle))))
     ci = (center_ci + (radius_ci * Math.sin(__pytra_float(angle))))
     phase = ((phase_offset + (i * 5)) % 255)
     frames.append(render_frame(width, height, cr, ci, max_iter, phase))
-    i += __step_0
+    i += 1
   end
   save_gif(out_path, width, height, frames, julia_palette(), 8, 0)
   elapsed = (__pytra_perf_counter() - start)

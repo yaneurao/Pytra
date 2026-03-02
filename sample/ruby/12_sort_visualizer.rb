@@ -9,28 +9,25 @@ def render(values, w, h)
   bar_w = __pytra_div(w, n)
   __hoisted_cast_1 = __pytra_float(n)
   __hoisted_cast_2 = __pytra_float(h)
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(n)) || (__step_0 < 0 && i > __pytra_int(n)))
+  i = 0
+  while i < n
     x0 = __pytra_int((i * bar_w))
     x1 = __pytra_int(((i + 1) * bar_w))
-    if __pytra_truthy((x1 <= x0))
+    if (x1 <= x0)
       x1 = (x0 + 1)
     end
     bh = __pytra_int((__pytra_div(__pytra_get_index(values, i), __hoisted_cast_1) * __hoisted_cast_2))
     y = (h - bh)
-    __step_1 = __pytra_int(1)
-    y = __pytra_int(y)
-    while ((__step_1 >= 0 && y < __pytra_int(h)) || (__step_1 < 0 && y > __pytra_int(h)))
-      __step_2 = __pytra_int(1)
-      x = __pytra_int(x0)
-      while ((__step_2 >= 0 && x < __pytra_int(x1)) || (__step_2 < 0 && x > __pytra_int(x1)))
+    y = y
+    while y < h
+      x = x0
+      while x < x1
         __pytra_set_index(frame, ((y * w) + x), 255)
-        x += __step_2
+        x += 1
       end
-      y += __step_1
+      y += 1
     end
-    i += __step_0
+    i += 1
   end
   return __pytra_bytes(frame)
 end
@@ -42,38 +39,35 @@ def run_12_sort_visualizer()
   out_path = "sample/out/12_sort_visualizer.gif"
   start = __pytra_perf_counter()
   values = []
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(n)) || (__step_0 < 0 && i > __pytra_int(n)))
+  i = 0
+  while i < n
     values.append((((i * 37) + 19) % n))
-    i += __step_0
+    i += 1
   end
   frames = [render(values, w, h)]
   frame_stride = 16
   op = 0
-  __step_1 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_1 >= 0 && i < __pytra_int(n)) || (__step_1 < 0 && i > __pytra_int(n)))
+  i = 0
+  while i < n
     swapped = false
-    __step_2 = __pytra_int(1)
-    j = __pytra_int(0)
-    while ((__step_2 >= 0 && j < __pytra_int(((n - i) - 1))) || (__step_2 < 0 && j > __pytra_int(((n - i) - 1))))
-      if __pytra_truthy((__pytra_get_index(values, j) > __pytra_get_index(values, (j + 1))))
-        __tuple_3 = __pytra_as_list([__pytra_get_index(values, (j + 1)), __pytra_get_index(values, j)])
-        __pytra_set_index(values, j, __tuple_3[0])
-        __pytra_set_index(values, (j + 1), __tuple_3[1])
+    j = 0
+    while j < ((n - i) - 1)
+      if (__pytra_get_index(values, j) > __pytra_get_index(values, (j + 1)))
+        __tuple_0 = __pytra_as_list([__pytra_get_index(values, (j + 1)), __pytra_get_index(values, j)])
+        __pytra_set_index(values, j, __tuple_0[0])
+        __pytra_set_index(values, (j + 1), __tuple_0[1])
         swapped = true
       end
-      if __pytra_truthy(((op % frame_stride) == 0))
+      if ((op % frame_stride) == 0)
         frames.append(render(values, w, h))
       end
       op += 1
-      j += __step_2
+      j += 1
     end
-    if __pytra_truthy((!__pytra_truthy(swapped)))
+    if (!swapped)
       break
     end
-    i += __step_1
+    i += 1
   end
   save_gif(out_path, w, h, frames, grayscale_palette(), 3, 0)
   elapsed = (__pytra_perf_counter() - start)

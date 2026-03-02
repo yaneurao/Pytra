@@ -96,22 +96,19 @@ fn palette_332() -> Vec<u8> {
     let __hoisted_cast_1: f64 = ((7) as f64);
     let __hoisted_cast_2: f64 = ((3) as f64);
     let mut i: i64 = 0;
-    while i < 256 {
-        let r = i >> 5 & 7;
-        let g = i >> 2 & 7;
-        let b = i & 3;
-        let __idx_i64_1 = ((i * 3 + 0) as i64);
-        let __idx_2 = if __idx_i64_1 < 0 { (p.len() as i64 + __idx_i64_1) as usize } else { __idx_i64_1 as usize };
-        p[__idx_2] = ((((((255 * r) as f64) / __hoisted_cast_1) as i64)) as u8);
-        let __idx_i64_3 = ((i * 3 + 1) as i64);
-        let __idx_4 = if __idx_i64_3 < 0 { (p.len() as i64 + __idx_i64_3) as usize } else { __idx_i64_3 as usize };
-        p[__idx_4] = ((((((255 * g) as f64) / __hoisted_cast_1) as i64)) as u8);
-        let __idx_i64_5 = ((i * 3 + 2) as i64);
-        let __idx_6 = if __idx_i64_5 < 0 { (p.len() as i64 + __idx_i64_5) as usize } else { __idx_i64_5 as usize };
-        p[__idx_6] = ((((((255 * b) as f64) / __hoisted_cast_2) as i64)) as u8);
-        i += 1;
+    for __for_i_1 in (0)..(256) {
+        i = __for_i_1;
+            let r = i >> 5 & 7;
+            let g = i >> 2 & 7;
+            let b = i & 3;
+            let __idx_2 = ((i * 3 + 0) as usize);
+            p[__idx_2] = ((((((255 * r) as f64) / __hoisted_cast_1) as i64)) as u8);
+            let __idx_3 = ((i * 3 + 1) as usize);
+            p[__idx_3] = ((((((255 * g) as f64) / __hoisted_cast_1) as i64)) as u8);
+            let __idx_4 = ((i * 3 + 2) as usize);
+            p[__idx_4] = ((((((255 * b) as f64) / __hoisted_cast_2) as i64)) as u8);
     }
-    return (p).clone();
+    return p;
 }
 
 fn quantize_332(r: f64, g: f64, b: f64) -> i64 {
@@ -134,18 +131,18 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
     let look_y = 0.35;
     let look_z = 0.0;
     
-    let __tmp_7 = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
-    let fwd_x = __tmp_7.0;
-    let fwd_y = __tmp_7.1;
-    let fwd_z = __tmp_7.2;
-    let __tmp_8 = normalize(fwd_z, 0.0, -fwd_x);
-    let right_x = __tmp_8.0;
-    let right_y = __tmp_8.1;
-    let right_z = __tmp_8.2;
-    let __tmp_9 = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
-    let up_x = __tmp_9.0;
-    let up_y = __tmp_9.1;
-    let up_z = __tmp_9.2;
+    let __tmp_5 = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
+    let fwd_x = __tmp_5.0;
+    let fwd_y = __tmp_5.1;
+    let fwd_z = __tmp_5.2;
+    let __tmp_6 = normalize(fwd_z, 0.0, -fwd_x);
+    let right_x = __tmp_6.0;
+    let right_y = __tmp_6.1;
+    let right_z = __tmp_6.2;
+    let __tmp_7 = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
+    let up_x = __tmp_7.0;
+    let up_y = __tmp_7.1;
+    let up_z = __tmp_7.2;
     
     // Moving glass sculpture (3 spheres) and an emissive sphere.
     let s0x = 0.9 * math::cos(1.3 * tphase);
@@ -169,91 +166,91 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
     let __hoisted_cast_4: f64 = ((width) as f64);
     
     let mut py: i64 = 0;
-    while py < height {
-        let row_base = py * width;
-        let sy = 1.0 - 2.0 * (((py) as f64) + 0.5) / __hoisted_cast_3;
-        let mut px: i64 = 0;
-        while px < width {
-            let sx = (2.0 * (((px) as f64) + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
-            let rx = fwd_x + fov * (sx * right_x + sy * up_x);
-            let ry = fwd_y + fov * (sx * right_y + sy * up_y);
-            let rz = fwd_z + fov * (sx * right_z + sy * up_z);
-            let __tmp_10 = normalize(rx, ry, rz);
-            let dx = __tmp_10.0;
-            let dy = __tmp_10.1;
-            let dz = __tmp_10.2;
-            
-            // Search for the nearest hit.
-            let mut best_t = 1e9;
-            let mut hit_kind = 0;
-            let mut r = 0.0;
-            let mut g = 0.0;
-            let mut b = 0.0;
-            
-            // Floor plane y=-1.2
-            if dy < -1e-6 {
-                let tf = (-1.2 - cam_y) / dy;
-                if (tf > 1e-4) && (tf < best_t) {
-                    best_t = py_any_to_f64(&(tf));
-                    hit_kind = 1;
-                }
-            }
-            let t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
-            if (t0 > 0.0) && (t0 < best_t) {
-                best_t = t0;
-                hit_kind = 2;
-            }
-            let t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
-            if (t1 > 0.0) && (t1 < best_t) {
-                best_t = t1;
-                hit_kind = 3;
-            }
-            let t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
-            if (t2 > 0.0) && (t2 < best_t) {
-                best_t = t2;
-                hit_kind = 4;
-            }
-            if hit_kind == 0 {
-                let __tmp_11 = sky_color(dx, dy, dz, tphase);
-                r = __tmp_11.0;
-                g = __tmp_11.1;
-                b = __tmp_11.2;
-            } else {
-                if hit_kind == 1 {
-                    let mut hx = cam_x + best_t * dx;
-                    let mut hz = cam_z + best_t * dz;
-                    let mut cx = ((math::floor(hx * 2.0)) as i64);
-                    let mut cz = ((math::floor(hz * 2.0)) as i64);
-                    let checker = (if (cx + cz) % 2 == 0 { 0 } else { 1 });
-                    let base_r = (if checker == 0 { 0.10 } else { 0.04 });
-                    let base_g = (if checker == 0 { 0.11 } else { 0.05 });
-                    let base_b = (if checker == 0 { 0.13 } else { 0.08 });
-                    // Emissive sphere contribution.
-                    let mut lxv = lx - hx;
-                    let mut lyv = ly - -1.2;
-                    let mut lzv = lz - hz;
-                    let __tmp_12 = normalize(lxv, lyv, lzv);
-                    let mut ldx = __tmp_12.0;
-                    let mut ldy = __tmp_12.1;
-                    let mut ldz = __tmp_12.2;
-                    let mut ndotl = (if ldy > 0.0 { ldy } else { 0.0 });
-                    let ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
-                    let mut glow = 8.0 / (1.0 + ldist2);
-                    r = py_any_to_f64(&(base_r + 0.8 * glow + 0.20 * ndotl));
-                    g = py_any_to_f64(&(base_g + 0.5 * glow + 0.18 * ndotl));
-                    b = py_any_to_f64(&(base_b + 1.0 * glow + 0.24 * ndotl));
-                } else {
-                    let mut cx = 0.0;
-                    let mut cy = 0.0;
-                    let mut cz = 0.0;
-                    let mut rad = 1.0;
-                    if hit_kind == 2 {
-                        cx = py_any_to_f64(&(s0x));
-                        cy = py_any_to_f64(&(s0y));
-                        cz = py_any_to_f64(&(s0z));
-                        rad = 0.65;
+    for __for_i_8 in (0)..(height) {
+        py = __for_i_8;
+            let row_base = py * width;
+            let sy = 1.0 - 2.0 * (((py) as f64) + 0.5) / __hoisted_cast_3;
+            let mut px: i64 = 0;
+            for __for_i_9 in (0)..(width) {
+                px = __for_i_9;
+                    let sx = (2.0 * (((px) as f64) + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
+                    let rx = fwd_x + fov * (sx * right_x + sy * up_x);
+                    let ry = fwd_y + fov * (sx * right_y + sy * up_y);
+                    let rz = fwd_z + fov * (sx * right_z + sy * up_z);
+                    let __tmp_10 = normalize(rx, ry, rz);
+                    let dx = __tmp_10.0;
+                    let dy = __tmp_10.1;
+                    let dz = __tmp_10.2;
+                    
+                    // Search for the nearest hit.
+                    let mut best_t = 1e9;
+                    let mut hit_kind = 0;
+                    let mut r = 0.0;
+                    let mut g = 0.0;
+                    let mut b = 0.0;
+                    
+                    // Floor plane y=-1.2
+                    if dy < -1e-6 {
+                        let tf = (-1.2 - cam_y) / dy;
+                        if (tf > 1e-4) && (tf < best_t) {
+                            best_t = py_any_to_f64(&(tf));
+                            hit_kind = 1;
+                        }
+                    }
+                    let t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
+                    if (t0 > 0.0) && (t0 < best_t) {
+                        best_t = t0;
+                        hit_kind = 2;
+                    }
+                    let t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
+                    if (t1 > 0.0) && (t1 < best_t) {
+                        best_t = t1;
+                        hit_kind = 3;
+                    }
+                    let t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
+                    if (t2 > 0.0) && (t2 < best_t) {
+                        best_t = t2;
+                        hit_kind = 4;
+                    }
+                    if hit_kind == 0 {
+                        let __tmp_11 = sky_color(dx, dy, dz, tphase);
+                        r = __tmp_11.0;
+                        g = __tmp_11.1;
+                        b = __tmp_11.2;
+                    } else if hit_kind == 1 {
+                        let mut hx = cam_x + best_t * dx;
+                        let mut hz = cam_z + best_t * dz;
+                        let mut cx = ((math::floor(hx * 2.0)) as i64);
+                        let mut cz = ((math::floor(hz * 2.0)) as i64);
+                        let checker = (if (cx + cz) % 2 == 0 { 0 } else { 1 });
+                        let base_r = (if checker == 0 { 0.10 } else { 0.04 });
+                        let base_g = (if checker == 0 { 0.11 } else { 0.05 });
+                        let base_b = (if checker == 0 { 0.13 } else { 0.08 });
+                        // Emissive sphere contribution.
+                        let mut lxv = lx - hx;
+                        let mut lyv = ly - -1.2;
+                        let mut lzv = lz - hz;
+                        let __tmp_12 = normalize(lxv, lyv, lzv);
+                        let mut ldx = __tmp_12.0;
+                        let mut ldy = __tmp_12.1;
+                        let mut ldz = __tmp_12.2;
+                        let mut ndotl = (if ldy > 0.0 { ldy } else { 0.0 });
+                        let ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
+                        let mut glow = 8.0 / (1.0 + ldist2);
+                        r = py_any_to_f64(&(base_r + 0.8 * glow + 0.20 * ndotl));
+                        g = py_any_to_f64(&(base_g + 0.5 * glow + 0.18 * ndotl));
+                        b = py_any_to_f64(&(base_b + 1.0 * glow + 0.24 * ndotl));
                     } else {
-                        if hit_kind == 3 {
+                        let mut cx = 0.0;
+                        let mut cy = 0.0;
+                        let mut cz = 0.0;
+                        let mut rad = 1.0;
+                        if hit_kind == 2 {
+                            cx = py_any_to_f64(&(s0x));
+                            cy = py_any_to_f64(&(s0y));
+                            cz = py_any_to_f64(&(s0z));
+                            rad = 0.65;
+                        } else if hit_kind == 3 {
                             cx = py_any_to_f64(&(s1x));
                             cy = py_any_to_f64(&(s1y));
                             cz = py_any_to_f64(&(s1z));
@@ -264,67 +261,65 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
                             cz = py_any_to_f64(&(s2z));
                             rad = 0.58;
                         }
-                    }
-                    let mut hx = cam_x + best_t * dx;
-                    let hy = cam_y + best_t * dy;
-                    let mut hz = cam_z + best_t * dz;
-                    let __tmp_13 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
-                    let nx = __tmp_13.0;
-                    let ny = __tmp_13.1;
-                    let nz = __tmp_13.2;
-                    
-                    // Simple glass shading (reflection + refraction + light highlights).
-                    let __tmp_14 = reflect(dx, dy, dz, nx, ny, nz);
-                    let rdx = __tmp_14.0;
-                    let rdy = __tmp_14.1;
-                    let rdz = __tmp_14.2;
-                    let __tmp_15 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
-                    let tdx = __tmp_15.0;
-                    let tdy = __tmp_15.1;
-                    let tdz = __tmp_15.2;
-                    let __tmp_16 = sky_color(rdx, rdy, rdz, tphase);
-                    let sr = __tmp_16.0;
-                    let sg = __tmp_16.1;
-                    let sb = __tmp_16.2;
-                    let __tmp_17 = sky_color(tdx, tdy, tdz, tphase + 0.8);
-                    let tr = __tmp_17.0;
-                    let tg = __tmp_17.1;
-                    let tb = __tmp_17.2;
-                    let cosi = (if -(dx * nx + dy * ny + dz * nz) > 0.0 { -(dx * nx + dy * ny + dz * nz) } else { 0.0 });
-                    let fr = schlick(cosi, 0.04);
-                    r = py_any_to_f64(&(tr * (1.0 - fr) + sr * fr));
-                    g = py_any_to_f64(&(tg * (1.0 - fr) + sg * fr));
-                    b = py_any_to_f64(&(tb * (1.0 - fr) + sb * fr));
-                    
-                    let mut lxv = lx - hx;
-                    let mut lyv = ly - hy;
-                    let mut lzv = lz - hz;
-                    let __tmp_18 = normalize(lxv, lyv, lzv);
-                    let mut ldx = __tmp_18.0;
-                    let mut ldy = __tmp_18.1;
-                    let mut ldz = __tmp_18.2;
-                    let mut ndotl = (if nx * ldx + ny * ldy + nz * ldz > 0.0 { nx * ldx + ny * ldy + nz * ldz } else { 0.0 });
-                    let __tmp_19 = normalize(ldx - dx, ldy - dy, ldz - dz);
-                    let hvx = __tmp_19.0;
-                    let hvy = __tmp_19.1;
-                    let hvz = __tmp_19.2;
-                    let ndoth = (if nx * hvx + ny * hvy + nz * hvz > 0.0 { nx * hvx + ny * hvy + nz * hvz } else { 0.0 });
-                    let mut spec = ndoth * ndoth;
-                    spec = spec * spec;
-                    spec = spec * spec;
-                    spec = spec * spec;
-                    let mut glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
-                    r += 0.20 * ndotl + 0.80 * spec + 0.45 * glow;
-                    g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow;
-                    b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow;
-                    
-                    // Slight tint variation per sphere.
-                    if hit_kind == 2 {
-                        r *= 0.95;
-                        g *= 1.05;
-                        b *= 1.10;
-                    } else {
-                        if hit_kind == 3 {
+                        let mut hx = cam_x + best_t * dx;
+                        let hy = cam_y + best_t * dy;
+                        let mut hz = cam_z + best_t * dz;
+                        let __tmp_13 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
+                        let nx = __tmp_13.0;
+                        let ny = __tmp_13.1;
+                        let nz = __tmp_13.2;
+                        
+                        // Simple glass shading (reflection + refraction + light highlights).
+                        let __tmp_14 = reflect(dx, dy, dz, nx, ny, nz);
+                        let rdx = __tmp_14.0;
+                        let rdy = __tmp_14.1;
+                        let rdz = __tmp_14.2;
+                        let __tmp_15 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
+                        let tdx = __tmp_15.0;
+                        let tdy = __tmp_15.1;
+                        let tdz = __tmp_15.2;
+                        let __tmp_16 = sky_color(rdx, rdy, rdz, tphase);
+                        let sr = __tmp_16.0;
+                        let sg = __tmp_16.1;
+                        let sb = __tmp_16.2;
+                        let __tmp_17 = sky_color(tdx, tdy, tdz, tphase + 0.8);
+                        let tr = __tmp_17.0;
+                        let tg = __tmp_17.1;
+                        let tb = __tmp_17.2;
+                        let cosi = (if -(dx * nx + dy * ny + dz * nz) > 0.0 { -(dx * nx + dy * ny + dz * nz) } else { 0.0 });
+                        let fr = schlick(cosi, 0.04);
+                        r = py_any_to_f64(&(tr * (1.0 - fr) + sr * fr));
+                        g = py_any_to_f64(&(tg * (1.0 - fr) + sg * fr));
+                        b = py_any_to_f64(&(tb * (1.0 - fr) + sb * fr));
+                        
+                        let mut lxv = lx - hx;
+                        let mut lyv = ly - hy;
+                        let mut lzv = lz - hz;
+                        let __tmp_18 = normalize(lxv, lyv, lzv);
+                        let mut ldx = __tmp_18.0;
+                        let mut ldy = __tmp_18.1;
+                        let mut ldz = __tmp_18.2;
+                        let mut ndotl = (if nx * ldx + ny * ldy + nz * ldz > 0.0 { nx * ldx + ny * ldy + nz * ldz } else { 0.0 });
+                        let __tmp_19 = normalize(ldx - dx, ldy - dy, ldz - dz);
+                        let hvx = __tmp_19.0;
+                        let hvy = __tmp_19.1;
+                        let hvz = __tmp_19.2;
+                        let ndoth = (if nx * hvx + ny * hvy + nz * hvz > 0.0 { nx * hvx + ny * hvy + nz * hvz } else { 0.0 });
+                        let mut spec = ndoth * ndoth;
+                        spec = spec * spec;
+                        spec = spec * spec;
+                        spec = spec * spec;
+                        let mut glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                        r += 0.20 * ndotl + 0.80 * spec + 0.45 * glow;
+                        g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow;
+                        b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow;
+                        
+                        // Slight tint variation per sphere.
+                        if hit_kind == 2 {
+                            r *= 0.95;
+                            g *= 1.05;
+                            b *= 1.10;
+                        } else if hit_kind == 3 {
                             r *= 1.08;
                             g *= 0.98;
                             b *= 1.04;
@@ -334,20 +329,16 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
                             b *= 0.95;
                         }
                     }
-                }
+                    // Slightly stronger tone mapping.
+                    r = py_any_to_f64(&(math::sqrt(clamp01(r))));
+                    g = py_any_to_f64(&(math::sqrt(clamp01(g))));
+                    b = py_any_to_f64(&(math::sqrt(clamp01(b))));
+                    let __idx_i64_21 = ((row_base + px) as i64);
+                    let __idx_20 = if __idx_i64_21 < 0 { (frame.len() as i64 + __idx_i64_21) as usize } else { __idx_i64_21 as usize };
+                    frame[__idx_20] = ((quantize_332(r, g, b)) as u8);
             }
-            // Slightly stronger tone mapping.
-            r = py_any_to_f64(&(math::sqrt(clamp01(r))));
-            g = py_any_to_f64(&(math::sqrt(clamp01(g))));
-            b = py_any_to_f64(&(math::sqrt(clamp01(b))));
-            let __idx_i64_20 = ((row_base + px) as i64);
-            let __idx_21 = if __idx_i64_20 < 0 { (frame.len() as i64 + __idx_i64_20) as usize } else { __idx_i64_20 as usize };
-            frame[__idx_21] = ((quantize_332(r, g, b)) as u8);
-            px += 1;
-        }
-        py += 1;
     }
-    return (frame).clone();
+    return frame;
 }
 
 fn run_16_glass_sculpture_chaos() {
@@ -359,9 +350,9 @@ fn run_16_glass_sculpture_chaos() {
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
     let mut i: i64 = 0;
-    while i < frames_n {
-        frames.push(render_frame(width, height, i, frames_n));
-        i += 1;
+    for __for_i_22 in (0)..(frames_n) {
+        i = __for_i_22;
+            frames.push(render_frame(width, height, i, frames_n));
     }
     save_gif(&(out_path), width, height, &(frames), &(palette_332()), 6, 0);
     let elapsed = perf_counter() - start;

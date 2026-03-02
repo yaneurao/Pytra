@@ -62,129 +62,125 @@ fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
     let __hoisted_cast_4: f64 = ((height) as f64);
     
     let mut y: i64 = 0;
-    while y < height {
-        let mut x: i64 = 0;
-        while x < width {
-            let mut ar: i64 = 0;
-            let mut ag: i64 = 0;
-            let mut ab: i64 = 0;
-            
-            let mut ay: i64 = 0;
-            while ay < aa {
-                let mut ax: i64 = 0;
-                while ax < aa {
-                    let fy = (((y) as f64) + (((ay) as f64) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
-                    let fx = (((x) as f64) + (((ax) as f64) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
-                    let sy: f64 = 1.0 - 2.0 * fy;
-                    let sx: f64 = (2.0 * fx - 1.0) * (((width) as f64) / __hoisted_cast_4);
+    for __for_i_1 in (0)..(height) {
+        y = __for_i_1;
+            let mut x: i64 = 0;
+            for __for_i_2 in (0)..(width) {
+                x = __for_i_2;
+                    let mut ar: i64 = 0;
+                    let mut ag: i64 = 0;
+                    let mut ab: i64 = 0;
                     
-                    let mut dx: f64 = sx;
-                    let mut dy: f64 = sy;
-                    let mut dz: f64 = 1.0;
-                    let inv_len: f64 = py_any_to_f64(&(1.0 / math::sqrt(dx * dx + dy * dy + dz * dz)));
-                    dx *= inv_len;
-                    dy *= inv_len;
-                    dz *= inv_len;
-                    
-                    let mut t_min: f64 = 1.0e30;
-                    let mut hit_id: i64 = -1;
-                    
-                    let mut t: f64 = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
-                    if (t > 0.0) && (t < t_min) {
-                        t_min = t;
-                        hit_id = 0;
-                    }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
-                    if (t > 0.0) && (t < t_min) {
-                        t_min = t;
-                        hit_id = 1;
-                    }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
-                    if (t > 0.0) && (t < t_min) {
-                        t_min = t;
-                        hit_id = 2;
-                    }
-                    let mut r: i64 = 0;
-                    let mut g: i64 = 0;
-                    let mut b: i64 = 0;
-                    
-                    if hit_id >= 0 {
-                        let px: f64 = ox + dx * t_min;
-                        let py: f64 = oy + dy * t_min;
-                        let pz: f64 = oz + dz * t_min;
-                        
-                        let mut nx: f64 = 0.0;
-                        let mut ny: f64 = 0.0;
-                        let mut nz: f64 = 0.0;
-                        
-                        if hit_id == 0 {
-                            nx = (px + 0.8) / 0.8;
-                            ny = (py + 0.2) / 0.8;
-                            nz = (pz - 2.2) / 0.8;
-                        } else {
-                            if hit_id == 1 {
-                                nx = (px - 0.9) / 0.95;
-                                ny = (py - 0.1) / 0.95;
-                                nz = (pz - 2.9) / 0.95;
-                            } else {
-                                nx = 0.0;
-                                ny = 1.0;
-                                nz = 0.0;
+                    let mut ay: i64 = 0;
+                    for __for_i_3 in (0)..(aa) {
+                        ay = __for_i_3;
+                            let mut ax: i64 = 0;
+                            for __for_i_4 in (0)..(aa) {
+                                ax = __for_i_4;
+                                    let fy = (((y) as f64) + (((ay) as f64) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
+                                    let fx = (((x) as f64) + (((ax) as f64) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
+                                    let sy: f64 = 1.0 - 2.0 * fy;
+                                    let sx: f64 = (2.0 * fx - 1.0) * (((width) as f64) / __hoisted_cast_4);
+                                    
+                                    let mut dx: f64 = sx;
+                                    let mut dy: f64 = sy;
+                                    let mut dz: f64 = 1.0;
+                                    let inv_len: f64 = py_any_to_f64(&(1.0 / math::sqrt(dx * dx + dy * dy + dz * dz)));
+                                    dx *= inv_len;
+                                    dy *= inv_len;
+                                    dz *= inv_len;
+                                    
+                                    let mut t_min: f64 = 1.0e30;
+                                    let mut hit_id: i64 = -1;
+                                    
+                                    let mut t: f64 = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
+                                    if (t > 0.0) && (t < t_min) {
+                                        t_min = t;
+                                        hit_id = 0;
+                                    }
+                                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95);
+                                    if (t > 0.0) && (t < t_min) {
+                                        t_min = t;
+                                        hit_id = 1;
+                                    }
+                                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
+                                    if (t > 0.0) && (t < t_min) {
+                                        t_min = t;
+                                        hit_id = 2;
+                                    }
+                                    let mut r: i64 = 0;
+                                    let mut g: i64 = 0;
+                                    let mut b: i64 = 0;
+                                    
+                                    if hit_id >= 0 {
+                                        let px: f64 = ox + dx * t_min;
+                                        let py: f64 = oy + dy * t_min;
+                                        let pz: f64 = oz + dz * t_min;
+                                        
+                                        let mut nx: f64 = 0.0;
+                                        let mut ny: f64 = 0.0;
+                                        let mut nz: f64 = 0.0;
+                                        
+                                        if hit_id == 0 {
+                                            nx = (px + 0.8) / 0.8;
+                                            ny = (py + 0.2) / 0.8;
+                                            nz = (pz - 2.2) / 0.8;
+                                        } else if hit_id == 1 {
+                                            nx = (px - 0.9) / 0.95;
+                                            ny = (py - 0.1) / 0.95;
+                                            nz = (pz - 2.9) / 0.95;
+                                        } else {
+                                            nx = 0.0;
+                                            ny = 1.0;
+                                            nz = 0.0;
+                                        }
+                                        let mut diff: f64 = nx * -lx + ny * -ly + nz * -lz;
+                                        diff = clamp01(diff);
+                                        
+                                        let mut base_r: f64 = 0.0;
+                                        let mut base_g: f64 = 0.0;
+                                        let mut base_b: f64 = 0.0;
+                                        
+                                        if hit_id == 0 {
+                                            base_r = 0.95;
+                                            base_g = 0.35;
+                                            base_b = 0.25;
+                                        } else if hit_id == 1 {
+                                            base_r = 0.25;
+                                            base_g = 0.55;
+                                            base_b = 0.95;
+                                        } else {
+                                            let checker: i64 = (((px + 50.0) * 0.8) as i64) + (((pz + 50.0) * 0.8) as i64);
+                                            if checker % 2 == 0 {
+                                                base_r = 0.85;
+                                                base_g = 0.85;
+                                                base_b = 0.85;
+                                            } else {
+                                                base_r = 0.2;
+                                                base_g = 0.2;
+                                                base_b = 0.2;
+                                            }
+                                        }
+                                        let shade: f64 = 0.12 + 0.88 * diff;
+                                        r = ((255.0 * clamp01(base_r * shade)) as i64);
+                                        g = ((255.0 * clamp01(base_g * shade)) as i64);
+                                        b = ((255.0 * clamp01(base_b * shade)) as i64);
+                                    } else {
+                                        let tsky: f64 = 0.5 * (dy + 1.0);
+                                        r = ((255.0 * (0.65 + 0.20 * tsky)) as i64);
+                                        g = ((255.0 * (0.75 + 0.18 * tsky)) as i64);
+                                        b = ((255.0 * (0.90 + 0.08 * tsky)) as i64);
+                                    }
+                                    ar += r;
+                                    ag += g;
+                                    ab += b;
                             }
-                        }
-                        let mut diff: f64 = nx * -lx + ny * -ly + nz * -lz;
-                        diff = clamp01(diff);
-                        
-                        let mut base_r: f64 = 0.0;
-                        let mut base_g: f64 = 0.0;
-                        let mut base_b: f64 = 0.0;
-                        
-                        if hit_id == 0 {
-                            base_r = 0.95;
-                            base_g = 0.35;
-                            base_b = 0.25;
-                        } else {
-                            if hit_id == 1 {
-                                base_r = 0.25;
-                                base_g = 0.55;
-                                base_b = 0.95;
-                            } else {
-                                let checker: i64 = (((px + 50.0) * 0.8) as i64) + (((pz + 50.0) * 0.8) as i64);
-                                if checker % 2 == 0 {
-                                    base_r = 0.85;
-                                    base_g = 0.85;
-                                    base_b = 0.85;
-                                } else {
-                                    base_r = 0.2;
-                                    base_g = 0.2;
-                                    base_b = 0.2;
-                                }
-                            }
-                        }
-                        let shade: f64 = 0.12 + 0.88 * diff;
-                        r = ((255.0 * clamp01(base_r * shade)) as i64);
-                        g = ((255.0 * clamp01(base_g * shade)) as i64);
-                        b = ((255.0 * clamp01(base_b * shade)) as i64);
-                    } else {
-                        let tsky: f64 = 0.5 * (dy + 1.0);
-                        r = ((255.0 * (0.65 + 0.20 * tsky)) as i64);
-                        g = ((255.0 * (0.75 + 0.18 * tsky)) as i64);
-                        b = ((255.0 * (0.90 + 0.08 * tsky)) as i64);
                     }
-                    ar += r;
-                    ag += g;
-                    ab += b;
-                    ax += 1;
-                }
-                ay += 1;
+                    let samples = aa * aa;
+                    pixels.push(((ar / samples) as u8));
+                    pixels.push(((ag / samples) as u8));
+                    pixels.push(((ab / samples) as u8));
             }
-            let samples = aa * aa;
-            pixels.push(((ar / samples) as u8));
-            pixels.push(((ag / samples) as u8));
-            pixels.push(((ab / samples) as u8));
-            x += 1;
-        }
-        y += 1;
     }
     return pixels;
 }
