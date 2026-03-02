@@ -53,7 +53,7 @@ def _remove_first_import_with_prefix(src: str, prefix: str) -> tuple[str, bool]:
 def _remove_import_lines(text: str) -> str:
     out = text
     targets = [
-        "from hooks.cs.emitter.cs_emitter import ",
+        "from backends.cs.emitter.cs_emitter import ",
         "from pytra.compiler.transpile_cli import ",
     ]
     for prefix in targets:

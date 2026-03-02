@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
+from backends.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path

@@ -85,14 +85,14 @@ def _assert_cpp_emitter_separation() -> tuple[bool, str]:
             has_cpp_emitter_class = True
         if not isinstance(node, ast.ImportFrom):
             continue
-        if node.module == "hooks.cpp.emitter":
+        if node.module == "backends.cpp.emitter":
             if any(alias.name == "CppEmitter" for alias in node.names):
                 has_cpp_emitter_import = True
 
     if has_cpp_emitter_class:
         return False, "class CppEmitter must be removed from src/py2cpp.py"
     if not has_cpp_emitter_import:
-        return False, "missing import from hooks.cpp.emitter import CppEmitter"
+        return False, "missing import from backends.cpp.emitter import CppEmitter"
     return True, ""
 
 

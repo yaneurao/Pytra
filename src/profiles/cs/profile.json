@@ -8,7 +8,7 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "hooks.cs.hooks.cs_hooks",
+    "module": "backends.cs.hooks.cs_hooks",
     "factory": "build_cs_hooks"
   }
 }

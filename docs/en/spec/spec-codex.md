@@ -59,7 +59,7 @@ This document defines the operational rules Codex follows while working.
 ## 5. Implementation and Placement Rules
 
 - Place only language-agnostic code in `src/common/`.
-- Place language-specific code in each `py2*.py`, `src/hooks/<lang>/`, `src/profiles/<lang>/`, and `src/runtime/<lang>/pytra/`.
+- Place language-specific code in each `py2*.py`, `src/backends/<lang>/`, `src/profiles/<lang>/`, and `src/runtime/<lang>/pytra/`.
 - Do not place files directly under `src/` except transpiler entry points (`py2*.py`).
 - Move shared base logic usable across languages (e.g., `CodeEmitter`) to `src/common/`; keep only C++-specific logic in `py2cpp.py`.
 - To support future multi-language expansion and avoid `py2cpp.py` bloat, migrate commonizable processing to `src/common/` in phases.
@@ -84,7 +84,7 @@ This document defines the operational rules Codex follows while working.
 - If `src/pytra/compiler/east_parts/code_emitter.py` is changed, run `test/unit/test_code_emitter.py` first to verify shared utility regressions.
 - For `CodeEmitter` / `py2cpp` changes, pass both `python3 tools/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` before commit.
 - Committing while either of the two commands above fails is prohibited.
-- When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/hooks/**`, `src/profiles/**`), bump the corresponding version in `src/pytra/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
+- When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/profiles/**`), bump the corresponding version in `src/pytra/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
 - For sample regeneration, use `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` to compile/run-check C++ cases that changed after version bump.
 
 ## 7. Selfhost Operations Know-How

@@ -281,7 +281,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Same as JS. Unsupported import fails during conversion.
 
-### 6. Go (`src/py2go.py` + `src/hooks/go/emitter/go_native_emitter.py`)
+### 6. Go (`src/py2go.py` + `src/backends/go/emitter/go_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2go.py` is a thin CLI and the default output is produced by the Go native emitter.
@@ -306,7 +306,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unresolved methods currently fail as `TranspileError("cannot resolve method call: ...")`; move detection to import-resolution phase and unify message format.
 
-### 8. Swift (`src/py2swift.py` + `src/hooks/swift/emitter/swift_native_emitter.py`)
+### 8. Swift (`src/py2swift.py` + `src/backends/swift/emitter/swift_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2swift.py` is a thin CLI and the default output is produced by the Swift native emitter.
@@ -317,7 +317,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Swift code generation.
 
-### 9. Kotlin (`src/py2kotlin.py` + `src/hooks/kotlin/emitter/kotlin_native_emitter.py`)
+### 9. Kotlin (`src/py2kotlin.py` + `src/backends/kotlin/emitter/kotlin_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2kotlin.py` is a thin CLI and the default output is produced by the Kotlin native emitter.
@@ -328,7 +328,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Kotlin code generation.
 
-### 10. Ruby (`src/py2rb.py` + `src/hooks/ruby/emitter/ruby_native_emitter.py`)
+### 10. Ruby (`src/py2rb.py` + `src/backends/ruby/emitter/ruby_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2rb.py` is a thin CLI and the default output is handled by the Ruby native emitter.
@@ -338,7 +338,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported syntax must fail on the frontend/EAST side and must not proceed to Ruby output.
 
-### 11. Lua (`src/py2lua.py` + `src/hooks/lua/emitter/lua_native_emitter.py`)
+### 11. Lua (`src/py2lua.py` + `src/backends/lua/emitter/lua_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2lua.py` is a thin CLI and the default output is handled by the Lua native emitter.

@@ -46,7 +46,7 @@ Minimal `profile.json` example:
     "syntax.json"
   ],
   "hooks": {
-    "module": "hooks.cpp.hooks.cpp_hooks",
+    "module": "backends.cpp.backends.cpp_hooks",
     "factory": "build_cpp_hooks"
   }
 }
@@ -153,13 +153,13 @@ Move only branches hard to express in profiles into hooks.
 ```json
 {
   "hooks": {
-    "module": "hooks.cpp.hooks.cpp_hooks",
+    "module": "backends.cpp.backends.cpp_hooks",
     "factory": "build_cpp_hooks"
   }
 }
 ```
 
-Place `module` under language-specific side (e.g., `src/hooks/cpp/hooks/`), not under `src/common/`.
+Place `module` under language-specific side (e.g., `src/backends/cpp/hooks/`), not under `src/common/`.
 
 ## 5. Hooks Specification
 
@@ -181,7 +181,7 @@ Return values:
 ### 5.1 Implementation Location (C++)
 
 ```text
-src/hooks/cpp/hooks/cpp_hooks.py
+src/backends/cpp/hooks/cpp_hooks.py
 ```
 
 ## 6. Validation Rules

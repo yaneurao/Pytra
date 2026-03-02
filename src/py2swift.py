@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.swift.emitter import load_swift_profile, transpile_to_swift, transpile_to_swift_native
+from backends.swift.emitter import load_swift_profile, transpile_to_swift, transpile_to_swift_native
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path

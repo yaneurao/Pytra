@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.hooks.cpp.hooks.cpp_hooks import (
+from src.backends.cpp.hooks.cpp_hooks import (
     build_cpp_hooks,
     on_render_expr_complex,
     on_stmt_omit_braces,
@@ -39,7 +39,7 @@ class _DummyEmitter:
 class CppHooksTest(unittest.TestCase):
     def test_build_cpp_hooks_registers_only_syntax_hooks(self) -> None:
         hooks = build_cpp_hooks()
-        self.assertEqual(set(hooks.keys()), {"on_stmt_omit_braces", "on_render_expr_complex"})
+        self.assertEqual(set(backends.keys()), {"on_stmt_omit_braces", "on_render_expr_complex"})
         self.assertNotIn("on_render_module_method", hooks)
         self.assertNotIn("on_render_class_method", hooks)
         self.assertNotIn("on_render_expr_leaf", hooks)

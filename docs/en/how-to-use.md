@@ -169,7 +169,7 @@ ruby test/transpile/ruby/iterable.rb
 ```
 
 Notes:
-- `py2rb.py` generates Ruby source directly from EAST3 via the native emitter (`src/hooks/ruby/emitter/ruby_native_emitter.py`).
+- `py2rb.py` generates Ruby source directly from EAST3 via the native emitter (`src/backends/ruby/emitter/ruby_native_emitter.py`).
 - Image APIs (`png.write_rgb_png` / `save_gif`) are currently handled by no-op runtime hooks; use the backend primarily for syntax/execution-path regression checks at this stage.
 - Check transpile regressions with `python3 tools/check_py2rb_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets ruby` (environments without Ruby toolchain are recorded as `toolchain_missing`). Unstable timing lines such as `elapsed_sec` are excluded from compare by default.
@@ -185,7 +185,7 @@ php test/transpile/php/iterable.php
 ```
 
 Notes:
-- `py2php.py` generates PHP source directly from EAST3 via the native emitter (`src/hooks/php/emitter/php_native_emitter.py`).
+- `py2php.py` generates PHP source directly from EAST3 via the native emitter (`src/backends/php/emitter/php_native_emitter.py`).
 - Runtime helpers are managed under `src/runtime/php/pytra/` and copied into `test/transpile/php/pytra/**` when transpiling.
 - Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
@@ -244,7 +244,7 @@ go run test/transpile/go/iterable.go
 ```
 
 Notes:
-- `py2go.py` generates Go source directly from EAST3 via the native emitter (`src/hooks/go/emitter/go_native_emitter.py`).
+- `py2go.py` generates Go source directly from EAST3 via the native emitter (`src/backends/go/emitter/go_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -260,7 +260,7 @@ java -cp test/transpile/java iterable
 ```
 
 Notes:
-- `py2java.py` generates Java source directly from EAST3 via the native emitter (`src/hooks/java/emitter/java_native_emitter.py`).
+- `py2java.py` generates Java source directly from EAST3 via the native emitter (`src/backends/java/emitter/java_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -276,7 +276,7 @@ swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.
 ```
 
 Notes:
-- `py2swift.py` generates Swift source directly from EAST3 via the native emitter (`src/hooks/swift/emitter/swift_native_emitter.py`).
+- `py2swift.py` generates Swift source directly from EAST3 via the native emitter (`src/backends/swift/emitter/swift_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -292,7 +292,7 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 Notes:
-- `py2kotlin.py` generates Kotlin source directly from EAST3 via the native emitter (`src/hooks/kotlin/emitter/kotlin_native_emitter.py`).
+- `py2kotlin.py` generates Kotlin source directly from EAST3 via the native emitter (`src/backends/kotlin/emitter/kotlin_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -307,7 +307,7 @@ scala run test/transpile/scala/iterable.scala
 ```
 
 Notes:
-- `py2scala.py` generates Scala3 code directly from EAST3 via the native emitter (`src/hooks/scala/emitter/scala_native_emitter.py`).
+- `py2scala.py` generates Scala3 code directly from EAST3 via the native emitter (`src/backends/scala/emitter/scala_native_emitter.py`).
 - Check transpile regressions with `python3 tools/check_py2scala_transpile.py` (it validates both positive success and expected-negative error categories).
 - Run full parity (sample + positive fixture manifest) with `python3 tools/check_scala_parity.py`.
 - To run sample-only parity first, use `python3 tools/check_scala_parity.py --skip-fixture`.

@@ -37,37 +37,37 @@ from pytra.compiler.transpile_cli import (
 )
 from pytra.std.pathlib import Path
 from pytra.std import sys
-from hooks.cpp.profile import CMP_OPS as CPP_CMP_OPS
-from hooks.cpp.profile import AUG_BIN as CPP_AUG_BIN
-from hooks.cpp.profile import AUG_OPS as CPP_AUG_OPS
-from hooks.cpp.profile import BIN_OPS as CPP_BIN_OPS
-from hooks.cpp.profile import load_cpp_identifier_rules as _load_cpp_identifier_rules
-from hooks.cpp.profile import load_cpp_module_attr_call_map as _load_cpp_module_attr_call_map
-from hooks.cpp.profile import load_cpp_profile as _load_cpp_profile
-from hooks.cpp.profile import load_cpp_type_map as _load_cpp_type_map
-from hooks.cpp.profile import load_cpp_bin_ops as _load_cpp_bin_ops
-from hooks.cpp.profile import load_cpp_cmp_ops as _load_cpp_cmp_ops
-from hooks.cpp.profile import load_cpp_aug_ops as _load_cpp_aug_ops
-from hooks.cpp.profile import load_cpp_aug_bin as _load_cpp_aug_bin
-from hooks.cpp.header import build_cpp_header_from_east as _build_cpp_header_from_east
-from hooks.cpp.multifile import write_multi_file_cpp as _write_multi_file_cpp_impl
-from hooks.cpp.optimizer import parse_cpp_opt_pass_overrides
+from backends.cpp.profile import CMP_OPS as CPP_CMP_OPS
+from backends.cpp.profile import AUG_BIN as CPP_AUG_BIN
+from backends.cpp.profile import AUG_OPS as CPP_AUG_OPS
+from backends.cpp.profile import BIN_OPS as CPP_BIN_OPS
+from backends.cpp.profile import load_cpp_identifier_rules as _load_cpp_identifier_rules
+from backends.cpp.profile import load_cpp_module_attr_call_map as _load_cpp_module_attr_call_map
+from backends.cpp.profile import load_cpp_profile as _load_cpp_profile
+from backends.cpp.profile import load_cpp_type_map as _load_cpp_type_map
+from backends.cpp.profile import load_cpp_bin_ops as _load_cpp_bin_ops
+from backends.cpp.profile import load_cpp_cmp_ops as _load_cpp_cmp_ops
+from backends.cpp.profile import load_cpp_aug_ops as _load_cpp_aug_ops
+from backends.cpp.profile import load_cpp_aug_bin as _load_cpp_aug_bin
+from backends.cpp.header import build_cpp_header_from_east as _build_cpp_header_from_east
+from backends.cpp.multifile import write_multi_file_cpp as _write_multi_file_cpp_impl
+from backends.cpp.optimizer import parse_cpp_opt_pass_overrides
 
 build_module_symbol_index = East1BuildHelpers.build_module_symbol_index
 build_module_type_schema = East1BuildHelpers.build_module_type_schema
-from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl
+from backends.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl
 
 
-from hooks.cpp.runtime_emit import RUNTIME_CPP_COMPAT_ROOT
-from hooks.cpp.runtime_emit import RUNTIME_CPP_GEN_ROOT
-from hooks.cpp.runtime_emit import _is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
-from hooks.cpp.runtime_emit import _join_runtime_path as _join_runtime_path_impl
-from hooks.cpp.runtime_emit import _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
-from hooks.cpp.runtime_emit import _prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl
-from hooks.cpp.runtime_emit import _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl
-from hooks.cpp.runtime_emit import _runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl
-from hooks.cpp.runtime_emit import _runtime_namespace_for_tail as _runtime_namespace_for_tail_impl
-from hooks.cpp.runtime_emit import _runtime_output_rel_tail as _runtime_output_rel_tail_impl
+from backends.cpp.runtime_emit import RUNTIME_CPP_COMPAT_ROOT
+from backends.cpp.runtime_emit import RUNTIME_CPP_GEN_ROOT
+from backends.cpp.runtime_emit import _is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
+from backends.cpp.runtime_emit import _join_runtime_path as _join_runtime_path_impl
+from backends.cpp.runtime_emit import _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
+from backends.cpp.runtime_emit import _prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl
+from backends.cpp.runtime_emit import _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl
+from backends.cpp.runtime_emit import _runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl
+from backends.cpp.runtime_emit import _runtime_namespace_for_tail as _runtime_namespace_for_tail_impl
+from backends.cpp.runtime_emit import _runtime_output_rel_tail as _runtime_output_rel_tail_impl
 
 
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
@@ -237,9 +237,9 @@ def cpp_char_lit(ch: str) -> str:
     return "'" + str(ch) + "'"
 
 
-from hooks.cpp.emitter import CppEmitter
-from hooks.cpp.emitter import emit_cpp_from_east
-from hooks.cpp.emitter import install_py2cpp_runtime_symbols
+from backends.cpp.emitter import CppEmitter
+from backends.cpp.emitter import emit_cpp_from_east
+from backends.cpp.emitter import install_py2cpp_runtime_symbols
 install_py2cpp_runtime_symbols(globals())
 
 
@@ -441,7 +441,7 @@ def _write_multi_file_cpp(
     max_generated_lines: int = 0,
     cpp_list_model: str = "",
 ) -> dict[str, Any]:
-    """Delegate multi-file output generation to hooks.cpp.multifile."""
+    """Delegate multi-file output generation to backends.cpp.multifile."""
     return _write_multi_file_cpp_impl(
         entry_path,
         module_east_map,

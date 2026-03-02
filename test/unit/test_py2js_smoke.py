@@ -18,7 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2js import load_east, load_js_profile, transpile_to_js
 from src.pytra.compiler.east_parts.core import convert_path
-from hooks.js.emitter.js_emitter import JsEmitter
+from backends.js.emitter.js_emitter import JsEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 

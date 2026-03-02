@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
+from backends.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
 from pytra.compiler.transpile_cli import load_east3_document
 from pytra.std.pathlib import Path
 from pytra.std import sys

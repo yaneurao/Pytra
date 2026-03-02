@@ -18,7 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2cs import load_east, load_cs_profile, transpile_to_csharp
 from src.pytra.compiler.east_parts.core import convert_path
-from hooks.cs.emitter.cs_emitter import CSharpEmitter
+from backends.cs.emitter.cs_emitter import CSharpEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 

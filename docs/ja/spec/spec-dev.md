@@ -15,7 +15,7 @@
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
-  - backend 段階実装の標準ディレクトリは `src/hooks/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
+  - backend 段階実装の標準ディレクトリは `src/backends/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
   - 当面は `extensions/<topic>/` を併用する（案2）。将来は `lower/optimizer/emitter` 中心へ縮退する（案3）。
   - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
   - `runtime/`: 各ターゲット言語のランタイム配置先（正本、`src/runtime/<lang>/pytra/`）
@@ -100,7 +100,7 @@
 
 - EAST ベースで変換します（`.py/.json -> EAST -> C#`）。
 - `py2cs.py` は CLI + 入出力の薄いオーケストレータに限定します。
-- C# 固有ロジックは `src/hooks/cs/emitter/cs_emitter.py` に分離します。
+- C# 固有ロジックは `src/backends/cs/emitter/cs_emitter.py` に分離します。
 - 言語差分は `src/profiles/cs/*.json`（`types/operators/runtime_calls/syntax`）で管理します。
 - `import` / `from ... import ...` は EAST `meta.import_bindings` を正本として `using` 行へ変換します。
 - 主要型は `src/profiles/cs/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
@@ -108,14 +108,14 @@
 ## 3. C++ 変換仕様（`py2cpp.py`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
-- `CppEmitter` 実装は `src/hooks/cpp/emitter/cpp_emitter.py` へ分離され、`py2cpp.py` は CLI / オーケストレーション層として扱います。
+- `CppEmitter` 実装は `src/backends/cpp/emitter/cpp_emitter.py` へ分離され、`py2cpp.py` は CLI / オーケストレーション層として扱います。
 - 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
   - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
-- class method 呼び出しは `src/hooks/cpp/emitter/call.py` の dispatch mode（`virtual` / `direct` / `fallback`）で描画先を分離します。
+- class method 呼び出しは `src/backends/cpp/emitter/call.py` の dispatch mode（`virtual` / `direct` / `fallback`）で描画先を分離します。
   - `virtual` / `direct`: ユーザー定義 class method シグネチャが解決できる経路。
   - `fallback`: `BuiltinCall` lower 前提経路や runtime/type_id API（`IsInstance/IsSubtype/IsSubclass/ObjTypeId`）など、virtual dispatch 置換対象外の経路。
 - selfhost 回帰では `sample/cpp` と `src/runtime/cpp/pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch を残さないことをテストで固定します（`test_selfhost_virtual_dispatch_regression.py`）。
@@ -364,9 +364,9 @@
 ### 5.2 EASTベース Rust 経路（段階移行）
 
 - `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
-- Rust 固有の出力処理は `src/hooks/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
+- Rust 固有の出力処理は `src/backends/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
 - `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない（`src/runtime/rs/pytra/` 基準で統一済み）。
-- 言語固有差分は `src/profiles/rs/` と `src/hooks/rs/` に分離する。
+- 言語固有差分は `src/profiles/rs/` と `src/backends/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
@@ -374,9 +374,9 @@
 ### 5.3 EASTベース JavaScript 経路（段階移行）
 
 - `src/py2js.py` は CLI + 入出力の薄いオーケストレータに限定する。
-- JavaScript 固有の出力処理は `src/hooks/js/emitter/js_emitter.py`（`JsEmitter`）へ分離する。
+- JavaScript 固有の出力処理は `src/backends/js/emitter/js_emitter.py`（`JsEmitter`）へ分離する。
 - `src/py2js.py` は `src/common/` に依存しない。
-- 言語固有差分は `src/profiles/js/` と `src/hooks/js/` に分離する。
+- 言語固有差分は `src/profiles/js/` と `src/backends/js/` に分離する。
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
 - 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。

@@ -19,19 +19,19 @@ LANGS = ["cpp", "rs", "cs", "js", "ts", "go", "java", "swift", "kotlin"]
 SHARED_DEPENDENCY_PATHS = [
     "src/pytra",
     "src/profiles/common",
-    "src/hooks/__init__.py",
+    "src/backends/__init__.py",
 ]
 
 LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
-    "cpp": ["src/py2cpp.py", "src/hooks/cpp", "src/profiles/cpp"],
-    "rs": ["src/py2rs.py", "src/hooks/rs", "src/profiles/rs"],
-    "cs": ["src/py2cs.py", "src/hooks/cs", "src/profiles/cs"],
-    "js": ["src/py2js.py", "src/hooks/js", "src/profiles/js"],
-    "ts": ["src/py2ts.py", "src/hooks/ts"],
-    "go": ["src/py2go.py", "src/hooks/go"],
-    "java": ["src/py2java.py", "src/hooks/java"],
-    "swift": ["src/py2swift.py", "src/hooks/swift"],
-    "kotlin": ["src/py2kotlin.py", "src/hooks/kotlin"],
+    "cpp": ["src/py2cpp.py", "src/backends/cpp", "src/profiles/cpp"],
+    "rs": ["src/py2rs.py", "src/backends/rs", "src/profiles/rs"],
+    "cs": ["src/py2cs.py", "src/backends/cs", "src/profiles/cs"],
+    "js": ["src/py2js.py", "src/backends/js", "src/profiles/js"],
+    "ts": ["src/py2ts.py", "src/backends/ts"],
+    "go": ["src/py2go.py", "src/backends/go"],
+    "java": ["src/py2java.py", "src/backends/java"],
+    "swift": ["src/py2swift.py", "src/backends/swift"],
+    "kotlin": ["src/py2kotlin.py", "src/backends/kotlin"],
 }
 
 

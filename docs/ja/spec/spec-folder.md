@@ -27,7 +27,7 @@
   - `py2*.py` エントリ
   - `src/pytra/`（共通Python正本）
   - `src/runtime/<lang>/pytra/`（ターゲット言語ランタイム）
-  - `src/hooks/`, `src/profiles/`
+  - `src/backends/`, `src/profiles/`
 - 置かないもの:
   - 運用ログ、検証一時生成物、手順ドキュメント
 
@@ -86,9 +86,9 @@
   - ターゲット言語固有の最終出力分岐
 - 依存方向:
   - `pytra.*` 共通層への依存を許可
-  - `hooks/<lang>` への直接依存は原則禁止
+  - `backends/lang>` への直接依存は原則禁止
 
-### 3.2 `src/hooks/`
+### 3.2 `src/backends/`
 
 - 目的: 言語固有の構文差分を吸収する。
 - 置くもの: backendごとのhook実装
@@ -96,7 +96,7 @@
 
 #### 3.2.1 backend パイプラインの標準ディレクトリ
 
-- 各 backend の標準構成は `src/hooks/<lang>/{lower,optimizer,emitter}/` とする。
+- 各 backend の標準構成は `src/backends/<lang>/{lower,optimizer,emitter}/` とする。
 - 役割は次で固定する。
   - `lower/`: `EAST3 -> <LangIR>` への言語固有 lowering
   - `optimizer/`: `<LangIR> -> <LangIR>` の言語固有最適化
@@ -112,7 +112,7 @@
 - `extensions/` 配下の命名は機能名を固定語でそろえる。
   - 例: `extensions/runtime/`, `extensions/packaging/`, `extensions/integration/`
 - `header/`, `multifile/`, `runtime_emit/`, `hooks/` など言語ごとの独自名ディレクトリは、新規追加を禁止し、段階的に `extensions/<topic>/` へ寄せる。
-- 将来の案3移行では、`src/hooks/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
+- 将来の案3移行では、`src/backends/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
 
 ### 3.3 `src/profiles/`
 
