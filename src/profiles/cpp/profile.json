@@ -8,7 +8,7 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "backends.cpp.hooks.cpp_hooks",
+    "module": "backends.cpp.emitter.hooks_registry",
     "factory": "build_cpp_hooks"
   }
 }

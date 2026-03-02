@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 from pytra.compiler.east_parts.code_emitter import CodeEmitter
 from pytra.compiler.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list
-from backends.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl
+from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
 
 DEFAULT_BIN_OPS: dict[str, str] = {

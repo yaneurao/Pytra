@@ -55,7 +55,7 @@ from backends.cpp.optimizer import parse_cpp_opt_pass_overrides
 
 build_module_symbol_index = East1BuildHelpers.build_module_symbol_index
 build_module_type_schema = East1BuildHelpers.build_module_type_schema
-from backends.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl
+from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
 
 from backends.cpp.runtime_emit import RUNTIME_CPP_COMPAT_ROOT
