@@ -2409,13 +2409,27 @@ class RustEmitter(CodeEmitter):
             stmt,
             cond_empty_default="false",
         )
-        self.emit_if_stmt_skeleton(
-            cond,
-            body_stmts,
-            else_stmts,
-            if_open_default="if {cond} {",
-            else_open_default="} else {",
-        )
+        self.emit(self.syntax_line("if_open", "if {cond} {", {"cond": cond}))
+        self.emit_scoped_stmt_list(body_stmts, set())
+        self._emit_if_else_chain(else_stmts)
+
+    def _emit_if_else_chain(self, else_stmts: list[dict[str, Any]]) -> None:
+        if len(else_stmts) == 0:
+            self.emit(self.syntax_text("block_close", "}"))
+            return
+        if len(else_stmts) == 1 and self.any_dict_get_str(else_stmts[0], "kind", "") == "If":
+            nested = else_stmts[0]
+            nested_cond, nested_body, nested_else = self.prepare_if_stmt_parts(
+                nested,
+                cond_empty_default="false",
+            )
+            self.emit(self.syntax_line("else_if_open", "} else if {cond} {", {"cond": nested_cond}))
+            self.emit_scoped_stmt_list(nested_body, set())
+            self._emit_if_else_chain(nested_else)
+            return
+        self.emit(self.syntax_text("else_open", "} else {"))
+        self.emit_scoped_stmt_list(else_stmts, set())
+        self.emit(self.syntax_text("block_close", "}"))
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         cond, body_stmts = self.prepare_while_stmt_parts(

@@ -50,7 +50,7 @@
 - [x] [ID: P1-RS-S08-QUALITY-01-S2-01] `capture` 返却の不要 `clone` を削減する出力規則を導入する。
 - [x] [ID: P1-RS-S08-QUALITY-01-S2-02] 非負添字が保証される経路で index 正規化式を省略する fastpath を追加する。
 - [x] [ID: P1-RS-S08-QUALITY-01-S2-03] 単純 `range` 由来ループを Rust `for` へ縮退する fastpath を追加する。
-- [ ] [ID: P1-RS-S08-QUALITY-01-S2-04] `if/elif` 連鎖を `else if` / `match` 相当へ簡素化する出力規則を追加する。
+- [x] [ID: P1-RS-S08-QUALITY-01-S2-04] `if/elif` 連鎖を `else if` / `match` 相当へ簡素化する出力規則を追加する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-05] capture 判定 `%` を next-capture カウンタ方式へ置換する fastpath を追加する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-06] 推定可能な `frames` サイズに対する `reserve` 出力規則を追加する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S3-01] 回帰テストを追加し、`sample/rs/08` 再生成差分を固定する。
@@ -62,6 +62,7 @@
 - 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S2-01] `bytes()` call が return 式上で `bytearray/bytes` を受ける場合は move 優先にし、`sample/rs/08` の `return (frame).clone();` を `return frame;` へ縮退。
 - 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S2-02] 簡易 non-negative 解析（変数追跡 + range 由来）を導入し、`sample/rs/08` の `grid[y][x]` 経路は `((y) as usize)` / `((x) as usize)` へ縮退。
 - 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S2-03] ascending `step=1` + 正規化条件一致の `ForRange` で `for __for_i in start..stop` fastpath を導入し、`sample/rs/08` の主ループを `while` から `for` へ縮退。
+- 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S2-04] ネスト `if` を `else if` 連鎖へ平坦化する emit を追加し、`sample/rs/08` の `d` 分岐を簡素化。
 
 ## S1-01 棚卸し結果
 

@@ -57,16 +57,12 @@ fn run_08_langtons_ant() {
             }
             if d == 0 {
                 y = (y - 1 + h) % h;
+            } else if d == 1 {
+                x = (x + 1) % w;
+            } else if d == 2 {
+                y = (y + 1) % h;
             } else {
-                if d == 1 {
-                    x = (x + 1) % w;
-                } else {
-                    if d == 2 {
-                        y = (y + 1) % h;
-                    } else {
-                        x = (x - 1 + w) % w;
-                    }
-                }
+                x = (x - 1 + w) % w;
             }
             if i % capture_every == 0 {
                 frames.push(capture(&(grid), w, h));

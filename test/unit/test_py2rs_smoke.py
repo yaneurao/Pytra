@@ -223,6 +223,8 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertNotIn("return (frame).clone();", rust)
         self.assertIn("grid[((y) as usize)][((x) as usize)]", rust)
         self.assertNotIn("grid.len() as i64 + ((y) as i64)", rust)
+        self.assertIn("} else if d == 1 {", rust)
+        self.assertIn("} else if d == 2 {", rust)
 
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
