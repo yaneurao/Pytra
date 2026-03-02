@@ -61,6 +61,7 @@
 - 2026-03-02: `CppBraceOmitHintPass` を追加し、`If/ForCore` 等の brace 省略判定を optimizer 側で `cpp_omit_braces_v1` ヒント化。emitter は hint 優先で描画する形へ更新（S3-01 部分着手）。
 - 2026-03-02: `CppForIterModeHintPass` を追加し、legacy `For` の `iter_mode` 決定を optimizer 側 `cpp_iter_mode_v1` ヒントへ移設。`pyobj` list model は現状 emitter 側判定を維持。
 - 2026-03-02: `CppCastCallNormalizePass` を追加し、`py_to_*` 入れ子と `static_cast` + `py_to_*` の重複キャストを optimizer 側で縮約（S3-02 部分着手）。
+- 2026-03-02: `CppCompareNormalizePass` を追加し、`bool_expr == True/False` / `!= True/False` を `bool_expr` / `!bool_expr` へ正規化して compare 冗長性を optimizer 側で縮約（S3-02 部分着手）。
 - 2026-03-02: 境界テストとして `test_cpp_optimizer.py` に `CppLower` / `CppIrOptimizer` / `emit_cpp_from_east` の接続検証を追加し、unit 回帰を固定（S4-01）。
 - 2026-03-02: `tools/check_py2cpp_transpile.py`（136/136 pass, skip6）、`tools/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`、`tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot 08_langtons_ant 18_mini_language_interpreter --ignore-unstable-stdout`（3/3 pass）で非退行を確認（S4-02）。
 
