@@ -91,7 +91,7 @@
 4. [x] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格（関数・分岐・ループ・基本式）を実装する。
 5. [x] [ID: P3-PHP-BACKEND-01-S2-02] class/inheritance と container 操作の最低限 lower を実装する。
 6. [x] [ID: P3-PHP-BACKEND-01-S2-03] runtime helper を `src/runtime/php/pytra/` へ分離し、生成コードから参照する方式へ統一する。
-7. [ ] [ID: P3-PHP-BACKEND-01-S3-01] `test_py2php_smoke.py` と `check_py2php_transpile.py` を追加し、回帰導線を整備する。
+7. [x] [ID: P3-PHP-BACKEND-01-S3-01] `test_py2php_smoke.py` と `check_py2php_transpile.py` を追加し、回帰導線を整備する。
 8. [ ] [ID: P3-PHP-BACKEND-01-S3-02] `runtime_parity_check` / `regenerate_samples` に PHP を統合し、`sample/php` を再生成する。
 9. [ ] [ID: P3-PHP-BACKEND-01-S3-03] docs（how-to-use/spec/README 系）の PHP backend 記載を更新する。
 
