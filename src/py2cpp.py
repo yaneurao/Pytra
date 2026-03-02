@@ -37,18 +37,18 @@ from pytra.compiler.transpile_cli import (
 )
 from pytra.std.pathlib import Path
 from pytra.std import sys
-from backends.cpp.profile import CMP_OPS as CPP_CMP_OPS
-from backends.cpp.profile import AUG_BIN as CPP_AUG_BIN
-from backends.cpp.profile import AUG_OPS as CPP_AUG_OPS
-from backends.cpp.profile import BIN_OPS as CPP_BIN_OPS
-from backends.cpp.profile import load_cpp_identifier_rules as _load_cpp_identifier_rules
-from backends.cpp.profile import load_cpp_module_attr_call_map as _load_cpp_module_attr_call_map
-from backends.cpp.profile import load_cpp_profile as _load_cpp_profile
-from backends.cpp.profile import load_cpp_type_map as _load_cpp_type_map
-from backends.cpp.profile import load_cpp_bin_ops as _load_cpp_bin_ops
-from backends.cpp.profile import load_cpp_cmp_ops as _load_cpp_cmp_ops
-from backends.cpp.profile import load_cpp_aug_ops as _load_cpp_aug_ops
-from backends.cpp.profile import load_cpp_aug_bin as _load_cpp_aug_bin
+from backends.cpp.emitter.profile_loader import CMP_OPS as CPP_CMP_OPS
+from backends.cpp.emitter.profile_loader import AUG_BIN as CPP_AUG_BIN
+from backends.cpp.emitter.profile_loader import AUG_OPS as CPP_AUG_OPS
+from backends.cpp.emitter.profile_loader import BIN_OPS as CPP_BIN_OPS
+from backends.cpp.emitter.profile_loader import load_cpp_identifier_rules as _load_cpp_identifier_rules
+from backends.cpp.emitter.profile_loader import load_cpp_module_attr_call_map as _load_cpp_module_attr_call_map
+from backends.cpp.emitter.profile_loader import load_cpp_profile as _load_cpp_profile
+from backends.cpp.emitter.profile_loader import load_cpp_type_map as _load_cpp_type_map
+from backends.cpp.emitter.profile_loader import load_cpp_bin_ops as _load_cpp_bin_ops
+from backends.cpp.emitter.profile_loader import load_cpp_cmp_ops as _load_cpp_cmp_ops
+from backends.cpp.emitter.profile_loader import load_cpp_aug_ops as _load_cpp_aug_ops
+from backends.cpp.emitter.profile_loader import load_cpp_aug_bin as _load_cpp_aug_bin
 from backends.cpp.header import build_cpp_header_from_east as _build_cpp_header_from_east
 from backends.cpp.multifile import write_multi_file_cpp as _write_multi_file_cpp_impl
 from backends.cpp.optimizer import parse_cpp_opt_pass_overrides

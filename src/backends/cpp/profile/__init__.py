@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .cpp_profile import (
+from backends.cpp.emitter.profile_loader import (
     AUG_BIN,
     AUG_OPS,
     BIN_OPS,

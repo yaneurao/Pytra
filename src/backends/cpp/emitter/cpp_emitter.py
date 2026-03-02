@@ -25,7 +25,7 @@ from backends.cpp.emitter.stmt import CppStatementEmitter
 from backends.cpp.emitter.type_bridge import CppTypeBridgeEmitter
 from backends.cpp.emitter.tmp import CppTemporaryEmitter
 from backends.cpp.emitter.trivia import CppTriviaEmitter
-from backends.cpp.profile import (
+from backends.cpp.emitter.profile_loader import (
     CMP_OPS,
     load_cpp_hooks,
     load_cpp_identifier_rules,

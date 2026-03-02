@@ -58,7 +58,7 @@
 
 - [x] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元（`py2cpp`/`emitter`/tests）を棚卸しし、移設先を確定する。
 - [x] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新ディレクトリ方針（`emitter` 配下の受け皿名）を決定し、命名規約を文書化する。
-- [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` を `emitter` 配下へ移設し、`py2cpp`/`CppEmitter` の import を更新する。
+- [x] [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` を `emitter` 配下へ移設し、`py2cpp`/`CppEmitter` の import を更新する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` を `emitter` 配下へ移設し、hook factory の呼び出し元を更新する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` を `emitter` 配下へ移設し、module include/runtime path 解決を更新する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-04] `header` を `emitter` 配下へ移設し、header 生成導線を更新する。
@@ -99,3 +99,4 @@
 - 2026-03-02: 本タスクでは 5 フォルダを `lower/optimizer/emitter` のいずれかへ再配置する方針を採用し、共通部品扱いはしない前提を確定。
 - 2026-03-02: [ID: P0-CPP-DIR-REALIGN-01-S1-01] 5 フォルダの責務/参照元を棚卸しし、移設先を `emitter` 配下5モジュールへ確定した。
 - 2026-03-02: [ID: P0-CPP-DIR-REALIGN-01-S1-02] 命名規約と import 境界（`backends.cpp.emitter.*` へ統一）を明文化した。
+- 2026-03-02: [ID: P0-CPP-DIR-REALIGN-01-S2-01] `src/backends/cpp/profile/cpp_profile.py` を `src/backends/cpp/emitter/profile_loader.py` へ移設し、`py2cpp`/`CppEmitter`/関連 helper の import を新パスへ更新。`check_py2cpp_transpile.py` と `test_language_profile.py` で非退行を確認。

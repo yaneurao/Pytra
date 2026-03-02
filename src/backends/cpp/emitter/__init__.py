@@ -7,7 +7,7 @@ from backends.cpp.emitter.cpp_emitter import (
     emit_cpp_from_east,
     install_py2cpp_runtime_symbols,
 )
-from backends.cpp.profile import load_cpp_profile
+from backends.cpp.emitter.profile_loader import load_cpp_profile
 from pytra.std.typing import Any
 
 __all__ = [
