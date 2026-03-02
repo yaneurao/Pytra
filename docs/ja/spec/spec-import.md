@@ -152,7 +152,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 
 - import 関連の失敗は `input_invalid` に統一する。
 - detail 行に最低限次を含める。
-- `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unsupported_import_form`
+- `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unresolved_wildcard | unsupported_import_form`
 - `file`: 入力ファイル
 - `import`: 元の import 文字列（再構築文字列で可）
 - 例:
@@ -164,7 +164,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 - `import M` / `import M as A` / `from M import S` / `from M import S as A`
 - 同名 symbol が別モジュールに存在しても完全修飾で衝突しないこと
 - 異常系:
-- `from M import *`（受理。`binding_kind=wildcard` として保持）
+- `from M import *`（受理。`__all__` 優先/公開名 fallback で展開し、解決不能は `kind=unresolved_wildcard` で fail-closed）
 - `from .m import x`（第一段階では `input_invalid`）
 - 存在しないモジュール/シンボル
 - 同名 alias 重複
@@ -246,7 +246,7 @@ QualifiedSymbolRef
 - `as` 付き import は Rust 側でも `as` へ正規化する。
 - `typing` / `__future__` は import 出力対象から除外する。
 - エラー方針:
-- `from M import *` と相対 import は `TranspileError`（上位で `input_invalid` 同等）に統一。
+- `from M import *` は frontend で解決済み `QualifiedSymbolRef` を利用し、解決不能時のみ `input_invalid(kind=unresolved_wildcard)` とする。相対 import は引き続き `input_invalid`。
 
 ### 3. C#（`src/py2cs.py`）
 
@@ -258,7 +258,7 @@ QualifiedSymbolRef
 - `typing` / `__future__` / `browser*` は using 出力対象から除外する。
 - C# 固有の文・式変換は profile/hook（`src/profiles/cs/*`, `src/hooks/cs/*`）で管理する。
 - エラー方針:
-- `from M import *` は展開しない。frontend の禁止構文として失敗させる。
+- `from M import *` は frontend で展開済み解決結果（`meta.qualified_symbol_refs`）を利用する。未解決の wildcard は frontend 側で fail-closed させる。
 - 相対 import や未解決 import は frontend 側の `input_invalid` 方針に従う。
 
 ### 4. JavaScript（`src/py2js.py` + `src/hooks/js/emitter/js_emitter.py`）
@@ -271,7 +271,7 @@ QualifiedSymbolRef
 - `browser` / `browser.widgets.dialog` は外部参照として扱い、import 本体を生成しない。
 - `from browser import window as win` は `win` を `window` 参照へ解決する。
 - エラー方針:
-- 既存の禁止構文（例: `from M import *`）は frontend/EAST 側のエラー方針に従う。
+- wildcard 由来の参照は frontend/EAST 側で解決済みメタを利用し、未解決時のみ `input_invalid(kind=unresolved_wildcard)` とする。
 
 ### 5. TypeScript（`src/py2ts.py` + `src/hooks/ts/emitter/ts_emitter.py`）
 
