@@ -43,5 +43,49 @@
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] `CodeEmitter` から C# 固有回避コードを除去し、共通実装へ戻す。
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] unit/selfhost 回帰を実施し、C# pass 維持と他 backend 非退行を確認する。
 
+## S1-01 棚卸し（v0.4.0=96898f02 以降）
+
+分類は `git log 96898f02..HEAD -- src/pytra/compiler/east_parts/code_emitter.py` を基準に作成した。
+
+### 共通必須（維持候補）
+
+1. `fe81e0a1`（依存収集API）  
+   - `require_dep*` / `finalize_deps` は Go emitter で利用され、C# 固有ではない。
+2. `72e3895a`（`import_resolution` 受理）  
+   - 複数 backend が `load_import_bindings_from_meta` を共有し、IR 契約の後方互換維持に必要。
+3. `11d50618`（ForCore downrange mode 解決）  
+   - `cs/js/ts/rs/lua` が `resolve_forcore_static_range_mode` を利用。
+4. `cc49329e`（`rc_new` 型復元補助）  
+   - C++ 出力品質改善由来であり、C# selfhost 固有理由ではない。
+
+### C# 固有（移管候補）
+
+1. `P4-MULTILANG-SH-01-S2-02-S2-S2-S2-S2-S7` 群（`6ff2dbe7`〜`f9e3a5b6`）  
+   - `any_dict_get*` / `emit_with_scope` / hook 返り値処理の `Any` 化など、C# selfhost の object 型整合で導入された緩和。
+2. `5d00eda8` / `a101d8d5` / `003424db`  
+   - C# selfhost stage1/multistage の通過を主目的とする調整。
+
+### 判定保留
+
+1. ASCII 判定 helper 群（`_is_ascii_*`）  
+   - 実装意図は C# selfhost 起点だが、識別子/フック名正規化の共通安定化にも寄与しうる。
+2. `any_to_dict_or_empty` の key 正規化コピー  
+   - C# object-safe 化由来だが、非文字列 key 混入時の fail-closed 強化として共通採用余地あり。
+
+## S1-02 判定基準（共通必須）
+
+「共通必須」と判定する条件を次の3軸で固定する。
+
+1. backend 中立性  
+   - API/挙動が特定言語固有型（例: C# の `object` 都合）を前提にしない。
+2. 他言語利用実績  
+   - C# 以外の emitter が実際に呼び出している、または IR 契約上必須である。
+3. fail-closed 必要性  
+   - 取り除くと未解決 import・range mode 破綻などの安全性低下を招く。
+
+上記 3 条件のいずれかを満たさない変更は、原則として C# 側へ移管候補に分類する。
+
 決定ログ:
 - 2026-03-01: ユーザー指示により「CodeEmitter へ C# 都合を持ち込まない」方針を明示し、実装着手前に P3 計画化することを決定した。
+- 2026-03-02: S1-01 として `v0.4.0` 以降の `CodeEmitter` 差分を commit 単位で棚卸しし、共通必須 / C# 固有 / 判定保留の3分類を作成した。
+- 2026-03-02: S1-02 として共通必須の判定基準（backend中立性・他言語利用実績・fail-closed必要性）を明文化した。
