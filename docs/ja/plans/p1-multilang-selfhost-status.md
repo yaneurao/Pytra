@@ -11,7 +11,7 @@ python3 tools/check_multilang_selfhost_stage1.py
 | lang | stage1 (self-transpile) | generated_mode | stage2 (selfhost run) | note |
 |---|---|---|---|---|
 | rs | pass | native | fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
-| cs | pass | native | fail | /tmp/tmp4j3gy4_i/cs_selfhost_stage1.cs(602,18): error CS0019: Operator `<=' cannot be applied to operands of type `string' and `string' |
+| cs | pass | native | fail | /tmp/tmpj4f9_30m/cs_selfhost_stage1.cs(197,19): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?) |
 | js | pass | native | pass | sample/py/01 transpile ok |
 | ts | pass | native | skip | stage2 scope is rs/cs/js only |
 | go | pass | native | skip | stage2 scope is rs/cs/js only |

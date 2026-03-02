@@ -166,9 +166,9 @@ class CodeEmitter:
     def quote_string_literal(self, text: Any, quote: str = "\"") -> str:
         """エスケープ済み文字列を引用符で囲んで返す。"""
         txt = self.any_to_str(text)
-        if txt == "" and text is not None:
-            txt = str(text)
-        q = quote
+        if txt == "" and isinstance(text, str):
+            txt = text
+        q = quote if isinstance(quote, str) else "\""
         if q == "":
             q = "\""
         return q + CodeEmitter.escape_string_for_literal(txt) + q
@@ -255,7 +255,18 @@ class CodeEmitter:
 
     def emit(self, line: str = "") -> None:
         """現在のインデントで1行を出力バッファへ追加する。"""
-        self.lines.append(("    " * self.indent) + line)
+        self.lines.append(self._indent_padding(self.indent) + line)
+
+    def _indent_padding(self, level: int) -> str:
+        """インデント段数に応じた空白文字列を返す。"""
+        if level <= 0:
+            return ""
+        out = ""
+        i = 0
+        while i < level:
+            out += "    "
+            i += 1
+        return out
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         for stmt in stmts:

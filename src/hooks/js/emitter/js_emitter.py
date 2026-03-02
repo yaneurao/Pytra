@@ -528,7 +528,7 @@ class JsEmitter(CodeEmitter):
                 continue
             if kind == "FunctionDef":
                 self.emit_leading_comments(stmt)
-                self._emit_function(stmt, in_class=None)
+                self._emit_function(stmt, in_class="")
                 self.emit("")
                 continue
             if kind == "ClassDef":
@@ -636,7 +636,7 @@ class JsEmitter(CodeEmitter):
                 return True
         return False
 
-    def _emit_function(self, fn: dict[str, Any], in_class: str | None) -> None:
+    def _emit_function(self, fn: dict[str, Any], in_class: str) -> None:
         """FunctionDef を JavaScript 関数/メソッドとして出力する。"""
         fn_name_raw = self.any_to_str(fn.get("name"))
         arg_order = self.any_to_str_list(fn.get("arg_order"))
@@ -646,9 +646,9 @@ class JsEmitter(CodeEmitter):
         prev_ref_vars = self.current_ref_vars
         prev_in_method_scope = self.in_method_scope
         self.current_ref_vars = set()
-        self.in_method_scope = in_class is not None
+        self.in_method_scope = in_class != ""
 
-        if in_class is not None:
+        if in_class != "":
             method_name = "constructor" if fn_name_raw == "__init__" else self._safe_name(fn_name_raw)
             if len(arg_order) > 0 and arg_order[0] == "self":
                 arg_order = arg_order[1:]
@@ -668,11 +668,11 @@ class JsEmitter(CodeEmitter):
             self.emit("function " + fn_name + "(" + ", ".join(args) + ") {")
 
         body = self._dict_stmt_list(fn.get("body"))
-        if in_class is not None and fn_name_raw == "__init__" and self.current_class_base_name != "":
+        if in_class != "" and fn_name_raw == "__init__" and self.current_class_base_name != "":
             if not self._ctor_has_explicit_super_init(body):
                 self.emit("super();")
         self.emit_scoped_stmt_list(body, scope_names)
-        if in_class is not None and fn_name_raw == "__init__":
+        if in_class != "" and fn_name_raw == "__init__":
             self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
         self.emit("}")
         self.in_method_scope = prev_in_method_scope
@@ -756,7 +756,7 @@ class JsEmitter(CodeEmitter):
         if kind == "Import" or kind == "ImportFrom":
             return
         if kind == "FunctionDef":
-            self._emit_function(stmt, in_class=None)
+            self._emit_function(stmt, in_class="")
             return
         raise RuntimeError("js emitter: unsupported stmt kind: " + kind)
 
