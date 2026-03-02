@@ -43,7 +43,7 @@
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-01] `go/java` の `Any/Object` 退化 hotspot（`sample/18`）を棚卸しし、typed fastpath の適用境界を固定する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-02] `kotlin/swift/scala` の helper/cast 連鎖（`__pytra_int/float`, `asInstanceOf`）を棚卸しし、削減優先順を確定する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-03] `rs/js/ts` のループ冗長パターン（`__for_i` 再代入、`__start_N`）の縮退規則を仕様化する。
-- [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] `go/java` emitter に typed container/typed access fastpath を実装する。
+- [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] `go/java` emitter に typed container/typed access fastpath を実装する。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
@@ -54,6 +54,10 @@
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-01] `sample/go/18` と `sample/java/18` を棚卸し。`[]any` / `ArrayList<Object>`・`map[any]any` / `HashMap<Object,Object>`・`enumerate` 展開で `line_index/source` が untyped 化していることを確認。`S2-01` の適用境界を「(a) list/tuple/dict の resolved_type が閉じている、(b) loop target plan が Name/Tuple で型注釈がある、(c) `py_*` helper が object 境界を要求しない箇所」に固定。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-02] `sample/{kotlin,swift,scala}/18` を棚卸し。`__pytra_int(...)` の同型再キャスト連鎖、`asInstanceOf` / `as? ... ??` の防御キャスト、`__pytra_as_list(...typed literal...)` が主要ノイズと判定。削減優先順は 1) 同型 cast/helper 除去、2) typed literal 直出力、3) container access の typed fastpath 化。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-03] `sample/{rs,js,ts}/18` を棚卸し。`rs` は `for __for_i_N ...; i = __for_i_N`、`js/ts` は `const __start_N = 0; for (let i = __start_N; ...)` が冗長パターン。`S2-03` 規則を「定数開始値は直接埋め込み」「range 直列は target へ直接束縛」「再代入のみの中継変数を emit しない」に固定。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] Go emitter の `RuntimeIterForPlan + TupleTarget` に enumerate fastpath を追加し、`__pytra_enumerate` + tuple 展開（`__pytra_as_list(__it)`）を index/value 直束縛へ縮退した（`sample/go/18`）。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] Java emitter に container 型推論（`list[T] -> ArrayList<T>`, `dict[K,V] -> HashMap<K,V>`）と empty literal の expected-type ctor 補正を追加。`sample/java/18` の `ArrayList<Object>/HashMap<Object,Object>` を型付き container へ置換。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] Java enumerate loop で list 要素型が既知な場合に typed iterator cast を使う fastpath を追加し、`String.valueOf(__iter.get(...))` 依存を削減。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] 検証: `test_py2go*`/`test_py2java*` smoke は通過、`regenerate_samples --langs go,java --stems 18_mini_language_interpreter --force` 実施。`runtime_parity_check --targets go,java 18_mini_language_interpreter` は既知の compile blocker（go: interface field access, java: `HashMap.get(key,default)` 等）で失敗し、今回差分の退行ではないことを確認。
 
 実装境界メモ（S1 集約）:
 - `go/java` typed fastpath は `tokenize/parse_program/execute/build_benchmark_source` の container と loop target を優先対象にする。
