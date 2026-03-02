@@ -119,11 +119,12 @@
 
 文脈: [docs/ja/plans/p0-cpp-forcore-single-stmt-brace-omit.md](../plans/p0-cpp-forcore-single-stmt-brace-omit.md)
 
-1. [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01] `ForCore` 単文ループで不要な波括弧 `{}` を省略し、C++ 出力可読性を改善する。
-2. [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S1-01] `ForCore` の brace 省略条件（単文・安全条件・除外条件）を確定する。
-3. [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S2-01] `CppEmitter` の既定 brace 判定へ `ForCore` を追加し、出力経路へ適用する。
-4. [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-01] unit テストを追加/更新し、`ForCore` 省略回帰を固定する。
-5. [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
+1. [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01] `ForCore` 単文ループで不要な波括弧 `{}` を省略し、C++ 出力可読性を改善する。
+2. [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S1-01] `ForCore` の brace 省略条件（単文・安全条件・除外条件）を確定する。
+3. [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S2-01] `CppEmitter` の既定 brace 判定へ `ForCore` を追加し、出力経路へ適用する。
+4. [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-01] unit テストを追加/更新し、`ForCore` 省略回帰を固定する。
+5. [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
+- 進捗メモ: [ID: P0-CPP-FORCORE-BRACE-OMIT-01] `StaticRangeForPlan + NameTarget` の単文 `ForCore` で brace 省略を有効化し、unit/transpile と `sample/cpp/18` 再生成で `for (...)` 単文出力を確認。
 
 ### P1: sample/ruby/03 出力品質改善（Julia hot path）
 
