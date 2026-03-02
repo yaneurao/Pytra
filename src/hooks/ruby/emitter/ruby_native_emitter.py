@@ -238,6 +238,19 @@ def _const_int_literal(node: Any) -> int | None:
     return None
 
 
+def _is_nonzero_numeric_constant(node: Any) -> bool:
+    if not isinstance(node, dict) or node.get("kind") != "Constant":
+        return False
+    value_any = node.get("value")
+    if isinstance(value_any, bool):
+        return False
+    if isinstance(value_any, int):
+        return value_any != 0
+    if isinstance(value_any, float):
+        return value_any != 0.0
+    return False
+
+
 def _resolved_type_name(node: Any) -> str:
     if not isinstance(node, dict):
         return ""
@@ -464,6 +477,14 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     left_wrapped = _wrap_binop_operand_if_needed(left, left_node, op, is_right=False)
     right_wrapped = _wrap_binop_operand_if_needed(right, right_node, op, is_right=True)
     if op == "Div":
+        if _is_nonzero_numeric_constant(right_node):
+            return _join_binop_expr(
+                _wrap_binop_operand_if_needed(_render_float_cast(left_node), left_node, op, is_right=False),
+                _wrap_binop_operand_if_needed(_render_float_cast(right_node), right_node, op, is_right=True),
+                "/",
+                left_node,
+                right_node,
+            )
         return "__pytra_div(" + left_wrapped + ", " + right_wrapped + ")"
     if op == "FloorDiv":
         return _join_binop_expr(

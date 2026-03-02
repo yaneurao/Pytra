@@ -274,14 +274,27 @@ class Py2RbSmokeTest(unittest.TestCase):
             src_py = Path(td) / "true_div.py"
             src_py.write_text(
                 "def main() -> None:\n"
-                "    x: float = 1 / 2\n"
+                "    denom: int = 2\n"
+                "    x: float = 1 / denom\n"
                 "    print(x)\n",
                 encoding="utf-8",
             )
             east = load_east(src_py, parser_backend="self_hosted")
             ruby = transpile_to_ruby_native(east)
-        self.assertIn("__pytra_div(1, 2)", ruby)
-        self.assertNotIn("(1 / 2)", ruby)
+        self.assertIn("__pytra_div(1, denom)", ruby)
+
+    def test_true_division_with_nonzero_constant_rhs_uses_direct_slash_fastpath(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "true_div_const_rhs.py"
+            src_py.write_text(
+                "def main(a: int) -> float:\n"
+                "    return a / 2\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            ruby = transpile_to_ruby_native(east)
+        self.assertIn("__pytra_float(a) / __pytra_float(2)", ruby)
+        self.assertNotIn("__pytra_div(a, 2)", ruby)
 
     def test_sample06_uses_true_division_helper(self) -> None:
         sample = find_sample_case("06_julia_parameter_sweep")

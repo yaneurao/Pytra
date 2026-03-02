@@ -4,52 +4,52 @@ require_relative "py_runtime"
 # 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
 def julia_palette()
-  palette = __pytra_bytearray((256 * 3))
+  palette = __pytra_bytearray(256 * 3)
   __pytra_set_index(palette, 0, 0)
   __pytra_set_index(palette, 1, 0)
   __pytra_set_index(palette, 2, 0)
   i = 1
   while i < 256
-    t = __pytra_div((i - 1), 254.0)
+    t = ((__pytra_float(i - 1)) / 254.0)
     r = __pytra_int((255.0 * ((((9.0 * (1.0 - t)) * t) * t) * t)))
     g = __pytra_int((255.0 * ((((15.0 * (1.0 - t)) * (1.0 - t)) * t) * t)))
     b = __pytra_int((255.0 * ((((8.5 * (1.0 - t)) * (1.0 - t)) * (1.0 - t)) * t)))
-    __pytra_set_index(palette, ((i * 3) + 0), r)
-    __pytra_set_index(palette, ((i * 3) + 1), g)
-    __pytra_set_index(palette, ((i * 3) + 2), b)
+    __pytra_set_index(palette, (i * 3 + 0), r)
+    __pytra_set_index(palette, (i * 3 + 1), g)
+    __pytra_set_index(palette, (i * 3 + 2), b)
     i += 1
   end
   return __pytra_bytes(palette)
 end
 
 def render_frame(width, height, cr, ci, max_iter, phase)
-  frame = __pytra_bytearray((width * height))
-  __hoisted_cast_1 = __pytra_float((height - 1))
-  __hoisted_cast_2 = __pytra_float((width - 1))
+  frame = __pytra_bytearray(width * height)
+  __hoisted_cast_1 = __pytra_float(height - 1)
+  __hoisted_cast_2 = __pytra_float(width - 1)
   y = 0
   while y < height
-    row_base = (y * width)
+    row_base = y * width
     zy0 = ((-1.2) + (2.4 * __pytra_div(y, __hoisted_cast_1)))
     x = 0
     while x < width
       zx = ((-1.8) + (3.6 * __pytra_div(x, __hoisted_cast_2)))
       zy = zy0
       i = 0
-      while (i < max_iter)
-        zx2 = (zx * zx)
-        zy2 = (zy * zy)
-        if ((zx2 + zy2) > 4.0)
+      while i < max_iter
+        zx2 = zx * zx
+        zy2 = zy * zy
+        if zx2 + zy2 > 4.0
           break
         end
-        zy = (((2.0 * zx) * zy) + ci)
-        zx = ((zx2 - zy2) + cr)
+        zy = ((2.0 * zx * zy) + ci)
+        zx = (zx2 - zy2 + cr)
         i += 1
       end
-      if (i >= max_iter)
-        __pytra_set_index(frame, (row_base + x), 0)
+      if i >= max_iter
+        __pytra_set_index(frame, row_base + x, 0)
       else
-        color_index = (1 + ((((i * 224) / max_iter) + phase) % 255))
-        __pytra_set_index(frame, (row_base + x), color_index)
+        color_index = (1 + (((i * 224 / max_iter) + phase) % 255))
+        __pytra_set_index(frame, row_base + x, color_index)
       end
       x += 1
     end
@@ -76,15 +76,15 @@ def run_06_julia_parameter_sweep()
   i = 0
   while i < frames_n
     t = __pytra_div(((i + start_offset) % frames_n), __hoisted_cast_3)
-    angle = ((2.0 * Math::PI) * t)
-    cr = (center_cr + (radius_cr * Math.cos(__pytra_float(angle))))
-    ci = (center_ci + (radius_ci * Math.sin(__pytra_float(angle))))
-    phase = ((phase_offset + (i * 5)) % 255)
+    angle = (2.0 * Math::PI * t)
+    cr = (center_cr + radius_cr * Math.cos(__pytra_float(angle)))
+    ci = (center_ci + radius_ci * Math.sin(__pytra_float(angle)))
+    phase = ((phase_offset + i * 5) % 255)
     frames.append(render_frame(width, height, cr, ci, max_iter, phase))
     i += 1
   end
   save_gif(out_path, width, height, frames, julia_palette(), 8, 0)
-  elapsed = (__pytra_perf_counter() - start)
+  elapsed = __pytra_perf_counter() - start
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frames_n)
   __pytra_print("elapsed_sec:", elapsed)
