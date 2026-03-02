@@ -46,6 +46,7 @@
 - 2026-03-02: `test_py2rb_smoke.py` を更新し、`sample/01` と `sample/03` の括弧品質回帰を追加。`runtime_parity_check --case-root sample --targets ruby --ignore-unstable-stdout 03_julia_set` を通過。
 - 2026-03-02: 連続 `append` の peephole を追加し、同一 owner + 安全引数（Name/Constant/Attribute/Subscript）2件以上を `owner.concat([..])` へ縮退。
 - 2026-03-02: `sample/ruby/01` / `sample/ruby/03` で `pixels.concat([r, g, b])` を確認。`test_py2rb_smoke` と `03_julia_set` parity を再通過。
+- 2026-03-02: `test_sample03_reduces_redundant_parentheses_in_binop_and_conditions` を追加し、括弧縮退 + `concat` 縮退の回帰検知を固定（S3-01）。
 
 ## 分解
 
@@ -56,7 +57,7 @@
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-03] `r/g/b` 初期化の冗長代入を削減する分岐出力へ更新する。
 - [x] [ID: P1-RUBY-S03-QUALITY-01-S2-04] Ruby 出力の過剰括弧を削減する正規化規則を追加する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-05] 同型変換 helper（`__pytra_float/__pytra_int`）の不要呼び出しを抑制する。
-- [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長パターンの再発を検知可能にする。
+- [x] [ID: P1-RUBY-S03-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長パターンの再発を検知可能にする。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-02] `sample/ruby/03` 再生成と transpile/parity で非退行を確認する。
 
 ## 棚卸し結果（S1-01）
