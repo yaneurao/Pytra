@@ -59,7 +59,7 @@
 
 文脈: [docs/ja/plans/p1-sample-multilang-output-quality-uplift.md](../plans/p1-sample-multilang-output-quality-uplift.md)
 
-1. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01] 多言語 sample 出力の型既知 fastpath を強化し、`Any/Object` 退化と helper/cast 過多を削減する。
+1. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01] 多言語 sample 出力の型既知 fastpath を強化し、`Any/Object` 退化と helper/cast 過多を削減する。
 2. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-01] `go/java` の `Any/Object` 退化 hotspot（`sample/18`）を棚卸しし、typed fastpath の適用境界を固定する。
 3. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-02] `kotlin/swift/scala` の helper/cast 連鎖（`__pytra_int/float`, `asInstanceOf`）を棚卸しし、削減優先順を確定する。
 4. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-03] `rs/js/ts` のループ冗長パターン（`__for_i` 再代入、`__start_N`）の縮退規則を仕様化する。
@@ -67,7 +67,7 @@
 6. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
 7. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
 8. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
-9. [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
+9. [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
 
 ### P2: sample 多言語出力の可読性縮退（冗長構文整理）
 

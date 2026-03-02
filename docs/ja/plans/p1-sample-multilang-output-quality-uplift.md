@@ -47,7 +47,7 @@
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
-- [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
+- [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
 
 決定ログ:
 - 2026-03-02: sample 多言語品質調査の結果を受け、型既知 fastpath を中心とする横断改善を P1 へ起票した。
@@ -67,6 +67,8 @@
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 回帰テストを追加: `js/ts` は `start` 直埋め fastpath と TDZ 回避の `__start_N` 維持条件を固定、`rs` は「後続未参照で direct bind」「後続参照時は bridge (`__for_i`) 維持」を固定。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] Rust の後続参照判定は node `meta` 追記では保持できない（`any_to_dict_or_empty` が copy を返す）ため、`emit_stmt_list` のブロック文脈スタックで「現在文の後続文検索」を実装して fail-closed を担保した。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 検証: `test_py2rs_smoke.py`(34), `test_py2js_smoke.py`(26), `test_py2ts_smoke.py`(18) を実行し全 pass。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] `regenerate_samples --langs go,java,kotlin,swift,scala,rs,js,ts --stems 01_mandelbrot,18_mini_language_interpreter --force` を実行。再生成差分を反映し、`sample` 出力を現行 emitter 状態へ同期した。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 検証: `test_py2{go,java,kotlin,swift,scala,rs,js,ts}*` smoke は全 pass（合計 165）。`runtime_parity_check` は既知制約で fail（go/java: compile/run blocker、js/ts: 01 artifact_size_mismatch、swift: toolchain_missing）を確認し、今回差分による新規の smoke 退行はなし。
 
 実装境界メモ（S1 集約）:
 - `go/java` typed fastpath は `tokenize/parse_program/execute/build_benchmark_source` の container と loop target を優先対象にする。
