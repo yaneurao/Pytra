@@ -11,9 +11,11 @@ This document summarizes transpiler implementation policy, structure, and conver
 ## 1. Repository Layout
 
 - `src/`
-  - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
+  - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - Place only transpiler entry scripts (`py2*.py`) directly under `src/`.
   - `common/`: shared base implementations and utilities used across multiple languages
+  - The standard backend stage layout is `src/backends/<lang>/{lower,optimizer,emitter}/` (source of truth: `spec-folder.md`).
+  - During transition, `extensions/<topic>/` may coexist (plan-2), then converge toward the 3-layer core (plan-3).
   - `profiles/`: language-difference JSON for `CodeEmitter` (types/operators/runtime-call/syntax)
   - `runtime/cpp/`, `runtime/<lang>/pytra/`: canonical runtime helpers for each target language
   - `*_module/`: legacy compatibility folders for non-native migrations
@@ -22,7 +24,16 @@ This document summarizes transpiler implementation policy, structure, and conver
 - `sample/`: practical sample inputs and converted outputs for each language
 - `docs/ja/` + `docs/en/`: specifications, usage guides, and implementation status
 
-### 1.1 `src/pytra/` Public API (Implementation Baseline)
+### 1.1 Backend 3-Layer Standard (Non-C++)
+
+- The standard non-C++ backend pipeline is `Lower -> Optimizer -> Emitter`.
+- Current 3-layer-adopted backends are `rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`.
+- `py2<lang>.py` must keep this fixed order:
+  `load_east3_document -> lower_east3_to_<lang>_ir -> optimize_<lang>_ir -> transpile`.
+- `lower/optimizer` must not import `emitter`, and `emitter` must not import `lower/optimizer`.
+- The canonical regression guard is `python3 tools/check_noncpp_east3_contract.py`.
+
+### 1.2 `src/pytra/` Public API (Implementation Baseline)
 
 `src/pytra/` is the source of truth for shared Python libraries including selfhost.
 Names starting with `_` are treated as internal. The following are public APIs.
