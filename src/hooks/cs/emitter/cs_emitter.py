@@ -128,6 +128,18 @@ class CSharpEmitter(CodeEmitter):
         for stmt in stmts:
             self.emit_stmt(stmt)
 
+    def _normalize_scope_names(self, scope_names: Any) -> set[str]:
+        out: set[str] = set()
+        if not isinstance(scope_names, set):
+            return out
+        for item in scope_names:
+            txt = self.any_to_str(item)
+            if txt == "" and item is not None:
+                txt = str(item)
+            if txt != "":
+                out.add(txt)
+        return out
+
     def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: Any) -> None:
         stack: list[set[str]] = self.scope_stack
         self.indent += 1

@@ -39,7 +39,7 @@
 分解:
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-01] `v0.4.0` 以降の `CodeEmitter` 差分を棚卸しし、「共通必須 / C# 固有 / 判定保留」の3分類を作成する。
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-02] 「共通必須」の判定基準（backend 中立性・他言語利用実績・fail-closed 必要性）を明文化する。
-- [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] 「C# 固有」変更を `CSharpEmitter` / C# runtime / selfhost 準備層へ移管する。
+- [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] 「C# 固有」変更を `CSharpEmitter` / C# runtime / selfhost 準備層へ移管する。
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] `CodeEmitter` から C# 固有回避コードを除去し、共通実装へ戻す。
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] unit/selfhost 回帰を実施し、C# pass 維持と他 backend 非退行を確認する。
 
@@ -89,3 +89,4 @@
 - 2026-03-01: ユーザー指示により「CodeEmitter へ C# 都合を持ち込まない」方針を明示し、実装着手前に P3 計画化することを決定した。
 - 2026-03-02: S1-01 として `v0.4.0` 以降の `CodeEmitter` 差分を commit 単位で棚卸しし、共通必須 / C# 固有 / 判定保留の3分類を作成した。
 - 2026-03-02: S1-02 として共通必須の判定基準（backend中立性・他言語利用実績・fail-closed必要性）を明文化した。
+- 2026-03-02: S2-01 として scope 名正規化（`_normalize_scope_names`）を `CodeEmitter` から `CSharpEmitter` へ移管し、共通層は `set[str]` 前提へ戻した。`test_code_emitter` / `test_py2cs_smoke` は通過、`check_py2cs_transpile` の fail 2件（`yield_generator_min.py`/`tuple_assign.py`）は既知継続。

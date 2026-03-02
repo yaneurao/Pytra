@@ -945,12 +945,9 @@ class CodeEmitterTest(unittest.TestCase):
             ],
         )
 
-    def test_emit_scoped_stmt_list_normalizes_non_string_scope_names(self) -> None:
+    def test_emit_scoped_stmt_list_no_longer_exposes_scope_normalizer(self) -> None:
         em = _DummyEmitter({})
-        names = em._normalize_scope_names({"x", 1, None})
-        self.assertIn("x", names)
-        self.assertIn("1", names)
-        self.assertNotIn("", names)
+        self.assertFalse(hasattr(em, "_normalize_scope_names"))
 
     def test_emit_with_scope_helper(self) -> None:
         em = _DummyEmitter({})
