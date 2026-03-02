@@ -94,6 +94,13 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertNotIn("def __pytra_write_rgb_png(", scala)
         self.assertNotIn("def __pytra_save_gif(", scala)
 
+    def test_sample_01_preserves_nested_arithmetic_precedence(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("__pytra_int(255.0 * (1.0 - t))", scala)
+        self.assertNotIn("__pytra_int(255.0 * 1.0 - t)", scala)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

@@ -31,7 +31,7 @@ def color_map(iter_count: Long, max_iter: Long): mutable.ArrayBuffer[Long] = {
     var t: Double = __pytra_float(iter_count) / __pytra_float(max_iter)
     var r: Long = __pytra_int(255.0 * t * t)
     var g: Long = __pytra_int(255.0 * t)
-    var b: Long = __pytra_int(255.0 * 1.0 - t)
+    var b: Long = __pytra_int(255.0 * (1.0 - t))
     return __pytra_as_list(mutable.ArrayBuffer[Long](r, g, b)).asInstanceOf[mutable.ArrayBuffer[Long]]
 }
 
@@ -42,10 +42,10 @@ def render_mandelbrot(width: Long, height: Long, max_iter: Long, x_min: Double, 
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
     var y: Long = 0L
     while (y < height) {
-        var py: Double = (y_min + (y_max - y_min * __pytra_float(y) / __hoisted_cast_1))
+        var py: Double = (y_min + ((y_max - y_min) * (__pytra_float(y) / __hoisted_cast_1)))
         var x: Long = 0L
         while (x < width) {
-            var px: Double = (x_min + (x_max - x_min * __pytra_float(x) / __hoisted_cast_2))
+            var px: Double = (x_min + ((x_max - x_min) * (__pytra_float(x) / __hoisted_cast_2)))
             var it: Long = __pytra_int(escape_count(px, py, max_iter))
             var r: Long = 0L
             var g: Long = 0L
@@ -58,7 +58,7 @@ def render_mandelbrot(width: Long, height: Long, max_iter: Long, x_min: Double, 
                 var t: Double = __pytra_float(it) / __hoisted_cast_3
                 r = __pytra_int(255.0 * t * t)
                 g = __pytra_int(255.0 * t)
-                b = __pytra_int(255.0 * 1.0 - t)
+                b = __pytra_int(255.0 * (1.0 - t))
             }
             pixels.append(r)
             pixels.append(g)

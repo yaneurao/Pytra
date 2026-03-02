@@ -2653,6 +2653,8 @@ class CSharpEmitter(CodeEmitter):
             custom = self.hook_on_render_binop(expr_d, left, right)
             if custom != "":
                 return custom
+            if op == "Div":
+                return "System.Convert.ToDouble(" + left + ") / System.Convert.ToDouble(" + right + ")"
             if op == "FloorDiv":
                 return "System.Convert.ToInt64(System.Math.Floor(System.Convert.ToDouble(" + left + ") / System.Convert.ToDouble(" + right + ")))"
             if op == "Mult":

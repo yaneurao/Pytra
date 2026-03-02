@@ -53,6 +53,13 @@ class Py2CsSmokeTest(unittest.TestCase):
         assert_no_generated_comments(self, cs)
         assert_sample01_module_comments(self, cs, prefix="//")
 
+    def test_sample_01_uses_float_division_for_typed_div(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("System.Convert.ToDouble(iter_count) / System.Convert.ToDouble(max_iter)", cs)
+        self.assertNotIn("double t = iter_count / max_iter;", cs)
+
     def test_class_inheritance_emits_base_clause(self) -> None:
         src = """class Base:
     pass

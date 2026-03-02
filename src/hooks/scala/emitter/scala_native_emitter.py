@@ -488,6 +488,22 @@ def _bin_op_symbol(op: Any) -> str:
     return "+"
 
 
+def _binop_precedence(op: Any) -> int:
+    if op == "Mult" or op == "Div" or op == "FloorDiv" or op == "Mod":
+        return 12
+    if op == "Add" or op == "Sub":
+        return 11
+    if op == "LShift" or op == "RShift":
+        return 10
+    if op == "BitAnd":
+        return 9
+    if op == "BitXor":
+        return 8
+    if op == "BitOr":
+        return 7
+    return 0
+
+
 def _is_simple_binop_operand(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
@@ -495,10 +511,37 @@ def _is_simple_binop_operand(node: Any) -> bool:
     return kind in {"Name", "Constant", "Attribute", "Call", "Subscript"}
 
 
-def _join_binop_expr(left_expr: str, right_expr: str, op_symbol: str, left_node: Any, right_node: Any) -> str:
-    if _is_simple_binop_operand(left_node) and _is_simple_binop_operand(right_node):
-        return _strip_outer_parens(left_expr) + " " + op_symbol + " " + _strip_outer_parens(right_expr)
-    return "(" + left_expr + " " + op_symbol + " " + right_expr + ")"
+def _wrap_binop_operand(expr: str, node: Any, parent_op: Any, is_right: bool) -> str:
+    if not isinstance(node, dict):
+        return expr
+    kind = node.get("kind")
+    if kind == "IfExp" or kind == "BoolOp" or kind == "Compare":
+        return "(" + expr + ")"
+    if kind != "BinOp":
+        return expr
+    child_op = node.get("op")
+    parent_prec = _binop_precedence(parent_op)
+    child_prec = _binop_precedence(child_op)
+    if child_prec < parent_prec:
+        return "(" + expr + ")"
+    if parent_op == "Mult" and (child_op == "Div" or child_op == "FloorDiv"):
+        return "(" + expr + ")"
+    if is_right and child_prec == parent_prec and parent_op in {"Sub", "Div", "FloorDiv", "Mod", "LShift", "RShift"}:
+        return "(" + expr + ")"
+    return expr
+
+
+def _join_binop_expr(left_expr: str, right_expr: str, op_symbol: str, left_node: Any, right_node: Any, parent_op: Any) -> str:
+    left_rendered = _wrap_binop_operand(left_expr, left_node, parent_op, False)
+    right_rendered = _wrap_binop_operand(right_expr, right_node, parent_op, True)
+    if (
+        _is_simple_binop_operand(left_node)
+        and _is_simple_binop_operand(right_node)
+        and left_rendered == left_expr
+        and right_rendered == right_expr
+    ):
+        return _strip_outer_parens(left_rendered) + " " + op_symbol + " " + _strip_outer_parens(right_rendered)
+    return "(" + left_rendered + " " + op_symbol + " " + right_rendered + ")"
 
 
 def _render_unary_expr(expr: dict[str, Any]) -> str:
@@ -553,6 +596,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             "/",
             left_any,
             right_any,
+            op,
         )
 
     if op == "FloorDiv":
@@ -567,6 +611,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             "%",
             left_any,
             right_any,
+            op,
         )
 
     if resolved == "str" and op == "Add":
@@ -576,6 +621,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             "+",
             left_any,
             right_any,
+            op,
         )
 
     if resolved in {"int", "int64", "uint8"}:
@@ -586,6 +632,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             sym,
             left_any,
             right_any,
+            op,
         )
 
     if resolved in {"float", "float64"}:
@@ -596,10 +643,11 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             sym,
             left_any,
             right_any,
+            op,
         )
 
     sym = _bin_op_symbol(op)
-    return _join_binop_expr(left_expr, right_expr, sym, left_any, right_any)
+    return _join_binop_expr(left_expr, right_expr, sym, left_any, right_any, op)
 
 
 def _compare_op_symbol(op: Any) -> str:

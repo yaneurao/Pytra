@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using png = Pytra.CsModule.png_helper;
 
@@ -31,7 +35,7 @@ public static class Program
         if (iter_count >= max_iter) {
             return (0, 0, 0);
         }
-        double t = iter_count / max_iter;
+        double t = System.Convert.ToDouble(iter_count) / System.Convert.ToDouble(max_iter);
         long r = Pytra.CsModule.py_runtime.py_int(255.0 * t * t);
         long g = Pytra.CsModule.py_runtime.py_int(255.0 * t);
         long b = Pytra.CsModule.py_runtime.py_int(255.0 * (1.0 - t));
@@ -47,11 +51,11 @@ public static class Program
         
         long y = 0;
         for (y = 0; y < height; y += 1) {
-            double py = y_min + (y_max - y_min) * (y / __hoisted_cast_1);
+            double py = y_min + (y_max - y_min) * (System.Convert.ToDouble(y) / System.Convert.ToDouble(__hoisted_cast_1));
             
             long x = 0;
             for (x = 0; x < width; x += 1) {
-                double px = x_min + (x_max - x_min) * (x / __hoisted_cast_2);
+                double px = x_min + (x_max - x_min) * (System.Convert.ToDouble(x) / System.Convert.ToDouble(__hoisted_cast_2));
                 long it = escape_count(px, py, max_iter);
                 long r;
                 long g;
@@ -61,7 +65,7 @@ public static class Program
                     g = 0;
                     b = 0;
                 } else {
-                    double t = it / __hoisted_cast_3;
+                    double t = System.Convert.ToDouble(it) / System.Convert.ToDouble(__hoisted_cast_3);
                     r = Pytra.CsModule.py_runtime.py_int(255.0 * t * t);
                     g = Pytra.CsModule.py_runtime.py_int(255.0 * t);
                     b = Pytra.CsModule.py_runtime.py_int(255.0 * (1.0 - t));
