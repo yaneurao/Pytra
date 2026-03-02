@@ -250,7 +250,7 @@
 3. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
 4. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播する最小拡張を設計する。
 5. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] CodeEmitter 基底で利用する ownership 判定 API（backend 中立）を定義する。
-6. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend に pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
+6. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend に pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
 7. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] GC 系 backend（Java or Kotlin）に pilot 実装し、同一判定規則で縮退を確認する。
 8. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
 9. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] `cs/js/ts/go/swift/ruby/lua` へ順次展開し、backend ごとの差分を吸収する。
@@ -258,6 +258,7 @@
 11. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様へ運用ルール（参照管理境界・rollback）を追記する。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] backend 差分マトリクス（`rs/cs/go/java/kotlin/swift` の typed+Any fallback と `js/ts/ruby/lua` の動的helper中心）を整理し、`container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` の共通語彙と fail-closed 判定を v1 化。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] EAST3 `container_ownership_hints_v1` と `meta.container_ownership_hint_ref` の最小契約、ならびに CodeEmitter 基底 API（hint解決/境界分類/value_path 判定）を設計して責務境界を固定。
+- 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust pilot として、参照引数（`&[T]` など）を値型ローカルへ初期化する際の `to_vec()/clone()` 材料化を追加し、`test_py2rs_smoke` 新規回帰 + `check_py2rs_transpile` + sample/18 parity(rs) を再通過。
 
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 

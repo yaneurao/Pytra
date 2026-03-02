@@ -109,12 +109,27 @@
   - 分類結果を自言語表現へ写像（`Vec<T>` / `List<T>` / `Any` / table など）。
   - 既存 runtime helper との接続（boxing/unboxing/cast）を保持。
 
+## S3-01 Rust pilot 実装メモ
+
+- 変更点:
+  - `rs_emitter._render_value_for_decl_type` に「参照引数 -> 値型ローカル」縮退を追加。
+  - `current_ref_vars` 上の参照値を `AnnAssign` で値型へ初期化する際、
+    - `list[...]` / `bytes` / `bytearray` は `to_vec()`
+    - `dict[...]` / `set[...]` / `tuple[...]` / class 型は `clone()`
+    を適用する。
+- 意図:
+  - `typed_non_escape_value_path` で `&[T]` / `&BTreeMap<...>` をそのまま値型変数へ代入してしまう破綻を防ぎ、Rust の所有モデルに沿って値化する。
+- 回帰固定:
+  - `test_py2rs_smoke.py::test_ref_container_args_materialize_value_path_with_to_vec_or_clone`
+  - `tools/check_py2rs_transpile.py`
+  - `tools/runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout 18_mini_language_interpreter`
+
 分解:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播するための最小拡張設計を作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] CodeEmitter 基底で利用可能な ownership 判定 API（backend 中立）を定義する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend へ pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend へ pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] GC 系 backend（Java or Kotlin）へ pilot 実装し、同一判定規則での縮退を確認する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] `cs/js/ts/go/swift/ruby/lua` へ順次展開し、backend ごとの runtime 依存差を吸収する。
@@ -128,3 +143,4 @@
 - 2026-03-02: S1-02 として `container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` を v1 用語として定義し、判定不能時は escape 扱いに倒す fail-closed 方針を固定した。
 - 2026-03-02: S2-01 として EAST3 `container_ownership_hints_v1` スキーマとノード参照キー（`meta.container_ownership_hint_ref`）を定義し、伝播/昇格/fail-closed 規則を固定した。
 - 2026-03-02: S2-02 として CodeEmitter 基底の ownership 判定 API 案を定義し、基底責務（判定）と backend 責務（表現写像）の境界を明文化した。
+- 2026-03-02: S3-01 として Rust emitter に参照引数から値型ローカルへの `to_vec()/clone()` 材料化を実装し、typed value path を安全に通す pilot を追加した（unit/transpile/parity 通過）。

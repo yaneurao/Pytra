@@ -3293,6 +3293,14 @@ class RustEmitter(CodeEmitter):
             return rendered
         if t.startswith("dict[") and value_kind == "Dict":
             return self._render_dict_expr(value_d, force_any_values=False, prefer_hash_map=prefer_hash_map)
+        if value_kind == "Name":
+            value_name_raw = self.any_dict_get_str(value_d, "id", "")
+            if value_name_raw in self.current_ref_vars:
+                rendered_ref = self.render_expr(value_obj)
+                if t.startswith("list[") or t in {"bytes", "bytearray"}:
+                    return "(" + rendered_ref + ").to_vec()"
+                if t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple[") or t in self.class_names:
+                    return "(" + rendered_ref + ").clone()"
         if t == "str":
             return self._ensure_string_owned(self.render_expr(value_obj))
         return self.render_expr(value_obj)

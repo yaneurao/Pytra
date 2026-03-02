@@ -473,6 +473,27 @@ def g(a: int, b: int) -> int:
         self.assertIn("fn g(a: i64, b: i64) -> i64 {", rust)
         self.assertNotIn("fn f(mut x: i64, mut y: i64) -> i64 {", rust)
 
+    def test_ref_container_args_materialize_value_path_with_to_vec_or_clone(self) -> None:
+        src = """
+from pytra.std.typing import Any
+
+def f(xs: list[int], ys: list[Any]) -> int:
+    a: list[int] = xs
+    b: list[Any] = ys
+    return a[0] + int(b[0])
+"""
+        with tempfile.TemporaryDirectory() as td:
+            case = Path(td) / "ref_container_args.py"
+            case.write_text(src, encoding="utf-8")
+            east = load_east(case, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertIn("fn f(xs: &[i64], ys: &[PyAny]) -> i64 {", rust)
+        self.assertIn("let a: Vec<i64> = (xs).to_vec();", rust)
+        self.assertIn("let b: Vec<PyAny> = (ys).to_vec();", rust)
+        self.assertNotIn("let a: Vec<i64> = xs;", rust)
+        self.assertNotIn("let b: Vec<PyAny> = ys;", rust)
+
     def test_py2rs_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2rs.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
