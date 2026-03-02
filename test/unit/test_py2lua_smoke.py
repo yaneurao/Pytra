@@ -236,6 +236,29 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_str_isdigit(s)", lua)
         self.assertIn("__pytra_str_isalpha(s)", lua)
 
+    def test_ref_container_args_materialize_value_path_with_table_copy(self) -> None:
+        src = (
+            "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+            "    a: list[int] = xs\n"
+            "    b: dict[str, int] = ys\n"
+            "    a.append(1)\n"
+            "    b['k'] = 2\n"
+            "    return len(a) + len(b)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ref_materialize.lua_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn(
+            "local a = (function(__src) local __out = {}; for __i = 1, #__src do __out[__i] = __src[__i] end; return __out end)(xs)",
+            lua,
+        )
+        self.assertIn(
+            "local b = (function(__src) local __out = {}; for __k, __v in pairs(__src) do __out[__k] = __v end; return __out end)(ys)",
+            lua,
+        )
+
     def test_lowering_supports_in_notin_via_contains_helper(self) -> None:
         src = (
             "def f(d: dict[str, int], xs: list[int], k: str, v: int) -> bool:\n"

@@ -259,7 +259,7 @@
 12. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go backend へ展開し、`any` 境界と typed 値型経路を分離する。
 13. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
 14. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
-15. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
+15. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
 16. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
 17. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様へ運用ルール（参照管理境界・rollback）を追記する。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] backend 差分マトリクス（`rs/cs/go/java/kotlin/swift` の typed+Any fallback と `js/ts/ruby/lua` の動的helper中心）を整理し、`container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` の共通語彙と fail-closed 判定を v1 化。
@@ -272,6 +272,7 @@
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go emitter に ref-container 材料化（slice copy + map copy IIFE）を導入し、`test_py2go_smoke`/`check_py2go_transpile` は通過（sample/18 parity(go) は既存 compile blocker を S4-02 に分離）。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift emitter に `ref_vars` 追跡 + container 材料化（`Array(__pytra_as_list(...))` / `Dictionary(uniqueKeysWithValues: __pytra_as_dict(...).map { ... })`）を導入し、`test_py2swift_smoke`/`check_py2swift_transpile` を通過（sample parity は toolchain_missing skip）。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby emitter に `ref_vars` + `decl_type` 材料化（`__pytra_as_list/__pytra_as_dict` + `.dup`）と `dict.get -> fetch` lower を導入し、`test_py2rb_smoke` は通過（sample/18 parity は既存 run_failed を S4-02 blocker へ分離）。
+- 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua emitter に関数スコープ `ref_vars/type_map` と shallow-copy 材料化（list/dict）を追加し、追加回帰 + `check_py2lua_transpile` + sample/18 parity(lua) を通過（`test_py2lua_smoke` 全体の既存期待差分は S4-02 へ分離）。
 
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 

@@ -112,6 +112,89 @@ class LuaNativeEmitter:
         self.loop_continue_labels: list[str] = []
         self.current_class_name: str = ""
         self.current_class_base_name: str = ""
+        self._local_type_stack: list[dict[str, str]] = []
+        self._ref_var_stack: list[set[str]] = []
+
+    def _current_type_map(self) -> dict[str, str]:
+        if len(self._local_type_stack) == 0:
+            return {}
+        return self._local_type_stack[-1]
+
+    def _current_ref_vars(self) -> set[str]:
+        if len(self._ref_var_stack) == 0:
+            return set()
+        return self._ref_var_stack[-1]
+
+    def _container_kind_from_decl_type(self, type_name: Any) -> str:
+        if not isinstance(type_name, str):
+            return ""
+        if type_name.startswith("dict["):
+            return "dict"
+        if type_name.startswith("list[") or type_name.startswith("tuple[") or type_name.startswith("set["):
+            return "list"
+        if type_name in {"bytes", "bytearray"}:
+            return "list"
+        return ""
+
+    def _is_container_east_type(self, type_name: Any) -> bool:
+        return self._container_kind_from_decl_type(type_name) != ""
+
+    def _push_function_context(self, stmt: dict[str, Any], arg_names: list[str], arg_order: list[Any]) -> None:
+        type_map: dict[str, str] = {}
+        ref_vars: set[str] = set()
+        arg_types_any = stmt.get("arg_types")
+        arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+        i = 0
+        while i < len(arg_names):
+            safe_name = arg_names[i]
+            raw_name = arg_order[i] if i < len(arg_order) else safe_name
+            arg_type_any = arg_types.get(raw_name)
+            if not isinstance(arg_type_any, str):
+                arg_type_any = arg_types.get(safe_name)
+            arg_type = arg_type_any.strip() if isinstance(arg_type_any, str) else ""
+            if arg_type != "":
+                type_map[safe_name] = arg_type
+                if self._is_container_east_type(arg_type):
+                    ref_vars.add(safe_name)
+            i += 1
+        self._local_type_stack.append(type_map)
+        self._ref_var_stack.append(ref_vars)
+
+    def _pop_function_context(self) -> None:
+        if len(self._local_type_stack) > 0:
+            self._local_type_stack.pop()
+        if len(self._ref_var_stack) > 0:
+            self._ref_var_stack.pop()
+
+    def _materialize_container_value_from_ref(self, value_any: Any, *, target_name: str, target_decl_type: Any) -> str | None:
+        if target_name == "":
+            return None
+        if not isinstance(value_any, dict) or value_any.get("kind") != "Name":
+            return None
+        source_name = _safe_ident(value_any.get("id"), "value")
+        if source_name == target_name:
+            return None
+        if source_name not in self._current_ref_vars():
+            return None
+        container_kind = self._container_kind_from_decl_type(target_decl_type)
+        if container_kind == "":
+            return None
+        source_expr = self._render_expr(value_any)
+        if container_kind == "dict":
+            return (
+                "(function(__src) local __out = {}; "
+                + "for __k, __v in pairs(__src) do __out[__k] = __v end; "
+                + "return __out end)("
+                + source_expr
+                + ")"
+            )
+        return (
+            "(function(__src) local __out = {}; "
+            + "for __i = 1, #__src do __out[__i] = __src[__i] end; "
+            + "return __out end)("
+            + source_expr
+            + ")"
+        )
 
     def _const_int_literal(self, node_any: Any) -> int | None:
         if not isinstance(node_any, dict):
@@ -1145,12 +1228,28 @@ class LuaNativeEmitter:
             value_node = stmt.get("value")
             value = self._render_expr(value_node) if isinstance(value_node, dict) else "nil"
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                target_name = _safe_ident(target_node.get("id"), "value")
+                decl_type_any = stmt.get("decl_type")
+                decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                if decl_type == "":
+                    anno_any = stmt.get("annotation")
+                    if isinstance(anno_any, str):
+                        decl_type = anno_any.strip()
                 if value_node is None and bool(stmt.get("declare")):
-                    decl_type_any = stmt.get("decl_type")
-                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
                     if decl_type in _NIL_FREE_DECL_TYPES:
+                        if decl_type != "":
+                            self._current_type_map()[target_name] = decl_type
                         self._emit_line("local " + target)
                         return
+                materialized = self._materialize_container_value_from_ref(
+                    value_node,
+                    target_name=target_name,
+                    target_decl_type=decl_type,
+                )
+                if materialized is not None:
+                    value = materialized
+                if decl_type != "":
+                    self._current_type_map()[target_name] = decl_type
                 self._emit_line("local " + target + " = " + value)
             else:
                 self._emit_line(target + " = " + value)
@@ -1163,6 +1262,22 @@ class LuaNativeEmitter:
                     return
                 target = self._render_target(target_any)
                 value = self._render_expr(stmt.get("value"))
+                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                    target_name = _safe_ident(target_any.get("id"), "value")
+                    decl_type_any = stmt.get("decl_type")
+                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                    if decl_type == "":
+                        mapped_decl = self._current_type_map().get(target_name)
+                        decl_type = mapped_decl.strip() if isinstance(mapped_decl, str) else ""
+                    materialized = self._materialize_container_value_from_ref(
+                        stmt.get("value"),
+                        target_name=target_name,
+                        target_decl_type=decl_type,
+                    )
+                    if materialized is not None:
+                        value = materialized
+                    if isinstance(decl_type_any, str) and decl_type != "":
+                        self._current_type_map()[target_name] = decl_type
                 self._emit_line(target + " = " + value)
                 return
             targets = stmt.get("targets")
@@ -1172,6 +1287,22 @@ class LuaNativeEmitter:
                     return
                 target = self._render_target(targets[0])
                 value = self._render_expr(stmt.get("value"))
+                if targets[0].get("kind") == "Name":
+                    target_name = _safe_ident(targets[0].get("id"), "value")
+                    decl_type_any = stmt.get("decl_type")
+                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                    if decl_type == "":
+                        mapped_decl = self._current_type_map().get(target_name)
+                        decl_type = mapped_decl.strip() if isinstance(mapped_decl, str) else ""
+                    materialized = self._materialize_container_value_from_ref(
+                        stmt.get("value"),
+                        target_name=target_name,
+                        target_decl_type=decl_type,
+                    )
+                    if materialized is not None:
+                        value = materialized
+                    if isinstance(decl_type_any, str) and decl_type != "":
+                        self._current_type_map()[target_name] = decl_type
                 self._emit_line(target + " = " + value)
                 return
             raise RuntimeError("lang=lua unsupported assign shape")
@@ -1237,7 +1368,9 @@ class LuaNativeEmitter:
             arg_names.append(_safe_ident(a, "arg"))
         self._emit_line("function " + name + "(" + ", ".join(arg_names) + ")")
         self.indent += 1
+        self._push_function_context(stmt, arg_names, args)
         self._emit_block(stmt.get("body"))
+        self._pop_function_context()
         self.indent -= 1
         self._emit_line("end")
         self._emit_line("")
@@ -1313,7 +1446,9 @@ class LuaNativeEmitter:
             self._emit_line("function " + cls_name + ".new(" + ", ".join(args) + ")")
             self.indent += 1
             self._emit_line("local self = setmetatable({}, " + cls_name + ")")
+            self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
             self._emit_block(stmt.get("body"))
+            self._pop_function_context()
             self._emit_line("return self")
             self.indent -= 1
             self._emit_line("end")
@@ -1323,7 +1458,9 @@ class LuaNativeEmitter:
             return
         self._emit_line("function " + cls_name + ":" + method_name + "(" + ", ".join(args) + ")")
         self.indent += 1
+        self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
         self._emit_block(stmt.get("body"))
+        self._pop_function_context()
         self.indent -= 1
         self._emit_line("end")
         self._emit_line("")
