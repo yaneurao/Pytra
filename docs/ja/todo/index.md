@@ -49,11 +49,11 @@
 
 文脈: [docs/ja/plans/p0-sample-multilang-output-correctness-fixes.md](../plans/p0-sample-multilang-output-correctness-fixes.md)
 
-1. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01] sample 出力の正しさ不備（Scala 演算子優先順位 / C# typed 除算）を修正する。
-2. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Scala emitter で算術式の優先順位保持を修正し、`sample/scala/01` の崩れ式を解消する。
-3. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-02] C# emitter の typed 除算出力を修正し、整数除算経路を除去する。
-4. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-01] Scala/C# の回帰テストを追加し、同種退行を固定する。
-5. [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-02] `sample/01` 再生成 + parity で非退行を確認する。
+1. [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01] sample 出力の正しさ不備（Scala 演算子優先順位 / C# typed 除算）を修正する。
+2. [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Scala emitter で算術式の優先順位保持を修正し、`sample/scala/01` の崩れ式を解消する。
+3. [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-02] C# emitter の typed 除算出力を修正し、整数除算経路を除去する。
+4. [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-01] Scala/C# の回帰テストを追加し、同種退行を固定する。
+5. [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-02] `sample/01` 再生成 + parity で非退行を確認する。
 
 ### P1: sample 多言語出力の型既知 fastpath 強化（品質改善）
 

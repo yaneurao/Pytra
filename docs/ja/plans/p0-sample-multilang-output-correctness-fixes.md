@@ -37,10 +37,14 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets scala,cs --ignore-unstable-stdout 01_mandelbrot`
 
 分解:
-- [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Scala emitter で算術式の優先順位保持を修正し、`sample/scala/01` の崩れ式を解消する。
-- [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-02] C# emitter の typed 除算出力を修正し、整数除算経路を除去する。
-- [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-01] Scala/C# の回帰テストを追加し、同種退行を固定する。
-- [ ] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-02] `sample/01` 再生成 + parity で非退行を確認する。
+- [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Scala emitter で算術式の優先順位保持を修正し、`sample/scala/01` の崩れ式を解消する。
+- [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-02] C# emitter の typed 除算出力を修正し、整数除算経路を除去する。
+- [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-01] Scala/C# の回帰テストを追加し、同種退行を固定する。
+- [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-02] `sample/01` 再生成 + parity で非退行を確認する。
 
 決定ログ:
 - 2026-03-02: sample 多言語コード品質調査で、正しさ影響ありの修正（Scala 優先順位/C# 除算）を P0 として分離した。
+- 2026-03-02: [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] `scala_native_emitter.py` に binop precedence 判定（`_binop_precedence` / `_wrap_binop_operand`）を導入し、`255.0 * (1.0 - t)` の括弧を保持するよう修正。
+- 2026-03-02: [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-02] `cs_emitter.py` の `Div` 出力を `System.Convert.ToDouble(lhs) / System.Convert.ToDouble(rhs)` に統一し、typed 経路での整数除算を排除。
+- 2026-03-02: [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-01] `test_py2scala_smoke.py` / `test_py2cs_smoke.py` に回帰テストを追加し、式優先順位崩れと typed 除算退行を固定。
+- 2026-03-02: [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S2-02] `regenerate_samples` で `sample/{scala,cs}/01_mandelbrot` を再生成し、`runtime_parity_check` で `targets=scala,cs` の parity pass（cases=1/fail=0）を確認。
