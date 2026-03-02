@@ -596,6 +596,8 @@ def f() -> float:
         )
         self.assertIn("list<bytes> frames = list<bytes>{};", cpp)
         self.assertIn("list<::std::tuple<int64, int64, int64, int64>> candidates = list<::std::tuple<int64, int64, int64, int64>>{};", cpp)
+        self.assertNotIn("::std::tuple<int64, int64, int64, int64>(::std::make_tuple(", cpp)
+        self.assertNotIn("::std::tuple<int64, int64>(::std::make_tuple(", cpp)
         self.assertIn("auto __idx_", cpp)
         self.assertIn("= (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);", cpp)
         self.assertIn("::std::tuple<int64, int64, int64, int64> sel = candidates[__idx_", cpp)

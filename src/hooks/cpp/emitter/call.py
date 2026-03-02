@@ -459,6 +459,11 @@ class CppCallEmitter:
                 inner_t_norm = self.normalize_type_name(inner_t)
                 if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
                     inner_cpp_t = self._cpp_type_text(inner_t)
+                    # `list<tuple[...]>.append((...))` は `::std::make_tuple(...)` が
+                    # そのまま受理されるため、`::std::tuple<...>(::std::make_tuple(...))`
+                    # の二重ラップを避ける。
+                    if inner_cpp_t.startswith("::std::tuple<") and a0.startswith("::std::make_tuple("):
+                        return f"{owner_expr}.append({a0})"
                     if not self.should_skip_same_type_cast(a0, inner_cpp_t):
                         a0 = f"{inner_cpp_t}({a0})"
             return f"{owner_expr}.append({a0})"

@@ -49,14 +49,15 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-tuple-construction-slimming.md](../plans/p0-cpp-s13-tuple-construction-slimming.md)
 
-1. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01] sample/13 の tuple 構築で二重ラップを削減し、最短等価表現へ統一する。
-2. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S1-01] sample/13 の tuple 二重ラップ発生箇所を棚卸しし、適用境界を固定する。
-3. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S1-02] `make_tuple` 直接化と `append/emplace` の適用優先ルールを定義する。
-4. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S2-01] CppEmitter の tuple 構築出力を更新し、二重ラップを除去する。
-5. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S2-02] `append` 系で `emplace_back` 可能な経路を追加し、余分な一時構築を削減する。
-6. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S2-03] 適用不可ケースの fallback を固定し、現行意味を維持する。
-7. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S3-01] unit テストを追加し、二重ラップ再発を検知可能にする。
-8. [ ] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+1. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01] sample/13 の tuple 構築で二重ラップを削減し、最短等価表現へ統一する。
+2. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S1-01] sample/13 の tuple 二重ラップ発生箇所を棚卸しし、適用境界を固定する。
+3. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S1-02] `make_tuple` 直接化と `append/emplace` の適用優先ルールを定義する。
+4. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S2-01] CppEmitter の tuple 構築出力を更新し、二重ラップを除去する。
+5. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S2-02] `append` 系で `emplace_back` 可能な経路を追加し、余分な一時構築を削減する。
+6. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S2-03] 適用不可ケースの fallback を固定し、現行意味を維持する。
+7. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S3-01] unit テストを追加し、二重ラップ再発を検知可能にする。
+8. [x] [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+- 進捗メモ: [ID: P0-CPP-S13-TUPLE-CTOR-SLIM-01] `append(::std::make_tuple(...))` 経路で tuple 冗長 cast を抑止し、sample/13 の `::std::tuple<...>(::std::make_tuple(...))` を撤去。
 
 ### P0: sample/13 C++ grid 初期化 IIFE 縮退
 

@@ -53,13 +53,13 @@ void run_13_maze_generation_steps() {
             int64 ny = y + dy;
             if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny][nx] == 1)) {
                 if (dx == 2) {
-                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x + 1, y)));
+                    candidates.append(::std::make_tuple(nx, ny, x + 1, y));
                 } else if (dx == -2) {
-                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x - 1, y)));
+                    candidates.append(::std::make_tuple(nx, ny, x - 1, y));
                 } else if (dy == 2) {
-                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x, y + 1)));
+                    candidates.append(::std::make_tuple(nx, ny, x, y + 1));
                 } else {
-                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x, y - 1)));
+                    candidates.append(::std::make_tuple(nx, ny, x, y - 1));
                 }
             }
         }
@@ -75,7 +75,7 @@ void run_13_maze_generation_steps() {
             int64 wy = ::std::get<3>(__tuple_4);
             grid[wy][wx] = 0;
             grid[ny][nx] = 0;
-            stack.append(::std::tuple<int64, int64>(::std::make_tuple(nx, ny)));
+            stack.append(::std::make_tuple(nx, ny));
         }
         if (step % capture_every == 0)
             frames.append(capture(grid, cell_w, cell_h, scale));
