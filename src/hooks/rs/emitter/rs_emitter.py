@@ -478,6 +478,8 @@ class RustEmitter(CodeEmitter):
         self.current_ref_vars: set[str] = set()
         self.current_non_negative_vars: set[str] = set()
         self.current_positive_vars: set[str] = set()
+        self.assumed_non_negative_vars: set[str] = set()
+        self.assumed_positive_vars: set[str] = set()
         self.current_class_name: str = ""
         self.uses_string_helpers: bool = False
 
@@ -1347,7 +1349,7 @@ class RustEmitter(CodeEmitter):
             return False
         if kind == "Name":
             name = self.any_dict_get_str(d, "id", "")
-            return name in self.current_positive_vars
+            return name in self.current_positive_vars or name in self.assumed_positive_vars
         if kind == "Call":
             fn = self.any_to_dict_or_empty(d.get("func"))
             if self.any_dict_get_str(fn, "kind", "") == "Name":
@@ -1384,7 +1386,7 @@ class RustEmitter(CodeEmitter):
             return False
         if kind == "Name":
             name = self.any_dict_get_str(d, "id", "")
-            return name in self.current_non_negative_vars
+            return name in self.current_non_negative_vars or name in self.assumed_non_negative_vars
         if kind == "Call":
             fn = self.any_to_dict_or_empty(d.get("func"))
             if self.any_dict_get_str(fn, "kind", "") == "Name":
@@ -1404,6 +1406,13 @@ class RustEmitter(CodeEmitter):
             right = d.get("right")
             if op == "Add":
                 return self._expr_is_non_negative(left) and self._expr_is_non_negative(right)
+            if op == "Sub":
+                right_lit = self._const_int_literal(right)
+                if right_lit == 0:
+                    return self._expr_is_non_negative(left)
+                if right_lit == 1:
+                    return self._expr_is_positive(left)
+                return False
             if op == "Mult":
                 return self._expr_is_non_negative(left) and self._expr_is_non_negative(right)
             if op == "FloorDiv" or op == "Div":
@@ -1411,6 +1420,126 @@ class RustEmitter(CodeEmitter):
             if op == "Mod":
                 return self._expr_is_positive(right)
         return False
+
+    def _const_number_literal(self, node: Any) -> int | float | None:
+        d = self.any_to_dict_or_empty(node)
+        if len(d) == 0:
+            return None
+        if self.any_dict_get_str(d, "kind", "") != "Constant":
+            return None
+        value_any = d.get("value")
+        if isinstance(value_any, bool):
+            return None
+        if isinstance(value_any, int):
+            return int(value_any)
+        if isinstance(value_any, float):
+            return float(value_any)
+        return None
+
+    def _sign_name_candidate(self, node: Any) -> str:
+        d = self.any_to_dict_or_empty(node)
+        if len(d) == 0:
+            return ""
+        kind = self.any_dict_get_str(d, "kind", "")
+        if kind == "Name":
+            return self.any_dict_get_str(d, "id", "")
+        if kind == "Call":
+            fn = self.any_to_dict_or_empty(d.get("func"))
+            fn_kind = self.any_dict_get_str(fn, "kind", "")
+            if fn_kind != "Name":
+                return ""
+            fn_name = self.any_dict_get_str(fn, "id", "")
+            if fn_name != "int" and fn_name != "float":
+                return ""
+            args = self.any_to_list(d.get("args"))
+            if len(args) == 0:
+                return ""
+            return self._sign_name_candidate(args[0])
+        if kind == "UnaryOp" and self.any_dict_get_str(d, "op", "") == "UAdd":
+            return self._sign_name_candidate(d.get("operand"))
+        return ""
+
+    def _flip_compare_op(self, op: str) -> str:
+        if op == "Lt":
+            return "Gt"
+        if op == "LtE":
+            return "GtE"
+        if op == "Gt":
+            return "Lt"
+        if op == "GtE":
+            return "LtE"
+        return op
+
+    def _apply_sign_hint_from_name_const_compare(self, name: str, op: str, const_value: int | float, non_negative: set[str], positive: set[str]) -> None:
+        if name == "":
+            return
+        if op == "Gt":
+            if const_value >= 0:
+                positive.add(name)
+                non_negative.add(name)
+            return
+        if op == "GtE":
+            if const_value >= 1:
+                positive.add(name)
+                non_negative.add(name)
+                return
+            if const_value >= 0:
+                non_negative.add(name)
+            return
+        if op == "Eq":
+            if const_value > 0:
+                positive.add(name)
+                non_negative.add(name)
+                return
+            if const_value == 0:
+                non_negative.add(name)
+
+    def _infer_then_sign_assumptions_from_test(self, test_node: Any) -> tuple[set[str], set[str]]:
+        non_negative: set[str] = set()
+        positive: set[str] = set()
+        d = self.any_to_dict_or_empty(test_node)
+        if len(d) == 0:
+            return non_negative, positive
+
+        kind = self.any_dict_get_str(d, "kind", "")
+        if kind == "BoolOp" and self.any_dict_get_str(d, "op", "") == "And":
+            for value_node in self.any_to_list(d.get("values")):
+                add_non_negative, add_positive = self._infer_then_sign_assumptions_from_test(value_node)
+                non_negative.update(add_non_negative)
+                positive.update(add_positive)
+            return non_negative, positive
+
+        if kind != "Compare":
+            return non_negative, positive
+
+        ops = self.any_to_str_list(d.get("ops"))
+        comps = self.any_to_list(d.get("comparators"))
+        if len(ops) == 0 or len(comps) == 0:
+            return non_negative, positive
+
+        op = ops[0]
+        left_node = self.any_to_dict_or_empty(d.get("left"))
+        right_node = self.any_to_dict_or_empty(comps[0])
+        left_name = self._sign_name_candidate(left_node)
+        right_name = self._sign_name_candidate(right_node)
+        left_const = self._const_number_literal(left_node)
+        right_const = self._const_number_literal(right_node)
+
+        if left_name != "" and right_const is not None:
+            self._apply_sign_hint_from_name_const_compare(left_name, op, right_const, non_negative, positive)
+            return non_negative, positive
+
+        if right_name != "" and left_const is not None:
+            self._apply_sign_hint_from_name_const_compare(
+                right_name,
+                self._flip_compare_op(op),
+                left_const,
+                non_negative,
+                positive,
+            )
+            return non_negative, positive
+
+        return non_negative, positive
 
     def _update_name_sign_info(self, name_raw: str, value_node: Any) -> None:
         if name_raw == "":
@@ -2259,6 +2388,8 @@ class RustEmitter(CodeEmitter):
         prev_ref_vars = self.current_ref_vars
         prev_non_negative_vars = self.current_non_negative_vars
         prev_positive_vars = self.current_positive_vars
+        prev_assumed_non_negative_vars = self.assumed_non_negative_vars
+        prev_assumed_positive_vars = self.assumed_positive_vars
         prev_class_name = self.current_class_name
         self.current_class_name = self.normalize_type_name(in_class) if in_class is not None else ""
         self.current_fn_write_counts = self._collect_name_write_counts(body)
@@ -2266,6 +2397,8 @@ class RustEmitter(CodeEmitter):
         self.current_ref_vars = set()
         self.current_non_negative_vars = set()
         self.current_positive_vars = set()
+        self.assumed_non_negative_vars = set()
+        self.assumed_positive_vars = set()
         args_text_list: list[str] = []
         scope_names: set[str] = set()
         if in_class is None:
@@ -2325,6 +2458,8 @@ class RustEmitter(CodeEmitter):
         self.current_ref_vars = prev_ref_vars
         self.current_non_negative_vars = prev_non_negative_vars
         self.current_positive_vars = prev_positive_vars
+        self.assumed_non_negative_vars = prev_assumed_non_negative_vars
+        self.assumed_positive_vars = prev_assumed_positive_vars
         self.current_class_name = prev_class_name
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2415,8 +2550,24 @@ class RustEmitter(CodeEmitter):
             stmt,
             cond_empty_default="false",
         )
+        test_node = stmt.get("test")
+        if self.any_to_str(stmt.get("normalized_expr_version")) == "east3_expr_v1":
+            normalized_exprs = self.any_to_dict_or_empty(stmt.get("normalized_exprs"))
+            cond_node = normalized_exprs.get("if_cond_expr")
+            if cond_node is not None:
+                test_node = cond_node
+        then_non_negative, then_positive = self._infer_then_sign_assumptions_from_test(test_node)
         self.emit(self.syntax_line("if_open", "if {cond} {", {"cond": cond}))
+        prev_assumed_non_negative = self.assumed_non_negative_vars
+        prev_assumed_positive = self.assumed_positive_vars
+        if len(then_non_negative) > 0 or len(then_positive) > 0:
+            self.assumed_non_negative_vars = set(prev_assumed_non_negative)
+            self.assumed_positive_vars = set(prev_assumed_positive)
+            self.assumed_non_negative_vars.update(then_non_negative)
+            self.assumed_positive_vars.update(then_positive)
         self.emit_scoped_stmt_list(body_stmts, set())
+        self.assumed_non_negative_vars = prev_assumed_non_negative
+        self.assumed_positive_vars = prev_assumed_positive
         self._emit_if_else_chain(else_stmts)
 
     def _emit_if_else_chain(self, else_stmts: list[dict[str, Any]]) -> None:
@@ -2429,8 +2580,24 @@ class RustEmitter(CodeEmitter):
                 nested,
                 cond_empty_default="false",
             )
+            nested_test_node = nested.get("test")
+            if self.any_to_str(nested.get("normalized_expr_version")) == "east3_expr_v1":
+                normalized_exprs = self.any_to_dict_or_empty(nested.get("normalized_exprs"))
+                cond_node = normalized_exprs.get("if_cond_expr")
+                if cond_node is not None:
+                    nested_test_node = cond_node
+            then_non_negative, then_positive = self._infer_then_sign_assumptions_from_test(nested_test_node)
             self.emit(self.syntax_line("else_if_open", "} else if {cond} {", {"cond": nested_cond}))
+            prev_assumed_non_negative = self.assumed_non_negative_vars
+            prev_assumed_positive = self.assumed_positive_vars
+            if len(then_non_negative) > 0 or len(then_positive) > 0:
+                self.assumed_non_negative_vars = set(prev_assumed_non_negative)
+                self.assumed_positive_vars = set(prev_assumed_positive)
+                self.assumed_non_negative_vars.update(then_non_negative)
+                self.assumed_positive_vars.update(then_positive)
             self.emit_scoped_stmt_list(nested_body, set())
+            self.assumed_non_negative_vars = prev_assumed_non_negative
+            self.assumed_positive_vars = prev_assumed_positive
             self._emit_if_else_chain(nested_else)
             return
         self.emit(self.syntax_text("else_open", "} else {"))
