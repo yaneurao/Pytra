@@ -127,6 +127,30 @@ function __pytra_noop(...$_args) {
     return null;
 }
 
+function __pytra_array_is_list_like(array $v): bool {
+    $i = 0;
+    foreach ($v as $k => $_value) {
+        if (!is_int($k) || $k !== $i) {
+            return false;
+        }
+        $i += 1;
+    }
+    return true;
+}
+
+function __pytra_contains($container, $item): bool {
+    if (is_array($container)) {
+        if (__pytra_array_is_list_like($container)) {
+            return in_array($item, $container, true);
+        }
+        return array_key_exists($item, $container);
+    }
+    if (is_string($container)) {
+        return strpos($container, (string)$item) !== false;
+    }
+    return false;
+}
+
 function bytearray($v = 0): array {
     if (is_int($v) || is_float($v) || is_bool($v)) {
         $n = (int)$v;

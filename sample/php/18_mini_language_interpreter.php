@@ -4,17 +4,49 @@ declare(strict_types=1);
 require_once __DIR__ . '/pytra/py_runtime.php';
 
 class Token {
-    public function __construct() {
+    public $kind;
+    public $text;
+    public $pos;
+    public $number_value;
+    public function __construct($kind, $text, $pos, $number_value) {
+        $this->kind = $kind;
+        $this->text = $text;
+        $this->pos = $pos;
+        $this->number_value = $number_value;
     }
 }
 
 class ExprNode {
-    public function __construct() {
+    public $kind;
+    public $value;
+    public $name;
+    public $op;
+    public $left;
+    public $right;
+    public $kind_tag;
+    public $op_tag;
+    public function __construct($kind, $value, $name, $op, $left, $right, $kind_tag, $op_tag) {
+        $this->kind = $kind;
+        $this->value = $value;
+        $this->name = $name;
+        $this->op = $op;
+        $this->left = $left;
+        $this->right = $right;
+        $this->kind_tag = $kind_tag;
+        $this->op_tag = $op_tag;
     }
 }
 
 class StmtNode {
-    public function __construct() {
+    public $kind;
+    public $name;
+    public $expr_index;
+    public $kind_tag;
+    public function __construct($kind, $name, $expr_index, $kind_tag) {
+        $this->kind = $kind;
+        $this->name = $name;
+        $this->expr_index = $expr_index;
+        $this->kind_tag = $kind_tag;
     }
 }
 
@@ -165,7 +197,7 @@ class Parser {
 }
 
 function tokenize($lines) {
-    $single_char_token_tags = [];
+    $single_char_token_tags = ["+" => 1, "-" => 2, "*" => 3, "/" => 4, "(" => 5, ")" => 6, "=" => 7];
     $single_char_token_kinds = ["PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"];
     $tokens = [];
     for ($__i = 0; $__i < count($lines); $__i += 1) {
@@ -225,7 +257,7 @@ function eval_expr($expr_index, $expr_nodes, $env) {
         return $node->value;
     }
     if (($node->kind_tag == 2)) {
-        if ((!($node->name == $env))) {
+        if ((!(array_key_exists($node->name, $env)))) {
             throw new Exception(strval(("undefined variable: " . $node->name)));
         }
         return $env[$node->name];
@@ -266,7 +298,7 @@ function execute($stmts, $expr_nodes, $trace) {
             continue;
         }
         if (($stmt->kind_tag == 2)) {
-            if ((!($stmt->name == $env))) {
+            if ((!(array_key_exists($stmt->name, $env)))) {
                 throw new Exception(strval(("assign to undefined variable: " . $stmt->name)));
             }
             $env[$stmt->name] = eval_expr($stmt->expr_index, $expr_nodes, $env);

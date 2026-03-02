@@ -83,14 +83,21 @@
 
 文脈: [docs/ja/plans/p1-php-s18-codegen-quality-uplift.md](../plans/p1-php-s18-codegen-quality-uplift.md)
 
-1. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01] `sample/php/18_mini_language_interpreter.php` のコード生成品質を改善し、実行可能性と意味互換を回復する。
-2. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S1-01] `sample/18` の失敗断片（dict literal / membership / ctor / entrypoint）を棚卸しし、改善境界を固定する。
-3. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-01] PHP emitter の dict literal 出力を修正し、キー付き連想配列を正しく生成する。
-4. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `in` / `not in` の lower を型別に修正し、dict membership を `array_key_exists` 系へ統一する。
-5. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass 由来クラス（`Token/ExprNode/StmtNode`）のフィールド/コンストラクタ出力を整合させる。
-6. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] `main_guard` 出力の entrypoint 名衝突回避を一般化し、`sample/18` で衝突しないことを保証する。
-7. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] unit/smoke 回帰を追加し、同種崩れ（dict/in/ctor/entrypoint）の再発検知を固定する。
-8. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` 再生成と parity 実行で非退行を確認する。
+1. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01] `sample/php/18_mini_language_interpreter.php` のコード生成品質を改善し、実行可能性と意味互換を回復する。
+2. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S1-01] `sample/18` の失敗断片（dict literal / membership / ctor / entrypoint）を棚卸しし、改善境界を固定する。
+3. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-01] PHP emitter の dict literal 出力を修正し、キー付き連想配列を正しく生成する。
+4. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `in` / `not in` の lower を型別に修正し、dict membership を `array_key_exists` 系へ統一する。
+5. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass 由来クラス（`Token/ExprNode/StmtNode`）のフィールド/コンストラクタ出力を整合させる。
+6. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] `main_guard` 出力の entrypoint 名衝突回避を一般化し、`sample/18` で衝突しないことを保証する。
+7. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] unit/smoke 回帰を追加し、同種崩れ（dict/in/ctor/entrypoint）の再発検知を固定する。
+8. [x] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` 再生成と parity 実行で非退行を確認する。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S1-01] 旧 `sample/php/18` で `dict` 空配列化・`in` 崩れ・dataclass ctor 不整合・entrypoint 衝突余地を再現し、改善境界を固定。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-01] `php_native_emitter` の `Dict` 出力を `entries` 対応へ拡張し、`single_char_token_tags` を連想配列として正しく生成。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `Compare(In/NotIn)` を型別 membership へ変更し、`dict` では `array_key_exists` を用いる lower に修正。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass クラスの field 宣言と自動 `__construct` 生成を追加し、`Token/ExprNode/StmtNode` の呼び出し契約を整合。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] entrypoint 名決定時に class 名も衝突候補へ含め、`main_guard` 出力の名衝突回避を一般化。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] `tools/check_py2php_transpile.py` に `sample/18` 品質断片チェックを追加し、dict/in/ctor/entrypoint 崩れの再発検知を固定。
+- 進捗メモ: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` を再生成し、`tools/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 18_mini_language_interpreter` を pass。
 
 ### P1: 非C++ backend 3層再整列（`Lower` / `Optimizer` / `Emitter`）
 

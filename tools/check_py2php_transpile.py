@@ -27,6 +27,26 @@ CASES = [
 STAGE2_REMOVED_FRAGMENT = "--east-stage 2 is no longer supported; use EAST3 (default)."
 
 
+def _assert_sample18_quality(out: Path) -> tuple[bool, str]:
+    text = out.read_text(encoding="utf-8")
+    required_fragments = [
+        '$single_char_token_tags = ["+" => 1',
+        "array_key_exists($node->name, $env)",
+        "public function __construct($kind, $text, $pos, $number_value)",
+        "public function __construct($kind, $value, $name, $op, $left, $right, $kind_tag, $op_tag)",
+        "public function __construct($kind, $name, $expr_index, $kind_tag)",
+        "function __pytra_entry_main(): void {",
+        "__pytra_entry_main();",
+    ]
+    i = 0
+    while i < len(required_fragments):
+        frag = required_fragments[i]
+        if frag not in text:
+            return False, "sample18 missing fragment: " + frag
+        i += 1
+    return True, ""
+
+
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
         ["python3", str(PY2PHP), str(src), "-o", str(out)],
@@ -46,6 +66,10 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
             if not runtime_files[i].exists():
                 return False, "missing runtime file: " + str(runtime_files[i].relative_to(out.parent))
             i += 1
+        if src.name == "18_mini_language_interpreter.py":
+            ok, msg = _assert_sample18_quality(out)
+            if not ok:
+                return False, msg
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"
