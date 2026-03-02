@@ -36,15 +36,16 @@
 
 文脈: [docs/ja/plans/p0-nim-sample-parity-runtime-hardening.md](../plans/p0-nim-sample-parity-runtime-hardening.md)
 
-1. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01] Nim runtime を整備し、`sample/` の Nim parity を全件通過させる。
-2. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-01] `sample` 全件の Nim parity ベースラインを取得し、失敗ケース一覧と失敗カテゴリを確定する。
-3. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-02] 失敗ケースを runtime API 不足・契約不整合・emitter 側問題に切り分け、修正優先順を確定する。
-4. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-01] `py_runtime.nim` の不足 API を fail-closed で補完する。
-5. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-02] emitter と runtime の呼び出し契約を整合し、必要な出力修正を実施する。
-6. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-03] case 固有崩れを最小修正で解消する。
-7. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、transpile/compile/runtime エラーを全件解消する。
-8. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認する。
-9. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰で非退行を確認する。
+1. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01] Nim runtime を整備し、`sample/` の Nim parity を全件通過させる。
+2. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-01] `sample` 全件の Nim parity ベースラインを取得し、失敗ケース一覧と失敗カテゴリを確定する。
+3. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-02] 失敗ケースを runtime API 不足・契約不整合・emitter 側問題に切り分け、修正優先順を確定する。
+4. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-01] `py_runtime.nim` の不足 API を fail-closed で補完する。
+5. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-02] emitter と runtime の呼び出し契約を整合し、必要な出力修正を実施する。
+6. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-03] case 固有崩れを最小修正で解消する。
+7. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、transpile/compile/runtime エラーを全件解消する。
+8. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認する。
+9. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰で非退行を確認する。
+- 進捗メモ: [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `sample/nim`（18ケース + `py_runtime.nim`）を再生成し、`runtime_parity_check --case-root sample --targets nim --ignore-unstable-stdout` は `cases=18 pass=18 fail=0`、`check_py2nim_transpile` は `checked=7 ok=7 fail=0` を確認。
 
 ### P1: 非C++ backend 3層再整列（`Lower` / `Optimizer` / `Emitter`）
 

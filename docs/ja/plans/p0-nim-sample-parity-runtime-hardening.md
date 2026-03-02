@@ -35,18 +35,21 @@
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/check_py2nim_transpile.py`
 - `python3 tools/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs nim --force`
+- `python3 src/py2nim.py sample/py/<case>.py -o sample/nim/<case>.nim`（`regenerate_samples.py` は Nim 未対応）
 
 ## 分解
 
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-01] `sample` 全件に対する Nim parity ベースラインを取得し、失敗ケース一覧と失敗カテゴリ（compile/runtime/output mismatch）を確定する。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-02] 失敗ケースごとに runtime API 不足・契約不整合・emitter 側問題を切り分け、修正優先順を確定する。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-01] `py_runtime.nim` の不足 API（型変換/コレクション/文字列/時刻/画像補助）を fail-closed で補完する。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-02] emitter と runtime の呼び出し契約（関数名・引数順・戻り値型）を整合し、必要な出力修正を行う。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-03] case 固有の崩れ（例: `sample/18` 相当の tokenizer/構文要素）を最小修正で解消する。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、Nim 実行でのエラー（transpile/compile/runtime）を全件解消する。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認し、結果を記録する。
-- [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰を実行し、非退行を確認する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-01] `sample` 全件に対する Nim parity ベースラインを取得し、失敗ケース一覧と失敗カテゴリ（compile/runtime/output mismatch）を確定する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-02] 失敗ケースごとに runtime API 不足・契約不整合・emitter 側問題を切り分け、修正優先順を確定する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-01] `py_runtime.nim` の不足 API（型変換/コレクション/文字列/時刻/画像補助）を fail-closed で補完する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-02] emitter と runtime の呼び出し契約（関数名・引数順・戻り値型）を整合し、必要な出力修正を行う。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-03] case 固有の崩れ（例: `sample/18` 相当の tokenizer/構文要素）を最小修正で解消する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、Nim 実行でのエラー（transpile/compile/runtime）を全件解消する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認し、結果を記録する。
+- [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰を実行し、非退行を確認する。
 
 決定ログ:
 - 2026-03-03: ユーザー指示により、Nim runtime 整備と `sample/` parity 全件通過を P0 として起票。
+- 2026-03-03: `runtime_parity_check --case-root sample --targets nim --ignore-unstable-stdout` のベースラインで `cases=18 pass=18 fail=0` を確認し、失敗ケース分類（runtime不足/契約不整合/emitter問題）は空であることを確定。
+- 2026-03-03: `tools/regenerate_samples.py --langs nim --force` は `unknown language(s): nim` で未対応だったため、`python3 src/py2nim.py sample/py/*.py -o sample/nim/*.nim` の手動再生成導線で `sample/nim` を更新（18ケース + `py_runtime.nim`）。
+- 2026-03-03: 再生成後の parity 再実行で `cases=18 pass=18 fail=0` を確認し、`python3 tools/check_py2nim_transpile.py` も `checked=7 ok=7 fail=0` で通過。追加コード修正なしで受け入れ基準を満たした。
