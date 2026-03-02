@@ -168,7 +168,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LifetimeAnalysisPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -186,6 +186,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
         self.assertFalse(by_name.get("TupleTargetDirectExpansionPass", True))
         self.assertFalse(by_name.get("NonEscapeInterproceduralPass", True))
+        self.assertFalse(by_name.get("LifetimeAnalysisPass", True))
         self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
         self.assertFalse(by_name.get("LoopInvariantHoistLitePass", True))
@@ -203,6 +204,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("DictStrKeyNormalizationPass", trace_text)
         self.assertIn("TupleTargetDirectExpansionPass", trace_text)
         self.assertIn("NonEscapeInterproceduralPass", trace_text)
+        self.assertIn("LifetimeAnalysisPass", trace_text)
         self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
