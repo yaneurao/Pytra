@@ -177,6 +177,22 @@ Notes:
 </details>
 
 <details>
+<summary>PHP</summary>
+
+```bash
+python src/py2php.py test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
+php test/transpile/php/iterable.php
+```
+
+Notes:
+- `py2php.py` generates PHP source directly from EAST3 via the native emitter (`src/hooks/php/emitter/php_native_emitter.py`).
+- Runtime helpers are managed under `src/runtime/php/pytra/` and copied into `test/transpile/php/pytra/**` when transpiling.
+- Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
+- Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
+
+</details>
+
+<details>
 <summary>C#</summary>
 
 ```bash

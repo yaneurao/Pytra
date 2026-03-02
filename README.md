@@ -193,7 +193,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby)</summary>
+<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby | PHP)</summary>
 
 - C++: [View full code](sample/cpp/06_julia_parameter_sweep.cpp)
 - Rust: [View full code](sample/rs/06_julia_parameter_sweep.rs)
@@ -205,6 +205,7 @@ if __name__ == "__main__":
 - Swift: [View full code](sample/swift/06_julia_parameter_sweep.swift)
 - Kotlin: [View full code](sample/kotlin/06_julia_parameter_sweep.kt)
 - Ruby: [View full code](sample/ruby/06_julia_parameter_sweep.rb)
+- PHP: [View full code](sample/php/06_julia_parameter_sweep.php)
 
 </details>
 
@@ -532,7 +533,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby)</summary>
+<summary>Transpiled code (C++ | Rust | C# | JavaScript | TypeScript | Go | Java | Swift | Kotlin | Ruby | PHP)</summary>
 
 - C++: [View full code](sample/cpp/16_glass_sculpture_chaos.cpp)
 - Rust: [View full code](sample/rs/16_glass_sculpture_chaos.rs)
@@ -544,6 +545,7 @@ if __name__ == "__main__":
 - Swift: [View full code](sample/swift/16_glass_sculpture_chaos.swift)
 - Kotlin: [View full code](sample/kotlin/16_glass_sculpture_chaos.kt)
 - Ruby: [View full code](sample/ruby/16_glass_sculpture_chaos.rb)
+- PHP: [View full code](sample/php/16_glass_sculpture_chaos.php)
 
 </details>
 

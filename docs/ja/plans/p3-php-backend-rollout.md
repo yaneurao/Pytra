@@ -78,6 +78,7 @@ runtime 分離契約（S1-01 確定）:
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-03] runtime を `src/runtime/php/pytra/{py_runtime.php,runtime/{png,gif}.php,std/time.php}` に分離し、`py2php.py` で `output/pytra/**` へ同期コピーする方式へ拡張。emitter は `__pytra_perf_counter/__pytra_len/__pytra_str_*` を参照し、生成コードへの helper 本体埋め込みを行わない構成へ統一した。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-01] `test/unit/test_py2php_smoke.py`（11件）と `tools/check_py2php_transpile.py` を追加。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v` および `python3 tools/check_py2php_transpile.py` の双方で pass を確認した。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-02] `tools/regenerate_samples.py` と `tools/runtime_parity_check.py` に `php` ターゲットを追加し、`transpiler_versions.json` へ `php` version token を登録。`python3 tools/regenerate_samples.py --langs php --force` で `sample/php` 18件を再生成し、`runtime_parity_check --targets php` はこの環境で `php` ツールチェーン未導入のため `toolchain_missing` skip まで確認した。
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-03] docs 導線を更新。`docs/{ja,en}/spec/spec-user.md` に `py2php` と `test/transpile/php` / `sample/php` の配置を追記し、`docs/{ja,en}/how-to-use.md` に PHP 実行手順と回帰コマンドを追加、`README.md` / `docs/ja/README.md` のサンプル変換コード一覧へ PHP リンクを反映した。
 
 ## 分解
 
@@ -88,4 +89,4 @@ runtime 分離契約（S1-01 確定）:
 - [x] [ID: P3-PHP-BACKEND-01-S2-03] runtime helper を `src/runtime/php/pytra/` へ分離し、生成コードから参照する方式へ統一する。
 - [x] [ID: P3-PHP-BACKEND-01-S3-01] `test_py2php_smoke.py` と `check_py2php_transpile.py` を追加し、回帰検知導線を整備する。
 - [x] [ID: P3-PHP-BACKEND-01-S3-02] `runtime_parity_check` と `regenerate_samples` に PHP を統合し、`sample/php` を再生成する。
-- [ ] [ID: P3-PHP-BACKEND-01-S3-03] docs（how-to-use/spec/README 系）の PHP backend 記載を更新し、利用導線を固定する。
+- [x] [ID: P3-PHP-BACKEND-01-S3-03] docs（how-to-use/spec/README 系）の PHP backend 記載を更新し、利用導線を固定する。

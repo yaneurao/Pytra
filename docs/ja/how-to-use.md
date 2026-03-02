@@ -78,7 +78,7 @@ Windows では次の読み替えを行ってください。
 
 ## non-C++ backend のコンテナ参照管理運用（v1）
 
-- 対象 backend: `cs/js/ts/go/swift/ruby/lua`（Rust/Kotlin は pilot 実装済み）。
+- 対象 backend: `cs/js/ts/go/swift/ruby/lua/php`（Rust/Kotlin は pilot 実装済み）。
 - 共通方針:
   - `object/Any/unknown/union(any含む)` へ流れる境界は参照管理境界（ref-boundary）として扱う。
   - 型既知かつ局所 non-escape の経路は値型経路（value-path）として shallow copy を挿入する。
@@ -91,7 +91,8 @@ Windows では次の読み替えを行ってください。
   - `python3 tools/check_py2swift_transpile.py`
   - `python3 tools/check_py2rb_transpile.py`
   - `python3 tools/check_py2lua_transpile.py`
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs,js,ts,go,swift,ruby,lua --ignore-unstable-stdout 18_mini_language_interpreter`
+  - `python3 tools/check_py2php_transpile.py`
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs,js,ts,go,swift,ruby,lua,php --ignore-unstable-stdout 18_mini_language_interpreter`
 - rollback 手段（暫定）:
   - 値型材料化が問題になる箇所は、ローカルの型注釈を `object/Any` 側へ寄せて ref-boundary を強制する。
   - 逆に alias 分離を明示したい場合は、入力 Python 側で `list(...)` / `dict(...)` などの明示コピーを書く。
@@ -219,6 +220,22 @@ lua test/transpile/lua/iterable.lua
 - 変換回帰は `python3 tools/check_py2lua_transpile.py` で確認できます（現状は expected-fail を除外して監視）。
 - parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets lua 17_monte_carlo_pi` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。`elapsed_sec` など不安定行はデフォルトで比較から除外されます。
 - `sample/lua` は現時点で `02_raytrace_spheres` / `03_julia_set` / `04_orbit_trap_julia` / `17_monte_carlo_pi` を再生成済みです。
+
+</details>
+
+<details>
+<summary>PHP</summary>
+
+```bash
+python src/py2php.py test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
+php test/transpile/php/iterable.php
+```
+
+補足:
+- `py2php.py` は EAST3 から PHP native emitter（`src/hooks/php/emitter/php_native_emitter.py`）で直接コード生成します。
+- runtime は `src/runtime/php/pytra/` を正本とし、生成時に `test/transpile/php/pytra/**` へ同期コピーされます。
+- 変換回帰は `python3 tools/check_py2php_transpile.py` で確認できます。
+- parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets php` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
 
 </details>
 
