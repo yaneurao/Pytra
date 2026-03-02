@@ -83,7 +83,7 @@
 2. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
 3. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 4. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
-5. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
+5. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 6. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
 7. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 8. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
@@ -93,6 +93,7 @@
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通 frontend 化後に残す差分を `runtime_packaging_hook`・backend post-process・`py2cpp.py` 互換ラッパ維持の3分類で確定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` の共通 CLI（`--target`, 共通 optimizer option, 層別 pass-through）と互換方針、fail-fast 規約（stage2禁止・schema検証）を計画書に確定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry の必須契約（entrypoint, default options, schema, runtime hook, compat wrapper）を定義し、S2 実装インタフェースを固定。
+- 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `src/py2x.py` と `src/pytra/compiler/backend_registry.py` を追加し、14 target の共通 EAST3 入力 + dispatch + runtime hook の初版を実装（`--help` と複数 target 変換を確認）。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 

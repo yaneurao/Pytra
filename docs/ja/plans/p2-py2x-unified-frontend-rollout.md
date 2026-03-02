@@ -56,7 +56,7 @@
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
@@ -174,9 +174,30 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 - wrapper は `EAST3` 生成・`lower/optimizer/emitter` 呼び出しを保持しない。
 - 互換維持のため、C++ など段階移行中 backend は wrapper 側に暫定オプションを残せるが、registry 経路を最終正本とする。
 
+## S2-01 実装（2026-03-03）
+
+- 追加:
+  - `src/py2x.py`
+  - `src/pytra/compiler/backend_registry.py`
+- 実装内容:
+  - `py2x` が `INPUT + --target` を受け、`load_east3_document` で共通に EAST3 を構築。
+  - backend registry から `lower -> optimizer -> emitter -> runtime_hook` を解決して実行。
+  - 対応 target: `cpp/rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/scala/php/nim`。
+  - `--help`（`-h/--help`）を `py2x` 側で明示サポート。
+- 実装時点の制約:
+  - 層別 option parser / schema 検証は未実装（`S2-02` で対応）。
+  - 既存 `py2*.py` は未委譲（`S2-03` で thin wrapper 化）。
+- 実行確認:
+  - `python3 src/py2x.py --help`
+  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp -o /tmp/py2x_cpp.cpp`
+  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target rs -o /tmp/py2x_rs.rs`
+  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target php -o /tmp/py2x_php.php`
+  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target scala -o /tmp/py2x_scala.scala`
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通化で残す差分を「runtime hook」「backend post-process」「C++互換ラッパ維持」に分類して確定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様（基本形、共通オプション、層別 pass-through、互換方針、fail-fast 規約）を確定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint/default options/schema/runtime hook/compat wrapper）を定義し、S2 実装の受け入れインタフェースを固定した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` と `backend_registry.py` の初版を実装し、共通 EAST3 入力処理 + target dispatch + runtime hook 実行を導入した。
