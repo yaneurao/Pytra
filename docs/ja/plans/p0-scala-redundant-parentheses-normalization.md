@@ -39,13 +39,16 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、実装着手せず計画のみを先行し、Scala の冗長括弧削減を `P0` で起票。
+- 2026-03-02: `If/While/ForCore` 条件で `_strip_outer_parens` を通す経路を追加し、`while ((...))` を `while (...)` へ正規化。
+- 2026-03-02: `BinOp` に単純オペランド fastpath（`Name/Constant/Attribute/Call/Subscript`）を追加し、不要な外側括弧のみ削減。複雑式は従来どおり括弧維持（fail-closed）。
+- 2026-03-02: `test_py2scala_smoke.py` の runtime 分離後期待値を同期し、`check_py2scala_transpile` / `sample/scala/01` 再生成まで通過。
 
 ## 分解
 
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S1-01] 冗長括弧パターン（`BinOp` / `Compare` / `BoolOp` / 条件式）を棚卸しし、除去対象と保持対象を分類する。
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S1-02] 優先順位を壊さない最小括弧ルール（必要括弧判定）を仕様化する。
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S2-01] `Compare` / `BoolOp` の条件式レンダリングで二重括弧を削減する。
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S2-02] `BinOp` の単純式 fastpath を追加し、不要な外側括弧を削減する。
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S2-03] 優先順位が必要なケースでは括弧維持するガードを追加する（fail-closed）。
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S3-01] unit テストを更新し、冗長括弧再発を回帰検知できるようにする。
-- [ ] [ID: P0-SCALA-PAREN-NORM-01-S3-02] `sample/scala/01` 再生成と transpile チェックで非退行を確認する。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S1-01] 冗長括弧パターン（`BinOp` / `Compare` / `BoolOp` / 条件式）を棚卸しし、除去対象と保持対象を分類する。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S1-02] 優先順位を壊さない最小括弧ルール（必要括弧判定）を仕様化する。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S2-01] `Compare` / `BoolOp` の条件式レンダリングで二重括弧を削減する。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S2-02] `BinOp` の単純式 fastpath を追加し、不要な外側括弧を削減する。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S2-03] 優先順位が必要なケースでは括弧維持するガードを追加する（fail-closed）。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S3-01] unit テストを更新し、冗長括弧再発を回帰検知できるようにする。
+- [x] [ID: P0-SCALA-PAREN-NORM-01-S3-02] `sample/scala/01` 再生成と transpile チェックで非退行を確認する。

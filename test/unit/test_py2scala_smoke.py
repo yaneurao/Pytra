@@ -69,20 +69,17 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         scala = transpile_to_scala_native(east)
-        self.assertIn("def __pytra_write_rgb_png(path: Any, width: Any, height: Any, pixels: Any): Unit = {", scala)
         self.assertIn("__pytra_write_rgb_png(out_path, width, height, pixels)", scala)
         self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", scala)
+        self.assertNotIn("def __pytra_write_rgb_png(", scala)
 
     def test_gif_writer_uses_runtime_helper_instead_of_noop(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         scala = transpile_to_scala_native(east)
-        self.assertIn(
-            "def __pytra_save_gif(path: Any, width: Any, height: Any, frames: Any, palette: Any, delayCsArg: Any = 4L, loopArg: Any = 0L): Unit = {",
-            scala,
-        )
         self.assertIn("__pytra_save_gif(out_path, width, height, frames, julia_palette())", scala)
         self.assertNotIn("__pytra_noop(out_path, width, height, frames, julia_palette())", scala)
+        self.assertNotIn("def __pytra_save_gif(", scala)
 
     def test_sample_01_quality_fastpaths_reduce_redundant_wrappers(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
@@ -90,11 +87,11 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         scala = transpile_to_scala_native(east)
         self.assertNotIn("__pytra_float(__pytra_float(", scala)
         self.assertNotIn("__pytra_int(__pytra_int(", scala)
-        self.assertIn("while (y < __pytra_int(height)) {", scala)
-        self.assertIn("while (x < __pytra_int(width)) {", scala)
+        self.assertIn("while (y < height) {", scala)
+        self.assertIn("while (x < width) {", scala)
         self.assertIn("pixels.append(r)", scala)
         self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.append(", scala)
-        self.assertIn("def __pytra_write_rgb_png(path: Any, width: Any, height: Any, pixels: Any): Unit = {", scala)
+        self.assertNotIn("def __pytra_write_rgb_png(", scala)
         self.assertNotIn("def __pytra_save_gif(", scala)
 
     def test_load_east_from_json(self) -> None:
@@ -210,7 +207,8 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             "meta": {},
         }
         scala = transpile_to_scala_native(east)
-        self.assertIn("while ((i > 3L)) {", scala)
+        self.assertIn("while (i > 3L) {", scala)
+        self.assertNotIn("while ((i > 3L)) {", scala)
         self.assertNotIn("while ((i < 3L)) {", scala)
 
     def test_cli_smoke_defaults_to_native_without_sidecar(self) -> None:
