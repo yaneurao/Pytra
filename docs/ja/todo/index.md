@@ -51,7 +51,7 @@
 
 文脈: [docs/ja/plans/p1-multilang-backend-3layer-realign.md](../plans/p1-multilang-backend-3layer-realign.md)
 
-1. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01] 非C++ backend を順次 `Lower -> Optimizer -> Emitter` の3層へ再整列し、責務境界を統一する。
+1. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01] 非C++ backend を順次 `Lower -> Optimizer -> Emitter` の3層へ再整列し、責務境界を統一する。
 2. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務（意味決定/正規化/描画）の棚卸しを作成する。
 3. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約・fail-closed・層別禁止事項）を定義する。
 4. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ/命名/import 規約を文書化する。
