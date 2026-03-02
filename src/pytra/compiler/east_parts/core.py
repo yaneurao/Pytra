@@ -5303,6 +5303,68 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
     return _sh_parse_stmt_block_mutable(body_lines_copy, name_types=name_types_copy, scope_label=scope_label)
 
 
+_SH_VALUE_SAFE_CLASS_FIELD_TYPES: set[str] = {
+    "bool",
+    "int8",
+    "uint8",
+    "int16",
+    "uint16",
+    "int32",
+    "uint32",
+    "int64",
+    "uint64",
+    "float32",
+    "float64",
+    "str",
+    "bytes",
+    "bytearray",
+}
+
+
+def _sh_is_value_safe_dataclass_field_type(type_name: str) -> bool:
+    """dataclass 自動 value 判定用の保守的な型チェック。"""
+    t = type_name.strip()
+    if t in _SH_VALUE_SAFE_CLASS_FIELD_TYPES:
+        return True
+    if t.startswith("tuple[") and t.endswith("]"):
+        inner = t[6:-1].strip()
+        if inner == "":
+            return True
+        parts = _sh_split_top_level_commas(inner)
+        if len(parts) == 0:
+            return False
+        for part in parts:
+            if not _sh_is_value_safe_dataclass_field_type(part):
+                return False
+        return True
+    return False
+
+
+def _sh_is_value_safe_dataclass_candidate(
+    *,
+    is_dataclass: bool,
+    base: str,
+    has_del: bool,
+    class_body: list[dict[str, Any]],
+    field_types: dict[str, str],
+) -> bool:
+    """参照共有が不要な dataclass を value 候補として判定する。"""
+    if not is_dataclass or base != "" or has_del:
+        return False
+    # dataclass の自動 value は「データ保持専用クラス」に限定する。
+    for st in class_body:
+        if isinstance(st, dict) and st.get("kind") == "FunctionDef":
+            return False
+    if len(field_types) == 0:
+        return True
+    for field_t in field_types.values():
+        if not isinstance(field_t, str):
+            return False
+        if not _sh_is_value_safe_dataclass_field_type(field_t):
+            return False
+    return True
+
+
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
     source = _sh_strip_utf8_bom(source)
@@ -6117,6 +6179,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             # - stateless, non-inherited classes can be value candidates
             if storage_hint_override != "":
                 cls_item["class_storage_hint"] = storage_hint_override
+            elif _sh_is_value_safe_dataclass_candidate(
+                is_dataclass=pending_dataclass,
+                base=base,
+                has_del=has_del,
+                class_body=class_body,
+                field_types=field_types,
+            ):
+                cls_item["class_storage_hint"] = "value"
             elif base_name in {"Enum", "IntEnum", "IntFlag"}:
                 cls_item["class_storage_hint"] = "value"
             elif len(instance_field_names) == 0 and not has_del and base == "":

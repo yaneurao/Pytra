@@ -1,6 +1,6 @@
 # P2: sample/18 C++ AST コンテナ値型化（`list<rc<T>>` -> `list<T>`）
 
-最終更新: 2026-03-01
+最終更新: 2026-03-02
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P2-CPP-S18-VALUE-CONTAINER-01`
@@ -37,6 +37,8 @@
 - 2026-03-01: ユーザー指示により、sample/18 の AST コンテナ値型化を `P2` 計画として起票した。
 - 2026-03-02: S1-01 として sample/18 の AST コンテナ利用点を棚卸しし、`expr_nodes`/`stmts` は `append` + 読み取り専用（index/for）で使われ、`object/Any` 境界へ要素が流出しないことを確認した。
 - 2026-03-02: S1-02 として EAST3→CppEmitter 連携仕様を設計。`container_ownership_hint_v1`（候補名）を `AnnAssign`/`FunctionDef` の list 型宣言点へ付与し、値型条件を満たすときのみ `list<T>` を選択、逸脱時は既存 `list<rc<T>>` へ fail-closed で戻す方針を確定した。
+- 2026-03-02: S2-01/S2-02 として dataclass の保守的 value 候補判定を `core.py` に導入し、`cpp_list_model=pyobj` でも `list[ValueClass]` を typed container として維持する分岐を `type_bridge.py` に追加した。`sample/18` で `Token/ExprNode/StmtNode` が `list<T>` 出力へ縮退し、unsafe 条件は既存 `ref` fallback を維持する。
+- 2026-03-02: S3-01 として `test_east_core.py`（dataclass value/ref 境界）および `test_py2cpp_codegen_issues.py`（sample18 の値型出力断片）を更新し、`check_py2cpp_transpile` と parity（case18, cpp）で非退行を確認した。
 
 ## S1-01 棚卸し結果（sample/18）
 
@@ -80,6 +82,6 @@
 
 - [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-01] sample/18 の AST コンテナ利用点を棚卸しし、値型化可能な non-escape 条件を定義する。
 - [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-02] EAST3 メタ（ownership hint / non-escape）と C++ emitter 連携仕様を設計する。
-- [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-01] sample/18 先行で `expr_nodes` / `stmts` の値型出力を実装する。
-- [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-02] 逸脱ケースでは `rc` へ自動フォールバックする fail-closed 条件を実装する。
-- [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S3-01] 回帰テスト（型出力断片 + 実行整合）を追加し、再発検知を固定する。
+- [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-01] sample/18 先行で `expr_nodes` / `stmts` の値型出力を実装する。
+- [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-02] 逸脱ケースでは `rc` へ自動フォールバックする fail-closed 条件を実装する。
+- [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S3-01] 回帰テスト（型出力断片 + 実行整合）を追加し、再発検知を固定する。
