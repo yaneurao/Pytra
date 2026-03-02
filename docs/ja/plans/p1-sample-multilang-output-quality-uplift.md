@@ -46,7 +46,7 @@
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] `go/java` emitter に typed container/typed access fastpath を実装する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
-- [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
+- [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
 
 決定ログ:
@@ -64,6 +64,9 @@
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] JS emitter の `ForRange` で `start` 式が target 名を参照しない場合は `const __start_N` を省略し、`for (let i = <start>; ...)` を直接出力する fastpath を追加。TS は JS 経路のため同時に改善される。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] Rust emitter に loop target 後続参照注釈（`rust_loop_target_used_after_stmt`）を追加し、後続未参照の `ForRange` は `for i in (start)..(stop)` へ直接束縛（`__for_i`/再代入を削除）。後続参照ありは従来経路を維持して fail-closed とした。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] 検証: `test_py2rs*`/`test_py2js*`/`test_py2ts*` smoke は通過。`sample/{rs,js,ts}` の `01/18` を再生成し、`__for_i`・`const __start_N` が対象ケースで縮退したことを確認。`runtime_parity_check --targets rs,js,ts 01/18` は `js/ts` の既知 `artifact_size_mismatch`（01）で fail（今回差分による新規 compile/runtime 失敗ではない）を確認。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 回帰テストを追加: `js/ts` は `start` 直埋め fastpath と TDZ 回避の `__start_N` 維持条件を固定、`rs` は「後続未参照で direct bind」「後続参照時は bridge (`__for_i`) 維持」を固定。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] Rust の後続参照判定は node `meta` 追記では保持できない（`any_to_dict_or_empty` が copy を返す）ため、`emit_stmt_list` のブロック文脈スタックで「現在文の後続文検索」を実装して fail-closed を担保した。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 検証: `test_py2rs_smoke.py`(34), `test_py2js_smoke.py`(26), `test_py2ts_smoke.py`(18) を実行し全 pass。
 
 実装境界メモ（S1 集約）:
 - `go/java` typed fastpath は `tokenize/parse_program/execute/build_benchmark_source` の container と loop target を優先対象にする。
