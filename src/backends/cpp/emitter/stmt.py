@@ -1419,7 +1419,11 @@ class CppStatementEmitter:
                     "inc": inc,
                 },
             )
-            capture_guard_rewrite = self._forcore_capture_mod_guard_rewrite(body_stmts, target_id, start_txt)
+            # Temporarily disable emitter-side rewrite:
+            # `if i % k == 0: append(...)` -> `__next_capture` form.
+            # Keep original loop/body shape for source readability/fidelity.
+            # capture_guard_rewrite = self._forcore_capture_mod_guard_rewrite(body_stmts, target_id, start_txt)
+            capture_guard_rewrite = None
             loop_body_stmts = body_stmts
             loop_omit_braces = omit_braces
             next_capture_var = ""

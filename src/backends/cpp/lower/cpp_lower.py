@@ -30,6 +30,26 @@ _CPP_STMT_KINDS = {
 }
 
 
+def _is_expr_hint_annotatable(node: dict[str, Any], kind_obj: Any) -> bool:
+    """`cpp_expr_kind_v1` を付与してよい式ノードかを判定する。"""
+    if not isinstance(kind_obj, str) or kind_obj == "":
+        return False
+    if kind_obj == "Module" or kind_obj in _CPP_STMT_KINDS:
+        return False
+    # Avoid annotating non-AST metadata dicts such as `field_types` where
+    # user-defined keys can be named "kind".
+    return (
+        "source_span" in node
+        or "resolved_type" in node
+        or "repr" in node
+        or "borrow_kind" in node
+        or "casts" in node
+        or "runtime_call" in node
+        or "lowered_kind" in node
+        or "builtin_name" in node
+    )
+
+
 def _annotate_stmt_kind_hints(node: Any) -> int:
     changed = 0
     if isinstance(node, list):
@@ -43,7 +63,7 @@ def _annotate_stmt_kind_hints(node: Any) -> int:
         if node.get("cpp_stmt_kind_v1") != kind_obj:
             node["cpp_stmt_kind_v1"] = kind_obj
             changed += 1
-    elif isinstance(kind_obj, str) and kind_obj != "Module":
+    elif _is_expr_hint_annotatable(node, kind_obj):
         if node.get("cpp_expr_kind_v1") != kind_obj:
             node["cpp_expr_kind_v1"] = kind_obj
             changed += 1
