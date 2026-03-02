@@ -97,6 +97,22 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("for i = 0, n - 1 do", lua)
         self.assertIn("total = total + i", lua)
 
+    def test_append_chain_is_compacted_with_table_move(self) -> None:
+        src = (
+            "def f() -> list[int]:\n"
+            "    xs: list[int] = []\n"
+            "    xs.append(1)\n"
+            "    xs.append(2)\n"
+            "    xs.append(3)\n"
+            "    return xs\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "append_chain.lua_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("table.move({1, 2, 3}, 1, 3, #(xs) + 1, xs)", lua)
+
     def test_inheritance_virtual_dispatch_lowers_super_to_base_method_call(self) -> None:
         fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
         east = load_east(fixture, parser_backend="self_hosted")

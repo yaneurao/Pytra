@@ -57,9 +57,7 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
                 g = __pytra_int((255.0 * t))
                 b = __pytra_int((255.0 * (1.0 - t)))
             end
-            table.insert(pixels, r)
-            table.insert(pixels, g)
-            table.insert(pixels, b)
+            table.move({r, g, b}, 1, 3, #(pixels) + 1, pixels)
         end
     end
     return pixels

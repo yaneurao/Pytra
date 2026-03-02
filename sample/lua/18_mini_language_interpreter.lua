@@ -1,113 +1,4 @@
-local function __pytra_print(...)
-    local argc = select("#", ...)
-    if argc == 0 then
-        io.write("\n")
-        return
-    end
-    local parts = {}
-    for i = 1, argc do
-        local v = select(i, ...)
-        if v == true then
-            parts[i] = "True"
-        elseif v == false then
-            parts[i] = "False"
-        elseif v == nil then
-            parts[i] = "None"
-        else
-            parts[i] = tostring(v)
-        end
-    end
-    io.write(table.concat(parts, " ") .. "\n")
-end
-
-local function __pytra_repeat_seq(a, b)
-    local seq = a
-    local count = b
-    if type(a) == "number" and type(b) ~= "number" then
-        seq = b
-        count = a
-    end
-    local n = math.floor(tonumber(count) or 0)
-    if n <= 0 then
-        if type(seq) == "string" then return "" end
-        return {}
-    end
-    if type(seq) == "string" then
-        return string.rep(seq, n)
-    end
-    if type(seq) ~= "table" then
-        return (tonumber(a) or 0) * (tonumber(b) or 0)
-    end
-    local out = {}
-    for _ = 1, n do
-        for i = 1, #seq do
-            out[#out + 1] = seq[i]
-        end
-    end
-    return out
-end
-
-local function __pytra_truthy(v)
-    if v == nil then return false end
-    local t = type(v)
-    if t == "boolean" then return v end
-    if t == "number" then return v ~= 0 end
-    if t == "string" then return #v ~= 0 end
-    if t == "table" then return next(v) ~= nil end
-    return true
-end
-
-local function __pytra_contains(container, value)
-    local t = type(container)
-    if t == "table" then
-        if container[value] ~= nil then return true end
-        for i = 1, #container do
-            if container[i] == value then return true end
-        end
-        return false
-    end
-    if t == "string" then
-        if type(value) ~= "string" then value = tostring(value) end
-        return string.find(container, value, 1, true) ~= nil
-    end
-    return false
-end
-
-local function __pytra_str_isdigit(s)
-    if type(s) ~= "string" or #s == 0 then return false end
-    for i = 1, #s do
-        local b = string.byte(s, i)
-        if b < 48 or b > 57 then return false end
-    end
-    return true
-end
-
-local function __pytra_str_isalpha(s)
-    if type(s) ~= "string" or #s == 0 then return false end
-    for i = 1, #s do
-        local b = string.byte(s, i)
-        local is_upper = (b >= 65 and b <= 90)
-        local is_lower = (b >= 97 and b <= 122)
-        if not (is_upper or is_lower) then return false end
-    end
-    return true
-end
-
-local function __pytra_str_isalnum(s)
-    if type(s) ~= "string" or #s == 0 then return false end
-    for i = 1, #s do
-        local b = string.byte(s, i)
-        local is_digit = (b >= 48 and b <= 57)
-        local is_upper = (b >= 65 and b <= 90)
-        local is_lower = (b >= 97 and b <= 122)
-        if not (is_digit or is_upper or is_lower) then return false end
-    end
-    return true
-end
-
-local function __pytra_perf_counter()
-    return os.clock()
-end
+dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\/])") or "") .. "py_runtime.lua")
 
 -- from dataclasses import dataclass as dataclass (not yet mapped)
 local perf_counter = __pytra_perf_counter
@@ -197,17 +88,15 @@ function tokenize(lines)
                 local start = i
                 while ((i < n) and __pytra_str_isdigit(string.sub(source, (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1)), (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1))))) do
                     i = i + 1
-                    ::__pytra_continue_4::
                 end
                 local text = string.sub(source, (start) + 1, i)
-                table.insert(tokens, Token.new("NUMBER", text, start, (math.floor(tonumber(text) or 0))))
+                table.insert(tokens, Token.new("NUMBER", text, start, __pytra_int(text)))
                 goto __pytra_continue_3
             end
             if (__pytra_str_isalpha(ch) or (ch == "_")) then
                 start = i
                 while ((i < n) and ((__pytra_str_isalpha(string.sub(source, (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1)), (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1)))) or (string.sub(source, (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1)), (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1))) == "_")) or __pytra_str_isdigit(string.sub(source, (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1)), (((i) < 0) and (#(source) + (i) + 1) or ((i) + 1)))))) do
                     i = i + 1
-                    ::__pytra_continue_5::
                 end
                 text = string.sub(source, (start) + 1, i)
                 if (text == "let") then
@@ -278,7 +167,6 @@ end
 function Parser:skip_newlines()
     while self:match("NEWLINE") do
         do end
-        ::__pytra_continue_6::
     end
 end
 
@@ -294,7 +182,6 @@ function Parser:parse_program()
         local stmt = self:parse_stmt()
         table.insert(stmts, stmt)
         self:skip_newlines()
-        ::__pytra_continue_7::
     end
     return stmts
 end
@@ -461,12 +348,11 @@ function build_benchmark_source(var_count, loops)
     local lines = {  }
     
     -- Declare initial variables.
-    for i = 0, (var_count) - 1, 1 do
+    for i = 0, var_count - 1 do
         table.insert(lines, ((("let v" .. tostring(i)) .. " = ") .. tostring((i + 1))))
-        ::__pytra_continue_11::
     end
     -- Force evaluation of many arithmetic expressions.
-    for i = 0, (loops) - 1, 1 do
+    for i = 0, loops - 1 do
         local x = (i % var_count)
         local y = ((i + 3) % var_count)
         local c1 = ((i % 7) + 1)
@@ -475,7 +361,6 @@ function build_benchmark_source(var_count, loops)
         if ((i % 97) == 0) then
             table.insert(lines, ("print v" .. tostring(x)))
         end
-        ::__pytra_continue_12::
     end
     -- Print final values together.
     table.insert(lines, "print (v0 + v1 + v2 + v3)")
@@ -484,11 +369,7 @@ end
 
 function run_demo()
     local demo_lines = {  }
-    table.insert(demo_lines, "let a = 10")
-    table.insert(demo_lines, "let b = 3")
-    table.insert(demo_lines, "a = (a + b) * 2")
-    table.insert(demo_lines, "print a")
-    table.insert(demo_lines, "print a / b")
+    table.move({"let a = 10", "let b = 3", "a = (a + b) * 2", "print a", "print a / b"}, 1, 5, #(demo_lines) + 1, demo_lines)
     
     local tokens = tokenize(demo_lines)
     local parser = Parser.new(tokens)

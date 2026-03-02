@@ -322,8 +322,58 @@ class LuaNativeEmitter:
         if len(body) == 0:
             self._emit_line("do end")
             return
-        for stmt in body:
-            self._emit_stmt(stmt)
+        i = 0
+        while i < len(body):
+            head = self._append_chain_stmt_parts(body[i])
+            if head is not None:
+                owner = head[0]
+                args: list[str] = [head[1]]
+                j = i + 1
+                while j < len(body):
+                    nxt = self._append_chain_stmt_parts(body[j])
+                    if nxt is None or nxt[0] != owner:
+                        break
+                    args.append(nxt[1])
+                    j += 1
+                if len(args) >= 2:
+                    self._emit_leading_trivia(body[i], prefix="-- ")
+                    self._emit_line(
+                        "table.move({" + ", ".join(args) + "}, 1, " + str(len(args)) + ", #(" + owner + ") + 1, " + owner + ")"
+                    )
+                    i = j
+                    continue
+            self._emit_stmt(body[i])
+            i += 1
+
+    def _is_safe_append_chain_arg_node(self, node: Any) -> bool:
+        if not isinstance(node, dict):
+            return False
+        kind = node.get("kind")
+        return kind in {"Name", "Constant", "Attribute", "Subscript"}
+
+    def _append_chain_stmt_parts(self, stmt_any: Any) -> tuple[str, str] | None:
+        if not isinstance(stmt_any, dict) or stmt_any.get("kind") != "Expr":
+            return None
+        value_any = stmt_any.get("value")
+        if not isinstance(value_any, dict) or value_any.get("kind") != "Call":
+            return None
+        func_any = value_any.get("func")
+        if not isinstance(func_any, dict) or func_any.get("kind") != "Attribute":
+            return None
+        if _safe_ident(func_any.get("attr"), "") != "append":
+            return None
+        owner_any = func_any.get("value")
+        if not isinstance(owner_any, dict) or owner_any.get("kind") != "Name":
+            return None
+        args_any = value_any.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        keywords_any = value_any.get("keywords")
+        keywords = keywords_any if isinstance(keywords_any, list) else []
+        if len(args) != 1 or len(keywords) != 0:
+            return None
+        if not self._is_safe_append_chain_arg_node(args[0]):
+            return None
+        return (self._render_expr(owner_any), self._render_expr(args[0]))
 
     def _has_continue_in_block(self, body_any: Any) -> bool:
         body = self._dict_list(body_any)
