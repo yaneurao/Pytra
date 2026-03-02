@@ -118,6 +118,7 @@ class CSharpEmitter(CodeEmitter):
         self.needs_dict_str_object_helper: bool = False
         self.current_return_east_type: str = ""
         self.top_function_names: set[str] = set()
+        self.current_ref_vars: set[str] = set()
 
     # NOTE:
     # C# selfhost generated code does not use virtual dispatch by default.
@@ -811,6 +812,66 @@ class CSharpEmitter(CodeEmitter):
                         return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">(" + rendered_args[0] + ")"
         return self.render_expr(value_obj)
 
+    def _is_container_east_type(self, east_type_name: str) -> bool:
+        t = self.normalize_type_name(east_type_name)
+        return (
+            t.startswith("list[")
+            or t.startswith("tuple[")
+            or t.startswith("dict[")
+            or t.startswith("set[")
+            or t in {"bytes", "bytearray"}
+        )
+
+    def _materialize_container_value_from_ref(
+        self,
+        value_obj: Any,
+        rendered_value: str,
+        east_type_hint: str,
+        *,
+        target_name_raw: str,
+    ) -> str:
+        node = self.any_to_dict_or_empty(value_obj)
+        if self.any_dict_get_str(node, "kind", "") != "Name":
+            return rendered_value
+        src_raw = self.any_dict_get_str(node, "id", "")
+        if src_raw == "" or src_raw == target_name_raw:
+            return rendered_value
+        if src_raw not in self.current_ref_vars:
+            return rendered_value
+        hint = self.normalize_type_name(east_type_hint)
+        if hint.startswith("list[") and hint.endswith("]"):
+            elem_t = self._cs_type(hint[5:-1].strip())
+            if elem_t == "":
+                elem_t = "object"
+            return "new System.Collections.Generic.List<" + elem_t + ">(" + rendered_value + ")"
+        if hint.startswith("dict[") and hint.endswith("]"):
+            parts = self.split_generic(hint[5:-1].strip())
+            if len(parts) == 2:
+                key_t = self._cs_type(parts[0])
+                val_t = self._cs_type(parts[1])
+                if key_t == "":
+                    key_t = "object"
+                if val_t == "":
+                    val_t = "object"
+                return "new System.Collections.Generic.Dictionary<" + key_t + ", " + val_t + ">(" + rendered_value + ")"
+        if hint.startswith("set[") and hint.endswith("]"):
+            elem_t = self._cs_type(hint[4:-1].strip())
+            if elem_t == "":
+                elem_t = "object"
+            return "new System.Collections.Generic.HashSet<" + elem_t + ">(" + rendered_value + ")"
+        if hint in {"bytes", "bytearray"}:
+            return "new System.Collections.Generic.List<byte>(" + rendered_value + ")"
+        return rendered_value
+
+    def _render_assignment_value_with_hint(self, value_obj: Any, east_type_hint: str, *, target_name_raw: str) -> str:
+        rendered = self._render_expr_with_type_hint(value_obj, east_type_hint)
+        return self._materialize_container_value_from_ref(
+            value_obj,
+            rendered,
+            east_type_hint,
+            target_name_raw=target_name_raw,
+        )
+
     def _render_list_repeat(self, list_node: dict[str, Any], list_expr: str, count_expr: str) -> str:
         """Python の list 乗算（`[x] * n`）を C# 式へ lower する。"""
         list_t = self.get_expr_type(list_node)
@@ -1455,6 +1516,8 @@ class CSharpEmitter(CodeEmitter):
         prev_declared: dict[str, str] = dict(self.declared_var_types)
         prev_method_scope = self.in_method_scope
         prev_return_type = self.current_return_east_type
+        prev_ref_vars = self.current_ref_vars
+        self.current_ref_vars = set()
         self.in_method_scope = in_class is not None
 
         fn_name_raw = self.any_to_str(fn.get("name"))
@@ -1509,6 +1572,8 @@ class CSharpEmitter(CodeEmitter):
                 args.append(arg_cs_t + " " + safe)
             scope_names.add(arg_name)
             self.declared_var_types[arg_name] = self.normalize_type_name(arg_east_t)
+            if self._is_container_east_type(arg_east_t):
+                self.current_ref_vars.add(arg_name)
 
         if is_constructor:
             class_name = self._safe_name(in_class if in_class is not None else "")
@@ -1558,6 +1623,7 @@ class CSharpEmitter(CodeEmitter):
         self.declared_var_types = prev_declared
         self.in_method_scope = prev_method_scope
         self.current_return_east_type = prev_return_type
+        self.current_ref_vars = prev_ref_vars
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """文ノードを C# へ出力する。"""
@@ -1887,7 +1953,7 @@ class CSharpEmitter(CodeEmitter):
             t = self.render_expr(target)
             v = ""
             if t_hint != "":
-                v = self._render_expr_with_type_hint(value_obj, t_hint)
+                v = self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw="")
             else:
                 v = self.render_expr(value_obj)
             self.emit(self.syntax_line("annassign_assign", "{target} = {value};", {"target": t, "value": v}))
@@ -1909,7 +1975,7 @@ class CSharpEmitter(CodeEmitter):
                 else:
                     self.emit(t_cs + " " + name + ";")
             else:
-                value = self._render_expr_with_type_hint(value_obj, t_east)
+                value = self._render_assignment_value_with_hint(value_obj, t_east, target_name_raw=name_raw)
                 if use_var_decl or t_cs == "" or t_cs == "object":
                     if value == "null":
                         self.emit("object " + name + " = null;")
@@ -1920,7 +1986,16 @@ class CSharpEmitter(CodeEmitter):
             return
 
         if value_obj is not None:
-            self.emit(name + " = " + self._render_expr_with_type_hint(value_obj, self.declared_var_types.get(name_raw, t_east)) + ";")
+            self.emit(
+                name
+                + " = "
+                + self._render_assignment_value_with_hint(
+                    value_obj,
+                    self.declared_var_types.get(name_raw, t_east),
+                    target_name_raw=name_raw,
+                )
+                + ";"
+            )
 
     def _emit_assign(self, stmt: dict[str, Any]) -> None:
         target = self.primary_assign_target(stmt)
@@ -1936,7 +2011,7 @@ class CSharpEmitter(CodeEmitter):
                 if t_east != "":
                     self.declared_var_types[name_raw] = t_east
                 t_cs = self._cs_type(t_east)
-                init_value = self._render_expr_with_type_hint(value_obj, t_east)
+                init_value = self._render_assignment_value_with_hint(value_obj, t_east, target_name_raw=name_raw)
                 if t_cs.startswith("(") or t_cs == "" or t_cs == "object":
                     if init_value == "null":
                         self.emit("object " + name + " = null;")
@@ -1945,7 +2020,11 @@ class CSharpEmitter(CodeEmitter):
                 else:
                     self.emit(t_cs + " " + name + " = " + init_value + ";")
                 return
-            assigned_value = self.render_expr(value_obj)
+            hint_t = self.declared_var_types.get(name_raw, "")
+            if hint_t != "":
+                assigned_value = self._render_assignment_value_with_hint(value_obj, hint_t, target_name_raw=name_raw)
+            else:
+                assigned_value = self.render_expr(value_obj)
             self.emit(name + " = " + assigned_value + ";")
             return
 

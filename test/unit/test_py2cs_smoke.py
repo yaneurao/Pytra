@@ -260,6 +260,31 @@ class Child(Base):
             cs,
         )
 
+    def test_ref_container_args_materialize_value_path_with_copy_ctor(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "ref_container_args.py"
+            src.write_text(
+                "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+                "    a: list[int] = xs\n"
+                "    b: dict[str, int] = ys\n"
+                "    a.append(1)\n"
+                "    b['k'] = 2\n"
+                "    return len(a) + len(b)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+        self.assertIn(
+            "System.Collections.Generic.List<long> a = new System.Collections.Generic.List<long>(xs);",
+            cs,
+        )
+        self.assertIn(
+            "System.Collections.Generic.Dictionary<string, long> b = new System.Collections.Generic.Dictionary<string, long>(ys);",
+            cs,
+        )
+        self.assertNotIn("System.Collections.Generic.List<long> a = xs;", cs)
+        self.assertNotIn("System.Collections.Generic.Dictionary<string, long> b = ys;", cs)
+
     def test_try_with_multiple_except_handlers_is_emitted(self) -> None:
         east = {
             "kind": "Module",

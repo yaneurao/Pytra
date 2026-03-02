@@ -147,6 +147,22 @@
   - `python3 tools/check_py2kotlin_transpile.py`
   - `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --ignore-unstable-stdout 18_mini_language_interpreter`
 
+## S4-01 C# 展開メモ（S4-01-S1-01）
+
+- 変更点:
+  - `cs_emitter` に `current_ref_vars` と container 判定 helper を追加し、関数引数のコンテナ型を `container_ref_boundary` として追跡する。
+  - `AnnAssign/Assign` の初期化・再代入で、右辺が ref 境界の `Name` かつ左辺ヒントがコンテナ型のとき、
+    - `list[T] -> new List<T>(src)`
+    - `dict[K,V] -> new Dictionary<K,V>(src)`
+    - `set[T] -> new HashSet<T>(src)`
+    - `bytes/bytearray -> new List<byte>(src)`
+    を適用して値経路へ materialize する。
+  - `test_py2cs_smoke` に `test_ref_container_args_materialize_value_path_with_copy_ctor` を追加し、alias代入再発を検知する。
+- 検証:
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（PASS）
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
+  - `python3 tools/check_py2cs_transpile.py` は既存未対応 fixture（`Yield` / `Swap`）2件で fail 継続（今回変更の新規退行なし）。
+
 分解:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
@@ -156,6 +172,12 @@
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] GC 系 backend（Java or Kotlin）へ pilot 実装し、同一判定規則での縮退を確認する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] `cs/js/ts/go/swift/ruby/lua` へ順次展開し、backend ごとの runtime 依存差を吸収する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S1-01] C# backend へ展開し、ref境界引数のコンテナを copy ctor で value path 材料化する。
+- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend の動的コンテナ helper 境界へ同一判定規則を展開する。
+- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go backend へ展開し、`any` 境界と typed 値型経路を分離する。
+- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
+- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
+- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様に運用ルール（参照管理境界と rollback 手段）を追記する。
 
@@ -169,3 +191,4 @@
 - 2026-03-02: S3-01 として Rust emitter に参照引数から値型ローカルへの `to_vec()/clone()` 材料化を実装し、typed value path を安全に通す pilot を追加した（unit/transpile/parity 通過）。
 - 2026-03-02: S3-02 として Kotlin emitter に `ref_vars` 追跡と `AnnAssign/Assign` の `toMutableList()/toMutableMap()` 材料化を実装し、GC backend でも同一境界規則の pilot を追加した。
 - 2026-03-02: S3-03 として Kotlin smoke に回帰テストを追加し、`check_py2kotlin_transpile` + sample parity(case18) まで通過を確認した。
+- 2026-03-02: S4-01 の分割を追加し、S4-01-S1-01 として C# backend に copy ctor 材料化を実装。`test_py2cs_smoke` と sample parity(case18) を通過、`check_py2cs_transpile` の `Yield/Swap` 失敗は既存既知として継続確認。
