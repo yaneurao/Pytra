@@ -171,6 +171,33 @@ def _resolved_type_name(node: Any) -> str:
     return resolved
 
 
+def _type_is_dict(resolved_type: str) -> bool:
+    t = resolved_type.replace(" ", "")
+    return t.startswith("dict[")
+
+
+def _type_is_sequence_like(resolved_type: str) -> bool:
+    t = resolved_type.replace(" ", "")
+    return t.startswith("list[") or t.startswith("tuple[") or t.startswith("set[") or t in {
+        "list",
+        "tuple",
+        "set",
+        "bytes",
+        "bytearray",
+    }
+
+
+def _render_membership_expr(container_expr: str, item_expr: str, container_node: Any) -> str:
+    container_type = _resolved_type_name(container_node)
+    if _type_is_dict(container_type):
+        return "array_key_exists(" + item_expr + ", " + container_expr + ")"
+    if _type_is_sequence_like(container_type):
+        return "in_array(" + item_expr + ", " + container_expr + ", true)"
+    if container_type == "str":
+        return "(strpos(" + container_expr + ", strval(" + item_expr + ")) !== false)"
+    return "__pytra_contains(" + container_expr + ", " + item_expr + ")"
+
+
 def _call_name(expr: dict[str, Any]) -> str:
     func_any = expr.get("func")
     if not isinstance(func_any, dict):
@@ -463,7 +490,13 @@ def _render_expr(expr: Any) -> str:
         i = 0
         while i < len(ops) and i < len(comps):
             right = _render_expr(comps[i])
-            parts.append("(" + cur_left + " " + _compare_symbol(ops[i]) + " " + right + ")")
+            op_i = ops[i]
+            if op_i == "In":
+                parts.append("(" + _render_membership_expr(right, cur_left, comps[i]) + ")")
+            elif op_i == "NotIn":
+                parts.append("(!" + _render_membership_expr(right, cur_left, comps[i]) + ")")
+            else:
+                parts.append("(" + cur_left + " " + _compare_symbol(op_i) + " " + right + ")")
             cur_left = right
             i += 1
         if len(parts) == 1:
@@ -513,15 +546,25 @@ def _render_expr(expr: Any) -> str:
             i += 1
         return "[" + ", ".join(rendered) + "]"
     if kind == "Dict":
-        keys_any = expr.get("keys")
-        vals_any = expr.get("values")
-        keys = keys_any if isinstance(keys_any, list) else []
-        vals = vals_any if isinstance(vals_any, list) else []
         pairs: list[str] = []
-        i = 0
-        while i < len(keys) and i < len(vals):
-            pairs.append(_render_expr(keys[i]) + " => " + _render_expr(vals[i]))
-            i += 1
+        entries_any = expr.get("entries")
+        entries = entries_any if isinstance(entries_any, list) else []
+        if len(entries) > 0:
+            i = 0
+            while i < len(entries):
+                entry = entries[i]
+                if isinstance(entry, dict):
+                    pairs.append(_render_expr(entry.get("key")) + " => " + _render_expr(entry.get("value")))
+                i += 1
+        else:
+            keys_any = expr.get("keys")
+            vals_any = expr.get("values")
+            keys = keys_any if isinstance(keys_any, list) else []
+            vals = vals_any if isinstance(vals_any, list) else []
+            i = 0
+            while i < len(keys) and i < len(vals):
+                pairs.append(_render_expr(keys[i]) + " => " + _render_expr(vals[i]))
+                i += 1
         return "[" + ", ".join(pairs) + "]"
     if kind == "IfExp":
         test = _render_expr(expr.get("test"))
@@ -812,6 +855,25 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
 
     body_any = cls.get("body")
     body = body_any if isinstance(body_any, list) else []
+    dataclass_fields: list[str] = []
+    if cls.get("dataclass") is True:
+        j = 0
+        while j < len(body):
+            node = body[j]
+            if isinstance(node, dict) and node.get("kind") == "AnnAssign":
+                target_any = node.get("target")
+                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                    field = _safe_ident(target_any.get("id"), "field")
+                    if field not in dataclass_fields:
+                        dataclass_fields.append(field)
+            j += 1
+    if len(dataclass_fields) > 0:
+        j = 0
+        while j < len(dataclass_fields):
+            lines.append(indent + "    public $" + dataclass_fields[j] + ";")
+            j += 1
+        lines.append("")
+
     has_init = False
     i = 0
     while i < len(body):
@@ -826,8 +888,22 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     if len(lines) > 0 and lines[-1] == "":
         lines.pop()
     if not has_init:
-        lines.append(indent + "    public function __construct() {")
-        lines.append(indent + "    }")
+        if len(dataclass_fields) > 0:
+            params: list[str] = []
+            j = 0
+            while j < len(dataclass_fields):
+                params.append("$" + dataclass_fields[j])
+                j += 1
+            lines.append(indent + "    public function __construct(" + ", ".join(params) + ") {")
+            j = 0
+            while j < len(dataclass_fields):
+                field = dataclass_fields[j]
+                lines.append(indent + "        $this->" + field + " = $" + field + ";")
+                j += 1
+            lines.append(indent + "    }")
+        else:
+            lines.append(indent + "    public function __construct() {")
+            lines.append(indent + "    }")
     lines.append(indent + "}")
     return lines
 
@@ -897,6 +973,13 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         if isinstance(name_any, str):
             fn_names.add(_safe_ident(name_any, "f"))
         i += 1
+    class_names: set[str] = set()
+    i = 0
+    while i < len(classes):
+        name_any = classes[i].get("name")
+        if isinstance(name_any, str):
+            class_names.add(_safe_ident(name_any, "PytraClass"))
+        i += 1
 
     if "__pytra_main" in fn_names and "main" not in fn_names:
         lines.append("function main(): void {")
@@ -906,9 +989,9 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         fn_names.add("main")
 
     entry_name = "__pytra_main"
-    if entry_name in fn_names:
+    if entry_name in fn_names or entry_name in class_names:
         entry_name = "__pytra_entry_main"
-    while entry_name in fn_names:
+    while entry_name in fn_names or entry_name in class_names:
         entry_name = entry_name + "_"
 
     lines.append("function " + entry_name + "(): void {")
