@@ -49,7 +49,7 @@
 - [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
 - [x] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
 - [x] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
 - [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
 - [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
 
@@ -65,6 +65,7 @@
 - 2026-03-02: `CppBinOpNormalizePass` を追加し、数値 `+0/-0/*1` の冗長 binop を optimizer 側で縮約。S3-02（cast/compare/binop）を完了扱いへ更新。
 - 2026-03-02: `CppForcoreDirectUnpackHintPass` を追加し、`ForCore` tuple target の `direct_unpack` 判定を optimizer 側ヒント化。`CppBraceOmitHintPass` / `CppForIterModeHintPass` と合わせて S3-01（loop/if/tuple unpack）を完了扱いへ更新。
 - 2026-03-02: `CppLower` が文ノードへ `cpp_stmt_kind_v1` を付与し、`CppEmitter.emit_stmt` は hint 優先で dispatch する構成へ更新。S3-03 の「EAST3 生 kind 直参照削減」を開始（未完）。
+- 2026-03-02: `CppLower` が式ノードにも `cpp_expr_kind_v1` を付与し、`CppEmitter.render_expr` も hint 優先 dispatch へ移行。`_emit_stmt_kind_fallback` をテーブル駆動化し、S3-03 を完了扱いへ更新。
 - 2026-03-02: 境界テストとして `test_cpp_optimizer.py` に `CppLower` / `CppIrOptimizer` / `emit_cpp_from_east` の接続検証を追加し、unit 回帰を固定（S4-01）。
 - 2026-03-02: `tools/check_py2cpp_transpile.py`（136/136 pass, skip6）、`tools/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`、`tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot 08_langtons_ant 18_mini_language_interpreter --ignore-unstable-stdout`（3/3 pass）で非退行を確認（S4-02）。
 
