@@ -296,17 +296,14 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
     for (int64 i = 0; i < var_count; ++i)
         lines.append(str("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1)));
     // Force evaluation of many arithmetic expressions.
-    int64 __next_capture_2 = 0;
     for (int64 i = 0; i < loops; ++i) {
         int64 x = i % var_count;
         int64 y = (i + 3) % var_count;
         int64 c1 = i % 7 + 1;
         int64 c2 = i % 11 + 2;
         lines.append(str("v" + ::std::to_string(x) + " = (v" + ::std::to_string(x) + " * " + ::std::to_string(c1) + " + v" + ::std::to_string(y) + " + 10000) / " + ::std::to_string(c2)));
-        if (i == __next_capture_2) {
+        if (i % 97 == 0)
             lines.append(str("print v" + ::std::to_string(x)));
-            __next_capture_2 += 97;
-        }
     }
     // Print final values together.
     lines.append(str("print (v0 + v1 + v2 + v3)"));

@@ -92,6 +92,31 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertIsInstance(test_expr, dict)
         self.assertEqual(test_expr.get("cpp_expr_kind_v1"), "Constant")
 
+    def test_cpp_lower_does_not_annotate_non_ast_kind_maps(self) -> None:
+        doc = {
+            "kind": "Module",
+            "meta": {},
+            "body": [
+                {
+                    "kind": "ClassDef",
+                    "name": "Token",
+                    "base": None,
+                    "dataclass": True,
+                    "field_types": {"kind": "str", "text": "str"},
+                    "body": [],
+                }
+            ],
+        }
+        out_doc, _report = lower_cpp_from_east3(doc)
+        body = out_doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(len(body), 1)
+        cls = body[0]
+        self.assertIsInstance(cls, dict)
+        field_types = cls.get("field_types")
+        self.assertIsInstance(field_types, dict)
+        self.assertNotIn("cpp_expr_kind_v1", field_types)
+
     def test_cpp_emitter_accepts_stmt_kind_hint(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.emit_stmt({"kind": "Unknown", "cpp_stmt_kind_v1": "Pass"})
