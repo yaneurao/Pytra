@@ -88,6 +88,7 @@ def emit_cpp_from_east(
             "str_index_mode": str_index_mode,
             "str_slice_mode": str_slice_mode,
             "opt_level": opt_level,
+            "cpp_list_model": cpp_list_model,
         }
         lowered_ir, lower_report = lower_cpp_from_east3(
             east_module,

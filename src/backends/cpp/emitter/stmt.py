@@ -1598,6 +1598,9 @@ class CppStatementEmitter:
 
     def _resolve_for_iter_mode(self, stmt: dict[str, Any], iter_expr: dict[str, Any]) -> str:
         """`For` の反復モード（static/runtime）を決定する。"""
+        hint_mode = self.any_to_str(stmt.get("cpp_iter_mode_v1"))
+        if hint_mode in {"runtime_protocol", "static_fastpath"}:
+            return hint_mode
         mode_txt = self.any_to_str(stmt.get("iter_mode"))
         if mode_txt == "runtime_protocol":
             return mode_txt
