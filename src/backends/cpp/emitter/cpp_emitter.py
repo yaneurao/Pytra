@@ -2870,7 +2870,9 @@ class CppEmitter(
         expr_d = self.any_to_dict_or_empty(expr)
         if len(expr_d) == 0:
             return "/* none */"
-        kind = self._node_kind_from_dict(expr_d)
+        kind = self.any_to_str(expr_d.get("cpp_expr_kind_v1"))
+        if kind == "":
+            kind = self._node_kind_from_dict(expr_d)
         hook_kind = self.hook_on_render_expr_kind(kind, expr_d)
         if hook_kind != "":
             return hook_kind

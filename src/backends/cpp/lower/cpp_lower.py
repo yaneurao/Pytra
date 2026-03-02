@@ -43,6 +43,10 @@ def _annotate_stmt_kind_hints(node: Any) -> int:
         if node.get("cpp_stmt_kind_v1") != kind_obj:
             node["cpp_stmt_kind_v1"] = kind_obj
             changed += 1
+    elif isinstance(kind_obj, str) and kind_obj != "Module":
+        if node.get("cpp_expr_kind_v1") != kind_obj:
+            node["cpp_expr_kind_v1"] = kind_obj
+            changed += 1
     for value in node.values():
         changed += _annotate_stmt_kind_hints(value)
     return changed
