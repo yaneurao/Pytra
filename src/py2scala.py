@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.scala.emitter import load_scala_profile, transpile_to_scala, transpile_to_scala_native
+from backends.scala.lower import lower_east3_to_scala_ir
+from backends.scala.optimizer import optimize_scala_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,8 +125,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    scala_ir = lower_east3_to_scala_ir(east)
+    scala_ir = optimize_scala_ir(scala_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    scala_src = transpile_to_scala_native(east)
+    scala_src = transpile_to_scala_native(scala_ir)
     output_path.write_text(scala_src, encoding="utf-8")
     _copy_scala_runtime(output_path)
     return 0

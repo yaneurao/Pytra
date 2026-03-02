@@ -64,7 +64,7 @@
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約、失敗時 fail-closed、層ごとの禁止事項）を定義する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ・命名規約（`lower/*`, `optimizer/*`, `emitter/*`）と import 規約を文書化する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave 1（`rs`）で `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave 1（`scala`）で `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave 1（`scala`）で `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave 1の回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2（`js/ts/cs`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3（`go/java/kotlin/swift`）へ同テンプレートを展開する。
@@ -148,3 +148,5 @@ import 規約:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Lower/Optimizer/Emitter 契約と fail-closed 規約を確定。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ命名/import 規約を確定し、Wave1 テンプレート方針を記録。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `backends/rs/lower` と `backends/rs/optimizer` を導入し、`py2rs.py` を 3層配線へ切替。`check_py2rs_transpile` を pass。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] `backends/scala/lower` と `backends/scala/optimizer` を導入し、`py2scala.py` を 3層配線へ切替。`check_py2scala_transpile`（`checked=141 ok=141 fail=0`）を pass。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰で `runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout` を実行したが `SUMMARY cases=18 pass=6 fail=12`（`scala` の `run_failed=12`）で未達。`ArrayBuffer[Any]` / `ArrayBuffer[Long]` 型不整合と `Not found: value` 系 compile error の解消が次アクション。

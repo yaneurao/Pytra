@@ -1,1 +1,1 @@
-"""Scala hooks package."""
+"""Scala backend package."""
