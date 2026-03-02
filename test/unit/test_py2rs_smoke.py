@@ -225,6 +225,8 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertNotIn("grid.len() as i64 + ((y) as i64)", rust)
         self.assertIn("} else if d == 1 {", rust)
         self.assertIn("} else if d == 2 {", rust)
+        self.assertIn("if i == __next_capture_", rust)
+        self.assertNotIn("if i % capture_every == 0 {", rust)
 
     def test_sample18_list_ref_params_prefer_slice_signature(self) -> None:
         sample = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"

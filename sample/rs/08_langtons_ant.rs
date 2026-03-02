@@ -8,18 +8,18 @@ use crate::pytra::runtime::gif::save_gif;
 
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
-fn capture(grid: &Vec<Vec<i64>>, w: i64, h: i64) -> Vec<u8> {
+fn capture(grid: &[Vec<i64>], w: i64, h: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (w * h) as usize];
     let mut y: i64 = 0;
-    for __for_i_1 in (0)..(h) {
-        y = __for_i_1;
+    for __for_i_2 in (0)..(h) {
+        y = __for_i_2;
             let row_base = y * w;
             let mut x: i64 = 0;
-            for __for_i_2 in (0)..(w) {
-                x = __for_i_2;
-                    let __idx_i64_4 = ((row_base + x) as i64);
-                    let __idx_3 = if __idx_i64_4 < 0 { (frame.len() as i64 + __idx_i64_4) as usize } else { __idx_i64_4 as usize };
-                    frame[__idx_3] = (((if grid[((y) as usize)][((x) as usize)] != 0 { 255 } else { 0 })) as u8);
+            for __for_i_4 in (0)..(w) {
+                x = __for_i_4;
+                    let __idx_i64_6 = ((row_base + x) as i64);
+                    let __idx_5 = if __idx_i64_6 < 0 { (frame.len() as i64 + __idx_i64_6) as usize } else { __idx_i64_6 as usize };
+                    frame[__idx_5] = (((if grid[((y) as usize)][((x) as usize)] != 0 { 255 } else { 0 })) as u8);
             }
     }
     return frame;
@@ -42,18 +42,19 @@ fn run_08_langtons_ant() {
     let mut frames: Vec<Vec<u8>> = vec![];
     
     let mut i: i64 = 0;
-    for __for_i_5 in (0)..(steps_total) {
-        i = __for_i_5;
+    let mut __next_capture_7: i64 = 0;
+    for __for_i_8 in (0)..(steps_total) {
+        i = __for_i_8;
             if grid[((y) as usize)][((x) as usize)] == 0 {
                 d = (d + 1) % 4;
-                let __idx_6 = ((y) as usize);
-                let __idx_7 = ((x) as usize);
-                grid[__idx_6][__idx_7] = 1;
+                let __idx_9 = ((y) as usize);
+                let __idx_10 = ((x) as usize);
+                grid[__idx_9][__idx_10] = 1;
             } else {
                 d = (d + 3) % 4;
-                let __idx_8 = ((y) as usize);
-                let __idx_9 = ((x) as usize);
-                grid[__idx_8][__idx_9] = 0;
+                let __idx_11 = ((y) as usize);
+                let __idx_12 = ((x) as usize);
+                grid[__idx_11][__idx_12] = 0;
             }
             if d == 0 {
                 y = (y - 1 + h) % h;
@@ -64,8 +65,9 @@ fn run_08_langtons_ant() {
             } else {
                 x = (x - 1 + w) % w;
             }
-            if i % capture_every == 0 {
+            if i == __next_capture_7 {
                 frames.push(capture(&(grid), w, h));
+            __next_capture_7 += capture_every;
             }
     }
     save_gif(&(out_path), w, h, &(frames), &(grayscale_palette()), 5, 0);

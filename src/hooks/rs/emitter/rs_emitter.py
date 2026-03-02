@@ -2767,6 +2767,17 @@ class RustEmitter(CodeEmitter):
         if kind == "If":
             self._emit_if(stmt)
             return
+        if kind == "CaptureCounterIfPlan":
+            loop_var_raw = self.any_to_str(stmt.get("loop_var"))
+            loop_var = self._safe_name(loop_var_raw)
+            next_counter = self.any_to_str(stmt.get("next_counter_name"))
+            step_expr = self.render_expr(stmt.get("step"))
+            body_stmts = self._dict_stmt_list(stmt.get("body"))
+            self.emit(f"if {loop_var} == {next_counter} {{")
+            self.emit_scoped_stmt_list(body_stmts, set())
+            self.emit(f"{next_counter} += {step_expr};")
+            self.emit("}")
+            return
         if kind == "While":
             self._emit_while(stmt)
             return
@@ -2843,6 +2854,68 @@ class RustEmitter(CodeEmitter):
         self.emit_scoped_stmt_list(else_stmts, set())
         self.emit(self.syntax_text("block_close", "}"))
 
+    def _match_capture_mod_if_plan(self, stmt: dict[str, Any], loop_var_raw: str) -> dict[str, Any] | None:
+        if self.any_dict_get_str(stmt, "kind", "") != "If":
+            return None
+        if len(self._dict_stmt_list(stmt.get("orelse"))) > 0:
+            return None
+        test_d = self.any_to_dict_or_empty(stmt.get("test"))
+        if self.any_dict_get_str(test_d, "kind", "") != "Compare":
+            return None
+        ops = self.any_to_str_list(test_d.get("ops"))
+        comps = self.any_to_list(test_d.get("comparators"))
+        if len(ops) != 1 or len(comps) != 1 or ops[0] != "Eq":
+            return None
+        rhs_zero = self._const_int_literal(comps[0])
+        if rhs_zero != 0:
+            return None
+        mod_d = self.any_to_dict_or_empty(test_d.get("left"))
+        if self.any_dict_get_str(mod_d, "kind", "") != "BinOp":
+            return None
+        if self.any_dict_get_str(mod_d, "op", "") != "Mod":
+            return None
+        left_d = self.any_to_dict_or_empty(mod_d.get("left"))
+        if self.any_dict_get_str(left_d, "kind", "") != "Name":
+            return None
+        if self.any_dict_get_str(left_d, "id", "") != loop_var_raw:
+            return None
+        step_node = mod_d.get("right")
+        if step_node is None:
+            return None
+        if self._expr_mentions_name(step_node, loop_var_raw):
+            return None
+        if not self._expr_is_positive(step_node):
+            return None
+        return {
+            "step": step_node,
+            "body": self._dict_stmt_list(stmt.get("body")),
+            "leading_comments": self.any_to_list(stmt.get("leading_comments")),
+            "trailing_comment": self.any_to_str(stmt.get("trailing_comment")),
+        }
+
+    def _rewrite_capture_mod_if_in_body(self, body: list[dict[str, Any]], loop_var_raw: str, next_counter_name: str) -> tuple[list[dict[str, Any]], bool]:
+        rewritten: list[dict[str, Any]] = []
+        replaced = False
+        for st in body:
+            if not replaced:
+                plan = self._match_capture_mod_if_plan(st, loop_var_raw)
+                if plan is not None:
+                    rewritten.append(
+                        {
+                            "kind": "CaptureCounterIfPlan",
+                            "loop_var": loop_var_raw,
+                            "next_counter_name": next_counter_name,
+                            "step": plan.get("step"),
+                            "body": plan.get("body"),
+                            "leading_comments": plan.get("leading_comments", []),
+                            "trailing_comment": plan.get("trailing_comment", ""),
+                        }
+                    )
+                    replaced = True
+                    continue
+            rewritten.append(st)
+        return rewritten, replaced
+
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         cond, body_stmts = self.prepare_while_stmt_parts(
             stmt,
@@ -2890,6 +2963,13 @@ class RustEmitter(CodeEmitter):
         normalized_matches_default = (not has_normalized_cond) or (cond == default_ascending_cond)
         if is_ascending_mode and step_const == 1 and normalized_matches_default:
             self.emit(f"let mut {target}: {target_type} = {start};")
+            body_to_emit = body
+            if self._const_int_literal(stmt.get("start")) == 0 and target_raw != "":
+                next_counter_name = self.next_tmp("__next_capture")
+                rewritten_body, replaced = self._rewrite_capture_mod_if_in_body(body, target_raw, next_counter_name)
+                if replaced:
+                    self.emit(f"let mut {next_counter_name}: {target_type} = 0;")
+                    body_to_emit = rewritten_body
             loop_index = self.next_tmp("__for_i")
             prev_target_non_negative = target_raw in self.current_non_negative_vars
             prev_target_positive = target_raw in self.current_positive_vars
@@ -2899,7 +2979,7 @@ class RustEmitter(CodeEmitter):
             self.emit(f"for {loop_index} in ({start})..({stop}) {{")
             self.indent += 1
             self.emit(f"{target} = {loop_index};")
-            self.emit_scoped_stmt_list(body, body_scope)
+            self.emit_scoped_stmt_list(body_to_emit, body_scope)
             self.indent -= 1
             self.emit("}")
             if target_raw != "":

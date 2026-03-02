@@ -187,7 +187,7 @@
 4. [x] [ID: P1-RS-S08-QUALITY-01-S2-02] 非負添字が保証される経路で index 正規化式を省略する fastpath を追加する。
 5. [x] [ID: P1-RS-S08-QUALITY-01-S2-03] 単純 `range` 由来ループを Rust `for` へ縮退する fastpath を追加する。
 6. [x] [ID: P1-RS-S08-QUALITY-01-S2-04] `if/elif` 連鎖を `else if` / `match` 相当へ簡素化する出力規則を追加する。
-7. [ ] [ID: P1-RS-S08-QUALITY-01-S2-05] capture 判定 `%` を next-capture カウンタ方式へ置換する fastpath を追加する。
+7. [x] [ID: P1-RS-S08-QUALITY-01-S2-05] capture 判定 `%` を next-capture カウンタ方式へ置換する fastpath を追加する。
 8. [ ] [ID: P1-RS-S08-QUALITY-01-S2-06] 推定可能な `frames` サイズに対する `reserve` 出力規則を追加する。
 9. [ ] [ID: P1-RS-S08-QUALITY-01-S3-01] 回帰テストを追加し、`sample/rs/08` 再生成差分を固定する。
 10. [ ] [ID: P1-RS-S08-QUALITY-01-S3-02] transpile/smoke/parity を実行し、非退行を確認する。
@@ -196,6 +196,7 @@
 - 進捗メモ: [ID: P1-RS-S08-QUALITY-01-S2-02] 簡易 non-negative 解析を追加し、`sample/rs/08` の `grid[y][x]` 経路で負添字正規化式を省略。
 - 進捗メモ: [ID: P1-RS-S08-QUALITY-01-S2-03] ascending `step=1` の `ForRange` を `for` fastpath へ切替え、`sample/rs/08` 主ループを `while` から縮退。
 - 進捗メモ: [ID: P1-RS-S08-QUALITY-01-S2-04] nested `if` を `else if` 連鎖へ平坦化し、`sample/rs/08` の `d` 分岐を簡素化。
+- 進捗メモ: [ID: P1-RS-S08-QUALITY-01-S2-05] `for` fastpath 内で `if i % capture_every == 0` を `next_capture` 比較 + 加算へ置換し、`sample/rs/08` から `%` 判定を除去（unit/transpile/parity 通過）。
 
 ### P2: `from ... import *` 正式対応（wildcard import）
 
