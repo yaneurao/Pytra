@@ -62,10 +62,11 @@
 7. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
 8. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
 9. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
-10. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
-11. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
+10. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
+11. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppLower` / `CppIrOptimizer` を新設し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` へ配線。`test_cpp_optimizer*` と `check_py2cpp_transpile`（136/136, skip6）を通過。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppBraceOmitHintPass` を追加して `If/ForCore` の brace 省略判定を optimizer 側へ移し、emitter は `cpp_omit_braces_v1` ヒント優先で描画するように更新。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `sample/cpp` の `01/08/18` を再生成し、`runtime_parity_check`（target=cpp）で 3/3 pass を確認した。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
