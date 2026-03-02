@@ -42,6 +42,7 @@ fn run_08_langtons_ant() {
     let mut frames: Vec<Vec<u8>> = vec![];
     
     let mut i: i64 = 0;
+    frames.reserve(((if (steps_total) <= 0 { 0 } else { ((steps_total) + (capture_every) - 1) / (capture_every) })) as usize);
     let mut __next_capture_7: i64 = 0;
     for __for_i_8 in (0)..(steps_total) {
         i = __for_i_8;

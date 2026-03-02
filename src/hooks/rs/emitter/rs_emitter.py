@@ -2886,20 +2886,43 @@ class RustEmitter(CodeEmitter):
             return None
         if not self._expr_is_positive(step_node):
             return None
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        reserve_owner = ""
+        if len(body_stmts) == 1:
+            b0 = self.any_to_dict_or_empty(body_stmts[0])
+            if self.any_dict_get_str(b0, "kind", "") == "Expr":
+                call = self.any_to_dict_or_empty(b0.get("value"))
+                if self.any_dict_get_str(call, "kind", "") == "Call":
+                    fn = self.any_to_dict_or_empty(call.get("func"))
+                    if self.any_dict_get_str(fn, "kind", "") == "Attribute":
+                        attr = self.any_dict_get_str(fn, "attr", "")
+                        owner = self.any_to_dict_or_empty(fn.get("value"))
+                        if attr in {"append", "push"} and self.any_dict_get_str(owner, "kind", "") == "Name":
+                            reserve_owner = self.any_dict_get_str(owner, "id", "")
         return {
             "step": step_node,
-            "body": self._dict_stmt_list(stmt.get("body")),
+            "body": body_stmts,
+            "reserve_owner": reserve_owner,
             "leading_comments": self.any_to_list(stmt.get("leading_comments")),
             "trailing_comment": self.any_to_str(stmt.get("trailing_comment")),
         }
 
-    def _rewrite_capture_mod_if_in_body(self, body: list[dict[str, Any]], loop_var_raw: str, next_counter_name: str) -> tuple[list[dict[str, Any]], bool]:
+    def _rewrite_capture_mod_if_in_body(
+        self,
+        body: list[dict[str, Any]],
+        loop_var_raw: str,
+        next_counter_name: str,
+    ) -> tuple[list[dict[str, Any]], bool, Any, str]:
         rewritten: list[dict[str, Any]] = []
         replaced = False
+        matched_step: Any = None
+        matched_reserve_owner = ""
         for st in body:
             if not replaced:
                 plan = self._match_capture_mod_if_plan(st, loop_var_raw)
                 if plan is not None:
+                    matched_step = plan.get("step")
+                    matched_reserve_owner = self.any_to_str(plan.get("reserve_owner"))
                     rewritten.append(
                         {
                             "kind": "CaptureCounterIfPlan",
@@ -2914,7 +2937,7 @@ class RustEmitter(CodeEmitter):
                     replaced = True
                     continue
             rewritten.append(st)
-        return rewritten, replaced
+        return rewritten, replaced, matched_step, matched_reserve_owner
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         cond, body_stmts = self.prepare_while_stmt_parts(
@@ -2966,8 +2989,17 @@ class RustEmitter(CodeEmitter):
             body_to_emit = body
             if self._const_int_literal(stmt.get("start")) == 0 and target_raw != "":
                 next_counter_name = self.next_tmp("__next_capture")
-                rewritten_body, replaced = self._rewrite_capture_mod_if_in_body(body, target_raw, next_counter_name)
+                rewritten_body, replaced, capture_step_node, reserve_owner_raw = self._rewrite_capture_mod_if_in_body(
+                    body,
+                    target_raw,
+                    next_counter_name,
+                )
                 if replaced:
+                    step_expr = self.render_expr(capture_step_node)
+                    if reserve_owner_raw != "":
+                        reserve_owner = self._safe_name(reserve_owner_raw)
+                        reserve_count_expr = "(if (" + stop + ") <= 0 { 0 } else { ((" + stop + ") + (" + step_expr + ") - 1) / (" + step_expr + ") })"
+                        self.emit(reserve_owner + ".reserve((" + reserve_count_expr + ") as usize);")
                     self.emit(f"let mut {next_counter_name}: {target_type} = 0;")
                     body_to_emit = rewritten_body
             loop_index = self.next_tmp("__for_i")
