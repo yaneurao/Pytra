@@ -29,6 +29,7 @@ _LUA_KEYWORDS = {
     "until",
     "while",
 }
+_NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
 
 
 def _safe_ident(name: Any, fallback: str = "value") -> str:
@@ -1104,8 +1105,15 @@ class LuaNativeEmitter:
         if kind == "AnnAssign":
             target_node = stmt.get("target")
             target = self._render_target(target_node)
-            value = self._render_expr(stmt.get("value")) if isinstance(stmt.get("value"), dict) else "nil"
+            value_node = stmt.get("value")
+            value = self._render_expr(value_node) if isinstance(value_node, dict) else "nil"
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                if value_node is None and bool(stmt.get("declare")):
+                    decl_type_any = stmt.get("decl_type")
+                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                    if decl_type in _NIL_FREE_DECL_TYPES:
+                        self._emit_line("local " + target)
+                        return
                 self._emit_line("local " + target + " = " + value)
             else:
                 self._emit_line(target + " = " + value)

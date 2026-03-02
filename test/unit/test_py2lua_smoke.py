@@ -293,6 +293,12 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("local g = __pytra_int((255.0 * t))", lua)
         self.assertIn("local b = __pytra_int((255.0 * (1.0 - t)))", lua)
         self.assertNotIn("math.floor(tonumber((255.0 * (t * t))) or 0)", lua)
+        self.assertIn("local r", lua)
+        self.assertIn("local g", lua)
+        self.assertIn("local b", lua)
+        self.assertNotIn("local r = nil", lua)
+        self.assertNotIn("local g = nil", lua)
+        self.assertNotIn("local b = nil", lua)
 
     def test_lowering_supports_sequence_repeat(self) -> None:
         src = (

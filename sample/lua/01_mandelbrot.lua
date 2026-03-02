@@ -45,9 +45,9 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
         for x = 0, (width) - 1, 1 do
             local px = (x_min + ((x_max - x_min) * (x / __hoisted_cast_2)))
             local it = escape_count(px, py, max_iter)
-            local r = nil
-            local g = nil
-            local b = nil
+            local r
+            local g
+            local b
             if (it >= max_iter) then
                 r = 0
                 g = 0
