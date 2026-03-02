@@ -77,7 +77,7 @@
 2. [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 各言語の冗長構文パターンを棚卸しし、適用境界を定義する。
 3. [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-01] `js/ts` の loop 補助変数（`__start_N`）を簡約する出力規則を実装する。
 4. [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] `ruby/lua` の append 連鎖を簡約する出力規則を実装する。
-5. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
+5. [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
 6. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰テストを追加して可読性退行を検知可能にする。
 7. [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] 対象 sample を再生成し、transpile/parity で非退行を確認する。
 

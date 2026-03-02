@@ -341,12 +341,10 @@ public final class Pytra_18_mini_language_interpreter {
 
     public static java.util.ArrayList<String> build_benchmark_source(long var_count, long loops) {
         java.util.ArrayList<String> lines = new java.util.ArrayList<String>();
-        long __step_0 = 1L;
-        for (long i = 0L; (__step_0 >= 0L) ? (i < var_count) : (i > var_count); i += __step_0) {
+        for (long i = 0L; i < var_count; i += 1L) {
             lines.add("let v" + String.valueOf(i) + " = " + String.valueOf(i + 1L));
         }
-        long __step_1 = 1L;
-        for (long i = 0L; (__step_1 >= 0L) ? (i < loops) : (i > loops); i += __step_1) {
+        for (long i = 0L; i < loops; i += 1L) {
             long x = i % var_count;
             long y = (i + 3L) % var_count;
             long c1 = i % 7L + 1L;
