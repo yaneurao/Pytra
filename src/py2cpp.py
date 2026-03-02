@@ -58,16 +58,16 @@ build_module_type_schema = East1BuildHelpers.build_module_type_schema
 from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
 
-from backends.cpp.runtime_emit import RUNTIME_CPP_COMPAT_ROOT
-from backends.cpp.runtime_emit import RUNTIME_CPP_GEN_ROOT
-from backends.cpp.runtime_emit import _is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
-from backends.cpp.runtime_emit import _join_runtime_path as _join_runtime_path_impl
-from backends.cpp.runtime_emit import _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
-from backends.cpp.runtime_emit import _prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl
-from backends.cpp.runtime_emit import _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl
-from backends.cpp.runtime_emit import _runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl
-from backends.cpp.runtime_emit import _runtime_namespace_for_tail as _runtime_namespace_for_tail_impl
-from backends.cpp.runtime_emit import _runtime_output_rel_tail as _runtime_output_rel_tail_impl
+from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_COMPAT_ROOT
+from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_GEN_ROOT
+from backends.cpp.emitter.runtime_paths import is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
+from backends.cpp.emitter.runtime_paths import join_runtime_path as _join_runtime_path_impl
+from backends.cpp.emitter.runtime_paths import module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
+from backends.cpp.emitter.runtime_paths import prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl
+from backends.cpp.emitter.runtime_paths import runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl
+from backends.cpp.emitter.runtime_paths import runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl
+from backends.cpp.emitter.runtime_paths import runtime_namespace_for_tail as _runtime_namespace_for_tail_impl
+from backends.cpp.emitter.runtime_paths import runtime_output_rel_tail as _runtime_output_rel_tail_impl
 
 
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")

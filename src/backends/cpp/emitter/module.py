@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from pytra.std.typing import Any
-from backends.cpp.runtime_emit import (
-    _module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
-    _runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl,
+from backends.cpp.emitter.runtime_paths import (
+    module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
+    runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl,
 )
 from pytra.compiler.transpile_cli import (
     append_unique_non_empty,

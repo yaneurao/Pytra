@@ -3,7 +3,7 @@ from __future__ import annotations
 from pytra.std.pathlib import Path
 from pytra.std.typing import Any
 
-from backends.cpp.runtime_emit.cpp_runtime_emit import (
+from backends.cpp.emitter.runtime_paths import (
     RUNTIME_BUILT_IN_SOURCE_ROOT,
     RUNTIME_COMPILER_SOURCE_ROOT,
     RUNTIME_CPP_COMPAT_ROOT,
