@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
-from backends.cpp.profile import AUG_BIN, AUG_OPS, load_cpp_profile
+from backends.cpp.emitter.profile_loader import AUG_BIN, AUG_OPS, load_cpp_profile
 
 
 class CppStatementEmitter:
