@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-02
+最終更新: 2026-03-03
 
 ## 文脈運用ルール
 
@@ -78,6 +78,20 @@
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S2-06] `src/backends/cpp/{hooks,header,multifile,profile,runtime_emit}` の Python 実体を削除し、`src/backends/cpp/` 直下を `lower/optimizer/emitter` のみに整理。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S3-01] `tools/check_cpp_backend_layout.py` を追加し、旧ディレクトリ残存と旧 import（`backends.cpp.{hooks,header,multifile,profile,runtime_emit}`）を検査可能にした。
 - 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S3-02] `check_cpp_backend_layout` / `check_py2cpp_boundary` / `check_py2cpp_transpile` / `sample/py/01 -> py2cpp` を実行し、移設範囲の非退行を確認。
+
+### P0: Nim runtime 整備で `sample/` parity 全件通過
+
+文脈: [docs/ja/plans/p0-nim-sample-parity-runtime-hardening.md](../plans/p0-nim-sample-parity-runtime-hardening.md)
+
+1. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01] Nim runtime を整備し、`sample/` の Nim parity を全件通過させる。
+2. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-01] `sample` 全件の Nim parity ベースラインを取得し、失敗ケース一覧と失敗カテゴリを確定する。
+3. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-02] 失敗ケースを runtime API 不足・契約不整合・emitter 側問題に切り分け、修正優先順を確定する。
+4. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-01] `py_runtime.nim` の不足 API を fail-closed で補完する。
+5. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-02] emitter と runtime の呼び出し契約を整合し、必要な出力修正を実施する。
+6. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-03] case 固有崩れを最小修正で解消する。
+7. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、transpile/compile/runtime エラーを全件解消する。
+8. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認する。
+9. [ ] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰で非退行を確認する。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
