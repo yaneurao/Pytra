@@ -160,7 +160,7 @@
 5. [x] [ID: P1-RS-S18-QUALITY-01-S2-02] 非負添字が確定する経路で index 正規化式を省略する fastpath を追加する。
 6. [x] [ID: P1-RS-S18-QUALITY-01-S2-03] tokenize の文字走査を `String` 汎用経路から軽量経路（bytes/chars）へ縮退する。
 7. [ ] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
-8. [ ] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
+8. [x] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
 9. [x] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
 10. [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
 11. [ ] [ID: P1-RS-S18-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長出力パターンの再発を検知可能にする。
@@ -171,6 +171,7 @@
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-01] `AnnAssign` の list 添字初期化で borrow 優先経路を追加し、`eval_expr` の `ExprNode` 取得を clone から `&ExprNode` 参照へ縮退（unit/transpile/parity 通過）。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-02] `if` 条件の then 節限定で符号ヒントを導入し、`single_tag > 0` 配下の `single_char_token_kinds[single_tag - 1]` から負添字正規化式を除去（unit/transpile/parity 通過）。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-03] `str` 添字の非負確定経路で `py_str_at_nonneg` を導入し、`sample/rs/18` tokenize ホットパスを軽量化（unit/transpile/parity 通過）。
+- 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-05] cast 無し `str` Add 連鎖を `format!` 1回へ平坦化し、`sample/rs/18` の nested `format!` を削減（unit/transpile/parity 通過）。
 
 ### P1: sample/rs/08 出力品質改善（可読性 + ホットパス縮退）
 

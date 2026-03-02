@@ -3660,12 +3660,47 @@ class RustEmitter(CodeEmitter):
                 if self.normalize_type_name(to_t) == "str":
                     right_t = "str"
         if op == "Add" and (left_t == "str" or right_t == "str"):
+            flat_terms = self._try_flatten_string_add_terms(expr)
+            if flat_terms is not None and len(flat_terms) >= 2:
+                return "format!(\"" + ("{}" * len(flat_terms)) + "\", " + ", ".join(flat_terms) + ")"
             return "format!(\"{}{}\", " + left + ", " + right + ")"
         custom = self.hook_on_render_binop(expr, left, right)
         if custom != "":
             return custom
         mapped = self.bin_ops.get(op, "+")
         return left + " " + mapped + " " + right
+
+    def _try_flatten_string_add_terms(self, expr_node: Any) -> list[str] | None:
+        """cast無しの `str` 連結 Add を平坦化し、`format!` 引数列へ変換する。"""
+        d = self.any_to_dict_or_empty(expr_node)
+        if self.any_dict_get_str(d, "kind", "") != "BinOp":
+            return None
+        if self.any_dict_get_str(d, "op", "") != "Add":
+            return None
+        if len(self._dict_stmt_list(d.get("casts"))) > 0:
+            return None
+
+        left_node = self.any_to_dict_or_empty(d.get("left"))
+        right_node = self.any_to_dict_or_empty(d.get("right"))
+        left_t = self.normalize_type_name(self.get_expr_type(left_node))
+        right_t = self.normalize_type_name(self.get_expr_type(right_node))
+        if left_t != "str" and right_t != "str":
+            return None
+
+        out: list[str] = []
+        left_terms = self._try_flatten_string_add_terms(left_node)
+        if left_terms is not None:
+            out.extend(left_terms)
+        else:
+            out.append(self.render_expr(left_node))
+
+        right_terms = self._try_flatten_string_add_terms(right_node)
+        if right_terms is not None:
+            out.extend(right_terms)
+        else:
+            out.append(self.render_expr(right_node))
+
+        return out
 
     def _should_clone_call_arg_type(self, arg_type: str) -> bool:
         t = self.normalize_type_name(arg_type)

@@ -238,6 +238,7 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("single_char_token_kinds[((single_tag - 1) as usize)]", rust)
         self.assertNotIn("single_char_token_kinds[((if ((single_tag - 1) as i64) < 0", rust)
         self.assertIn("py_str_at_nonneg(&source, ((i) as usize))", rust)
+        self.assertNotIn("format!(\"{}{}\", format!(\"{}{}\",", rust)
         self.assertNotIn("fn tokenize(lines: &Vec<String>) -> Vec<Token> {", rust)
         self.assertNotIn("fn eval_expr(expr_index: i64, expr_nodes: &Vec<ExprNode>", rust)
         self.assertNotIn("fn execute(stmts: &Vec<StmtNode>", rust)

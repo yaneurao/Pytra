@@ -113,7 +113,7 @@ fn tokenize(lines: &[String]) -> Vec<Token> {
                 }
                 continue;
             }
-            panic!("{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", ("tokenize error at line=").to_string(), (line_index).to_string()), (" pos=").to_string()), (i).to_string()), (" ch=").to_string()), ch));
+            panic!("{}", format!("{}{}{}{}{}{}", ("tokenize error at line=").to_string(), (line_index).to_string(), (" pos=").to_string(), (i).to_string(), (" ch=").to_string(), ch));
         }
         tokens.push(Token::new(("NEWLINE").to_string(), ("").to_string(), n, 0));
     }
@@ -163,7 +163,7 @@ impl Parser {
     fn expect(&mut self, kind: &str) -> Token {
         let token: Token = self.current_token();
         if token.kind != kind {
-            panic!("{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", ("parse error at pos=").to_string(), py_any_to_string(&token.pos)), (", expected=").to_string()), kind), (", got=").to_string()), token.kind));
+            panic!("{}", format!("{}{}{}{}{}{}", ("parse error at pos=").to_string(), py_any_to_string(&token.pos), (", expected=").to_string(), kind, (", got=").to_string(), token.kind));
         }
         self.pos += 1;
         return token;
@@ -271,7 +271,7 @@ impl Parser {
             return expr_index;
         }
         let t = self.current_token();
-        panic!("{}", format!("{}{}", format!("{}{}", format!("{}{}", ("primary parse error at pos=").to_string(), py_any_to_string(&t.pos)), (" got=").to_string()), t.kind));
+        panic!("{}", format!("{}{}{}{}", ("primary parse error at pos=").to_string(), py_any_to_string(&t.pos), (" got=").to_string(), t.kind));
     }
 }
 
@@ -355,7 +355,7 @@ fn build_benchmark_source(var_count: i64, loops: i64) -> Vec<String> {
     let mut i: i64 = 0;
     for __for_i_1 in (0)..(var_count) {
         i = __for_i_1;
-            lines.push(format!("{}{}", format!("{}{}", format!("{}{}", ("let v").to_string(), (i).to_string()), (" = ").to_string()), (i + 1).to_string()));
+            lines.push(format!("{}{}{}{}", ("let v").to_string(), (i).to_string(), (" = ").to_string(), (i + 1).to_string()));
     }
     // Force evaluation of many arithmetic expressions.
     let mut i: i64 = 0;
@@ -365,7 +365,7 @@ fn build_benchmark_source(var_count: i64, loops: i64) -> Vec<String> {
             let y: i64 = (i + 3) % var_count;
             let c1: i64 = i % 7 + 1;
             let c2: i64 = i % 11 + 2;
-            lines.push(format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", ("v").to_string(), (x).to_string()), (" = (v").to_string()), (x).to_string()), (" * ").to_string()), (c1).to_string()), (" + v").to_string()), (y).to_string()), (" + 10000) / ").to_string()), (c2).to_string()));
+            lines.push(format!("{}{}{}{}{}{}{}{}{}{}", ("v").to_string(), (x).to_string(), (" = (v").to_string(), (x).to_string(), (" * ").to_string(), (c1).to_string(), (" + v").to_string(), (y).to_string(), (" + 10000) / ").to_string(), (c2).to_string()));
             if i % 97 == 0 {
                 lines.push(format!("{}{}", ("print v").to_string(), (x).to_string()));
             }
