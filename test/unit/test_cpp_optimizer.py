@@ -24,6 +24,7 @@ from backends.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
 from backends.cpp.optimizer.cpp_ir_optimizer import optimize_cpp_ir_module
 from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
 from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
+from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
 from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from backends.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
 from backends.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
@@ -94,7 +95,7 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = optimize_cpp_ir(
             doc,
             opt_level="1",
-            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppConstConditionPass,-CppRangeForShapePass,-CppRuntimeFastPathPass",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppConstConditionPass,-CppRangeForShapePass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -109,15 +110,40 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertFalse(bool(trace[3].get("enabled")))
         self.assertEqual(trace[4].get("name"), "CppRangeForShapePass")
         self.assertFalse(bool(trace[4].get("enabled")))
-        self.assertEqual(trace[5].get("name"), "CppRuntimeFastPathPass")
+        self.assertEqual(trace[5].get("name"), "CppBraceOmitHintPass")
         self.assertFalse(bool(trace[5].get("enabled")))
+        self.assertEqual(trace[6].get("name"), "CppRuntimeFastPathPass")
+        self.assertFalse(bool(trace[6].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
         self.assertIn("CppDeadTempPass enabled=false", trace_text)
         self.assertIn("CppNoOpCastPass enabled=false", trace_text)
         self.assertIn("CppConstConditionPass enabled=false", trace_text)
         self.assertIn("CppRangeForShapePass enabled=false", trace_text)
+        self.assertIn("CppBraceOmitHintPass enabled=false", trace_text)
         self.assertIn("CppRuntimeFastPathPass enabled=false", trace_text)
+
+    def test_cpp_brace_omit_hint_pass_marks_simple_forcore(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "static_fastpath",
+            "iter_plan": {
+                "kind": "StaticRangeForPlan",
+                "start": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                "stop": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                "step": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                "range_mode": "ascending",
+            },
+            "target_plan": {"kind": "NameTarget", "id": "i", "target_type": "int64"},
+            "body": [{"kind": "Expr", "value": {"kind": "Name", "id": "i", "resolved_type": "int64"}}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = CppBraceOmitHintPass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        self.assertTrue(bool(for_stmt.get("cpp_omit_braces_v1")))
 
     def test_optimize_cpp_ir_module_delegates_existing_optimizer(self) -> None:
         doc = _module_doc()

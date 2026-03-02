@@ -58,6 +58,7 @@
 - 2026-03-02: `CppLower` を `pass_through_v0`（EAST3形状維持）で導入。fail-closed 契約として root `dict` + `kind=Module` を必須化。
 - 2026-03-02: `CppIrOptimizer` を既存 `optimize_cpp_ir` への薄い委譲層として導入し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` 配線へ変更。
 - 2026-03-02: `dump_cpp_opt_trace` は `cpp_lower_trace` と既存 `cpp_optimizer_trace` を同一ファイルへ連結出力する方式にした（CLI互換維持）。
+- 2026-03-02: `CppBraceOmitHintPass` を追加し、`If/ForCore` 等の brace 省略判定を optimizer 側で `cpp_omit_braces_v1` ヒント化。emitter は hint 優先で描画する形へ更新（S3-01 部分着手）。
 
 ## C++ IR v0 契約（S1-01）
 
