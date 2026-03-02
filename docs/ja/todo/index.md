@@ -33,6 +33,19 @@
 ## 未完了タスク
 
 
+### P0: EAST3 マーカー経由で C++ tuple unpack を構造化束縛へ縮退
+
+文脈: [docs/ja/plans/p0-east3-cpp-structured-binding-tuple-unpack.md](../plans/p0-east3-cpp-structured-binding-tuple-unpack.md)
+
+1. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01] EAST3 マーカーで安全条件を固定し、C++ tuple unpack を構造化束縛へ縮退する。
+2. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S1-01] 適用条件（宣言時 unpack / tuple 要素確定 / 非Any-object）を仕様化する。
+3. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S1-02] EAST3 マーカースキーマ（例: `cpp_struct_bind_unpack_v1`）と fail-closed 条件を定義する。
+4. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-01] EAST3 optimizer pass で対象 `Assign(TupleTarget)` へマーカーを付与する。
+5. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-02] CppEmitter tuple assign 分岐をマーカー参照型に切替え、構造化束縛出力を実装する。
+6. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-03] マーカー不在/不整合時の fallback を固定し、現行 `std::get` 経路を維持する。
+7. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S3-01] unit テストを追加して構造化束縛適用/非適用境界を回帰固定する。
+8. [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S3-02] `sample/cpp/16` 再生成と transpile チェックで非退行を確認する。
+
 ### P0: EAST3 マーカー経由で C++ 空初期化を `= {};` へ縮退
 
 文脈: [docs/ja/plans/p0-east3-cpp-empty-init-shorthand.md](../plans/p0-east3-cpp-empty-init-shorthand.md)
