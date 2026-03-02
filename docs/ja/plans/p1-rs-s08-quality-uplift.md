@@ -46,7 +46,7 @@
 - `python3 tools/runtime_parity_check.py --case-root sample --targets rs 08_langtons_ant --ignore-unstable-stdout`
 
 分解:
-- [ ] [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長箇所（clone/添字正規化/loop/分岐/capture判定/capacity）をコード断片で固定する。
+- [x] [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長箇所（clone/添字正規化/loop/分岐/capture判定/capacity）をコード断片で固定する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-01] `capture` 返却の不要 `clone` を削減する出力規則を導入する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-02] 非負添字が保証される経路で index 正規化式を省略する fastpath を追加する。
 - [ ] [ID: P1-RS-S08-QUALITY-01-S2-03] 単純 `range` 由来ループを Rust `for` へ縮退する fastpath を追加する。
@@ -58,3 +58,31 @@
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`sample/rs/08` の出力品質改善を `P1` で計画化し TODO へ追加する方針を確定した。
+- 2026-03-02: [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長断片を固定し、実装優先順を `clone -> index正規化 -> loop縮退 -> 分岐簡素化 -> capture判定 -> reserve` に確定。
+
+## S1-01 棚卸し結果
+
+固定断片（`sample/rs/08_langtons_ant.rs`）:
+
+- 不要 clone:
+  - `return (frame).clone();`
+- 添字正規化の過剰展開:
+  - `if __idx_i64_3 < 0 { ... } else { ... }` が `grid[y][x]` 相当箇所に反復。
+  - `capture` 内でも `grid[...]` と `frame[...]` の双方で長大化。
+- loop 退化:
+  - `let mut i: i64 = 0; while i < steps_total { ... i += 1; }`
+- 分岐の入れ子:
+  - `if d == 0 { ... } else { if d == 1 { ... } else { if d == 2 { ... } else { ... } } }`
+- capture 判定 `%`:
+  - `if i % capture_every == 0 { ... }`
+- reserve 未導入:
+  - `let mut frames: Vec<Vec<u8>> = vec![];`（容量予約なし）
+
+優先実装順:
+
+1. `S2-01` clone 削減（意味影響が小さく即効）
+2. `S2-02` 添字正規化縮退（ホットパス効果が大きい）
+3. `S2-03` range ループ縮退（`while` -> `for`）
+4. `S2-04` 分岐簡素化（`else if` / `match`）
+5. `S2-05` capture 判定の next-capture 化
+6. `S2-06` `frames.reserve` 導入
