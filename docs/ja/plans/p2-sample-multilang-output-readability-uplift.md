@@ -41,8 +41,8 @@
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-01] `js/ts` の loop 補助変数（`__start_N`）を簡約する出力規則を実装する。
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] `ruby/lua` の append 連鎖を簡約する出力規則を実装する。
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
-- [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰テストを追加して可読性退行を検知可能にする。
-- [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] 対象 sample を再生成し、transpile/parity で非退行を確認する。
+- [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰テストを追加して可読性退行を検知可能にする。
+- [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] 対象 sample を再生成し、transpile/parity で非退行を確認する。
 
 決定ログ:
 - 2026-03-02: sample 多言語品質調査の「可読性のみ改善」項目を P2 として分離し、正しさ修正（P0）と混線しない実施順を確定した。
@@ -53,3 +53,5 @@
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] 検証: 追加した `test_append_chain_is_compacted_with_table_move` は pass。`test_py2lua*` 全体は既知ベースライン失敗（runtime 分離期待値の旧前提）を含むため fail 継続、`test_py2rb*` は pass。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] Java emitter の `ForCore` / listcomp range に「定数 step fastpath」を追加し、`step=±1` を含む定数 step で `__step_N` 変数を生成しない出力へ変更した。step が非定数または 0 の場合は既存の動的 ternary 条件経路を維持（fail-closed）。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] 検証: `test_py2java_smoke.py` に `for_range` と `range_downcount_len_minus1` の回帰を追加し pass。`tools/regenerate_samples.py --langs java --stems 01_mandelbrot,18_mini_language_interpreter --force` で `sample/java` へ反映済み。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰確認: `test_py2{js,ts,rb,java}_smoke.py` は pass。`test_py2lua_smoke.py` は runtime 分離契約移行に追随していない既知期待値（helper内包前提）7件が fail のまま（本タスク変更とは独立）。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] `tools/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force` を実行して再生成。`runtime_parity_check --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01,18` を実行し、`lua` は両case OK、`js/ts` は `01` artifact size mismatch、`java` は `01` artifact missing と `18` compile/run fail、`ruby` は `18` tokenize run fail を確認（既知の別系統課題として継続管理）。
