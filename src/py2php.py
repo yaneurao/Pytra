@@ -62,20 +62,37 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
     return default_value
 
 
-def _php_runtime_source_path() -> Path:
-    """PHP runtime 正本のソースファイルパスを返す。"""
-    return Path(__file__).resolve().parent / "runtime" / "php" / "pytra" / "py_runtime.php"
+def _php_runtime_source_root() -> Path:
+    """PHP runtime 正本ルートディレクトリを返す。"""
+    return Path(__file__).resolve().parent / "runtime" / "php" / "pytra"
+
+
+def _copy_runtime_file(runtime_root: Path, runtime_dst_root: Path, rel_path: str) -> None:
+    src = runtime_root / rel_path
+    if not src.exists():
+        return
+    dst = runtime_dst_root / rel_path
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 def _copy_php_runtime(output_path: Path) -> None:
     """生成先ディレクトリへ PHP runtime を配置する。"""
-    runtime_src = _php_runtime_source_path()
-    if not runtime_src.exists():
-        raise RuntimeError("php runtime source not found: " + str(runtime_src))
-    runtime_dst_dir = output_path.parent / "pytra"
-    runtime_dst_dir.mkdir(parents=True, exist_ok=True)
-    runtime_dst = runtime_dst_dir / "py_runtime.php"
-    runtime_dst.write_text(runtime_src.read_text(encoding="utf-8"), encoding="utf-8")
+    runtime_root = _php_runtime_source_root()
+    if not runtime_root.exists():
+        raise RuntimeError("php runtime source root not found: " + str(runtime_root))
+    runtime_dst_root = output_path.parent / "pytra"
+    runtime_dst_root.mkdir(parents=True, exist_ok=True)
+    files = [
+        "py_runtime.php",
+        "runtime/png.php",
+        "runtime/gif.php",
+        "std/time.php",
+    ]
+    i = 0
+    while i < len(files):
+        _copy_runtime_file(runtime_root, runtime_dst_root, files[i])
+        i += 1
 
 
 def main() -> int:

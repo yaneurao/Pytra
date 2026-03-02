@@ -312,7 +312,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
-        return "((bool)(" + _render_expr(args[0]) + "))"
+        return "__pytra_truthy(" + _render_expr(args[0]) + ")"
     if callee_name == "str":
         if len(args) == 0:
             return '""'
@@ -320,7 +320,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "len":
         if len(args) == 0:
             return "0"
-        return "count(" + _render_expr(args[0]) + ")"
+        return "__pytra_len(" + _render_expr(args[0]) + ")"
     if callee_name == "min":
         rendered: list[str] = []
         i = 0
@@ -335,6 +335,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered.append(_render_expr(args[i]))
             i += 1
         return "max(" + ", ".join(rendered) + ")"
+    if callee_name == "perf_counter":
+        return "__pytra_perf_counter()"
+    if callee_name in {"save_gif", "write_rgb_png"}:
+        rendered_noop_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_noop_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -388,6 +397,17 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if len(args) == 0:
                 return "array_pop(" + owner_expr + ")"
             return owner_expr + "[" + _render_expr(args[0]) + "]"
+        if attr_name == "isdigit" and len(args) == 0:
+            return "__pytra_str_isdigit(" + owner_expr + ")"
+        if attr_name == "isalpha" and len(args) == 0:
+            return "__pytra_str_isalpha(" + owner_expr + ")"
+        if attr_name in {"write_rgb_png", "save_gif"}:
+            rendered_noop_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_noop_args.append(_render_expr(args[i]))
+                i += 1
+            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -474,7 +494,14 @@ def _render_expr(expr: Any) -> str:
         return _render_expr(value_any) + "->" + attr
     if kind == "Subscript":
         owner = _render_expr(expr.get("value"))
-        index = _render_expr(expr.get("slice"))
+        index_any = expr.get("slice")
+        if isinstance(index_any, dict) and index_any.get("kind") == "Slice":
+            lower_any = index_any.get("lower")
+            upper_any = index_any.get("upper")
+            lower_expr = _render_expr(lower_any) if isinstance(lower_any, dict) else "0"
+            upper_expr = _render_expr(upper_any) if isinstance(upper_any, dict) else "__pytra_len(" + owner + ")"
+            return "__pytra_str_slice(" + owner + ", " + lower_expr + ", " + upper_expr + ")"
+        index = _render_expr(index_any)
         return owner + "[" + index + "]"
     if kind == "List" or kind == "Tuple":
         elems_any = expr.get("elements")
@@ -504,7 +531,7 @@ def _render_expr(expr: Any) -> str:
     if kind == "Unbox" or kind == "Box":
         return _render_expr(expr.get("value"))
     if kind == "ObjLen":
-        return "count(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
     if kind == "ObjStr":
         return "strval(" + _render_expr(expr.get("value")) + ")"
     if kind == "ObjBool":
