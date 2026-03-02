@@ -15,9 +15,9 @@ fn capture(grid: &Vec<Vec<i64>>, w: i64, h: i64) -> Vec<u8> {
         let row_base = y * w;
         let mut x: i64 = 0;
         while x < w {
-            let __idx_i64_1 = ((row_base + x) as i64);
-            let __idx_2 = if __idx_i64_1 < 0 { (frame.len() as i64 + __idx_i64_1) as usize } else { __idx_i64_1 as usize };
-            frame[__idx_2] = (((if grid[((if ((y) as i64) < 0 { (grid.len() as i64 + ((y) as i64)) } else { ((y) as i64) }) as usize)][((if ((x) as i64) < 0 { (grid[((if ((y) as i64) < 0 { (grid.len() as i64 + ((y) as i64)) } else { ((y) as i64) }) as usize)].len() as i64 + ((x) as i64)) } else { ((x) as i64) }) as usize)] != 0 { 255 } else { 0 })) as u8);
+            let __idx_i64_2 = ((row_base + x) as i64);
+            let __idx_1 = if __idx_i64_2 < 0 { (frame.len() as i64 + __idx_i64_2) as usize } else { __idx_i64_2 as usize };
+            frame[__idx_1] = (((if grid[((y) as usize)][((x) as usize)] != 0 { 255 } else { 0 })) as u8);
             x += 1;
         }
         y += 1;
@@ -43,20 +43,16 @@ fn run_08_langtons_ant() {
     
     let mut i: i64 = 0;
     while i < steps_total {
-        if grid[((if ((y) as i64) < 0 { (grid.len() as i64 + ((y) as i64)) } else { ((y) as i64) }) as usize)][((if ((x) as i64) < 0 { (grid[((if ((y) as i64) < 0 { (grid.len() as i64 + ((y) as i64)) } else { ((y) as i64) }) as usize)].len() as i64 + ((x) as i64)) } else { ((x) as i64) }) as usize)] == 0 {
+        if grid[((y) as usize)][((x) as usize)] == 0 {
             d = (d + 1) % 4;
-            let __idx_i64_3 = ((y) as i64);
-            let __idx_4 = if __idx_i64_3 < 0 { (grid.len() as i64 + __idx_i64_3) as usize } else { __idx_i64_3 as usize };
-            let __idx_i64_5 = ((x) as i64);
-            let __idx_6 = if __idx_i64_5 < 0 { (grid[__idx_4].len() as i64 + __idx_i64_5) as usize } else { __idx_i64_5 as usize };
-            grid[__idx_4][__idx_6] = 1;
+            let __idx_3 = ((y) as usize);
+            let __idx_4 = ((x) as usize);
+            grid[__idx_3][__idx_4] = 1;
         } else {
             d = (d + 3) % 4;
-            let __idx_i64_7 = ((y) as i64);
-            let __idx_8 = if __idx_i64_7 < 0 { (grid.len() as i64 + __idx_i64_7) as usize } else { __idx_i64_7 as usize };
-            let __idx_i64_9 = ((x) as i64);
-            let __idx_10 = if __idx_i64_9 < 0 { (grid[__idx_8].len() as i64 + __idx_i64_9) as usize } else { __idx_i64_9 as usize };
-            grid[__idx_8][__idx_10] = 0;
+            let __idx_5 = ((y) as usize);
+            let __idx_6 = ((x) as usize);
+            grid[__idx_5][__idx_6] = 0;
         }
         if d == 0 {
             y = (y - 1 + h) % h;

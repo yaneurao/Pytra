@@ -476,6 +476,8 @@ class RustEmitter(CodeEmitter):
         self.current_fn_write_counts: dict[str, int] = {}
         self.current_fn_mutating_call_counts: dict[str, int] = {}
         self.current_ref_vars: set[str] = set()
+        self.current_non_negative_vars: set[str] = set()
+        self.current_positive_vars: set[str] = set()
         self.current_class_name: str = ""
         self.uses_string_helpers: bool = False
 
@@ -1317,6 +1319,99 @@ class RustEmitter(CodeEmitter):
             return True
         return t in {"bool", "char", "int", "float", "usize", "isize"}
 
+    def _expr_is_positive(self, node: Any) -> bool:
+        d = self.any_to_dict_or_empty(node)
+        if len(d) == 0:
+            return False
+        kind = self.any_dict_get_str(d, "kind", "")
+        if kind == "Constant":
+            value_any = d.get("value")
+            if isinstance(value_any, bool):
+                return False
+            if isinstance(value_any, int):
+                return value_any > 0
+            if isinstance(value_any, float):
+                return value_any > 0.0
+            return False
+        if kind == "Name":
+            name = self.any_dict_get_str(d, "id", "")
+            return name in self.current_positive_vars
+        if kind == "Call":
+            fn = self.any_to_dict_or_empty(d.get("func"))
+            if self.any_dict_get_str(fn, "kind", "") == "Name":
+                fn_name = self.any_dict_get_str(fn, "id", "")
+                args = self.any_to_list(d.get("args"))
+                if (fn_name == "int" or fn_name == "float") and len(args) > 0:
+                    return self._expr_is_positive(args[0])
+            return False
+        if kind == "BinOp":
+            op = self.any_dict_get_str(d, "op", "")
+            left = d.get("left")
+            right = d.get("right")
+            if op == "Add":
+                return self._expr_is_positive(left) and self._expr_is_non_negative(right)
+            if op == "Mult":
+                return self._expr_is_positive(left) and self._expr_is_positive(right)
+            if op == "FloorDiv" or op == "Div":
+                return self._expr_is_positive(left) and self._expr_is_positive(right)
+        return False
+
+    def _expr_is_non_negative(self, node: Any) -> bool:
+        d = self.any_to_dict_or_empty(node)
+        if len(d) == 0:
+            return False
+        kind = self.any_dict_get_str(d, "kind", "")
+        if kind == "Constant":
+            value_any = d.get("value")
+            if isinstance(value_any, bool):
+                return False
+            if isinstance(value_any, int):
+                return value_any >= 0
+            if isinstance(value_any, float):
+                return value_any >= 0.0
+            return False
+        if kind == "Name":
+            name = self.any_dict_get_str(d, "id", "")
+            return name in self.current_non_negative_vars
+        if kind == "Call":
+            fn = self.any_to_dict_or_empty(d.get("func"))
+            if self.any_dict_get_str(fn, "kind", "") == "Name":
+                fn_name = self.any_dict_get_str(fn, "id", "")
+                args = self.any_to_list(d.get("args"))
+                if (fn_name == "int" or fn_name == "float") and len(args) > 0:
+                    return self._expr_is_non_negative(args[0])
+            return False
+        if kind == "UnaryOp":
+            op = self.any_dict_get_str(d, "op", "")
+            if op == "UAdd":
+                return self._expr_is_non_negative(d.get("operand"))
+            return False
+        if kind == "BinOp":
+            op = self.any_dict_get_str(d, "op", "")
+            left = d.get("left")
+            right = d.get("right")
+            if op == "Add":
+                return self._expr_is_non_negative(left) and self._expr_is_non_negative(right)
+            if op == "Mult":
+                return self._expr_is_non_negative(left) and self._expr_is_non_negative(right)
+            if op == "FloorDiv" or op == "Div":
+                return self._expr_is_non_negative(left) and self._expr_is_positive(right)
+            if op == "Mod":
+                return self._expr_is_positive(right)
+        return False
+
+    def _update_name_sign_info(self, name_raw: str, value_node: Any) -> None:
+        if name_raw == "":
+            return
+        if self._expr_is_non_negative(value_node):
+            self.current_non_negative_vars.add(name_raw)
+        else:
+            self.current_non_negative_vars.discard(name_raw)
+        if self._expr_is_positive(value_node):
+            self.current_positive_vars.add(name_raw)
+        else:
+            self.current_positive_vars.discard(name_raw)
+
     def _string_constant_literal(self, node: Any) -> str:
         d = self.any_to_dict_or_empty(node)
         if self.any_dict_get_str(d, "kind", "") != "Constant":
@@ -2138,11 +2233,15 @@ class RustEmitter(CodeEmitter):
         prev_write_counts = self.current_fn_write_counts
         prev_mut_call_counts = self.current_fn_mutating_call_counts
         prev_ref_vars = self.current_ref_vars
+        prev_non_negative_vars = self.current_non_negative_vars
+        prev_positive_vars = self.current_positive_vars
         prev_class_name = self.current_class_name
         self.current_class_name = self.normalize_type_name(in_class) if in_class is not None else ""
         self.current_fn_write_counts = self._collect_name_write_counts(body)
         self.current_fn_mutating_call_counts = self._collect_mutating_receiver_name_counts(body)
         self.current_ref_vars = set()
+        self.current_non_negative_vars = set()
+        self.current_positive_vars = set()
         args_text_list: list[str] = []
         scope_names: set[str] = set()
         if in_class is None:
@@ -2206,6 +2305,8 @@ class RustEmitter(CodeEmitter):
         self.current_fn_write_counts = prev_write_counts
         self.current_fn_mutating_call_counts = prev_mut_call_counts
         self.current_ref_vars = prev_ref_vars
+        self.current_non_negative_vars = prev_non_negative_vars
+        self.current_positive_vars = prev_positive_vars
         self.current_class_name = prev_class_name
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2340,12 +2441,27 @@ class RustEmitter(CodeEmitter):
         body_scope: set[str] = set()
         body_scope.add(self.any_dict_get_str(target_node, "id", target))
         body = self._dict_stmt_list(stmt.get("body"))
+        loop_target_raw = self.any_dict_get_str(target_node, "id", "")
+        prev_loop_non_negative = loop_target_raw in self.current_non_negative_vars
+        prev_loop_positive = loop_target_raw in self.current_positive_vars
+        if loop_target_raw != "" and range_mode == "ascending" and self._expr_is_non_negative(stmt.get("start")):
+            self.current_non_negative_vars.add(loop_target_raw)
+            self.current_positive_vars.discard(loop_target_raw)
         self.emit_scoped_block_with_tail_lines(
             self.syntax_line("for_range_open", "while {cond} {", {"cond": cond}),
             body,
             body_scope,
             [f"{target} += {step};"],
         )
+        if loop_target_raw != "":
+            if prev_loop_non_negative:
+                self.current_non_negative_vars.add(loop_target_raw)
+            else:
+                self.current_non_negative_vars.discard(loop_target_raw)
+            if prev_loop_positive:
+                self.current_positive_vars.add(loop_target_raw)
+            else:
+                self.current_positive_vars.discard(loop_target_raw)
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
@@ -2670,6 +2786,8 @@ class RustEmitter(CodeEmitter):
         if value_obj is None:
             mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=False) else ""
             self.emit(self.syntax_line("annassign_decl_noinit", "let {mut_kw}{target}: {type};", {"mut_kw": mut_kw, "target": name, "type": t}))
+            self.current_non_negative_vars.discard(name_raw)
+            self.current_positive_vars.discard(name_raw)
             return
         value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t_east, value_obj)
         if value == "":
@@ -2682,6 +2800,7 @@ class RustEmitter(CodeEmitter):
                 {"mut_kw": mut_kw, "target": name, "type": t, "value": value},
             )
         )
+        self._update_name_sign_info(name_raw, value_obj)
 
     def _emit_assign(self, stmt: dict[str, Any]) -> None:
         target = self.primary_assign_target(stmt)
@@ -2699,8 +2818,10 @@ class RustEmitter(CodeEmitter):
                 if prealloc_value != "":
                     value = prealloc_value
                 self.emit(self.syntax_line("assign_decl_init", "let {mut_kw}{target} = {value};", {"mut_kw": mut_kw, "target": name, "value": value}))
+                self._update_name_sign_info(name_raw, stmt.get("value"))
                 return
             self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": name, "value": value}))
+            self._update_name_sign_info(name_raw, stmt.get("value"))
             return
 
         if self._emit_tuple_assign(target, value):
@@ -2719,9 +2840,13 @@ class RustEmitter(CodeEmitter):
     def _render_subscript_lvalue(self, subscript_expr: dict[str, Any]) -> str:
         """Subscript を代入先として描画する（clone を付けない）。"""
         owner = self.render_expr(subscript_expr.get("value"))
-        idx = self.render_expr(subscript_expr.get("slice"))
-        idx_i64 = "((" + idx + ") as i64)"
-        idx_usize = "((if " + idx_i64 + " < 0 { (" + owner + ".len() as i64 + " + idx_i64 + ") } else { " + idx_i64 + " }) as usize)"
+        slice_node = subscript_expr.get("slice")
+        idx = self.render_expr(slice_node)
+        if self._expr_is_non_negative(slice_node):
+            idx_usize = "((" + idx + ") as usize)"
+        else:
+            idx_i64 = "((" + idx + ") as i64)"
+            idx_usize = "((if " + idx_i64 + " < 0 { (" + owner + ".len() as i64 + " + idx_i64 + ") } else { " + idx_i64 + " }) as usize)"
         return owner + "[" + idx_usize + "]"
 
     def _collect_subscript_chain(self, subscript_expr: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -2760,22 +2885,25 @@ class RustEmitter(CodeEmitter):
                 self.emit(self._render_subscript_lvalue(subscript_expr) + " = " + value_expr + ";")
                 return
             idx_txt = self.render_expr(slice_node)
-            idx_i64_tmp = self.next_tmp("__idx_i64")
             idx_tmp = self.next_tmp("__idx")
-            self.emit("let " + idx_i64_tmp + " = ((" + idx_txt + ") as i64);")
-            self.emit(
-                "let "
-                + idx_tmp
-                + " = if "
-                + idx_i64_tmp
-                + " < 0 { ("
-                + owner_expr
-                + ".len() as i64 + "
-                + idx_i64_tmp
-                + ") as usize } else { "
-                + idx_i64_tmp
-                + " as usize };"
-            )
+            if self._expr_is_non_negative(slice_node):
+                self.emit("let " + idx_tmp + " = ((" + idx_txt + ") as usize);")
+            else:
+                idx_i64_tmp = self.next_tmp("__idx_i64")
+                self.emit("let " + idx_i64_tmp + " = ((" + idx_txt + ") as i64);")
+                self.emit(
+                    "let "
+                    + idx_tmp
+                    + " = if "
+                    + idx_i64_tmp
+                    + " < 0 { ("
+                    + owner_expr
+                    + ".len() as i64 + "
+                    + idx_i64_tmp
+                    + ") as usize } else { "
+                    + idx_i64_tmp
+                    + " as usize };"
+                )
             owner_expr = owner_expr + "[" + idx_tmp + "]"
             i += 1
         self.emit(owner_expr + " = " + value_expr + ";")
@@ -2830,6 +2958,11 @@ class RustEmitter(CodeEmitter):
             elif target_t == "str" and mapped == "+=":
                 value = "py_any_to_string(&" + value + ")"
         self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
+        target_d = self.any_to_dict_or_empty(target_obj)
+        if self.any_dict_get_str(target_d, "kind", "") == "Name":
+            name_raw = self.any_dict_get_str(target_d, "id", "")
+            self.current_non_negative_vars.discard(name_raw)
+            self.current_positive_vars.discard(name_raw)
 
     def _collect_class_base_map(self, body: list[dict[str, Any]]) -> dict[str, str]:
         """ClassDef から `child -> base` の継承表を抽出する。"""
@@ -3776,8 +3909,11 @@ class RustEmitter(CodeEmitter):
             if owner_t == "str":
                 self.uses_string_helpers = True
                 return "py_str_at(&" + owner + ", ((" + idx + ") as i64))"
-            idx_i64 = "((" + idx + ") as i64)"
-            idx_usize = "((if " + idx_i64 + " < 0 { (" + owner + ".len() as i64 + " + idx_i64 + ") } else { " + idx_i64 + " }) as usize)"
+            if self._expr_is_non_negative(expr_d.get("slice")):
+                idx_usize = "((" + idx + ") as usize)"
+            else:
+                idx_i64 = "((" + idx + ") as i64)"
+                idx_usize = "((if " + idx_i64 + " < 0 { (" + owner + ".len() as i64 + " + idx_i64 + ") } else { " + idx_i64 + " }) as usize)"
             indexed = owner + "[" + idx_usize + "]"
             if owner_t in {"bytes", "bytearray"}:
                 return "((" + indexed + ") as i64)"
