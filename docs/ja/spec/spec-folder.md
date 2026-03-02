@@ -94,6 +94,26 @@
 - 置くもの: backendごとのhook実装
 - 置かないもの: 言語非依存の意味論lowering
 
+#### 3.2.1 backend パイプラインの標準ディレクトリ
+
+- 各 backend の標準構成は `src/hooks/<lang>/{lower,optimizer,emitter}/` とする。
+- 役割は次で固定する。
+  - `lower/`: `EAST3 -> <LangIR>` への言語固有 lowering
+  - `optimizer/`: `<LangIR> -> <LangIR>` の言語固有最適化
+  - `emitter/`: `<LangIR> -> 最終ソース文字列` の描画
+- 新規実装は上記 3 層へ配置し、`emitter/` に意味論 lowering や optimizer 相当ロジックを新規追加しない。
+- 既存 backend は段階移行を許容するが、移行時の到達形は同一ディレクトリ規約へそろえる。
+
+#### 3.2.2 追加機能ディレクトリ（案2）と最終到達形（案3）
+
+- 当面の運用は案2（core + extensions）を採用する。
+  - core（必須）: `lower/`, `optimizer/`, `emitter/`
+  - 拡張（任意）: `extensions/<topic>/`
+- `extensions/` 配下の命名は機能名を固定語でそろえる。
+  - 例: `extensions/runtime/`, `extensions/packaging/`, `extensions/integration/`
+- `header/`, `multifile/`, `runtime_emit/`, `hooks/` など言語ごとの独自名ディレクトリは、新規追加を禁止し、段階的に `extensions/<topic>/` へ寄せる。
+- 将来の案3移行では、`src/hooks/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
+
 ### 3.3 `src/profiles/`
 
 - 目的: 言語差分設定を宣言的JSONとして保持する。

@@ -32,6 +32,67 @@
 
 ## 未完了タスク
 
+### P0: `src/hooks` -> `src/backends` 一括改名（最優先の最優先）
+
+文脈: [docs/ja/plans/p0-hooks-to-backends-oneshot-rename.md](../plans/p0-hooks-to-backends-oneshot-rename.md)
+
+1. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01] backend 実装ルートを `src/hooks` から `src/backends` へ一括改名し、import/ドキュメント/検証導線を同時収束させる。
+2. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S1-01] `src/hooks/**` の現行構成を棚卸しし、`src/backends/**` への 1:1 移動マップを確定する。
+3. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S1-02] 改名時に影響する import 参照点（`src/`, `tools/`, `test/`）を全列挙し、更新順序を固定する。
+4. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-01] `src/hooks` を `src/backends` へ一括移動し、パッケージ初期化ファイルを維持する。
+5. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-02] `src/py2*.py` と compiler/utility 側 import を `hooks.*` から `backends.*` へ一括更新する。
+6. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-03] `tools/**` / `test/**` の import を `backends.*` へ一括更新し、テスト実行導線を復旧する。
+7. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S2-04] 必要最小限の互換層（`src/hooks` re-export）を設置し、当面の外部参照破断を防ぐ（不要なら設置しない）。
+8. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-01] `docs/ja` / `docs/en` の仕様・手順書で `src/hooks` 表記を `src/backends` へ更新する。
+9. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-02] `spec-folder` / `spec-dev` の責務記述を `backends` 名へ更新し、`hooks` を互換・退役扱いへ明記する。
+10. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-01] 全 target の transpile チェックを再実行し、改名起因の import 崩れがないことを確認する。
+11. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-02] `rg` による残存 `hooks.*` 参照監査を実施し、残存理由を明示して収束させる。
+
+### P0: C++ 3段構成移行（案1: `CppLower` / `CppIrOptimizer` / `CppEmitter`）
+
+文脈: [docs/ja/plans/p0-cpp-lower-pipeline-rollout.md](../plans/p0-cpp-lower-pipeline-rollout.md)
+
+1. [ ] [ID: P0-CPP-LOWER-PIPELINE-01] C++ backend を `EAST3 -> CppLower -> CppIrOptimizer -> CppEmitter` 構成へ移行し、責務境界を固定する。
+2. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S1-01] C++ IR の最小ノード集合（Stmt/Expr/Type/Decl）と fail-closed 契約を定義する。
+3. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S1-02] 案1のファイル責務（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）と公開 API を固定する。
+4. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-01] `cpp_lower.py` を新設し、EAST3 Module から C++ IR Module へ lower する骨格を実装する。
+5. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-02] `cpp_ir_optimizer.py` を新設し、既存 optimizer pass の移設/再配線方針を実装する。
+6. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
+7. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
+8. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
+9. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
+10. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
+11. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
+
+### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
+
+文脈: [docs/ja/plans/p1-php-s18-codegen-quality-uplift.md](../plans/p1-php-s18-codegen-quality-uplift.md)
+
+1. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01] `sample/php/18_mini_language_interpreter.php` のコード生成品質を改善し、実行可能性と意味互換を回復する。
+2. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S1-01] `sample/18` の失敗断片（dict literal / membership / ctor / entrypoint）を棚卸しし、改善境界を固定する。
+3. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-01] PHP emitter の dict literal 出力を修正し、キー付き連想配列を正しく生成する。
+4. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `in` / `not in` の lower を型別に修正し、dict membership を `array_key_exists` 系へ統一する。
+5. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass 由来クラス（`Token/ExprNode/StmtNode`）のフィールド/コンストラクタ出力を整合させる。
+6. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] `main_guard` 出力の entrypoint 名衝突回避を一般化し、`sample/18` で衝突しないことを保証する。
+7. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] unit/smoke 回帰を追加し、同種崩れ（dict/in/ctor/entrypoint）の再発検知を固定する。
+8. [ ] [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` 再生成と parity 実行で非退行を確認する。
+
+### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
+
+文脈: [docs/ja/plans/p2-py2x-unified-frontend-rollout.md](../plans/p2-py2x-unified-frontend-rollout.md)
+
+1. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01] `py2x.py` を共通 frontend として導入し、言語別 `py2*.py` の重複責務を backend registry + 層別 option へ再編する。
+2. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
+3. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
+4. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
+5. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
+6. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
+7. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
+8. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
+9. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
+10. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
+11. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の使い方・仕様を更新し、移行手順（互換ラッパ期間を含む）を明文化する。
+
 ### P4: 全言語 selfhost 完全化（低低優先）
 
 文脈: [docs/ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)

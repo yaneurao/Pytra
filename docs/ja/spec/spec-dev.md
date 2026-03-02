@@ -15,6 +15,8 @@
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
+  - backend 段階実装の標準ディレクトリは `src/hooks/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
+  - 当面は `extensions/<topic>/` を併用する（案2）。将来は `lower/optimizer/emitter` 中心へ縮退する（案3）。
   - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
   - `runtime/`: 各ターゲット言語のランタイム配置先（正本、`src/runtime/<lang>/pytra/`）
   - `*_module/`: 旧ランタイム配置（互換レイヤ、段階撤去対象）
