@@ -69,7 +69,12 @@ class CppOptimizerTest(unittest.TestCase):
             "meta": {},
             "body": [
                 {"kind": "Pass"},
-                {"kind": "If", "test": {"kind": "Constant", "value": True}, "body": [{"kind": "Break"}], "orelse": []},
+                {
+                    "kind": "If",
+                    "test": {"kind": "Constant", "value": True, "resolved_type": "bool"},
+                    "body": [{"kind": "Break"}],
+                    "orelse": [],
+                },
             ],
         }
         out_doc, report = lower_cpp_from_east3(doc)
@@ -83,12 +88,20 @@ class CppOptimizerTest(unittest.TestCase):
         nested = body[1].get("body")
         self.assertIsInstance(nested, list)
         self.assertEqual(nested[0].get("cpp_stmt_kind_v1"), "Break")
+        test_expr = body[1].get("test")
+        self.assertIsInstance(test_expr, dict)
+        self.assertEqual(test_expr.get("cpp_expr_kind_v1"), "Constant")
 
     def test_cpp_emitter_accepts_stmt_kind_hint(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.emit_stmt({"kind": "Unknown", "cpp_stmt_kind_v1": "Pass"})
         text = "\n".join(emitter.lines)
         self.assertIn(";", text)
+
+    def test_cpp_emitter_accepts_expr_kind_hint(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        out = emitter.render_expr({"kind": "Unknown", "cpp_expr_kind_v1": "Name", "id": "x", "resolved_type": "int64"})
+        self.assertEqual(out, "x")
 
     def test_cpp_lower_rejects_non_module_kind(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "kind must be Module"):
