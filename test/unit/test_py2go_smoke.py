@@ -109,6 +109,24 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_save_gif(", go_gif)
         self.assertNotIn("__pytra_noop(out_path, width, height, frames", go_gif)
 
+    def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "ref_container_args.py"
+            src.write_text(
+                "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+                "    a: list[int] = xs\n"
+                "    b: dict[str, int] = ys\n"
+                "    a.append(1)\n"
+                "    return len(a) + len(b)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            go = transpile_to_go_native(east)
+        self.assertIn("var a []any = __pytra_as_list(append([]any(nil), xs...))", go)
+        self.assertIn("var b map[any]any = __pytra_as_dict((func() map[any]any {", go)
+        self.assertNotIn("var a []any = __pytra_as_list(xs)", go)
+        self.assertNotIn("var b map[any]any = __pytra_as_dict(ys)", go)
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

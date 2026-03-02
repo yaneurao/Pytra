@@ -1022,6 +1022,85 @@ def _type_map(ctx: dict[str, Any]) -> dict[str, str]:
     return out
 
 
+def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
+    ref_vars = ctx.get("ref_vars")
+    if isinstance(ref_vars, set):
+        return ref_vars
+    out: set[str] = set()
+    ctx["ref_vars"] = out
+    return out
+
+
+def _is_container_east_type(type_name: Any) -> bool:
+    if not isinstance(type_name, str):
+        return False
+    t = type_name.strip()
+    return (
+        t.startswith("list[")
+        or t.startswith("tuple[")
+        or t.startswith("dict[")
+        or t.startswith("set[")
+        or t in {"bytes", "bytearray"}
+    )
+
+
+def _materialize_container_value_from_ref(
+    value_expr: Any,
+    rendered_value: str,
+    target_go_type: str,
+    *,
+    ctx: dict[str, Any],
+    target_name: str,
+) -> str:
+    if not isinstance(value_expr, dict) or value_expr.get("kind") != "Name":
+        return rendered_value
+    source_name = _safe_ident(value_expr.get("id"), "")
+    if source_name == "" or source_name == target_name:
+        return rendered_value
+    if source_name not in _ref_var_set(ctx):
+        return rendered_value
+    t = target_go_type.strip()
+    if t.startswith("[]"):
+        return "append(" + t + "(nil), " + rendered_value + "...)"
+    if t.startswith("map["):
+        src_tmp = _fresh_tmp(ctx, "src")
+        dst_tmp = _fresh_tmp(ctx, "dst")
+        key_tmp = _fresh_tmp(ctx, "k")
+        val_tmp = _fresh_tmp(ctx, "v")
+        return (
+            "(func() "
+            + t
+            + " { "
+            + src_tmp
+            + " := "
+            + rendered_value
+            + "; if "
+            + src_tmp
+            + " == nil { return nil }; "
+            + dst_tmp
+            + " := make("
+            + t
+            + ", len("
+            + src_tmp
+            + ")); for "
+            + key_tmp
+            + ", "
+            + val_tmp
+            + " := range "
+            + src_tmp
+            + " { "
+            + dst_tmp
+            + "["
+            + key_tmp
+            + "] = "
+            + val_tmp
+            + " }; return "
+            + dst_tmp
+            + " })()"
+        )
+    return rendered_value
+
+
 def _read_name_set(ctx: dict[str, Any]) -> set[str]:
     names = ctx.get("read_names")
     if isinstance(names, set):
@@ -1273,6 +1352,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "read_names": set(_read_name_set(ctx)),
         }
@@ -1318,6 +1398,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "read_names": set(_read_name_set(ctx)),
         }
@@ -1349,6 +1430,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "read_names": set(_read_name_set(ctx)),
         }
@@ -1545,6 +1627,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             value = _default_return_expr(go_type)
         else:
             value = _render_expr(stmt_value)
+            value = _materialize_container_value_from_ref(
+                stmt_value,
+                value,
+                go_type,
+                ctx=ctx,
+                target_name=target,
+            )
             if go_type != "any":
                 value = _cast_from_any(value, go_type, stmt_value, _type_map(ctx))
         if target_is_name and target not in used_names:
@@ -1559,7 +1648,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if target in type_map and type_map[target] != "any":
                 if stmt_value is None:
                     return [indent + target + " = " + _default_return_expr(type_map[target])]
-                return [indent + target + " = " + _cast_from_any(_render_expr(stmt_value), type_map[target], stmt_value, _type_map(ctx))]
+                reassigned = _materialize_container_value_from_ref(
+                    stmt_value,
+                    _render_expr(stmt_value),
+                    type_map[target],
+                    ctx=ctx,
+                    target_name=target,
+                )
+                return [indent + target + " = " + _cast_from_any(reassigned, type_map[target], stmt_value, _type_map(ctx))]
             return [indent + target + " = " + value]
 
         declared.add(target)
@@ -1603,6 +1699,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         used_names = _read_name_set(ctx)
         lhs_is_name = isinstance(targets[0], dict) and targets[0].get("kind") == "Name"
         value = _render_expr(stmt.get("value"))
+        value_node = stmt.get("value")
 
         if lhs_is_name and lhs not in used_names:
             return [indent + "_ = " + value]
@@ -1610,28 +1707,56 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if stmt.get("declare"):
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "any":
-                    return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs], stmt.get("value"), _type_map(ctx))]
+                    reassigned = _materialize_container_value_from_ref(
+                        value_node,
+                        value,
+                        type_map[lhs],
+                        ctx=ctx,
+                        target_name=lhs,
+                    )
+                    return [indent + lhs + " = " + _cast_from_any(reassigned, type_map[lhs], value_node, _type_map(ctx))]
                 return [indent + lhs + " = " + value]
             go_type = _go_type(stmt.get("decl_type"), allow_void=False)
             if go_type == "any":
-                inferred = _infer_go_type(stmt.get("value"), _type_map(ctx))
+                inferred = _infer_go_type(value_node, _type_map(ctx))
                 if inferred != "any":
                     go_type = inferred
+            value_decl = _materialize_container_value_from_ref(
+                value_node,
+                value,
+                go_type,
+                ctx=ctx,
+                target_name=lhs,
+            )
             if go_type != "any":
-                value = _cast_from_any(value, go_type, stmt.get("value"), _type_map(ctx))
+                value_decl = _cast_from_any(value_decl, go_type, value_node, _type_map(ctx))
             declared.add(lhs)
             type_map[lhs] = go_type
-            return [indent + "var " + lhs + " " + go_type + " = " + value]
+            return [indent + "var " + lhs + " " + go_type + " = " + value_decl]
 
         if lhs not in declared:
-            inferred = _infer_go_type(stmt.get("value"), _type_map(ctx))
+            inferred = _infer_go_type(value_node, _type_map(ctx))
             declared.add(lhs)
             type_map[lhs] = inferred
+            value_init = _materialize_container_value_from_ref(
+                value_node,
+                value,
+                inferred,
+                ctx=ctx,
+                target_name=lhs,
+            )
             if inferred != "any":
-                value = _cast_from_any(value, inferred, stmt.get("value"), _type_map(ctx))
-            return [indent + "var " + lhs + " " + inferred + " = " + value]
+                value_init = _cast_from_any(value_init, inferred, value_node, _type_map(ctx))
+            return [indent + "var " + lhs + " " + inferred + " = " + value_init]
         if lhs in type_map and type_map[lhs] != "any":
-            return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs], stmt.get("value"), _type_map(ctx))]
+            reassigned = _materialize_container_value_from_ref(
+                value_node,
+                value,
+                type_map[lhs],
+                ctx=ctx,
+                target_name=lhs,
+            )
+            return [indent + lhs + " = " + _cast_from_any(reassigned, type_map[lhs], value_node, _type_map(ctx))]
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":
@@ -1659,6 +1784,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "read_names": set(_read_name_set(ctx)),
         }
@@ -1679,6 +1805,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": body_ctx.get("tmp", ctx.get("tmp", 0)),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "read_names": set(_read_name_set(ctx)),
         }
@@ -1786,9 +1913,10 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
     read_names: set[str] = set()
     _collect_read_names_block(body, read_names)
 
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type, "read_names": read_names}
+    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "ref_vars": set(), "return_type": return_type, "read_names": read_names}
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
+    ref_vars = _ref_var_set(ctx)
 
     param_names = _function_param_names(fn, drop_self=drop_self)
     arg_types_any = fn.get("arg_types")
@@ -1796,8 +1924,11 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
     i = 0
     while i < len(param_names):
         p = param_names[i]
+        raw_t = arg_types.get(p)
         declared.add(p)
-        type_map[p] = _go_type(arg_types.get(p), allow_void=False)
+        type_map[p] = _go_type(raw_t, allow_void=False)
+        if _is_container_east_type(raw_t):
+            ref_vars.add(p)
         i += 1
 
     i = 0
