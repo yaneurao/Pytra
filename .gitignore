@@ -26,3 +26,7 @@ __pycache__/
 /from_import_symbols.png
 
 /AGENTS.md
+
+# Scala CLI transient workspace
+sample/scala/.bsp/
+sample/scala/.scala-build/
