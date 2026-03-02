@@ -28,6 +28,7 @@ from backends.cpp.optimizer.passes.binop_normalize_pass import CppBinOpNormalize
 from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
 from backends.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNormalizePass
 from backends.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
+from backends.cpp.optimizer.passes.forcore_direct_unpack_hint_pass import CppForcoreDirectUnpackHintPass
 from backends.cpp.optimizer.passes.for_iter_mode_hint_pass import CppForIterModeHintPass
 from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from backends.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
@@ -99,7 +100,7 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = optimize_cpp_ir(
             doc,
             opt_level="1",
-            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppCastCallNormalizePass,-CppCompareNormalizePass,-CppBinOpNormalizePass,-CppConstConditionPass,-CppRangeForShapePass,-CppForIterModeHintPass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppCastCallNormalizePass,-CppCompareNormalizePass,-CppBinOpNormalizePass,-CppConstConditionPass,-CppRangeForShapePass,-CppForcoreDirectUnpackHintPass,-CppForIterModeHintPass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -120,12 +121,14 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertFalse(bool(trace[6].get("enabled")))
         self.assertEqual(trace[7].get("name"), "CppRangeForShapePass")
         self.assertFalse(bool(trace[7].get("enabled")))
-        self.assertEqual(trace[8].get("name"), "CppForIterModeHintPass")
+        self.assertEqual(trace[8].get("name"), "CppForcoreDirectUnpackHintPass")
         self.assertFalse(bool(trace[8].get("enabled")))
-        self.assertEqual(trace[9].get("name"), "CppBraceOmitHintPass")
+        self.assertEqual(trace[9].get("name"), "CppForIterModeHintPass")
         self.assertFalse(bool(trace[9].get("enabled")))
-        self.assertEqual(trace[10].get("name"), "CppRuntimeFastPathPass")
+        self.assertEqual(trace[10].get("name"), "CppBraceOmitHintPass")
         self.assertFalse(bool(trace[10].get("enabled")))
+        self.assertEqual(trace[11].get("name"), "CppRuntimeFastPathPass")
+        self.assertFalse(bool(trace[11].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
         self.assertIn("CppDeadTempPass enabled=false", trace_text)
@@ -135,6 +138,7 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertIn("CppBinOpNormalizePass enabled=false", trace_text)
         self.assertIn("CppConstConditionPass enabled=false", trace_text)
         self.assertIn("CppRangeForShapePass enabled=false", trace_text)
+        self.assertIn("CppForcoreDirectUnpackHintPass enabled=false", trace_text)
         self.assertIn("CppForIterModeHintPass enabled=false", trace_text)
         self.assertIn("CppBraceOmitHintPass enabled=false", trace_text)
         self.assertIn("CppRuntimeFastPathPass enabled=false", trace_text)
@@ -345,6 +349,60 @@ class CppOptimizerTest(unittest.TestCase):
         value = doc.get("body")[0].get("value")
         self.assertEqual(value.get("kind"), "Name")
         self.assertEqual(value.get("id"), "x")
+
+    def test_cpp_forcore_direct_unpack_hint_pass_sets_hint_for_known_tuple(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {"kind": "Name", "id": "pairs", "resolved_type": "list[tuple[int64, str]]"},
+                "iter_item_type": "tuple[int64, str]",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "int64"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "str"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = CppForcoreDirectUnpackHintPass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        target_plan = for_stmt.get("target_plan")
+        self.assertIsInstance(target_plan, dict)
+        self.assertTrue(bool(target_plan.get("direct_unpack")))
+        self.assertEqual(target_plan.get("direct_unpack_names"), ["line_index", "source"])
+        self.assertEqual(target_plan.get("direct_unpack_types"), ["int64", "str"])
+
+    def test_cpp_forcore_direct_unpack_hint_pass_skips_unknown_tuple(self) -> None:
+        doc = _module_doc()
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {"kind": "Name", "id": "pairs", "resolved_type": "object"},
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "a", "target_type": "unknown"},
+                    {"kind": "NameTarget", "id": "b", "target_type": "unknown"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc["body"] = [for_stmt]
+        result = CppForcoreDirectUnpackHintPass().run(doc, CppOptContext(opt_level=1))
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
 
     def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
         doc = _module_doc()

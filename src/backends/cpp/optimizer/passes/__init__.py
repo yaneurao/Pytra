@@ -8,6 +8,7 @@ from backends.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNo
 from backends.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
 from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
 from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
+from backends.cpp.optimizer.passes.forcore_direct_unpack_hint_pass import CppForcoreDirectUnpackHintPass
 from backends.cpp.optimizer.passes.for_iter_mode_hint_pass import CppForIterModeHintPass
 from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
 from backends.cpp.optimizer.passes.noop_pass import CppNoOpPass
@@ -26,6 +27,7 @@ def build_default_cpp_passes() -> list[object]:
         CppBinOpNormalizePass(),
         CppConstConditionPass(),
         CppRangeForShapePass(),
+        CppForcoreDirectUnpackHintPass(),
         CppForIterModeHintPass(),
         CppBraceOmitHintPass(),
         CppRuntimeFastPathPass(),
