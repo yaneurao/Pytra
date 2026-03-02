@@ -1393,6 +1393,17 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             return target_type == "Double"
         if callee == "len":
             return target_type == "Long"
+        resolved = _scala_type(value_expr.get("resolved_type"), allow_void=False)
+        func_any = value_expr.get("func")
+        if isinstance(func_any, dict):
+            f_kind = func_any.get("kind")
+            if f_kind == "Name":
+                if callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
+                    return True
+            if f_kind == "Attribute":
+                attr = _safe_ident(func_any.get("attr"), "")
+                if attr not in {"get", "getOrElse"} and not attr.startswith("__pytra_") and resolved == target_type:
+                    return True
     return False
 
 
