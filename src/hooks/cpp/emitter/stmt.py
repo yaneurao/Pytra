@@ -178,6 +178,8 @@ class CppStatementEmitter:
             )
         if self.is_any_like_type(ann_t_str) and val_is_dict:
             rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
+        if val_is_dict and rendered_val != "":
+            rendered_val = self._apply_empty_init_shorthand_if_marked(stmt, ann_t_str, val, rendered_val)
         is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
         declare_stmt = self.stmt_declare_flag(stmt, True)
         declare_name_binding = is_plain_name_target and self.should_declare_name_binding(stmt, target, True)
@@ -381,6 +383,53 @@ class CppStatementEmitter:
             "types": hint_types,
         }
 
+    def _empty_init_shorthand_hint(self, stmt: dict[str, Any]) -> dict[str, Any] | None:
+        """EAST3 optimizer が付与した空初期化 shorthand ヒントを取得する。"""
+        hint_any = stmt.get("cpp_empty_init_shorthand_v1")
+        hint = hint_any if isinstance(hint_any, dict) else None
+        if hint is None:
+            return None
+        if self.any_dict_get_str(hint, "version", "") != "1":
+            return None
+        return hint
+
+    def _apply_empty_init_shorthand_if_marked(
+        self,
+        stmt: dict[str, Any],
+        target_type: str,
+        value_node: dict[str, Any],
+        rendered_value: str,
+    ) -> str:
+        """`T x = T{};` をマーカー付き安全ケースのみ `T x = {};` へ縮退する。"""
+        hint = self._empty_init_shorthand_hint(stmt)
+        if hint is None:
+            return rendered_value
+        kind = self._node_kind_from_dict(value_node)
+        if kind not in {"List", "Dict", "Set"}:
+            return rendered_value
+        if kind == "List" and len(self._dict_stmt_list(value_node.get("elements"))) != 0:
+            return rendered_value
+        if kind == "Set" and len(self._dict_stmt_list(value_node.get("elements"))) != 0:
+            return rendered_value
+        if kind == "Dict" and len(self._dict_stmt_list(value_node.get("entries"))) != 0:
+            return rendered_value
+        hint_kind = self.any_dict_get_str(hint, "rhs_kind", "")
+        if hint_kind != kind:
+            return rendered_value
+        hint_target = self.normalize_type_name(self.any_dict_get_str(hint, "target_type", ""))
+        target_norm = self.normalize_type_name(target_type)
+        if hint_target in {"", "unknown"} or target_norm in {"", "unknown"}:
+            return rendered_value
+        if hint_target != target_norm or self.is_any_like_type(target_norm) or self._contains_text(target_norm, "|"):
+            return rendered_value
+        if kind == "List" and not (target_norm.startswith("list[") and target_norm.endswith("]")):
+            return rendered_value
+        if kind == "Set" and not (target_norm.startswith("set[") and target_norm.endswith("]")):
+            return rendered_value
+        if kind == "Dict" and not (target_norm.startswith("dict[") and target_norm.endswith("]")):
+            return rendered_value
+        return "{}"
+
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
         target = self.primary_assign_target(stmt)
@@ -548,6 +597,7 @@ class CppStatementEmitter:
                 )
             if self.is_any_like_type(picked):
                 rval = self._box_any_target_value(rval, stmt.get("value"))
+            rval = self._apply_empty_init_shorthand_if_marked(stmt, picked, value, rval)
             use_const_ref_decl = False
             if self.is_plain_name_expr(target_obj):
                 reassigned_names = set(getattr(self, "current_function_reassigned_names", set()))
@@ -592,6 +642,7 @@ class CppStatementEmitter:
             )
         if self.is_any_like_type(t_target):
             rval = self._box_any_target_value(rval, stmt.get("value"))
+        rval = self._apply_empty_init_shorthand_if_marked(stmt, t_target, value, rval)
         self.emit(f"{texpr} = {rval};")
 
     def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:

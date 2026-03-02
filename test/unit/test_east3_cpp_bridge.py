@@ -28,6 +28,38 @@ def _const_i(v: int) -> dict[str, object]:
 
 
 class East3CppBridgeTest(unittest.TestCase):
+    def test_emit_stmt_annassign_empty_dict_with_marker_uses_brace_shorthand(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "AnnAssign",
+            "target": {"kind": "Name", "id": "env", "resolved_type": "dict[str, int64]"},
+            "annotation": "dict[str, int64]",
+            "decl_type": "dict[str, int64]",
+            "value": {"kind": "Dict", "entries": [], "resolved_type": "dict[str, int64]"},
+            "cpp_empty_init_shorthand_v1": {
+                "version": "1",
+                "target_type": "dict[str, int64]",
+                "rhs_kind": "Dict",
+            },
+        }
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("dict<str, int64> env = {};", text)
+        self.assertNotIn("dict<str, int64> env = dict<str, int64>{};", text)
+
+    def test_emit_stmt_annassign_empty_dict_without_marker_keeps_ctor_init(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "AnnAssign",
+            "target": {"kind": "Name", "id": "env", "resolved_type": "dict[str, int64]"},
+            "annotation": "dict[str, int64]",
+            "decl_type": "dict[str, int64]",
+            "value": {"kind": "Dict", "entries": [], "resolved_type": "dict[str, int64]"},
+        }
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("dict<str, int64> env = dict<str, int64>{};", text)
+
     def test_emit_stmt_forcore_static_range(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {

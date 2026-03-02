@@ -503,7 +503,7 @@ def f() -> float:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("list<rc<Token>> tokenize(const list<str>& lines) {", cpp)
-        self.assertIn("list<rc<Token>> tokens = list<rc<Token>>{};", cpp)
+        self.assertIn("list<rc<Token>> tokens = {};", cpp)
         self.assertIn("list<rc<Token>> tokens;", cpp)
         self.assertIn("return this->tokens[this->pos];", cpp)
         self.assertNotIn('obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")', cpp)
@@ -538,8 +538,8 @@ def f() -> float:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("list<str> build_benchmark_source(int64 var_count, int64 loops) {", cpp)
-        self.assertIn("list<str> lines = list<str>{};", cpp)
-        self.assertIn("list<str> demo_lines = list<str>{};", cpp)
+        self.assertIn("list<str> lines = {};", cpp)
+        self.assertIn("list<str> demo_lines = {};", cpp)
         self.assertIn("list<str> source_lines = build_benchmark_source(32, 120000);", cpp)
         self.assertIn("list<rc<Token>> tokens = tokenize(demo_lines);", cpp)
         self.assertIn("list<rc<Token>> tokens = tokenize(source_lines);", cpp)
@@ -594,8 +594,8 @@ def f() -> float:
             "list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-2, 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -2)};",
             cpp,
         )
-        self.assertIn("list<bytes> frames = list<bytes>{};", cpp)
-        self.assertIn("list<::std::tuple<int64, int64, int64, int64>> candidates = list<::std::tuple<int64, int64, int64, int64>>{};", cpp)
+        self.assertIn("list<bytes> frames = {};", cpp)
+        self.assertIn("list<::std::tuple<int64, int64, int64, int64>> candidates = {};", cpp)
         self.assertNotIn("::std::tuple<int64, int64, int64, int64>(::std::make_tuple(", cpp)
         self.assertNotIn("::std::tuple<int64, int64>(::std::make_tuple(", cpp)
         self.assertIn("auto __idx_", cpp)
@@ -1451,7 +1451,7 @@ def f() -> int:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
 
-        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("list<int64> xs = {};", cpp)
         self.assertIn("xs.append(int64(1));", cpp)
         self.assertIn("return sink(xs);", cpp)
 
@@ -1492,7 +1492,7 @@ def f() -> int:
         em.cpp_list_model = "pyobj"
         cpp = em.transpile()
 
-        self.assertIn("list<int64> values = list<int64>{};", cpp)
+        self.assertIn("list<int64> values = {};", cpp)
         self.assertIn("render(values, w, h)", cpp)
 
     def test_pyobj_list_model_tuple_subscript_uses_structured_binding_on_declare_unpack(self) -> None:
@@ -1549,7 +1549,7 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("list<int64> xs = {};", cpp)
         self.assertIn("xs.append(int64(1));", cpp)
         self.assertIn("xs.append(int64(2));", cpp)
         self.assertIn("int64 head = xs[0];", cpp)
@@ -1573,7 +1573,7 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("list<int64> xs = {};", cpp)
         self.assertIn("xs.append(int64(1));", cpp)
         self.assertIn("return sink(xs);", cpp)
 
@@ -1592,7 +1592,7 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("list<int64> xs = {};", cpp)
         self.assertIn("xs.append(int64(1));", cpp)
 
     def test_pyobj_list_model_does_not_stack_lower_when_external_attr_call_consumes_list(self) -> None:
@@ -1611,7 +1611,7 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("list<int64> xs = list<int64>{};", cpp)
+        self.assertIn("list<int64> xs = {};", cpp)
         self.assertIn("xs.append(int64(1));", cpp)
 
 

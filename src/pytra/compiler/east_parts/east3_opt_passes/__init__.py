@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from pytra.compiler.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
 from pytra.compiler.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
 from pytra.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
 from pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
@@ -29,6 +30,7 @@ def build_default_passes() -> list[object]:
         NumericCastChainReductionPass(),
         RangeForCanonicalizationPass(),
         ExpressionNormalizationPass(),
+        EmptyInitShorthandPass(),
         SafeReserveHintPass(),
         TypedEnumerateNormalizationPass(),
         TypedRepeatMaterializationPass(),

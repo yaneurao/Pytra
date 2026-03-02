@@ -46,7 +46,7 @@ struct StmtNode : public PyObj {
 list<rc<Token>> tokenize(const list<str>& lines) {
     dict<str, int64> single_char_token_tags = dict<str, int64>{{"+", 1}, {"-", 2}, {"*", 3}, {"/", 4}, {"(", 5}, {")", 6}, {"=", 7}};
     list<str> single_char_token_kinds = list<str>{"PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"};
-    list<rc<Token>> tokens = list<rc<Token>>{};
+    list<rc<Token>> tokens = {};
     for (const auto& [line_index, source] : py_enumerate(lines)) {
         int64 i = 0;
         int64 n = py_len(source);
@@ -142,7 +142,7 @@ struct Parser : public PyObj {
         return py_len(this->expr_nodes) - 1;
     }
     list<rc<StmtNode>> parse_program() {
-        list<rc<StmtNode>> stmts = list<rc<StmtNode>>{};
+        list<rc<StmtNode>> stmts = {};
         this->skip_newlines();
         while (this->peek_kind() != "EOF") {
             rc<StmtNode> stmt = this->parse_stmt();
@@ -262,7 +262,7 @@ int64 eval_expr(int64 expr_index, const list<rc<ExprNode>>& expr_nodes, const di
 }
 
 int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_nodes, bool trace) {
-    dict<str, int64> env = dict<str, int64>{};
+    dict<str, int64> env = {};
     int64 checksum = 0;
     int64 printed = 0;
     
@@ -292,7 +292,7 @@ int64 execute(const list<rc<StmtNode>>& stmts, const list<rc<ExprNode>>& expr_no
 }
 
 list<str> build_benchmark_source(int64 var_count, int64 loops) {
-    list<str> lines = list<str>{};
+    list<str> lines = {};
     
     // Declare initial variables.
     lines.reserve((var_count <= 0) ? 0 : var_count);
@@ -318,7 +318,7 @@ list<str> build_benchmark_source(int64 var_count, int64 loops) {
 }
 
 void run_demo() {
-    list<str> demo_lines = list<str>{};
+    list<str> demo_lines = {};
     demo_lines.append(str("let a = 10"));
     demo_lines.append(str("let b = 3"));
     demo_lines.append(str("a = (a + b) * 2"));

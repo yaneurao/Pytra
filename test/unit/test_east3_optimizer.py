@@ -4,6 +4,7 @@ import copy
 import unittest
 
 from src.pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from src.pytra.compiler.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
 from src.pytra.compiler.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
 from src.pytra.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
 from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
@@ -167,7 +168,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -813,6 +814,44 @@ class East3OptimizerTest(unittest.TestCase):
         key_node = subscript.get("slice", {})
         self.assertEqual(key_node.get("resolved_type"), "unknown")
         self.assertFalse(bool(key_node.get("dict_key_verified", False)))
+
+    def test_empty_init_shorthand_pass_marks_typed_empty_dict_assign(self) -> None:
+        doc = _module_doc()
+        stmt = {
+            "kind": "AnnAssign",
+            "target": {"kind": "Name", "id": "env", "resolved_type": "dict[str, int64]"},
+            "annotation": "dict[str, int64]",
+            "decl_type": "dict[str, int64]",
+            "value": {"kind": "Dict", "entries": [], "resolved_type": "dict[str, int64]"},
+        }
+        doc["body"] = [stmt]
+        result = EmptyInitShorthandPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        hint_any = stmt.get("cpp_empty_init_shorthand_v1")
+        self.assertIsInstance(hint_any, dict)
+        hint = hint_any if isinstance(hint_any, dict) else {}
+        self.assertEqual(hint.get("version"), "1")
+        self.assertEqual(hint.get("target_type"), "dict[str, int64]")
+        self.assertEqual(hint.get("rhs_kind"), "Dict")
+
+    def test_empty_init_shorthand_pass_skips_any_like_container(self) -> None:
+        doc = _module_doc()
+        stmt = {
+            "kind": "AnnAssign",
+            "target": {"kind": "Name", "id": "xs", "resolved_type": "list[object]"},
+            "annotation": "list[object]",
+            "decl_type": "list[object]",
+            "value": {"kind": "List", "elements": [], "resolved_type": "list[object]"},
+            "cpp_empty_init_shorthand_v1": {
+                "version": "1",
+                "target_type": "list[object]",
+                "rhs_kind": "List",
+            },
+        }
+        doc["body"] = [stmt]
+        result = EmptyInitShorthandPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertNotIn("cpp_empty_init_shorthand_v1", stmt)
 
     def test_tuple_target_direct_expansion_pass_marks_flat_typed_tuple_target(self) -> None:
         doc = _module_doc()

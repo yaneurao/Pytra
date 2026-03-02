@@ -91,14 +91,15 @@
 
 文脈: [docs/ja/plans/p0-east3-cpp-empty-init-shorthand.md](../plans/p0-east3-cpp-empty-init-shorthand.md)
 
-1. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01] EAST3 マーカーで安全性を確定し、C++ の空初期化を `= {};` に縮退する。
-2. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-01] 適用条件（左辺型=右辺空コンテナ型、非Any/object、非boxing）を仕様化する。
-3. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-02] EAST3 マーカースキーマ（例: `cpp_empty_init_shorthand_v1`）と fail-closed 条件を定義する。
-4. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-01] EAST3 optimizer pass で対象ノードへマーカーを付与する。
-5. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-02] C++ emitter をマーカー参照型に切替え、`T x = T{};` を `T x = {};` へ縮退する。
-6. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-03] マーカー不在/不整合時の fallback を実装し、既存出力へ戻す。
-7. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-01] unit テストを追加し、誤適用（Any/object 経路）と再発を検知可能にする。
-8. [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
+1. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01] EAST3 マーカーで安全性を確定し、C++ の空初期化を `= {};` に縮退する。
+2. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-01] 適用条件（左辺型=右辺空コンテナ型、非Any/object、非boxing）を仕様化する。
+3. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-02] EAST3 マーカースキーマ（例: `cpp_empty_init_shorthand_v1`）と fail-closed 条件を定義する。
+4. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-01] EAST3 optimizer pass で対象ノードへマーカーを付与する。
+5. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-02] C++ emitter をマーカー参照型に切替え、`T x = T{};` を `T x = {};` へ縮退する。
+6. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-03] マーカー不在/不整合時の fallback を実装し、既存出力へ戻す。
+7. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-01] unit テストを追加し、誤適用（Any/object 経路）と再発を検知可能にする。
+8. [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
+- 進捗メモ: [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01] `cpp_empty_init_shorthand_v1` を追加し、空 `List/Dict/Set` の安全ケースを `= {};` へ縮退（Any/object/union/不整合は既存 `T{}` fallback）。
 
 ### P0: Scala 出力の冗長括弧（`((...))` / 不要 `(...)`）削減
 

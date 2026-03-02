@@ -40,13 +40,21 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、EAST3 で安全性マーカーを付与し、C++ emitter 側で `= {};` へ縮退する方針で `P0` 起票。
+- 2026-03-02: `EmptyInitShorthandPass` を追加し、`Assign/AnnAssign` の空 `List/Dict/Set` かつ `target_type` が `list/dict/set[...]`・非 `Any/object/union` のケースだけ `cpp_empty_init_shorthand_v1`（`version/target_type/rhs_kind`）を付与する実装に確定（不一致時はマーカー削除で fail-closed）。
+- 2026-03-02: `CppEmitter` 側へマーカー参照経路を追加し、ヒント整合時のみ `rendered_value` を `{}` へ縮退するよう更新。ヒント欠落/不整合/非空初期化時は既存 `T{}` 出力を維持。
+- 2026-03-02: unit + sample + transpile チェックを実行し、`sample/cpp/18` の空初期化が `= {};` へ縮退したことを確認。
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`（51 tests, OK）
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（92 tests, OK）
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（98 tests, OK）
+  - `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`（regen=1 fail=0）
+  - `python3 tools/check_py2cpp_transpile.py`（checked=136 ok=136 fail=0 skipped=6）
 
 ## 分解
 
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-01] 適用条件（左辺型=右辺空コンテナ型、非Any/object、非boxing）を仕様化する。
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-02] EAST3 マーカースキーマ（例: `cpp_empty_init_shorthand_v1`）と fail-closed 条件を定義する。
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-01] EAST3 optimizer pass で対象ノードへマーカーを付与する。
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-02] C++ emitter をマーカー参照型に切替え、`T x = T{};` を `T x = {};` へ縮退する。
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-03] マーカー不在/不整合時の fallback を実装し、既存出力へ戻す。
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-01] unit テストを追加し、誤適用（Any/object 経路）と再発を検知可能にする。
-- [ ] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-01] 適用条件（左辺型=右辺空コンテナ型、非Any/object、非boxing）を仕様化する。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S1-02] EAST3 マーカースキーマ（例: `cpp_empty_init_shorthand_v1`）と fail-closed 条件を定義する。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-01] EAST3 optimizer pass で対象ノードへマーカーを付与する。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-02] C++ emitter をマーカー参照型に切替え、`T x = T{};` を `T x = {};` へ縮退する。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S2-03] マーカー不在/不整合時の fallback を実装し、既存出力へ戻す。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-01] unit テストを追加し、誤適用（Any/object 経路）と再発を検知可能にする。
+- [x] [ID: P0-EAST3-CPP-EMPTY-INIT-SHORTHAND-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
