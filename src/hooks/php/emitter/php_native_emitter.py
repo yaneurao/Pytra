@@ -890,7 +890,28 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         lines.append("")
         i += 1
 
-    lines.append("function __pytra_main(): void {")
+    fn_names: set[str] = set()
+    i = 0
+    while i < len(functions):
+        name_any = functions[i].get("name")
+        if isinstance(name_any, str):
+            fn_names.add(_safe_ident(name_any, "f"))
+        i += 1
+
+    if "__pytra_main" in fn_names and "main" not in fn_names:
+        lines.append("function main(): void {")
+        lines.append("    __pytra_main();")
+        lines.append("}")
+        lines.append("")
+        fn_names.add("main")
+
+    entry_name = "__pytra_main"
+    if entry_name in fn_names:
+        entry_name = "__pytra_entry_main"
+    while entry_name in fn_names:
+        entry_name = entry_name + "_"
+
+    lines.append("function " + entry_name + "(): void {")
     ctx: dict[str, Any] = {}
     i = 0
     while i < len(main_guard):
@@ -898,6 +919,6 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         i += 1
     lines.append("}")
     lines.append("")
-    lines.append("__pytra_main();")
+    lines.append(entry_name + "();")
     lines.append("")
     return "\n".join(lines)

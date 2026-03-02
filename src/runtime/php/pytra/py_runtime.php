@@ -126,3 +126,52 @@ function __pytra_str_slice($s, $start, $stop) {
 function __pytra_noop(...$_args) {
     return null;
 }
+
+function bytearray($v = 0): array {
+    if (is_int($v) || is_float($v) || is_bool($v)) {
+        $n = (int)$v;
+        if ($n <= 0) {
+            return [];
+        }
+        return array_fill(0, $n, 0);
+    }
+    if (is_string($v)) {
+        $out = [];
+        $n = strlen($v);
+        $i = 0;
+        while ($i < $n) {
+            $out[] = ord($v[$i]);
+            $i += 1;
+        }
+        return $out;
+    }
+    if (is_array($v)) {
+        return array_values($v);
+    }
+    return [];
+}
+
+function bytes($v = null): array {
+    if ($v === null) {
+        return [];
+    }
+    if (is_array($v)) {
+        return array_values($v);
+    }
+    if (is_string($v)) {
+        return bytearray($v);
+    }
+    return bytearray($v);
+}
+
+function grayscale_palette(): array {
+    $out = [];
+    $i = 0;
+    while ($i < 256) {
+        $out[] = $i;
+        $out[] = $i;
+        $out[] = $i;
+        $i += 1;
+    }
+    return $out;
+}

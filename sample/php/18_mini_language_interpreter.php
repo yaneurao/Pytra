@@ -342,8 +342,12 @@ function __pytra_main() {
     run_benchmark();
 }
 
-function __pytra_main(): void {
+function main(): void {
+    __pytra_main();
+}
+
+function __pytra_entry_main(): void {
     main();
 }
 
-__pytra_main();
+__pytra_entry_main();
