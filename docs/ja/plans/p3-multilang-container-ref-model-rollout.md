@@ -124,14 +124,37 @@
   - `tools/check_py2rs_transpile.py`
   - `tools/runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout 18_mini_language_interpreter`
 
+## S3-02 Kotlin pilot 実装メモ（GC backend）
+
+- 変更点:
+  - `kotlin_native_emitter` に `ref_vars` 文脈を追加し、関数引数のうちコンテナ型（`list/tuple/dict/set/bytes/bytearray`）を `container_ref_boundary` として追跡する。
+  - `AnnAssign/Assign` の宣言・再代入で、右辺が `ref_vars` 起点かつ左辺がコンテナ型のときに
+    - `MutableList<...>`: `__pytra_as_list(src).toMutableList()`
+    - `MutableMap<...>`: `__pytra_as_dict(src).toMutableMap()`
+    を挿入し、typed/non-escape 側を「別インスタンス材料化」に固定した。
+  - 判定不能ケースは現行経路へ倒す fail-closed を維持（`Name` 右辺以外や target==source は非適用）。
+- 意図:
+  - GC backend でも Rust pilot と同じ境界規則で、「参照境界（引数）から値経路（ローカル宣言）」へ縮退する最小実装を確認する。
+  - 既存 runtime helper 契約（`__pytra_as_list/__pytra_as_dict`）を再利用し、破壊的変更を避ける。
+
+## S3-03 回帰固定メモ（Rust + Kotlin pilot）
+
+- 追加テスト:
+  - `test_py2kotlin_smoke.py::test_ref_container_args_materialize_value_path_with_mutable_copy`
+    - `a: list[int] = xs`, `b: dict[str, int] = ys` が alias 代入でなく `toMutableList()/toMutableMap()` になることを固定。
+- 実行確認:
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`
+  - `python3 tools/check_py2kotlin_transpile.py`
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --ignore-unstable-stdout 18_mini_language_interpreter`
+
 分解:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播するための最小拡張設計を作成する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] CodeEmitter 基底で利用可能な ownership 判定 API（backend 中立）を定義する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend へ pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] GC 系 backend（Java or Kotlin）へ pilot 実装し、同一判定規則での縮退を確認する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] GC 系 backend（Java or Kotlin）へ pilot 実装し、同一判定規則での縮退を確認する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] pilot 2 backend の回帰テスト（unit + sample 断片）を追加し、再発検知を固定する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] `cs/js/ts/go/swift/ruby/lua` へ順次展開し、backend ごとの runtime 依存差を吸収する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様に運用ルール（参照管理境界と rollback 手段）を追記する。
@@ -144,3 +167,5 @@
 - 2026-03-02: S2-01 として EAST3 `container_ownership_hints_v1` スキーマとノード参照キー（`meta.container_ownership_hint_ref`）を定義し、伝播/昇格/fail-closed 規則を固定した。
 - 2026-03-02: S2-02 として CodeEmitter 基底の ownership 判定 API 案を定義し、基底責務（判定）と backend 責務（表現写像）の境界を明文化した。
 - 2026-03-02: S3-01 として Rust emitter に参照引数から値型ローカルへの `to_vec()/clone()` 材料化を実装し、typed value path を安全に通す pilot を追加した（unit/transpile/parity 通過）。
+- 2026-03-02: S3-02 として Kotlin emitter に `ref_vars` 追跡と `AnnAssign/Assign` の `toMutableList()/toMutableMap()` 材料化を実装し、GC backend でも同一境界規則の pilot を追加した。
+- 2026-03-02: S3-03 として Kotlin smoke に回帰テストを追加し、`check_py2kotlin_transpile` + sample parity(case18) まで通過を確認した。

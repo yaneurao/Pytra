@@ -1036,6 +1036,50 @@ def _type_map(ctx: dict[str, Any]) -> dict[str, str]:
     return out
 
 
+def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
+    ref_vars = ctx.get("ref_vars")
+    if isinstance(ref_vars, set):
+        return ref_vars
+    out: set[str] = set()
+    ctx["ref_vars"] = out
+    return out
+
+
+def _is_container_east_type(type_name: Any) -> bool:
+    if not isinstance(type_name, str):
+        return False
+    t = type_name.strip()
+    return (
+        t.startswith("list[")
+        or t.startswith("tuple[")
+        or t.startswith("dict[")
+        or t.startswith("set[")
+        or t in {"bytes", "bytearray"}
+    )
+
+
+def _materialize_container_value_from_ref(
+    value_expr: Any,
+    rendered_value: str,
+    target_kotlin_type: str,
+    *,
+    ctx: dict[str, Any],
+    target_name: str,
+) -> str:
+    if not isinstance(value_expr, dict) or value_expr.get("kind") != "Name":
+        return rendered_value
+    source_name = _safe_ident(value_expr.get("id"), "")
+    if source_name == "" or source_name == target_name:
+        return rendered_value
+    if source_name not in _ref_var_set(ctx):
+        return rendered_value
+    if target_kotlin_type.startswith("MutableList<"):
+        return "__pytra_as_list(" + rendered_value + ").toMutableList()"
+    if target_kotlin_type.startswith("MutableMap<"):
+        return "__pytra_as_dict(" + rendered_value + ").toMutableMap()"
+    return rendered_value
+
+
 def _infer_kotlin_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
     if not isinstance(expr, dict):
         return "Any?"
@@ -1224,6 +1268,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": target_name + (" += 1L" if step_is_one else " += " + step_tmp),
         }
@@ -1278,6 +1323,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": idx_tmp + " += 1L",
         }
@@ -1310,6 +1356,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": idx_tmp + " += 1L",
         }
@@ -1456,14 +1503,22 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 1:
-                        if owner_type == "MutableList<Any?>":
+                        if owner_type.startswith("MutableList<"):
                             return [indent + owner + ".add(" + _render_expr(args[0]) + ")"]
                         return [indent + owner + " = __pytra_as_list(" + owner + "); " + owner + ".add(" + _render_expr(args[0]) + ")"]
                 if attr == "pop":
-                    owner = _render_expr(func_any.get("value"))
+                    owner_any = func_any.get("value")
+                    owner = _render_expr(owner_any)
+                    owner_type = ""
+                    if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                        owner_name = _safe_ident(owner_any.get("id"), "")
+                        type_hint_any = _type_map(ctx).get(owner_name)
+                        owner_type = type_hint_any if isinstance(type_hint_any, str) else ""
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 0:
+                        if owner_type == "MutableList<Any?>":
+                            return [indent + owner + " = __pytra_pop_last(" + owner + ")"]
                         return [indent + owner + " = __pytra_pop_last(__pytra_as_list(" + owner + "))"]
         return [indent + _render_expr(value_any)]
 
@@ -1497,6 +1552,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             value = _default_return_expr(kotlin_type)
         else:
             value = _render_expr(stmt_value)
+            value = _materialize_container_value_from_ref(
+                stmt_value,
+                value,
+                kotlin_type,
+                ctx=ctx,
+                target_name=target,
+            )
             if kotlin_type != "Any?" and _needs_cast(stmt_value, kotlin_type, _type_map(ctx)):
                 value = _cast_from_any(value, kotlin_type)
         if stmt.get("declare") is False or target in declared:
@@ -1508,6 +1570,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 if stmt_value is None:
                     return [indent + target + " = " + _default_return_expr(type_map[target])]
                 reassigned = _render_expr(stmt_value)
+                reassigned = _materialize_container_value_from_ref(
+                    stmt_value,
+                    reassigned,
+                    type_map[target],
+                    ctx=ctx,
+                    target_name=target,
+                )
                 if _needs_cast(stmt_value, type_map[target], _type_map(ctx)):
                     reassigned = _cast_from_any(reassigned, type_map[target])
                 return [indent + target + " = " + reassigned]
@@ -1551,35 +1620,68 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lhs = _target_name(targets[0])
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
-        value = _render_expr(stmt.get("value"))
+        value_expr = stmt.get("value")
+        value = _render_expr(value_expr)
 
         if stmt.get("declare"):
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "Any?":
-                    if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
-                        return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+                    target_type = type_map[lhs]
+                    reassigned = _materialize_container_value_from_ref(
+                        value_expr,
+                        value,
+                        target_type,
+                        ctx=ctx,
+                        target_name=lhs,
+                    )
+                    if _needs_cast(value_expr, target_type, _type_map(ctx)):
+                        return [indent + lhs + " = " + _cast_from_any(reassigned, target_type)]
+                    return [indent + lhs + " = " + reassigned]
                 return [indent + lhs + " = " + value]
             kotlin_type = _kotlin_type(stmt.get("decl_type"), allow_void=False)
             if kotlin_type == "Any?":
-                inferred = _infer_kotlin_type(stmt.get("value"), _type_map(ctx))
+                inferred = _infer_kotlin_type(value_expr, _type_map(ctx))
                 if inferred != "Any?":
                     kotlin_type = inferred
-            if kotlin_type != "Any?" and _needs_cast(stmt.get("value"), kotlin_type, _type_map(ctx)):
-                value = _cast_from_any(value, kotlin_type)
+            value_decl = _materialize_container_value_from_ref(
+                value_expr,
+                value,
+                kotlin_type,
+                ctx=ctx,
+                target_name=lhs,
+            )
+            if kotlin_type != "Any?" and _needs_cast(value_expr, kotlin_type, _type_map(ctx)):
+                value_decl = _cast_from_any(value_decl, kotlin_type)
             declared.add(lhs)
             type_map[lhs] = kotlin_type
-            return [indent + "var " + lhs + ": " + kotlin_type + " = " + value]
+            return [indent + "var " + lhs + ": " + kotlin_type + " = " + value_decl]
 
         if lhs not in declared:
-            inferred = _infer_kotlin_type(stmt.get("value"), _type_map(ctx))
+            inferred = _infer_kotlin_type(value_expr, _type_map(ctx))
             declared.add(lhs)
             type_map[lhs] = inferred
-            if inferred != "Any?" and _needs_cast(stmt.get("value"), inferred, _type_map(ctx)):
-                value = _cast_from_any(value, inferred)
-            return [indent + "var " + lhs + ": " + inferred + " = " + value]
+            value_init = _materialize_container_value_from_ref(
+                value_expr,
+                value,
+                inferred,
+                ctx=ctx,
+                target_name=lhs,
+            )
+            if inferred != "Any?" and _needs_cast(value_expr, inferred, _type_map(ctx)):
+                value_init = _cast_from_any(value_init, inferred)
+            return [indent + "var " + lhs + ": " + inferred + " = " + value_init]
         if lhs in type_map and type_map[lhs] != "Any?":
-            if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
-                return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+            target_type = type_map[lhs]
+            reassigned = _materialize_container_value_from_ref(
+                value_expr,
+                value,
+                target_type,
+                ctx=ctx,
+                target_name=lhs,
+            )
+            if _needs_cast(value_expr, target_type, _type_map(ctx)):
+                return [indent + lhs + " = " + _cast_from_any(reassigned, target_type)]
+            return [indent + lhs + " = " + reassigned]
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":
@@ -1607,6 +1709,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": ctx.get("continue_prefix", ""),
         }
@@ -1627,6 +1730,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": body_ctx.get("tmp", ctx.get("tmp", 0)),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": ctx.get("continue_prefix", ""),
         }
@@ -1650,6 +1754,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": "",
         }
@@ -1744,9 +1849,10 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class_name: str | None
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
 
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type}
+    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "ref_vars": set(), "return_type": return_type}
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
+    ref_vars = _ref_var_set(ctx)
 
     param_names = _function_param_names(fn, drop_self=in_class)
     arg_types_any = fn.get("arg_types")
@@ -1754,8 +1860,11 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class_name: str | None
     i = 0
     while i < len(param_names):
         p = param_names[i]
+        raw_t = arg_types.get(p)
         declared.add(p)
-        type_map[p] = _kotlin_type(arg_types.get(p), allow_void=False)
+        type_map[p] = _kotlin_type(raw_t, allow_void=False)
+        if _is_container_east_type(raw_t):
+            ref_vars.add(p)
         i += 1
 
     i = 0

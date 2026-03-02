@@ -176,6 +176,26 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn('Pair("=", 7L)', kotlin)
         self.assertIn('(d.get("=") ?: 0L)', kotlin)
 
+    def test_ref_container_args_materialize_value_path_with_mutable_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "ref_container_args.py"
+            src.write_text(
+                "def f(xs: list[int], ys: dict[str, int]) -> int:\n"
+                "    a: list[int] = xs\n"
+                "    b: dict[str, int] = ys\n"
+                "    a.append(1)\n"
+                "    b['k'] = 2\n"
+                "    return len(a) + len(b)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("var a: MutableList<Any?> = __pytra_as_list(xs).toMutableList()", kotlin)
+        self.assertIn("var b: MutableMap<Any, Any?> = __pytra_as_dict(ys).toMutableMap()", kotlin)
+        self.assertNotIn("var a: MutableList<Any?> = xs", kotlin)
+        self.assertNotIn("var b: MutableMap<Any, Any?> = ys", kotlin)
+        self.assertIn("a.add(1L)", kotlin)
+
     def test_py2kotlin_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2kotlin.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
