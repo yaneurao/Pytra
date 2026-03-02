@@ -31,6 +31,30 @@
 - 高度最適化（EAST3 optimizer 強化は別タスク）
 - フロントエンド拡張（Python 以外からの入力）
 
+仕様スコープ（S1-01 確定）:
+- 対応構文（v1）:
+  - 文: `Assign/AnnAssign/Expr/Return/If/While/ForCore(RuntimeIter, StaticRange)/Break/Continue/Pass`
+  - 式: `Name/Constant/BinOp/UnaryOp/Compare/BoolOp/Call/Attribute/Subscript/List/Dict/Tuple/IfExp`
+  - 宣言: `FunctionDef/ClassDef`（単一継承のみ）
+  - コンテナ: `list/dict/tuple/bytes/bytearray` を PHP 配列 + helper で表現
+  - 組み込み: `len/int/float/bool/str/min/max/isinstance/print/range/enumerate`
+- 非対応（fail-closed）:
+  - `Yield/Await/Try/With/Lambda/Match`、多重継承、generator 式、可変長 keyword 展開
+  - 未対応ノード検出時は emitter で `RuntimeError` を投げ、部分生成を許可しない
+- 互換方針:
+  - EAST2 互換は持たず、`--east-stage 3` のみ
+  - 型不明式は `mixed` 相当の helper 経路へ退避し、型既知経路を優先
+
+runtime 分離契約（S1-01 確定）:
+- 生成コード冒頭で `require_once __DIR__ . "/pytra/py_runtime.php";` を参照する。
+- 生成 `.php` へ helper 本体は埋め込まない（import only）。
+- runtime 配置:
+  - `src/runtime/php/pytra/py_runtime.php`（共通 helper）
+  - `src/runtime/php/pytra/runtime/png.php` / `gif.php`（I/O helper）
+  - `src/runtime/php/pytra/std/*.php`（`time`, `math`, `pathlib`）
+- `tools/regenerate_samples.py` は sample 出力時に `sample/php/pytra/**` を同期コピーする。
+- 同一 helper 名は全 backend で意味を揃える（例: `py_truthy`, `py_len`, `py_str`）。
+
 受け入れ基準:
 - `src/py2php.py` で EAST3 入力から PHP 生成が通る。
 - 生成コードが runtime 分離方式（`require` / `include`）で実行可能。
@@ -47,10 +71,11 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、PHP 対応を `P3` として計画化し、`Ruby -> Lua -> PHP` 順の次段として起票した。
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S1-01] v1 スコープを確定。対応構文・非対応構文・runtime 分離契約を本計画書へ明文化し、非対応は fail-closed（例外停止）で扱う方針を固定した。
 
 ## 分解
 
-- [ ] [ID: P3-PHP-BACKEND-01-S1-01] PHP backend のスコープ（対応構文・非対応構文・runtime 分離契約）を確定する。
+- [x] [ID: P3-PHP-BACKEND-01-S1-01] PHP backend のスコープ（対応構文・非対応構文・runtime 分離契約）を確定する。
 - [ ] [ID: P3-PHP-BACKEND-01-S1-02] `src/py2php.py` と profile loader を追加し、CLI 導線を確立する。
 - [ ] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格を実装し、関数・条件分岐・ループ・基本式の出力を通す。
 - [ ] [ID: P3-PHP-BACKEND-01-S2-02] class/inheritance と container 操作（list/dict/tuple 相当）の最低限 lower を実装する。

@@ -86,7 +86,7 @@
 文脈: [docs/ja/plans/p3-php-backend-rollout.md](../plans/p3-php-backend-rollout.md)
 
 1. [ ] [ID: P3-PHP-BACKEND-01] 変換対象言語として PHP を追加し、`EAST3 -> PHP native` 生成経路を成立させる。
-2. [ ] [ID: P3-PHP-BACKEND-01-S1-01] 対応構文・非対応構文・runtime 分離契約を仕様化する。
+2. [x] [ID: P3-PHP-BACKEND-01-S1-01] 対応構文・非対応構文・runtime 分離契約を仕様化する。
 3. [ ] [ID: P3-PHP-BACKEND-01-S1-02] `src/py2php.py` と profile loader を追加し、CLI 導線を確立する。
 4. [ ] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格（関数・分岐・ループ・基本式）を実装する。
 5. [ ] [ID: P3-PHP-BACKEND-01-S2-02] class/inheritance と container 操作の最低限 lower を実装する。
