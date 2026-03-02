@@ -88,7 +88,7 @@
 1. [ ] [ID: P3-PHP-BACKEND-01] 変換対象言語として PHP を追加し、`EAST3 -> PHP native` 生成経路を成立させる。
 2. [x] [ID: P3-PHP-BACKEND-01-S1-01] 対応構文・非対応構文・runtime 分離契約を仕様化する。
 3. [x] [ID: P3-PHP-BACKEND-01-S1-02] `src/py2php.py` と profile loader を追加し、CLI 導線を確立する。
-4. [ ] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格（関数・分岐・ループ・基本式）を実装する。
+4. [x] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格（関数・分岐・ループ・基本式）を実装する。
 5. [ ] [ID: P3-PHP-BACKEND-01-S2-02] class/inheritance と container 操作の最低限 lower を実装する。
 6. [ ] [ID: P3-PHP-BACKEND-01-S2-03] runtime helper を `src/runtime/php/pytra/` へ分離し、生成コードから参照する方式へ統一する。
 7. [ ] [ID: P3-PHP-BACKEND-01-S3-01] `test_py2php_smoke.py` と `check_py2php_transpile.py` を追加し、回帰導線を整備する。

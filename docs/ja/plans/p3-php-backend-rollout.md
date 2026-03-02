@@ -73,12 +73,13 @@ runtime 分離契約（S1-01 確定）:
 - 2026-03-02: ユーザー指示により、PHP 対応を `P3` として計画化し、`Ruby -> Lua -> PHP` 順の次段として起票した。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S1-01] v1 スコープを確定。対応構文・非対応構文・runtime 分離契約を本計画書へ明文化し、非対応は fail-closed（例外停止）で扱う方針を固定した。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S1-02] `src/py2php.py` と `hooks/php/emitter` を追加し、`load_east3_document(target_lang="php")` 経由で EAST3 読み込み可能な CLI 導線を新設。runtime は `output/pytra/py_runtime.php` コピー方式で接続した。
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-01] `php_native_emitter` を拡張し、`FunctionDef/If/While/ForCore(StaticRange, RuntimeIter)` と基本式（定数/二項/比較/呼び出し/コンテナ）を出力可能にした。`core/add`, `control/if_else`, `control/for_range` を `py2php` で変換し、for-range が PHP `for` へ出力されることを確認。
 
 ## 分解
 
 - [x] [ID: P3-PHP-BACKEND-01-S1-01] PHP backend のスコープ（対応構文・非対応構文・runtime 分離契約）を確定する。
 - [x] [ID: P3-PHP-BACKEND-01-S1-02] `src/py2php.py` と profile loader を追加し、CLI 導線を確立する。
-- [ ] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格を実装し、関数・条件分岐・ループ・基本式の出力を通す。
+- [x] [ID: P3-PHP-BACKEND-01-S2-01] PHP native emitter 骨格を実装し、関数・条件分岐・ループ・基本式の出力を通す。
 - [ ] [ID: P3-PHP-BACKEND-01-S2-02] class/inheritance と container 操作（list/dict/tuple 相当）の最低限 lower を実装する。
 - [ ] [ID: P3-PHP-BACKEND-01-S2-03] runtime helper を `src/runtime/php/pytra/` へ分離し、生成コードから参照する方式へ統一する。
 - [ ] [ID: P3-PHP-BACKEND-01-S3-01] `test_py2php_smoke.py` と `check_py2php_transpile.py` を追加し、回帰検知導線を整備する。
