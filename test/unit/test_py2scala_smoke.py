@@ -40,7 +40,7 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         scala = transpile_to_scala(east)
         self.assertIn("def main(args: Array[String]): Unit", scala)
-        self.assertIn("Auto-generated Pytra Scala 3 native source from EAST3.", scala)
+        self.assertNotIn("Auto-generated Pytra Scala 3 native source from EAST3.", scala)
 
     def test_scala_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
@@ -234,7 +234,7 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             self.assertFalse(out_js.exists())
             txt = out_scala.read_text(encoding="utf-8")
             self.assertIn("def main(args: Array[String]): Unit", txt)
-            self.assertIn("Auto-generated Pytra Scala 3 native source from EAST3.", txt)
+            self.assertNotIn("Auto-generated Pytra Scala 3 native source from EAST3.", txt)
             self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
 
     def test_cli_rejects_stage2_compat_mode(self) -> None:
