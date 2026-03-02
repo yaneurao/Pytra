@@ -50,8 +50,8 @@
 - [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
 - [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
 - [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、他言語展開は後回しにして C++ 先行で案1（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）を P0 起票。
@@ -59,6 +59,8 @@
 - 2026-03-02: `CppIrOptimizer` を既存 `optimize_cpp_ir` への薄い委譲層として導入し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` 配線へ変更。
 - 2026-03-02: `dump_cpp_opt_trace` は `cpp_lower_trace` と既存 `cpp_optimizer_trace` を同一ファイルへ連結出力する方式にした（CLI互換維持）。
 - 2026-03-02: `CppBraceOmitHintPass` を追加し、`If/ForCore` 等の brace 省略判定を optimizer 側で `cpp_omit_braces_v1` ヒント化。emitter は hint 優先で描画する形へ更新（S3-01 部分着手）。
+- 2026-03-02: 境界テストとして `test_cpp_optimizer.py` に `CppLower` / `CppIrOptimizer` / `emit_cpp_from_east` の接続検証を追加し、unit 回帰を固定（S4-01）。
+- 2026-03-02: `tools/check_py2cpp_transpile.py`（136/136 pass, skip6）、`tools/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`、`tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot 08_langtons_ant 18_mini_language_interpreter --ignore-unstable-stdout`（3/3 pass）で非退行を確認（S4-02）。
 
 ## C++ IR v0 契約（S1-01）
 

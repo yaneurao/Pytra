@@ -9,9 +9,8 @@ bytes capture(const list<list<int64>>& grid, int64 w, int64 h) {
     bytearray frame = bytearray(w * h);
     for (int64 y = 0; y < h; ++y) {
         int64 row_base = y * w;
-        for (int64 x = 0; x < w; ++x) {
+        for (int64 x = 0; x < w; ++x)
             frame[row_base + x] = (grid[y][x] ? 255 : 0);
-        }
     }
     return frame;
 }
@@ -30,7 +29,7 @@ void run_08_langtons_ant() {
     
     int64 steps_total = 600000;
     int64 capture_every = 3000;
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     
     int64 __next_capture_1 = 0;
     for (int64 i = 0; i < steps_total; ++i) {
