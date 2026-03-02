@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-east3-lifetime-analysis-foundation.md](../plans/p0-east3-lifetime-analysis-foundation.md)
 
-1. [ ] [ID: P0-EAST3-LIFETIME-ANALYSIS-01] EAST3 に backend 非依存の lifetime 注釈（def/use・live-range・last-use）を導入し、non-escape 解析と統合する。
+1. [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01] EAST3 に backend 非依存の lifetime 注釈（def/use・live-range・last-use）を導入し、non-escape 解析と統合する。
 2. [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-01] lifetime 注釈スキーマと fail-closed 規則を仕様化する。
 3. [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S1-02] block-local CFG と def-use index 生成基盤を追加する。
 4. [x] [ID: P0-EAST3-LIFETIME-ANALYSIS-01-S2-01] backward data-flow で liveness 固定点計算を実装する。
