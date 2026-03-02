@@ -205,14 +205,15 @@
 
 文脈: [docs/ja/plans/p2-wildcard-import-support.md](../plans/p2-wildcard-import-support.md)
 
-1. [ ] [ID: P2-WILDCARD-IMPORT-01] `from M import *` を正式サポートし、解決不能ケースは fail-closed で `input_invalid` に統一する。
-2. [ ] [ID: P2-WILDCARD-IMPORT-01-S1-01] wildcard import の公開シンボル決定規則（`__all__` 優先、未定義時 public 名）を仕様化する。
-3. [ ] [ID: P2-WILDCARD-IMPORT-01-S1-02] 既存 import 診断契約（unsupported/duplicate/missing）との整合を整理し、エラー分類を固定する。
-4. [ ] [ID: P2-WILDCARD-IMPORT-01-S2-01] import graph / export table で wildcard 展開情報を構築し、解決テーブルへ反映する。
-5. [ ] [ID: P2-WILDCARD-IMPORT-01-S2-02] 同名衝突・非公開名・未解決 wildcard を fail-closed で検出する。
-6. [ ] [ID: P2-WILDCARD-IMPORT-01-S2-03] CLI の wildcard 例外分岐とテスト期待値を正式対応契約へ更新する。
-7. [ ] [ID: P2-WILDCARD-IMPORT-01-S3-01] unit/統合テスト（正常系 + 衝突/失敗系）を追加して再発検知を固定する。
-8. [ ] [ID: P2-WILDCARD-IMPORT-01-S3-02] `spec-user.md` / `spec-import.md` / TODO の記述を実装契約に同期する。
+1. [x] [ID: P2-WILDCARD-IMPORT-01] `from M import *` を正式サポートし、解決不能ケースは fail-closed で `input_invalid` に統一する。
+2. [x] [ID: P2-WILDCARD-IMPORT-01-S1-01] wildcard import の公開シンボル決定規則（`__all__` 優先、未定義時 public 名）を仕様化する。
+3. [x] [ID: P2-WILDCARD-IMPORT-01-S1-02] 既存 import 診断契約（unsupported/duplicate/missing）との整合を整理し、エラー分類を固定する。
+4. [x] [ID: P2-WILDCARD-IMPORT-01-S2-01] import graph / export table で wildcard 展開情報を構築し、解決テーブルへ反映する。
+5. [x] [ID: P2-WILDCARD-IMPORT-01-S2-02] 同名衝突・非公開名・未解決 wildcard を fail-closed で検出する。
+6. [x] [ID: P2-WILDCARD-IMPORT-01-S2-03] CLI の wildcard 例外分岐とテスト期待値を正式対応契約へ更新する。
+7. [x] [ID: P2-WILDCARD-IMPORT-01-S3-01] unit/統合テスト（正常系 + 衝突/失敗系）を追加して再発検知を固定する。
+8. [x] [ID: P2-WILDCARD-IMPORT-01-S3-02] `spec-user.md` / `spec-import.md` / TODO の記述を実装契約に同期する。
+- 進捗メモ: [ID: P2-WILDCARD-IMPORT-01] wildcard を `__all__` 優先/public fallback で解決し、`unresolved_wildcard` fail-closed・重複検出・CLI/回帰テスト・spec 同期まで完了。
 
 ### P2: sample/18 C++ AST コンテナ値型化
 

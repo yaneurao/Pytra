@@ -44,7 +44,7 @@ Should namespace-like prefixes be attached to symbol names?
 
 ## Addendum: Concerns
 
-- In current spec (`docs/en/spec/spec-dev.md`), `from module import *` is unsupported. This should be explicitly fixed as either a target to implement first or continue as `input_invalid`.
+- `from module import *` is accepted as `binding_kind=wildcard` and resolved in frontend import analysis. Static-undecidable cases fail closed as `input_invalid(kind=unresolved_wildcard)`.
 - `#include` alone cannot enforce C++ visibility restrictions, so `from X import Y` constraints must be guaranteed by transpiler name resolution.
 - The allowed symbol kinds for `from X import Y` (function/class/constant/variable), and whether `X.Y` access is allowed/forbidden, need explicit specification.
 - Priority on collisions between import names and local names (local/arg/import alias/builtin) must be fixed to avoid per-language behavior drift.
@@ -58,7 +58,7 @@ Should namespace-like prefixes be attached to symbol names?
   - `import M as A`
   - `from M import S`
   - `from M import S as A`
-- In phase 1, keep `from M import *` unsupported as `input_invalid`.
+- In phase 1, accept `from M import *` as wildcard binding and expand it with `__all__` priority / public-name fallback.
 - In phase 1, keep relative import (`from .m import x`) unsupported as `input_invalid`.
 
 ### 1. Fix Input Data Structure for Dependency Analysis Phase
@@ -141,7 +141,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 
 - Unify all import-related failures under `input_invalid`.
 - `detail` lines must include at least:
-  - `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unsupported_import_form`
+  - `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unresolved_wildcard | unsupported_import_form`
   - `file`: input file
   - `import`: original import string (reconstructed string is acceptable)
 - Example:
@@ -153,7 +153,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
   - `import M` / `import M as A` / `from M import S` / `from M import S as A`
   - no collision at call site due to full qualification even when same-name symbols exist across modules
 - Negative cases:
-  - `from M import *` (phase 1: `input_invalid`)
+  - `from M import *` (accepted; unresolved/static-undecidable wildcard must fail as `kind=unresolved_wildcard`)
   - `from .m import x` (phase 1: `input_invalid`)
   - non-existing module/symbol
   - duplicate same-name alias
@@ -223,7 +223,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
   - For `from M import S as A`, never emit `A` directly; normalize to `ns_of(M)::S` at reference sites.
   - Use the same `module_namespace_map` in single-file and multi-file modes; no rule drift.
 - Error policy:
-  - `from M import *`, relative import, unresolved module, unresolved symbol, and duplicate alias all fail as `input_invalid`.
+  - unresolved wildcard, relative import, unresolved module, unresolved symbol, and duplicate alias all fail as `input_invalid`.
 
 ### 2. Rust (`src/py2rs.py`)
 
@@ -238,7 +238,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
     - `from math import sqrt as s`: lower `s(x)` to `math_sqrt(...)`.
   - Keep runtime integration through `py_runtime`; import only used symbols via `use py_runtime::{...}`.
 - Error policy:
-  - `from M import *` and relative import should be unified as `TranspileError` (equivalent to top-level `input_invalid`).
+  - unresolved wildcard and relative import should be reported as `input_invalid` (wildcard uses `kind=unresolved_wildcard`).
 
 ### 3. C# (`src/py2cs.py`)
 
@@ -252,7 +252,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
   - Keep existing `typing_aliases` route and register from-import names into type-resolution tables.
   - Keep `py_module`/`pylib` compatibility and gradually converge names to `pytra.*`.
 - Error policy:
-  - Do not expand `from M import *`; fail as unsupported.
+  - Use frontend-resolved wildcard references and fail only when wildcard cannot be resolved statically.
   - Same-name alias collision fails immediately as `duplicate_binding`.
 
 ### 4. JavaScript (`src/py2js.py` + `src/common/js_ts_native_transpiler.py`)
@@ -268,7 +268,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
   - `from pytra.utils.gif import save_gif as sg` -> `const { save_gif: sg } = require(.../gif_helper.js)`
   - Add lazy emission based on reference counts (emit require only for used bindings).
 - Error policy:
-  - Keep unsupported branch in `_transpile_import` and fail early on unsupported import forms.
+  - Consume frontend-resolved import metadata; unresolved wildcard must be rejected in frontend before JS emission.
 
 ### 5. TypeScript (`src/py2ts.py` + `src/common/js_ts_native_transpiler.py`)
 

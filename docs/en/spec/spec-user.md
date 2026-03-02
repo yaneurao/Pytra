@@ -34,7 +34,7 @@ Pytra is a set of transpilers that converts type-annotated Python code into the 
 - Members declared in class body are treated as class members (`static` in C#, `inline static` in C++).
 - Classes with `@dataclass` are treated as dataclasses, generating fields and constructor.
 - Supports `import` / `from ... import ...`.
-- `from ... import *` (wildcard import) is unsupported.
+- `from ... import *` (wildcard import) is supported (relative import is still unsupported).
 - In transpilation target code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.
 - Importable modules are modules under `src/pytra/` and user-authored `.py` modules.
 - User module import is legal by specification, but multi-file dependency resolution is still under staged implementation.
