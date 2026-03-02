@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from backends.cpp.optimizer.passes.binop_normalize_pass import CppBinOpNormalizePass
 from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
 from backends.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNormalizePass
 from backends.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
@@ -22,6 +23,7 @@ def build_default_cpp_passes() -> list[object]:
         CppNoOpCastPass(),
         CppCastCallNormalizePass(),
         CppCompareNormalizePass(),
+        CppBinOpNormalizePass(),
         CppConstConditionPass(),
         CppRangeForShapePass(),
         CppForIterModeHintPass(),

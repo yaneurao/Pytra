@@ -24,6 +24,7 @@ from backends.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
 from backends.cpp.optimizer.cpp_ir_optimizer import optimize_cpp_ir_module
 from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
 from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
+from backends.cpp.optimizer.passes.binop_normalize_pass import CppBinOpNormalizePass
 from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
 from backends.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNormalizePass
 from backends.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
@@ -98,7 +99,7 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = optimize_cpp_ir(
             doc,
             opt_level="1",
-            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppCastCallNormalizePass,-CppCompareNormalizePass,-CppConstConditionPass,-CppRangeForShapePass,-CppForIterModeHintPass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
+            opt_pass_spec="-CppNoOpPass,-CppDeadTempPass,-CppNoOpCastPass,-CppCastCallNormalizePass,-CppCompareNormalizePass,-CppBinOpNormalizePass,-CppConstConditionPass,-CppRangeForShapePass,-CppForIterModeHintPass,-CppBraceOmitHintPass,-CppRuntimeFastPathPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -113,22 +114,25 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertFalse(bool(trace[3].get("enabled")))
         self.assertEqual(trace[4].get("name"), "CppCompareNormalizePass")
         self.assertFalse(bool(trace[4].get("enabled")))
-        self.assertEqual(trace[5].get("name"), "CppConstConditionPass")
+        self.assertEqual(trace[5].get("name"), "CppBinOpNormalizePass")
         self.assertFalse(bool(trace[5].get("enabled")))
-        self.assertEqual(trace[6].get("name"), "CppRangeForShapePass")
+        self.assertEqual(trace[6].get("name"), "CppConstConditionPass")
         self.assertFalse(bool(trace[6].get("enabled")))
-        self.assertEqual(trace[7].get("name"), "CppForIterModeHintPass")
+        self.assertEqual(trace[7].get("name"), "CppRangeForShapePass")
         self.assertFalse(bool(trace[7].get("enabled")))
-        self.assertEqual(trace[8].get("name"), "CppBraceOmitHintPass")
+        self.assertEqual(trace[8].get("name"), "CppForIterModeHintPass")
         self.assertFalse(bool(trace[8].get("enabled")))
-        self.assertEqual(trace[9].get("name"), "CppRuntimeFastPathPass")
+        self.assertEqual(trace[9].get("name"), "CppBraceOmitHintPass")
         self.assertFalse(bool(trace[9].get("enabled")))
+        self.assertEqual(trace[10].get("name"), "CppRuntimeFastPathPass")
+        self.assertFalse(bool(trace[10].get("enabled")))
         trace_text = render_cpp_opt_trace(report)
         self.assertIn("CppNoOpPass enabled=false", trace_text)
         self.assertIn("CppDeadTempPass enabled=false", trace_text)
         self.assertIn("CppNoOpCastPass enabled=false", trace_text)
         self.assertIn("CppCastCallNormalizePass enabled=false", trace_text)
         self.assertIn("CppCompareNormalizePass enabled=false", trace_text)
+        self.assertIn("CppBinOpNormalizePass enabled=false", trace_text)
         self.assertIn("CppConstConditionPass enabled=false", trace_text)
         self.assertIn("CppRangeForShapePass enabled=false", trace_text)
         self.assertIn("CppForIterModeHintPass enabled=false", trace_text)
@@ -307,6 +311,40 @@ class CppOptimizerTest(unittest.TestCase):
         value = doc.get("body")[0].get("value")
         self.assertEqual(value.get("kind"), "UnaryOp")
         self.assertEqual(value.get("op"), "Not")
+
+    def test_cpp_binop_normalize_pass_folds_add_zero(self) -> None:
+        doc = _module_doc()
+        expr = {
+            "kind": "BinOp",
+            "op": "Add",
+            "left": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+            "right": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+            "resolved_type": "int64",
+        }
+        doc["body"] = [{"kind": "Expr", "value": expr}]
+        result = CppBinOpNormalizePass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        value = doc.get("body")[0].get("value")
+        self.assertEqual(value.get("kind"), "Name")
+        self.assertEqual(value.get("id"), "x")
+
+    def test_cpp_binop_normalize_pass_folds_mult_one(self) -> None:
+        doc = _module_doc()
+        expr = {
+            "kind": "BinOp",
+            "op": "Mult",
+            "left": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+            "right": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+            "resolved_type": "int64",
+        }
+        doc["body"] = [{"kind": "Expr", "value": expr}]
+        result = CppBinOpNormalizePass().run(doc, CppOptContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.change_count, 1)
+        value = doc.get("body")[0].get("value")
+        self.assertEqual(value.get("kind"), "Name")
+        self.assertEqual(value.get("id"), "x")
 
     def test_cpp_noop_cast_pass_removes_noop_cast_entries(self) -> None:
         doc = _module_doc()
