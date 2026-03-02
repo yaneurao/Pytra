@@ -39,10 +39,13 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`ForCore` 単文ループの `{}` 省略を `CppEmitter` 側で扱う方針で `P0` 起票。
+- 2026-03-02: 省略条件は fail-closed とし、`StaticRangeForPlan + NameTarget + orelseなし + 単文` に限定する方針で確定。
+- 2026-03-02: `CppEmitter._default_stmt_omit_braces` に `ForCore` 分岐を追加し、上記条件を満たすときのみ brace 省略を有効化。
+- 2026-03-02: `test_forcore_static_range_single_stmt_omits_braces` を追加し、`sample/cpp/18` 再生成と `check_py2cpp_transpile` を通過。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S1-01] `ForCore` の brace 省略条件（単文・安全条件・除外条件）を確定する。
-- [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S2-01] `CppEmitter` の既定 brace 判定に `ForCore` を追加し、出力経路へ適用する。
-- [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-01] unit テストを追加/更新し、`ForCore` 省略回帰を固定する。
-- [ ] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。
+- [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S1-01] `ForCore` の brace 省略条件（単文・安全条件・除外条件）を確定する。
+- [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S2-01] `CppEmitter` の既定 brace 判定に `ForCore` を追加し、出力経路へ適用する。
+- [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-01] unit テストを追加/更新し、`ForCore` 省略回帰を固定する。
+- [x] [ID: P0-CPP-FORCORE-BRACE-OMIT-01-S3-02] `sample/cpp/18` 再生成と transpile チェックで非退行を確認する。

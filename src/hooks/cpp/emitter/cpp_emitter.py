@@ -1326,6 +1326,16 @@ class CppEmitter(
             if self._node_kind_from_dict(target) == "Tuple":
                 return False
             return self._can_omit_braces_for_single_stmt(body_stmts)
+        if kind == "ForCore":
+            if len(self.any_dict_get_list(stmt, "orelse")) != 0:
+                return False
+            iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
+            target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
+            if self.any_dict_get_str(iter_plan, "kind", "") != "StaticRangeForPlan":
+                return False
+            if self.any_dict_get_str(target_plan, "kind", "") != "NameTarget":
+                return False
+            return self._can_omit_braces_for_single_stmt(body_stmts)
         return default_value
 
     def _default_for_range_mode(self, stmt: dict[str, Any], default_mode: str, step_expr: str) -> str:

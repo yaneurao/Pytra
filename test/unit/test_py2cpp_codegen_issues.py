@@ -1085,6 +1085,24 @@ def f(x: object) -> None:
         )
         self.assertNotIn("? i < 3 : i > 3", cpp)
 
+    def test_forcore_static_range_single_stmt_omits_braces(self) -> None:
+        src = """def f() -> int:
+    total: int = 0
+    for i in range(0, 3, 1):
+        total += i
+    return total
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "forcore_single_stmt_brace_omit.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        loop_lines = [line.strip() for line in cpp.splitlines() if line.strip().startswith("for (int64 i = 0; i < 3; ++i)")]
+        self.assertEqual(loop_lines, ["for (int64 i = 0; i < 3; ++i)"])
+        self.assertNotIn("for (int64 i = 0; i < 3; ++i) {", cpp)
+        self.assertIn("total += i;", cpp)
+
     def test_for_object_uses_runtime_protocol_py_dyn_range(self) -> None:
         src = """def f(x: object) -> int:
     s: int = 0
