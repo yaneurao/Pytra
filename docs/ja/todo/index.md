@@ -153,7 +153,7 @@
 
 文脈: [docs/ja/plans/p1-rs-s18-quality-uplift.md](../plans/p1-rs-s18-quality-uplift.md)
 
-1. [ ] [ID: P1-RS-S18-QUALITY-01] `sample/rs/18` の生成品質を改善し、可読性とホットパス効率を引き上げる。
+1. [x] [ID: P1-RS-S18-QUALITY-01] `sample/rs/18` の生成品質を改善し、可読性とホットパス効率を引き上げる。
 2. [x] [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust 出力の冗長断片（clone/添字/走査/format）を棚卸しし、改善対象を固定する。
 3. [x] [ID: P1-RS-S18-QUALITY-01-S1-02] 期待効果とリスクで実装順を確定し、fail-closed 適用境界を定義する。
 4. [x] [ID: P1-RS-S18-QUALITY-01-S2-01] `current_token/previous_token/eval_expr` で borrow 優先経路を追加し、不要 `clone` を削減する。
@@ -162,7 +162,7 @@
 7. [x] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
 8. [x] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
 9. [x] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
-10. [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
+10. [x] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
 11. [x] [ID: P1-RS-S18-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長出力パターンの再発を検知可能にする。
 12. [x] [ID: P1-RS-S18-QUALITY-01-S3-02] `sample/rs/18` 再生成と transpile/smoke/parity で非退行を確認する。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust の冗長断片を `clone`/添字正規化/走査/format連鎖/`&Vec<T>` で棚卸しし、改善対象を固定。
@@ -173,6 +173,7 @@
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-03] `str` 添字の非負確定経路で `py_str_at_nonneg` を導入し、`sample/rs/18` tokenize ホットパスを軽量化（unit/transpile/parity 通過）。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 `dict[str, const]` の `get` を `match` へ縮退し、`sample/rs/18` の token 判定 lookup を簡素化（unit/transpile/parity 通過）。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-05] cast 無し `str` Add 連鎖を `format!` 1回へ平坦化し、`sample/rs/18` の nested `format!` を削減（unit/transpile/parity 通過）。
+- 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-07] 順序依存解析（`items/keys/values`・dict反復・外部不明呼び出し）を追加し、順序不要な `dict[str,int64]` の `env` 経路を `HashMap` へ縮退（unit/transpile/parity 通過）。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S3-01] `test_py2rs_smoke` に `single_tag` 添字 fastpath / `py_str_at_nonneg` / nested `format!` 非出力の回帰検知を追加。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S3-02] `sample/rs/18` 再生成と `test_py2rs_smoke` / `check_py2rs_transpile` / parity（case18）を再通過。
 

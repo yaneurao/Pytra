@@ -51,6 +51,7 @@
 - 2026-03-02: 小規模固定 `dict[str, const]` の `get` を `match` へ縮退し、token 判定 lookup の map 依存を削減（S2-04）。
 - 2026-03-02: cast 無し `str` Add 連鎖を平坦化して `format!` 1回へ統合し、nested `format!` を削減（S2-05）。
 - 2026-03-02: sample/18 向け回帰検知を追加（`single_tag` 添字 fastpath / `py_str_at_nonneg` / nested `format!` 非出力）し、再生成 + transpile/smoke/parity を再通過（S3-01/S3-02）。
+- 2026-03-02: 順序依存解析（`items/keys/values`・dict反復・外部不明呼び出し）を追加し、順序不要な `dict[str,int64]` 経路を `HashMap` へ縮退（S2-07）。
 
 ## 分解
 
@@ -62,7 +63,7 @@
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
-- [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
+- [x] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
 - [x] [ID: P1-RS-S18-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長出力パターンの再発を検知可能にする。
 - [x] [ID: P1-RS-S18-QUALITY-01-S3-02] `sample/rs/18` 再生成と transpile/smoke/parity で非退行を確認する。
 

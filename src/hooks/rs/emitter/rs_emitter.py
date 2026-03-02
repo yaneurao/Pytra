@@ -492,6 +492,7 @@ class RustEmitter(CodeEmitter):
         self.assumed_non_negative_vars: set[str] = set()
         self.assumed_positive_vars: set[str] = set()
         self.current_const_string_dict_bindings: dict[str, dict[str, str]] = {}
+        self.current_hashmap_dict_names: set[str] = set()
         self.current_class_name: str = ""
         self.uses_string_helpers: bool = False
 
@@ -724,6 +725,161 @@ class RustEmitter(CodeEmitter):
             if len(inner) == 1:
                 return "&[" + self._rust_type(inner[0]) + "]"
         return "&" + rust_type
+
+    def _dict_key_supports_hashmap(self, key_t: str) -> bool:
+        key_norm = self.normalize_type_name(key_t)
+        return key_norm in {"str", "int64", "bool"}
+
+    def _can_hashmap_backend(self, east_type: str) -> bool:
+        t = self.normalize_type_name(east_type)
+        if not t.startswith("dict["):
+            return False
+        key_t, _val_t = self._dict_key_value_types(t)
+        if key_t == "":
+            return False
+        return self._dict_key_supports_hashmap(key_t)
+
+    def _rust_type_for_binding(self, name_raw: str, east_type: str) -> str:
+        t = self.normalize_type_name(east_type)
+        base = self._rust_type(t)
+        if t.startswith("dict[") and name_raw in self.current_hashmap_dict_names and self._can_hashmap_backend(t):
+            return base.replace("::std::collections::BTreeMap<", "::std::collections::HashMap<")
+        return base
+
+    def _collect_local_dict_decl_types(self, stmts: list[dict[str, Any]], out: dict[str, str]) -> None:
+        for st in stmts:
+            if not isinstance(st, dict):
+                continue
+            kind = self.any_dict_get_str(st, "kind", "")
+            if kind == "AnnAssign":
+                target = self.any_to_dict_or_empty(st.get("target"))
+                if self.any_dict_get_str(target, "kind", "") == "Name":
+                    name_raw = self.any_dict_get_str(target, "id", "")
+                    ann = self.any_to_str(st.get("annotation"))
+                    decl_t = self.any_to_str(st.get("decl_type"))
+                    value_t = self.normalize_type_name(self.get_expr_type(st.get("value")))
+                    t = self.normalize_type_name(ann if ann != "" else decl_t)
+                    if t == "":
+                        t = value_t
+                    if self._can_hashmap_backend(t):
+                        out[name_raw] = t
+                continue
+            if kind == "Assign":
+                target = self.primary_assign_target(st)
+                target_d = self.any_to_dict_or_empty(target)
+                if self.any_dict_get_str(target_d, "kind", "") == "Name":
+                    name_raw = self.any_dict_get_str(target_d, "id", "")
+                    t = self.normalize_type_name(self.get_expr_type(st.get("value")))
+                    if self._can_hashmap_backend(t):
+                        out[name_raw] = t
+                continue
+            nested: list[dict[str, Any]] = []
+            if kind in {"If", "While", "For", "ForRange", "ForCore"}:
+                nested.extend(self._dict_stmt_list(st.get("body")))
+                nested.extend(self._dict_stmt_list(st.get("orelse")))
+            elif kind == "Try":
+                nested.extend(self._dict_stmt_list(st.get("body")))
+                nested.extend(self._dict_stmt_list(st.get("orelse")))
+                nested.extend(self._dict_stmt_list(st.get("finalbody")))
+                for h in self.any_to_list(st.get("handlers")):
+                    nested.extend(self._dict_stmt_list(self.any_to_dict_or_empty(h).get("body")))
+            if len(nested) > 0:
+                self._collect_local_dict_decl_types(nested, out)
+
+    def _collect_dict_order_sensitive_names_from_expr(self, node: Any, dict_types: dict[str, str], out: set[str]) -> None:
+        if isinstance(node, dict):
+            kind = self.any_dict_get_str(node, "kind", "")
+            if kind == "Call":
+                fn = self.any_to_dict_or_empty(node.get("func"))
+                mark_call_args_unsafe = False
+                if self.any_dict_get_str(fn, "kind", "") == "Attribute":
+                    attr = self.any_dict_get_str(fn, "attr", "")
+                    owner = self.any_to_dict_or_empty(fn.get("value"))
+                    if self.any_dict_get_str(owner, "kind", "") == "Name":
+                        owner_name = self.any_dict_get_str(owner, "id", "")
+                        if owner_name in dict_types and attr in {"items", "keys", "values"}:
+                            out.add(owner_name)
+                    elif attr not in {"get", "insert", "contains_key", "len", "clear", "remove", "pop", "update"}:
+                        mark_call_args_unsafe = True
+                elif self.any_dict_get_str(fn, "kind", "") == "Name":
+                    fn_name = self.any_dict_get_str(fn, "id", "")
+                    if fn_name not in self.function_return_types and fn_name not in {
+                        "str",
+                        "int",
+                        "float",
+                        "bool",
+                        "len",
+                        "max",
+                        "min",
+                        "print",
+                        "range",
+                        "enumerate",
+                        "isinstance",
+                        "bytearray",
+                        "bytes",
+                        "list",
+                        "dict",
+                        "set",
+                        "tuple",
+                        "py_assert_stdout",
+                    }:
+                        mark_call_args_unsafe = True
+                else:
+                    mark_call_args_unsafe = True
+                if mark_call_args_unsafe:
+                    for arg_node in self.any_to_list(node.get("args")):
+                        arg_d = self.any_to_dict_or_empty(arg_node)
+                        if self.any_dict_get_str(arg_d, "kind", "") == "Name":
+                            arg_name = self.any_dict_get_str(arg_d, "id", "")
+                            if arg_name in dict_types:
+                                out.add(arg_name)
+            if kind == "Name":
+                return
+            for _k, v in node.items():
+                self._collect_dict_order_sensitive_names_from_expr(v, dict_types, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._collect_dict_order_sensitive_names_from_expr(item, dict_types, out)
+
+    def _collect_dict_order_sensitive_names(self, stmts: list[dict[str, Any]], dict_types: dict[str, str], out: set[str]) -> None:
+        for st in stmts:
+            if not isinstance(st, dict):
+                continue
+            kind = self.any_dict_get_str(st, "kind", "")
+            if kind in {"For", "ForCore"}:
+                iter_node = st.get("iter") if kind == "For" else self.any_to_dict_or_empty(st.get("iter_plan")).get("iter_expr")
+                iter_d = self.any_to_dict_or_empty(iter_node)
+                if self.any_dict_get_str(iter_d, "kind", "") == "Name":
+                    iter_name = self.any_dict_get_str(iter_d, "id", "")
+                    if iter_name in dict_types:
+                        out.add(iter_name)
+            self._collect_dict_order_sensitive_names_from_expr(st, dict_types, out)
+
+    def _analyze_function_hashmap_dict_names(self, fn: dict[str, Any], *, in_class: str | None) -> set[str]:
+        _ = in_class
+        out: set[str] = set()
+        arg_order = self.any_to_str_list(fn.get("arg_order"))
+        arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        dict_types: dict[str, str] = {}
+        for arg_name in arg_order:
+            if arg_name == "self":
+                continue
+            t = self.normalize_type_name(self.any_to_str(arg_types.get(arg_name)))
+            if self._can_hashmap_backend(t):
+                dict_types[arg_name] = t
+        body = self._dict_stmt_list(fn.get("body"))
+        self._collect_local_dict_decl_types(body, dict_types)
+        for name_raw in dict_types.keys():
+            out.add(name_raw)
+        if len(out) == 0:
+            return out
+        sensitive: set[str] = set()
+        self._collect_dict_order_sensitive_names(body, dict_types, sensitive)
+        for name_raw in list(out):
+            if name_raw in sensitive:
+                out.discard(name_raw)
+        return out
 
     def _compute_function_arg_ref_modes(self, fn: dict[str, Any], *, for_method: bool = False) -> list[bool]:
         """関数の各引数を `&T` で受けるべきかを返す（top-level 用）。"""
@@ -2468,6 +2624,7 @@ class RustEmitter(CodeEmitter):
         prev_assumed_non_negative_vars = self.assumed_non_negative_vars
         prev_assumed_positive_vars = self.assumed_positive_vars
         prev_const_string_dict_bindings = self.current_const_string_dict_bindings
+        prev_hashmap_dict_names = self.current_hashmap_dict_names
         prev_class_name = self.current_class_name
         self.current_class_name = self.normalize_type_name(in_class) if in_class is not None else ""
         self.current_fn_write_counts = self._collect_name_write_counts(body)
@@ -2478,6 +2635,7 @@ class RustEmitter(CodeEmitter):
         self.assumed_non_negative_vars = set()
         self.assumed_positive_vars = set()
         self.current_const_string_dict_bindings = {}
+        self.current_hashmap_dict_names = self._analyze_function_hashmap_dict_names(fn, in_class=in_class)
         args_text_list: list[str] = []
         scope_names: set[str] = set()
         if in_class is None:
@@ -2500,7 +2658,7 @@ class RustEmitter(CodeEmitter):
         for arg_name in arg_order:
             safe = self._safe_name(arg_name)
             arg_east_t = self.any_to_str(arg_types.get(arg_name))
-            arg_t = self._rust_type(arg_east_t)
+            arg_t = self._rust_type_for_binding(arg_name, arg_east_t)
             usage = self.any_to_str(arg_usage.get(arg_name))
             write_count = self.current_fn_write_counts.get(arg_name, 0)
             mut_call_count = self.current_fn_mutating_call_counts.get(arg_name, 0)
@@ -2540,6 +2698,7 @@ class RustEmitter(CodeEmitter):
         self.assumed_non_negative_vars = prev_assumed_non_negative_vars
         self.assumed_positive_vars = prev_assumed_positive_vars
         self.current_const_string_dict_bindings = prev_const_string_dict_bindings
+        self.current_hashmap_dict_names = prev_hashmap_dict_names
         self.current_class_name = prev_class_name
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2947,7 +3106,13 @@ class RustEmitter(CodeEmitter):
             return "PyAny::None"
         return "PyAny::Str(format!(\"{:?}\", " + rendered + "))"
 
-    def _render_dict_expr(self, expr_d: dict[str, Any], *, force_any_values: bool = False) -> str:
+    def _render_dict_expr(
+        self,
+        expr_d: dict[str, Any],
+        *,
+        force_any_values: bool = False,
+        prefer_hash_map: bool = False,
+    ) -> str:
         """Dict リテラルを Rust `BTreeMap::from([...])` へ描画する。"""
         dict_t = self.normalize_type_name(self.get_expr_type(expr_d))
         key_t = ""
@@ -2988,9 +3153,12 @@ class RustEmitter(CodeEmitter):
                     val_txt = self._render_as_pyany(val_node)
                 pairs.append("(" + key_txt + ", " + val_txt + ")")
                 i += 1
-        return "::std::collections::BTreeMap::from([" + ", ".join(pairs) + "])"
+        backend = "::std::collections::BTreeMap::from(["
+        if prefer_hash_map:
+            backend = "::std::collections::HashMap::from(["
+        return backend + ", ".join(pairs) + "])"
 
-    def _render_value_for_decl_type(self, value_obj: Any, target_type: str) -> str:
+    def _render_value_for_decl_type(self, value_obj: Any, target_type: str, *, prefer_hash_map: bool = False) -> str:
         """宣言型に合わせて右辺式を補正する。"""
         t = self.normalize_type_name(target_type)
         value_d = self.any_to_dict_or_empty(value_obj)
@@ -2999,7 +3167,7 @@ class RustEmitter(CodeEmitter):
             return self._render_as_pyany(value_obj)
         if self._is_dict_with_any_value(t):
             if value_kind == "Dict":
-                return self._render_dict_expr(value_d, force_any_values=True)
+                return self._render_dict_expr(value_d, force_any_values=True, prefer_hash_map=prefer_hash_map)
             rendered = self.render_expr(value_obj)
             src_t = self.normalize_type_name(self.get_expr_type(value_obj))
             if self._is_any_type(src_t):
@@ -3011,6 +3179,8 @@ class RustEmitter(CodeEmitter):
                     self.uses_pyany = True
                     return "py_any_as_dict(" + rendered + ")"
             return rendered
+        if t.startswith("dict[") and value_kind == "Dict":
+            return self._render_dict_expr(value_d, force_any_values=False, prefer_hash_map=prefer_hash_map)
         if t == "str":
             return self._ensure_string_owned(self.render_expr(value_obj))
         return self.render_expr(value_obj)
@@ -3094,7 +3264,8 @@ class RustEmitter(CodeEmitter):
         value_t = self.normalize_type_name(self.get_expr_type(value_obj))
         if value_t in self.class_names and self._is_class_subtype(value_t, t_east):
             t_east = value_t
-        t = self._rust_type(t_east)
+        prefer_hash_map = name_raw in self.current_hashmap_dict_names and self._can_hashmap_backend(t_east)
+        t = self._rust_type_for_binding(name_raw, t_east)
         self.declare_in_current_scope(name_raw)
         self.declared_var_types[name_raw] = self.normalize_type_name(t_east)
         if value_obj is None:
@@ -3113,7 +3284,7 @@ class RustEmitter(CodeEmitter):
             return
         value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t_east, value_obj)
         if value == "":
-            value = self._render_value_for_decl_type(value_obj, t_east)
+            value = self._render_value_for_decl_type(value_obj, t_east, prefer_hash_map=prefer_hash_map)
         is_mut = self._should_declare_mut(name_raw, has_init_write=True)
         self._update_const_string_dict_binding(name_raw, value_obj, is_mut)
         mut_kw = "mut " if is_mut else ""
@@ -3143,6 +3314,10 @@ class RustEmitter(CodeEmitter):
                 prealloc_value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t, stmt.get("value"))
                 if prealloc_value != "":
                     value = prealloc_value
+                elif self.any_dict_get_str(self.any_to_dict_or_empty(stmt.get("value")), "kind", "") == "Dict":
+                    t_norm = self.normalize_type_name(t)
+                    if name_raw in self.current_hashmap_dict_names and self._can_hashmap_backend(t_norm):
+                        value = self._render_dict_expr(self.any_to_dict_or_empty(stmt.get("value")), prefer_hash_map=True)
                 self.emit(self.syntax_line("assign_decl_init", "let {mut_kw}{target} = {value};", {"mut_kw": mut_kw, "target": name, "value": value}))
                 self._update_name_sign_info(name_raw, stmt.get("value"))
                 return
