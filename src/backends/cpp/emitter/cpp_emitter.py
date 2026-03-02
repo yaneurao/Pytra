@@ -1382,46 +1382,33 @@ class CppEmitter(
     def _emit_stmt_kind_fallback(self, kind: str, stmt: dict[str, Any]) -> bool:
         """`on_emit_stmt_kind` 未処理時の C++ 既定ディスパッチ。"""
         self.render_trivia(stmt)
-        if kind == "Expr":
-            self._emit_expr_stmt(stmt)
-        elif kind == "Return":
-            self._emit_return_stmt(stmt)
-        elif kind == "Assign":
-            self._emit_assign_stmt(stmt)
-        elif kind == "Swap":
-            self._emit_swap_stmt(stmt)
-        elif kind == "AnnAssign":
-            self._emit_annassign_stmt(stmt)
-        elif kind == "AugAssign":
-            self._emit_augassign_stmt(stmt)
-        elif kind == "If":
-            self._emit_if_stmt(stmt)
-        elif kind == "While":
-            self._emit_while_stmt(stmt)
-        elif kind == "ForRange" or kind == "For":
+        if kind == "ForRange" or kind == "For":
             raise ValueError("legacy loop node is unsupported in EAST3; lower to ForCore: " + kind)
-        elif kind == "ForCore":
-            self.emit_for_core(stmt)
-        elif kind == "Raise":
-            self._emit_raise_stmt(stmt)
-        elif kind == "Try":
-            self._emit_try_stmt(stmt)
-        elif kind == "FunctionDef":
-            self._emit_function_stmt(stmt)
-        elif kind == "ClassDef":
-            self._emit_class_stmt(stmt)
-        elif kind == "Pass":
-            self._emit_pass_stmt(stmt)
-        elif kind == "Break":
-            self._emit_break_stmt(stmt)
-        elif kind == "Continue":
-            self._emit_continue_stmt(stmt)
-        elif kind == "Yield":
-            self._emit_yield_stmt(stmt)
-        elif kind == "Import" or kind == "ImportFrom":
-            self._emit_noop_stmt(stmt)
-        else:
+        dispatch: dict[str, Any] = {
+            "Expr": self._emit_expr_stmt,
+            "Return": self._emit_return_stmt,
+            "Assign": self._emit_assign_stmt,
+            "Swap": self._emit_swap_stmt,
+            "AnnAssign": self._emit_annassign_stmt,
+            "AugAssign": self._emit_augassign_stmt,
+            "If": self._emit_if_stmt,
+            "While": self._emit_while_stmt,
+            "ForCore": self.emit_for_core,
+            "Raise": self._emit_raise_stmt,
+            "Try": self._emit_try_stmt,
+            "FunctionDef": self._emit_function_stmt,
+            "ClassDef": self._emit_class_stmt,
+            "Pass": self._emit_pass_stmt,
+            "Break": self._emit_break_stmt,
+            "Continue": self._emit_continue_stmt,
+            "Yield": self._emit_yield_stmt,
+            "Import": self._emit_noop_stmt,
+            "ImportFrom": self._emit_noop_stmt,
+        }
+        handler = dispatch.get(kind)
+        if not callable(handler):
             return False
+        handler(stmt)
         return True
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -1429,7 +1416,9 @@ class CppEmitter(
         hook_stmt = self.hook_on_emit_stmt(stmt)
         if hook_stmt:
             return
-        kind = self._node_kind_from_dict(stmt)
+        kind = self.any_to_str(stmt.get("cpp_stmt_kind_v1"))
+        if kind == "":
+            kind = self._node_kind_from_dict(stmt)
         if self.hook_on_emit_stmt_kind(kind, stmt):
             return
         self.render_trivia(stmt)

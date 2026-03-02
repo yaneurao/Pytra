@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+from backends.cpp.emitter.cpp_emitter import CppEmitter
 from backends.cpp.emitter.cpp_emitter import emit_cpp_from_east
 from backends.cpp.lower import lower_cpp_from_east3
 from backends.cpp.optimizer.context import CppOptContext
@@ -59,8 +60,35 @@ class CppOptimizerTest(unittest.TestCase):
         out_doc, report = lower_cpp_from_east3(doc, debug_flags={"x": "1"})
         self.assertIs(out_doc, doc)
         self.assertEqual(report.get("stage"), "cpp_lower")
-        self.assertEqual(report.get("mode"), "pass_through_v0")
+        self.assertEqual(report.get("mode"), "pass_through_v1_stmt_kind_hint")
         self.assertFalse(bool(report.get("changed")))
+
+    def test_cpp_lower_adds_stmt_kind_hints(self) -> None:
+        doc = {
+            "kind": "Module",
+            "meta": {},
+            "body": [
+                {"kind": "Pass"},
+                {"kind": "If", "test": {"kind": "Constant", "value": True}, "body": [{"kind": "Break"}], "orelse": []},
+            ],
+        }
+        out_doc, report = lower_cpp_from_east3(doc)
+        self.assertIs(out_doc, doc)
+        self.assertTrue(bool(report.get("changed")))
+        self.assertGreaterEqual(int(report.get("change_count", 0)), 3)
+        body = out_doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(body[0].get("cpp_stmt_kind_v1"), "Pass")
+        self.assertEqual(body[1].get("cpp_stmt_kind_v1"), "If")
+        nested = body[1].get("body")
+        self.assertIsInstance(nested, list)
+        self.assertEqual(nested[0].get("cpp_stmt_kind_v1"), "Break")
+
+    def test_cpp_emitter_accepts_stmt_kind_hint(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.emit_stmt({"kind": "Unknown", "cpp_stmt_kind_v1": "Pass"})
+        text = "\n".join(emitter.lines)
+        self.assertIn(";", text)
 
     def test_cpp_lower_rejects_non_module_kind(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "kind must be Module"):
