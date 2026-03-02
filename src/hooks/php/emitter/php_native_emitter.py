@@ -76,6 +76,8 @@ _PHP_KEYWORDS = {
     "yield",
 }
 
+_CLASS_NAMES: set[str] = set()
+
 
 def _safe_ident(name: Any, fallback: str) -> str:
     if not isinstance(name, str) or name == "":
@@ -179,6 +181,50 @@ def _call_name(expr: dict[str, Any]) -> str:
     if isinstance(name_any, str):
         return name_any
     return ""
+
+
+def _render_isinstance_check(lhs_expr: str, typ_expr: Any) -> str:
+    if not isinstance(typ_expr, dict):
+        return "false"
+    if typ_expr.get("kind") == "Tuple":
+        elems_any = typ_expr.get("elements")
+        elems = elems_any if isinstance(elems_any, list) else []
+        checks: list[str] = []
+        i = 0
+        while i < len(elems):
+            checks.append(_render_isinstance_check(lhs_expr, elems[i]))
+            i += 1
+        if len(checks) == 0:
+            return "false"
+        return "(" + " || ".join(checks) + ")"
+    if typ_expr.get("kind") == "Set":
+        elems_any = typ_expr.get("elements")
+        elems = elems_any if isinstance(elems_any, list) else []
+        checks: list[str] = []
+        i = 0
+        while i < len(elems):
+            checks.append(_render_isinstance_check(lhs_expr, elems[i]))
+            i += 1
+        if len(checks) == 0:
+            return "false"
+        return "(" + " || ".join(checks) + ")"
+    if typ_expr.get("kind") != "Name":
+        return "false"
+    typ_name_any = typ_expr.get("id")
+    if not isinstance(typ_name_any, str):
+        return "false"
+    typ_name = _safe_ident(typ_name_any, "Object")
+    if typ_name_any in {"int", "int64"}:
+        return "is_int(" + lhs_expr + ")"
+    if typ_name_any in {"float", "float64"}:
+        return "is_float(" + lhs_expr + ")"
+    if typ_name_any == "bool":
+        return "is_bool(" + lhs_expr + ")"
+    if typ_name_any == "str":
+        return "is_string(" + lhs_expr + ")"
+    if typ_name_any in {"list", "tuple", "dict", "bytes", "bytearray"}:
+        return "is_array(" + lhs_expr + ")"
+    return "(" + lhs_expr + " instanceof " + typ_name + ")"
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -289,11 +335,37 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered.append(_render_expr(args[i]))
             i += 1
         return "max(" + ", ".join(rendered) + ")"
+    if callee_name == "isinstance":
+        if len(args) < 2:
+            return "false"
+        return _render_isinstance_check(_render_expr(args[0]), args[1])
+    if callee_name == "RuntimeError":
+        if len(args) >= 1:
+            return _render_expr(args[0])
+        return "\"RuntimeError\""
+
+    ctor_name = _safe_ident(callee_name, "")
+    if ctor_name in _CLASS_NAMES:
+        rendered_ctor_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_ctor_args.append(_render_expr(args[i]))
+            i += 1
+        return "new " + ctor_name + "(" + ", ".join(rendered_ctor_args) + ")"
 
     func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         owner_any = func_any.get("value")
         attr_name = _safe_ident(func_any.get("attr"), "call")
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
+            rendered_super_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_super_args.append(_render_expr(args[i]))
+                i += 1
+            if attr_name == "__init__":
+                return "parent::__construct(" + ", ".join(rendered_super_args) + ")"
+            return "parent::" + attr_name + "(" + ", ".join(rendered_super_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
             if owner == "math":
@@ -305,12 +377,23 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if attr_name == "pi":
                     return "M_PI"
                 return attr_name + "(" + ", ".join(rendered_math_args) + ")"
+        owner_expr = _render_expr(owner_any)
+        if attr_name == "get":
+            if len(args) == 0:
+                return "null"
+            if len(args) == 1:
+                return "(" + owner_expr + "[" + _render_expr(args[0]) + "] ?? null)"
+            return "(" + owner_expr + "[" + _render_expr(args[0]) + "] ?? " + _render_expr(args[1]) + ")"
+        if attr_name == "pop":
+            if len(args) == 0:
+                return "array_pop(" + owner_expr + ")"
+            return owner_expr + "[" + _render_expr(args[0]) + "]"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_args.append(_render_expr(args[i]))
             i += 1
-        return _render_expr(owner_any) + "->" + attr_name + "(" + ", ".join(rendered_args) + ")"
+        return owner_expr + "->" + attr_name + "(" + ", ".join(rendered_args) + ")"
 
     rendered_args: list[str] = []
     i = 0
@@ -418,6 +501,17 @@ def _render_expr(expr: Any) -> str:
         body = _render_expr(expr.get("body"))
         orelse = _render_expr(expr.get("orelse"))
         return "(" + test + " ? " + body + " : " + orelse + ")"
+    if kind == "Unbox" or kind == "Box":
+        return _render_expr(expr.get("value"))
+    if kind == "ObjLen":
+        return "count(" + _render_expr(expr.get("value")) + ")"
+    if kind == "ObjStr":
+        return "strval(" + _render_expr(expr.get("value")) + ")"
+    if kind == "ObjBool":
+        return "((bool)(" + _render_expr(expr.get("value")) + "))"
+    if kind == "IsInstance":
+        lhs = _render_expr(expr.get("value"))
+        return _render_isinstance_check(lhs, expr.get("expected_type_id"))
     return "null"
 
 
@@ -556,6 +650,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + "return " + _render_expr(value) + ";"]
     if kind == "Expr":
         value = stmt.get("value")
+        if isinstance(value, dict) and value.get("kind") == "Name":
+            name = _safe_ident(value.get("id"), "")
+            if name == "continue_":
+                return [indent + "continue;"]
+            if name == "break_":
+                return [indent + "break;"]
         if isinstance(value, dict) and value.get("kind") == "Call":
             func_any = value.get("func")
             if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
@@ -651,9 +751,18 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> str:
     return ", ".join(out)
 
 
-def _emit_function(fn: dict[str, Any], *, indent: str) -> list[str]:
+def _emit_function(
+    fn: dict[str, Any],
+    *,
+    indent: str,
+    in_class: bool = False,
+    class_name: str = "",
+) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
-    lines: list[str] = [indent + "function " + name + "(" + _function_params(fn, drop_self=False) + ") {"]
+    method_name = "__construct" if in_class and name == "__init__" else name
+    params = _function_params(fn, drop_self=in_class)
+    prefix = "public function " if in_class else "function "
+    lines: list[str] = [indent + prefix + method_name + "(" + params + ") {"]
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
     ctx: dict[str, Any] = {}
@@ -661,6 +770,37 @@ def _emit_function(fn: dict[str, Any], *, indent: str) -> list[str]:
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
         i += 1
+    _ = class_name
+    lines.append(indent + "}")
+    return lines
+
+
+def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
+    class_name = _safe_ident(cls.get("name"), "PytraClass")
+    base_any = cls.get("base")
+    extends = ""
+    if isinstance(base_any, str) and base_any != "":
+        extends = " extends " + _safe_ident(base_any, "Object")
+    lines: list[str] = [indent + "class " + class_name + extends + " {"]
+
+    body_any = cls.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    has_init = False
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+            fn_name = _safe_ident(node.get("name"), "")
+            if fn_name == "__init__":
+                has_init = True
+            lines.extend(_emit_function(node, indent=indent + "    ", in_class=True, class_name=class_name))
+            lines.append("")
+        i += 1
+    if len(lines) > 0 and lines[-1] == "":
+        lines.pop()
+    if not has_init:
+        lines.append(indent + "    public function __construct() {")
+        lines.append(indent + "    }")
     lines.append(indent + "}")
     return lines
 
@@ -690,12 +830,28 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         lines.extend(module_comments)
         lines.append("")
 
+    global _CLASS_NAMES
+    _CLASS_NAMES = set()
     functions: list[dict[str, Any]] = []
+    classes: list[dict[str, Any]] = []
     i = 0
     while i < len(body_any):
         node = body_any[i]
-        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
-            functions.append(node)
+        if isinstance(node, dict):
+            if node.get("kind") == "FunctionDef":
+                functions.append(node)
+            elif node.get("kind") == "ClassDef":
+                classes.append(node)
+                _CLASS_NAMES.add(_safe_ident(node.get("name"), "PytraClass"))
+        i += 1
+
+    i = 0
+    while i < len(classes):
+        cls_comments = _leading_comment_lines(classes[i], "// ")
+        if len(cls_comments) > 0:
+            lines.extend(cls_comments)
+        lines.extend(_emit_class(classes[i], indent=""))
+        lines.append("")
         i += 1
 
     i = 0
@@ -703,7 +859,7 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         fn_comments = _leading_comment_lines(functions[i], "// ")
         if len(fn_comments) > 0:
             lines.extend(fn_comments)
-        lines.extend(_emit_function(functions[i], indent=""))
+        lines.extend(_emit_function(functions[i], indent="", in_class=False))
         lines.append("")
         i += 1
 
