@@ -39,12 +39,14 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、sample/13 の `grid` 初期化 IIFE 縮退を P0 として起票。
+- 2026-03-02: 現行出力が `list<list<int64>>(cell_h, list<int64>(cell_w, 1))` であり、`[&]() -> list<list<int64>> { ... }()` IIFE が再出力されていないことを確認した。
+- 2026-03-02: `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-01] sample/13 の IIFE 初期化断片を棚卸しし、縮退可能条件を固定する。
-- [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-02] 「縮退可能 / IIFE維持」の境界条件を仕様化する（fail-closed）。
-- [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-01] CppEmitter の初期化出力を更新し、縮退可能パターンで通常文列へ変換する。
-- [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-02] fallback 経路を維持し、縮退不可ケースは現行 IIFE 出力に戻す。
-- [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-01] unit テストを追加し、IIFE 再発と誤縮退を回帰検知可能にする。
-- [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+- [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-01] sample/13 の IIFE 初期化断片を棚卸しし、縮退可能条件を固定する。
+- [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-02] 「縮退可能 / IIFE維持」の境界条件を仕様化する（fail-closed）。
+- [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-01] CppEmitter の初期化出力を更新し、縮退可能パターンで通常文列へ変換する。
+- [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-02] fallback 経路を維持し、縮退不可ケースは現行 IIFE 出力に戻す。
+- [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-01] unit テストを追加し、IIFE 再発と誤縮退を回帰検知可能にする。
+- [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。

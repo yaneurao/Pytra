@@ -63,13 +63,14 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-grid-init-iife-reduction.md](../plans/p0-cpp-s13-grid-init-iife-reduction.md)
 
-1. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01] sample/13 の `grid` 初期化で不要 IIFE を縮退し、通常文列へ統一する。
-2. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-01] sample/13 の IIFE 初期化断片を棚卸しし、縮退可能条件を固定する。
-3. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-02] 「縮退可能 / IIFE維持」の境界条件を仕様化する（fail-closed）。
-4. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-01] CppEmitter の初期化出力を更新し、縮退可能パターンで通常文列へ変換する。
-5. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-02] fallback 経路を維持し、縮退不可ケースは現行 IIFE 出力に戻す。
-6. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-01] unit テストを追加し、IIFE 再発と誤縮退を回帰検知可能にする。
-7. [ ] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+1. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01] sample/13 の `grid` 初期化で不要 IIFE を縮退し、通常文列へ統一する。
+2. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-01] sample/13 の IIFE 初期化断片を棚卸しし、縮退可能条件を固定する。
+3. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S1-02] 「縮退可能 / IIFE維持」の境界条件を仕様化する（fail-closed）。
+4. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-01] CppEmitter の初期化出力を更新し、縮退可能パターンで通常文列へ変換する。
+5. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S2-02] fallback 経路を維持し、縮退不可ケースは現行 IIFE 出力に戻す。
+6. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-01] unit テストを追加し、IIFE 再発と誤縮退を回帰検知可能にする。
+7. [x] [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+- 進捗メモ: [ID: P0-CPP-S13-GRID-IIFE-REDUCE-01] sample/13 は既に `list<list<int64>>(...)` 初期化へ縮退済みで、IIFE 非出力と回帰コマンド通過を確認。
 
 
 ### P0: EAST3 マーカー経由で C++ tuple unpack を構造化束縛へ縮退
