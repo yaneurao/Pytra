@@ -257,8 +257,8 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
             label = first_import_detail_line(source_text, "wildcard")
             raise make_user_error(
                 "input_invalid",
-                "Unsupported import syntax.",
-                [f"kind=unsupported_import_form file={input_path} import={label}"],
+                "Failed to resolve imports (missing/conflict/wildcard).",
+                [f"kind=unresolved_wildcard file={input_path} import={label}"],
             ) from ex
         if "relative import is not supported" in msg:
             label = first_import_detail_line(source_text, "relative")
@@ -1020,6 +1020,62 @@ def module_export_table(
     return out
 
 
+def _const_string_value(expr: dict[str, object]) -> tuple[str, bool]:
+    """定数文字列ノードなら `(value, True)` を返す。"""
+    if dict_any_kind(expr) != "Constant":
+        return "", False
+    value = dict_any_get(expr, "value")
+    if isinstance(value, str):
+        return value, True
+    return "", False
+
+
+def _literal_string_sequence(expr: dict[str, object]) -> tuple[list[str], bool]:
+    """`List/Tuple/Set` の文字列リテラル列を抽出する。"""
+    kind = dict_any_kind(expr)
+    if kind not in {"List", "Tuple", "Set"}:
+        return [], False
+    out: list[str] = []
+    for ent in dict_any_get_dict_list(expr, "elements"):
+        val, ok = _const_string_value(ent)
+        if not ok:
+            return [], False
+        if val not in out:
+            out.append(val)
+    return out, True
+
+
+def _module_static_all_symbols(body: list[dict[str, object]]) -> tuple[str, list[str]]:
+    """`__all__` の静的判定結果を返す（unset|ok|dynamic）。"""
+    state = "unset"
+    symbols: list[str] = []
+    for st in body:
+        kind = dict_any_kind(st)
+        if kind == "Assign" or kind == "AnnAssign":
+            assigned = stmt_assigned_names(st)
+            has_all = False
+            for name_txt in assigned:
+                if name_txt == "__all__":
+                    has_all = True
+                    break
+            if not has_all:
+                continue
+            value = dict_any_get_dict(st, "value")
+            names, ok = _literal_string_sequence(value)
+            if ok:
+                state = "ok"
+                symbols = names
+            else:
+                state = "dynamic"
+                symbols = []
+        elif kind == "AugAssign":
+            target = dict_any_get_dict(st, "target")
+            if name_target_id(target) == "__all__":
+                state = "dynamic"
+                symbols = []
+    return state, symbols
+
+
 def build_module_symbol_index(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """モジュール単位 EAST から公開シンボルと import alias 情報を抽出する。"""
     out: dict[str, dict[str, Any]] = {}
@@ -1151,31 +1207,235 @@ def validate_from_import_symbols_or_raise(
     module_east_map: dict[str, dict[str, object]],
     root: Path,
 ) -> None:
-    """`from M import S` の `S` が `M` の公開シンボルに存在するか検証する。"""
+    """`from-import` 解決を検証し、解決済み import メタを再構築する。"""
     exports = module_export_table(module_east_map, root)
-    if len(exports) == 0:
-        return
+    module_by_id: dict[str, tuple[str, dict[str, object]]] = {}
+    for mod_key, east in module_east_map.items():
+        module_id = module_id_from_east_for_graph(root, Path(mod_key), east)
+        if module_id != "":
+            module_by_id[module_id] = (mod_key, east)
+
+    wildcard_cache: dict[str, list[str]] = {}
     details: list[str] = []
+    detail_seen: set[str] = set()
+
+    def _add_detail(detail: str) -> None:
+        if detail == "" or detail in detail_seen:
+            return
+        detail_seen.add(detail)
+        details.append(detail)
+
+    def _resolve_wildcard_exports_or_error(imported_mod: str, importer_disp: str) -> list[str]:
+        if imported_mod in wildcard_cache:
+            return wildcard_cache[imported_mod]
+        if imported_mod not in module_by_id:
+            _add_detail(
+                f"kind=unresolved_wildcard file={importer_disp} import=from {imported_mod} import *"
+            )
+            return []
+        mod_key, imported_east = module_by_id[imported_mod]
+        imported_disp = rel_disp_for_graph(root, Path(mod_key))
+        imported_body = dict_any_get_dict_list(imported_east, "body")
+        all_state, all_symbols = _module_static_all_symbols(imported_body)
+        imported_exports = exports[imported_mod] if imported_mod in exports else set()
+        if all_state == "dynamic":
+            _add_detail(
+                "kind=unresolved_wildcard file="
+                + importer_disp
+                + " import=from "
+                + imported_mod
+                + " import * (__all__ is not statically resolvable)"
+            )
+            return []
+        if all_state == "ok":
+            resolved: list[str] = []
+            for sym in all_symbols:
+                if sym not in imported_exports:
+                    _add_detail(
+                        f"kind=missing_symbol file={imported_disp} import=__all__[{sym}]"
+                    )
+                else:
+                    resolved.append(sym)
+            wildcard_cache[imported_mod] = resolved
+            return resolved
+        public_exports: list[str] = []
+        for sym in imported_exports:
+            if sym != "" and not sym.startswith("_"):
+                public_exports.append(sym)
+        wildcard_cache[imported_mod] = sort_str_list_copy(public_exports)
+        return wildcard_cache[imported_mod]
+
+    def _bind_symbol_or_duplicate(
+        import_symbols: dict[str, dict[str, str]],
+        import_modules: dict[str, str],
+        local_name: str,
+        module_id: str,
+        symbol: str,
+        importer_disp: str,
+        detail_label: str,
+    ) -> None:
+        if local_name == "" or module_id == "" or symbol == "":
+            return
+        if local_name in import_modules:
+            prev_mod = import_modules[local_name]
+            _add_detail(
+                "kind=duplicate_binding file="
+                + importer_disp
+                + " import="
+                + detail_label
+                + " (conflict with import "
+                + prev_mod
+                + ")"
+            )
+            return
+        if local_name in import_symbols:
+            prev = import_symbols[local_name]
+            prev_mod = dict_str_get(prev, "module")
+            prev_sym = dict_str_get(prev, "name")
+            _add_detail(
+                "kind=duplicate_binding file="
+                + importer_disp
+                + " import="
+                + detail_label
+                + " (conflict with from "
+                + prev_mod
+                + " import "
+                + prev_sym
+                + ")"
+            )
+            return
+        set_import_symbol_binding(import_symbols, local_name, module_id, symbol)
+
     for mod_key, east in module_east_map.items():
         file_disp = rel_disp_for_graph(root, Path(mod_key))
         body = dict_any_get_dict_list(east, "body")
         for st in body:
             if dict_any_kind(st) == "ImportFrom":
                 imported_mod = dict_any_get_str(st, "module")
+                names = dict_any_get_dict_list(st, "names")
                 if imported_mod in exports:
-                    names = dict_any_get_dict_list(st, "names")
                     for ent in names:
                         sym = dict_any_get_str(ent, "name")
-                        if sym == "*":
+                        if sym == "*" or sym == "":
                             continue
-                        if sym != "" and sym not in exports[imported_mod]:
-                            details.append(
+                        if sym not in exports[imported_mod]:
+                            _add_detail(
                                 f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
                             )
+
+        meta = dict_any_get_dict(east, "meta")
+        import_bindings = meta_import_bindings(east)
+        qualified_symbol_refs = meta_qualified_symbol_refs(east)
+        import_modules: dict[str, str] = {}
+        import_symbols: dict[str, dict[str, str]] = {}
+
+        for ent in import_bindings:
+            if ent["binding_kind"] != "module":
+                continue
+            local_name = ent["local_name"]
+            module_id = ent["module_id"]
+            if local_name == "" or module_id == "":
+                continue
+            if local_name in import_modules or local_name in import_symbols:
+                _add_detail(
+                    f"kind=duplicate_binding file={file_disp} import=import {module_id} as {local_name}"
+                )
+                continue
+            set_import_module_binding(import_modules, local_name, module_id)
+
+        if len(qualified_symbol_refs) > 0:
+            for ref in qualified_symbol_refs:
+                local_name = ref["local_name"]
+                module_id = ref["module_id"]
+                symbol = ref["symbol"]
+                _bind_symbol_or_duplicate(
+                    import_symbols,
+                    import_modules,
+                    local_name,
+                    module_id,
+                    symbol,
+                    file_disp,
+                    "from " + module_id + " import " + symbol + " as " + local_name,
+                )
+        else:
+            for ent in import_bindings:
+                if ent["binding_kind"] != "symbol":
+                    continue
+                module_id = ent["module_id"]
+                local_name = ent["local_name"]
+                symbol = ent["export_name"]
+                if symbol == "":
+                    continue
+                _bind_symbol_or_duplicate(
+                    import_symbols,
+                    import_modules,
+                    local_name,
+                    module_id,
+                    symbol,
+                    file_disp,
+                    "from " + module_id + " import " + symbol + " as " + local_name,
+                )
+
+        for ent in import_bindings:
+            if ent["binding_kind"] != "wildcard":
+                continue
+            imported_mod = ent["module_id"]
+            expanded_symbols = _resolve_wildcard_exports_or_error(imported_mod, file_disp)
+            for sym in expanded_symbols:
+                _bind_symbol_or_duplicate(
+                    import_symbols,
+                    import_modules,
+                    sym,
+                    imported_mod,
+                    sym,
+                    file_disp,
+                    "from " + imported_mod + " import * (symbol " + sym + ")",
+                )
+
+        resolved_refs: list[dict[str, str]] = []
+        local_names = sort_str_list_copy(list(import_symbols.keys()))
+        for local_name in local_names:
+            sym = import_symbols[local_name]
+            module_id = dict_str_get(sym, "module")
+            symbol = dict_str_get(sym, "name")
+            if module_id == "" or symbol == "":
+                continue
+            ref: dict[str, str] = {}
+            ref["module_id"] = module_id
+            ref["symbol"] = symbol
+            ref["local_name"] = local_name
+            resolved_refs.append(ref)
+
+        import_resolution = dict_any_get_dict(meta, "import_resolution")
+        import_resolution["schema_version"] = 1
+        import_resolution["bindings"] = import_bindings
+        import_resolution["qualified_refs"] = resolved_refs
+        meta["import_resolution"] = import_resolution
+        meta["qualified_symbol_refs"] = resolved_refs
+        meta["import_symbols"] = import_symbols
+        meta["import_modules"] = import_modules
+        east["meta"] = meta
+        module_east_map[mod_key] = east
+
+    for mod_key, east in module_east_map.items():
+        # wildcard 展開後、ImportFrom の `*` でも module 解決不能を検知する。
+        body = dict_any_get_dict_list(east, "body")
+        file_disp = rel_disp_for_graph(root, Path(mod_key))
+        for st in body:
+            if dict_any_kind(st) != "ImportFrom":
+                continue
+            imported_mod = dict_any_get_str(st, "module")
+            for ent in dict_any_get_dict_list(st, "names"):
+                if dict_any_get_str(ent, "name") != "*":
+                    continue
+                if imported_mod not in module_by_id:
+                    _add_detail(
+                        f"kind=unresolved_wildcard file={file_disp} import=from {imported_mod} import *"
+                    )
     if len(details) > 0:
         raise make_user_error(
             "input_invalid",
-            "Failed to resolve imports (missing symbols).",
+            "Failed to resolve imports (missing/conflict/wildcard).",
             details,
         )
 

@@ -543,6 +543,85 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertIn("kind=missing_symbol", detail0)
         self.assertIn("import=from a import missing", detail0)
 
+    def test_validate_from_import_symbols_or_raise_expands_wildcard_import(self) -> None:
+        module_map: dict[str, dict[str, object]] = {
+            "/tmp/helper.py": {
+                "meta": {"module_id": "helper"},
+                "body": [
+                    {
+                        "kind": "Assign",
+                        "targets": [{"kind": "Name", "id": "__all__"}],
+                        "value": {
+                            "kind": "List",
+                            "elements": [
+                                {"kind": "Constant", "value": "f"},
+                            ],
+                        },
+                    },
+                    {"kind": "FunctionDef", "name": "f"},
+                ],
+            },
+            "/tmp/main.py": {
+                "meta": {
+                    "module_id": "main",
+                    "import_bindings": [
+                        {
+                            "module_id": "helper",
+                            "export_name": "*",
+                            "local_name": "__wildcard__helper",
+                            "binding_kind": "wildcard",
+                        }
+                    ],
+                },
+                "body": [{"kind": "ImportFrom", "module": "helper", "names": [{"name": "*"}]}],
+            },
+        }
+        validate_from_import_symbols_or_raise(module_map, Path("/tmp"))
+        main_meta = dict_any_get_dict(module_map["/tmp/main.py"], "meta")
+        import_symbols = dict_any_get_dict(main_meta, "import_symbols")
+        self.assertIn("f", import_symbols)
+        sym_f = dict_any_get_dict(import_symbols, "f")
+        self.assertEqual(dict_any_get_str(sym_f, "module"), "helper")
+        self.assertEqual(dict_any_get_str(sym_f, "name"), "f")
+        qrefs = dict_any_get_dict_list(main_meta, "qualified_symbol_refs")
+        self.assertEqual(len(qrefs), 1)
+        self.assertEqual(dict_any_get_str(qrefs[0], "module_id"), "helper")
+        self.assertEqual(dict_any_get_str(qrefs[0], "symbol"), "f")
+        self.assertEqual(dict_any_get_str(qrefs[0], "local_name"), "f")
+
+    def test_validate_from_import_symbols_or_raise_detects_wildcard_duplicate_binding(self) -> None:
+        module_map: dict[str, dict[str, object]] = {
+            "/tmp/a.py": {
+                "meta": {"module_id": "a"},
+                "body": [{"kind": "Assign", "targets": [{"kind": "Name", "id": "x"}], "value": {"kind": "Constant", "value": 1}}],
+            },
+            "/tmp/b.py": {
+                "meta": {"module_id": "b"},
+                "body": [{"kind": "Assign", "targets": [{"kind": "Name", "id": "x"}], "value": {"kind": "Constant", "value": 2}}],
+            },
+            "/tmp/main.py": {
+                "meta": {
+                    "module_id": "main",
+                    "import_bindings": [
+                        {"module_id": "a", "export_name": "*", "local_name": "__wildcard__a", "binding_kind": "wildcard"},
+                        {"module_id": "b", "export_name": "*", "local_name": "__wildcard__b", "binding_kind": "wildcard"},
+                    ],
+                },
+                "body": [
+                    {"kind": "ImportFrom", "module": "a", "names": [{"name": "*"}]},
+                    {"kind": "ImportFrom", "module": "b", "names": [{"name": "*"}]},
+                ],
+            },
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            validate_from_import_symbols_or_raise(module_map, Path("/tmp"))
+        parsed = parse_user_error(str(cm.exception))
+        self.assertEqual(parsed.get("category"), "input_invalid")
+        details = parsed.get("details")
+        self.assertTrue(isinstance(details, list))
+        joined = "\n".join(str(v) for v in details) if isinstance(details, list) else ""
+        self.assertIn("kind=duplicate_binding", joined)
+
     def test_collect_import_modules(self) -> None:
         east_module: dict[str, object] = {
             "body": [
@@ -1873,11 +1952,11 @@ def main() -> None:
         self.assertIn("kind=unsupported_import_form", proc.stderr)
         self.assertIn("import=from .helper import f", proc.stderr)
 
-    def test_cli_reports_input_invalid_for_from_import_star(self) -> None:
+    def test_cli_resolves_from_import_star_in_multi_file_mode(self) -> None:
         src_main = """from helper import *
 
 def main() -> None:
-    print(1)
+    print(f())
 """
         src_helper = """def f() -> int:
     return 1
@@ -1886,19 +1965,101 @@ def main() -> None:
             root = Path(tmpdir)
             main_py = root / "main.py"
             helper_py = root / "helper.py"
-            out_cpp = root / "out.cpp"
+            out_dir = root / "out"
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2cpp.py", str(main_py), "-o", str(out_cpp)],
+                [
+                    "python3",
+                    "src/py2cpp.py",
+                    str(main_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            main_cpp = out_dir / "src" / "main.cpp"
+            main_cpp_txt = main_cpp.read_text(encoding="utf-8")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("pytra_mod_helper::f()", main_cpp_txt)
+
+    def test_cli_reports_input_invalid_for_duplicate_from_import_star(self) -> None:
+        src_main = """from a import *
+from b import *
+
+def main() -> None:
+    print(x)
+"""
+        src_a = """x: int = 1
+"""
+        src_b = """x: int = 2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            a_py = root / "a.py"
+            b_py = root / "b.py"
+            out_dir = root / "out"
+            main_py.write_text(src_main, encoding="utf-8")
+            a_py.write_text(src_a, encoding="utf-8")
+            b_py.write_text(src_b, encoding="utf-8")
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "src/py2cpp.py",
+                    str(main_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
             )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
-        self.assertIn("kind=unsupported_import_form", proc.stderr)
-        self.assertIn("import=from helper import *", proc.stderr)
+        self.assertIn("kind=duplicate_binding", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_unresolved_from_import_star(self) -> None:
+        src_main = """from helper import *
+
+def main() -> None:
+    print(1)
+"""
+        src_helper = """__all__ = make_all()
+
+def make_all() -> list[str]:
+    return ["f"]
+
+def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_dir = root / "out"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "src/py2cpp.py",
+                    str(main_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=unresolved_wildcard", proc.stderr)
 
     def test_cli_reports_input_invalid_for_duplicate_import_binding(self) -> None:
         src_main = """from a import x
