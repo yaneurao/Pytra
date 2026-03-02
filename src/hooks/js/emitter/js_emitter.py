@@ -226,6 +226,24 @@ class JsEmitter(CodeEmitter):
             for item in node:
                 self._walk_node_names(item, out)
 
+    def _node_mentions_name(self, node: Any, name: str) -> bool:
+        """ノード配下に `Name(name)` が含まれる場合に True を返す。"""
+        if name == "":
+            return False
+        node_dict = self.any_to_dict(node)
+        if node_dict is not None:
+            if self.any_dict_get_str(node_dict, "kind", "") == "Name" and self.any_dict_get_str(node_dict, "id", "") == name:
+                return True
+            for value in node_dict.values():
+                if self._node_mentions_name(value, name):
+                    return True
+            return False
+        if isinstance(node, list):
+            for item in node:
+                if self._node_mentions_name(item, name):
+                    return True
+        return False
+
     def _collect_used_names(self, body: list[dict[str, Any]], main_guard_body: list[dict[str, Any]]) -> set[str]:
         """モジュール全体で実際に参照される識別子名を収集する。"""
         used: set[str] = set()
@@ -807,11 +825,15 @@ class JsEmitter(CodeEmitter):
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
         target_name = self.any_dict_get_str(target_node, "id", "_i")
         target = self._safe_name(target_name)
-        start = self.render_expr(stmt.get("start"))
+        start_node = stmt.get("start")
+        start = self.render_expr(start_node)
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
-        start_tmp = self.next_tmp("__start")
-        self.emit("const " + start_tmp + " = " + start + ";")
+        start_expr = start
+        if self._node_mentions_name(start_node, target_name):
+            start_tmp = self.next_tmp("__start")
+            self.emit("const " + start_tmp + " = " + start + ";")
+            start_expr = start_tmp
         range_mode = self.any_to_str(stmt.get("range_mode"))
         cond = target + " < " + stop
         inc = target + " += " + step
@@ -822,7 +844,7 @@ class JsEmitter(CodeEmitter):
         body = self._dict_stmt_list(stmt.get("body"))
         scope = set()
         scope.add(target_name)
-        self.emit_scoped_block("for (let " + target + " = " + start_tmp + "; " + cond + "; " + inc + ") {", body, scope)
+        self.emit_scoped_block("for (let " + target + " = " + start_expr + "; " + cond + "; " + inc + ") {", body, scope)
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))

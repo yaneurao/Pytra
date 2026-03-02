@@ -7,8 +7,7 @@ import { png } from "./pytra/runtime.js";
 function escape_count(cx, cy, max_iter) {
     let x = 0.0;
     let y = 0.0;
-    const __start_1 = 0;
-    for (let i = __start_1; i < max_iter; i += 1) {
+    for (let i = 0; i < max_iter; i += 1) {
         let x2 = x * x;
         let y2 = y * y;
         if (x2 + y2 > 4.0) {
@@ -37,12 +36,10 @@ function render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max) 
     let __hoisted_cast_2 = Number(width - 1);
     let __hoisted_cast_3 = Number(max_iter);
     
-    const __start_2 = 0;
-    for (let y = __start_2; y < height; y += 1) {
+    for (let y = 0; y < height; y += 1) {
         let py = y_min + (y_max - y_min) * (y / __hoisted_cast_1);
         
-        const __start_3 = 0;
-        for (let x = __start_3; x < width; x += 1) {
+        for (let x = 0; x < width; x += 1) {
             let px = x_min + (x_max - x_min) * (x / __hoisted_cast_2);
             let it = escape_count(px, py, max_iter);
             let r;

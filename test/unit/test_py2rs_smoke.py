@@ -57,8 +57,9 @@ class Py2RsSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")
         rust = transpile_to_rust(east)
-        self.assertIn("for __for_i_", rust)
-        self.assertIn("i = __for_i_", rust)
+        self.assertIn("for i in (0)..(n) {", rust)
+        self.assertNotIn("for __for_i_", rust)
+        self.assertNotIn("i = __for_i_", rust)
         self.assertNotIn("while i < n {", rust)
 
     def test_load_east_from_json(self) -> None:
@@ -122,9 +123,9 @@ class Py2RsSmokeTest(unittest.TestCase):
             "meta": {},
         }
         rust = transpile_to_rust(east)
-        self.assertIn("let mut i: i64 = 0;", rust)
-        self.assertIn("for __for_i_", rust)
-        self.assertIn("i = __for_i_", rust)
+        self.assertIn("for i in (0)..(3) {", rust)
+        self.assertNotIn("for __for_i_", rust)
+        self.assertNotIn("i = __for_i_", rust)
         self.assertNotIn("while i < 3 {", rust)
 
     def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
@@ -212,7 +213,7 @@ class Py2RsSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")
         rust = transpile_to_rust(east)
-        self.assertIn("while i > -1 {", rust)
+        self.assertIn("((-1) < 0 && i > -1)", rust)
         self.assertNotIn("while i < -1 {", rust)
 
     def test_sample08_capture_return_avoids_clone_on_bytes_ctor_in_return(self) -> None:

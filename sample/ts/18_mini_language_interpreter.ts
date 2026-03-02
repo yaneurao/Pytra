@@ -4,18 +4,19 @@ import { perf_counter } from "./pytra/std/time.js";
 class Token {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
-    constructor(kind, text, pos) {
+    constructor(kind, text, pos, number_value) {
     this[PYTRA_TYPE_ID] = Token.PYTRA_TYPE_ID;
     this.kind = kind;
     this.text = text;
     this.pos = pos;
+    this.number_value = number_value;
     }
 }
 
 class ExprNode {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
-    constructor(kind, value, name, op, left, right) {
+    constructor(kind, value, name, op, left, right, kind_tag, op_tag) {
     this[PYTRA_TYPE_ID] = ExprNode.PYTRA_TYPE_ID;
     this.kind = kind;
     this.value = value;
@@ -23,21 +24,26 @@ class ExprNode {
     this.op = op;
     this.left = left;
     this.right = right;
+    this.kind_tag = kind_tag;
+    this.op_tag = op_tag;
     }
 }
 
 class StmtNode {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
-    constructor(kind, name, expr_index) {
+    constructor(kind, name, expr_index, kind_tag) {
     this[PYTRA_TYPE_ID] = StmtNode.PYTRA_TYPE_ID;
     this.kind = kind;
     this.name = name;
     this.expr_index = expr_index;
+    this.kind_tag = kind_tag;
     }
 }
 
 function tokenize(lines) {
+    let single_char_token_tags = ({[PYTRA_TYPE_ID]: PY_TYPE_MAP, "+": 1, "-": 2, "*": 3, "/": 4, "(": 5, ")": 6, "=": 7});
+    let single_char_token_kinds = ["PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"];
     let tokens = [];
     for (const [line_index, source] of lines.map((__v, __i) => [__i, __v])) {
         let i = 0;
@@ -49,38 +55,9 @@ function tokenize(lines) {
                 i += 1;
                 continue;
             }
-            if (ch === "+") {
-                tokens.push(new Token("PLUS", ch, i));
-                i += 1;
-                continue;
-            }
-            if (ch === "-") {
-                tokens.push(new Token("MINUS", ch, i));
-                i += 1;
-                continue;
-            }
-            if (ch === "*") {
-                tokens.push(new Token("STAR", ch, i));
-                i += 1;
-                continue;
-            }
-            if (ch === "/") {
-                tokens.push(new Token("SLASH", ch, i));
-                i += 1;
-                continue;
-            }
-            if (ch === "(") {
-                tokens.push(new Token("LPAREN", ch, i));
-                i += 1;
-                continue;
-            }
-            if (ch === ")") {
-                tokens.push(new Token("RPAREN", ch, i));
-                i += 1;
-                continue;
-            }
-            if (ch === "=") {
-                tokens.push(new Token("EQUAL", ch, i));
+            let single_tag = (Object.prototype.hasOwnProperty.call(single_char_token_tags, ch) ? single_char_token_tags[ch] : 0);
+            if (single_tag > 0) {
+                tokens.push(new Token(single_char_token_kinds[(((single_tag - 1) < 0) ? ((single_char_token_kinds).length + (single_tag - 1)) : (single_tag - 1))], ch, i, 0));
                 i += 1;
                 continue;
             }
@@ -90,7 +67,7 @@ function tokenize(lines) {
                     i += 1;
                 }
                 let text = source.slice(start, i);
-                tokens.push(new Token("NUMBER", text, start));
+                tokens.push(new Token("NUMBER", text, start, Math.trunc(Number(text))));
                 continue;
             }
             if (((typeof ch === "string") && (ch).length > 0 && (/^[A-Za-z]+$/.test(ch))) || ch === "_") {
@@ -100,21 +77,21 @@ function tokenize(lines) {
                 }
                 let text = source.slice(start, i);
                 if (text === "let") {
-                    tokens.push(new Token("LET", text, start));
+                    tokens.push(new Token("LET", text, start, 0));
                 } else {
                     if (text === "print") {
-                        tokens.push(new Token("PRINT", text, start));
+                        tokens.push(new Token("PRINT", text, start, 0));
                     } else {
-                        tokens.push(new Token("IDENT", text, start));
+                        tokens.push(new Token("IDENT", text, start, 0));
                     }
                 }
                 continue;
             }
             throw new Error("tokenize error at line=" + String(line_index) + " pos=" + String(i) + " ch=" + ch);
         }
-        tokens.push(new Token("NEWLINE", "", n));
+        tokens.push(new Token("NEWLINE", "", n, 0));
     }
-    tokens.push(new Token("EOF", "", (lines).length));
+    tokens.push(new Token("EOF", "", (lines).length, 0));
     return tokens;
 }
 
@@ -122,18 +99,26 @@ class Parser {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
     constructor(tokens) {
-    this[PYTRA_TYPE_ID] = Parser.PYTRA_TYPE_ID;
-        this.tokens = tokens;
+        this.tokens = (Array.isArray(tokens) ? tokens.slice() : Array.from(tokens));
         this.pos = 0;
         this.expr_nodes = this.new_expr_nodes();
+    this[PYTRA_TYPE_ID] = Parser.PYTRA_TYPE_ID;
     }
     
     new_expr_nodes() {
         return [];
     }
     
+    current_token() {
+        return this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
+    }
+    
+    previous_token() {
+        return this.tokens[(((this.pos - 1) < 0) ? ((this.tokens).length + (this.pos - 1)) : (this.pos - 1))];
+    }
+    
     peek_kind() {
-        return this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))].kind;
+        return this.current_token().kind;
     }
     
     match(kind) {
@@ -145,11 +130,10 @@ class Parser {
     }
     
     expect(kind) {
-        if (this.peek_kind() !== kind) {
-            let t = this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
-            throw new Error("parse error at pos=" + pyStr(t.pos) + ", expected=" + kind + ", got=" + t.kind);
+        let token = this.current_token();
+        if (token.kind !== kind) {
+            throw new Error("parse error at pos=" + pyStr(token.pos) + ", expected=" + kind + ", got=" + token.kind);
         }
-        let token = this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
         this.pos += 1;
         return token;
     }
@@ -181,16 +165,16 @@ class Parser {
             let let_name = this.expect("IDENT").text;
             this.expect("EQUAL");
             let let_expr_index = this.parse_expr();
-            return new StmtNode("let", let_name, let_expr_index);
+            return new StmtNode("let", let_name, let_expr_index, 1);
         }
         if (this.match("PRINT")) {
             let print_expr_index = this.parse_expr();
-            return new StmtNode("print", "", print_expr_index);
+            return new StmtNode("print", "", print_expr_index, 3);
         }
         let assign_name = this.expect("IDENT").text;
         this.expect("EQUAL");
         let assign_expr_index = this.parse_expr();
-        return new StmtNode("assign", assign_name, assign_expr_index);
+        return new StmtNode("assign", assign_name, assign_expr_index, 2);
     }
     
     parse_expr() {
@@ -202,12 +186,12 @@ class Parser {
         while (true) {
             if (this.match("PLUS")) {
                 let right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right, 3, 1));
                 continue;
             }
             if (this.match("MINUS")) {
                 let right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right, 3, 2));
                 continue;
             }
             break;
@@ -220,12 +204,12 @@ class Parser {
         while (true) {
             if (this.match("STAR")) {
                 let right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right, 3, 3));
                 continue;
             }
             if (this.match("SLASH")) {
                 let right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right, 3, 4));
                 continue;
             }
             break;
@@ -236,26 +220,26 @@ class Parser {
     parse_unary() {
         if (this.match("MINUS")) {
             let child = this.parse_unary();
-            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1));
+            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1, 4, 0));
         }
         return this.parse_primary();
     }
     
     parse_primary() {
         if (this.match("NUMBER")) {
-            let token_num = this.tokens[(((this.pos - 1) < 0) ? ((this.tokens).length + (this.pos - 1)) : (this.pos - 1))];
-            return this.add_expr(new ExprNode("lit", Math.trunc(Number(token_num.text)), "", "", -1, -1));
+            let token_num = this.previous_token();
+            return this.add_expr(new ExprNode("lit", token_num.number_value, "", "", -1, -1, 1, 0));
         }
         if (this.match("IDENT")) {
-            let token_ident = this.tokens[(((this.pos - 1) < 0) ? ((this.tokens).length + (this.pos - 1)) : (this.pos - 1))];
-            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1));
+            let token_ident = this.previous_token();
+            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1, 2, 0));
         }
         if (this.match("LPAREN")) {
             let expr_index = this.parse_expr();
             this.expect("RPAREN");
             return expr_index;
         }
-        let t = this.tokens[(((this.pos) < 0) ? ((this.tokens).length + (this.pos)) : (this.pos))];
+        let t = this.current_token();
         throw new Error("primary parse error at pos=" + pyStr(t.pos) + " got=" + t.kind);
     }
 }
@@ -263,31 +247,31 @@ class Parser {
 function eval_expr(expr_index, expr_nodes, env) {
     let node = expr_nodes[(((expr_index) < 0) ? ((expr_nodes).length + (expr_index)) : (expr_index))];
     
-    if (node.kind === "lit") {
+    if (node.kind_tag === 1) {
         return node.value;
     }
-    if (node.kind === "var") {
+    if (node.kind_tag === 2) {
         if (!(Object.prototype.hasOwnProperty.call(env, node.name))) {
             throw new Error("undefined variable: " + node.name);
         }
         return env[node.name];
     }
-    if (node.kind === "neg") {
+    if (node.kind_tag === 4) {
         return -eval_expr(node.left, expr_nodes, env);
     }
-    if (node.kind === "bin") {
+    if (node.kind_tag === 3) {
         let lhs = eval_expr(node.left, expr_nodes, env);
         let rhs = eval_expr(node.right, expr_nodes, env);
-        if (node.op === "+") {
+        if (node.op_tag === 1) {
             return lhs + rhs;
         }
-        if (node.op === "-") {
+        if (node.op_tag === 2) {
             return lhs - rhs;
         }
-        if (node.op === "*") {
+        if (node.op_tag === 3) {
             return lhs * rhs;
         }
-        if (node.op === "/") {
+        if (node.op_tag === 4) {
             if (rhs === 0) {
                 throw new Error("division by zero");
             }
@@ -304,11 +288,11 @@ function execute(stmts, expr_nodes, trace) {
     let printed = 0;
     
     for (const stmt of stmts) {
-        if (stmt.kind === "let") {
+        if (stmt.kind_tag === 1) {
             env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
             continue;
         }
-        if (stmt.kind === "assign") {
+        if (stmt.kind_tag === 2) {
             if (!(Object.prototype.hasOwnProperty.call(env, stmt.name))) {
                 throw new Error("assign to undefined variable: " + stmt.name);
             }
@@ -336,13 +320,11 @@ function build_benchmark_source(var_count, loops) {
     let lines = [];
     
     // Declare initial variables.
-    const __start_1 = 0;
-    for (let i = __start_1; i < var_count; i += 1) {
+    for (let i = 0; i < var_count; i += 1) {
         lines.push("let v" + String(i) + " = " + String(i + 1));
     }
     // Force evaluation of many arithmetic expressions.
-    const __start_2 = 0;
-    for (let i = __start_2; i < loops; i += 1) {
+    for (let i = 0; i < loops; i += 1) {
         let x = i % var_count;
         let y = (i + 3) % var_count;
         let c1 = i % 7 + 1;

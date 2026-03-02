@@ -11,9 +11,7 @@ use crate::pytra::runtime::png;
 fn escape_count(cx: f64, cy: f64, max_iter: i64) -> i64 {
     let mut x: f64 = 0.0;
     let mut y: f64 = 0.0;
-    let mut i: i64 = 0;
-    for __for_i_1 in (0)..(max_iter) {
-        i = __for_i_1;
+    for i in (0)..(max_iter) {
             let x2: f64 = x * x;
             let y2: f64 = y * y;
             if x2 + y2 > 4.0 {
@@ -42,14 +40,10 @@ fn render_mandelbrot(width: i64, height: i64, max_iter: i64, x_min: f64, x_max: 
     let __hoisted_cast_2: f64 = ((width - 1) as f64);
     let __hoisted_cast_3: f64 = ((max_iter) as f64);
     
-    let mut y: i64 = 0;
-    for __for_i_2 in (0)..(height) {
-        y = __for_i_2;
+    for y in (0)..(height) {
             let py: f64 = y_min + (y_max - y_min) * (((y) as f64) / __hoisted_cast_1);
             
-            let mut x: i64 = 0;
-            for __for_i_3 in (0)..(width) {
-                x = __for_i_3;
+            for x in (0)..(width) {
                     let px: f64 = x_min + (x_max - x_min) * (((x) as f64) / __hoisted_cast_2);
                     let it: i64 = escape_count(px, py, max_iter);
                     let mut r: i64;

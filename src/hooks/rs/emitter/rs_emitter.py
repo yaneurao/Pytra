@@ -671,6 +671,54 @@ class RustEmitter(CodeEmitter):
                     return True
         return False
 
+    def _loop_target_name_from_stmt(self, stmt: dict[str, Any]) -> str:
+        """`For*` 文から Name target を抽出する（非 Name target は空文字）。"""
+        kind = self.any_dict_get_str(stmt, "kind", "")
+        if kind == "For" or kind == "ForRange":
+            target = self.any_to_dict_or_empty(stmt.get("target"))
+            if self.any_dict_get_str(target, "kind", "") == "Name":
+                return self.any_dict_get_str(target, "id", "")
+            return ""
+        if kind == "ForCore":
+            target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
+            if self.any_dict_get_str(target_plan, "kind", "") == "NameTarget":
+                return self.any_dict_get_str(target_plan, "id", "")
+        return ""
+
+    def _ensure_stmt_meta_dict(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        meta = self.any_to_dict(stmt.get("meta"))
+        if meta is None:
+            meta = {}
+            stmt["meta"] = meta
+        return meta
+
+    def _annotate_loop_target_usage_in_stmt(self, stmt: dict[str, Any]) -> None:
+        """文内の子ブロックへ loop target 後続参照注釈を再帰付与する。"""
+        self._annotate_loop_target_usage_in_block(self._dict_stmt_list(stmt.get("body")))
+        self._annotate_loop_target_usage_in_block(self._dict_stmt_list(stmt.get("orelse")))
+        self._annotate_loop_target_usage_in_block(self._dict_stmt_list(stmt.get("finalbody")))
+        handlers = self._dict_stmt_list(stmt.get("handlers"))
+        for handler in handlers:
+            self._annotate_loop_target_usage_in_block(self._dict_stmt_list(handler.get("body")))
+
+    def _annotate_loop_target_usage_in_block(self, stmts: list[dict[str, Any]]) -> None:
+        """同一ブロック後続での loop target 参照有無を `meta` に注釈する。"""
+        total = len(stmts)
+        for i in range(total):
+            stmt = self.any_to_dict_or_empty(stmts[i])
+            if len(stmt) == 0:
+                continue
+            target_name = self._loop_target_name_from_stmt(stmt)
+            if target_name != "":
+                used_after = False
+                for j in range(i + 1, total):
+                    if self._expr_mentions_name(stmts[j], target_name):
+                        used_after = True
+                        break
+                meta = self._ensure_stmt_meta_dict(stmt)
+                meta["rust_loop_target_used_after_stmt"] = used_after
+            self._annotate_loop_target_usage_in_stmt(stmt)
+
     def _mutating_method_names(self) -> set[str]:
         return {
             "append",
@@ -2616,6 +2664,7 @@ class RustEmitter(CodeEmitter):
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(fn.get("arg_usage"))
         body = self._dict_stmt_list(fn.get("body"))
+        self._annotate_loop_target_usage_in_block(body)
         prev_write_counts = self.current_fn_write_counts
         prev_mut_call_counts = self.current_fn_mutating_call_counts
         prev_ref_vars = self.current_ref_vars
@@ -2980,12 +3029,15 @@ class RustEmitter(CodeEmitter):
                 if cond_rendered != "":
                     cond = cond_rendered
                     has_normalized_cond = True
+        target_used_after = False
+        meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        if target_raw != "":
+            target_used_after = meta.get("rust_loop_target_used_after_stmt") is True
 
         # Fastpath: canonical ascending step=1 range uses Rust for-loop.
         is_ascending_mode = range_mode == "ascending" or range_mode == ""
         normalized_matches_default = (not has_normalized_cond) or (cond == default_ascending_cond)
         if is_ascending_mode and step_const == 1 and normalized_matches_default:
-            self.emit(f"let mut {target}: {target_type} = {start};")
             body_to_emit = body
             if self._const_int_literal(stmt.get("start")) == 0 and target_raw != "":
                 next_counter_name = self.next_tmp("__next_capture")
@@ -3002,18 +3054,28 @@ class RustEmitter(CodeEmitter):
                         self.emit(reserve_owner + ".reserve((" + reserve_count_expr + ") as usize);")
                     self.emit(f"let mut {next_counter_name}: {target_type} = 0;")
                     body_to_emit = rewritten_body
-            loop_index = self.next_tmp("__for_i")
             prev_target_non_negative = target_raw in self.current_non_negative_vars
             prev_target_positive = target_raw in self.current_positive_vars
             if target_raw != "" and self._expr_is_non_negative(stmt.get("start")):
                 self.current_non_negative_vars.add(target_raw)
                 self.current_positive_vars.discard(target_raw)
-            self.emit(f"for {loop_index} in ({start})..({stop}) {{")
-            self.indent += 1
-            self.emit(f"{target} = {loop_index};")
-            self.emit_scoped_stmt_list(body_to_emit, body_scope)
-            self.indent -= 1
-            self.emit("}")
+            if target_raw != "" and (not target_used_after):
+                target_writes_in_body = self._collect_name_write_counts(body_to_emit).get(target_raw, 0)
+                target_bind = ("mut " if target_writes_in_body > 0 else "") + target
+                self.emit(f"for {target_bind} in ({start})..({stop}) {{")
+                self.indent += 1
+                self.emit_scoped_stmt_list(body_to_emit, body_scope)
+                self.indent -= 1
+                self.emit("}")
+            else:
+                self.emit(f"let mut {target}: {target_type} = {start};")
+                loop_index = self.next_tmp("__for_i")
+                self.emit(f"for {loop_index} in ({start})..({stop}) {{")
+                self.indent += 1
+                self.emit(f"{target} = {loop_index};")
+                self.emit_scoped_stmt_list(body_to_emit, body_scope)
+                self.indent -= 1
+                self.emit("}")
             if target_raw != "":
                 if prev_target_non_negative:
                     self.current_non_negative_vars.add(target_raw)
@@ -3161,6 +3223,7 @@ class RustEmitter(CodeEmitter):
                     "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
                     "normalized_expr_version": self.any_to_str(stmt.get("normalized_expr_version")),
                     "normalized_exprs": stmt.get("normalized_exprs"),
+                    "meta": stmt.get("meta"),
                     "body": body,
                     "orelse": orelse,
                 }

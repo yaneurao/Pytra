@@ -204,8 +204,10 @@ def f(x: object) -> bool:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
-        self.assertIn("for (let i = __start_1; i > -1; i += -1)", ts)
-        self.assertNotIn("for (let i = __start_1; i < -1; i += -1)", ts)
+        self.assertIn("for (let i = ", ts)
+        self.assertIn("i > -1; i += -1)", ts)
+        self.assertNotIn("__start_", ts)
+        self.assertNotIn("i < -1; i += -1)", ts)
 
     def test_ts_preview_materializes_ref_container_args_to_value_path(self) -> None:
         with tempfile.TemporaryDirectory() as td:
