@@ -33,6 +33,19 @@
 ## 未完了タスク
 
 
+### P0: Scala 出力の冗長括弧（`((...))` / 不要 `(...)`）削減
+
+文脈: [docs/ja/plans/p0-scala-redundant-parentheses-normalization.md](../plans/p0-scala-redundant-parentheses-normalization.md)
+
+1. [ ] [ID: P0-SCALA-PAREN-NORM-01] Scala 出力の冗長括弧を削減し、`sample/scala/01` の可読性を改善する。
+2. [ ] [ID: P0-SCALA-PAREN-NORM-01-S1-01] 冗長括弧パターン（`BinOp` / `Compare` / `BoolOp` / 条件式）を棚卸しし、除去対象と保持対象を分類する。
+3. [ ] [ID: P0-SCALA-PAREN-NORM-01-S1-02] 優先順位を壊さない最小括弧ルール（必要括弧判定）を仕様化する。
+4. [ ] [ID: P0-SCALA-PAREN-NORM-01-S2-01] `Compare` / `BoolOp` の条件式レンダリングで二重括弧を削減する。
+5. [ ] [ID: P0-SCALA-PAREN-NORM-01-S2-02] `BinOp` の単純式 fastpath を追加し、不要な外側括弧を削減する。
+6. [ ] [ID: P0-SCALA-PAREN-NORM-01-S2-03] 優先順位が必要なケースでは括弧維持するガードを追加する（fail-closed）。
+7. [ ] [ID: P0-SCALA-PAREN-NORM-01-S3-01] unit テストを更新し、冗長括弧再発を回帰検知できるようにする。
+8. [ ] [ID: P0-SCALA-PAREN-NORM-01-S3-02] `sample/scala/01` 再生成と transpile チェックで非退行を確認する。
+
 ### P0: C++ `ForCore` 単文ループの波括弧省略
 
 文脈: [docs/ja/plans/p0-cpp-forcore-single-stmt-brace-omit.md](../plans/p0-cpp-forcore-single-stmt-brace-omit.md)
