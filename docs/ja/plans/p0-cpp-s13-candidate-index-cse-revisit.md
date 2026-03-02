@@ -38,12 +38,15 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示「6.もP0としてTODOに積む」に基づき、sample/13 改善項目 #6 を再実施タスクとして起票。
+- 2026-03-02: `Assign(Name = Subscript(...))` で owner が `Name` かつ複雑 index の場合に `auto __idx_* = ...;` を先行生成し、`candidates[__idx_*]` へ縮退する emitter 経路を追加した（`src/hooks/cpp/emitter/stmt.py`）。
+- 2026-03-02: `test_py2cpp_codegen_issues.py` の sample/13 回帰を更新し、`__idx_*` hoist 出力を固定した。
+- 2026-03-02: `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-01] sample/13 の `candidates` 選択で重複している index/要素取得断片を棚卸しする。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-02] 適用境界（型既知・副作用なし・fail-closed）を仕様化する。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-01] CppEmitter で index 計算と要素取得の hoist 出力を実装する。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-02] 適用不可ケースの fallback を固定し、意味保持を担保する。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-01] unit テストを追加し、重複式再発を検知可能にする。
-- [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-01] sample/13 の `candidates` 選択で重複している index/要素取得断片を棚卸しする。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-02] 適用境界（型既知・副作用なし・fail-closed）を仕様化する。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-01] CppEmitter で index 計算と要素取得の hoist 出力を実装する。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-02] 適用不可ケースの fallback を固定し、意味保持を担保する。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-01] unit テストを追加し、重複式再発を検知可能にする。
+- [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。

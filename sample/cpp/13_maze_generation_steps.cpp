@@ -20,7 +20,7 @@ bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
             }
         }
     }
-    return bytes(frame);
+    return frame;
 }
 
 void run_13_maze_generation_steps() {
@@ -32,7 +32,7 @@ void run_13_maze_generation_steps() {
     str out_path = "sample/out/13_maze_generation_steps.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<list<int64>> grid = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < cell_h); _ += (1)) {         __out.append(py_repeat(list<int64>(list<int64>{1}), cell_w));     }     return __out; }();
+    list<list<int64>> grid = list<list<int64>>(cell_h, list<int64>(cell_w, 1));
     list<::std::tuple<int64, int64>> stack = list<::std::tuple<int64, int64>>{::std::make_tuple(1, 1)};
     grid[1][1] = 0;
     
@@ -41,35 +41,33 @@ void run_13_maze_generation_steps() {
     int64 step = 0;
     
     while (!(stack.empty())) {
-        auto __tuple_2 = py_at(stack, -1);
-        int64 x = ::std::get<0>(__tuple_2);
-        int64 y = ::std::get<1>(__tuple_2);
+        auto __tuple_1 = py_at(stack, -1);
+        int64 x = ::std::get<0>(__tuple_1);
+        int64 y = ::std::get<1>(__tuple_1);
         list<::std::tuple<int64, int64, int64, int64>> candidates = list<::std::tuple<int64, int64, int64, int64>>{};
         for (int64 k = 0; k < 4; ++k) {
-            auto __tuple_3 = dirs[k];
-            int64 dx = ::std::get<0>(__tuple_3);
-            int64 dy = ::std::get<1>(__tuple_3);
+            auto __tuple_2 = dirs[k];
+            int64 dx = ::std::get<0>(__tuple_2);
+            int64 dy = ::std::get<1>(__tuple_2);
             int64 nx = x + dx;
             int64 ny = y + dy;
             if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny][nx] == 1)) {
                 if (dx == 2) {
                     candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x + 1, y)));
+                } else if (dx == -2) {
+                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x - 1, y)));
+                } else if (dy == 2) {
+                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x, y + 1)));
                 } else {
-                    if (dx == -2) {
-                        candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x - 1, y)));
-                    } else {
-                        if (dy == 2)
-                            candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x, y + 1)));
-                        else
-                            candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x, y - 1)));
-                    }
+                    candidates.append(::std::tuple<int64, int64, int64, int64>(::std::make_tuple(nx, ny, x, y - 1)));
                 }
             }
         }
         if (candidates.empty()) {
             stack.pop();
         } else {
-            ::std::tuple<int64, int64, int64, int64> sel = candidates[(x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates)];
+            auto __idx_3 = (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);
+            ::std::tuple<int64, int64, int64, int64> sel = candidates[__idx_3];
             auto __tuple_4 = sel;
             int64 nx = ::std::get<0>(__tuple_4);
             int64 ny = ::std::get<1>(__tuple_4);

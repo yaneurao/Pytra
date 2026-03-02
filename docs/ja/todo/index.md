@@ -36,13 +36,14 @@
 
 文脈: [docs/ja/plans/p0-cpp-s13-candidate-index-cse-revisit.md](../plans/p0-cpp-s13-candidate-index-cse-revisit.md)
 
-1. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02] sample/13 の `candidates` 選択で CSE/hoist を再実施し、重複式を縮退する。
-2. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-01] sample/13 の `candidates` 選択で重複している index/要素取得断片を棚卸しする。
-3. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-02] 適用境界（型既知・副作用なし・fail-closed）を仕様化する。
-4. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-01] CppEmitter で index 計算と要素取得の hoist 出力を実装する。
-5. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-02] 適用不可ケースの fallback を固定し、意味保持を担保する。
-6. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-01] unit テストを追加し、重複式再発を検知可能にする。
-7. [ ] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+1. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02] sample/13 の `candidates` 選択で CSE/hoist を再実施し、重複式を縮退する。
+2. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-01] sample/13 の `candidates` 選択で重複している index/要素取得断片を棚卸しする。
+3. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S1-02] 適用境界（型既知・副作用なし・fail-closed）を仕様化する。
+4. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-01] CppEmitter で index 計算と要素取得の hoist 出力を実装する。
+5. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S2-02] 適用不可ケースの fallback を固定し、意味保持を担保する。
+6. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-01] unit テストを追加し、重複式再発を検知可能にする。
+7. [x] [ID: P0-CPP-S13-CANDIDATE-CSE-02-S3-02] `sample/cpp/13` 再生成と transpile チェックで非退行を確認する。
+- 進捗メモ: [ID: P0-CPP-S13-CANDIDATE-CSE-02] `Assign(Name=Subscript)` の複雑 index を `auto __idx_*` へ hoist する経路を追加し、sample/13 と unit/transpile 回帰を通過。
 
 ### P0: sample/13 C++ tuple 構築の冗長ラップ削減
 
