@@ -84,6 +84,26 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         self.assertIn("pixels.append(b)", swift)
         self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.append", swift)
 
+    def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
+        src = """
+def f(xs: list[int], ys: dict[str, int]) -> int:
+    a: list[int] = xs
+    b: dict[str, int] = ys
+    a.append(1)
+    b["k"] = 2
+    return len(a) + len(b)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            in_py = Path(td) / "case.py"
+            in_py.write_text(src, encoding="utf-8")
+            east = load_east(in_py, parser_backend="self_hosted")
+            swift = transpile_to_swift_native(east)
+        self.assertIn("var a: [Any] = Array(__pytra_as_list(xs))", swift)
+        self.assertIn(
+            "var b: [AnyHashable: Any] = Dictionary(uniqueKeysWithValues: __pytra_as_dict(ys).map { ($0.key, $0.value) })",
+            swift,
+        )
+
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

@@ -205,7 +205,7 @@
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S1-01] C# backend へ展開し、ref境界引数のコンテナを copy ctor で value path 材料化する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] JS/TS backend の動的コンテナ helper 境界へ同一判定規則を展開する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Go backend へ展開し、`any` 境界と typed 値型経路を分離する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
@@ -224,3 +224,4 @@
 - 2026-03-02: S4-01 の分割を追加し、S4-01-S1-01 として C# backend に copy ctor 材料化を実装。`test_py2cs_smoke` と sample parity(case18) を通過、`check_py2cs_transpile` の `Yield/Swap` 失敗は既存既知として継続確認。
 - 2026-03-02: S4-01-S2-01 として JS emitter に ref-container 材料化（`slice/Array.from`・`{...src}`・`new Set(src)`）を追加し、TS preview も同時反映。JS/TS smoke と sample parity(case18) は通過し、`check_py2js/ts_transpile` の失敗は共通 `east3-contract`（C# CLI 契約）由来 blocker と分離した。
 - 2026-03-02: S4-01-S3-01 として Go emitter に ref-container 材料化（slice copy + map deep copy IIFE）を導入。Go smoke/transpile は通過し、sample/18 parity(go) の run_failed は既存 `TokenLike` field 解決失敗として S4-02 blocker へ分離した。
+- 2026-03-02: S4-01-S4-01 として Swift emitter に `ref_vars` 追跡と `AnnAssign/Assign` の container 材料化（`Array(__pytra_as_list(...))` / `Dictionary(uniqueKeysWithValues: __pytra_as_dict(...).map { ... })`）を導入。`test_py2swift_smoke` / `check_py2swift_transpile` は通過し、sample parity(case18) は toolchain_missing skip で run_failed なし。

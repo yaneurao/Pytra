@@ -1009,6 +1009,45 @@ def _type_map(ctx: dict[str, Any]) -> dict[str, str]:
     return out
 
 
+def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
+    ref_vars = ctx.get("ref_vars")
+    if isinstance(ref_vars, set):
+        return ref_vars
+    out: set[str] = set()
+    ctx["ref_vars"] = out
+    return out
+
+
+def _is_container_east_type(type_name: Any) -> bool:
+    if not isinstance(type_name, str):
+        return False
+    if type_name.startswith("list[") or type_name.startswith("tuple[") or type_name.startswith("dict["):
+        return True
+    return type_name in {"bytes", "bytearray"}
+
+
+def _materialize_container_value_from_ref(
+    value_expr: Any,
+    *,
+    target_type: str,
+    target_name: str,
+    ctx: dict[str, Any],
+) -> str | None:
+    if target_type not in {"[Any]", "[AnyHashable: Any]"}:
+        return None
+    if not isinstance(value_expr, dict) or value_expr.get("kind") != "Name":
+        return None
+    source_name = _safe_ident(value_expr.get("id"), "")
+    if source_name == "" or source_name == target_name:
+        return None
+    if source_name not in _ref_var_set(ctx):
+        return None
+    source_expr = _render_expr(value_expr)
+    if target_type == "[Any]":
+        return "Array(" + _to_list_expr(source_expr) + ")"
+    return "Dictionary(uniqueKeysWithValues: " + _to_dict_expr(source_expr) + ".map { ($0.key, $0.value) })"
+
+
 def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
     if not isinstance(expr, dict):
         return "Any"
@@ -1165,6 +1204,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": target_name + (" += 1" if step_is_one else " += " + step_tmp),
         }
@@ -1195,6 +1235,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": idx_tmp + " += 1",
         }
@@ -1376,6 +1417,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             value = _render_expr(stmt_value)
             if swift_type != "Any" and _needs_cast(stmt_value, swift_type, _type_map(ctx)):
                 value = _cast_from_any(value, swift_type)
+            materialized = _materialize_container_value_from_ref(
+                stmt_value,
+                target_type=swift_type,
+                target_name=target,
+                ctx=ctx,
+            )
+            if materialized is not None:
+                value = materialized
         if stmt.get("declare") is False or target in declared:
             if target not in declared:
                 declared.add(target)
@@ -1387,6 +1436,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 reassigned = _render_expr(stmt_value)
                 if _needs_cast(stmt_value, type_map[target], _type_map(ctx)):
                     reassigned = _cast_from_any(reassigned, type_map[target])
+                materialized_reassigned = _materialize_container_value_from_ref(
+                    stmt_value,
+                    target_type=type_map[target],
+                    target_name=target,
+                    ctx=ctx,
+                )
+                if materialized_reassigned is not None:
+                    reassigned = materialized_reassigned
                 return [indent + target + " = " + reassigned]
             return [indent + target + " = " + value]
 
@@ -1434,7 +1491,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "Any":
                     if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
-                        return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+                        value = _cast_from_any(value, type_map[lhs])
+                    materialized_existing = _materialize_container_value_from_ref(
+                        stmt.get("value"),
+                        target_type=type_map[lhs],
+                        target_name=lhs,
+                        ctx=ctx,
+                    )
+                    if materialized_existing is not None:
+                        value = materialized_existing
                 return [indent + lhs + " = " + value]
             swift_type = _swift_type(stmt.get("decl_type"), allow_void=False)
             if swift_type == "Any":
@@ -1443,6 +1508,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     swift_type = inferred
             if swift_type != "Any" and _needs_cast(stmt.get("value"), swift_type, _type_map(ctx)):
                 value = _cast_from_any(value, swift_type)
+            materialized_decl = _materialize_container_value_from_ref(
+                stmt.get("value"),
+                target_type=swift_type,
+                target_name=lhs,
+                ctx=ctx,
+            )
+            if materialized_decl is not None:
+                value = materialized_decl
             declared.add(lhs)
             type_map[lhs] = swift_type
             return [indent + "var " + lhs + ": " + swift_type + " = " + value]
@@ -1453,10 +1526,26 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             type_map[lhs] = inferred
             if inferred != "Any" and _needs_cast(stmt.get("value"), inferred, _type_map(ctx)):
                 value = _cast_from_any(value, inferred)
+            materialized_inferred = _materialize_container_value_from_ref(
+                stmt.get("value"),
+                target_type=inferred,
+                target_name=lhs,
+                ctx=ctx,
+            )
+            if materialized_inferred is not None:
+                value = materialized_inferred
             return [indent + "var " + lhs + ": " + inferred + " = " + value]
         if lhs in type_map and type_map[lhs] != "Any":
             if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
-                return [indent + lhs + " = " + _cast_from_any(value, type_map[lhs])]
+                value = _cast_from_any(value, type_map[lhs])
+            materialized_known = _materialize_container_value_from_ref(
+                stmt.get("value"),
+                target_type=type_map[lhs],
+                target_name=lhs,
+                ctx=ctx,
+            )
+            if materialized_known is not None:
+                value = materialized_known
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":
@@ -1484,6 +1573,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": ctx.get("continue_prefix", ""),
         }
@@ -1504,6 +1594,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": body_ctx.get("tmp", ctx.get("tmp", 0)),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": ctx.get("continue_prefix", ""),
         }
@@ -1527,6 +1618,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": ctx.get("tmp", 0),
             "declared": set(_declared_set(ctx)),
             "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": "",
         }
@@ -1618,9 +1710,17 @@ def _emit_function(
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
 
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type, "continue_prefix": ""}
+    ctx: dict[str, Any] = {
+        "tmp": 0,
+        "declared": set(),
+        "types": {},
+        "ref_vars": set(),
+        "return_type": return_type,
+        "continue_prefix": "",
+    }
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
+    ref_vars = _ref_var_set(ctx)
 
     param_names = _function_param_names(fn, drop_self=drop_self)
     arg_types_any = fn.get("arg_types")
@@ -1629,7 +1729,10 @@ def _emit_function(
     while i < len(param_names):
         p = param_names[i]
         declared.add(p)
-        type_map[p] = _swift_type(arg_types.get(p), allow_void=False)
+        arg_type = arg_types.get(p)
+        type_map[p] = _swift_type(arg_type, allow_void=False)
+        if _is_container_east_type(arg_type):
+            ref_vars.add(p)
         i += 1
 
     i = 0
