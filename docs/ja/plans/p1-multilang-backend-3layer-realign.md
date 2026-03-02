@@ -68,7 +68,7 @@
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave 1の回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2（`js/ts/cs`）へ同テンプレートを展開する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3（`go/java/kotlin/swift`）へ同テンプレートを展開する。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave 4（`ruby/lua/php`）へ同テンプレートを展開する。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave 4（`ruby/lua/php`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec` / `docs/en/spec` を更新し、3層を backend 標準構成として明文化する。
 
@@ -155,3 +155,5 @@ import 規約:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2 sample parity（`runtime_parity_check --case-root sample --targets js,ts,cs --ignore-unstable-stdout`）は `cases=18 pass=14 fail=4`、`artifact_size_mismatch=8`（`js/ts` の `01-04`）を確認。3層配線変更に起因する transpile 崩れはなく、artifact差は既知課題として次 wave へ持ち越す。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] `backends/{go,java,kotlin,swift}/lower`・`optimizer` を追加し、`py2{go,java,kotlin,swift}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{go,java,kotlin,swift}_transpile` は各 `checked=131 ok=131 fail=0 skipped=10` で通過。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave3 sample parity（`runtime_parity_check --case-root sample --targets go,java,kotlin,swift --ignore-unstable-stdout`）は `cases=18 pass=1 fail=17`（`go: run_failed=11`, `java: run_failed=5 + artifact_missing=12`, `swift: toolchain_missing=18`, `kotlin: failureなし`）。3層配線変更の回帰は transpile check で非退行を確認し、実行系差分は wave別課題として継続管理。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] `backends/{ruby,lua,php}/lower`・`optimizer` を追加し、`py2{rb,lua,php}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2rb_transpile`（`checked=132 ok=132 fail=0 skipped=10`）、`check_py2lua_transpile`（`checked=89 ok=89 fail=0 skipped=53`）、`check_py2php_transpile`（`checked=10 ok=10 fail=0 skipped=0`）で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave4 sample parity（`runtime_parity_check --case-root sample --targets ruby,lua,php --ignore-unstable-stdout`）は `cases=18 pass=14 fail=4`。内訳は `php` の `output_mismatch=2`（`12/13`）と `run_failed=1`（`16`）、`ruby` の `run_failed=1`（`18`）で、`lua` は failure なし。3層配線の transpile 回帰は非退行として確認済み。

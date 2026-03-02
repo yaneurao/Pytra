@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.lua.emitter import load_lua_profile, transpile_to_lua, transpile_to_lua_native
+from backends.lua.lower import lower_east3_to_lua_ir
+from backends.lua.optimizer import optimize_lua_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,8 +125,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    lua_ir = lower_east3_to_lua_ir(east)
+    lua_ir = optimize_lua_ir(lua_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    lua_src = transpile_to_lua_native(east)
+    lua_src = transpile_to_lua_native(lua_ir)
     output_path.write_text(lua_src, encoding="utf-8")
     _copy_lua_runtime(output_path)
     return 0

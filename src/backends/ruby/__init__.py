@@ -1,1 +1,1 @@
-"""Ruby backend hooks package."""
+"""Ruby backend package."""
