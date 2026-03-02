@@ -497,12 +497,13 @@ class CodeEmitter:
         step_node = self.any_to_dict_or_empty(iter_plan.get("step"))
         step_const = self._const_int_literal(step_node)
         if isinstance(step_const, int):
+            step_num = int(step_const)
             # step が定数で mode と矛盾する場合は step を優先する。
-            if step_const > 0:
+            if step_num > 0:
                 if mode in {"ascending", "dynamic"}:
                     return mode if mode != "" else "ascending"
                 return "ascending"
-            if step_const < 0:
+            if step_num < 0:
                 if mode in {"descending", "dynamic"}:
                     return mode if mode != "" else "descending"
                 return "descending"
@@ -2495,7 +2496,7 @@ class CodeEmitter:
             return ""
         return ""
 
-    def _const_int_literal(self, node: Any) -> int | None:
+    def _const_int_literal(self, node: Any) -> Any:
         """整数定数ノードを `int` として返す（取得できない場合は None）。"""
         nd = self.any_to_dict_or_empty(node)
         if len(nd) == 0:

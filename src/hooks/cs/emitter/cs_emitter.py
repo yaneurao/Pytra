@@ -128,7 +128,7 @@ class CSharpEmitter(CodeEmitter):
         for stmt in stmts:
             self.emit_stmt(stmt)
 
-    def _normalize_scope_names(self, scope_names: Any) -> set[str]:
+    def _normalize_scope_names(self, scope_names: set[str]) -> set[str]:
         out: set[str] = set()
         if not isinstance(scope_names, set):
             return out
@@ -140,7 +140,11 @@ class CSharpEmitter(CodeEmitter):
                 out.add(txt)
         return out
 
-    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: Any) -> None:
+    def _empty_scope_names(self) -> set[str]:
+        out: set[str] = set()
+        return out
+
+    def emit_scoped_stmt_list(self, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
         stack: list[set[str]] = self.scope_stack
         self.indent += 1
         stack.append(self._normalize_scope_names(scope_names))
@@ -150,7 +154,7 @@ class CSharpEmitter(CodeEmitter):
         self.scope_stack = stack
         self.indent -= 1
 
-    def emit_with_scope(self, scope_names: Any, body_fn: list[dict[str, Any]]) -> None:
+    def emit_with_scope(self, scope_names: set[str], body_fn: list[dict[str, Any]]) -> None:
         stack: list[set[str]] = self.scope_stack
         self.indent += 1
         stack.append(self._normalize_scope_names(scope_names))
@@ -161,7 +165,7 @@ class CSharpEmitter(CodeEmitter):
         self.scope_stack = stack
         self.indent -= 1
 
-    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: Any) -> None:
+    def emit_scoped_block(self, open_line: str, stmts: list[dict[str, Any]], scope_names: set[str]) -> None:
         self.emit(open_line)
         self.emit_scoped_stmt_list(stmts, scope_names)
         self.emit_block_close()
@@ -170,7 +174,7 @@ class CSharpEmitter(CodeEmitter):
         self,
         open_line: str,
         stmts: list[dict[str, Any]],
-        scope_names: Any,
+        scope_names: set[str],
         tail_lines: list[str],
     ) -> None:
         stack: list[set[str]] = self.scope_stack
@@ -839,8 +843,7 @@ class CSharpEmitter(CodeEmitter):
         value_obj: Any,
         rendered_value: str,
         east_type_hint: str,
-        *,
-        target_name_raw: str,
+        target_name_raw: str = "",
     ) -> str:
         node = self.any_to_dict_or_empty(value_obj)
         if self.any_dict_get_str(node, "kind", "") != "Name":
@@ -875,7 +878,7 @@ class CSharpEmitter(CodeEmitter):
             return "new System.Collections.Generic.List<byte>(" + rendered_value + ")"
         return rendered_value
 
-    def _render_assignment_value_with_hint(self, value_obj: Any, east_type_hint: str, *, target_name_raw: str) -> str:
+    def _render_assignment_value_with_hint(self, value_obj: Any, east_type_hint: str, target_name_raw: str = "") -> str:
         rendered = self._render_expr_with_type_hint(value_obj, east_type_hint)
         return self._materialize_container_value_from_ref(
             value_obj,
@@ -1156,7 +1159,8 @@ class CSharpEmitter(CodeEmitter):
             if base == "":
                 continue
             if base not in out:
-                out[base] = []
+                children: list[str] = []
+                out[base] = children
             out[base].append(child)
         return out
 
@@ -1164,7 +1168,7 @@ class CSharpEmitter(CodeEmitter):
         """クラスメソッドが基底クラス定義を override するか判定する。"""
         cur = self.class_base_map.get(class_name, "")
         while cur != "":
-            if method_name in self.class_method_map.get(cur, set()):
+            if cur in self.class_method_map and method_name in self.class_method_map[cur]:
                 return True
             cur = self.class_base_map.get(cur, "")
         return False
@@ -1173,17 +1177,19 @@ class CSharpEmitter(CodeEmitter):
         """クラスメソッドが派生側で再定義されるか判定する。"""
         stack: list[str] = []
         seen: set[str] = set()
-        for child in self.class_children_map.get(class_name, []):
-            stack.append(child)
+        if class_name in self.class_children_map:
+            for child in self.class_children_map[class_name]:
+                stack.append(child)
         while len(stack) > 0:
             cur = stack.pop()
             if cur in seen:
                 continue
             seen.add(cur)
-            if method_name in self.class_method_map.get(cur, set()):
+            if cur in self.class_method_map and method_name in self.class_method_map[cur]:
                 return True
-            for child in self.class_children_map.get(cur, []):
-                stack.append(child)
+            if cur in self.class_children_map:
+                for child in self.class_children_map[cur]:
+                    stack.append(child)
         return False
 
     def transpile(self) -> str:
@@ -1725,7 +1731,7 @@ class CSharpEmitter(CodeEmitter):
         """Try/Except/Finally を C# の try/catch/finally へ変換する。"""
         self.emit("try")
         self.emit("{")
-        self.emit_scoped_stmt_list(self._dict_stmt_list(stmt.get("body")), set())
+        self.emit_scoped_stmt_list(self._dict_stmt_list(stmt.get("body")), self._empty_scope_names())
         handlers = self._dict_stmt_list(stmt.get("handlers"))
         finalbody = self._dict_stmt_list(stmt.get("finalbody"))
         if len(handlers) > 0:
@@ -1762,7 +1768,7 @@ class CSharpEmitter(CodeEmitter):
                 self.emit("}")
         if len(finalbody) > 0:
             self.emit("} finally {")
-            self.emit_scoped_stmt_list(finalbody, set())
+            self.emit_scoped_stmt_list(finalbody, self._empty_scope_names())
         self.emit("}")
 
     def _render_except_match_cond(self, type_node: Any, ex_name: str) -> str:
@@ -1828,7 +1834,11 @@ class CSharpEmitter(CodeEmitter):
             self.declare_in_current_scope(target_name)
             self.declared_var_types[target_name] = self.normalize_type_name(self.any_to_str(stmt.get("target_type")))
             self.emit(target_type + " " + target + " = " + start + ";")
-        self.emit_scoped_block("for (" + target + " = " + start + "; " + cond + "; " + target + " += " + step + ") {", body, set())
+        self.emit_scoped_block(
+            "for (" + target + " = " + start + "; " + cond + "; " + target + " += " + step + ") {",
+            body,
+            self._empty_scope_names(),
+        )
 
     def _iter_is_dict_items(self, iter_node: Any) -> bool:
         """反復対象が `dict.items()` か判定する。"""
@@ -2033,6 +2043,7 @@ class CSharpEmitter(CodeEmitter):
                     self.emit(t_cs + " " + name + " = " + init_value + ";")
                 return
             hint_t = self.declared_var_types.get(name_raw, "")
+            assigned_value = ""
             if hint_t != "":
                 assigned_value = self._render_assignment_value_with_hint(value_obj, hint_t, target_name_raw=name_raw)
             else:

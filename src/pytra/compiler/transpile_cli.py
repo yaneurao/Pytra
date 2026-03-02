@@ -1022,24 +1022,27 @@ def module_export_table(
 
 def _const_string_value(expr: dict[str, object]) -> tuple[str, bool]:
     """定数文字列ノードなら `(value, True)` を返す。"""
+    empty = ""
     if dict_any_kind(expr) != "Constant":
-        return "", False
+        return empty, False
     value = dict_any_get(expr, "value")
     if isinstance(value, str):
-        return value, True
-    return "", False
+        value_txt = str(value)
+        return value_txt, True
+    return empty, False
 
 
 def _literal_string_sequence(expr: dict[str, object]) -> tuple[list[str], bool]:
     """`List/Tuple/Set` の文字列リテラル列を抽出する。"""
+    empty: list[str] = []
     kind = dict_any_kind(expr)
     if kind not in {"List", "Tuple", "Set"}:
-        return [], False
+        return empty, False
     out: list[str] = []
     for ent in dict_any_get_dict_list(expr, "elements"):
         val, ok = _const_string_value(ent)
         if not ok:
-            return [], False
+            return empty, False
         if val not in out:
             out.append(val)
     return out, True
@@ -1203,6 +1206,127 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
     return out
 
 
+def append_import_validation_detail(details: list[str], detail_seen: set[str], detail: str) -> None:
+    """import 検証 detail を重複排除して追加する。"""
+    if detail == "" or detail in detail_seen:
+        return
+    detail_seen.add(detail)
+    details.append(detail)
+
+
+def resolve_wildcard_exports_for_import_validation(
+    imported_mod: str,
+    importer_disp: str,
+    wildcard_cache: dict[str, list[str]],
+    module_by_id: dict[str, tuple[str, dict[str, object]]],
+    exports: dict[str, set[str]],
+    root: Path,
+    details: list[str],
+    detail_seen: set[str],
+) -> list[str]:
+    """wildcard import の公開シンボルを解決し、失敗時は detail を追記する。"""
+    if imported_mod in wildcard_cache:
+        return wildcard_cache[imported_mod]
+    if imported_mod not in module_by_id:
+        append_import_validation_detail(
+            details,
+            detail_seen,
+            f"kind=unresolved_wildcard file={importer_disp} import=from {imported_mod} import *",
+        )
+        return []
+    mod_key, imported_east = module_by_id[imported_mod]
+    imported_disp = rel_disp_for_graph(root, Path(mod_key))
+    imported_body = dict_any_get_dict_list(imported_east, "body")
+    all_state, all_symbols_raw = _module_static_all_symbols(imported_body)
+    all_symbols: list[str] = []
+    for sym_any in all_symbols_raw:
+        sym_txt = str(sym_any)
+        if sym_txt != "":
+            all_symbols.append(sym_txt)
+    imported_exports: set[str] = set()
+    if imported_mod in exports:
+        imported_exports = exports[imported_mod]
+    if all_state == "dynamic":
+        append_import_validation_detail(
+            details,
+            detail_seen,
+            "kind=unresolved_wildcard file="
+            + importer_disp
+            + " import=from "
+            + imported_mod
+            + " import * (__all__ is not statically resolvable)",
+        )
+        return []
+    if all_state == "ok":
+        resolved: list[str] = []
+        for sym in all_symbols:
+            if sym not in imported_exports:
+                append_import_validation_detail(
+                    details,
+                    detail_seen,
+                    f"kind=missing_symbol file={imported_disp} import=__all__[{sym}]",
+                )
+            else:
+                resolved.append(sym)
+        wildcard_cache[imported_mod] = resolved
+        return resolved
+    public_exports: list[str] = []
+    for sym in imported_exports:
+        if sym != "" and not sym.startswith("_"):
+            public_exports.append(sym)
+    wildcard_cache[imported_mod] = sort_str_list_copy(public_exports)
+    return wildcard_cache[imported_mod]
+
+
+def bind_import_symbol_or_duplicate(
+    import_symbols: dict[str, dict[str, str]],
+    import_modules: dict[str, str],
+    local_name: str,
+    module_id: str,
+    symbol: str,
+    importer_disp: str,
+    detail_label: str,
+    details: list[str],
+    detail_seen: set[str],
+) -> None:
+    """import symbol を束縛し、衝突時は detail を追記する。"""
+    if local_name == "" or module_id == "" or symbol == "":
+        return
+    if local_name in import_modules:
+        prev_mod = import_modules[local_name]
+        append_import_validation_detail(
+            details,
+            detail_seen,
+            "kind=duplicate_binding file="
+            + importer_disp
+            + " import="
+            + detail_label
+            + " (conflict with import "
+            + prev_mod
+            + ")",
+        )
+        return
+    if local_name in import_symbols:
+        prev = import_symbols[local_name]
+        prev_mod = dict_str_get(prev, "module")
+        prev_sym = dict_str_get(prev, "name")
+        append_import_validation_detail(
+            details,
+            detail_seen,
+            "kind=duplicate_binding file="
+            + importer_disp
+            + " import="
+            + detail_label
+            + " (conflict with from "
+            + prev_mod
+            + " import "
+            + prev_sym
+            + ")",
+        )
+        return
+    set_import_symbol_binding(import_symbols, local_name, module_id, symbol)
+
+
 def validate_from_import_symbols_or_raise(
     module_east_map: dict[str, dict[str, object]],
     root: Path,
@@ -1219,96 +1343,10 @@ def validate_from_import_symbols_or_raise(
     details: list[str] = []
     detail_seen: set[str] = set()
 
-    def _add_detail(detail: str) -> None:
-        if detail == "" or detail in detail_seen:
-            return
-        detail_seen.add(detail)
-        details.append(detail)
-
-    def _resolve_wildcard_exports_or_error(imported_mod: str, importer_disp: str) -> list[str]:
-        if imported_mod in wildcard_cache:
-            return wildcard_cache[imported_mod]
-        if imported_mod not in module_by_id:
-            _add_detail(
-                f"kind=unresolved_wildcard file={importer_disp} import=from {imported_mod} import *"
-            )
-            return []
-        mod_key, imported_east = module_by_id[imported_mod]
-        imported_disp = rel_disp_for_graph(root, Path(mod_key))
-        imported_body = dict_any_get_dict_list(imported_east, "body")
-        all_state, all_symbols = _module_static_all_symbols(imported_body)
-        imported_exports = exports[imported_mod] if imported_mod in exports else set()
-        if all_state == "dynamic":
-            _add_detail(
-                "kind=unresolved_wildcard file="
-                + importer_disp
-                + " import=from "
-                + imported_mod
-                + " import * (__all__ is not statically resolvable)"
-            )
-            return []
-        if all_state == "ok":
-            resolved: list[str] = []
-            for sym in all_symbols:
-                if sym not in imported_exports:
-                    _add_detail(
-                        f"kind=missing_symbol file={imported_disp} import=__all__[{sym}]"
-                    )
-                else:
-                    resolved.append(sym)
-            wildcard_cache[imported_mod] = resolved
-            return resolved
-        public_exports: list[str] = []
-        for sym in imported_exports:
-            if sym != "" and not sym.startswith("_"):
-                public_exports.append(sym)
-        wildcard_cache[imported_mod] = sort_str_list_copy(public_exports)
-        return wildcard_cache[imported_mod]
-
-    def _bind_symbol_or_duplicate(
-        import_symbols: dict[str, dict[str, str]],
-        import_modules: dict[str, str],
-        local_name: str,
-        module_id: str,
-        symbol: str,
-        importer_disp: str,
-        detail_label: str,
-    ) -> None:
-        if local_name == "" or module_id == "" or symbol == "":
-            return
-        if local_name in import_modules:
-            prev_mod = import_modules[local_name]
-            _add_detail(
-                "kind=duplicate_binding file="
-                + importer_disp
-                + " import="
-                + detail_label
-                + " (conflict with import "
-                + prev_mod
-                + ")"
-            )
-            return
-        if local_name in import_symbols:
-            prev = import_symbols[local_name]
-            prev_mod = dict_str_get(prev, "module")
-            prev_sym = dict_str_get(prev, "name")
-            _add_detail(
-                "kind=duplicate_binding file="
-                + importer_disp
-                + " import="
-                + detail_label
-                + " (conflict with from "
-                + prev_mod
-                + " import "
-                + prev_sym
-                + ")"
-            )
-            return
-        set_import_symbol_binding(import_symbols, local_name, module_id, symbol)
-
     for mod_key, east in module_east_map.items():
+        east_doc: dict[str, object] = east
         file_disp = rel_disp_for_graph(root, Path(mod_key))
-        body = dict_any_get_dict_list(east, "body")
+        body = dict_any_get_dict_list(east_doc, "body")
         for st in body:
             if dict_any_kind(st) == "ImportFrom":
                 imported_mod = dict_any_get_str(st, "module")
@@ -1319,13 +1357,15 @@ def validate_from_import_symbols_or_raise(
                         if sym == "*" or sym == "":
                             continue
                         if sym not in exports[imported_mod]:
-                            _add_detail(
+                            append_import_validation_detail(
+                                details,
+                                detail_seen,
                                 f"kind=missing_symbol file={file_disp} import=from {imported_mod} import {sym}"
                             )
 
-        meta = dict_any_get_dict(east, "meta")
-        import_bindings = meta_import_bindings(east)
-        qualified_symbol_refs = meta_qualified_symbol_refs(east)
+        meta = dict_any_get_dict(east_doc, "meta")
+        import_bindings = meta_import_bindings(east_doc)
+        qualified_symbol_refs = meta_qualified_symbol_refs(east_doc)
         import_modules: dict[str, str] = {}
         import_symbols: dict[str, dict[str, str]] = {}
 
@@ -1337,7 +1377,9 @@ def validate_from_import_symbols_or_raise(
             if local_name == "" or module_id == "":
                 continue
             if local_name in import_modules or local_name in import_symbols:
-                _add_detail(
+                append_import_validation_detail(
+                    details,
+                    detail_seen,
                     f"kind=duplicate_binding file={file_disp} import=import {module_id} as {local_name}"
                 )
                 continue
@@ -1348,7 +1390,7 @@ def validate_from_import_symbols_or_raise(
                 local_name = ref["local_name"]
                 module_id = ref["module_id"]
                 symbol = ref["symbol"]
-                _bind_symbol_or_duplicate(
+                bind_import_symbol_or_duplicate(
                     import_symbols,
                     import_modules,
                     local_name,
@@ -1356,6 +1398,8 @@ def validate_from_import_symbols_or_raise(
                     symbol,
                     file_disp,
                     "from " + module_id + " import " + symbol + " as " + local_name,
+                    details,
+                    detail_seen,
                 )
         else:
             for ent in import_bindings:
@@ -1366,7 +1410,7 @@ def validate_from_import_symbols_or_raise(
                 symbol = ent["export_name"]
                 if symbol == "":
                     continue
-                _bind_symbol_or_duplicate(
+                bind_import_symbol_or_duplicate(
                     import_symbols,
                     import_modules,
                     local_name,
@@ -1374,15 +1418,26 @@ def validate_from_import_symbols_or_raise(
                     symbol,
                     file_disp,
                     "from " + module_id + " import " + symbol + " as " + local_name,
+                    details,
+                    detail_seen,
                 )
 
         for ent in import_bindings:
             if ent["binding_kind"] != "wildcard":
                 continue
             imported_mod = ent["module_id"]
-            expanded_symbols = _resolve_wildcard_exports_or_error(imported_mod, file_disp)
+            expanded_symbols = resolve_wildcard_exports_for_import_validation(
+                imported_mod,
+                file_disp,
+                wildcard_cache,
+                module_by_id,
+                exports,
+                root,
+                details,
+                detail_seen,
+            )
             for sym in expanded_symbols:
-                _bind_symbol_or_duplicate(
+                bind_import_symbol_or_duplicate(
                     import_symbols,
                     import_modules,
                     sym,
@@ -1390,10 +1445,15 @@ def validate_from_import_symbols_or_raise(
                     sym,
                     file_disp,
                     "from " + imported_mod + " import * (symbol " + sym + ")",
+                    details,
+                    detail_seen,
                 )
 
         resolved_refs: list[dict[str, str]] = []
-        local_names = sort_str_list_copy(list(import_symbols.keys()))
+        local_names_raw: list[str] = []
+        for local_name_raw in import_symbols.keys():
+            local_names_raw.append(str(local_name_raw))
+        local_names = sort_str_list_copy(local_names_raw)
         for local_name in local_names:
             sym = import_symbols[local_name]
             module_id = dict_str_get(sym, "module")
@@ -1414,12 +1474,13 @@ def validate_from_import_symbols_or_raise(
         meta["qualified_symbol_refs"] = resolved_refs
         meta["import_symbols"] = import_symbols
         meta["import_modules"] = import_modules
-        east["meta"] = meta
-        module_east_map[mod_key] = east
+        east_doc["meta"] = meta
+        module_east_map[mod_key] = east_doc
 
     for mod_key, east in module_east_map.items():
+        east_doc: dict[str, object] = east
         # wildcard 展開後、ImportFrom の `*` でも module 解決不能を検知する。
-        body = dict_any_get_dict_list(east, "body")
+        body = dict_any_get_dict_list(east_doc, "body")
         file_disp = rel_disp_for_graph(root, Path(mod_key))
         for st in body:
             if dict_any_kind(st) != "ImportFrom":
@@ -1429,7 +1490,9 @@ def validate_from_import_symbols_or_raise(
                 if dict_any_get_str(ent, "name") != "*":
                     continue
                 if imported_mod not in module_by_id:
-                    _add_detail(
+                    append_import_validation_detail(
+                        details,
+                        detail_seen,
                         f"kind=unresolved_wildcard file={file_disp} import=from {imported_mod} import *"
                     )
     if len(details) > 0:
@@ -2432,18 +2495,14 @@ def analyze_import_graph_via_east1_build(
     """`east1_build` 入口へ委譲する import graph helper。"""
     from pytra.compiler.east_parts.east1_build import East1BuildHelpers
 
-    def _load_east1(path_obj: Path) -> dict[str, object]:
-        if callable(load_east_fn):
-            loaded = load_east_fn(path_obj)
-            if isinstance(loaded, dict):
-                return loaded
-        return {}
-
+    load_doc_fn: object = None
+    if callable(load_east_fn):
+        load_doc_fn = load_east_fn
     return East1BuildHelpers.analyze_import_graph(
         entry_path,
         runtime_std_source_root=runtime_std_source_root,
         runtime_utils_source_root=runtime_utils_source_root,
-        load_east1_document_fn=_load_east1,
+        load_east1_document_fn=load_doc_fn,
     )
 
 
@@ -2459,20 +2518,17 @@ def build_module_east_map_via_east1_build(
     """`east1_build` 入口へ委譲する module EAST map helper。"""
     from pytra.compiler.east_parts.east1_build import East1BuildHelpers
 
-    def _build_doc(path_obj: Path, parser_backend: str = "self_hosted", object_dispatch_mode: str = "") -> dict[str, object]:
-        if callable(load_east_fn):
-            loaded = load_east_fn(path_obj, parser_backend, east_stage, object_dispatch_mode)
-            if isinstance(loaded, dict):
-                return loaded
-        return {}
-
+    build_doc_fn: object = None
+    if callable(load_east_fn):
+        build_doc_fn = load_east_fn
     return East1BuildHelpers.build_module_east_map(
         entry_path,
         parser_backend=parser_backend,
+        east_stage=east_stage,
         object_dispatch_mode=object_dispatch_mode,
         runtime_std_source_root=runtime_std_source_root,
         runtime_utils_source_root=runtime_utils_source_root,
-        build_module_document_fn=_build_doc,
+        build_module_document_fn=build_doc_fn,
     )
 
 

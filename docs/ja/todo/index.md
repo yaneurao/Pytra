@@ -280,16 +280,17 @@
 
 文脈: [docs/ja/plans/p3-codeemitter-cs-isolation.md](../plans/p3-codeemitter-cs-isolation.md)
 
-1. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01] C# selfhost 起因の修正を `CodeEmitter` から隔離し、共通層の責務を backend 中立へ戻す。
+1. [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01] C# selfhost 起因の修正を `CodeEmitter` から隔離し、共通層の責務を backend 中立へ戻す。
 2. [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-01] `v0.4.0` 以降の `CodeEmitter` 差分を棚卸しし、「共通必須 / C# 固有 / 判定保留」の3分類を作成する。
 3. [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-02] 「共通必須」の判定基準（backend 中立性・他言語利用実績・fail-closed 必要性）を明文化する。
 4. [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] 「C# 固有」変更を `CSharpEmitter` / C# runtime / selfhost 準備層へ移管する。
 5. [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] `CodeEmitter` から C# 固有回避コードを除去し、共通実装へ戻す。
-6. [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] unit/selfhost 回帰を実施し、C# pass 維持と他 backend 非退行を確認する。
+6. [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] unit/selfhost 回帰を実施し、C# pass 維持と他 backend 非退行を確認する。
 - 進捗メモ: [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-01] `v0.4.0` 以降の `CodeEmitter` 変更を commit 単位で棚卸しし、`共通必須 / C#固有 / 判定保留` の3分類を文脈ファイルへ記録。
 - 進捗メモ: [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-02] 共通必須判定を `backend中立性 / 他言語利用実績 / fail-closed必要性` の3軸に固定し、移管判定ルールを明文化。
 - 進捗メモ: [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] scope 名正規化（`_normalize_scope_names`）を `CodeEmitter` から `CSharpEmitter` へ移管し、共通層 API を `set[str]` 前提へ戻した。`test_code_emitter`/`test_py2cs_smoke` 通過、`check_py2cs_transpile` fail 2件は既知継続。
 - 進捗メモ: [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] `is_declared` の逆順走査を C# 回避 `while` から `range(...,-1,-1)` に戻し、`_const_int_literal` の返り型注釈を `int|None` へ復帰。`test_code_emitter`/`test_py2cs_smoke` 通過、`check_py2cs_transpile` fail 2件は既知継続。
+- 進捗メモ: [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] `check_multilang_selfhost_stage1 --strict-stage1` / `check_multilang_selfhost_multistage` を含む回帰を再実施し、C# 行を stage1/native・multistage(stage1/2/3) すべて `pass` へ回復。`test_code_emitter`/`test_py2cs_smoke` も通過。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 

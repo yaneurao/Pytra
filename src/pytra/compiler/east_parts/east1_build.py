@@ -42,6 +42,7 @@ def _analyze_import_graph_impl(
     runtime_std_source_root: Path,
     runtime_utils_source_root: Path,
     load_east_fn: Any,
+    parser_backend: str = "self_hosted",
 ) -> dict[str, object]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
     root = Path(path_parent_text(entry_path))
@@ -79,8 +80,10 @@ def _analyze_import_graph_impl(
         try:
             if callable(load_east_fn):
                 loaded = load_east_fn(cur_path)
-                if isinstance(loaded, dict):
-                    east_cur = loaded
+            else:
+                loaded = build_east1_document(cur_path, parser_backend=parser_backend)
+            if isinstance(loaded, dict):
+                east_cur = loaded
         except Exception:
             continue
 
@@ -152,18 +155,12 @@ def analyze_import_graph(
     load_east1_document_fn: Any = None,
 ) -> dict[str, object]:
     """`EAST1` build を用いて import graph を解析する。"""
-    load_fn = load_east1_document_fn
-    if load_fn is None:
-
-        def _load_default(path: Path) -> dict[str, object]:
-            return build_east1_document(path, parser_backend=parser_backend)
-
-        load_fn = _load_default
     out_any = _analyze_import_graph_impl(
         entry_path,
         runtime_std_source_root,
         runtime_utils_source_root,
-        load_fn,
+        load_east1_document_fn,
+        parser_backend,
     )
     if isinstance(out_any, dict):
         out: dict[str, object] = out_any
@@ -174,6 +171,7 @@ def analyze_import_graph(
 def build_module_east_map(
     entry_path: Path,
     parser_backend: str = "self_hosted",
+    east_stage: str = "2",
     object_dispatch_mode: str = "",
     runtime_std_source_root: Path = Path("src/pytra/std"),
     runtime_utils_source_root: Path = Path("src/pytra/utils"),
@@ -212,6 +210,7 @@ def build_module_east_map(
             east_any = build_fn(
                 p,
                 parser_backend=parser_backend,
+                east_stage=east_stage,
                 object_dispatch_mode=object_dispatch_mode,
             )
         except TypeError:

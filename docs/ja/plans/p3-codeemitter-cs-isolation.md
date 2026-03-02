@@ -41,7 +41,7 @@
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-02] 「共通必須」の判定基準（backend 中立性・他言語利用実績・fail-closed 必要性）を明文化する。
 - [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] 「C# 固有」変更を `CSharpEmitter` / C# runtime / selfhost 準備層へ移管する。
 - [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] `CodeEmitter` から C# 固有回避コードを除去し、共通実装へ戻す。
-- [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] unit/selfhost 回帰を実施し、C# pass 維持と他 backend 非退行を確認する。
+- [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] unit/selfhost 回帰を実施し、C# pass 維持と他 backend 非退行を確認する。
 
 ## S1-01 棚卸し（v0.4.0=96898f02 以降）
 
@@ -91,3 +91,4 @@
 - 2026-03-02: S1-02 として共通必須の判定基準（backend中立性・他言語利用実績・fail-closed必要性）を明文化した。
 - 2026-03-02: S2-01 として scope 名正規化（`_normalize_scope_names`）を `CodeEmitter` から `CSharpEmitter` へ移管し、共通層は `set[str]` 前提へ戻した。`test_code_emitter` / `test_py2cs_smoke` は通過、`check_py2cs_transpile` の fail 2件（`yield_generator_min.py`/`tuple_assign.py`）は既知継続。
 - 2026-03-02: S2-02 として `is_declared` の逆順走査を C# 回避 `while` から共通実装 `range(...,-1,-1)` へ戻し、`_const_int_literal` の返り型注釈を `int|None` へ復帰。unit/smoke は通過し、`check_py2cs_transpile` fail 2件は既知継続。
+- 2026-03-02: S3-01 として `test_code_emitter` / `test_py2cs_smoke` / `check_multilang_selfhost_stage1 --strict-stage1` / `check_multilang_selfhost_multistage` を再実行。C# は stage1/native・multistage(stage1/2/3) とも `pass` を回復。併せて `transpile_cli` helper 抽出リスト（`prepare_selfhost_source.py`）と C# selfhost compile blocker（typed container/keyword引数/dict key型）を整理した。

@@ -1,6 +1,6 @@
 # P1-MQ-05 Multistage Selfhost Status
 
-計測日: 2026-03-01
+計測日: 2026-03-02
 
 実行コマンド:
 
