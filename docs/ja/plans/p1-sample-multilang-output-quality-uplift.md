@@ -45,7 +45,7 @@
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-03] `rs/js/ts` のループ冗長パターン（`__for_i` 再代入、`__start_N`）の縮退規則を仕様化する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] `go/java` emitter に typed container/typed access fastpath を実装する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
-- [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
+- [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
 
@@ -61,6 +61,9 @@
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` の `_expr_emits_target_type` と `int/float` call 出力を調整し、helper (`__pytra_*`) や `dict.get` など Any 返却経路を除外した上で、resolved-type 既知の非 helper call だけ cast 省略を許可。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `sample/{kotlin,swift,scala}/18` を再生成。`let_expr_index/print_expr_index/assign_expr_index` などで `__pytra_int(...)` 連鎖が除去され、直接代入へ縮退したことを確認。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] 検証: `test_py2kotlin*`/`test_py2swift*`/`test_py2scala*` smoke は通過。parity は `kotlin,scala` で pass（`18_mini_language_interpreter`）。`swift` は toolchain 未導入のため parity 未実行（既知制約）。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] JS emitter の `ForRange` で `start` 式が target 名を参照しない場合は `const __start_N` を省略し、`for (let i = <start>; ...)` を直接出力する fastpath を追加。TS は JS 経路のため同時に改善される。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] Rust emitter に loop target 後続参照注釈（`rust_loop_target_used_after_stmt`）を追加し、後続未参照の `ForRange` は `for i in (start)..(stop)` へ直接束縛（`__for_i`/再代入を削除）。後続参照ありは従来経路を維持して fail-closed とした。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] 検証: `test_py2rs*`/`test_py2js*`/`test_py2ts*` smoke は通過。`sample/{rs,js,ts}` の `01/18` を再生成し、`__for_i`・`const __start_N` が対象ケースで縮退したことを確認。`runtime_parity_check --targets rs,js,ts 01/18` は `js/ts` の既知 `artifact_size_mismatch`（01）で fail（今回差分による新規 compile/runtime 失敗ではない）を確認。
 
 実装境界メモ（S1 集約）:
 - `go/java` typed fastpath は `tokenize/parse_program/execute/build_benchmark_source` の container と loop target を優先対象にする。
