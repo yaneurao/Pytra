@@ -12,7 +12,7 @@ python3 tools/check_multilang_selfhost_multistage.py
 |---|---|---|---|---|---|
 | rs | pass | fail | skip | compile_fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
 | cs | pass | pass | pass | pass | stage2/stage3 sample transpile ok |
-| js | pass | fail | skip | self_retranspile_fail | Error [ERR_MODULE_NOT_FOUND]: Cannot find module './pytra/std.js' (imported by stage1 `py2js.js`) |
+| js | pass | fail | skip | self_retranspile_fail | SyntaxError: Unexpected token ':' |
 | ts | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | go | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | java | pass | skip | skip | runner_not_defined | multistage runner is not defined |

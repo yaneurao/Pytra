@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import os
 import re
 import shutil
 import subprocess
@@ -124,10 +125,311 @@ def _extract_js_relative_imports(js_src: str) -> list[str]:
     return out
 
 
+def _normalize_js_module_import_paths(js_src: str, src_file: Path, stage_src_root: Path) -> str:
+    lines = js_src.splitlines()
+    out: list[str] = []
+    pat = re.compile(r'(?P<head>\s*import\s+(?:.+?\s+from\s+)?["\'])(?P<path>\.[^"\']*\.js)(?P<tail>["\'].*)')
+    for line in lines:
+        m = pat.match(line)
+        if m is None:
+            out.append(line)
+            continue
+        rel_path = m.group("path")
+        if rel_path.startswith("./"):
+            target_abs = (stage_src_root / rel_path[2:]).resolve()
+            rel = os.path.relpath(target_abs, src_file.parent.resolve()).replace("\\", "/")
+            if not rel.startswith("."):
+                rel = "./" + rel
+            line = m.group("head") + rel + m.group("tail")
+        out.append(line)
+    norm = "\n".join(out)
+    if js_src.endswith("\n"):
+        norm += "\n"
+    return norm
+
+
+def _rewrite_js_selfhost_syntax(js_src: str) -> str:
+    out = js_src
+    pat_not_in = re.compile(r"(?P<lhs>[A-Za-z_][A-Za-z0-9_\.]*)\s+not\s+in\s+\{(?P<items>[^{}]+)\}")
+    pat_in = re.compile(r"(?P<lhs>[A-Za-z_][A-Za-z0-9_\.]*)\s+in\s+\{(?P<items>[^{}]+)\}")
+    pat_f_dq = re.compile(r'(?<![A-Za-z0-9_"\'])f"(?P<body>[^"\n]*)"')
+    pat_f_sq = re.compile(r"(?<![A-Za-z0-9_\"'])f'(?P<body>[^'\n]*)'")
+    out = pat_not_in.sub(lambda m: "!" + "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
+    out = pat_in.sub(lambda m: "[" + m.group("items") + "].includes(" + m.group("lhs") + ")", out)
+    out = pat_f_dq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
+    out = pat_f_sq.sub(lambda m: "`" + m.group("body").replace("{", "${") + "`", out)
+    return out
+
+
+def _parse_js_named_imports(js_src: str) -> list[tuple[str, str]]:
+    reqs: list[tuple[str, str]] = []
+    pat = re.compile(r'\s*import\s*\{(?P<names>[^}]*)\}\s*from\s*["\'](?P<path>\.[^"\']*\.js)["\']')
+    for line in js_src.splitlines():
+        m = pat.match(line)
+        if m is None:
+            continue
+        rel_path = m.group("path").strip()
+        names_txt = m.group("names")
+        for raw in names_txt.split(","):
+            part = raw.strip()
+            if part == "":
+                continue
+            src_name = part.split(" as ")[0].strip()
+            if src_name != "":
+                reqs.append((rel_path, src_name))
+    return reqs
+
+
+def _js_has_symbol_definition(js_src: str, name: str) -> bool:
+    esc = re.escape(name)
+    pats = [
+        re.compile(rf"^function\s+{esc}\s*\(", re.MULTILINE),
+        re.compile(rf"^class\s+{esc}\b", re.MULTILINE),
+        re.compile(rf"^(?:const|let|var)\s+{esc}\b", re.MULTILINE),
+    ]
+    for pat in pats:
+        if pat.search(js_src):
+            return True
+    return False
+
+
+def _js_already_exports_name(js_src: str, name: str) -> bool:
+    esc = re.escape(name)
+    if re.search(rf"^export\s+(?:function|class|const|let|var)\s+{esc}\b", js_src, re.MULTILINE):
+        return True
+    for m in re.finditer(r"^export\s*\{(?P<body>[^}]*)\}", js_src, re.MULTILINE):
+        body = m.group("body")
+        for raw in body.split(","):
+            token = raw.strip()
+            if token == "":
+                continue
+            exported = token.split(" as ")[0].strip()
+            if exported == name:
+                return True
+    return False
+
+
+def _inject_js_named_exports(stage_src_root: Path) -> None:
+    requests: dict[str, set[str]] = {}
+    for src_file in stage_src_root.rglob("*.js"):
+        js_src = src_file.read_text(encoding="utf-8")
+        for rel_path, name in _parse_js_named_imports(js_src):
+            target_abs = (src_file.parent / rel_path).resolve()
+            try:
+                target_abs.relative_to(stage_src_root.resolve())
+            except ValueError:
+                continue
+            key = str(target_abs)
+            if key not in requests:
+                requests[key] = set()
+            requests[key].add(name)
+    for target_key, names in requests.items():
+        target = Path(target_key)
+        if not target.exists():
+            continue
+        js_src = target.read_text(encoding="utf-8")
+        exportable: list[str] = []
+        for name in sorted(names):
+            if not _js_has_symbol_definition(js_src, name):
+                continue
+            if _js_already_exports_name(js_src, name):
+                continue
+            exportable.append(name)
+        if len(exportable) == 0:
+            continue
+        updated = js_src.rstrip() + "\nexport { " + ", ".join(exportable) + " };\n"
+        target.write_text(updated, encoding="utf-8")
+
+
+def _write_js_selfhost_shims(stage_src_root: Path) -> None:
+    files: dict[str, str] = {
+        "pytra/py_runtime.js": (
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra/py_runtime.js');\n"
+            "exports.PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"
+            "exports.PY_TYPE_BOOL = rt.PY_TYPE_BOOL;\n"
+            "exports.PY_TYPE_NUMBER = rt.PY_TYPE_NUMBER;\n"
+            "exports.PY_TYPE_STRING = rt.PY_TYPE_STRING;\n"
+            "exports.PY_TYPE_ARRAY = rt.PY_TYPE_ARRAY;\n"
+            "exports.PY_TYPE_MAP = rt.PY_TYPE_MAP;\n"
+            "exports.PY_TYPE_SET = rt.PY_TYPE_SET;\n"
+            "exports.PY_TYPE_OBJECT = rt.PY_TYPE_OBJECT;\n"
+            "exports.PYTRA_TYPE_ID = rt.PYTRA_TYPE_ID;\n"
+            "exports.pyRegisterType = rt.pyRegisterType;\n"
+            "exports.pyRegisterClassType = rt.pyRegisterClassType;\n"
+            "exports.pyIsSubtype = rt.pyIsSubtype;\n"
+            "exports.pyIsInstance = rt.pyIsInstance;\n"
+            "exports.pyTypeId = rt.pyTypeId;\n"
+            "exports.pyTruthy = rt.pyTruthy;\n"
+            "exports.pyTryLen = rt.pyTryLen;\n"
+            "exports.pyStr = rt.pyStr;\n"
+            "exports.pyToString = rt.pyToString;\n"
+            "exports.pyPrint = rt.pyPrint;\n"
+            "exports.pyLen = rt.pyLen;\n"
+            "exports.pyBool = rt.pyBool;\n"
+            "exports.pyRange = rt.pyRange;\n"
+            "exports.pyFloorDiv = rt.pyFloorDiv;\n"
+            "exports.pyMod = rt.pyMod;\n"
+            "exports.pyIn = rt.pyIn;\n"
+            "exports.pySlice = rt.pySlice;\n"
+            "exports.pyOrd = rt.pyOrd;\n"
+            "exports.pyChr = rt.pyChr;\n"
+            "exports.pyBytearray = rt.pyBytearray;\n"
+            "exports.pyBytes = rt.pyBytes;\n"
+            "exports.pyIsDigit = rt.pyIsDigit;\n"
+            "exports.pyIsAlpha = rt.pyIsAlpha;\n"
+        ),
+        "pytra/std/pathlib.js": (
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra/pathlib.js');\n"
+            "exports.Path = rt.Path;\n"
+            "exports.pathJoin = rt.pathJoin;\n"
+        ),
+        "pytra/std/math.js": (
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra/math.js');\n"
+            "exports.pi = rt.pi;\n"
+            "exports.e = rt.e;\n"
+            "exports.sin = rt.sin;\n"
+            "exports.cos = rt.cos;\n"
+            "exports.tan = rt.tan;\n"
+            "exports.sqrt = rt.sqrt;\n"
+            "exports.exp = rt.exp;\n"
+            "exports.log = rt.log;\n"
+            "exports.log10 = rt.log10;\n"
+            "exports.fabs = rt.fabs;\n"
+            "exports.floor = rt.floor;\n"
+            "exports.ceil = rt.ceil;\n"
+            "exports.pow = rt.pow;\n"
+        ),
+        "pytra/std/time.js": (
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra/time.js');\n"
+            "const perf_counter = typeof rt.perf_counter === 'function' ? rt.perf_counter : rt.perfCounter;\n"
+            "exports.perf_counter = perf_counter;\n"
+            "exports.perfCounter = perf_counter;\n"
+        ),
+        "pytra/std/sys.js": (
+            "const sys = {\n"
+            "  argv: Array.from(process.argv),\n"
+            "  path: [],\n"
+            "  stderr: process.stderr,\n"
+            "  stdout: process.stdout,\n"
+            "  exit: function(code = 0) { process.exit(Number(code) || 0); },\n"
+            "  set_argv: function(values) { this.argv = Array.isArray(values) ? values.map((v) => String(v)) : []; },\n"
+            "  set_path: function(values) { this.path = Array.isArray(values) ? values.map((v) => String(v)) : []; },\n"
+            "  write_stderr_impl: function(text) { process.stderr.write(String(text)); },\n"
+            "  write_stdout_impl: function(text) { process.stdout.write(String(text)); },\n"
+            "  write_stderr: function(text) { process.stderr.write(String(text)); },\n"
+            "  write_stdout: function(text) { process.stdout.write(String(text)); },\n"
+            "};\n"
+            "exports.sys = sys;\n"
+        ),
+        "pytra/std/json.js": (
+            "function _escape_non_ascii(text) {\n"
+            "  return String(text).replace(/[\\u0080-\\uFFFF]/g, (ch) => {\n"
+            "    const hex = ch.charCodeAt(0).toString(16).padStart(4, '0');\n"
+            "    return '\\\\u' + hex;\n"
+            "  });\n"
+            "}\n"
+            "const json = {\n"
+            "  loads: function(text) { return JSON.parse(String(text)); },\n"
+            "  dumps: function(obj, ensure_ascii = true, indent = null) {\n"
+            "    const space = indent === null || indent === undefined ? undefined : Number(indent);\n"
+            "    let out = JSON.stringify(obj, null, space);\n"
+            "    if (out === undefined) { out = 'null'; }\n"
+            "    if (ensure_ascii) { out = _escape_non_ascii(out); }\n"
+            "    return out;\n"
+            "  },\n"
+            "};\n"
+            "exports.json = json;\n"
+        ),
+        "pytra/std/argparse.js": (
+            "const { sys } = require('./sys.js');\n"
+            "class _ArgumentParser {\n"
+            "  constructor(description = '') { this.description = String(description || ''); this._specs = []; }\n"
+            "  add_argument() {\n"
+            "    const names = Array.from(arguments).filter((x) => typeof x === 'string');\n"
+            "    if (names.length === 0) { throw new Error('add_argument requires at least one name'); }\n"
+            "    const is_optional = names[0].startsWith('-');\n"
+            "    const base = is_optional ? names[names.length - 1].replace(/^-+/, '').replace(/-/g, '_') : names[0];\n"
+            "    this._specs.push({ names, is_optional, dest: base, action: null, choices: null, default: null });\n"
+            "  }\n"
+            "  error(msg) { if (msg) { sys.write_stderr('error: ' + msg + '\\n'); } throw new Error('argparse_error'); }\n"
+            "  parse_args(argv = null) {\n"
+            "    const tokens = Array.isArray(argv) ? Array.from(argv).map((x) => String(x)) : Array.from(process.argv.slice(2));\n"
+            "    const values = {};\n"
+            "    const specsPos = this._specs.filter((s) => !s.is_optional);\n"
+            "    const byName = {};\n"
+            "    for (const spec of this._specs) {\n"
+            "      values[spec.dest] = spec.default;\n"
+            "      if (spec.is_optional) { for (const n of spec.names) { byName[n] = spec; } }\n"
+            "    }\n"
+            "    let posI = 0;\n"
+            "    for (let i = 0; i < tokens.length; ) {\n"
+            "      const tok = tokens[i];\n"
+            "      if (tok.startsWith('-')) {\n"
+            "        const spec = byName[tok];\n"
+            "        if (!spec) { this.error('unknown option: ' + tok); }\n"
+            "        if (i + 1 >= tokens.length) { this.error('missing value for option: ' + tok); }\n"
+            "        values[spec.dest] = tokens[i + 1];\n"
+            "        i += 2;\n"
+            "        continue;\n"
+            "      }\n"
+            "      if (posI >= specsPos.length) { this.error('unexpected extra argument: ' + tok); }\n"
+            "      values[specsPos[posI].dest] = tok;\n"
+            "      posI += 1;\n"
+            "      i += 1;\n"
+            "    }\n"
+            "    if (posI < specsPos.length) { this.error('missing required argument: ' + specsPos[posI].dest); }\n"
+            "    return values;\n"
+            "  }\n"
+            "}\n"
+            "const argparse = { ArgumentParser: function(description = '') { return new _ArgumentParser(description); } };\n"
+            "exports.argparse = argparse;\n"
+        ),
+        "pytra/std.js": (
+            "exports.argparse = require('./std/argparse.js').argparse;\n"
+            "exports.sys = require('./std/sys.js').sys;\n"
+            "exports.json = require('./std/json.js').json;\n"
+            "exports.pathlib = require('./std/pathlib.js');\n"
+            "exports.math = require('./std/math.js');\n"
+            "exports.time = require('./std/time.js');\n"
+        ),
+        "pytra/compiler/transpile_cli.js": (
+            "import fs from 'node:fs';\n"
+            "function add_common_transpile_args(parser, enable_negative_index_mode = true, enable_object_dispatch_mode = true, parser_backends = null) {\n"
+            "  parser.add_argument('input');\n"
+            "  parser.add_argument('-o', '--output');\n"
+            "  parser.add_argument('--east3-opt-level');\n"
+            "  parser.add_argument('--east3-opt-pass');\n"
+            "  parser.add_argument('--dump-east3-before-opt');\n"
+            "  parser.add_argument('--dump-east3-after-opt');\n"
+            "  parser.add_argument('--dump-east3-opt-trace');\n"
+            "  if (enable_negative_index_mode) { parser.add_argument('--negative-index-mode'); }\n"
+            "  if (enable_object_dispatch_mode) { parser.add_argument('--object-dispatch-mode'); }\n"
+            "  if (parser_backends !== null) { parser.add_argument('--parser-backend'); }\n"
+            "}\n"
+            "function load_east3_document(input_path) {\n"
+            "  const payload = fs.readFileSync(String(input_path), 'utf8');\n"
+            "  return JSON.parse(payload);\n"
+            "}\n"
+            "export { add_common_transpile_args, load_east3_document };\n"
+        ),
+        "pytra/compiler/js_runtime_shims.js": (
+            "function write_js_runtime_shims(_output_dir) {\n"
+            "  return;\n"
+            "}\n"
+            "export { write_js_runtime_shims };\n"
+        ),
+    }
+    for rel, text in files.items():
+        out = stage_src_root / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")
+
+
 def _copy_js_runtime(stage2_src_root: Path) -> None:
     src_runtime = ROOT / "src" / "runtime" / "js"
     dst_runtime = stage2_src_root / "runtime" / "js"
     shutil.copytree(src_runtime, dst_runtime, dirs_exist_ok=True)
+    _write_js_selfhost_shims(stage2_src_root)
 
 
 def _prepare_js_stage2_tree(stage2_root: Path, entry_py: Path) -> tuple[bool, str, Path]:
@@ -153,12 +455,19 @@ def _prepare_js_stage2_tree(stage2_root: Path, entry_py: Path) -> tuple[bool, st
 
         out_js = stage2_src_root / rel_py.with_suffix(".js")
         out_js.parent.mkdir(parents=True, exist_ok=True)
-        ok_emit, msg_emit = _run(["python3", str(py2js_cli), str(py_src), "-o", str(out_js)])
-        if not ok_emit:
-            return False, "js stage2 emit failed at " + rel_key + ": " + msg_emit, entry_js
-        emitted.add(rel_key)
-
+        if not out_js.exists():
+            ok_emit, msg_emit = _run(["python3", str(py2js_cli), str(py_src), "-o", str(out_js)])
+            if not ok_emit:
+                return False, "js stage2 emit failed at " + rel_key + ": " + msg_emit, entry_js
         js_text = out_js.read_text(encoding="utf-8")
+        norm_text = _normalize_js_module_import_paths(js_text, out_js, stage2_src_root)
+        rew_text = _rewrite_js_selfhost_syntax(norm_text)
+        if rew_text != js_text:
+            out_js.write_text(rew_text, encoding="utf-8")
+            js_text = rew_text
+        else:
+            js_text = rew_text
+        emitted.add(rel_key)
         import_paths = _extract_js_relative_imports(js_text)
         for rel_import in import_paths:
             resolved_js = (out_js.parent / rel_import).resolve()
@@ -170,6 +479,7 @@ def _prepare_js_stage2_tree(stage2_root: Path, entry_py: Path) -> tuple[bool, st
             if dep_py.exists():
                 queue.append(dep_py)
 
+    _inject_js_named_exports(stage2_src_root)
     return True, "", entry_js
 
 

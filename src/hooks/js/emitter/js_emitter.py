@@ -63,7 +63,8 @@ class JsEmitter(CodeEmitter):
             or t.startswith("tuple[")
             or t.startswith("dict[")
             or t.startswith("set[")
-            or t in {"bytes", "bytearray"}
+            or t == "bytes"
+            or t == "bytearray"
         )
 
     def _materialize_container_value_from_ref(
@@ -83,7 +84,7 @@ class JsEmitter(CodeEmitter):
         if src_raw not in self.current_ref_vars:
             return rendered_value
         hint = self.normalize_type_name(east_type_hint)
-        if hint.startswith("list[") or hint.startswith("tuple[") or hint in {"bytes", "bytearray"}:
+        if hint.startswith("list[") or hint.startswith("tuple[") or hint == "bytes" or hint == "bytearray":
             return "(Array.isArray(" + rendered_value + ") ? " + rendered_value + ".slice() : Array.from(" + rendered_value + "))"
         if hint.startswith("dict["):
             return "((" + rendered_value + " && typeof " + rendered_value + " === \"object\") ? { ..." + rendered_value + " } : {})"
@@ -319,7 +320,7 @@ class JsEmitter(CodeEmitter):
                 module_id = self.any_to_str(ent.get("module_id"))
                 local_name = self.any_to_str(ent.get("local_name"))
                 export_name = self.any_to_str(ent.get("export_name"))
-                if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
+                if module_id.startswith("__future__") or module_id == "typing" or module_id == "pytra.std.typing":
                     i += 1
                     continue
                 if self._is_browser_module(module_id):
@@ -368,7 +369,7 @@ class JsEmitter(CodeEmitter):
             if kind == "Import":
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     module_id = self.any_to_str(ent.get("name"))
-                    if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
+                    if module_id == "" or module_id.startswith("__future__") or module_id == "typing" or module_id == "pytra.std.typing":
                         continue
                     if self._is_browser_module(module_id):
                         asname = self.any_to_str(ent.get("asname"))
@@ -386,7 +387,7 @@ class JsEmitter(CodeEmitter):
                     _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
             elif kind == "ImportFrom":
                 module_id = self.any_to_str(stmt.get("module"))
-                if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
+                if module_id == "" or module_id.startswith("__future__") or module_id == "typing" or module_id == "pytra.std.typing":
                     continue
                 for ent in self._dict_stmt_list(stmt.get("names")):
                     name = self.any_to_str(ent.get("name"))
@@ -942,7 +943,7 @@ class JsEmitter(CodeEmitter):
             if op == "In" or op == "NotIn":
                 if right_t.startswith("dict["):
                     term = "Object.prototype.hasOwnProperty.call(" + right + ", " + cur_left + ")"
-                elif right_t.startswith("list[") or right_t in {"bytes", "bytearray", "str"}:
+                elif right_t.startswith("list[") or right_t == "bytes" or right_t == "bytearray" or right_t == "str":
                     term = "(" + right + ").includes(" + cur_left + ")"
                 else:
                     term = "(" + cur_left + " in " + right + ")"
@@ -1129,7 +1130,14 @@ class JsEmitter(CodeEmitter):
                 expr_txt = "Math.min(" + expr_txt + ", " + rendered_args[i] + ")"
                 i += 1
             return expr_txt
-        if fn_name_raw in {"Exception", "RuntimeError", "ValueError", "TypeError", "KeyError", "IndexError"}:
+        if (
+            fn_name_raw == "Exception"
+            or fn_name_raw == "RuntimeError"
+            or fn_name_raw == "ValueError"
+            or fn_name_raw == "TypeError"
+            or fn_name_raw == "KeyError"
+            or fn_name_raw == "IndexError"
+        ):
             if len(rendered_args) >= 1:
                 return "new Error(" + rendered_args[0] + ")"
             return "new Error(" + self.quote_string_literal(fn_name_raw) + ")"
@@ -1170,7 +1178,7 @@ class JsEmitter(CodeEmitter):
         owner_expr = self.render_expr(owner_node)
         owner_type = self.get_expr_type(owner_node)
 
-        if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
+        if owner_type.startswith("list[") or owner_type == "bytes" or owner_type == "bytearray":
             if attr_raw == "append" and len(rendered_args) == 1:
                 return owner_expr + ".push(" + rendered_args[0] + ")"
             if attr_raw == "clear" and len(rendered_args) == 0:
@@ -1274,7 +1282,13 @@ class JsEmitter(CodeEmitter):
             operand_node = self.any_to_dict_or_empty(expr_d.get("operand"))
             operand = self.render_expr(operand_node)
             operand_kind = self.any_dict_get_str(operand_node, "kind", "")
-            simple_operand = operand_kind in {"Name", "Constant", "Call", "Attribute", "Subscript"}
+            simple_operand = (
+                operand_kind == "Name"
+                or operand_kind == "Constant"
+                or operand_kind == "Call"
+                or operand_kind == "Attribute"
+                or operand_kind == "Subscript"
+            )
             if op == "USub":
                 if simple_operand:
                     return "-" + operand
