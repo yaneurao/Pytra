@@ -13,9 +13,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PY2NIM = ROOT / "src" / "py2nim.py"
 
-# Minimal emitter will fail many things, so for now we don't list expected failures
-# and just check if it can transpile a very simple file.
-
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
         ["python3", str(PY2NIM), str(src), "-o", str(out)],
@@ -34,18 +31,36 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     return False, first
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="check py2nim transpile success for fixtures/sample")
+    ap.add_argument("--verbose", action="store_true", help="print passing files")
+    args = ap.parse_args()
+
+    fixture_files = sorted((ROOT / "test" / "fixtures" / "nim").glob("*.py"))
+    sample_files = sorted((ROOT / "sample" / "py").glob("01_*.py")) # mandelbrot only for now
+
+    fails: list[tuple[str, str]] = []
+    total = 0
+    ok = 0
+    
     with tempfile.TemporaryDirectory() as tmpdir:
-        test_py = Path(tmpdir) / "test.py"
-        test_py.write_text("print('hello')\n", encoding="utf-8")
-        test_nim = Path(tmpdir) / "test.nim"
-        
-        ok, msg = _run_one(test_py, test_nim)
-        if ok:
-            print("Basic transpile: OK")
-            return 0
-        else:
-            print(f"Basic transpile: FAIL ({msg})")
-            return 1
+        out = Path(tmpdir) / "out.nim"
+        for src in fixture_files + sample_files:
+            rel = str(src.relative_to(ROOT))
+            total += 1
+            good, msg = _run_one(src, out)
+            if good:
+                ok += 1
+                if args.verbose:
+                    print(f"OK: {rel}")
+            else:
+                fails.append((rel, msg))
+
+    print(f"checked={total} ok={ok} fail={len(fails)}")
+    if fails:
+        for rel, msg in fails:
+            print(f"FAIL {rel}: {msg}")
+        return 1
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
