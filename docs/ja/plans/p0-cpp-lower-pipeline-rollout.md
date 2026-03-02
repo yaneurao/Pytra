@@ -15,9 +15,9 @@
 - `CppEmitter` を「C++ IR の決定的レンダラ」に縮退し、EAST3 直接解釈ロジックを段階的に削減する。
 
 対象:
-- `src/hooks/cpp/lower/cpp_lower.py`（新設）
-- `src/hooks/cpp/optimizer/cpp_ir_optimizer.py`（新設、既存 optimizer との橋渡し）
-- `src/hooks/cpp/emitter/cpp_emitter.py`（責務縮退）
+- `src/backends/cpp/lower/cpp_lower.py`（新設）
+- `src/backends/cpp/optimizer/cpp_ir_optimizer.py`（新設、既存 optimizer との橋渡し）
+- `src/backends/cpp/emitter/cpp_emitter.py`（責務縮退）
 - `src/py2cpp.py`（新パイプライン配線）
 - C++ backend 回帰テスト（unit / transpile / sample）
 
@@ -42,11 +42,11 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S1-01] C++ IR の最小ノード集合（Stmt/Expr/Type/Decl）と fail-closed 契約を定義する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S1-02] 案1のファイル責務（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）と公開 API を固定する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-01] `cpp_lower.py` を新設し、EAST3 Module から C++ IR Module へ lower する骨格を実装する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-02] `cpp_ir_optimizer.py` を新設し、既存 optimizer pass の移設/再配線方針を実装する。
-- [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S1-01] C++ IR の最小ノード集合（Stmt/Expr/Type/Decl）と fail-closed 契約を定義する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S1-02] 案1のファイル責務（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）と公開 API を固定する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-01] `cpp_lower.py` を新設し、EAST3 Module から C++ IR Module へ lower する骨格を実装する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-02] `cpp_ir_optimizer.py` を新設し、既存 optimizer pass の移設/再配線方針を実装する。
+- [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
 - [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
 - [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
 - [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
@@ -55,3 +55,21 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、他言語展開は後回しにして C++ 先行で案1（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）を P0 起票。
+- 2026-03-02: `CppLower` を `pass_through_v0`（EAST3形状維持）で導入。fail-closed 契約として root `dict` + `kind=Module` を必須化。
+- 2026-03-02: `CppIrOptimizer` を既存 `optimize_cpp_ir` への薄い委譲層として導入し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` 配線へ変更。
+- 2026-03-02: `dump_cpp_opt_trace` は `cpp_lower_trace` と既存 `cpp_optimizer_trace` を同一ファイルへ連結出力する方式にした（CLI互換維持）。
+
+## C++ IR v0 契約（S1-01）
+
+- root は `dict` で `kind == "Module"` を必須とする。
+- body は従来 EAST3 互換の statement node 群（`Stmt/Expr/Decl/Type` を含む）を許可し、phase-1 では形状を変更しない。
+- lower/optimizer の入力が契約違反の場合は `RuntimeError` で fail-closed とする。
+- `CppEmitter` には C++ IR root（`Module`）のみを渡す。
+
+## API 境界（S1-02）
+
+- `backends.cpp.lower.cpp_lower.CppLower.lower(east_module, debug_flags=...) -> (cpp_ir, report)`
+- `backends.cpp.lower.cpp_lower.lower_cpp_from_east3(...)` は上記 convenience wrapper。
+- `backends.cpp.optimizer.cpp_ir_optimizer.CppIrOptimizer.optimize(cpp_ir, ...) -> (cpp_ir, report)`
+- `backends.cpp.optimizer.cpp_ir_optimizer.optimize_cpp_ir_module(...)` は上記 convenience wrapper。
+- `backends.cpp.emitter.cpp_emitter.emit_cpp_from_east(...)` は公開 bridge として `lower -> optimizer -> CppEmitter.transpile()` を実行する。

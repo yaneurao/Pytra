@@ -54,16 +54,17 @@
 文脈: [docs/ja/plans/p0-cpp-lower-pipeline-rollout.md](../plans/p0-cpp-lower-pipeline-rollout.md)
 
 1. [ ] [ID: P0-CPP-LOWER-PIPELINE-01] C++ backend を `EAST3 -> CppLower -> CppIrOptimizer -> CppEmitter` 構成へ移行し、責務境界を固定する。
-2. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S1-01] C++ IR の最小ノード集合（Stmt/Expr/Type/Decl）と fail-closed 契約を定義する。
-3. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S1-02] 案1のファイル責務（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）と公開 API を固定する。
-4. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-01] `cpp_lower.py` を新設し、EAST3 Module から C++ IR Module へ lower する骨格を実装する。
-5. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-02] `cpp_ir_optimizer.py` を新設し、既存 optimizer pass の移設/再配線方針を実装する。
-6. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
+2. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S1-01] C++ IR の最小ノード集合（Stmt/Expr/Type/Decl）と fail-closed 契約を定義する。
+3. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S1-02] 案1のファイル責務（`cpp_lower.py` / `cpp_ir_optimizer.py` / `cpp_emitter.py`）と公開 API を固定する。
+4. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-01] `cpp_lower.py` を新設し、EAST3 Module から C++ IR Module へ lower する骨格を実装する。
+5. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-02] `cpp_ir_optimizer.py` を新設し、既存 optimizer pass の移設/再配線方針を実装する。
+6. [x] [ID: P0-CPP-LOWER-PIPELINE-01-S2-03] `py2cpp` から新パイプラインを呼び出す配線と dump/trace 入口を追加する。
 7. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-01] 文単位の構造決定（loop/if/tuple unpack など）を emitter から lower/optimizer 側へ移設する。
 8. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-02] 式単位の正規化（cast/compare/binop の冗長除去）を emitter から lower/optimizer 側へ移設する。
 9. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S3-03] `CppEmitter` の EAST3 直接分岐を削減し、C++ IR レンダラ責務へ縮退する。
 10. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-01] lower/optimizer/emitter 境界を検証する unit テストを追加し、回帰を固定する。
 11. [ ] [ID: P0-CPP-LOWER-PIPELINE-01-S4-02] C++ transpile/sample/parity を実施し、非退行を確認する。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppLower` / `CppIrOptimizer` を新設し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` へ配線。`test_cpp_optimizer*` と `check_py2cpp_transpile`（136/136, skip6）を通過。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
