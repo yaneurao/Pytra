@@ -40,7 +40,7 @@
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 各言語の冗長構文パターン（不要括弧/補助変数/append連鎖）を棚卸しし、適用境界を定義する。
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-01] `js/ts` の loop 補助変数（`__start_N`）を簡約する出力規則を実装する。
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] `ruby/lua` の append 連鎖を簡約する出力規則を実装する。
-- [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
+- [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] `java` の冗長括弧/step 変数の簡約規則を実装する。
 - [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰テストを追加して可読性退行を検知可能にする。
 - [ ] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] 対象 sample を再生成し、transpile/parity で非退行を確認する。
 
@@ -51,3 +51,5 @@
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-01] `js` emitter の `ForRange` に start 直埋め fastpath（`start` が target 非参照時）を適用済み。`ts` は JS 経路共有のため同時に反映され、`sample/{js,ts}/01,18` で `const __start_N` を生成しない形を確認。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] Ruby は既存実装で `append` 連鎖を `owner.concat([..])` へ縮退済みであることを確認。Lua へ同等規則を追加し、`owner.append(x)` 連鎖（owner=Name, arg=副作用なし式）を `table.move({..}, 1, n, #(owner)+1, owner)` 1行へ縮退した。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] 検証: 追加した `test_append_chain_is_compacted_with_table_move` は pass。`test_py2lua*` 全体は既知ベースライン失敗（runtime 分離期待値の旧前提）を含むため fail 継続、`test_py2rb*` は pass。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] Java emitter の `ForCore` / listcomp range に「定数 step fastpath」を追加し、`step=±1` を含む定数 step で `__step_N` 変数を生成しない出力へ変更した。step が非定数または 0 の場合は既存の動的 ternary 条件経路を維持（fail-closed）。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] 検証: `test_py2java_smoke.py` に `for_range` と `range_downcount_len_minus1` の回帰を追加し pass。`tools/regenerate_samples.py --langs java --stems 01_mandelbrot,18_mini_language_interpreter --force` で `sample/java` へ反映済み。

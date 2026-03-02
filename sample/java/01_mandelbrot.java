@@ -9,8 +9,7 @@ public final class Pytra_01_mandelbrot {
     public static long escape_count(double cx, double cy, long max_iter) {
         double x = 0.0;
         double y = 0.0;
-        long __step_0 = 1L;
-        for (long i = 0L; (__step_0 >= 0L) ? (i < max_iter) : (i > max_iter); i += __step_0) {
+        for (long i = 0L; i < max_iter; i += 1L) {
             double x2 = x * x;
             double y2 = y * y;
             if ((x2 + y2 > 4.0)) {
@@ -38,11 +37,9 @@ public final class Pytra_01_mandelbrot {
         double __hoisted_cast_1 = ((double)(height - 1L));
         double __hoisted_cast_2 = ((double)(width - 1L));
         double __hoisted_cast_3 = ((double)(max_iter));
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
+        for (long y = 0L; y < height; y += 1L) {
             double py = y_min + (y_max - y_min) * (((double)(y)) / __hoisted_cast_1);
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+            for (long x = 0L; x < width; x += 1L) {
                 double px = x_min + (x_max - x_min) * (((double)(x)) / __hoisted_cast_2);
                 long it = escape_count(px, py, max_iter);
                 long r = 0L;

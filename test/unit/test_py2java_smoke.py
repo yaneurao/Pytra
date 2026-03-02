@@ -167,6 +167,19 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("for (long i = 0L;", for_java)
         self.assertIn("total += i;", for_java)
 
+    def test_java_native_emitter_omits_step_tmp_for_constant_range_steps(self) -> None:
+        for_fixture = find_fixture_case("for_range")
+        for_east = load_east(for_fixture, parser_backend="self_hosted")
+        for_java = transpile_to_java_native(for_east, class_name="Main")
+        self.assertNotIn("__step_", for_java)
+        self.assertIn("for (long i = 0L; i < n; i += 1L)", for_java)
+
+        down_fixture = find_fixture_case("range_downcount_len_minus1")
+        down_east = load_east(down_fixture, parser_backend="self_hosted")
+        down_java = transpile_to_java_native(down_east, class_name="Main")
+        self.assertNotIn("__step_", down_java)
+        self.assertIn("for (long i = ((long)(xs.size())) - 1L; i > (-1L); i -= 1L)", down_java)
+
     def test_java_native_emitter_uses_main_guard_body_for_sample_entry(self) -> None:
         sample = ROOT / "sample" / "py" / "17_monte_carlo_pi.py"
         east = load_east(sample, parser_backend="self_hosted")

@@ -259,6 +259,45 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
     return "null"
 
 
+def _const_int_from_expr_node(expr: Any) -> int | None:
+    if not isinstance(expr, dict):
+        return None
+    kind = expr.get("kind")
+    if kind == "Constant":
+        value = expr.get("value")
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value
+        return None
+    if kind == "UnaryOp":
+        op = expr.get("op")
+        inner = _const_int_from_expr_node(expr.get("operand"))
+        if inner is None:
+            return None
+        if op == "USub":
+            return -inner
+        if op == "UAdd":
+            return inner
+    return None
+
+
+def _for_step_parts(target_name: str, stop_expr: str, step_node: Any) -> tuple[str, str] | None:
+    step_value = _const_int_from_expr_node(step_node)
+    if step_value is None or step_value == 0:
+        return None
+    if step_value > 0:
+        cond = target_name + " < " + stop_expr
+        if step_value == 1:
+            return (cond, target_name + " += 1L")
+        return (cond, target_name + " += " + str(step_value) + "L")
+    cond = target_name + " > " + stop_expr
+    step_abs = -step_value
+    if step_abs == 1:
+        return (cond, target_name + " -= 1L")
+    return (cond, target_name + " -= " + str(step_abs) + "L")
+
+
 def _render_unary_expr(expr: dict[str, Any]) -> str:
     op = expr.get("op")
     operand = _render_expr(expr.get("operand"))
@@ -1157,11 +1196,17 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         target_type = "long"
     start_expr = _render_expr(iter_plan_any.get("start"))
     stop_expr = _render_expr(iter_plan_any.get("stop"))
-    step_expr = _render_expr(iter_plan_any.get("step"))
-    step_tmp = _fresh_tmp(ctx, "step")
+    step_node = iter_plan_any.get("step")
+    step_expr = _render_expr(step_node)
     lines: list[str] = []
-    lines.append(indent + target_type + " " + step_tmp + " = " + step_expr + ";")
-    cond = "(" + step_tmp + " >= 0L) ? (" + target_name + " < " + stop_expr + ") : (" + target_name + " > " + stop_expr + ")"
+    fast_step = _for_step_parts(target_name, stop_expr, step_node)
+    if fast_step is None:
+        step_tmp = _fresh_tmp(ctx, "step")
+        lines.append(indent + target_type + " " + step_tmp + " = " + step_expr + ";")
+        cond = "(" + step_tmp + " >= 0L) ? (" + target_name + " < " + stop_expr + ") : (" + target_name + " > " + stop_expr + ")"
+        step_update = target_name + " += " + step_tmp
+    else:
+        cond, step_update = fast_step
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
     type_map[target_name] = target_type
@@ -1176,9 +1221,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         + "; "
         + cond
         + "; "
-        + target_name
-        + " += "
-        + step_tmp
+        + step_update
         + ") {"
     )
     body_any = stmt.get("body")
@@ -1301,8 +1344,8 @@ def _try_emit_listcomp_assign(
         loop_var = _fresh_tmp(ctx, "lc")
     start = _render_expr(iter_any.get("start"))
     stop = _render_expr(iter_any.get("stop"))
-    step = _render_expr(iter_any.get("step"))
-    step_var = _fresh_tmp(ctx, "step")
+    step_node = iter_any.get("step")
+    step = _render_expr(step_node)
     elt_expr = _render_expr(value_any.get("elt"))
     ctor_type = "java.util.ArrayList<Object>"
     decl_type = decl_prefix.strip()
@@ -1314,29 +1357,46 @@ def _try_emit_listcomp_assign(
         if mapped.startswith("java.util.ArrayList<"):
             ctor_type = mapped
     lines: list[str] = [indent + decl_prefix + lhs + " = new " + ctor_type + "();"]
-    lines.append(indent + "long " + step_var + " = " + step + ";")
-    lines.append(
-        indent
-        + "for (long "
-        + loop_var
-        + " = "
-        + start
-        + "; ("
-        + step_var
-        + " >= 0L) ? ("
-        + loop_var
-        + " < "
-        + stop
-        + ") : ("
-        + loop_var
-        + " > "
-        + stop
-        + "); "
-        + loop_var
-        + " += "
-        + step_var
-        + ") {"
-    )
+    fast_step = _for_step_parts(loop_var, stop, step_node)
+    if fast_step is None:
+        step_var = _fresh_tmp(ctx, "step")
+        lines.append(indent + "long " + step_var + " = " + step + ";")
+        lines.append(
+            indent
+            + "for (long "
+            + loop_var
+            + " = "
+            + start
+            + "; ("
+            + step_var
+            + " >= 0L) ? ("
+            + loop_var
+            + " < "
+            + stop
+            + ") : ("
+            + loop_var
+            + " > "
+            + stop
+            + "); "
+            + loop_var
+            + " += "
+            + step_var
+            + ") {"
+        )
+    else:
+        cond, step_update = fast_step
+        lines.append(
+            indent
+            + "for (long "
+            + loop_var
+            + " = "
+            + start
+            + "; "
+            + cond
+            + "; "
+            + step_update
+            + ") {"
+        )
     lines.append(indent + "    " + lhs + ".add(" + elt_expr + ");")
     lines.append(indent + "}")
     return lines
