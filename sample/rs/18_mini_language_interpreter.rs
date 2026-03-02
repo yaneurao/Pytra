@@ -83,7 +83,7 @@ fn tokenize(lines: &[String]) -> Vec<Token> {
                 i += 1;
                 continue;
             }
-            let single_tag: i64 = py_any_to_i64(&single_char_token_tags.get(&ch).cloned().unwrap_or(0));
+            let single_tag: i64 = py_any_to_i64(&(match (ch).as_str() { "(" => 5, ")" => 6, "*" => 3, "+" => 1, "-" => 2, "/" => 4, "=" => 7, _ => 0 }));
             if single_tag > 0 {
                 tokens.push(Token::new((((single_char_token_kinds[((single_tag - 1) as usize)]).clone()).to_string()), ((ch).to_string()), i, 0));
                 i += 1;

@@ -491,6 +491,7 @@ class RustEmitter(CodeEmitter):
         self.current_positive_vars: set[str] = set()
         self.assumed_non_negative_vars: set[str] = set()
         self.assumed_positive_vars: set[str] = set()
+        self.current_const_string_dict_bindings: dict[str, dict[str, str]] = {}
         self.current_class_name: str = ""
         self.uses_string_helpers: bool = False
 
@@ -1648,6 +1649,71 @@ class RustEmitter(CodeEmitter):
             return owner_t
         return ""
 
+    def _const_string_literal_value(self, node: Any) -> str | None:
+        d = self.any_to_dict_or_empty(node)
+        if self.any_dict_get_str(d, "kind", "") != "Constant":
+            return None
+        v = d.get("value")
+        if isinstance(v, str):
+            return v
+        return None
+
+    def _extract_const_string_dict_binding(self, value_node: Any) -> dict[str, str] | None:
+        value_d = self.any_to_dict_or_empty(value_node)
+        if self.any_dict_get_str(value_d, "kind", "") != "Dict":
+            return None
+        out: dict[str, str] = {}
+        entries = self.any_to_list(value_d.get("entries"))
+        if len(entries) > 0:
+            i = 0
+            while i < len(entries):
+                ent = self.any_to_dict_or_empty(entries[i])
+                key_raw = self._const_string_literal_value(ent.get("key"))
+                if key_raw is None:
+                    return None
+                out[key_raw] = self.render_expr(ent.get("value"))
+                i += 1
+            return out
+
+        keys = self.any_to_list(value_d.get("keys"))
+        values = self.any_to_list(value_d.get("values"))
+        if len(keys) != len(values):
+            return None
+        i = 0
+        while i < len(keys):
+            key_raw = self._const_string_literal_value(keys[i])
+            if key_raw is None:
+                return None
+            out[key_raw] = self.render_expr(values[i])
+            i += 1
+        return out
+
+    def _update_const_string_dict_binding(self, name_raw: str, value_node: Any, is_mut: bool) -> None:
+        if name_raw == "":
+            return
+        if is_mut:
+            self.current_const_string_dict_bindings.pop(name_raw, None)
+            return
+        entries = self._extract_const_string_dict_binding(value_node)
+        if entries is None:
+            self.current_const_string_dict_bindings.pop(name_raw, None)
+            return
+        self.current_const_string_dict_bindings[name_raw] = entries
+
+    def _render_const_string_dict_get(self, owner_name_raw: str, key_expr: str, key_node: Any, default_expr: str) -> str:
+        entries = self.current_const_string_dict_bindings.get(owner_name_raw)
+        if entries is None:
+            return ""
+        key_lit = self._const_string_literal_value(key_node)
+        if key_lit is not None:
+            return entries.get(key_lit, default_expr)
+        if len(entries) == 0:
+            return default_expr
+        arms: list[str] = []
+        for key_raw, value_txt in sorted(entries.items(), key=lambda kv: kv[0]):
+            arms.append(self.quote_string_literal(key_raw) + " => " + value_txt)
+        return "(match (" + key_expr + ").as_str() { " + ", ".join(arms) + ", _ => " + default_expr + " })"
+
     def _emit_pyany_runtime(self) -> None:
         """Any/object 用の最小ランタイム（PyAny）を出力する。"""
         self.emit("#[derive(Clone, Debug, Default)]")
@@ -2401,6 +2467,7 @@ class RustEmitter(CodeEmitter):
         prev_positive_vars = self.current_positive_vars
         prev_assumed_non_negative_vars = self.assumed_non_negative_vars
         prev_assumed_positive_vars = self.assumed_positive_vars
+        prev_const_string_dict_bindings = self.current_const_string_dict_bindings
         prev_class_name = self.current_class_name
         self.current_class_name = self.normalize_type_name(in_class) if in_class is not None else ""
         self.current_fn_write_counts = self._collect_name_write_counts(body)
@@ -2410,6 +2477,7 @@ class RustEmitter(CodeEmitter):
         self.current_positive_vars = set()
         self.assumed_non_negative_vars = set()
         self.assumed_positive_vars = set()
+        self.current_const_string_dict_bindings = {}
         args_text_list: list[str] = []
         scope_names: set[str] = set()
         if in_class is None:
@@ -2471,6 +2539,7 @@ class RustEmitter(CodeEmitter):
         self.current_positive_vars = prev_positive_vars
         self.assumed_non_negative_vars = prev_assumed_non_negative_vars
         self.assumed_positive_vars = prev_assumed_positive_vars
+        self.current_const_string_dict_bindings = prev_const_string_dict_bindings
         self.current_class_name = prev_class_name
 
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
@@ -3031,19 +3100,23 @@ class RustEmitter(CodeEmitter):
         if value_obj is None:
             mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=False) else ""
             self.emit(self.syntax_line("annassign_decl_noinit", "let {mut_kw}{target}: {type};", {"mut_kw": mut_kw, "target": name, "type": t}))
+            self.current_const_string_dict_bindings.pop(name_raw, None)
             self.current_non_negative_vars.discard(name_raw)
             self.current_positive_vars.discard(name_raw)
             return
         borrowed_init = self._try_render_borrowed_annassign_init(name_raw, t_east, value_obj)
         if borrowed_init != "":
             self.emit("let " + name + ": &" + t + " = " + borrowed_init + ";")
+            self.current_const_string_dict_bindings.pop(name_raw, None)
             self.current_ref_vars.add(name_raw)
             self._update_name_sign_info(name_raw, value_obj)
             return
         value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t_east, value_obj)
         if value == "":
             value = self._render_value_for_decl_type(value_obj, t_east)
-        mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=True) else ""
+        is_mut = self._should_declare_mut(name_raw, has_init_write=True)
+        self._update_const_string_dict_binding(name_raw, value_obj, is_mut)
+        mut_kw = "mut " if is_mut else ""
         self.emit(
             self.syntax_line(
                 "annassign_decl_init",
@@ -3064,13 +3137,16 @@ class RustEmitter(CodeEmitter):
                 t = self.get_expr_type(stmt.get("value"))
                 if t != "":
                     self.declared_var_types[name_raw] = t
-                mut_kw = "mut " if self._should_declare_mut(name_raw, has_init_write=True) else ""
+                is_mut = self._should_declare_mut(name_raw, has_init_write=True)
+                self._update_const_string_dict_binding(name_raw, stmt.get("value"), is_mut)
+                mut_kw = "mut " if is_mut else ""
                 prealloc_value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t, stmt.get("value"))
                 if prealloc_value != "":
                     value = prealloc_value
                 self.emit(self.syntax_line("assign_decl_init", "let {mut_kw}{target} = {value};", {"mut_kw": mut_kw, "target": name, "value": value}))
                 self._update_name_sign_info(name_raw, stmt.get("value"))
                 return
+            self.current_const_string_dict_bindings.pop(name_raw, None)
             self.emit(self.syntax_line("assign_set", "{target} = {value};", {"target": name, "value": value}))
             self._update_name_sign_info(name_raw, stmt.get("value"))
             return
@@ -3165,6 +3241,9 @@ class RustEmitter(CodeEmitter):
             return
 
         base_node, chain = self._collect_subscript_chain(subscript_expr)
+        if self.any_dict_get_str(base_node, "kind", "") == "Name":
+            base_name_raw = self.any_dict_get_str(base_node, "id", "")
+            self.current_const_string_dict_bindings.pop(base_name_raw, None)
         if len(chain) == 0:
             self.emit(self._render_subscript_lvalue(subscript_expr) + " = " + value_expr + ";")
             return
@@ -3254,6 +3333,7 @@ class RustEmitter(CodeEmitter):
         target_d = self.any_to_dict_or_empty(target_obj)
         if self.any_dict_get_str(target_d, "kind", "") == "Name":
             name_raw = self.any_dict_get_str(target_d, "id", "")
+            self.current_const_string_dict_bindings.pop(name_raw, None)
             self.current_non_negative_vars.discard(name_raw)
             self.current_positive_vars.discard(name_raw)
 
@@ -4012,6 +4092,16 @@ class RustEmitter(CodeEmitter):
             if owner_type.startswith("dict["):
                 key_t, owner_val_t = self._dict_key_value_types(owner_type)
                 if attr_raw == "get" and len(merged_args) == 1:
+                    if key_t == "str" and self.any_dict_get_str(owner_node, "kind", "") == "Name" and len(arg_nodes) >= 1:
+                        owner_name_raw = self.any_dict_get_str(owner_node, "id", "")
+                        const_lookup = self._render_const_string_dict_get(
+                            owner_name_raw,
+                            merged_args[0],
+                            arg_nodes[0],
+                            "Default::default()",
+                        )
+                        if const_lookup != "":
+                            return const_lookup
                     key_expr = self._coerce_dict_key_expr(merged_args[0], key_t, require_owned=False)
                     return owner_expr + ".get(&" + key_expr + ").cloned().unwrap_or_default()"
                 if attr_raw == "get" and len(merged_args) >= 2:
@@ -4019,6 +4109,16 @@ class RustEmitter(CodeEmitter):
                     if self._is_any_type(owner_val_t) and len(arg_nodes) >= 2:
                         self.uses_pyany = True
                         default_txt = self._render_as_pyany(arg_nodes[1])
+                    if key_t == "str" and self.any_dict_get_str(owner_node, "kind", "") == "Name" and len(arg_nodes) >= 1:
+                        owner_name_raw = self.any_dict_get_str(owner_node, "id", "")
+                        const_lookup = self._render_const_string_dict_get(
+                            owner_name_raw,
+                            merged_args[0],
+                            arg_nodes[0],
+                            default_txt,
+                        )
+                        if const_lookup != "":
+                            return const_lookup
                     key_expr = self._coerce_dict_key_expr(merged_args[0], key_t, require_owned=False)
                     return owner_expr + ".get(&" + key_expr + ").cloned().unwrap_or(" + default_txt + ")"
             owner_type_norm = self.normalize_type_name(owner_type)

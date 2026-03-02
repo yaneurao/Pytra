@@ -48,6 +48,7 @@
 - 2026-03-02: `AnnAssign` の list 添字初期化で borrow 優先経路を実装し、`eval_expr` 冒頭の `ExprNode` 取得を clone から `&ExprNode` 参照へ縮退（S2-01）。
 - 2026-03-02: `if` then 節に限定した符号ヒントを導入し、`single_tag > 0` 配下の添字で負index正規化式を省略（S2-02）。
 - 2026-03-02: `str` 添字の非負確定経路を `py_str_at_nonneg` へ分岐し、tokenize の文字取得を軽量化（S2-03）。
+- 2026-03-02: 小規模固定 `dict[str, const]` の `get` を `match` へ縮退し、token 判定 lookup の map 依存を削減（S2-04）。
 - 2026-03-02: cast 無し `str` Add 連鎖を平坦化して `format!` 1回へ統合し、nested `format!` を削減（S2-05）。
 - 2026-03-02: sample/18 向け回帰検知を追加（`single_tag` 添字 fastpath / `py_str_at_nonneg` / nested `format!` 非出力）し、再生成 + transpile/smoke/parity を再通過（S3-01/S3-02）。
 
@@ -58,7 +59,7 @@
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-01] `current_token/previous_token/eval_expr` で borrow 優先経路を追加し、不要 `clone` を削減する。
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-02] 非負添字が確定する経路で index 正規化式を省略する fastpath を追加する。
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-03] tokenize の文字走査を `String` 汎用経路から軽量経路（bytes/chars）へ縮退する。
-- [ ] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
+- [x] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
 - [x] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
