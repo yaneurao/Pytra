@@ -293,7 +293,7 @@ class Py2RbSmokeTest(unittest.TestCase):
             )
             east = load_east(src_py, parser_backend="self_hosted")
             ruby = transpile_to_ruby_native(east)
-        self.assertIn("__pytra_float(a) / __pytra_float(2)", ruby)
+        self.assertIn("__pytra_float(a) / 2.0", ruby)
         self.assertNotIn("__pytra_div(a, 2)", ruby)
 
     def test_sample06_uses_true_division_helper(self) -> None:

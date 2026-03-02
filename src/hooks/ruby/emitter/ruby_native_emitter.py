@@ -301,6 +301,14 @@ def _render_int_cast(node: Any) -> str:
 
 
 def _render_float_cast(node: Any) -> str:
+    if isinstance(node, dict) and node.get("kind") == "Constant":
+        value_any = node.get("value")
+        if isinstance(value_any, bool):
+            return "1.0" if value_any else "0.0"
+        if isinstance(value_any, int):
+            return str(value_any) + ".0"
+        if isinstance(value_any, float):
+            return str(value_any)
     rendered = _render_expr(node)
     if _is_float_like_expr(node):
         return rendered
