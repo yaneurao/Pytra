@@ -53,12 +53,13 @@ class Py2RsSmokeTest(unittest.TestCase):
         assert_no_generated_comments(self, rust)
         assert_sample01_module_comments(self, rust, prefix="//")
 
-    def test_transpile_for_range_fixture_lowers_to_while(self) -> None:
+    def test_transpile_for_range_fixture_lowers_to_for_fastpath(self) -> None:
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")
         rust = transpile_to_rust(east)
-        self.assertIn("while i < n {", rust)
-        self.assertIn("i += 1;", rust)
+        self.assertIn("for __for_i_", rust)
+        self.assertIn("i = __for_i_", rust)
+        self.assertNotIn("while i < n {", rust)
 
     def test_load_east_from_json(self) -> None:
         fixture = find_fixture_case("add")
@@ -122,8 +123,9 @@ class Py2RsSmokeTest(unittest.TestCase):
         }
         rust = transpile_to_rust(east)
         self.assertIn("let mut i: i64 = 0;", rust)
-        self.assertIn("while i < 3 {", rust)
-        self.assertIn("i += 1;", rust)
+        self.assertIn("for __for_i_", rust)
+        self.assertIn("i = __for_i_", rust)
+        self.assertNotIn("while i < 3 {", rust)
 
     def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
         east = {

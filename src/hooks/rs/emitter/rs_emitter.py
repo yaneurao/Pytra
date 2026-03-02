@@ -1412,6 +1412,18 @@ class RustEmitter(CodeEmitter):
         else:
             self.current_positive_vars.discard(name_raw)
 
+    def _const_int_literal(self, node: Any) -> int | None:
+        d = self.any_to_dict_or_empty(node)
+        if len(d) == 0:
+            return None
+        if self.any_dict_get_str(d, "kind", "") == "Constant":
+            value_any = d.get("value")
+            if isinstance(value_any, bool):
+                return None
+            if isinstance(value_any, int):
+                return int(value_any)
+        return None
+
     def _string_constant_literal(self, node: Any) -> str:
         d = self.any_to_dict_or_empty(node)
         if self.any_dict_get_str(d, "kind", "") != "Constant":
@@ -2419,18 +2431,25 @@ class RustEmitter(CodeEmitter):
     def _emit_for_range(self, stmt: dict[str, Any]) -> None:
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
         target = self._safe_name(self.any_dict_get_str(target_node, "id", "_i"))
+        target_raw = self.any_dict_get_str(target_node, "id", "")
         target_type = self._rust_type(self.any_to_str(stmt.get("target_type")))
         start = self.render_expr(stmt.get("start"))
         stop = self.render_expr(stmt.get("stop"))
         step = self.render_expr(stmt.get("step"))
         range_mode = self.any_to_str(stmt.get("range_mode"))
+        step_const = self._const_int_literal(stmt.get("step"))
+        body_scope: set[str] = set()
+        if target_raw != "":
+            body_scope.add(target_raw)
+        body = self._dict_stmt_list(stmt.get("body"))
 
-        self.emit(f"let mut {target}: {target_type} = {start};")
-        cond = f"{target} < {stop}"
+        default_ascending_cond = f"{target} < {stop}"
+        cond = default_ascending_cond
         if range_mode == "descending":
             cond = f"{target} > {stop}"
         elif range_mode == "dynamic":
             cond = f"(({step}) > 0 && {target} < {stop}) || (({step}) < 0 && {target} > {stop})"
+        has_normalized_cond = False
         normalized_exprs = self.any_to_dict_or_empty(stmt.get("normalized_exprs"))
         if self.any_to_str(stmt.get("normalized_expr_version")) == "east3_expr_v1":
             cond_expr = self.any_to_dict_or_empty(normalized_exprs.get("for_cond_expr"))
@@ -2438,13 +2457,41 @@ class RustEmitter(CodeEmitter):
                 cond_rendered = self._strip_outer_parens(self.render_expr(cond_expr))
                 if cond_rendered != "":
                     cond = cond_rendered
-        body_scope: set[str] = set()
-        body_scope.add(self.any_dict_get_str(target_node, "id", target))
-        body = self._dict_stmt_list(stmt.get("body"))
+                    has_normalized_cond = True
+
+        # Fastpath: canonical ascending step=1 range uses Rust for-loop.
+        is_ascending_mode = range_mode == "ascending" or range_mode == ""
+        normalized_matches_default = (not has_normalized_cond) or (cond == default_ascending_cond)
+        if is_ascending_mode and step_const == 1 and normalized_matches_default:
+            self.emit(f"let mut {target}: {target_type} = {start};")
+            loop_index = self.next_tmp("__for_i")
+            prev_target_non_negative = target_raw in self.current_non_negative_vars
+            prev_target_positive = target_raw in self.current_positive_vars
+            if target_raw != "" and self._expr_is_non_negative(stmt.get("start")):
+                self.current_non_negative_vars.add(target_raw)
+                self.current_positive_vars.discard(target_raw)
+            self.emit(f"for {loop_index} in ({start})..({stop}) {{")
+            self.indent += 1
+            self.emit(f"{target} = {loop_index};")
+            self.emit_scoped_stmt_list(body, body_scope)
+            self.indent -= 1
+            self.emit("}")
+            if target_raw != "":
+                if prev_target_non_negative:
+                    self.current_non_negative_vars.add(target_raw)
+                else:
+                    self.current_non_negative_vars.discard(target_raw)
+                if prev_target_positive:
+                    self.current_positive_vars.add(target_raw)
+                else:
+                    self.current_positive_vars.discard(target_raw)
+            return
+
+        self.emit(f"let mut {target}: {target_type} = {start};")
         loop_target_raw = self.any_dict_get_str(target_node, "id", "")
         prev_loop_non_negative = loop_target_raw in self.current_non_negative_vars
         prev_loop_positive = loop_target_raw in self.current_positive_vars
-        if loop_target_raw != "" and range_mode == "ascending" and self._expr_is_non_negative(stmt.get("start")):
+        if loop_target_raw != "" and is_ascending_mode and self._expr_is_non_negative(stmt.get("start")):
             self.current_non_negative_vars.add(loop_target_raw)
             self.current_positive_vars.discard(loop_target_raw)
         self.emit_scoped_block_with_tail_lines(

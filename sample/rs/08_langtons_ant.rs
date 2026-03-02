@@ -11,16 +11,16 @@ use crate::pytra::runtime::gif::save_gif;
 fn capture(grid: &Vec<Vec<i64>>, w: i64, h: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (w * h) as usize];
     let mut y: i64 = 0;
-    while y < h {
-        let row_base = y * w;
-        let mut x: i64 = 0;
-        while x < w {
-            let __idx_i64_2 = ((row_base + x) as i64);
-            let __idx_1 = if __idx_i64_2 < 0 { (frame.len() as i64 + __idx_i64_2) as usize } else { __idx_i64_2 as usize };
-            frame[__idx_1] = (((if grid[((y) as usize)][((x) as usize)] != 0 { 255 } else { 0 })) as u8);
-            x += 1;
-        }
-        y += 1;
+    for __for_i_1 in (0)..(h) {
+        y = __for_i_1;
+            let row_base = y * w;
+            let mut x: i64 = 0;
+            for __for_i_2 in (0)..(w) {
+                x = __for_i_2;
+                    let __idx_i64_4 = ((row_base + x) as i64);
+                    let __idx_3 = if __idx_i64_4 < 0 { (frame.len() as i64 + __idx_i64_4) as usize } else { __idx_i64_4 as usize };
+                    frame[__idx_3] = (((if grid[((y) as usize)][((x) as usize)] != 0 { 255 } else { 0 })) as u8);
+            }
     }
     return frame;
 }
@@ -42,35 +42,35 @@ fn run_08_langtons_ant() {
     let mut frames: Vec<Vec<u8>> = vec![];
     
     let mut i: i64 = 0;
-    while i < steps_total {
-        if grid[((y) as usize)][((x) as usize)] == 0 {
-            d = (d + 1) % 4;
-            let __idx_3 = ((y) as usize);
-            let __idx_4 = ((x) as usize);
-            grid[__idx_3][__idx_4] = 1;
-        } else {
-            d = (d + 3) % 4;
-            let __idx_5 = ((y) as usize);
-            let __idx_6 = ((x) as usize);
-            grid[__idx_5][__idx_6] = 0;
-        }
-        if d == 0 {
-            y = (y - 1 + h) % h;
-        } else {
-            if d == 1 {
-                x = (x + 1) % w;
+    for __for_i_5 in (0)..(steps_total) {
+        i = __for_i_5;
+            if grid[((y) as usize)][((x) as usize)] == 0 {
+                d = (d + 1) % 4;
+                let __idx_6 = ((y) as usize);
+                let __idx_7 = ((x) as usize);
+                grid[__idx_6][__idx_7] = 1;
             } else {
-                if d == 2 {
-                    y = (y + 1) % h;
+                d = (d + 3) % 4;
+                let __idx_8 = ((y) as usize);
+                let __idx_9 = ((x) as usize);
+                grid[__idx_8][__idx_9] = 0;
+            }
+            if d == 0 {
+                y = (y - 1 + h) % h;
+            } else {
+                if d == 1 {
+                    x = (x + 1) % w;
                 } else {
-                    x = (x - 1 + w) % w;
+                    if d == 2 {
+                        y = (y + 1) % h;
+                    } else {
+                        x = (x - 1 + w) % w;
+                    }
                 }
             }
-        }
-        if i % capture_every == 0 {
-            frames.push(capture(&(grid), w, h));
-        }
-        i += 1;
+            if i % capture_every == 0 {
+                frames.push(capture(&(grid), w, h));
+            }
     }
     save_gif(&(out_path), w, h, &(frames), &(grayscale_palette()), 5, 0);
     let elapsed = perf_counter() - start;
