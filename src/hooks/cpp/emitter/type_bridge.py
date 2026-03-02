@@ -65,6 +65,9 @@ class CppTypeBridgeEmitter:
         # list[RefClass] は pyobj モデルでも typed container へ寄せる。
         if elem_t in self.ref_classes:
             return False
+        # list[ValueClass] も typed container を維持する（sample/18 AST 値型化向け）。
+        if elem_t in self.class_names:
+            return False
         return True
 
     def _build_box_expr_node(self, value_node: Any) -> dict[str, Any]:

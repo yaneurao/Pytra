@@ -450,16 +450,17 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn('str let_name = this->expect("IDENT")->text;', cpp)
-        self.assertIn('str assign_name = this->expect("IDENT")->text;', cpp)
-        self.assertNotIn('py_to_string(this->expect("IDENT")->text)', cpp)
+        self.assertIn('str let_name = this->expect("IDENT").text;', cpp)
+        self.assertIn('str assign_name = this->expect("IDENT").text;', cpp)
+        self.assertNotIn('py_to_string(this->expect("IDENT").text)', cpp)
 
     def test_sample18_rc_new_avoids_redundant_rc_cast(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east)
-        self.assertIn("tokens.append(::rc_new<Token>(", cpp)
+        self.assertIn("tokens.append(Token(", cpp)
         self.assertIn("single_char_token_kinds[single_tag - 1]", cpp)
+        self.assertNotIn("::rc_new<Token>(", cpp)
         self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
 
     def test_sample18_tokenize_single_char_dispatch_uses_tag_lookup(self) -> None:
@@ -493,7 +494,7 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("for (const rc<StmtNode>& stmt : stmts) {", cpp)
+        self.assertIn("for (StmtNode stmt : stmts) {", cpp)
         self.assertNotIn("for (object __itobj_2 : py_dyn_range(stmts)) {", cpp)
         self.assertNotIn('obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt")', cpp)
         self.assertNotIn('py_to_rc_list_from_object<StmtNode>(stmts, "for_target:stmt")', cpp)
@@ -502,13 +503,13 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("list<rc<Token>> tokenize(const list<str>& lines) {", cpp)
-        self.assertIn("list<rc<Token>> tokens = {};", cpp)
-        self.assertIn("list<rc<Token>> tokens;", cpp)
+        self.assertIn("list<Token> tokenize(const list<str>& lines) {", cpp)
+        self.assertIn("list<Token> tokens = {};", cpp)
+        self.assertIn("list<Token> tokens;", cpp)
         self.assertIn("return this->tokens[this->pos];", cpp)
         self.assertNotIn('obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")', cpp)
-        self.assertIn("const rc<ExprNode>& node = expr_nodes[expr_index];", cpp)
-        self.assertNotIn("rc<ExprNode> node = expr_nodes[expr_index];", cpp)
+        self.assertIn("ExprNode node = expr_nodes[expr_index];", cpp)
+        self.assertNotIn("const rc<ExprNode>& node = expr_nodes[expr_index];", cpp)
 
     def test_sample18_synthesized_ctors_use_init_list(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
@@ -541,8 +542,8 @@ def f() -> float:
         self.assertIn("list<str> lines = {};", cpp)
         self.assertIn("list<str> demo_lines = {};", cpp)
         self.assertIn("list<str> source_lines = build_benchmark_source(32, 120000);", cpp)
-        self.assertIn("list<rc<Token>> tokens = tokenize(demo_lines);", cpp)
-        self.assertIn("list<rc<Token>> tokens = tokenize(source_lines);", cpp)
+        self.assertIn("list<Token> tokens = tokenize(demo_lines);", cpp)
+        self.assertIn("list<Token> tokens = tokenize(source_lines);", cpp)
         self.assertNotIn("object lines = make_object(list<object>{});", cpp)
         self.assertNotIn("py_append(lines, ", cpp)
         self.assertNotIn("object demo_lines = make_object(list<object>{});", cpp)
@@ -553,10 +554,10 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("rc<Token> current_token()", cpp)
-        self.assertIn("rc<Token> previous_token()", cpp)
-        self.assertIn("rc<Token> token = this->current_token();", cpp)
-        self.assertIn("if (token->kind != kind)", cpp)
+        self.assertIn("Token current_token()", cpp)
+        self.assertIn("Token previous_token()", cpp)
+        self.assertIn("Token token = this->current_token();", cpp)
+        self.assertIn("if (token.kind != kind)", cpp)
         self.assertNotIn("if (this->peek_kind() != kind)", cpp)
 
     def test_sample18_number_token_uses_predecoded_number_value(self) -> None:
@@ -564,19 +565,19 @@ def f() -> float:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("int64 number_value;", cpp)
-        self.assertIn("token_num->number_value", cpp)
-        self.assertNotIn("py_to_int64(token_num->text)", cpp)
+        self.assertIn("token_num.number_value", cpp)
+        self.assertNotIn("py_to_int64(token_num.text)", cpp)
 
     def test_sample18_uses_tag_based_dispatch_in_eval_and_execute(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("if (node->kind_tag == 1)", cpp)
-        self.assertIn("if (node->op_tag == 1)", cpp)
-        self.assertIn("if (stmt->kind_tag == 1)", cpp)
-        self.assertNotIn('if (node->kind == "lit")', cpp)
-        self.assertNotIn('if (node->op == "+")', cpp)
-        self.assertNotIn('if (stmt->kind == "let")', cpp)
+        self.assertIn("if (node.kind_tag == 1)", cpp)
+        self.assertIn("if (node.op_tag == 1)", cpp)
+        self.assertIn("if (stmt.kind_tag == 1)", cpp)
+        self.assertNotIn('if (node.kind == "lit")', cpp)
+        self.assertNotIn('if (node.op == "+")', cpp)
+        self.assertNotIn('if (stmt.kind == "let")', cpp)
 
     def test_sample13_pyobj_expands_typed_lists_for_grid_stack_dirs_frames(self) -> None:
         src_py = ROOT / "sample" / "py" / "13_maze_generation_steps.py"

@@ -519,6 +519,35 @@ class Box:
                     names.append(tgt.get("id"))
         self.assertNotIn("__pytra_class_storage_hint__", names)
 
+    def test_dataclass_scalar_fields_are_value_candidates(self) -> None:
+        src = """
+from dataclasses import dataclass
+
+@dataclass
+class Token:
+    kind: str
+    text: str
+    pos: int
+    number_value: int
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "Token"]
+        self.assertEqual(len(classes), 1)
+        self.assertEqual(classes[0].get("class_storage_hint"), "value")
+
+    def test_dataclass_container_field_falls_back_to_ref(self) -> None:
+        src = """
+from dataclasses import dataclass
+
+@dataclass
+class Box:
+    items: list[int]
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "Box"]
+        self.assertEqual(len(classes), 1)
+        self.assertEqual(classes[0].get("class_storage_hint"), "ref")
+
     def test_enum_members_are_parsed_in_class_body(self) -> None:
         src = """
 from pytra.std.enum import Enum

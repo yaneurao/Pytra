@@ -219,13 +219,14 @@
 
 文脈: [docs/ja/plans/p2-cpp-s18-value-container.md](../plans/p2-cpp-s18-value-container.md)
 
-1. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01] sample/18 の AST コンテナ値型化（`list<rc<T>> -> list<T>`）を段階導入する。
+1. [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01] sample/18 の AST コンテナ値型化（`list<rc<T>> -> list<T>`）を段階導入する。
 2. [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-01] AST コンテナ利用点を棚卸しし、値型化可能な non-escape 条件を定義する。
 3. [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-02] EAST3 メタと C++ emitter 連携仕様（ownership hint / fail-closed）を設計する。
-4. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-01] sample/18 先行で `expr_nodes` / `stmts` の値型出力を実装する。
-5. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-02] 逸脱ケースで `rc` へフォールバックする条件を実装する。
-6. [ ] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S3-01] 回帰テスト（型出力断片 + 実行整合）を追加して再発検知を固定する。
+4. [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-01] sample/18 先行で `expr_nodes` / `stmts` の値型出力を実装する。
+5. [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S2-02] 逸脱ケースで `rc` へフォールバックする条件を実装する。
+6. [x] [ID: P2-CPP-S18-VALUE-CONTAINER-01-S3-01] 回帰テスト（型出力断片 + 実行整合）を追加して再発検知を固定する。
 - 進捗メモ: [ID: P2-CPP-S18-VALUE-CONTAINER-01-S1-02] sample/18 の `expr_nodes`/`stmts` について non-escape 条件を棚卸しし、`container_ownership_hint_v1` を使う EAST3→CppEmitter 連携仕様（safe 時のみ `list<T>`、不成立時 `list<rc<T>>` fallback）を確定。
+- 進捗メモ: [ID: P2-CPP-S18-VALUE-CONTAINER-01] dataclass の保守的 value 判定 + `cpp_list_model=pyobj` の `list[ValueClass]` typed 維持を実装し、sample/18 を `list<Token/ExprNode/StmtNode>` へ縮退。unit/transpile/parity を再通過。
 
 ### P2: Scala 負例fixtureの skip 撤廃（失敗期待テスト化）
 
