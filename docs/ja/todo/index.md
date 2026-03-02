@@ -112,6 +112,7 @@
 - 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長断片（runtime依存/nil初期化/loop冗長）を計画書へ固定し、実装優先順を確定。
 - 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray/bytes` を `__pytra_*` helper 呼び出しへ統一し、`sample/lua/01` を runtime別ファイル参照 + 明示依存へ更新。
 - 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] scalar型 `AnnAssign(value=None)` を `local name` へ縮退し、`sample/lua/01` の `local r/g/b = nil` を撤去。
+- 進捗メモ: [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` で `, 1` を省略し、`continue` 非使用ループの `::__pytra_continue_*::` を非出力化。
 
 ### P0: EAST3式正規化ロールアウト（multi-backend共通化）
 
@@ -148,7 +149,7 @@
 2. [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。
 3. [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-01] `int/float/bytearray` など runtime 依存の出力を明示化し、自己完結性を改善する。
 4. [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-02] typed 経路で `r/g/b` の不要な `nil` 初期化を削減する。
-5. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループの step/括弧出力を簡素化する fastpath を追加する。
+5. [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S2-03] 単純 `range` ループの step/括弧出力を簡素化する fastpath を追加する。
 6. [ ] [ID: P1-LUA-SAMPLE01-QUALITY-01-S3-01] 回帰テストを追加し、`sample/lua/01` 再生成差分を固定する。
 
 ### P1: sample/rs/08 出力品質改善（可読性 + ホットパス縮退）

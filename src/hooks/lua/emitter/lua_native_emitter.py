@@ -242,6 +242,43 @@ class LuaNativeEmitter:
         for stmt in body:
             self._emit_stmt(stmt)
 
+    def _has_continue_in_block(self, body_any: Any) -> bool:
+        body = self._dict_list(body_any)
+        i = 0
+        while i < len(body):
+            stmt = body[i]
+            kind = stmt.get("kind")
+            if kind == "Continue":
+                return True
+            if kind == "Expr":
+                value_any = stmt.get("value")
+                if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+                    if str(value_any.get("id")) == "continue":
+                        return True
+            if kind == "If":
+                if self._has_continue_in_block(stmt.get("body")):
+                    return True
+                if self._has_continue_in_block(stmt.get("orelse")):
+                    return True
+            if kind == "ForCore" or kind == "While":
+                if self._has_continue_in_block(stmt.get("body")):
+                    return True
+            i += 1
+        return False
+
+    def _is_simple_bound_expr(self, node_any: Any) -> bool:
+        if not isinstance(node_any, dict):
+            return False
+        kind = node_any.get("kind")
+        if kind == "Name":
+            return True
+        if kind == "Constant":
+            value_any = node_any.get("value")
+            if isinstance(value_any, bool):
+                return False
+            return isinstance(value_any, int) or isinstance(value_any, float)
+        return False
+
     def _scan_module_symbols(self, body: list[dict[str, Any]]) -> None:
         self.class_names = set()
         self.imported_modules = set()
@@ -1300,6 +1337,7 @@ class LuaNativeEmitter:
         if isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
             target_name = _safe_ident(target_plan.get("id"), "it")
         continue_label = self._next_tmp_name("__pytra_continue")
+        needs_continue_label = self._has_continue_in_block(stmt.get("body"))
         if iter_mode == "static_fastpath":
             iter_plan = stmt.get("iter_plan")
             if not isinstance(iter_plan, dict) or iter_plan.get("kind") != "StaticRangeForPlan":
@@ -1307,9 +1345,9 @@ class LuaNativeEmitter:
             start = self._render_expr(iter_plan.get("start"))
             stop = self._render_expr(iter_plan.get("stop"))
             step = self._render_expr(iter_plan.get("step"))
+            step_const = self._const_int_literal(iter_plan.get("step"))
             range_mode = str(iter_plan.get("range_mode") or "")
             if range_mode not in {"ascending", "descending", "dynamic"}:
-                step_const = self._const_int_literal(iter_plan.get("step"))
                 if isinstance(step_const, int):
                     if step_const > 0:
                         range_mode = "ascending"
@@ -1321,13 +1359,18 @@ class LuaNativeEmitter:
                     range_mode = "dynamic"
             if range_mode == "ascending":
                 # Python range stop is exclusive, Lua numeric-for upper bound is inclusive.
-                upper = "(" + stop + ") - 1"
-                self._emit_line("for " + target_name + " = " + start + ", " + upper + ", " + step + " do")
+                upper = stop + " - 1" if self._is_simple_bound_expr(iter_plan.get("stop")) else "(" + stop + ") - 1"
+                if step_const == 1:
+                    self._emit_line("for " + target_name + " = " + start + ", " + upper + " do")
+                else:
+                    self._emit_line("for " + target_name + " = " + start + ", " + upper + ", " + step + " do")
                 self.indent += 1
-                self.loop_continue_labels.append(continue_label)
+                if needs_continue_label:
+                    self.loop_continue_labels.append(continue_label)
                 self._emit_block(stmt.get("body"))
-                self.loop_continue_labels.pop()
-                self._emit_line("::" + continue_label + "::")
+                if needs_continue_label:
+                    self.loop_continue_labels.pop()
+                    self._emit_line("::" + continue_label + "::")
                 self.indent -= 1
                 self._emit_line("end")
                 return
@@ -1336,10 +1379,12 @@ class LuaNativeEmitter:
                 lower = "(" + stop + ") + 1"
                 self._emit_line("for " + target_name + " = " + start + ", " + lower + ", " + step + " do")
                 self.indent += 1
-                self.loop_continue_labels.append(continue_label)
+                if needs_continue_label:
+                    self.loop_continue_labels.append(continue_label)
                 self._emit_block(stmt.get("body"))
-                self.loop_continue_labels.pop()
-                self._emit_line("::" + continue_label + "::")
+                if needs_continue_label:
+                    self.loop_continue_labels.pop()
+                    self._emit_line("::" + continue_label + "::")
                 self.indent -= 1
                 self._emit_line("end")
                 return
@@ -1355,10 +1400,12 @@ class LuaNativeEmitter:
                 "for " + target_name + " = " + start_tmp + ", (" + stop_tmp + ") - 1, " + step_tmp + " do"
             )
             self.indent += 1
-            self.loop_continue_labels.append(continue_label)
+            if needs_continue_label:
+                self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
-            self.loop_continue_labels.pop()
-            self._emit_line("::" + continue_label + "::")
+            if needs_continue_label:
+                self.loop_continue_labels.pop()
+                self._emit_line("::" + continue_label + "::")
             self.indent -= 1
             self._emit_line("end")
             self.indent -= 1
@@ -1368,10 +1415,12 @@ class LuaNativeEmitter:
                 "for " + target_name + " = " + start_tmp + ", (" + stop_tmp + ") + 1, " + step_tmp + " do"
             )
             self.indent += 1
-            self.loop_continue_labels.append(continue_label)
+            if needs_continue_label:
+                self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
-            self.loop_continue_labels.pop()
-            self._emit_line("::" + continue_label + "::")
+            if needs_continue_label:
+                self.loop_continue_labels.pop()
+                self._emit_line("::" + continue_label + "::")
             self.indent -= 1
             self._emit_line("end")
             self.indent -= 1
@@ -1409,10 +1458,12 @@ class LuaNativeEmitter:
                             local_name = _safe_ident(elem.get("id"), "it")
                             self._emit_line("local " + local_name + " = " + iter_name + "[" + str(i + 1) + "]")
                         i += 1
-            self.loop_continue_labels.append(continue_label)
+            if needs_continue_label:
+                self.loop_continue_labels.append(continue_label)
             self._emit_block(stmt.get("body"))
-            self.loop_continue_labels.pop()
-            self._emit_line("::" + continue_label + "::")
+            if needs_continue_label:
+                self.loop_continue_labels.pop()
+                self._emit_line("::" + continue_label + "::")
             self.indent -= 1
             self._emit_line("end")
             return
@@ -1421,12 +1472,15 @@ class LuaNativeEmitter:
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         test = self._render_cond_expr(stmt.get("test"))
         continue_label = self._next_tmp_name("__pytra_continue")
+        needs_continue_label = self._has_continue_in_block(stmt.get("body"))
         self._emit_line("while " + test + " do")
         self.indent += 1
-        self.loop_continue_labels.append(continue_label)
+        if needs_continue_label:
+            self.loop_continue_labels.append(continue_label)
         self._emit_block(stmt.get("body"))
-        self.loop_continue_labels.pop()
-        self._emit_line("::" + continue_label + "::")
+        if needs_continue_label:
+            self.loop_continue_labels.pop()
+            self._emit_line("::" + continue_label + "::")
         self.indent -= 1
         self._emit_line("end")
 

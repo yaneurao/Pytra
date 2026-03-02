@@ -94,7 +94,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         lua = transpile_to_lua_native(east)
         self.assertIn("function sum_range_29(n)", lua)
         self.assertIn("local total = 0", lua)
-        self.assertIn("for i = 0, (n) - 1, 1 do", lua)
+        self.assertIn("for i = 0, n - 1 do", lua)
         self.assertIn("total = total + i", lua)
 
     def test_inheritance_virtual_dispatch_lowers_super_to_base_method_call(self) -> None:
@@ -299,6 +299,10 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertNotIn("local r = nil", lua)
         self.assertNotIn("local g = nil", lua)
         self.assertNotIn("local b = nil", lua)
+        self.assertIn("for i = 0, max_iter - 1 do", lua)
+        self.assertIn("for y = 0, height - 1 do", lua)
+        self.assertIn("for x = 0, width - 1 do", lua)
+        self.assertNotIn("::__pytra_continue_", lua)
 
     def test_lowering_supports_sequence_repeat(self) -> None:
         src = (
