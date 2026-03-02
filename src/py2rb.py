@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
+from backends.ruby.lower import lower_east3_to_ruby_ir
+from backends.ruby.optimizer import optimize_ruby_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,8 +125,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    ruby_ir = lower_east3_to_ruby_ir(east)
+    ruby_ir = optimize_ruby_ir(ruby_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    ruby_src = transpile_to_ruby_native(east)
+    ruby_src = transpile_to_ruby_native(ruby_ir)
     output_path.write_text(ruby_src, encoding="utf-8")
     _copy_ruby_runtime(output_path)
     return 0

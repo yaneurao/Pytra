@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
+from backends.php.lower import lower_east3_to_php_ir
+from backends.php.optimizer import optimize_php_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -142,8 +144,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    php_ir = lower_east3_to_php_ir(east)
+    php_ir = optimize_php_ir(php_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    php_src = transpile_to_php_native(east)
+    php_src = transpile_to_php_native(php_ir)
     output_path.write_text(php_src, encoding="utf-8")
     _copy_php_runtime(output_path)
     return 0

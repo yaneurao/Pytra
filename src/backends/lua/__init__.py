@@ -1,2 +1,1 @@
-"""Lua backend hook package."""
-
+"""Lua backend package."""

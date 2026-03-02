@@ -60,7 +60,7 @@
 7. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
 8. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2: `js/ts/cs` に同テンプレートを展開する。
 9. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave3: `go/java/kotlin/swift` に同テンプレートを展開する。
-10. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave4: `ruby/lua/php` に同テンプレートを展開する。
+10. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave4: `ruby/lua/php` に同テンプレートを展開する。
 11. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
 12. [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec` / `docs/en/spec` に3層標準構成を反映する。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] `src/backends/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim}` の責務棚卸しを完了し、全backendで意味決定/正規化/描画が emitter 側へ混在している事実を整理。
@@ -71,6 +71,7 @@
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] `scala` の `bytearray/bytes` 戻り型と `ForCore` 条件式フォールバックを修正し、Wave1 回帰（`check_py2{rs,scala}_transpile` と `runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout`）を全通過。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `js/ts/cs` へ `lower/optimizer` 骨格を追加し `py2{js,ts,cs}` を3層配線へ切替。`check_py2{js,ts,cs}_transpile` は全通過（各 `checked=133 ok=133 fail=0 skipped=8`）。
 - 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] `go/java/kotlin/swift` へ `lower/optimizer` 骨格を追加し `py2{go,java,kotlin,swift}` を3層配線へ切替。`check_py2{go,java,kotlin,swift}_transpile` は全通過（各 `checked=131 ok=131 fail=0 skipped=10`）。
+- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] `ruby/lua/php` へ `lower/optimizer` 骨格を追加し `py2{rb,lua,php}` を3層配線へ切替。`check_py2{rb,lua,php}_transpile` は全通過（`rb:132/132`, `lua:89/89`, `php:10/10`）。
 
 ### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
 
