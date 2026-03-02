@@ -69,7 +69,7 @@ impl StmtNode {
 }
 
 
-fn tokenize(lines: &Vec<String>) -> Vec<Token> {
+fn tokenize(lines: &[String]) -> Vec<Token> {
     let single_char_token_tags: ::std::collections::BTreeMap<String, i64> = ::std::collections::BTreeMap::from([(("+").to_string(), 1), (("-").to_string(), 2), (("*").to_string(), 3), (("/").to_string(), 4), (("(").to_string(), 5), ((")").to_string(), 6), (("=").to_string(), 7)]);
     let single_char_token_kinds: Vec<String> = vec![("PLUS").to_string(), ("MINUS").to_string(), ("STAR").to_string(), ("SLASH").to_string(), ("LPAREN").to_string(), ("RPAREN").to_string(), ("EQUAL").to_string()];
     let mut tokens: Vec<Token> = vec![];
@@ -276,7 +276,7 @@ impl Parser {
 }
 
 
-fn eval_expr(expr_index: i64, expr_nodes: &Vec<ExprNode>, env: &::std::collections::BTreeMap<String, i64>) -> i64 {
+fn eval_expr(expr_index: i64, expr_nodes: &[ExprNode], env: &::std::collections::BTreeMap<String, i64>) -> i64 {
     let node: ExprNode = (expr_nodes[((if ((expr_index) as i64) < 0 { (expr_nodes.len() as i64 + ((expr_index) as i64)) } else { ((expr_index) as i64) }) as usize)]).clone();
     
     if node.kind_tag == 1 {
@@ -314,7 +314,7 @@ fn eval_expr(expr_index: i64, expr_nodes: &Vec<ExprNode>, env: &::std::collectio
     panic!("{}", format!("{}{}", ("unknown node kind: ").to_string(), node.kind));
 }
 
-fn execute(stmts: &Vec<StmtNode>, expr_nodes: &Vec<ExprNode>, trace: bool) -> i64 {
+fn execute(stmts: &[StmtNode], expr_nodes: &[ExprNode], trace: bool) -> i64 {
     let mut env: ::std::collections::BTreeMap<String, i64> = ::std::collections::BTreeMap::from([]);
     let mut checksum: i64 = 0;
     let mut printed: i64 = 0;

@@ -161,12 +161,13 @@
 6. [ ] [ID: P1-RS-S18-QUALITY-01-S2-03] tokenize の文字走査を `String` 汎用経路から軽量経路（bytes/chars）へ縮退する。
 7. [ ] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
 8. [ ] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
-9. [ ] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
+9. [x] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
 10. [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
 11. [ ] [ID: P1-RS-S18-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長出力パターンの再発を検知可能にする。
 12. [ ] [ID: P1-RS-S18-QUALITY-01-S3-02] `sample/rs/18` 再生成と transpile/smoke/parity で非退行を確認する。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust の冗長断片を `clone`/添字正規化/走査/format連鎖/`&Vec<T>` で棚卸しし、改善対象を固定。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S1-02] 実装順を `borrow -> 添字 -> &[T] -> 文字列 -> 走査 -> token判定 -> map再評価` に固定し、fail-closed 境界を定義。
+- 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-06] 借用 list 引数の型を `&Vec<T>` から `&[T]` へ縮退し、`sample/rs/18` の `tokenize/eval_expr/execute` 署名で確認（transpile/parity 通過）。
 
 ### P1: sample/rs/08 出力品質改善（可読性 + ホットパス縮退）
 

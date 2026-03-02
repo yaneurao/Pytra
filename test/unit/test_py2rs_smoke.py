@@ -226,6 +226,17 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("} else if d == 1 {", rust)
         self.assertIn("} else if d == 2 {", rust)
 
+    def test_sample18_list_ref_params_prefer_slice_signature(self) -> None:
+        sample = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("fn tokenize(lines: &[String]) -> Vec<Token> {", rust)
+        self.assertIn("fn eval_expr(expr_index: i64, expr_nodes: &[ExprNode], env: &::std::collections::BTreeMap<String, i64>) -> i64 {", rust)
+        self.assertIn("fn execute(stmts: &[StmtNode], expr_nodes: &[ExprNode], trace: bool) -> i64 {", rust)
+        self.assertNotIn("fn tokenize(lines: &Vec<String>) -> Vec<Token> {", rust)
+        self.assertNotIn("fn eval_expr(expr_index: i64, expr_nodes: &Vec<ExprNode>", rust)
+        self.assertNotIn("fn execute(stmts: &Vec<StmtNode>", rust)
+
     def test_object_boundary_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
             "kind": "Module",

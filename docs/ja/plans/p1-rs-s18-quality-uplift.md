@@ -43,6 +43,8 @@
 - 2026-03-02: ユーザー指示により、sample/18 Rust 出力改善を P1 として起票。
 - 2026-03-02: sample/18 の棚卸しで、優先度を `clone削減 -> 添字fastpath -> 走査軽量化 -> 文字列生成簡約 -> API型縮退(&Vec->&[T]) -> map見直し` の順に固定。
 - 2026-03-02: fail-closed 境界を「型既知 + 値境界不変 + 失敗時は現行出力維持」に確定。`unknown/object/union` と順序依存経路は最適化非適用に固定。
+- 2026-03-02: Rust emitter の借用引数型解決を拡張し、`list[T]` の参照引数を `&Vec<T>` から `&[T]` へ縮退（S2-06）。
+- 2026-03-02: `sample/rs/18` で `tokenize/eval_expr/execute` の slice 署名を確認し、`check_py2rs_transpile` と parity（case18）を通過。
 
 ## 分解
 
@@ -53,7 +55,7 @@
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-03] tokenize の文字走査を `String` 汎用経路から軽量経路（bytes/chars）へ縮退する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-05] `to_string/format!` 連鎖を簡約し、同値な直接生成へ寄せる。
-- [ ] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
+- [x] [ID: P1-RS-S18-QUALITY-01-S2-06] `&Vec<T>` 受けを `&[T]` に縮退できる経路を実装する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長出力パターンの再発を検知可能にする。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S3-02] `sample/rs/18` 再生成と transpile/smoke/parity で非退行を確認する。

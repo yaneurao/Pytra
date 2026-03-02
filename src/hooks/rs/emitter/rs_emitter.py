@@ -699,6 +699,18 @@ class RustEmitter(CodeEmitter):
             return True
         return False
 
+    def _borrowed_arg_type_text(self, east_type: str, rust_type: str, *, allow_trait_impl: bool) -> str:
+        arg_norm = self.normalize_type_name(east_type)
+        if allow_trait_impl and arg_norm in self.class_names and self._is_inheritance_class(arg_norm):
+            return "&impl " + self._class_trait_name(arg_norm)
+        if arg_norm == "str":
+            return "&str"
+        if arg_norm.startswith("list["):
+            inner = self.type_generic_args(arg_norm, "list")
+            if len(inner) == 1:
+                return "&[" + self._rust_type(inner[0]) + "]"
+        return "&" + rust_type
+
     def _compute_function_arg_ref_modes(self, fn: dict[str, Any], *, for_method: bool = False) -> list[bool]:
         """関数の各引数を `&T` で受けるべきかを返す（top-level 用）。"""
         arg_order = self.any_to_str_list(fn.get("arg_order"))
@@ -2286,13 +2298,7 @@ class RustEmitter(CodeEmitter):
                 pass_by_ref = fn_ref_modes[arg_pos]
             arg_pos += 1
             if pass_by_ref:
-                arg_norm = self.normalize_type_name(arg_east_t)
-                if arg_norm in self.class_names and self._is_inheritance_class(arg_norm):
-                    arg_t = "&impl " + self._class_trait_name(arg_norm)
-                elif arg_norm == "str":
-                    arg_t = "&str"
-                else:
-                    arg_t = "&" + arg_t
+                arg_t = self._borrowed_arg_type_text(arg_east_t, arg_t, allow_trait_impl=True)
             prefix = "mut " if is_mut else ""
             args_text_list.append(f"{prefix}{safe}: {arg_t}")
             scope_names.add(arg_name)
@@ -3073,10 +3079,7 @@ class RustEmitter(CodeEmitter):
             arg_east_t = self.any_to_str(arg_types.get(arg_name))
             arg_t = self._rust_type(arg_east_t)
             if self._should_pass_method_arg_by_ref_type(arg_east_t):
-                if self.normalize_type_name(arg_east_t) == "str":
-                    arg_t = "&str"
-                else:
-                    arg_t = "&" + arg_t
+                arg_t = self._borrowed_arg_type_text(arg_east_t, arg_t, allow_trait_impl=False)
             params.append(self._safe_name(arg_name) + ": " + arg_t)
         ret_t = self._rust_type(self.normalize_type_name(self.any_to_str(fn_node.get("return_type"))))
         ret_txt = "" if ret_t == "()" else " -> " + ret_t
