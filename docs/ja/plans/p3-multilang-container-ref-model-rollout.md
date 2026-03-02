@@ -1,6 +1,6 @@
 # P3: 非C++ backend へのコンテナ参照管理モデル展開
 
-最終更新: 2026-03-01
+最終更新: 2026-03-02
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P3-MULTILANG-CONTAINER-REF-01`
@@ -39,9 +39,42 @@
 - `PYTHONPATH=src python3 tools/runtime_parity_check.py --case-root sample --targets rs,cs,go,java,kotlin,swift,ruby,lua`
 - `python3 tools/check_todo_priority.py`
 
+## S1-01 現行モデル棚卸し（差分マトリクス）
+
+| backend | 言語メモリモデル | 型既知コンテナ経路 | 動的境界経路 | 現状ギャップ |
+|---|---|---|---|---|
+| `rs` | 所有権/borrow（GCなし） | `Vec<T>` / `BTreeMap<K,V>`（一部 `HashMap`） | `PyAny::List/Dict/Set` | ownership hint を参照せず backend 内 heuristics 中心。 |
+| `cs` | GC | `List<T>` / `Dictionary<K,V>` | `object` + cast helper | non-escape 判定と value/ref 出し分け契約が未統一。 |
+| `go` | GC | 既知型 + 一部構造体型 | `any`, `[]any`, `map[any]any` | `any` fallback 条件が明文化不足。 |
+| `java` | GC | primitive + 既知クラス | `Object`, `ArrayList<Object>`, `HashMap<Object,Object>` | dynamic 境界判定が emitter 局所実装。 |
+| `kotlin` | GC (JVM) | `MutableList<T>` / `MutableMap<K,V>`（型既知時） | `Any?`, `MutableList<Any?>` | `Any?` への降格条件が backend 固有。 |
+| `swift` | ARC | Swift 値型/参照型 | `Any`, `[Any]`, `[AnyHashable: Any]` | ARC 前提の境界運用を IR 契約へ未接続。 |
+| `js` | GC | 実質動的（Array/Object） | `py_runtime` helper 経由 | typed/non-escape 概念を未運用。 |
+| `ts` | GC | 現状 `js` emitter 流用（JS互換） | `js` と同一 | TS 専用の型境界ルール未整備。 |
+| `ruby` | GC | 実質動的（Array/Hash） | runtime helper 経由 | 値型縮退メタを未利用。 |
+| `lua` | GC | 実質動的（table） | `__pytra_*` helper 経由 | escape 判定の取り込みが未着手。 |
+
+## S1-02 共通用語と判定規則（v1）
+
+- `container_ref_boundary`:
+  - `object/Any/unknown/union(any含む)` に流入する地点、または未知 call へ受け渡す地点。
+  - この境界では backend 固有の参照管理表現（boxed/Any/GC 参照）へ寄せる。
+- `typed_non_escape_value_path`:
+  - 要素型が具体化され、`escape_condition` を満たさない局所経路。
+  - ここでは backend の値型寄りコンテナ（`Vec<T>`, `List<T>`, `MutableList<T>` など）を優先。
+- `escape_condition`（fail-closed）:
+  - 戻り値として外部へ返却される。
+  - `object/Any` へ代入される。
+  - 未知 call / 外部 call に引数として渡る。
+  - フィールド保存・別名化で寿命/所有が局所外へ伸びる。
+  - 判定不能は escape 扱いに倒す。
+- `backend_adaptation_rule`:
+  - 共通IRは「境界判定メタ」を供給し、具体的メモリ管理（GC/ARC/borrow）は各 backend が担当する。
+  - 目的は `rc` の移植ではなく、同一境界判定で各言語の自然な参照表現へ落とすこと。
+
 分解:
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播するための最小拡張設計を作成する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] CodeEmitter 基底で利用可能な ownership 判定 API（backend 中立）を定義する。
 - [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-01] Rust backend へ pilot 実装し、`object` 境界と typed 値型経路の出し分けを追加する。
@@ -54,3 +87,5 @@
 決定ログ:
 - 2026-03-01: ユーザー要望により、C++ で採用済みの container 参照管理方針を non-C++ backend にも展開する計画を P3 として新規作成した。
 - 2026-03-01: 方針は「各言語に `rc` を強制移植」ではなく、「動的境界は参照管理、型既知 non-escape は値型」の抽象ルール統一を採用した。
+- 2026-03-02: S1-01 として非C++ backend の現行モデルを棚卸しし、`rs/cs/go/java/kotlin/swift` は「型付きコンテナ + Any/Object fallback」、`js/ts/ruby/lua` は「動的コンテナ + runtime helper」中心であると整理した。
+- 2026-03-02: S1-02 として `container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` を v1 用語として定義し、判定不能時は escape 扱いに倒す fail-closed 方針を固定した。
