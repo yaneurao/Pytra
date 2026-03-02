@@ -41,6 +41,9 @@
 - 2026-03-02: ユーザー指示により、`sample/ruby/03` の改善項目を P1 計画として起票。
 - 2026-03-02: `sample/ruby/03_julia_set.rb` の棚卸しで、優先度を `1) hot path 除算 helper 2) 画素 append 3連 3) r/g/b 初期化 4) 過剰括弧 5) 同型 cast helper` の順に固定。
 - 2026-03-02: fail-closed 境界を「型既知 numeric（`int/float/bool`）かつ副作用なし式のみ fastpath 適用、`Any/object/union/呼び出し副作用` は既存 helper 経路維持」に確定。
+- 2026-03-02: Ruby emitter に `_strip_outer_parens` と `BinOp` 単純式 fastpath を追加し、`if/while` 条件と `zx2 = zx * zx` 系の冗長括弧を削減。
+- 2026-03-02: `BinOp` fastpath は precedence guard（`Add/Sub` と `Mult/Div/...`）を追加し、`255.0 * (1.0 - t)` のような右オペランド grouping を保持する fail-closed 実装に固定。
+- 2026-03-02: `test_py2rb_smoke.py` を更新し、`sample/01` と `sample/03` の括弧品質回帰を追加。`runtime_parity_check --case-root sample --targets ruby --ignore-unstable-stdout 03_julia_set` を通過。
 
 ## 分解
 
@@ -49,7 +52,7 @@
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-01] 型既知の割り算経路で `__pytra_div` 依存を削減する emitter fastpath を追加する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-02] `pixels.append` 周辺の冗長呼び出しを削減する出力規則を追加する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-03] `r/g/b` 初期化の冗長代入を削減する分岐出力へ更新する。
-- [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-04] Ruby 出力の過剰括弧を削減する正規化規則を追加する。
+- [x] [ID: P1-RUBY-S03-QUALITY-01-S2-04] Ruby 出力の過剰括弧を削減する正規化規則を追加する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-05] 同型変換 helper（`__pytra_float/__pytra_int`）の不要呼び出しを抑制する。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長パターンの再発を検知可能にする。
 - [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-02] `sample/ruby/03` 再生成と transpile/parity で非退行を確認する。

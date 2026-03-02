@@ -308,6 +308,83 @@ def _render_condition_expr(node: Any) -> str:
     return "__pytra_truthy(" + rendered + ")"
 
 
+def _strip_outer_parens(text: str) -> str:
+    s = text.strip()
+    while len(s) >= 2 and s.startswith("(") and s.endswith(")"):
+        depth = 0
+        in_str = False
+        esc = False
+        quote = ""
+        wrapped = True
+        i = 0
+        while i < len(s):
+            ch = s[i]
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == quote:
+                    in_str = False
+                i += 1
+                continue
+            if ch == "'" or ch == '"':
+                in_str = True
+                quote = ch
+                i += 1
+                continue
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0 and i != len(s) - 1:
+                    wrapped = False
+                    break
+            i += 1
+        if wrapped and depth == 0:
+            s = s[1:-1].strip()
+            continue
+        break
+    return s
+
+
+def _is_simple_binop_operand(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    kind = node.get("kind")
+    return kind in {"Name", "Constant", "Attribute", "Call", "Subscript"}
+
+
+def _join_binop_expr(left: str, right: str, op_symbol: str, left_node: Any, right_node: Any) -> str:
+    if _is_simple_binop_operand(left_node) and _is_simple_binop_operand(right_node):
+        return _strip_outer_parens(left) + " " + op_symbol + " " + _strip_outer_parens(right)
+    return "(" + left + " " + op_symbol + " " + right + ")"
+
+
+def _bin_op_precedence(op: Any) -> int:
+    if op in {"Mult", "Div", "FloorDiv", "Mod"}:
+        return 20
+    if op in {"Add", "Sub"}:
+        return 10
+    return 0
+
+
+def _wrap_binop_operand_if_needed(text: str, node: Any, parent_op: Any, *, is_right: bool) -> str:
+    if not isinstance(node, dict) or node.get("kind") != "BinOp":
+        return text
+    child_op = node.get("op")
+    parent_prec = _bin_op_precedence(parent_op)
+    child_prec = _bin_op_precedence(child_op)
+    need_wrap = False
+    if child_prec < parent_prec:
+        need_wrap = True
+    elif child_prec == parent_prec and is_right and parent_op in {"Sub", "Div", "FloorDiv", "Mod"}:
+        need_wrap = True
+    if not need_wrap:
+        return text
+    return "(" + _strip_outer_parens(text) + ")"
+
+
 def _render_name_expr(expr: dict[str, Any]) -> str:
     raw = expr.get("id")
     if raw == "self":
@@ -379,14 +456,24 @@ def _render_unary_expr(expr: dict[str, Any]) -> str:
 
 
 def _render_binop_expr(expr: dict[str, Any]) -> str:
-    left = _render_expr(expr.get("left"))
-    right = _render_expr(expr.get("right"))
+    left_node = expr.get("left")
+    right_node = expr.get("right")
+    left = _render_expr(left_node)
+    right = _render_expr(right_node)
     op = expr.get("op")
+    left_wrapped = _wrap_binop_operand_if_needed(left, left_node, op, is_right=False)
+    right_wrapped = _wrap_binop_operand_if_needed(right, right_node, op, is_right=True)
     if op == "Div":
-        return "__pytra_div(" + left + ", " + right + ")"
+        return "__pytra_div(" + left_wrapped + ", " + right_wrapped + ")"
     if op == "FloorDiv":
-        return "(" + _render_int_cast(expr.get("left")) + " / " + _render_int_cast(expr.get("right")) + ")"
-    return "(" + left + " " + _bin_op_symbol(op) + " " + right + ")"
+        return _join_binop_expr(
+            _wrap_binop_operand_if_needed(_render_int_cast(left_node), left_node, op, is_right=False),
+            _wrap_binop_operand_if_needed(_render_int_cast(right_node), right_node, op, is_right=True),
+            "/",
+            left_node,
+            right_node,
+        )
+    return _join_binop_expr(left_wrapped, right_wrapped, _bin_op_symbol(op), left_node, right_node)
 
 
 def _render_compare_expr(expr: dict[str, Any]) -> str:
@@ -932,7 +1019,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + lhs + " " + symbol + "= " + rhs]
 
     if kind == "If":
-        test_expr = _render_condition_expr(stmt.get("test"))
+        test_expr = _strip_outer_parens(_render_condition_expr(stmt.get("test")))
         lines = [indent + "if " + test_expr]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
@@ -955,7 +1042,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_for_core(stmt, indent=indent, ctx=ctx)
 
     if kind == "While":
-        test_expr = _render_condition_expr(stmt.get("test"))
+        test_expr = _strip_outer_parens(_render_condition_expr(stmt.get("test")))
         lines = [indent + "while " + test_expr]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []

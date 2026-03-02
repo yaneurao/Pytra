@@ -6,8 +6,8 @@ require_relative "py_runtime"
 
 def render_julia(width, height, max_iter, cx, cy)
   pixels = __pytra_bytearray()
-  __hoisted_cast_1 = __pytra_float((height - 1))
-  __hoisted_cast_2 = __pytra_float((width - 1))
+  __hoisted_cast_1 = __pytra_float(height - 1)
+  __hoisted_cast_2 = __pytra_float(width - 1)
   __hoisted_cast_3 = __pytra_float(max_iter)
   y = 0
   while y < height
@@ -17,27 +17,27 @@ def render_julia(width, height, max_iter, cx, cy)
       zx = ((-1.8) + (3.6 * __pytra_div(x, __hoisted_cast_2)))
       zy = zy0
       i = 0
-      while (i < max_iter)
-        zx2 = (zx * zx)
-        zy2 = (zy * zy)
-        if ((zx2 + zy2) > 4.0)
+      while i < max_iter
+        zx2 = zx * zx
+        zy2 = zy * zy
+        if zx2 + zy2 > 4.0
           break
         end
-        zy = (((2.0 * zx) * zy) + cy)
-        zx = ((zx2 - zy2) + cx)
+        zy = ((2.0 * zx * zy) + cy)
+        zx = (zx2 - zy2 + cx)
         i += 1
       end
       r = 0
       g = 0
       b = 0
-      if (i >= max_iter)
+      if i >= max_iter
         r = 0
         g = 0
         b = 0
       else
         t = __pytra_div(i, __hoisted_cast_3)
-        r = __pytra_int((255.0 * (0.2 + (0.8 * t))))
-        g = __pytra_int((255.0 * (0.1 + (0.9 * (t * t)))))
+        r = __pytra_int((255.0 * (0.2 + 0.8 * t)))
+        g = __pytra_int((255.0 * (0.1 + (0.9 * t * t))))
         b = __pytra_int((255.0 * (1.0 - t)))
       end
       pixels.append(r)
@@ -58,7 +58,7 @@ def run_julia()
   start = __pytra_perf_counter()
   pixels = render_julia(width, height, max_iter, (-0.8), 0.156)
   write_rgb_png(out_path, width, height, pixels)
-  elapsed = (__pytra_perf_counter() - start)
+  elapsed = __pytra_perf_counter() - start
   __pytra_print("output:", out_path)
   __pytra_print("size:", width, "x", height)
   __pytra_print("max_iter:", max_iter)

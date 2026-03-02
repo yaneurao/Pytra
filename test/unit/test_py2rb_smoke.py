@@ -186,13 +186,26 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("y = 0", ruby)
         self.assertIn("x = 0", ruby)
         self.assertIn("i = 0", ruby)
-        self.assertIn("if ((x2 + y2) > 4.0)", ruby)
-        self.assertIn("if (it >= max_iter)", ruby)
+        self.assertIn("if x2 + y2 > 4.0", ruby)
+        self.assertIn("if it >= max_iter", ruby)
+        self.assertNotIn("if ((x2 + y2) > 4.0)", ruby)
+        self.assertNotIn("if (it >= max_iter)", ruby)
         self.assertNotIn("if __pytra_truthy(((x2 + y2) > 4.0))", ruby)
         self.assertNotIn("if __pytra_truthy((it >= max_iter))", ruby)
         self.assertNotIn("r = nil", ruby)
         self.assertNotIn("g = nil", ruby)
         self.assertNotIn("b = nil", ruby)
+
+    def test_sample03_reduces_redundant_parentheses_in_binop_and_conditions(self) -> None:
+        sample = find_sample_case("03_julia_set")
+        east = load_east(sample, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("zx2 = zx * zx", ruby)
+        self.assertIn("zy2 = zy * zy", ruby)
+        self.assertIn("if zx2 + zy2 > 4.0", ruby)
+        self.assertNotIn("zx2 = (zx * zx)", ruby)
+        self.assertNotIn("zy2 = (zy * zy)", ruby)
+        self.assertNotIn("if ((zx2 + zy2) > 4.0)", ruby)
 
     def test_sample18_enumerate_and_slice_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")
