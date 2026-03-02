@@ -54,9 +54,7 @@ def render_mandelbrot(width, height, max_iter, x_min, x_max, y_min, y_max)
         g = __pytra_int(255.0 * t)
         b = __pytra_int((255.0 * (1.0 - t)))
       end
-      pixels.append(r)
-      pixels.append(g)
-      pixels.append(b)
+      pixels.concat([r, g, b])
       x += 1
     end
     y += 1

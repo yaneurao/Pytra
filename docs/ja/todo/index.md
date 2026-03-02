@@ -134,7 +134,7 @@
 2. [x] [ID: P1-RUBY-S03-QUALITY-01-S1-01] `sample/ruby/03` の冗長断片（`__pytra_div` / append / 初期化 / 括弧 / cast）を棚卸しし、優先順を固定する。
 3. [x] [ID: P1-RUBY-S03-QUALITY-01-S1-02] fail-closed 適用境界（型既知条件、演算意味維持条件）を仕様化する。
 4. [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-01] 型既知の割り算経路で `__pytra_div` 依存を削減する emitter fastpath を追加する。
-5. [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-02] `pixels.append` 周辺の冗長呼び出しを削減する出力規則を追加する。
+5. [x] [ID: P1-RUBY-S03-QUALITY-01-S2-02] `pixels.append` 周辺の冗長呼び出しを削減する出力規則を追加する。
 6. [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-03] `r/g/b` 初期化の冗長代入を削減する分岐出力へ更新する。
 7. [x] [ID: P1-RUBY-S03-QUALITY-01-S2-04] Ruby 出力の過剰括弧を削減する正規化規則を追加する。
 8. [ ] [ID: P1-RUBY-S03-QUALITY-01-S2-05] 同型変換 helper（`__pytra_float/__pytra_int`）の不要呼び出しを抑制する。
@@ -142,6 +142,7 @@
 10. [ ] [ID: P1-RUBY-S03-QUALITY-01-S3-02] `sample/ruby/03` 再生成と transpile/parity で非退行を確認する。
 - 進捗メモ: [ID: P1-RUBY-S03-QUALITY-01-S1-01] `sample/ruby/03` の冗長断片を `__pytra_div`/append3連/`r,g,b` 初期化/括弧/cast に分類し、hot path 優先順と fail-closed 境界（型既知 numeric 限定）を確定。
 - 進捗メモ: [ID: P1-RUBY-S03-QUALITY-01-S2-04] `_strip_outer_parens` + `BinOp` precedence guard を追加し、`sample/ruby/03` の `if/while` 二重括弧と `zx2 = (zx * zx)` 系を縮退（`03_julia_set` parity 通過）。
+- 進捗メモ: [ID: P1-RUBY-S03-QUALITY-01-S2-02] 連続 `append` を `concat([...])` へ縮退する peephole を追加し、`sample/ruby/01,03` で `pixels.concat([r, g, b])` を確認（`03_julia_set` parity 通過）。
 
 ### P1: sample/18 Rust 出力品質改善（可読性 + ホットパス縮退）
 

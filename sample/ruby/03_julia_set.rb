@@ -40,9 +40,7 @@ def render_julia(width, height, max_iter, cx, cy)
         g = __pytra_int((255.0 * (0.1 + (0.9 * t * t))))
         b = __pytra_int((255.0 * (1.0 - t)))
       end
-      pixels.append(r)
-      pixels.append(g)
-      pixels.append(b)
+      pixels.concat([r, g, b])
       x += 1
     end
     y += 1

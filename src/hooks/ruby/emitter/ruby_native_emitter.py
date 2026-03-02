@@ -875,10 +875,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "while " + cond)
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
-        i = 0
-        while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
-            i += 1
+        lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
         lines.append(indent + "  " + inc)
         lines.append(indent + "end")
         return lines
@@ -892,10 +889,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + "for " + target + " in " + iter_expr)
             body_any = stmt.get("body")
             body = body_any if isinstance(body_any, list) else []
-            i = 0
-            while i < len(body):
-                lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
-                i += 1
+            lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
             lines.append(indent + "end")
             return lines
         if iter_kind == "TupleTarget":
@@ -917,10 +911,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                 i += 1
             body_any = stmt.get("body")
             body = body_any if isinstance(body_any, list) else []
-            i = 0
-            while i < len(body):
-                lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
-                i += 1
+            lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
             lines.append(indent + "end")
             return lines
 
@@ -954,6 +945,62 @@ def _emit_tuple_assign(target_any: Any, value_any: Any, *, indent: str, ctx: dic
             return None
         i += 1
     return lines
+
+
+def _is_safe_append_chain_arg(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    return node.get("kind") in {"Name", "Constant", "Attribute", "Subscript"}
+
+
+def _append_chain_stmt_parts(stmt: Any) -> tuple[str, str] | None:
+    if not isinstance(stmt, dict) or stmt.get("kind") != "Expr":
+        return None
+    value_any = stmt.get("value")
+    if not isinstance(value_any, dict) or value_any.get("kind") != "Call":
+        return None
+    func_any = value_any.get("func")
+    if not isinstance(func_any, dict) or func_any.get("kind") != "Attribute":
+        return None
+    if _safe_ident(func_any.get("attr"), "") != "append":
+        return None
+    owner_any = func_any.get("value")
+    if not isinstance(owner_any, dict) or owner_any.get("kind") != "Name":
+        return None
+    args_any = value_any.get("args")
+    args = args_any if isinstance(args_any, list) else []
+    keywords_any = value_any.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if len(args) != 1 or len(keywords) != 0:
+        return None
+    arg_node = args[0]
+    if not _is_safe_append_chain_arg(arg_node):
+        return None
+    return (_render_expr(owner_any), _render_expr(arg_node))
+
+
+def _emit_stmt_list(stmts: list[Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
+    out: list[str] = []
+    i = 0
+    while i < len(stmts):
+        head = _append_chain_stmt_parts(stmts[i])
+        if head is not None:
+            owner = head[0]
+            args: list[str] = [head[1]]
+            j = i + 1
+            while j < len(stmts):
+                nxt = _append_chain_stmt_parts(stmts[j])
+                if nxt is None or nxt[0] != owner:
+                    break
+                args.append(nxt[1])
+                j += 1
+            if len(args) >= 2:
+                out.append(indent + owner + ".concat([" + ", ".join(args) + "])")
+                i = j
+                continue
+        out.extend(_emit_stmt(stmts[i], indent=indent, ctx=ctx))
+        i += 1
+    return out
 
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
@@ -1023,18 +1070,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lines = [indent + "if " + test_expr]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
-        i = 0
-        while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
-            i += 1
+        lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
         orelse_any = stmt.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         if len(orelse) > 0:
             lines.append(indent + "else")
-            i = 0
-            while i < len(orelse):
-                lines.extend(_emit_stmt(orelse[i], indent=indent + "  ", ctx=ctx))
-                i += 1
+            lines.extend(_emit_stmt_list(orelse, indent=indent + "  ", ctx=ctx))
         lines.append(indent + "end")
         return lines
 
@@ -1046,10 +1087,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lines = [indent + "while " + test_expr]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
-        i = 0
-        while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
-            i += 1
+        lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
         lines.append(indent + "end")
         return lines
 
@@ -1103,10 +1141,7 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
     ctx: dict[str, Any] = {"tmp": 0}
-    i = 0
-    while i < len(body):
-        lines.extend(_emit_stmt(body[i], indent=indent + "  ", ctx=ctx))
-        i += 1
+    lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
     if len(body) == 0:
         lines.append(indent + "  nil")
     lines.append(indent + "end")

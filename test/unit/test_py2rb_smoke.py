@@ -206,6 +206,10 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertNotIn("zx2 = (zx * zx)", ruby)
         self.assertNotIn("zy2 = (zy * zy)", ruby)
         self.assertNotIn("if ((zx2 + zy2) > 4.0)", ruby)
+        self.assertIn("pixels.concat([r, g, b])", ruby)
+        self.assertNotIn("pixels.append(r)", ruby)
+        self.assertNotIn("pixels.append(g)", ruby)
+        self.assertNotIn("pixels.append(b)", ruby)
 
     def test_sample18_enumerate_and_slice_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")
