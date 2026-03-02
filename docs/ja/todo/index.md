@@ -72,6 +72,7 @@
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppCompareNormalizePass` を追加し、bool 比較（`== True/False`, `!= True/False`）の冗長形を optimizer 側で正規化した。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppBinOpNormalizePass` を追加し、数値 `+0/-0/*1` の冗長 binop を optimizer 側へ移し、S3-02 を完了に更新した。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppForcoreDirectUnpackHintPass` を追加し、`ForCore` tuple unpack 判定を optimizer 側へ移して S3-01 を完了に更新した。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppLower` が `cpp_stmt_kind_v1` を付与し、`CppEmitter` の文 dispatch は hint 優先へ移行した（S3-03 継続中）。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 

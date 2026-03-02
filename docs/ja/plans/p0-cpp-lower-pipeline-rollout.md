@@ -64,6 +64,7 @@
 - 2026-03-02: `CppCompareNormalizePass` を追加し、`bool_expr == True/False` / `!= True/False` を `bool_expr` / `!bool_expr` へ正規化して compare 冗長性を optimizer 側で縮約（S3-02 部分着手）。
 - 2026-03-02: `CppBinOpNormalizePass` を追加し、数値 `+0/-0/*1` の冗長 binop を optimizer 側で縮約。S3-02（cast/compare/binop）を完了扱いへ更新。
 - 2026-03-02: `CppForcoreDirectUnpackHintPass` を追加し、`ForCore` tuple target の `direct_unpack` 判定を optimizer 側ヒント化。`CppBraceOmitHintPass` / `CppForIterModeHintPass` と合わせて S3-01（loop/if/tuple unpack）を完了扱いへ更新。
+- 2026-03-02: `CppLower` が文ノードへ `cpp_stmt_kind_v1` を付与し、`CppEmitter.emit_stmt` は hint 優先で dispatch する構成へ更新。S3-03 の「EAST3 生 kind 直参照削減」を開始（未完）。
 - 2026-03-02: 境界テストとして `test_cpp_optimizer.py` に `CppLower` / `CppIrOptimizer` / `emit_cpp_from_east` の接続検証を追加し、unit 回帰を固定（S4-01）。
 - 2026-03-02: `tools/check_py2cpp_transpile.py`（136/136 pass, skip6）、`tools/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`、`tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot 08_langtons_ant 18_mini_language_interpreter --ignore-unstable-stdout`（3/3 pass）で非退行を確認（S4-02）。
 
