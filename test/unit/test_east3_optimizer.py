@@ -885,6 +885,52 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 0)
         self.assertFalse(bool(for_stmt.get("target_plan", {}).get("direct_unpack", False)))
 
+    def test_tuple_target_direct_expansion_pass_marks_assign_tuple_unpack_hint(self) -> None:
+        doc = _module_doc()
+        assign_stmt = {
+            "kind": "Assign",
+            "target": {
+                "kind": "Tuple",
+                "elements": [
+                    {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                    {"kind": "Name", "id": "y", "resolved_type": "str"},
+                ],
+            },
+            "value": {"kind": "Name", "id": "pair", "resolved_type": "tuple[int64, str]"},
+        }
+        doc["body"] = [assign_stmt]
+        result = TupleTargetDirectExpansionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        hint_any = assign_stmt.get("cpp_struct_bind_unpack_v1")
+        self.assertIsInstance(hint_any, dict)
+        hint = hint_any if isinstance(hint_any, dict) else {}
+        self.assertEqual(hint.get("version"), "1")
+        self.assertEqual(hint.get("names"), ["x", "y"])
+        self.assertEqual(hint.get("types"), ["int64", "str"])
+
+    def test_tuple_target_direct_expansion_pass_clears_assign_hint_for_union_rhs(self) -> None:
+        doc = _module_doc()
+        assign_stmt = {
+            "kind": "Assign",
+            "target": {
+                "kind": "Tuple",
+                "elements": [
+                    {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                    {"kind": "Name", "id": "y", "resolved_type": "str"},
+                ],
+            },
+            "value": {"kind": "Name", "id": "pair", "resolved_type": "tuple[int64, str]|None"},
+            "cpp_struct_bind_unpack_v1": {
+                "version": "1",
+                "names": ["x", "y"],
+                "types": ["int64", "str"],
+            },
+        }
+        doc["body"] = [assign_stmt]
+        result = TupleTargetDirectExpansionPass().run(doc, PassContext(opt_level=1))
+        self.assertTrue(result.changed)
+        self.assertNotIn("cpp_struct_bind_unpack_v1", assign_stmt)
+
     def test_unused_loop_var_elision_pass_renames_unused_target_to_underscore(self) -> None:
         doc = _module_doc()
         for_stmt = {

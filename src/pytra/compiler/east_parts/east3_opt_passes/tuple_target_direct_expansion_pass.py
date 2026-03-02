@@ -8,6 +8,8 @@ from pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
 from pytra.compiler.east_parts.east3_optimizer import PassContext
 from pytra.compiler.east_parts.east3_optimizer import PassResult
 
+_CPP_STRUCT_BIND_ASSIGN_HINT_KEY = "cpp_struct_bind_unpack_v1"
+
 
 def _normalize_type_name(value: Any) -> str:
     if isinstance(value, str):
@@ -52,6 +54,11 @@ def _tuple_element_types(type_name: str) -> list[str]:
     return _split_generic_types(inner)
 
 
+def _is_any_like_type(type_name: str) -> bool:
+    t = _normalize_type_name(type_name)
+    return t in {"", "unknown", "Any", "object"}
+
+
 def _iter_item_type(iter_plan: dict[str, Any], iter_expr: dict[str, Any]) -> str:
     hint0 = _normalize_type_name(iter_plan.get("iter_item_type"))
     if hint0.startswith("tuple[") and hint0.endswith("]"):
@@ -72,6 +79,70 @@ class TupleTargetDirectExpansionPass(East3OptimizerPass):
 
     name = "TupleTargetDirectExpansionPass"
     min_opt_level = 1
+
+    def _set_assign_hint(self, stmt: dict[str, Any], hint: dict[str, Any] | None) -> int:
+        current_any = stmt.get(_CPP_STRUCT_BIND_ASSIGN_HINT_KEY)
+        current = current_any if isinstance(current_any, dict) else None
+        if hint is None:
+            if _CPP_STRUCT_BIND_ASSIGN_HINT_KEY in stmt:
+                stmt.pop(_CPP_STRUCT_BIND_ASSIGN_HINT_KEY, None)
+                return 1
+            return 0
+        if current == hint:
+            return 0
+        stmt[_CPP_STRUCT_BIND_ASSIGN_HINT_KEY] = hint
+        return 1
+
+    def _tuple_type_from_assign_value(self, value_node: dict[str, Any]) -> str:
+        value_t = _normalize_type_name(value_node.get("resolved_type"))
+        if value_t.startswith("tuple[") and value_t.endswith("]"):
+            return value_t
+        # optional/union tuple は fail-closed（marker 非付与）
+        return ""
+
+    def _try_rewrite_assign(self, stmt: dict[str, Any]) -> int:
+        if _normalize_type_name(stmt.get("kind")) != "Assign":
+            return 0
+        target_obj = stmt.get("target")
+        target = target_obj if isinstance(target_obj, dict) else None
+        if target is None or _normalize_type_name(target.get("kind")) != "Tuple":
+            return self._set_assign_hint(stmt, None)
+        elems_obj = target.get("elements")
+        elems = elems_obj if isinstance(elems_obj, list) else []
+        if len(elems) == 0:
+            return self._set_assign_hint(stmt, None)
+
+        names: list[str] = []
+        for elem_obj in elems:
+            elem = elem_obj if isinstance(elem_obj, dict) else None
+            if elem is None or _normalize_type_name(elem.get("kind")) != "Name":
+                return self._set_assign_hint(stmt, None)
+            nm = _normalize_type_name(elem.get("id"))
+            if nm == "unknown":
+                return self._set_assign_hint(stmt, None)
+            names.append(nm)
+        if len(set(names)) != len(names):
+            return self._set_assign_hint(stmt, None)
+
+        value_obj = stmt.get("value")
+        value = value_obj if isinstance(value_obj, dict) else None
+        if value is None:
+            return self._set_assign_hint(stmt, None)
+        tuple_t = self._tuple_type_from_assign_value(value)
+        if tuple_t == "":
+            return self._set_assign_hint(stmt, None)
+        elem_types = _tuple_element_types(tuple_t)
+        if len(elem_types) != len(names):
+            return self._set_assign_hint(stmt, None)
+        if any(_is_any_like_type(t) for t in elem_types):
+            return self._set_assign_hint(stmt, None)
+
+        hint = {
+            "version": "1",
+            "names": names,
+            "types": elem_types,
+        }
+        return self._set_assign_hint(stmt, hint)
 
     def _try_rewrite_forcore(self, stmt: dict[str, Any]) -> int:
         if _normalize_type_name(stmt.get("kind")) != "ForCore":
@@ -149,6 +220,7 @@ class TupleTargetDirectExpansionPass(East3OptimizerPass):
         if not isinstance(node, dict):
             return 0
         changed += self._try_rewrite_forcore(node)
+        changed += self._try_rewrite_assign(node)
         for value in node.values():
             changed += self._visit(value)
         return changed

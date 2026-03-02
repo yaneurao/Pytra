@@ -1495,7 +1495,7 @@ def f() -> int:
         self.assertIn("list<int64> values = list<int64>{};", cpp)
         self.assertIn("render(values, w, h)", cpp)
 
-    def test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure(self) -> None:
+    def test_pyobj_list_model_tuple_subscript_uses_structured_binding_on_declare_unpack(self) -> None:
         src = """def f(stack: list[tuple[int, int]]) -> int:
     x, y = stack[-1]
     return x + y
@@ -1508,9 +1508,30 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
+        self.assertIn("auto [x, y] = py_at(stack, -1);", cpp)
+        self.assertNotIn("auto __tuple_1 = py_at(stack, -1);", cpp)
+        self.assertNotIn("::std::get<0>(__tuple_1)", cpp)
+        self.assertNotIn("::std::get<1>(__tuple_1)", cpp)
+
+    def test_pyobj_list_model_tuple_subscript_reassign_keeps_get_fallback(self) -> None:
+        src = """def f(stack: list[tuple[int, int]]) -> int:
+    x: int = 0
+    y: int = 0
+    x, y = stack[-1]
+    return x + y
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_tuple_subscript_reassign.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
         self.assertIn("auto __tuple_1 = py_at(stack, -1);", cpp)
-        self.assertIn("int64 x = ::std::get<0>(__tuple_1);", cpp)
-        self.assertIn("int64 y = ::std::get<1>(__tuple_1);", cpp)
+        self.assertIn("x = ::std::get<0>(__tuple_1);", cpp)
+        self.assertIn("y = ::std::get<1>(__tuple_1);", cpp)
+        self.assertNotIn("auto [x, y] = py_at(stack, -1);", cpp)
 
     def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
         src = """def f() -> int:

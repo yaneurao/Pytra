@@ -95,7 +95,7 @@ bytes palette_332() {
         p[i * 3 + 1] = int64(py_to<float64>(255 * g) / __hoisted_cast_1);
         p[i * 3 + 2] = int64(py_to<float64>(255 * b) / __hoisted_cast_2);
     }
-    return bytes(p);
+    return p;
 }
 
 int64 quantize_332(float64 r, float64 g, float64 b) {
@@ -118,18 +118,9 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
     float64 look_y = 0.35;
     float64 look_z = 0.0;
     
-    auto __tuple_1 = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
-    float64 fwd_x = ::std::get<0>(__tuple_1);
-    float64 fwd_y = ::std::get<1>(__tuple_1);
-    float64 fwd_z = ::std::get<2>(__tuple_1);
-    auto __tuple_2 = normalize(fwd_z, 0.0, -fwd_x);
-    float64 right_x = ::std::get<0>(__tuple_2);
-    float64 right_y = ::std::get<1>(__tuple_2);
-    float64 right_z = ::std::get<2>(__tuple_2);
-    auto __tuple_3 = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
-    float64 up_x = ::std::get<0>(__tuple_3);
-    float64 up_y = ::std::get<1>(__tuple_3);
-    float64 up_z = ::std::get<2>(__tuple_3);
+    auto [fwd_x, fwd_y, fwd_z] = normalize(look_x - cam_x, look_y - cam_y, look_z - cam_z);
+    auto [right_x, right_y, right_z] = normalize(fwd_z, 0.0, -fwd_x);
+    auto [up_x, up_y, up_z] = normalize(right_y * fwd_z - right_z * fwd_y, right_z * fwd_x - right_x * fwd_z, right_x * fwd_y - right_y * fwd_x);
     
     // Moving glass sculpture (3 spheres) and an emissive sphere.
     float64 s0x = 0.9 * pytra::std::math::cos(1.3 * tphase);
@@ -160,10 +151,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
             float64 rx = fwd_x + fov * (sx * right_x + sy * up_x);
             float64 ry = fwd_y + fov * (sx * right_y + sy * up_y);
             float64 rz = fwd_z + fov * (sx * right_z + sy * up_z);
-            auto __tuple_4 = normalize(rx, ry, rz);
-            float64 dx = ::std::get<0>(__tuple_4);
-            float64 dy = ::std::get<1>(__tuple_4);
-            float64 dz = ::std::get<2>(__tuple_4);
+            auto [dx, dy, dz] = normalize(rx, ry, rz);
             
             // Search for the nearest hit.
             float64 best_t = 1e9;
@@ -200,134 +188,110 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
                 r = ::std::get<0>(__tuple_5);
                 g = ::std::get<1>(__tuple_5);
                 b = ::std::get<2>(__tuple_5);
+            float64 hx;
+            float64 hz;
+            float64 cx;
+            float64 cz;
+            float64 lxv;
+            float64 lyv;
+            float64 lzv;
+            float64 ldx;
+            float64 ldy;
+            float64 ldz;
+            float64 ndotl;
+            float64 glow;
+            } else if (hit_kind == 1) {
+                hx = cam_x + best_t * dx;
+                hz = cam_z + best_t * dz;
+                cx = int64(pytra::std::math::floor(hx * 2.0));
+                cz = int64(pytra::std::math::floor(hz * 2.0));
+                int64 checker = (py_mod((cx + cz), 2) == 0 ? 0 : 1);
+                float64 base_r = (checker == 0 ? 0.10 : 0.04);
+                float64 base_g = (checker == 0 ? 0.11 : 0.05);
+                float64 base_b = (checker == 0 ? 0.13 : 0.08);
+                // Emissive sphere contribution.
+                lxv = lx - hx;
+                lyv = ly - -1.2;
+                lzv = lz - hz;
+                auto __tuple_6 = normalize(lxv, lyv, lzv);
+                ldx = ::std::get<0>(__tuple_6);
+                ldy = ::std::get<1>(__tuple_6);
+                ldz = ::std::get<2>(__tuple_6);
+                ndotl = ::std::max<float64>(float64(ldy), float64(0.0));
+                float64 ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
+                glow = 8.0 / (1.0 + ldist2);
+                r = base_r + 0.8 * glow + 0.20 * ndotl;
+                g = base_g + 0.5 * glow + 0.18 * ndotl;
+                b = base_b + 1.0 * glow + 0.24 * ndotl;
             } else {
-                float64 hx;
-                float64 hz;
-                float64 cx;
-                float64 cz;
-                float64 lxv;
-                float64 lyv;
-                float64 lzv;
-                float64 ldx;
-                float64 ldy;
-                float64 ldz;
-                float64 ndotl;
-                float64 glow;
-                if (hit_kind == 1) {
-                    hx = cam_x + best_t * dx;
-                    hz = cam_z + best_t * dz;
-                    cx = int64(pytra::std::math::floor(hx * 2.0));
-                    cz = int64(pytra::std::math::floor(hz * 2.0));
-                    int64 checker = (py_mod((cx + cz), 2) == 0 ? 0 : 1);
-                    float64 base_r = (checker == 0 ? 0.10 : 0.04);
-                    float64 base_g = (checker == 0 ? 0.11 : 0.05);
-                    float64 base_b = (checker == 0 ? 0.13 : 0.08);
-                    // Emissive sphere contribution.
-                    lxv = lx - hx;
-                    lyv = ly - -1.2;
-                    lzv = lz - hz;
-                    auto __tuple_6 = normalize(lxv, lyv, lzv);
-                    ldx = ::std::get<0>(__tuple_6);
-                    ldy = ::std::get<1>(__tuple_6);
-                    ldz = ::std::get<2>(__tuple_6);
-                    ndotl = ::std::max<float64>(float64(ldy), float64(0.0));
-                    float64 ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
-                    glow = 8.0 / (1.0 + ldist2);
-                    r = base_r + 0.8 * glow + 0.20 * ndotl;
-                    g = base_g + 0.5 * glow + 0.18 * ndotl;
-                    b = base_b + 1.0 * glow + 0.24 * ndotl;
+                cx = 0.0;
+                float64 cy = 0.0;
+                cz = 0.0;
+                float64 rad = 1.0;
+                if (hit_kind == 2) {
+                    cx = s0x;
+                    cy = s0y;
+                    cz = s0z;
+                    rad = 0.65;
+                } else if (hit_kind == 3) {
+                    cx = s1x;
+                    cy = s1y;
+                    cz = s1z;
+                    rad = 0.72;
                 } else {
-                    cx = 0.0;
-                    float64 cy = 0.0;
-                    cz = 0.0;
-                    float64 rad = 1.0;
-                    if (hit_kind == 2) {
-                        cx = s0x;
-                        cy = s0y;
-                        cz = s0z;
-                        rad = 0.65;
-                    } else {
-                        if (hit_kind == 3) {
-                            cx = s1x;
-                            cy = s1y;
-                            cz = s1z;
-                            rad = 0.72;
-                        } else {
-                            cx = s2x;
-                            cy = s2y;
-                            cz = s2z;
-                            rad = 0.58;
-                        }
-                    }
-                    hx = cam_x + best_t * dx;
-                    float64 hy = cam_y + best_t * dy;
-                    hz = cam_z + best_t * dz;
-                    auto __tuple_7 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
-                    float64 nx = ::std::get<0>(__tuple_7);
-                    float64 ny = ::std::get<1>(__tuple_7);
-                    float64 nz = ::std::get<2>(__tuple_7);
-                    
-                    // Simple glass shading (reflection + refraction + light highlights).
-                    auto __tuple_8 = reflect(dx, dy, dz, nx, ny, nz);
-                    float64 rdx = ::std::get<0>(__tuple_8);
-                    float64 rdy = ::std::get<1>(__tuple_8);
-                    float64 rdz = ::std::get<2>(__tuple_8);
-                    auto __tuple_9 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
-                    float64 tdx = ::std::get<0>(__tuple_9);
-                    float64 tdy = ::std::get<1>(__tuple_9);
-                    float64 tdz = ::std::get<2>(__tuple_9);
-                    auto __tuple_10 = sky_color(rdx, rdy, rdz, tphase);
-                    float64 sr = ::std::get<0>(__tuple_10);
-                    float64 sg = ::std::get<1>(__tuple_10);
-                    float64 sb = ::std::get<2>(__tuple_10);
-                    auto __tuple_11 = sky_color(tdx, tdy, tdz, tphase + 0.8);
-                    float64 tr = ::std::get<0>(__tuple_11);
-                    float64 tg = ::std::get<1>(__tuple_11);
-                    float64 tb = ::std::get<2>(__tuple_11);
-                    float64 cosi = ::std::max<float64>(float64(-dx * nx + dy * ny + dz * nz), float64(0.0));
-                    float64 fr = schlick(cosi, 0.04);
-                    r = tr * (1.0 - fr) + sr * fr;
-                    g = tg * (1.0 - fr) + sg * fr;
-                    b = tb * (1.0 - fr) + sb * fr;
-                    
-                    lxv = lx - hx;
-                    lyv = ly - hy;
-                    lzv = lz - hz;
-                    auto __tuple_12 = normalize(lxv, lyv, lzv);
-                    ldx = ::std::get<0>(__tuple_12);
-                    ldy = ::std::get<1>(__tuple_12);
-                    ldz = ::std::get<2>(__tuple_12);
-                    ndotl = ::std::max<float64>(float64(nx * ldx + ny * ldy + nz * ldz), float64(0.0));
-                    auto __tuple_13 = normalize(ldx - dx, ldy - dy, ldz - dz);
-                    float64 hvx = ::std::get<0>(__tuple_13);
-                    float64 hvy = ::std::get<1>(__tuple_13);
-                    float64 hvz = ::std::get<2>(__tuple_13);
-                    float64 ndoth = ::std::max<float64>(float64(nx * hvx + ny * hvy + nz * hvz), float64(0.0));
-                    float64 spec = ndoth * ndoth;
-                    spec = spec * spec;
-                    spec = spec * spec;
-                    spec = spec * spec;
-                    glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
-                    r += 0.20 * ndotl + 0.80 * spec + 0.45 * glow;
-                    g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow;
-                    b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow;
-                    
-                    // Slight tint variation per sphere.
-                    if (hit_kind == 2) {
-                        r *= 0.95;
-                        g *= 1.05;
-                        b *= 1.10;
-                    } else {
-                        if (hit_kind == 3) {
-                            r *= 1.08;
-                            g *= 0.98;
-                            b *= 1.04;
-                        } else {
-                            r *= 1.02;
-                            g *= 1.10;
-                            b *= 0.95;
-                        }
-                    }
+                    cx = s2x;
+                    cy = s2y;
+                    cz = s2z;
+                    rad = 0.58;
+                }
+                hx = cam_x + best_t * dx;
+                float64 hy = cam_y + best_t * dy;
+                hz = cam_z + best_t * dz;
+                auto [nx, ny, nz] = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
+                
+                // Simple glass shading (reflection + refraction + light highlights).
+                auto [rdx, rdy, rdz] = reflect(dx, dy, dz, nx, ny, nz);
+                auto [tdx, tdy, tdz] = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
+                auto [sr, sg, sb] = sky_color(rdx, rdy, rdz, tphase);
+                auto [tr, tg, tb] = sky_color(tdx, tdy, tdz, tphase + 0.8);
+                float64 cosi = ::std::max<float64>(float64(-dx * nx + dy * ny + dz * nz), float64(0.0));
+                float64 fr = schlick(cosi, 0.04);
+                r = tr * (1.0 - fr) + sr * fr;
+                g = tg * (1.0 - fr) + sg * fr;
+                b = tb * (1.0 - fr) + sb * fr;
+                
+                lxv = lx - hx;
+                lyv = ly - hy;
+                lzv = lz - hz;
+                auto __tuple_12 = normalize(lxv, lyv, lzv);
+                ldx = ::std::get<0>(__tuple_12);
+                ldy = ::std::get<1>(__tuple_12);
+                ldz = ::std::get<2>(__tuple_12);
+                ndotl = ::std::max<float64>(float64(nx * ldx + ny * ldy + nz * ldz), float64(0.0));
+                auto [hvx, hvy, hvz] = normalize(ldx - dx, ldy - dy, ldz - dz);
+                float64 ndoth = ::std::max<float64>(float64(nx * hvx + ny * hvy + nz * hvz), float64(0.0));
+                float64 spec = ndoth * ndoth;
+                spec = spec * spec;
+                spec = spec * spec;
+                spec = spec * spec;
+                glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                r += 0.20 * ndotl + 0.80 * spec + 0.45 * glow;
+                g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow;
+                b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow;
+                
+                // Slight tint variation per sphere.
+                if (hit_kind == 2) {
+                    r *= 0.95;
+                    g *= 1.05;
+                    b *= 1.10;
+                } else if (hit_kind == 3) {
+                    r *= 1.08;
+                    g *= 0.98;
+                    b *= 1.04;
+                } else {
+                    r *= 1.02;
+                    g *= 1.10;
+                    b *= 0.95;
                 }
             }
             // Slightly stronger tone mapping.
@@ -337,7 +301,7 @@ bytes render_frame(int64 width, int64 height, int64 frame_id, int64 frames_n) {
             frame[row_base + px] = quantize_332(r, g, b);
         }
     }
-    return bytes(frame);
+    return frame;
 }
 
 void run_16_glass_sculpture_chaos() {
@@ -348,6 +312,7 @@ void run_16_glass_sculpture_chaos() {
     
     float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = list<bytes>{};
+    frames.reserve((frames_n <= 0) ? 0 : frames_n);
     for (int64 i = 0; i < frames_n; ++i) {
         frames.append(render_frame(width, height, i, frames_n));
     }

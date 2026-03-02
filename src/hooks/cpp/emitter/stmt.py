@@ -323,6 +323,64 @@ class CppStatementEmitter:
         self.emit(f"auto {plan['idx_tmp']} = {plan['idx_expr']};")
         return plan["rewritten_expr"]
 
+    def _assign_struct_bind_unpack_hint(self, stmt: dict[str, Any]) -> dict[str, Any] | None:
+        """EAST3 optimizer が付与した tuple unpack 構造化束縛ヒントを取得する。"""
+        hint_any = stmt.get("cpp_struct_bind_unpack_v1")
+        hint = hint_any if isinstance(hint_any, dict) else None
+        if hint is None:
+            return None
+        version = self.any_dict_get_str(hint, "version", "")
+        if version != "1":
+            return None
+        return hint
+
+    def _resolve_assign_struct_bind_targets(
+        self,
+        stmt: dict[str, Any],
+        lhs_elems: list[Any],
+        tuple_elem_types: list[str],
+        rhs_is_tuple: bool,
+        value_is_optional_tuple: bool,
+    ) -> dict[str, list[str]] | None:
+        """構造化束縛へ縮退できる tuple unpack の束縛情報を返す（不可時は None）。"""
+        if not rhs_is_tuple or value_is_optional_tuple:
+            return None
+        hint = self._assign_struct_bind_unpack_hint(stmt)
+        if hint is None:
+            return None
+        names_obj = hint.get("names")
+        types_obj = hint.get("types")
+        hint_names = self.any_to_str_list(names_obj)
+        hint_types = self.any_to_str_list(types_obj)
+        if len(hint_names) == 0 or len(hint_names) != len(lhs_elems) or len(hint_types) != len(lhs_elems):
+            return None
+        if len(set(hint_names)) != len(hint_names):
+            return None
+        if len(tuple_elem_types) != len(hint_types):
+            return None
+        rendered_names: list[str] = []
+        for i, elt in enumerate(lhs_elems):
+            elt_node = self.any_to_dict_or_empty(elt)
+            if self._node_kind_from_dict(elt_node) != "Name":
+                return None
+            raw_name = self.any_dict_get_str(elt_node, "id", "")
+            if raw_name == "" or raw_name != hint_names[i]:
+                return None
+            if self.is_declared_for_name_binding(raw_name):
+                return None
+            hint_t = self.normalize_type_name(hint_types[i])
+            tuple_t = self.normalize_type_name(tuple_elem_types[i])
+            if hint_t in {"", "unknown", "Any", "object"} or tuple_t in {"", "unknown", "Any", "object"}:
+                return None
+            if hint_t != tuple_t:
+                return None
+            rendered_names.append(self.render_expr(elt))
+        return {
+            "raw_names": hint_names,
+            "rendered_names": rendered_names,
+            "types": hint_types,
+        }
+
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
         target = self.primary_assign_target(stmt)
@@ -409,6 +467,20 @@ class CppStatementEmitter:
                         if ret_t.startswith("tuple[") and ret_t.endswith("]"):
                             rhs_is_tuple = True
                             tuple_elem_types = self.split_generic(ret_t[6:-1])
+            struct_bind_targets = self._resolve_assign_struct_bind_targets(
+                stmt,
+                lhs_elems,
+                tuple_elem_types,
+                rhs_is_tuple,
+                value_is_optional_tuple,
+            )
+            if struct_bind_targets is not None:
+                bind_targets = ", ".join(struct_bind_targets["rendered_names"])
+                self.emit(f"auto [{bind_targets}] = {value_expr};")
+                for i, raw_name in enumerate(struct_bind_targets["raw_names"]):
+                    self.declare_in_current_scope(raw_name)
+                    self.declared_var_types[raw_name] = self.normalize_type_name(struct_bind_targets["types"][i])
+                return
             if value_is_optional_tuple:
                 self.emit(f"auto {tmp} = *({value_expr});")
             else:

@@ -43,13 +43,20 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、EAST3 で安全条件マーカーを付与し、CppEmitter で構造化束縛へ縮退する P0 を起票。
+- 2026-03-02: `TupleTargetDirectExpansionPass` を拡張し、`Assign(Tuple)` で `resolved_type == tuple[...]` かつ要素型が `Any/object/unknown` でない場合のみ `cpp_struct_bind_unpack_v1`（`version/names/types`）を付与。`union`・型不一致・非Name要素・重複名は fail-closed でマーカー除去に統一。
+- 2026-03-02: `CppEmitter.emit_assign` にマーカー参照経路を追加し、`宣言時 unpack` かつヒント整合時だけ `auto [a, b, ...] = expr;` を出力。再代入やヒント不整合時は既存 `auto __tuple_n` + `std::get` 経路へフォールバック。
+- 2026-03-02: 検証コマンドを実施し、`sample/cpp/16` で主要 tuple unpack を構造化束縛へ縮退したことを確認。
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`（49 tests, OK）
+  - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（98 tests, OK）
+  - `python3 tools/regenerate_samples.py --langs cpp --stems 16_glass_sculpture_chaos --force`（regen=1 fail=0）
+  - `python3 tools/check_py2cpp_transpile.py`（checked=136 ok=136 fail=0 skipped=6）
 
 ## 分解
 
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S1-01] 適用条件（宣言時 unpack / tuple 要素確定 / 非Any-object）を仕様化する。
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S1-02] EAST3 マーカースキーマ（例: `cpp_struct_bind_unpack_v1`）と fail-closed 条件を定義する。
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-01] EAST3 optimizer pass で対象 `Assign(TupleTarget)` へマーカーを付与する。
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-02] CppEmitter tuple assign 分岐をマーカー参照型に切替え、構造化束縛出力を実装する。
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-03] マーカー不在/不整合時の fallback を固定し、現行 `std::get` 経路を維持する。
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S3-01] unit テストを追加して構造化束縛適用/非適用境界を回帰固定する。
-- [ ] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S3-02] `sample/cpp/16` 再生成と transpile チェックで非退行を確認する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S1-01] 適用条件（宣言時 unpack / tuple 要素確定 / 非Any-object）を仕様化する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S1-02] EAST3 マーカースキーマ（例: `cpp_struct_bind_unpack_v1`）と fail-closed 条件を定義する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-01] EAST3 optimizer pass で対象 `Assign(Tuple)` へマーカーを付与する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-02] CppEmitter tuple assign 分岐をマーカー参照型に切替え、構造化束縛出力を実装する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S2-03] マーカー不在/不整合時の fallback を固定し、現行 `std::get` 経路を維持する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S3-01] unit テストを追加して構造化束縛適用/非適用境界を回帰固定する。
+- [x] [ID: P0-EAST3-CPP-STRUCT-BIND-UNPACK-01-S3-02] `sample/cpp/16` 再生成と transpile チェックで非退行を確認する。
