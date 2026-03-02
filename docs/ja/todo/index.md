@@ -67,6 +67,8 @@
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppLower` / `CppIrOptimizer` を新設し、`emit_cpp_from_east` を `lower -> optimizer -> emitter` へ配線。`test_cpp_optimizer*` と `check_py2cpp_transpile`（136/136, skip6）を通過。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppBraceOmitHintPass` を追加して `If/ForCore` の brace 省略判定を optimizer 側へ移し、emitter は `cpp_omit_braces_v1` ヒント優先で描画するように更新。
 - 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `sample/cpp` の `01/08/18` を再生成し、`runtime_parity_check`（target=cpp）で 3/3 pass を確認した。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppForIterModeHintPass` で legacy `For` の iter_mode 決定を optimizer へ移し、`cpp_iter_mode_v1` を emitter 側で優先利用するように更新。
+- 進捗メモ: [ID: P0-CPP-LOWER-PIPELINE-01] `CppCastCallNormalizePass` を追加し、`py_to_*` 入れ子と `static_cast` 重複の式正規化を optimizer 側へ移設した。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
