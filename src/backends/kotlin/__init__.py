@@ -1,2 +1,1 @@
-"""Kotlin backend hooks package."""
-
+"""Kotlin backend package."""

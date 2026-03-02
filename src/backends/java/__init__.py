@@ -1,2 +1,1 @@
-"""Java backend hooks package."""
-
+"""Java backend package."""

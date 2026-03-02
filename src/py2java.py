@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.java.emitter import load_java_profile, transpile_to_java, transpile_to_java_native
+from backends.java.lower import lower_east3_to_java_ir
+from backends.java.optimizer import optimize_java_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -145,9 +147,11 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    java_ir = lower_east3_to_java_ir(east)
+    java_ir = optimize_java_ir(java_ir)
     class_name = _java_class_name_from_path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    java_src = transpile_to_java_native(east, class_name=class_name)
+    java_src = transpile_to_java_native(java_ir, class_name=class_name)
     output_path.write_text(java_src, encoding="utf-8")
     _copy_java_runtime(output_path)
     return 0

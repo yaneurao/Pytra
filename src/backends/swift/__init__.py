@@ -1,2 +1,1 @@
-"""Swift backend hooks package."""
-
+"""Swift backend package."""

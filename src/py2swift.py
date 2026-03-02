@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.swift.emitter import load_swift_profile, transpile_to_swift, transpile_to_swift_native
+from backends.swift.lower import lower_east3_to_swift_ir
+from backends.swift.optimizer import optimize_swift_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,8 +125,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    swift_ir = lower_east3_to_swift_ir(east)
+    swift_ir = optimize_swift_ir(swift_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    swift_src = transpile_to_swift_native(east)
+    swift_src = transpile_to_swift_native(swift_ir)
     output_path.write_text(swift_src, encoding="utf-8")
     _copy_swift_runtime(output_path)
     return 0

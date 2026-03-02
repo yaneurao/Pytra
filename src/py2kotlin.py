@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.kotlin.emitter import load_kotlin_profile, transpile_to_kotlin, transpile_to_kotlin_native
+from backends.kotlin.lower import lower_east3_to_kotlin_ir
+from backends.kotlin.optimizer import optimize_kotlin_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,8 +125,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    kotlin_ir = lower_east3_to_kotlin_ir(east)
+    kotlin_ir = optimize_kotlin_ir(kotlin_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    kotlin_src = transpile_to_kotlin_native(east)
+    kotlin_src = transpile_to_kotlin_native(kotlin_ir)
     output_path.write_text(kotlin_src, encoding="utf-8")
     _copy_kotlin_runtime(output_path)
     return 0

@@ -6,6 +6,8 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.go.emitter import load_go_profile, transpile_to_go, transpile_to_go_native
+from backends.go.lower import lower_east3_to_go_ir
+from backends.go.optimizer import optimize_go_ir
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -123,8 +125,10 @@ def main() -> int:
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
     )
+    go_ir = lower_east3_to_go_ir(east)
+    go_ir = optimize_go_ir(go_ir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    go_src = transpile_to_go_native(east)
+    go_src = transpile_to_go_native(go_ir)
     output_path.write_text(go_src, encoding="utf-8")
     _copy_go_runtime(output_path)
     return 0

@@ -1,2 +1,1 @@
-"""Go backend hooks package."""
-
+"""Go backend package."""

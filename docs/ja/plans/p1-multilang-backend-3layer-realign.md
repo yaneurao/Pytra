@@ -67,7 +67,7 @@
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave 1（`scala`）で `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave 1の回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
 - [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2（`js/ts/cs`）へ同テンプレートを展開する。
-- [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3（`go/java/kotlin/swift`）へ同テンプレートを展開する。
+- [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3（`go/java/kotlin/swift`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave 4（`ruby/lua/php`）へ同テンプレートを展開する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
 - [ ] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec` / `docs/en/spec` を更新し、3層を backend 標準構成として明文化する。
@@ -153,3 +153,5 @@ import 規約:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] `src/runtime/scala/pytra/py_runtime.scala` の `bytearray/bytes` を `ArrayBuffer[Long]` 返却へ是正し、`scala_native_emitter` に正規化条件式の識別子検証フォールバックを追加。`check_py2scala_transpile`（141/141）、`check_py2rs_transpile`（131/131, skipped=10）、`runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout`（18/18）で通過。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `backends/{js,ts,cs}/lower`・`optimizer` を追加し、`py2{js,ts,cs}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{js,ts,cs}_transpile` は各 `checked=133 ok=133 fail=0 skipped=8` で通過。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2 sample parity（`runtime_parity_check --case-root sample --targets js,ts,cs --ignore-unstable-stdout`）は `cases=18 pass=14 fail=4`、`artifact_size_mismatch=8`（`js/ts` の `01-04`）を確認。3層配線変更に起因する transpile 崩れはなく、artifact差は既知課題として次 wave へ持ち越す。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] `backends/{go,java,kotlin,swift}/lower`・`optimizer` を追加し、`py2{go,java,kotlin,swift}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{go,java,kotlin,swift}_transpile` は各 `checked=131 ok=131 fail=0 skipped=10` で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave3 sample parity（`runtime_parity_check --case-root sample --targets go,java,kotlin,swift --ignore-unstable-stdout`）は `cases=18 pass=1 fail=17`（`go: run_failed=11`, `java: run_failed=5 + artifact_missing=12`, `swift: toolchain_missing=18`, `kotlin: failureなし`）。3層配線変更の回帰は transpile check で非退行を確認し、実行系差分は wave別課題として継続管理。
