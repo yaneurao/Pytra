@@ -208,8 +208,8 @@
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
-- [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様に運用ルール（参照管理境界と rollback 手段）を追記する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様に運用ルール（参照管理境界と rollback 手段）を追記する。
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、C++ で採用済みの container 参照管理方針を non-C++ backend にも展開する計画を P3 として新規作成した。
@@ -227,3 +227,5 @@
 - 2026-03-02: S4-01-S4-01 として Swift emitter に `ref_vars` 追跡と `AnnAssign/Assign` の container 材料化（`Array(__pytra_as_list(...))` / `Dictionary(uniqueKeysWithValues: __pytra_as_dict(...).map { ... })`）を導入。`test_py2swift_smoke` / `check_py2swift_transpile` は通過し、sample parity(case18) は toolchain_missing skip で run_failed なし。
 - 2026-03-02: S4-01-S5-01 として Ruby emitter に `ref_vars` + `decl_type` ベースの container 材料化（`__pytra_as_list(...).dup` / `__pytra_as_dict(...).dup`）を導入し、`dict.get` を `Hash#fetch` lower に更新。`test_py2rb_smoke` は通過、`sample/18` parity(ruby) は既存の `single_char_token_tags` 初期化欠落起因 run_failed を S4-02 blocker として分離。
 - 2026-03-02: S4-01-S6-01 として Lua emitter に関数スコープ `ref_vars/type_map` を導入し、`AnnAssign/Assign(Name)` で ref境界コンテナを shallow copy（list: index走査, dict: `pairs` 走査）へ材料化。追加回帰は通過し、`check_py2lua_transpile` + sample/18 parity(lua) は通過（`test_py2lua_smoke` 全体の既存期待差分は S4-02 で切り分け）。
+- 2026-03-02: S4-02 を実施し、`check_py2{cs/js/ts/go/swift/rb/lua}_transpile` と sample parity(case18) を横断確認。`go` は `TokenLike` field compile error、`ruby` は tokenize run_failed、`swift` は toolchain_missing skip、`cs/rb/js/ts` transpile は既知 fixture/contract 失敗を blocker として分離記録した。
+- 2026-03-02: S5-01 として `docs/ja/how-to-use.md` に non-C++ backend の参照管理境界運用（確認コマンド/rollback）を追記し、`spec-gsk-native-backend.md` / `spec-ruby-native-backend.md` / `spec-lua-native-backend.md` へ同一 v1 契約を反映した。

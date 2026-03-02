@@ -59,3 +59,14 @@ Ruby 生成コードの runtime 境界は、原則として次に限定する。
 - `py2rb.py` が EAST3 から `.rb` を生成できる。
 - 最小 fixture（`add` / `if_else` / `for_range`）で変換失敗しない。
 - `test/unit/test_py2rb_smoke.py` で CLI と emitter 骨格の回帰を固定する。
+
+## 7. コンテナ参照管理境界（v1）
+
+- `object/Any/unknown` 境界へ流れるコンテナは参照境界（ref-boundary）として扱う。
+- 型既知かつ局所 non-escape の `AnnAssign/Assign(Name)` は shallow copy 材料化を許可する。
+  - list/tuple/bytes/bytearray: `__pytra_as_list(...).dup`
+  - dict: `__pytra_as_dict(...).dup`
+- 判定不能時は fail-closed で ref-boundary 側へ倒す。
+- rollback:
+  - 問題箇所は入力 Python 側で `Any/object` 注釈へ寄せるか、明示コピー（`list(...)` / `dict(...)`）へ切り替える。
+  - 回帰確認は `python3 tools/check_py2rb_transpile.py` と `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --ignore-unstable-stdout 18_mini_language_interpreter` を併用する。

@@ -76,3 +76,16 @@ native 生成物は次の runtime 境界のみを利用する。
 - 生成経路は native のみとし、`.js` sidecar / JS runtime shim を一切生成しない。
 - CI の既定回帰・sample 再生成・parity 検証は native 経路のみを監視対象とする。
 - 既定経路で unsupported を検出した場合は fail-closed で停止する（sidecar への自動/手動退避は不可）。
+
+## 8. コンテナ参照管理境界（v1）
+
+- 共通語彙:
+  - `container_ref_boundary`: `Any/object/unknown/union(any含む)` へ流入する経路。
+  - `typed_non_escape_value_path`: 型既知で局所 non-escape な経路。
+- 運用規則:
+  - `container_ref_boundary` は参照として扱い、不要な暗黙コピーを避ける。
+  - `typed_non_escape_value_path` は shallow copy 材料化を許可する（alias 分離を優先）。
+  - 判定不能時は fail-closed で `container_ref_boundary` へ倒す。
+- rollback:
+  - 生成差分で問題が出た箇所は、入力側の型注釈を `Any/object` に寄せて ref-boundary を強制する。
+  - 検証は `check_py2{go,swift,kotlin}_transpile.py` と `runtime_parity_check.py` を併用する。

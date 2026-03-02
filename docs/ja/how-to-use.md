@@ -76,6 +76,26 @@ Windows では次の読み替えを行ってください。
 - 代表値は 2 回の**算術平均（average）**を使います（中央値は使いません）。
 - コンパイル時間は計測値に含めません。
 
+## non-C++ backend のコンテナ参照管理運用（v1）
+
+- 対象 backend: `cs/js/ts/go/swift/ruby/lua`（Rust/Kotlin は pilot 実装済み）。
+- 共通方針:
+  - `object/Any/unknown/union(any含む)` へ流れる境界は参照管理境界（ref-boundary）として扱う。
+  - 型既知かつ局所 non-escape の経路は値型経路（value-path）として shallow copy を挿入する。
+  - 判定不能時は fail-closed で ref-boundary 側へ倒す。
+- 生成結果確認:
+  - `python3 tools/check_py2cs_transpile.py`
+  - `python3 tools/check_py2js_transpile.py`
+  - `python3 tools/check_py2ts_transpile.py`
+  - `python3 tools/check_py2go_transpile.py`
+  - `python3 tools/check_py2swift_transpile.py`
+  - `python3 tools/check_py2rb_transpile.py`
+  - `python3 tools/check_py2lua_transpile.py`
+  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs,js,ts,go,swift,ruby,lua --ignore-unstable-stdout 18_mini_language_interpreter`
+- rollback 手段（暫定）:
+  - 値型材料化が問題になる箇所は、ローカルの型注釈を `object/Any` 側へ寄せて ref-boundary を強制する。
+  - 逆に alias 分離を明示したい場合は、入力 Python 側で `list(...)` / `dict(...)` などの明示コピーを書く。
+
 
 ## トランスパイラの使い方
 

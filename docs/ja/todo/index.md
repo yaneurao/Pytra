@@ -245,7 +245,7 @@
 
 文脈: [docs/ja/plans/p3-multilang-container-ref-model-rollout.md](../plans/p3-multilang-container-ref-model-rollout.md)
 
-1. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01] non-C++ backend に「動的境界は参照管理、型既知 non-escape は値型」の共通方針を展開する。
+1. [x] [ID: P3-MULTILANG-CONTAINER-REF-01] non-C++ backend に「動的境界は参照管理、型既知 non-escape は値型」の共通方針を展開する。
 2. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。
 3. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] 「参照管理境界」「typed/non-escape 縮退」「escape 条件」の共通用語と判定規則を仕様化する。
 4. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S2-01] EAST3 ノードメタに container ownership hint を保持・伝播する最小拡張を設計する。
@@ -260,8 +260,8 @@
 13. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift backend へ展開し、`Any` 境界と typed 値型経路を分離する。
 14. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby backend へ展開し、動的 helper 境界と局所値経路の材料化規則を追加する。
 15. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua backend へ展開し、table helper 境界と局所値経路の材料化規則を追加する。
-16. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
-17. [ ] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様へ運用ルール（参照管理境界・rollback）を追記する。
+16. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] parity/smoke を実行して non-regression を確認し、未達は blocker として分離記録する。
+17. [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `docs/ja/how-to-use.md` と backend 仕様へ運用ルール（参照管理境界・rollback）を追記する。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S1-02] backend 差分マトリクス（`rs/cs/go/java/kotlin/swift` の typed+Any fallback と `js/ts/ruby/lua` の動的helper中心）を整理し、`container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` の共通語彙と fail-closed 判定を v1 化。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S2-02] EAST3 `container_ownership_hints_v1` と `meta.container_ownership_hint_ref` の最小契約、ならびに CodeEmitter 基底 API（hint解決/境界分類/value_path 判定）を設計して責務境界を固定。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S3-02] Kotlin emitter に `ref_vars` と `AnnAssign/Assign` の `toMutableList()/toMutableMap()` 材料化を実装し、GC backend pilot を同一境界規則で導入。
@@ -273,6 +273,8 @@
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Swift emitter に `ref_vars` 追跡 + container 材料化（`Array(__pytra_as_list(...))` / `Dictionary(uniqueKeysWithValues: __pytra_as_dict(...).map { ... })`）を導入し、`test_py2swift_smoke`/`check_py2swift_transpile` を通過（sample parity は toolchain_missing skip）。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Ruby emitter に `ref_vars` + `decl_type` 材料化（`__pytra_as_list/__pytra_as_dict` + `.dup`）と `dict.get -> fetch` lower を導入し、`test_py2rb_smoke` は通過（sample/18 parity は既存 run_failed を S4-02 blocker へ分離）。
 - 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S6-01] Lua emitter に関数スコープ `ref_vars/type_map` と shallow-copy 材料化（list/dict）を追加し、追加回帰 + `check_py2lua_transpile` + sample/18 parity(lua) を通過（`test_py2lua_smoke` 全体の既存期待差分は S4-02 へ分離）。
+- 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S4-02] 横断確認で `go` parity compile error（TokenLike field）、`ruby` parity run_failed（tokenize）、`swift` toolchain_missing skip、`cs/rb/js/ts` transpile 既知失敗を blocker として分離記録。
+- 進捗メモ: [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] `how-to-use` と backend spec（GSK/Ruby/Lua）に `container_ref_boundary` / `typed_non_escape_value_path` / rollback 手順（Any注釈寄せ・明示コピー）を追記。
 
 ### P3: CodeEmitter から C# selfhost 起因修正を隔離
 
