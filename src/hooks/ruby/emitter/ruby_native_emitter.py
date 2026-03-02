@@ -1008,10 +1008,114 @@ def _append_chain_stmt_parts(stmt: Any) -> tuple[str, str] | None:
     return (_render_expr(owner_any), _render_expr(arg_node))
 
 
+def _simple_name_assign_parts(stmt: Any) -> tuple[str, str] | None:
+    if not isinstance(stmt, dict):
+        return None
+    kind = stmt.get("kind")
+    if kind == "AnnAssign":
+        target_any = stmt.get("target")
+        value_any = stmt.get("value")
+        if not isinstance(target_any, dict) or target_any.get("kind") != "Name" or value_any is None:
+            return None
+        return (_render_expr(target_any), _render_expr(value_any))
+    if kind != "Assign":
+        return None
+    targets_any = stmt.get("targets")
+    targets = targets_any if isinstance(targets_any, list) else []
+    if len(targets) == 0 and isinstance(stmt.get("target"), dict):
+        targets = [stmt.get("target")]
+    if len(targets) != 1:
+        return None
+    target_any = targets[0]
+    value_any = stmt.get("value")
+    if not isinstance(target_any, dict) or target_any.get("kind") != "Name" or value_any is None:
+        return None
+    return (_render_expr(target_any), _render_expr(value_any))
+
+
+def _collect_leading_name_assign_map(stmts: list[Any]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    i = 0
+    while i < len(stmts):
+        parts = _simple_name_assign_parts(stmts[i])
+        if parts is None:
+            break
+        out[parts[0]] = parts[1]
+        i += 1
+    return out
+
+
+def _node_uses_any_name(node: Any, names: set[str]) -> bool:
+    if isinstance(node, dict):
+        if node.get("kind") == "Name":
+            ident = _safe_ident(node.get("id"), "")
+            if ident in names:
+                return True
+        for value in node.values():
+            if _node_uses_any_name(value, names):
+                return True
+        return False
+    if isinstance(node, list):
+        i = 0
+        while i < len(node):
+            if _node_uses_any_name(node[i], names):
+                return True
+            i += 1
+    return False
+
+
+def _can_drop_preinit_before_if(stmts: list[Any], start: int, if_index: int) -> bool:
+    if if_index <= start or if_index >= len(stmts):
+        return False
+    defaults: dict[str, str] = {}
+    i = start
+    while i < if_index:
+        parts = _simple_name_assign_parts(stmts[i])
+        if parts is None:
+            return False
+        defaults[parts[0]] = parts[1]
+        i += 1
+    if len(defaults) == 0:
+        return False
+    if_stmt = stmts[if_index]
+    if not isinstance(if_stmt, dict) or if_stmt.get("kind") != "If":
+        return False
+    names = set(defaults.keys())
+    if _node_uses_any_name(if_stmt.get("test"), names):
+        return False
+    body_any = if_stmt.get("body")
+    orelse_any = if_stmt.get("orelse")
+    body = body_any if isinstance(body_any, list) else []
+    orelse = orelse_any if isinstance(orelse_any, list) else []
+    if len(body) == 0 or len(orelse) == 0:
+        return False
+    body_assign = _collect_leading_name_assign_map(body)
+    orelse_assign = _collect_leading_name_assign_map(orelse)
+    for name, default_value in defaults.items():
+        if name not in body_assign or name not in orelse_assign:
+            return False
+        if body_assign[name] != default_value:
+            return False
+    return True
+
+
 def _emit_stmt_list(stmts: list[Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     out: list[str] = []
     i = 0
     while i < len(stmts):
+        j = i
+        while j < len(stmts):
+            if not isinstance(stmts[j], dict):
+                break
+            if stmts[j].get("kind") == "If":
+                if _can_drop_preinit_before_if(stmts, i, j):
+                    i = j
+                break
+            if _simple_name_assign_parts(stmts[j]) is None:
+                break
+            j += 1
+        if i >= len(stmts):
+            break
         head = _append_chain_stmt_parts(stmts[i])
         if head is not None:
             owner = head[0]

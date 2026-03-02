@@ -27,9 +27,6 @@ def render_julia(width, height, max_iter, cx, cy)
         zx = (zx2 - zy2 + cx)
         i += 1
       end
-      r = 0
-      g = 0
-      b = 0
       if i >= max_iter
         r = 0
         g = 0
