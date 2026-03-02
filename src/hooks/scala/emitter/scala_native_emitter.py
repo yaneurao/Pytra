@@ -3028,7 +3028,6 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
         i += 1
 
     lines: list[str] = []
-    lines.append("// Auto-generated Pytra Scala 3 native source from EAST3.")
     lines.append("import scala.collection.mutable")
     lines.append("import scala.util.boundary, boundary.break")
     lines.append("import scala.math.*")

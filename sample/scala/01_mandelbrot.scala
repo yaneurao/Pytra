@@ -1,4 +1,3 @@
-// Auto-generated Pytra Scala 3 native source from EAST3.
 import scala.collection.mutable
 import scala.util.boundary, boundary.break
 import scala.math.*
