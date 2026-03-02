@@ -57,7 +57,7 @@
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
@@ -194,6 +194,23 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
   - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target php -o /tmp/py2x_php.php`
   - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target scala -o /tmp/py2x_scala.scala`
 
+## S2-02 実装（2026-03-03）
+
+- `py2x.py` に層別 option の手動抽出を追加:
+  - `--lower-option key=value`
+  - `--optimizer-option key=value`
+  - `--emitter-option key=value`
+- `backend_registry.py` に schema 解決関数 `resolve_layer_options(...)` を追加し、次を fail-fast 化:
+  - 未知 key
+  - 型不整合（`int` / `bool` 変換失敗）
+  - `choices` 外の値
+- 現時点の schema 実装:
+  - `cpp.emitter` の `negative_index_mode`, `bounds_check_mode`, `floor_div_mode`, `mod_mode`
+  - その他 backend/layer は空 schema（指定時は未知 key エラー）
+- 実行確認:
+  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option negative_index_mode=always --emitter-option bounds_check_mode=debug -o /tmp/py2x_cpp_opt.cpp`
+  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option unknown_key=1 -o /tmp/py2x_cpp_bad.cpp`（`exit=2` を確認）
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
@@ -201,3 +218,4 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様（基本形、共通オプション、層別 pass-through、互換方針、fail-fast 規約）を確定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint/default options/schema/runtime hook/compat wrapper）を定義し、S2 実装の受け入れインタフェースを固定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` と `backend_registry.py` の初版を実装し、共通 EAST3 入力処理 + target dispatch + runtime hook 実行を導入した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser と schema 検証を `py2x/backend_registry` に実装し、unknown key/invalid value を fail-fast で検出するようにした。

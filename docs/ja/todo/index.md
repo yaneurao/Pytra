@@ -84,7 +84,7 @@
 3. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 4. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 5. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
-6. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
+6. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
 7. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 8. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
 9. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
@@ -94,6 +94,7 @@
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` の共通 CLI（`--target`, 共通 optimizer option, 層別 pass-through）と互換方針、fail-fast 規約（stage2禁止・schema検証）を計画書に確定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry の必須契約（entrypoint, default options, schema, runtime hook, compat wrapper）を定義し、S2 実装インタフェースを固定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `src/py2x.py` と `src/pytra/compiler/backend_registry.py` を追加し、14 target の共通 EAST3 入力 + dispatch + runtime hook の初版を実装（`--help` と複数 target 変換を確認）。
+- 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] `--lower/--optimizer/--emitter-option key=value` の抽出と schema 検証を実装し、`cpp.emitter` で有効値反映・未知 key の fail-fast（exit=2）を確認。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 

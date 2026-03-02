@@ -90,60 +90,71 @@ def _copy_php_runtime(output_path: Path) -> None:
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
-def _emit_java(ir: dict[str, Any], output_path: Path) -> str:
+def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     class_name = output_path.stem if output_path.stem != "" else "Main"
     return transpile_to_java_native(ir, class_name=class_name)
 
 
-def _emit_cpp(ir: dict[str, Any], _output_path: Path) -> str:
-    return transpile_to_cpp(ir)
+def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
+    opts = emitter_options if isinstance(emitter_options, dict) else {}
+    negative_index_mode = str(opts.get("negative_index_mode", "const_only"))
+    bounds_check_mode = str(opts.get("bounds_check_mode", "off"))
+    floor_div_mode = str(opts.get("floor_div_mode", "native"))
+    mod_mode = str(opts.get("mod_mode", "native"))
+    return transpile_to_cpp(
+        ir,
+        negative_index_mode=negative_index_mode,
+        bounds_check_mode=bounds_check_mode,
+        floor_div_mode=floor_div_mode,
+        mod_mode=mod_mode,
+    )
 
 
-def _emit_rs(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_rs(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_rust(ir)
 
 
-def _emit_cs(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_cs(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_csharp(ir)
 
 
-def _emit_js(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_js(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_js(ir)
 
 
-def _emit_ts(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_ts(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_typescript(ir)
 
 
-def _emit_go(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_go(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_go_native(ir)
 
 
-def _emit_kotlin(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_kotlin(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_kotlin_native(ir)
 
 
-def _emit_swift(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_swift(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_swift_native(ir)
 
 
-def _emit_ruby(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_ruby(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_ruby_native(ir)
 
 
-def _emit_lua(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_lua(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_lua_native(ir)
 
 
-def _emit_scala(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_scala(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_scala_native(ir)
 
 
-def _emit_php(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_php(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_php_native(ir)
 
 
-def _emit_nim(ir: dict[str, Any], _output_path: Path) -> str:
+def _emit_nim(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
     return transpile_to_nim_native(ir)
 
 
@@ -202,6 +213,26 @@ _BACKEND_SPECS: dict[str, BackendSpec] = {
         "optimizer": _identity_ir,
         "emit": _emit_cpp,
         "runtime_hook": _runtime_none,
+        "default_options": {
+            "lower": {},
+            "optimizer": {},
+            "emitter": {
+                "negative_index_mode": "const_only",
+                "bounds_check_mode": "off",
+                "floor_div_mode": "native",
+                "mod_mode": "native",
+            },
+        },
+        "option_schema": {
+            "lower": {},
+            "optimizer": {},
+            "emitter": {
+                "negative_index_mode": {"type": "str", "choices": ["always", "const_only", "off"]},
+                "bounds_check_mode": {"type": "str", "choices": ["off", "always", "debug"]},
+                "floor_div_mode": {"type": "str", "choices": ["native", "python"]},
+                "mod_mode": {"type": "str", "choices": ["native", "python"]},
+            },
+        },
     },
     "rs": {
         "target_lang": "rs",
@@ -310,6 +341,48 @@ _BACKEND_SPECS: dict[str, BackendSpec] = {
 }
 
 
+def _normalize_backend_specs() -> None:
+    for spec in _BACKEND_SPECS.values():
+        defaults = spec.get("default_options")
+        if not isinstance(defaults, dict):
+            defaults = {}
+        default_lower = defaults.get("lower")
+        if not isinstance(default_lower, dict):
+            default_lower = {}
+        default_optimizer = defaults.get("optimizer")
+        if not isinstance(default_optimizer, dict):
+            default_optimizer = {}
+        default_emitter = defaults.get("emitter")
+        if not isinstance(default_emitter, dict):
+            default_emitter = {}
+        spec["default_options"] = {
+            "lower": dict(default_lower),
+            "optimizer": dict(default_optimizer),
+            "emitter": dict(default_emitter),
+        }
+
+        schemas = spec.get("option_schema")
+        if not isinstance(schemas, dict):
+            schemas = {}
+        schema_lower = schemas.get("lower")
+        if not isinstance(schema_lower, dict):
+            schema_lower = {}
+        schema_optimizer = schemas.get("optimizer")
+        if not isinstance(schema_optimizer, dict):
+            schema_optimizer = {}
+        schema_emitter = schemas.get("emitter")
+        if not isinstance(schema_emitter, dict):
+            schema_emitter = {}
+        spec["option_schema"] = {
+            "lower": dict(schema_lower),
+            "optimizer": dict(schema_optimizer),
+            "emitter": dict(schema_emitter),
+        }
+
+
+_normalize_backend_specs()
+
+
 def list_backend_targets() -> list[str]:
     return list(_BACKEND_SPECS.keys())
 
@@ -326,21 +399,90 @@ def default_output_path(input_path: Path, target: str) -> Path:
     return _default_output_path_for(input_path, ext)
 
 
-def lower_ir(spec: BackendSpec, east_doc: dict[str, Any]) -> dict[str, Any]:
+def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict[str, str]) -> dict[str, Any]:
+    defaults = spec.get("default_options")
+    if not isinstance(defaults, dict):
+        defaults = {}
+    merged = defaults.get(layer)
+    if not isinstance(merged, dict):
+        merged = {}
+    out: dict[str, Any] = dict(merged)
+
+    schemas = spec.get("option_schema")
+    if not isinstance(schemas, dict):
+        schemas = {}
+    schema = schemas.get(layer)
+    if not isinstance(schema, dict):
+        schema = {}
+
+    for key, raw in raw_options.items():
+        if key not in schema:
+            raise RuntimeError("unknown " + layer + " option: " + key)
+        rule = schema[key]
+        if not isinstance(rule, dict):
+            raise RuntimeError("invalid schema for option: " + key)
+        typ = str(rule.get("type", "str"))
+        value_any: Any = raw
+        if typ == "str":
+            value_any = raw
+        elif typ == "int":
+            try:
+                value_any = int(raw)
+            except Exception as ex:
+                raise RuntimeError("invalid int for option " + key + ": " + raw) from ex
+        elif typ == "bool":
+            lowered = raw.lower()
+            if lowered in {"1", "true", "yes", "on"}:
+                value_any = True
+            elif lowered in {"0", "false", "no", "off"}:
+                value_any = False
+            else:
+                raise RuntimeError("invalid bool for option " + key + ": " + raw)
+        else:
+            raise RuntimeError("unsupported option type for " + key + ": " + typ)
+
+        choices = rule.get("choices")
+        if isinstance(choices, list) and len(choices) > 0 and value_any not in choices:
+            raise RuntimeError("invalid value for option " + key + ": " + str(value_any))
+        out[key] = value_any
+    return out
+
+
+def lower_ir(spec: BackendSpec, east_doc: dict[str, Any], lower_options: dict[str, Any] | None = None) -> dict[str, Any]:
     fn = spec.get("lower", _identity_ir)
-    ir = fn(east_doc) if callable(fn) else _identity_ir(east_doc)
+    if not callable(fn):
+        return _identity_ir(east_doc)
+    try:
+        ir = fn(east_doc, lower_options if isinstance(lower_options, dict) else {})
+    except TypeError:
+        ir = fn(east_doc)
     return ir if isinstance(ir, dict) else {}
 
 
-def optimize_ir(spec: BackendSpec, ir: dict[str, Any]) -> dict[str, Any]:
+def optimize_ir(spec: BackendSpec, ir: dict[str, Any], optimizer_options: dict[str, Any] | None = None) -> dict[str, Any]:
     fn = spec.get("optimizer", _identity_ir)
-    out = fn(ir) if callable(fn) else _identity_ir(ir)
+    if not callable(fn):
+        return _identity_ir(ir)
+    try:
+        out = fn(ir, optimizer_options if isinstance(optimizer_options, dict) else {})
+    except TypeError:
+        out = fn(ir)
     return out if isinstance(out, dict) else {}
 
 
-def emit_source(spec: BackendSpec, ir: dict[str, Any], output_path: Path) -> str:
+def emit_source(
+    spec: BackendSpec,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: dict[str, Any] | None = None,
+) -> str:
     fn = spec.get("emit", _emit_cpp)
-    source = fn(ir, output_path) if callable(fn) else ""
+    if not callable(fn):
+        return ""
+    try:
+        source = fn(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
+    except TypeError:
+        source = fn(ir, output_path)
     return source if isinstance(source, str) else ""
 
 
