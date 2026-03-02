@@ -60,15 +60,15 @@ public final class Pytra_18_mini_language_interpreter {
     }
 
     public static class Parser {
-        public java.util.ArrayList<Object> tokens;
+        public java.util.ArrayList<Token> tokens;
         public long pos;
-        public java.util.ArrayList<Object> expr_nodes;
+        public java.util.ArrayList<ExprNode> expr_nodes;
 
-        public java.util.ArrayList<Object> new_expr_nodes() {
-            return new java.util.ArrayList<Object>(java.util.Arrays.asList());
+        public java.util.ArrayList<ExprNode> new_expr_nodes() {
+            return new java.util.ArrayList<ExprNode>();
         }
 
-        public Parser(java.util.ArrayList<Object> tokens) {
+        public Parser(java.util.ArrayList<Token> tokens) {
             this.tokens = tokens;
             this.pos = 0L;
             this.expr_nodes = this.new_expr_nodes();
@@ -114,8 +114,8 @@ public final class Pytra_18_mini_language_interpreter {
             return ((long)(this.expr_nodes.size())) - 1L;
         }
 
-        public java.util.ArrayList<Object> parse_program() {
-            java.util.ArrayList<Object> stmts = new java.util.ArrayList<Object>(java.util.Arrays.asList());
+        public java.util.ArrayList<StmtNode> parse_program() {
+            java.util.ArrayList<StmtNode> stmts = new java.util.ArrayList<StmtNode>();
             this.skip_newlines();
             while ((!(java.util.Objects.equals(this.peek_kind(), "EOF")))) {
                 StmtNode stmt = this.parse_stmt();
@@ -210,11 +210,11 @@ public final class Pytra_18_mini_language_interpreter {
         }
     }
 
-    public static java.util.ArrayList<Object> tokenize(java.util.ArrayList<Object> lines) {
-        java.util.HashMap<Object, Object> single_char_token_tags = new java.util.HashMap<Object, Object>();
-        java.util.ArrayList<Object> single_char_token_kinds = new java.util.ArrayList<Object>(java.util.Arrays.asList("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"));
-        java.util.ArrayList<Object> tokens = new java.util.ArrayList<Object>(java.util.Arrays.asList());
-        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(lines));
+    public static java.util.ArrayList<Token> tokenize(java.util.ArrayList<String> lines) {
+        java.util.HashMap<String, Long> single_char_token_tags = new java.util.HashMap<String, Long>();
+        java.util.ArrayList<String> single_char_token_kinds = new java.util.ArrayList<String>(java.util.Arrays.asList("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"));
+        java.util.ArrayList<Token> tokens = new java.util.ArrayList<Token>();
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(lines));
         for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
             long line_index = __iter_i_1;
             String source = String.valueOf(__iter_0.get((int)(__iter_i_1)));
@@ -266,7 +266,7 @@ public final class Pytra_18_mini_language_interpreter {
         return tokens;
     }
 
-    public static long eval_expr(long expr_index, java.util.ArrayList<Object> expr_nodes, java.util.HashMap<Object, Object> env) {
+    public static long eval_expr(long expr_index, java.util.ArrayList<ExprNode> expr_nodes, java.util.HashMap<String, Long> env) {
         ExprNode node = ((ExprNode)(expr_nodes.get((int)((((expr_index) < 0L) ? (((long)(expr_nodes.size())) + (expr_index)) : (expr_index))))));
         if ((node.kind_tag == 1L)) {
             return node.value;
@@ -304,11 +304,11 @@ public final class Pytra_18_mini_language_interpreter {
         return 0L;
     }
 
-    public static long execute(java.util.ArrayList<Object> stmts, java.util.ArrayList<Object> expr_nodes, boolean trace) {
-        java.util.HashMap<Object, Object> env = new java.util.HashMap<Object, Object>();
+    public static long execute(java.util.ArrayList<StmtNode> stmts, java.util.ArrayList<ExprNode> expr_nodes, boolean trace) {
+        java.util.HashMap<String, Long> env = new java.util.HashMap<String, Long>();
         long checksum = 0L;
         long printed = 0L;
-        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(stmts));
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(stmts));
         for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
             StmtNode stmt = ((StmtNode)(__iter_0.get((int)(__iter_i_1))));
             if ((stmt.kind_tag == 1L)) {
@@ -339,8 +339,8 @@ public final class Pytra_18_mini_language_interpreter {
         return checksum;
     }
 
-    public static java.util.ArrayList<Object> build_benchmark_source(long var_count, long loops) {
-        java.util.ArrayList<Object> lines = new java.util.ArrayList<Object>(java.util.Arrays.asList());
+    public static java.util.ArrayList<String> build_benchmark_source(long var_count, long loops) {
+        java.util.ArrayList<String> lines = new java.util.ArrayList<String>();
         long __step_0 = 1L;
         for (long i = 0L; (__step_0 >= 0L) ? (i < var_count) : (i > var_count); i += __step_0) {
             lines.add("let v" + String.valueOf(i) + " = " + String.valueOf(i + 1L));
@@ -361,25 +361,25 @@ public final class Pytra_18_mini_language_interpreter {
     }
 
     public static void run_demo() {
-        java.util.ArrayList<Object> demo_lines = new java.util.ArrayList<Object>(java.util.Arrays.asList());
+        java.util.ArrayList<String> demo_lines = new java.util.ArrayList<String>();
         demo_lines.add("let a = 10");
         demo_lines.add("let b = 3");
         demo_lines.add("a = (a + b) * 2");
         demo_lines.add("print a");
         demo_lines.add("print a / b");
-        java.util.ArrayList<Object> tokens = tokenize(demo_lines);
+        java.util.ArrayList<Token> tokens = tokenize(demo_lines);
         Parser parser = new Parser(tokens);
-        java.util.ArrayList<Object> stmts = parser.parse_program();
+        java.util.ArrayList<StmtNode> stmts = parser.parse_program();
         long checksum = execute(stmts, parser.expr_nodes, true);
         System.out.println(String.valueOf("demo_checksum:") + " " + String.valueOf(checksum));
     }
 
     public static void run_benchmark() {
-        java.util.ArrayList<Object> source_lines = build_benchmark_source(32L, 120000L);
+        java.util.ArrayList<String> source_lines = build_benchmark_source(32L, 120000L);
         double start = (System.nanoTime() / 1000000000.0);
-        java.util.ArrayList<Object> tokens = tokenize(source_lines);
+        java.util.ArrayList<Token> tokens = tokenize(source_lines);
         Parser parser = new Parser(tokens);
-        java.util.ArrayList<Object> stmts = parser.parse_program();
+        java.util.ArrayList<StmtNode> stmts = parser.parse_program();
         long checksum = execute(stmts, parser.expr_nodes, false);
         double elapsed = (System.nanoTime() / 1000000000.0) - start;
         System.out.println(String.valueOf("token_count:") + " " + String.valueOf(((long)(tokens.size()))));

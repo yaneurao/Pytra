@@ -1414,15 +1414,33 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         return lines
 
     if iter_plan_any.get("kind") == "RuntimeIterForPlan" and target_plan_any.get("kind") == "TupleTarget":
-        iter_expr = _render_expr(iter_plan_any.get("iter_expr"))
+        iter_expr_any = iter_plan_any.get("iter_expr")
+        iter_expr = _render_expr(iter_expr_any)
+        enumerate_list_expr = ""
+        is_enumerate = False
+        if isinstance(iter_expr_any, dict) and iter_expr_any.get("kind") == "Call" and _call_name(iter_expr_any) == "enumerate":
+            args_any = iter_expr_any.get("args")
+            args = args_any if isinstance(args_any, list) else []
+            if len(args) >= 1:
+                enumerate_list_expr = _render_expr(args[0])
+                is_enumerate = True
+
+        elem_any = target_plan_any.get("elements")
+        elems = elem_any if isinstance(elem_any, list) else []
+        use_enumerate_fastpath = is_enumerate and len(elems) == 2
+
         iter_tmp = _fresh_tmp(ctx, "iter")
         idx_tmp = _fresh_tmp(ctx, "i")
         item_tmp = _fresh_tmp(ctx, "it")
         tuple_tmp = _fresh_tmp(ctx, "tuple")
-        lines.append(indent + iter_tmp + " := __pytra_as_list(" + iter_expr + ")")
+        if use_enumerate_fastpath:
+            lines.append(indent + iter_tmp + " := __pytra_as_list(" + enumerate_list_expr + ")")
+        else:
+            lines.append(indent + iter_tmp + " := __pytra_as_list(" + iter_expr + ")")
         lines.append(indent + "for " + idx_tmp + " := int64(0); " + idx_tmp + " < int64(len(" + iter_tmp + ")); " + idx_tmp + " += 1 {")
-        lines.append(indent + "    " + item_tmp + " := " + iter_tmp + "[" + idx_tmp + "]")
-        lines.append(indent + "    " + tuple_tmp + " := __pytra_as_list(" + item_tmp + ")")
+        if not use_enumerate_fastpath:
+            lines.append(indent + "    " + item_tmp + " := " + iter_tmp + "[" + idx_tmp + "]")
+            lines.append(indent + "    " + tuple_tmp + " := __pytra_as_list(" + item_tmp + ")")
 
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
@@ -1442,8 +1460,6 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         parent_t = target_plan_any.get("target_type")
         if isinstance(parent_t, str):
             elem_types = _tuple_element_types(parent_t)
-        elem_any = target_plan_any.get("elements")
-        elems = elem_any if isinstance(elem_any, list) else []
 
         i = 0
         while i < len(elems):
@@ -1454,6 +1470,11 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             if name == "_":
                 name = _fresh_tmp(body_ctx, "item")
             rhs = tuple_tmp + "[" + str(i) + "]"
+            if use_enumerate_fastpath:
+                if i == 0:
+                    rhs = idx_tmp
+                else:
+                    rhs = iter_tmp + "[" + idx_tmp + "]"
             target_t_any = elem.get("target_type")
             target_t = target_t_any if isinstance(target_t_any, str) else ""
             if target_t in {"", "unknown"} and i < len(elem_types):

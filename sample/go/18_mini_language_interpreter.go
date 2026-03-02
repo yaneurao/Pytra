@@ -293,13 +293,11 @@ func tokenize(lines []any) []any {
     var single_char_token_tags map[any]any = __pytra_as_dict(map[any]any{})
     var single_char_token_kinds []any = __pytra_as_list([]any{"PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"})
     var tokens []any = __pytra_as_list([]any{})
-    __iter_0 := __pytra_as_list(__pytra_enumerate(lines))
+    __iter_0 := __pytra_as_list(lines)
     for __i_1 := int64(0); __i_1 < int64(len(__iter_0)); __i_1 += 1 {
-        __it_2 := __iter_0[__i_1]
-        __tuple_3 := __pytra_as_list(__it_2)
-        var line_index int64 = __pytra_int(__tuple_3[0])
+        var line_index int64 = __pytra_int(__i_1)
         _ = line_index
-        var source string = __pytra_str(__tuple_3[1])
+        var source string = __pytra_str(__iter_0[__i_1])
         _ = source
         var i int64 = int64(0)
         var n int64 = __pytra_len(source)

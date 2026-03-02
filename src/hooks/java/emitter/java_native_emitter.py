@@ -29,40 +29,11 @@ def _safe_ident(name: Any, fallback: str) -> str:
     return out
 
 
-def _java_type(type_name: Any, *, allow_void: bool) -> str:
-    if not isinstance(type_name, str):
-        return "Object"
-    if type_name == "None":
-        return "void" if allow_void else "Object"
-    if type_name in {"unknown", "object", "any"}:
-        return "Object"
-    if type_name in {"int", "int64"}:
-        return "long"
-    if type_name in {"float", "float64"}:
-        return "double"
-    if type_name == "bool":
-        return "boolean"
-    if type_name == "str":
-        return "String"
-    if type_name == "bytes":
-        return "java.util.ArrayList<Long>"
-    if type_name == "bytearray":
-        return "java.util.ArrayList<Long>"
-    if type_name.startswith("list["):
-        return "java.util.ArrayList<Object>"
-    if type_name.startswith("dict["):
-        return "java.util.HashMap<Object, Object>"
-    if type_name.isidentifier():
-        return _safe_ident(type_name, "Object")
-    return "Object"
-
-
-def _tuple_element_types(type_name: Any) -> list[str]:
-    if not isinstance(type_name, str):
+def _split_type_args(type_name: str, prefix: str) -> list[str]:
+    open_prefix = prefix + "["
+    if not type_name.startswith(open_prefix) or not type_name.endswith("]"):
         return []
-    if not type_name.startswith("tuple[") or not type_name.endswith("]"):
-        return []
-    body = type_name[6:-1]
+    body = type_name[len(open_prefix):-1]
     out: list[str] = []
     buf = ""
     depth = 0
@@ -92,6 +63,78 @@ def _tuple_element_types(type_name: Any) -> list[str]:
     if tail != "":
         out.append(tail)
     return out
+
+
+def _java_ref_type(type_name: Any) -> str:
+    if not isinstance(type_name, str):
+        return "Object"
+    if type_name in {"int", "int64"}:
+        return "Long"
+    if type_name in {"float", "float64"}:
+        return "Double"
+    if type_name == "bool":
+        return "Boolean"
+    if type_name == "str":
+        return "String"
+    if type_name in {"bytes", "bytearray"}:
+        return "java.util.ArrayList<Long>"
+    if type_name.startswith("list["):
+        elems = _split_type_args(type_name, "list")
+        if len(elems) == 1:
+            return "java.util.ArrayList<" + _java_ref_type(elems[0]) + ">"
+        return "java.util.ArrayList<Object>"
+    if type_name.startswith("dict["):
+        parts = _split_type_args(type_name, "dict")
+        if len(parts) == 2:
+            return "java.util.HashMap<" + _java_ref_type(parts[0]) + ", " + _java_ref_type(parts[1]) + ">"
+        return "java.util.HashMap<Object, Object>"
+    if type_name.startswith("tuple["):
+        return "java.util.ArrayList<Object>"
+    if type_name in {"unknown", "object", "any", "None"}:
+        return "Object"
+    if type_name.isidentifier():
+        return _safe_ident(type_name, "Object")
+    return "Object"
+
+
+def _java_type(type_name: Any, *, allow_void: bool) -> str:
+    if not isinstance(type_name, str):
+        return "Object"
+    if type_name == "None":
+        return "void" if allow_void else "Object"
+    if type_name in {"unknown", "object", "any"}:
+        return "Object"
+    if type_name in {"int", "int64"}:
+        return "long"
+    if type_name in {"float", "float64"}:
+        return "double"
+    if type_name == "bool":
+        return "boolean"
+    if type_name == "str":
+        return "String"
+    if type_name == "bytes":
+        return "java.util.ArrayList<Long>"
+    if type_name == "bytearray":
+        return "java.util.ArrayList<Long>"
+    if type_name.startswith("list["):
+        elems = _split_type_args(type_name, "list")
+        if len(elems) == 1:
+            return "java.util.ArrayList<" + _java_ref_type(elems[0]) + ">"
+        return "java.util.ArrayList<Object>"
+    if type_name.startswith("dict["):
+        parts = _split_type_args(type_name, "dict")
+        if len(parts) == 2:
+            return "java.util.HashMap<" + _java_ref_type(parts[0]) + ", " + _java_ref_type(parts[1]) + ">"
+        return "java.util.HashMap<Object, Object>"
+    if type_name.isidentifier():
+        return _safe_ident(type_name, "Object")
+    return "Object"
+
+
+def _tuple_element_types(type_name: Any) -> list[str]:
+    if not isinstance(type_name, str):
+        return []
+    return _split_type_args(type_name, "tuple")
 
 
 def _cast_from_object(expr: str, java_type: str) -> str:
@@ -653,15 +696,23 @@ def _render_expr(expr: Any) -> str:
     if kind == "List":
         elements_any = expr.get("elements")
         elements = elements_any if isinstance(elements_any, list) else []
+        resolved_any = expr.get("resolved_type")
+        list_type = _java_type(resolved_any, allow_void=False)
+        if not list_type.startswith("java.util.ArrayList<"):
+            list_type = "java.util.ArrayList<Object>"
+        if len(elements) == 0:
+            return "new " + list_type + "()"
         rendered: list[str] = []
         i = 0
         while i < len(elements):
             rendered.append(_render_expr(elements[i]))
             i += 1
-        return "new java.util.ArrayList<Object>(java.util.Arrays.asList(" + ", ".join(rendered) + "))"
+        return "new " + list_type + "(java.util.Arrays.asList(" + ", ".join(rendered) + "))"
     if kind == "Tuple":
         elements_any = expr.get("elements")
         elements = elements_any if isinstance(elements_any, list) else []
+        if len(elements) == 0:
+            return "new java.util.ArrayList<Object>()"
         rendered: list[str] = []
         i = 0
         while i < len(elements):
@@ -673,15 +724,22 @@ def _render_expr(expr: Any) -> str:
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
+        resolved_any = expr.get("resolved_type")
+        dict_type = _java_type(resolved_any, allow_void=False)
+        if not dict_type.startswith("java.util.HashMap<"):
+            dict_type = "java.util.HashMap<Object, Object>"
         if len(keys) == 0 or len(vals) == 0:
-            return "new java.util.HashMap<Object, Object>()"
+            return "new " + dict_type + "()"
         rendered: list[str] = []
         i = 0
         while i < len(keys) and i < len(vals):
             rendered.append(_render_expr(keys[i]))
             rendered.append(_render_expr(vals[i]))
             i += 1
-        return "PyRuntime.__pytra_dict_of(" + ", ".join(rendered) + ")"
+        base = "PyRuntime.__pytra_dict_of(" + ", ".join(rendered) + ")"
+        if dict_type != "java.util.HashMap<Object, Object>":
+            return "((" + dict_type + ")(Object)(" + base + "))"
+        return base
     if kind == "ListComp":
         return "new java.util.ArrayList<Object>()"
     if kind == "IfExp":
@@ -760,7 +818,7 @@ def _render_expr(expr: Any) -> str:
             if resolved == "str":
                 return "String.valueOf(" + base + ")"
             if resolved.startswith("list["):
-                return "((java.util.ArrayList<Object>)(" + base + "))"
+                return "((java.util.ArrayList<Object>)(Object)(" + base + "))"
             if resolved in {"bytes", "bytearray"}:
                 return "((java.util.ArrayList<Long>)(" + base + "))"
             inferred = _java_type(resolved, allow_void=False)
@@ -951,17 +1009,28 @@ def _emit_for_runtime_iter(
     iter_expr_any = iter_plan.get("iter_expr")
     list_expr = _render_expr(iter_expr_any)
     is_enumerate = False
+    enumerate_elem_ref_type = "Object"
     if isinstance(iter_expr_any, dict) and iter_expr_any.get("kind") == "Call" and _call_name(iter_expr_any) == "enumerate":
         args_any = iter_expr_any.get("args")
         args = args_any if isinstance(args_any, list) else []
         if len(args) >= 1:
             list_expr = _render_expr(args[0])
             is_enumerate = True
+            base_expr = args[0]
+            if isinstance(base_expr, dict):
+                base_resolved_any = base_expr.get("resolved_type")
+                base_resolved = base_resolved_any if isinstance(base_resolved_any, str) else ""
+                elem_parts = _split_type_args(base_resolved, "list")
+                if len(elem_parts) == 1:
+                    enumerate_elem_ref_type = _java_ref_type(elem_parts[0])
 
     iter_tmp = _fresh_tmp(ctx, "iter")
     idx_tmp = _fresh_tmp(ctx, "iter_i")
     lines: list[str] = []
-    lines.append(indent + "java.util.ArrayList<Object> " + iter_tmp + " = ((java.util.ArrayList<Object>)(" + list_expr + "));")
+    iter_list_type = "java.util.ArrayList<Object>"
+    if is_enumerate and enumerate_elem_ref_type != "Object":
+        iter_list_type = "java.util.ArrayList<" + enumerate_elem_ref_type + ">"
+    lines.append(indent + iter_list_type + " " + iter_tmp + " = ((" + iter_list_type + ")(Object)(" + list_expr + "));")
     lines.append(
         indent
         + "for (long "
@@ -978,6 +1047,7 @@ def _emit_for_runtime_iter(
         "tmp": ctx.get("tmp", 0),
         "declared": set(_declared_set(ctx)),
         "types": dict(_type_map(ctx)),
+        "return_type": ctx.get("return_type", ""),
     }
     body_declared = _declared_set(body_ctx)
     body_types = _type_map(body_ctx)
@@ -1015,7 +1085,10 @@ def _emit_for_runtime_iter(
                     else:
                         rhs = _cast_from_object("Long.valueOf(" + idx_tmp + ")", elem_type)
                 else:
-                    rhs = _cast_from_object(iter_tmp + ".get((int)(" + idx_tmp + "))", elem_type)
+                    if elem_type == enumerate_elem_ref_type and enumerate_elem_ref_type != "Object":
+                        rhs = iter_tmp + ".get((int)(" + idx_tmp + "))"
+                    else:
+                        rhs = _cast_from_object(iter_tmp + ".get((int)(" + idx_tmp + "))", elem_type)
                 lines.append(indent + "    " + elem_type + " " + name + " = " + rhs + ";")
                 body_declared.add(name)
                 if elem_type != "Object":
@@ -1026,7 +1099,7 @@ def _emit_for_runtime_iter(
                 indent
                 + "    java.util.ArrayList<Object> "
                 + tuple_item_tmp
-                + " = ((java.util.ArrayList<Object>)("
+                + " = ((java.util.ArrayList<Object>)(Object)("
                 + iter_tmp
                 + ".get((int)("
                 + idx_tmp
@@ -1114,6 +1187,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         "tmp": ctx.get("tmp", 0),
         "declared": set(_declared_set(ctx)),
         "types": dict(_type_map(ctx)),
+        "return_type": ctx.get("return_type", ""),
     }
     i = 0
     while i < len(body):
@@ -1150,7 +1224,7 @@ def _try_emit_tuple_assign(
         i += 1
     tuple_tmp = _fresh_tmp(ctx, "tuple")
     tuple_expr = _render_expr(value_any)
-    lines: list[str] = [indent + "java.util.ArrayList<Object> " + tuple_tmp + " = ((java.util.ArrayList<Object>)(" + tuple_expr + "));"]
+    lines: list[str] = [indent + "java.util.ArrayList<Object> " + tuple_tmp + " = ((java.util.ArrayList<Object>)(Object)(" + tuple_expr + "));"]
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
     tuple_types = _tuple_element_types(decl_type_any)
@@ -1230,7 +1304,16 @@ def _try_emit_listcomp_assign(
     step = _render_expr(iter_any.get("step"))
     step_var = _fresh_tmp(ctx, "step")
     elt_expr = _render_expr(value_any.get("elt"))
-    lines: list[str] = [indent + decl_prefix + lhs + " = new java.util.ArrayList<Object>();"]
+    ctor_type = "java.util.ArrayList<Object>"
+    decl_type = decl_prefix.strip()
+    if decl_type.startswith("java.util.ArrayList<"):
+        ctor_type = decl_type
+    else:
+        mapped_any = _type_map(ctx).get(lhs) if isinstance(_type_map(ctx), dict) else None
+        mapped = mapped_any if isinstance(mapped_any, str) else ""
+        if mapped.startswith("java.util.ArrayList<"):
+            ctor_type = mapped
+    lines: list[str] = [indent + decl_prefix + lhs + " = new " + ctor_type + "();"]
     lines.append(indent + "long " + step_var + " = " + step + ";")
     lines.append(
         indent
@@ -1259,13 +1342,62 @@ def _try_emit_listcomp_assign(
     return lines
 
 
+def _is_empty_list_expr(expr: Any) -> bool:
+    if not isinstance(expr, dict):
+        return False
+    kind = expr.get("kind")
+    if kind == "List":
+        elements_any = expr.get("elements")
+        elements = elements_any if isinstance(elements_any, list) else []
+        return len(elements) == 0
+    if kind == "Call" and _call_name(expr) == "list":
+        args_any = expr.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        return len(args) == 0
+    return False
+
+
+def _is_empty_dict_expr(expr: Any) -> bool:
+    if not isinstance(expr, dict):
+        return False
+    kind = expr.get("kind")
+    if kind == "Dict":
+        keys_any = expr.get("keys")
+        vals_any = expr.get("values")
+        keys = keys_any if isinstance(keys_any, list) else []
+        vals = vals_any if isinstance(vals_any, list) else []
+        if len(keys) == 0 or len(vals) == 0:
+            return True
+        return False
+    if kind == "Call" and _call_name(expr) == "dict":
+        args_any = expr.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        return len(args) == 0
+    return False
+
+
+def _typed_empty_ctor(expr: Any, expected_type: str) -> str | None:
+    if expected_type.startswith("java.util.ArrayList<") and _is_empty_list_expr(expr):
+        return "new " + expected_type + "()"
+    if expected_type.startswith("java.util.HashMap<") and _is_empty_dict_expr(expr):
+        return "new " + expected_type + "()"
+    return None
+
+
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         raise RuntimeError("java native emitter: unsupported statement")
     kind = stmt.get("kind")
     if kind == "Return":
         if "value" in stmt and stmt.get("value") is not None:
-            return [indent + "return " + _render_expr(stmt.get("value")) + ";"]
+            value_expr = stmt.get("value")
+            rendered = _render_expr(value_expr)
+            expected_any = ctx.get("return_type")
+            expected_type = expected_any if isinstance(expected_any, str) else ""
+            typed_ctor = _typed_empty_ctor(value_expr, expected_type)
+            if isinstance(typed_ctor, str):
+                rendered = typed_ctor
+            return [indent + "return " + rendered + ";"]
         return [indent + "return;"]
     if kind == "Expr":
         return [indent + _render_expr(stmt.get("value")) + ";"]
@@ -1314,7 +1446,11 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     declared.add(target)
                     type_map[target] = decl_type
                     return listcomp_lines
-        value = _render_expr(stmt.get("value"))
+        value_expr = stmt.get("value")
+        value = _render_expr(value_expr)
+        typed_ctor = _typed_empty_ctor(value_expr, decl_type)
+        if isinstance(typed_ctor, str):
+            value = typed_ctor
         if value == "null" and decl_type == "long":
             value = "0L"
         if value == "null" and decl_type == "double":
@@ -1393,9 +1529,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 listcomp_lines = _try_emit_listcomp_assign(lhs, stmt.get("value"), decl_prefix="", indent=indent, ctx=ctx)
                 if listcomp_lines is not None:
                     return listcomp_lines
-        value = _render_expr(stmt.get("value"))
+        value_expr = stmt.get("value")
+        value = _render_expr(value_expr)
         if stmt.get("declare"):
             if lhs in declared:
+                mapped_decl_any = type_map.get(lhs)
+                mapped_decl = mapped_decl_any if isinstance(mapped_decl_any, str) else ""
+                typed_ctor = _typed_empty_ctor(value_expr, mapped_decl)
+                if isinstance(typed_ctor, str):
+                    value = typed_ctor
                 return [indent + lhs + " = " + value + ";"]
             decl_type = _java_type(stmt.get("decl_type"), allow_void=False)
             if decl_type == "Object":
@@ -1404,6 +1546,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     decl_type = inferred
             if decl_type == "void":
                 decl_type = "Object"
+            typed_ctor = _typed_empty_ctor(value_expr, decl_type)
+            if isinstance(typed_ctor, str):
+                value = typed_ctor
             if value == "null" and decl_type == "long":
                 value = "0L"
             if value == "null" and decl_type == "double":
@@ -1415,6 +1560,11 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             declared.add(lhs)
             type_map[lhs] = decl_type
             return [indent + decl_type + " " + lhs + " = " + value + ";"]
+        mapped_decl_any = type_map.get(lhs)
+        mapped_decl = mapped_decl_any if isinstance(mapped_decl_any, str) else ""
+        typed_ctor = _typed_empty_ctor(value_expr, mapped_decl)
+        if isinstance(typed_ctor, str):
+            value = typed_ctor
         return [indent + lhs + " = " + value + ";"]
     if kind == "AugAssign":
         lhs = _target_name(stmt.get("target"))
@@ -1431,7 +1581,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lines: list[str] = [indent + "if (" + test_expr + ") {"]
         declared_parent = set(_declared_set(ctx))
         types_parent = dict(_type_map(ctx))
-        body_ctx: dict[str, Any] = {"tmp": ctx.get("tmp", 0), "declared": set(declared_parent), "types": dict(types_parent)}
+        body_ctx: dict[str, Any] = {
+            "tmp": ctx.get("tmp", 0),
+            "declared": set(declared_parent),
+            "types": dict(types_parent),
+            "return_type": ctx.get("return_type", ""),
+        }
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
@@ -1444,6 +1599,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             "tmp": body_ctx.get("tmp", ctx.get("tmp", 0)),
             "declared": set(declared_parent),
             "types": dict(types_parent),
+            "return_type": ctx.get("return_type", ""),
         }
         if len(orelse) == 0:
             ctx["tmp"] = orelse_ctx.get("tmp", ctx.get("tmp", 0))
@@ -1545,7 +1701,7 @@ def _emit_function_in_class(
         lines.append(indent + static_prefix + return_type + " " + name + "(" + ", ".join(params) + ") {")
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
+    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type}
     param_names = _function_param_names(fn, drop_self=drop_self)
     arg_types_any = fn.get("arg_types")
     arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
@@ -1599,7 +1755,11 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
                     field_type = _infer_java_type_from_expr_node(node.get("value"))
                 if field_type == "void":
                     field_type = "Object"
-                field_value = _render_expr(node.get("value"))
+                field_expr = node.get("value")
+                field_value = _render_expr(field_expr)
+                typed_ctor = _typed_empty_ctor(field_expr, field_type)
+                if isinstance(typed_ctor, str):
+                    field_value = typed_ctor
                 if field_value == "null" and field_type == "long":
                     field_value = "0L"
                 if field_value == "null" and field_type == "double":
