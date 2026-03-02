@@ -488,10 +488,10 @@ def __pytra_ifexp(cond: Boolean, a: Any, b: Any): Any = {
     if (cond) a else b
 }
 
-def __pytra_bytearray(initValue: Any): mutable.ArrayBuffer[Any] = {
+def __pytra_bytearray(initValue: Any): mutable.ArrayBuffer[Long] = {
     initValue match {
         case n: Long =>
-            val out = mutable.ArrayBuffer[Any]()
+            val out = mutable.ArrayBuffer[Long]()
             var i = 0L
             while (i < n) {
                 out.append(0L)
@@ -499,19 +499,34 @@ def __pytra_bytearray(initValue: Any): mutable.ArrayBuffer[Any] = {
             }
             out
         case n: Int =>
-            val out = mutable.ArrayBuffer[Any]()
+            val out = mutable.ArrayBuffer[Long]()
             var i = 0
             while (i < n) {
                 out.append(0L)
                 i += 1
             }
             out
-        case _ => __pytra_as_list(initValue).clone()
+        case _ =>
+            val src = __pytra_as_list(initValue)
+            val out = mutable.ArrayBuffer[Long]()
+            var i = 0
+            while (i < src.size) {
+                out.append(__pytra_int(src(i)))
+                i += 1
+            }
+            out
     }
 }
 
-def __pytra_bytes(v: Any): mutable.ArrayBuffer[Any] = {
-    __pytra_as_list(v).clone()
+def __pytra_bytes(v: Any): mutable.ArrayBuffer[Long] = {
+    val src = __pytra_as_list(v)
+    val out = mutable.ArrayBuffer[Long]()
+    var i = 0
+    while (i < src.size) {
+        out.append(__pytra_int(src(i)))
+        i += 1
+    }
+    out
 }
 
 def __pytra_list_repeat(value: Any, count: Any): mutable.ArrayBuffer[Any] = {

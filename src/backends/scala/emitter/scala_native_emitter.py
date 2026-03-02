@@ -307,6 +307,23 @@ def _strip_outer_parens(expr: str) -> str:
     return cur
 
 
+def _mentions_ident(expr: str, ident: str) -> bool:
+    if ident == "":
+        return False
+    i = 0
+    n = len(expr)
+    m = len(ident)
+    while i + m <= n:
+        if expr[i : i + m] == ident:
+            prev_ok = i == 0 or not (expr[i - 1].isalnum() or expr[i - 1] == "_")
+            j = i + m
+            next_ok = j >= n or not (expr[j].isalnum() or expr[j] == "_")
+            if prev_ok and next_ok:
+                return True
+        i += 1
+    return False
+
+
 def _is_direct_call(expr: str, fn_name: str) -> bool:
     txt = _strip_outer_parens(expr)
     prefix = fn_name + "("
@@ -1514,7 +1531,11 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
         if step_is_one:
             while_prefix = indent + "    " if loop_uses_control else indent
-            cond_text = _strip_outer_parens(normalized_cond) if normalized_cond != "" else target_name + " < " + stop
+            cond_text = target_name + " < " + stop
+            if normalized_cond != "":
+                normalized_cond_text = _strip_outer_parens(normalized_cond)
+                if _mentions_ident(normalized_cond_text, target_name):
+                    cond_text = normalized_cond_text
             lines.append(while_prefix + "while (" + _strip_outer_parens(cond_text) + ") {")
         else:
             step_prefix = indent + "    " if loop_uses_control else indent
@@ -1524,7 +1545,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             range_mode_any = iter_plan_any.get("range_mode")
             range_mode = range_mode_any if isinstance(range_mode_any, str) else ""
             if normalized_cond != "" and range_mode in {"ascending", "descending"}:
-                cond_text = normalized_cond
+                normalized_cond_text = _strip_outer_parens(normalized_cond)
+                if _mentions_ident(normalized_cond_text, target_name):
+                    cond_text = normalized_cond_text
             if cond_text == "":
                 cond_text = (
                     "("
