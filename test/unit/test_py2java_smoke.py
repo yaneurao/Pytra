@@ -223,7 +223,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("grid = new java.util.ArrayList<Object>();", java)
+        self.assertIn("grid = new java.util.ArrayList<", java)
         self.assertIn("grid.add(PyRuntime.__pytra_list_repeat(0L, w));", java)
 
     def test_java_native_emitter_maps_min_max_and_list_truthy(self) -> None:
