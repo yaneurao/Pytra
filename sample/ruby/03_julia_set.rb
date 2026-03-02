@@ -9,20 +9,18 @@ def render_julia(width, height, max_iter, cx, cy)
   __hoisted_cast_1 = __pytra_float((height - 1))
   __hoisted_cast_2 = __pytra_float((width - 1))
   __hoisted_cast_3 = __pytra_float(max_iter)
-  __step_0 = __pytra_int(1)
-  y = __pytra_int(0)
-  while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
+  y = 0
+  while y < height
     zy0 = ((-1.2) + (2.4 * __pytra_div(y, __hoisted_cast_1)))
-    __step_1 = __pytra_int(1)
-    x = __pytra_int(0)
-    while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
+    x = 0
+    while x < width
       zx = ((-1.8) + (3.6 * __pytra_div(x, __hoisted_cast_2)))
       zy = zy0
       i = 0
-      while __pytra_truthy((i < max_iter))
+      while (i < max_iter)
         zx2 = (zx * zx)
         zy2 = (zy * zy)
-        if __pytra_truthy(((zx2 + zy2) > 4.0))
+        if ((zx2 + zy2) > 4.0)
           break
         end
         zy = (((2.0 * zx) * zy) + cy)
@@ -32,7 +30,7 @@ def render_julia(width, height, max_iter, cx, cy)
       r = 0
       g = 0
       b = 0
-      if __pytra_truthy((i >= max_iter))
+      if (i >= max_iter)
         r = 0
         g = 0
         b = 0
@@ -45,9 +43,9 @@ def render_julia(width, height, max_iter, cx, cy)
       pixels.append(r)
       pixels.append(g)
       pixels.append(b)
-      x += __step_1
+      x += 1
     end
-    y += __step_0
+    y += 1
   end
   return pixels
 end

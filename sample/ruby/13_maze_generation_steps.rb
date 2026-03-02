@@ -7,28 +7,24 @@ def capture(grid, w, h, scale)
   width = (w * scale)
   height = (h * scale)
   frame = __pytra_bytearray((width * height))
-  __step_0 = __pytra_int(1)
-  y = __pytra_int(0)
-  while ((__step_0 >= 0 && y < __pytra_int(h)) || (__step_0 < 0 && y > __pytra_int(h)))
-    __step_1 = __pytra_int(1)
-    x = __pytra_int(0)
-    while ((__step_1 >= 0 && x < __pytra_int(w)) || (__step_1 < 0 && x > __pytra_int(w)))
-      v = (__pytra_truthy((__pytra_get_index(__pytra_get_index(grid, y), x) == 0)) ? 255 : 40)
-      __step_2 = __pytra_int(1)
-      yy = __pytra_int(0)
-      while ((__step_2 >= 0 && yy < __pytra_int(scale)) || (__step_2 < 0 && yy > __pytra_int(scale)))
+  y = 0
+  while y < h
+    x = 0
+    while x < w
+      v = ((__pytra_get_index(__pytra_get_index(grid, y), x) == 0) ? 255 : 40)
+      yy = 0
+      while yy < scale
         base = ((((y * scale) + yy) * width) + (x * scale))
-        __step_3 = __pytra_int(1)
-        xx = __pytra_int(0)
-        while ((__step_3 >= 0 && xx < __pytra_int(scale)) || (__step_3 < 0 && xx > __pytra_int(scale)))
+        xx = 0
+        while xx < scale
           __pytra_set_index(frame, (base + xx), v)
-          xx += __step_3
+          xx += 1
         end
-        yy += __step_2
+        yy += 1
       end
-      x += __step_1
+      x += 1
     end
-    y += __step_0
+    y += 1
   end
   return __pytra_bytes(frame)
 end
@@ -51,22 +47,21 @@ def run_13_maze_generation_steps()
     x = __tuple_0[0]
     y = __tuple_0[1]
     candidates = []
-    __step_1 = __pytra_int(1)
-    k = __pytra_int(0)
-    while ((__step_1 >= 0 && k < __pytra_int(4)) || (__step_1 < 0 && k > __pytra_int(4)))
-      __tuple_2 = __pytra_as_list(__pytra_get_index(dirs, k))
-      dx = __tuple_2[0]
-      dy = __tuple_2[1]
+    k = 0
+    while k < 4
+      __tuple_1 = __pytra_as_list(__pytra_get_index(dirs, k))
+      dx = __tuple_1[0]
+      dy = __tuple_1[1]
       nx = (x + dx)
       ny = (y + dy)
-      if __pytra_truthy((__pytra_truthy((nx >= 1)) && __pytra_truthy((nx < (cell_w - 1))) && __pytra_truthy((ny >= 1)) && __pytra_truthy((ny < (cell_h - 1))) && __pytra_truthy((__pytra_get_index(__pytra_get_index(grid, ny), nx) == 1))))
-        if __pytra_truthy((dx == 2))
+      if ((nx >= 1) && (nx < (cell_w - 1)) && (ny >= 1) && (ny < (cell_h - 1)) && (__pytra_get_index(__pytra_get_index(grid, ny), nx) == 1))
+        if (dx == 2)
           candidates.append([nx, ny, (x + 1), y])
         else
-          if __pytra_truthy((dx == (-2)))
+          if (dx == (-2))
             candidates.append([nx, ny, (x - 1), y])
           else
-            if __pytra_truthy((dy == 2))
+            if (dy == 2)
               candidates.append([nx, ny, x, (y + 1)])
             else
               candidates.append([nx, ny, x, (y - 1)])
@@ -74,22 +69,22 @@ def run_13_maze_generation_steps()
           end
         end
       end
-      k += __step_1
+      k += 1
     end
-    if __pytra_truthy((__pytra_len(candidates) == 0))
+    if (__pytra_len(candidates) == 0)
       stack.pop()
     else
       sel = __pytra_get_index(candidates, ((((x * 17) + (y * 29)) + (__pytra_len(stack) * 13)) % __pytra_len(candidates)))
-      __tuple_3 = __pytra_as_list(sel)
-      nx = __tuple_3[0]
-      ny = __tuple_3[1]
-      wx = __tuple_3[2]
-      wy = __tuple_3[3]
+      __tuple_2 = __pytra_as_list(sel)
+      nx = __tuple_2[0]
+      ny = __tuple_2[1]
+      wx = __tuple_2[2]
+      wy = __tuple_2[3]
       __pytra_set_index(__pytra_get_index(grid, wy), wx, 0)
       __pytra_set_index(__pytra_get_index(grid, ny), nx, 0)
       stack.append([nx, ny])
     end
-    if __pytra_truthy(((step % capture_every) == 0))
+    if ((step % capture_every) == 0)
       frames.append(capture(grid, cell_w, cell_h, scale))
     end
     step += 1

@@ -8,20 +8,18 @@ def run_integer_grid_checksum(width, height, seed)
   mod_main = 2147483647
   mod_out = 1000000007
   acc = (seed % mod_out)
-  __step_0 = __pytra_int(1)
-  y = __pytra_int(0)
-  while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
+  y = 0
+  while y < height
     row_sum = 0
-    __step_1 = __pytra_int(1)
-    x = __pytra_int(0)
-    while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
+    x = 0
+    while x < width
       v = ((((x * 37) + (y * 73)) + seed) % mod_main)
       v = (((v * 48271) + 1) % mod_main)
       row_sum += (v % 256)
-      x += __step_1
+      x += 1
     end
     acc = ((acc + (row_sum * (y + 1))) % mod_out)
-    y += __step_0
+    y += 1
   end
   return acc
 end

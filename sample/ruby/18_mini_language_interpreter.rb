@@ -2,35 +2,39 @@ require_relative "py_runtime"
 
 
 class Token
-  attr_accessor :kind, :text, :pos
+  attr_accessor :kind, :text, :pos, :number_value
 
-  def initialize(kind, text, pos)
+  def initialize(kind, text, pos, number_value)
     self.kind = kind
     self.text = text
     self.pos = pos
+    self.number_value = number_value
   end
 end
 
 class ExprNode
-  attr_accessor :kind, :value, :name, :op, :left, :right
+  attr_accessor :kind, :value, :name, :op, :left, :right, :kind_tag, :op_tag
 
-  def initialize(kind, value, name, op, left, right)
+  def initialize(kind, value, name, op, left, right, kind_tag, op_tag)
     self.kind = kind
     self.value = value
     self.name = name
     self.op = op
     self.left = left
     self.right = right
+    self.kind_tag = kind_tag
+    self.op_tag = op_tag
   end
 end
 
 class StmtNode
-  attr_accessor :kind, :name, :expr_index
+  attr_accessor :kind, :name, :expr_index, :kind_tag
 
-  def initialize(kind, name, expr_index)
+  def initialize(kind, name, expr_index, kind_tag)
     self.kind = kind
     self.name = name
     self.expr_index = expr_index
+    self.kind_tag = kind_tag
   end
 end
 
@@ -47,12 +51,20 @@ class Parser
     self.expr_nodes = self.new_expr_nodes()
   end
 
+  def current_token()
+    return __pytra_get_index(self.tokens, self.pos)
+  end
+
+  def previous_token()
+    return __pytra_get_index(self.tokens, (self.pos - 1))
+  end
+
   def peek_kind()
-    return __pytra_get_index(self.tokens, self.pos).kind
+    return self.current_token().kind
   end
 
   def match(kind)
-    if __pytra_truthy((self.peek_kind() == kind))
+    if (self.peek_kind() == kind)
       self.pos += 1
       return true
     end
@@ -60,17 +72,16 @@ class Parser
   end
 
   def expect(kind)
-    if __pytra_truthy((self.peek_kind() != kind))
-      t = __pytra_get_index(self.tokens, self.pos)
-      raise RuntimeError, __pytra_str(((((("parse error at pos=" + __pytra_str(t.pos)) + ", expected=") + kind) + ", got=") + t.kind))
+    token = self.current_token()
+    if (token.kind != kind)
+      raise RuntimeError, __pytra_str(((((("parse error at pos=" + __pytra_str(token.pos)) + ", expected=") + kind) + ", got=") + token.kind))
     end
-    token = __pytra_get_index(self.tokens, self.pos)
     self.pos += 1
     return token
   end
 
   def skip_newlines()
-    while __pytra_truthy(self.match("NEWLINE"))
+    while self.match("NEWLINE")
       nil
     end
   end
@@ -83,7 +94,7 @@ class Parser
   def parse_program()
     stmts = []
     self.skip_newlines()
-    while __pytra_truthy((self.peek_kind() != "EOF"))
+    while (self.peek_kind() != "EOF")
       stmt = self.parse_stmt()
       stmts.append(stmt)
       self.skip_newlines()
@@ -92,20 +103,20 @@ class Parser
   end
 
   def parse_stmt()
-    if __pytra_truthy(self.match("LET"))
+    if self.match("LET")
       let_name = self.expect("IDENT").text
       self.expect("EQUAL")
       let_expr_index = self.parse_expr()
-      return StmtNode.new("let", let_name, let_expr_index)
+      return StmtNode.new("let", let_name, let_expr_index, 1)
     end
-    if __pytra_truthy(self.match("PRINT"))
+    if self.match("PRINT")
       print_expr_index = self.parse_expr()
-      return StmtNode.new("print", "", print_expr_index)
+      return StmtNode.new("print", "", print_expr_index, 3)
     end
     assign_name = self.expect("IDENT").text
     self.expect("EQUAL")
     assign_expr_index = self.parse_expr()
-    return StmtNode.new("assign", assign_name, assign_expr_index)
+    return StmtNode.new("assign", assign_name, assign_expr_index, 2)
   end
 
   def parse_expr()
@@ -114,15 +125,15 @@ class Parser
 
   def parse_add()
     left = self.parse_mul()
-    while __pytra_truthy(true)
-      if __pytra_truthy(self.match("PLUS"))
+    while true
+      if self.match("PLUS")
         right = self.parse_mul()
-        left = self.add_expr(ExprNode.new("bin", 0, "", "+", left, right))
+        left = self.add_expr(ExprNode.new("bin", 0, "", "+", left, right, 3, 1))
         next
       end
-      if __pytra_truthy(self.match("MINUS"))
+      if self.match("MINUS")
         right = self.parse_mul()
-        left = self.add_expr(ExprNode.new("bin", 0, "", "-", left, right))
+        left = self.add_expr(ExprNode.new("bin", 0, "", "-", left, right, 3, 2))
         next
       end
       break
@@ -132,15 +143,15 @@ class Parser
 
   def parse_mul()
     left = self.parse_unary()
-    while __pytra_truthy(true)
-      if __pytra_truthy(self.match("STAR"))
+    while true
+      if self.match("STAR")
         right = self.parse_unary()
-        left = self.add_expr(ExprNode.new("bin", 0, "", "*", left, right))
+        left = self.add_expr(ExprNode.new("bin", 0, "", "*", left, right, 3, 3))
         next
       end
-      if __pytra_truthy(self.match("SLASH"))
+      if self.match("SLASH")
         right = self.parse_unary()
-        left = self.add_expr(ExprNode.new("bin", 0, "", "/", left, right))
+        left = self.add_expr(ExprNode.new("bin", 0, "", "/", left, right, 3, 4))
         next
       end
       break
@@ -149,33 +160,35 @@ class Parser
   end
 
   def parse_unary()
-    if __pytra_truthy(self.match("MINUS"))
+    if self.match("MINUS")
       child = self.parse_unary()
-      return self.add_expr(ExprNode.new("neg", 0, "", "", child, (-1)))
+      return self.add_expr(ExprNode.new("neg", 0, "", "", child, (-1), 4, 0))
     end
     return self.parse_primary()
   end
 
   def parse_primary()
-    if __pytra_truthy(self.match("NUMBER"))
-      token_num = __pytra_get_index(self.tokens, (self.pos - 1))
-      return self.add_expr(ExprNode.new("lit", __pytra_int(token_num.text), "", "", (-1), (-1)))
+    if self.match("NUMBER")
+      token_num = self.previous_token()
+      return self.add_expr(ExprNode.new("lit", token_num.number_value, "", "", (-1), (-1), 1, 0))
     end
-    if __pytra_truthy(self.match("IDENT"))
-      token_ident = __pytra_get_index(self.tokens, (self.pos - 1))
-      return self.add_expr(ExprNode.new("var", 0, token_ident.text, "", (-1), (-1)))
+    if self.match("IDENT")
+      token_ident = self.previous_token()
+      return self.add_expr(ExprNode.new("var", 0, token_ident.text, "", (-1), (-1), 2, 0))
     end
-    if __pytra_truthy(self.match("LPAREN"))
+    if self.match("LPAREN")
       expr_index = self.parse_expr()
       self.expect("RPAREN")
       return expr_index
     end
-    t = __pytra_get_index(self.tokens, self.pos)
+    t = self.current_token()
     raise RuntimeError, __pytra_str(((("primary parse error at pos=" + __pytra_str(t.pos)) + " got=") + t.kind))
   end
 end
 
 def tokenize(lines)
+  single_char_token_tags = {}
+  single_char_token_kinds = ["PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"]
   tokens = []
   __iter_0 = __pytra_as_list(__pytra_enumerate(lines))
   for __it_1 in __iter_0
@@ -184,112 +197,83 @@ def tokenize(lines)
     source = __tuple_2[1]
     i = 0
     n = __pytra_len(source)
-    while __pytra_truthy((i < n))
+    while (i < n)
       ch = __pytra_get_index(source, i)
-      if __pytra_truthy((ch == " "))
+      if (ch == " ")
         i += 1
         next
       end
-      if __pytra_truthy((ch == "+"))
-        tokens.append(Token.new("PLUS", ch, i))
-        i += 1
-        next
-      end
-      if __pytra_truthy((ch == "-"))
-        tokens.append(Token.new("MINUS", ch, i))
-        i += 1
-        next
-      end
-      if __pytra_truthy((ch == "*"))
-        tokens.append(Token.new("STAR", ch, i))
-        i += 1
-        next
-      end
-      if __pytra_truthy((ch == "/"))
-        tokens.append(Token.new("SLASH", ch, i))
-        i += 1
-        next
-      end
-      if __pytra_truthy((ch == "("))
-        tokens.append(Token.new("LPAREN", ch, i))
-        i += 1
-        next
-      end
-      if __pytra_truthy((ch == ")"))
-        tokens.append(Token.new("RPAREN", ch, i))
-        i += 1
-        next
-      end
-      if __pytra_truthy((ch == "="))
-        tokens.append(Token.new("EQUAL", ch, i))
+      single_tag = single_char_token_tags.get(ch, 0)
+      if (single_tag > 0)
+        tokens.append(Token.new(__pytra_get_index(single_char_token_kinds, (single_tag - 1)), ch, i, 0))
         i += 1
         next
       end
       if __pytra_truthy(__pytra_isdigit(ch))
         start = i
-        while __pytra_truthy((__pytra_truthy((i < n)) && __pytra_truthy(__pytra_isdigit(__pytra_get_index(source, i)))))
+        while ((i < n) && __pytra_truthy(__pytra_isdigit(__pytra_get_index(source, i))))
           i += 1
         end
         text = __pytra_slice(source, start, i)
-        tokens.append(Token.new("NUMBER", text, start))
+        tokens.append(Token.new("NUMBER", text, start, __pytra_int(text)))
         next
       end
-      if __pytra_truthy((__pytra_truthy(__pytra_isalpha(ch)) || __pytra_truthy((ch == "_"))))
+      if (__pytra_truthy(__pytra_isalpha(ch)) || (ch == "_"))
         start = i
-        while __pytra_truthy((__pytra_truthy((i < n)) && __pytra_truthy((__pytra_truthy((__pytra_truthy(__pytra_isalpha(__pytra_get_index(source, i))) || __pytra_truthy((__pytra_get_index(source, i) == "_")))) || __pytra_truthy(__pytra_isdigit(__pytra_get_index(source, i)))))))
+        while ((i < n) && ((__pytra_truthy(__pytra_isalpha(__pytra_get_index(source, i))) || (__pytra_get_index(source, i) == "_")) || __pytra_truthy(__pytra_isdigit(__pytra_get_index(source, i)))))
           i += 1
         end
         text = __pytra_slice(source, start, i)
-        if __pytra_truthy((text == "let"))
-          tokens.append(Token.new("LET", text, start))
+        if (text == "let")
+          tokens.append(Token.new("LET", text, start, 0))
         else
-          if __pytra_truthy((text == "print"))
-            tokens.append(Token.new("PRINT", text, start))
+          if (text == "print")
+            tokens.append(Token.new("PRINT", text, start, 0))
           else
-            tokens.append(Token.new("IDENT", text, start))
+            tokens.append(Token.new("IDENT", text, start, 0))
           end
         end
         next
       end
       raise RuntimeError, __pytra_str(((((("tokenize error at line=" + __pytra_str(line_index)) + " pos=") + __pytra_str(i)) + " ch=") + ch))
     end
-    tokens.append(Token.new("NEWLINE", "", n))
+    tokens.append(Token.new("NEWLINE", "", n, 0))
   end
-  tokens.append(Token.new("EOF", "", __pytra_len(lines)))
+  tokens.append(Token.new("EOF", "", __pytra_len(lines), 0))
   return tokens
 end
 
 def eval_expr(expr_index, expr_nodes, env)
   node = __pytra_get_index(expr_nodes, expr_index)
-  if __pytra_truthy((node.kind == "lit"))
+  if (node.kind_tag == 1)
     return node.value
   end
-  if __pytra_truthy((node.kind == "var"))
-    if __pytra_truthy((!__pytra_truthy(__pytra_contains(env, node.name))))
+  if (node.kind_tag == 2)
+    if (!__pytra_contains(env, node.name))
       raise RuntimeError, __pytra_str(("undefined variable: " + node.name))
     end
     return __pytra_get_index(env, node.name)
   end
-  if __pytra_truthy((node.kind == "neg"))
+  if (node.kind_tag == 4)
     return (-eval_expr(node.left, expr_nodes, env))
   end
-  if __pytra_truthy((node.kind == "bin"))
+  if (node.kind_tag == 3)
     lhs = eval_expr(node.left, expr_nodes, env)
     rhs = eval_expr(node.right, expr_nodes, env)
-    if __pytra_truthy((node.op == "+"))
+    if (node.op_tag == 1)
       return (lhs + rhs)
     end
-    if __pytra_truthy((node.op == "-"))
+    if (node.op_tag == 2)
       return (lhs - rhs)
     end
-    if __pytra_truthy((node.op == "*"))
+    if (node.op_tag == 3)
       return (lhs * rhs)
     end
-    if __pytra_truthy((node.op == "/"))
-      if __pytra_truthy((rhs == 0))
+    if (node.op_tag == 4)
+      if (rhs == 0)
         raise RuntimeError, __pytra_str("division by zero")
       end
-      return (__pytra_int(lhs) / __pytra_int(rhs))
+      return (lhs / rhs)
     end
     raise RuntimeError, __pytra_str(("unknown operator: " + node.op))
   end
@@ -301,29 +285,29 @@ def execute(stmts, expr_nodes, trace)
   checksum = 0
   printed = 0
   for stmt in __pytra_as_list(stmts)
-    if __pytra_truthy((stmt.kind == "let"))
+    if (stmt.kind_tag == 1)
       __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
       next
     end
-    if __pytra_truthy((stmt.kind == "assign"))
-      if __pytra_truthy((!__pytra_truthy(__pytra_contains(env, stmt.name))))
+    if (stmt.kind_tag == 2)
+      if (!__pytra_contains(env, stmt.name))
         raise RuntimeError, __pytra_str(("assign to undefined variable: " + stmt.name))
       end
       __pytra_set_index(env, stmt.name, eval_expr(stmt.expr_index, expr_nodes, env))
       next
     end
     value = eval_expr(stmt.expr_index, expr_nodes, env)
-    if __pytra_truthy(trace)
+    if trace
       __pytra_print(value)
     end
     norm = (value % 1000000007)
-    if __pytra_truthy((norm < 0))
+    if (norm < 0)
       norm += 1000000007
     end
     checksum = (((checksum * 131) + norm) % 1000000007)
     printed += 1
   end
-  if __pytra_truthy(trace)
+  if trace
     __pytra_print("printed:", printed)
   end
   return checksum
@@ -331,24 +315,22 @@ end
 
 def build_benchmark_source(var_count, loops)
   lines = []
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(var_count)) || (__step_0 < 0 && i > __pytra_int(var_count)))
+  i = 0
+  while i < var_count
     lines.append(((("let v" + __pytra_str(i)) + " = ") + __pytra_str((i + 1))))
-    i += __step_0
+    i += 1
   end
-  __step_1 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_1 >= 0 && i < __pytra_int(loops)) || (__step_1 < 0 && i > __pytra_int(loops)))
+  i = 0
+  while i < loops
     x = (i % var_count)
     y = ((i + 3) % var_count)
     c1 = ((i % 7) + 1)
     c2 = ((i % 11) + 2)
     lines.append(((((((((("v" + __pytra_str(x)) + " = (v") + __pytra_str(x)) + " * ") + __pytra_str(c1)) + " + v") + __pytra_str(y)) + " + 10000) / ") + __pytra_str(c2)))
-    if __pytra_truthy(((i % 97) == 0))
+    if ((i % 97) == 0)
       lines.append(("print v" + __pytra_str(x)))
     end
-    i += __step_1
+    i += 1
   end
   lines.append("print (v0 + v1 + v2 + v3)")
   return lines

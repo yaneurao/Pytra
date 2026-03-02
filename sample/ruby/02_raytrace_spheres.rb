@@ -5,10 +5,10 @@ require_relative "py_runtime"
 # Dependencies are kept minimal (time only) for transpilation compatibility.
 
 def clamp01(v)
-  if __pytra_truthy((v < 0.0))
+  if (v < 0.0)
     return 0.0
   end
-  if __pytra_truthy((v > 1.0))
+  if (v > 1.0)
     return 1.0
   end
   return v
@@ -22,16 +22,16 @@ def hit_sphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, r)
   b = (2.0 * (((lx * dx) + (ly * dy)) + (lz * dz)))
   c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r))
   d = ((b * b) - ((4.0 * a) * c))
-  if __pytra_truthy((d < 0.0))
+  if (d < 0.0)
     return (-1.0)
   end
-  sd = Math.sqrt(__pytra_float(d))
+  sd = Math.sqrt(d)
   t0 = __pytra_div(((-b) - sd), (2.0 * a))
   t1 = __pytra_div(((-b) + sd), (2.0 * a))
-  if __pytra_truthy((t0 > 0.001))
+  if (t0 > 0.001)
     return t0
   end
-  if __pytra_truthy((t1 > 0.001))
+  if (t1 > 0.001)
     return t1
   end
   return (-1.0)
@@ -49,21 +49,17 @@ def render(width, height, aa)
   __hoisted_cast_2 = __pytra_float((height - 1))
   __hoisted_cast_3 = __pytra_float((width - 1))
   __hoisted_cast_4 = __pytra_float(height)
-  __step_0 = __pytra_int(1)
-  y = __pytra_int(0)
-  while ((__step_0 >= 0 && y < __pytra_int(height)) || (__step_0 < 0 && y > __pytra_int(height)))
-    __step_1 = __pytra_int(1)
-    x = __pytra_int(0)
-    while ((__step_1 >= 0 && x < __pytra_int(width)) || (__step_1 < 0 && x > __pytra_int(width)))
+  y = 0
+  while y < height
+    x = 0
+    while x < width
       ar = 0
       ag = 0
       ab = 0
-      __step_2 = __pytra_int(1)
-      ay = __pytra_int(0)
-      while ((__step_2 >= 0 && ay < __pytra_int(aa)) || (__step_2 < 0 && ay > __pytra_int(aa)))
-        __step_3 = __pytra_int(1)
-        ax = __pytra_int(0)
-        while ((__step_3 >= 0 && ax < __pytra_int(aa)) || (__step_3 < 0 && ax > __pytra_int(aa)))
+      ay = 0
+      while ay < aa
+        ax = 0
+        while ax < aa
           fy = __pytra_div((y + __pytra_div((ay + 0.5), __hoisted_cast_1)), __hoisted_cast_2)
           fx = __pytra_div((x + __pytra_div((ax + 0.5), __hoisted_cast_1)), __hoisted_cast_3)
           sy = (1.0 - (2.0 * fy))
@@ -71,43 +67,43 @@ def render(width, height, aa)
           dx = sx
           dy = sy
           dz = 1.0
-          inv_len = __pytra_div(1.0, Math.sqrt(__pytra_float((((dx * dx) + (dy * dy)) + (dz * dz)))))
+          inv_len = __pytra_div(1.0, Math.sqrt((((dx * dx) + (dy * dy)) + (dz * dz))))
           dx *= inv_len
           dy *= inv_len
           dz *= inv_len
           t_min = 1e+30
           hit_id = (-1)
           t = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8)
-          if __pytra_truthy((__pytra_truthy((t > 0.0)) && __pytra_truthy((t < t_min))))
+          if ((t > 0.0) && (t < t_min))
             t_min = t
             hit_id = 0
           end
           t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95)
-          if __pytra_truthy((__pytra_truthy((t > 0.0)) && __pytra_truthy((t < t_min))))
+          if ((t > 0.0) && (t < t_min))
             t_min = t
             hit_id = 1
           end
           t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0)
-          if __pytra_truthy((__pytra_truthy((t > 0.0)) && __pytra_truthy((t < t_min))))
+          if ((t > 0.0) && (t < t_min))
             t_min = t
             hit_id = 2
           end
           r = 0
           g = 0
           b = 0
-          if __pytra_truthy((hit_id >= 0))
+          if (hit_id >= 0)
             px = (ox + (dx * t_min))
             py = (oy + (dy * t_min))
             pz = (oz + (dz * t_min))
             nx = 0.0
             ny = 0.0
             nz = 0.0
-            if __pytra_truthy((hit_id == 0))
+            if (hit_id == 0)
               nx = __pytra_div((px + 0.8), 0.8)
               ny = __pytra_div((py + 0.2), 0.8)
               nz = __pytra_div((pz - 2.2), 0.8)
             else
-              if __pytra_truthy((hit_id == 1))
+              if (hit_id == 1)
                 nx = __pytra_div((px - 0.9), 0.95)
                 ny = __pytra_div((py - 0.1), 0.95)
                 nz = __pytra_div((pz - 2.9), 0.95)
@@ -122,18 +118,18 @@ def render(width, height, aa)
             base_r = 0.0
             base_g = 0.0
             base_b = 0.0
-            if __pytra_truthy((hit_id == 0))
+            if (hit_id == 0)
               base_r = 0.95
               base_g = 0.35
               base_b = 0.25
             else
-              if __pytra_truthy((hit_id == 1))
+              if (hit_id == 1)
                 base_r = 0.25
                 base_g = 0.55
                 base_b = 0.95
               else
                 checker = (__pytra_int(((px + 50.0) * 0.8)) + __pytra_int(((pz + 50.0) * 0.8)))
-                if __pytra_truthy(((checker % 2) == 0))
+                if ((checker % 2) == 0)
                   base_r = 0.85
                   base_g = 0.85
                   base_b = 0.85
@@ -157,17 +153,17 @@ def render(width, height, aa)
           ar += r
           ag += g
           ab += b
-          ax += __step_3
+          ax += 1
         end
-        ay += __step_2
+        ay += 1
       end
       samples = (aa * aa)
-      pixels.append((__pytra_int(ar) / __pytra_int(samples)))
-      pixels.append((__pytra_int(ag) / __pytra_int(samples)))
-      pixels.append((__pytra_int(ab) / __pytra_int(samples)))
-      x += __step_1
+      pixels.append((ar / samples))
+      pixels.append((ag / samples))
+      pixels.append((ab / samples))
+      x += 1
     end
-    y += __step_0
+    y += 1
   end
   return pixels
 end

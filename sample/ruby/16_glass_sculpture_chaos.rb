@@ -4,10 +4,10 @@ require_relative "py_runtime"
 # 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
 
 def clamp01(v)
-  if __pytra_truthy((v < 0.0))
+  if (v < 0.0)
     return 0.0
   end
-  if __pytra_truthy((v > 1.0))
+  if (v > 1.0)
     return 1.0
   end
   return v
@@ -18,12 +18,12 @@ def dot(ax, ay, az, bx, by, bz)
 end
 
 def length(x, y, z)
-  return Math.sqrt(__pytra_float((((x * x) + (y * y)) + (z * z))))
+  return Math.sqrt((((x * x) + (y * y)) + (z * z)))
 end
 
 def normalize(x, y, z)
   l = length(x, y, z)
-  if __pytra_truthy((l < 1e-09))
+  if (l < 1e-09)
     return [0.0, 0.0, 0.0]
   end
   return [__pytra_div(x, l), __pytra_div(y, l), __pytra_div(z, l)]
@@ -37,10 +37,10 @@ end
 def refract(ix, iy, iz, nx, ny, nz, eta)
   cosi = (-dot(ix, iy, iz, nx, ny, nz))
   sint2 = ((eta * eta) * (1.0 - (cosi * cosi)))
-  if __pytra_truthy((sint2 > 1.0))
+  if (sint2 > 1.0)
     return reflect(ix, iy, iz, nx, ny, nz)
   end
-  cost = Math.sqrt(__pytra_float((1.0 - sint2)))
+  cost = Math.sqrt((1.0 - sint2))
   k = ((eta * cosi) - cost)
   return [((eta * ix) + (k * nx)), ((eta * iy) + (k * ny)), ((eta * iz) + (k * nz))]
 end
@@ -55,7 +55,7 @@ def sky_color(dx, dy, dz, tphase)
   r = (0.06 + (0.2 * t))
   g = (0.1 + (0.25 * t))
   b = (0.16 + (0.45 * t))
-  band = (0.5 + (0.5 * Math.sin(__pytra_float((((8.0 * dx) + (6.0 * dz)) + tphase)))))
+  band = (0.5 + (0.5 * Math.sin((((8.0 * dx) + (6.0 * dz)) + tphase))))
   r += (0.08 * band)
   g += (0.05 * band)
   b += (0.12 * band)
@@ -69,16 +69,16 @@ def sphere_intersect(ox, oy, oz, dx, dy, dz, cx, cy, cz, radius)
   b = (((lx * dx) + (ly * dy)) + (lz * dz))
   c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (radius * radius))
   h = ((b * b) - c)
-  if __pytra_truthy((h < 0.0))
+  if (h < 0.0)
     return (-1.0)
   end
-  s = Math.sqrt(__pytra_float(h))
+  s = Math.sqrt(h)
   t0 = ((-b) - s)
-  if __pytra_truthy((t0 > 0.0001))
+  if (t0 > 0.0001)
     return t0
   end
   t1 = ((-b) + s)
-  if __pytra_truthy((t1 > 0.0001))
+  if (t1 > 0.0001)
     return t1
   end
   return (-1.0)
@@ -88,16 +88,15 @@ def palette_332()
   p = __pytra_bytearray((256 * 3))
   __hoisted_cast_1 = __pytra_float(7)
   __hoisted_cast_2 = __pytra_float(3)
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(256)) || (__step_0 < 0 && i > __pytra_int(256)))
+  i = 0
+  while i < 256
     r = ((i + 5) + 7)
     g = ((i + 2) + 7)
     b = (i + 3)
     __pytra_set_index(p, ((i * 3) + 0), __pytra_int(__pytra_div((255 * r), __hoisted_cast_1)))
     __pytra_set_index(p, ((i * 3) + 1), __pytra_int(__pytra_div((255 * g), __hoisted_cast_1)))
     __pytra_set_index(p, ((i * 3) + 2), __pytra_int(__pytra_div((255 * b), __hoisted_cast_2)))
-    i += __step_0
+    i += 1
   end
   return __pytra_bytes(p)
 end
@@ -149,71 +148,69 @@ def render_frame(width, height, frame_id, frames_n)
   fov = 1.25
   __hoisted_cast_3 = __pytra_float(height)
   __hoisted_cast_4 = __pytra_float(width)
-  __step_3 = __pytra_int(1)
-  py = __pytra_int(0)
-  while ((__step_3 >= 0 && py < __pytra_int(height)) || (__step_3 < 0 && py > __pytra_int(height)))
+  py = 0
+  while py < height
     row_base = (py * width)
     sy = (1.0 - __pytra_div((2.0 * (py + 0.5)), __hoisted_cast_3))
-    __step_4 = __pytra_int(1)
-    px = __pytra_int(0)
-    while ((__step_4 >= 0 && px < __pytra_int(width)) || (__step_4 < 0 && px > __pytra_int(width)))
+    px = 0
+    while px < width
       sx = ((__pytra_div((2.0 * (px + 0.5)), __hoisted_cast_4) - 1.0) * aspect)
       rx = (fwd_x + (fov * ((sx * right_x) + (sy * up_x))))
       ry = (fwd_y + (fov * ((sx * right_y) + (sy * up_y))))
       rz = (fwd_z + (fov * ((sx * right_z) + (sy * up_z))))
-      __tuple_5 = __pytra_as_list(normalize(rx, ry, rz))
-      dx = __tuple_5[0]
-      dy = __tuple_5[1]
-      dz = __tuple_5[2]
+      __tuple_3 = __pytra_as_list(normalize(rx, ry, rz))
+      dx = __tuple_3[0]
+      dy = __tuple_3[1]
+      dz = __tuple_3[2]
       best_t = 1000000000.0
       hit_kind = 0
       r = 0.0
       g = 0.0
       b = 0.0
-      if __pytra_truthy((dy < (-1e-06)))
+      if (dy < (-1e-06))
         tf = __pytra_div(((-1.2) - cam_y), dy)
-        if __pytra_truthy((__pytra_truthy((tf > 0.0001)) && __pytra_truthy((tf < best_t))))
+        if ((tf > 0.0001) && (tf < best_t))
           best_t = tf
           hit_kind = 1
         end
       end
       t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65)
-      if __pytra_truthy((__pytra_truthy((t0 > 0.0)) && __pytra_truthy((t0 < best_t))))
+      if ((t0 > 0.0) && (t0 < best_t))
         best_t = t0
         hit_kind = 2
       end
       t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72)
-      if __pytra_truthy((__pytra_truthy((t1 > 0.0)) && __pytra_truthy((t1 < best_t))))
+      if ((t1 > 0.0) && (t1 < best_t))
         best_t = t1
         hit_kind = 3
       end
       t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58)
-      if __pytra_truthy((__pytra_truthy((t2 > 0.0)) && __pytra_truthy((t2 < best_t))))
+      if ((t2 > 0.0) && (t2 < best_t))
         best_t = t2
         hit_kind = 4
       end
-      if __pytra_truthy((hit_kind == 0))
-        __tuple_6 = __pytra_as_list(sky_color(dx, dy, dz, tphase))
-        r = __tuple_6[0]
-        g = __tuple_6[1]
-        b = __tuple_6[2]
+      if (hit_kind == 0)
+        __tuple_4 = __pytra_as_list(sky_color(dx, dy, dz, tphase))
+        r = __tuple_4[0]
+        g = __tuple_4[1]
+        b = __tuple_4[2]
       else
-        if __pytra_truthy((hit_kind == 1))
+        if (hit_kind == 1)
           hx = (cam_x + (best_t * dx))
           hz = (cam_z + (best_t * dz))
           cx = __pytra_int((__pytra_float((hx * 2.0))).floor)
           cz = __pytra_int((__pytra_float((hz * 2.0))).floor)
-          checker = (__pytra_truthy((((cx + cz) % 2) == 0)) ? 0 : 1)
-          base_r = (__pytra_truthy((checker == 0)) ? 0.1 : 0.04)
-          base_g = (__pytra_truthy((checker == 0)) ? 0.11 : 0.05)
-          base_b = (__pytra_truthy((checker == 0)) ? 0.13 : 0.08)
+          checker = ((((cx + cz) % 2) == 0) ? 0 : 1)
+          base_r = ((checker == 0) ? 0.1 : 0.04)
+          base_g = ((checker == 0) ? 0.11 : 0.05)
+          base_b = ((checker == 0) ? 0.13 : 0.08)
           lxv = (lx - hx)
           lyv = (ly - (-1.2))
           lzv = (lz - hz)
-          __tuple_7 = __pytra_as_list(normalize(lxv, lyv, lzv))
-          ldx = __tuple_7[0]
-          ldy = __tuple_7[1]
-          ldz = __tuple_7[2]
+          __tuple_5 = __pytra_as_list(normalize(lxv, lyv, lzv))
+          ldx = __tuple_5[0]
+          ldy = __tuple_5[1]
+          ldz = __tuple_5[2]
           ndotl = __pytra_max(ldy, 0.0)
           ldist2 = (((lxv * lxv) + (lyv * lyv)) + (lzv * lzv))
           glow = __pytra_div(8.0, (1.0 + ldist2))
@@ -225,13 +222,13 @@ def render_frame(width, height, frame_id, frames_n)
           cy = 0.0
           cz = 0.0
           rad = 1.0
-          if __pytra_truthy((hit_kind == 2))
+          if (hit_kind == 2)
             cx = s0x
             cy = s0y
             cz = s0z
             rad = 0.65
           else
-            if __pytra_truthy((hit_kind == 3))
+            if (hit_kind == 3)
               cx = s1x
               cy = s1y
               cz = s1z
@@ -246,26 +243,26 @@ def render_frame(width, height, frame_id, frames_n)
           hx = (cam_x + (best_t * dx))
           hy = (cam_y + (best_t * dy))
           hz = (cam_z + (best_t * dz))
-          __tuple_8 = __pytra_as_list(normalize(__pytra_div((hx - cx), rad), __pytra_div((hy - cy), rad), __pytra_div((hz - cz), rad)))
-          nx = __tuple_8[0]
-          ny = __tuple_8[1]
-          nz = __tuple_8[2]
-          __tuple_9 = __pytra_as_list(reflect(dx, dy, dz, nx, ny, nz))
-          rdx = __tuple_9[0]
-          rdy = __tuple_9[1]
-          rdz = __tuple_9[2]
-          __tuple_10 = __pytra_as_list(refract(dx, dy, dz, nx, ny, nz, __pytra_div(1.0, 1.45)))
-          tdx = __tuple_10[0]
-          tdy = __tuple_10[1]
-          tdz = __tuple_10[2]
-          __tuple_11 = __pytra_as_list(sky_color(rdx, rdy, rdz, tphase))
-          sr = __tuple_11[0]
-          sg = __tuple_11[1]
-          sb = __tuple_11[2]
-          __tuple_12 = __pytra_as_list(sky_color(tdx, tdy, tdz, (tphase + 0.8)))
-          tr = __tuple_12[0]
-          tg = __tuple_12[1]
-          tb = __tuple_12[2]
+          __tuple_6 = __pytra_as_list(normalize(__pytra_div((hx - cx), rad), __pytra_div((hy - cy), rad), __pytra_div((hz - cz), rad)))
+          nx = __tuple_6[0]
+          ny = __tuple_6[1]
+          nz = __tuple_6[2]
+          __tuple_7 = __pytra_as_list(reflect(dx, dy, dz, nx, ny, nz))
+          rdx = __tuple_7[0]
+          rdy = __tuple_7[1]
+          rdz = __tuple_7[2]
+          __tuple_8 = __pytra_as_list(refract(dx, dy, dz, nx, ny, nz, __pytra_div(1.0, 1.45)))
+          tdx = __tuple_8[0]
+          tdy = __tuple_8[1]
+          tdz = __tuple_8[2]
+          __tuple_9 = __pytra_as_list(sky_color(rdx, rdy, rdz, tphase))
+          sr = __tuple_9[0]
+          sg = __tuple_9[1]
+          sb = __tuple_9[2]
+          __tuple_10 = __pytra_as_list(sky_color(tdx, tdy, tdz, (tphase + 0.8)))
+          tr = __tuple_10[0]
+          tg = __tuple_10[1]
+          tb = __tuple_10[2]
           cosi = __pytra_max((-(((dx * nx) + (dy * ny)) + (dz * nz))), 0.0)
           fr = schlick(cosi, 0.04)
           r = ((tr * (1.0 - fr)) + (sr * fr))
@@ -274,15 +271,15 @@ def render_frame(width, height, frame_id, frames_n)
           lxv = (lx - hx)
           lyv = (ly - hy)
           lzv = (lz - hz)
-          __tuple_13 = __pytra_as_list(normalize(lxv, lyv, lzv))
-          ldx = __tuple_13[0]
-          ldy = __tuple_13[1]
-          ldz = __tuple_13[2]
+          __tuple_11 = __pytra_as_list(normalize(lxv, lyv, lzv))
+          ldx = __tuple_11[0]
+          ldy = __tuple_11[1]
+          ldz = __tuple_11[2]
           ndotl = __pytra_max((((nx * ldx) + (ny * ldy)) + (nz * ldz)), 0.0)
-          __tuple_14 = __pytra_as_list(normalize((ldx - dx), (ldy - dy), (ldz - dz)))
-          hvx = __tuple_14[0]
-          hvy = __tuple_14[1]
-          hvz = __tuple_14[2]
+          __tuple_12 = __pytra_as_list(normalize((ldx - dx), (ldy - dy), (ldz - dz)))
+          hvx = __tuple_12[0]
+          hvy = __tuple_12[1]
+          hvz = __tuple_12[2]
           ndoth = __pytra_max((((nx * hvx) + (ny * hvy)) + (nz * hvz)), 0.0)
           spec = (ndoth * ndoth)
           spec = (spec * spec)
@@ -292,12 +289,12 @@ def render_frame(width, height, frame_id, frames_n)
           r += (((0.2 * ndotl) + (0.8 * spec)) + (0.45 * glow))
           g += (((0.18 * ndotl) + (0.6 * spec)) + (0.35 * glow))
           b += (((0.26 * ndotl) + (1.0 * spec)) + (0.65 * glow))
-          if __pytra_truthy((hit_kind == 2))
+          if (hit_kind == 2)
             r *= 0.95
             g *= 1.05
             b *= 1.1
           else
-            if __pytra_truthy((hit_kind == 3))
+            if (hit_kind == 3)
               r *= 1.08
               g *= 0.98
               b *= 1.04
@@ -309,13 +306,13 @@ def render_frame(width, height, frame_id, frames_n)
           end
         end
       end
-      r = Math.sqrt(__pytra_float(clamp01(r)))
-      g = Math.sqrt(__pytra_float(clamp01(g)))
-      b = Math.sqrt(__pytra_float(clamp01(b)))
+      r = Math.sqrt(clamp01(r))
+      g = Math.sqrt(clamp01(g))
+      b = Math.sqrt(clamp01(b))
       __pytra_set_index(frame, (row_base + px), quantize_332(r, g, b))
-      px += __step_4
+      px += 1
     end
-    py += __step_3
+    py += 1
   end
   return __pytra_bytes(frame)
 end
@@ -327,11 +324,10 @@ def run_16_glass_sculpture_chaos()
   out_path = "sample/out/16_glass_sculpture_chaos.gif"
   start = __pytra_perf_counter()
   frames = []
-  __step_0 = __pytra_int(1)
-  i = __pytra_int(0)
-  while ((__step_0 >= 0 && i < __pytra_int(frames_n)) || (__step_0 < 0 && i > __pytra_int(frames_n)))
+  i = 0
+  while i < frames_n
     frames.append(render_frame(width, height, i, frames_n))
-    i += __step_0
+    i += 1
   end
   save_gif(out_path, width, height, frames, palette_332(), 6, 0)
   elapsed = (__pytra_perf_counter() - start)

@@ -106,12 +106,10 @@ fn tokenize(lines: &Vec<String>) -> Vec<Token> {
                 let mut text = py_slice_str(&source, Some((start) as i64), Some((i) as i64));
                 if text == "let" {
                     tokens.push(Token::new(("LET").to_string(), ((text).to_string()), start, 0));
+                } else if text == "print" {
+                    tokens.push(Token::new(("PRINT").to_string(), ((text).to_string()), start, 0));
                 } else {
-                    if text == "print" {
-                        tokens.push(Token::new(("PRINT").to_string(), ((text).to_string()), start, 0));
-                    } else {
-                        tokens.push(Token::new(("IDENT").to_string(), ((text).to_string()), start, 0));
-                    }
+                    tokens.push(Token::new(("IDENT").to_string(), ((text).to_string()), start, 0));
                 }
                 continue;
             }
@@ -355,22 +353,22 @@ fn build_benchmark_source(var_count: i64, loops: i64) -> Vec<String> {
     
     // Declare initial variables.
     let mut i: i64 = 0;
-    while i < var_count {
-        lines.push(format!("{}{}", format!("{}{}", format!("{}{}", ("let v").to_string(), (i).to_string()), (" = ").to_string()), (i + 1).to_string()));
-        i += 1;
+    for __for_i_1 in (0)..(var_count) {
+        i = __for_i_1;
+            lines.push(format!("{}{}", format!("{}{}", format!("{}{}", ("let v").to_string(), (i).to_string()), (" = ").to_string()), (i + 1).to_string()));
     }
     // Force evaluation of many arithmetic expressions.
     let mut i: i64 = 0;
-    while i < loops {
-        let x: i64 = i % var_count;
-        let y: i64 = (i + 3) % var_count;
-        let c1: i64 = i % 7 + 1;
-        let c2: i64 = i % 11 + 2;
-        lines.push(format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", ("v").to_string(), (x).to_string()), (" = (v").to_string()), (x).to_string()), (" * ").to_string()), (c1).to_string()), (" + v").to_string()), (y).to_string()), (" + 10000) / ").to_string()), (c2).to_string()));
-        if i % 97 == 0 {
-            lines.push(format!("{}{}", ("print v").to_string(), (x).to_string()));
-        }
-        i += 1;
+    for __for_i_2 in (0)..(loops) {
+        i = __for_i_2;
+            let x: i64 = i % var_count;
+            let y: i64 = (i + 3) % var_count;
+            let c1: i64 = i % 7 + 1;
+            let c2: i64 = i % 11 + 2;
+            lines.push(format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", format!("{}{}", ("v").to_string(), (x).to_string()), (" = (v").to_string()), (x).to_string()), (" * ").to_string()), (c1).to_string()), (" + v").to_string()), (y).to_string()), (" + 10000) / ").to_string()), (c2).to_string()));
+            if i % 97 == 0 {
+                lines.push(format!("{}{}", ("print v").to_string(), (x).to_string()));
+            }
     }
     // Print final values together.
     lines.push(("print (v0 + v1 + v2 + v3)").to_string());

@@ -10,16 +10,16 @@ use crate::pytra::runtime::gif::save_gif;
 fn palette() -> Vec<u8> {
     let mut p = Vec::<u8>::new();
     let mut i: i64 = 0;
-    while i < 256 {
-        let r = (if 255 < ((((20) as f64) + ((i) as f64) * 0.9) as i64) { 255 } else { ((((20) as f64) + ((i) as f64) * 0.9) as i64) });
-        let g = (if 255 < ((((10) as f64) + ((i) as f64) * 0.7) as i64) { 255 } else { ((((10) as f64) + ((i) as f64) * 0.7) as i64) });
-        let b = (if 255 < 30 + i { 255 } else { 30 + i });
-        p.push(((r) as u8));
-        p.push(((g) as u8));
-        p.push(((b) as u8));
-        i += 1;
+    for __for_i_1 in (0)..(256) {
+        i = __for_i_1;
+            let r = (if 255 < ((((20) as f64) + ((i) as f64) * 0.9) as i64) { 255 } else { ((((20) as f64) + ((i) as f64) * 0.9) as i64) });
+            let g = (if 255 < ((((10) as f64) + ((i) as f64) * 0.7) as i64) { 255 } else { ((((10) as f64) + ((i) as f64) * 0.7) as i64) });
+            let b = (if 255 < 30 + i { 255 } else { 30 + i });
+            p.push(((r) as u8));
+            p.push(((g) as u8));
+            p.push(((b) as u8));
     }
-    return (p).clone();
+    return p;
 }
 
 fn scene(x: f64, y: f64, light_x: f64, light_y: f64) -> i64 {
@@ -53,28 +53,27 @@ fn run_14_raymarching_light_cycle() {
     let __hoisted_cast_3: f64 = ((w - 1) as f64);
     
     let mut t: i64 = 0;
-    while t < frames_n {
-        let mut frame = vec![0u8; (w * h) as usize];
-        let a = (((t) as f64) / __hoisted_cast_1) * math::pi * 2.0;
-        let light_x = 0.75 * math::cos(a);
-        let light_y = 0.55 * math::sin(a * 1.2);
-        
-        let mut y: i64 = 0;
-        while y < h {
-            let row_base = y * w;
-            let py = (((y) as f64) / __hoisted_cast_2) * 2.0 - 1.0;
-            let mut x: i64 = 0;
-            while x < w {
-                let px = (((x) as f64) / __hoisted_cast_3) * 2.0 - 1.0;
-                let __idx_i64_1 = ((row_base + x) as i64);
-                let __idx_2 = if __idx_i64_1 < 0 { (frame.len() as i64 + __idx_i64_1) as usize } else { __idx_i64_1 as usize };
-                frame[__idx_2] = ((scene(px, py, light_x, light_y)) as u8);
-                x += 1;
+    for __for_i_2 in (0)..(frames_n) {
+        t = __for_i_2;
+            let mut frame = vec![0u8; (w * h) as usize];
+            let a = (((t) as f64) / __hoisted_cast_1) * math::pi * 2.0;
+            let light_x = 0.75 * math::cos(a);
+            let light_y = 0.55 * math::sin(a * 1.2);
+            
+            let mut y: i64 = 0;
+            for __for_i_3 in (0)..(h) {
+                y = __for_i_3;
+                    let row_base = y * w;
+                    let py = (((y) as f64) / __hoisted_cast_2) * 2.0 - 1.0;
+                    let mut x: i64 = 0;
+                    for __for_i_4 in (0)..(w) {
+                        x = __for_i_4;
+                            let px = (((x) as f64) / __hoisted_cast_3) * 2.0 - 1.0;
+                            let __idx_5 = ((row_base + x) as usize);
+                            frame[__idx_5] = ((scene(px, py, light_x, light_y)) as u8);
+                    }
             }
-            y += 1;
-        }
-        frames.push((frame).clone());
-        t += 1;
+            frames.push((frame).clone());
     }
     save_gif(&(out_path), w, h, &(frames), &(palette()), 3, 0);
     let elapsed = perf_counter() - start;
