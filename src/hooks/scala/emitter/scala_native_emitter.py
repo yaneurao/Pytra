@@ -488,6 +488,19 @@ def _bin_op_symbol(op: Any) -> str:
     return "+"
 
 
+def _is_simple_binop_operand(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    kind = node.get("kind")
+    return kind in {"Name", "Constant", "Attribute", "Call", "Subscript"}
+
+
+def _join_binop_expr(left_expr: str, right_expr: str, op_symbol: str, left_node: Any, right_node: Any) -> str:
+    if _is_simple_binop_operand(left_node) and _is_simple_binop_operand(right_node):
+        return _strip_outer_parens(left_expr) + " " + op_symbol + " " + _strip_outer_parens(right_expr)
+    return "(" + left_expr + " " + op_symbol + " " + right_expr + ")"
+
+
 def _render_unary_expr(expr: dict[str, Any]) -> str:
     op = expr.get("op")
     operand = _render_expr(expr.get("operand"))
@@ -534,29 +547,59 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
         return "__pytra_path_join(" + left_expr + ", " + right_expr + ")"
 
     if op == "Div":
-        return "(" + _float_operand(left_expr, left_any) + " / " + _float_operand(right_expr, right_any) + ")"
+        return _join_binop_expr(
+            _float_operand(left_expr, left_any),
+            _float_operand(right_expr, right_any),
+            "/",
+            left_any,
+            right_any,
+        )
 
     if op == "FloorDiv":
         lhs = _int_operand(left_expr, left_any)
         rhs = _int_operand(right_expr, right_any)
-        return "(" + _to_int_expr(lhs + " / " + rhs) + ")"
+        return _to_int_expr(lhs + " / " + rhs)
 
     if op == "Mod":
-        return "(" + _int_operand(left_expr, left_any) + " % " + _int_operand(right_expr, right_any) + ")"
+        return _join_binop_expr(
+            _int_operand(left_expr, left_any),
+            _int_operand(right_expr, right_any),
+            "%",
+            left_any,
+            right_any,
+        )
 
     if resolved == "str" and op == "Add":
-        return "(" + _to_str_expr(left_expr) + " + " + _to_str_expr(right_expr) + ")"
+        return _join_binop_expr(
+            _to_str_expr(left_expr),
+            _to_str_expr(right_expr),
+            "+",
+            left_any,
+            right_any,
+        )
 
     if resolved in {"int", "int64", "uint8"}:
         sym = _bin_op_symbol(op)
-        return "(" + _int_operand(left_expr, left_any) + " " + sym + " " + _int_operand(right_expr, right_any) + ")"
+        return _join_binop_expr(
+            _int_operand(left_expr, left_any),
+            _int_operand(right_expr, right_any),
+            sym,
+            left_any,
+            right_any,
+        )
 
     if resolved in {"float", "float64"}:
         sym = _bin_op_symbol(op)
-        return "(" + _float_operand(left_expr, left_any) + " " + sym + " " + _float_operand(right_expr, right_any) + ")"
+        return _join_binop_expr(
+            _float_operand(left_expr, left_any),
+            _float_operand(right_expr, right_any),
+            sym,
+            left_any,
+            right_any,
+        )
 
     sym = _bin_op_symbol(op)
-    return "(" + left_expr + " " + sym + " " + right_expr + ")"
+    return _join_binop_expr(left_expr, right_expr, sym, left_any, right_any)
 
 
 def _compare_op_symbol(op: Any) -> str:
@@ -1412,8 +1455,8 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + "    given " + break_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
         if step_is_one:
             while_prefix = indent + "    " if loop_uses_control else indent
-            cond_text = normalized_cond if normalized_cond != "" else target_name + " < " + stop
-            lines.append(while_prefix + "while (" + cond_text + ") {")
+            cond_text = _strip_outer_parens(normalized_cond) if normalized_cond != "" else target_name + " < " + stop
+            lines.append(while_prefix + "while (" + _strip_outer_parens(cond_text) + ") {")
         else:
             step_prefix = indent + "    " if loop_uses_control else indent
             lines.append(step_prefix + "val " + step_tmp + " = " + step)
@@ -1439,7 +1482,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                     + stop
                     + ")"
                 )
-            lines.append(while_prefix + "while (" + cond_text + ") {")
+            lines.append(while_prefix + "while (" + _strip_outer_parens(cond_text) + ") {")
         if loop_uses_control:
             lines.append(indent + "        boundary:")
             lines.append(indent + "            given " + continue_label + ": boundary.Label[Unit] = summon[boundary.Label[Unit]]")
@@ -1957,7 +2000,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     if kind == "If":
-        test_expr = _render_truthy_expr(stmt.get("test"))
+        test_expr = _strip_outer_parens(_render_truthy_expr(stmt.get("test")))
         lines: list[str] = [indent + "if (" + test_expr + ") {"]
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
@@ -2006,7 +2049,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_for_core(stmt, indent=indent, ctx=ctx)
 
     if kind == "While":
-        test_expr = _render_truthy_expr(stmt.get("test"))
+        test_expr = _strip_outer_parens(_render_truthy_expr(stmt.get("test")))
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         loop_uses_control = _body_uses_loop_control(body)

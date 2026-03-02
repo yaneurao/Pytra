@@ -11,27 +11,27 @@ def escape_count(cx: Double, cy: Double, max_iter: Long): Long = {
     var x: Double = 0.0
     var y: Double = 0.0
     var i: Long = 0L
-    while ((i < max_iter)) {
-        var x2: Double = (x * x)
-        var y2: Double = (y * y)
-        if (((x2 + y2) > 4.0)) {
+    while (i < max_iter) {
+        var x2: Double = x * x
+        var y2: Double = y * y
+        if (x2 + y2 > 4.0) {
             return i
         }
-        y = (((2.0 * x) * y) + cy)
-        x = ((x2 - y2) + cx)
+        y = ((2.0 * x * y) + cy)
+        x = (x2 - y2 + cx)
         i += 1L
     }
     return max_iter
 }
 
 def color_map(iter_count: Long, max_iter: Long): mutable.ArrayBuffer[Long] = {
-    if ((iter_count >= max_iter)) {
+    if (iter_count >= max_iter) {
         return __pytra_as_list(mutable.ArrayBuffer[Long](0L, 0L, 0L)).asInstanceOf[mutable.ArrayBuffer[Long]]
     }
-    var t: Double = (__pytra_float(iter_count) / __pytra_float(max_iter))
-    var r: Long = __pytra_int(255.0 * (t * t))
+    var t: Double = __pytra_float(iter_count) / __pytra_float(max_iter)
+    var r: Long = __pytra_int(255.0 * t * t)
     var g: Long = __pytra_int(255.0 * t)
-    var b: Long = __pytra_int(255.0 * (1.0 - t))
+    var b: Long = __pytra_int(255.0 * 1.0 - t)
     return __pytra_as_list(mutable.ArrayBuffer[Long](r, g, b)).asInstanceOf[mutable.ArrayBuffer[Long]]
 }
 
@@ -41,24 +41,24 @@ def render_mandelbrot(width: Long, height: Long, max_iter: Long, x_min: Double, 
     var __hoisted_cast_2: Double = __pytra_float(width - 1L)
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
     var y: Long = 0L
-    while ((y < height)) {
-        var py: Double = (y_min + ((y_max - y_min) * (__pytra_float(y) / __hoisted_cast_1)))
+    while (y < height) {
+        var py: Double = (y_min + (y_max - y_min * __pytra_float(y) / __hoisted_cast_1))
         var x: Long = 0L
-        while ((x < width)) {
-            var px: Double = (x_min + ((x_max - x_min) * (__pytra_float(x) / __hoisted_cast_2)))
+        while (x < width) {
+            var px: Double = (x_min + (x_max - x_min * __pytra_float(x) / __hoisted_cast_2))
             var it: Long = __pytra_int(escape_count(px, py, max_iter))
             var r: Long = 0L
             var g: Long = 0L
             var b: Long = 0L
-            if ((it >= max_iter)) {
+            if (it >= max_iter) {
                 r = 0L
                 g = 0L
                 b = 0L
             } else {
-                var t: Double = (__pytra_float(it) / __hoisted_cast_3)
-                r = __pytra_int(255.0 * (t * t))
+                var t: Double = __pytra_float(it) / __hoisted_cast_3
+                r = __pytra_int(255.0 * t * t)
                 g = __pytra_int(255.0 * t)
-                b = __pytra_int(255.0 * (1.0 - t))
+                b = __pytra_int(255.0 * 1.0 - t)
             }
             pixels.append(r)
             pixels.append(g)
@@ -78,7 +78,7 @@ def run_mandelbrot(): Unit = {
     var start: Double = __pytra_perf_counter()
     var pixels: mutable.ArrayBuffer[Long] = __pytra_as_list(render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2)).asInstanceOf[mutable.ArrayBuffer[Long]]
     __pytra_write_rgb_png(out_path, width, height, pixels)
-    var elapsed: Double = (__pytra_perf_counter() - start)
+    var elapsed: Double = __pytra_perf_counter() - start
     __pytra_print("output:", out_path)
     __pytra_print("size:", width, "x", height)
     __pytra_print("max_iter:", max_iter)
