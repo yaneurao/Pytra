@@ -33,7 +33,7 @@ fun color_map(iter_count: Long, max_iter: Long): MutableList<Any?> {
 }
 
 fun render_mandelbrot(width: Long, height: Long, max_iter: Long, x_min: Double, x_max: Double, y_min: Double, y_max: Double): MutableList<Any?> {
-    var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var pixels: MutableList<Any?> = mutableListOf<Any?>()
     var __hoisted_cast_1: Double = __pytra_float(height - 1L)
     var __hoisted_cast_2: Double = __pytra_float(width - 1L)
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
@@ -43,7 +43,7 @@ fun render_mandelbrot(width: Long, height: Long, max_iter: Long, x_min: Double, 
         var x = __pytra_int(0L)
         while (x < __pytra_int(width)) {
             var px: Double = (x_min + ((x_max - x_min) * (__pytra_float(x) / __hoisted_cast_2)))
-            var it: Long = __pytra_int(escape_count(px, py, max_iter))
+            var it: Long = escape_count(px, py, max_iter)
             var r: Long = 0L
             var g: Long = 0L
             var b: Long = 0L
@@ -73,7 +73,7 @@ fun run_mandelbrot() {
     var max_iter: Long = 1000L
     var out_path: String = "sample/out/01_mandelbrot.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: MutableList<Any?> = __pytra_as_list(render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2))
+    var pixels: MutableList<Any?> = render_mandelbrot(width, height, max_iter, (-2.2), 1.0, (-1.2), 1.2)
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

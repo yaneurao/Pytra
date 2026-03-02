@@ -214,10 +214,10 @@ public final class Pytra_18_mini_language_interpreter {
         java.util.HashMap<String, Long> single_char_token_tags = new java.util.HashMap<String, Long>();
         java.util.ArrayList<String> single_char_token_kinds = new java.util.ArrayList<String>(java.util.Arrays.asList("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"));
         java.util.ArrayList<Token> tokens = new java.util.ArrayList<Token>();
-        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(lines));
+        java.util.ArrayList<String> __iter_0 = ((java.util.ArrayList<String>)(Object)(lines));
         for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
             long line_index = __iter_i_1;
-            String source = String.valueOf(__iter_0.get((int)(__iter_i_1)));
+            String source = __iter_0.get((int)(__iter_i_1));
             long i = 0L;
             long n = ((long)(source.length()));
             while ((i < n)) {

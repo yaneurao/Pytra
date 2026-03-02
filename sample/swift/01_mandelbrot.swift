@@ -33,7 +33,7 @@ func color_map(iter_count: Int64, max_iter: Int64) -> [Any] {
 }
 
 func render_mandelbrot(width: Int64, height: Int64, max_iter: Int64, x_min: Double, x_max: Double, y_min: Double, y_max: Double) -> [Any] {
-    var pixels: [Any] = __pytra_as_list([])
+    var pixels: [Any] = []
     var __hoisted_cast_1: Double = __pytra_float(height - Int64(1))
     var __hoisted_cast_2: Double = __pytra_float(width - Int64(1))
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
@@ -43,7 +43,7 @@ func render_mandelbrot(width: Int64, height: Int64, max_iter: Int64, x_min: Doub
         var x = __pytra_int(Int64(0))
         while (x < __pytra_int(width)) {
             var px: Double = (x_min + ((x_max - x_min) * (__pytra_float(x) / __hoisted_cast_2)))
-            var it: Int64 = __pytra_int(escape_count(px, py, max_iter))
+            var it: Int64 = escape_count(px, py, max_iter)
             var r: Int64 = 0
             var g: Int64 = 0
             var b: Int64 = 0
@@ -73,7 +73,7 @@ func run_mandelbrot() {
     var max_iter: Int64 = Int64(1000)
     var out_path: String = "sample/out/01_mandelbrot.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: [Any] = __pytra_as_list(render_mandelbrot(width, height, max_iter, (-Double(2.2)), Double(1.0), (-Double(1.2)), Double(1.2)))
+    var pixels: [Any] = render_mandelbrot(width, height, max_iter, (-Double(2.2)), Double(1.0), (-Double(1.2)), Double(1.2))
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

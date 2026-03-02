@@ -352,21 +352,23 @@ fn build_benchmark_source(var_count: i64, loops: i64) -> Vec<String> {
     let mut lines: Vec<String> = vec![];
     
     // Declare initial variables.
-    for i in (0)..(var_count) {
+    let mut i: i64 = 0;
+    for __for_i_2 in (0)..(var_count) {
+        i = __for_i_2;
             lines.push(format!("{}{}{}{}", ("let v").to_string(), (i).to_string(), (" = ").to_string(), (i + 1).to_string()));
     }
     // Force evaluation of many arithmetic expressions.
     lines.reserve(((if (loops) <= 0 { 0 } else { ((loops) + (97) - 1) / (97) })) as usize);
-    let mut __next_capture_2: i64 = 0;
+    let mut __next_capture_3: i64 = 0;
     for i in (0)..(loops) {
             let x: i64 = i % var_count;
             let y: i64 = (i + 3) % var_count;
             let c1: i64 = i % 7 + 1;
             let c2: i64 = i % 11 + 2;
             lines.push(format!("{}{}{}{}{}{}{}{}{}{}", ("v").to_string(), (x).to_string(), (" = (v").to_string(), (x).to_string(), (" * ").to_string(), (c1).to_string(), (" + v").to_string(), (y).to_string(), (" + 10000) / ").to_string(), (c2).to_string()));
-            if i == __next_capture_2 {
+            if i == __next_capture_3 {
                 lines.push(format!("{}{}", ("print v").to_string(), (x).to_string()));
-            __next_capture_2 += 97;
+            __next_capture_3 += 97;
             }
     }
     // Print final values together.
