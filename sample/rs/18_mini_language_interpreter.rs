@@ -277,7 +277,7 @@ impl Parser {
 
 
 fn eval_expr(expr_index: i64, expr_nodes: &[ExprNode], env: &::std::collections::BTreeMap<String, i64>) -> i64 {
-    let node: ExprNode = (expr_nodes[((if ((expr_index) as i64) < 0 { (expr_nodes.len() as i64 + ((expr_index) as i64)) } else { ((expr_index) as i64) }) as usize)]).clone();
+    let node: &ExprNode = &(expr_nodes[((if ((expr_index) as i64) < 0 { (expr_nodes.len() as i64 + ((expr_index) as i64)) } else { ((expr_index) as i64) }) as usize)]);
     
     if node.kind_tag == 1 {
         return node.value;

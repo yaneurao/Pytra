@@ -156,7 +156,7 @@
 1. [ ] [ID: P1-RS-S18-QUALITY-01] `sample/rs/18` の生成品質を改善し、可読性とホットパス効率を引き上げる。
 2. [x] [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust 出力の冗長断片（clone/添字/走査/format）を棚卸しし、改善対象を固定する。
 3. [x] [ID: P1-RS-S18-QUALITY-01-S1-02] 期待効果とリスクで実装順を確定し、fail-closed 適用境界を定義する。
-4. [ ] [ID: P1-RS-S18-QUALITY-01-S2-01] `current_token/previous_token/eval_expr` で borrow 優先経路を追加し、不要 `clone` を削減する。
+4. [x] [ID: P1-RS-S18-QUALITY-01-S2-01] `current_token/previous_token/eval_expr` で borrow 優先経路を追加し、不要 `clone` を削減する。
 5. [ ] [ID: P1-RS-S18-QUALITY-01-S2-02] 非負添字が確定する経路で index 正規化式を省略する fastpath を追加する。
 6. [ ] [ID: P1-RS-S18-QUALITY-01-S2-03] tokenize の文字走査を `String` 汎用経路から軽量経路（bytes/chars）へ縮退する。
 7. [ ] [ID: P1-RS-S18-QUALITY-01-S2-04] 小規模固定 token 判定で map 依存を減らし、分岐/lookup を簡素化する。
@@ -168,6 +168,7 @@
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust の冗長断片を `clone`/添字正規化/走査/format連鎖/`&Vec<T>` で棚卸しし、改善対象を固定。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S1-02] 実装順を `borrow -> 添字 -> &[T] -> 文字列 -> 走査 -> token判定 -> map再評価` に固定し、fail-closed 境界を定義。
 - 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-06] 借用 list 引数の型を `&Vec<T>` から `&[T]` へ縮退し、`sample/rs/18` の `tokenize/eval_expr/execute` 署名で確認（transpile/parity 通過）。
+- 進捗メモ: [ID: P1-RS-S18-QUALITY-01-S2-01] `AnnAssign` の list 添字初期化で borrow 優先経路を追加し、`eval_expr` の `ExprNode` 取得を clone から `&ExprNode` 参照へ縮退（unit/transpile/parity 通過）。
 
 ### P1: sample/rs/08 出力品質改善（可読性 + ホットパス縮退）
 

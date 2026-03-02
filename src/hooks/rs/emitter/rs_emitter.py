@@ -2856,6 +2856,12 @@ class RustEmitter(CodeEmitter):
             self.current_non_negative_vars.discard(name_raw)
             self.current_positive_vars.discard(name_raw)
             return
+        borrowed_init = self._try_render_borrowed_annassign_init(name_raw, t_east, value_obj)
+        if borrowed_init != "":
+            self.emit("let " + name + ": &" + t + " = " + borrowed_init + ";")
+            self.current_ref_vars.add(name_raw)
+            self._update_name_sign_info(name_raw, value_obj)
+            return
         value = self._maybe_render_preallocated_byte_buffer_init(name_raw, t_east, value_obj)
         if value == "":
             value = self._render_value_for_decl_type(value_obj, t_east)
@@ -2915,6 +2921,48 @@ class RustEmitter(CodeEmitter):
             idx_i64 = "((" + idx + ") as i64)"
             idx_usize = "((if " + idx_i64 + " < 0 { (" + owner + ".len() as i64 + " + idx_i64 + ") } else { " + idx_i64 + " }) as usize)"
         return owner + "[" + idx_usize + "]"
+
+    def _render_list_subscript_borrow_expr(self, subscript_expr: dict[str, Any]) -> str:
+        """`list[T][idx]` を borrow で参照する式（`&(owner[idx])`）を返す。"""
+        owner_node = self.any_to_dict_or_empty(subscript_expr.get("value"))
+        owner = self.render_expr(owner_node)
+        if self.any_dict_get_str(owner_node, "kind", "") == "Subscript":
+            owner_owner_t = self.normalize_type_name(self.get_expr_type(owner_node.get("value")))
+            if owner_owner_t.startswith("list[") or owner_owner_t.startswith("tuple[") or owner_owner_t in {"bytes", "bytearray"}:
+                owner = self._render_subscript_lvalue(owner_node)
+        idx_node = subscript_expr.get("slice")
+        idx_txt = self.render_expr(idx_node)
+        if self._expr_is_non_negative(idx_node):
+            idx_usize = "((" + idx_txt + ") as usize)"
+        else:
+            idx_i64 = "((" + idx_txt + ") as i64)"
+            idx_usize = "((if " + idx_i64 + " < 0 { (" + owner + ".len() as i64 + " + idx_i64 + ") } else { " + idx_i64 + " }) as usize)"
+        return "&(" + owner + "[" + idx_usize + "])"
+
+    def _try_render_borrowed_annassign_init(self, name_raw: str, target_type_east: str, value_obj: Any) -> str:
+        """`AnnAssign` 初期化を borrow で描画できる場合は式を返す。"""
+        if self._should_declare_mut(name_raw, has_init_write=True):
+            return ""
+        t_norm = self.normalize_type_name(target_type_east)
+        if t_norm == "" or self._is_copy_type(t_norm):
+            return ""
+        value_d = self.any_to_dict_or_empty(value_obj)
+        if self.any_dict_get_str(value_d, "kind", "") != "Subscript":
+            return ""
+        owner_node = self.any_to_dict_or_empty(value_d.get("value"))
+        owner_kind = self.any_dict_get_str(owner_node, "kind", "")
+        if owner_kind != "Name" and owner_kind != "Attribute":
+            return ""
+        owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
+        if not owner_t.startswith("list["):
+            return ""
+        elem_t = self._list_elem_type(owner_t)
+        if elem_t == "":
+            return ""
+        if elem_t != t_norm:
+            if not (elem_t in self.class_names and self._is_class_subtype(elem_t, t_norm)):
+                return ""
+        return self._render_list_subscript_borrow_expr(value_d)
 
     def _collect_subscript_chain(self, subscript_expr: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """`a[b][c]` を `(a, [a[b], a[b][c]])` 形式に分解する。"""

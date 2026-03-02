@@ -233,6 +233,8 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("fn tokenize(lines: &[String]) -> Vec<Token> {", rust)
         self.assertIn("fn eval_expr(expr_index: i64, expr_nodes: &[ExprNode], env: &::std::collections::BTreeMap<String, i64>) -> i64 {", rust)
         self.assertIn("fn execute(stmts: &[StmtNode], expr_nodes: &[ExprNode], trace: bool) -> i64 {", rust)
+        self.assertIn("let node: &ExprNode = &(expr_nodes[", rust)
+        self.assertNotIn("let node: ExprNode = (expr_nodes[", rust)
         self.assertNotIn("fn tokenize(lines: &Vec<String>) -> Vec<Token> {", rust)
         self.assertNotIn("fn eval_expr(expr_index: i64, expr_nodes: &Vec<ExprNode>", rust)
         self.assertNotIn("fn execute(stmts: &Vec<StmtNode>", rust)
