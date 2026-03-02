@@ -22,7 +22,7 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 ### 2.1 `src/`
 
 - Purpose: transpiler implementation, shared libraries, and target runtimes.
-- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/pytra/`, `src/hooks/`, `src/profiles/`.
+- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/pytra/`, `src/backends/`, `src/profiles/`.
 - Not allowed: logs, temporary outputs, process docs.
 
 ### 2.2 `test/`
@@ -75,9 +75,9 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 - Purpose: EAST1/EAST2/EAST3 stage processing and shared emitter foundation.
 - Allowed: `east1.py`, `east2.py`, `east3.py`, `east3_lowering.py`, `east_io.py`, `core.py`, `code_emitter.py`.
 - Not allowed: target-language-specific final emission branches.
-- Dependency rule: allow `pytra.*` shared layers; avoid direct dependency on `hooks/<lang>`.
+- Dependency rule: allow `pytra.*` shared layers; avoid direct dependency on `backends/lang>`.
 
-### 3.2 `src/hooks/`
+### 3.2 `src/backends/`
 
 - Purpose: absorb target-language syntax differences.
 - Allowed: backend-specific hook implementations.

@@ -8,7 +8,7 @@
     "syntax.json"
   ],
   "hooks": {
-    "module": "hooks.rs.hooks.rs_hooks",
+    "module": "backends.rs.hooks.rs_hooks",
     "factory": "build_rs_hooks"
   }
 }

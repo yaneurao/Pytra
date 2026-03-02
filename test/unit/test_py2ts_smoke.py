@@ -18,7 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2ts import load_east, load_ts_profile, transpile_to_typescript
 from src.pytra.compiler.east_parts.core import convert_path
-from hooks.ts.emitter import ts_emitter as ts_emitter_mod
+from backends.ts.emitter import ts_emitter as ts_emitter_mod
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 

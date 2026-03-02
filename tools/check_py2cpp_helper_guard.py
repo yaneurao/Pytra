@@ -88,7 +88,7 @@ def main() -> int:
 
     if _has_class(TARGET, CPP_EMITTER_CLASS_NAME):
         print("[FAIL] CppEmitter must not be implemented in src/py2cpp.py")
-        print("Move implementation to src/hooks/cpp/emitter/cpp_emitter.py")
+        print("Move implementation to src/backends/cpp/emitter/cpp_emitter.py")
         return 1
 
     current = _collect_cpp_private_helpers(CPP_EMITTER_TARGET)

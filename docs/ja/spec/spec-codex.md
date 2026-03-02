@@ -60,7 +60,7 @@
 ## 5. 実装・配置ルール
 
 - `src/common/` には言語非依存コードのみ配置します。
-- 言語固有コードは各 `py2*.py`、`src/hooks/<lang>/`、`src/profiles/<lang>/`、`src/runtime/<lang>/pytra/` に配置します。
+- 言語固有コードは各 `py2*.py`、`src/backends/<lang>/`、`src/profiles/<lang>/`、`src/runtime/<lang>/pytra/` に配置します。
 - `src/` 直下にはトランスパイラ本体（`py2*.py`）以外を置きません。
 - `CodeEmitter` など全言語で共有可能な基底ロジックは `src/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
 - 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/common/` へ移管します。
@@ -85,7 +85,7 @@
 - `src/pytra/compiler/east_parts/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/hooks/**`, `src/profiles/**`）を変更する場合は、`src/pytra/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/profiles/**`）を変更する場合は、`src/pytra/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
 - sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
 
 ## 7. selfhost 運用ノウハウ

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.kotlin.emitter import load_kotlin_profile, transpile_to_kotlin, transpile_to_kotlin_native
+from backends.kotlin.emitter import load_kotlin_profile, transpile_to_kotlin, transpile_to_kotlin_native
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path

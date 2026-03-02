@@ -78,7 +78,7 @@ def _remove_import_line(text: str) -> str:
         # `CodeEmitter` import は py2cpp 側から hooks 側へ移ったため、存在しない版も許容する。
         ("from pytra.compiler.east_parts.code_emitter import CodeEmitter", "CodeEmitter import", False),
         ("from pytra.compiler.transpile_cli import ", "transpile_cli import", True),
-        ("from hooks.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl", "build_cpp_hooks import", True),
+        ("from backends.cpp.hooks.cpp_hooks import build_cpp_hooks as _build_cpp_hooks_impl", "build_cpp_hooks import", True),
     ]
     out = text
     missing: list[str] = []

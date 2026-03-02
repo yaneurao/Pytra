@@ -12,20 +12,20 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from hooks.cpp.emitter.cpp_emitter import emit_cpp_from_east
-from hooks.cpp.optimizer.context import CppOptContext
-from hooks.cpp.optimizer.context import CppOptimizerPass
-from hooks.cpp.optimizer.context import CppOptResult
-from hooks.cpp.optimizer.cpp_optimizer import CppPassManager
-from hooks.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
-from hooks.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
-from hooks.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
-from hooks.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
-from hooks.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
-from hooks.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
-from hooks.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
-from hooks.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
-from hooks.cpp.optimizer.trace import render_cpp_opt_trace
+from backends.cpp.emitter.cpp_emitter import emit_cpp_from_east
+from backends.cpp.optimizer.context import CppOptContext
+from backends.cpp.optimizer.context import CppOptimizerPass
+from backends.cpp.optimizer.context import CppOptResult
+from backends.cpp.optimizer.cpp_optimizer import CppPassManager
+from backends.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
+from backends.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
+from backends.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
+from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
+from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
+from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
+from backends.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
+from backends.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
+from backends.cpp.optimizer.trace import render_cpp_opt_trace
 
 
 def _module_doc() -> dict[str, object]:
@@ -281,8 +281,8 @@ class CppOptimizerTest(unittest.TestCase):
                 meta = meta_any if isinstance(meta_any, dict) else {}
                 return "dummy-cpp:" + str(meta.get("optimized", "0"))
 
-        with patch("hooks.cpp.emitter.cpp_emitter.optimize_cpp_ir", return_value=(optimized_doc, {"trace": []})) as opt_mock:
-            with patch("hooks.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
+        with patch("backends.cpp.emitter.cpp_emitter.optimize_cpp_ir", return_value=(optimized_doc, {"trace": []})) as opt_mock:
+            with patch("backends.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
                 out = emit_cpp_from_east(east_doc, {})
         self.assertEqual(opt_mock.call_count, 1)
         call_args = opt_mock.call_args

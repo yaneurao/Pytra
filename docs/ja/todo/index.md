@@ -47,6 +47,7 @@
 9. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S3-02] `spec-folder` / `spec-dev` の責務記述を `backends` 名へ更新し、`hooks` を互換・退役扱いへ明記する。
 10. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-01] 全 target の transpile チェックを再実行し、改名起因の import 崩れがないことを確認する。
 11. [ ] [ID: P0-HOOKS-TO-BACKENDS-RENAME-01-S4-02] `rg` による残存 `hooks.*` 参照監査を実施し、残存理由を明示して収束させる。
+- 進捗メモ: [ID: P0-HOOKS-TO-BACKENDS-RENAME-01] `src/hooks` を `src/backends` へ移動し、`src/test/tools` の import を `backends.*` へ更新。`check_py2cpp_transpile`/`check_py2rs_transpile` は通過、`check_py2cs_transpile` は既知2件失敗（`yield_generator_min.py`, `tuple_assign.py`）を確認。
 
 ### P0: C++ 3段構成移行（案1: `CppLower` / `CppIrOptimizer` / `CppEmitter`）
 

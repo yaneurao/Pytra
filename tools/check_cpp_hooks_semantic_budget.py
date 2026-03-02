@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CPP_HOOKS = ROOT / "src" / "hooks" / "cpp" / "hooks" / "cpp_hooks.py"
+CPP_HOOKS = ROOT / "src" / "backends" / "cpp" / "hooks" / "cpp_hooks.py"
 ADD_RE = re.compile(r'hooks\.add\("([^"]+)",\s*([a-zA-Z_][a-zA-Z0-9_]*)\)')
 
 # NOTE:

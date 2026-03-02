@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from hooks.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
+from backends.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
 from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
