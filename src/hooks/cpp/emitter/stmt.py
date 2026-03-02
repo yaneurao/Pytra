@@ -282,6 +282,47 @@ class CppStatementEmitter:
             return
         self.emit(f"{target} {op} {val};")
 
+    def _build_assign_subscript_index_hoist_plan(self, value: dict[str, Any]) -> dict[str, str] | None:
+        """`Name = subscript(...)` の index 式 hoist 計画を返す（適用不可時は None）。"""
+        if self._node_kind_from_dict(value) != "Subscript":
+            return None
+        owner_node = self.any_to_dict_or_empty(value.get("value"))
+        if self._node_kind_from_dict(owner_node) != "Name":
+            return None
+        owner_t = self.normalize_type_name(self.get_expr_type(value.get("value")))
+        if not (self.is_indexable_sequence_type(owner_t) or (owner_t.startswith("tuple[") and owner_t.endswith("]"))):
+            return None
+        index_node = self.any_to_dict_or_empty(value.get("slice"))
+        index_kind = self._node_kind_from_dict(index_node)
+        if index_kind in {"", "Name", "Constant", "Slice"}:
+            return None
+        idx_tmp = self.next_tmp("__idx")
+        idx_expr = self.render_expr(value.get("slice"))
+        idx_type = self.normalize_type_name(self.get_expr_type(value.get("slice")))
+        if idx_type == "":
+            idx_type = "unknown"
+        idx_name_node: dict[str, Any] = {
+            "kind": "Name",
+            "id": idx_tmp,
+            "resolved_type": idx_type,
+            "repr": idx_tmp,
+        }
+        rewritten = dict(value)
+        rewritten["slice"] = idx_name_node
+        return {
+            "idx_tmp": idx_tmp,
+            "idx_expr": idx_expr,
+            "rewritten_expr": self.render_expr(rewritten),
+        }
+
+    def _render_assign_value_with_subscript_index_hoist(self, value: dict[str, Any]) -> str:
+        """Assign RHS を描画し、必要時のみ subscript index を hoist する。"""
+        plan = self._build_assign_subscript_index_hoist_plan(value)
+        if plan is None:
+            return self.render_expr(value)
+        self.emit(f"auto {plan['idx_tmp']} = {plan['idx_expr']};")
+        return plan["rewritten_expr"]
+
     def emit_assign(self, stmt: dict[str, Any]) -> None:
         """代入文（通常代入/タプル代入）を C++ へ出力する。"""
         target = self.primary_assign_target(stmt)
@@ -412,7 +453,7 @@ class CppStatementEmitter:
             dtype = self._cpp_type_text(picked)
             self.declare_in_current_scope(texpr)
             self.declared_var_types[texpr] = picked
-            rval = self.render_expr(stmt.get("value"))
+            rval = self._render_assign_value_with_subscript_index_hoist(value)
             rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
             rval_trim = self._trim_ws(rval)
             if dtype.startswith("list<") and rval_trim.startswith("[&]() -> list<object> {"):
@@ -453,7 +494,7 @@ class CppStatementEmitter:
             else:
                 self.emit(f"{dtype} {texpr} = {rval};")
             return
-        rval = self.render_expr(stmt.get("value"))
+        rval = self._render_assign_value_with_subscript_index_hoist(value)
         t_target = self.get_expr_type(target_obj)
         if t_target == "None":
             t_target = "Any"
