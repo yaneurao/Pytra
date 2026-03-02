@@ -53,7 +53,7 @@
 
 ## 分解
 
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
@@ -64,6 +64,35 @@
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の使い方・仕様を更新し、移行手順（互換ラッパ期間を含む）を明文化する。
 
+## S1-01 棚卸し結果（2026-03-03）
+
+### CLI 差分
+
+| 区分 | 対象 | 現状 | `py2x` での扱い |
+| --- | --- | --- | --- |
+| 共通 CLI | `py2cs/rs/js/ts/go/java/kotlin/swift/rb/lua/php/scala/nim` | `INPUT`, `-o/--output`, `--parser-backend`, `--east-stage`, `--object-dispatch-mode`, EAST3 optimizer 系 dump/level | `py2x` の共通引数として統合する。 |
+| C# だけ独自実装 | `py2cs.py` | `argparse` 非使用の手書き parser | `py2x` 側で argparse 統一し、`py2cs.py` は互換ラッパへ縮退。 |
+| C++ 専用 CLI | `py2cpp.py` | `--single-file/--multi-file`, `--header-output`, `--emit-runtime-cpp`, `--output-dir`, C++/EAST3/CppOpt 固有 option 群 | `py2x` 共通には入れず、backend option（`--lower/optimizer/emitter-option`）または `py2cpp.py` 互換ラッパに残す。 |
+| Java 専用 post-process | `py2java.py` | 出力ファイル名から `class_name` を導出 | backend extension hook（packaging hook）として registry で扱う。 |
+
+### runtime 配置差分
+
+| 種別 | 対象 | 現状 | `py2x` で残す差分 |
+| --- | --- | --- | --- |
+| runtime 同梱なし | `py2cs.py` | 出力 `.cs` のみ書き出し | なし |
+| JS shim 同梱 | `py2js.py`, `py2ts.py` | `write_js_runtime_shims(output_dir)` を呼び出し | `runtime_packaging_hook=js_shims` として backend registry 化 |
+| 単一 runtime ファイル同梱 | `py2rs/go/java/kotlin/swift/rb/lua/scala/nim` | `py_runtime.*`（Javaは `PyRuntime.java`）を同一出力ディレクトリへコピー | `runtime_packaging_hook=single_runtime_file` として backend ごとに `source/dest` を宣言 |
+| runtime 複数ファイル同梱 | `py2php.py` | `pytra/` 配下へ `py_runtime.php`, `runtime/png.php`, `runtime/gif.php` をコピー | `runtime_packaging_hook=runtime_tree_copy` として backend registry 化 |
+| runtime 生成モードを持つ | `py2cpp.py` | `--emit-runtime-cpp` で runtime module から `pytra-gen` を生成 | `py2x` 初期導入では対象外（`py2cpp.py` 互換ラッパ経由を維持） |
+
+### 共通 frontend 化で残す差分（確定）
+
+1. 入力解決（`.py/.json -> EAST3`）、共通 guard、共通出力書き込みは `py2x` に集約する。  
+2. runtime 配置は backend registry の `runtime_packaging_hook` に委譲する。  
+3. C++ 固有の多量 CLI は段階移行し、初期フェーズは `py2cpp.py` 互換ラッパを維持する。  
+4. Java の `class_name` 導出など backend 固有 post-process は `backend extension hook` で管理する。  
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通化で残す差分を「runtime hook」「backend post-process」「C++互換ラッパ維持」に分類して確定した。
