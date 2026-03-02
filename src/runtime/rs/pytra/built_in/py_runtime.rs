@@ -204,6 +204,17 @@ pub fn py_str_at(s: &str, index: i64) -> String {
     s.chars().nth(idx as usize).map(|c| c.to_string()).unwrap_or_default()
 }
 
+pub fn py_str_at_nonneg(s: &str, index: usize) -> String {
+    if s.is_ascii() {
+        if index >= s.len() {
+            return String::new();
+        }
+        let b = s.as_bytes()[index];
+        return (b as char).to_string();
+    }
+    s.chars().nth(index).map(|c| c.to_string()).unwrap_or_default()
+}
+
 pub fn py_slice_str(s: &str, start: Option<i64>, end: Option<i64>) -> String {
     let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
     let mut i = start.unwrap_or(0);

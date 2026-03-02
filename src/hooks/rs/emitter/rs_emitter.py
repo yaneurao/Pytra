@@ -58,6 +58,17 @@ fn py_str_at(s: &str, index: i64) -> String {
     s.chars().nth(idx as usize).map(|c| c.to_string()).unwrap_or_default()
 }
 
+fn py_str_at_nonneg(s: &str, index: usize) -> String {
+    if s.is_ascii() {
+        if index >= s.len() {
+            return String::new();
+        }
+        let b = s.as_bytes()[index];
+        return (b as char).to_string();
+    }
+    s.chars().nth(index).map(|c| c.to_string()).unwrap_or_default()
+}
+
 fn py_slice_str(s: &str, start: Option<i64>, end: Option<i64>) -> String {
     let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
     let mut i = start.unwrap_or(0);
@@ -4187,6 +4198,8 @@ class RustEmitter(CodeEmitter):
             idx = self.render_expr(expr_d.get("slice"))
             if owner_t == "str":
                 self.uses_string_helpers = True
+                if self._expr_is_non_negative(expr_d.get("slice")):
+                    return "py_str_at_nonneg(&" + owner + ", ((" + idx + ") as usize))"
                 return "py_str_at(&" + owner + ", ((" + idx + ") as i64))"
             if self._expr_is_non_negative(expr_d.get("slice")):
                 idx_usize = "((" + idx + ") as usize)"

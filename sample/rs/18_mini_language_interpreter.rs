@@ -77,7 +77,7 @@ fn tokenize(lines: &[String]) -> Vec<Token> {
         let mut i: i64 = 0;
         let n: i64 = source.len() as i64;
         while i < n {
-            let ch: String = ((py_str_at(&source, ((i) as i64))).to_string());
+            let ch: String = ((py_str_at_nonneg(&source, ((i) as usize))).to_string());
             
             if ch == " " {
                 i += 1;
