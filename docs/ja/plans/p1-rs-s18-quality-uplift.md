@@ -41,11 +41,13 @@
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、sample/18 Rust 出力改善を P1 として起票。
+- 2026-03-02: sample/18 の棚卸しで、優先度を `clone削減 -> 添字fastpath -> 走査軽量化 -> 文字列生成簡約 -> API型縮退(&Vec->&[T]) -> map見直し` の順に固定。
+- 2026-03-02: fail-closed 境界を「型既知 + 値境界不変 + 失敗時は現行出力維持」に確定。`unknown/object/union` と順序依存経路は最適化非適用に固定。
 
 ## 分解
 
-- [ ] [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust 出力の冗長断片（clone/添字/走査/format）を棚卸しし、改善対象を固定する。
-- [ ] [ID: P1-RS-S18-QUALITY-01-S1-02] 期待効果とリスクで実装順を確定し、fail-closed 適用境界を定義する。
+- [x] [ID: P1-RS-S18-QUALITY-01-S1-01] sample/18 Rust 出力の冗長断片（clone/添字/走査/format）を棚卸しし、改善対象を固定する。
+- [x] [ID: P1-RS-S18-QUALITY-01-S1-02] 期待効果とリスクで実装順を確定し、fail-closed 適用境界を定義する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-01] `current_token/previous_token/eval_expr` で borrow 優先経路を追加し、不要 `clone` を削減する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-02] 非負添字が確定する経路で index 正規化式を省略する fastpath を追加する。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-03] tokenize の文字走査を `String` 汎用経路から軽量経路（bytes/chars）へ縮退する。
@@ -55,3 +57,37 @@
 - [ ] [ID: P1-RS-S18-QUALITY-01-S2-07] `BTreeMap` 利用箇所の必要性を再評価し、順序不要経路を軽量mapへ切替える。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S3-01] unit/golden 回帰を追加し、冗長出力パターンの再発を検知可能にする。
 - [ ] [ID: P1-RS-S18-QUALITY-01-S3-02] `sample/rs/18` 再生成と transpile/smoke/parity で非退行を確認する。
+
+## 棚卸し結果（S1-01）
+
+- `clone` 過多:
+  - `current_token/previous_token` が `Token` を clone 返却（`clone()` + index 正規化式）。
+  - `eval_expr` 冒頭で `ExprNode` を clone 取得。
+  - `Parser::new((tokens).clone())` の呼び出し側 clone。
+- 添字正規化式:
+  - `vec[((if idx < 0 { len + idx } else { idx }) as usize)]` 形が多数（`expr_nodes/tokens`）。
+  - 非負が保証される `pos/expr_index` でも同式が残存。
+- 走査/lookup:
+  - `tokenize` の `ch` が毎回 `String` 化（`py_str_at(...).to_string()`）。
+  - 単文字 token 判定で `BTreeMap<String, i64>` lookup を毎回実施。
+- 文字列生成:
+  - `format!("{}{}", format!("{}{}", ...))` 連鎖で深いネスト。
+  - `to_string()` が短命値にも広く付与される。
+- API 形状:
+  - 関数引数が `&Vec<T>` 固定で `&[T]` へ縮退できる箇所が残る。
+
+## 実装順・境界（S1-02）
+
+- 実装順（期待効果/安全性）:
+  1. `S2-01` borrow 優先（clone 削減、意味保持しやすい）
+  2. `S2-02` 非負添字 fastpath（境界明確）
+  3. `S2-06` `&Vec<T> -> &[T]`（低リスク）
+  4. `S2-05` 文字列生成簡約
+  5. `S2-03` tokenize 走査軽量化
+  6. `S2-04` token 判定 map 見直し
+  7. `S2-07` map 構造再評価（影響範囲大）
+- fail-closed ルール:
+  - 型/境界が判定できない場合は最適化しない。
+  - index fastpath は `idx >= 0` が構文上確定するケースのみ。
+  - borrow 化は mutable alias が発生しない箇所のみ。
+  - lookup 構造変更は出力順序依存がないことを確認できる箇所のみ。
