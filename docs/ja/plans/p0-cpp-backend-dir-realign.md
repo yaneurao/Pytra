@@ -56,8 +56,8 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元（`py2cpp`/`emitter`/tests）を棚卸しし、移設先を確定する。
-- [ ] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新ディレクトリ方針（`emitter` 配下の受け皿名）を決定し、命名規約を文書化する。
+- [x] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元（`py2cpp`/`emitter`/tests）を棚卸しし、移設先を確定する。
+- [x] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新ディレクトリ方針（`emitter` 配下の受け皿名）を決定し、命名規約を文書化する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` を `emitter` 配下へ移設し、`py2cpp`/`CppEmitter` の import を更新する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` を `emitter` 配下へ移設し、hook factory の呼び出し元を更新する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` を `emitter` 配下へ移設し、module include/runtime path 解決を更新する。
@@ -67,6 +67,35 @@
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S3-01] 旧 import 再発防止の回帰テスト/検査（`rg` ベース or unit）を追加する。
 - [ ] [ID: P0-CPP-DIR-REALIGN-01-S3-02] unit/transpile/sample 回帰を実行し、非退行を確認して完了条件を満たす。
 
+## S1-01 棚卸し結果（2026-03-02）
+
+| 現行フォルダ | 主責務 | 主参照元 | 移設先（確定） |
+| --- | --- | --- | --- |
+| `backends/cpp/profile/` | C++ profile loader / operator map / hooks loader | `src/py2cpp.py`, `backends/cpp/emitter/*` | `backends/cpp/emitter/profile_loader.py` |
+| `backends/cpp/hooks/` | C++ emitter hook registry（`build_cpp_hooks`） | `backends/cpp/profile/cpp_profile.py`, `src/py2cpp.py`, test | `backends/cpp/emitter/hooks_registry.py` |
+| `backends/cpp/runtime_emit/` | runtime path / include / namespace 解決 | `src/py2cpp.py`, `backends/cpp/emitter/module.py` | `backends/cpp/emitter/runtime_paths.py` |
+| `backends/cpp/header/` | EAST -> C++ header 生成 | `src/py2cpp.py` | `backends/cpp/emitter/header_builder.py` |
+| `backends/cpp/multifile/` | multi-file 出力オーケストレーション | `src/py2cpp.py` | `backends/cpp/emitter/multifile_writer.py` |
+
+補足:
+- 5 フォルダはいずれも `lower`/`optimizer` 共有部品ではなく、`emitter` 周辺または CLI bridge 向け補助であることを確認した。
+- したがって本タスクでは、`lower/optimizer` 配下へは移さず `emitter` 配下へ集約する。
+
+## S1-02 命名・import 規約（2026-03-02）
+
+- `src/backends/cpp/` 直下の正本ディレクトリは `lower/`, `optimizer/`, `emitter/` の3つに限定する。
+- 補助モジュールは `emitter/` 直下に以下で配置する:
+  - `profile_loader.py`
+  - `hooks_registry.py`
+  - `runtime_paths.py`
+  - `header_builder.py`
+  - `multifile_writer.py`
+- 旧 import（`backends.cpp.{profile,hooks,runtime_emit,header,multifile}`）は段階移行後に禁止する。
+- `py2cpp.py` は backend helper を `backends.cpp.emitter.*` からのみ import する。
+- 後方互換 alias は移行期間のみ許容し、`S2-06` 完了時に削除する。
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、`src/backends/cpp/` 直下に残る 5 フォルダ（`hooks/header/multifile/profile/runtime_emit`）の整理を P0 として起票。
 - 2026-03-02: 本タスクでは 5 フォルダを `lower/optimizer/emitter` のいずれかへ再配置する方針を採用し、共通部品扱いはしない前提を確定。
+- 2026-03-02: [ID: P0-CPP-DIR-REALIGN-01-S1-01] 5 フォルダの責務/参照元を棚卸しし、移設先を `emitter` 配下5モジュールへ確定した。
+- 2026-03-02: [ID: P0-CPP-DIR-REALIGN-01-S1-02] 命名規約と import 境界（`backends.cpp.emitter.*` へ統一）を明文化した。

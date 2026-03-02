@@ -37,8 +37,8 @@
 文脈: [docs/ja/plans/p0-cpp-backend-dir-realign.md](../plans/p0-cpp-backend-dir-realign.md)
 
 1. [ ] [ID: P0-CPP-DIR-REALIGN-01] `src/backends/cpp/` 直下の `hooks/header/multifile/profile/runtime_emit` を責務境界に沿って再配置し、構成を `lower/optimizer/emitter` 中心へ整理する。
-2. [ ] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元を棚卸しし、移設先を確定する。
-3. [ ] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新配置の命名規約と import 境界を文書化する。
+2. [x] [ID: P0-CPP-DIR-REALIGN-01-S1-01] 現行 5 フォルダの責務と参照元を棚卸しし、移設先を確定する。
+3. [x] [ID: P0-CPP-DIR-REALIGN-01-S1-02] 新配置の命名規約と import 境界を文書化する。
 4. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-01] `profile` を `emitter` 配下へ移設し、`py2cpp`/`CppEmitter` の参照を更新する。
 5. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-02] `hooks` を `emitter` 配下へ移設し、hook factory 導線を更新する。
 6. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-03] `runtime_emit` を `emitter` 配下へ移設し、runtime path/include 解決を更新する。
@@ -47,6 +47,8 @@
 9. [ ] [ID: P0-CPP-DIR-REALIGN-01-S2-06] 旧 5 フォルダを削除し、旧 import を全面撤去する。
 10. [ ] [ID: P0-CPP-DIR-REALIGN-01-S3-01] 旧 import 再発防止チェックを追加する。
 11. [ ] [ID: P0-CPP-DIR-REALIGN-01-S3-02] unit/transpile/sample 回帰で非退行を確認する。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S1-01] 5 フォルダの責務/参照元を棚卸しし、移設先を `emitter` 配下へ確定。
+- 進捗メモ: [ID: P0-CPP-DIR-REALIGN-01-S1-02] `src/backends/cpp/` 直下を `lower/optimizer/emitter` 限定とする命名・import 規約を文書化。
 
 ### P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
