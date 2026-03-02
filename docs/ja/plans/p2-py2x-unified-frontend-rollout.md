@@ -55,7 +55,7 @@
 
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
@@ -137,8 +137,46 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 4. backend schema にない key、型不一致値は即時エラー。  
 5. `.json` 入力で parser 系 option が指定された場合は警告ではなく無視不可エラー（明示的に不整合を止める）。  
 
+## S1-03 backend registry 契約（2026-03-03）
+
+### registry エントリ最小契約
+
+各 target は `BackendSpec`（仮称）として次を必須にする。
+
+1. `target: str`  
+2. `lower_entry: Callable[[East3Module, LowerOptions], LangIRModule]`  
+3. `optimizer_entry: Callable[[LangIRModule, OptimizerOptions], LangIRModule]`  
+4. `emitter_entry: Callable[[LangIRModule, EmitterOptions], str]`  
+5. `runtime_packaging_hook: Callable[[Path, RuntimePackagingOptions], None] | None`  
+6. `default_options: {lower: dict, optimizer: dict, emitter: dict}`  
+7. `option_schema: {lower: Schema, optimizer: Schema, emitter: Schema}`  
+8. `compat_wrapper: list[str]`（対応する既存 `py2*.py` 名）
+
+### option schema 契約
+
+- schema は層ごとに独立し、`key -> {type, allowed, default, description}` で定義する。
+- `py2x` は `--*-option key=value` を受けた時点で schema 検証を行い、未知 key や型不整合は即時失敗。
+- schema 既定値は `default_options` へ反映し、wrapper 経由でも同一解決順序を保証する。
+
+### runtime packaging hook 契約
+
+- hook は `emit` 後に 1 回だけ呼び出し、出力ディレクトリ配下のみを書き換える。
+- hook の副作用は `runtime` 配置に限定し、生成コード文字列は変更しない。
+- hook 種別は少なくとも次を定義する。
+  - `none`
+  - `js_shims`
+  - `single_runtime_file`
+  - `runtime_tree_copy`
+
+### 互換ラッパ契約
+
+- 既存 `py2*.py` は「引数解釈 -> `py2x` 互換引数へ写像 -> `py2x` 呼び出し」のみを行う。
+- wrapper は `EAST3` 生成・`lower/optimizer/emitter` 呼び出しを保持しない。
+- 互換維持のため、C++ など段階移行中 backend は wrapper 側に暫定オプションを残せるが、registry 経路を最終正本とする。
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通化で残す差分を「runtime hook」「backend post-process」「C++互換ラッパ維持」に分類して確定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様（基本形、共通オプション、層別 pass-through、互換方針、fail-fast 規約）を確定した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint/default options/schema/runtime hook/compat wrapper）を定義し、S2 実装の受け入れインタフェースを固定した。
