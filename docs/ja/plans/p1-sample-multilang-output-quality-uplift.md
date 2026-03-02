@@ -44,7 +44,7 @@
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-02] `kotlin/swift/scala` の helper/cast 連鎖（`__pytra_int/float`, `asInstanceOf`）を棚卸しし、削減優先順を確定する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-03] `rs/js/ts` のループ冗長パターン（`__for_i` 再代入、`__start_N`）の縮退規則を仕様化する。
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] `go/java` emitter に typed container/typed access fastpath を実装する。
-- [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
+- [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` emitter に cast/helper 抑制 fastpath を実装する。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-03] `rs/js/ts` emitter に canonical loop 出力を実装し、冗長一時変数を削減する。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-01] 言語別回帰テストを追加し、退化再発を検知可能にする。
 - [ ] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S3-02] 対象 sample を再生成し、smoke/transpile/parity で非退行を確認する。
@@ -58,6 +58,9 @@
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] Java emitter に container 型推論（`list[T] -> ArrayList<T>`, `dict[K,V] -> HashMap<K,V>`）と empty literal の expected-type ctor 補正を追加。`sample/java/18` の `ArrayList<Object>/HashMap<Object,Object>` を型付き container へ置換。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] Java enumerate loop で list 要素型が既知な場合に typed iterator cast を使う fastpath を追加し、`String.valueOf(__iter.get(...))` 依存を削減。
 - 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-01] 検証: `test_py2go*`/`test_py2java*` smoke は通過、`regenerate_samples --langs go,java --stems 18_mini_language_interpreter --force` 実施。`runtime_parity_check --targets go,java 18_mini_language_interpreter` は既知の compile blocker（go: interface field access, java: `HashMap.get(key,default)` 等）で失敗し、今回差分の退行ではないことを確認。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `kotlin/swift/scala` の `_expr_emits_target_type` と `int/float` call 出力を調整し、helper (`__pytra_*`) や `dict.get` など Any 返却経路を除外した上で、resolved-type 既知の非 helper call だけ cast 省略を許可。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] `sample/{kotlin,swift,scala}/18` を再生成。`let_expr_index/print_expr_index/assign_expr_index` などで `__pytra_int(...)` 連鎖が除去され、直接代入へ縮退したことを確認。
+- 2026-03-02: [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S2-02] 検証: `test_py2kotlin*`/`test_py2swift*`/`test_py2scala*` smoke は通過。parity は `kotlin,scala` で pass（`18_mini_language_interpreter`）。`swift` は toolchain 未導入のため parity 未実行（既知制約）。
 
 実装境界メモ（S1 集約）:
 - `go/java` typed fastpath は `tokenize/parse_program/execute/build_benchmark_source` の container と loop target を優先対象にする。
