@@ -42,6 +42,16 @@ def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess
     return subprocess.run(cmd, cwd=str(cwd or ROOT), capture_output=True, text=True, env=env)
 
 
+def _resolve_selfhost_target(selfhost_bin: Path, requested: str) -> str:
+    if requested != "auto":
+        return requested
+    cp = subprocess.run([str(selfhost_bin), "--help"], cwd=str(ROOT), capture_output=True, text=True)
+    text = (cp.stdout or "") + "\n" + (cp.stderr or "")
+    if "--target" in text:
+        return "cpp"
+    return ""
+
+
 def _runtime_cpp_sources() -> list[str]:
     out: list[str] = []
     for p in sorted((ROOT / "src" / "runtime" / "cpp" / "pytra").rglob("*.cpp")):
@@ -78,6 +88,7 @@ def _ignore_prefixes_for_case(rel: str) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description="verify selfhost direct e2e output parity")
     ap.add_argument("--selfhost-bin", default=str(SELFHOST_BIN), help="path to selfhost binary")
+    ap.add_argument("--selfhost-target", default="auto", help="target passed to selfhost binary")
     ap.add_argument("--skip-build", action="store_true", help="skip building selfhost binary")
     ap.add_argument("--cases", nargs="*", default=DEFAULT_CASES, help="python case files")
     args = ap.parse_args()
@@ -92,6 +103,7 @@ def main() -> int:
     if not selfhost_bin.exists():
         print(f"[FAIL] missing selfhost binary: {selfhost_bin}")
         return 2
+    selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
 
     runtime_cpp = _runtime_cpp_sources()
     failures = 0
@@ -118,7 +130,11 @@ def main() -> int:
             out_cpp = td / (src.stem + ".selfhost.cpp")
             out_bin = td / (src.stem + ".selfhost.out")
 
-            cp_transpile = _run([str(selfhost_bin), str(src), "-o", str(out_cpp)])
+            transpile_cmd = [str(selfhost_bin), str(src)]
+            if selfhost_target != "":
+                transpile_cmd.extend(["--target", selfhost_target])
+            transpile_cmd.extend(["-o", str(out_cpp)])
+            cp_transpile = _run(transpile_cmd)
             if cp_transpile.returncode != 0:
                 msg = cp_transpile.stderr.strip() or cp_transpile.stdout.strip()
                 print(f"[FAIL selfhost-transpile] {rel}: {msg.splitlines()[:1]}")

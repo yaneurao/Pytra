@@ -1894,9 +1894,14 @@ def collect_reserved_import_conflicts(root: Path) -> list[str]:
     out: list[str] = []
     pytra_file = root / "pytra.py"
     pytra_pkg_init = root / "pytra" / "__init__.py"
+    canonical_pytra_pkg = (
+        (root / "pytra" / "std").exists()
+        and (root / "pytra" / "utils").exists()
+        and (root / "pytra" / "built_in").exists()
+    )
     if pytra_file.exists():
         out.append(str(pytra_file))
-    if pytra_pkg_init.exists():
+    if pytra_pkg_init.exists() and not canonical_pytra_pkg:
         out.append(str(pytra_pkg_init))
     return out
 

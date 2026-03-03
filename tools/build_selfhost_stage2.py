@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BUILD_STAGE1 = ROOT / "tools" / "build_selfhost.py"
 STAGE1_BIN = ROOT / "selfhost" / "py2cpp.out"
-STAGE1_SRC = ROOT / "selfhost" / "py2cpp.py"
+STAGE1_SRC = ROOT / "src" / "py2x-selfhost.py"
 STAGE2_CPP = ROOT / "selfhost" / "py2cpp_stage2.cpp"
 STAGE2_BIN = ROOT / "selfhost" / "py2cpp_stage2.out"
 
@@ -39,9 +39,9 @@ def main() -> int:
     if not STAGE1_BIN.exists():
         raise SystemExit("missing stage1 binary: selfhost/py2cpp.out")
     if not STAGE1_SRC.exists():
-        raise SystemExit("missing source: selfhost/py2cpp.py")
+        raise SystemExit("missing source: src/py2x-selfhost.py")
 
-    _run([str(STAGE1_BIN), str(STAGE1_SRC), "-o", str(STAGE2_CPP)])
+    _run([str(STAGE1_BIN), str(STAGE1_SRC), "--target", "cpp", "-o", str(STAGE2_CPP)])
 
     cmd = [
         "g++",
