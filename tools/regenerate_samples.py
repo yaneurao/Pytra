@@ -19,24 +19,24 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CACHE_FILE = ROOT / "out" / "sample_regen_cache.json"
-DEFAULT_VERSIONS_FILE = ROOT / "src" / "pytra" / "compiler" / "transpiler_versions.json"
+DEFAULT_VERSIONS_FILE = ROOT / "src" / "toolchain" / "compiler" / "transpiler_versions.json"
 CACHE_VERSION = 1
 
 
 LANG_CONFIGS: dict[str, dict[str, str]] = {
-    "cpp": {"cli": "src/py2cpp.py", "out_dir": "sample/cpp", "ext": ".cpp"},
-    "rs": {"cli": "src/py2rs.py", "out_dir": "sample/rs", "ext": ".rs"},
-    "cs": {"cli": "src/py2cs.py", "out_dir": "sample/cs", "ext": ".cs"},
-    "js": {"cli": "src/py2js.py", "out_dir": "sample/js", "ext": ".js"},
-    "ts": {"cli": "src/py2ts.py", "out_dir": "sample/ts", "ext": ".ts"},
-    "go": {"cli": "src/py2go.py", "out_dir": "sample/go", "ext": ".go"},
-    "java": {"cli": "src/py2java.py", "out_dir": "sample/java", "ext": ".java"},
-    "swift": {"cli": "src/py2swift.py", "out_dir": "sample/swift", "ext": ".swift"},
-    "kotlin": {"cli": "src/py2kotlin.py", "out_dir": "sample/kotlin", "ext": ".kt"},
-    "scala": {"cli": "src/py2scala.py", "out_dir": "sample/scala", "ext": ".scala"},
-    "lua": {"cli": "src/py2lua.py", "out_dir": "sample/lua", "ext": ".lua"},
-    "ruby": {"cli": "src/py2rb.py", "out_dir": "sample/ruby", "ext": ".rb"},
-    "php": {"cli": "src/py2php.py", "out_dir": "sample/php", "ext": ".php"},
+    "cpp": {"out_dir": "sample/cpp", "ext": ".cpp"},
+    "rs": {"out_dir": "sample/rs", "ext": ".rs"},
+    "cs": {"out_dir": "sample/cs", "ext": ".cs"},
+    "js": {"out_dir": "sample/js", "ext": ".js"},
+    "ts": {"out_dir": "sample/ts", "ext": ".ts"},
+    "go": {"out_dir": "sample/go", "ext": ".go"},
+    "java": {"out_dir": "sample/java", "ext": ".java"},
+    "swift": {"out_dir": "sample/swift", "ext": ".swift"},
+    "kotlin": {"out_dir": "sample/kotlin", "ext": ".kt"},
+    "scala": {"out_dir": "sample/scala", "ext": ".scala"},
+    "lua": {"out_dir": "sample/lua", "ext": ".lua"},
+    "ruby": {"out_dir": "sample/ruby", "ext": ".rb"},
+    "php": {"out_dir": "sample/php", "ext": ".php"},
 }
 
 LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
@@ -165,8 +165,8 @@ def _save_cache(path: Path, cache: dict[str, Any]) -> None:
     path.write_text(txt + "\n", encoding="utf-8")
 
 
-def _run_transpile(cli_path: Path, src: Path, out: Path) -> tuple[bool, str]:
-    cmd = ["python3", str(cli_path), str(src), "-o", str(out)]
+def _run_transpile(target: str, src: Path, out: Path) -> tuple[bool, str]:
+    cmd = ["python3", "src/py2x.py", str(src), "--target", target, "-o", str(out)]
     cp = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
     if cp.returncode == 0:
         return True, ""
@@ -289,15 +289,9 @@ def main() -> int:
 
     for lang in langs:
         cfg = LANG_CONFIGS[lang]
-        cli = ROOT / cfg["cli"]
         out_dir = ROOT / cfg["out_dir"]
         ext = cfg["ext"]
         version_token = version_tokens[lang]
-
-        if not cli.exists():
-            print(f"[FAIL] missing transpiler: {cli}")
-            failed += 1
-            continue
 
         for src in sample_files:
             total += 1
@@ -333,7 +327,7 @@ def main() -> int:
                 continue
 
             out.parent.mkdir(parents=True, exist_ok=True)
-            ok, msg = _run_transpile(cli, src, out)
+            ok, msg = _run_transpile(lang, src, out)
             if not ok:
                 failed += 1
                 print(f"[FAIL] {lang} {stem}: {msg}")

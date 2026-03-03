@@ -106,10 +106,16 @@ def benchmark_case(case: str, work: Path, warmup: int, repeat: int, runtime_cpp:
         raise RuntimeError("missing case: " + case)
     src = sample_path.as_posix()
 
-    tr_cpp = _run(f"python src/py2cpp.py {shlex.quote(src)} test/transpile/cpp/{case}.cpp", work)
+    tr_cpp = _run(
+        f"python src/py2x.py {shlex.quote(src)} --target cpp -o test/transpile/cpp/{case}.cpp",
+        work,
+    )
     if tr_cpp.returncode != 0:
         raise RuntimeError("py2cpp failed: " + tr_cpp.stderr.strip())
-    tr_rs = _run(f"python src/py2rs.py {shlex.quote(src)} -o test/transpile/rs/{case}.rs", work)
+    tr_rs = _run(
+        f"python src/py2x.py {shlex.quote(src)} --target rs -o test/transpile/rs/{case}.rs",
+        work,
+    )
     if tr_rs.returncode != 0:
         raise RuntimeError("py2rs failed: " + tr_rs.stderr.strip())
 

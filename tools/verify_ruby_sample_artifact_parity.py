@@ -86,8 +86,10 @@ def _run_one(stem: str, east3_opt_level: str) -> CaseResult:
         tr = _run(
             [
                 "python3",
-                "src/py2rb.py",
+                "src/py2x.py",
                 f"sample/py/{stem}.py",
+                "--target",
+                "ruby",
                 "-o",
                 f"test/transpile/ruby/{stem}.rb",
                 "--east3-opt-level",

@@ -159,6 +159,13 @@ def runtime_cpp_sources_shell() -> str:
     return " ".join(paths)
 
 
+def py2x_transpile_cmd(case_src: str, target: str, out_path: str, opt_arg: str) -> str:
+    return (
+        f"python src/py2x.py {shlex.quote(case_src)} --target {shlex.quote(target)} "
+        f"-o {shlex.quote(out_path)} {opt_arg}"
+    )
+
+
 def build_targets(
     case_stem: str,
     case_path: Path,
@@ -170,7 +177,12 @@ def build_targets(
     return [
         Target(
             name="cpp",
-            transpile_cmd=f"python src/py2cpp.py {shlex.quote(case_src)} test/transpile/cpp/{case_stem}.cpp {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "cpp",
+                f"test/transpile/cpp/{case_stem}.cpp",
+                opt_arg,
+            ),
             run_cmd=(
                 f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
                 "-I src/runtime/cpp "
@@ -181,13 +193,23 @@ def build_targets(
         ),
         Target(
             name="rs",
-            transpile_cmd=f"python src/py2rs.py {shlex.quote(case_src)} -o test/transpile/rs/{case_stem}.rs {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "rs",
+                f"test/transpile/rs/{case_stem}.rs",
+                opt_arg,
+            ),
             run_cmd=f"rustc -O test/transpile/rs/{case_stem}.rs -o test/transpile/obj/{case_stem}_rs.out && test/transpile/obj/{case_stem}_rs.out",
             needs=("python", "rustc"),
         ),
         Target(
             name="cs",
-            transpile_cmd=f"python src/py2cs.py {shlex.quote(case_src)} -o test/transpile/cs/{case_stem}.cs {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "cs",
+                f"test/transpile/cs/{case_stem}.cs",
+                opt_arg,
+            ),
             run_cmd=(
                 f"mcs -warn:0 -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
                 "src/runtime/cs/pytra/built_in/py_runtime.cs "
@@ -202,51 +224,88 @@ def build_targets(
         ),
         Target(
             name="js",
-            transpile_cmd=f"python src/py2js.py {shlex.quote(case_src)} -o test/transpile/js/{case_stem}.js {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "js",
+                f"test/transpile/js/{case_stem}.js",
+                opt_arg,
+            ),
             run_cmd=f"node test/transpile/js/{case_stem}.js",
             needs=("python", "node"),
         ),
         Target(
             name="ruby",
-            transpile_cmd=f"python src/py2rb.py {shlex.quote(case_src)} -o test/transpile/ruby/{case_stem}.rb {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "ruby",
+                f"test/transpile/ruby/{case_stem}.rb",
+                opt_arg,
+            ),
             run_cmd=f"ruby test/transpile/ruby/{case_stem}.rb",
             needs=("python", "ruby"),
         ),
         Target(
             name="lua",
-            transpile_cmd=f"python src/py2lua.py {shlex.quote(case_src)} -o test/transpile/lua/{case_stem}.lua {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "lua",
+                f"test/transpile/lua/{case_stem}.lua",
+                opt_arg,
+            ),
             run_cmd=f"lua test/transpile/lua/{case_stem}.lua",
             needs=("python", "lua"),
         ),
         Target(
             name="php",
-            transpile_cmd=f"python src/py2php.py {shlex.quote(case_src)} -o test/transpile/php/{case_stem}.php {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "php",
+                f"test/transpile/php/{case_stem}.php",
+                opt_arg,
+            ),
             run_cmd=f"php test/transpile/php/{case_stem}.php",
             needs=("python", "php"),
         ),
         Target(
             name="ts",
-            transpile_cmd=f"python src/py2ts.py {shlex.quote(case_src)} -o test/transpile/ts/{case_stem}.ts {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "ts",
+                f"test/transpile/ts/{case_stem}.ts",
+                opt_arg,
+            ),
             run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",
             needs=("python", "node", "npx"),
         ),
         Target(
             name="go",
-            transpile_cmd=f"python src/py2go.py {shlex.quote(case_src)} -o test/transpile/go/{case_stem}.go {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "go",
+                f"test/transpile/go/{case_stem}.go",
+                opt_arg,
+            ),
             run_cmd=f"go run test/transpile/go/{case_stem}.go test/transpile/go/py_runtime.go",
             needs=("python", "go"),
         ),
         Target(
             name="java",
-            transpile_cmd=f"python src/py2java.py {shlex.quote(case_src)} -o test/transpile/java/Main.java {opt_arg}",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "java",
+                "test/transpile/java/Main.java",
+                opt_arg,
+            ),
             run_cmd="javac test/transpile/java/Main.java test/transpile/java/PyRuntime.java && java -cp test/transpile/java Main",
             needs=("python", "javac", "java"),
         ),
         Target(
             name="swift",
-            transpile_cmd=(
-                f"python src/py2swift.py {shlex.quote(case_src)} --output "
-                f"test/transpile/swift/{case_stem}.swift {opt_arg}"
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "swift",
+                f"test/transpile/swift/{case_stem}.swift",
+                opt_arg,
             ),
             run_cmd=(
                 f"swiftc test/transpile/swift/{case_stem}.swift test/transpile/swift/py_runtime.swift "
@@ -256,9 +315,11 @@ def build_targets(
         ),
         Target(
             name="kotlin",
-            transpile_cmd=(
-                f"python src/py2kotlin.py {shlex.quote(case_src)} "
-                f"-o test/transpile/kotlin/{case_stem}.kt {opt_arg}"
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "kotlin",
+                f"test/transpile/kotlin/{case_stem}.kt",
+                opt_arg,
             ),
             run_cmd=(
                 f"kotlinc test/transpile/kotlin/{case_stem}.kt test/transpile/kotlin/py_runtime.kt "
@@ -271,9 +332,11 @@ def build_targets(
         ),
         Target(
             name="scala",
-            transpile_cmd=(
-                f"python src/py2scala.py {shlex.quote(case_src)} "
-                f"-o test/transpile/scala/{case_stem}.scala {opt_arg}"
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "scala",
+                f"test/transpile/scala/{case_stem}.scala",
+                opt_arg,
             ),
             run_cmd=f"scala run test/transpile/scala/py_runtime.scala test/transpile/scala/{case_stem}.scala",
             needs=("python", "scala"),
