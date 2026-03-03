@@ -59,7 +59,7 @@
 - [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-02] `src/pytra` 名前空間維持前提のディレクトリ規約と import 境界（依存方向）を定義する。
 - [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `src/pytra/frontends` / `src/pytra/ir` を新設し、最小 bootstrap モジュールを配置する。
 - [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] Python入力〜EAST1 生成の frontends 相当モジュールを `src/pytra/frontends` へ移設する。
-- [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-03] EAST1/2/3・lower/optimizer/analysis の IR 相当モジュールを `src/pytra/ir` へ移設する。
+- [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-03] EAST1/2/3・lower/optimizer/analysis の IR 相当モジュールを `src/pytra/ir` へ移設する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `src/pytra/compiler` を互換 shim 化し、既存 import を壊さない re-export 導線を整備する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-01] 境界ガード（禁止 import / 逆流依存）を追加し、再発防止を固定する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-02] 主要 unit/transpile 回帰を実行して非退行を確認する。
@@ -113,3 +113,6 @@ S1-02 で固定した境界ルール:
 - 2026-03-03: `src/pytra/frontends/{east1_build.py,frontend_semantics.py,signature_registry.py}` へ実体を移設し、旧 `src/pytra/compiler/east_parts/east1_build.py` と `src/pytra/compiler/stdlib/{frontend_semantics.py,signature_registry.py}` は互換 shim 化した。
 - 2026-03-03: `src/pytra/compiler/east_parts/core.py` の stdlib 参照を `pytra.frontends.*` へ切替し、`py2cpp`/`multifile_writer`/`transpile_cli` の `East1BuildHelpers` 参照を新経路へ更新した。
 - 2026-03-03: `pytra.frontends.__init__` は package import 時循環を避けるため lazy 委譲実装へ変更した。`test_stdlib_signature_registry.py`, `test_east1_build.py`, `test_pytra_layer_bootstrap.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract.py --skip-transpile`, `check_transpiler_version_gate.py --base-ref HEAD` の通過を確認した。
+- 2026-03-03: IR 本体として `src/pytra/ir/{core,east1,east2,east3,east2_to_east3_lowering,east3_optimizer,east_io}.py` と `src/pytra/ir/east3_opt_passes/*` を新設し、旧 `src/pytra/compiler/east_parts/*` 側は互換 shim 化した。
+- 2026-03-03: `transpile_cli` と `frontends/east1_build` の EAST stage 参照を `pytra.ir.*` へ切替。`ir/east_io` が `compiler.east` 経由で循環する問題は `ir.core` 直接参照へ変更して解消した。
+- 2026-03-03: IR移設後の回帰として `test_east{2_to_east3_lowering,3_optimizer,3_non_escape_interprocedural_pass,3_lifetime_analysis_pass}`、`check_py2{cpp,rs,js}_transpile.py`、`check_noncpp_east3_contract --skip-transpile`、`check_transpiler_version_gate --base-ref HEAD` を実行し通過を確認した。
