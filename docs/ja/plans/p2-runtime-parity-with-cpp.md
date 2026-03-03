@@ -51,7 +51,7 @@
 
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] C++ runtime の必須 API カタログ（module/function/契約）を抽出し、正本一覧を作成する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` の3段階で優先度付けする。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` の3段階で優先度付けする。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` の不足 API を実装・統一する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
@@ -67,6 +67,7 @@
 - 2026-03-02: 「実装行数の一致」ではなく「API 契約・挙動同等」を完了判定に採用。
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] `docs/ja/spec/spec-runtime.md` に C++ runtime 正本カタログ（core/math/time/pathlib/json/png/gif + timeit/random）を追加し、Wave の基準 API を固定。
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] `src/runtime/<lang>/pytra` を棚卸しし、`native/mono/compat/missing` 分類の実装有無マトリクスと主要ギャップ（json/pathlib/gif/分離構成差）を確定。
+- 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] マトリクス結果を `Must/Should/Optional` へ優先度化し、Wave1/2/3 の実装順を固定。
 
 ## S1-01 実装（2026-03-03）
 
@@ -105,3 +106,24 @@
 2. `pathlib` 欠落: `kotlin/swift/ruby/php/nim` は C++ `Path` の最小 API 群に未到達。
 3. 画像 API 偏在: `kotlin/swift/nim` で `gif` 側が不足（`png` のみ）。
 4. 実装形態差: `go/java/rs/lua/scala/ruby` は monolithic runtime 集中で、`cs/js/ts` の分離構成と乖離。
+
+## S1-03 実装（2026-03-03）
+
+### Must（Wave1/2 先行）
+
+1. `json.loads/dumps` を `go/java/kotlin/swift/ruby/lua/scala/php/rs/nim` へ追加し、C++ 公開契約に合わせる。
+2. `pathlib.Path` 最小 API（`resolve/parent/name/stem/exists/mkdir/read_text/write_text`）を `kotlin/swift/ruby/php/nim` に追加する。
+3. `gif` API（`grayscale_palette/save_gif`）を `kotlin/swift/nim` に追加する。
+4. `math/time/pathlib/json/png/gif` の emitter 呼び出しを adapter 経由へ寄せ、名前揺れを吸収する。
+
+### Should（Wave2/3）
+
+1. monolithic 実装（`go/java/rs/lua/scala/ruby`）を `std/*` / `utils/*` 分離へ段階移行する。
+2. `timeit/random` の C++ 同等 API を不足言語へ補完する。
+3. `js/ts/php` の `json` compat 経路を専用 runtime API 名へ揃える。
+
+### Optional（後段）
+
+1. API 名一致後の挙動差（例外文言/誤差許容）を厳密化する。
+2. module 分離後の runtime 配置最適化（`profiles` と合わせた責務整理）を行う。
+3. parity 失敗時の runtime 欠落自動診断を `tools/` に追加する。
