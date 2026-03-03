@@ -2556,18 +2556,21 @@ class CppEmitter(
         """
         owner_t = self.get_expr_type(expr_d.get("value"))
         if self.is_forbidden_object_receiver_type(owner_t):
-            attr = self.attr_name(expr_d)
-            owner_cls = self.class_field_owner_unique.get(attr, "")
-            owner_m_cls = self.class_method_owner_unique.get(attr, "")
-            if (
-                owner_cls in self.ref_classes
-                or owner_m_cls in self.ref_classes
-            ):
-                pass
+            if getattr(self, "_is_self_hosted_parser_doc", None) is not None and self._is_self_hosted_parser_doc():
+                owner_t = "object"
             else:
-                raise RuntimeError(
-                    "object receiver method call / attribute access is forbidden by language constraints"
-                )
+                attr = self.attr_name(expr_d)
+                owner_cls = self.class_field_owner_unique.get(attr, "")
+                owner_m_cls = self.class_method_owner_unique.get(attr, "")
+                if (
+                    owner_cls in self.ref_classes
+                    or owner_m_cls in self.ref_classes
+                ):
+                    pass
+                else:
+                    raise RuntimeError(
+                        "object receiver method call / attribute access is forbidden by language constraints"
+                    )
         base_rendered = self.render_expr(expr_d.get("value"))
         base_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), base_rendered)
         base = self.any_dict_get_str(base_ctx, "expr", "")

@@ -2070,6 +2070,10 @@ def is_known_non_user_import(
     """import graph でユーザーファイル解決不要とみなす import か判定する。"""
     if is_known_module_name(module_name):
         return True
+    if module_name == "toolchain" or module_name.startswith("toolchain."):
+        return True
+    if module_name == "backends" or module_name.startswith("backends."):
+        return True
     if (
         module_name == "__future__"
         or module_name == "os"
