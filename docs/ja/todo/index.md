@@ -111,7 +111,7 @@
 
 文脈: [docs/ja/plans/p1-py2x-single-entrypoint-remove-legacy-clis.md](../plans/p1-py2x-single-entrypoint-remove-legacy-clis.md)
 
-1. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01] `py2x.py` を唯一の正規入口へ統一し、最終的に `src/py2cpp.py` を削除する。
+1. [x] [ID: P1-PY2X-SINGLE-ENTRY-01] `py2x.py` を唯一の正規入口へ統一し、最終的に `src/py2cpp.py` を削除する。
 2. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] `tools/` / `test/` / `docs/` / `src/pytra/cli.py` の `py2*.py` 依存箇所を棚卸しし、移行順序を確定する。
 3. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 固有機能（`--emit-runtime-cpp`, `--header-output`, `--multi-file` 等）の `py2x` 受け皿仕様を確定する。
 4. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
@@ -122,7 +122,7 @@
 9. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
 10. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
 11. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
-12. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
+12. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] 依存棚卸しを実施し、`src/pytra/cli.py`・`tools`・`test`・`docs` の legacy CLI 参照分布と移行順（CLI/tools→test→docs→selfhost）を確定。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp` 実利用オプション集合を抽出し、可搬オプションは layer-option マップ、出力モード変更系は `py2x --target cpp` 専用互換フラグで受ける方針を確定。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost の prepare/build/check が `src/py2cpp.py` 連鎖に依存していることを特定し、通常は `py2x`・selfhost は `py2x-selfhost` へ統一する置換方針を確定。
@@ -137,6 +137,7 @@
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `self_hosted` builtin method フォールバックを selfhost 系ソースに限定して `east3-contract` 回帰を復旧し、`check_selfhost_cpp_diff` / `check_selfhost_stage2_cpp_diff`（`allow-not-implemented`）を通常モードで通過確認。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check_legacy_cli_references.py` を追加し、`src/tools/test` の `src/py2*.py` 直参照・`import py2*` 新規流入を fail-fast 検出できるようにした。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、C++ 入口を `src/backends/cpp/cli.py` へ移行したうえで `py2x`/`pytra cli`/tools/tests の参照を `py2x --target cpp` 基準へ更新し回帰確認した。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 `check_py2*_transpile`（14本）と selfhost 4本（build/stage2/diff×2）を実行し、`py2cpp.py` 削除後の transpile/selfhost 非退行を確認した。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
