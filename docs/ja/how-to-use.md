@@ -111,7 +111,19 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
 python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
 ```
 
+### 移行メモ（`py2*.py` 互換ラッパ）
 
+- 既存の `py2rs.py`, `py2js.py`, `py2rb.py` などは削除せず、互換ラッパとして維持しています。
+- 新規運用は `py2x.py --target <lang>` を正規入口とし、ラッパは段階移行期間の互換導線として扱います。
+- 層別 option（`--lower-option`, `--optimizer-option`, `--emitter-option`）は `py2x.py` 側仕様で統一しています。
+
+```bash
+# 旧（互換ラッパ）
+python3 src/py2rs.py test/fixtures/core/add.py -o out/add_wrapper.rs
+
+# 新（推奨）
+python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
+```
 
 ## `ir2lang.py`（EAST3 JSON -> target backend）
 

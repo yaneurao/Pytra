@@ -61,8 +61,8 @@
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の使い方・仕様を更新し、移行手順（互換ラッパ期間を含む）を明文化する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の使い方・仕様を更新し、移行手順（互換ラッパ期間を含む）を明文化する。
 
 ## S1-01 棚卸し結果（2026-03-03）
 
@@ -248,6 +248,32 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 - 実行確認:
   - `python3 -m unittest discover -s test/unit -p test_py2x_cli.py`
 
+## S3-02 実装（2026-03-03）
+
+- 実装内容:
+  - 既存 transpile check 群を `py2x` 経由（`py2*.py` thin wrapper 導線）で全件実行し、言語横断の非退行を確認。
+- 実行確認:
+  - `python3 tools/check_py2cpp_transpile.py`
+  - `python3 tools/check_py2rs_transpile.py`
+  - `python3 tools/check_py2cs_transpile.py`
+  - `python3 tools/check_py2js_transpile.py`
+  - `python3 tools/check_py2ts_transpile.py`
+  - `python3 tools/check_py2go_transpile.py`
+  - `python3 tools/check_py2java_transpile.py`
+  - `python3 tools/check_py2swift_transpile.py`
+  - `python3 tools/check_py2kotlin_transpile.py`
+  - `python3 tools/check_py2rb_transpile.py`
+  - `python3 tools/check_py2lua_transpile.py`
+  - `python3 tools/check_py2scala_transpile.py`
+  - `python3 tools/check_py2php_transpile.py`
+  - `python3 tools/check_py2nim_transpile.py`
+
+## S3-03 実装（2026-03-03）
+
+- 実装内容:
+  - `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` に `py2x` 正規入口と `py2*.py` 互換ラッパの移行メモを追記。
+  - 互換ラッパ期間の位置づけ（互換維持/推奨導線）と代表的な旧→新コマンド移行例を明文化。
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
@@ -259,3 +285,5 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 非C++ `py2*.py` を `run_py2x_for_target` へ段階委譲し、互換 CLI を維持したまま thin wrapper 化を完了。静的契約検査は wrapper/旧実装の両対応へ更新し、`py2php` の runtime コピー漏れ（`pytra/std/time.php`）を補完して transpile 回帰を復旧した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 責務を `backend_registry.runtime_hook` へ固定し、frontend 側への逆流を `check_noncpp_east3_contract` の wrapper 静的ガードで防止した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] `test_py2x_cli.py` を追加し、target dispatch・stage2 fail-fast・層別 option 伝搬（`resolve_layer_options` 経路）を unit で固定した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 全 `check_py2*_transpile.py` を実行し、thin wrapper 経由でも `py2x` 導線の非退行を確認した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` に wrapper 互換期間の移行メモを追記し、`py2x` 正規入口への移行手順を明文化した。

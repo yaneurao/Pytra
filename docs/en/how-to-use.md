@@ -82,6 +82,20 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
 python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
 ```
 
+### Migration Note (`py2*.py` compatibility wrappers)
+
+- Existing wrappers such as `py2rs.py`, `py2js.py`, and `py2rb.py` are still kept for compatibility.
+- For new usage, treat `py2x.py --target <lang>` as the primary entrypoint, and wrappers as transitional compatibility paths.
+- Layer options (`--lower-option`, `--optimizer-option`, `--emitter-option`) are standardized on the `py2x.py` interface.
+
+```bash
+# Old (compat wrapper)
+python3 src/py2rs.py test/fixtures/core/add.py -o out/add_wrapper.rs
+
+# New (recommended)
+python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
+```
+
 
 ## `ir2lang.py` (EAST3 JSON -> target backend)
 

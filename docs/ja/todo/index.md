@@ -107,7 +107,7 @@
 
 文脈: [docs/ja/plans/p2-py2x-unified-frontend-rollout.md](../plans/p2-py2x-unified-frontend-rollout.md)
 
-1. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01] `py2x.py` を共通 frontend として導入し、言語別 `py2*.py` の重複責務を backend registry + 層別 option へ再編する。
+1. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01] `py2x.py` を共通 frontend として導入し、言語別 `py2*.py` の重複責務を backend registry + 層別 option へ再編する。
 2. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
 3. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 4. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
@@ -116,8 +116,8 @@
 7. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 8. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
 9. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
-10. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
-11. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の使い方・仕様を更新し、移行手順（互換ラッパ期間を含む）を明文化する。
+10. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
+11. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の使い方・仕様を更新し、移行手順（互換ラッパ期間を含む）を明文化する。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通 frontend 化後に残す差分を `runtime_packaging_hook`・backend post-process・`py2cpp.py` 互換ラッパ維持の3分類で確定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` の共通 CLI（`--target`, 共通 optimizer option, 層別 pass-through）と互換方針、fail-fast 規約（stage2禁止・schema検証）を計画書に確定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry の必須契約（entrypoint, default options, schema, runtime hook, compat wrapper）を定義し、S2 実装インタフェースを固定。
@@ -126,6 +126,8 @@
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] `py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}.py` を `run_py2x_for_target` 薄ラッパへ切替し、`check_noncpp_east3_contract --skip-transpile`・`test_east2_to_east3_lowering`・各 transpile check（php runtime `std/time.php` 補完含む）で非退行を確認。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を `backend_registry.runtime_hook` に統一し、`check_noncpp_east3_contract` へ「wrapperで旧 runtime copy 呼び出し禁止」静的ガードを追加して frontend 側分岐の再流入を防止。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] `test/unit/test_py2x_cli.py` を追加し、`--target` 必須/`--east-stage 2` fail-fast と層別 option（`--lower/--optimizer/--emitter-option`）の `resolve_layer_options` 伝搬・dispatch 経路を unit で固定。
+- 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] `check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim}_transpile.py` を実行し、`py2x` 経由の言語横断非退行を確認。
+- 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-03] `docs/ja` / `docs/en` の how-to-use に wrapper 互換期間の移行メモ（旧→新コマンド例）を追記し、`py2x` 正規入口を明文化。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
