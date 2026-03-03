@@ -16,19 +16,10 @@ from toolchain.compiler.backend_registry_static import list_backend_targets
 from toolchain.compiler.backend_registry_static import lower_ir
 from toolchain.compiler.backend_registry_static import optimize_ir
 from toolchain.compiler.backend_registry_static import resolve_layer_options
-from toolchain.compiler.transpile_cli import add_common_transpile_args
 from toolchain.compiler.transpile_cli import load_east3_document
 from pytra.std.argparse import ArgumentParser
 from pytra.std.pathlib import Path
 from pytra.std import sys
-
-
-def _add_common_args(parser: object) -> None:
-    add_common_transpile_args(
-        parser,
-        parser_backends=["self_hosted"],
-        enable_object_dispatch_mode=True,
-    )
 
 
 def _list_targets() -> list[str]:
@@ -187,9 +178,17 @@ def main() -> int:
             return 0
 
     parser = ArgumentParser(description="Pytra unified transpiler frontend (selfhost)")
-    _add_common_args(parser)
-    parser.add_argument("--target", choices=_list_targets(), help="Target backend language")
-    parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
+    parser.add_argument("input")
+    parser.add_argument("-o", "--output")
+    parser.add_argument("--parser-backend", "--parser-backend", choices=["self_hosted"], default="self_hosted")
+    parser.add_argument("--object-dispatch-mode", "--object-dispatch-mode", choices=["native", "type_id"], default="native")
+    parser.add_argument("--east3-opt-level", "--east3-opt-level", choices=["0", "1", "2"], default="1")
+    parser.add_argument("--east3-opt-pass", "--east3-opt-pass")
+    parser.add_argument("--dump-east3-before-opt", "--dump-east3-before-opt")
+    parser.add_argument("--dump-east3-after-opt", "--dump-east3-after-opt")
+    parser.add_argument("--dump-east3-opt-trace", "--dump-east3-opt-trace")
+    parser.add_argument("--target", "--target", choices=_list_targets(), default="")
+    parser.add_argument("--east-stage", "--east-stage", choices=["2", "3"], default="3")
     cleaned_argv, layer_option_items = _extract_layer_options(argv)
     args = parser.parse_args(cleaned_argv)
     if not isinstance(args, dict):
