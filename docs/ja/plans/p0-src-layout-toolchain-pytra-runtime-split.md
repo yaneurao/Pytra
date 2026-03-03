@@ -72,7 +72,7 @@
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` 配下の空ディレクトリ・不要残骸を除去し、`std/utils/built_in` 中心構成へ整理する。
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] CLI エントリ（`py2x.py`, `py2x-selfhost.py`, `py2*.py`）の import 経路を新構成に合わせる。
-- [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
+- [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新ディレクトリ責務と導線を反映する。
 
@@ -116,3 +116,4 @@
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` 配下から `frontends`/`ir`/`compiler` ディレクトリが消えていることを確認し、`pytra` は `std`/`utils`/`built_in` と最小エントリ（`__init__.py`, `cli.py`）のみへ収束した。
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/tools/test/selfhost` の import を新経路へ一括更新し、`rg` により旧 `pytra.frontends|pytra.ir|pytra.compiler`（`src.pytra.*` 含む）import が 0 件であることを確認した。
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] `py2x.py` / `py2x-selfhost.py` / `py2*.py` / `ir2lang.py` の import を `toolchain.compiler.*` へ統一し、CLI エントリから旧 `pytra.compiler` 依存を排除した。
+- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] `tools/check_pytra_layer_boundaries.py` に legacy import スキャン（`src/tools/test/selfhost` 対象）を追加し、`pytra.frontends|pytra.ir|pytra.compiler`（`src.pytra.*` 含む）を `legacy import path is forbidden` として fail-fast 検出するようにした（syntax error fixture はスキップ）。

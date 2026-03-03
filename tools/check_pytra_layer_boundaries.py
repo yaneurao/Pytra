@@ -25,6 +25,22 @@ ALLOW_IR_FRONTENDS_IMPORTS = {
     (IR_ROOT / "core.py").resolve(),
 }
 
+LEGACY_IMPORT_SCAN_ROOTS = [
+    ROOT / "src",
+    ROOT / "tools",
+    ROOT / "test",
+    ROOT / "selfhost",
+]
+
+LEGACY_IMPORT_PREFIXES = [
+    "pytra.frontends",
+    "src.pytra.frontends",
+    "pytra.ir",
+    "src.pytra.ir",
+    "pytra.compiler",
+    "src.pytra.compiler",
+]
+
 
 def _module_matches(module_name: str, prefixes: list[str]) -> bool:
     for prefix in prefixes:
@@ -107,6 +123,28 @@ def _check_file(path: Path) -> list[str]:
     return errs
 
 
+def _check_legacy_imports(path: Path) -> list[str]:
+    errs: list[str] = []
+    try:
+        text = path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        rel = path.relative_to(ROOT).as_posix()
+        return [f"{rel}:1: read error: {exc}"]
+
+    try:
+        tree = ast.parse(text, filename=str(path))
+    except SyntaxError as exc:
+        # Fixtures may intentionally contain invalid syntax; skip strict parsing here.
+        _ = exc
+        return []
+
+    rel = path.relative_to(ROOT).as_posix()
+    for lineno, module_name in _iter_import_targets(tree):
+        if _module_matches(module_name, LEGACY_IMPORT_PREFIXES):
+            errs.append(f"{rel}:{lineno}: legacy import path is forbidden: `{module_name}`")
+    return errs
+
+
 def main() -> int:
     paths = list(FRONTENDS_ROOT.rglob("*.py"))
     paths += list(IR_ROOT.rglob("*.py"))
@@ -116,6 +154,13 @@ def main() -> int:
     errors: list[str] = []
     for p in paths:
         errors.extend(_check_file(Path(p)))
+
+    legacy_paths: set[Path] = set()
+    for scan_root in LEGACY_IMPORT_SCAN_ROOTS:
+        if scan_root.exists():
+            legacy_paths.update(scan_root.rglob("*.py"))
+    for p in sorted(path.resolve() for path in legacy_paths):
+        errors.extend(_check_legacy_imports(Path(p)))
 
     if len(errors) == 0:
         print("[OK] pytra layer boundary check passed")
