@@ -1,6 +1,6 @@
 # P0: PHP 画像 runtime 実装と sample/16 実行失敗の修復
 
-最終更新: 2026-03-03
+最終更新: 2026-03-04
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P0-PHP-IMAGE-RUNTIME-S16-01`
@@ -43,11 +43,12 @@
 - 2026-03-03: ユーザー指示により、PHP 画像 runtime 未実装と `sample/16` 実行失敗を P0 として起票。
 - 2026-03-03: parity 偽陽性防止のため、`runtime_parity_check.py` に「毎回 artifact 削除」を明示実装する方針を採用。
 - 2026-03-03: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S1-01] no-op 依存箇所を棚卸しし、`emitter -> __pytra_noop -> runtime stub(return null)` の経路と `sample/16` の tuple 受け取り崩れ（未束縛変数→`DivisionByZeroError`）を実行再現で確認。
+- 2026-03-04: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `src/runtime/php/pytra/runtime/png.php` に pure PHP 実装（CRC32/Adler32/stored-deflate）を追加し、`1x1 RGB` で Python 実装と PNG バイト一致（SHA-256 一致）を確認。
 
 ## 分解
 
 - [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S1-01] PHP 画像出力経路（runtime/emit）の no-op 依存箇所を棚卸しする。
-- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `png.php` に Python 互換の PNG 書き出し実装を追加する。
+- [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `png.php` に Python 互換の PNG 書き出し実装を追加する。
 - [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-02] `gif.php` に Python 互換の GIF 書き出し実装を追加する。
 - [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-03] PHP emitter/lower の `save_gif` / `write_rgb_png` を `__pytra_noop` から実体 runtime 呼び出しへ切り替える。
 - [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-04] PHP emitter/lower の tuple 受け取りを修正し、`sample/16` の未束縛変数参照を解消する。
