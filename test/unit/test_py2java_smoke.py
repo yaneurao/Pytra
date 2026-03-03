@@ -18,7 +18,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.py2java import load_east, load_java_profile, transpile_to_java
 from backends.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
-from src.pytra.compiler.east_parts.core import convert_path
+from src.toolchain.compiler.east_parts.core import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 

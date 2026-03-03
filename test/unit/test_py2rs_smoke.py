@@ -17,7 +17,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.py2rs import load_east, load_rs_profile, transpile_to_rust
-from src.pytra.compiler.east_parts.core import convert_path
+from src.toolchain.compiler.east_parts.core import convert_path
 from backends.rs.emitter.rs_emitter import RustEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 

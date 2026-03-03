@@ -3,7 +3,7 @@
 
 Policy:
 - Language-agnostic helpers should be implemented in shared compiler layers
-  (`src/pytra/compiler/*`) before adding to `src/py2cpp.py`.
+  (`src/toolchain/compiler/*`) before adding to `src/py2cpp.py`.
 - This guard fails when new private helper methods are added to CppEmitter
   unless the allowlist is explicitly updated.
 """
@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "src" / "py2cpp.py"
-CPP_EMITTER_TARGET = ROOT / "src" / "hooks" / "cpp" / "emitter" / "cpp_emitter.py"
+CPP_EMITTER_TARGET = ROOT / "src" / "backends" / "cpp" / "emitter" / "cpp_emitter.py"
 CPP_EMITTER_CLASS_NAME = "CppEmitter"
 ALLOWLIST = ROOT / "tools" / "py2cpp_cpp_helper_allowlist.txt"
 

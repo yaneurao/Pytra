@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from pytra.compiler.backend_registry import (
+from toolchain.compiler.backend_registry import (
     apply_runtime_hook,
     default_output_path,
     emit_source,

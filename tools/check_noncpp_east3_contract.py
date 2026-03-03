@@ -289,7 +289,7 @@ def main() -> int:
         smoke_path = ROOT / target.smoke_rel
         src_text = src_path.read_text(encoding="utf-8") if src_path.exists() else ""
         wrapper_patterns = [
-            "from pytra.compiler.py2x_wrapper import run_py2x_for_target",
+            "from toolchain.compiler.py2x_wrapper import run_py2x_for_target",
             f'run_py2x_for_target("{target.lang}"',
         ]
         is_wrapper = src_text != "" and all(pattern in src_text for pattern in wrapper_patterns)

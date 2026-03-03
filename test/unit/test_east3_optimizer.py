@@ -3,31 +3,31 @@ from __future__ import annotations
 import copy
 import unittest
 
-from src.pytra.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
-from src.pytra.compiler.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
-from src.pytra.compiler.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
-from src.pytra.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
-from src.pytra.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
-from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
-from src.pytra.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
-from src.pytra.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
-from src.pytra.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
-from src.pytra.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
-from src.pytra.compiler.east_parts.east3_opt_passes.safe_reserve_hint_pass import SafeReserveHintPass
-from src.pytra.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
-from src.pytra.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
-from src.pytra.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
-from src.pytra.compiler.east_parts.east3_opt_passes.tuple_target_direct_expansion_pass import TupleTargetDirectExpansionPass
-from src.pytra.compiler.east_parts.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
-from src.pytra.compiler.east_parts.east3_optimizer import East3OptimizerPass
-from src.pytra.compiler.east_parts.east3_optimizer import PassContext
-from src.pytra.compiler.east_parts.east3_optimizer import PassManager
-from src.pytra.compiler.east_parts.east3_optimizer import PassResult
-from src.pytra.compiler.east_parts.east3_optimizer import optimize_east3_document
-from src.pytra.compiler.east_parts.east3_optimizer import parse_east3_opt_pass_overrides
-from src.pytra.compiler.east_parts.east3_optimizer import render_east3_opt_trace
-from src.pytra.compiler.east_parts.east3_optimizer import resolve_east3_opt_level
-from src.pytra.compiler.east_parts.east3_optimizer import normalize_non_escape_policy
+from src.toolchain.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.literal_cast_fold_pass import LiteralCastFoldPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInvariantCastHoistPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
+from src.toolchain.compiler.east_parts.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.safe_reserve_hint_pass import SafeReserveHintPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.typed_enumerate_normalization_pass import TypedEnumerateNormalizationPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.tuple_target_direct_expansion_pass import TupleTargetDirectExpansionPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
+from src.toolchain.compiler.east_parts.east3_optimizer import East3OptimizerPass
+from src.toolchain.compiler.east_parts.east3_optimizer import PassContext
+from src.toolchain.compiler.east_parts.east3_optimizer import PassManager
+from src.toolchain.compiler.east_parts.east3_optimizer import PassResult
+from src.toolchain.compiler.east_parts.east3_optimizer import optimize_east3_document
+from src.toolchain.compiler.east_parts.east3_optimizer import parse_east3_opt_pass_overrides
+from src.toolchain.compiler.east_parts.east3_optimizer import render_east3_opt_trace
+from src.toolchain.compiler.east_parts.east3_optimizer import resolve_east3_opt_level
+from src.toolchain.compiler.east_parts.east3_optimizer import normalize_non_escape_policy
 
 
 def _module_doc() -> dict[str, object]:
@@ -1403,7 +1403,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(doc.get("body")[0].get("kind"), "ForCore")
 
     def test_optimize_east3_document_applies_o2_passes_only_at_o2(self) -> None:
-        from pytra.compiler.east_parts.east3_optimizer import optimize_east3_document as optimize_native
+        from toolchain.compiler.east_parts.east3_optimizer import optimize_east3_document as optimize_native
 
         base_for = {
             "kind": "ForCore",

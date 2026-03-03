@@ -54,7 +54,7 @@ def _remove_import_lines(text: str) -> str:
     out = text
     targets = [
         "from backends.cs.emitter.cs_emitter import ",
-        "from pytra.compiler.transpile_cli import ",
+        "from toolchain.compiler.transpile_cli import ",
     ]
     for prefix in targets:
         out, removed = _remove_first_import_with_prefix(out, prefix)

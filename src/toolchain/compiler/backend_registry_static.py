@@ -43,7 +43,7 @@ from backends.ts.lower import lower_east3_to_ts_ir
 from backends.ts.optimizer import optimize_ts_ir
 from backends.ts.emitter.ts_emitter import transpile_to_typescript
 from py2cpp import transpile_to_cpp
-from pytra.compiler.js_runtime_shims import write_js_runtime_shims
+from toolchain.compiler.js_runtime_shims import write_js_runtime_shims
 
 
 def _src_root() -> Path:

@@ -26,6 +26,6 @@ from .code_emitter import CodeEmitter  # noqa: F401
 from .east2_to_east3_lowering import lower_east2_to_east3  # noqa: F401
 # NOTE:
 # `east1_build` imports many helpers from `transpile_cli`, and `transpile_cli` imports
-# `pytra.compiler.east_parts.*`. Re-exporting `east1_build` here makes import cycles
+# `toolchain.compiler.east_parts.*`. Re-exporting `east1_build` here makes import cycles
 # easier to trigger depending on import order. Keep `east1_build` as an explicit import
-# target (`pytra.compiler.east_parts.east1_build`) instead of package-level re-export.
+# target (`toolchain.compiler.east_parts.east1_build`) instead of package-level re-export.

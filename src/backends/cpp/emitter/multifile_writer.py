@@ -3,8 +3,8 @@ from __future__ import annotations
 from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std.typing import Any
-from pytra.compiler.east_parts.east1_build import East1BuildHelpers
-from pytra.compiler.transpile_cli import (
+from toolchain.compiler.east_parts.east1_build import East1BuildHelpers
+from toolchain.compiler.transpile_cli import (
     check_guard_limit,
     dict_any_get_dict,
     dict_any_get_list,

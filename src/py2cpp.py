@@ -2,14 +2,14 @@
 """EAST -> C++ transpiler.
 
 This tool transpiles Pytra EAST JSON into C++ source.
-It can also accept a Python source file and internally run src/pytra/compiler/east.py conversion.
+It can also accept a Python source file and internally run src/toolchain/compiler/east.py conversion.
 """
 
 from __future__ import annotations
 
 from pytra.std.typing import Any
 from toolchain.frontends.east1_build import East1BuildHelpers
-from pytra.compiler.transpile_cli import (
+from toolchain.compiler.transpile_cli import (
     check_analyze_stage_guards,
     check_guard_limit,
     check_parse_stage_guards,
@@ -72,7 +72,7 @@ from backends.cpp.emitter.runtime_paths import runtime_output_rel_tail as _runti
 
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
-RUNTIME_COMPILER_SOURCE_ROOT = Path("src/pytra/compiler")
+RUNTIME_COMPILER_SOURCE_ROOT = Path("src/toolchain/compiler")
 RUNTIME_BUILT_IN_SOURCE_ROOT = Path("src/pytra/built_in")
 
 
@@ -721,7 +721,7 @@ def main(argv: list[str]) -> int:
             module_tail = _runtime_module_tail_from_source_path(input_path)
             if module_tail == "":
                 print(
-                    "error: --emit-runtime-cpp input must be under src/pytra/std/, src/pytra/utils/, src/pytra/compiler/, or src/pytra/built_in/",
+                    "error: --emit-runtime-cpp input must be under src/pytra/std/, src/pytra/utils/, src/toolchain/compiler/, or src/pytra/built_in/",
                     file=sys.stderr,
                 )
                 return 1

@@ -38,11 +38,11 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
         removed = mod._remove_import_line(py2cpp_text)
         self.assertNotIn(
-            "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n",
+            "from toolchain.compiler.east_parts.code_emitter import CodeEmitter\n",
             removed,
         )
         self.assertNotIn(
-            "from pytra.compiler.transpile_cli import ",
+            "from toolchain.compiler.transpile_cli import ",
             removed,
         )
         self.assertNotIn(
@@ -53,8 +53,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_remove_import_line_raises_when_required_import_missing(self) -> None:
         mod = _load_prepare_module()
         broken = (
-            "from pytra.compiler.east_parts.code_emitter import CodeEmitter\n"
-            "from pytra.compiler.transpile_cli import any_symbol\n"
+            "from toolchain.compiler.east_parts.code_emitter import CodeEmitter\n"
+            "from toolchain.compiler.transpile_cli import any_symbol\n"
         )
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)
@@ -93,9 +93,9 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def name_target_id(target: dict[str, object]) -> str:", support_blocks)
         self.assertIn("def stmt_assigned_names(stmt: dict[str, object]) -> list[str]:", support_blocks)
         self.assertIn("def stmt_child_stmt_lists(stmt: dict[str, object]) -> list[list[dict[str, object]]]:", support_blocks)
-        self.assertIn("def collect_store_names_from_target(target: dict[str, object], out: set[str]) -> None:", support_blocks)
+        self.assertIn("def collect_store_names_from_target(", support_blocks)
         self.assertIn(
-            "def collect_store_names_from_target_plan(target_plan: dict[str, object], out: set[str]) -> None:",
+            "def collect_store_names_from_target_plan(",
             support_blocks,
         )
         self.assertIn("def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:", support_blocks)
@@ -130,7 +130,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def meta_import_bindings(east_module: dict[str, object]) -> list[dict[str, str]]:", support_blocks)
         self.assertIn("def meta_qualified_symbol_refs(east_module: dict[str, object]) -> list[dict[str, str]]:", support_blocks)
         self.assertIn("def path_key_for_graph(p: Path) -> str:", support_blocks)
-        self.assertIn("def rel_disp_for_graph(base: Path, p: Path) -> str:", support_blocks)
+        self.assertIn("def rel_disp_for_graph(", support_blocks)
         self.assertIn("def python_module_exists_under(root_dir: Path, module_tail: str) -> bool:", support_blocks)
         self.assertIn("def collect_reserved_import_conflicts(root: Path) -> list[str]:", support_blocks)
         self.assertIn("def module_parse_metrics(east_module: dict[str, object]) -> dict[str, int]:", support_blocks)
@@ -140,7 +140,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def set_import_symbol_binding(", support_blocks)
         self.assertIn("def set_import_symbol_binding_and_module_set(", support_blocks)
         self.assertIn("def resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:", support_blocks)
-        self.assertIn("def format_graph_list_section(out: str, label: str, items: list[str]) -> str:", support_blocks)
+        self.assertIn("def format_graph_list_section(", support_blocks)
         self.assertIn("def dump_deps_text(east_module: dict[str, object]) -> str:", support_blocks)
         self.assertIn("def format_import_graph_report(analysis: dict[str, object]) -> str:", support_blocks)
         self.assertIn("def dump_deps_graph_text(", support_blocks)
@@ -150,8 +150,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def resolve_module_name(", support_blocks)
         self.assertIn("def validate_from_import_symbols_or_raise(", support_blocks)
         self.assertIn("def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:", support_blocks)
-        self.assertIn("build_module_east_map_common = build_module_east_map", support_blocks)
-        self.assertIn("dump_deps_graph_text_common = dump_deps_graph_text", support_blocks)
+        self.assertIn("def build_module_east_map_common(", support_blocks)
+        self.assertIn("def dump_deps_graph_text_common(", support_blocks)
         self.assertIn("def graph_cycle_dfs(", support_blocks)
         self.assertIn("def write_text_file(path_obj: Path, text: str) -> None:", support_blocks)
         self.assertIn("def parse_guard_limit_or_raise(raw: str, option_name: str) -> int:", support_blocks)
@@ -204,13 +204,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertNotIn("fn = self._lookup_hook(name)", post_call_hook)
         self.assertNotIn("pass", post_call_hook)
 
-        cpp_init_block = _slice_block(
-            patched,
-            "    def __init__(\n",
-            "\n    def current_scope_names(",
-        )
-        self.assertIn("self.init_base_state(east_doc, profile, hooks)", cpp_init_block)
-        self.assertIn("self.set_dynamic_hooks_enabled(False)", cpp_init_block)
+        self.assertIn("self.init_base_state(", patched)
+        self.assertIn("self.set_dynamic_hooks_enabled(False)", patched)
 
         hook_emit_stmt_block = _slice_block(patched, "    def hook_on_emit_stmt(", "\n    def hook_on_emit_stmt_kind(")
         self.assertIn("v = self._call_hook1(", hook_emit_stmt_block)

@@ -72,14 +72,14 @@ def _load_ast(path: Path) -> ast.Module:
 
 
 def _check_east2_boundary(errors: list[str]) -> None:
-    path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "east2.py"
+    path = ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "east2.py"
     tree = _load_ast(path)
     rel = path.relative_to(ROOT).as_posix()
     forbidden_import_prefixes = (
-        "pytra.compiler.east_parts.east3",
-        "pytra.compiler.east_parts.east2_to_east3_lowering",
-        "src.pytra.compiler.east_parts.east3",
-        "src.pytra.compiler.east_parts.east2_to_east3_lowering",
+        "toolchain.compiler.east_parts.east3",
+        "toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "src.toolchain.compiler.east_parts.east3",
+        "src.toolchain.compiler.east_parts.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "lower_east2_to_east3",
@@ -95,22 +95,22 @@ def _check_east2_boundary(errors: list[str]) -> None:
 
 
 def _check_code_emitter_boundary(errors: list[str]) -> None:
-    path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "code_emitter.py"
+    path = ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "code_emitter.py"
     tree = _load_ast(path)
     rel = path.relative_to(ROOT).as_posix()
     forbidden_import_prefixes = (
-        "pytra.compiler.east",
-        "pytra.compiler.transpile_cli",
-        "pytra.compiler.east_parts.east1",
-        "pytra.compiler.east_parts.east2",
-        "pytra.compiler.east_parts.east3",
-        "pytra.compiler.east_parts.east2_to_east3_lowering",
-        "src.pytra.compiler.east",
-        "src.pytra.compiler.transpile_cli",
-        "src.pytra.compiler.east_parts.east1",
-        "src.pytra.compiler.east_parts.east2",
-        "src.pytra.compiler.east_parts.east3",
-        "src.pytra.compiler.east_parts.east2_to_east3_lowering",
+        "toolchain.compiler.east",
+        "toolchain.compiler.transpile_cli",
+        "toolchain.compiler.east_parts.east1",
+        "toolchain.compiler.east_parts.east2",
+        "toolchain.compiler.east_parts.east3",
+        "toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "src.toolchain.compiler.east",
+        "src.toolchain.compiler.transpile_cli",
+        "src.toolchain.compiler.east_parts.east1",
+        "src.toolchain.compiler.east_parts.east2",
+        "src.toolchain.compiler.east_parts.east3",
+        "src.toolchain.compiler.east_parts.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "convert_source_to_east_with_backend",

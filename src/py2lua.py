@@ -8,8 +8,8 @@ from pytra.std.typing import Any
 from backends.lua.emitter import load_lua_profile, transpile_to_lua, transpile_to_lua_native
 from backends.lua.lower import lower_east3_to_lua_ir
 from backends.lua.optimizer import optimize_lua_ir
-from pytra.compiler.py2x_wrapper import run_py2x_for_target
-from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
+from toolchain.compiler.py2x_wrapper import run_py2x_for_target
+from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys

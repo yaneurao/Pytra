@@ -11,24 +11,24 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-import src.pytra.compiler.backend_registry as host_registry
+import src.toolchain.compiler.backend_registry as host_registry
 
 
 class Py2xEntrypointsContractTest(unittest.TestCase):
     def test_py2x_entrypoint_registry_binding(self) -> None:
         host_entry = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
-        self.assertIn("from pytra.compiler.backend_registry import", host_entry)
+        self.assertIn("from toolchain.compiler.backend_registry import", host_entry)
         self.assertNotIn("backend_registry_static", host_entry)
 
         selfhost_entry = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
-        self.assertIn("from pytra.compiler.backend_registry_static import", selfhost_entry)
+        self.assertIn("from toolchain.compiler.backend_registry_static import", selfhost_entry)
 
     def test_backend_registry_host_is_lazy_import_style(self) -> None:
-        host_src = (ROOT / "src" / "pytra" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
+        host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         self.assertIn("import importlib", host_src)
         self.assertNotIn("from backends.", host_src)
 
-        static_src = (ROOT / "src" / "pytra" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
+        static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
         self.assertIn("from backends.rs.lower import lower_east3_to_rs_ir", static_src)
 
     def test_host_registry_loads_only_selected_target_modules(self) -> None:
