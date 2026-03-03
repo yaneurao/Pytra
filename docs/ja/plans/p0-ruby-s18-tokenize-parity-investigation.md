@@ -1,6 +1,6 @@
 # P0: Ruby `sample/18` parity 失敗（tokenize error）原因調査
 
-最終更新: 2026-03-03
+最終更新: 2026-03-04
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P0-RUBY-S18-TOKENIZE-INVEST-01`
@@ -39,10 +39,11 @@
 
 決定ログ:
 - 2026-03-03: ユーザー指示により、`sample/18` の Ruby parity 失敗（tokenize error）原因調査を P0 として起票。
+- 2026-03-04: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] `runtime_parity_check --case-root sample --targets ruby 18_mini_language_interpreter` と `ruby out/ruby_validate/18_mini_language_interpreter.rb` の双方で `tokenize error at line=0 pos=6 ch==` を再現。入力先頭行は `let a = 10` で、生成 Ruby では `single_char_token_tags = {}`（`=` の辞書登録欠落）になっていることを確認。
 
 ## 分解
 
-- [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] parity 失敗を再現し、例外発生位置と入力トークン列を採取する。
+- [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] parity 失敗を再現し、例外発生位置と入力トークン列を採取する。
 - [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] Python 版と Ruby 版の tokenize 結果を比較し、最初の乖離点を特定する。
 - [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-01] 乖離を生む変換規則（lower/emitter/runtime）を特定し、責務境界を明確化する。
 - [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-02] 最小再現ケースを `test/fixtures` へ追加する案を作成し、必要な検証粒度を決める。
