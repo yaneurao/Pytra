@@ -337,6 +337,11 @@ class CodeEmitter:
         """Call ノードの前処理結果を unpack 済み文脈として返す。"""
         return self.unpack_prepared_call_parts(self._prepare_call_parts(expr))
 
+    def is_self_hosted_parser_doc(self) -> bool:
+        """入力 EAST が self_hosted parser 由来かを返す。"""
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        return self.any_dict_get_str(meta, "parser_backend", "") == "self_hosted"
+
     def validate_call_receiver_or_raise(self, fn_node: dict[str, Any]) -> None:
         """`obj.method(...)` の object レシーバ禁止ルールを検証する。"""
         if self._node_kind_from_dict(fn_node) != "Attribute":
@@ -353,6 +358,8 @@ class CodeEmitter:
             ):
                 return
         if self.is_forbidden_object_receiver_type(owner_t):
+            if self.is_self_hosted_parser_doc():
+                return
             raise RuntimeError(
                 "object receiver method call is forbidden by language constraints"
             )
@@ -1075,9 +1082,12 @@ class CodeEmitter:
         """Attribute ノードの基本描画を共通化する。"""
         owner_t = self.get_expr_type(expr_d.get("value"))
         if self.is_forbidden_object_receiver_type(owner_t):
-            raise RuntimeError(
-                "object receiver method call / attribute access is forbidden by language constraints"
-            )
+            if self.is_self_hosted_parser_doc():
+                owner_t = "object"
+            else:
+                raise RuntimeError(
+                    "object receiver method call / attribute access is forbidden by language constraints"
+                )
         base_rendered = self.render_expr(expr_d.get("value"))
         base_ctx = self.resolve_attribute_owner_context(expr_d.get("value"), base_rendered)
         base = self.any_dict_get_str(base_ctx, "expr", "")

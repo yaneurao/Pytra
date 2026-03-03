@@ -546,12 +546,68 @@ class CppCallEmitter:
             module_rendered_1 = self._render_call_module_method(owner_mod, attr, args, kw, arg_nodes, kw_nodes)
             if module_rendered_1 is not None and module_rendered_1 != "":
                 return module_rendered_1
+        selfhost_fallback = self._render_selfhost_builtin_method_call(
+            owner_t,
+            owner_expr,
+            attr,
+            args,
+            kw,
+        )
+        if selfhost_fallback is not None and selfhost_fallback != "":
+            return selfhost_fallback
         if self._requires_builtin_method_call_lowering(owner_t, attr):
             owner_label = self.normalize_type_name(owner_t)
             if owner_label == "":
                 owner_label = "unknown"
             raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
         return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, merged_arg_nodes)
+
+    def _render_selfhost_builtin_method_call(
+        self,
+        owner_t: str,
+        owner_expr: str,
+        attr: str,
+        args: list[str],
+        kw: dict[str, str],
+    ) -> str | None:
+        """self_hosted parser 由来で BuiltinCall 未lower の method を最小フォールバックする。"""
+        if not self._is_self_hosted_parser_doc():
+            return None
+        owner_norm = self.normalize_type_name(owner_t)
+        if owner_norm != "str":
+            return None
+        call_args = self.merge_call_args(args, kw)
+        if attr in {"strip", "lstrip", "rstrip"}:
+            if len(call_args) == 0:
+                return f"py_{attr}({owner_expr})"
+            if len(call_args) == 1:
+                return f"py_{attr}({owner_expr}, {call_args[0]})"
+            return None
+        if attr in {"startswith", "endswith"}:
+            if len(call_args) == 1:
+                return f"py_{attr}({owner_expr}, {call_args[0]})"
+            return None
+        if attr in {"find", "rfind"}:
+            if len(call_args) == 1:
+                return f"py_{attr}({owner_expr}, {call_args[0]})"
+            if len(call_args) == 2:
+                return f"py_{attr}({owner_expr}, {call_args[0]}, {call_args[1]})"
+            if len(call_args) == 3:
+                return f"py_{attr}({owner_expr}, {call_args[0]}, {call_args[1]}, {call_args[2]})"
+            return None
+        if attr == "replace":
+            if len(call_args) == 2:
+                return f"py_replace({owner_expr}, {call_args[0]}, {call_args[1]})"
+            return None
+        if attr == "join":
+            if len(call_args) == 1:
+                return f"py_join({owner_expr}, {call_args[0]})"
+            return None
+        if attr in {"isdigit", "isalpha"}:
+            if len(call_args) == 0:
+                return f"py_{attr}({owner_expr})"
+            return None
+        return None
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
         """`from-import` 束縛名の module 参照エラーを生成する（C++ 向け）。"""
