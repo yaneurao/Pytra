@@ -86,14 +86,26 @@
 
 文脈: [docs/ja/plans/p0-ruby-s18-tokenize-parity-investigation.md](../plans/p0-ruby-s18-tokenize-parity-investigation.md)
 
-1. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01] Ruby `sample/18` parity 失敗の根本原因を特定し、修正方針を確定する。
+1. [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01] Ruby `sample/18` parity 失敗の根本原因を特定し、修正方針を確定する。
 2. [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] parity 失敗を再現し、例外発生位置と入力トークン列を採取する。
 3. [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] Python 版と Ruby 版の tokenize 結果を比較し、最初の乖離点を特定する。
-4. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-01] 乖離を生む変換規則（lower/emitter/runtime）を特定し、責務境界を明確化する。
-5. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-02] 最小再現ケース追加方針（fixture 化）を作成する。
-6. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S3-01] 修正方針（実装箇所・回帰テスト）を確定し、次段修正タスクを起票する。
+4. [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-01] 乖離を生む変換規則（lower/emitter/runtime）を特定し、責務境界を明確化する。
+5. [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-02] 最小再現ケース追加方針（fixture 化）を作成する。
+6. [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S3-01] 修正方針（実装箇所・回帰テスト）を確定し、次段修正タスクを起票する。
 - 進捗メモ: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] `sample/18` Ruby失敗を再現し、`line=0 pos=6 ch==` と生成Ruby側 `single_char_token_tags = {}`（`=` 未登録）を採取。
 - 進捗メモ: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] 同一入力 `let a = 10` で Python は `EQUAL` を生成する一方、Ruby は `pos=6 '='` で停止し、最初の乖離点を辞書初期化欠落に確定。
+- 進捗メモ: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-01] Ruby emitter の `Dict` レンダリングが `entries` 非対応（旧 `keys/values` 前提）で、dict literal が `{}` に崩れることを根本原因として特定。
+- 進捗メモ: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-02] 最小再現は「型注釈付き dict literal + `.get()`」で十分と判断し、fixture 化粒度を `tokenize` 全体ではなく dict literal 経路単体へ確定。
+- 進捗メモ: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S3-01] 修正方針を `Dict(entries) 対応 + fixture 回帰 + sample/18 parity` に固定し、次段実装 `P0-RUBY-DICT-ENTRY-EMIT-FIX-01` を起票。
+
+### P0: Ruby Dict literal（EAST3 `entries`）emit 修正
+
+文脈: [docs/ja/plans/p0-ruby-dict-entry-emit-fix.md](../plans/p0-ruby-dict-entry-emit-fix.md)
+
+1. [x] [ID: P0-RUBY-DICT-ENTRY-EMIT-FIX-01] Ruby emitter の dict literal 生成を EAST3 `entries` 形式へ対応させ、`sample/18` parity 失敗を解消する。
+2. [x] [ID: P0-RUBY-DICT-ENTRY-EMIT-FIX-01-S1-01] `ruby_native_emitter._render_dict_expr` を `entries` 優先でレンダリングし、旧 `keys/values` 形式も後方互換で扱う。
+3. [x] [ID: P0-RUBY-DICT-ENTRY-EMIT-FIX-01-S1-02] dict literal 最小再現 fixture と Ruby 変換回帰テストを追加する。
+4. [x] [ID: P0-RUBY-DICT-ENTRY-EMIT-FIX-01-S2-01] `runtime_parity_check --case-root sample --targets ruby 18_mini_language_interpreter` を通し、失敗解消を確認する。
 
 ### P1: `py2x.py` 単一エントリ化（`py2*.py` 廃止、最終的に `py2cpp.py` 削除）
 
