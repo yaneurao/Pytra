@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-src-layout-toolchain-pytra-runtime-split.md](../plans/p0-src-layout-toolchain-pytra-runtime-split.md)
 
-1. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01] `src` を責務別に再編し、`src/pytra` から変換プログラム本体を分離する（後方互換なし）。
+1. [x] [ID: P0-SRC-LAYOUT-SPLIT-01] `src` を責務別に再編し、`src/pytra` から変換プログラム本体を分離する（後方互換なし）。
 2. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
 3. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] 新レイアウト規約（`toolchain` / `pytra` / `runtime`）と依存方向を `docs/ja/spec/spec-folder.md` に確定する。
 4. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] 旧 import 経路を禁止する移行ルール（後方互換なし）を明文化する。
@@ -47,8 +47,8 @@
 9. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
 10. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] CLI エントリ（`py2x.py`, `py2x-selfhost.py`, `py2*.py`）の import 経路を新構成に合わせる。
 11. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
-12. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
-13. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新ディレクトリ責務と導線を反映する。
+12. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
+13. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新ディレクトリ責務と導線を反映する。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] `src/pytra` 6領域の責務/参照点を棚卸しし、`compiler` 依存集中と `frontends`↔`ir` 循環を確認。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] `spec-folder` に `src/toolchain` 正規3層と `src/pytra` 参照ライブラリ専用境界、依存方向ルールを反映。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] `spec-folder` に旧 import 経路禁止（`pytra.frontends|ir|compiler`）と shim 禁止、`rg` 検査手順を追記。
@@ -59,6 +59,8 @@
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/tools/test/selfhost` の import を一括更新し、旧 `pytra.(frontends|ir|compiler)` 参照が 0 件であることを確認。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] `py2x.py` / `py2x-selfhost.py` / `py2*.py` / `ir2lang.py` の import を `toolchain.compiler.*` 基準へ統一。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] `check_pytra_layer_boundaries.py` に旧 import 経路の全体スキャンを追加し、`legacy import path is forbidden` で fail-fast 検出可能化。
+- 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 transpile 回帰（`cpp/rs/js/ts/go/java/kotlin/swift/ruby/lua/scala/php/nim`）と境界チェックを実行し、全件 pass を確認。
+- 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec` と `docs/en/spec`（archive 除く）の旧 `src/pytra/{frontends,ir,compiler}` 参照を新 `src/toolchain/*` へ更新。
 
 ### P0: PHP 画像 runtime 実装と sample/16 修復
 

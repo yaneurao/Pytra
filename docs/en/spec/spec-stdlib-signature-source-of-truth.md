@@ -11,8 +11,8 @@ This document defines the contract for `P0-STDLIB-SOT-01`: making `pytra/std` th
 ## 2. Source-of-Truth and Reference Boundaries
 
 - Source of truth: Return annotations of top-level functions and class methods in `src/pytra/std/*.py`.
-- Reference layer: `src/pytra/compiler/stdlib/signature_registry.py`.
-- Consumer side: `src/pytra/compiler/east_parts/core.py` retrieves types through the reference-layer API.
+- Reference layer: `src/toolchain/compiler/stdlib/signature_registry.py`.
+- Consumer side: `src/toolchain/compiler/east_parts/core.py` retrieves types through the reference-layer API.
 
 Prohibited:
 

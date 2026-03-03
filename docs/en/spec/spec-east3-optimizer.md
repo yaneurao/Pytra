@@ -134,9 +134,9 @@ Notes:
 
 Suggested layout:
 
-- `src/pytra/compiler/east_parts/east3_optimizer.py`
-- `src/pytra/compiler/east_parts/east3_optimizer_cpp.py`
-- `src/pytra/compiler/east_parts/east3_opt_passes/*.py`
+- `src/toolchain/compiler/east_parts/east3_optimizer.py`
+- `src/toolchain/compiler/east_parts/east3_optimizer_cpp.py`
+- `src/toolchain/compiler/east_parts/east3_opt_passes/*.py`
 
 ## 10. CLI and Debug Contract
 
