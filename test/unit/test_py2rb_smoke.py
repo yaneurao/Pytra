@@ -96,7 +96,7 @@ class Py2RbSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2rb.py", str(fixture), "-o", str(out_rb)],
+                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -123,7 +123,7 @@ class Py2RbSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2rb.py", str(fixture), "-o", str(out_rb), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -154,7 +154,7 @@ class Py2RbSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2rb.py", str(fixture), "-o", str(out_rb)],
+                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

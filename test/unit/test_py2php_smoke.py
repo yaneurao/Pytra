@@ -104,7 +104,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2php.py", str(fixture), "-o", str(out_php)],
+                [sys.executable, "src/py2x.py", "--target", "php", str(fixture), "-o", str(out_php)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -128,7 +128,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2php.py", str(fixture), "-o", str(out_php), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "php", str(fixture), "-o", str(out_php), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

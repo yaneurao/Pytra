@@ -154,7 +154,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2lua.py", str(fixture), "-o", str(out_lua)],
+                [sys.executable, "src/py2x.py", "--target", "lua", str(fixture), "-o", str(out_lua)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -175,7 +175,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2lua.py", str(fixture), "-o", str(out_lua), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "lua", str(fixture), "-o", str(out_lua), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

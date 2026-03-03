@@ -112,7 +112,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2kotlin.py", str(fixture), "-o", str(out_kotlin)],
+                [sys.executable, "src/py2x.py", "--target", "kotlin", str(fixture), "-o", str(out_kotlin)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -140,7 +140,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2kotlin.py", str(fixture), "-o", str(out_kotlin), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "kotlin", str(fixture), "-o", str(out_kotlin), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

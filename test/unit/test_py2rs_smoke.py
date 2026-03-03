@@ -426,7 +426,7 @@ class Py2RsSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2rs.py", str(fixture), "-o", str(out_rs)],
+                [sys.executable, "src/py2x.py", "--target", "rs", str(fixture), "-o", str(out_rs)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -448,7 +448,7 @@ class Py2RsSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2rs.py", str(fixture), "-o", str(out_rs), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "rs", str(fixture), "-o", str(out_rs), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

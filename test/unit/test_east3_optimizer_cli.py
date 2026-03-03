@@ -20,7 +20,7 @@ class East3OptimizerCliTest(unittest.TestCase):
             cp = subprocess.run(
                 [
                     "python3",
-                    "src/py2rs.py",
+                    "src/py2x.py", "--target", "rs",
                     str(src_py),
                     "-o",
                     str(out_rs),
@@ -49,7 +49,7 @@ class East3OptimizerCliTest(unittest.TestCase):
             cp = subprocess.run(
                 [
                     "python3",
-                    "src/py2cpp.py",
+                    "src/py2x.py", "--target", "cpp",
                     str(src_py),
                     "-o",
                     str(out_cpp),

@@ -228,7 +228,7 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2scala.py", str(fixture), "-o", str(out_scala)],
+                [sys.executable, "src/py2x.py", "--target", "scala", str(fixture), "-o", str(out_scala)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -251,7 +251,7 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2scala.py", str(fixture), "-o", str(out_scala), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "scala", str(fixture), "-o", str(out_scala), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

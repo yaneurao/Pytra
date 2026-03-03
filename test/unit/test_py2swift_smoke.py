@@ -131,7 +131,7 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2swift.py", str(fixture), "-o", str(out_swift)],
+                [sys.executable, "src/py2x.py", "--target", "swift", str(fixture), "-o", str(out_swift)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -159,7 +159,7 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2swift.py", str(fixture), "-o", str(out_swift), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "swift", str(fixture), "-o", str(out_swift), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

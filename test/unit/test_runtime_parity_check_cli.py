@@ -82,7 +82,8 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         names = {t.name for t in targets}
         self.assertIn("ruby", names)
         ruby_target = next(t for t in targets if t.name == "ruby")
-        self.assertIn("src/py2rb.py", ruby_target.transpile_cmd)
+        self.assertIn("src/py2x.py", ruby_target.transpile_cmd)
+        self.assertIn("--target ruby", ruby_target.transpile_cmd)
         self.assertIn("test/transpile/ruby/01_mandelbrot.rb", ruby_target.transpile_cmd)
         self.assertEqual(ruby_target.run_cmd, "ruby test/transpile/ruby/01_mandelbrot.rb")
         self.assertEqual(ruby_target.needs, ("python", "ruby"))
@@ -93,9 +94,13 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         names = {t.name for t in targets}
         self.assertIn("scala", names)
         scala_target = next(t for t in targets if t.name == "scala")
-        self.assertIn("src/py2scala.py", scala_target.transpile_cmd)
+        self.assertIn("src/py2x.py", scala_target.transpile_cmd)
+        self.assertIn("--target scala", scala_target.transpile_cmd)
         self.assertIn("test/transpile/scala/01_mandelbrot.scala", scala_target.transpile_cmd)
-        self.assertEqual(scala_target.run_cmd, "scala run test/transpile/scala/01_mandelbrot.scala")
+        self.assertEqual(
+            scala_target.run_cmd,
+            "scala run test/transpile/scala/py_runtime.scala test/transpile/scala/01_mandelbrot.scala",
+        )
         self.assertEqual(scala_target.needs, ("python", "scala"))
 
     def test_normalize_output_keeps_artifact_size_line(self) -> None:
@@ -124,7 +129,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
                     stderr="",
                 )
             elif idx == 1:
-                cp = subprocess.CompletedProcess(args="python src/py2rb.py ...", returncode=0, stdout="", stderr="")
+                cp = subprocess.CompletedProcess(args="python src/py2x.py --target ruby ...", returncode=0, stdout="", stderr="")
             else:
                 out_path.write_bytes(b"b" * 101)
                 cp = subprocess.CompletedProcess(
@@ -166,7 +171,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
                     stderr="",
                 )
             elif idx == 1:
-                cp = subprocess.CompletedProcess(args="python src/py2scala.py ...", returncode=0, stdout="", stderr="")
+                cp = subprocess.CompletedProcess(args="python src/py2x.py --target scala ...", returncode=0, stdout="", stderr="")
             else:
                 cp = subprocess.CompletedProcess(
                     args="scala run out.scala",

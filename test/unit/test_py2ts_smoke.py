@@ -83,7 +83,7 @@ class Py2TsSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2ts.py", str(fixture), "-o", str(out_ts)],
+                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -91,7 +91,7 @@ class Py2TsSmokeTest(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
-            self.assertTrue((Path(td) / "pytra" / "runtime.js").exists())
+            self.assertTrue((Path(td) / "pytra" / "py_runtime.js").exists())
 
     def test_cli_smoke_generates_ts_file(self) -> None:
         fixture = find_fixture_case("if_else")
@@ -102,7 +102,7 @@ class Py2TsSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2ts.py", str(fixture), "-o", str(out_ts)],
+                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -122,7 +122,7 @@ class Py2TsSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2ts.py", str(fixture), "-o", str(out_ts), "--east-stage", "2"],
+                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts), "--east-stage", "2"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
