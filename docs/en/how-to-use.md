@@ -82,6 +82,30 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
 python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
 ```
 
+
+## `ir2lang.py` (EAST3 JSON -> target backend)
+
+- `ir2lang.py` runs a backend directly from `EAST3(JSON)` without passing through the frontend (`.py -> EAST3`).
+- Use it for backend-only regression checks with fixed IR inputs under `sample/ir` and `test/ir`.
+- It accepts `.json` only and fail-fast rejects any input other than `east_stage=3`.
+
+```bash
+# 1) Build an EAST3(JSON) fixture from .py
+python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp \
+  -o out/seed_01.cpp --dump-east3-after-opt sample/ir/01_mandelbrot.east3.json
+
+# 2) Transpile directly from EAST3(JSON)
+python3 src/ir2lang.py sample/ir/01_mandelbrot.east3.json --target rs \
+  -o out/ir2lang_01.rs --no-runtime-hook
+
+# 3) Backend-only smoke checks for major targets (cpp/rs/js)
+python3 tools/check_ir2lang_smoke.py
+```
+
+Notes:
+- `ir2lang.py` supports `--lower-option key=value`, `--optimizer-option key=value`, and `--emitter-option key=value`.
+- Remove `--no-runtime-hook` when you also want to verify runtime helper copy/emission behavior.
+
 ## Transpiler Usage
 
 Use only the target language section you need.

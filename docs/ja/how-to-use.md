@@ -112,6 +112,30 @@ python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_se
 ```
 
 
+
+## `ir2lang.py`（EAST3 JSON -> target backend）
+
+- `ir2lang.py` は frontend（`.py -> EAST3`）を通さず、`EAST3(JSON)` から直接 backend を実行します。
+- backend 単体回帰や、`sample/ir` / `test/ir` の固定IR検証で使います。
+- 入力は `.json` のみ受理し、`east_stage=3` 以外は fail-fast します。
+
+```bash
+# 1) .py から EAST3(JSON) fixture を作成
+python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp \
+  -o out/seed_01.cpp --dump-east3-after-opt sample/ir/01_mandelbrot.east3.json
+
+# 2) EAST3(JSON) から直接ターゲット言語へ変換
+python3 src/ir2lang.py sample/ir/01_mandelbrot.east3.json --target rs \
+  -o out/ir2lang_01.rs --no-runtime-hook
+
+# 3) 主要 target（cpp/rs/js）の backend-only smoke
+python3 tools/check_ir2lang_smoke.py
+```
+
+補足:
+- `--lower-option key=value` / `--optimizer-option key=value` / `--emitter-option key=value` を `ir2lang.py` でも利用できます。
+- `--no-runtime-hook` を外すと、target ごとの runtime 補助ファイル配置も含めて確認できます。
+
 ## トランスパイラの使い方
 
 以下は言語別の手順です。必要な言語だけ展開して参照してください。
