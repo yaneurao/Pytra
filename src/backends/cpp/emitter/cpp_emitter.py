@@ -2259,9 +2259,9 @@ class CppEmitter(
                 if operand_t_norm in self.ref_classes and not operand.strip().startswith("*"):
                     return f"{owner}->__neg__()"
                 return f"{owner}.__neg__()"
-            return f"-{operand}"
+            return f"-({operand})"
         if op == "UAdd":
-            return f"+{operand}"
+            return f"+({operand})"
         return operand
 
     def _render_compare_expr(self, expr: dict[str, Any]) -> str:

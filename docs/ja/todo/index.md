@@ -48,7 +48,7 @@
 10. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift 引数ラベル整合（定義/呼び出し）を修正して sample 実行を成立させる。
 11. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS PNG/GIF writer を Python準拠バイナリへ揃えて mismatch を解消する。
 12. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C# image系 CRC mismatch を切り分け・修正する。
-13. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ sample/07,16 compile fail と 06/12/14 CRC mismatch を修正する。
+13. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ sample/07,16 compile fail と 06/12/14 CRC mismatch を修正する。
 14. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] 9言語全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
 15. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと仕様書へ CRC32 parity 運用ルールを反映する。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin emitter の `save_gif/grayscale_palette` を runtime 接続へ切替え、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer を追加。`--targets kotlin --all-samples` 再実行で `artifact_missing=0` を確認（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`）。
@@ -62,6 +62,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift emitter の関数/メソッドシグネチャを `func f(_ x: T, ...)` 形式へ統一し、呼び出し側（無ラベル）と整合。`sample/01` parity が `ok` になり、全sampleコンパイルログで `missing argument labels` エラーが消えたことを確認（`work/logs/runtime_parity_sample_swift_case01_after_s207_20260304.json`, `work/logs/swift_compile_all_after_s207_20260304.log`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS emitter で Call の keyword 引数を位置引数へ合流し、`save_gif(delay_cs=..., loop=...)` が欠落しないよう修正。JS/TS PNG helper を Python と同じ stored-block zlib writer へ置換し、`--targets js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_js_ts_crc_20260304_after_s208.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C# で `save_gif` の keyword 引数欠落（delay/loop）と `py_int` 丸め誤差（`Convert.ToInt64`）を原因特定し、call keyword 合流 + `Math.Truncate` 準拠へ修正。`--targets cs --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_cs_crc_20260304_after_s209.json`）。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ で `if/elif` 事前宣言スコープ崩れ、typed-list の `object` 退行、`for y in range(y, h)` 自己初期化崩れ、`math.pi/e` 未初期化、単項 `-` 括弧欠落（`-(a+b)`→`-a+b`）を修正。`sample/06,07,12,14,16` の parity を再確認し全件 `ok`（`work/logs/runtime_parity_sample_cpp_s210_focus_fixed_20260304.json`）。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 
