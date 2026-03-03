@@ -67,13 +67,14 @@
 文脈: [docs/ja/plans/p0-php-image-runtime-and-s16-repair.md](../plans/p0-php-image-runtime-and-s16-repair.md)
 
 1. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01] PHP の画像 runtime を実装し、`sample/16` 実行失敗を解消して parity の偽陽性を防ぐ。
-2. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S1-01] PHP 画像出力経路（runtime/emit）の no-op 依存箇所を棚卸しする。
+2. [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S1-01] PHP 画像出力経路（runtime/emit）の no-op 依存箇所を棚卸しする。
 3. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `src/runtime/php/pytra/runtime/png.php` に PNG 書き出し実装を追加する。
 4. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-02] `src/runtime/php/pytra/runtime/gif.php` に GIF 書き出し実装を追加する。
 5. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-03] PHP emitter/lower の画像保存経路を `__pytra_noop` から runtime 呼び出しへ切り替える。
 6. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-04] PHP emitter/lower の tuple 受け取りを修正し、`sample/16` の未束縛変数参照を解消する。
 7. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-01] `tools/runtime_parity_check.py` でケース実行前の既存 artifact 削除を強制する。
 8. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-02] `sample/01,06,16` を中心に Python vs PHP の stdout/artifact parity を再確認する。
+- 進捗メモ: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S1-01] PHP 画像出力は `emitter->__pytra_noop->runtime stub` で無効化されており、`sample/16` は tuple 受け取り崩れで `DivisionByZeroError` まで再現。
 
 ### P0: Ruby `sample/18` parity 失敗（tokenize error）原因調査
 
