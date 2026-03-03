@@ -226,6 +226,14 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertNotIn("node.name == env", ruby)
         self.assertIn("__pytra_main()", ruby)
 
+    def test_fixture_dict_literal_entries_are_emitted(self) -> None:
+        fixture = find_fixture_case("dict_literal_entries")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn('token_tags = { "+" => 1, "=" => 7 }', ruby)
+        self.assertNotIn("token_tags = {}", ruby)
+        self.assertIn('__pytra_as_dict(token_tags).fetch("=", 0)', ruby)
+
     def test_sample18_dataclass_ctor_and_self_receiver_are_lowered(self) -> None:
         sample = find_sample_case("18_mini_language_interpreter")
         east = load_east(sample, parser_backend="self_hosted")

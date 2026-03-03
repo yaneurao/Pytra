@@ -570,6 +570,23 @@ def _render_list_expr(expr: dict[str, Any]) -> str:
 
 
 def _render_dict_expr(expr: dict[str, Any]) -> str:
+    entries_any = expr.get("entries")
+    entries = entries_any if isinstance(entries_any, list) else []
+    if len(entries) > 0:
+        pairs_from_entries: list[str] = []
+        i = 0
+        while i < len(entries):
+            entry_any = entries[i]
+            if isinstance(entry_any, dict):
+                key_any = entry_any.get("key")
+                value_any = entry_any.get("value")
+                if key_any is not None and value_any is not None:
+                    pairs_from_entries.append(_render_expr(key_any) + " => " + _render_expr(value_any))
+            i += 1
+        if len(pairs_from_entries) == 0:
+            return "{}"
+        return "{ " + ", ".join(pairs_from_entries) + " }"
+
     keys_any = expr.get("keys")
     vals_any = expr.get("values")
     keys = keys_any if isinstance(keys_any, list) else []
