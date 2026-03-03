@@ -66,6 +66,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Go の `BitAnd/BitOr/BitXor/LShift/RShift` が `+` に誤変換されるバグを修正し、`sample/16` CRC mismatch を解消。`--targets go --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_go_after_bitop_fix_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Kotlin で `keywords` 欠落（`save_gif(delay_cs=..., loop=...)`）と bit演算（`>>`, `<<`, `&`, `|`, `^`）の誤変換を修正し、`shl/shr` の右辺 `Int` 化も追加。`--targets kotlin --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Java で `keywords` 欠落、単項 `-` の括弧崩れ、PNG writer の `Deflater` 非互換（Python非準拠）を修正。stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。残件は Swift 全件完走と `cpp` 全件再実行。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 

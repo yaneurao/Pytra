@@ -139,6 +139,7 @@
 - 2026-03-04: Go emitter の二項演算子マッピングに `BitAnd/BitOr/BitXor/LShift/RShift` が欠落し、既定 `+` に崩れる不具合を修正。`sample/16` の `palette_332/quantize_332` が正しいビット演算で生成されることを確認し、`--targets go --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_go_after_bitop_fix_20260304.json`）。
 - 2026-03-04: Kotlin emitter で `keywords`（`save_gif(delay_cs, loop)`）を位置引数へ合流し、`BitAnd/BitOr/BitXor/LShift/RShift` の演算子マッピング欠落を修正。`shl/shr` 右辺を `.toInt()` へ正規化して compile fail を解消し、`--targets kotlin --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`）。
 - 2026-03-04: Java emitter で `keywords` 合流、単項 `-` の括弧崩れ（`-(a+b)`→`-a+b`）修正、`BitAnd/BitOr/BitXor/LShift/RShift` マッピング追加を実施。Java runtime の PNG writer を `Deflater` 依存から Python準拠 stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
+- 2026-03-04: `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。`S3-01` の残件は Swift 全件完走と `cpp` 全件再実行のみ。
 
 ## 分解
 
