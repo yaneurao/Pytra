@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.compiler.east_parts.east1 import normalize_east1_root_document
+from pytra.ir.east1 import normalize_east1_root_document
 from pytra.compiler.transpile_cli import append_unique_non_empty
 from pytra.compiler.transpile_cli import build_module_east_map_from_analysis as build_module_east_map_from_analysis_core
 from pytra.compiler.transpile_cli import build_module_symbol_index as build_module_symbol_index_core

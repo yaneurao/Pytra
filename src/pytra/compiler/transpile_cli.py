@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from pytra.compiler.east_parts.core import convert_path, convert_source_to_east_with_backend
-from pytra.compiler.east_parts.east1 import load_east1_document as load_east1_document_stage
-from pytra.compiler.east_parts.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
-from pytra.compiler.east_parts.east3 import load_east3_document as load_east3_document_stage
+from pytra.ir.east1 import load_east1_document as load_east1_document_stage
+from pytra.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
+from pytra.ir.east3 import load_east3_document as load_east3_document_stage
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
