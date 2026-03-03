@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare py2cpp outputs between Python and selfhost executable."""
+"""Compare C++ outputs between host py2x-selfhost and selfhost executable."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2CPP = ROOT / "src" / "py2cpp.py"
+PY2X_SELFHOST = ROOT / "src" / "py2x-selfhost.py"
 DEFAULT_EXPECTED_DIFF_FILE = ROOT / "tools" / "selfhost_cpp_diff_expected.txt"
 DEFAULT_CASES = [
     "test/fixtures/core/add.py",
@@ -36,6 +36,16 @@ _FLOAT_CAST_PERF_COUNTER_RE = re.compile(
 
 def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+
+
+def _resolve_selfhost_target(selfhost_bin: Path, requested: str) -> str:
+    if requested != "auto":
+        return requested
+    cp = subprocess.run([str(selfhost_bin), "--help"], cwd=ROOT, capture_output=True, text=True)
+    text = (cp.stdout or "") + "\n" + (cp.stderr or "")
+    if "--target" in text:
+        return "cpp"
+    return ""
 
 
 def _load_expected_diff_cases(path: Path) -> set[str]:
@@ -98,8 +108,13 @@ def _run_east3_contract_tests() -> tuple[bool, str]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="compare py2cpp outputs: python vs selfhost")
+    ap = argparse.ArgumentParser(description="compare host(py2x-selfhost) vs selfhost outputs")
     ap.add_argument("--selfhost-bin", default="selfhost/py2cpp.out")
+    ap.add_argument(
+        "--selfhost-target",
+        default="auto",
+        help="target passed to selfhost binary/bridge (auto|\"\"|cpp; default: auto)",
+    )
     ap.add_argument(
         "--selfhost-driver",
         choices=["direct", "bridge"],
@@ -136,6 +151,7 @@ def main() -> int:
     if not selfhost_bin.exists():
         print(f"missing selfhost binary: {selfhost_bin}")
         return 2
+    selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
     bridge_tool = ROOT / "tools" / "selfhost_transpile.py"
     if args.selfhost_driver == "bridge" and not bridge_tool.exists():
         print(f"missing bridge tool: {bridge_tool}")
@@ -156,25 +172,42 @@ def main() -> int:
             out_py = td / (src.stem + ".py.cpp")
             out_sh = td / (src.stem + ".sh.cpp")
 
-            cp1 = _run(["python3", str(PY2CPP), str(src), "-o", str(out_py)])
+            cp1 = _run(
+                [
+                    "python3",
+                    str(PY2X_SELFHOST),
+                    str(src),
+                    "--target",
+                    "cpp",
+                    "-o",
+                    str(out_py),
+                ]
+            )
             if cp1.returncode != 0:
-                print(f"[FAIL python] {rel}: {(cp1.stderr.strip() or cp1.stdout.strip()).splitlines()[:1]}")
+                print(f"[FAIL host] {rel}: {(cp1.stderr.strip() or cp1.stdout.strip()).splitlines()[:1]}")
                 mismatches += 1
                 continue
             if args.selfhost_driver == "bridge":
+                bridge_cmd = [
+                    "python3",
+                    str(bridge_tool),
+                    str(src),
+                    "-o",
+                    str(out_sh),
+                    "--selfhost-bin",
+                    str(selfhost_bin),
+                ]
+                if selfhost_target != "":
+                    bridge_cmd.extend(["--target", selfhost_target])
                 cp2 = _run(
-                    [
-                        "python3",
-                        str(bridge_tool),
-                        str(src),
-                        "-o",
-                        str(out_sh),
-                        "--selfhost-bin",
-                        str(selfhost_bin),
-                    ]
+                    bridge_cmd
                 )
             else:
-                cp2 = _run([str(selfhost_bin), str(src), "-o", str(out_sh)])
+                direct_cmd = [str(selfhost_bin), str(src)]
+                if selfhost_target != "":
+                    direct_cmd.extend(["--target", selfhost_target])
+                direct_cmd.extend(["-o", str(out_sh)])
+                cp2 = _run(direct_cmd)
             if cp2.returncode != 0:
                 msg = (cp2.stderr.strip() or cp2.stdout.strip())
                 if args.mode == "allow-not-implemented" and "[not_implemented]" in msg:

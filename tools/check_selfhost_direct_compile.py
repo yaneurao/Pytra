@@ -29,9 +29,20 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=env)
 
 
+def _resolve_selfhost_target(selfhost_bin: Path, requested: str) -> str:
+    if requested != "auto":
+        return requested
+    cp = subprocess.run([str(selfhost_bin), "--help"], cwd=ROOT, capture_output=True, text=True)
+    text = (cp.stdout or "") + "\n" + (cp.stderr or "")
+    if "--target" in text:
+        return "cpp"
+    return ""
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="check selfhost direct path transpile + compile (-fsyntax-only)")
     ap.add_argument("--selfhost-bin", default=str(SELFHOST_BIN))
+    ap.add_argument("--selfhost-target", default="auto")
     ap.add_argument("--cases", nargs="*", default=_default_cases())
     args = ap.parse_args()
 
@@ -39,6 +50,7 @@ def main() -> int:
     if not selfhost_bin.exists():
         print(f"[FAIL] missing selfhost binary: {selfhost_bin}")
         return 2
+    selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
 
     failures = 0
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -51,7 +63,11 @@ def main() -> int:
                 continue
 
             out_cpp = td / f"{src.stem}.selfhost.cpp"
-            cp_transpile = _run([str(selfhost_bin), str(src), "-o", str(out_cpp)])
+            transpile_cmd = [str(selfhost_bin), str(src)]
+            if selfhost_target != "":
+                transpile_cmd.extend(["--target", selfhost_target])
+            transpile_cmd.extend(["-o", str(out_cpp)])
+            cp_transpile = _run(transpile_cmd)
             if cp_transpile.returncode != 0:
                 msg = cp_transpile.stderr.strip() or cp_transpile.stdout.strip()
                 print(f"[FAIL selfhost-transpile] {rel}: {msg.splitlines()[:1]}")
