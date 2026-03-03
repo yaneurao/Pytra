@@ -46,6 +46,7 @@
 - 2026-03-04: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `src/runtime/php/pytra/runtime/png.php` に pure PHP 実装（CRC32/Adler32/stored-deflate）を追加し、`1x1 RGB` で Python 実装と PNG バイト一致（SHA-256 一致）を確認。
 - 2026-03-04: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-02] `src/runtime/php/pytra/runtime/gif.php` に GIF89a 書き出し実装（Clear/Literal LZW・Netscape loop extension）を追加し、`2x1x2frames` で Python 実装と GIF バイト一致（SHA-256 一致）を確認。
 - 2026-03-04: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-03] PHP emitter の `save_gif` / `write_rgb_png` を `__pytra_noop` から `__pytra_save_gif` / `__pytra_write_rgb_png` へ切り替え、`sample/01` と `sample/06` の再変換出力および実行で画像生成を確認。
+- 2026-03-04: [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-04] PHP emitter の `Assign` に tuple/list 展開代入を実装し、`sample/16` の未束縛変数連鎖（`fwd_*`, `right_*`, `dy` など）を解消。再変換後の `sample/16` が `stderr` 空で完走することを確認。
 
 ## 分解
 
@@ -53,7 +54,7 @@
 - [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `png.php` に Python 互換の PNG 書き出し実装を追加する。
 - [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-02] `gif.php` に Python 互換の GIF 書き出し実装を追加する。
 - [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-03] PHP emitter/lower の `save_gif` / `write_rgb_png` を `__pytra_noop` から実体 runtime 呼び出しへ切り替える。
-- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-04] PHP emitter/lower の tuple 受け取りを修正し、`sample/16` の未束縛変数参照を解消する。
+- [x] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-04] PHP emitter/lower の tuple 受け取りを修正し、`sample/16` の未束縛変数参照を解消する。
 - [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-01] `runtime_parity_check.py` でケース実行前 artifact 削除を強制し、偽陽性経路を閉じる。
 - [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-02] `sample/01,06,16` を中心に Python vs PHP の stdout/artifact parity を再確認する。
 

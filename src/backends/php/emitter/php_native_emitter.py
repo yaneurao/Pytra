@@ -627,6 +627,35 @@ def _const_int(node: Any) -> int | None:
     return None
 
 
+def _emit_unpack_target_assign(
+    target: dict[str, Any],
+    source_expr: str,
+    *,
+    indent: str,
+    tmp_seq: list[int],
+) -> list[str]:
+    kind = target.get("kind")
+    if kind != "Tuple" and kind != "List":
+        return [indent + _target_lhs(target) + " = " + source_expr + ";"]
+
+    elems_any = target.get("elements")
+    elems = elems_any if isinstance(elems_any, list) else []
+    lines: list[str] = []
+    i = 0
+    while i < len(elems):
+        elem = elems[i]
+        item_expr = source_expr + "[" + str(i) + "]"
+        if isinstance(elem, dict) and (elem.get("kind") == "Tuple" or elem.get("kind") == "List"):
+            nested_tmp = "$__pytra_unpack_" + str(tmp_seq[0])
+            tmp_seq[0] += 1
+            lines.append(indent + nested_tmp + " = (" + item_expr + " ?? []);")
+            lines.extend(_emit_unpack_target_assign(elem, nested_tmp, indent=indent, tmp_seq=tmp_seq))
+        else:
+            lines.append(indent + _target_lhs(elem) + " = (" + item_expr + " ?? null);")
+        i += 1
+    return lines
+
+
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
@@ -752,6 +781,16 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             targets = [stmt.get("target")]
         if len(targets) == 0:
             raise RuntimeError("php native emitter: Assign without target")
+        primary_target = targets[0]
+        if isinstance(primary_target, dict) and (
+            primary_target.get("kind") == "Tuple" or primary_target.get("kind") == "List"
+        ):
+            tmp_seq = [0]
+            unpack_tmp = "$__pytra_unpack_" + str(tmp_seq[0])
+            tmp_seq[0] += 1
+            lines = [indent + unpack_tmp + " = " + _render_expr(stmt.get("value")) + ";"]
+            lines.extend(_emit_unpack_target_assign(primary_target, unpack_tmp, indent=indent, tmp_seq=tmp_seq))
+            return lines
         lhs = _target_lhs(targets[0])
         return [indent + lhs + " = " + _render_expr(stmt.get("value")) + ";"]
     if kind == "AugAssign":
