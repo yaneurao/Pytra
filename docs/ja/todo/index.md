@@ -131,6 +131,7 @@
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/unit` の CLI 実行を `src/py2x.py --target ...` へ統一し、代表 15 ファイルの unittest pass を確認（`test_py2lua_smoke.py` は既知失敗7件を維持）。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja|en/how-to-use.md` の実行例を `py2x --target` + `-o` 基準へ統一し、`spec-user` の対応言語一覧も `py2x` 正規入口表記へ更新。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost 系 scripts から `src/py2cpp.py` 直参照を除去し `py2x-selfhost` 基準へ寄せたが、`build_selfhost.py` は生成 C++ コンパイル失敗が残るため本 ID は継続。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `prepare_selfhost_source.py` 生成物の host transpile を再開通（`selfhost/py2cpp.py` の missing_module/未lower method 失敗を解消）し、`check_py2cpp_transpile.py`（137/137）で回帰なしを確認。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
