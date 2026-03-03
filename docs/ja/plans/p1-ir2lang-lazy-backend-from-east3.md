@@ -51,7 +51,7 @@
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-03] `--lower/--optimizer/--emitter-option` の層別 pass-through を実装する。
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-04] EAST2/不正IR入力の fail-fast エラー整備とメッセージ標準化を行う。
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-01] 主要 target で `sample/ir` / `test/ir` 変換スモークを追加し、backend 単体回帰導線を固定する。
-- [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-02] `docs/ja/how-to-use.md`（必要なら `docs/en/how-to-use.md`）へ `ir2lang.py` 手順を追記する。
+- [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-02] `docs/ja/how-to-use.md`（必要なら `docs/en/how-to-use.md`）へ `ir2lang.py` 手順を追記する。
 
 ## S1-01: 入力受理契約（確定）
 
@@ -93,3 +93,4 @@
 - 2026-03-03: CLI は `py2x.py` と同様の layer option 文法を採用し、`--no-runtime-hook` で backend 単体検証を可能にする方針を確定。
 - 2026-03-03: `src/ir2lang.py` を追加し、`backend_registry` の lazy dispatch・層別 option pass-through・`EAST3` 契約 fail-fast を実装。
 - 2026-03-03: `sample/ir/01_mandelbrot.east3.json` と `test/ir/core_add.east3.json` を fixture 化し、`tools/check_ir2lang_smoke.py`（`cpp/rs/js`）で backend-only 回帰導線を固定。
+- 2026-03-03: `docs/ja/how-to-use.md` / `docs/en/how-to-use.md` に `ir2lang.py` 手順（fixture作成・直接変換・smoke実行）を追記。
