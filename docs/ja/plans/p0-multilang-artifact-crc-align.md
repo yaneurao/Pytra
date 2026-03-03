@@ -136,6 +136,7 @@
 - 2026-03-04: JS emitter の Call で keyword 引数（`kw_values/kw_nodes`）を位置引数へ合流するよう修正し、`save_gif(delay_cs=..., loop=...)` 欠落を解消。JS/TS PNG helper を Python と同じ stored-block zlib 方式へ置換し、`--targets js,ts --all-samples` 18件で `ok` を確認（`work/logs/runtime_parity_sample_js_ts_crc_20260304_after_s208.json`）。
 - 2026-03-04: C# mismatch 原因を切り分け、GIF 側は `save_gif(delay_cs=..., loop=...)` keyword 引数欠落、PNG 側は `py_int` の `Convert.ToInt64` 丸め誤差（Python `int()` と非互換）と確定。C# emitter で keyword 引数合流、`py_runtime.py_int` を `Math.Truncate` 準拠へ修正し、`--targets cs --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_cs_crc_20260304_after_s209.json`）。
 - 2026-03-04: C++ の残件を修正。`if/elif` 事前宣言のスコープ誤り、typed list の `object` 退行、`for y in range(y, h)` の自己初期化崩れ、`math.pi/e` 未初期化、単項 `-` の括弧欠落（`-(a+b)`→`-a+b`）を解消し、`sample/06,07,12,14,16` を再検証して全件 `ok` を確認（`work/logs/runtime_parity_sample_cpp_s210_focus_fixed_20260304.json`）。
+- 2026-03-04: Go emitter の二項演算子マッピングに `BitAnd/BitOr/BitXor/LShift/RShift` が欠落し、既定 `+` に崩れる不具合を修正。`sample/16` の `palette_332/quantize_332` が正しいビット演算で生成されることを確認し、`--targets go --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_go_after_bitop_fix_20260304.json`）。
 
 ## 分解
 

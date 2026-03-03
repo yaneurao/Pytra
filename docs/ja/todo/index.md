@@ -63,6 +63,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS emitter で Call の keyword 引数を位置引数へ合流し、`save_gif(delay_cs=..., loop=...)` が欠落しないよう修正。JS/TS PNG helper を Python と同じ stored-block zlib writer へ置換し、`--targets js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_js_ts_crc_20260304_after_s208.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C# で `save_gif` の keyword 引数欠落（delay/loop）と `py_int` 丸め誤差（`Convert.ToInt64`）を原因特定し、call keyword 合流 + `Math.Truncate` 準拠へ修正。`--targets cs --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_cs_crc_20260304_after_s209.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ で `if/elif` 事前宣言スコープ崩れ、typed-list の `object` 退行、`for y in range(y, h)` 自己初期化崩れ、`math.pi/e` 未初期化、単項 `-` 括弧欠落（`-(a+b)`→`-a+b`）を修正。`sample/06,07,12,14,16` の parity を再確認し全件 `ok`（`work/logs/runtime_parity_sample_cpp_s210_focus_fixed_20260304.json`）。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Go の `BitAnd/BitOr/BitXor/LShift/RShift` が `+` に誤変換されるバグを修正し、`sample/16` CRC mismatch を解消。`--targets go --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_go_after_bitop_fix_20260304.json`）。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 
