@@ -1,11 +1,10 @@
 // Kotlin native runtime helpers for Pytra-generated code.
 
 import kotlin.math.*
-import java.awt.image.BufferedImage
 import java.io.File
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
-import javax.imageio.ImageIO
+import java.util.zip.CRC32
 
 fun __pytra_noop(vararg args: Any?) { }
 
@@ -173,35 +172,120 @@ fun __pytra_write_rgb_png(path: Any?, width: Any?, height: Any?, pixels: Any?) {
     val outPath = __pytra_str(path)
     val w = __pytra_int(width).toInt()
     val h = __pytra_int(height).toInt()
-    if (w <= 0 || h <= 0) return
-
-    val raw = __pytra_as_list(pixels)
+    val raw = __pytra_to_byte_array(pixels)
     val expected = w * h * 3
-    if (raw.size < expected) return
+    if (raw.size != expected) {
+        throw RuntimeException("pixels length mismatch")
+    }
 
-    val image = BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
-    var i = 0
+    val scan = ByteArray(h * (1 + w * 3))
+    val rowBytes = w * 3
+    var pos = 0
     var y = 0
     while (y < h) {
-        var x = 0
-        while (x < w) {
-            val r = __pytra_int(raw[i]).toInt().coerceIn(0, 255)
-            val g = __pytra_int(raw[i + 1]).toInt().coerceIn(0, 255)
-            val b = __pytra_int(raw[i + 2]).toInt().coerceIn(0, 255)
-            val rgb = (r shl 16) or (g shl 8) or b
-            image.setRGB(x, y, rgb)
-            i += 3
-            x += 1
-        }
+        scan[pos] = 0
+        pos += 1
+        val start = y * rowBytes
+        System.arraycopy(raw, start, scan, pos, rowBytes)
+        pos += rowBytes
         y += 1
     }
+
+    fun adler32(data: ByteArray): Int {
+        val mod = 65521
+        var s1 = 1
+        var s2 = 0
+        var i = 0
+        while (i < data.size) {
+            s1 += data[i].toInt() and 0xFF
+            if (s1 >= mod) s1 -= mod
+            s2 += s1
+            s2 %= mod
+            i += 1
+        }
+        return ((s2 shl 16) or s1)
+    }
+
+    fun zlibDeflateStore(data: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        out.write(0x78)
+        out.write(0x01)
+        val n = data.size
+        var pos = 0
+        while (pos < n) {
+            val remain = n - pos
+            val chunkLen = if (remain > 65535) 65535 else remain
+            val final = if ((pos + chunkLen) >= n) 1 else 0
+            out.write(final)
+            out.write(chunkLen and 0xFF)
+            out.write((chunkLen ushr 8) and 0xFF)
+            val nlen = 0xFFFF xor chunkLen
+            out.write(nlen and 0xFF)
+            out.write((nlen ushr 8) and 0xFF)
+            out.write(data, pos, chunkLen)
+            pos += chunkLen
+        }
+        val adler = adler32(data)
+        out.write((adler ushr 24) and 0xFF)
+        out.write((adler ushr 16) and 0xFF)
+        out.write((adler ushr 8) and 0xFF)
+        out.write(adler and 0xFF)
+        return out.toByteArray()
+    }
+
+    val idat = zlibDeflateStore(scan)
+
+    val ihdr = byteArrayOf(
+        ((w ushr 24) and 0xFF).toByte(),
+        ((w ushr 16) and 0xFF).toByte(),
+        ((w ushr 8) and 0xFF).toByte(),
+        (w and 0xFF).toByte(),
+        ((h ushr 24) and 0xFF).toByte(),
+        ((h ushr 16) and 0xFF).toByte(),
+        ((h ushr 8) and 0xFF).toByte(),
+        (h and 0xFF).toByte(),
+        8,
+        2,
+        0,
+        0,
+        0
+    )
+
+    fun chunk(chunkType: String, data: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        val n = data.size
+        out.write((n ushr 24) and 0xFF)
+        out.write((n ushr 16) and 0xFF)
+        out.write((n ushr 8) and 0xFF)
+        out.write(n and 0xFF)
+        val typeBytes = chunkType.toByteArray(Charsets.US_ASCII)
+        out.write(typeBytes)
+        out.write(data)
+        val crc = CRC32()
+        crc.update(typeBytes)
+        crc.update(data)
+        val c = crc.value
+        out.write(((c ushr 24) and 0xFF).toInt())
+        out.write(((c ushr 16) and 0xFF).toInt())
+        out.write(((c ushr 8) and 0xFF).toInt())
+        out.write((c and 0xFF).toInt())
+        return out.toByteArray()
+    }
+
+    val outPng = ByteArrayOutputStream()
+    outPng.write(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
+    outPng.write(chunk("IHDR", ihdr))
+    outPng.write(chunk("IDAT", idat))
+    outPng.write(chunk("IEND", ByteArray(0)))
 
     val outFile = File(outPath)
     val parent = outFile.parentFile
     if (parent != null && !parent.exists()) {
         parent.mkdirs()
     }
-    ImageIO.write(image, "png", outFile)
+    FileOutputStream(outFile).use { fos ->
+        fos.write(outPng.toByteArray())
+    }
 }
 
 fun __pytra_lzw_encode(data: ByteArray, minCodeSize: Int): ByteArray {
