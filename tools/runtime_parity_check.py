@@ -223,8 +223,6 @@ def build_targets(
             transpile_cmd=f"python src/py2php.py {shlex.quote(case_src)} -o test/transpile/php/{case_stem}.php {opt_arg}",
             run_cmd=f"php test/transpile/php/{case_stem}.php",
             needs=("python", "php"),
-            # PHP image writer helpers are currently no-op; artifact parity is deferred.
-            ignore_artifacts=True,
         ),
         Target(
             name="ts",
