@@ -4,6 +4,35 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+### 0. C++ runtime API 正本カタログ（P2-S1-01）
+
+`P2-RUNTIME-PARITY-CPP-01` の Wave 設計では、ここを「他言語 runtime 同等化」の基準 API とする。
+
+- 正本配置:
+  - core helper: `src/runtime/cpp/pytra-core/built_in/py_runtime.h`
+  - 生成 runtime: `src/runtime/cpp/pytra-gen/{std,utils}/*.h`
+  - 互換 forwarder: `src/runtime/cpp/pytra/{std,utils,built_in}/*.h`（`pytra-core` / `pytra-gen` へ委譲）
+- 受理ルール:
+  - API 名と引数契約は C++ を正本とする。
+  - 他言語は同名 API か adapter 経由で同等契約を満たす。
+  - `Must` は parity 優先実装、`Should` は段階導入対象。
+
+| モジュール | C++ API（基準） | 契約サマリ | 優先度 |
+| --- | --- | --- | --- |
+| `built_in/core` | `py_truthy`, `py_len`, `py_to<T>`, `py_to_int64`, `py_to_float64`, `py_to_bool`, `py_to_string`, `py_os_path_*`, `py_glob_glob`, `py_at`, `py_slice`, `py_dict_get(_default)` | 生成コードが直接利用する最小演算/変換/コンテナ/パス操作。型不一致時は fail-closed（例外/既定値契約を API ごとに維持）。 | Must |
+| `pytra::std::math` | `pi`, `e`, `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow` | `float64` 入出力を基準に数値演算契約を統一。 | Must |
+| `pytra::std::time` | `perf_counter()` | 単調増加の高分解能時刻を `float64` 秒で返す。 | Must |
+| `pytra::std::pathlib::Path` | `__truediv__`, `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd` | `Path` 型の最小操作集合。`read_text/write_text` は UTF-8 文字列経路を基準。 | Must |
+| `pytra::std::json` | `loads`, `dumps`（補助: `_dump_json_*`, `_escape_str`） | JSON 文字列との相互変換。公開契約は `loads/dumps` を基準。 | Must |
+| `pytra::utils::png` | `write_rgb_png(path, width, height, pixels)` | RGB バイト列を PNG ファイルへ保存。 | Must |
+| `pytra::utils::gif` | `grayscale_palette()`, `save_gif(path, width, height, frames, palette, delay_cs, loop)` | グレースケール palette 生成と GIF 保存。 | Must |
+| `pytra::std::timeit` | `default_timer()` | 計測補助 API。`perf_counter` と同系統契約。 | Should |
+| `pytra::std::random` | `random`, `seed`, `randrange`, `randint`, `uniform`, `choice` | 乱数 API の最小互換。結果分布契約を優先し、完全同値までは要求しない。 | Should |
+
+注記:
+- `pytra::std::json` / `pytra::utils::{png,gif}` は内部補助関数を含むが、多言語同等化で必須なのは公開 API。
+- `Path` は現状 `pytra-gen/std/pathlib.h` の宣言が薄く、`.cpp` 側 struct 実体が実効 API になっている。Wave1 で宣言/実体の整合も合わせて正規化対象とする。
+
 
 ### 1. 生成物と手書き実装の責務分離を明文化する
 

@@ -49,7 +49,7 @@
 
 ## 分解
 
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] C++ runtime の必須 API カタログ（module/function/契約）を抽出し、正本一覧を作成する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] C++ runtime の必須 API カタログ（module/function/契約）を抽出し、正本一覧を作成する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` の3段階で優先度付けする。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` の不足 API を実装・統一する。
@@ -65,3 +65,12 @@
 決定ログ:
 - 2026-03-02: ユーザー要望により、runtime 外出し（P1）とは別軸で「C++ 同等機能」を目的とする P2 計画を起票。
 - 2026-03-02: 「実装行数の一致」ではなく「API 契約・挙動同等」を完了判定に採用。
+- 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] `docs/ja/spec/spec-runtime.md` に C++ runtime 正本カタログ（core/math/time/pathlib/json/png/gif + timeit/random）を追加し、Wave の基準 API を固定。
+
+## S1-01 実装（2026-03-03）
+
+- 反映先: `docs/ja/spec/spec-runtime.md` セクション「0. C++ runtime API 正本カタログ」。
+- 抽出結果:
+  - `Must`: `built_in/core`, `std/math`, `std/time`, `std/pathlib::Path`, `std/json`, `utils/png`, `utils/gif`
+  - `Should`: `std/timeit`, `std/random`
+- 正本パスを `pytra-core` / `pytra-gen` に固定し、`pytra/*` を forwarder 層として明記。
