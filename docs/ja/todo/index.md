@@ -32,6 +32,24 @@
 
 ## 未完了タスク
 
+### P0: `src` レイアウト再編（`toolchain` / `pytra` / `runtime`）
+
+文脈: [docs/ja/plans/p0-src-layout-toolchain-pytra-runtime-split.md](../plans/p0-src-layout-toolchain-pytra-runtime-split.md)
+
+1. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01] `src` を責務別に再編し、`src/pytra` から変換プログラム本体を分離する（後方互換なし）。
+2. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
+3. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] 新レイアウト規約（`toolchain` / `pytra` / `runtime`）と依存方向を `docs/ja/spec-folder.md` に確定する。
+4. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] 旧 import 経路を禁止する移行ルール（後方互換なし）を明文化する。
+5. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-01] `src/toolchain/frontends` を作成し、`src/pytra/frontends` を一括移動する。
+6. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] `src/toolchain/ir` を作成し、`src/pytra/ir` を一括移動する。
+7. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] `src/toolchain/compiler` を作成し、`src/pytra/compiler` を一括移動する。
+8. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` 配下の空ディレクトリ・不要残骸を除去し、`std/utils/built_in` 中心構成へ整理する。
+9. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
+10. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] CLI エントリ（`py2x.py`, `py2x-selfhost.py`, `py2*.py`）の import 経路を新構成に合わせる。
+11. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
+12. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
+13. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新ディレクトリ責務と導線を反映する。
+
 ### P0: `backends/common` 基盤導入（`CodeEmitter` + profiles 集約）
 
 文脈: [docs/ja/plans/p0-backends-common-foundation.md](../plans/p0-backends-common-foundation.md)
