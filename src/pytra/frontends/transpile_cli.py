@@ -6,6 +6,7 @@ from pytra.ir.core import convert_path, convert_source_to_east_with_backend
 from pytra.ir.east1 import load_east1_document as load_east1_document_stage
 from pytra.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
 from pytra.ir.east3 import load_east3_document as load_east3_document_stage
+from pytra.frontends.known_modules import is_known_module_name
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
@@ -2062,6 +2063,8 @@ def is_known_non_user_import(
     runtime_utils_source_root: Path,
 ) -> bool:
     """import graph でユーザーファイル解決不要とみなす import か判定する。"""
+    if is_known_module_name(module_name):
+        return True
     if (
         module_name == "__future__"
         or module_name == "os"
