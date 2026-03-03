@@ -414,6 +414,16 @@ def _bin_op_symbol(op: Any) -> str:
         return "%"
     if op == "FloorDiv":
         return "/"
+    if op == "LShift":
+        return "shl"
+    if op == "RShift":
+        return "shr"
+    if op == "BitAnd":
+        return "and"
+    if op == "BitOr":
+        return "or"
+    if op == "BitXor":
+        return "xor"
     return "+"
 
 
@@ -459,6 +469,12 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
 
     if op == "Mod":
         return "(" + _int_operand(left_expr, left_node) + " % " + _int_operand(right_expr, right_node) + ")"
+
+    if op == "LShift" or op == "RShift":
+        shift_kw = "shl" if op == "LShift" else "shr"
+        lhs = _int_operand(left_expr, left_node)
+        rhs = _int_operand(right_expr, right_node)
+        return "(" + lhs + " " + shift_kw + " (" + rhs + ").toInt())"
 
     if resolved == "str" and op == "Add":
         return "(" + _to_str_expr(left_expr) + " + " + _to_str_expr(right_expr) + ")"
@@ -626,9 +642,52 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(raw, "")
 
 
-def _render_call_expr(expr: dict[str, Any]) -> str:
+def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
+    out: list[Any] = []
+    i = 0
+    while i < len(args):
+        out.append(args[i])
+        i += 1
+    keywords_any = expr.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if len(keywords) > 0:
+        j = 0
+        while j < len(keywords):
+            kw = keywords[j]
+            if isinstance(kw, dict):
+                out.append(kw.get("value"))
+            else:
+                out.append(kw)
+            j += 1
+        return out
+    kw_values_any = expr.get("kw_values")
+    kw_values = kw_values_any if isinstance(kw_values_any, list) else []
+    if len(kw_values) > 0:
+        j = 0
+        while j < len(kw_values):
+            out.append(kw_values[j])
+            j += 1
+        return out
+    kw_nodes_any = expr.get("kw_nodes")
+    kw_nodes = kw_nodes_any if isinstance(kw_nodes_any, list) else []
+    j = 0
+    while j < len(kw_nodes):
+        node = kw_nodes[j]
+        if isinstance(node, dict):
+            if node.get("kind") == "keyword":
+                out.append(node.get("value"))
+            else:
+                out.append(node)
+        else:
+            out.append(node)
+        j += 1
+    return out
+
+
+def _render_call_expr(expr: dict[str, Any]) -> str:
+    args = _call_arg_nodes(expr)
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):

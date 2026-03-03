@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.zip.CRC32;
-import java.util.zip.Deflater;
 
 final class PyRuntime {
     private PyRuntime() {
@@ -722,6 +721,48 @@ final class PyRuntime {
         }
     }
 
+    static int pyAdler32(byte[] data) {
+        final int mod = 65521;
+        int s1 = 1;
+        int s2 = 0;
+        for (byte b : data) {
+            s1 += (b & 0xff);
+            if (s1 >= mod) {
+                s1 -= mod;
+            }
+            s2 += s1;
+            s2 %= mod;
+        }
+        return (s2 << 16) | s1;
+    }
+
+    static byte[] pyZlibDeflateStore(byte[] data) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(0x78);
+        out.write(0x01);
+        int n = data.length;
+        int pos = 0;
+        while (pos < n) {
+            int remain = n - pos;
+            int chunkLen = Math.min(remain, 65535);
+            int fin = (pos + chunkLen >= n) ? 1 : 0;
+            out.write(fin);
+            out.write(chunkLen & 0xff);
+            out.write((chunkLen >>> 8) & 0xff);
+            int nlen = 0xFFFF ^ chunkLen;
+            out.write(nlen & 0xff);
+            out.write((nlen >>> 8) & 0xff);
+            out.write(data, pos, chunkLen);
+            pos += chunkLen;
+        }
+        int adler = pyAdler32(data);
+        out.write((adler >>> 24) & 0xff);
+        out.write((adler >>> 16) & 0xff);
+        out.write((adler >>> 8) & 0xff);
+        out.write(adler & 0xff);
+        return out.toByteArray();
+    }
+
     static void pyWriteRGBPNG(Object path, Object width, Object height, Object pixels) {
         int w = pyToInt(width);
         int h = pyToInt(height);
@@ -741,16 +782,7 @@ final class PyRuntime {
             pos += rowBytes;
         }
 
-        Deflater deflater = new Deflater(6);
-        deflater.setInput(scan);
-        deflater.finish();
-        byte[] buf = new byte[8192];
-        ByteArrayOutputStream zOut = new ByteArrayOutputStream();
-        while (!deflater.finished()) {
-            int n = deflater.deflate(buf);
-            zOut.write(buf, 0, n);
-        }
-        byte[] idat = zOut.toByteArray();
+        byte[] idat = pyZlibDeflateStore(scan);
 
         byte[] ihdr = new byte[] {
                 (byte) (w >>> 24), (byte) (w >>> 16), (byte) (w >>> 8), (byte) w,

@@ -153,7 +153,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn(
             "public static long abs_like(long n) {\n"
             "        if ((n < 0L)) {\n"
-            "            return (-n);\n"
+            "            return (-(n));\n"
             "        } else {\n"
             "            return n;\n"
             "        }\n"
@@ -178,7 +178,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         down_east = load_east(down_fixture, parser_backend="self_hosted")
         down_java = transpile_to_java_native(down_east, class_name="Main")
         self.assertNotIn("__step_", down_java)
-        self.assertIn("for (long i = ((long)(xs.size())) - 1L; i > (-1L); i -= 1L)", down_java)
+        self.assertIn("for (long i = ((long)(xs.size())) - 1L; i > (-(1L)); i -= 1L)", down_java)
 
     def test_java_native_emitter_uses_main_guard_body_for_sample_entry(self) -> None:
         sample = ROOT / "sample" / "py" / "17_monte_carlo_pi.py"
@@ -193,7 +193,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();", java)
         self.assertIn("pixels.add(r);", java)
         self.assertIn("r = PyRuntime.__pytra_int(", java)
-        self.assertIn("PyRuntime.__pytra_noop(out_path, width, height, pixels);", java)
+        self.assertIn("PyRuntime.pyWriteRGBPNG(out_path, width, height, pixels);", java)
 
     def test_java_native_emitter_allocates_sized_bytearray_for_subscript_set(self) -> None:
         sample = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"

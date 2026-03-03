@@ -137,6 +137,8 @@
 - 2026-03-04: C# mismatch 原因を切り分け、GIF 側は `save_gif(delay_cs=..., loop=...)` keyword 引数欠落、PNG 側は `py_int` の `Convert.ToInt64` 丸め誤差（Python `int()` と非互換）と確定。C# emitter で keyword 引数合流、`py_runtime.py_int` を `Math.Truncate` 準拠へ修正し、`--targets cs --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_cs_crc_20260304_after_s209.json`）。
 - 2026-03-04: C++ の残件を修正。`if/elif` 事前宣言のスコープ誤り、typed list の `object` 退行、`for y in range(y, h)` の自己初期化崩れ、`math.pi/e` 未初期化、単項 `-` の括弧欠落（`-(a+b)`→`-a+b`）を解消し、`sample/06,07,12,14,16` を再検証して全件 `ok` を確認（`work/logs/runtime_parity_sample_cpp_s210_focus_fixed_20260304.json`）。
 - 2026-03-04: Go emitter の二項演算子マッピングに `BitAnd/BitOr/BitXor/LShift/RShift` が欠落し、既定 `+` に崩れる不具合を修正。`sample/16` の `palette_332/quantize_332` が正しいビット演算で生成されることを確認し、`--targets go --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_go_after_bitop_fix_20260304.json`）。
+- 2026-03-04: Kotlin emitter で `keywords`（`save_gif(delay_cs, loop)`）を位置引数へ合流し、`BitAnd/BitOr/BitXor/LShift/RShift` の演算子マッピング欠落を修正。`shl/shr` 右辺を `.toInt()` へ正規化して compile fail を解消し、`--targets kotlin --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`）。
+- 2026-03-04: Java emitter で `keywords` 合流、単項 `-` の括弧崩れ（`-(a+b)`→`-a+b`）修正、`BitAnd/BitOr/BitXor/LShift/RShift` マッピング追加を実施。Java runtime の PNG writer を `Deflater` 依存から Python準拠 stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
 
 ## 分解
 
