@@ -68,6 +68,20 @@ Notes:
 - Use the **arithmetic mean (average)** of the two measured runs as the representative value (do not use median).
 - Exclude compile time from runtime numbers.
 
+## `py2x.py` / `py2x-selfhost.py` Entry Split
+
+- Use `src/py2x.py` for normal host execution. Target backends are loaded lazily per selected language.
+- Use `src/py2x-selfhost.py` for selfhost execution. Backends are fixed to static eager imports only.
+- Existing `py2{lang}.py` wrappers continue to call `py2x.py` as the normal path.
+
+```bash
+# Normal execution (host-lazy)
+python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
+
+# Selfhost execution (static eager import)
+python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
+```
+
 ## Transpiler Usage
 
 Use only the target language section you need.

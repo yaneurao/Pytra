@@ -97,6 +97,20 @@ Windows では次の読み替えを行ってください。
   - 値型材料化が問題になる箇所は、ローカルの型注釈を `object/Any` 側へ寄せて ref-boundary を強制する。
   - 逆に alias 分離を明示したい場合は、入力 Python 側で `list(...)` / `dict(...)` などの明示コピーを書く。
 
+## `py2x.py` / `py2x-selfhost.py` の使い分け
+
+- 通常実行は `src/py2x.py` を使います。target backend は必要言語のみ lazy import されます。
+- selfhost 実行は `src/py2x-selfhost.py` を使います。backend は static eager import 固定です。
+- 既存 `py2{lang}.py` ラッパは通常導線として `py2x.py` を呼び出します。
+
+```bash
+# 通常実行（host-lazy）
+python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
+
+# selfhost 実行（static eager import）
+python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
+```
+
 
 ## トランスパイラの使い方
 
