@@ -427,6 +427,16 @@ def _bin_op_symbol(op: Any) -> str:
         return "%"
     if op == "FloorDiv":
         return "/"
+    if op == "LShift":
+        return "<<"
+    if op == "RShift":
+        return ">>"
+    if op == "BitAnd":
+        return "&"
+    if op == "BitOr":
+        return "|"
+    if op == "BitXor":
+        return "^"
     return "+"
 
 
