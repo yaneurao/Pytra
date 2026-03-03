@@ -70,7 +70,7 @@
 2. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` 配下を棚卸しし、`frontends` / `ir` / 互換層に分類する。
 3. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-02] `src/pytra` 名前空間維持前提のディレクトリ規約と import 境界（依存方向）を定義する。
 4. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `src/pytra/frontends` / `src/pytra/ir` を新設し、最小 bootstrap モジュールを配置する。
-5. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] Python入力〜EAST1 生成の frontends 相当モジュールを `src/pytra/frontends` へ移設する。
+5. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] Python入力〜EAST1 生成の frontends 相当モジュールを `src/pytra/frontends` へ移設する。
 6. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-03] EAST1/2/3・lower/optimizer/analysis の IR 相当モジュールを `src/pytra/ir` へ移設する。
 7. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `src/pytra/compiler` を互換 shim 化し、既存 import を壊さない re-export 導線を整備する。
 8. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-01] 境界ガード（禁止 import / 逆流依存）を追加し、再発防止を固定する。
@@ -78,6 +78,7 @@
 10. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ新責務境界と移行方針を反映する。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` を棚卸しし、frontends/ir/互換層の初期分類と依存方向ルール（`frontends -> ir -> backends`）を計画書へ確定。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `pytra.frontends` / `pytra.ir` の bootstrap パッケージを新設し、互換委譲ラッパと import 契約 unit を追加して非退行を確認。
+- 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] `east1_build`/`frontend_semantics`/`signature_registry` を `pytra.frontends` へ移設し、旧 `pytra.compiler` 側は shim 化、主要 unit/transpile 回帰で非退行を確認。
 
 ### P1: `ir2lang.py` 導入（EAST3 JSON 直入力 + target lazy import）
 

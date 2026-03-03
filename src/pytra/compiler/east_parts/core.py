@@ -10,18 +10,18 @@ from pytra.std.dataclasses import dataclass
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 from pytra.std import sys
-from pytra.compiler.stdlib.signature_registry import is_stdlib_path_type
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_call
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_return_type
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_runtime_call
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
-from pytra.compiler.stdlib.signature_registry import lookup_stdlib_method_return_type
-from pytra.compiler.stdlib.frontend_semantics import lookup_builtin_semantic_tag
-from pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_function_semantic_tag
-from pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_method_semantic_tag
-from pytra.compiler.stdlib.frontend_semantics import lookup_stdlib_symbol_semantic_tag
+from pytra.frontends.signature_registry import is_stdlib_path_type
+from pytra.frontends.signature_registry import lookup_stdlib_attribute_type
+from pytra.frontends.signature_registry import lookup_stdlib_function_return_type
+from pytra.frontends.signature_registry import lookup_stdlib_function_runtime_call
+from pytra.frontends.signature_registry import lookup_stdlib_imported_symbol_return_type
+from pytra.frontends.signature_registry import lookup_stdlib_imported_symbol_runtime_call
+from pytra.frontends.signature_registry import lookup_stdlib_method_runtime_call
+from pytra.frontends.signature_registry import lookup_stdlib_method_return_type
+from pytra.frontends.frontend_semantics import lookup_builtin_semantic_tag
+from pytra.frontends.frontend_semantics import lookup_stdlib_function_semantic_tag
+from pytra.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
+from pytra.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、

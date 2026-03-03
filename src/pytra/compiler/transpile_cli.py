@@ -2493,7 +2493,7 @@ def analyze_import_graph_via_east1_build(
     load_east_fn: object,
 ) -> dict[str, object]:
     """`east1_build` 入口へ委譲する import graph helper。"""
-    from pytra.compiler.east_parts.east1_build import East1BuildHelpers
+    from pytra.frontends.east1_build import East1BuildHelpers
 
     load_doc_fn: object = None
     if callable(load_east_fn):
@@ -2516,7 +2516,7 @@ def build_module_east_map_via_east1_build(
     runtime_utils_source_root: Path = Path("src/pytra/utils"),
 ) -> dict[str, dict[str, object]]:
     """`east1_build` 入口へ委譲する module EAST map helper。"""
-    from pytra.compiler.east_parts.east1_build import East1BuildHelpers
+    from pytra.frontends.east1_build import East1BuildHelpers
 
     build_doc_fn: object = None
     if callable(load_east_fn):
