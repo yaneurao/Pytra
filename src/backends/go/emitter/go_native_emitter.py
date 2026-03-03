@@ -36,6 +36,7 @@ _GO_KEYWORDS = {
 
 _CLASS_NAMES: set[str] = set()
 _CLASS_BASE_MAP: dict[str, str] = {}
+_CLASS_HAS_DERIVED: set[str] = set()
 _CURRENT_RECEIVER_CLASS: str = ""
 _CURRENT_RECEIVER_VAR: str = "self"
 _INT_RESOLVED_TYPES = {"int", "int64", "uint8"}
@@ -244,6 +245,8 @@ def _go_type(type_name: Any, *, allow_void: bool) -> str:
     if type_name in {"unknown", "object", "any"}:
         return "any"
     if type_name in _CLASS_NAMES:
+        if type_name not in _CLASS_HAS_DERIVED:
+            return "*" + _safe_ident(type_name, "Any")
         return _class_iface_name(type_name)
     if type_name.isidentifier():
         return "*" + _safe_ident(type_name, "Any")
@@ -810,6 +813,22 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
         owner_expr = _render_expr(owner_any)
+        if attr_name == "get" and len(args) == 2:
+            base = (
+                "__pytra_dict_get_default("
+                + owner_expr
+                + ", "
+                + _render_expr(args[0])
+                + ", "
+                + _render_expr(args[1])
+                + ")"
+            )
+            resolved = _go_type(expr.get("resolved_type"), allow_void=False)
+            if resolved == "any" and isinstance(args[1], dict):
+                fallback = _go_type(args[1].get("resolved_type"), allow_void=False)
+                if fallback != "any":
+                    resolved = fallback
+            return _cast_from_any(base, resolved, expr)
         if attr_name in {"write_rgb_png", "save_gif"}:
             return _render_image_runtime_call(attr_name, args, keywords_any)
         if attr_name == "grayscale_palette":
@@ -911,6 +930,21 @@ def _render_expr(expr: Any) -> str:
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
+        if len(keys) == 0 and len(vals) == 0:
+            entries_any = expr.get("entries")
+            entries = entries_any if isinstance(entries_any, list) else []
+            if len(entries) > 0:
+                i = 0
+                while i < len(entries):
+                    entry_any = entries[i]
+                    if isinstance(entry_any, dict):
+                        key_any = entry_any.get("key")
+                        val_any = entry_any.get("value")
+                        if isinstance(key_any, dict):
+                            keys.append(key_any)
+                        if isinstance(val_any, dict):
+                            vals.append(val_any)
+                    i += 1
         if len(keys) == 0 or len(vals) == 0:
             return "map[any]any{}"
         parts: list[str] = []
@@ -2186,13 +2220,17 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
                 functions.append(node)
         i += 1
 
-    global _CLASS_NAMES, _CLASS_BASE_MAP
+    global _CLASS_NAMES, _CLASS_BASE_MAP, _CLASS_HAS_DERIVED
     _CLASS_NAMES = set()
     i = 0
     while i < len(classes):
         _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
         i += 1
     _CLASS_BASE_MAP = _collect_class_base_map(classes)
+    _CLASS_HAS_DERIVED = set()
+    for _, base_name in _CLASS_BASE_MAP.items():
+        if base_name != "":
+            _CLASS_HAS_DERIVED.add(base_name)
     class_method_sig_map = _collect_class_method_sig_map(classes)
 
     lines: list[str] = []
