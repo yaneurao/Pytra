@@ -46,7 +46,7 @@
 8. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go `__pytra_bytes([]byte)` と typed演算戻り値（`ifexp/min/max`）を修正して run_failed を解消する。
 9. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go sample/18 `TokenLike` フィールドアクセス崩れを修正する。
 10. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift 引数ラベル整合（定義/呼び出し）を修正して sample 実行を成立させる。
-11. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS PNG/GIF writer を Python準拠バイナリへ揃えて mismatch を解消する。
+11. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS PNG/GIF writer を Python準拠バイナリへ揃えて mismatch を解消する。
 12. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C# image系 CRC mismatch を切り分け・修正する。
 13. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ sample/07,16 compile fail と 06/12/14 CRC mismatch を修正する。
 14. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] 9言語全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
@@ -60,6 +60,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go runtime に `__pytra_bytes([]byte)` 対応を追加し、emitter の `ifexp/min/max` 経路で明示 cast を補強。`--targets go --all-samples` で `run_failed` は `sample/18` の `TokenLike` 残件のみへ縮退（`work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go class型付けを「派生なし class は `*Class`」へ変更し、`dict.get(default)` helper と `Dict.entries` emit を追加。`--targets go --all-samples` で `run_failed=0` を確認（`work/logs/runtime_parity_sample_go_crc_20260304_after_s206.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift emitter の関数/メソッドシグネチャを `func f(_ x: T, ...)` 形式へ統一し、呼び出し側（無ラベル）と整合。`sample/01` parity が `ok` になり、全sampleコンパイルログで `missing argument labels` エラーが消えたことを確認（`work/logs/runtime_parity_sample_swift_case01_after_s207_20260304.json`, `work/logs/swift_compile_all_after_s207_20260304.log`）。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS emitter で Call の keyword 引数を位置引数へ合流し、`save_gif(delay_cs=..., loop=...)` が欠落しないよう修正。JS/TS PNG helper を Python と同じ stored-block zlib writer へ置換し、`--targets js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_js_ts_crc_20260304_after_s208.json`）。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 
