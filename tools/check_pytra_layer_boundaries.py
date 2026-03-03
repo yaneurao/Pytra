@@ -80,7 +80,7 @@ def _check_file(path: Path) -> list[str]:
     rel = path.relative_to(ROOT).as_posix()
     for lineno, module_name in _iter_import_targets(tree):
         if group == "frontends":
-            if _module_matches(module_name, ["backends", "src.backends", "pytra.compiler.east_parts"]):
+            if _module_matches(module_name, ["backends", "src.backends", "toolchain.compiler.east_parts"]):
                 errs.append(f"{rel}:{lineno}: frontends must not import `{module_name}`")
             continue
 

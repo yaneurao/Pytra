@@ -13,10 +13,10 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.east1_build import build_east1_document
-from src.pytra.compiler.east_parts.east1_build import build_module_east_map
-from src.pytra.compiler.transpile_cli import ImportGraphHelpers
-from src.pytra.compiler.transpile_cli import load_east_document
+from src.toolchain.compiler.east_parts.east1_build import build_east1_document
+from src.toolchain.compiler.east_parts.east1_build import build_module_east_map
+from src.toolchain.compiler.transpile_cli import ImportGraphHelpers
+from src.toolchain.compiler.transpile_cli import load_east_document
 
 
 class East1BuildTest(unittest.TestCase):

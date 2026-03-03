@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
 SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
-SRC_TRANSPILE_CLI = ROOT / "src" / "pytra" / "compiler" / "transpile_cli.py"
+SRC_TRANSPILE_CLI = ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
 
 
 def _extract_code_emitter_class(text: str) -> str:
@@ -76,8 +76,8 @@ def _remove_import_line(text: str) -> str:
 
     targets: list[tuple[str, str, bool]] = [
         # `CodeEmitter` import は py2cpp 側から hooks 側へ移ったため、存在しない版も許容する。
-        ("from pytra.compiler.east_parts.code_emitter import CodeEmitter", "CodeEmitter import", False),
-        ("from pytra.compiler.transpile_cli import ", "transpile_cli import", True),
+        ("from toolchain.compiler.east_parts.code_emitter import CodeEmitter", "CodeEmitter import", False),
+        ("from toolchain.compiler.transpile_cli import ", "transpile_cli import", True),
         ("from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl", "build_cpp_hooks import", True),
     ]
     out = text
@@ -286,6 +286,16 @@ def _extract_support_blocks() -> str:
             ]
         )
     )
+    parts.append(
+        "\n".join(
+            [
+                "def _build_cpp_hooks_impl() -> dict[str, Any]:",
+                "    \"\"\"selfhost 互換: dynamic hooks 実装が利用できない場合の安全な既定値。\"\"\"",
+                "    return {}",
+                "",
+            ]
+        )
+    )
     return "\n".join(parts)
 
 
@@ -335,18 +345,31 @@ def _patch_code_emitter_hooks_for_selfhost(text: str) -> str:
     )
     out = text[:call_hook_start] + call_hook_stub + text[call_hook_end:]
 
-    class_marker = "class CppEmitter"
-    i = out.find(class_marker)
-    if i < 0:
-        return out
-    target = "        self.init_base_state(east_doc, profile, hooks)\n"
-    j = out.find(target, i + len(class_marker))
+    target = "self.init_base_state("
+    j = out.find(target)
     if j < 0:
+        raise RuntimeError("failed to find init_base_state call in CodeEmitter.__init__")
+
+    line_start = out.rfind("\n", 0, j)
+    if line_start < 0:
+        line_start = 0
+    else:
+        line_start += 1
+    line_end = out.find("\n", j)
+    if line_end < 0:
+        line_end = len(out)
+    line = out[line_start:line_end]
+    indent = ""
+    for ch in line:
+        if ch == " ":
+            indent += " "
+        else:
+            break
+    inserted = indent + "self.set_dynamic_hooks_enabled(False)\n"
+    insert_pos = line_end + 1 if line_end < len(out) else len(out)
+    if out.startswith(inserted, insert_pos):
         return out
-    inserted = "        self.set_dynamic_hooks_enabled(False)\n"
-    if out.startswith(inserted, j + len(target)):
-        return out
-    return out[: j + len(target)] + inserted + out[j + len(target) :]
+    return out[:insert_pos] + inserted + out[insert_pos:]
 
 
 def main() -> int:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from src.pytra.compiler.east_parts.east3_opt_passes.lifetime_analysis_pass import LifetimeAnalysisPass
-from src.pytra.compiler.east_parts.east3_optimizer import PassContext
+from src.toolchain.compiler.east_parts.east3_opt_passes.lifetime_analysis_pass import LifetimeAnalysisPass
+from src.toolchain.compiler.east_parts.east3_optimizer import PassContext
 
 
 def _name(name: str) -> dict[str, object]:

@@ -13,8 +13,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
-from src.pytra.compiler.transpile_cli import load_east3_document
+from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
+from src.toolchain.compiler.transpile_cli import load_east3_document
 
 
 def _const_i(v: int) -> dict[str, object]:

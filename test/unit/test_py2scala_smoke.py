@@ -17,7 +17,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.py2scala import load_east, load_scala_profile, transpile_to_scala, transpile_to_scala_native
-from src.pytra.compiler.east_parts.core import convert_path
+from src.toolchain.compiler.east_parts.core import convert_path
 
 
 def find_fixture_case(stem: str) -> Path:

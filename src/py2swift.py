@@ -8,8 +8,8 @@ from pytra.std.typing import Any
 from backends.swift.emitter import load_swift_profile, transpile_to_swift, transpile_to_swift_native
 from backends.swift.lower import lower_east3_to_swift_ir
 from backends.swift.optimizer import optimize_swift_ir
-from pytra.compiler.py2x_wrapper import run_py2x_for_target
-from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
+from toolchain.compiler.py2x_wrapper import run_py2x_for_target
+from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys

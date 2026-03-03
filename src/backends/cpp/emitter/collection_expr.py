@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
-from pytra.compiler.transpile_cli import join_str_list
+from toolchain.compiler.transpile_cli import join_str_list
 
 
 class CppCollectionExprEmitter:

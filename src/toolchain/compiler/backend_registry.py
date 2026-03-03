@@ -65,7 +65,7 @@ def _runtime_none(_output_path: Path) -> None:
 
 
 def _runtime_js_shims(output_path: Path) -> None:
-    mod = importlib.import_module("pytra.compiler.js_runtime_shims")
+    mod = importlib.import_module("toolchain.compiler.js_runtime_shims")
     writer = getattr(mod, "write_js_runtime_shims", None)
     if not callable(writer):
         raise RuntimeError("write_js_runtime_shims not found")

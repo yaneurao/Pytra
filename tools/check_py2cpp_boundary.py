@@ -106,7 +106,7 @@ def main() -> int:
         print("[FAIL] py2cpp boundary guard: unexpected top-level def(s)")
         for name in extras:
             print(f"  - {name}")
-        print("Move language-agnostic logic to src/pytra/compiler/* first.")
+        print("Move language-agnostic logic to src/toolchain/compiler/* first.")
         return 1
 
     # 許可集合を縮退した場合の追従漏れも検出。

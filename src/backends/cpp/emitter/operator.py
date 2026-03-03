@@ -3,7 +3,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.cpp.emitter.profile_loader import BIN_OPS
-from pytra.compiler.transpile_cli import join_str_list
+from toolchain.compiler.transpile_cli import join_str_list
 
 
 class CppBinaryOperatorEmitter:

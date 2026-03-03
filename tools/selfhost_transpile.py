@@ -55,7 +55,7 @@ def main() -> int:
                 "-c",
                 (
                     "import json,sys; "
-                    "from pytra.compiler.east import convert_path; "
+                    "from toolchain.compiler.east import convert_path; "
                     "from pytra.std.pathlib import Path; "
                     "obj=convert_path(Path(sys.argv[1]), parser_backend='self_hosted'); "
                     "obj=obj.get('east', obj) if isinstance(obj, dict) else obj; "

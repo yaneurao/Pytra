@@ -16,7 +16,7 @@ src_root = Path(__file__).resolve().parent.parent
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from pytra.compiler.east_parts import (  # noqa: F401
+from toolchain.compiler.east_parts import (  # noqa: F401
     EastBuildError,
     FLOAT_TYPES,
     INT_TYPES,

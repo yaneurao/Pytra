@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from pytra.std.pathlib import Path
 
-from pytra.compiler.transpile_cli import join_str_list
-from pytra.compiler.transpile_cli import python_module_exists_under
+from toolchain.compiler.transpile_cli import join_str_list
+from toolchain.compiler.transpile_cli import python_module_exists_under
 
 
 RUNTIME_CPP_COMPAT_ROOT: Path = Path("src/runtime/cpp/pytra")
 RUNTIME_CPP_GEN_ROOT: Path = Path("src/runtime/cpp/pytra-gen")
 RUNTIME_STD_SOURCE_ROOT: Path = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT: Path = Path("src/pytra/utils")
-RUNTIME_COMPILER_SOURCE_ROOT: Path = Path("src/pytra/compiler")
+RUNTIME_COMPILER_SOURCE_ROOT: Path = Path("src/toolchain/compiler")
 RUNTIME_BUILT_IN_SOURCE_ROOT: Path = Path("src/pytra/built_in")
 
 
@@ -49,7 +49,7 @@ def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
         tail = module_name_norm[12:]
         rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
         return rel != "" and _exists_under_runtime_roots("utils/" + rel)
-    if module_name_norm.startswith("pytra.compiler."):
+    if module_name_norm.startswith("toolchain.compiler."):
         tail = module_name_norm[15:]
         rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
         return rel != "" and _exists_under_runtime_roots("compiler/" + rel)
@@ -61,12 +61,12 @@ def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
 
 
 def runtime_module_tail_from_source_path(input_path: Path) -> str:
-    """`src/pytra/std|utils|compiler|built_in` から runtime tail を返す。"""
+    """`src/pytra/std|utils|built_in` と `src/toolchain/compiler` から runtime tail を返す。"""
     src = str(input_path)
     rel = ""
     std_prefix = "src/pytra/std/"
     utils_prefix = "src/pytra/utils/"
-    compiler_prefix = "src/pytra/compiler/"
+    compiler_prefix = "src/toolchain/compiler/"
     built_in_prefix = "src/pytra/built_in/"
     if src.startswith(std_prefix):
         rel = "std/" + src[len(std_prefix) :]
@@ -148,7 +148,7 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
         return "pytra/std/" + module_tail_to_cpp_header_path(module_name_norm[10:])
     if module_name_norm.startswith("pytra.utils."):
         return "pytra/utils/" + module_tail_to_cpp_header_path(module_name_norm[12:])
-    if module_name_norm.startswith("pytra.compiler."):
+    if module_name_norm.startswith("toolchain.compiler."):
         return "pytra/compiler/" + module_tail_to_cpp_header_path(module_name_norm[15:])
     if module_name_norm.startswith("pytra.built_in."):
         return "pytra/built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:])
@@ -163,7 +163,7 @@ def runtime_module_has_header(module_name_norm: str) -> bool:
         return runtime_cpp_header_exists_for_module(module_name_norm)
     if module_name_norm.startswith("pytra.utils.") and python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name_norm[12:].replace(".", "/")):
         return runtime_cpp_header_exists_for_module(module_name_norm)
-    if module_name_norm.startswith("pytra.compiler.") and python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name_norm[15:].replace(".", "/")):
+    if module_name_norm.startswith("toolchain.compiler.") and python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name_norm[15:].replace(".", "/")):
         return runtime_cpp_header_exists_for_module(module_name_norm)
     if module_name_norm.startswith("pytra.built_in.") and python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, module_name_norm[15:].replace(".", "/")):
         return runtime_cpp_header_exists_for_module(module_name_norm)

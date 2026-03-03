@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from src.pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
-from src.pytra.compiler.east_parts.east3_opt_passes.non_escape_call_graph import strongly_connected_components
+from src.toolchain.compiler.east_parts.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
+from src.toolchain.compiler.east_parts.east3_opt_passes.non_escape_call_graph import strongly_connected_components
 
 
 def _name(id_text: str) -> dict[str, object]:

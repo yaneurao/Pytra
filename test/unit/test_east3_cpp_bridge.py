@@ -13,7 +13,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.py2cpp import CppEmitter, load_east
-from src.pytra.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
+from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
 
 
 def _const_i(v: int) -> dict[str, object]:

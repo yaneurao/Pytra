@@ -96,7 +96,7 @@ _OWNER_ATTRIBUTE_TYPES: dict[str, dict[str, str]] = {
 
 
 def _std_root() -> Path:
-    return Path(__file__).resolve().parent.parent / "std"
+    return Path(__file__).resolve().parents[2] / "pytra" / "std"
 
 
 def _strip_quotes(text: str) -> str:

@@ -1,7 +1,7 @@
 """EAST/IR pipeline bootstrap wrappers.
 
 This module provides a stable import path under ``toolchain.ir`` while
-existing implementations remain in ``pytra.compiler.east_parts``.
+existing implementations remain in ``toolchain.compiler.east_parts``.
 """
 
 from __future__ import annotations

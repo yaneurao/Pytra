@@ -13,8 +13,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.east2_to_human_repr import render_east_to_human_repr
-from src.pytra.compiler.east_parts.east3_to_human_repr import render_east3_to_human_repr
+from src.toolchain.compiler.east_parts.east2_to_human_repr import render_east_to_human_repr
+from src.toolchain.compiler.east_parts.east3_to_human_repr import render_east3_to_human_repr
 
 
 class East3ToHumanReprTest(unittest.TestCase):

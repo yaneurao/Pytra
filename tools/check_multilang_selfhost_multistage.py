@@ -612,9 +612,9 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "import * as time from './std/time.js';\n"
             "export { argparse, sys, json, pathlib, math, time };\n"
         ),
-        "pytra/compiler/transpile_cli.js": (
+        "toolchain/compiler/transpile_cli.js": (
             "import fs from 'node:fs';\n"
-            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../py_runtime.js';\n"
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../../pytra/py_runtime.js';\n"
             "function _tag_map_like(value) {\n"
             "  if (value === null || value === undefined) { return value; }\n"
             "  if (Array.isArray(value)) {\n"
@@ -646,7 +646,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "}\n"
             "export { add_common_transpile_args, load_east3_document };\n"
         ),
-        "pytra/compiler/js_runtime_shims.js": (
+        "toolchain/compiler/js_runtime_shims.js": (
             "function write_js_runtime_shims(_output_dir) {\n"
             "  return;\n"
             "}\n"

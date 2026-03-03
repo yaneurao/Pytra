@@ -8,9 +8,9 @@ from pytra.std.typing import Any
 from backends.js.emitter.js_emitter import load_js_profile, transpile_to_js
 from backends.js.lower import lower_east3_to_js_ir
 from backends.js.optimizer import optimize_js_ir
-from pytra.compiler.py2x_wrapper import run_py2x_for_target
-from pytra.compiler.js_runtime_shims import write_js_runtime_shims
-from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
+from toolchain.compiler.py2x_wrapper import run_py2x_for_target
+from toolchain.compiler.js_runtime_shims import write_js_runtime_shims
+from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys

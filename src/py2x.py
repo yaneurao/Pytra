@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 
-from pytra.compiler.backend_registry import (
+from toolchain.compiler.backend_registry import (
     apply_runtime_hook,
     default_output_path,
     emit_source,
@@ -15,7 +15,7 @@ from pytra.compiler.backend_registry import (
     optimize_ir,
     resolve_layer_options,
 )
-from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
+from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys

@@ -8,8 +8,8 @@ from pytra.std.typing import Any
 from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
 from backends.php.lower import lower_east3_to_php_ir
 from backends.php.optimizer import optimize_php_ir
-from pytra.compiler.py2x_wrapper import run_py2x_for_target
-from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
+from toolchain.compiler.py2x_wrapper import run_py2x_for_target
+from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys
