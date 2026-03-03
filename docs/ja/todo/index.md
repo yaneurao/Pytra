@@ -37,8 +37,8 @@
 文脈: [docs/ja/plans/p0-multilang-artifact-crc-align.md](../plans/p0-multilang-artifact-crc-align.md)
 
 1. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01] `sample` の artifact parity（size+CRC32）を `cpp,rs,cs,js,ts,go,java,swift,kotlin` で一致させる。
-2. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後 baseline を固定し、失敗カテゴリを言語別にロックする。
-3. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走して失敗カテゴリをロックする。
+2. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後 baseline を固定し、失敗カテゴリを言語別にロックする。
+3. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走して失敗カテゴリをロックする。
 4. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin `save_gif` no-op 経路を除去し、runtime GIF writer 実装で artifact_missing を解消する。
 5. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin PNG writer を Python準拠バイナリに揃え、01..04 の mismatch を解消する。
 6. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java image call を runtime 実装へ接続し、artifact_missing を解消する。
@@ -53,6 +53,8 @@
 15. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと仕様書へ CRC32 parity 運用ルールを反映する。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin emitter の `save_gif/grayscale_palette` を runtime 接続へ切替え、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer を追加。`--targets kotlin --all-samples` 再実行で `artifact_missing=0` を確認（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin PNG writer を Python runtime と同じ stored-block zlib/chunk 仕様へ変更し、`01..04` の size/CRC mismatch を解消（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`）。残件は GIF 系 `artifact_crc32_mismatch` 8件。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] `runtime_parity_check.py` に `--cmd-timeout-sec` を追加して `--targets swift --all-samples` を完走化。`work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json` で `run_failed=17/artifact_missing=1` を固定。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] 既存 `cpp..kotlin` baseline と更新版 Kotlin/Swift ログを合成し、言語別カテゴリを `work/logs/runtime_parity_sample_baseline_lock_20260304.json` へ固定。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 

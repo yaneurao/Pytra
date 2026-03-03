@@ -38,6 +38,13 @@
 - Swift:
   - `swiftly` で `Swift 6.2.4` を導入し `swiftc` を利用可能化。
   - `--targets swift` 再実行で、少なくとも `sample/01..06` は `run_failed`（関数呼び出し引数ラベル不整合）を再現。
+- Swift（`--all-samples` 完走ログ固定）:
+  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets swift --cmd-timeout-sec 90 --summary-json work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json`
+  - `cases=18 pass=0 fail=18`
+  - `run_failed=17`, `artifact_missing=1`（`sample/11`）でカテゴリを固定。
+- 言語別 baseline lock（Kotlin/Swift 更新反映）:
+  - `work/logs/runtime_parity_sample_baseline_lock_20260304.json`
+  - `cpp/cs/go/java/js/kotlin/rs/swift/ts` のカテゴリ内訳を固定。
 
 原因調査（現時点の確定）:
 - Kotlin:
@@ -102,11 +109,14 @@
 - 2026-03-04: `Swift 6.2.4` を `swiftly` で導入し、`swiftc` を有効化（`/usr/local/bin/swiftc` symlink）。
 - 2026-03-04: Kotlin emitter の `save_gif/grayscale_palette` を runtime helper 接続へ変更し、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer（`__pytra_save_gif`）を追加。`artifact_missing` を解消した。
 - 2026-03-04: Kotlin `__pytra_write_rgb_png` を Python runtime と同じ stored-block zlib/chunk 構築へ変更し、01..04 の size/CRC mismatch を解消した。
+- 2026-03-04: `tools/runtime_parity_check.py` に `--cmd-timeout-sec` を追加し、Swift `sample/09` 長時間化で全体が停止しないようにした。`test_runtime_parity_check_cli.py` 全10件で回帰確認済み。
+- 2026-03-04: Swift `--all-samples` を timeout 付きで完走し、`run_failed=17/artifact_missing=1` を baseline としてロックした。
+- 2026-03-04: 既存 `cpp..kotlin` ログに Kotlin 更新版と Swift 全件版を合成し、`runtime_parity_sample_baseline_lock_20260304.json` を生成して言語別カテゴリを固定した。
 
 ## 分解
 
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後の baseline（summary-json）を固定し、失敗カテゴリを言語別にロックする。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走し、失敗カテゴリをロックする。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後の baseline（summary-json）を固定し、失敗カテゴリを言語別にロックする。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走し、失敗カテゴリをロックする。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin: `save_gif` no-op 経路を除去し、runtime GIF writer を実装して 05..16 の artifact_missing を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin: PNG writer を Python準拠バイナリへ寄せ、01..04 の artifact_size/CRC mismatch を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java: emitter の image call を `__pytra_noop` から runtime 実装へ接続し、artifact_missing を解消する。

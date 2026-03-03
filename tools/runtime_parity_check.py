@@ -50,19 +50,36 @@ def run_shell(
     cwd: Path,
     *,
     env: dict[str, str] | None = None,
+    timeout_sec: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
     proc_env = os.environ.copy()
     if env is not None:
         proc_env.update(env)
-    return subprocess.run(
-        cmd,
-        cwd=cwd,
-        shell=True,
-        check=False,
-        capture_output=True,
-        text=True,
-        env=proc_env,
-    )
+    try:
+        return subprocess.run(
+            cmd,
+            cwd=cwd,
+            shell=True,
+            check=False,
+            capture_output=True,
+            text=True,
+            env=proc_env,
+            timeout=timeout_sec,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout_text = exc.stdout if isinstance(exc.stdout, str) else ""
+        stderr_text = exc.stderr if isinstance(exc.stderr, str) else ""
+        timeout_note = f"[TIMEOUT] exceeded {timeout_sec}s: {cmd}"
+        if stderr_text == "":
+            stderr_text = timeout_note
+        else:
+            stderr_text = stderr_text.rstrip() + "\n" + timeout_note
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=124,
+            stdout=stdout_text,
+            stderr=stderr_text,
+        )
 
 
 def can_run(target: Target) -> bool:
@@ -365,6 +382,7 @@ def check_case(
     case_root: str,
     ignore_stdout: bool,
     east3_opt_level: str,
+    cmd_timeout_sec: int = 120,
     records: list[CheckRecord] | None = None,
 ) -> int:
     # Compatibility note:
@@ -395,7 +413,7 @@ def check_case(
         _purge_case_artifacts(work, case_stem)
         run_expr = f"python {shlex.quote(case_path.as_posix())}"
         run_env = {"PYTHONPATH": "src"}
-        py = run_shell(run_expr, cwd=work, env=run_env)
+        py = run_shell(run_expr, cwd=work, env=run_env, timeout_sec=cmd_timeout_sec)
 
         if py.returncode != 0:
             print(f"[ERROR] python:{case_stem} failed")
@@ -425,7 +443,7 @@ def check_case(
                 _record(target.name, "toolchain_missing", "missing toolchain")
                 continue
 
-            tr = run_shell(target.transpile_cmd, cwd=work)
+            tr = run_shell(target.transpile_cmd, cwd=work, timeout_sec=cmd_timeout_sec)
             if tr.returncode != 0:
                 msg = tr.stderr.strip()
                 mismatches.append(f"{case_stem}:{target.name}: transpile failed: {msg}")
@@ -436,7 +454,7 @@ def check_case(
             _purge_case_artifacts(work, case_stem)
             _safe_unlink(expected_artifact_path)
 
-            rr = run_shell(target.run_cmd, cwd=work)
+            rr = run_shell(target.run_cmd, cwd=work, timeout_sec=cmd_timeout_sec)
             if rr.returncode != 0:
                 msg = rr.stderr.strip()
                 mismatches.append(f"{case_stem}:{target.name}: run failed: {msg}")
@@ -573,6 +591,12 @@ def main() -> int:
         choices=("0", "1", "2"),
         help="EAST3 optimizer level passed to transpilers (default: 1)",
     )
+    parser.add_argument(
+        "--cmd-timeout-sec",
+        type=int,
+        default=120,
+        help="timeout seconds applied to python/transpile/run commands per case (default: 120)",
+    )
     args = parser.parse_args()
 
     enabled_targets: set[str] = set()
@@ -603,6 +627,7 @@ def main() -> int:
             case_root=args.case_root,
             ignore_stdout=args.ignore_unstable_stdout,
             east3_opt_level=args.east3_opt_level,
+            cmd_timeout_sec=args.cmd_timeout_sec,
             records=records,
         )
         if code != 0:
