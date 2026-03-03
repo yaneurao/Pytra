@@ -64,7 +64,7 @@
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
-- [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
+- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
 
@@ -80,3 +80,4 @@
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost 関連スクリプト（`build_selfhost*` / `check_selfhost_cpp_diff` / `selfhost_transpile` / `check_selfhost_direct_compile` / `verify_selfhost_end_to_end`）から `src/py2cpp.py` 直参照を除去し、`src/py2x-selfhost.py` 基準の呼び出しと `--selfhost-target auto`（旧 binary 互換）を導入。`check_selfhost_cpp_diff --skip-east3-contract-tests --cases test/fixtures/core/add.py` は実行可能で `mismatches=0` を確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `tools/build_selfhost.py` を `py2x-selfhost` 起点へ切替え後、生成 `selfhost/py2cpp.cpp` は C++ コンパイルで未解決（`pytra::compiler::ler::*` 参照・help 文字列連結・ローカル変数束縛欠落）となるため、selfhost 導線は未成立のまま。`S2-05` は完了化せず継続する。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `transpile_cli` の import 解決で `toolchain.*` / `backends.*` を既知 import 扱いへ調整し、C++ emitter に self_hosted 由来の未lower method 呼び出し（`str.startswith/endswith` 等）フォールバックを追加。これにより `python3 tools/prepare_selfhost_source.py && python3 src/py2cpp.py selfhost/py2cpp.py -o /tmp/selfhost_py2cpp_oldpath.cpp` は再度通過。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check_legacy_cli_references.py` を追加し、`src/tools/test` 配下の `src/py2*.py` 文字列参照と `import py2*` を allowlist 以外で fail-fast 検出するガードを導入。`tools/run_local_ci.py` に同チェックを組み込み、`python3 tools/check_legacy_cli_references.py` で pass を確認。

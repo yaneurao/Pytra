@@ -20,6 +20,7 @@ def run(cmd: list[str]) -> int:
 def main() -> int:
     steps: list[list[str]] = [
         ["python3", "tools/check_transpiler_version_gate.py"],
+        ["python3", "tools/check_legacy_cli_references.py"],
         ["python3", "tools/check_todo_priority.py"],
         ["python3", "tools/check_py2cpp_boundary.py"],
         ["python3", "tools/check_east_stage_boundary.py"],
