@@ -45,7 +45,17 @@ def verify_case(root: Path, stem: str) -> tuple[bool, str]:
         if rc != 0:
             return False, f"{stem}: python run failed"
         rc, tr_out = run_cmd(
-            ["python3", "src/py2cpp.py", str(py), "--multi-file", "--output-dir", str(out_dir)], cwd=root
+            [
+                "python3",
+                "src/py2x.py",
+                str(py),
+                "--target",
+                "cpp",
+                "--multi-file",
+                "--output-dir",
+                str(out_dir),
+            ],
+            cwd=root,
         )
         if rc != 0:
             return False, f"{stem}: transpile failed\n{tr_out}"
