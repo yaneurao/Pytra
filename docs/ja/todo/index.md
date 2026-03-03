@@ -43,7 +43,7 @@
 5. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin PNG writer を Python準拠バイナリに揃え、01..04 の mismatch を解消する。
 6. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java image call を runtime 実装へ接続し、artifact_missing を解消する。
 7. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java compile fail（`RuntimeError` / dict.get-default / 型）を修正して sample 実行を完走可能にする。
-8. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go `__pytra_bytes([]byte)` と typed演算戻り値（`ifexp/min/max`）を修正して run_failed を解消する。
+8. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go `__pytra_bytes([]byte)` と typed演算戻り値（`ifexp/min/max`）を修正して run_failed を解消する。
 9. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go sample/18 `TokenLike` フィールドアクセス崩れを修正する。
 10. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift 引数ラベル整合（定義/呼び出し）を修正して sample 実行を成立させる。
 11. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS PNG/GIF writer を Python準拠バイナリへ揃えて mismatch を解消する。
@@ -57,6 +57,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] 既存 `cpp..kotlin` baseline と更新版 Kotlin/Swift ログを合成し、言語別カテゴリを `work/logs/runtime_parity_sample_baseline_lock_20260304.json` へ固定。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java emitter の `save_gif/write_rgb_png/grayscale_palette` を runtime 実装へ接続し、`--targets java --all-samples` 再実行で `artifact_missing=0` を確認（`work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java の `RuntimeError` / `dict.get(default)` / `enumerate` / `Dict.entries` / `list_repeat` / `Raise` 終端判定を修正し、`--targets java --all-samples` で `run_failed=0` を確認（`work/logs/runtime_parity_sample_java_crc_20260304_after_compile_fix4.json`）。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go runtime に `__pytra_bytes([]byte)` 対応を追加し、emitter の `ifexp/min/max` 経路で明示 cast を補強。`--targets go --all-samples` で `run_failed` は `sample/18` の `TokenLike` 残件のみへ縮退（`work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`）。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 

@@ -299,15 +299,46 @@ def _tuple_element_types(type_name: Any) -> list[str]:
     return out
 
 
+def _needs_explicit_cast(value_any: Any) -> bool:
+    if not isinstance(value_any, dict):
+        return False
+    kind = value_any.get("kind")
+    if kind == "IfExp":
+        return True
+    if kind == "Call":
+        call_name = _call_name(value_any)
+        return call_name in {"min", "max"}
+    return False
+
+
+def _is_any_runtime_value_expr(expr: str) -> bool:
+    text = expr.strip()
+    return (
+        _is_wrapped_call(text, "__pytra_ifexp")
+        or _is_wrapped_call(text, "__pytra_min")
+        or _is_wrapped_call(text, "__pytra_max")
+    )
+
+
 def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dict[str, str] | None = None) -> str:
     if go_type == "int64":
-        if isinstance(value_any, dict) and _infer_go_type(value_any, type_map) == "int64":
+        if (
+            isinstance(value_any, dict)
+            and _infer_go_type(value_any, type_map) == "int64"
+            and not _needs_explicit_cast(value_any)
+            and not _is_any_runtime_value_expr(expr)
+        ):
             return expr
         if _is_int_cast_expr(expr):
             return expr
         return "__pytra_int(" + expr + ")"
     if go_type == "float64":
-        if isinstance(value_any, dict) and _infer_go_type(value_any, type_map) == "float64":
+        if (
+            isinstance(value_any, dict)
+            and _infer_go_type(value_any, type_map) == "float64"
+            and not _needs_explicit_cast(value_any)
+            and not _is_any_runtime_value_expr(expr)
+        ):
             return expr
         if _is_float_cast_expr(expr):
             return expr

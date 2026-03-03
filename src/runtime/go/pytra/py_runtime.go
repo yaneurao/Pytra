@@ -1257,6 +1257,14 @@ func __pytra_bytearray(init any) []any {
 
 func __pytra_bytes(v any) []any {
     switch t := v.(type) {
+    case []byte:
+        out := []any{}
+        i := 0
+        for i < len(t) {
+            out = append(out, int64(t[i]))
+            i += 1
+        }
+        return out
     case []any:
         out := []any{}
         i := 0
