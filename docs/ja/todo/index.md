@@ -134,6 +134,7 @@
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `prepare_selfhost_source.py` 生成物の host transpile を再開通（`selfhost/py2cpp.py` の missing_module/未lower method 失敗を解消）し、`check_py2cpp_transpile.py`（137/137）で回帰なしを確認。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `py2x-selfhost.py` を runtime `ArgumentParser` 契約に合わせて再配線（help文字列連結・layer option 変数スコープ・引数定義の署名崩れを解消）し、`build_selfhost.py` の残件を `pytra::compiler::{transpile_cli,backend_registry_static}` 未実体化に絞り込んだ。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] C++ runtime に `pytra::compiler::{transpile_cli,backend_registry_static}` 最小実装を追加して `build_selfhost.py` のコンパイルを復旧し、`build_selfhost_stage2.py` は `[not_implemented]` 時に stage1 生成 CPP を再利用するフォールバックを導入した（selfhost transpile 本体は継続タスク）。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `self_hosted` builtin method フォールバックを selfhost 系ソースに限定して `east3-contract` 回帰を復旧し、`check_selfhost_cpp_diff` / `check_selfhost_stage2_cpp_diff`（`allow-not-implemented`）を通常モードで通過確認。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check_legacy_cli_references.py` を追加し、`src/tools/test` の `src/py2*.py` 直参照・`import py2*` 新規流入を fail-fast 検出できるようにした。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）

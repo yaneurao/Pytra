@@ -573,6 +573,14 @@ class CppCallEmitter:
         """self_hosted parser 由来で BuiltinCall 未lower の method を最小フォールバックする。"""
         if not self._is_self_hosted_parser_doc():
             return None
+        src = self.any_dict_get_str(self.doc, "source_path", "")
+        # Restrict fallback to known selfhost bootstrap sources.
+        if not (
+            src.endswith("/selfhost/py2cpp.py")
+            or src.endswith("/src/py2cpp.py")
+            or src.endswith("/src/py2x-selfhost.py")
+        ):
+            return None
         owner_norm = self.normalize_type_name(owner_t)
         if owner_norm != "str":
             return None
