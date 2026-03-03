@@ -44,8 +44,8 @@
 
 ## 分解
 
-- [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-01] `test/ir` / `sample/ir` の入力形式（JSON schema / stage marker / 必須メタ）を棚卸しし、`ir2lang` の受理契約を確定する。
-- [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-02] `ir2lang.py` CLI 仕様（必須引数、出力先、層別 option、fail-fast 条件）を定義する。
+- [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-01] `test/ir` / `sample/ir` の入力形式（JSON schema / stage marker / 必須メタ）を棚卸しし、`ir2lang` の受理契約を確定する。
+- [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-02] `ir2lang.py` CLI 仕様（必須引数、出力先、層別 option、fail-fast 条件）を定義する。
 - [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-01] `src/ir2lang.py` を実装し、EAST3 JSON 読み込みと target dispatch を導入する。
 - [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-02] backend registry 経由の target lazy import を実装し、非指定 backend の import を回避する。
 - [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-03] `--lower/--optimizer/--emitter-option` の層別 pass-through を実装する。
@@ -53,5 +53,41 @@
 - [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-01] 主要 target で `sample/ir` / `test/ir` 変換スモークを追加し、backend 単体回帰導線を固定する。
 - [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-02] `docs/ja/how-to-use.md`（必要なら `docs/en/how-to-use.md`）へ `ir2lang.py` 手順を追記する。
 
+## S1-01: 入力受理契約（確定）
+
+- `ir2lang.py` の入力は JSON のみを受理し、`.py` は受理しない（frontend 依存を遮断）。
+- JSON ルートは次のどちらか:
+  - `{"ok": true, "east": {...Module...}}`
+  - `{"kind": "Module", ...}`
+- 受理する `Module` ルート必須キー:
+  - `kind == "Module"`
+  - `east_stage == 3`（`1/2` は fail-fast）
+  - `body` が `list`
+- `schema_version` は存在時に `int >= 1` を要求する（不正型/不正値は fail-fast）。
+- `meta` は未指定許容（内部で `{}` 扱い）。指定時は `dict` を要求する。
+
+## S1-02: CLI 仕様（確定）
+
+- エントリ: `python3 src/ir2lang.py`
+- 必須:
+  - 位置引数 `input`（EAST3 JSON）
+  - `--target <lang>`
+- 任意:
+  - `-o/--output`（未指定時は `input` stem + target 拡張子）
+  - `--lower-option key=value`（複数可）
+  - `--optimizer-option key=value`（複数可）
+  - `--emitter-option key=value`（複数可）
+  - `--no-runtime-hook`（runtime 配置を抑止）
+- fail-fast 条件:
+  - `--target` 未指定
+  - `key=value` 形式違反
+  - 未知 layer option / 型不一致（`backend_registry.resolve_layer_options`）
+  - 入力 JSON 不正 / `EAST2` / `Module` 契約違反
+- 終了コード:
+  - 正常終了 `0`
+  - ユーザー入力エラー `2`
+
 決定ログ:
 - 2026-03-03: ユーザー指示により、selfhost 非対応を前提として `ir2lang.py`（EAST3 JSON 直入力 + lazy target import）を P1 で起票。
+- 2026-03-03: `ir2lang.py` の入力は `EAST3 JSON` 専用とし、`east_stage==3` を必須化する方針を確定。
+- 2026-03-03: CLI は `py2x.py` と同様の layer option 文法を採用し、`--no-runtime-hook` で backend 単体検証を可能にする方針を確定。

@@ -90,14 +90,15 @@
 文脈: [docs/ja/plans/p1-ir2lang-lazy-backend-from-east3.md](../plans/p1-ir2lang-lazy-backend-from-east3.md)
 
 1. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01] `test/ir` / `sample/ir` の EAST3(JSON) から target 言語へ直接変換する `ir2lang.py` を導入する（selfhost は非対象）。
-2. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-01] `test/ir` / `sample/ir` の入力形式（JSON schema / stage marker / 必須メタ）を棚卸しし、受理契約を確定する。
-3. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-02] `ir2lang.py` CLI 仕様（必須引数、出力先、層別 option、fail-fast 条件）を定義する。
+2. [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-01] `test/ir` / `sample/ir` の入力形式（JSON schema / stage marker / 必須メタ）を棚卸しし、受理契約を確定する。
+3. [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-02] `ir2lang.py` CLI 仕様（必須引数、出力先、層別 option、fail-fast 条件）を定義する。
 4. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-01] `src/ir2lang.py` を実装し、EAST3 JSON 読み込みと target dispatch を導入する。
 5. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-02] backend registry 経由の target lazy import を実装し、非指定 backend import を回避する。
 6. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-03] `--lower/--optimizer/--emitter-option` の層別 pass-through を実装する。
 7. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-04] EAST2/不正IR入力の fail-fast エラー整備とメッセージ標準化を行う。
 8. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-01] 主要 target で `sample/ir` / `test/ir` 変換スモークを追加し、backend 単体回帰導線を固定する。
 9. [ ] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-02] `docs/ja/how-to-use.md`（必要なら `docs/en/how-to-use.md`）へ手順を追記する。
+- 進捗メモ: [ID: P1-IR2LANG-LAZY-EMIT-01-S1-01] `EAST3 JSON` 受理契約（`kind=Module`, `east_stage=3`, `body=list`, `schema_version/meta` 検証）と `ir2lang.py` CLI 仕様（layer options + fail-fast）を計画書へ確定。
 
 ### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
 
