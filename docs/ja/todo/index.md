@@ -32,6 +32,21 @@
 
 ## 未完了タスク
 
+### P0: `src/pytra` 3層分離ブートストラップ（`frontend` / `ir` / `backend`）
+
+文脈: [docs/ja/plans/p0-pytra-src-3layer-bootstrap.md](../plans/p0-pytra-src-3layer-bootstrap.md)
+
+1. [ ] [ID: P0-PYTRA-SRC-3LAYER-01] `src/pytra` 名前空間を維持しつつ `frontend` / `ir` を導入し、`compiler` 混在責務を段階的に分離する。
+2. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` 配下を棚卸しし、`frontend` / `ir` / 互換層に分類する。
+3. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S1-02] `src/pytra` 名前空間維持前提のディレクトリ規約と import 境界（依存方向）を定義する。
+4. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `src/pytra/frontend` / `src/pytra/ir` を新設し、最小 bootstrap モジュールを配置する。
+5. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] Python入力〜EAST1 生成の frontend 相当モジュールを `src/pytra/frontend` へ移設する。
+6. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-03] EAST1/2/3・lower/optimizer/analysis の IR 相当モジュールを `src/pytra/ir` へ移設する。
+7. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `src/pytra/compiler` を互換 shim 化し、既存 import を壊さない re-export 導線を整備する。
+8. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-01] 境界ガード（禁止 import / 逆流依存）を追加し、再発防止を固定する。
+9. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-02] 主要 unit/transpile 回帰を実行して非退行を確認する。
+10. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ新責務境界と移行方針を反映する。
+
 ### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
 
 文脈: [docs/ja/plans/p2-py2x-unified-frontend-rollout.md](../plans/p2-py2x-unified-frontend-rollout.md)
