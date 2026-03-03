@@ -208,7 +208,7 @@ def parse_east3_opt_pass_overrides(spec: str) -> tuple[set[str], set[str]]:
 
 def build_default_pass_manager() -> PassManager:
     """既定 pass 列を読み込んだ manager を構築する。"""
-    from pytra.ir.east3_opt_passes import build_default_passes
+    from toolchain.ir.east3_opt_passes import build_default_passes
 
     return PassManager(build_default_passes())
 

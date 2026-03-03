@@ -8,14 +8,14 @@ from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 
 from pytra.compiler.east_parts.core import convert_path
-from pytra.ir.east2_to_east3_lowering import lower_east2_to_east3
-from pytra.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
-from pytra.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
-from pytra.ir.east3_opt_passes.non_escape_call_graph import module_id_for_doc
-from pytra.ir.east3_opt_passes.non_escape_call_graph import resolve_non_escape_call_target
-from pytra.ir.east3_optimizer import East3OptimizerPass
-from pytra.ir.east3_optimizer import PassContext
-from pytra.ir.east3_optimizer import PassResult
+from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3
+from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
+from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from toolchain.ir.east3_opt_passes.non_escape_call_graph import module_id_for_doc
+from toolchain.ir.east3_opt_passes.non_escape_call_graph import resolve_non_escape_call_target
+from toolchain.ir.east3_optimizer import East3OptimizerPass
+from toolchain.ir.east3_optimizer import PassContext
+from toolchain.ir.east3_optimizer import PassResult
 
 
 def _safe_name(value: Any) -> str:

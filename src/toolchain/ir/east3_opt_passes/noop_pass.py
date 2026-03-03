@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pytra.ir.east3_optimizer import East3OptimizerPass
-from pytra.ir.east3_optimizer import PassContext
-from pytra.ir.east3_optimizer import PassResult
+from toolchain.ir.east3_optimizer import East3OptimizerPass
+from toolchain.ir.east3_optimizer import PassContext
+from toolchain.ir.east3_optimizer import PassResult
 
 
 class NoOpPass(East3OptimizerPass):

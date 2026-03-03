@@ -6,9 +6,9 @@ from dataclasses import dataclass
 
 from pytra.std.typing import Any
 
-from pytra.ir.east3_optimizer import East3OptimizerPass
-from pytra.ir.east3_optimizer import PassContext
-from pytra.ir.east3_optimizer import PassResult
+from toolchain.ir.east3_optimizer import East3OptimizerPass
+from toolchain.ir.east3_optimizer import PassContext
+from toolchain.ir.east3_optimizer import PassResult
 
 
 _DYNAMIC_NAME_CALLS = {"locals", "globals", "vars", "eval", "exec"}

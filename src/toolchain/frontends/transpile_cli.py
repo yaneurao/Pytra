@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from pytra.ir.core import convert_path, convert_source_to_east_with_backend
-from pytra.ir.east1 import load_east1_document as load_east1_document_stage
-from pytra.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
-from pytra.ir.east3 import load_east3_document as load_east3_document_stage
+from toolchain.ir.core import convert_path, convert_source_to_east_with_backend
+from toolchain.ir.east1 import load_east1_document as load_east1_document_stage
+from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
+from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
 from toolchain.frontends.known_modules import is_known_module_name
 from pytra.std import argparse
 from pytra.std import json

@@ -1,8 +1,8 @@
 """Compatibility shim for EAST3 optimizer pass module.
 
-Canonical implementation moved to pytra.ir.east3_opt_passes.strength_reduction_float_loop_pass.
+Canonical implementation moved to toolchain.ir.east3_opt_passes.strength_reduction_float_loop_pass.
 """
 
 from __future__ import annotations
 
-from pytra.ir.east3_opt_passes.strength_reduction_float_loop_pass import *  # noqa: F401,F403
+from toolchain.ir.east3_opt_passes.strength_reduction_float_loop_pass import *  # noqa: F401,F403

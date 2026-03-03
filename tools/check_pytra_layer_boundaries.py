@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 FRONTENDS_ROOT = ROOT / "src" / "toolchain" / "frontends"
-IR_ROOT = ROOT / "src" / "pytra" / "ir"
+IR_ROOT = ROOT / "src" / "toolchain" / "ir"
 BACKENDS_ROOT = ROOT / "src" / "backends"
 
 ALLOW_IR_FRONTENDS_IMPORTS = {

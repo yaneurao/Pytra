@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pytra.ir.east2_to_east3_lowering import lower_east2_to_east3
-from pytra.ir.east3_optimizer import optimize_east3_document
-from pytra.ir.east3_optimizer import render_east3_opt_trace
+from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3
+from toolchain.ir.east3_optimizer import optimize_east3_document
+from toolchain.ir.east3_optimizer import render_east3_opt_trace
 from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std.typing import Any
