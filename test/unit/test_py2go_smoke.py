@@ -72,6 +72,21 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn('    "math"', go)
         self.assertNotIn("var _ = math.Pi", go)
 
+    def test_go_native_emitter_maps_json_module_calls_to_runtime_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "json_calls.py"
+            src.write_text(
+                "import json\n"
+                "def roundtrip(v: dict[str, int]) -> dict[str, int]:\n"
+                "    s = json.dumps(v)\n"
+                "    return json.loads(s)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            go = transpile_to_go_native(east)
+        self.assertIn("pyJsonDumps(v)", go)
+        self.assertIn("pyJsonLoads(s)", go)
+
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")

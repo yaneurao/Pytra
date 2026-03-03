@@ -53,6 +53,7 @@
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` の3段階で優先度付けする。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` の不足 API を実装・統一する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: `json.loads/dumps` runtime API を追加し、Go emitter の `json.*` 呼び出しを runtime helper へ統一する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で同様に不足 API を実装・統一する。
@@ -68,6 +69,7 @@
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] `docs/ja/spec/spec-runtime.md` に C++ runtime 正本カタログ（core/math/time/pathlib/json/png/gif + timeit/random）を追加し、Wave の基準 API を固定。
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] `src/runtime/<lang>/pytra` を棚卸しし、`native/mono/compat/missing` 分類の実装有無マトリクスと主要ギャップ（json/pathlib/gif/分離構成差）を確定。
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] マトリクス結果を `Must/Should/Optional` へ優先度化し、Wave1/2/3 の実装順を固定。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Go runtime に `pyJsonLoads/pyJsonDumps` を実装（`encoding/json` + number preserving decode）し、Go emitter で `json.loads/json.dumps` を runtime helper へマップ。`test_py2go_smoke.py` と `check_py2go_transpile.py` の通過を確認。
 
 ## S1-01 実装（2026-03-03）
 

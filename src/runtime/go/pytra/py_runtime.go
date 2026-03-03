@@ -4,6 +4,7 @@ package main
 
 import (
     "bytes"
+    "encoding/json"
     "fmt"
     "hash/crc32"
     "math"
@@ -641,6 +642,100 @@ func pyPathMkdir(v any, parents any, existOK any) any {
         panic(err)
     }
     return nil
+}
+
+// -------- json helper --------
+
+func pyToJSONValue(v any) any {
+    switch x := v.(type) {
+    case nil:
+        return nil
+    case bool:
+        return x
+    case int:
+        return int64(x)
+    case int64:
+        return x
+    case float64:
+        return x
+    case string:
+        return x
+    case pyPath:
+        return x.value
+    case []byte:
+        out := make([]any, 0, len(x))
+        for _, b := range x {
+            out = append(out, int64(b))
+        }
+        return out
+    case []any:
+        out := make([]any, 0, len(x))
+        for _, it := range x {
+            out = append(out, pyToJSONValue(it))
+        }
+        return out
+    case map[any]any:
+        out := map[string]any{}
+        for k, v := range x {
+            out[pyToString(k)] = pyToJSONValue(v)
+        }
+        return out
+    default:
+        return pyToString(v)
+    }
+}
+
+func pyFromJSONValue(v any) any {
+    switch x := v.(type) {
+    case nil:
+        return nil
+    case bool:
+        return x
+    case string:
+        return x
+    case json.Number:
+        if i, err := x.Int64(); err == nil {
+            return int64(i)
+        }
+        if f, err := x.Float64(); err == nil {
+            return f
+        }
+        return x.String()
+    case float64:
+        return x
+    case []any:
+        out := make([]any, 0, len(x))
+        for _, it := range x {
+            out = append(out, pyFromJSONValue(it))
+        }
+        return out
+    case map[string]any:
+        out := map[any]any{}
+        for k, v := range x {
+            out[k] = pyFromJSONValue(v)
+        }
+        return out
+    default:
+        return x
+    }
+}
+
+func pyJsonDumps(v any) any {
+    b, err := json.Marshal(pyToJSONValue(v))
+    if err != nil {
+        panic(err)
+    }
+    return string(b)
+}
+
+func pyJsonLoads(v any) any {
+    dec := json.NewDecoder(strings.NewReader(pyToString(v)))
+    dec.UseNumber()
+    var out any
+    if err := dec.Decode(&out); err != nil {
+        panic(err)
+    }
+    return pyFromJSONValue(out)
 }
 
 // -------- png/gif helper --------
