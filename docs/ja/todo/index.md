@@ -114,7 +114,7 @@
 1. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01] `py2x.py` を唯一の正規入口へ統一し、最終的に `src/py2cpp.py` を削除する。
 2. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] `tools/` / `test/` / `docs/` / `src/pytra/cli.py` の `py2*.py` 依存箇所を棚卸しし、移行順序を確定する。
 3. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 固有機能（`--emit-runtime-cpp`, `--header-output`, `--multi-file` 等）の `py2x` 受け皿仕様を確定する。
-4. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
+4. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
 5. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
 6. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] `tools/` の CLI 呼び出しを `py2x.py --target ...` へ一括置換する。
 7. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
@@ -125,6 +125,7 @@
 12. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] 依存棚卸しを実施し、`src/pytra/cli.py`・`tools`・`test`・`docs` の legacy CLI 参照分布と移行順（CLI/tools→test→docs→selfhost）を確定。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp` 実利用オプション集合を抽出し、可搬オプションは layer-option マップ、出力モード変更系は `py2x --target cpp` 専用互換フラグで受ける方針を確定。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost の prepare/build/check が `src/py2cpp.py` 連鎖に依存していることを特定し、通常は `py2x`・selfhost は `py2x-selfhost` へ統一する置換方針を確定。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
