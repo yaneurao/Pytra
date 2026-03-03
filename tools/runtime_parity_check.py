@@ -99,6 +99,24 @@ def _resolve_output_path(cwd: Path, output_text: str) -> Path:
     return cwd / p
 
 
+def _safe_unlink(path: Path | None) -> None:
+    if path is None:
+        return
+    if path.exists() and path.is_file():
+        path.unlink()
+
+
+def _purge_case_artifacts(work: Path, case_stem: str) -> None:
+    # Always remove stale artifacts before each run so parity checks cannot pass
+    # by reusing files left by a previous language execution.
+    for out_dir in (work / "sample" / "out", work / "test" / "out", work / "out"):
+        if not out_dir.exists() or not out_dir.is_dir():
+            continue
+        for p in sorted(out_dir.glob(f"{case_stem}.*")):
+            if p.is_file():
+                p.unlink()
+
+
 def find_case_path(case_stem: str, case_root: str) -> Path | None:
     root = SAMPLE_ROOT if case_root == "sample" else FIXTURE_ROOT
     matches = sorted(root.rglob(f"{case_stem}.py"))
@@ -299,6 +317,7 @@ def check_case(
             (work / "sample" / "py").symlink_to(ROOT / "sample" / "py", target_is_directory=True)
             (work / "sample" / "out").mkdir(parents=True, exist_ok=True)
 
+        _purge_case_artifacts(work, case_stem)
         run_expr = f"python {shlex.quote(case_path.as_posix())}"
         run_env = {"PYTHONPATH": "src"}
         py = run_shell(run_expr, cwd=work, env=run_env)
@@ -336,9 +355,9 @@ def check_case(
                 _record(target.name, "transpile_failed", msg)
                 continue
 
-            # Ensure target artifact validation is not masked by stale python output.
-            if expected_artifact_path is not None and expected_artifact_path.exists() and expected_artifact_path.is_file():
-                expected_artifact_path.unlink()
+            # Ensure target artifact validation is never masked by stale outputs.
+            _purge_case_artifacts(work, case_stem)
+            _safe_unlink(expected_artifact_path)
 
             rr = run_shell(target.run_cmd, cwd=work)
             if rr.returncode != 0:

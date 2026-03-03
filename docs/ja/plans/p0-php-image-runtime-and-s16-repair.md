@@ -1,0 +1,54 @@
+# P0: PHP 画像 runtime 実装と sample/16 実行失敗の修復
+
+最終更新: 2026-03-03
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-PHP-IMAGE-RUNTIME-S16-01`
+
+背景:
+- PHP backend は画像出力 helper が no-op で、PNG/GIF artifact を生成しない。
+- `sample/php/16_glass_sculpture_chaos.php` は未束縛変数（`$fwd_x/$fwd_y/$fwd_z/$right_*` など）を参照し、`DivisionByZeroError` で停止する。
+- parity 検証では、過去 artifact 再利用の可能性を明示的に排除する必要がある。
+
+目的:
+- PHP backend で PNG/GIF を実際に書き出せるようにする。
+- `sample/16` を PHP で正常実行可能にし、`elapsed_sec` まで到達させる。
+- parity 検証時に常に既存 artifact を削除してから実行し、偽陽性を防ぐ。
+
+対象:
+- `src/runtime/php/pytra/runtime/png.php`
+- `src/runtime/php/pytra/runtime/gif.php`
+- PHP backend の画像保存 lower（`__pytra_noop` 経路の撤去）
+- PHP backend の tuple/多値返却受け取り lower（`sample/16` の未束縛変数原因）
+- `tools/runtime_parity_check.py` の artifact クリーンアップ
+
+非対象:
+- PHP backend 全体の性能最適化
+- 他言語 runtime の同時改修
+- README 実行時間表の再更新（別タスクで実施）
+
+受け入れ基準:
+- PHP 実行で `sample/01`（PNG）と `sample/06`（GIF）が実際に artifact を生成する。
+- `sample/16` が PHP で実行完了し、`output:` と `elapsed_sec:` を出力する。
+- parity で `sample` ケース実行前に stale artifact が必ず削除される（コードで担保）。
+- `runtime_parity_check --case-root sample --targets php --all-samples` の結果が、少なくとも artifact 偽陽性なしで評価される。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/regenerate_samples.py --langs php --force`
+- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples`
+- `python3 tools/check_py2php_transpile.py`
+
+決定ログ:
+- 2026-03-03: ユーザー指示により、PHP 画像 runtime 未実装と `sample/16` 実行失敗を P0 として起票。
+- 2026-03-03: parity 偽陽性防止のため、`runtime_parity_check.py` に「毎回 artifact 削除」を明示実装する方針を採用。
+
+## 分解
+
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S1-01] PHP 画像出力経路（runtime/emit）の no-op 依存箇所を棚卸しする。
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-01] `png.php` に Python 互換の PNG 書き出し実装を追加する。
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-02] `gif.php` に Python 互換の GIF 書き出し実装を追加する。
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-03] PHP emitter/lower の `save_gif` / `write_rgb_png` を `__pytra_noop` から実体 runtime 呼び出しへ切り替える。
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S2-04] PHP emitter/lower の tuple 受け取りを修正し、`sample/16` の未束縛変数参照を解消する。
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-01] `runtime_parity_check.py` でケース実行前 artifact 削除を強制し、偽陽性経路を閉じる。
+- [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-02] `sample/01,06,16` を中心に Python vs PHP の stdout/artifact parity を再確認する。
