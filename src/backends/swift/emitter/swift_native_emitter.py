@@ -975,7 +975,7 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     i = 0
     while i < len(names):
         name = names[i]
-        out.append(name + ": " + _swift_type(arg_types.get(name), allow_void=False))
+        out.append("_ " + name + ": " + _swift_type(arg_types.get(name), allow_void=False))
         i += 1
     return out
 
