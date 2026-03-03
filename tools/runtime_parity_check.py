@@ -343,8 +343,6 @@ def build_targets(
                 f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"
             ),
             needs=("python", "kotlinc", "java"),
-            # Kotlin backend still lowers image writers to no-op, so artifact parity is not meaningful yet.
-            ignore_artifacts=True,
         ),
         Target(
             name="scala",
