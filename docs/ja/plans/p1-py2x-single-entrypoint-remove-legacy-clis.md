@@ -62,7 +62,7 @@
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] `tools/` の CLI 呼び出しを `py2x.py --target ...` へ一括置換する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
-- [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
+- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
@@ -76,3 +76,4 @@
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `src/py2x.py` に C++ 互換経路を追加し、`--target cpp` 時は `py2cpp` 互換フラグを受理して委譲する実装へ更新。`--optimizer-option/--emitter-option` の C++ 対応キー（例: `cpp_opt_level`, `mod_mode`, `negative_index_mode`）を専用フラグへマップし、`test_py2x_cli.py`（5 tests）と実行確認（single-file / multi-file / header-output）で非退行を確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] selfhost 系を除く `tools/` の CLI 呼び出しを `src/py2x.py --target ...` へ統一し、`regenerate_samples` / `runtime_parity_check` / `verify_*` / `benchmark_*` / `check_py2*_transpile` を更新。`check_py2*_transpile.py` 一括実行で非退行（all pass）を確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/unit` の subprocess 実行を `src/py2x.py --target ...` へ統一（`test_py2{cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_smoke.py`、`test_runtime_parity_check_cli.py`、`test_cpp_optimizer_cli.py`、`test_east3_optimizer_cli.py`、`test_py2cpp_features.py`）。代表 15 ファイルの unittest が pass（`test_py2lua_smoke.py` は既知失敗7件のまま）。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` の実行例を `py2x --target` 基準へ更新し、出力パス指定を `-o` で統一。併せて `docs/ja/spec/spec-user.md` / `docs/en/spec/spec-user.md` の言語一覧を `py2x` 正規入口表記へ更新。

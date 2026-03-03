@@ -9,20 +9,20 @@ This file is the normative specification; executable command workflows are maint
 
 ## 1. Purpose
 
-Pytra is a set of transpilers that converts type-annotated Python code into the following languages:
+Pytra transpiles type-annotated Python code into multiple languages. The canonical CLI entrypoint is `src/py2x.py`.
 
-- Python -> C# (`src/py2cs.py`)
-- Python -> C++ (`src/py2cpp.py`)
-- Python -> Rust (`src/py2rs.py`)
-- Python -> JavaScript (`src/py2js.py`)
-- Python -> TypeScript (`src/py2ts.py`)
-- Python -> Go (`src/py2go.py`)
-- Python -> Java (`src/py2java.py`)
-- Python -> Swift (`src/py2swift.py`)
-- Python -> Kotlin (`src/py2kotlin.py`)
-- Python -> Ruby (`src/py2rb.py`)
-- Python -> Lua (`src/py2lua.py`)
-- Python -> PHP (`src/py2php.py`)
+- Python -> C# (`python src/py2x.py --target cs ...`)
+- Python -> C++ (`python src/py2x.py --target cpp ...`)
+- Python -> Rust (`python src/py2x.py --target rs ...`)
+- Python -> JavaScript (`python src/py2x.py --target js ...`)
+- Python -> TypeScript (`python src/py2x.py --target ts ...`)
+- Python -> Go (`python src/py2x.py --target go ...`)
+- Python -> Java (`python src/py2x.py --target java ...`)
+- Python -> Swift (`python src/py2x.py --target swift ...`)
+- Python -> Kotlin (`python src/py2x.py --target kotlin ...`)
+- Python -> Ruby (`python src/py2x.py --target ruby ...`)
+- Python -> Lua (`python src/py2x.py --target lua ...`)
+- Python -> PHP (`python src/py2x.py --target php ...`)
 
 ## 2. Python Input Specification
 
