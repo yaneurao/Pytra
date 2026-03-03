@@ -57,6 +57,10 @@
   - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`
   - `cases=18 pass=16 fail=2`
   - `run_failed` は `sample/18` のみ（`TokenLike` 残件）へ縮退。`palette must be 256*3 bytes` と `ifexp/min/max` 系 compile fail は解消。
+- Go（`TokenLike` フィールドアクセス崩れ修正後）:
+  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s206.json`
+  - `cases=18 pass=17 fail=1`
+  - `run_failed=0` を確認（残件は `sample/16` の `artifact_crc32_mismatch=1` のみ）
 
 原因調査（現時点の確定）:
 - Kotlin:
@@ -127,6 +131,7 @@
 - 2026-03-04: Java emitter の `write_rgb_png/save_gif/grayscale_palette` を `PyRuntime.pyWriteRGBPNG/pySaveGif/pyGrayscalePalette` へ接続し、`artifact_missing` を解消した。
 - 2026-03-04: Java compile fail 修正として、`RuntimeError` 呼び出しの文字列化、`dict.get(key, default)` の型付き縮退、`enumerate()` 直接呼び出し、`__pytra_list_repeat` の generic 化、`Dict.entries` emit 対応、`Raise` 終端判定を適用。`run_failed` を 0 にした。
 - 2026-03-04: Go runtime に `__pytra_bytes([]byte)` 変換を追加し、GIF palette 空配列化（`palette must be 256*3 bytes`）を解消。Go emitter 側で `ifexp/min/max` 由来式は推論一致時も明示 cast を省略しないよう補強し、typed 代入 compile fail を解消した。
+- 2026-03-04: Go `sample/18` 向けに class型付けを「派生を持たない class は `*Class`」へ変更し、`dict.get(default)` runtime helper と `Dict.entries` emit を追加。`TokenLike` フィールドアクセス崩れを解消した。
 
 ## 分解
 
@@ -137,7 +142,7 @@
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java: emitter の image call を `__pytra_noop` から runtime 実装へ接続し、artifact_missing を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java: `RuntimeError` / dict.get-default / 型周辺の compile fail を修正し、sample 実行を完走可能にする。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go: `__pytra_bytes([]byte)` 対応と typed演算戻り値（`ifexp/min/max`）の型確定を修正し、run_failed を解消する。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go: sample/18 の `TokenLike` フィールドアクセス崩れを修正し、parser/tokenize 系 compile fail を解消する。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go: sample/18 の `TokenLike` フィールドアクセス崩れを修正し、parser/tokenize 系 compile fail を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift: 関数定義と呼び出しの引数ラベル整合を修正し、全sampleをコンパイル・実行可能にする。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS: PNG/GIF helper を Python準拠バイナリ writer に合わせ、size/CRC mismatch を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C#: image系 CRC mismatch の原因（writer仕様差 or 入力変換差）を切り分け、Python準拠バイナリへ合わせる。

@@ -1314,6 +1314,15 @@ func __pytra_as_dict(v any) map[any]any {
     return map[any]any{}
 }
 
+func __pytra_dict_get_default(container any, key any, defaultValue any) any {
+    if t, ok := container.(map[any]any); ok {
+        if v, exists := t[key]; exists {
+            return v
+        }
+    }
+    return defaultValue
+}
+
 func __pytra_grayscale_palette() []any {
     raw := pyGrayscalePalette()
     return __pytra_bytes(raw)
