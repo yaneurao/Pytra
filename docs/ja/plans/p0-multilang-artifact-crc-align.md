@@ -45,6 +45,10 @@
 - 言語別 baseline lock（Kotlin/Swift 更新反映）:
   - `work/logs/runtime_parity_sample_baseline_lock_20260304.json`
   - `cpp/cs/go/java/js/kotlin/rs/swift/ts` のカテゴリ内訳を固定。
+- Java（image call runtime 接続後）:
+  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`
+  - `cases=18 pass=2 fail=16`
+  - `artifact_missing=0` を確認（残件: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=7`, `run_failed=5`）
 
 原因調査（現時点の確定）:
 - Kotlin:
@@ -112,6 +116,7 @@
 - 2026-03-04: `tools/runtime_parity_check.py` に `--cmd-timeout-sec` を追加し、Swift `sample/09` 長時間化で全体が停止しないようにした。`test_runtime_parity_check_cli.py` 全10件で回帰確認済み。
 - 2026-03-04: Swift `--all-samples` を timeout 付きで完走し、`run_failed=17/artifact_missing=1` を baseline としてロックした。
 - 2026-03-04: 既存 `cpp..kotlin` ログに Kotlin 更新版と Swift 全件版を合成し、`runtime_parity_sample_baseline_lock_20260304.json` を生成して言語別カテゴリを固定した。
+- 2026-03-04: Java emitter の `write_rgb_png/save_gif/grayscale_palette` を `PyRuntime.pyWriteRGBPNG/pySaveGif/pyGrayscalePalette` へ接続し、`artifact_missing` を解消した。
 
 ## 分解
 
@@ -119,7 +124,7 @@
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走し、失敗カテゴリをロックする。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin: `save_gif` no-op 経路を除去し、runtime GIF writer を実装して 05..16 の artifact_missing を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin: PNG writer を Python準拠バイナリへ寄せ、01..04 の artifact_size/CRC mismatch を解消する。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java: emitter の image call を `__pytra_noop` から runtime 実装へ接続し、artifact_missing を解消する。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java: emitter の image call を `__pytra_noop` から runtime 実装へ接続し、artifact_missing を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java: `RuntimeError` / dict.get-default / 型周辺の compile fail を修正し、sample 実行を完走可能にする。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go: `__pytra_bytes([]byte)` 対応と typed演算戻り値（`ifexp/min/max`）の型確定を修正し、run_failed を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go: sample/18 の `TokenLike` フィールドアクセス崩れを修正し、parser/tokenize 系 compile fail を解消する。

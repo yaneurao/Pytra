@@ -803,12 +803,13 @@ final class PyRuntime {
         return out.toByteArray();
     }
 
-    static Object pyGrayscalePalette() {
-        byte[] p = new byte[256 * 3];
+    static ArrayList<Long> pyGrayscalePalette() {
+        ArrayList<Long> p = new ArrayList<>(256 * 3);
         for (int i = 0; i < 256; i++) {
-            p[i * 3] = (byte) i;
-            p[i * 3 + 1] = (byte) i;
-            p[i * 3 + 2] = (byte) i;
+            long v = i;
+            p.add(v);
+            p.add(v);
+            p.add(v);
         }
         return p;
     }

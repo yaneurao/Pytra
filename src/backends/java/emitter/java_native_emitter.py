@@ -566,15 +566,17 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         lhs = _render_expr(args[0])
         typ = args[1]
         return _render_isinstance_check(lhs, typ)
-    if callee_name in {"save_gif", "write_rgb_png"}:
-        rendered_noop_args: list[str] = []
+    if callee_name == "write_rgb_png":
+        rendered_png_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_noop_args.append(_render_expr(args[i]))
+            rendered_png_args.append(_render_expr(args[i]))
             i += 1
-        return "PyRuntime.__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        return "PyRuntime.pyWriteRGBPNG(" + ", ".join(rendered_png_args) + ")"
+    if callee_name == "save_gif":
+        return _render_save_gif_call(args)
     if callee_name == "grayscale_palette":
-        return "new java.util.ArrayList<Long>()"
+        return "PyRuntime.pyGrayscalePalette()"
     if callee_name == "print":
         if len(args) == 0:
             return "System.out.println()"
@@ -622,12 +624,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if attr_name == "isalpha" and len(args) == 0:
             return "PyRuntime.__pytra_str_isalpha(" + owner_expr + ")"
         if attr_name in {"write_rgb_png", "save_gif"}:
-            rendered_noop_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_noop_args.append(_render_expr(args[i]))
-                i += 1
-            return "PyRuntime.__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+            if attr_name == "write_rgb_png":
+                rendered_png_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_png_args.append(_render_expr(args[i]))
+                    i += 1
+                return "PyRuntime.pyWriteRGBPNG(" + ", ".join(rendered_png_args) + ")"
+            return _render_save_gif_call(args)
     if callee_name != "" and callee_name[0].isupper():
         rendered_ctor_args: list[str] = []
         i = 0
@@ -710,6 +714,19 @@ def _normalize_index_expr(owner_expr: str, index_expr: str) -> str:
         + index_expr
         + "))"
     )
+
+
+def _render_save_gif_call(args: list[Any]) -> str:
+    rendered_args: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered_args.append(_render_expr(args[i]))
+        i += 1
+    if len(rendered_args) < 7:
+        rendered_args.append("4L")
+    if len(rendered_args) < 7:
+        rendered_args.append("0L")
+    return "PyRuntime.pySaveGif(" + ", ".join(rendered_args[:7]) + ")"
 
 
 def _render_expr(expr: Any) -> str:
