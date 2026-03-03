@@ -93,6 +93,15 @@
   - `toolchain.compiler -> toolchain.frontends|toolchain.ir` は互換層として許可。
   - 暫定例外として、`toolchain.ir.core` から `toolchain.frontends.signature_registry|frontend_semantics` 参照を許容する（循環解消タスクで撤去予定）。
 
+#### 3.1.1 旧 import 経路の禁止ルール（移行規約）
+
+- 旧経路 `pytra.frontends` / `pytra.ir` / `pytra.compiler` への新規 import 追加は禁止する。
+- 正規経路は `toolchain.frontends` / `toolchain.ir` / `toolchain.compiler` とする。
+- 旧経路を延命する re-export / alias shim は追加しない（後方互換レイヤは作らない）。
+- 既存参照の棚卸し・削除は段階移行で実施し、未移行参照は `rg` 検査で可視化する。
+  - 推奨検査: `rg -n "pytra\\.(frontends|ir|compiler)" src tools test`
+  - 変換後検査: `rg -n "toolchain\\.(frontends|ir|compiler)" src tools test`
+
 ### 3.2 `src/pytra/`（変換時参照ライブラリ）
 
 - 目的: 変換器が参照する Python 名前空間ライブラリ（`pytra.std` / `pytra.utils` / `pytra.built_in`）を保持する。
