@@ -69,7 +69,7 @@
 - `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
-- selfhost 対象コード（特に `src/pytra/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
+- selfhost 対象コード（特に `src/toolchain/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
 - トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
 - トランスパイル対象コードが import できるのは `src/pytra/std/`・`src/pytra/utils/` モジュールと、ユーザー自作 `.py` モジュールです。
@@ -85,7 +85,7 @@
 - `src/backends/common/emitter/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`）を変更する場合は、`src/pytra/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`）を変更する場合は、`src/toolchain/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
 - sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
 
 ## 7. selfhost 運用ノウハウ
@@ -106,4 +106,4 @@
 - 現在の対外リリース版は `0.6.0` です。
 - `PATCH` の更新は Codex が実施してよいものとします。
 - `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施します。
-- `src/pytra/compiler/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs/VERSION`）とは別管理です。
+- `src/toolchain/compiler/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs/VERSION`）とは別管理です。

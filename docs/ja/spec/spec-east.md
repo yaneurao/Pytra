@@ -5,7 +5,7 @@
 </a>
 
 
-この文書は `src/pytra/compiler/east.py` / `src/pytra/compiler/east_parts/` の現実装に合わせた EAST 仕様の統合正本である。
+この文書は `src/toolchain/compiler/east.py` / `src/toolchain/compiler/east_parts/` の現実装に合わせた EAST 仕様の統合正本である。
 
 統合方針:
 - 現行実装準拠の EAST2 仕様と、EAST1/EAST2/EAST3 三段構成の責務仕様をこの文書へ統合する。
@@ -57,7 +57,7 @@
 
 ### 2.3 CLI
 
-- `python src/pytra/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
+- `python src/toolchain/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: 整形 JSON を出力。
 - `--human-output`: C++風の人間可読ビューを出力。
 - `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EASTベースの C++ 生成器。
@@ -302,8 +302,8 @@
 
 ## 15. 検証状態
 
-- `test/fixtures` 32/32 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
-- `sample/py` 16/16 を `src/pytra/compiler/east.py` で変換可能（`ok: true`）
+- `test/fixtures` 32/32 を `src/toolchain/compiler/east.py` で変換可能（`ok: true`）
+- `sample/py` 16/16 を `src/toolchain/compiler/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
 
 <a id="east-stages"></a>
@@ -331,9 +331,9 @@
 
 | 段 | 入力 | 出力 | 禁止事項 | 担当ファイル |
 | --- | --- | --- | --- | --- |
-| `EAST1` | `Source`（`.py` / parser backend 指定） | `east_stage=1` の `Module` 文書 | `EAST2/EAST3` 変換、dispatch 意味適用、target 依存ノード生成 | `src/pytra/ir/core.py`, `src/pytra/ir/east1.py` |
-| `EAST2` | `EAST1` 文書 | `east_stage=2` の正規化 `Module` 文書 | dispatch 意味適用、boxing/type_id 命令化、backend 構文判断 | `src/pytra/ir/east2.py` |
-| `EAST3` | `EAST2` 文書 + `meta.dispatch_mode` | `east_stage=3` の core 命令化 `Module` 文書 | target 言語構文への写像、hook による意味論再判断 | `src/pytra/ir/east2_to_east3_lowering.py`, `src/pytra/ir/east3.py` |
+| `EAST1` | `Source`（`.py` / parser backend 指定） | `east_stage=1` の `Module` 文書 | `EAST2/EAST3` 変換、dispatch 意味適用、target 依存ノード生成 | `src/toolchain/ir/core.py`, `src/toolchain/ir/east1.py` |
+| `EAST2` | `EAST1` 文書 | `east_stage=2` の正規化 `Module` 文書 | dispatch 意味適用、boxing/type_id 命令化、backend 構文判断 | `src/toolchain/ir/east2.py` |
+| `EAST3` | `EAST2` 文書 + `meta.dispatch_mode` | `east_stage=3` の core 命令化 `Module` 文書 | target 言語構文への写像、hook による意味論再判断 | `src/toolchain/ir/east2_to_east3_lowering.py`, `src/toolchain/ir/east3.py` |
 
 ### 16.2 不変条件
 
@@ -358,13 +358,13 @@
 
 | 段 | 責務 | 現行実装（着手時点） | 移行後の正本 |
 | --- | --- | --- | --- |
-| EAST1 | parser 直後 IR 生成 | `src/pytra/compiler/east_parts/core.py`（互換 shim） | `src/pytra/ir/core.py` |
-| EAST1 | EAST1 入口 API | `src/pytra/compiler/east_parts/east1.py`（互換ラッパ経由） | `src/pytra/ir/east1.py` |
-| EAST2 | EAST1 -> EAST2 正規化 API | `src/pytra/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/pytra/ir/east2.py` |
-| EAST3 | EAST2 -> EAST3 lower 本体 | `src/pytra/compiler/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/pytra/ir/east2_to_east3_lowering.py` |
-| EAST3 | EAST3 入口 API | `src/pytra/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/pytra/ir/east3.py` |
+| EAST1 | parser 直後 IR 生成 | `src/toolchain/compiler/east_parts/core.py`（互換 shim） | `src/toolchain/ir/core.py` |
+| EAST1 | EAST1 入口 API | `src/toolchain/compiler/east_parts/east1.py`（互換ラッパ経由） | `src/toolchain/ir/east1.py` |
+| EAST2 | EAST1 -> EAST2 正規化 API | `src/toolchain/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/toolchain/ir/east2.py` |
+| EAST3 | EAST2 -> EAST3 lower 本体 | `src/toolchain/compiler/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/toolchain/ir/east2_to_east3_lowering.py` |
+| EAST3 | EAST3 入口 API | `src/toolchain/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/toolchain/ir/east3.py` |
 | Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage 3` 専用） | `src/py2cpp.py`（`EAST3` 専用） |
-| CLI 互換 | 旧 API 公開 | `src/pytra/compiler/transpile_cli.py`（互換 shim） | `src/pytra/frontends/transpile_cli.py`（実体） |
+| CLI 互換 | 旧 API 公開 | `src/toolchain/compiler/transpile_cli.py`（互換 shim） | `src/toolchain/frontends/transpile_cli.py`（実体） |
 
 <a id="east1-build-boundary"></a>
 ## 19. `EAST1` build 入口の責務境界
@@ -373,11 +373,11 @@
 - `.py/.json -> EAST1` build の入口責務を分離し、`transpile_cli.py` の責務を縮退する。
 
 構成:
-- `core.py`: self-hosted parser 実装（低レイヤ、現行正本は `src/pytra/ir/core.py`）
+- `core.py`: self-hosted parser 実装（低レイヤ、現行正本は `src/toolchain/ir/core.py`）
 - `east1_build.py`: build 入口（追加対象）
 - `east1.py`: stage 契約 helper（薄い API）
 - `py2cpp.py`: `_analyze_import_graph` / `build_module_east_map` は `East1BuildHelpers` への委譲のみを担当
-- `transpile_cli.py`: 実体は `src/pytra/frontends/transpile_cli.py`。`src/pytra/compiler/transpile_cli.py` は互換公開 thin wrapper。
+- `transpile_cli.py`: 実体は `src/toolchain/frontends/transpile_cli.py`。`src/toolchain/compiler/transpile_cli.py` は互換公開 thin wrapper。
 
 受け入れ条件:
 1. `EAST1` build は `east_stage=1` 付与までに限定し、`EAST1 -> EAST2` を行わない。  
@@ -385,7 +385,7 @@
 3. `compiler/transpile_cli.py` は build 本体ロジックを持たず、`frontends/transpile_cli.py` への委譲中心とする。  
 4. `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を回帰導線に含め、差分発生時は `todo` へ切り出して追跡する。  
 5. `test/unit/test_east1_build.py` と `test/unit/test_py2cpp_east1_build_bridge.py` で、`EAST1` 入口契約と `py2cpp` 委譲経路を固定する。  
-6. import graph 解析本体は `src/pytra/frontends/east1_build.py`（`_analyze_import_graph_impl`）を正本とし、`compiler/transpile_cli.py` の `analyze_import_graph` / `build_module_east_map` は互換公開用 thin wrapper のみを保持する。  
+6. import graph 解析本体は `src/toolchain/frontends/east1_build.py`（`_analyze_import_graph_impl`）を正本とし、`compiler/transpile_cli.py` の `analyze_import_graph` / `build_module_east_map` は互換公開用 thin wrapper のみを保持する。  
 
 <a id="east-migration-phases"></a>
 ## 20. 移行フェーズ（EAST3 主経路化）

@@ -83,7 +83,7 @@ test/
 - For user libraries imported from Python, use modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`).
   - Images: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`
   - Test helpers: `from pytra.utils.assertions import py_assert_eq`, etc.
-  - EAST converter: `python src/pytra/compiler/east.py <input.py> ...`
+  - EAST converter: `python src/toolchain/compiler/east.py <input.py> ...`
 - Image output samples (`sample/py/01`, `02`, `03`) output PNG.
 - GIF samples output to `sample/out/*.gif`.
 

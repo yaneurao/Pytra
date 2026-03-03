@@ -13,7 +13,7 @@ Its purpose is to let users explicitly choose trade-offs between "Python compati
 - When compatibility is prioritized, explicitly opt in via `balanced` / `python` presets or individual options.
 - Introduce options in phases:
   - Phase 1: `py2cpp.py` first
-  - Phase 2: consolidate into common CLI (`src/pytra/compiler/transpile_cli.py`)
+  - Phase 2: consolidate into common CLI (`src/toolchain/compiler/transpile_cli.py`)
   - Phase 3: make language-specific defaults switchable via LanguageProfile
 
 ## 2. Implemented Options (Current)

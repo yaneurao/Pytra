@@ -291,8 +291,8 @@ Constraints:
 
 ## 5. EAST-based C++ Path
 
-- `src/pytra/compiler/east.py`: Python -> EAST JSON (canonical)
-- `src/pytra/compiler/east_parts/east_io.py`: load EAST from `.py/.json` and supplement leading trivia (canonical)
+- `src/toolchain/compiler/east.py`: Python -> EAST JSON (canonical)
+- `src/toolchain/compiler/east_parts/east_io.py`: load EAST from `.py/.json` and supplement leading trivia (canonical)
 - `src/backends/common/emitter/code_emitter.py`: common base utilities for multi-language emitters (node predicates/type-string helpers/`Any` safe conversion)
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/runtime/cpp/pytra/built_in/py_runtime.h`: consolidated C++ runtime
@@ -320,11 +320,11 @@ Constraints:
   - Receive already-built EAST (`node` + `meta`) and emit target-language code strings via profile/hooks.
   - Own only codegen-local logic (scope handling, shared statement/expression lowering, syntax template expansion).
   - Do not own filesystem traversal, import-graph analysis, or project-wide dependency resolution.
-- EAST parser (`src/pytra/compiler/east.py`) responsibilities:
+- EAST parser (`src/toolchain/compiler/east.py`) responsibilities:
   - Parse a single input module (`.py`) and produce a single-module EAST.
   - Handle language-agnostic normalization (for example, `range` lowering) and single-file symbol/type annotations.
   - Do not own cross-module import graph analysis or module index construction.
-- Shared compiler layer responsibilities (incrementally extracted under `src/pytra/compiler/`):
+- Shared compiler layer responsibilities (incrementally extracted under `src/toolchain/compiler/`):
   - Own FS-dependent import resolution, module EAST map construction, symbol index / type schema building, and deps dump generation.
   - Each `py2*.py` CLI should complete project-level analysis in this layer, then pass results into `CodeEmitter`.
 
@@ -343,7 +343,7 @@ Constraints:
 
 - Put only language-agnostic reusable logic in `src/backends/common/`.
 - Do not put language-specific specs (type mapping, keywords, runtime symbol names, etc.) into `src/backends/common/`.
-- Consolidate common CLI args (`input`/`output`/`--negative-index-mode`/`--parser-backend`, etc.) into `src/pytra/compiler/transpile_cli.py` and reuse them from each `py2*.py` `main()`.
+- Consolidate common CLI args (`input`/`output`/`--negative-index-mode`/`--parser-backend`, etc.) into `src/toolchain/compiler/transpile_cli.py` and reuse them from each `py2*.py` `main()`.
 - In selfhost-target code, avoid dynamic imports (`try/except ImportError` split imports, `importlib`) and use only static imports.
 - Add Japanese comments (purpose explanations) to class names, function names, and member variable names.
 - For standard-library compatibility documentation, specify function-level support, not only module names.

@@ -70,7 +70,7 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 
 ## 3. Responsibilities Under `src/`
 
-### 3.1 `src/pytra/compiler/east_parts/`
+### 3.1 `src/toolchain/compiler/east_parts/`
 
 - Purpose: EAST1/EAST2/EAST3 stage processing.
 - Allowed: `east1.py`, `east2.py`, `east3.py`, `east3_lowering.py`, `east_io.py`, `core.py`.

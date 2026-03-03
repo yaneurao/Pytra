@@ -68,7 +68,7 @@ This document defines the operational rules Codex follows while working.
 - Treat `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` as generated from `src/pytra/utils/*.py`; do not edit by hand (auto-updated when running `py2cpp.py`).
 - Do not add Python-stdlib-equivalent functionality to `runtime/cpp` (not limited to `json`).
 - Keep `src/pytra/std/*.py` as the source of truth for Python-stdlib-equivalent functionality; use transpiled outputs in each target language.
-- In selfhost target code (especially `src/pytra/compiler/east.py` family), do not use dynamic imports (`try/except ImportError` fallback or `importlib` lazy import).
+- In selfhost target code (especially `src/toolchain/compiler/east.py` family), do not use dynamic imports (`try/except ImportError` fallback or `importlib` lazy import).
 - Write imports in statically resolvable form, prioritizing fewer unsupported constructs during self-transpile.
 - In transpile-target Python code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, etc.) are fully prohibited.
 - Transpile-target code may import only `src/pytra/std/`, `src/pytra/utils/`, and user-authored `.py` modules.
@@ -84,7 +84,7 @@ This document defines the operational rules Codex follows while working.
 - If `src/backends/common/emitter/code_emitter.py` is changed, run `test/unit/test_code_emitter.py` first to verify shared utility regressions.
 - For `CodeEmitter` / `py2cpp` changes, pass both `python3 tools/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` before commit.
 - Committing while either of the two commands above fails is prohibited.
-- When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`), bump the corresponding version in `src/pytra/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
+- When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`), bump the corresponding version in `src/toolchain/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
 - For sample regeneration, use `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` to compile/run-check C++ cases that changed after version bump.
 
 ## 7. Selfhost Operations Know-How
@@ -105,4 +105,4 @@ This document defines the operational rules Codex follows while working.
 - The current external release version is `0.6.0`.
 - `PATCH` updates may be performed by Codex.
 - `MAJOR` / `MINOR` updates may be performed only under explicit user instruction.
-- `src/pytra/compiler/transpiler_versions.json` is an internal version for regeneration triggers and is managed separately from the external release version (`docs/VERSION`).
+- `src/toolchain/compiler/transpiler_versions.json` is an internal version for regeneration triggers and is managed separately from the external release version (`docs/VERSION`).

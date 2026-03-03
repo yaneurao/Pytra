@@ -203,9 +203,9 @@ fail-closed 規則:
 
 推奨ファイル配置:
 
-- `src/pytra/compiler/east_parts/east3_optimizer.py`
-- `src/pytra/compiler/east_parts/east3_optimizer_cpp.py`
-- `src/pytra/compiler/east_parts/east3_opt_passes/*.py`
+- `src/toolchain/compiler/east_parts/east3_optimizer.py`
+- `src/toolchain/compiler/east_parts/east3_optimizer_cpp.py`
+- `src/toolchain/compiler/east_parts/east3_opt_passes/*.py`
 
 ## 10. CLI / デバッグ契約
 

@@ -4,7 +4,7 @@
 
 # EAST Specification (Implementation-Aligned)
 
-This document describes the EAST specification aligned with the current implementation in `src/pytra/compiler/east.py`.
+This document describes the EAST specification aligned with the current implementation in `src/toolchain/compiler/east.py`.
 
 ## 1. Purpose
 
@@ -50,7 +50,7 @@ This document describes the EAST specification aligned with the current implemen
 
 ### 2.3 CLI
 
-- `python src/pytra/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
+- `python src/toolchain/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: outputs formatted JSON.
 - `--human-output`: outputs a C++-style human-readable view.
 - `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EAST-based C++ generator.
@@ -290,8 +290,8 @@ Before generation, collect:
 
 ## 15. Verification Status
 
-- `test/fixtures`: 32/32 convertible by `src/pytra/compiler/east.py` (`ok: true`)
-- `sample/py`: 16/16 convertible by `src/pytra/compiler/east.py` (`ok: true`)
+- `test/fixtures`: 32/32 convertible by `src/toolchain/compiler/east.py` (`ok: true`)
+- `sample/py`: 16/16 convertible by `src/toolchain/compiler/east.py` (`ok: true`)
 - `sample/py`: 16/16 pass "convert -> compile -> run" via `src/py2cpp.py` (`ok`)
 
 ## 16. Phased Rollout Plan (EAST Migration)

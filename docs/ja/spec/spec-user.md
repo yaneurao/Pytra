@@ -91,7 +91,7 @@ test/
 - Python から import する自作ライブラリは `src/pytra/` 配下（`pytra.std.*`, `pytra.utils.*`）を使用します。
   - 画像: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`
   - テスト補助: `from pytra.utils.assertions import py_assert_eq` など
-  - EAST 変換器: `python src/pytra/compiler/east.py <input.py> ...`
+  - EAST 変換器: `python src/toolchain/compiler/east.py <input.py> ...`
 - 画像出力サンプル（`sample/py/01`, `02`, `03`）は PNG 形式で出力します。
 - GIF サンプルは `sample/out/*.gif` に出力します。
 

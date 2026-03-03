@@ -11,8 +11,8 @@
 ## 2. 正本と参照境界
 
 - 正本: `src/pytra/std/*.py` のトップレベル関数・クラスメソッドの戻り値注釈。
-- 参照層: `src/pytra/frontends/signature_registry.py`。
-- 利用側: `src/pytra/ir/core.py` は参照層 API 経由で型を取得する。
+- 参照層: `src/toolchain/frontends/signature_registry.py`。
+- 利用側: `src/toolchain/ir/core.py` は参照層 API 経由で型を取得する。
 
 禁止事項:
 
