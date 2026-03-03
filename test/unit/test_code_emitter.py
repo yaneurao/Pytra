@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.compiler.east_parts.code_emitter import CodeEmitter, EmitterHooks
+from src.backends.common.emitter.code_emitter import CodeEmitter, EmitterHooks
 
 
 class _DummyEmitter(CodeEmitter):
@@ -374,7 +374,7 @@ class CodeEmitterTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             src = root / "src"
-            prof_dir = src / "profiles" / "x"
+            prof_dir = src / "backends" / "x" / "profiles"
             prof_dir.mkdir(parents=True, exist_ok=True)
             (prof_dir / "types.json").write_text('{"types":{"int64":"long"}}', encoding="utf-8")
             (prof_dir / "operators.json").write_text('{"operators":{"binop":{"Add":"+"}}}', encoding="utf-8")
@@ -382,9 +382,9 @@ class CodeEmitterTest(unittest.TestCase):
                 '{"include":["types.json","operators.json"],"syntax":{"expr_stmt":"{expr};"}}',
                 encoding="utf-8",
             )
-            fake_anchor = str(src / "hooks" / "x" / "emitter.py")
+            fake_anchor = str(src / "backends" / "x" / "emitter.py")
             merged = CodeEmitter.load_profile_with_includes(
-                "src/profiles/x/profile.json",
+                "src/backends/x/profiles/profile.json",
                 anchor_file=fake_anchor,
             )
             self.assertEqual(merged.get("types"), {"int64": "long"})

@@ -7,7 +7,7 @@ from pytra.std.pathlib import Path
 from pytra.std.typing import Any
 
 from backends.js.hooks.js_hooks import build_js_hooks
-from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter
 
 _JS_EMITTER_BASE = CodeEmitter
 
@@ -71,7 +71,7 @@ def _load_profile_with_includes(profile_rel_path: str, anchor_file: str = "") ->
 def load_js_profile() -> dict[str, Any]:
     """JavaScript 用 profile を読み込む。"""
     return _load_profile_with_includes(
-        "src/profiles/js/profile.json",
+        "src/backends/js/profiles/profile.json",
         anchor_file=__file__,
     )
 

@@ -5,7 +5,7 @@ from pytra.std import os
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 
-from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter
 from pytra.compiler.transpile_cli import (
     dict_any_get_dict,
     dict_any_get_str,

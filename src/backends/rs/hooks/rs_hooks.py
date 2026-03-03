@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.compiler.east_parts.code_emitter import EmitterHooks
+from backends.common.emitter.code_emitter import EmitterHooks
 
 
 def build_rs_hooks() -> dict[str, object]:

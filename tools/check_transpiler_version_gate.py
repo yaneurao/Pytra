@@ -18,15 +18,15 @@ LANGS = ["cpp", "rs", "cs", "js", "ts", "go", "java", "swift", "kotlin"]
 
 SHARED_DEPENDENCY_PATHS = [
     "src/pytra",
-    "src/profiles/common",
+    "src/backends/common/profiles",
     "src/backends/__init__.py",
 ]
 
 LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
-    "cpp": ["src/py2cpp.py", "src/backends/cpp", "src/profiles/cpp"],
-    "rs": ["src/py2rs.py", "src/backends/rs", "src/profiles/rs"],
-    "cs": ["src/py2cs.py", "src/backends/cs", "src/profiles/cs"],
-    "js": ["src/py2js.py", "src/backends/js", "src/profiles/js"],
+    "cpp": ["src/py2cpp.py", "src/backends/cpp", "src/backends/cpp/profiles"],
+    "rs": ["src/py2rs.py", "src/backends/rs", "src/backends/rs/profiles"],
+    "cs": ["src/py2cs.py", "src/backends/cs", "src/backends/cs/profiles"],
+    "js": ["src/py2js.py", "src/backends/js", "src/backends/js/profiles"],
     "ts": ["src/py2ts.py", "src/backends/ts"],
     "go": ["src/py2go.py", "src/backends/go"],
     "java": ["src/py2java.py", "src/backends/java"],

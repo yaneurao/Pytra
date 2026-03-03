@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
-from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter
 
 
 _GO_KEYWORDS = {

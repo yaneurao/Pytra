@@ -5,13 +5,13 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.cs.hooks.cs_hooks import build_cs_hooks
-from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter
 
 
 def load_cs_profile() -> dict[str, Any]:
     """C# 用 profile を読み込む。"""
     return CodeEmitter.load_profile_with_includes(
-        "src/profiles/cs/profile.json",
+        "src/backends/cs/profiles/profile.json",
         "src/py2cs.py",
     )
 
@@ -29,7 +29,7 @@ class CSharpEmitter(CodeEmitter):
     """EAST を C# ソースへ変換するエミッタ。"""
 
     def __init__(self, east_doc: dict[str, Any]) -> None:
-        profile = CodeEmitter.load_profile_with_includes("src/profiles/cs/profile.json", "src/py2cs.py")
+        profile = CodeEmitter.load_profile_with_includes("src/backends/cs/profiles/profile.json", "src/py2cs.py")
         hooks: dict[str, Any] = {}
         self.init_base_state(east_doc, profile, hooks)
         self.type_map = CodeEmitter.load_type_map(profile)

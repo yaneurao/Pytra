@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
-from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter
 from pytra.compiler.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list
 from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
@@ -68,7 +68,7 @@ def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は最小既定）。"""
     profile_loader = CodeEmitter({}, {}, {})
     loaded = profile_loader.load_profile_with_includes(
-        "src/profiles/cpp/profile.json",
+        "src/backends/cpp/profiles/profile.json",
         anchor_file="src/py2cpp.py",
     )
     if not isinstance(loaded, dict):

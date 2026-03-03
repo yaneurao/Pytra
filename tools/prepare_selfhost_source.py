@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
-SRC_BASE = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "code_emitter.py"
+SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "pytra" / "compiler" / "transpile_cli.py"
 

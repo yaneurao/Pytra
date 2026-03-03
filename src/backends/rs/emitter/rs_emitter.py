@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.typing import Any
 
 from backends.rs.hooks.rs_hooks import build_rs_hooks
-from pytra.compiler.east_parts.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter
 
 
 RUST_RUNTIME_SUPPORT = """use std::fs;
@@ -439,7 +439,7 @@ mod pytra {
 def load_rs_profile() -> dict[str, Any]:
     """Rust 用 profile を読み込む。"""
     return CodeEmitter.load_profile_with_includes(
-        "src/profiles/rs/profile.json",
+        "src/backends/rs/profiles/profile.json",
         anchor_file=__file__,
     )
 
