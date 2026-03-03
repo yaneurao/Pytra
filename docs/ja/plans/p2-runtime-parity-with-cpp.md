@@ -50,7 +50,7 @@
 ## 分解
 
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] C++ runtime の必須 API カタログ（module/function/契約）を抽出し、正本一覧を作成する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` の3段階で優先度付けする。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` の不足 API を実装・統一する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
@@ -66,6 +66,7 @@
 - 2026-03-02: ユーザー要望により、runtime 外出し（P1）とは別軸で「C++ 同等機能」を目的とする P2 計画を起票。
 - 2026-03-02: 「実装行数の一致」ではなく「API 契約・挙動同等」を完了判定に採用。
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] `docs/ja/spec/spec-runtime.md` に C++ runtime 正本カタログ（core/math/time/pathlib/json/png/gif + timeit/random）を追加し、Wave の基準 API を固定。
+- 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] `src/runtime/<lang>/pytra` を棚卸しし、`native/mono/compat/missing` 分類の実装有無マトリクスと主要ギャップ（json/pathlib/gif/分離構成差）を確定。
 
 ## S1-01 実装（2026-03-03）
 
@@ -74,3 +75,33 @@
   - `Must`: `built_in/core`, `std/math`, `std/time`, `std/pathlib::Path`, `std/json`, `utils/png`, `utils/gif`
   - `Should`: `std/timeit`, `std/random`
 - 正本パスを `pytra-core` / `pytra-gen` に固定し、`pytra/*` を forwarder 層として明記。
+
+## S1-02 実装（2026-03-03）
+
+判定キー:
+- `native`: 専用モジュール/名前空間として分離実装あり
+- `mono`: 単一 `py_runtime.*` 内に実装あり
+- `compat`: 言語標準 API へ直結（専用 runtime API なし）
+- `missing`: 実装未確認（呼び出し時は不足/代替挙動の可能性）
+
+| lang | core helper | math | time | pathlib | json | png | gif | 備考 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `cs` | mono | native | native | native | native | native | native | C++基準に最も近い分離構成。 |
+| `js` | mono | native | native | native | compat | native | native | `json` は専用 runtime なし（JS `JSON.*` 依存）。 |
+| `ts` | mono | native | native | native | compat | native | native | JS と同系統。 |
+| `go` | mono | mono | mono | mono | missing | mono | mono | 単一 `py_runtime.go` へ集中。 |
+| `java` | mono | mono | mono | mono | missing | mono | mono | 単一 `PyRuntime.java` へ集中。 |
+| `kotlin` | mono | missing | mono | missing | missing | mono | missing | 画像は PNG のみ確認。 |
+| `swift` | mono | missing | mono | missing | missing | mono | missing | 画像は PNG のみ確認。 |
+| `ruby` | mono | missing | mono | missing | missing | mono | mono | 単一 `py_runtime.rb`。 |
+| `lua` | mono | mono | mono | mono | missing | mono | mono | path/gif/png は monolithic helper。 |
+| `scala` | mono | compat | mono | mono | missing | mono | mono | math は言語標準利用中心。 |
+| `php` | mono | missing | native | missing | compat | native | native | `json_encode` 利用はあるが `loads/dumps` 契約不足。 |
+| `rs` | mono | mono | mono | mono | missing | mono | mono | `built_in/py_runtime.rs` に集約。 |
+| `nim` | mono | missing | mono | missing | missing | mono | missing | 現状は最小 runtime。 |
+
+欠落/互換/挙動差の主分類:
+1. `json` 欠落: `cs` 以外で C++ `loads/dumps` 契約と同名 API が不足（`js/ts/php` は標準 API 依存の compat）。
+2. `pathlib` 欠落: `kotlin/swift/ruby/php/nim` は C++ `Path` の最小 API 群に未到達。
+3. 画像 API 偏在: `kotlin/swift/nim` で `gif` 側が不足（`png` のみ）。
+4. 実装形態差: `go/java/rs/lua/scala/ruby` は monolithic runtime 集中で、`cs/js/ts` の分離構成と乖離。
