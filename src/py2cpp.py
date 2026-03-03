@@ -8,7 +8,7 @@ It can also accept a Python source file and internally run src/pytra/compiler/ea
 from __future__ import annotations
 
 from pytra.std.typing import Any
-from pytra.frontends.east1_build import East1BuildHelpers
+from toolchain.frontends.east1_build import East1BuildHelpers
 from pytra.compiler.transpile_cli import (
     check_analyze_stage_guards,
     check_guard_limit,
