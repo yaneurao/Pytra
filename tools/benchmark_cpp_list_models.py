@@ -21,7 +21,7 @@ SAMPLE_ROOT = ROOT / "sample" / "py"
 ELAPSED_RE = re.compile(r"elapsed(?:_sec)?:\s*([0-9]+(?:\.[0-9]+)?)", re.IGNORECASE)
 
 sys.path.insert(0, str(ROOT / "src"))
-from py2cpp import load_east  # noqa: E402
+from backends.cpp.cli import load_east  # noqa: E402
 from backends.cpp.emitter import CppEmitter  # noqa: E402
 
 

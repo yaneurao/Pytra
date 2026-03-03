@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.py2cpp import CppEmitter, load_east
+from src.backends.cpp.cli import CppEmitter, load_east
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOUT_SEC", "120"))

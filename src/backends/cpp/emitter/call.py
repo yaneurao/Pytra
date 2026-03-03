@@ -577,7 +577,7 @@ class CppCallEmitter:
         # Restrict fallback to known selfhost bootstrap sources.
         if not (
             src.endswith("/selfhost/py2cpp.py")
-            or src.endswith("/src/py2cpp.py")
+            or src.endswith("/src/backends/cpp/cli.py")
             or src.endswith("/src/py2x-selfhost.py")
         ):
             return None

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Enforce top-level responsibility boundary of src/py2cpp.py.
+"""Enforce top-level responsibility boundary of src/backends/cpp/cli.py.
 
 Policy:
-- src/py2cpp.py top-level defs must be either:
+- src/backends/cpp/cli.py top-level defs must be either:
   1) C++-specific responsibilities, or
   2) explicit compatibility wrappers that delegate to shared compiler APIs.
 """
@@ -15,10 +15,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = ROOT / "src" / "py2cpp.py"
+TARGET = ROOT / "src" / "backends" / "cpp" / "cli.py"
 
 
-# C++ 固有責務として py2cpp.py に残すトップレベル関数。
+# C++ 固有責務として cli.py に残すトップレベル関数。
 CPP_SPECIFIC_TOPLEVEL: set[str] = {
     "load_cpp_profile",
     "load_cpp_bin_ops",
@@ -111,7 +111,7 @@ def main() -> int:
 
     # 許可集合を縮退した場合の追従漏れも検出。
     if missing:
-        print("[FAIL] py2cpp boundary guard: expected def(s) missing from src/py2cpp.py")
+        print("[FAIL] py2cpp boundary guard: expected def(s) missing from src/backends/cpp/cli.py")
         for name in missing:
             print(f"  - {name}")
         print("Update tools/check_py2cpp_boundary.py if boundary contract intentionally changed.")

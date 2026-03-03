@@ -14,9 +14,7 @@ from typing import Any
 
 # /src/pytra/cli.py -> project root is parents[2]
 ROOT = Path(__file__).resolve().parents[2]
-PY2CPP = ROOT / "src" / "py2cpp.py"
-PY2RS = ROOT / "src" / "py2rs.py"
-PY2SCALA = ROOT / "src" / "py2scala.py"
+PY2X = ROOT / "src" / "py2x.py"
 GEN_MAKEFILE = ROOT / "tools" / "gen_makefile_from_manifest.py"
 PYTHON = sys.executable or "python3"
 
@@ -85,7 +83,16 @@ def _manifest_path(output_dir: Path, args: argparse.Namespace) -> Path:
 
 
 def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> int:
-    cmd = [PYTHON, str(PY2CPP), str(input_path), "--multi-file", "--output-dir", str(output_dir)]
+    cmd = [
+        PYTHON,
+        str(PY2X),
+        str(input_path),
+        "--target",
+        "cpp",
+        "--multi-file",
+        "--output-dir",
+        str(output_dir),
+    ]
     cmd.extend(argv)
     return _run(cmd, cwd=ROOT)
 
@@ -154,7 +161,7 @@ def _build_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str
 
 
 def _transpile_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str]) -> int:
-    cmd = [PYTHON, str(PY2CPP), str(input_path)]
+    cmd = [PYTHON, str(PY2X), str(input_path), "--target", "cpp"]
     if args.output != "":
         cmd.extend(["--output", args.output])
     if args.output_dir != DEFAULT_OUTPUT_DIR:
@@ -179,7 +186,7 @@ def _transpile_rs(input_path: Path, args: argparse.Namespace, passthrough: list[
         print(f"error: output path is a directory: {output_path}", file=sys.stderr)
         return 1
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [PYTHON, str(PY2RS), str(input_path), "--output", str(output_path)]
+    cmd = [PYTHON, str(PY2X), str(input_path), "--target", "rs", "--output", str(output_path)]
     cmd.extend(passthrough)
     return _run(cmd, cwd=ROOT)
 
@@ -200,7 +207,7 @@ def _transpile_scala(input_path: Path, args: argparse.Namespace, passthrough: li
         print(f"error: output path is a directory: {output_path}", file=sys.stderr)
         return 1
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [PYTHON, str(PY2SCALA), str(input_path), "--output", str(output_path)]
+    cmd = [PYTHON, str(PY2X), str(input_path), "--target", "scala", "--output", str(output_path)]
     cmd.extend(passthrough)
     return _run(cmd, cwd=ROOT)
 

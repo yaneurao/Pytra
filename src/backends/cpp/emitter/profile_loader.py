@@ -69,7 +69,7 @@ def load_cpp_profile() -> dict[str, Any]:
     profile_loader = CodeEmitter({}, {}, {})
     loaded = profile_loader.load_profile_with_includes(
         "src/backends/cpp/profiles/profile.json",
-        anchor_file="src/py2cpp.py",
+        anchor_file="src/backends/cpp/cli.py",
     )
     if not isinstance(loaded, dict):
         return {"syntax": {}}

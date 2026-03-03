@@ -121,7 +121,7 @@
 8. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
 9. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
 10. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
-11. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
+11. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
 12. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] 依存棚卸しを実施し、`src/pytra/cli.py`・`tools`・`test`・`docs` の legacy CLI 参照分布と移行順（CLI/tools→test→docs→selfhost）を確定。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp` 実利用オプション集合を抽出し、可搬オプションは layer-option マップ、出力モード変更系は `py2x --target cpp` 専用互換フラグで受ける方針を確定。
@@ -136,6 +136,7 @@
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] C++ runtime に `pytra::compiler::{transpile_cli,backend_registry_static}` 最小実装を追加して `build_selfhost.py` のコンパイルを復旧し、`build_selfhost_stage2.py` は `[not_implemented]` 時に stage1 生成 CPP を再利用するフォールバックを導入した（selfhost transpile 本体は継続タスク）。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `self_hosted` builtin method フォールバックを selfhost 系ソースに限定して `east3-contract` 回帰を復旧し、`check_selfhost_cpp_diff` / `check_selfhost_stage2_cpp_diff`（`allow-not-implemented`）を通常モードで通過確認。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check_legacy_cli_references.py` を追加し、`src/tools/test` の `src/py2*.py` 直参照・`import py2*` 新規流入を fail-fast 検出できるようにした。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、C++ 入口を `src/backends/cpp/cli.py` へ移行したうえで `py2x`/`pytra cli`/tools/tests の参照を `py2x --target cpp` 基準へ更新し回帰確認した。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 

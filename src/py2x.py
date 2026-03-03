@@ -120,7 +120,7 @@ def _has_flag(argv: list[str], flag: str) -> bool:
 
 
 def _invoke_py2cpp_main(argv: list[str]) -> int:
-    from py2cpp import main as py2cpp_main
+    from backends.cpp.cli import main as py2cpp_main
 
     return py2cpp_main(argv)
 

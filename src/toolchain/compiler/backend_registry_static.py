@@ -42,7 +42,7 @@ from backends.swift.emitter import transpile_to_swift_native
 from backends.ts.lower import lower_east3_to_ts_ir
 from backends.ts.optimizer import optimize_ts_ir
 from backends.ts.emitter.ts_emitter import transpile_to_typescript
-from py2cpp import transpile_to_cpp
+from backends.cpp.emitter import transpile_to_cpp
 from toolchain.compiler.js_runtime_shims import write_js_runtime_shims
 
 
