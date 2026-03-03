@@ -365,12 +365,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "perf_counter":
         return "__pytra_perf_counter()"
     if callee_name in {"save_gif", "write_rgb_png"}:
-        rendered_noop_args: list[str] = []
+        rendered_runtime_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_noop_args.append(_render_expr(args[i]))
+            rendered_runtime_args.append(_render_expr(args[i]))
             i += 1
-        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        if callee_name == "save_gif":
+            return "__pytra_save_gif(" + ", ".join(rendered_runtime_args) + ")"
+        return "__pytra_write_rgb_png(" + ", ".join(rendered_runtime_args) + ")"
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -429,12 +431,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_str_isalpha(" + owner_expr + ")"
         if attr_name in {"write_rgb_png", "save_gif"}:
-            rendered_noop_args: list[str] = []
+            rendered_runtime_args: list[str] = []
             i = 0
             while i < len(args):
-                rendered_noop_args.append(_render_expr(args[i]))
+                rendered_runtime_args.append(_render_expr(args[i]))
                 i += 1
-            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+            if attr_name == "save_gif":
+                return "__pytra_save_gif(" + ", ".join(rendered_runtime_args) + ")"
+            return "__pytra_write_rgb_png(" + ", ".join(rendered_runtime_args) + ")"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
