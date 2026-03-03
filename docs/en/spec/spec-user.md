@@ -95,7 +95,7 @@ Run the following from project root (`Pytra/`):
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
-If you want to verify only the shared emitter foundation (`src/pytra/compiler/east_parts/code_emitter.py`):
+If you want to verify only the shared emitter foundation (`src/backends/common/emitter/code_emitter.py`):
 
 ```bash
 python -m unittest discover -s test/unit -p "test_code_emitter.py" -v

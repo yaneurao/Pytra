@@ -14,10 +14,10 @@
 - `src/`
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
-  - `common/`: 複数言語で共有する基底実装・共通ユーティリティ
+  - `backends/common/`: 複数言語で共有する基底実装・共通ユーティリティ
   - backend 段階実装の標準ディレクトリは `src/backends/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
   - 当面は `extensions/<topic>/` を併用する（案2）。将来は `lower/optimizer/emitter` 中心へ縮退する（案3）。
-  - `profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
+  - `backends/common/profiles/` と `backends/<lang>/profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
   - `runtime/`: 各ターゲット言語のランタイム配置先（正本、`src/runtime/<lang>/pytra/`）
   - `*_module/`: 旧ランタイム配置（互換レイヤ、段階撤去対象）
   - `pytra/`: Python 側の共通ライブラリ（正式）
@@ -109,9 +109,9 @@
 - EAST ベースで変換します（`.py/.json -> EAST -> C#`）。
 - `py2cs.py` は CLI + 入出力の薄いオーケストレータに限定します。
 - C# 固有ロジックは `src/backends/cs/emitter/cs_emitter.py` に分離します。
-- 言語差分は `src/profiles/cs/*.json`（`types/operators/runtime_calls/syntax`）で管理します。
+- 言語差分は `src/backends/cs/profiles/*.json`（`types/operators/runtime_calls/syntax`）で管理します。
 - `import` / `from ... import ...` は EAST `meta.import_bindings` を正本として `using` 行へ変換します。
-- 主要型は `src/profiles/cs/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
+- 主要型は `src/backends/cs/profiles/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
 
 ## 3. C++ 変換仕様（`py2cpp.py`）
 
@@ -348,7 +348,7 @@
 
 - `src/pytra/compiler/east.py`: Python -> EAST JSON（正本）
 - `src/pytra/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
-- `src/pytra/compiler/east_parts/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
+- `src/backends/common/emitter/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/runtime/cpp/pytra/built_in/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
@@ -361,7 +361,7 @@
 
 ### 5.1 CodeEmitter テスト方針
 
-- `src/pytra/compiler/east_parts/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
+- `src/backends/common/emitter/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
 - 主対象:
   - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
   - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）
@@ -373,8 +373,8 @@
 
 - `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
 - Rust 固有の出力処理は `src/backends/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
-- `src/py2rs.py` は `src/common/` / `src/rs_module/` に依存しない（`src/runtime/rs/pytra/` 基準で統一済み）。
-- 言語固有差分は `src/profiles/rs/` と `src/backends/rs/` に分離する。
+- `src/py2rs.py` は `src/backends/common/` / `src/rs_module/` に依存しない（`src/runtime/rs/pytra/` 基準で統一済み）。
+- 言語固有差分は `src/backends/rs/profiles/` と `src/backends/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
@@ -383,8 +383,8 @@
 
 - `src/py2js.py` は CLI + 入出力の薄いオーケストレータに限定する。
 - JavaScript 固有の出力処理は `src/backends/js/emitter/js_emitter.py`（`JsEmitter`）へ分離する。
-- `src/py2js.py` は `src/common/` に依存しない。
-- 言語固有差分は `src/profiles/js/` と `src/backends/js/` に分離する。
+- `src/py2js.py` は `src/backends/common/` に依存しない。
+- 言語固有差分は `src/backends/js/profiles/` と `src/backends/js/` に分離する。
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
 - 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
@@ -425,8 +425,8 @@
 
 ## 7. 実装上の共通ルール
 
-- `src/common/` には言語非依存で再利用される処理のみを配置します。
-- 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/common/` に置きません。
+- `src/backends/common/` には言語非依存で再利用される処理のみを配置します。
+- 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/backends/common/` に置きません。
 - ランタイム実体は `src/runtime/<lang>/pytra/` に配置し、`src/*_module/` 直下へ新規実体を追加しません。
 - `py2cpp.py` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。

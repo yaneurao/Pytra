@@ -49,15 +49,19 @@
 
 ## 分解
 
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-01] 共通資産（`CodeEmitter` / hooks / profile loader / profile JSON）の現行配置と参照点を棚卸しする。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-02] `backends/common` と `backends/<lang>/profiles` の配置規約・依存方向を定義する。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-01] `src/backends/common` を新設し、`CodeEmitter` / `EmitterHooks` を移設する。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-02] `src/profiles/common/*` を `src/backends/common/profiles/*` へ移設する。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-03] `src/profiles/<lang>/*` を `src/backends/<lang>/profiles/*` へ移設し、参照更新する。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-04] 旧 import 経路に対する互換 shim（必要最小限）を導入し、段階移行の破断を防ぐ。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-01] `rg` 監査で `src/profiles/` 直参照と旧 `code_emitter` 参照の残存を解消する。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-02] 主要 transpile チェックを通し、改修起因の非退行を確認する。
-- [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ責務境界とフォルダ規約を反映する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-01] 共通資産（`CodeEmitter` / hooks / profile loader / profile JSON）の現行配置と参照点を棚卸しする。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-02] `backends/common` と `backends/<lang>/profiles` の配置規約・依存方向を定義する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-01] `src/backends/common` を新設し、`CodeEmitter` / `EmitterHooks` を移設する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-02] `src/profiles/common/*` を `src/backends/common/profiles/*` へ移設する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-03] `src/profiles/<lang>/*` を `src/backends/<lang>/profiles/*` へ移設し、参照更新する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-04] 旧 import 経路に対する互換 shim（必要最小限）を導入し、段階移行の破断を防ぐ。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-01] `rg` 監査で `src/profiles/` 直参照と旧 `code_emitter` 参照の残存を解消する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-02] 主要 transpile チェックを通し、改修起因の非退行を確認する。
+- [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ責務境界とフォルダ規約を反映する。
 
 決定ログ:
 - 2026-03-03: ユーザー指示により、`src/profiles` と `CodeEmitter` の分散配置を見直し、`backends/common` を最優先（P0）で導入する方針を確定。
+- 2026-03-03: `CodeEmitter` / `EmitterHooks` の正規実装を `src/backends/common/emitter/code_emitter.py` へ移し、旧 `src/pytra/compiler/east_parts/code_emitter.py` は互換 shim 化した。
+- 2026-03-03: profile JSON を `src/backends/common/profiles` と `src/backends/{cpp,rs,cs,js}/profiles` へ移設し、各 emitter・テスト・version gate の参照を新パスへ更新した。
+- 2026-03-03: `rg` 監査で `src/profiles` と旧 `code_emitter` 直参照（import）の残存がないことを確認し、`check_py2{cpp,rs,cs,js,go,java,swift,kotlin,rb,lua,scala,ts,nim}_transpile.py` と `check_transpiler_version_gate.py` の通過を確認した。
+- 2026-03-03: `docs/ja/spec` / `docs/en/spec` の `src/profiles`・`src/common`・旧 `code_emitter` 記述を `src/backends/**/profiles`・`src/backends/common`・新 `code_emitter` パスへ更新し、責務境界記述を現状実装へ同期した。

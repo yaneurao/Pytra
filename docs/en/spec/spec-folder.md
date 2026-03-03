@@ -22,7 +22,7 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 ### 2.1 `src/`
 
 - Purpose: transpiler implementation, shared libraries, and target runtimes.
-- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/pytra/`, `src/backends/`, `src/profiles/`.
+- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/pytra/`, `src/backends/`.
 - Not allowed: logs, temporary outputs, process docs.
 
 ### 2.2 `test/`
@@ -72,8 +72,8 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 
 ### 3.1 `src/pytra/compiler/east_parts/`
 
-- Purpose: EAST1/EAST2/EAST3 stage processing and shared emitter foundation.
-- Allowed: `east1.py`, `east2.py`, `east3.py`, `east3_lowering.py`, `east_io.py`, `core.py`, `code_emitter.py`.
+- Purpose: EAST1/EAST2/EAST3 stage processing.
+- Allowed: `east1.py`, `east2.py`, `east3.py`, `east3_lowering.py`, `east_io.py`, `core.py`.
 - Not allowed: target-language-specific final emission branches.
 - Dependency rule: allow `pytra.*` shared layers; avoid direct dependency on `backends/lang>`.
 
@@ -104,10 +104,12 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 - Language-specific ad-hoc directory names such as `header/`, `multifile/`, `runtime_emit/`, `hooks/` are disallowed for new additions and should be migrated gradually into `extensions/<topic>/`.
 - In a later plan-3 phase, extension features are moved out of `src/backends/<lang>/` and each backend converges toward a `lower/optimizer/emitter`-centric shape.
 
-### 3.3 `src/profiles/`
+### 3.3 `src/backends/common/profiles/` and `src/backends/<lang>/profiles/`
 
 - Purpose: declarative language-difference profiles.
-- Allowed: `types/operators/runtime_calls/syntax` maps.
+- Allowed:
+  - Shared defaults: `src/backends/common/profiles/core.json`
+  - Per-language profiles: `src/backends/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
 - Not allowed: executable logic.
 
 ### 3.4 `src/runtime/`

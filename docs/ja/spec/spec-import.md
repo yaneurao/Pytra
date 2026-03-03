@@ -256,7 +256,7 @@ QualifiedSymbolRef
 - 具体実装:
 - `binding_kind=module/symbol` を使って `using ns;` / `using alias = ns.sym;` を生成する。
 - `typing` / `__future__` / `browser*` は using 出力対象から除外する。
-- C# 固有の文・式変換は profile/hook（`src/profiles/cs/*`, `src/backends/cs/*`）で管理する。
+- C# 固有の文・式変換は profile/hook（`src/backends/cs/profiles/*`, `src/backends/cs/*`）で管理する。
 - エラー方針:
 - `from M import *` は frontend で展開済み解決結果（`meta.qualified_symbol_refs`）を利用する。未解決の wildcard は frontend 側で fail-closed させる。
 - 相対 import や未解決 import は frontend 側の `input_invalid` 方針に従う。

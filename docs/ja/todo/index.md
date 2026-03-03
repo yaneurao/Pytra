@@ -36,16 +36,16 @@
 
 文脈: [docs/ja/plans/p0-backends-common-foundation.md](../plans/p0-backends-common-foundation.md)
 
-1. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01] `src/backends/common` を導入し、`CodeEmitter` / profiles の共通基盤を `backends` 配下へ統一する。
-2. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-01] 共通資産（`CodeEmitter` / hooks / profile loader / profile JSON）の現行配置と参照点を棚卸しする。
-3. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-02] `backends/common` と `backends/<lang>/profiles` の配置規約・依存方向を定義する。
-4. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-01] `src/backends/common` を新設し、`CodeEmitter` / `EmitterHooks` を移設する。
-5. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-02] `src/profiles/common/*` を `src/backends/common/profiles/*` へ移設する。
-6. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-03] `src/profiles/<lang>/*` を `src/backends/<lang>/profiles/*` へ移設し、参照更新する。
-7. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-04] 旧 import 経路に対する互換 shim（必要最小限）を導入し、段階移行の破断を防ぐ。
-8. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-01] `rg` 監査で `src/profiles/` 直参照と旧 `code_emitter` 参照の残存を解消する。
-9. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-02] 主要 transpile チェックを通し、改修起因の非退行を確認する。
-10. [ ] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ責務境界とフォルダ規約を反映する。
+1. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01] `src/backends/common` を導入し、`CodeEmitter` / profiles の共通基盤を `backends` 配下へ統一する。
+2. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-01] 共通資産（`CodeEmitter` / hooks / profile loader / profile JSON）の現行配置と参照点を棚卸しする。
+3. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S1-02] `backends/common` と `backends/<lang>/profiles` の配置規約・依存方向を定義する。
+4. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-01] `src/backends/common` を新設し、`CodeEmitter` / `EmitterHooks` を移設する。
+5. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-02] `src/profiles/common/*` を `src/backends/common/profiles/*` へ移設する。
+6. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-03] `src/profiles/<lang>/*` を `src/backends/<lang>/profiles/*` へ移設し、参照更新する。
+7. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S2-04] 旧 import 経路に対する互換 shim（必要最小限）を導入し、段階移行の破断を防ぐ。
+8. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-01] `rg` 監査で `src/profiles/` 直参照と旧 `code_emitter` 参照の残存を解消する。
+9. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-02] 主要 transpile チェックを通し、改修起因の非退行を確認する。
+10. [x] [ID: P0-BACKENDS-COMMON-FOUNDATION-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ責務境界とフォルダ規約を反映する。
 
 ### P0: `py2x` エントリ分離（通常 `py2x.py` / selfhost `py2x-selfhost.py`）
 

@@ -27,7 +27,7 @@
   - `py2*.py` エントリ
   - `src/pytra/`（共通Python正本）
   - `src/runtime/<lang>/pytra/`（ターゲット言語ランタイム）
-  - `src/backends/`, `src/profiles/`
+  - `src/backends/`
 - 置かないもの:
   - 運用ログ、検証一時生成物、手順ドキュメント
 
@@ -78,10 +78,10 @@
 
 ### 3.1 `src/pytra/compiler/east_parts/`
 
-- 目的: EAST1/EAST2/EAST3 の段階処理と共通エミッタ基盤を提供する。
+- 目的: EAST1/EAST2/EAST3 の段階処理を提供する。
 - 置くもの:
   - `east1.py`, `east2.py`, `east3.py`, `east3_lowering.py`
-  - `east_io.py`, `core.py`, `code_emitter.py`
+  - `east_io.py`, `core.py`
 - 置かないもの:
   - ターゲット言語固有の最終出力分岐
 - 依存方向:
@@ -115,10 +115,12 @@
 - `header/`, `multifile/`, `runtime_emit/`, `hooks/` など言語ごとの独自名ディレクトリは、新規追加を禁止し、段階的に `extensions/<topic>/` へ寄せる。
 - 将来の案3移行では、`src/backends/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
 
-### 3.3 `src/profiles/`
+### 3.3 `src/backends/common/profiles/` と `src/backends/<lang>/profiles/`
 
 - 目的: 言語差分設定を宣言的JSONとして保持する。
-- 置くもの: `types/operators/runtime_calls/syntax` マップ
+- 置くもの:
+  - 共通既定値: `src/backends/common/profiles/core.json`
+  - 言語差分: `src/backends/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
 - 置かないもの: 実行ロジック（Pythonコード）
 
 ### 3.4 `src/runtime/`
