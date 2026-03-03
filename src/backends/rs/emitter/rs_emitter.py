@@ -2194,7 +2194,7 @@ class RustEmitter(CodeEmitter):
                 if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                     i += 1
                     continue
-                if module_id in {"pytra.utils.assertions", "pytra.runtime.assertions"}:
+                if module_id == "pytra.utils.assertions":
                     i += 1
                     continue
                 if binding_kind == "module" and module_id == "math":
@@ -2222,7 +2222,7 @@ class RustEmitter(CodeEmitter):
                     module_id = self.any_to_str(ent.get("name"))
                     if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                         continue
-                    if module_id in {"pytra.utils.assertions", "pytra.runtime.assertions"}:
+                    if module_id == "pytra.utils.assertions":
                         continue
                     if module_id == "math":
                         continue
@@ -2239,7 +2239,7 @@ class RustEmitter(CodeEmitter):
                 module_id = self.any_to_str(stmt.get("module"))
                 if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                     continue
-                if module_id in {"pytra.utils.assertions", "pytra.runtime.assertions"}:
+                if module_id == "pytra.utils.assertions":
                     continue
                 base_path = self._module_id_to_rust_use_path(module_id)
                 if base_path == "":
@@ -4330,7 +4330,7 @@ class RustEmitter(CodeEmitter):
             imported_mod = self.any_dict_get_str(imported_sym, "module", "")
             if (
                 fn_name_raw in {"save_gif", "write_rgb_png"}
-                and imported_mod in {"pytra.runtime.gif", "pytra.utils.gif", "pytra.runtime.png", "pytra.utils.png"}
+                and imported_mod in {"pytra.utils.gif", "pytra.utils.png"}
                 and len(merged_args) > 0
             ):
                 call_args = list(merged_args)
@@ -4387,7 +4387,7 @@ class RustEmitter(CodeEmitter):
             if owner_mod != "":
                 if (
                     attr_raw in {"save_gif", "write_rgb_png"}
-                    and owner_mod in {"pytra.runtime.gif", "pytra.utils.gif", "pytra.runtime.png", "pytra.utils.png"}
+                    and owner_mod in {"pytra.utils.gif", "pytra.utils.png"}
                     and len(merged_args) > 0
                 ):
                     call_args = list(merged_args)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from time import perf_counter
 
-from pytra.runtime.gif import save_gif
+from pytra.utils.gif import save_gif
 
 
 def palette() -> bytes:

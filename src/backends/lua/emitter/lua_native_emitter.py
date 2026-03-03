@@ -451,7 +451,7 @@ class LuaNativeEmitter:
                         continue
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else symbol
-                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol in {"png", "gif"}:
+                    if module_name == "pytra.utils" and symbol in {"png", "gif"}:
                         self.imported_modules.add(_safe_ident(alias, "mod"))
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
@@ -481,10 +481,10 @@ class LuaNativeEmitter:
                     if module_name == "time":
                         import_lines.append("local " + alias_txt + " = { perf_counter = __pytra_perf_counter }")
                         continue
-                    if module_name in {"pytra.utils.png", "pytra.runtime.png"}:
+                    if module_name == "pytra.utils.png":
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")
                         continue
-                    if module_name in {"pytra.utils.gif", "pytra.runtime.gif"}:
+                    if module_name == "pytra.utils.gif":
                         import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
                         continue
                     if module_name.startswith("pytra."):
@@ -533,24 +533,22 @@ class LuaNativeEmitter:
                     if module_name == "pathlib" and symbol == "Path":
                         import_lines.append("local " + alias_txt + " = __pytra_path_new")
                         continue
-                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "png":
+                    if module_name == "pytra.utils" and symbol == "png":
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")
                         continue
-                    if module_name in {"pytra.utils", "pytra.runtime"} and symbol == "gif":
+                    if module_name == "pytra.utils" and symbol == "gif":
                         import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
                         continue
-                    if module_name in {"pytra.utils.png", "pytra.runtime.png"} and symbol == "write_rgb_png":
+                    if module_name == "pytra.utils.png" and symbol == "write_rgb_png":
                         import_lines.append("local " + alias_txt + " = __pytra_write_rgb_png")
                         continue
-                    if module_name in {"pytra.utils.gif", "pytra.runtime.gif"} and symbol == "save_gif":
+                    if module_name == "pytra.utils.gif" and symbol == "save_gif":
                         import_lines.append("local " + alias_txt + " = __pytra_save_gif")
                         continue
-                    if module_name in {"pytra.utils.gif", "pytra.runtime.gif"} and symbol == "grayscale_palette":
+                    if module_name == "pytra.utils.gif" and symbol == "grayscale_palette":
                         import_lines.append("local " + alias_txt + " = __pytra_grayscale_palette")
                         continue
-                    if (
-                        (module_name in {"pytra.utils.gif", "pytra.runtime.gif"})
-                    ):
+                    if module_name == "pytra.utils.gif":
                         raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)
                     if module_name.startswith("pytra."):
                         raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)

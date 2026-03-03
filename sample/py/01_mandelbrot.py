@@ -2,7 +2,7 @@
 # Syntax is kept straightforward with future transpilation in mind.
 
 from time import perf_counter
-from pytra.runtime import png
+from pytra.utils import png
 
 
 def escape_count(cx: float, cy: float, max_iter: int) -> int:

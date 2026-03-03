@@ -39,21 +39,6 @@ def write_js_runtime_shims(output_dir: Path) -> None:
             "exports.Path = rt.Path;\n"
             "exports.pathJoin = rt.pathJoin;\n"
         ),
-        "pytra/runtime.js": (
-            "const png = require(process.cwd() + '/src/runtime/js/pytra/png_helper.js');\n"
-            "const gif = require(process.cwd() + '/src/runtime/js/pytra/gif_helper.js');\n"
-            "exports.png = png;\n"
-            "exports.gif = gif;\n"
-        ),
-        "pytra/runtime/png.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/png_helper.js');\n"
-            "exports.write_rgb_png = rt.write_rgb_png;\n"
-        ),
-        "pytra/runtime/gif.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/gif_helper.js');\n"
-            "exports.grayscale_palette = rt.grayscale_palette;\n"
-            "exports.save_gif = rt.save_gif;\n"
-        ),
         "pytra/py_runtime.js": (
             "const rt = require(process.cwd() + '/src/runtime/js/pytra/py_runtime.js');\n"
             "exports.PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"

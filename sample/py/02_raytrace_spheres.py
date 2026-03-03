@@ -2,7 +2,7 @@
 # Dependencies are kept minimal (time only) for transpilation compatibility.
 
 import math
-from pytra.runtime import png
+from pytra.utils import png
 from time import perf_counter
 
 

@@ -2,7 +2,7 @@
 # Implemented with simple loop-centric logic for transpilation compatibility.
 
 from time import perf_counter
-from pytra.runtime import png
+from pytra.utils import png
 
 
 def render_julia(width: int, height: int, max_iter: int, cx: float, cy: float) -> bytearray:

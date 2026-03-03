@@ -382,13 +382,13 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.math"
             if module_id == "time":
                 return "Pytra.CsModule.time"
-            if module_id in {"pytra.runtime", "pytra.utils"}:
+            if module_id == "pytra.utils":
                 return "Pytra.CsModule"
             return ""
         if binding_kind == "symbol":
-            if module_id in {"pytra.runtime", "pytra.utils"} and export_name == "png":
+            if module_id == "pytra.utils" and export_name == "png":
                 return "Pytra.CsModule.png_helper"
-            if module_id in {"pytra.runtime", "pytra.utils"} and export_name == "gif":
+            if module_id == "pytra.utils" and export_name == "gif":
                 return "Pytra.CsModule.gif_helper"
             if module_id in {"pathlib", "pytra.std.pathlib"} and export_name == "Path":
                 return "Pytra.CsModule.py_path"

@@ -31,9 +31,9 @@
         "lineno": 5,
         "col": 0,
         "end_lineno": 5,
-        "end_col": 29
+        "end_col": 27
       },
-      "module": "pytra.runtime",
+      "module": "pytra.utils",
       "names": [
         {
           "name": "png",
@@ -10636,7 +10636,7 @@
           "source_line": 4
         },
         {
-          "module_id": "pytra.runtime",
+          "module_id": "pytra.utils",
           "export_name": "png",
           "local_name": "png",
           "binding_kind": "symbol",
@@ -10651,7 +10651,7 @@
           "local_name": "perf_counter"
         },
         {
-          "module_id": "pytra.runtime",
+          "module_id": "pytra.utils",
           "symbol": "png",
           "local_name": "png"
         }
@@ -10667,7 +10667,7 @@
         "source_line": 4
       },
       {
-        "module_id": "pytra.runtime",
+        "module_id": "pytra.utils",
         "export_name": "png",
         "local_name": "png",
         "binding_kind": "symbol",
@@ -10682,7 +10682,7 @@
         "local_name": "perf_counter"
       },
       {
-        "module_id": "pytra.runtime",
+        "module_id": "pytra.utils",
         "symbol": "png",
         "local_name": "png"
       }
@@ -10694,7 +10694,7 @@
         "name": "perf_counter"
       },
       "png": {
-        "module": "pytra.runtime",
+        "module": "pytra.utils",
         "name": "png"
       }
     },

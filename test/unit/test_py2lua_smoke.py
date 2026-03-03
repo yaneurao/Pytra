@@ -516,7 +516,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
 
     def test_import_lowering_maps_pytra_gif_runtime(self) -> None:
         src = (
-            "from pytra.runtime import gif\n"
+            "from pytra.utils import gif\n"
             "def f() -> None:\n"
             "    _ = gif\n"
         )
@@ -530,7 +530,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
 
     def test_import_lowering_fails_closed_for_unknown_pytra_symbol(self) -> None:
         src = (
-            "from pytra.runtime import unknown_symbol\n"
+            "from pytra.utils import unknown_symbol\n"
             "def f() -> None:\n"
             "    _ = unknown_symbol\n"
         )

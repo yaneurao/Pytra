@@ -39,16 +39,6 @@ class CppModuleEmitter:
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
         module_name_norm = module_name
-        if module_name_norm.startswith("pytra.runtime."):
-            # Python side `pytra.runtime.*` is backed by C++ `pytra::utils::*`.
-            tail = module_name_norm[14:]
-            mapped_module = "pytra.utils." + tail if tail != "" else ""
-            if (
-                tail != ""
-                and python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail)
-                and _runtime_cpp_header_exists_for_module(mapped_module)
-            ):
-                return "pytra/utils/" + _module_tail_to_cpp_header_path(tail)
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
@@ -79,11 +69,6 @@ class CppModuleEmitter:
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
         """Python import モジュール名を C++ namespace へ解決する。"""
         module_name_norm = module_name
-        if module_name_norm.startswith("pytra.runtime."):
-            tail = module_name_norm[14:]
-            if tail != "":
-                return "pytra::utils::" + tail.replace(".", "::")
-            return ""
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if tail != "":
@@ -134,8 +119,6 @@ class CppModuleEmitter:
         if mod_name == "pytra.std":
             return "pytra.std."
         if mod_name == "pytra.utils":
-            return "pytra.utils."
-        if mod_name == "pytra.runtime":
             return "pytra.utils."
         if mod_name == "pytra.built_in":
             return "pytra.built_in."
