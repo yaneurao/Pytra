@@ -40,11 +40,12 @@
 決定ログ:
 - 2026-03-03: ユーザー指示により、`sample/18` の Ruby parity 失敗（tokenize error）原因調査を P0 として起票。
 - 2026-03-04: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] `runtime_parity_check --case-root sample --targets ruby 18_mini_language_interpreter` と `ruby out/ruby_validate/18_mini_language_interpreter.rb` の双方で `tokenize error at line=0 pos=6 ch==` を再現。入力先頭行は `let a = 10` で、生成 Ruby では `single_char_token_tags = {}`（`=` の辞書登録欠落）になっていることを確認。
+- 2026-03-04: [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] 同一入力 `let a = 10` で Python tokenize は `LET, IDENT, EQUAL, NUMBER...` を返す一方、Ruby 版は `pos=6 ('=')` で停止。最初の乖離点は `single_char_token_tags` 初期化（Python: `{'=':7,...}` / Ruby生成: `{}`）で確定。
 
 ## 分解
 
 - [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] parity 失敗を再現し、例外発生位置と入力トークン列を採取する。
-- [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] Python 版と Ruby 版の tokenize 結果を比較し、最初の乖離点を特定する。
+- [x] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] Python 版と Ruby 版の tokenize 結果を比較し、最初の乖離点を特定する。
 - [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-01] 乖離を生む変換規則（lower/emitter/runtime）を特定し、責務境界を明確化する。
 - [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-02] 最小再現ケースを `test/fixtures` へ追加する案を作成し、必要な検証粒度を決める。
 - [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S3-01] 修正方針（実装箇所・非対象・回帰テスト）を確定し、次段修正タスクを起票する。
