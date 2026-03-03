@@ -25,7 +25,8 @@
 - 目的: 変換器本体・共通ライブラリ・言語ランタイムの実装を保持する。
 - 置くもの:
   - `py2*.py` エントリ
-  - `src/pytra/`（共通Python正本）
+  - `src/toolchain/`（変換プログラム本体）
+  - `src/pytra/`（変換時参照ライブラリ正本）
   - `src/runtime/<lang>/pytra/`（ターゲット言語ランタイム）
   - `src/backends/`
 - 置かないもの:
@@ -76,29 +77,38 @@
 
 ## 3. `src/` 配下の責務
 
-### 3.1 `src/pytra/frontends/` / `src/pytra/ir/` / `src/pytra/compiler/`（3層 + 互換）
+### 3.1 `src/toolchain/frontends/` / `src/toolchain/ir/` / `src/toolchain/compiler/`（3層 + 互換）
 
-- 目的: 入力frontend と IR 段階処理を分離し、`compiler` は互換導線へ縮退する。
+- 目的: 入力 frontend と IR 段階処理を `toolchain` 配下へ分離し、`compiler` は互換導線へ縮退する。
 - 置くもの:
-  - `src/pytra/frontends/`: `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, `signature_registry.py`, `frontend_semantics.py`
-  - `src/pytra/ir/`: `core.py`, `east1.py`, `east2.py`, `east3.py`, `east2_to_east3_lowering.py`, `east3_optimizer.py`, `east3_opt_passes/*`, `east_io.py`
-  - `src/pytra/compiler/`: 互換 shim / facade（例: `transpile_cli.py`, `east_parts/*` の re-export）
+  - `src/toolchain/frontends/`: 入力言語 frontend（例: `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, `signature_registry.py`, `frontend_semantics.py`）
+  - `src/toolchain/ir/`: EAST1/2/3 定義・lower・optimizer・pipeline（例: `core.py`, `east1.py`, `east2.py`, `east3.py`, `east3_optimizer.py`）
+  - `src/toolchain/compiler/`: 互換 shim / facade（例: 旧 import 経路の受け皿、backend registry）
 - 置かないもの:
-  - `frontends` / `ir` へ移設済みロジックの新規実装を `compiler` 側に戻すこと
+  - `frontends` / `ir` 側へ移設済みロジックを `compiler` へ戻す新規実装
   - ターゲット言語固有の最終出力分岐
 - 依存方向:
-  - `frontends -> ir -> backends` を原則とする。
-  - `backends -> frontends` は禁止（`tools/check_pytra_layer_boundaries.py` で検知）。
-  - `ir -> frontends` は `ir/core.py` のみ例外許可（parser 実装移行中の暫定）。
-  - 互換層 `compiler` から `frontends` / `ir` への依存は許可する。
+  - 正規方向は `toolchain.frontends -> toolchain.ir -> backends`。
+  - `backends -> toolchain.frontends` は禁止。
+  - `toolchain.compiler -> toolchain.frontends|toolchain.ir` は互換層として許可。
+  - 暫定例外として、`toolchain.ir.core` から `toolchain.frontends.signature_registry|frontend_semantics` 参照を許容する（循環解消タスクで撤去予定）。
 
-### 3.2 `src/backends/`
+### 3.2 `src/pytra/`（変換時参照ライブラリ）
+
+- 目的: 変換器が参照する Python 名前空間ライブラリ（`pytra.std` / `pytra.utils` / `pytra.built_in`）を保持する。
+- 置くもの:
+  - `src/pytra/std/`, `src/pytra/utils/`, `src/pytra/built_in/`
+- 置かないもの:
+  - `frontends` / `ir` / `compiler` の実体実装
+  - backend 固有ロジック
+
+### 3.3 `src/backends/`
 
 - 目的: 言語固有の構文差分を吸収する。
 - 置くもの: backendごとのhook実装
 - 置かないもの: 言語非依存の意味論lowering
 
-#### 3.2.1 backend パイプラインの標準ディレクトリ
+#### 3.3.1 backend パイプラインの標準ディレクトリ
 
 - 各 backend の標準構成は `src/backends/<lang>/{lower,optimizer,emitter}/` とする。
 - 役割は次で固定する。
@@ -109,7 +119,7 @@
 - 既存 backend は段階移行を許容するが、移行時の到達形は同一ディレクトリ規約へそろえる。
 - 非C++ backend の 3 層配線・層逆流 import の再発防止チェックは `python3 tools/check_noncpp_east3_contract.py` を正本とする。
 
-#### 3.2.2 追加機能ディレクトリ（案2）と最終到達形（案3）
+#### 3.3.2 追加機能ディレクトリ（案2）と最終到達形（案3）
 
 - 当面の運用は案2（core + extensions）を採用する。
   - core（必須）: `lower/`, `optimizer/`, `emitter/`
@@ -119,7 +129,7 @@
 - `header/`, `multifile/`, `runtime_emit/`, `hooks/` など言語ごとの独自名ディレクトリは、新規追加を禁止し、段階的に `extensions/<topic>/` へ寄せる。
 - 将来の案3移行では、`src/backends/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
 
-### 3.3 `src/backends/common/profiles/` と `src/backends/<lang>/profiles/`
+### 3.4 `src/backends/common/profiles/` と `src/backends/<lang>/profiles/`
 
 - 目的: 言語差分設定を宣言的JSONとして保持する。
 - 置くもの:
@@ -127,13 +137,13 @@
   - 言語差分: `src/backends/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
 - 置かないもの: 実行ロジック（Pythonコード）
 
-### 3.4 `src/runtime/`
+### 3.5 `src/runtime/`
 
 - 目的: ターゲット言語ランタイム実装を保持する。
 - 置くもの: `src/runtime/<lang>/pytra/` 実装
 - 置かないもの: トランスパイラ本体ロジック
 
-### 3.5 `src/*_module/`（レガシー互換）
+### 3.6 `src/*_module/`（レガシー互換）
 
 - 目的: 旧配置との互換維持
 - 置くもの: 既存互換資産のみ

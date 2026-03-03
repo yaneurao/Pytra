@@ -64,7 +64,7 @@
 ## 分解
 
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
-- [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] 新レイアウト規約（`toolchain` / `pytra` / `runtime`）と依存方向を `docs/ja/spec-folder.md` に確定する。
+- [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] 新レイアウト規約（`toolchain` / `pytra` / `runtime`）と依存方向を `docs/ja/spec/spec-folder.md` に確定する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] 旧 import 経路を禁止する移行ルール（後方互換なし）を明文化する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-01] `src/toolchain/frontends` を作成し、`src/pytra/frontends` を一括移動する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] `src/toolchain/ir` を作成し、`src/pytra/ir` を一括移動する。
@@ -108,3 +108,4 @@
 - 2026-03-03: ユーザー指示により、`src` の責務境界を `toolchain` / `pytra` / `runtime` の3系統へ再編する計画を P0 として起票。
 - 2026-03-03: 後方互換レイヤ（旧 import re-export）は不要と判断し、移行時に旧経路を一括撤去する方針を採用。
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] `src/pytra` 6領域の責務と参照点を棚卸しし、`compiler` への依存集中と `frontends`/`ir` の循環参照を確認した。
+- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] `docs/ja/spec/spec-folder.md` を更新し、`src/toolchain/{frontends,ir,compiler}` を正規配置、`src/pytra` を参照ライブラリ専用とする依存方向を確定した。
