@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Static import guard for `pytra` 3-layer boundaries.
+"""Static import guard for `toolchain`/`pytra` layer boundaries.
 
 Rules:
 - `frontends` must not import `backends`.
 - `ir` must not import `backends`.
-- `backends` must not import `pytra.frontends`.
-- `ir` must not import `pytra.frontends` except explicit allowlist paths.
+- `backends` must not import `toolchain.frontends`.
+- `ir` must not import `toolchain.frontends` except explicit allowlist paths.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-FRONTENDS_ROOT = ROOT / "src" / "pytra" / "frontends"
+FRONTENDS_ROOT = ROOT / "src" / "toolchain" / "frontends"
 IR_ROOT = ROOT / "src" / "pytra" / "ir"
 BACKENDS_ROOT = ROOT / "src" / "backends"
 
@@ -88,13 +88,19 @@ def _check_file(path: Path) -> list[str]:
             if _module_matches(module_name, ["backends", "src.backends"]):
                 errs.append(f"{rel}:{lineno}: ir must not import `{module_name}`")
                 continue
-            if _module_matches(module_name, ["pytra.frontends", "src.pytra.frontends"]):
+            if _module_matches(
+                module_name,
+                ["toolchain.frontends", "src.toolchain.frontends", "pytra.frontends", "src.pytra.frontends"],
+            ):
                 if path.resolve() not in ALLOW_IR_FRONTENDS_IMPORTS:
                     errs.append(f"{rel}:{lineno}: ir must not import `{module_name}`")
             continue
 
         if group == "backends":
-            if _module_matches(module_name, ["pytra.frontends", "src.pytra.frontends"]):
+            if _module_matches(
+                module_name,
+                ["toolchain.frontends", "src.toolchain.frontends", "pytra.frontends", "src.pytra.frontends"],
+            ):
                 errs.append(f"{rel}:{lineno}: backends must not import `{module_name}`")
             continue
 
@@ -123,4 +129,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

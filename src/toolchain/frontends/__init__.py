@@ -1,4 +1,4 @@
-"""Frontend bootstrap namespace (`src/pytra/frontends`).
+"""Frontend bootstrap namespace (`src/toolchain/frontends`).
 
 Keep package import side effects minimal to avoid cycles with
 ``pytra.compiler.transpile_cli`` during staged migration.
@@ -25,6 +25,7 @@ def load_east3_document(*args: Any, **kwargs: Any) -> dict[str, object]:
     from .python_frontend import load_east3_document as _impl
 
     return _impl(*args, **kwargs)
+
 
 __all__ = [
     "add_common_transpile_args",

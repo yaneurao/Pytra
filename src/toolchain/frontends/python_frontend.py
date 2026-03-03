@@ -1,7 +1,7 @@
 """Python-input frontend bootstrap wrappers.
 
-During 3-layer migration this module delegates to ``pytra.frontends.transpile_cli``
-and provides a stable future home under ``pytra.frontends``.
+During 3-layer migration this module delegates to ``toolchain.frontends.transpile_cli``
+and provides a stable future home under ``toolchain.frontends``.
 """
 
 from __future__ import annotations
@@ -9,9 +9,9 @@ from __future__ import annotations
 from pytra.std.typing import Any
 from pytra.std.typing import Iterable
 
-from pytra.frontends.transpile_cli import add_common_transpile_args as _add_common_transpile_args
-from pytra.frontends.transpile_cli import load_east3_document as _load_east3_document
-from pytra.frontends.transpile_cli import normalize_common_transpile_args as _normalize_common_transpile_args
+from toolchain.frontends.transpile_cli import add_common_transpile_args as _add_common_transpile_args
+from toolchain.frontends.transpile_cli import load_east3_document as _load_east3_document
+from toolchain.frontends.transpile_cli import normalize_common_transpile_args as _normalize_common_transpile_args
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 

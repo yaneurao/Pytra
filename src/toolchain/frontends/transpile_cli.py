@@ -6,7 +6,7 @@ from pytra.ir.core import convert_path, convert_source_to_east_with_backend
 from pytra.ir.east1 import load_east1_document as load_east1_document_stage
 from pytra.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
 from pytra.ir.east3 import load_east3_document as load_east3_document_stage
-from pytra.frontends.known_modules import is_known_module_name
+from toolchain.frontends.known_modules import is_known_module_name
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
@@ -2496,7 +2496,7 @@ def analyze_import_graph_via_east1_build(
     load_east_fn: object,
 ) -> dict[str, object]:
     """`east1_build` 入口へ委譲する import graph helper。"""
-    from pytra.frontends.east1_build import East1BuildHelpers
+    from toolchain.frontends.east1_build import East1BuildHelpers
 
     load_doc_fn: object = None
     if callable(load_east_fn):
@@ -2519,7 +2519,7 @@ def build_module_east_map_via_east1_build(
     runtime_utils_source_root: Path = Path("src/pytra/utils"),
 ) -> dict[str, dict[str, object]]:
     """`east1_build` 入口へ委譲する module EAST map helper。"""
-    from pytra.frontends.east1_build import East1BuildHelpers
+    from toolchain.frontends.east1_build import East1BuildHelpers
 
     build_doc_fn: object = None
     if callable(load_east_fn):
