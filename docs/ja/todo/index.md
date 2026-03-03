@@ -112,7 +112,7 @@
 文脈: [docs/ja/plans/p1-py2x-single-entrypoint-remove-legacy-clis.md](../plans/p1-py2x-single-entrypoint-remove-legacy-clis.md)
 
 1. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01] `py2x.py` を唯一の正規入口へ統一し、最終的に `src/py2cpp.py` を削除する。
-2. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] `tools/` / `test/` / `docs/` / `src/pytra/cli.py` の `py2*.py` 依存箇所を棚卸しし、移行順序を確定する。
+2. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] `tools/` / `test/` / `docs/` / `src/pytra/cli.py` の `py2*.py` 依存箇所を棚卸しし、移行順序を確定する。
 3. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 固有機能（`--emit-runtime-cpp`, `--header-output`, `--multi-file` 等）の `py2x` 受け皿仕様を確定する。
 4. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
 5. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
@@ -123,6 +123,7 @@
 10. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
 11. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
 12. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] 依存棚卸しを実施し、`src/pytra/cli.py`・`tools`・`test`・`docs` の legacy CLI 参照分布と移行順（CLI/tools→test→docs→selfhost）を確定。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
