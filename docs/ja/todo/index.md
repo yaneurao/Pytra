@@ -117,7 +117,7 @@
 4. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
 5. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
 6. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] `tools/` の CLI 呼び出しを `py2x.py --target ...` へ一括置換する。
-7. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
+7. [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
 8. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
 9. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
 10. [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
@@ -128,6 +128,7 @@
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost の prepare/build/check が `src/py2cpp.py` 連鎖に依存していることを特定し、通常は `py2x`・selfhost は `py2x-selfhost` へ統一する置換方針を確定。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 互換委譲を追加し、`optimizer/emitter-option` の C++ キーを専用フラグへマップ。`test_py2x_cli` と single/multi/header 出力で動作確認。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] selfhost 系を除く `tools/` の `src/py2*.py` 直呼びを `src/py2x.py --target ...` へ置換し、`check_py2*_transpile.py` 全件実行で非退行を確認。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/unit` の CLI 実行を `src/py2x.py --target ...` へ統一し、代表 15 ファイルの unittest pass を確認（`test_py2lua_smoke.py` は既知失敗7件を維持）。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
