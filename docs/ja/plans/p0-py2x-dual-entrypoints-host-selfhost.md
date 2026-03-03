@@ -44,8 +44,8 @@
 
 ## 分解
 
-- [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-01] 現行 `py2x` 導線（通常実行/selfhost実行）の import 制約と責務境界を棚卸しする。
-- [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-02] `py2x.py`（host）と `py2x-selfhost.py`（selfhost）の契約（許可/禁止事項）を定義する。
+- [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-01] 現行 `py2x` 導線（通常実行/selfhost実行）の import 制約と責務境界を棚卸しする。
+- [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-02] `py2x.py`（host）と `py2x-selfhost.py`（selfhost）の契約（許可/禁止事項）を定義する。
 - [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-01] `py2x.py` を host-lazy 専用実装へ整理する（selfhost 条件分岐を排除）。
 - [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-02] `py2x-selfhost.py` を新設し、static eager import のみで同等CLIを提供する。
 - [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-03] backend registry 依存を host/selfhost で分離し、境界違反を検知できる形にする。
@@ -55,3 +55,5 @@
 
 決定ログ:
 - 2026-03-03: 「通常は `py2x.py`（lazy）、selfhost は `py2x-selfhost.py`（static）」の二系統分離方針を採用。
+- 2026-03-03: 現行棚卸しとして、`src/py2x.py` が `pytra.compiler.backend_registry`（全backend eager import）へ依存し、`py2*.py` ラッパが `pytra.compiler.py2x_wrapper.run_py2x_for_target` 経由で通常導線を共有していることを確認した。
+- 2026-03-03: 契約を次で固定した。host (`py2x.py`) は dynamic import 許可・target限定 lazy import 必須。selfhost (`py2x-selfhost.py`) は dynamic import 禁止・static eager import のみ許可。両者とも CLI 契約（`--target`, layer options, EAST3固定）は同一に保つ。

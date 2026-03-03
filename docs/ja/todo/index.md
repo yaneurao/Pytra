@@ -52,8 +52,8 @@
 文脈: [docs/ja/plans/p0-py2x-dual-entrypoints-host-selfhost.md](../plans/p0-py2x-dual-entrypoints-host-selfhost.md)
 
 1. [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01] `py2x.py`（通常）と `py2x-selfhost.py`（selfhost）を分離し、通常は lazy import・selfhost は static import を固定する。
-2. [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-01] 現行 `py2x` 導線（通常実行/selfhost実行）の import 制約と責務境界を棚卸しする。
-3. [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-02] `py2x.py`（host）と `py2x-selfhost.py`（selfhost）の契約（許可/禁止事項）を定義する。
+2. [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-01] 現行 `py2x` 導線（通常実行/selfhost実行）の import 制約と責務境界を棚卸しする。
+3. [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-02] `py2x.py`（host）と `py2x-selfhost.py`（selfhost）の契約（許可/禁止事項）を定義する。
 4. [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-01] `py2x.py` を host-lazy 専用実装へ整理する（selfhost 条件分岐を排除）。
 5. [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-02] `py2x-selfhost.py` を新設し、static eager import のみで同等CLIを提供する。
 6. [ ] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-03] backend registry 依存を host/selfhost で分離し、境界違反を検知できる形にする。
