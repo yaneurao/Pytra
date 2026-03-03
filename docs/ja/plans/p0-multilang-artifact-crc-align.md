@@ -15,6 +15,10 @@
   - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304.json`
   - `cases=18 pass=2 fail=16`
   - `artifact_size_mismatch=4 (01..04)`, `artifact_missing=12 (05..16)`, `ok=2 (17,18)`
+- Kotlin（`save_gif` no-op 除去後）:
+  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`
+  - `cases=18 pass=6 fail=12`
+  - `artifact_missing=0` を確認（`artifact_size_mismatch=4 (01..04)`, `artifact_crc32_mismatch=8 (05,06,08,10,11,12,14,16)`）
 - PyPy:
   - `work/logs/runtime_parity_sample_pypy_artifact_20260304.json`
   - `ok=16`, `no_artifact_python=2`（artifact生成ケースは size+crc32 一致）
@@ -92,12 +96,13 @@
 - 2026-03-04: ユーザー指示により、Kotlin artifact スキップ撤去 + Kotlin再検証 + fail群原因調査 + Swift toolchain導入再実行を P0 起票。
 - 2026-03-04: Kotlin target の `ignore_artifacts=True` を `tools/runtime_parity_check.py` から撤去。
 - 2026-03-04: `Swift 6.2.4` を `swiftly` で導入し、`swiftc` を有効化（`/usr/local/bin/swiftc` symlink）。
+- 2026-03-04: Kotlin emitter の `save_gif/grayscale_palette` を runtime helper 接続へ変更し、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer（`__pytra_save_gif`）を追加。`artifact_missing` を解消した。
 
 ## 分解
 
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後の baseline（summary-json）を固定し、失敗カテゴリを言語別にロックする。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走し、失敗カテゴリをロックする。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin: `save_gif` no-op 経路を除去し、runtime GIF writer を実装して 05..16 の artifact_missing を解消する。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin: `save_gif` no-op 経路を除去し、runtime GIF writer を実装して 05..16 の artifact_missing を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin: PNG writer を Python準拠バイナリへ寄せ、01..04 の artifact_size/CRC mismatch を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java: emitter の image call を `__pytra_noop` から runtime 実装へ接続し、artifact_missing を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java: `RuntimeError` / dict.get-default / 型周辺の compile fail を修正し、sample 実行を完走可能にする。

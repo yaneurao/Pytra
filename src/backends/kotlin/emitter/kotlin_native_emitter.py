@@ -706,14 +706,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
     if callee_name == "save_gif":
-        rendered_noop_args: list[str] = []
+        rendered_gif_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_noop_args.append(_render_expr(args[i]))
+            rendered_gif_args.append(_render_expr(args[i]))
             i += 1
-        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
     if callee_name == "grayscale_palette":
-        return "mutableListOf<Any?>()"
+        return "__pytra_grayscale_palette()"
     if callee_name == "print":
         rendered_args: list[str] = []
         i = 0
@@ -764,12 +764,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 i += 1
             return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
         if attr_name == "save_gif":
-            rendered_noop_args: list[str] = []
+            rendered_gif_args: list[str] = []
             i = 0
             while i < len(args):
-                rendered_noop_args.append(_render_expr(args[i]))
+                rendered_gif_args.append(_render_expr(args[i]))
                 i += 1
-            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+            return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
         if attr_name == "get" and len(args) == 2:
             key_expr = _render_expr(args[0])
             default_expr = _render_expr(args[1])

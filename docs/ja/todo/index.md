@@ -39,7 +39,7 @@
 1. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01] `sample` の artifact parity（size+CRC32）を `cpp,rs,cs,js,ts,go,java,swift,kotlin` で一致させる。
 2. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後 baseline を固定し、失敗カテゴリを言語別にロックする。
 3. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走して失敗カテゴリをロックする。
-4. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin `save_gif` no-op 経路を除去し、runtime GIF writer 実装で artifact_missing を解消する。
+4. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin `save_gif` no-op 経路を除去し、runtime GIF writer 実装で artifact_missing を解消する。
 5. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin PNG writer を Python準拠バイナリに揃え、01..04 の mismatch を解消する。
 6. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java image call を runtime 実装へ接続し、artifact_missing を解消する。
 7. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java compile fail（`RuntimeError` / dict.get-default / 型）を修正して sample 実行を完走可能にする。
@@ -51,6 +51,7 @@
 13. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ sample/07,16 compile fail と 06/12/14 CRC mismatch を修正する。
 14. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] 9言語全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
 15. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと仕様書へ CRC32 parity 運用ルールを反映する。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin emitter の `save_gif/grayscale_palette` を runtime 接続へ切替え、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer を追加。`--targets kotlin --all-samples` 再実行で `artifact_missing=0` を確認（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`）。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 
