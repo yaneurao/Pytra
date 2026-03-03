@@ -11,6 +11,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -104,6 +105,21 @@ def _safe_unlink(path: Path | None) -> None:
         return
     if path.exists() and path.is_file():
         path.unlink()
+
+
+def _file_crc32(path: Path) -> int:
+    crc = 0
+    with path.open("rb") as f:
+        while True:
+            chunk = f.read(1 << 16)
+            if chunk == b"":
+                break
+            crc = zlib.crc32(chunk, crc)
+    return crc & 0xFFFFFFFF
+
+
+def _crc32_hex(v: int) -> str:
+    return f"0x{(v & 0xFFFFFFFF):08x}"
 
 
 def _purge_case_artifacts(work: Path, case_stem: str) -> None:
@@ -390,6 +406,7 @@ def check_case(
             return 1
         expected = _normalize_output_for_compare(py.stdout)
         expected_artifact_size: int | None = None
+        expected_artifact_crc32: int | None = None
         expected_artifact_path: Path | None = None
         expected_out_txt = _parse_output_path(py.stdout)
         if expected_out_txt != "":
@@ -399,6 +416,7 @@ def check_case(
                 print(f"[ERROR] python:{case_stem} artifact missing: {expected_artifact_path}")
                 return 1
             expected_artifact_size = int(expected_artifact_path.stat().st_size)
+            expected_artifact_crc32 = _file_crc32(expected_artifact_path)
 
         mismatches: list[str] = []
         for target in build_targets(case_stem, case_path, east3_opt_level):
@@ -481,8 +499,31 @@ def check_case(
                 )
                 continue
 
-            print(f"[OK] {case_stem}:{target.name}")
-            _record(target.name, "ok", "")
+            actual_artifact_crc32 = _file_crc32(actual_artifact_path)
+            if expected_artifact_crc32 is None:
+                expected_artifact_crc32 = _file_crc32(expected_artifact_path)
+            if actual_artifact_crc32 != expected_artifact_crc32:
+                _record(
+                    target.name,
+                    "artifact_crc32_mismatch",
+                    (
+                        f"python:{_crc32_hex(expected_artifact_crc32)} "
+                        f"target:{_crc32_hex(actual_artifact_crc32)}"
+                    ),
+                )
+                mismatches.append(
+                    f"{case_stem}:{target.name}: artifact crc32 mismatch "
+                    f"(python:{_crc32_hex(expected_artifact_crc32)} "
+                    f"target:{_crc32_hex(actual_artifact_crc32)})"
+                )
+                continue
+
+            artifact_info = (
+                f"artifact_size={actual_artifact_size} "
+                f"artifact_crc32={_crc32_hex(actual_artifact_crc32)}"
+            )
+            print(f"[OK] {case_stem}:{target.name} {artifact_info}")
+            _record(target.name, "ok", artifact_info)
 
     if mismatches:
         print("\n[FAIL] mismatches")
