@@ -13,10 +13,10 @@ This document summarizes transpiler implementation policy, structure, and conver
 - `src/`
   - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - Place only transpiler entry scripts (`py2*.py`) directly under `src/`.
-  - `common/`: shared base implementations and utilities used across multiple languages
+  - `backends/common/`: shared base implementations and utilities used across multiple languages
   - The standard backend stage layout is `src/backends/<lang>/{lower,optimizer,emitter}/` (source of truth: `spec-folder.md`).
   - During transition, `extensions/<topic>/` may coexist (plan-2), then converge toward the 3-layer core (plan-3).
-  - `profiles/`: language-difference JSON for `CodeEmitter` (types/operators/runtime-call/syntax)
+  - `backends/common/profiles/` + `backends/<lang>/profiles/`: language-difference JSON for `CodeEmitter` (types/operators/runtime-call/syntax)
   - `runtime/cpp/`, `runtime/<lang>/pytra/`: canonical runtime helpers for each target language
   - `*_module/`: legacy compatibility folders for non-native migrations
   - `pytra/`: canonical Python-side shared library
@@ -293,7 +293,7 @@ Constraints:
 
 - `src/pytra/compiler/east.py`: Python -> EAST JSON (canonical)
 - `src/pytra/compiler/east_parts/east_io.py`: load EAST from `.py/.json` and supplement leading trivia (canonical)
-- `src/pytra/compiler/east_parts/code_emitter.py`: common base utilities for multi-language emitters (node predicates/type-string helpers/`Any` safe conversion)
+- `src/backends/common/emitter/code_emitter.py`: common base utilities for multi-language emitters (node predicates/type-string helpers/`Any` safe conversion)
 - `src/py2cpp.py`: EAST JSON -> C++
 - `src/runtime/cpp/pytra/built_in/py_runtime.h`: consolidated C++ runtime
 - Responsibility separation:
@@ -306,7 +306,7 @@ Constraints:
 
 ### 5.1 CodeEmitter Test Policy
 
-- Regression coverage for `src/pytra/compiler/east_parts/code_emitter.py` is provided by `test/unit/test_code_emitter.py`.
+- Regression coverage for `src/backends/common/emitter/code_emitter.py` is provided by `test/unit/test_code_emitter.py`.
 - Main targets:
   - output buffer ops (`emit`, `emit_stmt_list`, `next_tmp`)
   - dynamic-input safety (`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`)
@@ -341,8 +341,8 @@ Constraints:
 
 ## 7. Common Implementation Rules
 
-- Put only language-agnostic reusable logic in `src/common/`.
-- Do not put language-specific specs (type mapping, keywords, runtime symbol names, etc.) into `src/common/`.
+- Put only language-agnostic reusable logic in `src/backends/common/`.
+- Do not put language-specific specs (type mapping, keywords, runtime symbol names, etc.) into `src/backends/common/`.
 - Consolidate common CLI args (`input`/`output`/`--negative-index-mode`/`--parser-backend`, etc.) into `src/pytra/compiler/transpile_cli.py` and reuse them from each `py2*.py` `main()`.
 - In selfhost-target code, avoid dynamic imports (`try/except ImportError` split imports, `importlib`) and use only static imports.
 - Add Japanese comments (purpose explanations) to class names, function names, and member variable names.

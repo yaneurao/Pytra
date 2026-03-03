@@ -255,7 +255,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
   - Use frontend-resolved wildcard references and fail only when wildcard cannot be resolved statically.
   - Same-name alias collision fails immediately as `duplicate_binding`.
 
-### 4. JavaScript (`src/py2js.py` + `src/common/js_ts_native_transpiler.py`)
+### 4. JavaScript (`src/py2js.py` + `src/backends/js/emitter/js_emitter.py`)
 
 - Implementation style:
   - Native AST conversion, runtime modules loaded by `require(...)`.
@@ -270,7 +270,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Consume frontend-resolved import metadata; unresolved wildcard must be rejected in frontend before JS emission.
 
-### 5. TypeScript (`src/py2ts.py` + `src/common/js_ts_native_transpiler.py`)
+### 5. TypeScript (`src/py2ts.py` + `src/backends/ts/emitter/ts_emitter.py`)
 
 - Implementation style:
   - Same conversion logic as JS (only runtime extension differs: `.ts`).
@@ -292,10 +292,10 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Go code generation.
 
-### 7. Java (`src/py2java.py` + `src/common/go_java_native_transpiler.py`)
+### 7. Java (`src/py2java.py` + `src/backends/java/emitter/java_native_emitter.py`)
 
 - Implementation style:
-  - Uses same common transpiler as Go. Java runtime is `PyRuntime.java`.
+  - EAST3 conversion via Java native emitter. Java runtime is `PyRuntime.java`.
   - Python imports are not expanded into Java import lines directly; lowered to `PyRuntime.*` calls.
 - Concrete implementation:
   - As in Go, normalize aliases first using `ImportBinding`.

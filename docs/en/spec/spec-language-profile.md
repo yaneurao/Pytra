@@ -14,19 +14,20 @@ This document defines the language-profile JSON specification used by `CodeEmitt
 
 ## 2. Placement
 
-- `src/profiles/`
-  - `common/core.json`: shared defaults for all languages
-  - `cpp/profile.json`: integrated profile for C++ (entry)
-  - `cpp/types.json`: type map
-  - `cpp/operators.json`: operator map
-  - `cpp/runtime_calls.json`: built-in / `module.attr` call map
-  - `cpp/syntax.json`: statement templates
+- `src/backends/common/profiles/`
+  - `core.json`: shared defaults for all languages
+- `src/backends/<lang>/profiles/`
+  - `profile.json`: integrated language profile (entry)
+  - `types.json`: type map
+  - `operators.json`: operator map
+  - `runtime_calls.json`: built-in / `module.attr` call map
+  - `syntax.json`: statement templates
 
 ## 3. Load Order
 
-1. `common/core.json`
-2. `include` order in `<lang>/profile.json`
-3. body of `<lang>/profile.json`
+1. `src/backends/common/profiles/core.json`
+2. `include` order in `src/backends/<lang>/profiles/profile.json`
+3. body of `src/backends/<lang>/profiles/profile.json`
 4. CLI overrides (if needed)
 
 Last-write-wins merge is the default rule.
@@ -46,7 +47,7 @@ Minimal `profile.json` example:
     "syntax.json"
   ],
   "hooks": {
-    "module": "backends.cpp.backends.cpp_hooks",
+    "module": "backends.cpp.emitter.hooks_registry",
     "factory": "build_cpp_hooks"
   }
 }
@@ -153,13 +154,13 @@ Move only branches hard to express in profiles into hooks.
 ```json
 {
   "hooks": {
-    "module": "backends.cpp.backends.cpp_hooks",
+    "module": "backends.cpp.emitter.hooks_registry",
     "factory": "build_cpp_hooks"
   }
 }
 ```
 
-Place `module` under language-specific side (e.g., `src/backends/cpp/hooks/`), not under `src/common/`.
+Place `module` under language-specific side (e.g., `src/backends/cpp/emitter/`), not under `src/backends/common/`.
 
 ## 5. Hooks Specification
 
@@ -181,7 +182,7 @@ Return values:
 ### 5.1 Implementation Location (C++)
 
 ```text
-src/backends/cpp/hooks/cpp_hooks.py
+src/backends/cpp/emitter/hooks_registry.py
 ```
 
 ## 6. Validation Rules
@@ -197,4 +198,3 @@ src/backends/cpp/hooks/cpp_hooks.py
 1. Migrate C++ first.
 2. Remove hardcoded maps in `py2cpp.py` in stages.
 3. Rename `BaseEmitter` to `CodeEmitter` while keeping compatibility with `BaseEmitter = CodeEmitter`.
-

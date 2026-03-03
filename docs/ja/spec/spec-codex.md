@@ -59,11 +59,11 @@
 
 ## 5. 実装・配置ルール
 
-- `src/common/` には言語非依存コードのみ配置します。
-- 言語固有コードは各 `py2*.py`、`src/backends/<lang>/`、`src/profiles/<lang>/`、`src/runtime/<lang>/pytra/` に配置します。
+- `src/backends/common/` には言語非依存コードのみ配置します。
+- 言語固有コードは各 `py2*.py`、`src/backends/<lang>/`、`src/backends/<lang>/profiles/`、`src/runtime/<lang>/pytra/` に配置します。
 - `src/` 直下にはトランスパイラ本体（`py2*.py`）以外を置きません。
-- `CodeEmitter` など全言語で共有可能な基底ロジックは `src/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
-- 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/common/` へ移管します。
+- `CodeEmitter` など全言語で共有可能な基底ロジックは `src/backends/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
+- 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/backends/common/` へ移管します。
 - 生成コードの補助関数は各ターゲット言語ランタイム（`src/runtime/<lang>/pytra/`）へ集約し、生成コードに重複埋め込みしません。
 - `src/*_module/` は互換レイヤ扱いとし、新規 runtime 実体ファイルを追加しません（段階撤去対象）。
 - `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
@@ -82,10 +82,10 @@
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
 - 生成物ディレクトリ（`out/`, `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
 - `out/` はローカル検証の一時出力に限定し、再生成不能な正本データは置きません。
-- `src/pytra/compiler/east_parts/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
+- `src/backends/common/emitter/code_emitter.py` を変更した場合は `test/unit/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/profiles/**`）を変更する場合は、`src/pytra/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`）を変更する場合は、`src/pytra/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
 - sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
 
 ## 7. selfhost 運用ノウハウ
