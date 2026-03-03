@@ -1,18 +1,49 @@
-"""Host-side backend registry for unified ``py2x`` frontend.
-
-This module keeps target backend imports lazy so regular host execution only loads
-modules for the selected target.
-"""
+"""Backend registry for unified ``py2x`` frontend."""
 
 from __future__ import annotations
-
-import importlib
 
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 
-
-BackendSpec = dict[str, Any]
+from backends.cs.lower import lower_east3_to_cs_ir
+from backends.cs.optimizer import optimize_cs_ir
+from backends.cs.emitter.cs_emitter import transpile_to_csharp
+from backends.go.lower import lower_east3_to_go_ir
+from backends.go.optimizer import optimize_go_ir
+from backends.go.emitter import transpile_to_go_native
+from backends.java.lower import lower_east3_to_java_ir
+from backends.java.optimizer import optimize_java_ir
+from backends.java.emitter import transpile_to_java_native
+from backends.js.lower import lower_east3_to_js_ir
+from backends.js.optimizer import optimize_js_ir
+from backends.js.emitter.js_emitter import transpile_to_js
+from backends.kotlin.lower import lower_east3_to_kotlin_ir
+from backends.kotlin.optimizer import optimize_kotlin_ir
+from backends.kotlin.emitter import transpile_to_kotlin_native
+from backends.lua.lower import lower_east3_to_lua_ir
+from backends.lua.optimizer import optimize_lua_ir
+from backends.lua.emitter import transpile_to_lua_native
+from backends.nim.emitter import transpile_to_nim_native
+from backends.php.lower import lower_east3_to_php_ir
+from backends.php.optimizer import optimize_php_ir
+from backends.php.emitter import transpile_to_php_native
+from backends.rs.lower import lower_east3_to_rs_ir
+from backends.rs.optimizer import optimize_rs_ir
+from backends.rs.emitter.rs_emitter import transpile_to_rust
+from backends.ruby.lower import lower_east3_to_ruby_ir
+from backends.ruby.optimizer import optimize_ruby_ir
+from backends.ruby.emitter import transpile_to_ruby_native
+from backends.scala.lower import lower_east3_to_scala_ir
+from backends.scala.optimizer import optimize_scala_ir
+from backends.scala.emitter import transpile_to_scala_native
+from backends.swift.lower import lower_east3_to_swift_ir
+from backends.swift.optimizer import optimize_swift_ir
+from backends.swift.emitter import transpile_to_swift_native
+from backends.ts.lower import lower_east3_to_ts_ir
+from backends.ts.optimizer import optimize_ts_ir
+from backends.ts.emitter.ts_emitter import transpile_to_typescript
+from py2cpp import transpile_to_cpp
+from pytra.compiler.js_runtime_shims import write_js_runtime_shims
 
 
 def _src_root() -> Path:
@@ -60,16 +91,80 @@ def _copy_php_runtime(output_path: Path) -> None:
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
+def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    class_name = output_path.stem if output_path.stem != "" else "Main"
+    return transpile_to_java_native(ir, class_name=class_name)
+
+
+def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
+    opts = emitter_options if isinstance(emitter_options, dict) else {}
+    negative_index_mode = str(opts.get("negative_index_mode", "const_only"))
+    bounds_check_mode = str(opts.get("bounds_check_mode", "off"))
+    floor_div_mode = str(opts.get("floor_div_mode", "native"))
+    mod_mode = str(opts.get("mod_mode", "native"))
+    return transpile_to_cpp(
+        ir,
+        negative_index_mode=negative_index_mode,
+        bounds_check_mode=bounds_check_mode,
+        floor_div_mode=floor_div_mode,
+        mod_mode=mod_mode,
+    )
+
+
+def _emit_rs(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_rust(ir)
+
+
+def _emit_cs(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_csharp(ir)
+
+
+def _emit_js(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_js(ir)
+
+
+def _emit_ts(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_typescript(ir)
+
+
+def _emit_go(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_go_native(ir)
+
+
+def _emit_kotlin(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_kotlin_native(ir)
+
+
+def _emit_swift(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_swift_native(ir)
+
+
+def _emit_ruby(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_ruby_native(ir)
+
+
+def _emit_lua(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_lua_native(ir)
+
+
+def _emit_scala(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_scala_native(ir)
+
+
+def _emit_php(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_php_native(ir)
+
+
+def _emit_nim(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return transpile_to_nim_native(ir)
+
+
 def _runtime_none(_output_path: Path) -> None:
     return
 
 
 def _runtime_js_shims(output_path: Path) -> None:
-    mod = importlib.import_module("pytra.compiler.js_runtime_shims")
-    writer = getattr(mod, "write_js_runtime_shims", None)
-    if not callable(writer):
-        raise RuntimeError("write_js_runtime_shims not found")
-    writer(output_path.parent)
+    write_js_runtime_shims(output_path.parent)
 
 
 def _runtime_rs(output_path: Path) -> None:
@@ -108,43 +203,11 @@ def _runtime_nim(output_path: Path) -> None:
     _copy_runtime_file("runtime/nim/pytra/py_runtime.nim", output_path, "py_runtime.nim")
 
 
-def _load_callable(module_name: str, symbol_name: str) -> Any:
-    mod = importlib.import_module(module_name)
-    fn = getattr(mod, symbol_name, None)
-    if fn is None:
-        raise RuntimeError("missing symbol: " + module_name + "." + symbol_name)
-    return fn
+BackendSpec = dict[str, Any]
 
 
-def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
-    emit_impl = _load_callable(module_name, symbol_name)
-
-    def _emit(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-        out = emit_impl(ir)
-        return out if isinstance(out, str) else ""
-
-    return _emit
-
-
-def _load_cpp_spec() -> BackendSpec:
-    transpile_to_cpp = _load_callable("py2cpp", "transpile_to_cpp")
-
-    def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
-        opts = emitter_options if isinstance(emitter_options, dict) else {}
-        negative_index_mode = str(opts.get("negative_index_mode", "const_only"))
-        bounds_check_mode = str(opts.get("bounds_check_mode", "off"))
-        floor_div_mode = str(opts.get("floor_div_mode", "native"))
-        mod_mode = str(opts.get("mod_mode", "native"))
-        out = transpile_to_cpp(
-            ir,
-            negative_index_mode=negative_index_mode,
-            bounds_check_mode=bounds_check_mode,
-            floor_div_mode=floor_div_mode,
-            mod_mode=mod_mode,
-        )
-        return out if isinstance(out, str) else ""
-
-    return {
+_BACKEND_SPECS: dict[str, BackendSpec] = {
+    "cpp": {
         "target_lang": "cpp",
         "extension": ".cpp",
         "lower": _identity_ir,
@@ -171,254 +234,164 @@ def _load_cpp_spec() -> BackendSpec:
                 "mod_mode": {"type": "str", "choices": ["native", "python"]},
             },
         },
-    }
-
-
-def _load_rs_spec() -> BackendSpec:
-    return {
+    },
+    "rs": {
         "target_lang": "rs",
         "extension": ".rs",
-        "lower": _load_callable("backends.rs.lower", "lower_east3_to_rs_ir"),
-        "optimizer": _load_callable("backends.rs.optimizer", "optimize_rs_ir"),
-        "emit": _make_unary_emit("backends.rs.emitter.rs_emitter", "transpile_to_rust"),
+        "lower": lower_east3_to_rs_ir,
+        "optimizer": optimize_rs_ir,
+        "emit": _emit_rs,
         "runtime_hook": _runtime_rs,
-    }
-
-
-def _load_cs_spec() -> BackendSpec:
-    return {
+    },
+    "cs": {
         "target_lang": "cs",
         "extension": ".cs",
-        "lower": _load_callable("backends.cs.lower", "lower_east3_to_cs_ir"),
-        "optimizer": _load_callable("backends.cs.optimizer", "optimize_cs_ir"),
-        "emit": _make_unary_emit("backends.cs.emitter.cs_emitter", "transpile_to_csharp"),
+        "lower": lower_east3_to_cs_ir,
+        "optimizer": optimize_cs_ir,
+        "emit": _emit_cs,
         "runtime_hook": _runtime_none,
-    }
-
-
-def _load_js_spec() -> BackendSpec:
-    return {
+    },
+    "js": {
         "target_lang": "js",
         "extension": ".js",
-        "lower": _load_callable("backends.js.lower", "lower_east3_to_js_ir"),
-        "optimizer": _load_callable("backends.js.optimizer", "optimize_js_ir"),
-        "emit": _make_unary_emit("backends.js.emitter.js_emitter", "transpile_to_js"),
+        "lower": lower_east3_to_js_ir,
+        "optimizer": optimize_js_ir,
+        "emit": _emit_js,
         "runtime_hook": _runtime_js_shims,
-    }
-
-
-def _load_ts_spec() -> BackendSpec:
-    return {
+    },
+    "ts": {
         "target_lang": "ts",
         "extension": ".ts",
-        "lower": _load_callable("backends.ts.lower", "lower_east3_to_ts_ir"),
-        "optimizer": _load_callable("backends.ts.optimizer", "optimize_ts_ir"),
-        "emit": _make_unary_emit("backends.ts.emitter.ts_emitter", "transpile_to_typescript"),
+        "lower": lower_east3_to_ts_ir,
+        "optimizer": optimize_ts_ir,
+        "emit": _emit_ts,
         "runtime_hook": _runtime_js_shims,
-    }
-
-
-def _load_go_spec() -> BackendSpec:
-    return {
+    },
+    "go": {
         "target_lang": "go",
         "extension": ".go",
-        "lower": _load_callable("backends.go.lower", "lower_east3_to_go_ir"),
-        "optimizer": _load_callable("backends.go.optimizer", "optimize_go_ir"),
-        "emit": _make_unary_emit("backends.go.emitter", "transpile_to_go_native"),
+        "lower": lower_east3_to_go_ir,
+        "optimizer": optimize_go_ir,
+        "emit": _emit_go,
         "runtime_hook": _runtime_go,
-    }
-
-
-def _load_java_spec() -> BackendSpec:
-    lower = _load_callable("backends.java.lower", "lower_east3_to_java_ir")
-    optimizer = _load_callable("backends.java.optimizer", "optimize_java_ir")
-    emit_impl = _load_callable("backends.java.emitter", "transpile_to_java_native")
-
-    def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-        class_name = output_path.stem if output_path.stem != "" else "Main"
-        out = emit_impl(ir, class_name=class_name)
-        return out if isinstance(out, str) else ""
-
-    return {
+    },
+    "java": {
         "target_lang": "java",
         "extension": ".java",
-        "lower": lower,
-        "optimizer": optimizer,
+        "lower": lower_east3_to_java_ir,
+        "optimizer": optimize_java_ir,
         "emit": _emit_java,
         "runtime_hook": _runtime_java,
-    }
-
-
-def _load_kotlin_spec() -> BackendSpec:
-    return {
+    },
+    "kotlin": {
         "target_lang": "kotlin",
         "extension": ".kt",
-        "lower": _load_callable("backends.kotlin.lower", "lower_east3_to_kotlin_ir"),
-        "optimizer": _load_callable("backends.kotlin.optimizer", "optimize_kotlin_ir"),
-        "emit": _make_unary_emit("backends.kotlin.emitter", "transpile_to_kotlin_native"),
+        "lower": lower_east3_to_kotlin_ir,
+        "optimizer": optimize_kotlin_ir,
+        "emit": _emit_kotlin,
         "runtime_hook": _runtime_kotlin,
-    }
-
-
-def _load_swift_spec() -> BackendSpec:
-    return {
+    },
+    "swift": {
         "target_lang": "swift",
         "extension": ".swift",
-        "lower": _load_callable("backends.swift.lower", "lower_east3_to_swift_ir"),
-        "optimizer": _load_callable("backends.swift.optimizer", "optimize_swift_ir"),
-        "emit": _make_unary_emit("backends.swift.emitter", "transpile_to_swift_native"),
+        "lower": lower_east3_to_swift_ir,
+        "optimizer": optimize_swift_ir,
+        "emit": _emit_swift,
         "runtime_hook": _runtime_swift,
-    }
-
-
-def _load_ruby_spec() -> BackendSpec:
-    return {
+    },
+    "ruby": {
         "target_lang": "ruby",
         "extension": ".rb",
-        "lower": _load_callable("backends.ruby.lower", "lower_east3_to_ruby_ir"),
-        "optimizer": _load_callable("backends.ruby.optimizer", "optimize_ruby_ir"),
-        "emit": _make_unary_emit("backends.ruby.emitter", "transpile_to_ruby_native"),
+        "lower": lower_east3_to_ruby_ir,
+        "optimizer": optimize_ruby_ir,
+        "emit": _emit_ruby,
         "runtime_hook": _runtime_ruby,
-    }
-
-
-def _load_lua_spec() -> BackendSpec:
-    return {
+    },
+    "lua": {
         "target_lang": "lua",
         "extension": ".lua",
-        "lower": _load_callable("backends.lua.lower", "lower_east3_to_lua_ir"),
-        "optimizer": _load_callable("backends.lua.optimizer", "optimize_lua_ir"),
-        "emit": _make_unary_emit("backends.lua.emitter", "transpile_to_lua_native"),
+        "lower": lower_east3_to_lua_ir,
+        "optimizer": optimize_lua_ir,
+        "emit": _emit_lua,
         "runtime_hook": _runtime_lua,
-    }
-
-
-def _load_scala_spec() -> BackendSpec:
-    return {
+    },
+    "scala": {
         "target_lang": "scala",
         "extension": ".scala",
-        "lower": _load_callable("backends.scala.lower", "lower_east3_to_scala_ir"),
-        "optimizer": _load_callable("backends.scala.optimizer", "optimize_scala_ir"),
-        "emit": _make_unary_emit("backends.scala.emitter", "transpile_to_scala_native"),
+        "lower": lower_east3_to_scala_ir,
+        "optimizer": optimize_scala_ir,
+        "emit": _emit_scala,
         "runtime_hook": _runtime_scala,
-    }
-
-
-def _load_php_spec() -> BackendSpec:
-    return {
+    },
+    "php": {
         "target_lang": "php",
         "extension": ".php",
-        "lower": _load_callable("backends.php.lower", "lower_east3_to_php_ir"),
-        "optimizer": _load_callable("backends.php.optimizer", "optimize_php_ir"),
-        "emit": _make_unary_emit("backends.php.emitter", "transpile_to_php_native"),
+        "lower": lower_east3_to_php_ir,
+        "optimizer": optimize_php_ir,
+        "emit": _emit_php,
         "runtime_hook": _copy_php_runtime,
-    }
-
-
-def _load_nim_spec() -> BackendSpec:
-    return {
+    },
+    "nim": {
         "target_lang": "nim",
         "extension": ".nim",
         "lower": _identity_ir,
         "optimizer": _identity_ir,
-        "emit": _make_unary_emit("backends.nim.emitter", "transpile_to_nim_native"),
+        "emit": _emit_nim,
         "runtime_hook": _runtime_nim,
-    }
-
-
-_TARGET_ORDER: list[str] = [
-    "cpp",
-    "rs",
-    "cs",
-    "js",
-    "ts",
-    "go",
-    "java",
-    "kotlin",
-    "swift",
-    "ruby",
-    "lua",
-    "scala",
-    "php",
-    "nim",
-]
-
-_TARGET_LOADERS: dict[str, Any] = {
-    "cpp": _load_cpp_spec,
-    "rs": _load_rs_spec,
-    "cs": _load_cs_spec,
-    "js": _load_js_spec,
-    "ts": _load_ts_spec,
-    "go": _load_go_spec,
-    "java": _load_java_spec,
-    "kotlin": _load_kotlin_spec,
-    "swift": _load_swift_spec,
-    "ruby": _load_ruby_spec,
-    "lua": _load_lua_spec,
-    "scala": _load_scala_spec,
-    "php": _load_php_spec,
-    "nim": _load_nim_spec,
+    },
 }
 
-_SPEC_CACHE: dict[str, BackendSpec] = {}
+
+def _normalize_backend_specs() -> None:
+    for spec in _BACKEND_SPECS.values():
+        defaults = spec.get("default_options")
+        if not isinstance(defaults, dict):
+            defaults = {}
+        default_lower = defaults.get("lower")
+        if not isinstance(default_lower, dict):
+            default_lower = {}
+        default_optimizer = defaults.get("optimizer")
+        if not isinstance(default_optimizer, dict):
+            default_optimizer = {}
+        default_emitter = defaults.get("emitter")
+        if not isinstance(default_emitter, dict):
+            default_emitter = {}
+        spec["default_options"] = {
+            "lower": dict(default_lower),
+            "optimizer": dict(default_optimizer),
+            "emitter": dict(default_emitter),
+        }
+
+        schemas = spec.get("option_schema")
+        if not isinstance(schemas, dict):
+            schemas = {}
+        schema_lower = schemas.get("lower")
+        if not isinstance(schema_lower, dict):
+            schema_lower = {}
+        schema_optimizer = schemas.get("optimizer")
+        if not isinstance(schema_optimizer, dict):
+            schema_optimizer = {}
+        schema_emitter = schemas.get("emitter")
+        if not isinstance(schema_emitter, dict):
+            schema_emitter = {}
+        spec["option_schema"] = {
+            "lower": dict(schema_lower),
+            "optimizer": dict(schema_optimizer),
+            "emitter": dict(schema_emitter),
+        }
 
 
-def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
-    defaults = spec.get("default_options")
-    if not isinstance(defaults, dict):
-        defaults = {}
-    default_lower = defaults.get("lower")
-    if not isinstance(default_lower, dict):
-        default_lower = {}
-    default_optimizer = defaults.get("optimizer")
-    if not isinstance(default_optimizer, dict):
-        default_optimizer = {}
-    default_emitter = defaults.get("emitter")
-    if not isinstance(default_emitter, dict):
-        default_emitter = {}
-    spec["default_options"] = {
-        "lower": dict(default_lower),
-        "optimizer": dict(default_optimizer),
-        "emitter": dict(default_emitter),
-    }
-
-    schemas = spec.get("option_schema")
-    if not isinstance(schemas, dict):
-        schemas = {}
-    schema_lower = schemas.get("lower")
-    if not isinstance(schema_lower, dict):
-        schema_lower = {}
-    schema_optimizer = schemas.get("optimizer")
-    if not isinstance(schema_optimizer, dict):
-        schema_optimizer = {}
-    schema_emitter = schemas.get("emitter")
-    if not isinstance(schema_emitter, dict):
-        schema_emitter = {}
-    spec["option_schema"] = {
-        "lower": dict(schema_lower),
-        "optimizer": dict(schema_optimizer),
-        "emitter": dict(schema_emitter),
-    }
-    return spec
+_normalize_backend_specs()
 
 
 def list_backend_targets() -> list[str]:
-    return list(_TARGET_ORDER)
+    return list(_BACKEND_SPECS.keys())
 
 
 def get_backend_spec(target: str) -> BackendSpec:
-    if target not in _TARGET_LOADERS:
+    if target not in _BACKEND_SPECS:
         raise RuntimeError("unsupported target: " + target)
-    cached = _SPEC_CACHE.get(target)
-    if isinstance(cached, dict):
-        return cached
-    loader = _TARGET_LOADERS[target]
-    spec_any = loader()
-    if not isinstance(spec_any, dict):
-        raise RuntimeError("invalid backend spec for target: " + target)
-    spec = _normalize_backend_spec(spec_any)
-    _SPEC_CACHE[target] = spec
-    return spec
+    return _BACKEND_SPECS[target]
 
 
 def default_output_path(input_path: Path, target: str) -> Path:
@@ -504,7 +477,7 @@ def emit_source(
     output_path: Path,
     emitter_options: dict[str, Any] | None = None,
 ) -> str:
-    fn = spec.get("emit", _identity_ir)
+    fn = spec.get("emit", _emit_cpp)
     if not callable(fn):
         return ""
     try:
