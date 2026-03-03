@@ -12,6 +12,8 @@ RUNTIME_STD_SOURCE_ROOT: Path = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT: Path = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT: Path = Path("src/toolchain/compiler")
 RUNTIME_BUILT_IN_SOURCE_ROOT: Path = Path("src/pytra/built_in")
+TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
+TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 
 def module_tail_to_cpp_header_path(module_tail: str) -> str:
@@ -49,8 +51,8 @@ def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
         tail = module_name_norm[12:]
         rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
         return rel != "" and _exists_under_runtime_roots("utils/" + rel)
-    if module_name_norm.startswith("toolchain.compiler."):
-        tail = module_name_norm[15:]
+    if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
+        tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
         rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
         return rel != "" and _exists_under_runtime_roots("compiler/" + rel)
     if module_name_norm.startswith("pytra.built_in."):
@@ -148,8 +150,8 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
         return "pytra/std/" + module_tail_to_cpp_header_path(module_name_norm[10:])
     if module_name_norm.startswith("pytra.utils."):
         return "pytra/utils/" + module_tail_to_cpp_header_path(module_name_norm[12:])
-    if module_name_norm.startswith("toolchain.compiler."):
-        return "pytra/compiler/" + module_tail_to_cpp_header_path(module_name_norm[15:])
+    if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
+        return "pytra/compiler/" + module_tail_to_cpp_header_path(module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:])
     if module_name_norm.startswith("pytra.built_in."):
         return "pytra/built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:])
     return "pytra/" + module_name_norm.replace(".", "/") + ".h"
@@ -163,7 +165,9 @@ def runtime_module_has_header(module_name_norm: str) -> bool:
         return runtime_cpp_header_exists_for_module(module_name_norm)
     if module_name_norm.startswith("pytra.utils.") and python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name_norm[12:].replace(".", "/")):
         return runtime_cpp_header_exists_for_module(module_name_norm)
-    if module_name_norm.startswith("toolchain.compiler.") and python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, module_name_norm[15:].replace(".", "/")):
+    if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX) and python_module_exists_under(
+        RUNTIME_COMPILER_SOURCE_ROOT, module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:].replace(".", "/")
+    ):
         return runtime_cpp_header_exists_for_module(module_name_norm)
     if module_name_norm.startswith("pytra.built_in.") and python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, module_name_norm[15:].replace(".", "/")):
         return runtime_cpp_header_exists_for_module(module_name_norm)

@@ -23,6 +23,8 @@ RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT = Path("src/toolchain/compiler")
 RUNTIME_BUILT_IN_SOURCE_ROOT = Path("src/pytra/built_in")
+TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
+TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 
 def _module_tail_to_cpp_header_path(module_tail: str) -> str:
@@ -47,8 +49,8 @@ class CppModuleEmitter:
             tail = module_name_norm[12:]
             if python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/utils/" + _module_tail_to_cpp_header_path(tail)
-        if module_name_norm.startswith("toolchain.compiler."):
-            tail = module_name_norm[15:]
+        if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
+            tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
             if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
                 return "pytra/compiler/" + _module_tail_to_cpp_header_path(tail)
         if module_name_norm.startswith("pytra.built_in."):
@@ -79,8 +81,8 @@ class CppModuleEmitter:
             if tail != "":
                 return "pytra::utils::" + tail.replace(".", "::")
             return ""
-        if module_name_norm.startswith("toolchain.compiler."):
-            tail = module_name_norm[15:]
+        if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
+            tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
             if tail != "":
                 return "pytra::compiler::" + tail.replace(".", "::")
             return ""

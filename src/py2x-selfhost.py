@@ -18,7 +18,7 @@ from toolchain.compiler.backend_registry_static import optimize_ir
 from toolchain.compiler.backend_registry_static import resolve_layer_options
 from toolchain.compiler.transpile_cli import add_common_transpile_args
 from toolchain.compiler.transpile_cli import load_east3_document
-from pytra.std import argparse
+from pytra.std.argparse import ArgumentParser
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
@@ -125,13 +125,14 @@ def _fatal(msg: str) -> None:
 
 
 def _print_help() -> None:
-    print(
-        "usage: py2x-selfhost.py INPUT.py --target {cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim} "
-        "[-o OUTPUT] [--parser-backend self_hosted] [--east-stage 3] [--object-dispatch-mode {native,type_id}] "
-        "[--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] "
-        "[--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--lower-option key=value] "
-        "[--optimizer-option key=value] [--emitter-option key=value]"
-    )
+    parts = [
+        "usage: py2x-selfhost.py INPUT.py --target {cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim} ",
+        "[-o OUTPUT] [--parser-backend self_hosted] [--east-stage 3] [--object-dispatch-mode {native,type_id}] ",
+        "[--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] ",
+        "[--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--lower-option key=value] ",
+        "[--optimizer-option key=value] [--emitter-option key=value]",
+    ]
+    print("".join(parts))
 
 
 def _extract_layer_options(argv: list[str]) -> object:
@@ -185,7 +186,7 @@ def main() -> int:
             _print_help()
             return 0
 
-    parser = argparse.ArgumentParser(description="Pytra unified transpiler frontend (selfhost)")
+    parser = ArgumentParser(description="Pytra unified transpiler frontend (selfhost)")
     _add_common_args(parser)
     parser.add_argument("--target", choices=_list_targets(), help="Target backend language")
     parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
@@ -228,6 +229,9 @@ def main() -> int:
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
+    lower_options: dict[str, object] = {}
+    optimizer_options: dict[str, object] = {}
+    emitter_options: dict[str, object] = {}
     try:
         lower_options = _resolve_opts(spec, "lower", lower_raw)
         optimizer_options = _resolve_opts(spec, "optimizer", optimizer_raw)

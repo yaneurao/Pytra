@@ -132,6 +132,7 @@
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja|en/how-to-use.md` の実行例を `py2x --target` + `-o` 基準へ統一し、`spec-user` の対応言語一覧も `py2x` 正規入口表記へ更新。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost 系 scripts から `src/py2cpp.py` 直参照を除去し `py2x-selfhost` 基準へ寄せたが、`build_selfhost.py` は生成 C++ コンパイル失敗が残るため本 ID は継続。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `prepare_selfhost_source.py` 生成物の host transpile を再開通（`selfhost/py2cpp.py` の missing_module/未lower method 失敗を解消）し、`check_py2cpp_transpile.py`（137/137）で回帰なしを確認。
+- 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] C++ import 解決の `toolchain.compiler.` prefix 切り出し長を修正し、`pytra::compiler::ler::*` 生成崩れを解消。`build_selfhost.py` の残件を `pytra::compiler::*` 未実体化と `pytra::std::argparse` 依存に絞り込んだ。
 - 進捗メモ: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check_legacy_cli_references.py` を追加し、`src/tools/test` の `src/py2*.py` 直参照・`import py2*` 新規流入を fail-fast 検出できるようにした。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
