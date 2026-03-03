@@ -134,6 +134,7 @@
 - 2026-03-04: Go `sample/18` 向けに class型付けを「派生を持たない class は `*Class`」へ変更し、`dict.get(default)` runtime helper と `Dict.entries` emit を追加。`TokenLike` フィールドアクセス崩れを解消した。
 - 2026-03-04: Swift emitter の `_function_params` を `_ name: Type` 形式へ変更し、定義/呼び出しの引数ラベル不整合（`missing argument labels`）を解消。`sample/01` parity `ok`（`work/logs/runtime_parity_sample_swift_case01_after_s207_20260304.json`）と全sampleコンパイルログで同種エラー消滅（`work/logs/swift_compile_all_after_s207_20260304.log`）を確認。
 - 2026-03-04: JS emitter の Call で keyword 引数（`kw_values/kw_nodes`）を位置引数へ合流するよう修正し、`save_gif(delay_cs=..., loop=...)` 欠落を解消。JS/TS PNG helper を Python と同じ stored-block zlib 方式へ置換し、`--targets js,ts --all-samples` 18件で `ok` を確認（`work/logs/runtime_parity_sample_js_ts_crc_20260304_after_s208.json`）。
+- 2026-03-04: C# mismatch 原因を切り分け、GIF 側は `save_gif(delay_cs=..., loop=...)` keyword 引数欠落、PNG 側は `py_int` の `Convert.ToInt64` 丸め誤差（Python `int()` と非互換）と確定。C# emitter で keyword 引数合流、`py_runtime.py_int` を `Math.Truncate` 準拠へ修正し、`--targets cs --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_cs_crc_20260304_after_s209.json`）。
 
 ## 分解
 
@@ -147,7 +148,7 @@
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go: sample/18 の `TokenLike` フィールドアクセス崩れを修正し、parser/tokenize 系 compile fail を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift: 関数定義と呼び出しの引数ラベル整合を修正し、全sampleをコンパイル・実行可能にする。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS: PNG/GIF helper を Python準拠バイナリ writer に合わせ、size/CRC mismatch を解消する。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C#: image系 CRC mismatch の原因（writer仕様差 or 入力変換差）を切り分け、Python準拠バイナリへ合わせる。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C#: image系 CRC mismatch の原因（writer仕様差 or 入力変換差）を切り分け、Python準拠バイナリへ合わせる。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++: sample/07,16 compile fail を修正し、06/12/14 の CRC mismatch 原因を潰して一致させる。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `cpp,rs,cs,js,ts,go,java,swift,kotlin` 全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと `docs/ja/spec` に artifact parity 運用（CRC32必須）を反映する。

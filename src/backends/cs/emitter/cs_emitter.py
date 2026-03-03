@@ -2530,13 +2530,28 @@ class CSharpEmitter(CodeEmitter):
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
         fn_kind = self.any_dict_get_str(fn_node, "kind", "")
-        args = self.any_to_list(parts.get("args"))
-        arg_nodes = self.any_to_list(parts.get("arg_nodes"))
+        args_raw = self.any_to_list(parts.get("args"))
+        kw_values_raw = self.any_to_list(parts.get("kw_values"))
+        args: list[str] = []
+        i = 0
+        while i < len(args_raw):
+            args.append(self.any_to_str(args_raw[i]))
+            i += 1
+        kw_values: list[str] = []
+        i = 0
+        while i < len(kw_values_raw):
+            kw_values.append(self.any_to_str(kw_values_raw[i]))
+            i += 1
+        args = self.merge_call_kw_values(args, kw_values)
+        arg_nodes = self.merge_call_arg_nodes(
+            self.any_to_list(parts.get("arg_nodes")),
+            self.any_to_list(parts.get("kw_nodes")),
+        )
 
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_args.append(self.any_to_str(args[i]))
+            rendered_args.append(args[i])
             i += 1
 
         if fn_kind == "Name":

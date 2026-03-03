@@ -579,6 +579,26 @@ namespace Pytra.CsModule
             {
                 throw new ArgumentException("int() argument must not be null");
             }
+            if (value is bool b)
+            {
+                return b ? 1L : 0L;
+            }
+            if (value is sbyte || value is byte || value is short || value is ushort || value is int || value is uint || value is long || value is ulong)
+            {
+                return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            }
+            if (value is float f)
+            {
+                return checked((long)Math.Truncate((double)f));
+            }
+            if (value is double d)
+            {
+                return checked((long)Math.Truncate(d));
+            }
+            if (value is decimal m)
+            {
+                return checked((long)decimal.Truncate(m));
+            }
             if (value is string s)
             {
                 string t = s.Trim();
@@ -588,7 +608,7 @@ namespace Pytra.CsModule
                 }
                 return parsed;
             }
-            return Convert.ToInt64(value);
+            return Convert.ToInt64(value, CultureInfo.InvariantCulture);
         }
 
         public static long py_floordiv(object left, object right)
