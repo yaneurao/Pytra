@@ -10,7 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2NIM = ROOT / "src" / "py2nim.py"
+PY2X = ROOT / "src" / "py2x.py"
+TARGET = "nim"
 
 CASES = [
     "test/fixtures/core/add.py",
@@ -26,7 +27,7 @@ STAGE2_REMOVED_FRAGMENT = "--east-stage 2 is no longer supported; use EAST3 (def
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2NIM), str(src), "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -43,7 +44,7 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
 
 def _run_one_stage2_must_fail(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2NIM), str(src), "--east-stage", "2", "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "--east-stage", "2", "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,

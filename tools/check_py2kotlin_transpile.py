@@ -10,7 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2KOTLIN = ROOT / "src" / "py2kotlin.py"
+PY2X = ROOT / "src" / "py2x.py"
+TARGET = "kotlin"
 
 DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/control/finally.py",
@@ -36,7 +37,7 @@ FORBIDDEN_INLINE_RUNTIME_MARKERS = [
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2KOTLIN), str(src), "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,

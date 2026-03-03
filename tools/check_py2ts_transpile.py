@@ -10,7 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2TS = ROOT / "src" / "py2ts.py"
+PY2X = ROOT / "src" / "py2x.py"
+TARGET = "ts"
 
 DEFAULT_EXPECTED_FAILS = {
     "test/fixtures/control/yield_generator_min.py",
@@ -26,7 +27,7 @@ DEFAULT_EXPECTED_FAILS = {
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2TS), str(src), "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,

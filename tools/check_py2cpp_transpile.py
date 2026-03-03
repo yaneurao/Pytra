@@ -12,6 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PY2CPP = ROOT / "src" / "py2cpp.py"
+PY2X = ROOT / "src" / "py2x.py"
+TARGET = "cpp"
 STAGE2_REMOVED_ERROR = "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
 
 DEFAULT_EXPECTED_FAILS = {
@@ -26,7 +28,7 @@ DEFAULT_EXPECTED_FAILS = {
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2CPP), str(src), "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -43,7 +45,16 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
 
 def _run_one_multifile(src: Path, out_dir: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2CPP), str(src), "--multi-file", "--output-dir", str(out_dir)],
+        [
+            "python3",
+            str(PY2X),
+            str(src),
+            "--target",
+            TARGET,
+            "--multi-file",
+            "--output-dir",
+            str(out_dir),
+        ],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -60,7 +71,7 @@ def _run_one_multifile(src: Path, out_dir: Path) -> tuple[bool, str]:
 
 def _run_one_stage2_must_fail(src: Path, out: Path) -> tuple[bool, str]:
     cp = subprocess.run(
-        ["python3", str(PY2CPP), str(src), "--east-stage", "2", "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "--east-stage", "2", "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,

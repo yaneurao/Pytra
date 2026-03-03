@@ -13,7 +13,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2SCALA = ROOT / "src" / "py2scala.py"
+PY2X = ROOT / "src" / "py2x.py"
+TARGET = "scala"
 
 
 @dataclass(frozen=True)
@@ -89,7 +90,7 @@ def _extract_failure_headline(text: str) -> str:
 
 def _run_one(src: Path, out: Path) -> RunResult:
     cp = subprocess.run(
-        ["python3", str(PY2SCALA), str(src), "-o", str(out)],
+        ["python3", str(PY2X), str(src), "--target", TARGET, "-o", str(out)],
         cwd=ROOT,
         capture_output=True,
         text=True,
