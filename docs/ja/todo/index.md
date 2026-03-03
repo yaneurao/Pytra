@@ -32,49 +32,6 @@
 
 ## 未完了タスク
 
-### P0: Nim runtime 整備で `sample/` parity 全件通過
-
-文脈: [docs/ja/plans/p0-nim-sample-parity-runtime-hardening.md](../plans/p0-nim-sample-parity-runtime-hardening.md)
-
-1. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01] Nim runtime を整備し、`sample/` の Nim parity を全件通過させる。
-2. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-01] `sample` 全件の Nim parity ベースラインを取得し、失敗ケース一覧と失敗カテゴリを確定する。
-3. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S1-02] 失敗ケースを runtime API 不足・契約不整合・emitter 側問題に切り分け、修正優先順を確定する。
-4. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-01] `py_runtime.nim` の不足 API を fail-closed で補完する。
-5. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-02] emitter と runtime の呼び出し契約を整合し、必要な出力修正を実施する。
-6. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S2-03] case 固有崩れを最小修正で解消する。
-7. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-01] `sample/nim` を再生成し、transpile/compile/runtime エラーを全件解消する。
-8. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-02] `runtime_parity_check --targets nim --ignore-unstable-stdout` 全件 pass を確認する。
-9. [x] [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `check_py2nim_transpile` と関連回帰で非退行を確認する。
-- 進捗メモ: [ID: P0-NIM-SAMPLE-PARITY-RUNTIME-01-S3-03] `sample/nim`（18ケース + `py_runtime.nim`）を再生成し、`runtime_parity_check --case-root sample --targets nim --ignore-unstable-stdout` は `cases=18 pass=18 fail=0`、`check_py2nim_transpile` は `checked=7 ok=7 fail=0` を確認。
-
-### P1: 非C++ backend 3層再整列（`Lower` / `Optimizer` / `Emitter`）
-
-文脈: [docs/ja/plans/p1-multilang-backend-3layer-realign.md](../plans/p1-multilang-backend-3layer-realign.md)
-
-1ff. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01] 非C++ backend を順次 `Lower -> Optimizer -> Emitter` の3層へ再整列し、責務境界を統一する。
-2. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務（意味決定/正規化/描画）の棚卸しを作成する。
-3. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約・fail-closed・層別禁止事項）を定義する。
-4. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ/命名/import 規約を文書化する。
-5. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Wave1: `rs` に `lower/optimizer` 骨格を導入し、`py2rs` を3層配線へ切り替える。
-6. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Wave1: `scala` に `lower/optimizer` 骨格を導入し、`py2scala` を3層配線へ切り替える。
-7. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰（unit/transpile/sample）を固定し、移行テンプレートを確定する。
-8. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2: `js/ts/cs` に同テンプレートを展開する。
-9. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave3: `go/java/kotlin/swift` に同テンプレートを展開する。
-10. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave4: `ruby/lua/php` に同テンプレートを展開する。
-11. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] 旧構成再発防止チェック（旧 import / emitter責務逆流）を追加する。
-12. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec` / `docs/en/spec` に3層標準構成を反映する。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] `src/backends/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim}` の責務棚卸しを完了し、全backendで意味決定/正規化/描画が emitter 側へ混在している事実を整理。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Lower/Optimizer/Emitter の入出力契約・禁止事項・fail-closed ルールを計画書へ明文化。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] `lower/optimizer/emitter` の命名規約と import 規約（`py2<lang>.py` は3層配線のみ）を確定。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `backends/rs/lower`・`backends/rs/optimizer` を追加し、`py2rs.py` を `lower -> optimizer -> emitter` 配線へ切替。1ケース smoke と `check_py2rs_transpile` pass で非退行を確認。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] `backends/scala/lower`・`backends/scala/optimizer` を追加し、`py2scala.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2scala_transpile` は `checked=141 ok=141 fail=0` で通過。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] `scala` の `bytearray/bytes` 戻り型と `ForCore` 条件式フォールバックを修正し、Wave1 回帰（`check_py2{rs,scala}_transpile` と `runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout`）を全通過。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `js/ts/cs` へ `lower/optimizer` 骨格を追加し `py2{js,ts,cs}` を3層配線へ切替。`check_py2{js,ts,cs}_transpile` は全通過（各 `checked=133 ok=133 fail=0 skipped=8`）。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] `go/java/kotlin/swift` へ `lower/optimizer` 骨格を追加し `py2{go,java,kotlin,swift}` を3層配線へ切替。`check_py2{go,java,kotlin,swift}_transpile` は全通過（各 `checked=131 ok=131 fail=0 skipped=10`）。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] `ruby/lua/php` へ `lower/optimizer` 骨格を追加し `py2{rb,lua,php}` を3層配線へ切替。`check_py2{rb,lua,php}_transpile` は全通過（`rb:132/132`, `lua:89/89`, `php:10/10`）。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] `check_noncpp_east3_contract.py` を 12 backend（`rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`）対応へ拡張し、3層配線必須パターンと layer逆流 import 禁止の静的ガードを追加。transpile 回帰（12本）も全通過。
-- 進捗メモ: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec/{spec-dev,spec-folder}.md` と `docs/en/spec/{spec-dev,spec-folder}.md` に3層標準構成（適用 backend、層責務、逆流禁止、検査コマンド）を反映し、P1 を完了化。
-
 ### P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
 
 文脈: [docs/ja/plans/p2-py2x-unified-frontend-rollout.md](../plans/p2-py2x-unified-frontend-rollout.md)
