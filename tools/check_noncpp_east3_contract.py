@@ -162,6 +162,20 @@ SOURCE_FORBIDDEN_PATTERNS = [
     "warning: --east-stage 2 is compatibility mode; default is 3.",
 ]
 
+LEGACY_RUNTIME_CALL_PATTERNS: dict[str, str] = {
+    "rs": "_copy_rust_runtime(output_path)",
+    "js": "write_js_runtime_shims(output_path.parent)",
+    "ts": "write_js_runtime_shims(output_path.parent)",
+    "go": "_copy_go_runtime(output_path)",
+    "java": "_copy_java_runtime(output_path)",
+    "kotlin": "_copy_kotlin_runtime(output_path)",
+    "swift": "_copy_swift_runtime(output_path)",
+    "ruby": "_copy_ruby_runtime(output_path)",
+    "lua": "_copy_lua_runtime(output_path)",
+    "php": "_copy_php_runtime(output_path)",
+    "scala": "_copy_scala_runtime(output_path)",
+}
+
 PY2X_REQUIRED_PATTERNS = [
     "--target",
     "--east-stage",
@@ -293,6 +307,11 @@ def main() -> int:
             if present_legacy_calls:
                 failures.append(
                     f"{target.lang}: {target.src_rel} wrapper contains legacy lower/optimizer calls {present_legacy_calls}"
+                )
+            runtime_call_pattern = LEGACY_RUNTIME_CALL_PATTERNS.get(target.lang, "")
+            if runtime_call_pattern != "" and runtime_call_pattern in src_text:
+                failures.append(
+                    f"{target.lang}: {target.src_rel} wrapper contains legacy runtime copy call {runtime_call_pattern}"
                 )
         else:
             missing_src = _missing_patterns(src_path, SOURCE_REQUIRED_PATTERNS)
