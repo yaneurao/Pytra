@@ -70,7 +70,7 @@
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] `src/toolchain/ir` を作成し、`src/pytra/ir` を一括移動する。
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] `src/toolchain/compiler` を作成し、`src/pytra/compiler` を一括移動する。
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` 配下の空ディレクトリ・不要残骸を除去し、`std/utils/built_in` 中心構成へ整理する。
-- [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
+- [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] CLI エントリ（`py2x.py`, `py2x-selfhost.py`, `py2*.py`）の import 経路を新構成に合わせる。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
@@ -114,3 +114,4 @@
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] `src/toolchain/ir` を新設し、`src/pytra/ir/*.py` を移動。`frontends`/`compiler.east_parts`/`test`/`tools` の参照先を `toolchain.ir.*` に更新し、`check_pytra_layer_boundaries`・`test_pytra_layer_bootstrap`・`py2cpp/py2x` 変換スモークの通過を確認した。
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] `src/toolchain/compiler` を新設し、`src/pytra/compiler` を移動。`py2x/py2*.py`・`backends/cpp`・`tools`・`test`・`selfhost` の import を `toolchain.compiler.*` へ切替え、`prepare_selfhost_source`/`signature_registry`/`east_stage_boundary` など固定パス依存も新配置へ更新した。
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` 配下から `frontends`/`ir`/`compiler` ディレクトリが消えていることを確認し、`pytra` は `std`/`utils`/`built_in` と最小エントリ（`__init__.py`, `cli.py`）のみへ収束した。
+- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/tools/test/selfhost` の import を新経路へ一括更新し、`rg` により旧 `pytra.frontends|pytra.ir|pytra.compiler`（`src.pytra.*` 含む）import が 0 件であることを確認した。

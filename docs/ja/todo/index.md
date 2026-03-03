@@ -44,7 +44,7 @@
 6. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] `src/toolchain/ir` を作成し、`src/pytra/ir` を一括移動する。
 7. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] `src/toolchain/compiler` を作成し、`src/pytra/compiler` を一括移動する。
 8. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` 配下の空ディレクトリ・不要残骸を除去し、`std/utils/built_in` 中心構成へ整理する。
-9. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
+9. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/`, `tools/`, `test/` の import を新経路へ一括更新する（shim 追加禁止）。
 10. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] CLI エントリ（`py2x.py`, `py2x-selfhost.py`, `py2*.py`）の import 経路を新構成に合わせる。
 11. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
 12. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
@@ -56,6 +56,7 @@
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] `ir` を `src/toolchain/ir` へ移動し、関連 import と層境界検査・transpile smoke を更新。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] `compiler` を `src/toolchain/compiler` へ移動し、CLI/emit/test/tooling の import・固定参照パスを更新。
 - 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] `src/pytra` から `frontends/ir/compiler` 痕跡を除去し、`std/utils/built_in` と最小エントリのみの構成を確認。
+- 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] `src/tools/test/selfhost` の import を一括更新し、旧 `pytra.(frontends|ir|compiler)` 参照が 0 件であることを確認。
 
 ### P0: PHP 画像 runtime 実装と sample/16 修復
 
