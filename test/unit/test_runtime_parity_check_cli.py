@@ -114,9 +114,16 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         target = self.rpc.Target(name="ruby", transpile_cmd="noop", run_cmd="noop", needs=())
         call_index = {"value": 0}
 
-        def _side_effect(cmd: str, cwd: Path, *, env: dict[str, str] | None = None):
+        def _side_effect(
+            cmd: str,
+            cwd: Path,
+            *,
+            env: dict[str, str] | None = None,
+            timeout_sec: int | None = None,
+        ):
             _ = cmd
             _ = env
+            _ = timeout_sec
             out_path = cwd / "tmp" / "out.bin"
             out_path.parent.mkdir(parents=True, exist_ok=True)
             idx = call_index["value"]
@@ -156,9 +163,16 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         target = self.rpc.Target(name="php", transpile_cmd="noop", run_cmd="noop", needs=())
         call_index = {"value": 0}
 
-        def _side_effect(cmd: str, cwd: Path, *, env: dict[str, str] | None = None):
+        def _side_effect(
+            cmd: str,
+            cwd: Path,
+            *,
+            env: dict[str, str] | None = None,
+            timeout_sec: int | None = None,
+        ):
             _ = cmd
             _ = env
+            _ = timeout_sec
             out_path = cwd / "tmp" / "out.bin"
             out_path.parent.mkdir(parents=True, exist_ok=True)
             idx = call_index["value"]
@@ -198,9 +212,16 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         target = self.rpc.Target(name="scala", transpile_cmd="noop", run_cmd="noop", needs=())
         call_index = {"value": 0}
 
-        def _side_effect(cmd: str, cwd: Path, *, env: dict[str, str] | None = None):
+        def _side_effect(
+            cmd: str,
+            cwd: Path,
+            *,
+            env: dict[str, str] | None = None,
+            timeout_sec: int | None = None,
+        ):
             _ = cmd
             _ = env
+            _ = timeout_sec
             out_path = cwd / "tmp" / "out.bin"
             out_path.parent.mkdir(parents=True, exist_ok=True)
             idx = call_index["value"]
