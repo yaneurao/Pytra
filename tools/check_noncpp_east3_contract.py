@@ -162,6 +162,18 @@ SOURCE_FORBIDDEN_PATTERNS = [
     "warning: --east-stage 2 is compatibility mode; default is 3.",
 ]
 
+PY2X_REQUIRED_PATTERNS = [
+    "--target",
+    "--east-stage",
+    'choices=["2", "3"]',
+    "--object-dispatch-mode",
+    "--east-stage 2 is no longer supported; use EAST3 (default).",
+    "resolve_layer_options(",
+    "lower_ir(",
+    "optimize_ir(",
+    "emit_source(",
+]
+
 SMOKE_REQUIRED_PATTERNS = [
     "test_load_east_defaults_to_stage3_entry_and_returns_east3_shape",
     "test_cli_rejects_stage2_compat_mode",
@@ -253,32 +265,58 @@ def main() -> int:
     args = ap.parse_args()
 
     failures: list[str] = []
+    py2x_path = ROOT / "src" / "py2x.py"
+    missing_py2x = _missing_patterns(py2x_path, PY2X_REQUIRED_PATTERNS)
+    if missing_py2x:
+        failures.append(f"py2x: src/py2x.py missing {missing_py2x}")
+
     for target in TARGETS:
         src_path = ROOT / target.src_rel
         smoke_path = ROOT / target.smoke_rel
-        missing_src = _missing_patterns(src_path, SOURCE_REQUIRED_PATTERNS)
-        missing_src.extend(
-            _missing_patterns(
+        src_text = src_path.read_text(encoding="utf-8") if src_path.exists() else ""
+        wrapper_patterns = [
+            "from pytra.compiler.py2x_wrapper import run_py2x_for_target",
+            f'run_py2x_for_target("{target.lang}"',
+        ]
+        is_wrapper = src_text != "" and all(pattern in src_text for pattern in wrapper_patterns)
+        if is_wrapper:
+            missing_wrapper = _missing_patterns(src_path, wrapper_patterns)
+            if missing_wrapper:
+                failures.append(f"{target.lang}: {target.src_rel} missing {missing_wrapper}")
+            present_legacy_calls = _present_patterns(
                 src_path,
                 [
-                    target.lower_import_pattern,
-                    target.optimizer_import_pattern,
                     target.lower_call_pattern,
                     target.optimizer_call_pattern,
                 ],
             )
-        )
-        if missing_src:
-            failures.append(f"{target.lang}: {target.src_rel} missing {missing_src}")
-
-        if src_path.exists():
-            src_text = src_path.read_text(encoding="utf-8")
-            lower_pos = src_text.find(target.lower_call_pattern)
-            optimizer_pos = src_text.find(target.optimizer_call_pattern)
-            if lower_pos >= 0 and optimizer_pos >= 0 and lower_pos > optimizer_pos:
+            if present_legacy_calls:
                 failures.append(
-                    f"{target.lang}: {target.src_rel} lower/optimizer call order reversed"
+                    f"{target.lang}: {target.src_rel} wrapper contains legacy lower/optimizer calls {present_legacy_calls}"
                 )
+        else:
+            missing_src = _missing_patterns(src_path, SOURCE_REQUIRED_PATTERNS)
+            missing_src.extend(
+                _missing_patterns(
+                    src_path,
+                    [
+                        target.lower_import_pattern,
+                        target.optimizer_import_pattern,
+                        target.lower_call_pattern,
+                        target.optimizer_call_pattern,
+                    ],
+                )
+            )
+            if missing_src:
+                failures.append(f"{target.lang}: {target.src_rel} missing {missing_src}")
+
+            if src_path.exists():
+                lower_pos = src_text.find(target.lower_call_pattern)
+                optimizer_pos = src_text.find(target.optimizer_call_pattern)
+                if lower_pos >= 0 and optimizer_pos >= 0 and lower_pos > optimizer_pos:
+                    failures.append(
+                        f"{target.lang}: {target.src_rel} lower/optimizer call order reversed"
+                    )
 
         present_src = _present_patterns(src_path, SOURCE_FORBIDDEN_PATTERNS)
         if present_src:

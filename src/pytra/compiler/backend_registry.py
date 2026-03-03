@@ -80,6 +80,7 @@ def _copy_php_runtime(output_path: Path) -> None:
         "py_runtime.php",
         "runtime/png.php",
         "runtime/gif.php",
+        "std/time.php",
     ]
     for rel in files:
         src = src_root / rel

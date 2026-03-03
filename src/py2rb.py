@@ -8,6 +8,7 @@ from pytra.std.typing import Any
 from backends.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
 from backends.ruby.lower import lower_east3_to_ruby_ir
 from backends.ruby.optimizer import optimize_ruby_ir
+from pytra.compiler.py2x_wrapper import run_py2x_for_target
 from pytra.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -79,59 +80,8 @@ def _copy_ruby_runtime(output_path: Path) -> None:
 
 
 def main() -> int:
-    """CLI 入口。"""
-    parser = argparse.ArgumentParser(description="Pytra EAST -> Ruby transpiler")
-    add_common_transpile_args(parser, parser_backends=["self_hosted"])
-    parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
-    parser.add_argument(
-        "--object-dispatch-mode",
-        choices=["native", "type_id"],
-        help="Object boundary dispatch mode used by EAST2->EAST3 lowering",
-    )
-    args = parser.parse_args()
-    if not isinstance(args, dict):
-        raise RuntimeError("argparse result must be dict")
-
-    input_path = Path(_arg_get_str(args, "input"))
-    output_text = _arg_get_str(args, "output")
-    output_path = Path(output_text) if output_text != "" else _default_output_path(input_path)
-    parser_backend = _arg_get_str(args, "parser_backend")
-    if parser_backend == "":
-        parser_backend = "self_hosted"
-    east_stage = _arg_get_str(args, "east_stage")
-    if east_stage == "":
-        east_stage = "3"
-    object_dispatch_mode = _arg_get_str(args, "object_dispatch_mode")
-    if object_dispatch_mode == "":
-        object_dispatch_mode = "native"
-    east3_opt_level = _arg_get_str(args, "east3_opt_level")
-    if east3_opt_level == "":
-        east3_opt_level = "1"
-    east3_opt_pass = _arg_get_str(args, "east3_opt_pass")
-    dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
-    dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
-    dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
-    if east_stage == "2":
-        parser.error("--east-stage 2 is no longer supported; use EAST3 (default).")
-
-    east = load_east(
-        input_path,
-        parser_backend=parser_backend,
-        east_stage=east_stage,
-        object_dispatch_mode=object_dispatch_mode,
-        east3_opt_level=east3_opt_level,
-        east3_opt_pass=east3_opt_pass,
-        dump_east3_before_opt=dump_east3_before_opt,
-        dump_east3_after_opt=dump_east3_after_opt,
-        dump_east3_opt_trace=dump_east3_opt_trace,
-    )
-    ruby_ir = lower_east3_to_ruby_ir(east)
-    ruby_ir = optimize_ruby_ir(ruby_ir)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    ruby_src = transpile_to_ruby_native(ruby_ir)
-    output_path.write_text(ruby_src, encoding="utf-8")
-    _copy_ruby_runtime(output_path)
-    return 0
+    """CLI 入口。互換ラッパとして py2x へ委譲する。"""
+    return run_py2x_for_target("ruby")
 
 
 if __name__ == "__main__":

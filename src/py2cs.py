@@ -8,6 +8,7 @@ from pytra.std.typing import Any
 from backends.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
 from backends.cs.lower import lower_east3_to_cs_ir
 from backends.cs.optimizer import optimize_cs_ir
+from pytra.compiler.py2x_wrapper import run_py2x_for_target
 from pytra.compiler.transpile_cli import load_east3_document
 from pytra.std.pathlib import Path
 from pytra.std import sys
@@ -148,84 +149,9 @@ def parse_py2cs_argv(argv: list[str]) -> dict[str, str]:
     return out
 
 
-def main(argv: list[str]) -> int:
-    """CLI 入口。"""
-    parsed = parse_py2cs_argv(argv)
-    parse_error = _arg_get_str(parsed, "__error")
-    usage_text = (
-        "usage: py2cs.py INPUT.py [-o OUTPUT.cs] [--parser-backend self_hosted] "
-        "[--east-stage 3] [--object-dispatch-mode {native,type_id}] "
-        "[--east3-opt-level {0,1,2}] [--east3-opt-pass SPEC] "
-        "[--dump-east3-before-opt PATH] [--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH]"
-    )
-    if parse_error != "":
-        print("error: " + parse_error, file=sys.stderr)
-        return 1
-    if _arg_get_str(parsed, "help") == "1":
-        print(usage_text, file=sys.stderr)
-        return 0
-
-    input_txt = _arg_get_str(parsed, "input")
-    if input_txt == "":
-        print(usage_text, file=sys.stderr)
-        return 1
-
-    parser_backend = _arg_get_str(parsed, "parser_backend")
-    if parser_backend not in {"", "self_hosted"}:
-        print("error: invalid --parser-backend: " + parser_backend, file=sys.stderr)
-        return 1
-    if parser_backend == "":
-        parser_backend = "self_hosted"
-
-    east_stage = _arg_get_str(parsed, "east_stage")
-    if east_stage not in {"", "3"}:
-        if east_stage == "2":
-            print("error: --east-stage 2 is no longer supported; use EAST3 (default).", file=sys.stderr)
-        else:
-            print("error: invalid --east-stage: " + east_stage, file=sys.stderr)
-        return 1
-    if east_stage == "":
-        east_stage = "3"
-
-    object_dispatch_mode = _arg_get_str(parsed, "object_dispatch_mode")
-    if object_dispatch_mode not in {"", "native", "type_id"}:
-        print("error: invalid --object-dispatch-mode: " + object_dispatch_mode, file=sys.stderr)
-        return 1
-    if object_dispatch_mode == "":
-        object_dispatch_mode = "native"
-
-    east3_opt_level = _arg_get_str(parsed, "east3_opt_level")
-    if east3_opt_level not in {"", "0", "1", "2"}:
-        print("error: invalid --east3-opt-level: " + east3_opt_level, file=sys.stderr)
-        return 1
-    if east3_opt_level == "":
-        east3_opt_level = "1"
-
-    input_path = Path(input_txt)
-    output_text = _arg_get_str(parsed, "output")
-    output_path = Path(output_text) if output_text != "" else _default_output_path(input_path)
-    east3_opt_pass = _arg_get_str(parsed, "east3_opt_pass")
-    dump_east3_before_opt = _arg_get_str(parsed, "dump_east3_before_opt")
-    dump_east3_after_opt = _arg_get_str(parsed, "dump_east3_after_opt")
-    dump_east3_opt_trace = _arg_get_str(parsed, "dump_east3_opt_trace")
-
-    east = load_east(
-        input_path,
-        parser_backend,
-        east_stage,
-        object_dispatch_mode,
-        east3_opt_level,
-        east3_opt_pass,
-        dump_east3_before_opt,
-        dump_east3_after_opt,
-        dump_east3_opt_trace,
-    )
-    cs_ir = lower_east3_to_cs_ir(east)
-    cs_ir = optimize_cs_ir(cs_ir)
-    cs_src = transpile_to_csharp(cs_ir)
-    output_path.parent.mkdir(True, True)
-    output_path.write_text(cs_src, "utf-8")
-    return 0
+def main(argv: list[str] | None = None) -> int:
+    """CLI 入口。互換ラッパとして py2x へ委譲する。"""
+    return run_py2x_for_target("cs", argv_override=argv)
 
 
 if __name__ == "__main__":
