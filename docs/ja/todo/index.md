@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p0-src-layout-toolchain-pytra-runtime-split.md](../plans/p0-src-layout-toolchain-pytra-runtime-split.md)
 
 1. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01] `src` を責務別に再編し、`src/pytra` から変換プログラム本体を分離する（後方互換なし）。
-2. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
+2. [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
 3. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] 新レイアウト規約（`toolchain` / `pytra` / `runtime`）と依存方向を `docs/ja/spec-folder.md` に確定する。
 4. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] 旧 import 経路を禁止する移行ルール（後方互換なし）を明文化する。
 5. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-01] `src/toolchain/frontends` を作成し、`src/pytra/frontends` を一括移動する。
@@ -49,6 +49,7 @@
 11. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] 検査スクリプトを追加し、旧 `pytra.frontends|ir|compiler` 参照を fail-fast で検出する。
 12. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
 13. [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新ディレクトリ責務と導線を反映する。
+- 進捗メモ: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] `src/pytra` 6領域の責務/参照点を棚卸しし、`compiler` 依存集中と `frontends`↔`ir` 循環を確認。
 
 ### P0: PHP 画像 runtime 実装と sample/16 修復
 

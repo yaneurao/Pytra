@@ -63,7 +63,7 @@
 
 ## 分解
 
-- [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
+- [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] 現行 `src/pytra/{frontends,ir,compiler,std,utils,built_in}` の責務と参照点を棚卸しする。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-02] 新レイアウト規約（`toolchain` / `pytra` / `runtime`）と依存方向を `docs/ja/spec-folder.md` に確定する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] 旧 import 経路を禁止する移行ルール（後方互換なし）を明文化する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-01] `src/toolchain/frontends` を作成し、`src/pytra/frontends` を一括移動する。
@@ -76,6 +76,35 @@
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] 主要 unit/transpile 回帰を実行し、非退行を確認する。
 - [ ] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新ディレクトリ責務と導線を反映する。
 
+## S1-01 棚卸し結果
+
+### `src/pytra` 配下の責務（現状）
+
+| 領域 | `.py` ファイル数 | 主責務 | 主な外部参照点 |
+|---|---:|---|---|
+| `frontends` | 7 | Python入力の解析・import graph 構築・シグネチャ/semantic 判定 | `src/py2cpp.py`, `pytra.compiler.transpile_cli`, `pytra.ir.core` |
+| `ir` | 30 | EAST1/2/3 定義・lower・optimizer・pipeline | `pytra.frontends.transpile_cli`, `pytra.compiler.east_parts.*` |
+| `compiler` | 44 | 互換 shim・backend registry・CLI 補助・`east_parts` 互換レイヤ | `src/py2*.py`, `src/ir2lang.py`, `tools/*`, `test/unit/*` |
+| `std` | 19 | 変換時に解決する std 互換層（`typing/pathlib/json/...`） | `src/py2*.py`, `src/backends/*`, `test/fixtures/stdlib/*` |
+| `utils` | 4 | 変換対象コード側で使う helper（`assertions/png/gif`） | `sample/py/*`, `test/fixtures/*`, `tools/verify_image_runtime_parity.py` |
+| `built_in` | 2 | built-in 互換補助（`type_id` など） | `test/unit/test_pytra_built_in_type_id.py` |
+
+### 参照点の実測（`src/tools/test`）
+
+- `frontends`: 105 参照（`src:104 / tools:0 / test:1`）
+- `ir`: 247 参照（`src:246 / tools:0 / test:1`）
+- `compiler`: 275 参照（`src:102 / tools:10 / test:163`）
+- `std`: 526 参照（`src:432 / tools:2 / test:92`）
+- `utils`: 211 参照（`src:0 / tools:1 / test:210`）
+- `built_in`: 1 参照（`src:0 / tools:0 / test:1`）
+
+### 依存方向の所見（S2/S3 で解消対象）
+
+- `frontends -> ir` と `ir -> frontends` が共存しており、循環参照が存在する（`transpile_cli` と `ir.core` が相互依存）。
+- `compiler` は既に互換 shim 層として機能しており、`src/py2*.py` / `tools` / `test` からの集中依存点になっている。
+- `std/utils/built_in` は変換実行時の参照ライブラリとして広く使われているため、`toolchain` 側へ移す対象ではない。
+
 決定ログ:
 - 2026-03-03: ユーザー指示により、`src` の責務境界を `toolchain` / `pytra` / `runtime` の3系統へ再編する計画を P0 として起票。
 - 2026-03-03: 後方互換レイヤ（旧 import re-export）は不要と判断し、移行時に旧経路を一括撤去する方針を採用。
+- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-01] `src/pytra` 6領域の責務と参照点を棚卸しし、`compiler` への依存集中と `frontends`/`ir` の循環参照を確認した。
