@@ -60,7 +60,7 @@
 - [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `src/pytra/frontends` / `src/pytra/ir` を新設し、最小 bootstrap モジュールを配置する。
 - [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] Python入力〜EAST1 生成の frontends 相当モジュールを `src/pytra/frontends` へ移設する。
 - [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-03] EAST1/2/3・lower/optimizer/analysis の IR 相当モジュールを `src/pytra/ir` へ移設する。
-- [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `src/pytra/compiler` を互換 shim 化し、既存 import を壊さない re-export 導線を整備する。
+- [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `src/pytra/compiler` を互換 shim 化し、既存 import を壊さない re-export 導線を整備する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-01] 境界ガード（禁止 import / 逆流依存）を追加し、再発防止を固定する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-02] 主要 unit/transpile 回帰を実行して非退行を確認する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ新責務境界と移行方針を反映する。
@@ -116,3 +116,5 @@ S1-02 で固定した境界ルール:
 - 2026-03-03: IR 本体として `src/pytra/ir/{core,east1,east2,east3,east2_to_east3_lowering,east3_optimizer,east_io}.py` と `src/pytra/ir/east3_opt_passes/*` を新設し、旧 `src/pytra/compiler/east_parts/*` 側は互換 shim 化した。
 - 2026-03-03: `transpile_cli` と `frontends/east1_build` の EAST stage 参照を `pytra.ir.*` へ切替。`ir/east_io` が `compiler.east` 経由で循環する問題は `ir.core` 直接参照へ変更して解消した。
 - 2026-03-03: IR移設後の回帰として `test_east{2_to_east3_lowering,3_optimizer,3_non_escape_interprocedural_pass,3_lifetime_analysis_pass}`、`check_py2{cpp,rs,js}_transpile.py`、`check_noncpp_east3_contract --skip-transpile`、`check_transpiler_version_gate --base-ref HEAD` を実行し通過を確認した。
+- 2026-03-03: `src/pytra/frontends/transpile_cli.py` へ `transpile_cli` 実体を移設し、旧 `src/pytra/compiler/transpile_cli.py` は互換 shim 化した。`python_frontend` は新経路（`pytra.frontends.transpile_cli`）参照へ切替した。
+- 2026-03-03: 互換導線検証として `test_py2x_cli.py`, `test_pytra_layer_bootstrap.py`, `test_stdlib_signature_registry.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD` を再実行し通過を確認した。
