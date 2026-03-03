@@ -2,15 +2,13 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const zlib = require("node:zlib");
 
-function chunk(chunkType, data) {
-  const length = Buffer.alloc(4);
-  length.writeUInt32BE(data.length, 0);
-  const crcInput = Buffer.concat([Buffer.from(chunkType, "ascii"), data]);
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(crcInput) >>> 0, 0);
-  return Buffer.concat([length, Buffer.from(chunkType, "ascii"), data, crc]);
+function u16le(v) {
+  return Buffer.from([v & 0xff, (v >>> 8) & 0xff]);
+}
+
+function u32be(v) {
+  return Buffer.from([(v >>> 24) & 0xff, (v >>> 16) & 0xff, (v >>> 8) & 0xff, v & 0xff]);
 }
 
 function crc32(buf) {
@@ -25,7 +23,45 @@ function crc32(buf) {
       }
     }
   }
-  return ~crc;
+  return (~crc) >>> 0;
+}
+
+function adler32(buf) {
+  const mod = 65521;
+  let s1 = 1;
+  let s2 = 0;
+  for (let i = 0; i < buf.length; i += 1) {
+    s1 += buf[i];
+    if (s1 >= mod) {
+      s1 -= mod;
+    }
+    s2 += s1;
+    s2 %= mod;
+  }
+  return (((s2 << 16) >>> 0) | (s1 & 0xffff)) >>> 0;
+}
+
+function zlibDeflateStore(data) {
+  const out = [];
+  out.push(Buffer.from([0x78, 0x01]));
+  let pos = 0;
+  while (pos < data.length) {
+    const remain = data.length - pos;
+    const chunkLen = remain > 65535 ? 65535 : remain;
+    const final = pos + chunkLen >= data.length ? 1 : 0;
+    out.push(Buffer.from([final]));
+    out.push(u16le(chunkLen));
+    out.push(u16le((0xffff ^ chunkLen) & 0xffff));
+    out.push(data.subarray(pos, pos + chunkLen));
+    pos += chunkLen;
+  }
+  out.push(u32be(adler32(data)));
+  return Buffer.concat(out);
+}
+
+function chunk(chunkType, data) {
+  const crcInput = Buffer.concat([Buffer.from(chunkType, "ascii"), data]);
+  return Buffer.concat([u32be(data.length >>> 0), Buffer.from(chunkType, "ascii"), data, u32be(crc32(crcInput))]);
 }
 
 function write_rgb_png(outPath, width, height, pixels) {
@@ -52,7 +88,7 @@ function write_rgb_png(outPath, width, height, pixels) {
   ihdr[11] = 0;
   ihdr[12] = 0;
 
-  const idat = zlib.deflateSync(scanlines, { level: 6 });
+  const idat = zlibDeflateStore(scanlines);
   const png = Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", ihdr),
