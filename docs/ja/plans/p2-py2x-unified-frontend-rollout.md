@@ -58,7 +58,7 @@
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
-- [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
 - [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
@@ -211,6 +211,21 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
   - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option negative_index_mode=always --emitter-option bounds_check_mode=debug -o /tmp/py2x_cpp_opt.cpp`
   - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option unknown_key=1 -o /tmp/py2x_cpp_bad.cpp`（`exit=2` を確認）
 
+## S2-03 実装（2026-03-03）
+
+- 追加:
+  - `src/pytra/compiler/py2x_wrapper.py`
+- 実装内容:
+  - 既存 frontend の `main` を `run_py2x_for_target("<lang>")` へ委譲する thin wrapper へ切り替え。
+  - 対象: `py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}.py`
+  - `py2cs.py` は既存の `main(argv)` 呼び出し形を維持するため、`argv_override` 経由で委譲。
+  - `tools/check_noncpp_east3_contract.py` を wrapper 契約対応に更新し、`旧実装` と `py2x thin wrapper` の両方を静的検査で許容。
+  - `py2x` の PHP runtime hook に `pytra/std/time.php` コピーを追加し、`py2php` ラッパ化後も既存契約を維持。
+- 実行確認:
+  - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
+  - `python3 -m unittest discover -s test/unit -p test_east2_to_east3_lowering.py`
+  - `python3 tools/check_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile.py`
+
 決定ログ:
 - 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
@@ -219,3 +234,4 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint/default options/schema/runtime hook/compat wrapper）を定義し、S2 実装の受け入れインタフェースを固定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` と `backend_registry.py` の初版を実装し、共通 EAST3 入力処理 + target dispatch + runtime hook 実行を導入した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser と schema 検証を `py2x/backend_registry` に実装し、unknown key/invalid value を fail-fast で検出するようにした。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 非C++ `py2*.py` を `run_py2x_for_target` へ段階委譲し、互換 CLI を維持したまま thin wrapper 化を完了。静的契約検査は wrapper/旧実装の両対応へ更新し、`py2php` の runtime コピー漏れ（`pytra/std/time.php`）を補完して transpile 回帰を復旧した。

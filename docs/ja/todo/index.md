@@ -51,7 +51,7 @@
 
 文脈: [docs/ja/plans/p1-multilang-backend-3layer-realign.md](../plans/p1-multilang-backend-3layer-realign.md)
 
-1. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01] 非C++ backend を順次 `Lower -> Optimizer -> Emitter` の3層へ再整列し、責務境界を統一する。
+1ff. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01] 非C++ backend を順次 `Lower -> Optimizer -> Emitter` の3層へ再整列し、責務境界を統一する。
 2. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務（意味決定/正規化/描画）の棚卸しを作成する。
 3. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] 3層契約（LangIR最小契約・fail-closed・層別禁止事項）を定義する。
 4. [x] [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ/命名/import 規約を文書化する。
@@ -85,7 +85,7 @@
 4. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
 5. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 6. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
-7. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
+7. [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 8. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
 9. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-01] CLI 単体テストを追加し、target dispatch と層別 option 伝搬を固定する。
 10. [ ] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S3-02] 既存 transpile check 群を `py2x` 経由でも通し、言語横断で非退行を確認する。
@@ -95,6 +95,7 @@
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry の必須契約（entrypoint, default options, schema, runtime hook, compat wrapper）を定義し、S2 実装インタフェースを固定。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `src/py2x.py` と `src/pytra/compiler/backend_registry.py` を追加し、14 target の共通 EAST3 入力 + dispatch + runtime hook の初版を実装（`--help` と複数 target 変換を確認）。
 - 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] `--lower/--optimizer/--emitter-option key=value` の抽出と schema 検証を実装し、`cpp.emitter` で有効値反映・未知 key の fail-fast（exit=2）を確認。
+- 進捗メモ: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] `py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}.py` を `run_py2x_for_target` 薄ラッパへ切替し、`check_noncpp_east3_contract --skip-transpile`・`test_east2_to_east3_lowering`・各 transpile check（php runtime `std/time.php` 補完含む）で非退行を確認。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
