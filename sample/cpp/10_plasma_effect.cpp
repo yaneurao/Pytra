@@ -13,7 +13,7 @@ void run_10_plasma_effect() {
     str out_path = "sample/out/10_plasma_effect.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
@@ -31,7 +31,7 @@ void run_10_plasma_effect() {
                 frame[row_base + x] = c;
             }
         }
-        frames.append(bytes(frame));
+        frames.append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, pytra::utils::gif::grayscale_palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

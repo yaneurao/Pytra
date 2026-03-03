@@ -4,7 +4,7 @@ import Foundation
 // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
 func render(values: [Any], w: Int64, h: Int64) -> [Any] {
-    var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+    var frame: [Any] = __pytra_bytearray((w * h))
     var n: Int64 = __pytra_len(values)
     var bar_w: Double = (__pytra_float(w) / __pytra_float(n))
     var __hoisted_cast_1: Double = __pytra_float(n)
@@ -29,7 +29,7 @@ func render(values: [Any], w: Int64, h: Int64) -> [Any] {
         }
         i += 1
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 func run_12_sort_visualizer() {

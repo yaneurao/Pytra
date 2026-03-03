@@ -12,7 +12,7 @@ func run_15_wave_interference_loop() {
     var frames: [Any] = __pytra_as_list([])
     var t = __pytra_int(Int64(0))
     while (t < __pytra_int(frames_n)) {
-        var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: [Any] = __pytra_bytearray((w * h))
         var phase: Double = (__pytra_float(t) * Double(0.12))
         var y = __pytra_int(Int64(0))
         while (y < __pytra_int(h)) {

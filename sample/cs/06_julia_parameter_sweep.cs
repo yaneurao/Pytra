@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using math = Pytra.CsModule.math;
 
@@ -17,7 +21,7 @@ public static class Program
         Pytra.CsModule.py_runtime.py_set(palette, 2, 0);
         long i = 1;
         for (i = 1; i < 256; i += 1) {
-            double t = (i - 1) / 254.0;
+            double t = System.Convert.ToDouble((i - 1)) / System.Convert.ToDouble(254.0);
             long r = Pytra.CsModule.py_runtime.py_int(255.0 * 9.0 * (1.0 - t) * t * t * t);
             long g = Pytra.CsModule.py_runtime.py_int(255.0 * 15.0 * (1.0 - t) * (1.0 - t) * t * t);
             long b = Pytra.CsModule.py_runtime.py_int(255.0 * 8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t);
@@ -36,10 +40,10 @@ public static class Program
         long y = 0;
         for (y = 0; y < height; y += 1) {
             long row_base = y * width;
-            double zy0 = -1.2 + 2.4 * (y / __hoisted_cast_1);
+            double zy0 = -1.2 + 2.4 * (System.Convert.ToDouble(y) / System.Convert.ToDouble(__hoisted_cast_1));
             long x = 0;
             for (x = 0; x < width; x += 1) {
-                double zx = -1.8 + 3.6 * (x / __hoisted_cast_2);
+                double zx = -1.8 + 3.6 * (System.Convert.ToDouble(x) / System.Convert.ToDouble(__hoisted_cast_2));
                 double zy = zy0;
                 long i = 0;
                 while (i < max_iter) {
@@ -86,7 +90,7 @@ public static class Program
         double __hoisted_cast_3 = System.Convert.ToDouble(frames_n);
         long i = 0;
         for (i = 0; i < frames_n; i += 1) {
-            double t = (i + start_offset) % frames_n / __hoisted_cast_3;
+            double t = System.Convert.ToDouble((i + start_offset) % frames_n) / System.Convert.ToDouble(__hoisted_cast_3);
             var angle = 2.0 * Pytra.CsModule.math.pi * t;
             var cr = center_cr + radius_cr * Pytra.CsModule.math.cos(angle);
             var ci = center_ci + radius_ci * Pytra.CsModule.math.sin(angle);

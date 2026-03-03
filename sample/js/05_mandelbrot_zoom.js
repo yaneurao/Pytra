@@ -1,18 +1,16 @@
 import { perf_counter } from "./pytra/std/time.js";
-import { grayscale_palette } from "./pytra/runtime/gif.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { grayscale_palette } from "./pytra/utils/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 function render_frame(width, height, center_x, center_y, scale, max_iter) {
     let frame = (typeof (width * height) === "number" ? new Array(Math.max(0, Math.trunc(Number((width * height))))).fill(0) : (Array.isArray((width * height)) ? (width * height).slice() : Array.from((width * height))));
     let __hoisted_cast_1 = Number(max_iter);
-    const __start_1 = 0;
-    for (let y = __start_1; y < height; y += 1) {
+    for (let y = 0; y < height; y += 1) {
         let row_base = y * width;
         let cy = center_y + (y - height * 0.5) * scale;
-        const __start_2 = 0;
-        for (let x = __start_2; x < width; x += 1) {
+        for (let x = 0; x < width; x += 1) {
             let cx = center_x + (x - width * 0.5) * scale;
             let zx = 0.0;
             let zy = 0.0;
@@ -47,8 +45,7 @@ function run_05_mandelbrot_zoom() {
     let start = perf_counter();
     let frames = [];
     let scale = base_scale;
-    const __start_3 = 0;
-    for (let _ = __start_3; _ < frame_count; _ += 1) {
+    for (let _ = 0; _ < frame_count; _ += 1) {
         frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;
     }

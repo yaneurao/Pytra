@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 
 public static class Program
@@ -11,7 +15,7 @@ public static class Program
     {
         List<byte> frame = Pytra.CsModule.py_runtime.py_bytearray(w * h);
         long n = (values).Count;
-        double bar_w = w / n;
+        double bar_w = System.Convert.ToDouble(w) / System.Convert.ToDouble(n);
         double __hoisted_cast_1 = System.Convert.ToDouble(n);
         double __hoisted_cast_2 = System.Convert.ToDouble(h);
         long i = 0;
@@ -21,7 +25,7 @@ public static class Program
             if (x1 <= x0) {
                 x1 = x0 + 1;
             }
-            long bh = Pytra.CsModule.py_runtime.py_int((Pytra.CsModule.py_runtime.py_get(values, i) / __hoisted_cast_1) * __hoisted_cast_2);
+            long bh = Pytra.CsModule.py_runtime.py_int((System.Convert.ToDouble(Pytra.CsModule.py_runtime.py_get(values, i)) / System.Convert.ToDouble(__hoisted_cast_1)) * __hoisted_cast_2);
             long y = h - bh;
             for (y = y; y < h; y += 1) {
                 long x = x0;

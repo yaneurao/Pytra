@@ -8,22 +8,14 @@ use crate::pytra::utils::gif::save_gif;
 
 // 07: Sample that outputs Game of Life evolution as a GIF.
 
-fn next_state(grid: &Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
+fn next_state(grid: &[Vec<i64>], w: i64, h: i64) -> Vec<Vec<i64>> {
     let mut nxt: Vec<Vec<i64>> = vec![];
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(h) {
-        y = __for_i_1;
+    for y in (0)..(h) {
             let mut row: Vec<i64> = vec![];
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(w) {
-                x = __for_i_2;
+            for x in (0)..(w) {
                     let mut cnt = 0;
-                    let mut dy: i64 = -1;
-                    for __for_i_3 in (-1)..(2) {
-                        dy = __for_i_3;
-                            let mut dx: i64 = -1;
-                            for __for_i_4 in (-1)..(2) {
-                                dx = __for_i_4;
+                    for dy in (-1)..(2) {
+                            for dx in (-1)..(2) {
                                     if (dx != 0) || (dy != 0) {
                                         let nx = (x + dx + w) % w;
                                         let ny = (y + dy + h) % h;
@@ -45,27 +37,19 @@ fn next_state(grid: &Vec<Vec<i64>>, w: i64, h: i64) -> Vec<Vec<i64>> {
     return nxt;
 }
 
-fn render(grid: &Vec<Vec<i64>>, w: i64, h: i64, cell: i64) -> Vec<u8> {
+fn render(grid: &[Vec<i64>], w: i64, h: i64, cell: i64) -> Vec<u8> {
     let width = w * cell;
     let height = h * cell;
     let mut frame = vec![0u8; (width * height) as usize];
-    let mut y: i64 = 0;
-    for __for_i_5 in (0)..(h) {
-        y = __for_i_5;
-            let mut x: i64 = 0;
-            for __for_i_6 in (0)..(w) {
-                x = __for_i_6;
+    for y in (0)..(h) {
+            for x in (0)..(w) {
                     let v = (if grid[((y) as usize)][((x) as usize)] != 0 { 255 } else { 0 });
-                    let mut yy: i64 = 0;
-                    for __for_i_7 in (0)..(cell) {
-                        yy = __for_i_7;
+                    for yy in (0)..(cell) {
                             let base = (y * cell + yy) * width + x * cell;
-                            let mut xx: i64 = 0;
-                            for __for_i_8 in (0)..(cell) {
-                                xx = __for_i_8;
-                                    let __idx_i64_10 = ((base + xx) as i64);
-                                    let __idx_9 = if __idx_i64_10 < 0 { (frame.len() as i64 + __idx_i64_10) as usize } else { __idx_i64_10 as usize };
-                                    frame[__idx_9] = ((v) as u8);
+                            for xx in (0)..(cell) {
+                                    let __idx_i64_8 = ((base + xx) as i64);
+                                    let __idx_7 = if __idx_i64_8 < 0 { (frame.len() as i64 + __idx_i64_8) as usize } else { __idx_i64_8 as usize };
+                                    frame[__idx_7] = ((v) as u8);
                             }
                     }
             }
@@ -85,17 +69,13 @@ fn run_07_game_of_life_loop() {
     
     // Lay down sparse noise so the whole field is less likely to stabilize too early.
     // Avoid large integer literals so all transpilers handle the expression consistently.
-    let mut y: i64 = 0;
-    for __for_i_11 in (0)..(h) {
-        y = __for_i_11;
-            let mut x: i64 = 0;
-            for __for_i_12 in (0)..(w) {
-                x = __for_i_12;
+    for y in (0)..(h) {
+            for x in (0)..(w) {
                     let noise = (x * 37 + y * 73 + x * y % 19 + (x + y) % 11) % 97;
                     if noise < 3 {
-                        let __idx_13 = ((y) as usize);
-                        let __idx_14 = ((x) as usize);
-                        grid[__idx_13][__idx_14] = 1;
+                        let __idx_11 = ((y) as usize);
+                        let __idx_12 = ((x) as usize);
+                        grid[__idx_11][__idx_12] = 1;
                     }
             }
     }
@@ -111,49 +91,37 @@ fn run_07_game_of_life_loop() {
             let kind = (gx * 7 + gy * 11) % 3;
             if kind == 0 {
                 let mut ph = glider.len() as i64;
-                let mut py: i64 = 0;
-                for __for_i_15 in (0)..(ph) {
-                    py = __for_i_15;
+                for py in (0)..(ph) {
                         let mut pw = (glider[((py) as usize)]).clone().len() as i64;
-                        let mut px: i64 = 0;
-                        for __for_i_16 in (0)..(pw) {
-                            px = __for_i_16;
+                        for px in (0)..(pw) {
                                 if glider[((py) as usize)][((px) as usize)] == 1 {
-                                    let __idx_17 = (((gy + py) % h) as usize);
-                                    let __idx_18 = (((gx + px) % w) as usize);
-                                    grid[__idx_17][__idx_18] = 1;
+                                    let __idx_15 = (((gy + py) % h) as usize);
+                                    let __idx_16 = (((gx + px) % w) as usize);
+                                    grid[__idx_15][__idx_16] = 1;
                                 }
                         }
                 }
             } else if kind == 1 {
                 let mut ph = r_pentomino.len() as i64;
-                let mut py: i64 = 0;
-                for __for_i_19 in (0)..(ph) {
-                    py = __for_i_19;
+                for py in (0)..(ph) {
                         let mut pw = (r_pentomino[((py) as usize)]).clone().len() as i64;
-                        let mut px: i64 = 0;
-                        for __for_i_20 in (0)..(pw) {
-                            px = __for_i_20;
+                        for px in (0)..(pw) {
                                 if r_pentomino[((py) as usize)][((px) as usize)] == 1 {
-                                    let __idx_21 = (((gy + py) % h) as usize);
-                                    let __idx_22 = (((gx + px) % w) as usize);
-                                    grid[__idx_21][__idx_22] = 1;
+                                    let __idx_19 = (((gy + py) % h) as usize);
+                                    let __idx_20 = (((gx + px) % w) as usize);
+                                    grid[__idx_19][__idx_20] = 1;
                                 }
                         }
                 }
             } else {
                 let mut ph = lwss.len() as i64;
-                let mut py: i64 = 0;
-                for __for_i_23 in (0)..(ph) {
-                    py = __for_i_23;
+                for py in (0)..(ph) {
                         let mut pw = (lwss[((py) as usize)]).clone().len() as i64;
-                        let mut px: i64 = 0;
-                        for __for_i_24 in (0)..(pw) {
-                            px = __for_i_24;
+                        for px in (0)..(pw) {
                                 if lwss[((py) as usize)][((px) as usize)] == 1 {
-                                    let __idx_25 = (((gy + py) % h) as usize);
-                                    let __idx_26 = (((gx + px) % w) as usize);
-                                    grid[__idx_25][__idx_26] = 1;
+                                    let __idx_23 = (((gy + py) % h) as usize);
+                                    let __idx_24 = (((gx + px) % w) as usize);
+                                    grid[__idx_23][__idx_24] = 1;
                                 }
                         }
                 }
@@ -163,9 +131,7 @@ fn run_07_game_of_life_loop() {
         gy += 18;
     }
     let mut frames: Vec<Vec<u8>> = vec![];
-    let mut py_underscore: i64 = 0;
-    for __for_i_27 in (0)..(steps) {
-        py_underscore = __for_i_27;
+    for py_underscore in (0)..(steps) {
             frames.push(render(&(grid), w, h, cell));
             grid = next_state(&(grid), w, h);
     }

@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using math = Pytra.CsModule.math;
 
@@ -35,7 +39,7 @@ public static class Program
         if (l < 1e-9) {
             return (0.0, 0.0, 0.0);
         }
-        return (x / l, y / l, z / l);
+        return (System.Convert.ToDouble(x) / System.Convert.ToDouble(l), System.Convert.ToDouble(y) / System.Convert.ToDouble(l), System.Convert.ToDouble(z) / System.Convert.ToDouble(l));
     }
     
     public static (double, double, double) reflect(double ix, double iy, double iz, double nx, double ny, double nz)
@@ -111,9 +115,9 @@ public static class Program
             long r = i >> 5 & 7;
             long g = i >> 2 & 7;
             long b = i & 3;
-            Pytra.CsModule.py_runtime.py_set(p, i * 3 + 0, Pytra.CsModule.py_runtime.py_int(255 * r / __hoisted_cast_1));
-            Pytra.CsModule.py_runtime.py_set(p, i * 3 + 1, Pytra.CsModule.py_runtime.py_int(255 * g / __hoisted_cast_1));
-            Pytra.CsModule.py_runtime.py_set(p, i * 3 + 2, Pytra.CsModule.py_runtime.py_int(255 * b / __hoisted_cast_2));
+            Pytra.CsModule.py_runtime.py_set(p, i * 3 + 0, Pytra.CsModule.py_runtime.py_int(System.Convert.ToDouble(255 * r) / System.Convert.ToDouble(__hoisted_cast_1)));
+            Pytra.CsModule.py_runtime.py_set(p, i * 3 + 1, Pytra.CsModule.py_runtime.py_int(System.Convert.ToDouble(255 * g) / System.Convert.ToDouble(__hoisted_cast_1)));
+            Pytra.CsModule.py_runtime.py_set(p, i * 3 + 2, Pytra.CsModule.py_runtime.py_int(System.Convert.ToDouble(255 * b) / System.Convert.ToDouble(__hoisted_cast_2)));
         }
         return Pytra.CsModule.py_runtime.py_bytes(p);
     }
@@ -128,7 +132,7 @@ public static class Program
     
     public static List<byte> render_frame(long width, long height, long frame_id, long frames_n)
     {
-        double t = frame_id / frames_n;
+        double t = System.Convert.ToDouble(frame_id) / System.Convert.ToDouble(frames_n);
         var tphase = 2.0 * Pytra.CsModule.math.pi * t;
         
         // Camera slowly orbits.
@@ -169,7 +173,7 @@ public static class Program
         var lz = 2.4 * Pytra.CsModule.math.sin(tphase * 1.8);
         
         List<byte> frame = Pytra.CsModule.py_runtime.py_bytearray(width * height);
-        double aspect = width / height;
+        double aspect = System.Convert.ToDouble(width) / System.Convert.ToDouble(height);
         double fov = 1.25;
         double __hoisted_cast_3 = System.Convert.ToDouble(height);
         double __hoisted_cast_4 = System.Convert.ToDouble(width);
@@ -177,10 +181,10 @@ public static class Program
         long py = 0;
         for (py = 0; py < height; py += 1) {
             long row_base = py * width;
-            double sy = 1.0 - 2.0 * (py + 0.5) / __hoisted_cast_3;
+            double sy = 1.0 - System.Convert.ToDouble(2.0 * (py + 0.5)) / System.Convert.ToDouble(__hoisted_cast_3);
             long px = 0;
             for (px = 0; px < width; px += 1) {
-                double sx = (2.0 * (px + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
+                double sx = (System.Convert.ToDouble(2.0 * (px + 0.5)) / System.Convert.ToDouble(__hoisted_cast_4) - 1.0) * aspect;
                 var rx = fwd_x + fov * (sx * right_x + sy * up_x);
                 var ry = fwd_y + fov * (sx * right_y + sy * up_y);
                 var rz = fwd_z + fov * (sx * right_z + sy * up_z);
@@ -198,7 +202,7 @@ public static class Program
                 
                 // Floor plane y=-1.2
                 if (dy < -1e-6) {
-                    var tf = (-1.2 - cam_y) / dy;
+                    var tf = System.Convert.ToDouble((-1.2 - cam_y)) / System.Convert.ToDouble(dy);
                     if ((tf > 1e-4) && (tf < best_t)) {
                         best_t = System.Convert.ToDouble(tf);
                         hit_kind = 1;
@@ -244,7 +248,7 @@ public static class Program
                         var ldz = __tmp_6.Item3;
                         var ndotl = System.Math.Max(ldy, 0.0);
                         var ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
-                        var glow = 8.0 / (1.0 + ldist2);
+                        var glow = System.Convert.ToDouble(8.0) / System.Convert.ToDouble((1.0 + ldist2));
                         r = System.Convert.ToDouble(base_r + 0.8 * glow + 0.20 * ndotl);
                         g = System.Convert.ToDouble(base_g + 0.5 * glow + 0.18 * ndotl);
                         b = System.Convert.ToDouble(base_b + 1.0 * glow + 0.24 * ndotl);
@@ -274,7 +278,7 @@ public static class Program
                         var hx = cam_x + best_t * dx;
                         var hy = cam_y + best_t * dy;
                         var hz = cam_z + best_t * dz;
-                        var __tmp_7 = normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad);
+                        var __tmp_7 = normalize(System.Convert.ToDouble((hx - cx)) / System.Convert.ToDouble(rad), System.Convert.ToDouble((hy - cy)) / System.Convert.ToDouble(rad), System.Convert.ToDouble((hz - cz)) / System.Convert.ToDouble(rad));
                         var nx = __tmp_7.Item1;
                         var ny = __tmp_7.Item2;
                         var nz = __tmp_7.Item3;
@@ -284,7 +288,7 @@ public static class Program
                         var rdx = __tmp_8.Item1;
                         var rdy = __tmp_8.Item2;
                         var rdz = __tmp_8.Item3;
-                        var __tmp_9 = refract(dx, dy, dz, nx, ny, nz, 1.0 / 1.45);
+                        var __tmp_9 = refract(dx, dy, dz, nx, ny, nz, System.Convert.ToDouble(1.0) / System.Convert.ToDouble(1.45));
                         var tdx = __tmp_9.Item1;
                         var tdy = __tmp_9.Item2;
                         var tdz = __tmp_9.Item3;
@@ -319,7 +323,7 @@ public static class Program
                         spec = spec * spec;
                         spec = spec * spec;
                         spec = spec * spec;
-                        var glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                        var glow = System.Convert.ToDouble(10.0) / System.Convert.ToDouble((1.0 + lxv * lxv + lyv * lyv + lzv * lzv));
                         r += 0.20 * ndotl + 0.80 * spec + 0.45 * glow;
                         g += 0.18 * ndotl + 0.60 * spec + 0.35 * glow;
                         b += 0.26 * ndotl + 1.00 * spec + 0.65 * glow;

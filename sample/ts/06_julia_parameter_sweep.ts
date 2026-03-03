@@ -1,6 +1,6 @@
 import * as math from "./pytra/std/math.js";
 import { perf_counter } from "./pytra/std/time.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
@@ -10,8 +10,7 @@ function julia_palette() {
     palette[(((0) < 0) ? ((palette).length + (0)) : (0))] = 0;
     palette[(((1) < 0) ? ((palette).length + (1)) : (1))] = 0;
     palette[(((2) < 0) ? ((palette).length + (2)) : (2))] = 0;
-    const __start_1 = 1;
-    for (let i = __start_1; i < 256; i += 1) {
+    for (let i = 1; i < 256; i += 1) {
         let t = (i - 1) / 254.0;
         let r = Math.trunc(Number(255.0 * 9.0 * (1.0 - t) * t * t * t));
         let g = Math.trunc(Number(255.0 * 15.0 * (1.0 - t) * (1.0 - t) * t * t));
@@ -27,12 +26,10 @@ function render_frame(width, height, cr, ci, max_iter, phase) {
     let frame = (typeof (width * height) === "number" ? new Array(Math.max(0, Math.trunc(Number((width * height))))).fill(0) : (Array.isArray((width * height)) ? (width * height).slice() : Array.from((width * height))));
     let __hoisted_cast_1 = Number(height - 1);
     let __hoisted_cast_2 = Number(width - 1);
-    const __start_2 = 0;
-    for (let y = __start_2; y < height; y += 1) {
+    for (let y = 0; y < height; y += 1) {
         let row_base = y * width;
         let zy0 = -1.2 + 2.4 * (y / __hoisted_cast_1);
-        const __start_3 = 0;
-        for (let x = __start_3; x < width; x += 1) {
+        for (let x = 0; x < width; x += 1) {
             let zx = -1.8 + 3.6 * (x / __hoisted_cast_2);
             let zy = zy0;
             let i = 0;
@@ -77,8 +74,7 @@ function run_06_julia_parameter_sweep() {
     let start_offset = 20;
     let phase_offset = 180;
     let __hoisted_cast_3 = Number(frames_n);
-    const __start_4 = 0;
-    for (let i = __start_4; i < frames_n; i += 1) {
+    for (let i = 0; i < frames_n; i += 1) {
         let t = (i + start_offset) % frames_n / __hoisted_cast_3;
         let angle = 2.0 * math.pi * t;
         let cr = center_cr + radius_cr * math.cos(angle);

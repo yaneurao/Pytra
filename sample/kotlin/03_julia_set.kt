@@ -5,7 +5,7 @@ import kotlin.math.*
 // Implemented with simple loop-centric logic for transpilation compatibility.
 
 fun render_julia(width: Long, height: Long, max_iter: Long, cx: Double, cy: Double): MutableList<Any?> {
-    var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var pixels: MutableList<Any?> = mutableListOf<Any?>()
     var __hoisted_cast_1: Double = __pytra_float(height - 1L)
     var __hoisted_cast_2: Double = __pytra_float(width - 1L)
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
@@ -56,7 +56,7 @@ fun run_julia() {
     var max_iter: Long = 20000L
     var out_path: String = "sample/out/03_julia_set.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: MutableList<Any?> = __pytra_as_list(render_julia(width, height, max_iter, (-0.8), 0.156))
+    var pixels: MutableList<Any?> = render_julia(width, height, max_iter, (-0.8), 0.156)
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

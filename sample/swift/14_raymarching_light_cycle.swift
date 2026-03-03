@@ -4,7 +4,7 @@ import Foundation
 // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
 
 func palette() -> [Any] {
-    var p: [Any] = __pytra_as_list([])
+    var p: [Any] = []
     var i = __pytra_int(Int64(0))
     while (i < __pytra_int(Int64(256))) {
         var r: Int64 = __pytra_int(__pytra_min(Int64(255), __pytra_int(__pytra_float(Int64(20)) + (__pytra_float(i) * Double(0.9)))))
@@ -15,7 +15,7 @@ func palette() -> [Any] {
         p.append(b)
         i += 1
     }
-    return __pytra_as_list(__pytra_bytes(p))
+    return __pytra_bytes(p)
 }
 
 func scene(x: Double, y: Double, light_x: Double, light_y: Double) -> Int64 {
@@ -46,7 +46,7 @@ func run_14_raymarching_light_cycle() {
     var __hoisted_cast_3: Double = __pytra_float(w - Int64(1))
     var t = __pytra_int(Int64(0))
     while (t < __pytra_int(frames_n)) {
-        var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: [Any] = __pytra_bytearray((w * h))
         var a: Double = __pytra_float(((__pytra_float(t) / __hoisted_cast_1) * Double.pi) * Double(2.0))
         var light_x: Double = __pytra_float(Double(0.75) * cos(__pytra_float(a)))
         var light_y: Double = __pytra_float(Double(0.55) * sin(__pytra_float(a * Double(1.2))))

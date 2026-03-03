@@ -19,12 +19,11 @@ bytes render(const list<int64>& values, int64 w, int64 h) {
         int64 bh = int64((py_to<float64>(values[i]) / __hoisted_cast_1) * __hoisted_cast_2);
         int64 y = h - bh;
         for (int64 y = y; y < h; ++y) {
-            for (int64 x = x0; x < x1; ++x) {
+            for (int64 x = x0; x < x1; ++x)
                 frame[y * w + x] = 255;
-            }
         }
     }
-    return bytes(frame);
+    return frame;
 }
 
 void run_12_sort_visualizer() {
@@ -34,10 +33,10 @@ void run_12_sort_visualizer() {
     str out_path = "sample/out/12_sort_visualizer.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<int64> values = list<int64>{};
-    for (int64 i = 0; i < n; ++i) {
+    list<int64> values = {};
+    values.reserve((n <= 0) ? 0 : n);
+    for (int64 i = 0; i < n; ++i)
         values.append(int64((i * 37 + 19) % n));
-    }
     list<bytes> frames = list<bytes>{render(values, w, h)};
     int64 frame_stride = 16;
     

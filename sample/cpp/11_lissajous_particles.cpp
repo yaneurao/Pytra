@@ -16,7 +16,7 @@ bytes color_palette() {
         p.append(g);
         p.append(b);
     }
-    return bytes(p);
+    return p;
 }
 
 void run_11_lissajous_particles() {
@@ -27,7 +27,7 @@ void run_11_lissajous_particles() {
     str out_path = "sample/out/11_lissajous_particles.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
@@ -56,7 +56,7 @@ void run_11_lissajous_particles() {
                 }
             }
         }
-        frames.append(bytes(frame));
+        frames.append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, color_palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

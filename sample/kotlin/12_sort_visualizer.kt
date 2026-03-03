@@ -4,7 +4,7 @@ import kotlin.math.*
 // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
 fun render(values: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((w * h)))
+    var frame: MutableList<Any?> = __pytra_bytearray((w * h))
     var n: Long = __pytra_len(values)
     var bar_w: Double = (__pytra_float(w) / __pytra_float(n))
     var __hoisted_cast_1: Double = __pytra_float(n)
@@ -29,7 +29,7 @@ fun render(values: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
         }
         i += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_12_sort_visualizer() {

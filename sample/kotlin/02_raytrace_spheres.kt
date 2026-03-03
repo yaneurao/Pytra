@@ -38,7 +38,7 @@ fun hit_sphere(ox: Double, oy: Double, oz: Double, dx: Double, dy: Double, dz: D
 }
 
 fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
-    var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var pixels: MutableList<Any?> = mutableListOf<Any?>()
     var ox: Double = 0.0
     var oy: Double = 0.0
     var oz: Double = __pytra_float(-3.0)
@@ -73,17 +73,17 @@ fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
                     dz *= inv_len
                     var t_min: Double = 1e+30
                     var hit_id: Long = __pytra_int(-1L)
-                    var t: Double = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8))
+                    var t: Double = hit_sphere(ox, oy, oz, dx, dy, dz, (-0.8), (-0.2), 2.2, 0.8)
                     if (((__pytra_float(t) > __pytra_float(0.0)) && (__pytra_float(t) < __pytra_float(t_min)))) {
                         t_min = t
                         hit_id = 0L
                     }
-                    t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95))
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.9, 0.1, 2.9, 0.95)
                     if (((__pytra_float(t) > __pytra_float(0.0)) && (__pytra_float(t) < __pytra_float(t_min)))) {
                         t_min = t
                         hit_id = 1L
                     }
-                    t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0))
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, (-1001.0), 3.0, 1000.0)
                     if (((__pytra_float(t) > __pytra_float(0.0)) && (__pytra_float(t) < __pytra_float(t_min)))) {
                         t_min = t
                         hit_id = 2L
@@ -114,7 +114,7 @@ fun render(width: Long, height: Long, aa: Long): MutableList<Any?> {
                             }
                         }
                         var diff: Double = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)))
-                        diff = __pytra_float(clamp01(diff))
+                        diff = clamp01(diff)
                         var base_r: Double = 0.0
                         var base_g: Double = 0.0
                         var base_b: Double = 0.0
@@ -174,7 +174,7 @@ fun run_raytrace() {
     var aa: Long = 2L
     var out_path: String = "sample/out/02_raytrace_spheres.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: MutableList<Any?> = __pytra_as_list(render(width, height, aa))
+    var pixels: MutableList<Any?> = render(width, height, aa)
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

@@ -91,7 +91,7 @@ bytes palette_332() {
         int64 r = i >> 5 & 7;
         int64 g = i >> 2 & 7;
         int64 b = i & 3;
-        p[i * 3 + 0] = int64(py_to<float64>(255 * r) / __hoisted_cast_1);
+        p[i * 3] = int64(py_to<float64>(255 * r) / __hoisted_cast_1);
         p[i * 3 + 1] = int64(py_to<float64>(255 * g) / __hoisted_cast_1);
         p[i * 3 + 2] = int64(py_to<float64>(255 * b) / __hoisted_cast_2);
     }
@@ -311,11 +311,10 @@ void run_16_glass_sculpture_chaos() {
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     frames.reserve((frames_n <= 0) ? 0 : frames_n);
-    for (int64 i = 0; i < frames_n; ++i) {
+    for (int64 i = 0; i < frames_n; ++i)
         frames.append(render_frame(width, height, i, frames_n));
-    }
     pytra::utils::gif::save_gif(out_path, width, height, frames, palette_332(), 6, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);

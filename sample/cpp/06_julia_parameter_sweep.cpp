@@ -17,11 +17,11 @@ bytes julia_palette() {
         int64 r = int64(255.0 * 9.0 * (1.0 - t) * t * t * t);
         int64 g = int64(255.0 * 15.0 * (1.0 - t) * (1.0 - t) * t * t);
         int64 b = int64(255.0 * 8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t);
-        palette[i * 3 + 0] = r;
+        palette[i * 3] = r;
         palette[i * 3 + 1] = g;
         palette[i * 3 + 2] = b;
     }
-    return bytes(palette);
+    return palette;
 }
 
 bytes render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 max_iter, int64 phase) {
@@ -53,7 +53,7 @@ bytes render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 max_
             }
         }
     }
-    return bytes(frame);
+    return frame;
 }
 
 void run_06_julia_parameter_sweep() {
@@ -64,7 +64,7 @@ void run_06_julia_parameter_sweep() {
     str out_path = "sample/out/06_julia_parameter_sweep.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     // Orbit an ellipse around a known visually good region to reduce flat blown highlights.
     float64 center_cr = -0.745;
     float64 center_ci = 0.186;
@@ -75,6 +75,7 @@ void run_06_julia_parameter_sweep() {
     int64 start_offset = 20;
     int64 phase_offset = 180;
     float64 __hoisted_cast_3 = float64(frames_n);
+    frames.reserve((frames_n <= 0) ? 0 : frames_n);
     for (int64 i = 0; i < frames_n; ++i) {
         float64 t = py_to<float64>((i + start_offset) % frames_n) / __hoisted_cast_3;
         auto angle = 2.0 * pytra::std::math::pi * t;

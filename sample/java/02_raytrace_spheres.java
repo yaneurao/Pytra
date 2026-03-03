@@ -1,5 +1,5 @@
-public final class Pytra_02_raytrace_spheres {
-    private Pytra_02_raytrace_spheres() {
+public final class _02_raytrace_spheres {
+    private _02_raytrace_spheres() {
     }
 
 
@@ -51,17 +51,13 @@ public final class Pytra_02_raytrace_spheres {
         double __hoisted_cast_2 = ((double)(height - 1L));
         double __hoisted_cast_3 = ((double)(width - 1L));
         double __hoisted_cast_4 = ((double)(height));
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+        for (long y = 0L; y < height; y += 1L) {
+            for (long x = 0L; x < width; x += 1L) {
                 long ar = 0L;
                 long ag = 0L;
                 long ab = 0L;
-                long __step_2 = 1L;
-                for (long ay = 0L; (__step_2 >= 0L) ? (ay < aa) : (ay > aa); ay += __step_2) {
-                    long __step_3 = 1L;
-                    for (long ax = 0L; (__step_3 >= 0L) ? (ax < aa) : (ax > aa); ax += __step_3) {
+                for (long ay = 0L; ay < aa; ay += 1L) {
+                    for (long ax = 0L; ax < aa; ax += 1L) {
                         double fy = (((double)(y)) + (((double)(ay)) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
                         double fx = (((double)(x)) + (((double)(ax)) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
                         double sy = 1.0 - 2.0 * fy;

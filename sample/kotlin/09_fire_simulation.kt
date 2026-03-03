@@ -4,7 +4,7 @@ import kotlin.math.*
 // 09: Sample that outputs a simple fire effect as a GIF.
 
 fun fire_palette(): MutableList<Any?> {
-    var p: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var p: MutableList<Any?> = mutableListOf<Any?>()
     var i = __pytra_int(0L)
     while (i < __pytra_int(256L)) {
         var r: Long = 0L
@@ -30,7 +30,7 @@ fun fire_palette(): MutableList<Any?> {
         p.add(b)
         i += 1L
     }
-    return __pytra_as_list(__pytra_bytes(p))
+    return __pytra_bytes(p)
 }
 
 fun run_09_fire_simulation() {
@@ -65,7 +65,7 @@ fun run_09_fire_simulation() {
             }
             y += 1L
         }
-        var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: MutableList<Any?> = __pytra_bytearray((w * h))
         var yy = __pytra_int(0L)
         while (yy < __pytra_int(h)) {
             var row_base: Long = (yy * w)

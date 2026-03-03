@@ -3,15 +3,13 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::gif::save_gif;
+use crate::pytra::utils::gif::save_gif;
 
 // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
 
 fn palette() -> Vec<u8> {
     let mut p = Vec::<u8>::new();
-    let mut i: i64 = 0;
-    for __for_i_1 in (0)..(256) {
-        i = __for_i_1;
+    for i in (0)..(256) {
             let r = (if 255 < ((((20) as f64) + ((i) as f64) * 0.9) as i64) { 255 } else { ((((20) as f64) + ((i) as f64) * 0.9) as i64) });
             let g = (if 255 < ((((10) as f64) + ((i) as f64) * 0.7) as i64) { 255 } else { ((((10) as f64) + ((i) as f64) * 0.7) as i64) });
             let b = (if 255 < 30 + i { 255 } else { 30 + i });
@@ -52,22 +50,16 @@ fn run_14_raymarching_light_cycle() {
     let __hoisted_cast_2: f64 = ((h - 1) as f64);
     let __hoisted_cast_3: f64 = ((w - 1) as f64);
     
-    let mut t: i64 = 0;
-    for __for_i_2 in (0)..(frames_n) {
-        t = __for_i_2;
+    for t in (0)..(frames_n) {
             let mut frame = vec![0u8; (w * h) as usize];
             let a = (((t) as f64) / __hoisted_cast_1) * math::pi * 2.0;
             let light_x = 0.75 * math::cos(a);
             let light_y = 0.55 * math::sin(a * 1.2);
             
-            let mut y: i64 = 0;
-            for __for_i_3 in (0)..(h) {
-                y = __for_i_3;
+            for y in (0)..(h) {
                     let row_base = y * w;
                     let py = (((y) as f64) / __hoisted_cast_2) * 2.0 - 1.0;
-                    let mut x: i64 = 0;
-                    for __for_i_4 in (0)..(w) {
-                        x = __for_i_4;
+                    for x in (0)..(w) {
                             let px = (((x) as f64) / __hoisted_cast_3) * 2.0 - 1.0;
                             let __idx_5 = ((row_base + x) as usize);
                             frame[__idx_5] = ((scene(px, py, light_x, light_y)) as u8);

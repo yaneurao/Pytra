@@ -12,7 +12,7 @@ fun run_10_plasma_effect() {
     var frames: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     var t = __pytra_int(0L)
     while (t < __pytra_int(frames_n)) {
-        var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: MutableList<Any?> = __pytra_bytearray((w * h))
         var y = __pytra_int(0L)
         while (y < __pytra_int(h)) {
             var row_base: Long = (y * w)

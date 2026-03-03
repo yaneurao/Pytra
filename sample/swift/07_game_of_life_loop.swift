@@ -45,7 +45,7 @@ func next_state(grid: [Any], w: Int64, h: Int64) -> [Any] {
 func render(grid: [Any], w: Int64, h: Int64, cell: Int64) -> [Any] {
     var width: Int64 = (w * cell)
     var height: Int64 = (h * cell)
-    var frame: [Any] = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: [Any] = __pytra_bytearray((width * height))
     var y = __pytra_int(Int64(0))
     while (y < __pytra_int(h)) {
         var x = __pytra_int(Int64(0))
@@ -65,7 +65,7 @@ func render(grid: [Any], w: Int64, h: Int64, cell: Int64) -> [Any] {
         }
         y += 1
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 func run_07_game_of_life_loop() {
@@ -151,7 +151,7 @@ func run_07_game_of_life_loop() {
     var __loop_10 = __pytra_int(Int64(0))
     while (__loop_10 < __pytra_int(steps)) {
         frames.append(render(grid, w, h, cell))
-        grid = __pytra_as_list(next_state(grid, w, h))
+        grid = next_state(grid, w, h)
         __loop_10 += 1
     }
     __pytra_noop(out_path, (w * cell), (h * cell), frames, [])

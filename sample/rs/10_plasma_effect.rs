@@ -3,8 +3,8 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::gif::grayscale_palette;
-use crate::pytra::runtime::gif::save_gif;
+use crate::pytra::utils::gif::grayscale_palette;
+use crate::pytra::utils::gif::save_gif;
 
 // 10: Sample that outputs a plasma effect as a GIF.
 
@@ -17,17 +17,11 @@ fn run_10_plasma_effect() {
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
     
-    let mut t: i64 = 0;
-    for __for_i_1 in (0)..(frames_n) {
-        t = __for_i_1;
+    for t in (0)..(frames_n) {
             let mut frame = vec![0u8; (w * h) as usize];
-            let mut y: i64 = 0;
-            for __for_i_2 in (0)..(h) {
-                y = __for_i_2;
+            for y in (0)..(h) {
                     let row_base = y * w;
-                    let mut x: i64 = 0;
-                    for __for_i_3 in (0)..(w) {
-                        x = __for_i_3;
+                    for x in (0)..(w) {
                             let dx = x - 160;
                             let dy = y - 120;
                             let v = math::sin((((x) as f64) + ((t) as f64) * 2.0) * 0.045) + math::sin((((y) as f64) - ((t) as f64) * 1.2) * 0.05) + math::sin((((x + y) as f64) + ((t) as f64) * 1.7) * 0.03) + math::sin(math::sqrt(dx * dx + dy * dy) * 0.07 - ((t) as f64) * 0.18);

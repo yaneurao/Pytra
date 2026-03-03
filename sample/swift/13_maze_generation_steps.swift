@@ -6,7 +6,7 @@ import Foundation
 func capture(grid: [Any], w: Int64, h: Int64, scale: Int64) -> [Any] {
     var width: Int64 = (w * scale)
     var height: Int64 = (h * scale)
-    var frame: [Any] = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: [Any] = __pytra_bytearray((width * height))
     var y = __pytra_int(Int64(0))
     while (y < __pytra_int(h)) {
         var x = __pytra_int(Int64(0))
@@ -26,7 +26,7 @@ func capture(grid: [Any], w: Int64, h: Int64, scale: Int64) -> [Any] {
         }
         y += 1
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 func run_13_maze_generation_steps() {

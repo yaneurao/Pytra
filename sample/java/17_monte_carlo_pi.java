@@ -1,5 +1,5 @@
-public final class Pytra_17_monte_carlo_pi {
-    private Pytra_17_monte_carlo_pi() {
+public final class _17_monte_carlo_pi {
+    private _17_monte_carlo_pi() {
     }
 
 
@@ -10,11 +10,9 @@ public final class Pytra_17_monte_carlo_pi {
         long mod_main = 2147483647L;
         long mod_out = 1000000007L;
         long acc = seed % mod_out;
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
+        for (long y = 0L; y < height; y += 1L) {
             long row_sum = 0L;
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+            for (long x = 0L; x < width; x += 1L) {
                 long v = (x * 37L + y * 73L + seed) % mod_main;
                 v = (v * 48271L + 1L) % mod_main;
                 row_sum += v % 256L;

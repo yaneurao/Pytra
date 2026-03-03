@@ -1,5 +1,5 @@
 import { perf_counter } from "./pytra/std/time.js";
-import { png } from "./pytra/runtime.js";
+import { png } from "./pytra/utils.js";
 
 // 01: Sample that outputs the Mandelbrot set as a PNG image.
 // Syntax is kept straightforward with future transpilation in mind.

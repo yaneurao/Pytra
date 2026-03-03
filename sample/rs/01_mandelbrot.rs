@@ -3,7 +3,7 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::png;
+use crate::pytra::utils::png;
 
 // 01: Sample that outputs the Mandelbrot set as a PNG image.
 // Syntax is kept straightforward with future transpilation in mind.
@@ -76,7 +76,7 @@ fn run_mandelbrot() {
     let start: f64 = perf_counter();
     
     let pixels: Vec<u8> = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
-    pytra::runtime::png::write_rgb_png(&(out_path), width, height, &(pixels));
+    pytra::utils::png::write_rgb_png(&(out_path), width, height, &(pixels));
     
     let elapsed: f64 = perf_counter() - start;
     println!("{} {}", ("output:").to_string(), out_path);

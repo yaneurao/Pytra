@@ -4,7 +4,7 @@ import Foundation
 // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
 func julia_palette() -> [Any] {
-    var palette: [Any] = __pytra_as_list(__pytra_bytearray((Int64(256) * Int64(3))))
+    var palette: [Any] = __pytra_bytearray((Int64(256) * Int64(3)))
     __pytra_setIndex(palette, Int64(0), Int64(0))
     __pytra_setIndex(palette, Int64(1), Int64(0))
     __pytra_setIndex(palette, Int64(2), Int64(0))
@@ -19,11 +19,11 @@ func julia_palette() -> [Any] {
         __pytra_setIndex(palette, ((i * Int64(3)) + Int64(2)), b)
         i += 1
     }
-    return __pytra_as_list(__pytra_bytes(palette))
+    return __pytra_bytes(palette)
 }
 
 func render_frame(width: Int64, height: Int64, cr: Double, ci: Double, max_iter: Int64, phase: Int64) -> [Any] {
-    var frame: [Any] = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: [Any] = __pytra_bytearray((width * height))
     var __hoisted_cast_1: Double = __pytra_float(height - Int64(1))
     var __hoisted_cast_2: Double = __pytra_float(width - Int64(1))
     var y = __pytra_int(Int64(0))
@@ -55,7 +55,7 @@ func render_frame(width: Int64, height: Int64, cr: Double, ci: Double, max_iter:
         }
         y += 1
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 func run_06_julia_parameter_sweep() {

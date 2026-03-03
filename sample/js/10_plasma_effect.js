@@ -1,7 +1,7 @@
 import * as math from "./pytra/std/math.js";
 import { perf_counter } from "./pytra/std/time.js";
-import { grayscale_palette } from "./pytra/runtime/gif.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { grayscale_palette } from "./pytra/utils/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 10: Sample that outputs a plasma effect as a GIF.
 
@@ -14,14 +14,11 @@ function run_10_plasma_effect() {
     let start = perf_counter();
     let frames = [];
     
-    const __start_1 = 0;
-    for (let t = __start_1; t < frames_n; t += 1) {
+    for (let t = 0; t < frames_n; t += 1) {
         let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
-        const __start_2 = 0;
-        for (let y = __start_2; y < h; y += 1) {
+        for (let y = 0; y < h; y += 1) {
             let row_base = y * w;
-            const __start_3 = 0;
-            for (let x = __start_3; x < w; x += 1) {
+            for (let x = 0; x < w; x += 1) {
                 let dx = x - 160;
                 let dy = y - 120;
                 let v = math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05) + math.sin((x + y + t * 1.7) * 0.03) + math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18);

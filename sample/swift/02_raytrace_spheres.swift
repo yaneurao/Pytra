@@ -38,7 +38,7 @@ func hit_sphere(ox: Double, oy: Double, oz: Double, dx: Double, dy: Double, dz: 
 }
 
 func render(width: Int64, height: Int64, aa: Int64) -> [Any] {
-    var pixels: [Any] = __pytra_as_list([])
+    var pixels: [Any] = []
     var ox: Double = Double(0.0)
     var oy: Double = Double(0.0)
     var oz: Double = __pytra_float(-Double(3.0))
@@ -73,17 +73,17 @@ func render(width: Int64, height: Int64, aa: Int64) -> [Any] {
                     dz *= inv_len
                     var t_min: Double = Double(1e+30)
                     var hit_id: Int64 = __pytra_int(-Int64(1))
-                    var t: Double = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, (-Double(0.8)), (-Double(0.2)), Double(2.2), Double(0.8)))
+                    var t: Double = hit_sphere(ox, oy, oz, dx, dy, dz, (-Double(0.8)), (-Double(0.2)), Double(2.2), Double(0.8))
                     if ((__pytra_float(t) > __pytra_float(Double(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
                         t_min = t
                         hit_id = Int64(0)
                     }
-                    t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, Double(0.9), Double(0.1), Double(2.9), Double(0.95)))
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, Double(0.9), Double(0.1), Double(2.9), Double(0.95))
                     if ((__pytra_float(t) > __pytra_float(Double(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
                         t_min = t
                         hit_id = Int64(1)
                     }
-                    t = __pytra_float(hit_sphere(ox, oy, oz, dx, dy, dz, Double(0.0), (-Double(1001.0)), Double(3.0), Double(1000.0)))
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, Double(0.0), (-Double(1001.0)), Double(3.0), Double(1000.0))
                     if ((__pytra_float(t) > __pytra_float(Double(0.0))) && (__pytra_float(t) < __pytra_float(t_min))) {
                         t_min = t
                         hit_id = Int64(2)
@@ -114,7 +114,7 @@ func render(width: Int64, height: Int64, aa: Int64) -> [Any] {
                             }
                         }
                         var diff: Double = (((nx * (-lx)) + (ny * (-ly))) + (nz * (-lz)))
-                        diff = __pytra_float(clamp01(diff))
+                        diff = clamp01(diff)
                         var base_r: Double = Double(0.0)
                         var base_g: Double = Double(0.0)
                         var base_b: Double = Double(0.0)
@@ -174,7 +174,7 @@ func run_raytrace() {
     var aa: Int64 = Int64(2)
     var out_path: String = "sample/out/02_raytrace_spheres.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: [Any] = __pytra_as_list(render(width, height, aa))
+    var pixels: [Any] = render(width, height, aa)
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

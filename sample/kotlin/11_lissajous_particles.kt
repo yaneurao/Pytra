@@ -4,7 +4,7 @@ import kotlin.math.*
 // 11: Sample that outputs Lissajous-motion particles as a GIF.
 
 fun color_palette(): MutableList<Any?> {
-    var p: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var p: MutableList<Any?> = mutableListOf<Any?>()
     var i = __pytra_int(0L)
     while (i < __pytra_int(256L)) {
         var r: Long = i
@@ -15,7 +15,7 @@ fun color_palette(): MutableList<Any?> {
         p.add(b)
         i += 1L
     }
-    return __pytra_as_list(__pytra_bytes(p))
+    return __pytra_bytes(p)
 }
 
 fun run_11_lissajous_particles() {
@@ -28,7 +28,7 @@ fun run_11_lissajous_particles() {
     var frames: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     var t = __pytra_int(0L)
     while (t < __pytra_int(frames_n)) {
-        var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: MutableList<Any?> = __pytra_bytearray((w * h))
         var __hoisted_cast_1: Double = __pytra_float(t)
         var p = __pytra_int(0L)
         while (p < __pytra_int(particles)) {

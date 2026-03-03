@@ -4,7 +4,7 @@ import Foundation
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 func render_frame(width: Int64, height: Int64, center_x: Double, center_y: Double, scale: Double, max_iter: Int64) -> [Any] {
-    var frame: [Any] = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: [Any] = __pytra_bytearray((width * height))
     var __hoisted_cast_1: Double = __pytra_float(max_iter)
     var y = __pytra_int(Int64(0))
     while (y < __pytra_int(height)) {
@@ -31,7 +31,7 @@ func render_frame(width: Int64, height: Int64, center_x: Double, center_y: Doubl
         }
         y += 1
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 func run_05_mandelbrot_zoom() {

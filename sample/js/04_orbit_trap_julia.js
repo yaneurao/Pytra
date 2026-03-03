@@ -9,11 +9,9 @@ function render_orbit_trap_julia(width, height, max_iter, cx, cy) {
     let __hoisted_cast_2 = Number(width - 1);
     let __hoisted_cast_3 = Number(max_iter);
     
-    const __start_1 = 0;
-    for (let y = __start_1; y < height; y += 1) {
+    for (let y = 0; y < height; y += 1) {
         let zy0 = -1.3 + 2.6 * (y / __hoisted_cast_1);
-        const __start_2 = 0;
-        for (let x = __start_2; x < width; x += 1) {
+        for (let x = 0; x < width; x += 1) {
             let zx = -1.9 + 3.8 * (x / __hoisted_cast_2);
             let zy = zy0;
             

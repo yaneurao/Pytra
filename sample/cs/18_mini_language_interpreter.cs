@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 
 public class Token
@@ -9,12 +13,14 @@ public class Token
     public string kind;
     public string text;
     public long pos;
+    public long number_value;
     
-    public Token(string kind, string text, long pos)
+    public Token(string kind, string text, long pos, long number_value)
     {
         this.kind = kind;
         this.text = text;
         this.pos = pos;
+        this.number_value = number_value;
     }
 }
 
@@ -27,8 +33,10 @@ public class ExprNode
     public string op;
     public long left;
     public long right;
+    public long kind_tag;
+    public long op_tag;
     
-    public ExprNode(string kind, long value, string name, string op, long left, long right)
+    public ExprNode(string kind, long value, string name, string op, long left, long right, long kind_tag, long op_tag)
     {
         this.kind = kind;
         this.value = value;
@@ -36,6 +44,8 @@ public class ExprNode
         this.op = op;
         this.left = left;
         this.right = right;
+        this.kind_tag = kind_tag;
+        this.op_tag = op_tag;
     }
 }
 
@@ -45,12 +55,14 @@ public class StmtNode
     public string kind;
     public string name;
     public long expr_index;
+    public long kind_tag;
     
-    public StmtNode(string kind, string name, long expr_index)
+    public StmtNode(string kind, string name, long expr_index, long kind_tag)
     {
         this.kind = kind;
         this.name = name;
         this.expr_index = expr_index;
+        this.kind_tag = kind_tag;
     }
 }
 
@@ -63,7 +75,7 @@ public class Parser
     
     public Parser(System.Collections.Generic.List<Token> tokens)
     {
-        this.tokens = tokens;
+        this.tokens = new System.Collections.Generic.List<Token>(tokens);
         this.pos = 0;
         this.expr_nodes = this.new_expr_nodes();
     }
@@ -73,9 +85,19 @@ public class Parser
         return new System.Collections.Generic.List<ExprNode>();
     }
     
+    public Token current_token()
+    {
+        return Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos);
+    }
+    
+    public Token previous_token()
+    {
+        return Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos - 1);
+    }
+    
     public string peek_kind()
     {
-        return Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos).kind;
+        return this.current_token().kind;
     }
     
     public bool match(string kind)
@@ -89,11 +111,10 @@ public class Parser
     
     public Token expect(string kind)
     {
-        if (this.peek_kind() != kind) {
-            Token t = Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos);
-            throw new System.Exception("parse error at pos=" + System.Convert.ToString(t.pos) + ", expected=" + kind + ", got=" + t.kind);
+        Token token = this.current_token();
+        if (token.kind != kind) {
+            throw new System.Exception("parse error at pos=" + System.Convert.ToString(token.pos) + ", expected=" + kind + ", got=" + token.kind);
         }
-        Token token = Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos);
         this.pos += 1;
         return token;
     }
@@ -129,16 +150,16 @@ public class Parser
             string let_name = System.Convert.ToString(this.expect("IDENT").text);
             this.expect("EQUAL");
             long let_expr_index = this.parse_expr();
-            return new StmtNode("let", let_name, let_expr_index);
+            return new StmtNode("let", let_name, let_expr_index, 1);
         }
         if (this.match("PRINT")) {
             long print_expr_index = this.parse_expr();
-            return new StmtNode("print", "", print_expr_index);
+            return new StmtNode("print", "", print_expr_index, 3);
         }
         string assign_name = System.Convert.ToString(this.expect("IDENT").text);
         this.expect("EQUAL");
         long assign_expr_index = this.parse_expr();
-        return new StmtNode("assign", assign_name, assign_expr_index);
+        return new StmtNode("assign", assign_name, assign_expr_index, 2);
     }
     
     public long parse_expr()
@@ -152,12 +173,12 @@ public class Parser
         while (true) {
             if (this.match("PLUS")) {
                 long right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "+", left, right, 3, 1));
                 continue;
             }
             if (this.match("MINUS")) {
                 long right = this.parse_mul();
-                left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "-", left, right, 3, 2));
                 continue;
             }
             break;
@@ -171,12 +192,12 @@ public class Parser
         while (true) {
             if (this.match("STAR")) {
                 long right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "*", left, right, 3, 3));
                 continue;
             }
             if (this.match("SLASH")) {
                 long right = this.parse_unary();
-                left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right));
+                left = this.add_expr(new ExprNode("bin", 0, "", "/", left, right, 3, 4));
                 continue;
             }
             break;
@@ -188,7 +209,7 @@ public class Parser
     {
         if (this.match("MINUS")) {
             long child = this.parse_unary();
-            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1));
+            return this.add_expr(new ExprNode("neg", 0, "", "", child, -1, 4, 0));
         }
         return this.parse_primary();
     }
@@ -196,20 +217,21 @@ public class Parser
     public long parse_primary()
     {
         if (this.match("NUMBER")) {
-            Token token_num = Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos - 1);
-            return this.add_expr(new ExprNode("lit", Pytra.CsModule.py_runtime.py_int(token_num.text), "", "", -1, -1));
+            Token token_num = this.previous_token();
+            return this.add_expr(new ExprNode("lit", token_num.number_value, "", "", -1, -1, 1, 0));
         }
         if (this.match("IDENT")) {
-            Token token_ident = Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos - 1);
-            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1));
+            Token token_ident = this.previous_token();
+            return this.add_expr(new ExprNode("var", 0, token_ident.text, "", -1, -1, 2, 0));
         }
         if (this.match("LPAREN")) {
             long expr_index = this.parse_expr();
             this.expect("RPAREN");
             return expr_index;
         }
-        Token t = Pytra.CsModule.py_runtime.py_get(this.tokens, this.pos);
+        Token t = this.current_token();
         throw new System.Exception("primary parse error at pos=" + System.Convert.ToString(t.pos) + " got=" + t.kind);
+    return default(long);
     }
 }
 
@@ -217,6 +239,8 @@ public static class Program
 {
     public static System.Collections.Generic.List<Token> tokenize(System.Collections.Generic.List<string> lines)
     {
+        System.Collections.Generic.Dictionary<string, long> single_char_token_tags = new System.Collections.Generic.Dictionary<string, long> { { "+", 1 }, { "-", 2 }, { "*", 3 }, { "/", 4 }, { "(", 5 }, { ")", 6 }, { "=", 7 } };
+        System.Collections.Generic.List<string> single_char_token_kinds = new System.Collections.Generic.List<string> { "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL" };
         System.Collections.Generic.List<Token> tokens = new System.Collections.Generic.List<Token>();
         foreach (var __it_1 in Program.PytraEnumerate(lines)) {
         var line_index = __it_1.Item1;
@@ -230,38 +254,9 @@ public static class Program
                     i += 1;
                     continue;
                 }
-                if (ch == "+") {
-                    tokens.Add(new Token("PLUS", ch, i));
-                    i += 1;
-                    continue;
-                }
-                if (ch == "-") {
-                    tokens.Add(new Token("MINUS", ch, i));
-                    i += 1;
-                    continue;
-                }
-                if (ch == "*") {
-                    tokens.Add(new Token("STAR", ch, i));
-                    i += 1;
-                    continue;
-                }
-                if (ch == "/") {
-                    tokens.Add(new Token("SLASH", ch, i));
-                    i += 1;
-                    continue;
-                }
-                if (ch == "(") {
-                    tokens.Add(new Token("LPAREN", ch, i));
-                    i += 1;
-                    continue;
-                }
-                if (ch == ")") {
-                    tokens.Add(new Token("RPAREN", ch, i));
-                    i += 1;
-                    continue;
-                }
-                if (ch == "=") {
-                    tokens.Add(new Token("EQUAL", ch, i));
+                long single_tag = System.Convert.ToInt64((single_char_token_tags.ContainsKey(System.Convert.ToString(ch)) ? single_char_token_tags[System.Convert.ToString(ch)] : 0));
+                if (single_tag > 0) {
+                    tokens.Add(new Token(Pytra.CsModule.py_runtime.py_get(single_char_token_kinds, single_tag - 1), ch, i, 0));
                     i += 1;
                     continue;
                 }
@@ -271,7 +266,7 @@ public static class Program
                         i += 1;
                     }
                     string text = Pytra.CsModule.py_runtime.py_slice(source, System.Convert.ToInt64(start), System.Convert.ToInt64(i));
-                    tokens.Add(new Token("NUMBER", text, start));
+                    tokens.Add(new Token("NUMBER", text, start, Pytra.CsModule.py_runtime.py_int(text)));
                     continue;
                 }
                 if ((Pytra.CsModule.py_runtime.py_isalpha(ch)) || (ch == "_")) {
@@ -281,21 +276,21 @@ public static class Program
                     }
                     string text = Pytra.CsModule.py_runtime.py_slice(source, System.Convert.ToInt64(start), System.Convert.ToInt64(i));
                     if (text == "let") {
-                        tokens.Add(new Token("LET", text, start));
+                        tokens.Add(new Token("LET", text, start, 0));
                     } else {
                         if (text == "print") {
-                            tokens.Add(new Token("PRINT", text, start));
+                            tokens.Add(new Token("PRINT", text, start, 0));
                         } else {
-                            tokens.Add(new Token("IDENT", text, start));
+                            tokens.Add(new Token("IDENT", text, start, 0));
                         }
                     }
                     continue;
                 }
                 throw new System.Exception("tokenize error at line=" + System.Convert.ToString(line_index) + " pos=" + System.Convert.ToString(i) + " ch=" + ch);
             }
-            tokens.Add(new Token("NEWLINE", "", n));
+            tokens.Add(new Token("NEWLINE", "", n, 0));
         }
-        tokens.Add(new Token("EOF", "", (lines).Count));
+        tokens.Add(new Token("EOF", "", (lines).Count, 0));
         return tokens;
     }
     
@@ -303,31 +298,31 @@ public static class Program
     {
         ExprNode node = Pytra.CsModule.py_runtime.py_get(expr_nodes, expr_index);
         
-        if (node.kind == "lit") {
+        if (node.kind_tag == 1) {
             return node.value;
         }
-        if (node.kind == "var") {
+        if (node.kind_tag == 2) {
             if (!((env).ContainsKey(node.name))) {
                 throw new System.Exception("undefined variable: " + node.name);
             }
             return env[node.name];
         }
-        if (node.kind == "neg") {
+        if (node.kind_tag == 4) {
             return -eval_expr(node.left, expr_nodes, env);
         }
-        if (node.kind == "bin") {
+        if (node.kind_tag == 3) {
             long lhs = eval_expr(node.left, expr_nodes, env);
             long rhs = eval_expr(node.right, expr_nodes, env);
-            if (node.op == "+") {
+            if (node.op_tag == 1) {
                 return lhs + rhs;
             }
-            if (node.op == "-") {
+            if (node.op_tag == 2) {
                 return lhs - rhs;
             }
-            if (node.op == "*") {
+            if (node.op_tag == 3) {
                 return lhs * rhs;
             }
-            if (node.op == "/") {
+            if (node.op_tag == 4) {
                 if (rhs == 0) {
                     throw new System.Exception("division by zero");
                 }
@@ -336,6 +331,7 @@ public static class Program
             throw new System.Exception("unknown operator: " + node.op);
         }
         throw new System.Exception("unknown node kind: " + node.kind);
+    return default(long);
     }
     
     public static long execute(System.Collections.Generic.List<StmtNode> stmts, System.Collections.Generic.List<ExprNode> expr_nodes, bool trace)
@@ -345,11 +341,11 @@ public static class Program
         long printed = 0;
         
         foreach (var stmt in stmts) {
-            if (stmt.kind == "let") {
+            if (stmt.kind_tag == 1) {
                 env[stmt.name] = eval_expr(stmt.expr_index, expr_nodes, env);
                 continue;
             }
-            if (stmt.kind == "assign") {
+            if (stmt.kind_tag == 2) {
                 if (!((env).ContainsKey(stmt.name))) {
                     throw new System.Exception("assign to undefined variable: " + stmt.name);
                 }
@@ -437,6 +433,11 @@ public static class Program
         run_benchmark();
     }
     
+    public static void Main(string[] args)
+    {
+            __pytra_main();
+    }
+    
     public static System.Collections.Generic.IEnumerable<(long, T)> PytraEnumerate<T>(System.Collections.Generic.IEnumerable<T> source, long start = 0)
     {
         long i = start;
@@ -445,10 +446,5 @@ public static class Program
             yield return (i, item);
             i += 1;
         }
-    }
-    
-    public static void Main(string[] args)
-    {
-            __pytra_main();
     }
 }

@@ -3,29 +3,21 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::gif::grayscale_palette;
-use crate::pytra::runtime::gif::save_gif;
+use crate::pytra::utils::gif::grayscale_palette;
+use crate::pytra::utils::gif::save_gif;
 
 // 13: Sample that outputs DFS maze-generation progress as a GIF.
 
-fn capture(grid: &Vec<Vec<i64>>, w: i64, h: i64, scale: i64) -> Vec<u8> {
+fn capture(grid: &[Vec<i64>], w: i64, h: i64, scale: i64) -> Vec<u8> {
     let width = w * scale;
     let height = h * scale;
     let mut frame = vec![0u8; (width * height) as usize];
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(h) {
-        y = __for_i_1;
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(w) {
-                x = __for_i_2;
+    for y in (0)..(h) {
+            for x in (0)..(w) {
                     let v = (if grid[((y) as usize)][((x) as usize)] == 0 { 255 } else { 40 });
-                    let mut yy: i64 = 0;
-                    for __for_i_3 in (0)..(scale) {
-                        yy = __for_i_3;
+                    for yy in (0)..(scale) {
                             let base = (y * scale + yy) * width + x * scale;
-                            let mut xx: i64 = 0;
-                            for __for_i_4 in (0)..(scale) {
-                                xx = __for_i_4;
+                            for xx in (0)..(scale) {
                                     let __idx_i64_6 = ((base + xx) as i64);
                                     let __idx_5 = if __idx_i64_6 < 0 { (frame.len() as i64 + __idx_i64_6) as usize } else { __idx_i64_6 as usize };
                                     frame[__idx_5] = ((v) as u8);
@@ -60,9 +52,7 @@ fn run_13_maze_generation_steps() {
         let x = __tmp_9.0;
         let y = __tmp_9.1;
         let mut candidates: Vec<(i64, i64, i64, i64)> = vec![];
-        let mut k: i64 = 0;
-        for __for_i_10 in (0)..(4) {
-            k = __for_i_10;
+        for k in (0)..(4) {
                 let __tmp_11 = (dirs[((k) as usize)]).clone();
                 let dx = __tmp_11.0;
                 let dy = __tmp_11.1;

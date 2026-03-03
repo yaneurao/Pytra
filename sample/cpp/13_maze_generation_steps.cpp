@@ -14,9 +14,8 @@ bytes capture(const list<list<int64>>& grid, int64 w, int64 h, int64 scale) {
             int64 v = (grid[y][x] == 0 ? 255 : 40);
             for (int64 yy = 0; yy < scale; ++yy) {
                 int64 base = (y * scale + yy) * width + x * scale;
-                for (int64 xx = 0; xx < scale; ++xx) {
+                for (int64 xx = 0; xx < scale; ++xx)
                     frame[base + xx] = v;
-                }
             }
         }
     }
@@ -37,18 +36,14 @@ void run_13_maze_generation_steps() {
     grid[1][1] = 0;
     
     list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-2, 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -2)};
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     int64 step = 0;
     
     while (!(stack.empty())) {
-        auto __tuple_1 = py_at(stack, -1);
-        int64 x = ::std::get<0>(__tuple_1);
-        int64 y = ::std::get<1>(__tuple_1);
-        list<::std::tuple<int64, int64, int64, int64>> candidates = list<::std::tuple<int64, int64, int64, int64>>{};
+        auto [x, y] = py_at(stack, -1);
+        list<::std::tuple<int64, int64, int64, int64>> candidates = {};
         for (int64 k = 0; k < 4; ++k) {
-            auto __tuple_2 = dirs[k];
-            int64 dx = ::std::get<0>(__tuple_2);
-            int64 dy = ::std::get<1>(__tuple_2);
+            auto [dx, dy] = dirs[k];
             int64 nx = x + dx;
             int64 ny = y + dy;
             if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (grid[ny][nx] == 1)) {
@@ -68,11 +63,7 @@ void run_13_maze_generation_steps() {
         } else {
             auto __idx_3 = (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);
             ::std::tuple<int64, int64, int64, int64> sel = candidates[__idx_3];
-            auto __tuple_4 = sel;
-            int64 nx = ::std::get<0>(__tuple_4);
-            int64 ny = ::std::get<1>(__tuple_4);
-            int64 wx = ::std::get<2>(__tuple_4);
-            int64 wy = ::std::get<3>(__tuple_4);
+            auto [nx, ny, wx, wy] = sel;
             grid[wy][wx] = 0;
             grid[ny][nx] = 0;
             stack.append(::std::make_tuple(nx, ny));

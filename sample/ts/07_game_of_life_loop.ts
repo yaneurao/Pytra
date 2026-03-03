@@ -6,16 +6,12 @@ import { save_gif } from "./pytra/utils/gif.js";
 
 function next_state(grid, w, h) {
     let nxt = [];
-    const __start_1 = 0;
-    for (let y = __start_1; y < h; y += 1) {
+    for (let y = 0; y < h; y += 1) {
         let row = [];
-        const __start_2 = 0;
-        for (let x = __start_2; x < w; x += 1) {
+        for (let x = 0; x < w; x += 1) {
             let cnt = 0;
-            const __start_3 = -1;
-            for (let dy = __start_3; dy < 2; dy += 1) {
-                const __start_4 = -1;
-                for (let dx = __start_4; dx < 2; dx += 1) {
+            for (let dy = -1; dy < 2; dy += 1) {
+                for (let dx = -1; dx < 2; dx += 1) {
                     if (dx !== 0 || dy !== 0) {
                         let nx = (x + dx + w) % w;
                         let ny = (y + dy + h) % h;
@@ -43,16 +39,12 @@ function render(grid, w, h, cell) {
     let width = w * cell;
     let height = h * cell;
     let frame = (typeof (width * height) === "number" ? new Array(Math.max(0, Math.trunc(Number((width * height))))).fill(0) : (Array.isArray((width * height)) ? (width * height).slice() : Array.from((width * height))));
-    const __start_5 = 0;
-    for (let y = __start_5; y < h; y += 1) {
-        const __start_6 = 0;
-        for (let x = __start_6; x < w; x += 1) {
+    for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
             let v = (grid[(((y) < 0) ? ((grid).length + (y)) : (y))][(((x) < 0) ? ((grid[(((y) < 0) ? ((grid).length + (y)) : (y))]).length + (x)) : (x))] ? 255 : 0);
-            const __start_7 = 0;
-            for (let yy = __start_7; yy < cell; yy += 1) {
+            for (let yy = 0; yy < cell; yy += 1) {
                 let base = (y * cell + yy) * width + x * cell;
-                const __start_8 = 0;
-                for (let xx = __start_8; xx < cell; xx += 1) {
+                for (let xx = 0; xx < cell; xx += 1) {
                     frame[(((base + xx) < 0) ? ((frame).length + (base + xx)) : (base + xx))] = v;
                 }
             }
@@ -73,10 +65,8 @@ function run_07_game_of_life_loop() {
     
     // Lay down sparse noise so the whole field is less likely to stabilize too early.
     // Avoid large integer literals so all transpilers handle the expression consistently.
-    const __start_9 = 0;
-    for (let y = __start_9; y < h; y += 1) {
-        const __start_10 = 0;
-        for (let x = __start_10; x < w; x += 1) {
+    for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
             let noise = (x * 37 + y * 73 + x * y % 19 + (x + y) % 11) % 97;
             if (noise < 3) {
                 grid[(((y) < 0) ? ((grid).length + (y)) : (y))][(((x) < 0) ? ((grid[(((y) < 0) ? ((grid).length + (y)) : (y))]).length + (x)) : (x))] = 1;
@@ -88,18 +78,14 @@ function run_07_game_of_life_loop() {
     let r_pentomino = [[0, 1, 1], [1, 1, 0], [0, 1, 0]];
     let lwss = [[0, 1, 1, 1, 1], [1, 0, 0, 0, 1], [0, 0, 0, 0, 1], [1, 0, 0, 1, 0]];
     
-    const __start_11 = 8;
-    for (let gy = __start_11; gy < h - 8; gy += 18) {
-        const __start_12 = 8;
-        for (let gx = __start_12; gx < w - 8; gx += 22) {
+    for (let gy = 8; gy < h - 8; gy += 18) {
+        for (let gx = 8; gx < w - 8; gx += 22) {
             let kind = (gx * 7 + gy * 11) % 3;
             if (kind === 0) {
                 let ph = (glider).length;
-                const __start_13 = 0;
-                for (let py = __start_13; py < ph; py += 1) {
+                for (let py = 0; py < ph; py += 1) {
                     let pw = (glider[(((py) < 0) ? ((glider).length + (py)) : (py))]).length;
-                    const __start_14 = 0;
-                    for (let px = __start_14; px < pw; px += 1) {
+                    for (let px = 0; px < pw; px += 1) {
                         if (glider[(((py) < 0) ? ((glider).length + (py)) : (py))][(((px) < 0) ? ((glider[(((py) < 0) ? ((glider).length + (py)) : (py))]).length + (px)) : (px))] === 1) {
                             grid[((((gy + py) % h) < 0) ? ((grid).length + ((gy + py) % h)) : ((gy + py) % h))][((((gx + px) % w) < 0) ? ((grid[((((gy + py) % h) < 0) ? ((grid).length + ((gy + py) % h)) : ((gy + py) % h))]).length + ((gx + px) % w)) : ((gx + px) % w))] = 1;
                         }
@@ -108,11 +94,9 @@ function run_07_game_of_life_loop() {
             } else {
                 if (kind === 1) {
                     let ph = (r_pentomino).length;
-                    const __start_15 = 0;
-                    for (let py = __start_15; py < ph; py += 1) {
+                    for (let py = 0; py < ph; py += 1) {
                         let pw = (r_pentomino[(((py) < 0) ? ((r_pentomino).length + (py)) : (py))]).length;
-                        const __start_16 = 0;
-                        for (let px = __start_16; px < pw; px += 1) {
+                        for (let px = 0; px < pw; px += 1) {
                             if (r_pentomino[(((py) < 0) ? ((r_pentomino).length + (py)) : (py))][(((px) < 0) ? ((r_pentomino[(((py) < 0) ? ((r_pentomino).length + (py)) : (py))]).length + (px)) : (px))] === 1) {
                                 grid[((((gy + py) % h) < 0) ? ((grid).length + ((gy + py) % h)) : ((gy + py) % h))][((((gx + px) % w) < 0) ? ((grid[((((gy + py) % h) < 0) ? ((grid).length + ((gy + py) % h)) : ((gy + py) % h))]).length + ((gx + px) % w)) : ((gx + px) % w))] = 1;
                             }
@@ -120,11 +104,9 @@ function run_07_game_of_life_loop() {
                     }
                 } else {
                     let ph = (lwss).length;
-                    const __start_17 = 0;
-                    for (let py = __start_17; py < ph; py += 1) {
+                    for (let py = 0; py < ph; py += 1) {
                         let pw = (lwss[(((py) < 0) ? ((lwss).length + (py)) : (py))]).length;
-                        const __start_18 = 0;
-                        for (let px = __start_18; px < pw; px += 1) {
+                        for (let px = 0; px < pw; px += 1) {
                             if (lwss[(((py) < 0) ? ((lwss).length + (py)) : (py))][(((px) < 0) ? ((lwss[(((py) < 0) ? ((lwss).length + (py)) : (py))]).length + (px)) : (px))] === 1) {
                                 grid[((((gy + py) % h) < 0) ? ((grid).length + ((gy + py) % h)) : ((gy + py) % h))][((((gx + px) % w) < 0) ? ((grid[((((gy + py) % h) < 0) ? ((grid).length + ((gy + py) % h)) : ((gy + py) % h))]).length + ((gx + px) % w)) : ((gx + px) % w))] = 1;
                             }
@@ -135,8 +117,7 @@ function run_07_game_of_life_loop() {
         }
     }
     let frames = [];
-    const __start_19 = 0;
-    for (let _ = __start_19; _ < steps; _ += 1) {
+    for (let _ = 0; _ < steps; _ += 1) {
         frames.push(render(grid, w, h, cell));
         grid = next_state(grid, w, h);
     }

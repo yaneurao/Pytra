@@ -1,18 +1,17 @@
-public final class Pytra_12_sort_visualizer {
-    private Pytra_12_sort_visualizer() {
+public final class _12_sort_visualizer {
+    private _12_sort_visualizer() {
     }
 
 
     // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
-    public static java.util.ArrayList<Long> render(java.util.ArrayList<Object> values, long w, long h) {
+    public static java.util.ArrayList<Long> render(java.util.ArrayList<Long> values, long w, long h) {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(w * h);
         long n = ((long)(values.size()));
         double bar_w = ((double)(w)) / ((double)(n));
         double __hoisted_cast_1 = ((double)(n));
         double __hoisted_cast_2 = ((double)(h));
-        long __step_0 = 1L;
-        for (long i = 0L; (__step_0 >= 0L) ? (i < n) : (i > n); i += __step_0) {
+        for (long i = 0L; i < n; i += 1L) {
             long x0 = PyRuntime.__pytra_int(((double)(i)) * bar_w);
             long x1 = PyRuntime.__pytra_int((((double)(i + 1L))) * bar_w);
             if ((x1 <= x0)) {
@@ -20,10 +19,8 @@ public final class Pytra_12_sort_visualizer {
             }
             long bh = PyRuntime.__pytra_int(((double)(((Long)(values.get((int)((((i) < 0L) ? (((long)(values.size())) + (i)) : (i)))))))) / __hoisted_cast_1 * __hoisted_cast_2);
             long y = h - bh;
-            long __step_1 = 1L;
-            for (y = y; (__step_1 >= 0L) ? (y < h) : (y > h); y += __step_1) {
-                long __step_2 = 1L;
-                for (long x = x0; (__step_2 >= 0L) ? (x < x1) : (x > x1); x += __step_2) {
+            for (y = y; y < h; y += 1L) {
+                for (long x = x0; x < x1; x += 1L) {
                     frame.set((int)((((y * w + x) < 0L) ? (((long)(frame.size())) + (y * w + x)) : (y * w + x))), 255L);
                 }
             }
@@ -37,23 +34,20 @@ public final class Pytra_12_sort_visualizer {
         long n = 124L;
         String out_path = "sample/out/12_sort_visualizer.gif";
         double start = (System.nanoTime() / 1000000000.0);
-        java.util.ArrayList<Object> values = new java.util.ArrayList<Object>(java.util.Arrays.asList());
-        long __step_0 = 1L;
-        for (long i = 0L; (__step_0 >= 0L) ? (i < n) : (i > n); i += __step_0) {
+        java.util.ArrayList<Long> values = new java.util.ArrayList<Long>();
+        for (long i = 0L; i < n; i += 1L) {
             values.add((i * 37L + 19L) % n);
         }
-        java.util.ArrayList<Object> frames = new java.util.ArrayList<Object>(java.util.Arrays.asList(render(values, w, h)));
+        java.util.ArrayList<java.util.ArrayList<Long>> frames = new java.util.ArrayList<java.util.ArrayList<Long>>(java.util.Arrays.asList(render(values, w, h)));
         long frame_stride = 16L;
         long op = 0L;
-        long __step_1 = 1L;
-        for (long i = 0L; (__step_1 >= 0L) ? (i < n) : (i > n); i += __step_1) {
+        for (long i = 0L; i < n; i += 1L) {
             boolean swapped = false;
-            long __step_2 = 1L;
-            for (long j = 0L; (__step_2 >= 0L) ? (j < n - i - 1L) : (j > n - i - 1L); j += __step_2) {
+            for (long j = 0L; j < n - i - 1L; j += 1L) {
                 if ((((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j)))))) > ((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L)))))))) {
-                    java.util.ArrayList<Object> __tuple_3 = ((java.util.ArrayList<Object>)(new java.util.ArrayList<Object>(java.util.Arrays.asList(((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L)))))), ((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))))))))));
-                    values.set((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))), ((Long)(__tuple_3.get(0))));
-                    values.set((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L))), ((Long)(__tuple_3.get(1))));
+                    java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(new java.util.ArrayList<Object>(java.util.Arrays.asList(((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L)))))), ((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))))))))));
+                    values.set((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))), ((Long)(__tuple_0.get(0))));
+                    values.set((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L))), ((Long)(__tuple_0.get(1))));
                     swapped = true;
                 }
                 if ((op % frame_stride == 0L)) {

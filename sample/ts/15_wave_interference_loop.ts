@@ -14,15 +14,12 @@ function run_15_wave_interference_loop() {
     let start = perf_counter();
     let frames = [];
     
-    const __start_1 = 0;
-    for (let t = __start_1; t < frames_n; t += 1) {
+    for (let t = 0; t < frames_n; t += 1) {
         let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
         let phase = t * 0.12;
-        const __start_2 = 0;
-        for (let y = __start_2; y < h; y += 1) {
+        for (let y = 0; y < h; y += 1) {
             let row_base = y * w;
-            const __start_3 = 0;
-            for (let x = __start_3; x < w; x += 1) {
+            for (let x = 0; x < w; x += 1) {
                 let dx = x - 160;
                 let dy = y - 120;
                 let v = math.sin((x + t * 1.5) * 0.045) + math.sin((y - t * 1.2) * 0.04) + math.sin((x + y) * 0.02 + phase) + math.sin(math.sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);

@@ -3,22 +3,18 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::gif::grayscale_palette;
-use crate::pytra::runtime::gif::save_gif;
+use crate::pytra::utils::gif::grayscale_palette;
+use crate::pytra::utils::gif::save_gif;
 
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 fn render_frame(width: i64, height: i64, center_x: f64, center_y: f64, scale: f64, max_iter: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (width * height) as usize];
     let __hoisted_cast_1: f64 = ((max_iter) as f64);
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(height) {
-        y = __for_i_1;
+    for y in (0)..(height) {
             let row_base = y * width;
             let cy = center_y + (((y) as f64) - ((height) as f64) * 0.5) * scale;
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(width) {
-                x = __for_i_2;
+            for x in (0)..(width) {
                     let cx = center_x + (((x) as f64) - ((width) as f64) * 0.5) * scale;
                     let mut zx = 0.0;
                     let mut zy = 0.0;
@@ -55,9 +51,7 @@ fn run_05_mandelbrot_zoom() {
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
     let mut scale = base_scale;
-    let mut py_underscore: i64 = 0;
-    for __for_i_5 in (0)..(frame_count) {
-        py_underscore = __for_i_5;
+    for py_underscore in (0)..(frame_count) {
             frames.push(render_frame(width, height, center_x, center_y, scale, max_iter));
             scale *= zoom_per_frame;
     }

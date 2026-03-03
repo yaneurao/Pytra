@@ -3,7 +3,7 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::png;
+use crate::pytra::utils::png;
 
 // 03: Sample that outputs a Julia set as a PNG image.
 // Implemented with simple loop-centric logic for transpilation compatibility.
@@ -14,14 +14,10 @@ fn render_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: f64) -> Vec
     let __hoisted_cast_2: f64 = ((width - 1) as f64);
     let __hoisted_cast_3: f64 = ((max_iter) as f64);
     
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(height) {
-        y = __for_i_1;
+    for y in (0)..(height) {
             let zy0: f64 = -1.2 + 2.4 * (((y) as f64) / __hoisted_cast_1);
             
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(width) {
-                x = __for_i_2;
+            for x in (0)..(width) {
                     let mut zx: f64 = -1.8 + 3.6 * (((x) as f64) / __hoisted_cast_2);
                     let mut zy: f64 = zy0;
                     
@@ -65,7 +61,7 @@ fn run_julia() {
     
     let start: f64 = perf_counter();
     let pixels: Vec<u8> = render_julia(width, height, max_iter, -0.8, 0.156);
-    pytra::runtime::png::write_rgb_png(&(out_path), width, height, &(pixels));
+    pytra::utils::png::write_rgb_png(&(out_path), width, height, &(pixels));
     let elapsed: f64 = perf_counter() - start;
     
     println!("{} {}", ("output:").to_string(), out_path);

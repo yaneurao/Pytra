@@ -15,22 +15,20 @@ bytes fire_palette() {
             r = i * 3;
             g = 0;
             b = 0;
+        } else if (i < 170) {
+            r = 255;
+            g = (i - 85) * 3;
+            b = 0;
         } else {
-            if (i < 170) {
-                r = 255;
-                g = (i - 85) * 3;
-                b = 0;
-            } else {
-                r = 255;
-                g = 255;
-                b = (i - 170) * 3;
-            }
+            r = 255;
+            g = 255;
+            b = (i - 170) * 3;
         }
         p.append(r);
         p.append(g);
         p.append(b);
     }
-    return bytes(p);
+    return p;
 }
 
 void run_09_fire_simulation() {
@@ -40,8 +38,8 @@ void run_09_fire_simulation() {
     str out_path = "sample/out/09_fire_simulation.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<list<int64>> heat = [&]() -> list<list<int64>> {     list<list<int64>> __out;     for (int64 _ = 0; (_ < h); _ += (1)) {         __out.append(py_repeat(list<int64>(list<int64>{0}), w));     }     return __out; }();
-    list<bytes> frames = list<bytes>{};
+    list<list<int64>> heat = list<list<int64>>(h, list<int64>(w, 0));
+    list<bytes> frames = {};
     
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
@@ -63,11 +61,10 @@ void run_09_fire_simulation() {
         bytearray frame = bytearray(w * h);
         for (int64 yy = 0; yy < h; ++yy) {
             int64 row_base = yy * w;
-            for (int64 xx = 0; xx < w; ++xx) {
+            for (int64 xx = 0; xx < w; ++xx)
                 frame[row_base + xx] = heat[yy][xx];
-            }
         }
-        frames.append(bytes(frame));
+        frames.append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

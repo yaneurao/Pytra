@@ -10,12 +10,12 @@ def fire_palette()
     r = 0
     g = 0
     b = 0
-    if (i < 85)
-      r = (i * 3)
+    if i < 85
+      r = i * 3
       g = 0
       b = 0
     else
-      if (i < 170)
+      if i < 170
         r = 255
         g = ((i - 85) * 3)
         b = 0
@@ -25,9 +25,7 @@ def fire_palette()
         b = ((i - 170) * 3)
       end
     end
-    p.append(r)
-    p.append(g)
-    p.append(b)
+    p.concat([r, g, b])
     i += 1
   end
   return __pytra_bytes(p)
@@ -45,8 +43,8 @@ def run_09_fire_simulation()
   while t < steps
     x = 0
     while x < w
-      val = (170 + (((x * 13) + (t * 17)) % 86))
-      __pytra_set_index(__pytra_get_index(heat, (h - 1)), x, val)
+      val = (170 + ((x * 13 + t * 17) % 86))
+      __pytra_set_index(__pytra_get_index(heat, h - 1), x, val)
       x += 1
     end
     y = 1
@@ -54,24 +52,24 @@ def run_09_fire_simulation()
       x = 0
       while x < w
         a = __pytra_get_index(__pytra_get_index(heat, y), x)
-        b = __pytra_get_index(__pytra_get_index(heat, y), (((x - 1) + w) % w))
+        b = __pytra_get_index(__pytra_get_index(heat, y), ((x - 1 + w) % w))
         c = __pytra_get_index(__pytra_get_index(heat, y), ((x + 1) % w))
         d = __pytra_get_index(__pytra_get_index(heat, ((y + 1) % h)), x)
-        v = ((((a + b) + c) + d) / 4)
-        cool = (1 + (((x + y) + t) % 3))
-        nv = (v - cool)
-        __pytra_set_index(__pytra_get_index(heat, (y - 1)), x, ((nv > 0) ? nv : 0))
+        v = (((a + b + c) + d) / 4)
+        cool = (1 + ((x + y + t) % 3))
+        nv = v - cool
+        __pytra_set_index(__pytra_get_index(heat, y - 1), x, ((nv > 0) ? nv : 0))
         x += 1
       end
       y += 1
     end
-    frame = __pytra_bytearray((w * h))
+    frame = __pytra_bytearray(w * h)
     yy = 0
     while yy < h
-      row_base = (yy * w)
+      row_base = yy * w
       xx = 0
       while xx < w
-        __pytra_set_index(frame, (row_base + xx), __pytra_get_index(__pytra_get_index(heat, yy), xx))
+        __pytra_set_index(frame, row_base + xx, __pytra_get_index(__pytra_get_index(heat, yy), xx))
         xx += 1
       end
       yy += 1
@@ -80,7 +78,7 @@ def run_09_fire_simulation()
     t += 1
   end
   save_gif(out_path, w, h, frames, fire_palette(), 4, 0)
-  elapsed = (__pytra_perf_counter() - start)
+  elapsed = __pytra_perf_counter() - start
   __pytra_print("output:", out_path)
   __pytra_print("frames:", steps)
   __pytra_print("elapsed_sec:", elapsed)

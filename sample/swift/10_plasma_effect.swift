@@ -12,7 +12,7 @@ func run_10_plasma_effect() {
     var frames: [Any] = __pytra_as_list([])
     var t = __pytra_int(Int64(0))
     while (t < __pytra_int(frames_n)) {
-        var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: [Any] = __pytra_bytearray((w * h))
         var y = __pytra_int(Int64(0))
         while (y < __pytra_int(h)) {
             var row_base: Int64 = (y * w)
