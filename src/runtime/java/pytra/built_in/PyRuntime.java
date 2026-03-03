@@ -1015,12 +1015,37 @@ final class PyRuntime {
         return out;
     }
 
-    static java.util.ArrayList<Object> __pytra_list_repeat(Object value, long count) {
-        java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
+    static Object __pytra_dict_get_default(Object mapObj, Object key, Object defaultValue) {
+        if (mapObj instanceof Map<?, ?>) {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> map = (Map<Object, Object>) mapObj;
+            if (map.containsKey(key)) {
+                return map.get(key);
+            }
+        }
+        return defaultValue;
+    }
+
+    static <T> java.util.ArrayList<T> __pytra_list_repeat(T value, long count) {
+        java.util.ArrayList<T> out = new java.util.ArrayList<T>();
         long i = 0L;
         while (i < count) {
             out.add(value);
             i += 1L;
+        }
+        return out;
+    }
+
+    static java.util.ArrayList<Object> __pytra_enumerate(Object value) {
+        java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
+        List<Object> items = pyIter(value);
+        int i = 0;
+        while (i < items.size()) {
+            java.util.ArrayList<Object> pair = new java.util.ArrayList<Object>(2);
+            pair.add((long) i);
+            pair.add(items.get(i));
+            out.add(pair);
+            i += 1;
         }
         return out;
     }

@@ -560,6 +560,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if isinstance(resolved, str) and (resolved.startswith("list[") or resolved in {"bytes", "bytearray"}):
                 return "((long)(" + rendered + ".size()))"
         return "PyRuntime.__pytra_len(" + _render_expr(args[0]) + ")"
+    if callee_name == "enumerate":
+        if len(args) == 0:
+            return "new java.util.ArrayList<Object>()"
+        return "PyRuntime.__pytra_enumerate(" + _render_expr(args[0]) + ")"
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -588,6 +592,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered.append("String.valueOf(" + _render_expr(args[i]) + ")")
             i += 1
         return "System.out.println(" + " + \" \" + ".join(rendered) + ")"
+    if callee_name in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError"}:
+        if len(args) == 0:
+            return "\"\""
+        return _render_expr(args[0])
     func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
@@ -623,6 +631,23 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "PyRuntime.__pytra_str_isdigit(" + owner_expr + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "PyRuntime.__pytra_str_isalpha(" + owner_expr + ")"
+        if attr_name == "get" and len(args) == 2:
+            base = (
+                "PyRuntime.__pytra_dict_get_default("
+                + owner_expr
+                + ", "
+                + _render_expr(args[0])
+                + ", "
+                + _render_expr(args[1])
+                + ")"
+            )
+            resolved_any = expr.get("resolved_type")
+            resolved_type = _java_type(resolved_any, allow_void=False)
+            if resolved_type == "Object" and isinstance(args[1], dict):
+                fallback_type = _java_type(args[1].get("resolved_type"), allow_void=False)
+                if fallback_type != "Object":
+                    resolved_type = fallback_type
+            return _cast_from_object(base, resolved_type)
         if attr_name in {"write_rgb_png", "save_gif"}:
             if attr_name == "write_rgb_png":
                 rendered_png_args: list[str] = []
@@ -780,6 +805,21 @@ def _render_expr(expr: Any) -> str:
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
+        if len(keys) == 0 and len(vals) == 0:
+            entries_any = expr.get("entries")
+            entries = entries_any if isinstance(entries_any, list) else []
+            if len(entries) > 0:
+                i = 0
+                while i < len(entries):
+                    entry_any = entries[i]
+                    if isinstance(entry_any, dict):
+                        key_any = entry_any.get("key")
+                        val_any = entry_any.get("value")
+                        if isinstance(key_any, dict):
+                            keys.append(key_any)
+                        if isinstance(val_any, dict):
+                            vals.append(val_any)
+                    i += 1
         resolved_any = expr.get("resolved_type")
         dict_type = _java_type(resolved_any, allow_void=False)
         if not dict_type.startswith("java.util.HashMap<"):
@@ -1443,9 +1483,13 @@ def _is_empty_dict_expr(expr: Any) -> bool:
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
-        if len(keys) == 0 or len(vals) == 0:
-            return True
-        return False
+        entries_any = expr.get("entries")
+        entries = entries_any if isinstance(entries_any, list) else []
+        if len(entries) > 0:
+            return False
+        if len(keys) > 0 and len(vals) > 0:
+            return False
+        return True
     if kind == "Call" and _call_name(expr) == "dict":
         args_any = expr.get("args")
         args = args_any if isinstance(args_any, list) else []
@@ -1652,7 +1696,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         exc_any = stmt.get("exc")
         if exc_any is None:
             return [indent + 'throw new RuntimeException("pytra raise");']
-        return [indent + "throw new RuntimeException(__pytra_str(" + _render_expr(exc_any) + "));"]
+        return [indent + "throw new RuntimeException(PyRuntime.pyToString(" + _render_expr(exc_any) + "));"]
     if kind == "If":
         test_expr = _render_truthy_expr(stmt.get("test"))
         lines: list[str] = [indent + "if (" + test_expr + ") {"]
@@ -1718,7 +1762,7 @@ def _stmt_guarantees_return(stmt: Any) -> bool:
     if not isinstance(stmt, dict):
         return False
     kind = stmt.get("kind")
-    if kind == "Return":
+    if kind == "Return" or kind == "Raise":
         return True
     if kind != "If":
         return False

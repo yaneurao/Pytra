@@ -49,6 +49,10 @@
   - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`
   - `cases=18 pass=2 fail=16`
   - `artifact_missing=0` を確認（残件: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=7`, `run_failed=5`）
+- Java（compile fail 群修正後）:
+  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_compile_fix4.json`
+  - `cases=18 pass=6 fail=12`
+  - `run_failed=0` を確認（残件: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=8`）
 
 原因調査（現時点の確定）:
 - Kotlin:
@@ -117,6 +121,7 @@
 - 2026-03-04: Swift `--all-samples` を timeout 付きで完走し、`run_failed=17/artifact_missing=1` を baseline としてロックした。
 - 2026-03-04: 既存 `cpp..kotlin` ログに Kotlin 更新版と Swift 全件版を合成し、`runtime_parity_sample_baseline_lock_20260304.json` を生成して言語別カテゴリを固定した。
 - 2026-03-04: Java emitter の `write_rgb_png/save_gif/grayscale_palette` を `PyRuntime.pyWriteRGBPNG/pySaveGif/pyGrayscalePalette` へ接続し、`artifact_missing` を解消した。
+- 2026-03-04: Java compile fail 修正として、`RuntimeError` 呼び出しの文字列化、`dict.get(key, default)` の型付き縮退、`enumerate()` 直接呼び出し、`__pytra_list_repeat` の generic 化、`Dict.entries` emit 対応、`Raise` 終端判定を適用。`run_failed` を 0 にした。
 
 ## 分解
 
@@ -125,7 +130,7 @@
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin: `save_gif` no-op 経路を除去し、runtime GIF writer を実装して 05..16 の artifact_missing を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin: PNG writer を Python準拠バイナリへ寄せ、01..04 の artifact_size/CRC mismatch を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-03] Java: emitter の image call を `__pytra_noop` から runtime 実装へ接続し、artifact_missing を解消する。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java: `RuntimeError` / dict.get-default / 型周辺の compile fail を修正し、sample 実行を完走可能にする。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-04] Java: `RuntimeError` / dict.get-default / 型周辺の compile fail を修正し、sample 実行を完走可能にする。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-05] Go: `__pytra_bytes([]byte)` 対応と typed演算戻り値（`ifexp/min/max`）の型確定を修正し、run_failed を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-06] Go: sample/18 の `TokenLike` フィールドアクセス崩れを修正し、parser/tokenize 系 compile fail を解消する。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-07] Swift: 関数定義と呼び出しの引数ラベル整合を修正し、全sampleをコンパイル・実行可能にする。
