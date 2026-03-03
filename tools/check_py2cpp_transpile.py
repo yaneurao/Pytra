@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2CPP = ROOT / "src" / "py2cpp.py"
+CPP_CLI = ROOT / "src" / "backends" / "cpp" / "cli.py"
 PY2X = ROOT / "src" / "py2x.py"
 TARGET = "cpp"
 STAGE2_REMOVED_ERROR = "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
@@ -86,7 +86,7 @@ def _run_one_stage2_must_fail(src: Path, out: Path) -> tuple[bool, str]:
 
 
 def _assert_cpp_emitter_separation() -> tuple[bool, str]:
-    py2cpp_text = PY2CPP.read_text(encoding="utf-8")
+    py2cpp_text = CPP_CLI.read_text(encoding="utf-8")
     py2cpp_ast = ast.parse(py2cpp_text)
 
     has_cpp_emitter_class = False
@@ -101,7 +101,7 @@ def _assert_cpp_emitter_separation() -> tuple[bool, str]:
                 has_cpp_emitter_import = True
 
     if has_cpp_emitter_class:
-        return False, "class CppEmitter must be removed from src/py2cpp.py"
+        return False, "class CppEmitter must not be implemented in src/backends/cpp/cli.py"
     if not has_cpp_emitter_import:
         return False, "missing import from backends.cpp.emitter import CppEmitter"
     return True, ""

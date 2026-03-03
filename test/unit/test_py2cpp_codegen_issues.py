@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import CppEmitter, load_cpp_profile, load_east, transpile_to_cpp
+from src.backends.cpp.cli import CppEmitter, load_cpp_profile, load_east, transpile_to_cpp
 
 
 class Py2CppCodegenIssueTest(unittest.TestCase):
@@ -149,7 +149,7 @@ def make_token() -> Token:
         self.assertIn("key_sep", cpp)
 
     def test_py2cpp_kind_lookup_is_centralized(self) -> None:
-        src_text = (ROOT / "src" / "py2cpp.py").read_text(encoding="utf-8")
+        src_text = (ROOT / "src" / "backends" / "cpp" / "cli.py").read_text(encoding="utf-8")
         bad_lines: list[str] = []
         line_no = 0
         for line in src_text.splitlines():

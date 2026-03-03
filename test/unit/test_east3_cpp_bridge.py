@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2cpp import CppEmitter, load_east
+from src.backends.cpp.cli import CppEmitter, load_east
 from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
 
 

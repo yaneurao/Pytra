@@ -147,7 +147,7 @@ def build_cpp_header_from_east(
     lines: list[str] = []
     lines.append("// AUTO-GENERATED FILE. DO NOT EDIT.")
     lines.append("// source: " + str(source_path))
-    lines.append("// generated-by: src/py2cpp.py")
+    lines.append("// generated-by: src/backends/cpp/cli.py")
     lines.append("")
     lines.append("#ifndef " + guard)
     lines.append("#define " + guard)

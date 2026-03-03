@@ -3,7 +3,7 @@
 
 Policy:
 - Language-agnostic helpers should be implemented in shared compiler layers
-  (`src/toolchain/compiler/*`) before adding to `src/py2cpp.py`.
+  (`src/toolchain/compiler/*`) before adding to `src/backends/cpp/cli.py`.
 - This guard fails when new private helper methods are added to CppEmitter
   unless the allowlist is explicitly updated.
 """
@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = ROOT / "src" / "py2cpp.py"
+TARGET = ROOT / "src" / "backends" / "cpp" / "cli.py"
 CPP_EMITTER_TARGET = ROOT / "src" / "backends" / "cpp" / "emitter" / "cpp_emitter.py"
 CPP_EMITTER_CLASS_NAME = "CppEmitter"
 ALLOWLIST = ROOT / "tools" / "py2cpp_cpp_helper_allowlist.txt"
@@ -87,7 +87,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if _has_class(TARGET, CPP_EMITTER_CLASS_NAME):
-        print("[FAIL] CppEmitter must not be implemented in src/py2cpp.py")
+        print("[FAIL] CppEmitter must not be implemented in src/backends/cpp/cli.py")
         print("Move implementation to src/backends/cpp/emitter/cpp_emitter.py")
         return 1
 
@@ -108,7 +108,7 @@ def main() -> int:
     removed = [name for name in allowed if name not in current]
 
     if added:
-        print("[FAIL] new CppEmitter private helper(s) detected in src/py2cpp.py:")
+        print("[FAIL] new CppEmitter private helper(s) detected in src/backends/cpp/cli.py:")
         for name in added:
             print(f"  - {name}")
         print("Move language-agnostic helpers to shared compiler layers first.")

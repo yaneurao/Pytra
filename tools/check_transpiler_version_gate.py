@@ -23,7 +23,7 @@ SHARED_DEPENDENCY_PATHS = [
 ]
 
 LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
-    "cpp": ["src/py2cpp.py", "src/backends/cpp", "src/backends/cpp/profiles"],
+    "cpp": ["src/backends/cpp/cli.py", "src/backends/cpp", "src/backends/cpp/profiles"],
     "rs": ["src/py2rs.py", "src/backends/rs", "src/backends/rs/profiles"],
     "cs": ["src/py2cs.py", "src/backends/cs", "src/backends/cs/profiles"],
     "js": ["src/py2js.py", "src/backends/js", "src/backends/js/profiles"],

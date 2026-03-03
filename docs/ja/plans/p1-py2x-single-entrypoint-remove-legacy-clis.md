@@ -65,7 +65,7 @@
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] legacy CLI 撤去前のガードを追加し、`py2*.py` 新規再流入を fail-fast で検出する。
-- [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
+- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を削除し、必要に応じて他 `py2*.py` も同時撤去する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
 
 決定ログ:
@@ -86,3 +86,4 @@
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `src/runtime/cpp/pytra/compiler/{transpile_cli,backend_registry_static}.{h,cpp}` を追加し、selfhost 生成 C++ のリンク失敗を解消。実行時は `[not_implemented]` を返す最小実装とし、`build_selfhost.py` は通過・`build_selfhost_stage2.py` は `[not_implemented]` 時に `selfhost/py2cpp.cpp` 再利用フォールバックで stage2 バイナリ生成を継続できる状態へ前進。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `backends/cpp/emitter/call.py` の self_hosted 向け builtin method フォールバックを selfhost ブートストラップソース（`selfhost/py2cpp.py` / `src/py2cpp.py` / `src/py2x-selfhost.py`）限定へ絞り、`test_east3_cpp_bridge` 失敗を解消。これにより `check_selfhost_cpp_diff` / `check_selfhost_stage2_cpp_diff`（`--mode allow-not-implemented`）を `--skip-east3-contract-tests` なしで通過確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] 受け入れ基準（`build_selfhost.py` 通過、`build_selfhost_stage2.py` 通過、`check_selfhost_cpp_diff` / `check_selfhost_stage2_cpp_diff` の `allow-not-implemented` 運用成立）を満たしたため完了化。selfhost transpile 本体の実装深化は別優先（`P4-MULTILANG-SH-01` 系）で継続する。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-02] `src/py2cpp.py` を `src/backends/cpp/cli.py` へ実体移行し、`py2x`/`pytra/cli`/backend registry/tools/unit tests を `py2x --target cpp` と新モジュール参照へ更新した上で `src/py2cpp.py` を削除。`check_legacy_cli_references` / `check_py2cpp_transpile` / `test_py2cpp_smoke` / `test_pytra_cli` / `test_east3_cpp_bridge` の通過を確認。

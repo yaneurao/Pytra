@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare selfhost/py2cpp.py as a self-contained source.
 
-This script inlines CodeEmitter into py2cpp.py so transpiling selfhost input
+This script inlines CodeEmitter into the C++ CLI source so transpiling selfhost input
 no longer depends on cross-module import resolution.
 """
 
@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC_PY2CPP = ROOT / "src" / "py2cpp.py"
+SRC_PY2CPP = ROOT / "src" / "backends" / "cpp" / "cli.py"
 SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"

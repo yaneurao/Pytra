@@ -30,7 +30,7 @@ class PytraCliTest(unittest.TestCase):
         ) -> subprocess.CompletedProcess[str]:
             cmd_list = list(cmd)
             calls.append((cmd_list, cwd))
-            if str(pytra_cli_mod.PY2CPP) in " ".join(cmd_list):
+            if str(pytra_cli_mod.PY2X) in " ".join(cmd_list):
                 if "--multi-file" not in cmd_list:
                     return subprocess.CompletedProcess(cmd_list, 0, stdout="", stderr="")
                 output_dir = ROOT
@@ -95,7 +95,7 @@ class PytraCliTest(unittest.TestCase):
             self.assertEqual(rc, 0)
             rendered = [str(item[0][0]) for item in calls]
             self.assertIn(pytra_cli_mod.PYTHON, rendered[0])
-            self.assertTrue(any(str(pytra_cli_mod.PY2CPP) in item for item in calls[0][0]))
+            self.assertTrue(any(str(pytra_cli_mod.PY2X) in item for item in calls[0][0]))
             self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
             self.assertIn("make", rendered[2])
 
@@ -128,7 +128,9 @@ class PytraCliTest(unittest.TestCase):
                     ["test/fixtures/core/top_level.py", "--target", "cpp", "--output", str(output)]
                 )
         self.assertEqual(rc, 0)
-        self.assertIn(str(pytra_cli_mod.PY2CPP), " ".join(calls[0][0]))
+        self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))
+        self.assertIn("--target", calls[0][0])
+        self.assertIn("cpp", calls[0][0])
 
     def test_transpile_only_invokes_py2rs_with_explicit_output(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
@@ -140,7 +142,9 @@ class PytraCliTest(unittest.TestCase):
                     ["test/fixtures/core/top_level.py", "--target", "rs", "--output", str(output)]
                 )
         self.assertEqual(rc, 0)
-        self.assertIn(str(pytra_cli_mod.PY2RS), " ".join(calls[0][0]))
+        self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))
+        self.assertIn("--target", calls[0][0])
+        self.assertIn("rs", calls[0][0])
         self.assertIn("--output", calls[0][0])
         out_idx = calls[0][0].index("--output")
         self.assertEqual(calls[0][0][out_idx + 1], str(output))
@@ -155,7 +159,9 @@ class PytraCliTest(unittest.TestCase):
             with patch("src.pytra.cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main([str(src), "--target", "rs", "--output-dir", str(out_dir)])
             self.assertEqual(rc, 0)
-            self.assertIn(str(pytra_cli_mod.PY2RS), " ".join(calls[0][0]))
+            self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))
+            self.assertIn("--target", calls[0][0])
+            self.assertIn("rs", calls[0][0])
             out_idx = calls[0][0].index("--output")
             self.assertEqual(Path(calls[0][0][out_idx + 1]), out_dir / "my_case.rs")
 
@@ -169,6 +175,8 @@ class PytraCliTest(unittest.TestCase):
             with patch("src.pytra.cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main([str(src), "--target", "scala", "--output-dir", str(out_dir)])
             self.assertEqual(rc, 0)
-            self.assertIn(str(pytra_cli_mod.PY2SCALA), " ".join(calls[0][0]))
+            self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))
+            self.assertIn("--target", calls[0][0])
+            self.assertIn("scala", calls[0][0])
             out_idx = calls[0][0].index("--output")
             self.assertEqual(Path(calls[0][0][out_idx + 1]), out_dir / "my_case.scala")

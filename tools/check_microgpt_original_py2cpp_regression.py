@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2CPP = ROOT / "src" / "py2cpp.py"
+PY2X = ROOT / "src" / "py2x.py"
 DEFAULT_SOURCE = ROOT / "materials" / "refs" / "microgpt" / "microgpt-20260222.py"
 
 KNOWN_STAGES = ("A", "B", "C", "D", "E", "F")
@@ -163,7 +163,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         out_cpp = Path(tmpdir) / "microgpt.original.cpp"
-        transpile_cmd = ["python3", str(PY2CPP), str(src), "-o", str(out_cpp)]
+        transpile_cmd = ["python3", str(PY2X), str(src), "--target", "cpp", "-o", str(out_cpp)]
         if args.verbose:
             print("CMD", " ".join(transpile_cmd))
         code, msg = _run(transpile_cmd)

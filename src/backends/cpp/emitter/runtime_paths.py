@@ -95,7 +95,7 @@ def prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
     lines = [
         marker,
         "// source: " + str(source_path),
-        "// generated-by: src/py2cpp.py",
+        "// generated-by: src/backends/cpp/cli.py",
         "",
     ]
     return join_str_list("\n", lines) + cpp_text
