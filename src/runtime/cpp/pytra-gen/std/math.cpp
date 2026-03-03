@@ -10,8 +10,8 @@
 
 namespace pytra::std::math {
 
-    float64 pi;
-    float64 e;
+    float64 pi = pytra::std::math_impl::pi;
+    float64 e = pytra::std::math_impl::e;
     
     
     
@@ -64,8 +64,6 @@ namespace pytra::std::math {
         if (__initialized) return;
         __initialized = true;
         /* pytra.std.math: thin wrapper over native math_impl module. */
-        pi = pytra::std::math_impl::pi;
-        e = pytra::std::math_impl::e;
     }
     
 }  // namespace pytra::std::math

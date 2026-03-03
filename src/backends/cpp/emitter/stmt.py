@@ -33,7 +33,6 @@ class CppStatementEmitter:
             if self._node_kind_from_dict(nested) != "If":
                 break
             n_cond, n_body, n_else = self.prepare_if_stmt_parts(nested, cond_empty_default="false")
-            self._predeclare_if_join_names(n_body, n_else)
             self.emit(f"}} else if ({n_cond}) {{")
             self.emit_scoped_stmt_list(n_body, set())
             cur_else = n_else
@@ -1384,6 +1383,13 @@ class CppStatementEmitter:
             if len(step_expr) == 0:
                 step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
             start_txt = self.render_expr(start_expr)
+            loop_start_txt = start_txt
+            start_reads: set[str] = set()
+            self._collect_name_reads(start_expr, start_reads)
+            if target_id in start_reads:
+                start_tmp = self.next_tmp("__for_start")
+                self.emit(f"auto {start_tmp} = {start_txt};")
+                loop_start_txt = start_tmp
             stop_txt = self.render_expr(stop_expr)
             step_txt = self.render_expr(step_expr)
             range_mode_txt = self.any_dict_get_str(iter_plan, "range_mode", "")
@@ -1414,7 +1420,7 @@ class CppStatementEmitter:
                 {
                     "type": self._cpp_type_text(target_type),
                     "target": target_id,
-                    "start": start_txt,
+                    "start": loop_start_txt,
                     "cond": cond,
                     "inc": inc,
                 },
