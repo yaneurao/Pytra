@@ -1,5 +1,5 @@
-public final class Pytra_01_mandelbrot {
-    private Pytra_01_mandelbrot() {
+public final class _01_mandelbrot {
+    private _01_mandelbrot() {
     }
 
 

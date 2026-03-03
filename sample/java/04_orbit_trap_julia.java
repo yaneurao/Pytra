@@ -1,5 +1,5 @@
-public final class Pytra_04_orbit_trap_julia {
-    private Pytra_04_orbit_trap_julia() {
+public final class _04_orbit_trap_julia {
+    private _04_orbit_trap_julia() {
     }
 
 
@@ -10,11 +10,9 @@ public final class Pytra_04_orbit_trap_julia {
         double __hoisted_cast_1 = ((double)(height - 1L));
         double __hoisted_cast_2 = ((double)(width - 1L));
         double __hoisted_cast_3 = ((double)(max_iter));
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
+        for (long y = 0L; y < height; y += 1L) {
             double zy0 = (-1.3) + 2.6 * (((double)(y)) / __hoisted_cast_1);
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+            for (long x = 0L; x < width; x += 1L) {
                 double zx = (-1.9) + 3.8 * (((double)(x)) / __hoisted_cast_2);
                 double zy = zy0;
                 double trap = 1000000000.0;

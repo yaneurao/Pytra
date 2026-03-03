@@ -1,6 +1,6 @@
 import { perf_counter } from "./pytra/std/time.js";
-import { grayscale_palette } from "./pytra/runtime/gif.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { grayscale_palette } from "./pytra/utils/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 13: Sample that outputs DFS maze-generation progress as a GIF.
 
@@ -8,16 +8,12 @@ function capture(grid, w, h, scale) {
     let width = w * scale;
     let height = h * scale;
     let frame = (typeof (width * height) === "number" ? new Array(Math.max(0, Math.trunc(Number((width * height))))).fill(0) : (Array.isArray((width * height)) ? (width * height).slice() : Array.from((width * height))));
-    const __start_1 = 0;
-    for (let y = __start_1; y < h; y += 1) {
-        const __start_2 = 0;
-        for (let x = __start_2; x < w; x += 1) {
+    for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
             let v = (grid[(((y) < 0) ? ((grid).length + (y)) : (y))][(((x) < 0) ? ((grid[(((y) < 0) ? ((grid).length + (y)) : (y))]).length + (x)) : (x))] === 0 ? 255 : 40);
-            const __start_3 = 0;
-            for (let yy = __start_3; yy < scale; yy += 1) {
+            for (let yy = 0; yy < scale; yy += 1) {
                 let base = (y * scale + yy) * width + x * scale;
-                const __start_4 = 0;
-                for (let xx = __start_4; xx < scale; xx += 1) {
+                for (let xx = 0; xx < scale; xx += 1) {
                     frame[(((base + xx) < 0) ? ((frame).length + (base + xx)) : (base + xx))] = v;
                 }
             }
@@ -44,15 +40,14 @@ function run_13_maze_generation_steps() {
     let step = 0;
     
     while ((stack).length !== 0) {
-        const __tmp_5 = stack[(((-1) < 0) ? ((stack).length + (-1)) : (-1))];
-        let x = __tmp_5[0];
-        let y = __tmp_5[1];
+        const __tmp_1 = stack[(((-1) < 0) ? ((stack).length + (-1)) : (-1))];
+        let x = __tmp_1[0];
+        let y = __tmp_1[1];
         let candidates = [];
-        const __start_6 = 0;
-        for (let k = __start_6; k < 4; k += 1) {
-            const __tmp_7 = dirs[(((k) < 0) ? ((dirs).length + (k)) : (k))];
-            let dx = __tmp_7[0];
-            let dy = __tmp_7[1];
+        for (let k = 0; k < 4; k += 1) {
+            const __tmp_2 = dirs[(((k) < 0) ? ((dirs).length + (k)) : (k))];
+            let dx = __tmp_2[0];
+            let dy = __tmp_2[1];
             let nx = x + dx;
             let ny = y + dy;
             if (nx >= 1 && nx < cell_w - 1 && ny >= 1 && ny < cell_h - 1 && grid[(((ny) < 0) ? ((grid).length + (ny)) : (ny))][(((nx) < 0) ? ((grid[(((ny) < 0) ? ((grid).length + (ny)) : (ny))]).length + (nx)) : (nx))] === 1) {
@@ -75,11 +70,11 @@ function run_13_maze_generation_steps() {
             stack.pop();
         } else {
             let sel = candidates[((((x * 17 + y * 29 + (stack).length * 13) % (candidates).length) < 0) ? ((candidates).length + ((x * 17 + y * 29 + (stack).length * 13) % (candidates).length)) : ((x * 17 + y * 29 + (stack).length * 13) % (candidates).length))];
-            const __tmp_8 = sel;
-            let nx = __tmp_8[0];
-            let ny = __tmp_8[1];
-            let wx = __tmp_8[2];
-            let wy = __tmp_8[3];
+            const __tmp_3 = sel;
+            let nx = __tmp_3[0];
+            let ny = __tmp_3[1];
+            let wx = __tmp_3[2];
+            let wy = __tmp_3[3];
             grid[(((wy) < 0) ? ((grid).length + (wy)) : (wy))][(((wx) < 0) ? ((grid[(((wy) < 0) ? ((grid).length + (wy)) : (wy))]).length + (wx)) : (wx))] = 0;
             grid[(((ny) < 0) ? ((grid).length + (ny)) : (ny))][(((nx) < 0) ? ((grid[(((ny) < 0) ? ((grid).length + (ny)) : (ny))]).length + (nx)) : (nx))] = 0;
             stack.push([nx, ny]);

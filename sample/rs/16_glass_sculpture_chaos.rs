@@ -3,7 +3,7 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::gif::save_gif;
+use crate::pytra::utils::gif::save_gif;
 
 // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
 
@@ -95,9 +95,7 @@ fn palette_332() -> Vec<u8> {
     let mut p = vec![0u8; (256 * 3) as usize];
     let __hoisted_cast_1: f64 = ((7) as f64);
     let __hoisted_cast_2: f64 = ((3) as f64);
-    let mut i: i64 = 0;
-    for __for_i_1 in (0)..(256) {
-        i = __for_i_1;
+    for i in (0)..(256) {
             let r = i >> 5 & 7;
             let g = i >> 2 & 7;
             let b = i & 3;
@@ -165,14 +163,10 @@ fn render_frame(width: i64, height: i64, frame_id: i64, frames_n: i64) -> Vec<u8
     let __hoisted_cast_3: f64 = ((height) as f64);
     let __hoisted_cast_4: f64 = ((width) as f64);
     
-    let mut py: i64 = 0;
-    for __for_i_8 in (0)..(height) {
-        py = __for_i_8;
+    for py in (0)..(height) {
             let row_base = py * width;
             let sy = 1.0 - 2.0 * (((py) as f64) + 0.5) / __hoisted_cast_3;
-            let mut px: i64 = 0;
-            for __for_i_9 in (0)..(width) {
-                px = __for_i_9;
+            for px in (0)..(width) {
                     let sx = (2.0 * (((px) as f64) + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
                     let rx = fwd_x + fov * (sx * right_x + sy * up_x);
                     let ry = fwd_y + fov * (sx * right_y + sy * up_y);
@@ -349,9 +343,7 @@ fn run_16_glass_sculpture_chaos() {
     
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
-    let mut i: i64 = 0;
-    for __for_i_22 in (0)..(frames_n) {
-        i = __for_i_22;
+    for i in (0)..(frames_n) {
             frames.push(render_frame(width, height, i, frames_n));
     }
     save_gif(&(out_path), width, height, &(frames), &(palette_332()), 6, 0);

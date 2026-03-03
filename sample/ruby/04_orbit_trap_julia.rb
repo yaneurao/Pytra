@@ -5,8 +5,8 @@ require_relative "py_runtime"
 
 def render_orbit_trap_julia(width, height, max_iter, cx, cy)
   pixels = __pytra_bytearray()
-  __hoisted_cast_1 = __pytra_float((height - 1))
-  __hoisted_cast_2 = __pytra_float((width - 1))
+  __hoisted_cast_1 = __pytra_float(height - 1)
+  __hoisted_cast_2 = __pytra_float(width - 1)
   __hoisted_cast_3 = __pytra_float(max_iter)
   y = 0
   while y < height
@@ -17,70 +17,68 @@ def render_orbit_trap_julia(width, height, max_iter, cx, cy)
       zy = zy0
       trap = 1000000000.0
       i = 0
-      while (i < max_iter)
+      while i < max_iter
         ax = zx
-        if (ax < 0.0)
+        if ax < 0.0
           ax = (-ax)
         end
         ay = zy
-        if (ay < 0.0)
+        if ay < 0.0
           ay = (-ay)
         end
-        dxy = (zx - zy)
-        if (dxy < 0.0)
+        dxy = zx - zy
+        if dxy < 0.0
           dxy = (-dxy)
         end
-        if (ax < trap)
+        if ax < trap
           trap = ax
         end
-        if (ay < trap)
+        if ay < trap
           trap = ay
         end
-        if (dxy < trap)
+        if dxy < trap
           trap = dxy
         end
-        zx2 = (zx * zx)
-        zy2 = (zy * zy)
-        if ((zx2 + zy2) > 4.0)
+        zx2 = zx * zx
+        zy2 = zy * zy
+        if zx2 + zy2 > 4.0
           break
         end
-        zy = (((2.0 * zx) * zy) + cy)
-        zx = ((zx2 - zy2) + cx)
+        zy = ((2.0 * zx * zy) + cy)
+        zx = (zx2 - zy2 + cx)
         i += 1
       end
       r = 0
       g = 0
       b = 0
-      if (i >= max_iter)
+      if i >= max_iter
         r = 0
         g = 0
         b = 0
       else
-        trap_scaled = (trap * 3.2)
-        if (trap_scaled > 1.0)
+        trap_scaled = trap * 3.2
+        if trap_scaled > 1.0
           trap_scaled = 1.0
         end
-        if (trap_scaled < 0.0)
+        if trap_scaled < 0.0
           trap_scaled = 0.0
         end
         t = __pytra_div(i, __hoisted_cast_3)
         tone = __pytra_int((255.0 * (1.0 - trap_scaled)))
-        r = __pytra_int((tone * (0.35 + (0.65 * t))))
+        r = __pytra_int((tone * (0.35 + 0.65 * t)))
         g = __pytra_int((tone * (0.15 + (0.85 * (1.0 - t)))))
-        b = __pytra_int((255.0 * (0.25 + (0.75 * t))))
-        if (r > 255)
+        b = __pytra_int((255.0 * (0.25 + 0.75 * t)))
+        if r > 255
           r = 255
         end
-        if (g > 255)
+        if g > 255
           g = 255
         end
-        if (b > 255)
+        if b > 255
           b = 255
         end
       end
-      pixels.append(r)
-      pixels.append(g)
-      pixels.append(b)
+      pixels.concat([r, g, b])
       x += 1
     end
     y += 1
@@ -96,7 +94,7 @@ def run_04_orbit_trap_julia()
   start = __pytra_perf_counter()
   pixels = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889)
   write_rgb_png(out_path, width, height, pixels)
-  elapsed = (__pytra_perf_counter() - start)
+  elapsed = __pytra_perf_counter() - start
   __pytra_print("output:", out_path)
   __pytra_print("size:", width, "x", height)
   __pytra_print("max_iter:", max_iter)

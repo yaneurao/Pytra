@@ -28,7 +28,7 @@ func run_integer_benchmark() {
     var width: Int64 = Int64(7600)
     var height: Int64 = Int64(5000)
     var start: Double = __pytra_perf_counter()
-    var checksum: Int64 = __pytra_int(run_integer_grid_checksum(width, height, Int64(123456789)))
+    var checksum: Int64 = run_integer_grid_checksum(width, height, Int64(123456789))
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("pixels:", (width * height))
     __pytra_print("checksum:", checksum)

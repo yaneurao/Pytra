@@ -45,7 +45,7 @@ fun next_state(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
 fun render(grid: MutableList<Any?>, w: Long, h: Long, cell: Long): MutableList<Any?> {
     var width: Long = (w * cell)
     var height: Long = (h * cell)
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: MutableList<Any?> = __pytra_bytearray((width * height))
     var y = __pytra_int(0L)
     while (y < __pytra_int(h)) {
         var x = __pytra_int(0L)
@@ -65,7 +65,7 @@ fun render(grid: MutableList<Any?>, w: Long, h: Long, cell: Long): MutableList<A
         }
         y += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_07_game_of_life_loop() {
@@ -151,7 +151,7 @@ fun run_07_game_of_life_loop() {
     var __loop_10 = __pytra_int(0L)
     while (__loop_10 < __pytra_int(steps)) {
         frames.add(render(grid, w, h, cell))
-        grid = __pytra_as_list(next_state(grid, w, h))
+        grid = next_state(grid, w, h)
         __loop_10 += 1L
     }
     __pytra_noop(out_path, (w * cell), (h * cell), frames, mutableListOf<Any?>())

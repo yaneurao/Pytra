@@ -12,7 +12,7 @@ fun run_15_wave_interference_loop() {
     var frames: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
     var t = __pytra_int(0L)
     while (t < __pytra_int(frames_n)) {
-        var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: MutableList<Any?> = __pytra_bytearray((w * h))
         var phase: Double = (__pytra_float(t) * 0.12)
         var y = __pytra_int(0L)
         while (y < __pytra_int(h)) {

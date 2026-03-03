@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using math = Pytra.CsModule.math;
 
@@ -36,7 +40,7 @@ public static class Program
         double lx = x - light_x;
         double ly = y - light_y;
         var l = Pytra.CsModule.math.sqrt(lx * lx + ly * ly);
-        var lit = 1.0 / (1.0 + 3.5 * l * l);
+        var lit = System.Convert.ToDouble(1.0) / System.Convert.ToDouble((1.0 + 3.5 * l * l));
         
         long v = Pytra.CsModule.py_runtime.py_int(255.0 * blob * lit * 5.0);
         return System.Math.Min(255, System.Math.Max(0, v));
@@ -58,17 +62,17 @@ public static class Program
         long t = 0;
         for (t = 0; t < frames_n; t += 1) {
             List<byte> frame = Pytra.CsModule.py_runtime.py_bytearray(w * h);
-            var a = (t / __hoisted_cast_1) * Pytra.CsModule.math.pi * 2.0;
+            var a = (System.Convert.ToDouble(t) / System.Convert.ToDouble(__hoisted_cast_1)) * Pytra.CsModule.math.pi * 2.0;
             var light_x = 0.75 * Pytra.CsModule.math.cos(a);
             var light_y = 0.55 * Pytra.CsModule.math.sin(a * 1.2);
             
             long y = 0;
             for (y = 0; y < h; y += 1) {
                 long row_base = y * w;
-                double py = (y / __hoisted_cast_2) * 2.0 - 1.0;
+                double py = (System.Convert.ToDouble(y) / System.Convert.ToDouble(__hoisted_cast_2)) * 2.0 - 1.0;
                 long x = 0;
                 for (x = 0; x < w; x += 1) {
-                    double px = (x / __hoisted_cast_3) * 2.0 - 1.0;
+                    double px = (System.Convert.ToDouble(x) / System.Convert.ToDouble(__hoisted_cast_3)) * 2.0 - 1.0;
                     Pytra.CsModule.py_runtime.py_set(frame, row_base + x, scene(px, py, light_x, light_y));
                 }
             }

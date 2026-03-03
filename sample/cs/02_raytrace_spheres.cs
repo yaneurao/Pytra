@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using math = Pytra.CsModule.math;
 using png = Pytra.CsModule.png_helper;
@@ -36,8 +40,8 @@ public static class Program
             return -1.0;
         }
         double sd = System.Convert.ToDouble(Pytra.CsModule.math.sqrt(d));
-        double t0 = (-b - sd) / (2.0 * a);
-        double t1 = (-b + sd) / (2.0 * a);
+        double t0 = System.Convert.ToDouble((-b - sd)) / System.Convert.ToDouble((2.0 * a));
+        double t1 = System.Convert.ToDouble((-b + sd)) / System.Convert.ToDouble((2.0 * a));
         
         if (t0 > 0.001) {
             return t0;
@@ -78,15 +82,15 @@ public static class Program
                 for (ay = 0; ay < aa; ay += 1) {
                     long ax = 0;
                     for (ax = 0; ax < aa; ax += 1) {
-                        double fy = (y + (ay + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
-                        double fx = (x + (ax + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
+                        double fy = System.Convert.ToDouble((y + System.Convert.ToDouble((ay + 0.5)) / System.Convert.ToDouble(__hoisted_cast_1))) / System.Convert.ToDouble(__hoisted_cast_2);
+                        double fx = System.Convert.ToDouble((x + System.Convert.ToDouble((ax + 0.5)) / System.Convert.ToDouble(__hoisted_cast_1))) / System.Convert.ToDouble(__hoisted_cast_3);
                         double sy = 1.0 - 2.0 * fy;
-                        double sx = (2.0 * fx - 1.0) * (width / __hoisted_cast_4);
+                        double sx = (2.0 * fx - 1.0) * (System.Convert.ToDouble(width) / System.Convert.ToDouble(__hoisted_cast_4));
                         
                         double dx = sx;
                         double dy = sy;
                         double dz = 1.0;
-                        double inv_len = System.Convert.ToDouble(1.0 / Pytra.CsModule.math.sqrt(dx * dx + dy * dy + dz * dz));
+                        double inv_len = System.Convert.ToDouble(System.Convert.ToDouble(1.0) / System.Convert.ToDouble(Pytra.CsModule.math.sqrt(dx * dx + dy * dy + dz * dz)));
                         dx *= inv_len;
                         dy *= inv_len;
                         dz *= inv_len;
@@ -123,14 +127,14 @@ public static class Program
                             double nz = 0.0;
                             
                             if (hit_id == 0) {
-                                nx = (px + 0.8) / 0.8;
-                                ny = (py + 0.2) / 0.8;
-                                nz = (pz - 2.2) / 0.8;
+                                nx = System.Convert.ToDouble((px + 0.8)) / System.Convert.ToDouble(0.8);
+                                ny = System.Convert.ToDouble((py + 0.2)) / System.Convert.ToDouble(0.8);
+                                nz = System.Convert.ToDouble((pz - 2.2)) / System.Convert.ToDouble(0.8);
                             } else {
                                 if (hit_id == 1) {
-                                    nx = (px - 0.9) / 0.95;
-                                    ny = (py - 0.1) / 0.95;
-                                    nz = (pz - 2.9) / 0.95;
+                                    nx = System.Convert.ToDouble((px - 0.9)) / System.Convert.ToDouble(0.95);
+                                    ny = System.Convert.ToDouble((py - 0.1)) / System.Convert.ToDouble(0.95);
+                                    nz = System.Convert.ToDouble((pz - 2.9)) / System.Convert.ToDouble(0.95);
                                 } else {
                                     nx = 0.0;
                                     ny = 1.0;

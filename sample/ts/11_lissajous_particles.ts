@@ -1,13 +1,12 @@
 import * as math from "./pytra/std/math.js";
 import { perf_counter } from "./pytra/std/time.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 11: Sample that outputs Lissajous-motion particles as a GIF.
 
 function color_palette() {
     let p = [];
-    const __start_1 = 0;
-    for (let i = __start_1; i < 256; i += 1) {
+    for (let i = 0; i < 256; i += 1) {
         let r = i;
         let g = i * 3 % 256;
         let b = 255 - i;
@@ -28,22 +27,18 @@ function run_11_lissajous_particles() {
     let start = perf_counter();
     let frames = [];
     
-    const __start_2 = 0;
-    for (let t = __start_2; t < frames_n; t += 1) {
+    for (let t = 0; t < frames_n; t += 1) {
         let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
         let __hoisted_cast_1 = Number(t);
         
-        const __start_3 = 0;
-        for (let p = __start_3; p < particles; p += 1) {
+        for (let p = 0; p < particles; p += 1) {
             let phase = p * 0.261799;
             let x = Math.trunc(Number(w * 0.5 + w * 0.38 * math.sin(0.11 * __hoisted_cast_1 + phase * 2.0)));
             let y = Math.trunc(Number(h * 0.5 + h * 0.38 * math.sin(0.17 * __hoisted_cast_1 + phase * 3.0)));
             let color = 30 + p * 9 % 220;
             
-            const __start_4 = -2;
-            for (let dy = __start_4; dy < 3; dy += 1) {
-                const __start_5 = -2;
-                for (let dx = __start_5; dx < 3; dx += 1) {
+            for (let dy = -2; dy < 3; dy += 1) {
+                for (let dx = -2; dx < 3; dx += 1) {
                     let xx = x + dx;
                     let yy = y + dy;
                     if (xx >= 0 && xx < w && yy >= 0 && yy < h) {

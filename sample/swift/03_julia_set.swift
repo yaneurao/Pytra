@@ -5,7 +5,7 @@ import Foundation
 // Implemented with simple loop-centric logic for transpilation compatibility.
 
 func render_julia(width: Int64, height: Int64, max_iter: Int64, cx: Double, cy: Double) -> [Any] {
-    var pixels: [Any] = __pytra_as_list([])
+    var pixels: [Any] = []
     var __hoisted_cast_1: Double = __pytra_float(height - Int64(1))
     var __hoisted_cast_2: Double = __pytra_float(width - Int64(1))
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
@@ -56,7 +56,7 @@ func run_julia() {
     var max_iter: Int64 = Int64(20000)
     var out_path: String = "sample/out/03_julia_set.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: [Any] = __pytra_as_list(render_julia(width, height, max_iter, (-Double(0.8)), Double(0.156)))
+    var pixels: [Any] = render_julia(width, height, max_iter, (-Double(0.8)), Double(0.156))
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

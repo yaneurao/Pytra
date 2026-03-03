@@ -1,16 +1,14 @@
 import { perf_counter } from "./pytra/std/time.js";
-import { grayscale_palette } from "./pytra/runtime/gif.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { grayscale_palette } from "./pytra/utils/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 function capture(grid, w, h) {
     let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
-    const __start_1 = 0;
-    for (let y = __start_1; y < h; y += 1) {
+    for (let y = 0; y < h; y += 1) {
         let row_base = y * w;
-        const __start_2 = 0;
-        for (let x = __start_2; x < w; x += 1) {
+        for (let x = 0; x < w; x += 1) {
             frame[(((row_base + x) < 0) ? ((frame).length + (row_base + x)) : (row_base + x))] = (grid[(((y) < 0) ? ((grid).length + (y)) : (y))][(((x) < 0) ? ((grid[(((y) < 0) ? ((grid).length + (y)) : (y))]).length + (x)) : (x))] ? 255 : 0);
         }
     }
@@ -33,8 +31,7 @@ function run_08_langtons_ant() {
     let capture_every = 3000;
     let frames = [];
     
-    const __start_3 = 0;
-    for (let i = __start_3; i < steps_total; i += 1) {
+    for (let i = 0; i < steps_total; i += 1) {
         if (grid[(((y) < 0) ? ((grid).length + (y)) : (y))][(((x) < 0) ? ((grid[(((y) < 0) ? ((grid).length + (y)) : (y))]).length + (x)) : (x))] === 0) {
             d = (d + 1) % 4;
             grid[(((y) < 0) ? ((grid).length + (y)) : (y))][(((x) < 0) ? ((grid[(((y) < 0) ? ((grid).length + (y)) : (y))]).length + (x)) : (x))] = 1;

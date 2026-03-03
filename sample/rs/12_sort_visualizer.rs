@@ -8,15 +8,13 @@ use crate::pytra::utils::gif::save_gif;
 
 // 12: Sample that outputs intermediate states of bubble sort as a GIF.
 
-fn render(values: &Vec<i64>, w: i64, h: i64) -> Vec<u8> {
+fn render(values: &[i64], w: i64, h: i64) -> Vec<u8> {
     let mut frame = vec![0u8; (w * h) as usize];
     let n = values.len() as i64;
     let bar_w = ((w) as f64) / ((n) as f64);
     let __hoisted_cast_1: f64 = ((n) as f64);
     let __hoisted_cast_2: f64 = ((h) as f64);
-    let mut i: i64 = 0;
-    for __for_i_1 in (0)..(n) {
-        i = __for_i_1;
+    for i in (0)..(n) {
             let x0 = ((((i) as f64) * bar_w) as i64);
             let mut x1 = (((((i + 1)) as f64) * bar_w) as i64);
             if x1 <= x0 {
@@ -24,15 +22,11 @@ fn render(values: &Vec<i64>, w: i64, h: i64) -> Vec<u8> {
             }
             let bh = (((((values[((i) as usize)]) as f64) / __hoisted_cast_1) * __hoisted_cast_2) as i64);
             let mut y = h - bh;
-            let mut y: i64 = y;
-            for __for_i_2 in (y)..(h) {
-                y = __for_i_2;
-                    let mut x: i64 = x0;
-                    for __for_i_3 in (x0)..(x1) {
-                        x = __for_i_3;
-                            let __idx_i64_5 = ((y * w + x) as i64);
-                            let __idx_4 = if __idx_i64_5 < 0 { (frame.len() as i64 + __idx_i64_5) as usize } else { __idx_i64_5 as usize };
-                            frame[__idx_4] = ((255) as u8);
+            for y in (y)..(h) {
+                    for x in (x0)..(x1) {
+                            let __idx_i64_3 = ((y * w + x) as i64);
+                            let __idx_2 = if __idx_i64_3 < 0 { (frame.len() as i64 + __idx_i64_3) as usize } else { __idx_i64_3 as usize };
+                            frame[__idx_2] = ((255) as u8);
                     }
             }
     }
@@ -48,27 +42,23 @@ fn run_12_sort_visualizer() {
     let start = perf_counter();
     let mut values: Vec<i64> = vec![];
     let mut i: i64 = 0;
-    for __for_i_6 in (0)..(n) {
-        i = __for_i_6;
+    for __for_i_5 in (0)..(n) {
+        i = __for_i_5;
             values.push((i * 37 + 19) % n);
     }
     let mut frames: Vec<Vec<u8>> = vec![render(&(values), w, h)];
     let frame_stride = 16;
     
     let mut op = 0;
-    let mut i: i64 = 0;
-    for __for_i_7 in (0)..(n) {
-        i = __for_i_7;
+    for i in (0)..(n) {
             let mut swapped = false;
-            let mut j: i64 = 0;
-            for __for_i_8 in (0)..(n - i - 1) {
-                j = __for_i_8;
+            for j in (0)..(n - i - 1) {
                     if values[((j) as usize)] > values[((j + 1) as usize)] {
-                        let __tmp_9 = (values[((j + 1) as usize)], values[((j) as usize)]);
-                        let __idx_10 = ((j) as usize);
-                        values[__idx_10] = __tmp_9.0;
-                        let __idx_11 = ((j + 1) as usize);
-                        values[__idx_11] = __tmp_9.1;
+                        let __tmp_8 = (values[((j + 1) as usize)], values[((j) as usize)]);
+                        let __idx_9 = ((j) as usize);
+                        values[__idx_9] = __tmp_8.0;
+                        let __idx_10 = ((j + 1) as usize);
+                        values[__idx_10] = __tmp_8.1;
                         swapped = true;
                     }
                     if op % frame_stride == 0 {

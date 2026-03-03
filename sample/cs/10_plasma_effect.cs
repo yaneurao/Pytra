@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using math = Pytra.CsModule.math;
 
@@ -29,7 +33,7 @@ public static class Program
                     long dx = x - 160;
                     long dy = y - 120;
                     var v = Pytra.CsModule.math.sin((x + t * 2.0) * 0.045) + Pytra.CsModule.math.sin((y - t * 1.2) * 0.05) + Pytra.CsModule.math.sin((x + y + t * 1.7) * 0.03) + Pytra.CsModule.math.sin(Pytra.CsModule.math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18);
-                    long c = Pytra.CsModule.py_runtime.py_int((v + 4.0) * (255.0 / 8.0));
+                    long c = Pytra.CsModule.py_runtime.py_int((v + 4.0) * (System.Convert.ToDouble(255.0) / System.Convert.ToDouble(8.0)));
                     if (c < 0) {
                         c = 0;
                     }

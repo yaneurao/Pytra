@@ -17,18 +17,12 @@ fn run_15_wave_interference_loop() {
     let start = perf_counter();
     let mut frames: Vec<Vec<u8>> = vec![];
     
-    let mut t: i64 = 0;
-    for __for_i_1 in (0)..(frames_n) {
-        t = __for_i_1;
+    for t in (0)..(frames_n) {
             let mut frame = vec![0u8; (w * h) as usize];
             let phase = ((t) as f64) * 0.12;
-            let mut y: i64 = 0;
-            for __for_i_2 in (0)..(h) {
-                y = __for_i_2;
+            for y in (0)..(h) {
                     let row_base = y * w;
-                    let mut x: i64 = 0;
-                    for __for_i_3 in (0)..(w) {
-                        x = __for_i_3;
+                    for x in (0)..(w) {
                             let dx = x - 160;
                             let dy = y - 120;
                             let v = math::sin((((x) as f64) + ((t) as f64) * 1.5) * 0.045) + math::sin((((y) as f64) - ((t) as f64) * 1.2) * 0.04) + math::sin((((x + y)) as f64) * 0.02 + phase) + math::sin(math::sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);

@@ -22,7 +22,7 @@ fun length(x: Double, y: Double, z: Double): Double {
 }
 
 fun normalize(x: Double, y: Double, z: Double): MutableList<Any?> {
-    var l: Double = __pytra_float(length(x, y, z))
+    var l: Double = length(x, y, z)
     if ((__pytra_float(l) < __pytra_float(1e-09))) {
         return __pytra_as_list(mutableListOf(0.0, 0.0, 0.0))
     }
@@ -38,7 +38,7 @@ fun refract(ix: Double, iy: Double, iz: Double, nx: Double, ny: Double, nz: Doub
     var cosi: Double = __pytra_float(-dot(ix, iy, iz, nx, ny, nz))
     var sint2: Double = ((eta * eta) * (1.0 - (cosi * cosi)))
     if ((__pytra_float(sint2) > __pytra_float(1.0))) {
-        return __pytra_as_list(reflect(ix, iy, iz, nx, ny, nz))
+        return reflect(ix, iy, iz, nx, ny, nz)
     }
     var cost: Double = __pytra_float(kotlin.math.sqrt(__pytra_float(1.0 - sint2)))
     var k: Double = __pytra_float((eta * cosi) - cost)
@@ -85,7 +85,7 @@ fun sphere_intersect(ox: Double, oy: Double, oz: Double, dx: Double, dy: Double,
 }
 
 fun palette_332(): MutableList<Any?> {
-    var p: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((256L * 3L)))
+    var p: MutableList<Any?> = __pytra_bytearray((256L * 3L))
     var __hoisted_cast_1: Double = __pytra_float(7L)
     var __hoisted_cast_2: Double = __pytra_float(3L)
     var i = __pytra_int(0L)
@@ -98,7 +98,7 @@ fun palette_332(): MutableList<Any?> {
         __pytra_set_index(p, ((i * 3L) + 2L), __pytra_int(__pytra_float(255L * b) / __hoisted_cast_2))
         i += 1L
     }
-    return __pytra_as_list(__pytra_bytes(p))
+    return __pytra_bytes(p)
 }
 
 fun quantize_332(r: Double, g: Double, b: Double): Long {
@@ -143,7 +143,7 @@ fun render_frame(width: Long, height: Long, frame_id: Long, frames_n: Long): Mut
     var lx: Double = __pytra_float(2.4 * kotlin.math.cos(__pytra_float(tphase * 1.8)))
     var ly: Double = __pytra_float(1.8 + (0.8 * kotlin.math.sin(__pytra_float(tphase * 1.2))))
     var lz: Double = __pytra_float(2.4 * kotlin.math.sin(__pytra_float(tphase * 1.8)))
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: MutableList<Any?> = __pytra_bytearray((width * height))
     var aspect: Double = (__pytra_float(width) / __pytra_float(height))
     var fov: Double = 1.25
     var __hoisted_cast_3: Double = __pytra_float(height)
@@ -174,17 +174,17 @@ fun render_frame(width: Long, height: Long, frame_id: Long, frames_n: Long): Mut
                     hit_kind = 1L
                 }
             }
-            var t0: Double = __pytra_float(sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65))
+            var t0: Double = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65)
             if (((__pytra_float(t0) > __pytra_float(0.0)) && (__pytra_float(t0) < __pytra_float(best_t)))) {
                 best_t = t0
                 hit_kind = 2L
             }
-            var t1: Double = __pytra_float(sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72))
+            var t1: Double = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72)
             if (((__pytra_float(t1) > __pytra_float(0.0)) && (__pytra_float(t1) < __pytra_float(best_t)))) {
                 best_t = t1
                 hit_kind = 3L
             }
-            var t2: Double = __pytra_float(sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58))
+            var t2: Double = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58)
             if (((__pytra_float(t2) > __pytra_float(0.0)) && (__pytra_float(t2) < __pytra_float(best_t)))) {
                 best_t = t2
                 hit_kind = 4L
@@ -264,7 +264,7 @@ fun render_frame(width: Long, height: Long, frame_id: Long, frames_n: Long): Mut
                     var tg: Double = __pytra_float(__tuple_12[1])
                     var tb: Double = __pytra_float(__tuple_12[2])
                     var cosi: Double = __pytra_float(__pytra_max((-(((dx * nx) + (dy * ny)) + (dz * nz))), 0.0))
-                    var fr: Double = __pytra_float(schlick(cosi, 0.04))
+                    var fr: Double = schlick(cosi, 0.04)
                     r = __pytra_float((tr * (1.0 - fr)) + (sr * fr))
                     g = __pytra_float((tg * (1.0 - fr)) + (sg * fr))
                     b = __pytra_float((tb * (1.0 - fr)) + (sb * fr))
@@ -314,7 +314,7 @@ fun render_frame(width: Long, height: Long, frame_id: Long, frames_n: Long): Mut
         }
         py += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_16_glass_sculpture_chaos() {

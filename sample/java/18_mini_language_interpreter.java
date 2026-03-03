@@ -1,5 +1,5 @@
-public final class Pytra_18_mini_language_interpreter {
-    private Pytra_18_mini_language_interpreter() {
+public final class _18_mini_language_interpreter {
+    private _18_mini_language_interpreter() {
     }
 
 

@@ -3,7 +3,7 @@ pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
 use crate::time::perf_counter;
-use crate::pytra::runtime::gif::save_gif;
+use crate::pytra::utils::gif::save_gif;
 
 // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
@@ -16,19 +16,17 @@ fn julia_palette() -> Vec<u8> {
     palette[__idx_2] = ((0) as u8);
     let __idx_3 = ((2) as usize);
     palette[__idx_3] = ((0) as u8);
-    let mut i: i64 = 1;
-    for __for_i_4 in (1)..(256) {
-        i = __for_i_4;
+    for i in (1)..(256) {
             let t = (((i - 1)) as f64) / 254.0;
             let r = ((255.0 * 9.0 * (1.0 - t) * t * t * t) as i64);
             let g = ((255.0 * 15.0 * (1.0 - t) * (1.0 - t) * t * t) as i64);
             let b = ((255.0 * 8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t) as i64);
-            let __idx_5 = ((i * 3 + 0) as usize);
-            palette[__idx_5] = ((r) as u8);
-            let __idx_6 = ((i * 3 + 1) as usize);
-            palette[__idx_6] = ((g) as u8);
-            let __idx_7 = ((i * 3 + 2) as usize);
-            palette[__idx_7] = ((b) as u8);
+            let __idx_4 = ((i * 3 + 0) as usize);
+            palette[__idx_4] = ((r) as u8);
+            let __idx_5 = ((i * 3 + 1) as usize);
+            palette[__idx_5] = ((g) as u8);
+            let __idx_6 = ((i * 3 + 2) as usize);
+            palette[__idx_6] = ((b) as u8);
     }
     return palette;
 }
@@ -37,14 +35,10 @@ fn render_frame(width: i64, height: i64, cr: f64, ci: f64, max_iter: i64, phase:
     let mut frame = vec![0u8; (width * height) as usize];
     let __hoisted_cast_1: f64 = ((height - 1) as f64);
     let __hoisted_cast_2: f64 = ((width - 1) as f64);
-    let mut y: i64 = 0;
-    for __for_i_8 in (0)..(height) {
-        y = __for_i_8;
+    for y in (0)..(height) {
             let row_base = y * width;
             let zy0 = -1.2 + 2.4 * (((y) as f64) / __hoisted_cast_1);
-            let mut x: i64 = 0;
-            for __for_i_9 in (0)..(width) {
-                x = __for_i_9;
+            for x in (0)..(width) {
                     let mut zx = -1.8 + 3.6 * (((x) as f64) / __hoisted_cast_2);
                     let mut zy = zy0;
                     let mut i = 0;
@@ -59,15 +53,15 @@ fn render_frame(width: i64, height: i64, cr: f64, ci: f64, max_iter: i64, phase:
                         i += 1;
                     }
                     if i >= max_iter {
-                        let __idx_i64_11 = ((row_base + x) as i64);
-                        let __idx_10 = if __idx_i64_11 < 0 { (frame.len() as i64 + __idx_i64_11) as usize } else { __idx_i64_11 as usize };
-                        frame[__idx_10] = ((0) as u8);
+                        let __idx_i64_10 = ((row_base + x) as i64);
+                        let __idx_9 = if __idx_i64_10 < 0 { (frame.len() as i64 + __idx_i64_10) as usize } else { __idx_i64_10 as usize };
+                        frame[__idx_9] = ((0) as u8);
                     } else {
                         // Add a small frame phase so colors flow smoothly.
                         let color_index = 1 + (i * 224 / max_iter + phase) % 255;
-                        let __idx_i64_13 = ((row_base + x) as i64);
-                        let __idx_12 = if __idx_i64_13 < 0 { (frame.len() as i64 + __idx_i64_13) as usize } else { __idx_i64_13 as usize };
-                        frame[__idx_12] = ((color_index) as u8);
+                        let __idx_i64_12 = ((row_base + x) as i64);
+                        let __idx_11 = if __idx_i64_12 < 0 { (frame.len() as i64 + __idx_i64_12) as usize } else { __idx_i64_12 as usize };
+                        frame[__idx_11] = ((color_index) as u8);
                     }
             }
     }
@@ -93,9 +87,7 @@ fn run_06_julia_parameter_sweep() {
     let start_offset = 20;
     let phase_offset = 180;
     let __hoisted_cast_3: f64 = ((frames_n) as f64);
-    let mut i: i64 = 0;
-    for __for_i_14 in (0)..(frames_n) {
-        i = __for_i_14;
+    for i in (0)..(frames_n) {
             let t = (((i + start_offset) % frames_n) as f64) / __hoisted_cast_3;
             let angle = 2.0 * math::pi * t;
             let cr = center_cr + radius_cr * math::cos(angle);

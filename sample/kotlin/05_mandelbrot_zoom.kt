@@ -4,7 +4,7 @@ import kotlin.math.*
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 fun render_frame(width: Long, height: Long, center_x: Double, center_y: Double, scale: Double, max_iter: Long): MutableList<Any?> {
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: MutableList<Any?> = __pytra_bytearray((width * height))
     var __hoisted_cast_1: Double = __pytra_float(max_iter)
     var y = __pytra_int(0L)
     while (y < __pytra_int(height)) {
@@ -31,7 +31,7 @@ fun render_frame(width: Long, height: Long, center_x: Double, center_y: Double, 
         }
         y += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_05_mandelbrot_zoom() {

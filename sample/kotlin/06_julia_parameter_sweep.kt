@@ -4,7 +4,7 @@ import kotlin.math.*
 // 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
 fun julia_palette(): MutableList<Any?> {
-    var palette: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((256L * 3L)))
+    var palette: MutableList<Any?> = __pytra_bytearray((256L * 3L))
     __pytra_set_index(palette, 0L, 0L)
     __pytra_set_index(palette, 1L, 0L)
     __pytra_set_index(palette, 2L, 0L)
@@ -19,11 +19,11 @@ fun julia_palette(): MutableList<Any?> {
         __pytra_set_index(palette, ((i * 3L) + 2L), b)
         i += 1L
     }
-    return __pytra_as_list(__pytra_bytes(palette))
+    return __pytra_bytes(palette)
 }
 
 fun render_frame(width: Long, height: Long, cr: Double, ci: Double, max_iter: Long, phase: Long): MutableList<Any?> {
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: MutableList<Any?> = __pytra_bytearray((width * height))
     var __hoisted_cast_1: Double = __pytra_float(height - 1L)
     var __hoisted_cast_2: Double = __pytra_float(width - 1L)
     var y = __pytra_int(0L)
@@ -55,7 +55,7 @@ fun render_frame(width: Long, height: Long, cr: Double, ci: Double, max_iter: Lo
         }
         y += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_06_julia_parameter_sweep() {

@@ -1,5 +1,5 @@
-public final class Pytra_03_julia_set {
-    private Pytra_03_julia_set() {
+public final class _03_julia_set {
+    private _03_julia_set() {
     }
 
 
@@ -11,11 +11,9 @@ public final class Pytra_03_julia_set {
         double __hoisted_cast_1 = ((double)(height - 1L));
         double __hoisted_cast_2 = ((double)(width - 1L));
         double __hoisted_cast_3 = ((double)(max_iter));
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
+        for (long y = 0L; y < height; y += 1L) {
             double zy0 = (-1.2) + 2.4 * (((double)(y)) / __hoisted_cast_1);
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+            for (long x = 0L; x < width; x += 1L) {
                 double zx = (-1.8) + 3.6 * (((double)(x)) / __hoisted_cast_2);
                 double zy = zy0;
                 long i = 0L;

@@ -12,13 +12,9 @@ fn run_integer_grid_checksum(width: i64, height: i64, seed: i64) -> i64 {
     let mod_out: i64 = 1000000007;
     let mut acc: i64 = seed % mod_out;
     
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(height) {
-        y = __for_i_1;
+    for y in (0)..(height) {
             let mut row_sum: i64 = 0;
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(width) {
-                x = __for_i_2;
+            for x in (0)..(width) {
                     let mut v: i64 = (x * 37 + y * 73 + seed) % mod_main;
                     v = (v * 48271 + 1) % mod_main;
                     row_sum += v % 256;

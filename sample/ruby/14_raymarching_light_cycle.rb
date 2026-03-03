@@ -7,30 +7,28 @@ def palette()
   p = __pytra_bytearray()
   i = 0
   while i < 256
-    r = __pytra_min(255, __pytra_int((20 + (i * 0.9))))
-    g = __pytra_min(255, __pytra_int((10 + (i * 0.7))))
-    b = __pytra_min(255, (30 + i))
-    p.append(r)
-    p.append(g)
-    p.append(b)
+    r = __pytra_min(255, __pytra_int((20 + i * 0.9)))
+    g = __pytra_min(255, __pytra_int((10 + i * 0.7)))
+    b = __pytra_min(255, 30 + i)
+    p.concat([r, g, b])
     i += 1
   end
   return __pytra_bytes(p)
 end
 
 def scene(x, y, light_x, light_y)
-  x1 = (x + 0.45)
-  y1 = (y + 0.2)
-  x2 = (x - 0.35)
-  y2 = (y - 0.15)
-  r1 = Math.sqrt(((x1 * x1) + (y1 * y1)))
-  r2 = Math.sqrt(((x2 * x2) + (y2 * y2)))
-  blob = (Math.exp(__pytra_float((((-7.0) * r1) * r1))) + Math.exp(__pytra_float((((-8.0) * r2) * r2))))
-  lx = (x - light_x)
-  ly = (y - light_y)
-  l = Math.sqrt(((lx * lx) + (ly * ly)))
-  lit = __pytra_div(1.0, (1.0 + ((3.5 * l) * l)))
-  v = __pytra_int((((255.0 * blob) * lit) * 5.0))
+  x1 = x + 0.45
+  y1 = y + 0.2
+  x2 = x - 0.35
+  y2 = y - 0.15
+  r1 = Math.sqrt((x1 * x1 + y1 * y1))
+  r2 = Math.sqrt((x2 * x2 + y2 * y2))
+  blob = Math.exp(__pytra_float((((-7.0) * r1) * r1))) + Math.exp(__pytra_float((((-8.0) * r2) * r2)))
+  lx = x - light_x
+  ly = y - light_y
+  l = Math.sqrt((lx * lx + ly * ly))
+  lit = __pytra_div(1.0, (1.0 + (3.5 * l * l)))
+  v = __pytra_int(((255.0 * blob * lit) * 5.0))
   return __pytra_min(255, __pytra_max(0, v))
 end
 
@@ -42,22 +40,22 @@ def run_14_raymarching_light_cycle()
   start = __pytra_perf_counter()
   frames = []
   __hoisted_cast_1 = __pytra_float(frames_n)
-  __hoisted_cast_2 = __pytra_float((h - 1))
-  __hoisted_cast_3 = __pytra_float((w - 1))
+  __hoisted_cast_2 = __pytra_float(h - 1)
+  __hoisted_cast_3 = __pytra_float(w - 1)
   t = 0
   while t < frames_n
-    frame = __pytra_bytearray((w * h))
+    frame = __pytra_bytearray(w * h)
     a = ((__pytra_div(t, __hoisted_cast_1) * Math::PI) * 2.0)
-    light_x = (0.75 * Math.cos(__pytra_float(a)))
-    light_y = (0.55 * Math.sin(__pytra_float((a * 1.2))))
+    light_x = 0.75 * Math.cos(__pytra_float(a))
+    light_y = 0.55 * Math.sin(__pytra_float(a * 1.2))
     y = 0
     while y < h
-      row_base = (y * w)
+      row_base = y * w
       py = ((__pytra_div(y, __hoisted_cast_2) * 2.0) - 1.0)
       x = 0
       while x < w
         px = ((__pytra_div(x, __hoisted_cast_3) * 2.0) - 1.0)
-        __pytra_set_index(frame, (row_base + x), scene(px, py, light_x, light_y))
+        __pytra_set_index(frame, row_base + x, scene(px, py, light_x, light_y))
         x += 1
       end
       y += 1
@@ -66,7 +64,7 @@ def run_14_raymarching_light_cycle()
     t += 1
   end
   save_gif(out_path, w, h, frames, palette(), 3, 0)
-  elapsed = (__pytra_perf_counter() - start)
+  elapsed = __pytra_perf_counter() - start
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frames_n)
   __pytra_print("elapsed_sec:", elapsed)

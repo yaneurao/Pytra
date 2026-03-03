@@ -4,7 +4,7 @@ import Foundation
 // 11: Sample that outputs Lissajous-motion particles as a GIF.
 
 func color_palette() -> [Any] {
-    var p: [Any] = __pytra_as_list([])
+    var p: [Any] = []
     var i = __pytra_int(Int64(0))
     while (i < __pytra_int(Int64(256))) {
         var r: Int64 = i
@@ -15,7 +15,7 @@ func color_palette() -> [Any] {
         p.append(b)
         i += 1
     }
-    return __pytra_as_list(__pytra_bytes(p))
+    return __pytra_bytes(p)
 }
 
 func run_11_lissajous_particles() {
@@ -28,7 +28,7 @@ func run_11_lissajous_particles() {
     var frames: [Any] = __pytra_as_list([])
     var t = __pytra_int(Int64(0))
     while (t < __pytra_int(frames_n)) {
-        var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: [Any] = __pytra_bytearray((w * h))
         var __hoisted_cast_1: Double = __pytra_float(t)
         var p = __pytra_int(Int64(0))
         while (p < __pytra_int(particles)) {

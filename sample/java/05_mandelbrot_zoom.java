@@ -1,5 +1,5 @@
-public final class Pytra_05_mandelbrot_zoom {
-    private Pytra_05_mandelbrot_zoom() {
+public final class _05_mandelbrot_zoom {
+    private _05_mandelbrot_zoom() {
     }
 
 
@@ -8,12 +8,10 @@ public final class Pytra_05_mandelbrot_zoom {
     public static java.util.ArrayList<Long> render_frame(long width, long height, double center_x, double center_y, double scale, long max_iter) {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(width * height);
         double __hoisted_cast_1 = ((double)(max_iter));
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
+        for (long y = 0L; y < height; y += 1L) {
             long row_base = y * width;
             double cy = center_y + (((double)(y)) - ((double)(height)) * 0.5) * scale;
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+            for (long x = 0L; x < width; x += 1L) {
                 double cx = center_x + (((double)(x)) - ((double)(width)) * 0.5) * scale;
                 double zx = 0.0;
                 double zy = 0.0;
@@ -45,10 +43,9 @@ public final class Pytra_05_mandelbrot_zoom {
         double zoom_per_frame = 0.93;
         String out_path = "sample/out/05_mandelbrot_zoom.gif";
         double start = (System.nanoTime() / 1000000000.0);
-        java.util.ArrayList<Object> frames = new java.util.ArrayList<Object>(java.util.Arrays.asList());
+        java.util.ArrayList<java.util.ArrayList<Long>> frames = new java.util.ArrayList<java.util.ArrayList<Long>>();
         double scale = base_scale;
-        long __step_0 = 1L;
-        for (long __ = 0L; (__step_0 >= 0L) ? (__ < frame_count) : (__ > frame_count); __ += __step_0) {
+        for (long __ = 0L; __ < frame_count; __ += 1L) {
             frames.add(render_frame(width, height, center_x, center_y, scale, max_iter));
             scale *= zoom_per_frame;
         }

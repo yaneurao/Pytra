@@ -4,7 +4,7 @@ import kotlin.math.*
 // 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
 
 fun render_orbit_trap_julia(width: Long, height: Long, max_iter: Long, cx: Double, cy: Double): MutableList<Any?> {
-    var pixels: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+    var pixels: MutableList<Any?> = mutableListOf<Any?>()
     var __hoisted_cast_1: Double = __pytra_float(height - 1L)
     var __hoisted_cast_2: Double = __pytra_float(width - 1L)
     var __hoisted_cast_3: Double = __pytra_float(max_iter)
@@ -94,7 +94,7 @@ fun run_04_orbit_trap_julia() {
     var max_iter: Long = 1400L
     var out_path: String = "sample/out/04_orbit_trap_julia.png"
     var start: Double = __pytra_perf_counter()
-    var pixels: MutableList<Any?> = __pytra_as_list(render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889))
+    var pixels: MutableList<Any?> = render_orbit_trap_julia(width, height, max_iter, (-0.7269), 0.1889)
     __pytra_write_rgb_png(out_path, width, height, pixels)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("output:", out_path)

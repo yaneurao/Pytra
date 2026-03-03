@@ -112,16 +112,14 @@ bytearray render(int64 width, int64 height, int64 aa) {
                             nx = (px + 0.8) / 0.8;
                             ny = (py + 0.2) / 0.8;
                             nz = (pz - 2.2) / 0.8;
+                        } else if (hit_id == 1) {
+                            nx = (px - 0.9) / 0.95;
+                            ny = (py - 0.1) / 0.95;
+                            nz = (pz - 2.9) / 0.95;
                         } else {
-                            if (hit_id == 1) {
-                                nx = (px - 0.9) / 0.95;
-                                ny = (py - 0.1) / 0.95;
-                                nz = (pz - 2.9) / 0.95;
-                            } else {
-                                nx = 0.0;
-                                ny = 1.0;
-                                nz = 0.0;
-                            }
+                            nx = 0.0;
+                            ny = 1.0;
+                            nz = 0.0;
                         }
                         float64 diff = nx * -lx + ny * -ly + nz * -lz;
                         diff = clamp01(diff);
@@ -134,22 +132,20 @@ bytearray render(int64 width, int64 height, int64 aa) {
                             base_r = 0.95;
                             base_g = 0.35;
                             base_b = 0.25;
+                        } else if (hit_id == 1) {
+                            base_r = 0.25;
+                            base_g = 0.55;
+                            base_b = 0.95;
                         } else {
-                            if (hit_id == 1) {
-                                base_r = 0.25;
-                                base_g = 0.55;
-                                base_b = 0.95;
+                            int64 checker = int64((px + 50.0) * 0.8) + int64((pz + 50.0) * 0.8);
+                            if (checker % 2 == 0) {
+                                base_r = 0.85;
+                                base_g = 0.85;
+                                base_b = 0.85;
                             } else {
-                                int64 checker = int64((px + 50.0) * 0.8) + int64((pz + 50.0) * 0.8);
-                                if (checker % 2 == 0) {
-                                    base_r = 0.85;
-                                    base_g = 0.85;
-                                    base_b = 0.85;
-                                } else {
-                                    base_r = 0.2;
-                                    base_g = 0.2;
-                                    base_b = 0.2;
-                                }
+                                base_r = 0.2;
+                                base_g = 0.2;
+                                base_b = 0.2;
                             }
                         }
                         float64 shade = 0.12 + 0.88 * diff;

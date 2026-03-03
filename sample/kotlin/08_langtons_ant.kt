@@ -4,7 +4,7 @@ import kotlin.math.*
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 fun capture(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((w * h)))
+    var frame: MutableList<Any?> = __pytra_bytearray((w * h))
     var y = __pytra_int(0L)
     while (y < __pytra_int(h)) {
         var row_base: Long = (y * w)
@@ -15,7 +15,7 @@ fun capture(grid: MutableList<Any?>, w: Long, h: Long): MutableList<Any?> {
         }
         y += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_08_langtons_ant() {

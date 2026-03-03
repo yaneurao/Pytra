@@ -16,7 +16,7 @@ bytes palette() {
         p.append(g);
         p.append(b);
     }
-    return bytes(p);
+    return p;
 }
 
 int64 scene(float64 x, float64 y, float64 light_x, float64 light_y) {
@@ -44,7 +44,7 @@ void run_14_raymarching_light_cycle() {
     str out_path = "sample/out/14_raymarching_light_cycle.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     float64 __hoisted_cast_1 = float64(frames_n);
     float64 __hoisted_cast_2 = float64(h - 1);
     float64 __hoisted_cast_3 = float64(w - 1);
@@ -63,7 +63,7 @@ void run_14_raymarching_light_cycle() {
                 frame[row_base + x] = scene(px, py, light_x, light_y);
             }
         }
-        frames.append(bytes(frame));
+        frames.append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, frames, palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

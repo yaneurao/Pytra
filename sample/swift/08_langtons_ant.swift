@@ -4,7 +4,7 @@ import Foundation
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 func capture(grid: [Any], w: Int64, h: Int64) -> [Any] {
-    var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+    var frame: [Any] = __pytra_bytearray((w * h))
     var y = __pytra_int(Int64(0))
     while (y < __pytra_int(h)) {
         var row_base: Int64 = (y * w)
@@ -15,7 +15,7 @@ func capture(grid: [Any], w: Int64, h: Int64) -> [Any] {
         }
         y += 1
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 func run_08_langtons_ant() {

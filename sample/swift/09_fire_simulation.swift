@@ -4,7 +4,7 @@ import Foundation
 // 09: Sample that outputs a simple fire effect as a GIF.
 
 func fire_palette() -> [Any] {
-    var p: [Any] = __pytra_as_list([])
+    var p: [Any] = []
     var i = __pytra_int(Int64(0))
     while (i < __pytra_int(Int64(256))) {
         var r: Int64 = Int64(0)
@@ -30,7 +30,7 @@ func fire_palette() -> [Any] {
         p.append(b)
         i += 1
     }
-    return __pytra_as_list(__pytra_bytes(p))
+    return __pytra_bytes(p)
 }
 
 func run_09_fire_simulation() {
@@ -65,7 +65,7 @@ func run_09_fire_simulation() {
             }
             y += 1
         }
-        var frame: [Any] = __pytra_as_list(__pytra_bytearray((w * h)))
+        var frame: [Any] = __pytra_bytearray((w * h))
         var yy = __pytra_int(Int64(0))
         while (yy < __pytra_int(h)) {
             var row_base: Int64 = (yy * w)

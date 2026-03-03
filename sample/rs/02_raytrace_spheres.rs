@@ -2,7 +2,7 @@ mod py_runtime;
 pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
-use crate::pytra::runtime::png;
+use crate::pytra::utils::png;
 use crate::time::perf_counter;
 
 // 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
@@ -61,22 +61,14 @@ fn render(width: i64, height: i64, aa: i64) -> Vec<u8> {
     let __hoisted_cast_3: f64 = ((width - 1) as f64);
     let __hoisted_cast_4: f64 = ((height) as f64);
     
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(height) {
-        y = __for_i_1;
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(width) {
-                x = __for_i_2;
+    for y in (0)..(height) {
+            for x in (0)..(width) {
                     let mut ar: i64 = 0;
                     let mut ag: i64 = 0;
                     let mut ab: i64 = 0;
                     
-                    let mut ay: i64 = 0;
-                    for __for_i_3 in (0)..(aa) {
-                        ay = __for_i_3;
-                            let mut ax: i64 = 0;
-                            for __for_i_4 in (0)..(aa) {
-                                ax = __for_i_4;
+                    for ay in (0)..(aa) {
+                            for ax in (0)..(aa) {
                                     let fy = (((y) as f64) + (((ay) as f64) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
                                     let fx = (((x) as f64) + (((ax) as f64) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
                                     let sy: f64 = 1.0 - 2.0 * fy;
@@ -193,7 +185,7 @@ fn run_raytrace() {
     
     let start: f64 = perf_counter();
     let pixels: Vec<u8> = render(width, height, aa);
-    pytra::runtime::png::write_rgb_png(&(out_path), width, height, &(pixels));
+    pytra::utils::png::write_rgb_png(&(out_path), width, height, &(pixels));
     let elapsed: f64 = perf_counter() - start;
     
     println!("{} {}", ("output:").to_string(), out_path);

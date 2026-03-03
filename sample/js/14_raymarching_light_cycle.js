@@ -1,13 +1,12 @@
 import * as math from "./pytra/std/math.js";
 import { perf_counter } from "./pytra/std/time.js";
-import { save_gif } from "./pytra/runtime/gif.js";
+import { save_gif } from "./pytra/utils/gif.js";
 
 // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
 
 function palette() {
     let p = [];
-    const __start_1 = 0;
-    for (let i = __start_1; i < 256; i += 1) {
+    for (let i = 0; i < 256; i += 1) {
         let r = Math.min(255, Math.trunc(Number(20 + i * 0.9)));
         let g = Math.min(255, Math.trunc(Number(10 + i * 0.7)));
         let b = Math.min(255, 30 + i);
@@ -48,19 +47,16 @@ function run_14_raymarching_light_cycle() {
     let __hoisted_cast_2 = Number(h - 1);
     let __hoisted_cast_3 = Number(w - 1);
     
-    const __start_2 = 0;
-    for (let t = __start_2; t < frames_n; t += 1) {
+    for (let t = 0; t < frames_n; t += 1) {
         let frame = (typeof (w * h) === "number" ? new Array(Math.max(0, Math.trunc(Number((w * h))))).fill(0) : (Array.isArray((w * h)) ? (w * h).slice() : Array.from((w * h))));
         let a = (t / __hoisted_cast_1) * math.pi * 2.0;
         let light_x = 0.75 * math.cos(a);
         let light_y = 0.55 * math.sin(a * 1.2);
         
-        const __start_3 = 0;
-        for (let y = __start_3; y < h; y += 1) {
+        for (let y = 0; y < h; y += 1) {
             let row_base = y * w;
             let py = (y / __hoisted_cast_2) * 2.0 - 1.0;
-            const __start_4 = 0;
-            for (let x = __start_4; x < w; x += 1) {
+            for (let x = 0; x < w; x += 1) {
                 let px = (x / __hoisted_cast_3) * 2.0 - 1.0;
                 frame[(((row_base + x) < 0) ? ((frame).length + (row_base + x)) : (row_base + x))] = scene(px, py, light_x, light_y);
             }

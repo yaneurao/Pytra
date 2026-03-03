@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 using png = Pytra.CsModule.png_helper;
 
@@ -18,11 +22,11 @@ public static class Program
         
         long y = 0;
         for (y = 0; y < height; y += 1) {
-            double zy0 = -1.2 + 2.4 * (y / __hoisted_cast_1);
+            double zy0 = -1.2 + 2.4 * (System.Convert.ToDouble(y) / System.Convert.ToDouble(__hoisted_cast_1));
             
             long x = 0;
             for (x = 0; x < width; x += 1) {
-                double zx = -1.8 + 3.6 * (x / __hoisted_cast_2);
+                double zx = -1.8 + 3.6 * (System.Convert.ToDouble(x) / System.Convert.ToDouble(__hoisted_cast_2));
                 double zy = zy0;
                 
                 long i = 0;
@@ -44,7 +48,7 @@ public static class Program
                     g = 0;
                     b = 0;
                 } else {
-                    double t = i / __hoisted_cast_3;
+                    double t = System.Convert.ToDouble(i) / System.Convert.ToDouble(__hoisted_cast_3);
                     r = Pytra.CsModule.py_runtime.py_int(255.0 * (0.2 + 0.8 * t));
                     g = Pytra.CsModule.py_runtime.py_int(255.0 * (0.1 + 0.9 * t * t));
                     b = Pytra.CsModule.py_runtime.py_int(255.0 * (1.0 - t));

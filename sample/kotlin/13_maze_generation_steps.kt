@@ -6,7 +6,7 @@ import kotlin.math.*
 fun capture(grid: MutableList<Any?>, w: Long, h: Long, scale: Long): MutableList<Any?> {
     var width: Long = (w * scale)
     var height: Long = (h * scale)
-    var frame: MutableList<Any?> = __pytra_as_list(__pytra_bytearray((width * height)))
+    var frame: MutableList<Any?> = __pytra_bytearray((width * height))
     var y = __pytra_int(0L)
     while (y < __pytra_int(h)) {
         var x = __pytra_int(0L)
@@ -26,7 +26,7 @@ fun capture(grid: MutableList<Any?>, w: Long, h: Long, scale: Long): MutableList
         }
         y += 1L
     }
-    return __pytra_as_list(__pytra_bytes(frame))
+    return __pytra_bytes(frame)
 }
 
 fun run_13_maze_generation_steps() {
@@ -72,7 +72,7 @@ fun run_13_maze_generation_steps() {
             k += 1L
         }
         if ((__pytra_int(__pytra_len(candidates)) == __pytra_int(0L))) {
-            stack = __pytra_pop_last(__pytra_as_list(stack))
+            stack = __pytra_pop_last(stack)
         } else {
             var sel: MutableList<Any?> = __pytra_as_list(__pytra_get_index(candidates, (__pytra_int(((x * 17L) + (y * 29L)) + (__pytra_len(stack) * 13L)) % __pytra_len(candidates))))
             val __tuple_3 = __pytra_as_list(sel)

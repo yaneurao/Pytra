@@ -28,7 +28,7 @@ fun run_integer_benchmark() {
     var width: Long = 7600L
     var height: Long = 5000L
     var start: Double = __pytra_perf_counter()
-    var checksum: Long = __pytra_int(run_integer_grid_checksum(width, height, 123456789L))
+    var checksum: Long = run_integer_grid_checksum(width, height, 123456789L)
     var elapsed: Double = (__pytra_perf_counter() - start)
     __pytra_print("pixels:", (width * height))
     __pytra_print("checksum:", checksum)

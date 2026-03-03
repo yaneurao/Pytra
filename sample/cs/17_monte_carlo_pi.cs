@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 
 public static class Program

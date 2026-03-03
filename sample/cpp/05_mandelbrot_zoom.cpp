@@ -28,7 +28,7 @@ bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y
             frame[row_base + x] = int64(255.0 * py_to<float64>(i) / __hoisted_cast_1);
         }
     }
-    return bytes(frame);
+    return frame;
 }
 
 void run_05_mandelbrot_zoom() {
@@ -43,8 +43,9 @@ void run_05_mandelbrot_zoom() {
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = list<bytes>{};
+    list<bytes> frames = {};
     float64 scale = base_scale;
+    frames.reserve((frame_count <= 0) ? 0 : frame_count);
     for (int64 _ = 0; _ < frame_count; ++_) {
         frames.append(render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;

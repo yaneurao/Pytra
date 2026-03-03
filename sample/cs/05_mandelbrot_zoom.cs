@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 using Pytra.CsModule;
 
 public static class Program
@@ -31,7 +35,7 @@ public static class Program
                     zx = zx2 - zy2 + cx;
                     i += 1;
                 }
-                Pytra.CsModule.py_runtime.py_set(frame, row_base + x, Pytra.CsModule.py_runtime.py_int(255.0 * i / __hoisted_cast_1));
+                Pytra.CsModule.py_runtime.py_set(frame, row_base + x, Pytra.CsModule.py_runtime.py_int(System.Convert.ToDouble(255.0 * i) / System.Convert.ToDouble(__hoisted_cast_1)));
             }
         }
         return Pytra.CsModule.py_runtime.py_bytes(frame);
@@ -45,7 +49,7 @@ public static class Program
         long max_iter = 110;
         double center_x = -0.743643887037151;
         double center_y = 0.13182590420533;
-        double base_scale = 3.2 / width;
+        double base_scale = System.Convert.ToDouble(3.2) / System.Convert.ToDouble(width);
         double zoom_per_frame = 0.93;
         string out_path = "sample/out/05_mandelbrot_zoom.gif";
         

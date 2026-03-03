@@ -4,29 +4,29 @@ require_relative "py_runtime"
 # 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
 def render_frame(width, height, center_x, center_y, scale, max_iter)
-  frame = __pytra_bytearray((width * height))
+  frame = __pytra_bytearray(width * height)
   __hoisted_cast_1 = __pytra_float(max_iter)
   y = 0
   while y < height
-    row_base = (y * width)
-    cy = (center_y + ((y - (height * 0.5)) * scale))
+    row_base = y * width
+    cy = (center_y + ((y - height * 0.5) * scale))
     x = 0
     while x < width
-      cx = (center_x + ((x - (width * 0.5)) * scale))
+      cx = (center_x + ((x - width * 0.5) * scale))
       zx = 0.0
       zy = 0.0
       i = 0
-      while (i < max_iter)
-        zx2 = (zx * zx)
-        zy2 = (zy * zy)
-        if ((zx2 + zy2) > 4.0)
+      while i < max_iter
+        zx2 = zx * zx
+        zy2 = zy * zy
+        if zx2 + zy2 > 4.0
           break
         end
-        zy = (((2.0 * zx) * zy) + cy)
-        zx = ((zx2 - zy2) + cx)
+        zy = ((2.0 * zx * zy) + cy)
+        zx = (zx2 - zy2 + cx)
         i += 1
       end
-      __pytra_set_index(frame, (row_base + x), __pytra_int(__pytra_div((255.0 * i), __hoisted_cast_1)))
+      __pytra_set_index(frame, row_base + x, __pytra_int(__pytra_div(255.0 * i, __hoisted_cast_1)))
       x += 1
     end
     y += 1
@@ -54,7 +54,7 @@ def run_05_mandelbrot_zoom()
     __loop_0 += 1
   end
   save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0)
-  elapsed = (__pytra_perf_counter() - start)
+  elapsed = __pytra_perf_counter() - start
   __pytra_print("output:", out_path)
   __pytra_print("frames:", frame_count)
   __pytra_print("elapsed_sec:", elapsed)

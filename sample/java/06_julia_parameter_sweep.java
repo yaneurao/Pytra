@@ -1,5 +1,5 @@
-public final class Pytra_06_julia_parameter_sweep {
-    private Pytra_06_julia_parameter_sweep() {
+public final class _06_julia_parameter_sweep {
+    private _06_julia_parameter_sweep() {
     }
 
 
@@ -10,8 +10,7 @@ public final class Pytra_06_julia_parameter_sweep {
         palette.set((int)((((0L) < 0L) ? (((long)(palette.size())) + (0L)) : (0L))), 0L);
         palette.set((int)((((1L) < 0L) ? (((long)(palette.size())) + (1L)) : (1L))), 0L);
         palette.set((int)((((2L) < 0L) ? (((long)(palette.size())) + (2L)) : (2L))), 0L);
-        long __step_0 = 1L;
-        for (long i = 1L; (__step_0 >= 0L) ? (i < 256L) : (i > 256L); i += __step_0) {
+        for (long i = 1L; i < 256L; i += 1L) {
             double t = (((double)(i - 1L))) / 254.0;
             long r = PyRuntime.__pytra_int(255.0 * (9.0 * (1.0 - t) * t * t * t));
             long g = PyRuntime.__pytra_int(255.0 * (15.0 * (1.0 - t) * (1.0 - t) * t * t));
@@ -27,12 +26,10 @@ public final class Pytra_06_julia_parameter_sweep {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(width * height);
         double __hoisted_cast_1 = ((double)(height - 1L));
         double __hoisted_cast_2 = ((double)(width - 1L));
-        long __step_0 = 1L;
-        for (long y = 0L; (__step_0 >= 0L) ? (y < height) : (y > height); y += __step_0) {
+        for (long y = 0L; y < height; y += 1L) {
             long row_base = y * width;
             double zy0 = (-1.2) + 2.4 * (((double)(y)) / __hoisted_cast_1);
-            long __step_1 = 1L;
-            for (long x = 0L; (__step_1 >= 0L) ? (x < width) : (x > width); x += __step_1) {
+            for (long x = 0L; x < width; x += 1L) {
                 double zx = (-1.8) + 3.6 * (((double)(x)) / __hoisted_cast_2);
                 double zy = zy0;
                 long i = 0L;
@@ -64,7 +61,7 @@ public final class Pytra_06_julia_parameter_sweep {
         long max_iter = 180L;
         String out_path = "sample/out/06_julia_parameter_sweep.gif";
         double start = (System.nanoTime() / 1000000000.0);
-        java.util.ArrayList<Object> frames = new java.util.ArrayList<Object>(java.util.Arrays.asList());
+        java.util.ArrayList<java.util.ArrayList<Long>> frames = new java.util.ArrayList<java.util.ArrayList<Long>>();
         double center_cr = (-0.745);
         double center_ci = 0.186;
         double radius_cr = 0.12;
@@ -72,8 +69,7 @@ public final class Pytra_06_julia_parameter_sweep {
         long start_offset = 20L;
         long phase_offset = 180L;
         double __hoisted_cast_3 = ((double)(frames_n));
-        long __step_0 = 1L;
-        for (long i = 0L; (__step_0 >= 0L) ? (i < frames_n) : (i > frames_n); i += __step_0) {
+        for (long i = 0L; i < frames_n; i += 1L) {
             double t = ((double)((i + start_offset) % frames_n)) / __hoisted_cast_3;
             double angle = 2.0 * Math.PI * t;
             double cr = center_cr + radius_cr * Math.cos(angle);

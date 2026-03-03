@@ -1,5 +1,5 @@
 import * as math from "./pytra/std/math.js";
-import { png } from "./pytra/runtime.js";
+import { png } from "./pytra/utils.js";
 import { perf_counter } from "./pytra/std/time.js";
 
 // 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
@@ -58,18 +58,14 @@ function render(width, height, aa) {
     let __hoisted_cast_3 = Number(width - 1);
     let __hoisted_cast_4 = Number(height);
     
-    const __start_1 = 0;
-    for (let y = __start_1; y < height; y += 1) {
-        const __start_2 = 0;
-        for (let x = __start_2; x < width; x += 1) {
+    for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
             let ar = 0;
             let ag = 0;
             let ab = 0;
             
-            const __start_3 = 0;
-            for (let ay = __start_3; ay < aa; ay += 1) {
-                const __start_4 = 0;
-                for (let ax = __start_4; ax < aa; ax += 1) {
+            for (let ay = 0; ay < aa; ay += 1) {
+                for (let ax = 0; ax < aa; ax += 1) {
                     let fy = (y + (ay + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
                     let fx = (x + (ax + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
                     let sy = 1.0 - 2.0 * fy;

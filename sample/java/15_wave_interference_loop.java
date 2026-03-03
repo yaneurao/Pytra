@@ -1,5 +1,5 @@
-public final class Pytra_15_wave_interference_loop {
-    private Pytra_15_wave_interference_loop() {
+public final class _15_wave_interference_loop {
+    private _15_wave_interference_loop() {
     }
 
 
@@ -11,16 +11,13 @@ public final class Pytra_15_wave_interference_loop {
         long frames_n = 96L;
         String out_path = "sample/out/15_wave_interference_loop.gif";
         double start = (System.nanoTime() / 1000000000.0);
-        java.util.ArrayList<Object> frames = new java.util.ArrayList<Object>(java.util.Arrays.asList());
-        long __step_0 = 1L;
-        for (long t = 0L; (__step_0 >= 0L) ? (t < frames_n) : (t > frames_n); t += __step_0) {
+        java.util.ArrayList<java.util.ArrayList<Long>> frames = new java.util.ArrayList<java.util.ArrayList<Long>>();
+        for (long t = 0L; t < frames_n; t += 1L) {
             java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(w * h);
             double phase = ((double)(t)) * 0.12;
-            long __step_1 = 1L;
-            for (long y = 0L; (__step_1 >= 0L) ? (y < h) : (y > h); y += __step_1) {
+            for (long y = 0L; y < h; y += 1L) {
                 long row_base = y * w;
-                long __step_2 = 1L;
-                for (long x = 0L; (__step_2 >= 0L) ? (x < w) : (x > w); x += __step_2) {
+                for (long x = 0L; x < w; x += 1L) {
                     long dx = x - 160L;
                     long dy = y - 120L;
                     double v = Math.sin((((double)(x)) + ((double)(t)) * 1.5) * 0.045) + Math.sin((((double)(y)) - ((double)(t)) * 1.2) * 0.04) + Math.sin((((double)(x + y))) * 0.02 + phase) + Math.sin(Math.sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);

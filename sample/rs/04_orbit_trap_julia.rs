@@ -13,13 +13,9 @@ fn render_orbit_trap_julia(width: i64, height: i64, max_iter: i64, cx: f64, cy: 
     let __hoisted_cast_2: f64 = ((width - 1) as f64);
     let __hoisted_cast_3: f64 = ((max_iter) as f64);
     
-    let mut y: i64 = 0;
-    for __for_i_1 in (0)..(height) {
-        y = __for_i_1;
+    for y in (0)..(height) {
             let zy0: f64 = -1.3 + 2.6 * (((y) as f64) / __hoisted_cast_1);
-            let mut x: i64 = 0;
-            for __for_i_2 in (0)..(width) {
-                x = __for_i_2;
+            for x in (0)..(width) {
                     let mut zx: f64 = -1.9 + 3.8 * (((x) as f64) / __hoisted_cast_2);
                     let mut zy: f64 = zy0;
                     
