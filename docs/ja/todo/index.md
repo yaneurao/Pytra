@@ -66,7 +66,7 @@
 
 文脈: [docs/ja/plans/p0-pytra-src-3layer-bootstrap.md](../plans/p0-pytra-src-3layer-bootstrap.md)
 
-1. [ ] [ID: P0-PYTRA-SRC-3LAYER-01] `src/pytra` 名前空間を維持しつつ `frontends` / `ir` を導入し、`compiler` 混在責務を段階的に分離する。
+1. [x] [ID: P0-PYTRA-SRC-3LAYER-01] `src/pytra` 名前空間を維持しつつ `frontends` / `ir` を導入し、`compiler` 混在責務を段階的に分離する。
 2. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` 配下を棚卸しし、`frontends` / `ir` / 互換層に分類する。
 3. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-02] `src/pytra` 名前空間維持前提のディレクトリ規約と import 境界（依存方向）を定義する。
 4. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `src/pytra/frontends` / `src/pytra/ir` を新設し、最小 bootstrap モジュールを配置する。
@@ -75,7 +75,7 @@
 7. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `src/pytra/compiler` を互換 shim 化し、既存 import を壊さない re-export 導線を整備する。
 8. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S3-01] 境界ガード（禁止 import / 逆流依存）を追加し、再発防止を固定する。
 9. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S3-02] 主要 unit/transpile 回帰を実行して非退行を確認する。
-10. [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ新責務境界と移行方針を反映する。
+10. [x] [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ新責務境界と移行方針を反映する。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` を棚卸しし、frontends/ir/互換層の初期分類と依存方向ルール（`frontends -> ir -> backends`）を計画書へ確定。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `pytra.frontends` / `pytra.ir` の bootstrap パッケージを新設し、互換委譲ラッパと import 契約 unit を追加して非退行を確認。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] `east1_build`/`frontend_semantics`/`signature_registry` を `pytra.frontends` へ移設し、旧 `pytra.compiler` 側は shim 化、主要 unit/transpile 回帰で非退行を確認。
@@ -83,6 +83,7 @@
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S2-04] `compiler/transpile_cli` を `frontends/transpile_cli` へ実体移設し、`compiler` 側を shim 化したうえで `py2x`/transpile 回帰を再通過。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S3-01] `check_pytra_layer_boundaries.py` を追加し、frontends/ir/backends の逆流 import を静的検知、違反1件（cpp multifile_writer）を解消。
 - 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S3-02] 主要回帰（unit + 全言語 transpile check + boundary/version gate）を一括実行し全通過を確認。
+- 進捗メモ: [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec` の責務境界記述（folder/east/stdlib-signature/options）を新配置 `frontends/ir/compiler(shim)` に更新。
 
 ### P1: `ir2lang.py` 導入（EAST3 JSON 直入力 + target lazy import）
 

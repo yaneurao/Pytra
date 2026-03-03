@@ -14,7 +14,7 @@
 - Python 互換性を重視する場合は、`balanced` / `python` プリセットや個別オプションで明示的に opt-in する。
 - オプションは段階導入する。
   - Phase 1: `py2cpp.py` 先行
-  - Phase 2: 共通 CLI（`src/pytra/compiler/transpile_cli.py`）へ集約
+  - Phase 2: 共通 CLI（`src/pytra/frontends/transpile_cli.py`）へ集約（`compiler/transpile_cli.py` は互換 shim）
   - Phase 3: LanguageProfile で言語別既定値を切替可能にする
 
 ## 2. 実装済みオプション（現状）

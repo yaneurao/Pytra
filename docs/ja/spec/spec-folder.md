@@ -76,17 +76,21 @@
 
 ## 3. `src/` 配下の責務
 
-### 3.1 `src/pytra/compiler/east_parts/`
+### 3.1 `src/pytra/frontends/` / `src/pytra/ir/` / `src/pytra/compiler/`（3層 + 互換）
 
-- 目的: EAST1/EAST2/EAST3 の段階処理を提供する。
+- 目的: 入力frontend と IR 段階処理を分離し、`compiler` は互換導線へ縮退する。
 - 置くもの:
-  - `east1.py`, `east2.py`, `east3.py`, `east3_lowering.py`
-  - `east_io.py`, `core.py`
+  - `src/pytra/frontends/`: `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, `signature_registry.py`, `frontend_semantics.py`
+  - `src/pytra/ir/`: `core.py`, `east1.py`, `east2.py`, `east3.py`, `east2_to_east3_lowering.py`, `east3_optimizer.py`, `east3_opt_passes/*`, `east_io.py`
+  - `src/pytra/compiler/`: 互換 shim / facade（例: `transpile_cli.py`, `east_parts/*` の re-export）
 - 置かないもの:
+  - `frontends` / `ir` へ移設済みロジックの新規実装を `compiler` 側に戻すこと
   - ターゲット言語固有の最終出力分岐
 - 依存方向:
-  - `pytra.*` 共通層への依存を許可
-  - `backends/lang>` への直接依存は原則禁止
+  - `frontends -> ir -> backends` を原則とする。
+  - `backends -> frontends` は禁止（`tools/check_pytra_layer_boundaries.py` で検知）。
+  - `ir -> frontends` は `ir/core.py` のみ例外許可（parser 実装移行中の暫定）。
+  - 互換層 `compiler` から `frontends` / `ir` への依存は許可する。
 
 ### 3.2 `src/backends/`
 
