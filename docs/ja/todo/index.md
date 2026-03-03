@@ -63,6 +63,17 @@
 7. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-01] `tools/runtime_parity_check.py` でケース実行前の既存 artifact 削除を強制する。
 8. [ ] [ID: P0-PHP-IMAGE-RUNTIME-S16-01-S3-02] `sample/01,06,16` を中心に Python vs PHP の stdout/artifact parity を再確認する。
 
+### P0: Ruby `sample/18` parity 失敗（tokenize error）原因調査
+
+文脈: [docs/ja/plans/p0-ruby-s18-tokenize-parity-investigation.md](../plans/p0-ruby-s18-tokenize-parity-investigation.md)
+
+1. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01] Ruby `sample/18` parity 失敗の根本原因を特定し、修正方針を確定する。
+2. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-01] parity 失敗を再現し、例外発生位置と入力トークン列を採取する。
+3. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S1-02] Python 版と Ruby 版の tokenize 結果を比較し、最初の乖離点を特定する。
+4. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-01] 乖離を生む変換規則（lower/emitter/runtime）を特定し、責務境界を明確化する。
+5. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S2-02] 最小再現ケース追加方針（fixture 化）を作成する。
+6. [ ] [ID: P0-RUBY-S18-TOKENIZE-INVEST-01-S3-01] 修正方針（実装箇所・回帰テスト）を確定し、次段修正タスクを起票する。
+
 ### P1: `py2x.py` 単一エントリ化（`py2*.py` 廃止、最終的に `py2cpp.py` 削除）
 
 文脈: [docs/ja/plans/p1-py2x-single-entrypoint-remove-legacy-clis.md](../plans/p1-py2x-single-entrypoint-remove-legacy-clis.md)
