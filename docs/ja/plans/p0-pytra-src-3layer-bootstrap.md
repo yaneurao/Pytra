@@ -55,8 +55,8 @@
 
 ## 分解
 
-- [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` 配下を棚卸しし、`frontends` / `ir` / 互換層に分類する。
-- [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S1-02] `src/pytra` 名前空間維持前提のディレクトリ規約と import 境界（依存方向）を定義する。
+- [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-01] `src/pytra/compiler` 配下を棚卸しし、`frontends` / `ir` / 互換層に分類する。
+- [x] [ID: P0-PYTRA-SRC-3LAYER-01-S1-02] `src/pytra` 名前空間維持前提のディレクトリ規約と import 境界（依存方向）を定義する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-01] `src/pytra/frontends` / `src/pytra/ir` を新設し、最小 bootstrap モジュールを配置する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-02] Python入力〜EAST1 生成の frontends 相当モジュールを `src/pytra/frontends` へ移設する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S2-03] EAST1/2/3・lower/optimizer/analysis の IR 相当モジュールを `src/pytra/ir` へ移設する。
@@ -65,5 +65,46 @@
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-02] 主要 unit/transpile 回帰を実行して非退行を確認する。
 - [ ] [ID: P0-PYTRA-SRC-3LAYER-01-S3-03] `docs/ja/spec`（必要なら `docs/en/spec`）へ新責務境界と移行方針を反映する。
 
+## S1 棚卸し結果（2026-03-03）
+
+frontends 候補（`src/pytra/frontends` へ段階移設）:
+- `src/pytra/compiler/transpile_cli.py`
+- `src/pytra/compiler/stdlib/frontend_semantics.py`
+- `src/pytra/compiler/stdlib/signature_registry.py`
+- `src/pytra/compiler/east_parts/east1_build.py`（EAST1 構築と import graph 解決）
+
+IR 候補（`src/pytra/ir` へ段階移設）:
+- `src/pytra/compiler/east.py`
+- `src/pytra/compiler/east_parts/east1.py`
+- `src/pytra/compiler/east_parts/east2.py`
+- `src/pytra/compiler/east_parts/east3.py`
+- `src/pytra/compiler/east_parts/east2_to_east3_lowering.py`
+- `src/pytra/compiler/east_parts/east3_optimizer.py`
+- `src/pytra/compiler/east_parts/east3_opt_passes/*`
+- `src/pytra/compiler/east_parts/east_io.py`
+- `src/pytra/compiler/east_parts/east2_to_human_repr.py`
+- `src/pytra/compiler/east_parts/east3_to_human_repr.py`
+- `src/pytra/compiler/east_parts/core.py`
+- `src/pytra/compiler/east_parts/code_emitter.py`
+
+互換層 / 導線維持（`src/pytra/compiler` 残置）:
+- `src/pytra/compiler/__init__.py`
+- `src/pytra/compiler/py2x_wrapper.py`
+- `src/pytra/compiler/backend_registry.py`
+- `src/pytra/compiler/backend_registry_static.py`
+- `src/pytra/compiler/js_runtime_shims.py`
+- `src/pytra/compiler/transpiler_versions.json`
+- `src/pytra/compiler/east_parts/__init__.py`
+- `src/pytra/compiler/east_parts/cli.py`（移行期間は `pytra.ir` 参照の薄い CLI ファサード化）
+
+S1-02 で固定した境界ルール:
+- 依存方向は `frontends -> ir -> backends` を原則とし、逆方向 import を禁止する。
+- `frontends` は入力解釈と EAST1 構築までを担当し、target 言語固有分岐を持たない。
+- `ir` は EAST1/2/3、lower/optimizer/analysis、IR 入出力のみを担当し、CLI 引数解析や runtime コピー処理を持たない。
+- `compiler` は互換 shim と統合導線の薄い橋渡しに限定し、新規ロジック実装先として扱わない。
+- `backends` から `frontends` への import は禁止し、必要な共有処理は `backends/common` または `pytra/ir` に寄せる。
+
 決定ログ:
 - 2026-03-03: `src/pytra` 名前空間を維持したまま `frontends` / `ir` を導入し、`src/frontends` 直下への最終移設は後続フェーズとする方針を採用。
+- 2026-03-03: `git ls-files src/pytra/compiler` で追跡対象を棚卸しし、`transpile_cli/stdlib/east1_build` を frontends 候補、EAST本体・lower・optimizer・human/io を ir 候補、registry/wrapper/version/shim を互換層として分類した。
+- 2026-03-03: 移行中の責務衝突を避けるため、`compiler/east_parts/cli.py` は当面互換層に残して `pytra.ir` 参照のみを許可する方針を採用した。
