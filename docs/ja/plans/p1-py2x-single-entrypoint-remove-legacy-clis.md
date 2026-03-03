@@ -59,7 +59,7 @@
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] `tools/` / `test/` / `docs/` / `src/pytra/cli.py` の `py2*.py` 依存箇所を棚卸しし、移行順序を確定する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 固有機能（`--emit-runtime-cpp`, `--header-output`, `--multi-file` 等）の `py2x` 受け皿仕様を確定する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
-- [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
+- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] `tools/` の CLI 呼び出しを `py2x.py --target ...` へ一括置換する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
 - [ ] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
@@ -73,3 +73,4 @@
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] 依存棚卸しを実施。`src/pytra/cli.py` は `PY2CPP/PY2RS/PY2SCALA` を直参照、`tools/` は `runtime_parity_check` / `regenerate_samples` / selfhost系を中心に `src/py2*.py` 依存、`test/` は `test_py2*` 系が wrapper 直接実行を前提、`docs` は `how-to-use` に実行例が集中していることを確認。移行順は `(1) src/pytra/cli.py + tools 共通導線 -> (2) test 契約更新 -> (3) docs -> (4) selfhost 最終置換` とする。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 実利用オプションを抽出（`--multi-file`, `--output-dir`, `--header-output`, `--emit-runtime-cpp`, `--dump-deps`, `--dump-options`, `--preset`, `--int-width`, `--mod-mode`, `--top-namespace`, `--str-index-mode`）。受け皿仕様は「共通レイヤ可搬オプションは `--lower/optimizer/emitter-option` へマップ」「出力モード変更系（`multi-file/header/runtime-cpp/dump-*`）は `py2x --target cpp` 専用の互換フラグとして直受け」に確定。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線の依存契約を棚卸し。`tools/prepare_selfhost_source.py` / `build_selfhost.py` / `build_selfhost_stage2.py` / `check_selfhost_cpp_diff.py` / `verify_selfhost_end_to_end.py` が `src/py2cpp.py` を前提に連鎖している。置換方針は「通常系は `src/py2x.py --target cpp`、selfhost系は `src/py2x-selfhost.py --target cpp` を正規入口」に統一し、`selfhost/py2cpp.py` は中間生成物としてのみ維持（呼び出し元からは wrapper 名を隠蔽）とする。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `src/py2x.py` に C++ 互換経路を追加し、`--target cpp` 時は `py2cpp` 互換フラグを受理して委譲する実装へ更新。`--optimizer-option/--emitter-option` の C++ 対応キー（例: `cpp_opt_level`, `mod_mode`, `negative_index_mode`）を専用フラグへマップし、`test_py2x_cli.py`（5 tests）と実行確認（single-file / multi-file / header-output）で非退行を確認。

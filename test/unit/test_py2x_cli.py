@@ -129,6 +129,46 @@ class Py2xCliTest(unittest.TestCase):
         self.assertTrue(out_exists)
         self.assertIn("emitted by test", out_text)
 
+    def test_cpp_target_uses_py2cpp_compat_path(self) -> None:
+        fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
+        with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(fixture), "--target", "cpp", "--multi-file"]):
+            with patch.object(py2x_mod, "_invoke_py2cpp_main", return_value=0) as invoke:
+                rc = py2x_mod.main()
+        self.assertEqual(rc, 0)
+        self.assertEqual(invoke.call_count, 1)
+        forwarded = invoke.call_args[0][0]
+        self.assertIn(str(fixture), forwarded)
+        self.assertIn("--multi-file", forwarded)
+        self.assertNotIn("--target", forwarded)
+
+    def test_cpp_target_maps_layer_options_to_cpp_flags(self) -> None:
+        fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
+        argv = [
+            "py2x.py",
+            str(fixture),
+            "--target",
+            "cpp",
+            "--optimizer-option",
+            "cpp_opt_level=2",
+            "--emitter-option",
+            "mod_mode=python",
+            "--emitter-option",
+            "negative_index_mode=always",
+        ]
+        with patch.object(py2x_mod.sys, "argv", argv):
+            with patch.object(py2x_mod, "_invoke_py2cpp_main", return_value=0) as invoke:
+                rc = py2x_mod.main()
+        self.assertEqual(rc, 0)
+        forwarded = invoke.call_args[0][0]
+        self.assertIn("--cpp-opt-level", forwarded)
+        self.assertIn("2", forwarded)
+        self.assertIn("--mod-mode", forwarded)
+        self.assertIn("python", forwarded)
+        self.assertIn("--negative-index-mode", forwarded)
+        self.assertIn("always", forwarded)
+        self.assertNotIn("--optimizer-option", forwarded)
+        self.assertNotIn("--emitter-option", forwarded)
+
 
 if __name__ == "__main__":
     unittest.main()

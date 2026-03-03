@@ -42,7 +42,9 @@ def _print_help() -> None:
         "[--object-dispatch-mode {native,type_id}] [--east3-opt-level {0,1,2}] "
         "[--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] "
         "[--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] "
-        "[--lower-option key=value] [--optimizer-option key=value] [--emitter-option key=value]"
+        "[--lower-option key=value] [--optimizer-option key=value] [--emitter-option key=value]\n"
+        "note: for --target cpp, py2cpp compatibility flags (e.g. --multi-file, --header-output, "
+        "--emit-runtime-cpp, --dump-deps, --dump-options, -O*) are also accepted."
     )
 
 
@@ -73,6 +75,126 @@ def _extract_layer_options(argv: list[str]) -> tuple[list[str], dict[str, list[s
     return cleaned, options
 
 
+def _peek_target(argv: list[str]) -> str:
+    i = 0
+    while i < len(argv):
+        tok = argv[i]
+        if tok == "--target":
+            if i + 1 >= len(argv):
+                _fatal("missing value for --target")
+            return argv[i + 1]
+        if tok.startswith("--target="):
+            return tok[len("--target=") :]
+        i += 1
+    return ""
+
+
+def _strip_target(argv: list[str]) -> list[str]:
+    out: list[str] = []
+    i = 0
+    while i < len(argv):
+        tok = argv[i]
+        if tok == "--target":
+            if i + 1 >= len(argv):
+                _fatal("missing value for --target")
+            i += 2
+            continue
+        if tok.startswith("--target="):
+            i += 1
+            continue
+        out.append(tok)
+        i += 1
+    return out
+
+
+def _has_flag(argv: list[str], flag: str) -> bool:
+    i = 0
+    while i < len(argv):
+        tok = argv[i]
+        if tok == flag:
+            return True
+        if tok.startswith(flag + "="):
+            return True
+        i += 1
+    return False
+
+
+def _invoke_py2cpp_main(argv: list[str]) -> int:
+    from py2cpp import main as py2cpp_main
+
+    return py2cpp_main(argv)
+
+
+def _apply_cpp_layer_options(
+    cpp_argv: list[str],
+    *,
+    lower_raw: dict[str, str],
+    optimizer_raw: dict[str, str],
+    emitter_raw: dict[str, str],
+) -> list[str]:
+    out = list(cpp_argv)
+    unsupported: list[str] = []
+    if len(lower_raw) > 0:
+        for key in lower_raw.keys():
+            unsupported.append("--lower-option " + key)
+
+    optimizer_map: dict[str, str] = {
+        "cpp_opt_level": "--cpp-opt-level",
+        "cpp_opt_pass": "--cpp-opt-pass",
+        "dump_cpp_ir_before_opt": "--dump-cpp-ir-before-opt",
+        "dump_cpp_ir_after_opt": "--dump-cpp-ir-after-opt",
+        "dump_cpp_opt_trace": "--dump-cpp-opt-trace",
+    }
+    emitter_map: dict[str, str] = {
+        "negative_index_mode": "--negative-index-mode",
+        "bounds_check_mode": "--bounds-check-mode",
+        "floor_div_mode": "--floor-div-mode",
+        "mod_mode": "--mod-mode",
+        "int_width": "--int-width",
+        "str_index_mode": "--str-index-mode",
+        "str_slice_mode": "--str-slice-mode",
+        "cpp_list_model": "--cpp-list-model",
+    }
+
+    def _append_mapped_options(raw: dict[str, str], mapping: dict[str, str], label: str) -> None:
+        for key, value in raw.items():
+            normalized_key = key.replace("-", "_")
+            flag = mapping.get(normalized_key, "")
+            if flag == "":
+                unsupported.append(label + " " + key)
+                continue
+            if _has_flag(out, flag):
+                continue
+            out.append(flag)
+            out.append(value)
+
+    _append_mapped_options(optimizer_raw, optimizer_map, "--optimizer-option")
+    _append_mapped_options(emitter_raw, emitter_map, "--emitter-option")
+
+    if len(unsupported) > 0:
+        _fatal("unsupported cpp layer option(s): " + ", ".join(unsupported))
+
+    return out
+
+
+def _run_cpp_compat(
+    cleaned_argv: list[str],
+    *,
+    layer_option_items: dict[str, list[str]],
+) -> int:
+    cpp_argv = _strip_target(cleaned_argv)
+    lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
+    optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
+    emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
+    forwarded = _apply_cpp_layer_options(
+        cpp_argv,
+        lower_raw=lower_raw,
+        optimizer_raw=optimizer_raw,
+        emitter_raw=emitter_raw,
+    )
+    return _invoke_py2cpp_main(forwarded)
+
+
 def _parse_layer_option_items(items: list[str], label: str) -> dict[str, str]:
     out: dict[str, str] = {}
     for item in items:
@@ -94,6 +216,11 @@ def main() -> int:
             _print_help()
             return 0
 
+    cleaned_argv, layer_option_items = _extract_layer_options(argv)
+    target_hint = _peek_target(cleaned_argv)
+    if target_hint == "cpp":
+        return _run_cpp_compat(cleaned_argv, layer_option_items=layer_option_items)
+
     parser = argparse.ArgumentParser(description="Pytra unified transpiler frontend")
     add_common_transpile_args(
         parser,
@@ -102,7 +229,6 @@ def main() -> int:
     )
     parser.add_argument("--target", choices=list_backend_targets(), help="Target backend language")
     parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
-    cleaned_argv, layer_option_items = _extract_layer_options(argv)
     args = parser.parse_args(cleaned_argv)
     if not isinstance(args, dict):
         raise RuntimeError("argparse result must be dict")
