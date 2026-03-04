@@ -121,6 +121,8 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] C# にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2cs_smoke.py` に未解決 stdlib call の負例回帰を追加した（44件通過）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] JS にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2js_smoke.py` に未解決 stdlib call の負例回帰を追加した（22件通過）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] TS（JS 経由）にも未解決 stdlib 呼び出しの fail-closed 負例回帰を追加し、`test_py2ts_smoke.py` で `RuntimeError` 送出を固定した（14件通過）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Rust にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2rs_smoke.py` に未解決 stdlib call の負例回帰を追加した（30件通過）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Lua にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2lua_smoke.py` に未解決 stdlib call の負例回帰を追加した（32件通過）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

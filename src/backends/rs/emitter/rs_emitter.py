@@ -4226,7 +4226,21 @@ class RustEmitter(CodeEmitter):
         non_escape = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
         return bool(non_escape.get("in_return_expr"))
 
+    def _resolved_runtime_call(self, expr: dict[str, Any]) -> str:
+        runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
+        if runtime_call != "":
+            return runtime_call
+        resolved_runtime_call = self.any_dict_get_str(expr, "resolved_runtime_call", "")
+        if resolved_runtime_call != "":
+            return resolved_runtime_call
+        return ""
+
     def _render_call(self, expr: dict[str, Any]) -> str:
+        semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
+        runtime_call = self._resolved_runtime_call(expr)
+        if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
+            raise RuntimeError("rust emitter: unresolved stdlib runtime call: " + semantic_tag)
+
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
         fn_kind = self.any_dict_get_str(fn_node, "kind", "")
@@ -4536,6 +4550,10 @@ class RustEmitter(CodeEmitter):
         if kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner = self.render_expr(owner_node)
+            semantic_tag = self.any_dict_get_str(expr_d, "semantic_tag", "")
+            runtime_call = self._resolved_runtime_call(expr_d)
+            if semantic_tag.startswith("stdlib.") and runtime_call == "":
+                raise RuntimeError("rust emitter: unresolved stdlib runtime attribute: " + semantic_tag)
             owner_ctx = self.resolve_attribute_owner_context(owner_node, owner)
             owner_mod = self.any_dict_get_str(owner_ctx, "module", "")
             attr_raw = self.any_dict_get_str(expr_d, "attr", "")

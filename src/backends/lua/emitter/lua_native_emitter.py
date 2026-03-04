@@ -214,6 +214,17 @@ class LuaNativeEmitter:
             return -operand
         return None
 
+    def _resolved_runtime_call(self, expr_any: Any) -> str:
+        if not isinstance(expr_any, dict):
+            return ""
+        runtime_call = expr_any.get("runtime_call")
+        if isinstance(runtime_call, str) and runtime_call != "":
+            return runtime_call
+        resolved_runtime_call = expr_any.get("resolved_runtime_call")
+        if isinstance(resolved_runtime_call, str) and resolved_runtime_call != "":
+            return resolved_runtime_call
+        return ""
+
     def _is_sequence_expr(self, node_any: Any) -> bool:
         if not isinstance(node_any, dict):
             return False
@@ -1982,6 +1993,11 @@ class LuaNativeEmitter:
         if kind == "Attribute":
             owner = self._render_expr(expr_any.get("value"))
             attr = _safe_ident(expr_any.get("attr"), "field")
+            semantic_tag_any = expr_any.get("semantic_tag")
+            semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+            runtime_call = self._resolved_runtime_call(expr_any)
+            if semantic_tag.startswith("stdlib.") and runtime_call == "":
+                raise RuntimeError("lang=lua unresolved stdlib runtime attribute: " + semantic_tag)
             return owner + "." + attr
         if kind == "IsInstance":
             value = self._render_expr(expr_any.get("value"))
@@ -2063,6 +2079,11 @@ class LuaNativeEmitter:
             rendered_kw = self._render_expr(kw_any.get("value"))
             kw_rendered[key_any] = rendered_kw
             kw_values_in_order.append(rendered_kw)
+        semantic_tag_any = expr.get("semantic_tag")
+        semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+        runtime_call = self._resolved_runtime_call(expr)
+        if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
+            raise RuntimeError("lang=lua unresolved stdlib runtime call: " + semantic_tag)
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             fn_name = _safe_ident(func_any.get("id"), "fn")
             if fn_name == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
