@@ -102,6 +102,7 @@
 8. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] transpile/smoke 回帰を実行し、wrapper 撤去後の非退行を確認する。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01] archive からの差し戻し。`src/py2*.py` 実ファイルと wrapper 依存（`tools/check_multilang_selfhost_stage1.py`, `tools/check_noncpp_east3_contract.py`, `test/unit/test_py2*_smoke.py`）残存を確認し、完了判定を再オープンした。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] `tools/test/docs/selfhost` の wrapper 参照を再棚卸しし、置換順を `tools -> test -> docs -> wrapper削除 -> guard/回帰` に確定。
+- 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `check_noncpp_east3_contract.py` と `check_transpiler_version_gate.py` の direct wrapper 参照を `py2x` 基準へ置換し、`check_legacy_cli_references.py` の allowlist から2ファイルを除外して再流入防止を強化（selfhost系 `tools/*` は継続対応）。
 
 ### P1: `py2x` 共通 smoke テスト統合（全言語）
 

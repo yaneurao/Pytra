@@ -82,3 +82,4 @@
 決定ログ:
 - 2026-03-04: archive 済み `P1-PY2X-SINGLE-ENTRY-01` を再開対象として差し戻し。完了条件を「`py2x` 導入」ではなく「legacy wrapper 実ファイル撤去」へ再定義した。
 - 2026-03-04: `S1-01` として wrapper 参照を `tools/test/docs/selfhost` で再棚卸しし、置換順を「tools -> test -> docs -> wrapper削除 -> guard/回帰」に確定した。
+- 2026-03-04: `S2-01` の先行分として `tools/check_noncpp_east3_contract.py` の wrapper 実ファイル前提チェックを除去し、`py2x.py` + backend layer + smoke 契約検証へ整理した。合わせて `tools/check_transpiler_version_gate.py` の言語 direct dependency を `src/py2*.py` から `src/py2x.py` へ置換し、`tools/check_legacy_cli_references.py` の allowlist から上記2ファイルを除外して再流入を抑止した。

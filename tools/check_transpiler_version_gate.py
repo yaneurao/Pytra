@@ -24,14 +24,14 @@ SHARED_DEPENDENCY_PATHS = [
 
 LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
     "cpp": ["src/backends/cpp/cli.py", "src/backends/cpp", "src/backends/cpp/profiles"],
-    "rs": ["src/py2rs.py", "src/backends/rs", "src/backends/rs/profiles"],
-    "cs": ["src/py2cs.py", "src/backends/cs", "src/backends/cs/profiles"],
-    "js": ["src/py2js.py", "src/backends/js", "src/backends/js/profiles"],
-    "ts": ["src/py2ts.py", "src/backends/ts"],
-    "go": ["src/py2go.py", "src/backends/go"],
-    "java": ["src/py2java.py", "src/backends/java"],
-    "swift": ["src/py2swift.py", "src/backends/swift"],
-    "kotlin": ["src/py2kotlin.py", "src/backends/kotlin"],
+    "rs": ["src/py2x.py", "src/backends/rs", "src/backends/rs/profiles"],
+    "cs": ["src/py2x.py", "src/backends/cs", "src/backends/cs/profiles"],
+    "js": ["src/py2x.py", "src/backends/js", "src/backends/js/profiles"],
+    "ts": ["src/py2x.py", "src/backends/ts"],
+    "go": ["src/py2x.py", "src/backends/go"],
+    "java": ["src/py2x.py", "src/backends/java"],
+    "swift": ["src/py2x.py", "src/backends/swift"],
+    "kotlin": ["src/py2x.py", "src/backends/kotlin"],
 }
 
 

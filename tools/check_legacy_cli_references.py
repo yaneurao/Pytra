@@ -28,11 +28,9 @@ ALLOWED_PATH_REF_FILES = {
     "src/backends/cs/emitter/cs_emitter.py",
     "tools/check_multilang_selfhost_multistage.py",
     "tools/check_multilang_selfhost_stage1.py",
-    "tools/check_noncpp_east3_contract.py",
     "tools/check_py2cpp_boundary.py",
     "tools/check_py2cpp_helper_guard.py",
     "tools/check_py2cpp_transpile.py",
-    "tools/check_transpiler_version_gate.py",
 }
 
 ALLOWED_IMPORT_REF_FILES = {
@@ -83,4 +81,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
