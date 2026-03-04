@@ -33,6 +33,19 @@ Its goals are:
 - `tools/check_emitter_forbidden_runtime_symbols.py`
   - Purpose: Detect newly added forbidden runtime-implementation symbols in `src/backends/*/emitter/*.py` (`__pytra_write_rgb_png` / `__pytra_save_gif` / `__pytra_grayscale_palette`) and fail on entries outside `tools/emitter_forbidden_runtime_symbols_allowlist.txt`.
 
+### 1.1 Mandatory Stop-Ship Checklist for Emitter Changes
+
+- Scope: any commit that modifies `src/backends/*/emitter/*.py`.
+- Before commit, always run these three commands:
+  - `python3 tools/check_emitter_runtimecall_guardrails.py`
+  - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+  - `python3 tools/check_noncpp_east3_contract.py`
+- If any of the three commands returns `FAIL`, treat it as Stop-Ship and do not commit/push/request review.
+- During review, use this checklist:
+  - [ ] Logs for all three commands are attached.
+  - [ ] No newly added forbidden runtime-implementation symbols exist in `src/backends/*/emitter/*.py`.
+  - [ ] Runtime/stdlib call resolution uses EAST3 canonical fields only (`runtime_call` / `resolved_runtime_call` / `resolved_runtime_source`).
+
 ## 2. Selfhost Related
 
 - `tools/build_selfhost.py`

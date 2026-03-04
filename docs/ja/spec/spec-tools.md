@@ -72,6 +72,19 @@
 - `tools/check_emitter_forbidden_runtime_symbols.py`
   - 目的: `src/backends/*/emitter/*.py` における禁止 runtime 実装シンボル（`__pytra_write_rgb_png` / `__pytra_save_gif` / `__pytra_grayscale_palette`）の混入増分を検知し、allowlist 外を fail させる（`tools/emitter_forbidden_runtime_symbols_allowlist.txt` 基準）。
 
+### 1.1 Emitter 変更 Stop-Ship チェックリスト（必須）
+
+- 対象: `src/backends/*/emitter/*.py` を変更したコミット。
+- コミット前に次の 3 コマンドを必ず実行する。
+  - `python3 tools/check_emitter_runtimecall_guardrails.py`
+  - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+  - `python3 tools/check_noncpp_east3_contract.py`
+- 3 コマンドのいずれかが `FAIL` の場合は Stop-Ship 扱いとし、コミット/プッシュ/レビュー依頼を禁止する。
+- レビュー時は次の 3 項目を checklist として確認する。
+  - [ ] 上記 3 コマンドの実行ログがある。
+  - [ ] `src/backends/*/emitter/*.py` に禁止 runtime 実装シンボルの増分がない。
+  - [ ] runtime/stdlib 呼び出し解決が EAST3 正本（`runtime_call` / `resolved_runtime_call` / `resolved_runtime_source`）のみを利用している。
+
 ## 2. selfhost 関連
 
 - `tools/build_selfhost.py`
