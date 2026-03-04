@@ -220,6 +220,7 @@ def build_targets(
     case_src = case_path.as_posix()
     runtime_srcs = runtime_cpp_sources_shell()
     opt_arg = "--east3-opt-level " + shlex.quote(str(east3_opt_level))
+    nim_unit = f"case_{case_stem}"
     return [
         Target(
             name="cpp",
@@ -384,6 +385,21 @@ def build_targets(
             ),
             run_cmd=f"scala run test/transpile/scala/py_runtime.scala test/transpile/scala/{case_stem}.scala",
             needs=("python", "scala"),
+        ),
+        Target(
+            name="nim",
+            transpile_cmd=py2x_transpile_cmd(
+                case_src,
+                "nim",
+                f"test/transpile/nim/{nim_unit}.nim",
+                opt_arg,
+            ),
+            run_cmd=(
+                f"nim c --hints:off --verbosity:0 "
+                f"--nimcache:test/transpile/obj/nimcache_{nim_unit} "
+                f"-r test/transpile/nim/{nim_unit}.nim"
+            ),
+            needs=("python", "nim"),
         ),
     ]
 

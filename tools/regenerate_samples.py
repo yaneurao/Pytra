@@ -37,6 +37,7 @@ LANG_CONFIGS: dict[str, dict[str, str]] = {
     "lua": {"out_dir": "sample/lua", "ext": ".lua"},
     "ruby": {"out_dir": "sample/ruby", "ext": ".rb"},
     "php": {"out_dir": "sample/php", "ext": ".php"},
+    "nim": {"out_dir": "sample/nim", "ext": ".nim"},
 }
 
 LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
@@ -53,6 +54,7 @@ LANG_VERSION_DEPENDENCIES: dict[str, list[str]] = {
     "lua": ["lua"],
     "ruby": ["ruby"],
     "php": ["php"],
+    "nim": ["nim"],
 }
 
 SEMVER_PARTS = 3
@@ -211,7 +213,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Regenerate sample outputs with version-gated skip")
     ap.add_argument(
         "--langs",
-        default="cpp,rs,cs,js,ts,go,java,swift,kotlin,scala,lua,ruby,php",
+        default="cpp,rs,cs,js,ts,go,java,swift,kotlin,scala,lua,ruby,php,nim",
         help="comma-separated target languages",
     )
     ap.add_argument(

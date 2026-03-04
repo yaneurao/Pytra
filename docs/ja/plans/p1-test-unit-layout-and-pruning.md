@@ -57,10 +57,10 @@
 - [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
 - [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
 - [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] 判定済みの未使用テストを削除または統合し、再発防止チェック（必要なら新規）を追加する。
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] 主要 unit/transpile/selfhost 回帰を実行し、再編・整理後の非退行を確認する。
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新しいテスト配置規約と運用手順を反映する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] 判定済みの未使用テストを削除または統合し、再発防止チェック（必要なら新規）を追加する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] 主要 unit/transpile/selfhost 回帰を実行し、再編・整理後の非退行を確認する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新しいテスト配置規約と運用手順を反映する。
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、`test/unit` の責務別フォルダ再編と未使用テスト整理を P1 タスクとして起票した。削除は必ず監査根拠付きで段階実施する方針を採用。
@@ -68,6 +68,25 @@
 - 2026-03-04: `S1-02` を完了。`test/unit` の目標配置規約を `責務ディレクトリ + 命名規約 + discover/実行規約 + 追加時チェック` で固定し、`S2` 以降の移動判断基準を確定した。
 - 2026-03-04: `S2-01` を完了。`test/unit/test_*.py` 71本を `common/backends/<lang>/ir/tooling/selfhost` へ `git mv` し、`tools/run_local_ci.py` と `tools/check_noncpp_east3_contract.py` の固定テストパスを新配置へ更新した。`test/unit/backends` を package 化すると `src/backends` と名前衝突するため、`__init__.py` は置かない方針を採用（discover 導線は `S2-02` で更新）。
 - 2026-03-04: `S2-02` を完了。`test/unit/test_discovery_router.py` を `load_tests + importlib` の手動ローダに差し替え、非package配下でも `python3 -m unittest discover -s test/unit -p 'test*.py'` が再帰実行できるようにした。個別実行で壊れていた `from comment_fidelity import ...` はルート `comment_fidelity.py` 追加で安定化し、`go/swift/kotlin` smoke discover 3本の通過を確認した。`tools/check_gsk_native_regression.py` も新パス（`test/unit/backends/*`）参照へ更新済み。
+- 2026-03-04: `S3-01` を完了。`test/unit/test*.py` 全件に対して `tools/docs` 参照スキャンを実施し、参照ゼロ候補（`test_pylib_*`, `test_east3_to_human_repr.py`）を抽出。候補はすべて discover 配下の現役回帰（`python3 -m unittest discover -s test/unit/common -p 'test_pylib_*.py'`, `... -s test/unit/ir -p 'test_east3_to_human_repr.py'` 通過）と判定し、削除・統合は見送り（維持）とした。
+- 2026-03-04: `S3-02` を完了。`S3-01` の監査結論（削除/統合候補 0 件）に基づき、コード変更なしでクローズ。再発防止は `test/unit` 直下直置き禁止規約と `test_discovery_router` の固定により担保する。
+- 2026-03-04: `S4-01` を完了。主要回帰として `test/unit/common/test_py2x_smoke_common.py`, `test/unit/backends/{go,swift,kotlin}/test_py2*_smoke.py`, `test/unit/selfhost/test_prepare_selfhost_source.py`, `tools/check_noncpp_east3_contract.py --skip-transpile` を再実行し全通過を確認した。
+- 2026-03-04: `S4-02` を完了。`docs/ja/spec` / `docs/en/spec` のテストパス参照（`test/unit/test_*.py`）を新配置へ更新し、`common/backends/ir/tooling/selfhost` 運用へ揃えた。
+
+## S3-01 監査メモ（2026-03-04）
+
+- 抽出手順:
+- `test/unit/test*.py` を全列挙し、各 `basename` について `rg -n <basename> tools docs/ja docs/en` のヒット件数を集計。
+- ヒット 0〜1 件を「未使用候補」として抽出し、discover 実行有無で再判定。
+- 候補と判定:
+- `test/unit/common/test_pylib_argparse.py` ほか `test_pylib_*` 8本:
+- 判定 `維持`。`test/unit/common` discover で 36 tests pass。`src/pytra/*` の shim 回帰を担うため削除不可。
+- `test/unit/ir/test_east3_to_human_repr.py`:
+- 判定 `維持`。`test/unit/ir` 個別 discover で 3 tests pass。`east2/east3` human repr の互換ラッパ契約を担保。
+- `test/unit/test_discovery_router.py`:
+- 判定 `維持`。`test/unit/backends` 非package運用時の top-level discover ルータとして必須。
+- 監査結論:
+- 今回の `S3-01` では「削除/統合」対象は 0 件。`S3-02` は `候補なしでクローズ` とする。
 
 ## S1-01 棚卸し結果（2026-03-04）
 
