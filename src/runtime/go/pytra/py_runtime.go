@@ -1,4 +1,6 @@
 // Go ネイティブ変換向け Python 互換ランタイム補助。
+// source: src/pytra/utils/png.py
+// source: src/pytra/utils/gif.py
 
 package main
 
