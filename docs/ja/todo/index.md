@@ -98,7 +98,7 @@
 4. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test/unit` の wrapper ファイル依存テストを `py2x` 基準または backend module 基準へ置換する。
 5. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja` / `docs/en` の wrapper 名記述を `py2x` 正規入口へ更新する。
 6. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] `src/py2*.py` wrapper 群と `toolchain/compiler/py2x_wrapper.py` を削除する（`py2x.py` / `py2x-selfhost.py` は除外）。
-7. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] wrapper 再流入を検知する静的ガードを更新し、削除後構成を固定する。
+7. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] wrapper 再流入を検知する静的ガードを更新し、削除後構成を固定する。
 8. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] transpile/smoke 回帰を実行し、wrapper 撤去後の非退行を確認する。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01] archive からの差し戻し。`src/py2*.py` 実ファイルと wrapper 依存（`tools/check_multilang_selfhost_stage1.py`, `tools/check_noncpp_east3_contract.py`, `test/unit/test_py2*_smoke.py`）残存を確認し、完了判定を再オープンした。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] `tools/test/docs/selfhost` の wrapper 参照を再棚卸しし、置換順を `tools -> test -> docs -> wrapper削除 -> guard/回帰` に確定。
@@ -107,6 +107,7 @@
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py` の wrapper import/ファイル依存を backend module + `load_east3_document(..., target_lang=<lang>)` 基準へ置換し、`test_py2*_smoke.py` 298件 `OK` を確認。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja|en` の実行例を `py2x.py --target <lang>` 基準へ統一し、`how-to-use` の互換ラッパ案内と `spec-runtime/spec-options/spec-east/spec-east3-optimizer/spec-dev/spec-tools` の `py2cpp.py` 前提記述を更新。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] `src/py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}.py` と `toolchain/compiler/py2x_wrapper.py` を削除し、`test_error_classification_cross_lang` の backend直呼び化・`cs_emitter` の anchor 修正後に smoke 298件と legacy guard を通過。
+- 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] `check_legacy_cli_references.py` を wrapper実ファイル再流入検知つきへ強化し、`src/py2x.py` / `src/py2x-selfhost.py` 以外の `src/py2*.py` と `toolchain/compiler/py2x_wrapper.py` を fail-fast で禁止する構成に固定。
 
 ### P1: `py2x` 共通 smoke テスト統合（全言語）
 
