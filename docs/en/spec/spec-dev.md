@@ -240,6 +240,14 @@ Constraints:
   - During replacement work, output bytes from `src/pytra/utils/*.py` and each language runtime output must match for identical input.
   - In C++, run `tools/verify_image_runtime_parity.py` and confirm minimal PNG/GIF parity.
 
+### 3.3.1 std/utils Source-of-Truth Guard (No Handwritten Runtime Logic)
+
+- `src/pytra/std/*.py` and `src/pytra/utils/*.py` are the single source of truth for runtime-equivalent library logic.
+- Equivalent handwritten logic is prohibited under `src/runtime/<lang>/pytra-core/**` and `src/runtime/<lang>/pytra/**`.
+- Canonical-derived implementations must be generated under `src/runtime/<lang>/pytra-gen/**` and keep `source:` / `generated-by:` trace markers.
+- Existing debt exceptions must be explicitly listed in `tools/runtime_std_sot_allowlist.txt`; untracked additions are prohibited.
+- The canonical gate is `python3 tools/check_runtime_std_sot_guard.py`, executed continuously by `tools/run_local_ci.py`.
+
 ### 3.4 Python Helper Library Naming
 
 - Legacy compatibility name `pylib.runtime` has been removed; canonical name is `pytra.utils.assertions`.

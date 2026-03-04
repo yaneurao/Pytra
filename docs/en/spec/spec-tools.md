@@ -26,6 +26,8 @@ Its goals are:
   - Purpose: Use `docs/ja/todo/archive` as source of truth and synchronize `docs/en/todo/archive` date-file stubs and index; detect sync gaps with `--check`.
 - `tools/verify_image_runtime_parity.py`
   - Purpose: Verify parity between Python source-of-truth image runtime (PNG/GIF) and C++ side.
+- `tools/check_runtime_std_sot_guard.py`
+  - Purpose: Enforce `src/pytra/std/*.py` and `src/pytra/utils/*.py` as source of truth, and fail on handwritten runtime implementations outside `pytra-gen` (currently guarded: `json`).
 
 ## 2. Selfhost Related
 

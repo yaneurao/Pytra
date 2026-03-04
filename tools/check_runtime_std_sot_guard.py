@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Guard source-of-truth runtime policy for std/utils modules.
+
+Policy (phase-1):
+- Canonical module logic must come from `src/pytra/std/*.py` or `src/pytra/utils/*.py`.
+- Handwritten runtime implementations of guarded module symbols are prohibited outside
+  `src/runtime/*/pytra-gen/**`.
+- Existing debt is tracked explicitly in `tools/runtime_std_sot_allowlist.txt`.
+
+Current guarded module set:
+- json (`pyJsonLoads` / `pyJsonDumps`)
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_ROOT = ROOT / "src" / "runtime"
+ALLOWLIST_PATH = ROOT / "tools" / "runtime_std_sot_allowlist.txt"
+
+TARGET_SUFFIXES = {
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cs",
+    ".go",
+    ".h",
+    ".hpp",
+    ".java",
+    ".js",
+    ".kt",
+    ".lua",
+    ".nim",
+    ".php",
+    ".py",
+    ".rb",
+    ".rs",
+    ".scala",
+    ".swift",
+    ".ts",
+}
+
+RULES: dict[str, list[re.Pattern[str]]] = {
+    "json": [
+        re.compile(r"\bpyJsonLoads\b"),
+        re.compile(r"\bpyJsonDumps\b"),
+        re.compile(r"\bclass\s+json\b"),
+    ],
+}
+
+
+def _parse_allowlist() -> dict[str, set[str]]:
+    out: dict[str, set[str]] = {}
+    if not ALLOWLIST_PATH.exists():
+        return out
+    for line in ALLOWLIST_PATH.read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        parts = s.split()
+        if len(parts) != 2:
+            raise RuntimeError(
+                "invalid allowlist line (expected: '<module> <path>'): " + s
+            )
+        module_name, rel_path = parts
+        if module_name not in RULES:
+            raise RuntimeError(
+                f"allowlist has unknown module '{module_name}': {rel_path}"
+            )
+        if rel_path.startswith("/"):
+            raise RuntimeError("allowlist path must be repository-relative: " + rel_path)
+        out.setdefault(module_name, set()).add(rel_path)
+    return out
+
+
+def _iter_runtime_files() -> list[Path]:
+    out: list[Path] = []
+    if not RUNTIME_ROOT.exists():
+        return out
+    for p in sorted(RUNTIME_ROOT.rglob("*")):
+        if not p.is_file():
+            continue
+        if p.suffix not in TARGET_SUFFIXES:
+            continue
+        out.append(p)
+    return out
+
+
+def _is_generated_runtime(rel_path: str) -> bool:
+    # Keep this strict and path-based; generated artifacts must live in pytra-gen.
+    return "/pytra-gen/" in ("/" + rel_path)
+
+
+def main() -> int:
+    allow = _parse_allowlist()
+
+    violations: list[str] = []
+    stale_allow: list[str] = []
+    used_allow: set[tuple[str, str]] = set()
+
+    for p in _iter_runtime_files():
+        rel = str(p.relative_to(ROOT)).replace("\\\\", "/")
+        if _is_generated_runtime(rel):
+            continue
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        for module_name, patterns in RULES.items():
+            hit = False
+            for pat in patterns:
+                if pat.search(txt):
+                    hit = True
+                    break
+            if not hit:
+                continue
+            allowed_paths = allow.get(module_name, set())
+            if rel in allowed_paths:
+                used_allow.add((module_name, rel))
+                continue
+            violations.append(f"[{module_name}] {rel}")
+
+    for module_name, paths in allow.items():
+        for rel in sorted(paths):
+            if (module_name, rel) not in used_allow:
+                stale_allow.append(f"[{module_name}] {rel}")
+
+    if violations or stale_allow:
+        print("[FAIL] runtime std/utils source-of-truth guard failed")
+        if violations:
+            print("  disallowed handwritten runtime implementation detected:")
+            for item in violations:
+                print("    - " + item)
+            print(
+                "  fix: move implementation to src/pytra/* canonical source and generate under pytra-gen"
+            )
+        if stale_allow:
+            print("  stale allowlist entries (remove them):")
+            for item in stale_allow:
+                print("    - " + item)
+        return 1
+
+    tracked = sum(len(v) for v in allow.values())
+    print("[OK] runtime std/utils source-of-truth guard passed")
+    print(f"  rules: {', '.join(sorted(RULES.keys()))}")
+    print(f"  allowlist entries used: {tracked}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -29,6 +29,7 @@ def main() -> int:
         ["python3", "tools/check_runtime_cpp_layout.py"],
         ["python3", "tools/check_rs_runtime_layout.py"],
         ["python3", "tools/audit_image_runtime_sot.py", "--fail-on-core-mix", "--fail-on-gen-markers"],
+        ["python3", "tools/check_runtime_std_sot_guard.py"],
         ["python3", "tools/check_runtime_legacy_shims.py"],
         ["python3", "tools/run_regen_on_version_bump.py", "--verify-cpp-on-diff"],
         ["python3", "tools/check_sample_regen_clean.py"],

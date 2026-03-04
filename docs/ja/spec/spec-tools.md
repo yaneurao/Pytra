@@ -65,6 +65,8 @@
   - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`
 - `tools/verify_image_runtime_parity.py`
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
+- `tools/check_runtime_std_sot_guard.py`
+  - 目的: `src/pytra/std/*.py` / `src/pytra/utils/*.py` を正本とする運用を検査し、`pytra-gen` 以外への手書き実装（現行ガード対象: `json`）を fail させる。
 
 ## 2. selfhost 関連
 

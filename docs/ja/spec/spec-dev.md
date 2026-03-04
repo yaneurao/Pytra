@@ -295,6 +295,14 @@
   - 置換作業中は、同一入力に対して `src/pytra/utils/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
   - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
+### 3.3.1 std/utils 正本運用ガード（手書き禁止）
+
+- `src/pytra/std/*.py` および `src/pytra/utils/*.py` を runtime 機能の唯一正本とする。
+- `src/runtime/<lang>/pytra-core/**` および `src/runtime/<lang>/pytra/**` へ、正本と同等のロジックを手書き実装してはならない。
+- 正本由来コードは必ず `src/runtime/<lang>/pytra-gen/**` に生成し、`source:` / `generated-by:` トレースを保持する。
+- 例外（既存負債）は `tools/runtime_std_sot_allowlist.txt` に明示し、無記録の追加は禁止する。
+- 検証の正本は `python3 tools/check_runtime_std_sot_guard.py` とし、`tools/run_local_ci.py` で常時実行する。
+
 ### 3.4 Python 補助ライブラリ命名
 
 - 旧 `pylib.runtime` 互換名は廃止済みで、`pytra.utils.assertions` を正とします。
