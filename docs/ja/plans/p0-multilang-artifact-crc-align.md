@@ -145,6 +145,7 @@
 - 2026-03-04: `S3-02` として `test_runtime_parity_check_cli.py` に `swiftc -O` 回帰と timeout 時 process-group kill 回帰を追加。`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に artifact parity の必須条件（exists+size+CRC32）、stale artifact purge、timeout kill の運用ルールを明記した。
 - 2026-03-04: Swift emitter に `Subscript` 代入 fast-path（`Name` への直接添字代入 + `grid[y][x]` write-back）を追加し、`__pytra_setIndex(Any, ...)` の値コピー経路を回避。`05..09` の timeout/CRC失敗が解消し、`--targets swift --all-samples --cmd-timeout-sec 300` は `case_pass=11` まで前進（`work/logs/runtime_parity_sample_swift_all_after_subscript_store_opt_20260304.json`）。
 - 2026-03-04: Swift `_call_name` が `Attribute` を解決していなかったため `math.sqrt/sin/...` の型推論が `Any` に落ちる問題を修正。`10/14/15/16` は 4件すべて `ok` を確認（`work/logs/runtime_parity_sample_swift_10_14_15_16_after_callname_attr_20260304.json`）。
+- 2026-03-04: Swift `ForCore` を `do { ... }` スコープへ閉じて loop 変数再宣言衝突を解消し、tuple unpack は初回代入時に `var` 宣言するよう修正。`12/13` が `ok` となり、`--targets swift --all-samples --cmd-timeout-sec 300` は `case_pass=17/case_fail=1` まで前進（残件は `18` の compile fail）（`work/logs/runtime_parity_sample_swift_all_after_loop_scope_tuple_decl_20260304.json`）。
 
 ## 分解
 

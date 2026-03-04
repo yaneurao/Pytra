@@ -1426,7 +1426,7 @@ def _emit_tuple_assign(
 
         if kind == "Name":
             name = _safe_ident(elem.get("id"), "tmp_" + str(i))
-            if declare_hint and name not in declared:
+            if name not in declared:
                 lines.append(indent + "var " + name + ": " + elem_type + " = " + casted)
                 declared.add(name)
                 type_map[name] = elem_type
@@ -1771,7 +1771,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     if kind == "ForCore":
-        return _emit_for_core(stmt, indent=indent, ctx=ctx)
+        lines = [indent + "do {"]
+        lines.extend(_emit_for_core(stmt, indent=indent + "    ", ctx=ctx))
+        lines.append(indent + "}")
+        return lines
 
     if kind == "While":
         test_expr = _render_truthy_expr(stmt.get("test"))
