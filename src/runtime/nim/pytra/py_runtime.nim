@@ -154,3 +154,112 @@ proc write_rgb_png*(path: string, width: int, height: int, pixels: seq[uint8]) =
   png.add(pytraPngChunk(@[0x49'u8, 0x44'u8, 0x41'u8, 0x54'u8], idat))
   png.add(pytraPngChunk(@[0x49'u8, 0x45'u8, 0x4E'u8, 0x44'u8], @[]))
   pytraWriteBytes(path, png)
+
+proc pytraGifLzwEncode(data: seq[uint8], minCodeSize: int = 8): seq[uint8] =
+  if data.len == 0:
+    return @[]
+
+  let clearCode = 1 shl minCodeSize
+  let endCode = clearCode + 1
+  let codeSize = minCodeSize + 1
+
+  var buf: seq[uint8] = @[]
+  var bitBuffer = 0
+  var bitCount = 0
+
+  proc emitCode(code: int, bits: int) =
+    bitBuffer = bitBuffer or (code shl bitCount)
+    bitCount += bits
+    while bitCount >= 8:
+      buf.add(uint8(bitBuffer and 0xFF))
+      bitBuffer = bitBuffer shr 8
+      bitCount -= 8
+
+  emitCode(clearCode, codeSize)
+  var i = 0
+  while i < data.len:
+    emitCode(int(data[i]), codeSize)
+    emitCode(clearCode, codeSize)
+    inc i
+  emitCode(endCode, codeSize)
+  if bitCount > 0:
+    buf.add(uint8(bitBuffer and 0xFF))
+  result = buf
+
+proc grayscale_palette*(): seq[uint8] =
+  result = @[]
+  var i = 0
+  while i < 256:
+    let b = uint8(i)
+    result.add(b)
+    result.add(b)
+    result.add(b)
+    inc i
+
+proc save_gif*(
+  path: string,
+  width: int,
+  height: int,
+  frames: seq[seq[uint8]],
+  palette: seq[uint8],
+  delay_cs: int = 4,
+  loop: int = 0,
+): int =
+  let framePixels = width * height
+  if palette.len != 256 * 3:
+    raise newException(ValueError, "palette must be 256*3 bytes")
+
+  var i = 0
+  while i < frames.len:
+    if frames[i].len != framePixels:
+      raise newException(ValueError, "frame size mismatch")
+    inc i
+
+  var buf: seq[uint8] = @[]
+  buf.add(@[0x47'u8, 0x49'u8, 0x46'u8, 0x38'u8, 0x39'u8, 0x61'u8]) # GIF89a
+  buf.add(pytraU16le(width))
+  buf.add(pytraU16le(height))
+  buf.add(0xF7'u8)
+  buf.add(0'u8)
+  buf.add(0'u8)
+  buf.add(palette)
+
+  buf.add(@[0x21'u8, 0xFF'u8, 0x0B'u8])
+  for ch in "NETSCAPE2.0":
+    buf.add(uint8(ord(ch)))
+  buf.add(@[0x03'u8, 0x01'u8])
+  buf.add(pytraU16le(loop))
+  buf.add(0'u8)
+
+  i = 0
+  while i < frames.len:
+    let fr = frames[i]
+    buf.add(@[0x21'u8, 0xF9'u8, 0x04'u8, 0x00'u8])
+    buf.add(pytraU16le(delay_cs))
+    buf.add(@[0x00'u8, 0x00'u8])
+
+    buf.add(0x2C'u8)
+    buf.add(pytraU16le(0))
+    buf.add(pytraU16le(0))
+    buf.add(pytraU16le(width))
+    buf.add(pytraU16le(height))
+    buf.add(0'u8)
+
+    buf.add(8'u8)
+    let compressed = pytraGifLzwEncode(fr, 8)
+    var pos = 0
+    while pos < compressed.len:
+      let remain = compressed.len - pos
+      let chunkLen = (if remain > 255: 255 else: remain)
+      buf.add(uint8(chunkLen))
+      var j = 0
+      while j < chunkLen:
+        buf.add(compressed[pos + j])
+        inc j
+      pos += chunkLen
+    buf.add(0'u8)
+    inc i
+
+  buf.add(0x3B'u8)
+  pytraWriteBytes(path, buf)
+  return 0
