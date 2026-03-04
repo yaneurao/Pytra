@@ -93,6 +93,7 @@
 - 2026-03-05: `S2-02` として Java runtime hook（host/static backend registry）を `pytra-core + pytra-gen/utils + pytra-gen/std` 配布へ更新した。
 - 2026-03-05: `S3-01` の先行段として Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を撤去し、`runtime_call/resolved_runtime_call` 経由描画へ寄せた（`test_py2java_smoke` green, guardrail green）。
 - 2026-03-05: `S3-01` 継続として `resolved_runtime_call` のシンボル素通し化を試行したが、`pytra-gen/std/json.java` の現行生成品質では Java コンパイルが崩れるため、`json.*` は一旦 `PyRuntime.pyJson*` 経路へ戻して継続課題とした。
+- 2026-03-05: `S3-02` の先行段として `test_py2java_smoke.py` に emitter 実装ソース検査を追加し、`json/png/gif` の `runtime_call == \"...\"` 直書き分岐再混入を回帰検知化した。
 - 2026-03-05: `S4-01` の先行段として `PyRuntime.java` から画像互換ラッパ（`pyWriteRGBPNG/pySaveGif/pyGrayscalePalette`）を削除し、公開名 `write_rgb_png/save_gif/grayscale_palette` のみを残した。
 - 2026-03-05: `S4-02` の先行段として `tools/check_java_pyruntime_boundary.py` を追加し、`PyRuntime.java` での画像互換ラッパ再混入を CI fail-fast（`run_local_ci.py` 組み込み）化した。
 - 2026-03-05: `S4-03` として `tools/runtime_parity_check.py --case-root sample --targets java --ignore-unstable-stdout` で `01_mandelbrot`, `05_mandelbrot_zoom`, `18_mini_language_interpreter` を再検証し pass（01/05 は artifact size+CRC32 一致）を確認した。

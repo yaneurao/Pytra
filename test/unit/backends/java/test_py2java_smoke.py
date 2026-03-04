@@ -296,6 +296,20 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertTrue(std_math.exists())
         self.assertFalse(legacy_path.exists())
 
+    def test_java_native_emitter_has_no_direct_runtime_call_branches_for_json_png_gif(self) -> None:
+        src_path = ROOT / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
+        src = src_path.read_text(encoding="utf-8")
+        forbidden = [
+            'runtime_call == "json.loads"',
+            'runtime_call == "json.dumps"',
+            'runtime_call == "write_rgb_png"',
+            'runtime_call == "save_gif"',
+            'runtime_call == "grayscale_palette"',
+        ]
+        for marker in forbidden:
+            with self.subTest(marker=marker):
+                self.assertNotIn(marker, src)
+
 
 if __name__ == "__main__":
     unittest.main()
