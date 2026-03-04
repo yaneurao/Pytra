@@ -638,6 +638,11 @@ def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    runtime_call, _ = _resolved_runtime_call(expr)
+    if semantic_tag.startswith("stdlib.") and runtime_call == "":
+        raise RuntimeError("go native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
     resolved_runtime_any = expr.get("resolved_runtime_call")
     resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
     if resolved_runtime != "":
@@ -785,6 +790,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "NewPath(" + _render_expr(args[0]) + ")"
 
     runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if semantic_tag.startswith("stdlib.") and runtime_call == "":
+        raise RuntimeError("go native emitter: unresolved stdlib runtime call: " + semantic_tag)
     if runtime_call != "":
         rendered_runtime = _render_call_via_runtime_call(
             runtime_call,
