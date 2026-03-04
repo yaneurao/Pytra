@@ -2180,6 +2180,21 @@ class RustEmitter(CodeEmitter):
             return True
         return False
 
+    def _is_image_utils_module(self, module_id: str) -> bool:
+        if not module_id.startswith("pytra.utils."):
+            return False
+        leaf = self._last_dotted_name(module_id)
+        return leaf == "gif" or leaf == "png"
+
+    def _apply_image_runtime_ref_args(self, call_args: list[str]) -> list[str]:
+        if len(call_args) > 0:
+            call_args[0] = "&(" + call_args[0] + ")"
+        if len(call_args) >= 4:
+            call_args[3] = "&(" + call_args[3] + ")"
+        if len(call_args) >= 5:
+            call_args[4] = "&(" + call_args[4] + ")"
+        return call_args
+
     def _collect_use_lines(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """import 情報を Rust `use` 行へ変換する。"""
         out: list[str] = []
@@ -4371,20 +4386,8 @@ class RustEmitter(CodeEmitter):
                 return "((" + merged_args[0] + ") != 0)"
             imported_sym = self._resolve_imported_symbol(fn_name_raw)
             imported_mod = self.any_dict_get_str(imported_sym, "module", "")
-            if (
-                fn_name_raw in {"save_gif", "write_rgb_png"}
-                and imported_mod in {"pytra.utils.gif", "pytra.utils.png"}
-                and len(merged_args) > 0
-            ):
-                call_args = list(merged_args)
-                call_args[0] = "&(" + call_args[0] + ")"
-                if fn_name_raw == "write_rgb_png" and len(call_args) >= 4:
-                    call_args[3] = "&(" + call_args[3] + ")"
-                if fn_name_raw == "save_gif":
-                    if len(call_args) >= 4:
-                        call_args[3] = "&(" + call_args[3] + ")"
-                    if len(call_args) >= 5:
-                        call_args[4] = "&(" + call_args[4] + ")"
+            if self._is_image_utils_module(imported_mod) and len(merged_args) > 0:
+                call_args = self._apply_image_runtime_ref_args(list(merged_args))
                 return fn_name + "(" + ", ".join(call_args) + ")"
             ref_modes = self.function_arg_ref_modes.get(fn_name, [])
             call_args: list[str] = []
@@ -4428,20 +4431,8 @@ class RustEmitter(CodeEmitter):
             attr_raw = self.any_dict_get_str(fn_node, "attr", "")
             attr = self._safe_name(attr_raw)
             if owner_mod != "":
-                if (
-                    attr_raw in {"save_gif", "write_rgb_png"}
-                    and owner_mod in {"pytra.utils.gif", "pytra.utils.png"}
-                    and len(merged_args) > 0
-                ):
-                    call_args = list(merged_args)
-                    call_args[0] = "&(" + call_args[0] + ")"
-                    if attr_raw == "write_rgb_png" and len(call_args) >= 4:
-                        call_args[3] = "&(" + call_args[3] + ")"
-                    if attr_raw == "save_gif":
-                        if len(call_args) >= 4:
-                            call_args[3] = "&(" + call_args[3] + ")"
-                        if len(call_args) >= 5:
-                            call_args[4] = "&(" + call_args[4] + ")"
+                if self._is_image_utils_module(owner_mod) and len(merged_args) > 0:
+                    call_args = self._apply_image_runtime_ref_args(list(merged_args))
                     return owner_mod.replace(".", "::") + "::" + attr_raw + "(" + ", ".join(call_args) + ")"
                 call_args = self._clone_owned_call_args(merged_args, arg_nodes)
                 return owner_mod.replace(".", "::") + "::" + attr_raw + "(" + ", ".join(call_args) + ")"
