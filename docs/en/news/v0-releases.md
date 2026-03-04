@@ -1,5 +1,9 @@
 # v0 Release Series (Past News)
 
+## 2026-03-04 | v0.7.0 Released
+
+> Version 0.7.0 was released, adding PHP as a supported target language. Nim official support is in progress, followed by Julia and Dart.
+
 ## 2026-03-02 | v0.6.0 Released
 
 > Version 0.6.0 was released, adding Scala as a supported target language.
