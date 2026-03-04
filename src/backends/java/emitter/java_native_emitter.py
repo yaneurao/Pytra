@@ -499,34 +499,34 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
-            return "PyRuntime.pyMathPi()"
+            return "_m.pi"
         if owner == "math" and attr == "e":
-            return "PyRuntime.pyMathE()"
+            return "_m.e"
     value = _render_expr(value_any)
     return value + "." + attr
 
 
 def _java_math_runtime_call(attr: str) -> str:
     if attr == "sqrt":
-        return "PyRuntime.pyMathSqrt"
+        return "_m.sqrt"
     if attr == "sin":
-        return "PyRuntime.pyMathSin"
+        return "_m.sin"
     if attr == "cos":
-        return "PyRuntime.pyMathCos"
+        return "_m.cos"
     if attr == "tan":
-        return "PyRuntime.pyMathTan"
+        return "_m.tan"
     if attr == "exp":
-        return "PyRuntime.pyMathExp"
+        return "_m.exp"
     if attr == "log":
-        return "PyRuntime.pyMathLog"
+        return "_m.log"
     if attr == "pow":
-        return "PyRuntime.pyMathPow"
+        return "_m.pow"
     if attr == "floor":
-        return "PyRuntime.pyMathFloor"
+        return "_m.floor"
     if attr == "ceil":
-        return "PyRuntime.pyMathCeil"
+        return "_m.ceil"
     if attr in {"abs", "fabs"}:
-        return "PyRuntime.pyMathFabs"
+        return "_m.fabs"
     return ""
 
 
@@ -646,7 +646,7 @@ def _render_call_via_runtime_call(runtime_call: str, runtime_source: str, args: 
         if rendered_resolved != "":
             return rendered_resolved
     if runtime_call == "perf_counter":
-        return "PyRuntime.pyPerfCounter()"
+        return "_impl.perf_counter()"
     if runtime_call == "Path":
         if len(args) == 0:
             return "new PyRuntime.Path(\"\")"

@@ -162,9 +162,9 @@ class Py2JavaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("double angle = 2.0 * PyRuntime.pyMathPi() * t;", java)
-        self.assertIn("PyRuntime.pyMathCos(angle)", java)
-        self.assertIn("PyRuntime.pyMathSin(angle)", java)
+        self.assertIn("double angle = 2.0 * _m.pi * t;", java)
+        self.assertIn("_m.cos(angle)", java)
+        self.assertIn("_m.sin(angle)", java)
 
     def test_java_native_emitter_maps_json_calls_to_runtime_helpers(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -211,7 +211,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
             )
             east = load_east(src, parser_backend="self_hosted")
             java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("return PyRuntime.pyPerfCounter();", java)
+        self.assertIn("return _impl.perf_counter();", java)
         self.assertNotIn("System.nanoTime()", java)
 
     def test_java_binop_minimal_parentheses_and_rhs_grouping(self) -> None:
@@ -280,6 +280,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "java" / "pytra-core" / "built_in" / "PyRuntime.java"
+        core_time_impl = ROOT / "src" / "runtime" / "java" / "pytra-core" / "std" / "time_impl.java"
+        core_math_impl = ROOT / "src" / "runtime" / "java" / "pytra-core" / "std" / "math_impl.java"
         png_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "png.java"
         gif_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "gif.java"
         std_time = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "time.java"
@@ -288,6 +290,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         std_math = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "math.java"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(core_time_impl.exists())
+        self.assertTrue(core_math_impl.exists())
         self.assertTrue(png_helper.exists())
         self.assertTrue(gif_helper.exists())
         self.assertTrue(std_time.exists())

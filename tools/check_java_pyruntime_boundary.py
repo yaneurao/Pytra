@@ -18,6 +18,20 @@ FORBIDDEN: dict[str, re.Pattern[str]] = {
     "legacy_image_wrapper.pyWriteRGBPNG": re.compile(r"\bstatic\s+[^\n;]*\bpyWriteRGBPNG\s*\("),
     "legacy_image_wrapper.pySaveGif": re.compile(r"\bstatic\s+[^\n;]*\bpySaveGif\s*\("),
     "legacy_image_wrapper.pyGrayscalePalette": re.compile(r"\bstatic\s+[^\n;]*\bpyGrayscalePalette\s*\("),
+    "core_std_time.pyPerfCounter": re.compile(r"\bstatic\s+[^\n;]*\bpyPerfCounter\s*\("),
+    "core_std_math.pyMathSqrt": re.compile(r"\bstatic\s+[^\n;]*\bpyMathSqrt\s*\("),
+    "core_std_math.pyMathSin": re.compile(r"\bstatic\s+[^\n;]*\bpyMathSin\s*\("),
+    "core_std_math.pyMathCos": re.compile(r"\bstatic\s+[^\n;]*\bpyMathCos\s*\("),
+    "core_std_math.pyMathTan": re.compile(r"\bstatic\s+[^\n;]*\bpyMathTan\s*\("),
+    "core_std_math.pyMathExp": re.compile(r"\bstatic\s+[^\n;]*\bpyMathExp\s*\("),
+    "core_std_math.pyMathLog": re.compile(r"\bstatic\s+[^\n;]*\bpyMathLog\s*\("),
+    "core_std_math.pyMathLog10": re.compile(r"\bstatic\s+[^\n;]*\bpyMathLog10\s*\("),
+    "core_std_math.pyMathFabs": re.compile(r"\bstatic\s+[^\n;]*\bpyMathFabs\s*\("),
+    "core_std_math.pyMathFloor": re.compile(r"\bstatic\s+[^\n;]*\bpyMathFloor\s*\("),
+    "core_std_math.pyMathCeil": re.compile(r"\bstatic\s+[^\n;]*\bpyMathCeil\s*\("),
+    "core_std_math.pyMathPow": re.compile(r"\bstatic\s+[^\n;]*\bpyMathPow\s*\("),
+    "core_std_math.pyMathPi": re.compile(r"\bstatic\s+[^\n;]*\bpyMathPi\s*\("),
+    "core_std_math.pyMathE": re.compile(r"\bstatic\s+[^\n;]*\bpyMathE\s*\("),
 }
 
 

@@ -180,6 +180,8 @@ def _runtime_go(output_path: Path) -> None:
 
 def _runtime_java(output_path: Path) -> None:
     _copy_runtime_file("runtime/java/pytra-core/built_in/PyRuntime.java", output_path, "PyRuntime.java")
+    _copy_runtime_file("runtime/java/pytra-core/std/time_impl.java", output_path, "_impl.java")
+    _copy_runtime_file("runtime/java/pytra-core/std/math_impl.java", output_path, "_m.java")
     _copy_runtime_file("runtime/java/pytra-gen/utils/png.java", output_path, "png.java")
     _copy_runtime_file("runtime/java/pytra-gen/utils/gif.java", output_path, "gif.java")
     _copy_runtime_file("runtime/java/pytra-gen/std/time.java", output_path, "time.java")

@@ -354,6 +354,8 @@ def build_targets(
                 "test/transpile/java/PyRuntime.java "
                 "test/transpile/java/png.java "
                 "test/transpile/java/gif.java "
+                "test/transpile/java/_impl.java "
+                "test/transpile/java/_m.java "
                 "&& java -cp test/transpile/java Main"
             ),
             needs=("python", "javac", "java"),

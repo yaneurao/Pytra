@@ -524,64 +524,6 @@ final class PyRuntime {
         return out;
     }
 
-    // --- time/math ---
-
-    static double pyPerfCounter() {
-        return System.nanoTime() / 1_000_000_000.0;
-    }
-
-    static double pyMathSqrt(Object v) {
-        return Math.sqrt(pyToFloat(v));
-    }
-
-    static double pyMathSin(Object v) {
-        return Math.sin(pyToFloat(v));
-    }
-
-    static double pyMathCos(Object v) {
-        return Math.cos(pyToFloat(v));
-    }
-
-    static double pyMathTan(Object v) {
-        return Math.tan(pyToFloat(v));
-    }
-
-    static double pyMathExp(Object v) {
-        return Math.exp(pyToFloat(v));
-    }
-
-    static double pyMathLog(Object v) {
-        return Math.log(pyToFloat(v));
-    }
-
-    static double pyMathLog10(Object v) {
-        return Math.log10(pyToFloat(v));
-    }
-
-    static double pyMathFabs(Object v) {
-        return Math.abs(pyToFloat(v));
-    }
-
-    static double pyMathFloor(Object v) {
-        return Math.floor(pyToFloat(v));
-    }
-
-    static double pyMathCeil(Object v) {
-        return Math.ceil(pyToFloat(v));
-    }
-
-    static double pyMathPow(Object a, Object b) {
-        return Math.pow(pyToFloat(a), pyToFloat(b));
-    }
-
-    static double pyMathPi() {
-        return Math.PI;
-    }
-
-    static double pyMathE() {
-        return Math.E;
-    }
-
     // --- pathlib ---
 
     static final class Path {
