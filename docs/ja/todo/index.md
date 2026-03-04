@@ -59,7 +59,7 @@
 21. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-02] 手書き混入検知を parity/CI 導線へ組み込み、再発防止を固定する。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] `python3 tools/audit_image_runtime_sot.py --probe-transpile --summary-json work/logs/image_runtime_sot_audit_20260304.json` を実行し、`languages=14/compliant=1/non_compliant=13` の基準値を記録。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] `probe ok: cs/js/ts/scala/nim`、`probe fail: rs/go/java/swift/kotlin/ruby/lua/php` に分割して言語別P0の着手順を確定。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] `src/pytra/utils/png.py` / `gif.py` の subset 正規化（`with/slice/to_bytes/f-string` 非依存化）を実施し、`work/logs/image_runtime_sot_audit_20260304_v4.json` で全 target `probe png/gif=ok` を確認。`python3 tools/verify_image_runtime_parity.py` も `True` で退行なし。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] `src/pytra/utils/png.py` / `gif.py` の subset 正規化（`with/slice/to_bytes/f-string` 非依存化 + `_lzw_encode` の index-loop/int 化）を実施し、`work/logs/image_runtime_sot_audit_20260304_v6.json` で全 target `probe png/gif=ok` を確認。`python3 tools/verify_image_runtime_parity.py` も `True` で退行なし。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 

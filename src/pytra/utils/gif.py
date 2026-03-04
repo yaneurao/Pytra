@@ -25,8 +25,12 @@ def _lzw_encode(data: bytes, min_code_size: int = 8) -> bytes:
         bit_count -= 8
     code_size = min_code_size + 1
 
-    for v in data:
-        bit_buffer |= v << bit_count
+    n = len(data)
+    i_data = 0
+    while i_data < n:
+        v = data[i_data]
+        vv = int(v)
+        bit_buffer |= vv << bit_count
         bit_count += code_size
         while bit_count >= 8:
             out.append(bit_buffer & 0xFF)
@@ -41,6 +45,7 @@ def _lzw_encode(data: bytes, min_code_size: int = 8) -> bytes:
             bit_count -= 8
 
         code_size = min_code_size + 1
+        i_data += 1
 
     bit_buffer |= end_code << bit_count
     bit_count += code_size
