@@ -27,7 +27,7 @@ Its goals are:
 - `tools/verify_image_runtime_parity.py`
   - Purpose: Verify parity between Python source-of-truth image runtime (PNG/GIF) and C++ side.
 - `tools/check_runtime_std_sot_guard.py`
-  - Purpose: Enforce `src/pytra/std/*.py` and `src/pytra/utils/*.py` as source of truth, and fail on handwritten runtime implementations outside `pytra-gen` (currently guarded: `json`).
+  - Purpose: Enforce `src/pytra/std/*.py` and `src/pytra/utils/*.py` as source of truth, and fail on handwritten runtime implementations outside `pytra-gen` (currently guarded: `json/assertions/re/typing`).
 
 ## 2. Selfhost Related
 

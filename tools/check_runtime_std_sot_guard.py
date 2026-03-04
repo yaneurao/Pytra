@@ -9,11 +9,15 @@ Policy (phase-1):
 
 Current guarded module set:
 - json (`pyJsonLoads` / `pyJsonDumps`)
+- assertions (`py_assert_*`)
+- re (`Match` / `strip_group`)
+- typing (`TypeVar`)
 """
 
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -43,12 +47,50 @@ TARGET_SUFFIXES = {
     ".ts",
 }
 
-RULES: dict[str, list[re.Pattern[str]]] = {
-    "json": [
-        re.compile(r"\bpyJsonLoads\b"),
-        re.compile(r"\bpyJsonDumps\b"),
-        re.compile(r"\bclass\s+json\b"),
-    ],
+@dataclass(frozen=True)
+class GuardRule:
+    text_patterns: list[re.Pattern[str]]
+    path_patterns: list[re.Pattern[str]]
+
+
+RULES: dict[str, GuardRule] = {
+    "json": GuardRule(
+        text_patterns=[
+            re.compile(r"\bpyJsonLoads\b"),
+            re.compile(r"\bpyJsonDumps\b"),
+            re.compile(r"\bclass\s+json\b"),
+        ],
+        path_patterns=[],
+    ),
+    "assertions": GuardRule(
+        text_patterns=[
+            re.compile(r"\bpy_assert_true\b"),
+            re.compile(r"\bpy_assert_eq\b"),
+            re.compile(r"\bpy_assert_all\b"),
+            re.compile(r"\bpy_assert_stdout\b"),
+        ],
+        path_patterns=[
+            re.compile(r"/utils/assertions\.[^/]+$"),
+        ],
+    ),
+    "re": GuardRule(
+        text_patterns=[
+            re.compile(r"\bstrip_group\s*\("),
+            re.compile(r"\bclass\s+Match\b"),
+            re.compile(r"\bstruct\s+Match\b"),
+        ],
+        path_patterns=[
+            re.compile(r"/std/re\.[^/]+$"),
+        ],
+    ),
+    "typing": GuardRule(
+        text_patterns=[
+            re.compile(r"\bTypeVar\s*\("),
+        ],
+        path_patterns=[
+            re.compile(r"/std/typing\.[^/]+$"),
+        ],
+    ),
 }
 
 
@@ -106,12 +148,17 @@ def main() -> int:
         if _is_generated_runtime(rel):
             continue
         txt = p.read_text(encoding="utf-8", errors="ignore")
-        for module_name, patterns in RULES.items():
+        for module_name, rule in RULES.items():
             hit = False
-            for pat in patterns:
-                if pat.search(txt):
+            for path_pat in rule.path_patterns:
+                if path_pat.search(rel):
                     hit = True
                     break
+            if not hit:
+                for txt_pat in rule.text_patterns:
+                    if txt_pat.search(txt):
+                        hit = True
+                        break
             if not hit:
                 continue
             allowed_paths = allow.get(module_name, set())
