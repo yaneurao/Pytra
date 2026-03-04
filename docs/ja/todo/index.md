@@ -46,6 +46,7 @@
 8. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
 9. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
 10. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
+- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を `runtime_call/resolved_runtime_call` 経路へ寄せ、smoke+guardrail を通過させた（完全撤去は継続）。
 
 ### P0: 非C++ emitter のライブラリ関数名直書き再発防止（IR解決 + CIガード）
 

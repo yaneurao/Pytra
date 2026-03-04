@@ -90,3 +90,4 @@
 - 2026-03-05: `S1-01` として Java runtime の責務境界を `pytra-core` / `pytra-gen/std` / `pytra-gen/utils` に固定し、禁止事項（core 側 std/utils 実装・emitter 直書き）を明文化した。
 - 2026-03-05: `S1-02` として `PyRuntime.java` 内の SoT 由来シンボル棚卸し（time/math/pathlib/json/image）と移管先を確定した。
 - 2026-03-05: `S2-01` として `tools/gen_java_std_runtime_from_canonical.py` を追加し、`src/pytra/std/{time,json,pathlib,math}.py` から `src/runtime/java/pytra-gen/std/*.java` を機械生成できる状態を固定した（`--check` 対応）。
+- 2026-03-05: `S3-01` の先行段として Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を撤去し、`runtime_call/resolved_runtime_call` 経由描画へ寄せた（`test_py2java_smoke` green, guardrail green）。

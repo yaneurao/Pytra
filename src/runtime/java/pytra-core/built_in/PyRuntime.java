@@ -1061,19 +1061,39 @@ final class PyRuntime {
 
     // --- png/gif bridge (pytra-gen) ---
 
-    static void pyWriteRGBPNG(Object path, Object width, Object height, Object pixels) {
+    static void write_rgb_png(Object path, Object width, Object height, Object pixels) {
         PngHelper.pyWriteRGBPNG(path, width, height, pixels);
     }
 
-    static ArrayList<Long> pyGrayscalePalette() {
+    static ArrayList<Long> grayscale_palette() {
         return GifHelper.pyGrayscalePalette();
     }
 
-    static void pySaveGif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs, Object loop) {
+    static void save_gif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs, Object loop) {
         GifHelper.pySaveGif(path, width, height, frames, palette, delayCs, loop);
     }
 
+    static void save_gif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs) {
+        save_gif(path, width, height, frames, palette, delayCs, 0L);
+    }
+
+    static void save_gif(Object path, Object width, Object height, Object frames, Object palette) {
+        save_gif(path, width, height, frames, palette, 4L, 0L);
+    }
+
     // ---- legacy java emitter helper compatibility ----
+    static void pyWriteRGBPNG(Object path, Object width, Object height, Object pixels) {
+        write_rgb_png(path, width, height, pixels);
+    }
+
+    static ArrayList<Long> pyGrayscalePalette() {
+        return grayscale_palette();
+    }
+
+    static void pySaveGif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs, Object loop) {
+        save_gif(path, width, height, frames, palette, delayCs, loop);
+    }
+
     static void __pytra_noop(Object... args) {
     }
 

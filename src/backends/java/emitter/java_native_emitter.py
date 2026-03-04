@@ -583,51 +583,82 @@ def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
     return out
 
 
-def _resolved_runtime_call_name(expr: dict[str, Any]) -> str:
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     runtime_call_any = expr.get("runtime_call")
     runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
     if runtime_call != "":
-        return runtime_call
+        return runtime_call, "runtime_call"
     resolved_any = expr.get("resolved_runtime_call")
-    return resolved_any if isinstance(resolved_any, str) else ""
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved, "resolved_runtime_call"
+    return "", ""
 
 
-def _render_call_via_runtime_call(runtime_call: str, args: list[Any]) -> str:
+def _runtime_call_java_name(runtime_call: str) -> str:
+    if runtime_call == "":
+        return ""
+    out: list[str] = []
+    i = 0
+    while i < len(runtime_call):
+        ch = runtime_call[i]
+        if ch.isalnum() or ch == "_":
+            out.append(ch)
+        else:
+            out.append("_")
+        i += 1
+    name = "".join(out)
+    if name == "":
+        return ""
+    if name[0].isdigit():
+        name = "_" + name
+    return name
+
+
+def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
+    method_name = _runtime_call_java_name(runtime_call)
+    if "." in runtime_call:
+        parts = method_name.split("_")
+        camel = ""
+        i = 0
+        while i < len(parts):
+            part = parts[i]
+            if part != "":
+                camel += part[0].upper() + part[1:]
+            i += 1
+        if camel != "":
+            method_name = "py" + camel
+    if method_name == "":
+        return ""
+    rendered_args: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered_args.append(_render_expr(args[i]))
+        i += 1
+    return "PyRuntime." + method_name + "(" + ", ".join(rendered_args) + ")"
+
+
+def _render_call_via_runtime_call(runtime_call: str, runtime_source: str, args: list[Any]) -> str:
     if runtime_call.startswith("py_assert_"):
         return _java_string_literal("True")
+    if runtime_source == "resolved_runtime_call":
+        rendered_resolved = _render_resolved_runtime_call(runtime_call, args)
+        if rendered_resolved != "":
+            return rendered_resolved
     if runtime_call == "perf_counter":
         return "PyRuntime.pyPerfCounter()"
     if runtime_call == "Path":
         if len(args) == 0:
             return "new PyRuntime.Path(\"\")"
         return "new PyRuntime.Path(" + _render_expr(args[0]) + ")"
-    if runtime_call == "write_rgb_png":
-        rendered_png_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_png_args.append(_render_expr(args[i]))
-            i += 1
-        return "PyRuntime.pyWriteRGBPNG(" + ", ".join(rendered_png_args) + ")"
-    if runtime_call == "save_gif":
-        return _render_save_gif_call(args)
-    if runtime_call == "grayscale_palette":
-        return "PyRuntime.pyGrayscalePalette()"
-    if runtime_call == "json.loads":
-        if len(args) == 0:
-            return "PyRuntime.pyJsonLoads(\"\")"
-        return "PyRuntime.pyJsonLoads(" + _render_expr(args[0]) + ")"
-    if runtime_call == "json.dumps":
-        if len(args) == 0:
-            return "PyRuntime.pyJsonDumps(\"\")"
-        return "PyRuntime.pyJsonDumps(" + _render_expr(args[0]) + ")"
     return ""
 
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
-    runtime_call = _resolved_runtime_call_name(expr)
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
-        rendered_runtime = _render_call_via_runtime_call(runtime_call, args)
+        rendered_runtime = _render_call_via_runtime_call(runtime_call, runtime_source, args)
         if rendered_runtime != "":
             return rendered_runtime
 
@@ -855,19 +886,6 @@ def _normalize_index_expr(owner_expr: str, index_expr: str) -> str:
         + index_expr
         + "))"
     )
-
-
-def _render_save_gif_call(args: list[Any]) -> str:
-    rendered_args: list[str] = []
-    i = 0
-    while i < len(args):
-        rendered_args.append(_render_expr(args[i]))
-        i += 1
-    if len(rendered_args) < 7:
-        rendered_args.append("4L")
-    if len(rendered_args) < 7:
-        rendered_args.append("0L")
-    return "PyRuntime.pySaveGif(" + ", ".join(rendered_args[:7]) + ")"
 
 
 def _render_expr(expr: Any) -> str:

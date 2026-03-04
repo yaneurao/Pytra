@@ -149,7 +149,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();", java)
         self.assertIn("pixels.add(r);", java)
         self.assertIn("r = PyRuntime.__pytra_int(", java)
-        self.assertIn("PyRuntime.pyWriteRGBPNG(out_path, width, height, pixels);", java)
+        self.assertIn("PyRuntime.write_rgb_png(out_path, width, height, pixels);", java)
 
     def test_java_native_emitter_allocates_sized_bytearray_for_subscript_set(self) -> None:
         sample = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
