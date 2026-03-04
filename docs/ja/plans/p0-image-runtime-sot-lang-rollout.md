@@ -68,7 +68,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して parity を通す。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
@@ -95,3 +95,4 @@
 - 2026-03-04: `S2-NIM` 完了。`src/runtime/nim/pytra/py_runtime.nim` の SoT marker を維持したまま、Nim emitter の call/print/control-flow/type mapping を補正（`keywords` 伝播、`print` 空白整形、`Expr(Name("break"/"continue"))` 制御文化、`bytearray/bytes/uint8` 整合）。`work/logs/runtime_parity_sample_nim_0105_s2_retry5_20260304.json` で `sample/01,05` parity pass、`work/logs/image_runtime_sot_audit_20260304_after_nim_s2_complete.json` で `nim: compliant_marker_present` を再確認。
 - 2026-03-04: `S3-RS` 完了。`src/runtime/rs/pytra/built_in/py_runtime.rs` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_rs_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_rs_s3_complete.json` で `rs: compliant_marker_present` へ遷移。
 - 2026-03-04: `S3-GO` 完了。`src/runtime/go/pytra/py_runtime.go` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_go_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_go_s3_complete.json` で `go: compliant_marker_present` へ遷移。
+- 2026-03-04: `S3-JAVA` 完了。`src/runtime/java/pytra/built_in/PyRuntime.java` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_java_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_java_s3_complete.json` で `java: compliant_marker_present` へ遷移。
