@@ -53,7 +53,7 @@
 
 ## 分解
 
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
@@ -64,3 +64,33 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、`test/unit` の責務別フォルダ再編と未使用テスト整理を P1 タスクとして起票した。削除は必ず監査根拠付きで段階実施する方針を採用。
+- 2026-03-04: `S1-01` を完了。`test/unit` 71本を責務分類し、移動マップを確定した。分類結果は `backends/*:29, ir:10, tooling:5, selfhost:3, common:23`。`S2-01` ではこのマップに従ってディレクトリ再編を実施する。
+
+## S1-01 棚卸し結果（2026-03-04）
+
+- 総数: `test/unit/test*.py` 71本
+- 分類サマリ:
+- `backends/*`: 29本
+- `ir`: 10本
+- `tooling`: 5本
+- `selfhost`: 3本
+- `common`: 23本
+- 目標移動先（確定）:
+- `test/unit/backends/<lang>/`: `test_py2<lang>_smoke.py` 系 + backend固有テスト
+- `test/unit/ir/`: `test_east*.py` 系
+- `test/unit/tooling/`: CLI/manifest/parity tool テスト
+- `test/unit/selfhost/`: selfhost build/diff/regression テスト
+- `test/unit/common/`: 上記以外の cross-lang / pylib / profile / bootstrap テスト
+- 主要マップ（明示分）:
+- `backends/cpp`:
+- `test_check_microgpt_original_py2cpp_regression.py`, `test_cpp_*.py`, `test_py2cpp_*.py`, `test_east3_cpp_bridge.py`, `test_noncpp_east3_contract_guard.py`
+- 各言語 backend:
+- `test_py2{rs,cs,js,ts,go,java,swift,kotlin,rb,lua,php,nim}_smoke.py`, `test_check_py2scala_transpile.py`, `test_py2scala_smoke.py`
+- `ir`:
+- `test_east1_build.py`, `test_east2_to_east3_lowering.py`, `test_east3_*.py`, `test_east_core.py`, `test_east_stage_boundary_guard.py`
+- `tooling`:
+- `test_docs_ja_guard.py`, `test_gen_makefile_from_manifest.py`, `test_ir2lang_cli.py`, `test_pytra_cli.py`, `test_runtime_parity_check_cli.py`
+- `selfhost`:
+- `test_check_selfhost_cpp_diff.py`, `test_prepare_selfhost_source.py`, `test_selfhost_virtual_dispatch_regression.py`
+- `common`:
+- 上記以外の 23 本（`test_code_emitter.py`, `test_py2x_smoke_common.py`, `test_pylib_*.py`, `test_language_profile.py` など）
