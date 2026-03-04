@@ -106,6 +106,19 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         )
         self.assertEqual(scala_target.needs, ("python", "scala"))
 
+    def test_build_targets_includes_nim_entry(self) -> None:
+        case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
+        names = {t.name for t in targets}
+        self.assertIn("nim", names)
+        nim_target = next(t for t in targets if t.name == "nim")
+        self.assertIn("src/py2x.py", nim_target.transpile_cmd)
+        self.assertIn("--target nim", nim_target.transpile_cmd)
+        self.assertIn("test/transpile/nim/case_01_mandelbrot.nim", nim_target.transpile_cmd)
+        self.assertIn("nim c --hints:off --verbosity:0", nim_target.run_cmd)
+        self.assertIn("-r test/transpile/nim/case_01_mandelbrot.nim", nim_target.run_cmd)
+        self.assertEqual(nim_target.needs, ("python", "nim"))
+
     def test_build_targets_swift_uses_optimized_compile_flag(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
         targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
