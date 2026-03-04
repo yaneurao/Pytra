@@ -54,7 +54,7 @@
 ## 分解
 
 - [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
@@ -65,6 +65,7 @@
 決定ログ:
 - 2026-03-04: ユーザー指示により、`test/unit` の責務別フォルダ再編と未使用テスト整理を P1 タスクとして起票した。削除は必ず監査根拠付きで段階実施する方針を採用。
 - 2026-03-04: `S1-01` を完了。`test/unit` 71本を責務分類し、移動マップを確定した。分類結果は `backends/*:29, ir:10, tooling:5, selfhost:3, common:23`。`S2-01` ではこのマップに従ってディレクトリ再編を実施する。
+- 2026-03-04: `S1-02` を完了。`test/unit` の目標配置規約を `責務ディレクトリ + 命名規約 + discover/実行規約 + 追加時チェック` で固定し、`S2` 以降の移動判断基準を確定した。
 
 ## S1-01 棚卸し結果（2026-03-04）
 
@@ -94,3 +95,22 @@
 - `test_check_selfhost_cpp_diff.py`, `test_prepare_selfhost_source.py`, `test_selfhost_virtual_dispatch_regression.py`
 - `common`:
 - 上記以外の 23 本（`test_code_emitter.py`, `test_py2x_smoke_common.py`, `test_pylib_*.py`, `test_language_profile.py` など）
+
+## S1-02 目標ディレクトリ規約（2026-03-04）
+
+- ルート構成:
+- `test/unit/common/`: 言語横断の共通テスト（IR非依存・backend非依存）
+- `test/unit/backends/<lang>/`: 言語 backend 固有テスト（`<lang>` は `cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim`）
+- `test/unit/ir/`: EAST1/2/3・最適化・境界契約の IR テスト
+- `test/unit/tooling/`: CLI / parity / manifest / docs-guard など運用系テスト
+- `test/unit/selfhost/`: selfhost 生成・差分・退行テスト
+- ファイル命名:
+- ファイル名は `test_*.py` を維持し、移動で `basename` は原則変更しない（履歴追跡と既存参照維持のため）。
+- backend 固有新規テストは `test_<lang>_*.py` または `test_py2<lang>_*.py` を優先し、`common` との識別を容易にする。
+- 実行規約:
+- 全体実行の基準は `python3 -m unittest discover -s test/unit -p 'test*.py'` を維持する。
+- 個別実行は `python3 -m unittest discover -s test/unit/<domain> -p 'test*.py'` で domain 単位に可能とする。
+- 参照更新規約:
+- `tools/` / `docs/` が旧パスを参照している場合は、`S2-01` で必ず新パスへ同一コミットで更新する。
+- 追加時チェック:
+- 新規テスト追加時は `common/backends/ir/tooling/selfhost` のいずれかへ必ず分類し、`test/unit` 直下への直置きは不可とする。

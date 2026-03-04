@@ -54,7 +54,7 @@
 
 1. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01] `test/unit` を責務別フォルダへ再編し、未使用テストを根拠付きで整理する。
 2. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
-3. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
+3. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
 4. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
 5. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
 6. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
@@ -62,6 +62,7 @@
 8. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] 主要 unit/transpile/selfhost 回帰を実行し、再編・整理後の非退行を確認する。
 9. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新しいテスト配置規約と運用手順を反映する。
 - 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` 71本を棚卸しし、移動マップを `backends/*:29, ir:10, tooling:5, selfhost:3, common:23` で確定。`S2-01` でこの分類に従って再編する。
+- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] `test/unit/{common,backends/<lang>,ir,tooling,selfhost}` の目標配置・命名・discover運用規約を計画書に確定し、`test/unit` 直下直置き禁止を明文化。
 
 ### P1: Nim sample parity 完了化（runtime_parity_check 正式統合）
 
