@@ -61,7 +61,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 言語別の着手順（probe ok 群 / probe fail 群）を計画へ確定する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ を正本準拠の基準実装として再確認し、他言語比較の基準を固定する。
-- [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
+- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
@@ -85,3 +85,4 @@
 - 2026-03-04: 巻き戻し後に `tools/audit_image_runtime_sot.py --probe-transpile` を再実行し、`work/logs/image_runtime_sot_audit_20260304_after_revert.json` で baseline（`probe ok: cs/js/ts/scala/nim`, `probe fail: rs/go/java/swift/kotlin/ruby/lua/php`）へ復帰したことを確認。
 - 2026-03-04: `S2-CS` 着手として backend 側の受け皿を実装（`CSharpEmitter` に `bytes literal` / `list.extend` / `int.to_bytes` / module alias shadow 回避を追加、`py_runtime.cs` に `py_int_to_bytes` を追加）。さらに `tools/gen_cs_image_runtime_from_canonical.py` を追加して正本から C# helper 生成を試行。
 - 2026-03-04: 生成 helper への実差し替えは compile fail で未完了。主因は C# emitter 由来の追加未対応（`List<byte> + List<byte>`、`long` と shift 演算の型整合、`PyFile/open` 経路）。差し替えは巻き戻し済みで、`work/logs/runtime_parity_sample_cs_0105_after_restore_20260304.json` で `01/05` parity pass を確認。
+- 2026-03-04: `S2-CS` 完了。`CSharpEmitter` に `list+list` concat / `open()` / shift-cast / compare 括弧を追加し、`py_runtime.cs` に `PyFile`, `open`, `py_bytes(object)`, `py_concat` を追加。`tools/gen_cs_image_runtime_from_canonical.py` 再生成後、`work/logs/runtime_parity_sample_cs_0105_canonical_retry_20260304.json` で `sample/01,05` pass、`work/logs/image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。

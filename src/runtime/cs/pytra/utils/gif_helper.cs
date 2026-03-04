@@ -1,159 +1,142 @@
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/utils/gif.py
+// generated-by: tools/gen_cs_image_runtime_from_canonical.py
+
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
+using Any = System.Object;
+using int64 = System.Int64;
+using float64 = System.Double;
+using str = System.String;
 
 namespace Pytra.CsModule
 {
-    // Python の pytra.utils.gif 相当実装。
     public static class gif_helper
     {
-        private static void EmitCode(List<byte> outv, ref int bitBuffer, ref int bitCount, int code, int codeSize)
+        public static List<byte> _lzw_encode(List<byte> data, long min_code_size = 8)
         {
-            bitBuffer |= (code << bitCount);
-            bitCount += codeSize;
-            while (bitCount >= 8)
-            {
-                outv.Add((byte)(bitBuffer & 0xFF));
-                bitBuffer >>= 8;
-                bitCount -= 8;
+            if (((data).Count) == (0)) {
+                return new System.Collections.Generic.List<byte> {  };
             }
-        }
+            long clear_code = 1 << System.Convert.ToInt32(min_code_size);
+            long end_code = clear_code + 1;
 
-        private static byte[] LzwEncode(IReadOnlyList<byte> data, int minCodeSize)
-        {
-            if (data.Count == 0)
-            {
-                return Array.Empty<byte>();
+            long code_size = min_code_size + 1;
+
+            List<byte> py_out = new System.Collections.Generic.List<byte>();
+            long bit_buffer = 0;
+            long bit_count = 0;
+
+            bit_buffer |= clear_code << System.Convert.ToInt32(bit_count);
+            bit_count += code_size;
+            while ((bit_count) >= (8)) {
+                Pytra.CsModule.py_runtime.py_append(py_out, bit_buffer & 0xFF);
+                bit_buffer >>= 8;
+                bit_count -= 8;
             }
+            code_size = min_code_size + 1;
 
-            int clearCode = 1 << minCodeSize;
-            int endCode = clearCode + 1;
-            int codeSize = minCodeSize + 1;
-
-            var outv = new List<byte>();
-            int bitBuffer = 0;
-            int bitCount = 0;
-
-            EmitCode(outv, ref bitBuffer, ref bitCount, clearCode, codeSize);
-
-            for (int i = 0; i < data.Count; i++)
-            {
-                EmitCode(outv, ref bitBuffer, ref bitCount, data[i], codeSize);
-                EmitCode(outv, ref bitBuffer, ref bitCount, clearCode, codeSize);
+            foreach (var v in data) {
+                bit_buffer |= System.Convert.ToInt64(v << System.Convert.ToInt32(bit_count));
+                bit_count += code_size;
+                while ((bit_count) >= (8)) {
+                    Pytra.CsModule.py_runtime.py_append(py_out, bit_buffer & 0xFF);
+                    bit_buffer >>= 8;
+                    bit_count -= 8;
+                }
+                bit_buffer |= clear_code << System.Convert.ToInt32(bit_count);
+                bit_count += code_size;
+                while ((bit_count) >= (8)) {
+                    Pytra.CsModule.py_runtime.py_append(py_out, bit_buffer & 0xFF);
+                    bit_buffer >>= 8;
+                    bit_count -= 8;
+                }
+                code_size = min_code_size + 1;
             }
-
-            EmitCode(outv, ref bitBuffer, ref bitCount, endCode, codeSize);
-
-            if (bitCount > 0)
-            {
-                outv.Add((byte)(bitBuffer & 0xFF));
+            bit_buffer |= end_code << System.Convert.ToInt32(bit_count);
+            bit_count += code_size;
+            while ((bit_count) >= (8)) {
+                Pytra.CsModule.py_runtime.py_append(py_out, bit_buffer & 0xFF);
+                bit_buffer >>= 8;
+                bit_count -= 8;
             }
-
-            return outv.ToArray();
+            if ((bit_count) > (0)) {
+                Pytra.CsModule.py_runtime.py_append(py_out, bit_buffer & 0xFF);
+            }
+            return Pytra.CsModule.py_runtime.py_bytes(py_out);
         }
 
         public static List<byte> grayscale_palette()
         {
-            var p = new List<byte>(256 * 3);
-            for (int i = 0; i < 256; i++)
-            {
-                byte v = (byte)i;
-                p.Add(v);
-                p.Add(v);
-                p.Add(v);
+            List<byte> p = new System.Collections.Generic.List<byte>();
+            long i = 0;
+            while ((i) < (256)) {
+                Pytra.CsModule.py_runtime.py_append(p, i);
+                Pytra.CsModule.py_runtime.py_append(p, i);
+                Pytra.CsModule.py_runtime.py_append(p, i);
+                i += 1;
             }
-            return p;
+            return Pytra.CsModule.py_runtime.py_bytes(p);
         }
 
-        private static void AppendU16LE(List<byte> outv, int v)
+        public static void save_gif(string path, long width, long height, System.Collections.Generic.List<List<byte>> frames, List<byte> palette, long delay_cs = 4, long loop = 0)
         {
-            outv.Add((byte)(v & 0xFF));
-            outv.Add((byte)((v >> 8) & 0xFF));
-        }
-
-        public static void save_gif(
-            string path,
-            long width,
-            long height,
-            List<List<byte>> frames,
-            List<byte> palette,
-            long delay_cs,
-            long loop)
-        {
-            int w = checked((int)width);
-            int h = checked((int)height);
-            int delay = checked((int)delay_cs);
-            int loopCount = checked((int)loop);
-
-            if (palette.Count != 256 * 3)
-            {
-                throw new ArgumentException("palette must be 256*3 bytes");
+            if (((palette).Count) != (256 * 3)) {
+                throw new System.Exception("palette must be 256*3 bytes");
             }
-            int frameSize = checked(w * h);
-            foreach (List<byte> fr in frames)
-            {
-                if (fr.Count != frameSize)
-                {
-                    throw new ArgumentException("frame size mismatch");
+            foreach (var fr in frames) {
+                if (((fr).Count) != (width * height)) {
+                    throw new System.Exception("frame size mismatch");
                 }
             }
+            List<byte> py_out = new System.Collections.Generic.List<byte>();
+            py_out.AddRange(new System.Collections.Generic.List<byte> { (byte)71, (byte)73, (byte)70, (byte)56, (byte)57, (byte)97 });
+            py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes(width, System.Convert.ToInt32(2), "little"));
+            py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes(height, System.Convert.ToInt32(2), "little"));
+            Pytra.CsModule.py_runtime.py_append(py_out, 0xF7);
+            Pytra.CsModule.py_runtime.py_append(py_out, 0);
+            Pytra.CsModule.py_runtime.py_append(py_out, 0);
+            py_out.AddRange(palette);
 
-            var outv = new List<byte>(1024 + frames.Count * frameSize / 2);
+            // Netscape loop extension
+            py_out.AddRange(new System.Collections.Generic.List<byte> { (byte)33, (byte)255, (byte)11, (byte)78, (byte)69, (byte)84, (byte)83, (byte)67, (byte)65, (byte)80, (byte)69, (byte)50, (byte)46, (byte)48, (byte)3, (byte)1 });
+            py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes(loop, System.Convert.ToInt32(2), "little"));
+            Pytra.CsModule.py_runtime.py_append(py_out, 0);
 
-            outv.Add((byte)'G'); outv.Add((byte)'I'); outv.Add((byte)'F'); outv.Add((byte)'8'); outv.Add((byte)'9'); outv.Add((byte)'a');
-            AppendU16LE(outv, w);
-            AppendU16LE(outv, h);
-            outv.Add(0xF7); outv.Add(0x00); outv.Add(0x00);
-            outv.AddRange(palette);
+            foreach (var fr in frames) {
+                py_out.AddRange(new System.Collections.Generic.List<byte> { (byte)33, (byte)249, (byte)4, (byte)0 });
+                py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes(delay_cs, System.Convert.ToInt32(2), "little"));
+                py_out.AddRange(new System.Collections.Generic.List<byte> { (byte)0, (byte)0 });
 
-            outv.Add(0x21); outv.Add(0xFF); outv.Add(0x0B);
-            outv.Add((byte)'N'); outv.Add((byte)'E'); outv.Add((byte)'T'); outv.Add((byte)'S'); outv.Add((byte)'C');
-            outv.Add((byte)'A'); outv.Add((byte)'P'); outv.Add((byte)'E'); outv.Add((byte)'2'); outv.Add((byte)'.'); outv.Add((byte)'0');
-            outv.Add(0x03); outv.Add(0x01);
-            AppendU16LE(outv, loopCount);
-            outv.Add(0x00);
+                Pytra.CsModule.py_runtime.py_append(py_out, 0x2C);
+                py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes((0), System.Convert.ToInt32(2), "little"));
+                py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes((0), System.Convert.ToInt32(2), "little"));
+                py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes(width, System.Convert.ToInt32(2), "little"));
+                py_out.AddRange(Pytra.CsModule.py_runtime.py_int_to_bytes(height, System.Convert.ToInt32(2), "little"));
+                Pytra.CsModule.py_runtime.py_append(py_out, 0);
 
-            foreach (List<byte> fr in frames)
-            {
-                outv.Add(0x21); outv.Add(0xF9); outv.Add(0x04); outv.Add(0x00);
-                AppendU16LE(outv, delay);
-                outv.Add(0x00); outv.Add(0x00);
-
-                outv.Add(0x2C);
-                AppendU16LE(outv, 0);
-                AppendU16LE(outv, 0);
-                AppendU16LE(outv, w);
-                AppendU16LE(outv, h);
-                outv.Add(0x00);
-
-                outv.Add(0x08);
-                byte[] compressed = LzwEncode(fr, 8);
-                int pos = 0;
-                while (pos < compressed.Length)
-                {
-                    int len = Math.Min(255, compressed.Length - pos);
-                    outv.Add((byte)len);
-                    for (int i = 0; i < len; i++)
-                    {
-                        outv.Add(compressed[pos + i]);
-                    }
-                    pos += len;
+                Pytra.CsModule.py_runtime.py_append(py_out, 8);
+                List<byte> compressed = _lzw_encode(fr, 8);
+                long pos = 0;
+                while ((pos) < ((compressed).Count)) {
+                    List<byte> chunk = Pytra.CsModule.py_runtime.py_slice(compressed, System.Convert.ToInt64(pos), System.Convert.ToInt64(pos + 255));
+                    Pytra.CsModule.py_runtime.py_append(py_out, (chunk).Count);
+                    py_out.AddRange(chunk);
+                    pos += (chunk).Count;
                 }
-                outv.Add(0x00);
+                Pytra.CsModule.py_runtime.py_append(py_out, 0);
             }
+            Pytra.CsModule.py_runtime.py_append(py_out, 0x3B);
 
-            outv.Add(0x3B);
-            File.WriteAllBytes(path, outv.ToArray());
+            PyFile f = Pytra.CsModule.py_runtime.open(path, "wb");
+            try
+            {
+                f.write(py_out);
+            } finally {
+                f.close();
+            }
         }
 
-        public static void save_gif(
-            string path,
-            long width,
-            long height,
-            List<List<byte>> frames,
-            List<byte> palette)
-        {
-            save_gif(path, width, height, frames, palette, 4, 0);
-        }
     }
 }

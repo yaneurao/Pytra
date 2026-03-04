@@ -2,10 +2,108 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 
 namespace Pytra.CsModule
 {
+    public sealed class PyFile : IDisposable
+    {
+        private readonly Stream _stream;
+        private bool _closed;
+
+        public PyFile(string path, string mode)
+        {
+            string m = mode ?? "r";
+            bool binary = m.Contains("b");
+            bool write = m.Contains("w");
+            bool append = m.Contains("a");
+            bool read = m.Contains("r") && !write && !append;
+            if (!binary)
+            {
+                // Pytra generated image/runtime code only relies on binary mode.
+                binary = true;
+            }
+            if (write)
+            {
+                _stream = new FileStream(path, FileMode.Create, FileAccess.Write);
+                return;
+            }
+            if (append)
+            {
+                _stream = new FileStream(path, FileMode.Append, FileAccess.Write);
+                return;
+            }
+            if (read)
+            {
+                _stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                return;
+            }
+            _stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        }
+
+        public void write(object data)
+        {
+            EnsureOpen();
+            if (!(_stream is FileStream))
+            {
+                throw new InvalidOperationException("stream is not file stream");
+            }
+            if (data is List<byte> listBytes)
+            {
+                byte[] arr = listBytes.ToArray();
+                _stream.Write(arr, 0, arr.Length);
+                return;
+            }
+            if (data is byte[] bytes)
+            {
+                _stream.Write(bytes, 0, bytes.Length);
+                return;
+            }
+            if (data is string text)
+            {
+                byte[] utf8 = System.Text.Encoding.UTF8.GetBytes(text);
+                _stream.Write(utf8, 0, utf8.Length);
+                return;
+            }
+            if (data is IEnumerable enumerable)
+            {
+                var outv = new List<byte>();
+                foreach (object item in enumerable)
+                {
+                    outv.Add((byte)Convert.ToInt64(item, CultureInfo.InvariantCulture));
+                }
+                byte[] arr = outv.ToArray();
+                _stream.Write(arr, 0, arr.Length);
+                return;
+            }
+            throw new ArgumentException("unsupported write() payload");
+        }
+
+        public void close()
+        {
+            if (_closed)
+            {
+                return;
+            }
+            _stream.Dispose();
+            _closed = true;
+        }
+
+        public void Dispose()
+        {
+            close();
+        }
+
+        private void EnsureOpen()
+        {
+            if (_closed)
+            {
+                throw new ObjectDisposedException(nameof(PyFile));
+            }
+        }
+    }
+
     // Python の print 相当を提供する最小ランタイム。
     public static class py_runtime
     {
@@ -409,9 +507,65 @@ namespace Pytra.CsModule
             return outv;
         }
 
+        public static PyFile open(object pathLike, object modeLike)
+        {
+            string path = Convert.ToString(pathLike, CultureInfo.InvariantCulture) ?? "";
+            string mode = Convert.ToString(modeLike, CultureInfo.InvariantCulture) ?? "r";
+            return new PyFile(path, mode);
+        }
+
+        public static PyFile open(object pathLike)
+        {
+            return open(pathLike, "r");
+        }
+
         public static List<byte> py_bytes(List<byte> source)
         {
             return new List<byte>(source);
+        }
+
+        public static List<byte> py_bytes(object source)
+        {
+            if (source == null)
+            {
+                return new List<byte>();
+            }
+            if (source is List<byte> listBytes)
+            {
+                return new List<byte>(listBytes);
+            }
+            if (source is byte[] rawBytes)
+            {
+                return new List<byte>(rawBytes);
+            }
+            if (source is string text)
+            {
+                return new List<byte>(System.Text.Encoding.UTF8.GetBytes(text));
+            }
+            if (source is IEnumerable enumerable)
+            {
+                var outv = new List<byte>();
+                foreach (object item in enumerable)
+                {
+                    outv.Add((byte)Convert.ToInt64(item, CultureInfo.InvariantCulture));
+                }
+                return outv;
+            }
+            return new List<byte> { (byte)Convert.ToInt64(source, CultureInfo.InvariantCulture) };
+        }
+
+        public static List<T> py_concat<T>(IEnumerable<T> left, IEnumerable<T> right)
+        {
+            var outv = new List<T>();
+            if (left != null)
+            {
+                outv.AddRange(left);
+            }
+            if (right != null)
+            {
+                outv.AddRange(right);
+            }
+            return outv;
         }
 
         public static List<byte> py_int_to_bytes(object valueLike, object lengthLike, object byteorderLike)

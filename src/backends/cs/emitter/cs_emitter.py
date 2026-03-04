@@ -1011,6 +1011,29 @@ class CSharpEmitter(CodeEmitter):
             return isinstance(node.get("value"), str)
         return False
 
+    def _is_list_like_east_type(self, east_type: str) -> bool:
+        t = self.any_to_str(east_type)
+        return t.startswith("list[") or t in {"bytes", "bytearray"}
+
+    def _is_list_like_expr_node(self, node: dict[str, Any]) -> bool:
+        if self._is_list_like_east_type(self.get_expr_type(node)):
+            return True
+        kind = self.any_dict_get_str(node, "kind", "")
+        if kind in {"List", "ListComp"}:
+            return True
+        if kind == "Call":
+            fn = self.any_to_dict_or_empty(node.get("func"))
+            if self.any_dict_get_str(fn, "kind", "") == "Name":
+                nm = self.any_dict_get_str(fn, "id", "")
+                if nm in {"list", "bytes", "bytearray"}:
+                    return True
+            return False
+        if kind == "BinOp" and self.any_to_str(node.get("op")) == "Add":
+            left_node = self.any_to_dict_or_empty(node.get("left"))
+            right_node = self.any_to_dict_or_empty(node.get("right"))
+            return self._is_list_like_expr_node(left_node) and self._is_list_like_expr_node(right_node)
+        return False
+
     def _render_string_repeat(self, text_expr: str, count_expr: str) -> str:
         """Python の文字列乗算（`\"a\" * n`）を C# 式へ lower する。"""
         return "string.Concat(System.Linq.Enumerable.Repeat(" + text_expr + ", System.Convert.ToInt32(" + count_expr + ")))"
@@ -2222,7 +2245,7 @@ class CSharpEmitter(CodeEmitter):
                     term = "!(" + term + ")"
             else:
                 mapped = self.cmp_ops.get(op, "==")
-                term = cur_left + " " + mapped + " " + right
+                term = "(" + cur_left + ") " + mapped + " (" + right + ")"
             terms.append(term)
             cur_left = right
             i += 1
@@ -2426,6 +2449,12 @@ class CSharpEmitter(CodeEmitter):
             if len(rendered_args) == 0:
                 return "new System.Collections.Generic.List<byte>()"
             return "Pytra.CsModule.py_runtime.py_bytes(" + rendered_args[0] + ")"
+        if fn_name_raw == "open":
+            if len(rendered_args) == 0:
+                return "Pytra.CsModule.py_runtime.open(\"\", \"r\")"
+            if len(rendered_args) == 1:
+                return "Pytra.CsModule.py_runtime.open(" + rendered_args[0] + ", \"r\")"
+            return "Pytra.CsModule.py_runtime.open(" + rendered_args[0] + ", " + rendered_args[1] + ")"
         if fn_name_raw in {"Exception", "RuntimeError", "ValueError", "TypeError", "KeyError", "IndexError"}:
             if len(rendered_args) >= 1:
                 return "new System.Exception(" + rendered_args[0] + ")"
@@ -2752,6 +2781,8 @@ class CSharpEmitter(CodeEmitter):
             custom = self.hook_on_render_binop(expr_d, left, right)
             if custom != "":
                 return custom
+            if op == "Add" and self._is_list_like_expr_node(left_node) and self._is_list_like_expr_node(right_node):
+                return "Pytra.CsModule.py_runtime.py_concat(" + left + ", " + right + ")"
             if op == "Div":
                 return "System.Convert.ToDouble(" + left + ") / System.Convert.ToDouble(" + right + ")"
             if op == "FloorDiv":
@@ -2766,6 +2797,8 @@ class CSharpEmitter(CodeEmitter):
                 if right_kind == "List" and left_kind != "List":
                     return self._render_list_repeat(right_node, right, left)
             mapped = self.bin_ops.get(op, "+")
+            if op == "LShift" or op == "RShift":
+                return left + " " + mapped + " System.Convert.ToInt32(" + right + ")"
             return left + " " + mapped + " " + right
 
         if kind == "Compare":
