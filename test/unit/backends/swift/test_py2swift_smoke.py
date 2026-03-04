@@ -185,6 +185,16 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
         self.assertIn("p.parent.mkdir(true, true)", swift)
         self.assertIn("return p.exists()", swift)
 
+    def test_swift_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = load_east(fixture, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        self.assertIn("var p: Path = Path(\"tmp/a.txt\")", swift)
+        self.assertIn("var q: Path = p.parent", swift)
+        self.assertIn("var n: String = __pytra_str(p.name)", swift)
+        self.assertIn("var s: String = __pytra_str(p.stem)", swift)
+        self.assertIn("var x: Double = pyMathSin(__pytra_float(pyMathPi()))", swift)
+
     def test_py2swift_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)

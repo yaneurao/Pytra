@@ -146,6 +146,16 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("p.parent.mkdir(true, true)", go)
         self.assertIn("return __pytra_truthy(p.exists())", go)
 
+    def test_go_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = load_east(fixture, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        self.assertIn("var p *Path = __pytra_as_Path(NewPath(\"tmp/a.txt\"))", go)
+        self.assertIn("var q *Path = __pytra_as_Path(p.parent)", go)
+        self.assertIn("var n string = __pytra_str(p.name)", go)
+        self.assertIn("var s string = __pytra_str(p.stem)", go)
+        self.assertIn("var x float64 = pyMathSin(__pytra_float(pyMathPi()))", go)
+
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")

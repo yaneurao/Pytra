@@ -179,6 +179,16 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("p.parent.mkdir(true, true)", kotlin)
         self.assertIn("return p.exists()", kotlin)
 
+    def test_kotlin_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = load_east(fixture, parser_backend="self_hosted")
+        kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("var p: Path = Path(\"tmp/a.txt\")", kotlin)
+        self.assertIn("var q: Path = p.parent", kotlin)
+        self.assertIn("var n: String = __pytra_str(p.name)", kotlin)
+        self.assertIn("var s: String = __pytra_str(p.stem)", kotlin)
+        self.assertIn("var x: Double = pyMathSin(__pytra_float(pyMathPi()))", kotlin)
+
     def test_dict_literal_entries_are_materialized(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "dict_literal_entries.py"
