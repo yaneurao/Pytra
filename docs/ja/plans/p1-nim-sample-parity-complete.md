@@ -7,7 +7,8 @@
 
 背景:
 - Nim については過去に `sample` parity を通過した記録があるが、現行 `tools/runtime_parity_check.py` の `build_targets()` には `nim` target が存在せず、継続的な回帰検証対象から外れている。
-- `src/runtime/nim/pytra/py_runtime.nim` は最小実装で、`write_rgb_png` が stub のまま、`save_gif` も未実装であり、artifact 生成ケース（PNG/GIF）を CRC32 まで一致させるには不足がある。
+- `png/gif` の正本は `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` であり、各言語 runtime へ手書き実装を追加する運用は許可されない。
+- 直近で Nim runtime に PNG/GIF 手実装を入れてしまっており、正本運用方針に反しているため是正が必要。
 - `tools/regenerate_samples.py` も Nim 未対応のため、`sample/nim` 再生成導線が固定されていない。
 
 目的:
@@ -17,7 +18,8 @@
 対象:
 - `tools/runtime_parity_check.py`（Nim target 追加）
 - `tools/regenerate_samples.py`（Nim 対応）
-- `src/runtime/nim/pytra/py_runtime.nim`（PNG/GIF 等の不足 runtime 実装）
+- `src/runtime/nim/pytra/py_runtime.nim`（手実装撤去と正本由来生成への切替）
+- `src/pytra/utils/png.py` / `src/pytra/utils/gif.py`（必要最小限の Nim 互換修正）
 - `src/backends/nim/emitter/nim_native_emitter.py`（runtime 契約接続に必要な範囲）
 - `test/unit/test_runtime_parity_check_cli.py` / Nim 関連 smoke
 
@@ -48,14 +50,15 @@
 - 2026-03-04: `S1-03` を完了。`python3 tools/runtime_parity_check.py --case-root sample --targets nim --all-samples --summary-json work/logs/runtime_parity_sample_nim_rebaseline_20260304.json` を実行し、`case_pass=0/case_fail=18`、カテゴリは `run_failed=16`, `output_mismatch=2` で固定した。
 - 2026-03-04: `S2-01` を完了。`src/runtime/nim/pytra/py_runtime.nim` の `write_rgb_png` stub を pure Nim 実装へ置換（CRC32/Adler32/zlib stored block/PNG chunk 組立）。`work/logs/runtime_nim_png_crc_check_20260304.json` で `sample/01` の PNG artifact が `size+crc32` 一致（`artifact_match=true`）を確認。
 - 2026-03-04: `S2-02` を完了。Nim runtime に `grayscale_palette` / `save_gif` / GIF向け LZW helper を追加し、`work/logs/runtime_nim_gif_crc_check_20260304.json` で Python 正本と `size+crc32` 一致（`artifact_match=true`）を確認。
+- 2026-03-04: 運用是正。`png/gif` は Python 正本からの生成物のみ許可とし、上記 `S2-01/S2-02` の「手実装での完了」は無効化。`S2-01/S2-02` は「手実装撤去＋正本由来差し替え」の未完了タスクとして再オープンした。
 
 ## 分解
 
 - [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-01] `runtime_parity_check` に Nim target（transpile/run/toolchain 判定）を追加し、baseline 実行可能な状態にする。
 - [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-02] `regenerate_samples.py` に Nim を追加し、`sample/nim` 再生成導線を固定する。
 - [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-03] Nim `sample` 全件 parity を実行して失敗カテゴリを固定する（stdout / artifact / run）。
-- [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] Nim runtime の PNG writer を Python 準拠バイナリ（size+CRC32一致）へ実装する。
-- [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-02] Nim runtime の GIF writer（`grayscale_palette` 含む）を実装し、GIF artifact mismatch を解消する。
+- [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] Nim runtime の PNG writer 手実装を撤去し、`src/pytra/utils/png.py` 正本由来の生成物へ置換する。
+- [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-02] Nim runtime の GIF writer 手実装を撤去し、`src/pytra/utils/gif.py` 正本由来の生成物へ置換する。
 - [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-03] Nim emitter/lower の画像出力経路と runtime 関数契約（関数名・引数型）を整合させる。
 - [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-04] 失敗が残るケース（例: `sample/18`）の言語機能差分を切り分け、最小修正で解消する。
 - [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets nim --all-samples` を再実行し、`case_pass=18` / `case_fail=0` を確認する。
