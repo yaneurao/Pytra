@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import ast
-
 from pytra.std.typing import Any
 from pytra.std.pathlib import Path
 
@@ -97,62 +95,157 @@ def _resolve_relative_module_id(base_module_id: str, import_module: str, level: 
     return ".".join(merged_parts)
 
 
+def _split_import_parts(text: str) -> list[str]:
+    parts: list[str] = []
+    cur = ""
+    depth = 0
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+            cur += ch
+            i += 1
+            continue
+        if ch == ")":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+            i += 1
+            continue
+        if ch == "," and depth == 0:
+            token = cur.strip()
+            if token != "":
+                parts.append(token)
+            cur = ""
+            i += 1
+            continue
+        cur += ch
+        i += 1
+    token = cur.strip()
+    if token != "":
+        parts.append(token)
+    return parts
+
+
+def _parse_import_stmt(stmt: str, module_id: str, out: list[dict[str, str]]) -> None:
+    line = stmt.strip()
+    if line == "":
+        return
+    if line.startswith("import "):
+        body = line[len("import ") :].strip()
+        for raw_item in _split_import_parts(body):
+            item = raw_item.strip()
+            if item == "":
+                continue
+            module_name = ""
+            local_name = ""
+            if " as " in item:
+                mod, alias = item.rsplit(" as ", 1)
+                module_name = _safe_name(mod)
+                local_name = _safe_name(alias)
+            else:
+                module_name = _safe_name(item)
+                local_name = _safe_name(module_name.split(".")[0])
+            if module_name == "" or local_name == "":
+                continue
+            out.append(
+                {
+                    "module_id": module_name,
+                    "export_name": "",
+                    "local_name": local_name,
+                    "binding_kind": "module",
+                }
+            )
+        return
+    if not line.startswith("from "):
+        return
+    import_marker = " import "
+    idx = line.find(import_marker)
+    if idx < 0:
+        return
+    module_part = line[len("from ") : idx].strip()
+    names_part = line[idx + len(import_marker) :].strip()
+    level = 0
+    while level < len(module_part) and module_part[level] == ".":
+        level += 1
+    imported_module = _safe_name(module_part[level:])
+    if level > 0:
+        module_name = _resolve_relative_module_id(module_id, imported_module, level)
+    else:
+        module_name = imported_module
+    module_name = _safe_name(module_name)
+    if module_name == "":
+        return
+    if names_part.startswith("(") and names_part.endswith(")"):
+        names_part = names_part[1:-1].strip()
+    for raw_item in _split_import_parts(names_part):
+        item = raw_item.strip()
+        if item.endswith(","):
+            item = item[:-1].strip()
+        if item == "" or item == "*":
+            continue
+        export_name = ""
+        local_name = ""
+        if " as " in item:
+            exp, alias = item.rsplit(" as ", 1)
+            export_name = _safe_name(exp)
+            local_name = _safe_name(alias)
+        else:
+            export_name = _safe_name(item)
+            local_name = export_name
+        if export_name == "" or local_name == "":
+            continue
+        out.append(
+            {
+                "module_id": module_name,
+                "export_name": export_name,
+                "local_name": local_name,
+                "binding_kind": "symbol",
+            }
+        )
+
+
+def _parse_import_statements(source: str, module_id: str) -> list[dict[str, str]]:
+    bindings: list[dict[str, str]] = []
+    lines = source.splitlines()
+    i = 0
+    current = ""
+    paren_depth = 0
+    while i < len(lines):
+        raw_line = lines[i]
+        stripped = raw_line.strip()
+        if stripped == "" or stripped.startswith("#"):
+            i += 1
+            continue
+        if current == "":
+            if not (stripped.startswith("import ") or stripped.startswith("from ")):
+                i += 1
+                continue
+            current = stripped
+        else:
+            current += " " + stripped
+        paren_depth += stripped.count("(")
+        paren_depth -= stripped.count(")")
+        has_continuation = stripped.endswith("\\")
+        if paren_depth <= 0 and not has_continuation:
+            stmt = current.replace("\\", " ").strip()
+            _parse_import_stmt(stmt, module_id, bindings)
+            current = ""
+            paren_depth = 0
+        i += 1
+    if current != "":
+        stmt = current.replace("\\", " ").strip()
+        _parse_import_stmt(stmt, module_id, bindings)
+    return bindings
+
+
 def _parse_import_only_module_doc(module_id: str, module_path: Path) -> dict[str, Any] | None:
     try:
         source = module_path.read_text(encoding="utf-8")
     except Exception:
         return None
-    try:
-        tree = ast.parse(source, filename=str(module_path))
-    except Exception:
-        return None
-
-    bindings: list[dict[str, Any]] = []
-    for stmt in tree.body:
-        if isinstance(stmt, ast.Import):
-            for alias in stmt.names:
-                module_name = _safe_name(alias.name)
-                if module_name == "":
-                    continue
-                local_name = _safe_name(alias.asname) if alias.asname is not None else _safe_name(module_name.split(".")[0])
-                if local_name == "":
-                    continue
-                bindings.append(
-                    {
-                        "module_id": module_name,
-                        "export_name": "",
-                        "local_name": local_name,
-                        "binding_kind": "module",
-                    }
-                )
-            continue
-        if not isinstance(stmt, ast.ImportFrom):
-            continue
-
-        imported_module = _safe_name(stmt.module) if stmt.module is not None else ""
-        level = int(stmt.level) if isinstance(stmt.level, int) else 0
-        if level > 0:
-            module_name = _resolve_relative_module_id(module_id, imported_module, level)
-        else:
-            module_name = imported_module
-        module_name = _safe_name(module_name)
-        if module_name == "":
-            continue
-        for alias in stmt.names:
-            export_name = _safe_name(alias.name)
-            if export_name == "*" or export_name == "":
-                continue
-            local_name = _safe_name(alias.asname) if alias.asname is not None else export_name
-            if local_name == "":
-                continue
-            bindings.append(
-                {
-                    "module_id": module_name,
-                    "export_name": export_name,
-                    "local_name": local_name,
-                    "binding_kind": "symbol",
-                }
-            )
+    bindings = _parse_import_statements(source, module_id)
 
     return {
         "kind": "Module",
