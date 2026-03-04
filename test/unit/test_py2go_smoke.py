@@ -16,9 +16,37 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2go import load_east, load_go_profile, transpile_to_go, transpile_to_go_native
+from backends.go.emitter import load_go_profile, transpile_to_go, transpile_to_go_native
+from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.compiler.east_parts.core import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+
+
+def load_east(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "3",
+    object_dispatch_mode: str = "native",
+    east3_opt_level: str = "1",
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+):
+    if east_stage != "3":
+        raise RuntimeError("unsupported east_stage: " + east_stage)
+    doc3 = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang="go",
+    )
+    return doc3 if isinstance(doc3, dict) else {}
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -207,7 +235,7 @@ class Py2GoSmokeTest(unittest.TestCase):
             self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2go_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2go.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

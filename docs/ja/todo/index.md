@@ -95,7 +95,7 @@
 1. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01] archive 済みの `py2x` 統一タスクを再開し、残存する legacy wrapper（`py2rs.py`, `py2cs.py`, ...）を完全撤去する。
 2. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] wrapper 参照の残存箇所を `tools/test/docs/selfhost` で再棚卸しし、置換順を確定する。
 3. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `tools/` の wrapper 直参照を `py2x` / backend module 参照へ置換する。
-4. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test/unit` の wrapper ファイル依存テストを `py2x` 基準または backend module 基準へ置換する。
+4. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test/unit` の wrapper ファイル依存テストを `py2x` 基準または backend module 基準へ置換する。
 5. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja` / `docs/en` の wrapper 名記述を `py2x` 正規入口へ更新する。
 6. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] `src/py2*.py` wrapper 群と `toolchain/compiler/py2x_wrapper.py` を削除する（`py2x.py` / `py2x-selfhost.py` は除外）。
 7. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] wrapper 再流入を検知する静的ガードを更新し、削除後構成を固定する。
@@ -104,6 +104,7 @@
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] `tools/test/docs/selfhost` の wrapper 参照を再棚卸しし、置換順を `tools -> test -> docs -> wrapper削除 -> guard/回帰` に確定。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `check_noncpp_east3_contract.py` と `check_transpiler_version_gate.py` の direct wrapper 参照を `py2x` 基準へ置換し、`check_legacy_cli_references.py` の allowlist から2ファイルを除外して再流入防止を強化（selfhost系 `tools/*` は継続対応）。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] selfhost系 `tools`（`check_multilang_selfhost_stage1.py`, `check_multilang_selfhost_multistage.py`, `prepare_selfhost_source_cs.py`, `check_cs_single_source_selfhost_compile.py`）を `py2x` 基準へ移行し、`tools` 内の `py2<lang>.py` 直参照を解消。
+- 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py` の wrapper import/ファイル依存を backend module + `load_east3_document(..., target_lang=<lang>)` 基準へ置換し、`test_py2*_smoke.py` 298件 `OK` を確認。
 
 ### P1: `py2x` 共通 smoke テスト統合（全言語）
 

@@ -16,10 +16,38 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2java import load_east, load_java_profile, transpile_to_java
+from backends.java.emitter import load_java_profile, transpile_to_java
+from toolchain.compiler.transpile_cli import load_east3_document
 from backends.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
 from src.toolchain.compiler.east_parts.core import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+
+
+def load_east(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "3",
+    object_dispatch_mode: str = "native",
+    east3_opt_level: str = "1",
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+):
+    if east_stage != "3":
+        raise RuntimeError("unsupported east_stage: " + east_stage)
+    doc3 = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang="java",
+    )
+    return doc3 if isinstance(doc3, dict) else {}
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -270,7 +298,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
             transpile_to_java_native({"kind": "FunctionDef"}, class_name="Main")
 
     def test_py2java_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2java.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
