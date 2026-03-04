@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 GEN_IMAGE_SYMBOL_RE = re.compile(
-    r"(write_rgb_png|save_gif|grayscale_palette|py_write_rgb_png|py_save_gif|py_grayscale_palette|pyWriteRGBPNG|pySaveGIF|pyGrayscalePalette|__pytra_write_rgb_png|__pytra_save_gif|__pytra_grayscale_palette)"
+    r"(write_rgb_png|save_gif|grayscale_palette|py_write_rgb_png|py_save_gif|py_grayscale_palette|pyWriteRGBPNG|pySaveGIF|pySaveGif|pyGrayscalePalette|__pytra_write_rgb_png|__pytra_save_gif|__pytra_grayscale_palette)"
 )
 CORE_FORBIDDEN_SYMBOL_RE = re.compile(
     r"(png_crc32|png_adler32|gif_lzw_encode|zlib_store_compress|pyChunk|pyAdler32|pyZlibDeflateStore|pyLzwEncode|pytraGifLzwEncode|pytraCrc32|pytraAdler32)"

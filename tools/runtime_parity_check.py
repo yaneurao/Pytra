@@ -348,7 +348,13 @@ def build_targets(
                 "test/transpile/java/Main.java",
                 opt_arg,
             ),
-            run_cmd="javac test/transpile/java/Main.java test/transpile/java/PyRuntime.java && java -cp test/transpile/java Main",
+            run_cmd=(
+                "javac test/transpile/java/Main.java "
+                "test/transpile/java/PyRuntime.java "
+                "test/transpile/java/PngHelper.java "
+                "test/transpile/java/GifHelper.java "
+                "&& java -cp test/transpile/java Main"
+            ),
             needs=("python", "javac", "java"),
         ),
         Target(

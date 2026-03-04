@@ -45,7 +45,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] 監査スクリプトを新方式（物理分離・混入禁止）へ更新する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] Rust を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go を `pytra-core` / `pytra-gen` 分離へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] Swift を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby を `pytra-core` / `pytra-gen` 分離へ移行する。
@@ -67,3 +67,4 @@
 - 2026-03-04: `S2-02` 完了。`tools/audit_image_runtime_sot.py` を core/gen レイアウト監査へ置換し、`pytra-core` 混入・`pytra-gen` marker不足・legacy配置残存を検知可能化。`work/logs/image_runtime_core_gen_audit_20260304_s2_02.json` で `compliant=1/non_compliant=13` の移行ベースラインを固定。
 - 2026-03-04: `S3-RS` 完了。Rust runtime を `pytra-core`/`pytra-gen` へ分離し、`py_runtime.rs` の画像本体を `pytra-gen/utils/image_runtime.rs` へ移設。`backend_registry(_static)` の Rust runtime hook を core+gen コピーへ更新し、`work/logs/runtime_parity_sample_rs_0105_core_gen_split_retry_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-GO` 完了。Go runtime を `pytra-core`/`pytra-gen` へ分離し、画像本体を `pytra-gen/utils/{png.go,gif.go}` へ移設。`backend_registry(_static)` と `runtime_parity_check` の Go 実行導線を `py_runtime.go + png.go + gif.go` に更新し、`work/logs/runtime_parity_sample_go_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 2026-03-04: `S3-JAVA` 完了。Java runtime を `pytra-core`/`pytra-gen` へ分離し、`PyRuntime.java` の画像本体を `pytra-gen/utils/{PngHelper.java,GifHelper.java}` へ移設。`backend_registry(_static)` と `runtime_parity_check` の Java 実行導線を `PyRuntime + PngHelper + GifHelper` へ更新し、`work/logs/runtime_parity_sample_java_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
