@@ -223,6 +223,15 @@ Prohibited:
 - Embedding runtime-dispatch tables (for example `py_assert_*`, `json.loads`, `write_rgb_png`) in emitters or frontends/signature registry.
 - Moving call-resolution rules into backend code because EAST3 is "not enough".
 
+Operational enforcement (CI):
+
+- `python3 tools/check_emitter_runtimecall_guardrails.py`
+  - Fails on newly introduced direct runtime/stdlib dispatch literals in non-C++ emitters.
+- `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+  - Fails on newly introduced runtime-implementation symbols in emitters (for example `__pytra_write_rgb_png`).
+- `python3 tools/check_noncpp_east3_contract.py`
+  - Detects static contract drift for non-C++ EAST3 pathways and language-specific smoke boundaries.
+
 For `.get(...).items()` on `dict[str, Any]`:
 
 - C++ generation assumes `dict[str, object]` and recursively converts `Dict`/`List` literal values via `make_object(...)` at initialization.

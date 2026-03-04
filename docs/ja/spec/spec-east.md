@@ -234,6 +234,15 @@
 - emitter や frontends/sig registry に `py_assert_*` / `json.loads` / `write_rgb_png` 等の runtime dispatch 用テーブルを埋めること。
 - 「EAST3では不足している」という理由で、呼び出し解決ルールを backend 側へ持ち込むこと。
 
+運用上の強制（CI）:
+
+- `python3 tools/check_emitter_runtimecall_guardrails.py`
+  - non-C++ emitter の runtime/stdlib 直書き分岐増分を fail にする。
+- `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+  - emitter への runtime 実装シンボル（`__pytra_write_rgb_png` 等）の再混入増分を fail にする。
+- `python3 tools/check_noncpp_east3_contract.py`
+  - 言語別 smoke の責務境界コメントや EAST3 契約逸脱を静的検知する。
+
 `dict[str, Any]` の `.get(...).items()` について:
 
 - C++ 生成時は `dict[str, object]` を前提に、`Dict`/`List` リテラル値を `make_object(...)` で再帰変換して初期化する。

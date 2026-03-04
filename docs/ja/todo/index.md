@@ -74,7 +74,7 @@
 11. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`src/pytra/utils/png.py` / `gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボル直書きを撤去する。
 12. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
 13. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
-14. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
+14. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 15. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
 16. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
 17. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
@@ -99,6 +99,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に「Emitter変更 Stop-Ship チェックリスト」を追加し、必須3コマンド・FAIL時コミット禁止・レビュー時確認項目を運用ルールとして固定した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Swift/Kotlin emitter の `runtime_call == "write_rgb_png|save_gif|grayscale_palette|json.loads|json.dumps|perf_counter|Path"` 直書き分岐を撤去し、`resolved_runtime_call` からの汎用シンボル導出へ移行した（Swift/Kotlin smoke + guardrail + noncpp contract 通過、allowlist は runtimecall `114->106` / forbidden symbol `28->22` に縮退）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go emitter でも同方式へ統一し、`runtime_call` 直書き分岐（`write_rgb_png/save_gif/grayscale_palette/json.loads/json.dumps/perf_counter/Path`）を撤去、`save_gif` の既定引数補完だけ semantic-tag 駆動で維持した（Go/Swift/Kotlin smoke + guardrail + noncpp contract 通過、runtimecall allowlist `114->99`）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec/spec-east.md` / `docs/en/spec/spec-east.md` に runtime-call 責務境界の CI 強制（`check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` / `check_noncpp_east3_contract.py`）を追記し、禁止事項と運用チェックを同一節で参照可能にした。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
