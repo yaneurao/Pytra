@@ -123,6 +123,20 @@ function __pytra_str_slice($s, $start, $stop) {
     return substr($s, $a, $b - $a);
 }
 
+function __pytra_index($container, $index): int {
+    $i = __pytra_int($index);
+    $n = 0;
+    if (is_array($container)) {
+        $n = count($container);
+    } elseif (is_string($container)) {
+        $n = strlen($container);
+    }
+    if ($i < 0) {
+        $i += $n;
+    }
+    return $i;
+}
+
 function __pytra_noop(...$_args) {
     return null;
 }
@@ -186,6 +200,21 @@ function bytes($v = null): array {
         return bytearray($v);
     }
     return bytearray($v);
+}
+
+function __pytra_list_repeat($v, int $count): array {
+    if (!is_array($v) || $count <= 0) {
+        return [];
+    }
+    $out = [];
+    $i = 0;
+    while ($i < $count) {
+        foreach ($v as $item) {
+            $out[] = $item;
+        }
+        $i += 1;
+    }
+    return $out;
 }
 
 function grayscale_palette(): array {

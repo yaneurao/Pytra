@@ -80,12 +80,13 @@
 
 文脈: [docs/ja/plans/p0-php-s13-parity-investigation.md](../plans/p0-php-s13-parity-investigation.md)
 
-1. [ ] [ID: P0-PHP-S13-PARITY-INVEST-01] `sample/13` の PHP 出力が `frames: 2` になる根本原因を特定し、修正方針を確定する。
-2. [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-01] parity 失敗を単独再現し、実行ログと artifact 情報を採取する。
-3. [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-02] Python と PHP の `frames` 算出経路を比較し、最初の乖離点を特定する。
-4. [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-01] 乖離を生む層（EAST3 / lower / emitter / runtime）を 1 箇所に特定する。
-5. [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-02] 最小再現ケース案を作成し、回帰テスト化粒度を確定する。
-6. [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S3-01] 修正方針を文脈へ記録し、次段の修正タスクを起票する。
+1. [x] [ID: P0-PHP-S13-PARITY-INVEST-01] `sample/13` の PHP 出力が `frames: 2` になる根本原因を特定し、修正方針を確定する。
+2. [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-01] parity 失敗を単独再現し、実行ログと artifact 情報を採取する。
+3. [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-02] Python と PHP の `frames` 算出経路を比較し、最初の乖離点を特定する。
+4. [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-01] 乖離を生む層（EAST3 / lower / emitter / runtime）を 1 箇所に特定する。
+5. [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-02] 最小再現ケース案を作成し、回帰テスト化粒度を確定する。
+6. [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S3-01] 修正方針を文脈へ記録し、次段の修正タスクを起票する。
+- 進捗メモ: [ID: P0-PHP-S13-PARITY-INVEST-01] 失敗を `output mismatch (frames: 147 -> 2)` で再現（`work/logs/runtime_parity_sample_php_13_invest_20260304.json`）。最初の乖離点を PHP emitter の負インデックス未対応（`stack[-1]` が `Undefined array key -1`）と `ListComp` 非対応（`null` fallback）に特定し、`ListComp(range)` 代入展開 + list repeat helper + `__pytra_index` 負インデックス解決を実装。`sample/13` は `php` 単独および `ruby,lua,scala,php` 横並びで `ok` を確認（`work/logs/runtime_parity_sample_php_13_after_negindex_fix_20260304.json`, `work/logs/runtime_parity_sample_ruby_lua_scala_php_case13_after_php_fix_20260304.json`）。
 
 ### P1: `py2x` 一本化の再開（legacy `py2*.py` wrapper 完全撤去）
 

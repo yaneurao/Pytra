@@ -187,6 +187,11 @@ def _type_is_sequence_like(resolved_type: str) -> bool:
     }
 
 
+def _type_is_int_like(resolved_type: str) -> bool:
+    t = resolved_type.replace(" ", "")
+    return t in {"int", "int64", "uint8"}
+
+
 def _render_membership_expr(container_expr: str, item_expr: str, container_node: Any) -> str:
     container_type = _resolved_type_name(container_node)
     if _type_is_dict(container_type):
@@ -478,6 +483,13 @@ def _render_expr(expr: Any) -> str:
         right_any = expr.get("right")
         left = _render_expr(left_any)
         right = _render_expr(right_any)
+        if op == "Mult":
+            left_t = _resolved_type_name(left_any)
+            right_t = _resolved_type_name(right_any)
+            if _type_is_sequence_like(left_t) and _type_is_int_like(right_t):
+                return "__pytra_list_repeat(" + left + ", __pytra_int(" + right + "))"
+            if _type_is_sequence_like(right_t) and _type_is_int_like(left_t):
+                return "__pytra_list_repeat(" + right + ", __pytra_int(" + left + "))"
         if op == "FloorDiv":
             return "intdiv(" + left + ", " + right + ")"
         return "(" + left + " " + _bin_op_symbol(op, left=left_any, right=right_any) + " " + right + ")"
@@ -531,6 +543,7 @@ def _render_expr(expr: Any) -> str:
         return _render_expr(value_any) + "->" + attr
     if kind == "Subscript":
         owner = _render_expr(expr.get("value"))
+        owner_type = _resolved_type_name(expr.get("value"))
         index_any = expr.get("slice")
         if isinstance(index_any, dict) and index_any.get("kind") == "Slice":
             lower_any = index_any.get("lower")
@@ -539,6 +552,8 @@ def _render_expr(expr: Any) -> str:
             upper_expr = _render_expr(upper_any) if isinstance(upper_any, dict) else "__pytra_len(" + owner + ")"
             return "__pytra_str_slice(" + owner + ", " + lower_expr + ", " + upper_expr + ")"
         index = _render_expr(index_any)
+        if _type_is_sequence_like(owner_type):
+            return owner + "[__pytra_index(" + owner + ", " + index + ")]"
         return owner + "[" + index + "]"
     if kind == "List" or kind == "Tuple":
         elems_any = expr.get("elements")
@@ -602,6 +617,9 @@ def _target_lhs(target: Any) -> str:
     if kind == "Subscript":
         owner = _render_expr(target.get("value"))
         index = _render_expr(target.get("slice"))
+        owner_type = _resolved_type_name(target.get("value"))
+        if _type_is_sequence_like(owner_type):
+            return owner + "[__pytra_index(" + owner + ", " + index + ")]"
         return owner + "[" + index + "]"
     return "$_"
 
@@ -625,6 +643,67 @@ def _const_int(node: Any) -> int | None:
     if kind == "UnaryOp" and node.get("op") == "UAdd":
         return _const_int(node.get("operand"))
     return None
+
+
+def _next_tmp(ctx: dict[str, Any], prefix: str) -> str:
+    seq_any = ctx.get("__tmp_seq")
+    seq = seq_any if isinstance(seq_any, int) else 0
+    ctx["__tmp_seq"] = seq + 1
+    return "$__pytra_" + prefix + "_" + str(seq)
+
+
+def _emit_listcomp_assign(
+    lhs: str,
+    value: Any,
+    *,
+    indent: str,
+    ctx: dict[str, Any],
+) -> list[str] | None:
+    if not isinstance(value, dict) or value.get("kind") != "ListComp":
+        return None
+    gens_any = value.get("generators")
+    gens = gens_any if isinstance(gens_any, list) else []
+    if len(gens) != 1 or not isinstance(gens[0], dict):
+        return None
+    gen = gens[0]
+    ifs_any = gen.get("ifs")
+    ifs = ifs_any if isinstance(ifs_any, list) else []
+    if len(ifs) != 0:
+        return None
+    target_any = gen.get("target")
+    if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+        return None
+    iter_any = gen.get("iter")
+    if not isinstance(iter_any, dict) or iter_any.get("kind") != "RangeExpr":
+        return None
+
+    target_name = _target_lhs(target_any)
+    start_expr = _render_expr(iter_any.get("start"))
+    stop_expr = _render_expr(iter_any.get("stop"))
+    step_node = iter_any.get("step")
+    step_expr = _render_expr(step_node)
+    step_value = _const_int(step_node)
+    loop_var = _next_tmp(ctx, "lc_i")
+    step_tmp = _next_tmp(ctx, "lc_step")
+
+    lines: list[str] = [indent + lhs + " = [];"]
+    if step_value is not None and step_value != 0:
+        if step_value > 0:
+            cond = loop_var + " < " + stop_expr
+            update = loop_var + " += " + str(step_value)
+        else:
+            cond = loop_var + " > " + stop_expr
+            update = loop_var + " -= " + str(-step_value)
+        lines.append(indent + "for (" + loop_var + " = " + start_expr + "; " + cond + "; " + update + ") {")
+    else:
+        lines.append(indent + step_tmp + " = " + step_expr + ";")
+        cond = "(" + step_tmp + " >= 0) ? (" + loop_var + " < " + stop_expr + ") : (" + loop_var + " > " + stop_expr + ")"
+        lines.append(indent + "for (" + loop_var + " = " + start_expr + "; " + cond + "; " + loop_var + " += " + step_tmp + ") {")
+
+    lines.append(indent + "    " + target_name + " = " + loop_var + ";")
+    lines.append(indent + "    " + lhs + "[] = " + _render_expr(value.get("elt")) + ";")
+    lines.append(indent + "}")
+    return lines
 
 
 def _emit_unpack_target_assign(
@@ -773,6 +852,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lhs = _target_lhs(stmt.get("target"))
         if stmt.get("value") is None:
             return [indent + lhs + " = null;"]
+        listcomp_lines = _emit_listcomp_assign(lhs, stmt.get("value"), indent=indent, ctx=ctx)
+        if listcomp_lines is not None:
+            return listcomp_lines
         return [indent + lhs + " = " + _render_expr(stmt.get("value")) + ";"]
     if kind == "Assign":
         targets_any = stmt.get("targets")
@@ -792,6 +874,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             lines.extend(_emit_unpack_target_assign(primary_target, unpack_tmp, indent=indent, tmp_seq=tmp_seq))
             return lines
         lhs = _target_lhs(targets[0])
+        listcomp_lines = _emit_listcomp_assign(lhs, stmt.get("value"), indent=indent, ctx=ctx)
+        if listcomp_lines is not None:
+            return listcomp_lines
         return [indent + lhs + " = " + _render_expr(stmt.get("value")) + ";"]
     if kind == "AugAssign":
         lhs = _target_lhs(stmt.get("target"))

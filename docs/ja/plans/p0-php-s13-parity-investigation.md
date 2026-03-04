@@ -41,11 +41,16 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、`sample/13` PHP parity 失敗（`frames: 147 -> 2`）の原因調査を P0 で起票。
+- 2026-03-04: `python3 tools/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps` で `output mismatch (frames: 147 -> 2)` を再現し、失敗ログを `work/logs/runtime_parity_sample_php_13_invest_20260304.json` に固定。
+- 2026-03-04: 生成PHPを比較し、最初の乖離点を `stack[-1]` の負インデックス未対応（`$stack[-1]` 直出力）と特定。PHP実行時に `Undefined array key -1` が発生し、探索が即枯渇して `frames: 2` になることを確認。
+- 2026-03-04: 併発要因として `ListComp` 未対応（`_render_expr` fallback `null`）も確認。最小再現 `/tmp/php_s13_min_repro.py` では `grid = [[1] * w for _ in range(h)]` が `$grid = null` に落ちることを確認。
+- 2026-03-04: 修正方針を即時実装へ転換し、PHP emitter に `AnnAssign/Assign` の `ListComp(range)` 展開を追加、`BinOp Mult` に list repeat 経路（`__pytra_list_repeat`）を追加、runtime に `__pytra_index` / `__pytra_list_repeat` を追加。
+- 2026-03-04: `sample/13` の parity は `php` 単独で `ok`（`work/logs/runtime_parity_sample_php_13_after_negindex_fix_20260304.json`）、`ruby,lua,scala,php` 横並びでも `ok`（`work/logs/runtime_parity_sample_ruby_lua_scala_php_case13_after_php_fix_20260304.json`）を確認。次段修正タスクの別起票は不要（本ID内で修正実施）。
 
 ## 分解
 
-- [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-01] parity 失敗（stdout mismatch）を単独再現し、実行ログと生成 artifact の最小情報を採取する。
-- [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-02] Python と PHP の `frames` 算出経路を比較し、最初の乖離点を特定する。
-- [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-01] 乖離を生む層（EAST3 / lower / emitter / runtime）を 1 箇所に特定する。
-- [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-02] 最小再現ケース案を作成し、回帰テストへ落とし込む粒度を決める。
-- [ ] [ID: P0-PHP-S13-PARITY-INVEST-01-S3-01] 修正方針（実装箇所・非対象・検証観点）を確定し、次段の修正タスクを起票する。
+- [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-01] parity 失敗（stdout mismatch）を単独再現し、実行ログと生成 artifact の最小情報を採取する。
+- [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S1-02] Python と PHP の `frames` 算出経路を比較し、最初の乖離点を特定する。
+- [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-01] 乖離を生む層（EAST3 / lower / emitter / runtime）を 1 箇所に特定する。
+- [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S2-02] 最小再現ケース案を作成し、回帰テストへ落とし込む粒度を決める。
+- [x] [ID: P0-PHP-S13-PARITY-INVEST-01-S3-01] 修正方針（実装箇所・非対象・検証観点）を確定し、次段の修正タスクを起票する。
