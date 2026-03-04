@@ -2,6 +2,10 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: tools/gen_java_std_runtime_from_canonical.py
 
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/pathlib.py
+// generated-by: tools/gen_java_std_runtime_from_canonical.py
+
 public final class pathlib {
     private pathlib() {
     }

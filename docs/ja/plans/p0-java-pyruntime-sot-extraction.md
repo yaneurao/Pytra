@@ -103,3 +103,5 @@
 - 2026-03-05: `S4-01` 継続として、`PyRuntime.java` から `write_rgb_png/save_gif/grayscale_palette` 本体を削除し、`check_java_pyruntime_boundary.py` へ同名禁止シンボルを追加した（json/pathlib は継続課題）。
 - 2026-03-05: `S3-01` 継続として、`resolved_runtime_call` の `json.loads/json.dumps` を `json.*` 直接描画へ移行し、Java emitter の `PyRuntime.pyJson*` 依存を撤去した（Path は継続課題）。
 - 2026-03-05: `S4-01` 継続として、`PyRuntime.java` から `pyJsonDumps/pyJsonLoads/jsonStringify/jsonEscapeString/JsonParser` を削除し、境界ガードに JSON 禁止シンボルを追加した（pathlib は継続課題）。
+- 2026-03-05: `S3-01` 完了として、`Path` 解決も `pathlib.Path` 直描画へ移行し、Java emitter から `PyRuntime.Path` 依存を除去した（`parent/name/stem` 属性はメソッド呼び出しへ正規化）。
+- 2026-03-05: `S4-01` 完了として、`PyRuntime.java` から `Path/pyPath*` 実装群を削除し、`check_java_pyruntime_boundary.py` に pathlib 禁止シンボルを追加。Java smoke/parity（`sample/01,05,18`）を再確認した。

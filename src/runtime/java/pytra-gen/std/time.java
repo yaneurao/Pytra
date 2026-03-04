@@ -2,6 +2,10 @@
 // source: src/pytra/std/time.py
 // generated-by: tools/gen_java_std_runtime_from_canonical.py
 
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/time.py
+// generated-by: tools/gen_java_std_runtime_from_canonical.py
+
 public final class time {
     private time() {
     }

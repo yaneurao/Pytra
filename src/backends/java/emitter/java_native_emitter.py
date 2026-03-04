@@ -77,7 +77,7 @@ def _java_ref_type(type_name: Any) -> str:
     if type_name == "str":
         return "String"
     if type_name == "Path":
-        return "PyRuntime.Path"
+        return "pathlib.Path"
     if type_name in {"bytes", "bytearray"}:
         return "java.util.ArrayList<Long>"
     if type_name.startswith("list["):
@@ -115,7 +115,7 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
     if type_name == "str":
         return "String"
     if type_name == "Path":
-        return "PyRuntime.Path"
+        return "pathlib.Path"
     if type_name == "bytes":
         return "java.util.ArrayList<Long>"
     if type_name == "bytearray":
@@ -503,6 +503,11 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         if owner == "math" and attr == "e":
             return "_m.e"
     value = _render_expr(value_any)
+    if isinstance(value_any, dict):
+        owner_type_any = value_any.get("resolved_type")
+        owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
+        if owner_type == "Path" and attr in {"parent", "name", "stem"}:
+            return value + "." + attr + "()"
     return value + "." + attr
 
 
@@ -595,32 +600,13 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
-def _runtime_call_java_name(runtime_call: str) -> str:
-    if runtime_call == "":
-        return ""
-    out: list[str] = []
-    i = 0
-    while i < len(runtime_call):
-        ch = runtime_call[i]
-        if ch.isalnum() or ch == "_":
-            out.append(ch)
-        else:
-            out.append("_")
-        i += 1
-    name = "".join(out)
-    if name == "":
-        return ""
-    if name[0].isdigit():
-        name = "_" + name
-    return name
-
-
 _RESOLVED_RUNTIME_HELPERS: dict[str, str] = {
     "json.loads": "json.loads",
     "json.dumps": "json.dumps",
     "write_rgb_png": "PngHelper.pyWriteRGBPNG",
     "save_gif": "GifHelper.pySaveGif",
     "grayscale_palette": "GifHelper.pyGrayscalePalette",
+    "Path": "pathlib.Path",
 }
 
 
@@ -632,38 +618,27 @@ def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
         i += 1
     helper_name = _RESOLVED_RUNTIME_HELPERS.get(runtime_call)
     if isinstance(helper_name, str) and helper_name != "":
+        if helper_name == "pathlib.Path":
+            if len(rendered_args) == 0:
+                return "new pathlib.Path(\"\")"
+            return "new pathlib.Path(" + rendered_args[0] + ")"
         return helper_name + "(" + ", ".join(rendered_args) + ")"
-
-    method_name = _runtime_call_java_name(runtime_call)
-    if "." in runtime_call:
-        parts = method_name.split("_")
-        camel = ""
-        i = 0
-        while i < len(parts):
-            part = parts[i]
-            if part != "":
-                camel += part[0].upper() + part[1:]
-            i += 1
-        if camel != "":
-            method_name = "py" + camel
-    if method_name == "":
-        return ""
-    return "PyRuntime." + method_name + "(" + ", ".join(rendered_args) + ")"
+    return ""
 
 
 def _render_call_via_runtime_call(runtime_call: str, runtime_source: str, args: list[Any]) -> str:
     if runtime_call.startswith("py_assert_"):
         return _java_string_literal("True")
+    if runtime_call in _RESOLVED_RUNTIME_HELPERS:
+        mapped_call = _render_resolved_runtime_call(runtime_call, args)
+        if mapped_call != "":
+            return mapped_call
     if runtime_source == "resolved_runtime_call":
         rendered_resolved = _render_resolved_runtime_call(runtime_call, args)
         if rendered_resolved != "":
             return rendered_resolved
     if runtime_call == "perf_counter":
         return "_impl.perf_counter()"
-    if runtime_call == "Path":
-        if len(args) == 0:
-            return "new PyRuntime.Path(\"\")"
-        return "new PyRuntime.Path(" + _render_expr(args[0]) + ")"
     return ""
 
 
@@ -849,7 +824,7 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
         if name in {"list", "bytes", "bytearray"}:
             return "(" + boxed_lhs + " instanceof java.util.ArrayList)"
         if name == "Path":
-            return "(" + boxed_lhs + " instanceof PyRuntime.Path)"
+            return "(" + boxed_lhs + " instanceof pathlib.Path)"
         return "(" + boxed_lhs + " instanceof " + name + ")"
     if typ.get("kind") == "Tuple":
         elements_any = typ.get("elements")
@@ -1210,7 +1185,7 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
         if name == "str":
             return "String"
         if name == "Path":
-            return "PyRuntime.Path"
+            return "pathlib.Path"
     if kind == "BinOp":
         left_t = _infer_java_type_from_expr_node(expr.get("left"), type_map)
         right_t = _infer_java_type_from_expr_node(expr.get("right"), type_map)

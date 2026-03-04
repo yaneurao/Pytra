@@ -197,8 +197,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
             )
             east = load_east(src, parser_backend="self_hosted")
             java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("PyRuntime.Path p = new PyRuntime.Path(\"tmp/a.txt\");", java)
-        self.assertIn("p.parent.mkdir(true, true);", java)
+        self.assertIn("pathlib.Path p = new pathlib.Path(\"tmp/a.txt\");", java)
+        self.assertIn("p.parent().mkdir(true, true);", java)
         self.assertIn("return p.exists();", java)
 
     def test_java_native_emitter_routes_perf_counter_via_runtime_helper(self) -> None:
