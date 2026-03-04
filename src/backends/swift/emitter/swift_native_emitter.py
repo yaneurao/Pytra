@@ -686,6 +686,52 @@ def _class_has_base_method(class_name: str, method_name: str) -> bool:
     return False
 
 
+def _resolved_runtime_call_name(expr: dict[str, Any]) -> str:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call
+    resolved_any = expr.get("resolved_runtime_call")
+    return resolved_any if isinstance(resolved_any, str) else ""
+
+
+def _render_call_via_runtime_call(runtime_call: str, args: list[Any]) -> str:
+    if runtime_call.startswith("py_assert_"):
+        rendered_assert_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_assert_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
+    if runtime_call == "perf_counter":
+        return "__pytra_perf_counter()"
+    if runtime_call == "write_rgb_png":
+        rendered_png_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_png_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
+    if runtime_call == "save_gif":
+        rendered_gif_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_gif_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
+    if runtime_call == "grayscale_palette":
+        return "__pytra_grayscale_palette()"
+    if runtime_call == "json.loads":
+        if len(args) == 0:
+            return "pyJsonLoads(\"\")"
+        return "pyJsonLoads(" + _render_expr(args[0]) + ")"
+    if runtime_call == "json.dumps":
+        if len(args) == 0:
+            return "pyJsonDumps(\"\")"
+        return "pyJsonDumps(" + _render_expr(args[0]) + ")"
+    return ""
+
+
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
 
@@ -703,6 +749,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_main_args.append(_render_expr(args[i]))
             i += 1
         return _MAIN_CALL_ALIAS + "(" + ", ".join(rendered_main_args) + ")"
+    runtime_call = _resolved_runtime_call_name(expr)
+    if runtime_call != "":
+        rendered_runtime = _render_call_via_runtime_call(runtime_call, args)
+        if rendered_runtime != "":
+            return rendered_runtime
     if callee_name.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0
@@ -710,8 +761,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
-    if callee_name == "perf_counter":
-        return "__pytra_perf_counter()"
     if callee_name == "bytearray":
         if len(args) == 0:
             return "[]"
@@ -770,22 +819,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name == "write_rgb_png":
-        rendered_png_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_png_args.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
-    if callee_name == "save_gif":
-        rendered_gif_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_gif_args.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
-    if callee_name == "grayscale_palette":
-        return "__pytra_grayscale_palette()"
     if callee_name == "print":
         rendered_args: list[str] = []
         i = 0
@@ -816,34 +849,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
                     i += 1
                 return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
-            if owner == "json":
-                if attr_name == "loads":
-                    if len(args) == 0:
-                        return "pyJsonLoads(\"\")"
-                    return "pyJsonLoads(" + _render_expr(args[0]) + ")"
-                if attr_name == "dumps":
-                    if len(args) == 0:
-                        return "pyJsonDumps(\"\")"
-                    return "pyJsonDumps(" + _render_expr(args[0]) + ")"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
         owner_expr = _render_expr(owner_any)
-        if attr_name == "write_rgb_png":
-            rendered_png_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_png_args.append(_render_expr(args[i]))
-                i += 1
-            return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
-        if attr_name == "save_gif":
-            rendered_gif_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_gif_args.append(_render_expr(args[i]))
-                i += 1
-            return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
         if attr_name == "get":
             if len(args) >= 2:
                 return "__pytra_dict_get(" + owner_expr + ", " + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ")"

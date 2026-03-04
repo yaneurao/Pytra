@@ -48,6 +48,7 @@
 10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go emitter の `perf_counter/Path/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `105 -> 95` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Kotlin emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `95 -> 87` へ縮退。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Swift emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `87 -> 79` へ縮退。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
