@@ -30,6 +30,7 @@ def main() -> int:
         ["python3", "tools/check_rs_runtime_layout.py"],
         ["python3", "tools/audit_image_runtime_sot.py", "--fail-on-core-mix", "--fail-on-gen-markers"],
         ["python3", "tools/check_runtime_std_sot_guard.py"],
+        ["python3", "tools/check_java_pyruntime_boundary.py"],
         ["python3", "tools/check_emitter_runtimecall_guardrails.py"],
         ["python3", "tools/check_emitter_forbidden_runtime_symbols.py"],
         ["python3", "tools/check_runtime_legacy_shims.py"],
