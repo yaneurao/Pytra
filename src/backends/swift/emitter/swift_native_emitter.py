@@ -605,15 +605,33 @@ def _math_call_name(attr: str) -> str:
     return _safe_ident(attr, "call")
 
 
+def _math_runtime_wrapper(runtime_call: str) -> str:
+    if runtime_call == "math.pi":
+        return "pyMathPi"
+    if runtime_call == "math.e":
+        return "pyMathE"
+    if runtime_call.startswith("math."):
+        return _math_call_name(runtime_call[len("math."):])
+    return ""
+
+
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner = _safe_ident(value_any.get("id"), "")
-        if owner == "math" and attr == "pi":
-            return "__pytra_float(pyMathPi())"
-        if owner == "math" and attr == "e":
-            return "__pytra_float(pyMathE())"
+    resolved_runtime_any = expr.get("resolved_runtime_call")
+    resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
+    if resolved_runtime != "":
+        resolved_source_any = expr.get("resolved_runtime_source")
+        resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
+        if resolved_source == "module_attr":
+            wrapped = _math_runtime_wrapper(resolved_runtime)
+            if wrapped == "pyMathPi":
+                return "__pytra_float(pyMathPi())"
+            if wrapped == "pyMathE":
+                return "__pytra_float(pyMathE())"
+            if wrapped != "":
+                return wrapped
+            return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -729,6 +747,18 @@ def _render_call_via_runtime_call(runtime_call: str, args: list[Any]) -> str:
         if len(args) == 0:
             return "pyJsonDumps(\"\")"
         return "pyJsonDumps(" + _render_expr(args[0]) + ")"
+    wrapped = _math_runtime_wrapper(runtime_call)
+    if wrapped != "":
+        if wrapped == "pyMathPi":
+            return "__pytra_float(pyMathPi())"
+        if wrapped == "pyMathE":
+            return "__pytra_float(pyMathE())"
+        rendered_math_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
+            i += 1
+        return wrapped + "(" + ", ".join(rendered_math_args) + ")"
     return ""
 
 
@@ -840,15 +870,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if attr_name == "__init__":
                 return "super.init(" + ", ".join(rendered_super_args) + ")"
             return "super." + attr_name + "(" + ", ".join(rendered_super_args) + ")"
-        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-            owner = _safe_ident(owner_any.get("id"), "")
-            if owner == "math":
-                rendered_math_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
-                    i += 1
-                return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:

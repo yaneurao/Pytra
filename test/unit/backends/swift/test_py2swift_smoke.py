@@ -114,6 +114,11 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         self.assertIn("pyMathCos(__pytra_float(angle))", swift)
         self.assertIn("pyMathSin(__pytra_float(angle))", swift)
 
+    def test_swift_emitter_source_has_no_owner_math_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "swift" / "emitter" / "swift_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('owner == "math"', src)
+        self.assertNotIn("owner == 'math'", src)
+
     def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
         src = """
 def f(xs: list[int], ys: dict[str, int]) -> int:
