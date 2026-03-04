@@ -80,7 +80,7 @@
 17. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
 18. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
 19. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] EAST3 固定入力（`test/ir/*.json`）から backend-only 回帰を追加し、`math/Path` を含む解決済み runtime 呼び出しが emitter 直書きなしで通ることを固定する。
-20. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] Emitter変更の Stop-Ship（必須3コマンド + FAIL時コミット禁止）を運用ルールへ固定し、レビュー checklist 化する。
+20. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] Emitter変更の Stop-Ship（必須3コマンド + FAIL時コミット禁止）を運用ルールへ固定し、レビュー checklist 化する。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go emitter の `perf_counter/Path/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `105 -> 95` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Kotlin emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `95 -> 87` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Swift emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `87 -> 79` へ縮退。
@@ -95,6 +95,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] `Path.parent/name/stem` を IR（`BuiltinAttr + runtime_call=path_*`）で解決するよう変更し、Java emitter の `owner_type == "Path"` 分岐を撤去した（`test_east_core` / `test_py2java_smoke` 回帰追加）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter の `_java_math_runtime_call` と `owner == "math"` 分岐を撤去し、`math.pi/sin/cos` は通常の属性描画経路で出力するよう更新した。`test_py2java_smoke.py` に再発防止アサートを追加し、`check_emitter_runtimecall_guardrails.py` を再通過した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] 固定 IR 入力 `test/ir/java_math_path_runtime.east3.json`（`test/fixtures/stdlib/math_path_runtime_ir.py` 由来）を追加し、Java backend-only 回帰で `math.sin/math.pi` と `Path.parent/name/stem` が emitter 直書きなしで描画されることを固定した。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に「Emitter変更 Stop-Ship チェックリスト」を追加し、必須3コマンド・FAIL時コミット禁止・レビュー時確認項目を運用ルールとして固定した。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
