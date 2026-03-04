@@ -38,9 +38,28 @@
 - `python3 tools/run_local_ci.py`
 - `python3 tools/runtime_parity_check.py 01_mandelbrot --case-root sample --targets cs,js,ts,go,java,ruby,lua,scala,php,nim`
 
+## S1-01 仕様（禁止/許可）
+
+禁止（non-C++ emitter で `if/elif` による文字列分岐を置かない）:
+- runtime 関数名: `write_rgb_png` / `save_gif` / `grayscale_palette` / `perf_counter`
+- assertion 関数名: `py_assert_stdout` / `py_assert_eq` / `py_assert_true` / `py_assert_all`
+- module/symbol 名（runtime 側責務）: `pytra.utils.png` / `pytra.utils.gif` / `pytra.utils.assertions` / `pytra.std.test` / `pytra.std.pathlib`
+- `json.loads` / `json.dumps` / `Path` の direct lower（文字列分岐）
+
+許可（言語組み込みブリッジの最小集合）:
+- `len` / `print` / `isinstance` / `range`
+- `int` / `float` / `bool` / `str`
+- `min` / `max` / `enumerate` / `abs`
+- `list` / `dict` / `set` / `tuple` / `bytes` / `bytearray`
+
+運用:
+- 既存負債は `tools/emitter_runtimecall_guardrails_allowlist.txt` で明示管理する。
+- 新規追加は `tools/check_emitter_runtimecall_guardrails.py` で fail させる。
+- 実際の解決責務は lower/IR 側へ寄せ、emitter は解決済みノード描画へ限定する。
+
 ## 分解
 
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 非C++ emitter の禁止/許可ルール（禁止文字列分岐、許可組み込み）を仕様化する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 非C++ emitter の禁止/許可ルール（禁止文字列分岐、許可組み込み）を仕様化する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存 emitter の違反棚卸し（言語別・関数別）を作成する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] `tools/check_emitter_runtimecall_guardrails.py` を追加し、違反を fail 化する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail チェックを `run_local_ci` と CI 必須ジョブへ組み込む。
@@ -52,3 +71,4 @@
 
 決定ログ:
 - 2026-03-05: ユーザー指示（5回目再発）に基づき、非C++ emitter のライブラリ関数名直書きを防ぐ P0 計画を起票。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01`] 禁止/許可ルールを明文化し、監視対象シンボルと許可組み込みの境界を固定した。既存負債は allowlist 管理、増分のみ fail-fast とする運用方針を確定した。
