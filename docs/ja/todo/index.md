@@ -161,8 +161,8 @@
 4. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` で優先度付けする。
 5. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` 不足 API を実装する。
 6. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: `json.loads/dumps` runtime API を追加し、Go emitter の `json.*` 呼び出しを runtime helper へ統一する。
-7. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
-8. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
+7. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
+8. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
 9. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で不足 API を実装する。
 10. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Wave2 の emitter 呼び出しを adapter 経由へ寄せる。
 11. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-03] Wave2 の parity 回帰を追加し、runtime 差由来 fail を固定する。
@@ -183,6 +183,8 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1 完了: `go/java/kotlin/swift` で `json/pathlib/math/time` の不足 API 実装と emitter 接続を完了し、`test_py2{go,java,kotlin,swift}_smoke.py` + `check_py2{go,java,kotlin,swift}_transpile.py` で green を確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 先行: Go/Java emitter の `math.*` を runtime helper (`pyMath*`) 経由へ統一し、Go emitter から `math` import 依存を撤去。`test_py2{go,java}_smoke.py` と `check_py2{go,java}_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Java emitter の `perf_counter()` を `PyRuntime.pyPerfCounter()` adapter 経由へ統一。`test_py2java_smoke.py`（`perf_counter` ケース）と `check_py2java_transpile.py` で非退行確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 完了: `go/java/kotlin/swift` の `math/time/pathlib/json` 呼び出しを runtime helper / runtime wrapper 経由へ統一し、言語固有 API 名揺れを emitter 内部に閉じ込めた。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity を `go/java/kotlin/swift` で再実行し、初回ログ（`...s2_03.json`）の Kotlin 6件 run_failed を `pyMath*` 戻り型 `Double` 統一で解消。再計測ログ `work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json` で `case_pass=18/case_fail=0`（`ok:72`）を確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
