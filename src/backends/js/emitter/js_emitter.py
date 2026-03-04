@@ -186,11 +186,7 @@ class JsEmitter(CodeEmitter):
             "time": "./pytra/std/time.js",
             "pathlib": "./pytra/std/pathlib.js",
             "pytra.std.math": "./pytra/std/math.js",
-            "pytra.std.time": "./pytra/std/time.js",
-            "pytra.std.pathlib": "./pytra/std/pathlib.js",
             "pytra.utils": "./pytra/utils.js",
-            "pytra.utils.png": "./pytra/utils/png.js",
-            "pytra.utils.gif": "./pytra/utils/gif.js",
         }
         if module_id in runtime_map:
             return runtime_map[module_id]
