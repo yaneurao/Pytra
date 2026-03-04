@@ -691,6 +691,46 @@ def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: An
     raise RuntimeError("go native emitter: unsupported image runtime call: " + call_name)
 
 
+def _resolved_runtime_call_name(expr: dict[str, Any]) -> str:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call
+    resolved_any = expr.get("resolved_runtime_call")
+    return resolved_any if isinstance(resolved_any, str) else ""
+
+
+def _render_call_via_runtime_call(runtime_call: str, args: list[Any], keywords_any: Any) -> str:
+    if runtime_call.startswith("py_assert_"):
+        rendered_assert_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_assert_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
+    if runtime_call == "perf_counter":
+        return "__pytra_perf_counter()"
+    if runtime_call == "Path":
+        if len(args) == 0:
+            return "NewPath(\"\")"
+        return "NewPath(" + _render_expr(args[0]) + ")"
+    if runtime_call in {"write_rgb_png", "save_gif"}:
+        return _render_image_runtime_call(runtime_call, args, keywords_any)
+    if runtime_call == "grayscale_palette":
+        if len(args) != 0:
+            raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
+        return "__pytra_grayscale_palette()"
+    if runtime_call == "json.loads":
+        if len(args) == 0:
+            return "pyJsonLoads(\"\")"
+        return "pyJsonLoads(" + _render_expr(args[0]) + ")"
+    if runtime_call == "json.dumps":
+        if len(args) == 0:
+            return "pyJsonDumps(nil)"
+        return "pyJsonDumps(" + _render_expr(args[0]) + ")"
+    return ""
+
+
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
@@ -706,6 +746,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 args_with_keywords.append(value_any)
         kw_i += 1
 
+    runtime_call = _resolved_runtime_call_name(expr)
+    if runtime_call != "":
+        rendered_runtime = _render_call_via_runtime_call(runtime_call, args, keywords_any)
+        if rendered_runtime != "":
+            return rendered_runtime
+
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
@@ -714,8 +760,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
-    if callee_name == "perf_counter":
-        return "__pytra_perf_counter()"
     if callee_name == "bytearray":
         if len(args) == 0:
             return "[]any{}"
@@ -748,10 +792,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "[]any{}"
         return "__pytra_enumerate(" + _render_expr(args[0]) + ")"
-    if callee_name == "Path":
-        if len(args) == 0:
-            return "NewPath(\"\")"
-        return "NewPath(" + _render_expr(args[0]) + ")"
     if callee_name == "min":
         if len(args) == 0:
             return "int64(0)"
@@ -770,12 +810,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name in {"save_gif", "write_rgb_png"}:
-        return _render_image_runtime_call(callee_name, args, keywords_any)
-    if callee_name == "grayscale_palette":
-        if len(args) != 0:
-            raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
-        return "__pytra_grayscale_palette()"
     if callee_name == "print":
         rendered_args: list[str] = []
         i = 0
@@ -816,15 +850,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_math_args.append(_coerce_float_expr(args[i], _render_expr(args[i])))
                     i += 1
                 return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
-            if owner == "json":
-                if attr_name == "loads":
-                    if len(args) == 0:
-                        return "pyJsonLoads(\"\")"
-                    return "pyJsonLoads(" + _render_expr(args[0]) + ")"
-                if attr_name == "dumps":
-                    if len(args) == 0:
-                        return "pyJsonDumps(nil)"
-                    return "pyJsonDumps(" + _render_expr(args[0]) + ")"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:
@@ -846,12 +871,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if fallback != "any":
                     resolved = fallback
             return _cast_from_any(base, resolved, expr)
-        if attr_name in {"write_rgb_png", "save_gif"}:
-            return _render_image_runtime_call(attr_name, args, keywords_any)
-        if attr_name == "grayscale_palette":
-            if len(args) != 0:
-                raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
-            return "__pytra_grayscale_palette()"
         rendered_args: list[str] = []
         i = 0
         while i < len(args_with_keywords):
