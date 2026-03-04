@@ -148,6 +148,7 @@
 - 2026-03-04: Swift `ForCore` を `do { ... }` スコープへ閉じて loop 変数再宣言衝突を解消し、tuple unpack は初回代入時に `var` 宣言するよう修正。`12/13` が `ok` となり、`--targets swift --all-samples --cmd-timeout-sec 300` は `case_pass=17/case_fail=1` まで前進（残件は `18` の compile fail）（`work/logs/runtime_parity_sample_swift_all_after_loop_scope_tuple_decl_20260304.json`）。
 - 2026-03-04: Swift `sample/18` の残件として、`main_guard` 直展開による entry 再帰、`main -> __pytra_main` 参照ずれ、`Dict.entries` literal 未対応、dict subscript が runtime helper 経由で値型コピーに落ちる問題を修正。`--targets swift 18_mini_language_interpreter` は `ok` へ復帰（`work/logs/runtime_parity_sample_swift_18_after_dict_fix_20260304.json`）。
 - 2026-03-04: `--targets swift --all-samples --cmd-timeout-sec 300` を再実行し、18件すべて `ok` を確認（`work/logs/runtime_parity_sample_swift_all_after_s301_complete_20260304.json`）。`S3-01` の残件は `cpp` 全件再実行のみ。
+- 2026-03-04: `--targets cpp --all-samples --cmd-timeout-sec 300` を再実行し、18件すべて `ok` を確認（`work/logs/runtime_parity_sample_cpp_all_after_s301_complete_20260304.json`）。既存の `rs/cs/js/ts/go/java/swift/kotlin` 全件 `ok` ログと合わせて `S3-01` 受け入れ基準（`mismatch/run_failed/toolchain_missing=0`）を充足した。
 
 ## 分解
 
@@ -163,5 +164,5 @@
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS: PNG/GIF helper を Python準拠バイナリ writer に合わせ、size/CRC mismatch を解消する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C#: image系 CRC mismatch の原因（writer仕様差 or 入力変換差）を切り分け、Python準拠バイナリへ合わせる。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++: sample/07,16 compile fail を修正し、06/12/14 の CRC mismatch 原因を潰して一致させる。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `cpp,rs,cs,js,ts,go,java,swift,kotlin` 全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `cpp,rs,cs,js,ts,go,java,swift,kotlin` 全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと `docs/ja/spec` に artifact parity 運用（CRC32必須）を反映する。
