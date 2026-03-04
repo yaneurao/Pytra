@@ -215,6 +215,59 @@ def _call_name(expr: dict[str, Any]) -> str:
     return ""
 
 
+def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: Any) -> str:
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if call_name == "write_rgb_png":
+        if len(keywords) != 0:
+            raise RuntimeError("php native emitter: write_rgb_png keyword args are unsupported")
+        if len(args) != 4:
+            raise RuntimeError("php native emitter: write_rgb_png expects 4 positional args")
+        rendered_png: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_png.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_write_rgb_png(" + ", ".join(rendered_png) + ")"
+
+    if call_name == "save_gif":
+        if len(args) < 5 or len(args) > 7:
+            raise RuntimeError("php native emitter: save_gif expects 5-7 positional args")
+        rendered_gif: list[str] = []
+        i = 0
+        while i < 5:
+            rendered_gif.append(_render_expr(args[i]))
+            i += 1
+        delay_expr = _render_expr(args[5]) if len(args) >= 6 else "4"
+        loop_expr = _render_expr(args[6]) if len(args) >= 7 else "0"
+        i = 0
+        while i < len(keywords):
+            kw_any = keywords[i]
+            if not isinstance(kw_any, dict):
+                i += 1
+                continue
+            kw_name_any = kw_any.get("arg")
+            if not isinstance(kw_name_any, str):
+                raise RuntimeError("php native emitter: save_gif keyword must be a name")
+            kw_name = _safe_ident(kw_name_any, "")
+            kw_val = _render_expr(kw_any.get("value"))
+            if kw_name == "delay_cs":
+                if len(args) >= 6:
+                    raise RuntimeError("php native emitter: save_gif duplicate delay_cs argument")
+                delay_expr = kw_val
+            elif kw_name == "loop":
+                if len(args) >= 7:
+                    raise RuntimeError("php native emitter: save_gif duplicate loop argument")
+                loop_expr = kw_val
+            else:
+                raise RuntimeError("php native emitter: unsupported save_gif keyword: " + kw_name)
+            i += 1
+        rendered_gif.append(delay_expr)
+        rendered_gif.append(loop_expr)
+        return "__pytra_save_gif(" + ", ".join(rendered_gif) + ")"
+
+    raise RuntimeError("php native emitter: unsupported image runtime call: " + call_name)
+
+
 def _render_isinstance_check(lhs_expr: str, typ_expr: Any) -> str:
     if not isinstance(typ_expr, dict):
         return "false"
@@ -291,6 +344,16 @@ def _bin_op_symbol(op: Any, *, left: Any, right: Any) -> str:
         return "/"
     if op == "Mod":
         return "%"
+    if op == "BitAnd":
+        return "&"
+    if op == "BitOr":
+        return "|"
+    if op == "BitXor":
+        return "^"
+    if op == "LShift":
+        return "<<"
+    if op == "RShift":
+        return ">>"
     if op == "FloorDiv":
         return "//"
     return "+"
@@ -322,6 +385,7 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
+    keywords_any = expr.get("keywords")
     callee_name = _call_name(expr)
 
     if callee_name.startswith("py_assert_"):
@@ -370,14 +434,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "perf_counter":
         return "__pytra_perf_counter()"
     if callee_name in {"save_gif", "write_rgb_png"}:
-        rendered_runtime_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_runtime_args.append(_render_expr(args[i]))
-            i += 1
-        if callee_name == "save_gif":
-            return "__pytra_save_gif(" + ", ".join(rendered_runtime_args) + ")"
-        return "__pytra_write_rgb_png(" + ", ".join(rendered_runtime_args) + ")"
+        return _render_image_runtime_call(callee_name, args, keywords_any)
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -436,14 +493,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_str_isalpha(" + owner_expr + ")"
         if attr_name in {"write_rgb_png", "save_gif"}:
-            rendered_runtime_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_runtime_args.append(_render_expr(args[i]))
-                i += 1
-            if attr_name == "save_gif":
-                return "__pytra_save_gif(" + ", ".join(rendered_runtime_args) + ")"
-            return "__pytra_write_rgb_png(" + ", ".join(rendered_runtime_args) + ")"
+            return _render_image_runtime_call(attr_name, args, keywords_any)
         rendered_args: list[str] = []
         i = 0
         while i < len(args):

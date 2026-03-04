@@ -57,6 +57,13 @@ def find_fixture_case(stem: str) -> Path:
     return matches[0]
 
 
+def find_sample_case(stem: str) -> Path:
+    p = ROOT / "sample" / "py" / f"{stem}.py"
+    if not p.exists():
+        raise FileNotFoundError(f"missing sample: {stem}")
+    return p
+
+
 class Py2PhpSmokeTest(unittest.TestCase):
     def test_load_php_profile_contains_core_sections(self) -> None:
         profile = load_php_profile()
@@ -100,6 +107,35 @@ class Py2PhpSmokeTest(unittest.TestCase):
         php = transpile_to_php_native(east)
         self.assertIn("($cat instanceof Dog)", php)
         self.assertIn("($dog instanceof Animal)", php)
+
+    def test_transpile_sample05_save_gif_emits_delay_and_loop(self) -> None:
+        sample = find_sample_case("05_mandelbrot_zoom")
+        east = load_east(sample, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        self.assertIn("__pytra_save_gif($out_path, $width, $height, $frames, grayscale_palette(), 5, 0);", php)
+
+    def test_transpile_save_gif_keyword_order_is_respected(self) -> None:
+        src = (
+            "from pytra.utils.gif import save_gif, grayscale_palette\n\n"
+            "def main() -> None:\n"
+            "    frames: list[bytes] = [bytes([0])]\n"
+            "    save_gif('x.gif', 1, 1, frames, grayscale_palette(), loop=0, delay_cs=4)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "case.py"
+            p.write_text(src, encoding="utf-8")
+            east = load_east(p, parser_backend="self_hosted")
+            php = transpile_to_php_native(east)
+        self.assertIn("__pytra_save_gif(\"x.gif\", 1, 1, $frames, grayscale_palette(), 4, 0);", php)
+        self.assertNotIn("__pytra_save_gif(\"x.gif\", 1, 1, $frames, grayscale_palette(), 0, 4);", php)
+
+    def test_transpile_sample16_bitwise_ops_are_preserved(self) -> None:
+        sample = find_sample_case("16_glass_sculpture_chaos")
+        east = load_east(sample, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        self.assertIn("($i >> 5)", php)
+        self.assertIn("($i & 3)", php)
+        self.assertIn("(($rr >> 5) << 5)", php)
 
 if __name__ == "__main__":
     unittest.main()
