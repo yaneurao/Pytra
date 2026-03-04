@@ -49,7 +49,7 @@
 11. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-08] JS/TS PNG/GIF writer を Python準拠バイナリへ揃えて mismatch を解消する。
 12. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C# image系 CRC mismatch を切り分け・修正する。
 13. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ sample/07,16 compile fail と 06/12/14 CRC mismatch を修正する。
-14. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] 9言語全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
+14. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] 9言語全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
 15. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと仕様書へ CRC32 parity 運用ルールを反映する。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin emitter の `save_gif/grayscale_palette` を runtime 接続へ切替え、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer を追加。`--targets kotlin --all-samples` 再実行で `artifact_missing=0` を確認（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin PNG writer を Python runtime と同じ stored-block zlib/chunk 仕様へ変更し、`01..04` の size/CRC mismatch を解消（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`）。残件は GIF 系 `artifact_crc32_mismatch` 8件。
@@ -73,6 +73,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Swift `ForCore` を `do { ... }` スコープ化して loop変数再宣言衝突を解消し、tuple unpack 未宣言名は初回 `var` 宣言するよう修正。`12/13` が `ok` になり、`--targets swift --all-samples --cmd-timeout-sec 300` は `case_pass=17/case_fail=1`（残件 `18` の compile fail）まで前進（`work/logs/runtime_parity_sample_swift_all_after_loop_scope_tuple_decl_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Swift `sample/18` 向けに `main_guard` の entry wrapper 化、`main -> __pytra_main` alias、`Dict.entries` literal 生成、dict subscript 直接代入（`env[key]=...`）を修正し、`18_mini_language_interpreter` 単独 parity を `ok` 化（`work/logs/runtime_parity_sample_swift_18_after_dict_fix_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `--targets swift --all-samples --cmd-timeout-sec 300` を再実行し、18件すべて `ok`（artifact 16件 size+CRC32一致）を確認（`work/logs/runtime_parity_sample_swift_all_after_s301_complete_20260304.json`）。残件は `cpp` 全件再実行のみ。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `--targets cpp --all-samples --cmd-timeout-sec 300` を再実行し、18件すべて `ok`（artifact 16件 size+CRC32一致）を確認（`work/logs/runtime_parity_sample_cpp_all_after_s301_complete_20260304.json`）。既存の `rs/cs/js/ts/go/java/swift/kotlin` 全件 `ok` ログと合わせ、9言語で `mismatch/run_failed/toolchain_missing=0` を満たしたため `S3-01` を完了化。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] `test_runtime_parity_check_cli.py` に `swiftc -O` 回帰と timeout 時 process-group kill の回帰を追加し、`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` へ artifact parity（exists+size+CRC32）と stale artifact purge / timeout kill ルールを反映。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
