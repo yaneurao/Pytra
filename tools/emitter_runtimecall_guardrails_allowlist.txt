@@ -14,16 +14,6 @@ src/backends/cs/emitter/cs_emitter.py:461:Path
 src/backends/cs/emitter/cs_emitter.py:461:pytra.std.pathlib
 src/backends/go/emitter/go_native_emitter.py:643:write_rgb_png
 src/backends/go/emitter/go_native_emitter.py:655:save_gif
-src/backends/go/emitter/go_native_emitter.py:717:perf_counter
-src/backends/go/emitter/go_native_emitter.py:751:Path
-src/backends/go/emitter/go_native_emitter.py:773:save_gif
-src/backends/go/emitter/go_native_emitter.py:773:write_rgb_png
-src/backends/go/emitter/go_native_emitter.py:775:grayscale_palette
-src/backends/go/emitter/go_native_emitter.py:820:loads
-src/backends/go/emitter/go_native_emitter.py:824:dumps
-src/backends/go/emitter/go_native_emitter.py:849:save_gif
-src/backends/go/emitter/go_native_emitter.py:849:write_rgb_png
-src/backends/go/emitter/go_native_emitter.py:851:grayscale_palette
 src/backends/kotlin/emitter/kotlin_native_emitter.py:700:perf_counter
 src/backends/kotlin/emitter/kotlin_native_emitter.py:760:write_rgb_png
 src/backends/kotlin/emitter/kotlin_native_emitter.py:767:save_gif

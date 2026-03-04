@@ -46,6 +46,7 @@
 8. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
 9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go emitter の `perf_counter/Path/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `105 -> 95` へ縮退。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
