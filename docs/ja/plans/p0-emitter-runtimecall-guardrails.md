@@ -57,10 +57,42 @@
 - 新規追加は `tools/check_emitter_runtimecall_guardrails.py` で fail させる。
 - 実際の解決責務は lower/IR 側へ寄せ、emitter は解決済みノード描画へ限定する。
 
+## S1-02 棚卸し結果（2026-03-05）
+
+non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
+
+| backend | 件数 |
+| --- | ---: |
+| cs | 11 |
+| go | 12 |
+| java | 10 |
+| kotlin | 8 |
+| lua | 24 |
+| nim | 1 |
+| php | 10 |
+| rs | 6 |
+| ruby | 11 |
+| scala | 14 |
+| swift | 8 |
+
+シンボル別上位:
+- `save_gif`: 21
+- `write_rgb_png`: 20
+- `Path`: 12
+- `grayscale_palette`: 11
+- `perf_counter`: 9
+- `loads` / `dumps`: 各 7
+- `pytra.utils.assertions`: 7
+
+移行順（実装優先度）:
+1. Java（`S3-02` で先行移行）
+2. 残り non-C++ emitter（`S3-03`）
+3. `loads/dumps/Path/perf_counter` を runtime_call 解決経路へ統合
+
 ## 分解
 
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 非C++ emitter の禁止/許可ルール（禁止文字列分岐、許可組み込み）を仕様化する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存 emitter の違反棚卸し（言語別・関数別）を作成する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存 emitter の違反棚卸し（言語別・関数別）を作成する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] `tools/check_emitter_runtimecall_guardrails.py` を追加し、違反を fail 化する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail チェックを `run_local_ci` と CI 必須ジョブへ組み込む。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR 側の runtime API 解決経路（`runtime_call` 系）を非C++ backend 共通で利用できる形に整理する。
@@ -72,3 +104,4 @@
 決定ログ:
 - 2026-03-05: ユーザー指示（5回目再発）に基づき、非C++ emitter のライブラリ関数名直書きを防ぐ P0 計画を起票。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01`] 禁止/許可ルールを明文化し、監視対象シンボルと許可組み込みの境界を固定した。既存負債は allowlist 管理、増分のみ fail-fast とする運用方針を確定した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02`] non-C++ emitter の direct-branch を棚卸しし、言語別件数（最大は `lua=24`）とシンボル上位（`save_gif/write_rgb_png/Path`）を固定した。移行優先順を `java -> その他` に確定した。
