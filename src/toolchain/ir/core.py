@@ -2426,6 +2426,24 @@ class _ShExprParser:
                     attr_runtime_call = lookup_stdlib_method_runtime_call(owner_t, attr_name)
                     attr_semantic_tag = lookup_stdlib_method_semantic_tag(attr_name)
                 owner_expr = node
+                noncpp_module_attr_runtime_call = ""
+                if isinstance(owner_expr, dict) and owner_expr.get("kind") == "Name":
+                    owner_name = str(owner_expr.get("id", "")).strip()
+                    if owner_name != "":
+                        if owner_name in _SH_IMPORT_MODULES:
+                            noncpp_module_attr_runtime_call = lookup_noncpp_module_attr_runtime_call(
+                                _SH_IMPORT_MODULES[owner_name],
+                                attr_name,
+                            )
+                        if noncpp_module_attr_runtime_call == "" and owner_name in _SH_IMPORT_SYMBOLS:
+                            binding = _SH_IMPORT_SYMBOLS[owner_name]
+                            mod_name = str(binding.get("module", "")).strip()
+                            sym_name = str(binding.get("name", "")).strip()
+                            if mod_name != "" and sym_name != "":
+                                noncpp_module_attr_runtime_call = lookup_noncpp_module_attr_runtime_call(
+                                    mod_name + "." + sym_name,
+                                    attr_name,
+                                )
                 node = {
                     "kind": "Attribute",
                     "source_span": self._node_span(s, e),
@@ -2442,6 +2460,9 @@ class _ShExprParser:
                     node["runtime_owner"] = owner_expr
                 if attr_semantic_tag != "":
                     node["semantic_tag"] = attr_semantic_tag
+                if noncpp_module_attr_runtime_call != "":
+                    node["resolved_runtime_call"] = noncpp_module_attr_runtime_call
+                    node["resolved_runtime_source"] = "module_attr"
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
@@ -2734,12 +2755,14 @@ class _ShExprParser:
                     owner = node.get("value")
                     owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
                     noncpp_module_runtime_call = ""
+                    noncpp_module_runtime_owner = ""
                     if isinstance(owner, dict) and owner.get("kind") == "Name":
                         owner_name = str(owner.get("id", "")).strip()
                         if owner_name != "":
                             if owner_name in _SH_IMPORT_MODULES:
+                                noncpp_module_runtime_owner = _SH_IMPORT_MODULES[owner_name]
                                 noncpp_module_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                    _SH_IMPORT_MODULES[owner_name],
+                                    noncpp_module_runtime_owner,
                                     attr,
                                 )
                             if noncpp_module_runtime_call == "" and owner_name in _SH_IMPORT_SYMBOLS:
@@ -2747,13 +2770,17 @@ class _ShExprParser:
                                 mod_name = str(binding.get("module", "")).strip()
                                 sym_name = str(binding.get("name", "")).strip()
                                 if mod_name != "" and sym_name != "":
+                                    noncpp_module_runtime_owner = mod_name + "." + sym_name
                                     noncpp_module_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                        mod_name + "." + sym_name,
+                                        noncpp_module_runtime_owner,
                                         attr,
                                     )
                     if noncpp_module_runtime_call != "":
                         payload["resolved_runtime_call"] = noncpp_module_runtime_call
                         payload["resolved_runtime_source"] = "module_attr"
+                        std_module_attr_ret = lookup_stdlib_function_return_type(attr)
+                        if std_module_attr_ret != "":
+                            payload["resolved_type"] = std_module_attr_ret
                     rc = lookup_stdlib_method_runtime_call(owner_t, attr)
                     if rc != "":
                         payload["lowered_kind"] = "BuiltinCall"

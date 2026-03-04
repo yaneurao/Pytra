@@ -220,6 +220,18 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("p.stem()", java)
         self.assertIn("p.parent()", java)
 
+    def test_java_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("pathlib.Path p = new pathlib.Path(\"tmp/a.txt\");", java)
+        self.assertIn("pathlib.Path q = p.parent();", java)
+        self.assertIn("String n = p.name();", java)
+        self.assertIn("String s = p.stem();", java)
+        self.assertIn("double x = math.sin(math.pi);", java)
+        self.assertNotIn("_m.sin(", java)
+        self.assertNotIn("_m.pi", java)
+
     def test_java_native_emitter_routes_perf_counter_via_runtime_helper(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "perf_case.py"

@@ -95,6 +95,14 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
             "grayscale_palette",
         )
         self.assertEqual(
+            lookup_noncpp_module_attr_runtime_call("math", "sin"),
+            "math.sin",
+        )
+        self.assertEqual(
+            lookup_noncpp_module_attr_runtime_call("math", "pi"),
+            "math.pi",
+        )
+        self.assertEqual(
             lookup_noncpp_module_attr_runtime_call("pytra.utils.gif", "unknown"),
             "",
         )

@@ -193,15 +193,17 @@ def main() -> float:
 from pytra.std import json
 from pytra.utils import png, gif
 from pytra.utils.assertions import py_assert_stdout
+import math
 
 def main() -> None:
     obj = json.loads("{\\"ok\\": true}")
     txt = json.dumps(obj)
     pixels: bytes = bytes([0, 0, 0])
+    wave = math.sin(math.pi)
     png.write_rgb_png("x.png", 1, 1, pixels)
     palette = gif.grayscale_palette()
     gif.save_gif("x.gif", 1, 1, [pixels], palette, delay_cs=1, loop=0)
-    py_assert_stdout("ok", txt)
+    py_assert_stdout("ok", txt + str(wave))
 """
         east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
@@ -217,6 +219,20 @@ def main() -> None:
         self.assertIn("save_gif", resolved_runtime_calls)
         self.assertIn("grayscale_palette", resolved_runtime_calls)
         self.assertIn("py_assert_stdout", resolved_runtime_calls)
+        self.assertIn("math.sin", resolved_runtime_calls)
+        math_sin_calls = [
+            n for n in calls if isinstance(n.get("resolved_runtime_call"), str) and n.get("resolved_runtime_call") == "math.sin"
+        ]
+        self.assertEqual(len(math_sin_calls), 1)
+        self.assertEqual(math_sin_calls[0].get("resolved_type"), "float64")
+        attrs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Attribute"]
+        resolved_runtime_attrs = {
+            str(n.get("resolved_runtime_call"))
+            for n in attrs
+            if isinstance(n.get("resolved_runtime_call"), str)
+            and str(n.get("resolved_runtime_call")) != ""
+        }
+        self.assertIn("math.pi", resolved_runtime_attrs)
 
     def test_core_does_not_reintroduce_perf_counter_direct_branch(self) -> None:
         src = CORE_SOURCE_PATH.read_text(encoding="utf-8")
