@@ -149,6 +149,18 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "kotlin" / "emitter" / "kotlin_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        banned_runtime_literals = [
+            "write_rgb_png",
+            "save_gif",
+            "grayscale_palette",
+            "perf_counter",
+            "json.loads",
+            "json.dumps",
+            "Path",
+        ]
+        for symbol in banned_runtime_literals:
+            self.assertNotIn(f'runtime_call == "{symbol}"', src)
+            self.assertNotIn(f"runtime_call == '{symbol}'", src)
 
     def test_kotlin_native_emitter_uses_runtime_path_class(self) -> None:
         with tempfile.TemporaryDirectory() as td:
