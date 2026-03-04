@@ -1,4 +1,5 @@
-# JavaScript runtime（移行中）
+# JavaScript runtime（legacy互換レイアウト）
 
-- 旧 `src/js_module/` は移行フェーズ終了に伴い削除され、実体の実装は `src/runtime/js/pytra/` に集約されています。
-- 新規の JS runtime 実装追加先は `src/runtime/js/pytra/` を正本とする。
+- `src/runtime/js/pytra-core/` が手書き runtime の正本です。
+- `src/runtime/js/pytra-gen/` が画像runtime（`png/gif`）の配置先です。
+- この `src/runtime/js/pytra/` は互換導線向けの legacy レイアウトです。

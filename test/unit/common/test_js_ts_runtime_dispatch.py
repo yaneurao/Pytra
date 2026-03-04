@@ -24,7 +24,7 @@ class JsTsRuntimeDispatchTest(unittest.TestCase):
             )
 
     def test_runtime_sources_do_not_use_name_dispatch(self) -> None:
-        js_src = (ROOT / "src" / "runtime" / "js" / "pytra" / "py_runtime.js").read_text(encoding="utf-8")
+        js_src = (ROOT / "src" / "runtime" / "js" / "pytra-core" / "built_in" / "py_runtime.js").read_text(encoding="utf-8")
         ts_src = (ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts").read_text(encoding="utf-8")
         self.assertNotIn("constructor.name", js_src)
         self.assertNotIn("constructor.name", ts_src)
@@ -36,7 +36,7 @@ class JsTsRuntimeDispatchTest(unittest.TestCase):
     def test_js_runtime_type_id_dispatch_and_hooks(self) -> None:
         script = r"""
 const assert = require("assert");
-const rt = require(process.cwd() + "/src/runtime/js/pytra/py_runtime.js");
+const rt = require(process.cwd() + "/src/runtime/js/pytra-core/built_in/py_runtime.js");
 
 const custom = {
   [rt.PYTRA_TYPE_ID]: 7001,

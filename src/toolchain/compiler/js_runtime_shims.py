@@ -9,17 +9,17 @@ def write_js_runtime_shims(output_dir: Path) -> None:
     """Write CommonJS shims expected by JS/TS transpiled imports.
 
     Generated JS/TS currently imports runtime modules under `./pytra/...`.
-    These shims forward to runtime implementations in `src/runtime/js/pytra`.
+    These shims forward to runtime implementations in `src/runtime/js/{pytra-core,pytra-gen}`.
     """
     files: dict[str, str] = {
         "pytra/std/time.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/time.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra-core/std/time.js');\n"
             "const perf_counter = typeof rt.perf_counter === 'function' ? rt.perf_counter : rt.perfCounter;\n"
             "exports.perf_counter = perf_counter;\n"
             "exports.perfCounter = perf_counter;\n"
         ),
         "pytra/std/math.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/math.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra-core/std/math.js');\n"
             "exports.pi = rt.pi;\n"
             "exports.e = rt.e;\n"
             "exports.sin = rt.sin;\n"
@@ -35,12 +35,12 @@ def write_js_runtime_shims(output_dir: Path) -> None:
             "exports.pow = rt.pow;\n"
         ),
         "pytra/std/pathlib.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/pathlib.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra-core/std/pathlib.js');\n"
             "exports.Path = rt.Path;\n"
             "exports.pathJoin = rt.pathJoin;\n"
         ),
         "pytra/py_runtime.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/py_runtime.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra-core/built_in/py_runtime.js');\n"
             "exports.PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"
             "exports.PY_TYPE_BOOL = rt.PY_TYPE_BOOL;\n"
             "exports.PY_TYPE_NUMBER = rt.PY_TYPE_NUMBER;\n"
@@ -78,17 +78,17 @@ def write_js_runtime_shims(output_dir: Path) -> None:
             "exports.pyIsAlpha = rt.pyIsAlpha;\n"
         ),
         "pytra/utils.js": (
-            "const png = require(process.cwd() + '/src/runtime/js/pytra/png_helper.js');\n"
-            "const gif = require(process.cwd() + '/src/runtime/js/pytra/gif_helper.js');\n"
+            "const png = require(process.cwd() + '/src/runtime/js/pytra-gen/utils/png_helper.js');\n"
+            "const gif = require(process.cwd() + '/src/runtime/js/pytra-gen/utils/gif_helper.js');\n"
             "exports.png = png;\n"
             "exports.gif = gif;\n"
         ),
         "pytra/utils/png.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/png_helper.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra-gen/utils/png_helper.js');\n"
             "exports.write_rgb_png = rt.write_rgb_png;\n"
         ),
         "pytra/utils/gif.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/pytra/gif_helper.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/pytra-gen/utils/gif_helper.js');\n"
             "exports.grayscale_palette = rt.grayscale_palette;\n"
             "exports.save_gif = rt.save_gif;\n"
         ),
