@@ -297,6 +297,31 @@ if __name__ == "__main__":
         self.assertIn("parents", names)
         self.assertIn("exist_ok", names)
 
+    def test_path_property_attributes_are_lowered_with_runtime_call(self) -> None:
+        src = """
+from pathlib import Path
+
+def main() -> None:
+    p: Path = Path("out/a.txt")
+    parent = p.parent
+    name = p.name
+    stem = p.stem
+    print(parent, name, stem)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        attrs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Attribute"]
+        path_attrs = [n for n in attrs if str(n.get("attr")) in {"parent", "name", "stem"}]
+        self.assertEqual(len(path_attrs), 3)
+        runtime_calls = {str(n.get("runtime_call")) for n in path_attrs}
+        self.assertEqual(runtime_calls, {"path_parent", "path_name", "path_stem"})
+        lowered_kinds = {str(n.get("lowered_kind")) for n in path_attrs}
+        self.assertEqual(lowered_kinds, {"BuiltinAttr"})
+        semantic_tags = {str(n.get("semantic_tag")) for n in path_attrs}
+        self.assertEqual(
+            semantic_tags,
+            {"stdlib.method.parent", "stdlib.method.name", "stdlib.method.stem"},
+        )
+
     def test_range_keywords_are_kept_for_builtin_call(self) -> None:
         src = """
 def main() -> None:

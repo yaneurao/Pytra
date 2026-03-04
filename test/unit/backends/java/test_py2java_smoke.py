@@ -201,6 +201,25 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("p.parent().mkdir(true, true);", java)
         self.assertIn("return p.exists();", java)
 
+    def test_java_native_emitter_renders_path_properties_from_ir_runtime_attr(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "path_props.py"
+            src.write_text(
+                "from pathlib import Path\n"
+                "def f() -> None:\n"
+                "    p = Path('tmp/a.txt')\n"
+                "    n = p.name\n"
+                "    s = p.stem\n"
+                "    q = p.parent\n"
+                "    print(n, s, q)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("p.name()", java)
+        self.assertIn("p.stem()", java)
+        self.assertIn("p.parent()", java)
+
     def test_java_native_emitter_routes_perf_counter_via_runtime_helper(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "perf_case.py"
@@ -313,6 +332,10 @@ class Py2JavaSmokeTest(unittest.TestCase):
             'runtime_call == "grayscale_palette"',
             'runtime_call.startswith("py_assert_")',
             'callee_name.startswith("py_assert_")',
+            'owner_type == "Path"',
+            "owner_type == 'Path'",
+            'attr in {"parent", "name", "stem"}',
+            "attr in {'parent', 'name', 'stem'}",
         ]
         for marker in forbidden:
             with self.subTest(marker=marker):

@@ -497,6 +497,11 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call in {"path_parent", "path_name", "path_stem"}:
+        value = _render_expr(value_any)
+        return value + "." + attr + "()"
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
@@ -504,11 +509,6 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         if owner == "math" and attr == "e":
             return "_m.e"
     value = _render_expr(value_any)
-    if isinstance(value_any, dict):
-        owner_type_any = value_any.get("resolved_type")
-        owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
-        if owner_type == "Path" and attr in {"parent", "name", "stem"}:
-            return value + "." + attr + "()"
     return value + "." + attr
 
 

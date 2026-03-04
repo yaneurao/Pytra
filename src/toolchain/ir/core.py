@@ -2419,8 +2419,13 @@ class _ShExprParser:
                     if isinstance(maybe_field_t, str) and maybe_field_t != "":
                         attr_t = maybe_field_t
                 std_attr_t = lookup_stdlib_attribute_type(owner_t, attr_name)
+                attr_runtime_call = ""
+                attr_semantic_tag = ""
                 if std_attr_t != "":
                     attr_t = std_attr_t
+                    attr_runtime_call = lookup_stdlib_method_runtime_call(owner_t, attr_name)
+                    attr_semantic_tag = lookup_stdlib_method_semantic_tag(attr_name)
+                owner_expr = node
                 node = {
                     "kind": "Attribute",
                     "source_span": self._node_span(s, e),
@@ -2428,9 +2433,15 @@ class _ShExprParser:
                     "borrow_kind": "value",
                     "casts": [],
                     "repr": self._src_slice(s, e),
-                    "value": node,
+                    "value": owner_expr,
                     "attr": attr_name,
                 }
+                if attr_runtime_call != "":
+                    node["lowered_kind"] = "BuiltinAttr"
+                    node["runtime_call"] = attr_runtime_call
+                    node["runtime_owner"] = owner_expr
+                if attr_semantic_tag != "":
+                    node["semantic_tag"] = attr_semantic_tag
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
