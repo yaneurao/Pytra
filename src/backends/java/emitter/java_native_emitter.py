@@ -597,11 +597,16 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     resolved_any = expr.get("resolved_runtime_call")
     resolved = resolved_any if isinstance(resolved_any, str) else ""
     if resolved != "":
-        return resolved, "resolved_runtime_call"
+        source_any = expr.get("resolved_runtime_source")
+        source = source_any if isinstance(source_any, str) else ""
+        if source == "":
+            source = "resolved_runtime_call"
+        return resolved, source
     return "", ""
 
 
 _ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
+_CURRENT_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
 
 
 def _snake_to_java_camel(name: str) -> str:
@@ -619,16 +624,46 @@ def _snake_to_java_camel(name: str) -> str:
     return "".join(out)
 
 
-def _runtime_helper_class_for_call_name(call_name: str) -> str:
-    lowered = call_name.strip().lower()
-    if lowered.find("png") >= 0:
-        return "PngHelper"
-    if lowered.find("gif") >= 0 or lowered.find("palette") >= 0:
-        return "GifHelper"
-    return ""
+def _snake_to_pascal_basic(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
 
 
-def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
+def _utils_module_class_name(module_id: str) -> str:
+    module = module_id.strip()
+    parts = module.split(".")
+    if len(parts) == 0:
+        return ""
+    leaf = parts[len(parts) - 1]
+    if leaf == "":
+        return ""
+    base = _snake_to_pascal_basic(leaf)
+    if base == "":
+        return ""
+    return base + "Helper"
+
+
+def _symbol_binding(local_name: str) -> tuple[str, str]:
+    if local_name == "":
+        return "", ""
+    binding_any = _CURRENT_IMPORT_SYMBOLS.get(local_name)
+    if not isinstance(binding_any, dict):
+        return "", ""
+    module_any = binding_any.get("module")
+    symbol_any = binding_any.get("name")
+    module_id = module_any if isinstance(module_any, str) else ""
+    symbol = symbol_any if isinstance(symbol_any, str) else ""
+    return module_id, symbol
+
+
+def _render_resolved_runtime_call(expr: dict[str, Any], runtime_call: str, runtime_source: str, args: list[Any]) -> str:
     runtime_name = runtime_call.strip()
     if runtime_name == "":
         return ""
@@ -638,12 +673,34 @@ def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
         rendered_args.append(_render_expr(args[i]))
         i += 1
     joined = ", ".join(rendered_args)
+    if runtime_source == "module_attr":
+        func_any = expr.get("func")
+        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+            owner_any = func_any.get("value")
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner_alias = _safe_ident(owner_any.get("id"), "")
+                owner_module, owner_symbol = _symbol_binding(owner_alias)
+                module_id = owner_module
+                if owner_symbol != "":
+                    if module_id != "":
+                        module_id = module_id + "." + owner_symbol
+                    else:
+                        module_id = owner_symbol
+                if module_id.startswith("pytra.utils."):
+                    class_name = _utils_module_class_name(module_id)
+                    if class_name != "":
+                        method_name = "py" + _snake_to_java_camel(runtime_name)
+                        return class_name + "." + method_name + "(" + joined + ")"
+    if runtime_source == "import_symbol":
+        callee = _call_name(expr).strip()
+        module_id, symbol_name = _symbol_binding(callee)
+        if module_id.startswith("pytra.utils.") and symbol_name != "":
+            class_name = _utils_module_class_name(module_id)
+            if class_name != "":
+                method_name = "py" + _snake_to_java_camel(symbol_name)
+                return class_name + "." + method_name + "(" + joined + ")"
     if runtime_name.find(".") >= 0:
         return runtime_name + "(" + joined + ")"
-    helper_class = _runtime_helper_class_for_call_name(runtime_name)
-    if helper_class != "":
-        helper_method = "py" + _snake_to_java_camel(runtime_name)
-        return helper_class + "." + helper_method + "(" + joined + ")"
     return runtime_name + "(" + joined + ")"
 
 
@@ -671,8 +728,8 @@ def _render_call_via_runtime_call(
             rendered_args.append(_render_expr(args[i]))
             i += 1
         return "_impl." + fn_name + "(" + ", ".join(rendered_args) + ")"
-    if runtime_source == "resolved_runtime_call":
-        rendered_resolved = _render_resolved_runtime_call(runtime_call, args)
+    if runtime_source != "runtime_call":
+        rendered_resolved = _render_resolved_runtime_call(expr, runtime_call, runtime_source, args)
         if rendered_resolved != "":
             return rendered_resolved
     return ""
@@ -2155,69 +2212,93 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
-    main_class = _safe_ident(class_name, "Main")
-    functions: list[dict[str, Any]] = []
-    classes: list[dict[str, Any]] = []
-    i = 0
-    while i < len(body_any):
-        node = body_any[i]
-        if isinstance(node, dict):
-            kind = node.get("kind")
-            if kind == "FunctionDef":
-                functions.append(node)
-            elif kind == "ClassDef":
-                classes.append(node)
-        i += 1
+    prev_import_symbols = dict(_CURRENT_IMPORT_SYMBOLS)
+    try:
+        _CURRENT_IMPORT_SYMBOLS.clear()
+        meta_any = east_doc.get("meta")
+        if isinstance(meta_any, dict):
+            import_symbols_any = meta_any.get("import_symbols")
+            if isinstance(import_symbols_any, dict):
+                i_keys = list(import_symbols_any.keys())
+                i = 0
+                while i < len(i_keys):
+                    key_any = i_keys[i]
+                    key = key_any if isinstance(key_any, str) else ""
+                    val_any = import_symbols_any.get(key_any)
+                    if key != "" and isinstance(val_any, dict):
+                        module_any = val_any.get("module")
+                        name_any = val_any.get("name")
+                        module_id = module_any if isinstance(module_any, str) else ""
+                        symbol = name_any if isinstance(name_any, str) else ""
+                        _CURRENT_IMPORT_SYMBOLS[key] = {"module": module_id, "name": symbol}
+                    i += 1
 
-    lines: list[str] = []
-    lines.append("public final class " + main_class + " {")
-    lines.append("    private " + main_class + "() {")
-    lines.append("    }")
-    lines.append("")
-    module_comments = _module_leading_comment_lines(east_doc, "// ", indent="    ")
-    if len(module_comments) > 0:
-        lines.extend(module_comments)
-        lines.append("")
-
-    i = 0
-    while i < len(classes):
-        cls_comments = _leading_comment_lines(classes[i], "// ", indent="    ")
-        if len(cls_comments) > 0:
-            lines.append("")
-            lines.extend(cls_comments)
-        lines.append("")
-        lines.extend(_emit_class(classes[i], indent="    "))
-        i += 1
-
-    i = 0
-    while i < len(functions):
-        fn_comments = _leading_comment_lines(functions[i], "// ", indent="    ")
-        if len(fn_comments) > 0:
-            lines.append("")
-            lines.extend(fn_comments)
-        lines.append("")
-        lines.extend(_emit_function(functions[i], indent="    ", in_class=False))
-        i += 1
-
-    lines.append("")
-    lines.append("    public static void main(String[] args) {")
-    ctx: dict[str, Any] = {"tmp": 0}
-    if len(main_guard) > 0:
+        main_class = _safe_ident(class_name, "Main")
+        functions: list[dict[str, Any]] = []
+        classes: list[dict[str, Any]] = []
         i = 0
-        while i < len(main_guard):
-            lines.extend(_emit_stmt(main_guard[i], indent="        ", ctx=ctx))
+        while i < len(body_any):
+            node = body_any[i]
+            if isinstance(node, dict):
+                kind = node.get("kind")
+                if kind == "FunctionDef":
+                    functions.append(node)
+                elif kind == "ClassDef":
+                    classes.append(node)
             i += 1
-    else:
-        has_case_main = False
+
+        lines: list[str] = []
+        lines.append("public final class " + main_class + " {")
+        lines.append("    private " + main_class + "() {")
+        lines.append("    }")
+        lines.append("")
+        module_comments = _module_leading_comment_lines(east_doc, "// ", indent="    ")
+        if len(module_comments) > 0:
+            lines.extend(module_comments)
+            lines.append("")
+
+        i = 0
+        while i < len(classes):
+            cls_comments = _leading_comment_lines(classes[i], "// ", indent="    ")
+            if len(cls_comments) > 0:
+                lines.append("")
+                lines.extend(cls_comments)
+            lines.append("")
+            lines.extend(_emit_class(classes[i], indent="    "))
+            i += 1
+
         i = 0
         while i < len(functions):
-            if functions[i].get("name") == "_case_main":
-                has_case_main = True
-                break
+            fn_comments = _leading_comment_lines(functions[i], "// ", indent="    ")
+            if len(fn_comments) > 0:
+                lines.append("")
+                lines.extend(fn_comments)
+            lines.append("")
+            lines.extend(_emit_function(functions[i], indent="    ", in_class=False))
             i += 1
-        if has_case_main:
-            lines.append("        _case_main();")
-    lines.append("    }")
-    lines.append("}")
-    lines.append("")
-    return "\n".join(lines)
+
+        lines.append("")
+        lines.append("    public static void main(String[] args) {")
+        ctx: dict[str, Any] = {"tmp": 0}
+        if len(main_guard) > 0:
+            i = 0
+            while i < len(main_guard):
+                lines.extend(_emit_stmt(main_guard[i], indent="        ", ctx=ctx))
+                i += 1
+        else:
+            has_case_main = False
+            i = 0
+            while i < len(functions):
+                if functions[i].get("name") == "_case_main":
+                    has_case_main = True
+                    break
+                i += 1
+            if has_case_main:
+                lines.append("        _case_main();")
+        lines.append("    }")
+        lines.append("}")
+        lines.append("")
+        return "\n".join(lines)
+    finally:
+        _CURRENT_IMPORT_SYMBOLS.clear()
+        _CURRENT_IMPORT_SYMBOLS.update(prev_import_symbols)
