@@ -76,6 +76,8 @@ def _java_ref_type(type_name: Any) -> str:
         return "Boolean"
     if type_name == "str":
         return "String"
+    if type_name == "Path":
+        return "PyRuntime.Path"
     if type_name in {"bytes", "bytearray"}:
         return "java.util.ArrayList<Long>"
     if type_name.startswith("list["):
@@ -112,6 +114,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "boolean"
     if type_name == "str":
         return "String"
+    if type_name == "Path":
+        return "PyRuntime.Path"
     if type_name == "bytes":
         return "java.util.ArrayList<Long>"
     if type_name == "bytearray":
@@ -631,6 +635,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         lhs = _render_expr(args[0])
         typ = args[1]
         return _render_isinstance_check(lhs, typ)
+    if callee_name == "Path":
+        if len(args) == 0:
+            return "new PyRuntime.Path(\"\")"
+        return "new PyRuntime.Path(" + _render_expr(args[0]) + ")"
     if callee_name == "write_rgb_png":
         rendered_png_args: list[str] = []
         i = 0
@@ -760,6 +768,8 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
             return "(" + boxed_lhs + " instanceof String)"
         if name in {"list", "bytes", "bytearray"}:
             return "(" + boxed_lhs + " instanceof java.util.ArrayList)"
+        if name == "Path":
+            return "(" + boxed_lhs + " instanceof PyRuntime.Path)"
         return "(" + boxed_lhs + " instanceof " + name + ")"
     if typ.get("kind") == "Tuple":
         elements_any = typ.get("elements")
@@ -1132,6 +1142,8 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
             return "boolean"
         if name == "str":
             return "String"
+        if name == "Path":
+            return "PyRuntime.Path"
     if kind == "BinOp":
         left_t = _infer_java_type_from_expr_node(expr.get("left"), type_map)
         right_t = _infer_java_type_from_expr_node(expr.get("right"), type_map)

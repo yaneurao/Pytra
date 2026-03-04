@@ -73,6 +73,7 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `PyRuntime` に `pyJsonLoads/pyJsonDumps`（再帰JSON parser/stringify）を追加し、Java emitter の `json.loads/json.dumps` を runtime helper 経由へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` で回帰なしを確認。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin: `py_runtime.kt` に `pyJsonLoads/pyJsonDumps`（再帰JSON parser/stringify）を追加し、Kotlin emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2kotlin_smoke.py` と `check_py2kotlin_transpile.py` を通過。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Swift: `py_runtime.swift` に `pyJsonLoads/pyJsonDumps`（`JSONSerialization` + 互換型変換）を追加し、Swift emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2swift_smoke.py` と `check_py2swift_transpile.py` を通過。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `Path` を `PyRuntime.Path` として runtime に実装（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）し、Java emitter の型/ctor/isinstance を `PyRuntime.Path` へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` を通過。
 
 ## S1-01 実装（2026-03-03）
 

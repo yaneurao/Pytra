@@ -176,6 +176,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `PyRuntime.pyJsonLoads/pyJsonDumps` を追加し、Java emitter の `json.loads/json.dumps` を runtime helper 経由へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin: `py_runtime.kt` に `pyJsonLoads/pyJsonDumps` を追加し、Kotlin emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2kotlin_smoke.py` と `check_py2kotlin_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Swift: `py_runtime.swift` に `pyJsonLoads/pyJsonDumps` を追加し、Swift emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2swift_smoke.py` と `check_py2swift_transpile.py` で非退行確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `Path` runtime を `PyRuntime.Path`（`parent/name/stem` と `exists/read_text/write_text/mkdir/resolve`）として実装し、Java emitter の `Path` 型/ctor/isinstance を `PyRuntime.Path` へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` で非退行確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 

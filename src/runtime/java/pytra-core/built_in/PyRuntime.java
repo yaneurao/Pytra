@@ -1,7 +1,6 @@
 // Java ネイティブ変換向け Python 互換ランタイム補助。
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -581,48 +580,91 @@ final class PyRuntime {
 
     // --- pathlib ---
 
-    static final class PyPath {
+    static final class Path {
         final String value;
+        final Path parent;
+        final String name;
+        final String stem;
 
-        PyPath(String value) {
+        Path(String value) {
+            this(value, false);
+        }
+
+        private Path(String value, boolean shallowParent) {
             this.value = value;
+            java.nio.file.Path p = Paths.get(value);
+            java.nio.file.Path pName = p.getFileName();
+            this.name = pName == null ? "" : pName.toString();
+            int idx = this.name.lastIndexOf('.');
+            this.stem = idx <= 0 ? this.name : this.name.substring(0, idx);
+            java.nio.file.Path pParent = p.getParent();
+            String parentText = pParent == null ? "" : pParent.toString();
+            if (parentText.equals(value)) {
+                this.parent = this;
+            } else {
+                this.parent = shallowParent ? this : new Path(parentText, true);
+            }
         }
 
         @Override
         public String toString() {
             return value;
         }
+
+        boolean exists() {
+            return pyBool(pyPathExists(this));
+        }
+
+        String read_text() {
+            return pyToString(pyPathReadText(this));
+        }
+
+        Object write_text(Object content) {
+            return pyPathWriteText(this, content);
+        }
+
+        Object mkdir(Object parents, Object exist_ok) {
+            return pyPathMkdir(this, parents, exist_ok);
+        }
+
+        Object mkdir() {
+            return pyPathMkdir(this, false, false);
+        }
+
+        Path resolve() {
+            return (Path) pyPathResolve(this);
+        }
     }
 
     static String pyPathString(Object v) {
-        if (v instanceof PyPath p) {
+        if (v instanceof Path p) {
             return p.value;
         }
         return pyToString(v);
     }
 
     static Object pyPathNew(Object v) {
-        return new PyPath(pyPathString(v));
+        return new Path(pyPathString(v));
     }
 
     static Object pyPathJoin(Object base, Object child) {
-        return new PyPath(Paths.get(pyPathString(base), pyPathString(child)).toString());
+        return new Path(Paths.get(pyPathString(base), pyPathString(child)).toString());
     }
 
     static Object pyPathResolve(Object v) {
-        return new PyPath(Paths.get(pyPathString(v)).toAbsolutePath().normalize().toString());
+        return new Path(Paths.get(pyPathString(v)).toAbsolutePath().normalize().toString());
     }
 
     static Object pyPathParent(Object v) {
-        Path p = Paths.get(pyPathString(v)).getParent();
+        java.nio.file.Path p = Paths.get(pyPathString(v)).getParent();
         if (p == null) {
-            return new PyPath("");
+            return new Path("");
         }
-        return new PyPath(p.toString());
+        return new Path(p.toString());
     }
 
     static Object pyPathName(Object v) {
-        Path p = Paths.get(pyPathString(v)).getFileName();
+        java.nio.file.Path p = Paths.get(pyPathString(v)).getFileName();
         return p == null ? "" : p.toString();
     }
 
@@ -657,7 +699,7 @@ final class PyRuntime {
     }
 
     static Object pyPathMkdir(Object v, Object parents, Object existOk) {
-        Path p = Paths.get(pyPathString(v));
+        java.nio.file.Path p = Paths.get(pyPathString(v));
         try {
             if (pyBool(parents)) {
                 Files.createDirectories(p);

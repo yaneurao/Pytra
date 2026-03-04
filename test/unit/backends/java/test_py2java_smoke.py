@@ -183,6 +183,23 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertNotIn("json.loads(", java)
         self.assertNotIn("json.dumps(", java)
 
+    def test_java_native_emitter_uses_runtime_path_class(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "path_case.py"
+            src.write_text(
+                "from pathlib import Path\n"
+                "def f() -> bool:\n"
+                "    p = Path('tmp/a.txt')\n"
+                "    p.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    return p.exists()\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("PyRuntime.Path p = new PyRuntime.Path(\"tmp/a.txt\");", java)
+        self.assertIn("p.parent.mkdir(true, true);", java)
+        self.assertIn("return p.exists();", java)
+
     def test_java_binop_minimal_parentheses_and_rhs_grouping(self) -> None:
         simple_expr = {
             "kind": "BinOp",
