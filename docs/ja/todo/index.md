@@ -48,9 +48,11 @@
 10. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を `runtime_call/resolved_runtime_call` 経路へ寄せたが、`json.*` 素通しは現行 `pytra-gen/std/json.java` 品質でコンパイル不成立のため一旦ロールバックし、継続課題として保持した。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] `resolved_runtime_call` の画像系（`write_rgb_png/save_gif/grayscale_palette`）は `PngHelper/GifHelper` へ直接描画するよう移行し、`PyRuntime.*` 経由を撤去した（Java smoke/parity green）。
+- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] `resolved_runtime_call` の `json.loads/json.dumps` は `json.*` 直接描画へ移行し、Java emitter での `PyRuntime.pyJson*` 依存を撤去した（Path は継続）。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] `test_py2java_smoke.py` に emitter ソース検査を追加し、`json/png/gif` の `runtime_call == \"...\"` 直書き分岐再混入を回帰検知化した。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から画像互換ラッパに加えて `pyPerfCounter` / `pyMath*` を除去し、`pytra-core/std/{time_impl.java,math_impl.java}`（`_impl`, `_m`）へ移管した。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から `write_rgb_png/save_gif/grayscale_palette` 本体を削除し、`tools/check_java_pyruntime_boundary.py` で再混入禁止を fail-fast 化した（json/pathlib は残課題）。
+- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から `pyJsonDumps/pyJsonLoads/jsonStringify/jsonEscapeString/JsonParser` を除去し、境界ガードへ JSON 禁止シンボルを追加した（pathlib は残課題）。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] `tools/check_java_pyruntime_boundary.py` を `run_local_ci.py` へ組み込み済み。禁止シンボルは image 互換ラッパ + `pyPerfCounter` / `pyMath*` まで拡張した（json/pathlib は継続）。
 
 ### P0: 非C++ emitter のライブラリ関数名直書き再発防止（IR解決 + CIガード）
