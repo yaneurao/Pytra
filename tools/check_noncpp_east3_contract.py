@@ -94,10 +94,35 @@ PY2X_REQUIRED_PATTERNS = [
     "emit_source(",
 ]
 
-SMOKE_REQUIRED_PATTERNS = [
-    "test_load_east_defaults_to_stage3_entry_and_returns_east3_shape",
-    "test_cli_rejects_stage2_compat_mode",
+COMMON_SMOKE_PATH = "test/unit/test_py2x_smoke_common.py"
+
+COMMON_SMOKE_REQUIRED_PATTERNS = [
+    "test_cli_smoke_generates_output_for_all_targets",
+    "test_cli_rejects_stage2_mode_for_all_targets",
+    "test_load_east_defaults_to_stage3_for_non_cpp_targets",
+    "test_load_east_from_json_roundtrip_for_non_cpp_targets",
+    "test_add_fixture_transpile_via_py2x_for_non_cpp_targets",
     "--east-stage 2 is no longer supported; use EAST3 (default).",
+]
+
+TARGET_SMOKE_REQUIRED_PATTERNS = [
+    "# Language-specific smoke suite.",
+    "test_py2x_smoke_common.py",
+]
+
+TARGET_SMOKE_FORBIDDEN_PATTERNS = [
+    "def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(",
+    "def test_load_east_from_json(",
+    "def test_cli_rejects_stage2_compat_mode(",
+    "def test_cli_smoke_defaults_to_native_without_sidecar(",
+    "def test_cli_smoke_defaults_to_native_and_copies_runtime(",
+    "def test_cli_smoke_defaults_to_native_and_copies_runtime_tree(",
+    "def test_cli_smoke_generates_cs_file(",
+    "def test_cli_smoke_generates_js_file(",
+    "def test_cli_smoke_generates_rs_file(",
+    "def test_cli_smoke_generates_ts_file(",
+    "def test_transpile_add_fixture_uses_native_output(",
+    "def test_transpile_add_fixture_contains_function_signature(",
 ]
 
 SMOKE_FORBIDDEN_PATTERNS = [
@@ -191,15 +216,28 @@ def main() -> int:
     if missing_py2x:
         failures.append(f"py2x: src/py2x.py missing {missing_py2x}")
 
+    common_smoke_path = ROOT / COMMON_SMOKE_PATH
+    missing_common_smoke = _missing_patterns(common_smoke_path, COMMON_SMOKE_REQUIRED_PATTERNS)
+    if missing_common_smoke:
+        failures.append(f"common-smoke: {COMMON_SMOKE_PATH} missing {missing_common_smoke}")
+    present_common_forbidden = _present_patterns(common_smoke_path, SMOKE_FORBIDDEN_PATTERNS)
+    if present_common_forbidden:
+        failures.append(
+            f"common-smoke: {COMMON_SMOKE_PATH} contains forbidden {present_common_forbidden}"
+        )
+
     for target in TARGETS:
         target_token_re = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(target.lang)}(?![A-Za-z0-9_])")
         if target_token_re.search(py2x_text) is None:
             failures.append(f"py2x: target literal missing for {target.lang}")
         smoke_path = ROOT / target.smoke_rel
-        missing_smoke = _missing_patterns(smoke_path, SMOKE_REQUIRED_PATTERNS)
+        missing_smoke = _missing_patterns(smoke_path, TARGET_SMOKE_REQUIRED_PATTERNS)
         if missing_smoke:
             failures.append(f"{target.lang}: {target.smoke_rel} missing {missing_smoke}")
-        present_smoke = _present_patterns(smoke_path, SMOKE_FORBIDDEN_PATTERNS)
+        present_smoke = _present_patterns(
+            smoke_path,
+            TARGET_SMOKE_FORBIDDEN_PATTERNS + SMOKE_FORBIDDEN_PATTERNS,
+        )
         if present_smoke:
             failures.append(
                 f"{target.lang}: {target.smoke_rel} contains forbidden {present_smoke}"
