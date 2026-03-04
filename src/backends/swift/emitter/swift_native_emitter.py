@@ -810,6 +810,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
                     i += 1
                 return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
+            if owner == "json":
+                if attr_name == "loads":
+                    if len(args) == 0:
+                        return "pyJsonLoads(\"\")"
+                    return "pyJsonLoads(" + _render_expr(args[0]) + ")"
+                if attr_name == "dumps":
+                    if len(args) == 0:
+                        return "pyJsonDumps(\"\")"
+                    return "pyJsonDumps(" + _render_expr(args[0]) + ")"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:

@@ -120,6 +120,23 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("?: 0L", kotlin)
         self.assertNotIn(".get(k, 0L)", kotlin)
 
+    def test_kotlin_native_emitter_maps_json_calls_to_runtime_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "json_case.py"
+            src.write_text(
+                "import json\n"
+                "def f(s: str) -> str:\n"
+                "    obj = json.loads(s)\n"
+                "    return json.dumps(obj)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("var obj: Any? = pyJsonLoads(s)", kotlin)
+        self.assertIn("return __pytra_str(pyJsonDumps(obj))", kotlin)
+        self.assertNotIn("json.loads(", kotlin)
+        self.assertNotIn("json.dumps(", kotlin)
+
     def test_dict_literal_entries_are_materialized(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "dict_literal_entries.py"

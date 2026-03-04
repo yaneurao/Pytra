@@ -310,3 +310,286 @@ fun __pytra_is_str(v: Any?): Boolean {
 fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
 }
+
+// --- json ---
+
+fun pyJsonDumps(v: Any?): String {
+    return __pytra_json_stringify(v)
+}
+
+fun pyJsonLoads(v: Any?): Any? {
+    return __PytraJsonParser(__pytra_str(v)).parse()
+}
+
+private fun __pytra_json_stringify(v: Any?): String {
+    if (v == null) return "null"
+    if (v is Boolean) return if (v) "true" else "false"
+    if (v is Int) return v.toString()
+    if (v is Long) return v.toString()
+    if (v is Double) {
+        if (!v.isFinite()) {
+            throw RuntimeException("json.dumps: non-finite float")
+        }
+        return v.toString()
+    }
+    if (v is Float) {
+        if (!v.isFinite()) {
+            throw RuntimeException("json.dumps: non-finite float")
+        }
+        return v.toString()
+    }
+    if (v is String) return __pytra_json_escape_string(v)
+    if (v is List<*>) {
+        return v.joinToString(prefix = "[", postfix = "]", separator = ",") { __pytra_json_stringify(it) }
+    }
+    if (v is Map<*, *>) {
+        return v.entries.joinToString(prefix = "{", postfix = "}", separator = ",") {
+            __pytra_json_escape_string(__pytra_str(it.key)) + ":" + __pytra_json_stringify(it.value)
+        }
+    }
+    return __pytra_json_escape_string(__pytra_str(v))
+}
+
+private fun __pytra_json_escape_string(s: String): String {
+    val out = StringBuilder()
+    out.append('"')
+    for (ch in s) {
+        when (ch) {
+            '"' -> out.append("\\\"")
+            '\\' -> out.append("\\\\")
+            '\b' -> out.append("\\b")
+            '\u000c' -> out.append("\\f")
+            '\n' -> out.append("\\n")
+            '\r' -> out.append("\\r")
+            '\t' -> out.append("\\t")
+            else -> {
+                if (ch.toInt() < 0x20) {
+                    out.append("\\u")
+                    out.append(ch.toInt().toString(16).padStart(4, '0'))
+                } else {
+                    out.append(ch)
+                }
+            }
+        }
+    }
+    out.append('"')
+    return out.toString()
+}
+
+private class __PytraJsonParser(private val text: String) {
+    private var i: Int = 0
+    private val n: Int = text.length
+
+    fun parse(): Any? {
+        skipWs()
+        val out = parseValue()
+        skipWs()
+        if (i != n) {
+            throw RuntimeException("invalid json: trailing characters")
+        }
+        return out
+    }
+
+    private fun skipWs() {
+        while (i < n) {
+            val ch = text[i]
+            if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+                i += 1
+                continue
+            }
+            return
+        }
+    }
+
+    private fun parseValue(): Any? {
+        if (i >= n) {
+            throw RuntimeException("invalid json: unexpected end")
+        }
+        return when (text[i]) {
+            '{' -> parseObject()
+            '[' -> parseArray()
+            '"' -> parseString()
+            else -> {
+                if (matchLiteral("true")) {
+                    i += 4
+                    true
+                } else if (matchLiteral("false")) {
+                    i += 5
+                    false
+                } else if (matchLiteral("null")) {
+                    i += 4
+                    null
+                } else {
+                    parseNumber()
+                }
+            }
+        }
+    }
+
+    private fun matchLiteral(lit: String): Boolean {
+        return text.startsWith(lit, i)
+    }
+
+    private fun parseObject(): MutableMap<Any, Any?> {
+        val out = mutableMapOf<Any, Any?>()
+        i += 1 // {
+        skipWs()
+        if (i < n && text[i] == '}') {
+            i += 1
+            return out
+        }
+        while (true) {
+            skipWs()
+            if (i >= n || text[i] != '"') {
+                throw RuntimeException("invalid json object key")
+            }
+            val key = parseString()
+            skipWs()
+            if (i >= n || text[i] != ':') {
+                throw RuntimeException("invalid json object: missing ':'")
+            }
+            i += 1
+            skipWs()
+            out[key] = parseValue()
+            skipWs()
+            if (i >= n) {
+                throw RuntimeException("invalid json object: unexpected end")
+            }
+            val delim = text[i]
+            i += 1
+            if (delim == '}') return out
+            if (delim != ',') {
+                throw RuntimeException("invalid json object separator")
+            }
+        }
+    }
+
+    private fun parseArray(): MutableList<Any?> {
+        val out = mutableListOf<Any?>()
+        i += 1 // [
+        skipWs()
+        if (i < n && text[i] == ']') {
+            i += 1
+            return out
+        }
+        while (true) {
+            skipWs()
+            out.add(parseValue())
+            skipWs()
+            if (i >= n) {
+                throw RuntimeException("invalid json array: unexpected end")
+            }
+            val delim = text[i]
+            i += 1
+            if (delim == ']') return out
+            if (delim != ',') {
+                throw RuntimeException("invalid json array separator")
+            }
+        }
+    }
+
+    private fun parseString(): String {
+        if (i >= n || text[i] != '"') {
+            throw RuntimeException("invalid json string")
+        }
+        i += 1 // opening quote
+        val out = StringBuilder()
+        while (i < n) {
+            val ch = text[i]
+            i += 1
+            if (ch == '"') return out.toString()
+            if (ch == '\\') {
+                if (i >= n) {
+                    throw RuntimeException("invalid json string escape")
+                }
+                val esc = text[i]
+                i += 1
+                when (esc) {
+                    '"', '\\', '/' -> out.append(esc)
+                    'b' -> out.append('\b')
+                    'f' -> out.append('\u000c')
+                    'n' -> out.append('\n')
+                    'r' -> out.append('\r')
+                    't' -> out.append('\t')
+                    'u' -> out.append(parseUnicodeEscape())
+                    else -> throw RuntimeException("invalid json escape")
+                }
+                continue
+            }
+            out.append(ch)
+        }
+        throw RuntimeException("unterminated json string")
+    }
+
+    private fun parseUnicodeEscape(): Char {
+        if (i + 4 > n) {
+            throw RuntimeException("invalid json unicode escape")
+        }
+        var value = 0
+        var j = 0
+        while (j < 4) {
+            val digit = Character.digit(text[i + j], 16)
+            if (digit < 0) {
+                throw RuntimeException("invalid json unicode escape")
+            }
+            value = (value shl 4) or digit
+            j += 1
+        }
+        i += 4
+        return value.toChar()
+    }
+
+    private fun parseNumber(): Any {
+        val start = i
+        if (text[i] == '-') {
+            i += 1
+        }
+        if (i >= n) {
+            throw RuntimeException("invalid json number")
+        }
+        if (text[i] == '0') {
+            i += 1
+        } else {
+            if (!isDigit(text[i])) {
+                throw RuntimeException("invalid json number")
+            }
+            while (i < n && isDigit(text[i])) {
+                i += 1
+            }
+        }
+        var isFloat = false
+        if (i < n && text[i] == '.') {
+            isFloat = true
+            i += 1
+            if (i >= n || !isDigit(text[i])) {
+                throw RuntimeException("invalid json number")
+            }
+            while (i < n && isDigit(text[i])) {
+                i += 1
+            }
+        }
+        if (i < n && (text[i] == 'e' || text[i] == 'E')) {
+            isFloat = true
+            i += 1
+            if (i < n && (text[i] == '+' || text[i] == '-')) {
+                i += 1
+            }
+            if (i >= n || !isDigit(text[i])) {
+                throw RuntimeException("invalid json exponent")
+            }
+            while (i < n && isDigit(text[i])) {
+                i += 1
+            }
+        }
+        val token = text.substring(start, i)
+        return try {
+            if (isFloat) token.toDouble() else token.toLong()
+        } catch (_: NumberFormatException) {
+            throw RuntimeException("invalid json number")
+        }
+    }
+
+    private fun isDigit(ch: Char): Boolean {
+        return ch >= '0' && ch <= '9'
+    }
+}

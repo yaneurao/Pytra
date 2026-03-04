@@ -126,6 +126,23 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
             swift,
         )
 
+    def test_swift_native_emitter_maps_json_calls_to_runtime_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "json_case.py"
+            src.write_text(
+                "import json\n"
+                "def f(s: str) -> str:\n"
+                "    obj = json.loads(s)\n"
+                "    return json.dumps(obj)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            swift = transpile_to_swift_native(east)
+        self.assertIn("var obj: Any = pyJsonLoads(s)", swift)
+        self.assertIn("return __pytra_str(pyJsonDumps(obj))", swift)
+        self.assertNotIn("json.loads(", swift)
+        self.assertNotIn("json.dumps(", swift)
+
     def test_py2swift_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)

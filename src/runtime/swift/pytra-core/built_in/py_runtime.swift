@@ -1,5 +1,6 @@
 // Swift 実行向け Node.js ランタイム補助。
 import Foundation
+import CoreFoundation
 
 /// Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
 /// - Parameters:
@@ -269,4 +270,124 @@ func __pytra_is_str(_ v: Any?) -> Bool {
 
 func __pytra_is_list(_ v: Any?) -> Bool {
     return v is [Any]
+}
+
+// --- json ---
+
+func pyJsonDumps(_ v: Any?) -> String {
+    return __pytra_json_stringify(v)
+}
+
+func pyJsonLoads(_ v: Any?) -> Any? {
+    let text = __pytra_str(v)
+    guard let data = text.data(using: .utf8) else {
+        fatalError("invalid json: utf8 decode failed")
+    }
+    do {
+        let obj = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        return __pytra_json_from_foundation(obj)
+    } catch {
+        fatalError("invalid json: \(error)")
+    }
+}
+
+private func __pytra_json_stringify(_ v: Any?) -> String {
+    guard let value = v else { return "null" }
+    if let b = value as? Bool {
+        return b ? "true" : "false"
+    }
+    if let i = value as? Int {
+        return String(i)
+    }
+    if let i = value as? Int64 {
+        return String(i)
+    }
+    if let d = value as? Double {
+        if !d.isFinite {
+            fatalError("json.dumps: non-finite float")
+        }
+        return String(d)
+    }
+    if let f = value as? Float {
+        if !f.isFinite {
+            fatalError("json.dumps: non-finite float")
+        }
+        return String(f)
+    }
+    if let s = value as? String {
+        return __pytra_json_escape_string(s)
+    }
+    if let arr = value as? [Any] {
+        let elems = arr.map { __pytra_json_stringify($0) }
+        return "[" + elems.joined(separator: ",") + "]"
+    }
+    if let dict = value as? [AnyHashable: Any] {
+        var pairs: [String] = []
+        for (k, item) in dict {
+            pairs.append(__pytra_json_escape_string(__pytra_str(k)) + ":" + __pytra_json_stringify(item))
+        }
+        return "{" + pairs.joined(separator: ",") + "}"
+    }
+    return __pytra_json_escape_string(__pytra_str(value))
+}
+
+private func __pytra_json_escape_string(_ s: String) -> String {
+    var out = "\""
+    for ch in s {
+        if ch == "\"" {
+            out += "\\\""
+        } else if ch == "\\" {
+            out += "\\\\"
+        } else if ch == "\u{0008}" {
+            out += "\\b"
+        } else if ch == "\u{000C}" {
+            out += "\\f"
+        } else if ch == "\n" {
+            out += "\\n"
+        } else if ch == "\r" {
+            out += "\\r"
+        } else if ch == "\t" {
+            out += "\\t"
+        } else if let scalar = ch.unicodeScalars.first, scalar.value < 0x20 {
+            let hex = String(scalar.value, radix: 16, uppercase: false)
+            out += "\\u" + String(repeating: "0", count: max(0, 4 - hex.count)) + hex
+        } else {
+            out.append(ch)
+        }
+    }
+    out += "\""
+    return out
+}
+
+private func __pytra_json_from_foundation(_ value: Any) -> Any? {
+    if value is NSNull {
+        return nil
+    }
+    if let b = value as? Bool {
+        return b
+    }
+    if let s = value as? String {
+        return s
+    }
+    if let arr = value as? [Any] {
+        return arr.map { __pytra_json_from_foundation($0) }
+    }
+    if let dict = value as? [String: Any] {
+        var out: [AnyHashable: Any] = [:]
+        for (k, v) in dict {
+            out[k] = __pytra_json_from_foundation(v)
+        }
+        return out
+    }
+    if let num = value as? NSNumber {
+        if CFGetTypeID(num) == CFBooleanGetTypeID() {
+            return num.boolValue
+        }
+        let d = num.doubleValue
+        if d.rounded() == d {
+            return num.int64Value
+        }
+        return d
+    }
+    return value
 }
