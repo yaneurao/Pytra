@@ -292,6 +292,19 @@ fun __pytra_max(a: Any?, b: Any?): Any? {
     return __pytra_int(b)
 }
 
+fun pyMathSqrt(v: Any?): Any? { return kotlin.math.sqrt(__pytra_float(v)) }
+fun pyMathSin(v: Any?): Any? { return kotlin.math.sin(__pytra_float(v)) }
+fun pyMathCos(v: Any?): Any? { return kotlin.math.cos(__pytra_float(v)) }
+fun pyMathTan(v: Any?): Any? { return kotlin.math.tan(__pytra_float(v)) }
+fun pyMathExp(v: Any?): Any? { return kotlin.math.exp(__pytra_float(v)) }
+fun pyMathLog(v: Any?): Any? { return kotlin.math.ln(__pytra_float(v)) }
+fun pyMathFabs(v: Any?): Any? { return kotlin.math.abs(__pytra_float(v)) }
+fun pyMathFloor(v: Any?): Any? { return kotlin.math.floor(__pytra_float(v)) }
+fun pyMathCeil(v: Any?): Any? { return kotlin.math.ceil(__pytra_float(v)) }
+fun pyMathPow(a: Any?, b: Any?): Any? { return __pytra_float(a).pow(__pytra_float(b)) }
+fun pyMathPi(): Any? { return Math.PI }
+fun pyMathE(): Any? { return Math.E }
+
 fun __pytra_is_int(v: Any?): Boolean {
     return (v is Long) || (v is Int)
 }

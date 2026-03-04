@@ -107,6 +107,14 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("pixels.add(b)", kotlin)
         self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.add", kotlin)
 
+    def test_kotlin_native_emitter_routes_math_calls_via_runtime_helpers(self) -> None:
+        sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("pyMathPi()", kotlin)
+        self.assertIn("pyMathCos(__pytra_float(angle))", kotlin)
+        self.assertIn("pyMathSin(__pytra_float(angle))", kotlin)
+
     def test_dict_get_with_default_uses_kotlin_elvis(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "dict_get_default.py"

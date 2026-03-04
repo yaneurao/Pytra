@@ -583,19 +583,25 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 
 def _math_call_name(attr: str) -> str:
     if attr == "sqrt":
-        return "sqrt"
+        return "pyMathSqrt"
     if attr == "sin":
-        return "sin"
+        return "pyMathSin"
     if attr == "cos":
-        return "cos"
+        return "pyMathCos"
     if attr == "tan":
-        return "tan"
+        return "pyMathTan"
     if attr == "exp":
-        return "exp"
+        return "pyMathExp"
     if attr == "log":
-        return "log"
+        return "pyMathLog"
     if attr == "pow":
-        return "pow"
+        return "pyMathPow"
+    if attr == "floor":
+        return "pyMathFloor"
+    if attr == "ceil":
+        return "pyMathCeil"
+    if attr == "abs":
+        return "pyMathFabs"
     return _safe_ident(attr, "call")
 
 
@@ -605,9 +611,9 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
-            return "Double.pi"
+            return "__pytra_float(pyMathPi())"
         if owner == "math" and attr == "e":
-            return "exp(1.0)"
+            return "__pytra_float(pyMathE())"
     value = _render_expr(value_any)
     return value + "." + attr
 

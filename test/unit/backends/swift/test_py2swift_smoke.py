@@ -106,6 +106,14 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         self.assertIn("pixels.append(b)", swift)
         self.assertNotIn("pixels = __pytra_as_list(pixels); pixels.append", swift)
 
+    def test_swift_native_emitter_routes_math_calls_via_runtime_helpers(self) -> None:
+        sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        self.assertIn("pyMathPi()", swift)
+        self.assertIn("pyMathCos(__pytra_float(angle))", swift)
+        self.assertIn("pyMathSin(__pytra_float(angle))", swift)
+
     def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
         src = """
 def f(xs: list[int], ys: dict[str, int]) -> int:

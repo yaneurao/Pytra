@@ -593,25 +593,25 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 
 def _math_call_name(attr: str) -> str:
     if attr == "sqrt":
-        return "kotlin.math.sqrt"
+        return "pyMathSqrt"
     if attr == "sin":
-        return "kotlin.math.sin"
+        return "pyMathSin"
     if attr == "cos":
-        return "kotlin.math.cos"
+        return "pyMathCos"
     if attr == "tan":
-        return "kotlin.math.tan"
+        return "pyMathTan"
     if attr == "exp":
-        return "kotlin.math.exp"
+        return "pyMathExp"
     if attr == "log":
-        return "kotlin.math.ln"
+        return "pyMathLog"
     if attr == "pow":
-        return "kotlin.math.pow"
+        return "pyMathPow"
     if attr == "floor":
-        return "kotlin.math.floor"
+        return "pyMathFloor"
     if attr == "ceil":
-        return "kotlin.math.ceil"
+        return "pyMathCeil"
     if attr == "abs":
-        return "kotlin.math.abs"
+        return "pyMathFabs"
     return _safe_ident(attr, "call")
 
 
@@ -621,9 +621,9 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
-            return "Math.PI"
+            return "__pytra_float(pyMathPi())"
         if owner == "math" and attr == "e":
-            return "Math.E"
+            return "__pytra_float(pyMathE())"
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -807,8 +807,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 while i < len(args):
                     rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
                     i += 1
-                if attr_name == "pow" and len(rendered_math_args) == 2:
-                    return rendered_math_args[0] + ".pow(" + rendered_math_args[1] + ")"
                 return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
             if owner == "json":
                 if attr_name == "loads":

@@ -252,6 +252,19 @@ func __pytra_max(_ a: Any?, _ b: Any?) -> Any {
     return __pytra_int(b)
 }
 
+func pyMathSqrt(_ v: Any?) -> Any { return Foundation.sqrt(__pytra_float(v)) }
+func pyMathSin(_ v: Any?) -> Any { return Foundation.sin(__pytra_float(v)) }
+func pyMathCos(_ v: Any?) -> Any { return Foundation.cos(__pytra_float(v)) }
+func pyMathTan(_ v: Any?) -> Any { return Foundation.tan(__pytra_float(v)) }
+func pyMathExp(_ v: Any?) -> Any { return Foundation.exp(__pytra_float(v)) }
+func pyMathLog(_ v: Any?) -> Any { return Foundation.log(__pytra_float(v)) }
+func pyMathFabs(_ v: Any?) -> Any { return Foundation.fabs(__pytra_float(v)) }
+func pyMathFloor(_ v: Any?) -> Any { return Foundation.floor(__pytra_float(v)) }
+func pyMathCeil(_ v: Any?) -> Any { return Foundation.ceil(__pytra_float(v)) }
+func pyMathPow(_ a: Any?, _ b: Any?) -> Any { return Foundation.pow(__pytra_float(a), __pytra_float(b)) }
+func pyMathPi() -> Any { return Double.pi }
+func pyMathE() -> Any { return Foundation.exp(1.0) }
+
 func __pytra_is_int(_ v: Any?) -> Bool {
     return (v is Int) || (v is Int64)
 }

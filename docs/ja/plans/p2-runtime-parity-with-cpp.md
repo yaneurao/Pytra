@@ -76,6 +76,7 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `Path` を `PyRuntime.Path` として runtime に実装（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）し、Java emitter の型/ctor/isinstance を `PyRuntime.Path` へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` を通過。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `Path` クラス（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）を追加し、既存 emitter の `Path(...)` 出力がコンパイル可能になることを `test_py2{kotlin,swift}_smoke.py`・`check_py2{kotlin,swift}_transpile.py` で確認。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Go: runtime に `Path` wrapper（`NewPath/__pytra_as_Path` + method群）を追加し、Go emitter で call keyword 値を一般呼び出しへ反映（`mkdir(parents=True, exist_ok=True)` が `mkdir(true, true)` へ降りる）する修正を適用。`test_py2go_smoke.py` と `check_py2go_transpile.py` を通過。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `pyMath*`（`sqrt/sin/cos/tan/exp/log/fabs/floor/ceil/pow/pi/e`）API を追加し、emitter の `math.*` 呼び出しを runtime helper 経由へ切替。`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` を通過。
 
 ## S1-01 実装（2026-03-03）
 
