@@ -346,6 +346,9 @@ Constraints:
 - Do not put language-specific specs (type mapping, keywords, runtime symbol names, etc.) into `src/backends/common/`.
 - Consolidate common CLI args (`input`/`output`/`--negative-index-mode`/`--parser-backend`, etc.) into `src/toolchain/compiler/transpile_cli.py` and reuse them from each `py2*.py` `main()`.
 - In selfhost-target code, avoid dynamic imports (`try/except ImportError` split imports, `importlib`) and use only static imports.
+- In selfhost target code (`src/` transpiler/backend/IR implementation), depending on Python standard `ast` (`import ast` / `from ast ...`) is prohibited.
+- When syntax/usage analysis is required, implement it from EAST nodes and existing IR metadata; do not add `ast`-based fallback logic.
+- Exception: `tools/` and `test/` checks/tests are outside selfhost targets, so `ast` usage is allowed there.
 - Add Japanese comments (purpose explanations) to class names, function names, and member variable names.
 - For standard-library compatibility documentation, specify function-level support, not only module names.
 - Functions not documented are treated as unsupported.

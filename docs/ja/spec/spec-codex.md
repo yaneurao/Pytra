@@ -73,6 +73,9 @@
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
 - selfhost 対象コード（特に `src/toolchain/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
+- selfhost 対象コード（`src/` 配下のトランスパイラ本体・backend・IR 実装）では、Python 標準 `ast` モジュール（`import ast` / `from ast ...`）への依存を禁止します。
+- `ast` ベース解析が必要な場合は、EAST ノード走査または既存の selfhost 対応 parser/IR 情報で代替します。
+- 例外: `tools/` と `test/` の検査・テストコードは selfhost 非対象のため `ast` 利用を許可します。
 - トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
 - トランスパイル対象コードが import できるのは `src/pytra/std/`・`src/pytra/utils/` モジュールと、ユーザー自作 `.py` モジュールです。
 

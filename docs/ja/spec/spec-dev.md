@@ -433,6 +433,9 @@
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。
 - CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/toolchain/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
 - selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
+- selfhost 対象コード（`src/` 配下のトランスパイラ本体・backend・IR 実装）では、Python 標準 `ast` モジュール（`import ast` / `from ast ...`）への依存を禁止します。
+- 構文解析/依存抽出が必要な場合は EAST ノードと既存 IR 情報を使って実装し、`ast` へのフォールバックを追加しません。
+- 例外として `tools/` と `test/` の検査・テストコードは selfhost 非対象のため `ast` 利用を許可します。
 - class 名・関数名・メンバー変数名には、日本語コメント（用途説明）を付与します。
 - 標準ライブラリ対応の記載は、モジュール名だけでなく関数単位で明記します。
 - ドキュメント未記載の関数は未対応扱いです。

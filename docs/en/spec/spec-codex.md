@@ -72,6 +72,9 @@ This document defines the operational rules Codex follows while working.
 - Keep `src/pytra/std/*.py` as the source of truth for Python-stdlib-equivalent functionality; use transpiled outputs in each target language.
 - In selfhost target code (especially `src/toolchain/compiler/east.py` family), do not use dynamic imports (`try/except ImportError` fallback or `importlib` lazy import).
 - Write imports in statically resolvable form, prioritizing fewer unsupported constructs during self-transpile.
+- In selfhost target code (`src/` transpiler/backend/IR implementation), depending on Python standard `ast` (`import ast` / `from ast ...`) is prohibited.
+- If AST-like analysis is needed, use EAST node traversal or existing selfhost-compatible parser/IR metadata instead.
+- Exception: `tools/` and `test/` checks/tests are outside selfhost targets, so `ast` usage is allowed there.
 - In transpile-target Python code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, etc.) are fully prohibited.
 - Transpile-target code may import only `src/pytra/std/`, `src/pytra/utils/`, and user-authored `.py` modules.
 
