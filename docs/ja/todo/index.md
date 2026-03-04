@@ -124,6 +124,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Rust にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2rs_smoke.py` に未解決 stdlib call の負例回帰を追加した（30件通過）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Lua にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2lua_smoke.py` に未解決 stdlib call の負例回帰を追加した（32件通過）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] Java 先行で `_render_call_via_runtime_call` / `_render_resolved_runtime_call` を「解決済み情報入力のみ」の API に変更し、raw `expr` 参照（`_call_name(expr).strip()` 等）を runtime-call 描画経路から除去した（`test_py2java_smoke.py` 25件通過）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] `tools/check_java_runtimecall_api_boundary.py` を追加し、Java emitter の runtime-call API 境界違反（raw `expr` 受け渡し/生 callee 参照）を fail-fast 化、`run_local_ci.py` 必須導線へ組み込んだ。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
