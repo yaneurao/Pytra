@@ -56,7 +56,7 @@
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: `json.loads/dumps` runtime API を追加し、Go emitter の `json.*` 呼び出しを runtime helper へ統一する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で同様に不足 API を実装・統一する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で同様に不足 API を実装・統一する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Wave2 の emitter 呼び出しを adapter 経由へ寄せる。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-03] Wave2 の parity 回帰を追加し、runtime 差由来 fail を固定する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-01] Wave3（`js/ts/cs/rs`）で不足 API を補完し、契約差を解消する。
@@ -86,7 +86,8 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity 再実行（`work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json`）で `case_pass=18/case_fail=0`（`ok:72`）を確認し、runtime 差由来 fail を固定した。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 先行実装（Ruby/PHP）として `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` runtime API を `pytra-core` へ追加。`runtime_parity_check --targets {ruby,php} 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Lua runtime に `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` API を追加し、`runtime_parity_check --targets lua 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime に `pyMath*` / `Path` API を追加し、`runtime_parity_check --targets scala 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。`pyJsonLoads|pyJsonDumps` は呼び出し口のみ追加（現状は `RuntimeException`）のため、次段で実装置換が必要。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime に `pyMath*` / `Path` API を追加し、`runtime_parity_check --targets scala 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime の `pyJsonLoads|pyJsonDumps` を再帰 parser/stringify 実装へ置換し、`check_py2{lua,php,scala}_transpile.py`（`90/10/142` all green）と `runtime_parity_check --targets ruby,php,lua,scala 01_mandelbrot` で Wave2 4言語の回帰を固定。`S3-01` を完了。
 
 ## S1-01 実装（2026-03-03）
 

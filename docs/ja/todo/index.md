@@ -163,7 +163,7 @@
 6. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: `json.loads/dumps` runtime API を追加し、Go emitter の `json.*` 呼び出しを runtime helper へ統一する。
 7. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
 8. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
-9. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で不足 API を実装する。
+9. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で不足 API を実装する。
 10. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Wave2 の emitter 呼び出しを adapter 経由へ寄せる。
 11. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-03] Wave2 の parity 回帰を追加し、runtime 差由来 fail を固定する。
 12. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-01] Wave3（`js/ts/cs/rs`）で不足 API を補完し、契約差を解消する。
@@ -186,7 +186,8 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 完了: `go/java/kotlin/swift` の `math/time/pathlib/json` 呼び出しを runtime helper / runtime wrapper 経由へ統一し、言語固有 API 名揺れを emitter 内部に閉じ込めた。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity を `go/java/kotlin/swift` で再実行し、初回ログ（`...s2_03.json`）の Kotlin 6件 run_failed を `pyMath*` 戻り型 `Double` 統一で解消。再計測ログ `work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json` で `case_pass=18/case_fail=0`（`ok:72`）を確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 先行（Ruby/PHP）として `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` runtime API を `pytra-core` に追加し、`runtime_parity_check --targets ruby,php 01_mandelbrot` で artifact（size+CRC32）一致を確認。
-- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 追加（Lua/Scala）として `pyMath*` / `Path` API を補完し、`runtime_parity_check --targets lua,scala 01_mandelbrot` で artifact（size+CRC32）一致を確認。Lua は `pyJsonLoads|pyJsonDumps` を実装済み、Scala は `json` 呼び出し口のみ（現状 `RuntimeException`）のため要継続。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 追加（Lua/Scala）として `pyMath*` / `Path` API を補完し、`runtime_parity_check --targets lua,scala 01_mandelbrot` で artifact（size+CRC32）一致を確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime の `pyJsonLoads|pyJsonDumps` を parser/stringify 実装へ置換し、`check_py2{lua,php,scala}_transpile.py` を全通過。`runtime_parity_check --targets ruby,php,lua,scala 01_mandelbrot` で Wave2 4言語回帰を確認してクローズ。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
