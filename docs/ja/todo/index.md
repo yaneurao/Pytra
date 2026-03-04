@@ -32,6 +32,21 @@
 
 ## 未完了タスク
 
+### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
+
+文脈: [docs/ja/plans/p0-php-sample-parity-complete.md](../plans/p0-php-sample-parity-complete.md)
+
+1. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01] PHP の `sample` parity（stdout + artifact size + CRC32）を全18件で完了させる。
+2. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] PHP `sample` 全件 parity を再実行し、単独 target の最新 baseline を固定する。
+3. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] fail 8件（`05,06,08,10,11,12,14,16`）の artifact 差分をケース別に切り分ける。
+4. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-01] PHP GIF runtime を Python 実装準拠へ揃え、GIF 系 CRC mismatch を解消する。
+5. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-02] PHP PNG runtime を再検証し、必要な差分を修正する。
+6. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] PHP lower/emitter の画像出力入力（palette/frame/list/bytes 経路）を是正する。
+7. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] `sample/13` の stdout mismatch 再発有無を検証し、未解消なら根本修正する。
+8. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets php --all-samples` を再実行し、`case_pass=18` / `case_fail=0` を確認する。
+9. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] 修正内容に対応する回帰テストを追加して再発防止を固定する。
+10. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-03] 生成ログと決定事項を計画書へ記録し、TODO の完了条件を明示する。
+
 ### P1: `test/unit` レイアウト再編と未使用テスト整理
 
 文脈: [docs/ja/plans/p1-test-unit-layout-and-pruning.md](../plans/p1-test-unit-layout-and-pruning.md)
