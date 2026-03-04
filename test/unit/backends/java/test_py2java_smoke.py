@@ -200,6 +200,20 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("p.parent.mkdir(true, true);", java)
         self.assertIn("return p.exists();", java)
 
+    def test_java_native_emitter_routes_perf_counter_via_runtime_helper(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "perf_case.py"
+            src.write_text(
+                "from time import perf_counter\n"
+                "def f() -> float:\n"
+                "    return perf_counter()\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("return PyRuntime.pyPerfCounter();", java)
+        self.assertNotIn("System.nanoTime()", java)
+
     def test_java_binop_minimal_parentheses_and_rhs_grouping(self) -> None:
         simple_expr = {
             "kind": "BinOp",

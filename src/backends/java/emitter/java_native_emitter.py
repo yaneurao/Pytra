@@ -592,7 +592,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "main" and len(args) == 0:
         return "__pytra_main()"
     if callee_name == "perf_counter":
-        return "(System.nanoTime() / 1000000000.0)"
+        return "PyRuntime.pyPerfCounter()"
     if callee_name == "bytearray":
         if len(args) == 0:
             return "new java.util.ArrayList<Long>()"

@@ -182,6 +182,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `pyMath*` API（`sqrt/sin/cos/tan/exp/log/fabs/floor/ceil/pow/pi/e`）を追加し、emitter の `math.*` を runtime helper 経由へ統一。`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1 完了: `go/java/kotlin/swift` で `json/pathlib/math/time` の不足 API 実装と emitter 接続を完了し、`test_py2{go,java,kotlin,swift}_smoke.py` + `check_py2{go,java,kotlin,swift}_transpile.py` で green を確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 先行: Go/Java emitter の `math.*` を runtime helper (`pyMath*`) 経由へ統一し、Go emitter から `math` import 依存を撤去。`test_py2{go,java}_smoke.py` と `check_py2{go,java}_transpile.py` で非退行確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Java emitter の `perf_counter()` を `PyRuntime.pyPerfCounter()` adapter 経由へ統一。`test_py2java_smoke.py`（`perf_counter` ケース）と `check_py2java_transpile.py` で非退行確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 

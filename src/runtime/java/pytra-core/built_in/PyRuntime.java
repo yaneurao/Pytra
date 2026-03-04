@@ -526,7 +526,7 @@ final class PyRuntime {
 
     // --- time/math ---
 
-    static Object pyPerfCounter() {
+    static double pyPerfCounter() {
         return System.nanoTime() / 1_000_000_000.0;
     }
 
