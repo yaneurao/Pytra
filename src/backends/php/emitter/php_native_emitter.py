@@ -441,6 +441,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "new Path(" + _render_expr(args[0]) + ")"
 
     runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if semantic_tag.startswith("stdlib.") and runtime_call == "":
+        raise RuntimeError("php native emitter: unresolved stdlib runtime call: " + semantic_tag)
     if runtime_call != "":
         rendered_runtime = _render_call_via_runtime_call(
             runtime_call,
@@ -667,7 +669,11 @@ def _render_expr(expr: Any) -> str:
     if kind == "Attribute":
         value_any = expr.get("value")
         attr = _safe_ident(expr.get("attr"), "field")
+        semantic_tag_any = expr.get("semantic_tag")
+        semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
         runtime_call, runtime_source = _resolved_runtime_call(expr)
+        if semantic_tag.startswith("stdlib.") and runtime_call == "":
+            raise RuntimeError("php native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
         if runtime_call != "":
             if runtime_call == "path_parent":
                 return _render_expr(value_any) + "->parent"
