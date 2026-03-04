@@ -24,6 +24,18 @@ proc py_float*(v: auto): float =
 proc py_str*(v: auto): string =
   $v
 
+proc py_isdigit*(v: char): bool =
+  v.isDigit()
+
+proc py_isdigit*(v: string): bool =
+  v.len > 0 and v[0].isDigit()
+
+proc py_isalpha*(v: char): bool =
+  v.isAlphaAscii()
+
+proc py_isalpha*(v: string): bool =
+  v.len > 0 and v[0].isAlphaAscii()
+
 proc py_len*(v: seq or string or Table): int =
   v.len
 
@@ -46,5 +58,17 @@ proc py_mod*[T: int or float](a, b: T): T =
     r + b
   else:
     r
+
+iterator py_range*(start: int, stop: int, step: int): int =
+  if step != 0:
+    var i = start
+    if step > 0:
+      while i < stop:
+        yield i
+        i += step
+    else:
+      while i > stop:
+        yield i
+        i += step
 
 include "image_runtime.nim"

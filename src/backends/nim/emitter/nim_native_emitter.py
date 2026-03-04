@@ -57,6 +57,11 @@ def _binop_symbol(op: str) -> str:
     if op == "Div": return "/"
     if op == "FloorDiv": return "div"
     if op == "Mod": return "mod"
+    if op == "BitAnd": return "and"
+    if op == "BitOr": return "or"
+    if op == "BitXor": return "xor"
+    if op == "LShift": return "shl"
+    if op == "RShift": return "shr"
     return "+"
 
 def _cmp_symbol(op: str) -> str:
@@ -68,6 +73,79 @@ def _cmp_symbol(op: str) -> str:
     if op == "GtE": return ">="
     return "=="
 
+
+def _const_int_value(node: Any) -> int | None:
+    if not isinstance(node, dict):
+        return None
+    kind = node.get("kind")
+    if kind == "Constant":
+        val = node.get("value")
+        if isinstance(val, bool):
+            return None
+        if isinstance(val, int):
+            return int(val)
+        return None
+    if kind == "UnaryOp" and node.get("op") == "USub":
+        operand = node.get("operand")
+        val = _const_int_value(operand)
+        if isinstance(val, int):
+            return -val
+    return None
+
+
+def _is_uint8_expr(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    resolved = node.get("resolved_type")
+    if not isinstance(resolved, str):
+        return False
+    return resolved in {"uint8", "byte"}
+
+
+def _is_int_like_expr(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    resolved = node.get("resolved_type")
+    if isinstance(resolved, str) and resolved in {"int", "int64"}:
+        return True
+    kind = node.get("kind")
+    if kind == "Constant":
+        val = node.get("value")
+        return isinstance(val, int) and not isinstance(val, bool)
+    if kind == "Call":
+        fn = node.get("func")
+        if isinstance(fn, dict) and fn.get("kind") == "Name" and fn.get("id") == "int":
+            return True
+    return False
+
+
+def _is_float_like_expr(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    resolved = node.get("resolved_type")
+    if isinstance(resolved, str) and resolved in {"float", "float64"}:
+        return True
+    kind = node.get("kind")
+    if kind == "Constant":
+        val = node.get("value")
+        return isinstance(val, float)
+    if kind == "Call":
+        fn = node.get("func")
+        if isinstance(fn, dict) and fn.get("kind") == "Name" and fn.get("id") == "float":
+            return True
+    return False
+
+
+def _is_string_like_expr(node: Any, rendered: str) -> bool:
+    if isinstance(node, dict):
+        resolved = node.get("resolved_type")
+        if isinstance(resolved, str) and resolved == "str":
+            return True
+        if node.get("kind") == "Constant":
+            return isinstance(node.get("value"), str)
+    txt = rendered.strip()
+    return txt.startswith("$(") or txt.startswith('"')
+
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
         self.east_doc = east_doc
@@ -78,11 +156,17 @@ class NimNativeEmitter:
         self.self_replacement: str = ""
         self.imported_modules: set[str] = set()
         self.declared_vars: set[str] = set()
+        self.var_types: dict[str, str] = {}
+        self.function_names: set[str] = set()
+        self.function_level_vars: set[str] = set()
+        self.scope_stack: list[int] = [0]
+        self.next_scope_id = 1
+        self.scope_declared: set[tuple[int, str]] = set()
 
     def transpile(self) -> str:
         self.lines.append('include "py_runtime.nim"')
         self.lines.append("")
-        self.lines.append('import std/os, std/times, std/tables, std/strutils, std/math')
+        self.lines.append('import std/os, std/times, std/tables, std/strutils, std/math, std/sequtils')
         self.lines.append("")
 
         body = self.east_doc.get("body")
@@ -90,6 +174,8 @@ class NimNativeEmitter:
             for stmt in body:
                 if isinstance(stmt, dict) and stmt.get("kind") == "ClassDef":
                     self.class_names.add(_safe_ident(stmt.get("name")))
+                if isinstance(stmt, dict) and stmt.get("kind") == "FunctionDef":
+                    self.function_names.add(_safe_ident(stmt.get("name"), "fn"))
 
             self.declared_vars = set()
             for stmt in body:
@@ -112,6 +198,19 @@ class NimNativeEmitter:
 
     def _emit_line(self, text: str) -> None:
         self.lines.append("  " * self.indent + text)
+
+    def _enter_scope(self) -> None:
+        self.scope_stack.append(self.next_scope_id)
+        self.next_scope_id += 1
+
+    def _leave_scope(self) -> None:
+        if len(self.scope_stack) > 1:
+            self.scope_stack.pop()
+
+    def _scope_key(self, name: str) -> tuple[int, str]:
+        if len(self.scope_stack) == 0:
+            return (0, name)
+        return (self.scope_stack[-1], name)
 
     def _map_type(self, py_type: Any) -> str:
         if not isinstance(py_type, str):
@@ -141,6 +240,189 @@ class NimNativeEmitter:
         if t in self.class_names:
             return t
         return "auto"
+
+    def _default_value_for_type(self, nim_type: str) -> str:
+        if nim_type == "int":
+            return "0"
+        if nim_type == "float":
+            return "0.0"
+        if nim_type == "bool":
+            return "false"
+        if nim_type == "string":
+            return "\"\""
+        if nim_type.startswith("seq["):
+            return "@[]"
+        if nim_type.startswith("Table["):
+            inner = nim_type[len("Table[") : -1] if nim_type.endswith("]") else ""
+            parts = [p.strip() for p in inner.split(",", 1)]
+            if len(parts) == 2 and parts[0] != "" and parts[1] != "":
+                if parts[0] == "auto" or parts[1] == "auto":
+                    return "initTable[string, int]()"
+                return f"initTable[{parts[0]}, {parts[1]}]()"
+            return "initTable[string, int]()"
+        if nim_type.startswith("(") and nim_type.endswith(")"):
+            inner = nim_type[1:-1]
+            parts = [p.strip() for p in inner.split(",") if p.strip() != ""]
+            defaults: list[str] = []
+            i = 0
+            while i < len(parts):
+                defaults.append(self._default_value_for_type(parts[i]))
+                i += 1
+            return "(" + ", ".join(defaults) + ")"
+        if nim_type in self.class_names:
+            return "nil"
+        return "0"
+
+    def _is_unknown_decl_type(self, t: Any) -> bool:
+        if not isinstance(t, str):
+            return True
+        tt = t.strip()
+        return tt in {"", "unknown", "auto", "None"}
+
+    def _merge_decl_type(self, prev: Any, cur: Any) -> Any:
+        if isinstance(prev, str) and isinstance(cur, str):
+            p = prev.strip()
+            c = cur.strip()
+            if p in {"int", "int64"} and c in {"float", "float64"}:
+                return "float64"
+            if p in {"float", "float64"} and c in {"int", "int64"}:
+                return "float64"
+        if self._is_unknown_decl_type(prev) and not self._is_unknown_decl_type(cur):
+            return cur
+        if not self._is_unknown_decl_type(prev):
+            return prev
+        return cur
+
+    def _tuple_decl_elem_type(self, tuple_decl: Any, index: int) -> Any:
+        if not isinstance(tuple_decl, str):
+            return "unknown"
+        txt = tuple_decl.strip()
+        if not (txt.startswith("tuple[") and txt.endswith("]")):
+            return "unknown"
+        inner = txt[6:-1]
+        parts = [p.strip() for p in inner.split(",")]
+        if index < 0 or index >= len(parts):
+            return "unknown"
+        return parts[index]
+
+    def _collect_declared_locals(self, stmts: Any) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+
+        def _put(name: str, decl_type: Any) -> None:
+            prev = out.get(name)
+            out[name] = self._merge_decl_type(prev, decl_type)
+
+        def _walk_stmt(stmt: Any) -> None:
+            if not isinstance(stmt, dict):
+                return
+            kind = stmt.get("kind")
+            if kind in {"Assign", "AnnAssign"} and bool(stmt.get("declare")):
+                target = stmt.get("target")
+                decl_type = stmt.get("decl_type")
+                if kind == "AnnAssign" and self._is_unknown_decl_type(decl_type):
+                    decl_type = stmt.get("annotation")
+                if self._is_unknown_decl_type(decl_type):
+                    value_any = stmt.get("value")
+                    if isinstance(value_any, dict):
+                        decl_type = value_any.get("resolved_type")
+                if isinstance(target, dict):
+                    tk = target.get("kind")
+                    if tk == "Name":
+                        _put(_safe_ident(target.get("id"), "tmp"), decl_type)
+                    elif tk == "Tuple":
+                        elements_any = target.get("elements")
+                        elements = elements_any if isinstance(elements_any, list) else []
+                        i = 0
+                        while i < len(elements):
+                            elem = elements[i]
+                            if isinstance(elem, dict) and elem.get("kind") == "Name":
+                                _put(_safe_ident(elem.get("id"), "tmp" + str(i)), self._tuple_decl_elem_type(decl_type, i))
+                            i += 1
+            # recurse over nested statement lists
+            for key in ("body", "orelse", "finalbody"):
+                child_any = stmt.get(key)
+                if isinstance(child_any, list):
+                    for child in child_any:
+                        _walk_stmt(child)
+            handlers_any = stmt.get("handlers")
+            handlers = handlers_any if isinstance(handlers_any, list) else []
+            for hd in handlers:
+                if isinstance(hd, dict):
+                    hbody_any = hd.get("body")
+                    hbody = hbody_any if isinstance(hbody_any, list) else []
+                    for child in hbody:
+                        _walk_stmt(child)
+
+        if isinstance(stmts, list):
+            for s in stmts:
+                _walk_stmt(s)
+        return out
+
+    def _infer_return_type_from_body(self, stmts: Any) -> str:
+        types: list[str] = []
+
+        def _merge_type(acc: str, cur: str) -> str:
+            if acc in {"", "auto", "unknown"}:
+                return cur
+            if cur in {"", "auto", "unknown"}:
+                return acc
+            if acc in {"int", "int64"} and cur in {"float", "float64"}:
+                return "float"
+            if acc in {"float", "float64"} and cur in {"int", "int64"}:
+                return "float"
+            if acc == cur:
+                return acc
+            return acc
+
+        def _walk(node: Any) -> None:
+            if isinstance(node, dict):
+                if node.get("kind") == "Return":
+                    value_any = node.get("value")
+                    if isinstance(value_any, dict):
+                        rt = self._map_type(value_any.get("resolved_type"))
+                        if rt == "auto":
+                            vk = value_any.get("kind")
+                            if vk == "Constant":
+                                v = value_any.get("value")
+                                if isinstance(v, bool):
+                                    rt = "bool"
+                                elif isinstance(v, int) and not isinstance(v, bool):
+                                    rt = "int"
+                                elif isinstance(v, float):
+                                    rt = "float"
+                                elif isinstance(v, str):
+                                    rt = "string"
+                            elif vk == "Attribute":
+                                attr = value_any.get("attr")
+                                if isinstance(attr, str):
+                                    if attr in {"kind", "name", "text", "op"}:
+                                        rt = "string"
+                                    elif attr in {"pos", "value", "left", "right", "expr_index", "kind_tag", "op_tag", "number_value"}:
+                                        rt = "int"
+                        types.append(rt)
+                    else:
+                        types.append("void")
+                for v in node.values():
+                    _walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    _walk(v)
+
+        _walk(stmts)
+        if len(types) == 0:
+            return "void"
+        out = ""
+        i = 0
+        while i < len(types):
+            t = types[i]
+            if t == "void":
+                i += 1
+                continue
+            out = _merge_type(out, t)
+            i += 1
+        if out == "":
+            return "void"
+        return out
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         kind = stmt.get("kind")
@@ -188,21 +470,43 @@ class NimNativeEmitter:
         name = _safe_ident(raw_name, "fn")
         arg_order = stmt.get("arg_order", [])
         arg_types = stmt.get("arg_types", {})
+        body = stmt.get("body", [])
         ret_type = self._map_type(stmt.get("returns"))
-        
+        override_ret_any = stmt.get("_nim_return_override")
+        if isinstance(override_ret_any, str) and override_ret_any != "":
+            ret_type = override_ret_any
+        if ret_type == "auto" or ret_type == "":
+            inferred_ret = self._infer_return_type_from_body(body)
+            if inferred_ret != "":
+                ret_type = inferred_ret
+
         args = []
         old_vars = self.declared_vars
+        old_var_types = self.var_types
+        old_scope_stack = self.scope_stack
+        old_next_scope_id = self.next_scope_id
+        old_scope_declared = self.scope_declared
+        old_function_level_vars = self.function_level_vars
         self.declared_vars = set()
-        
+        self.var_types = {}
+        self.function_level_vars = set()
+        self.scope_stack = [0]
+        self.next_scope_id = 1
+        self.scope_declared = set()
+
         for a in arg_order:
             safe_a = _safe_ident(a)
             self.declared_vars.add(safe_a)
+            self.function_level_vars.add(safe_a)
             if self.current_class and safe_a == "self":
                 args.append(f"{safe_a}: {self.current_class}")
+                self.var_types[safe_a] = self.current_class
             else:
                 t = self._map_type(arg_types.get(a))
                 args.append(f"{safe_a}: {t}")
-        
+                if t != "auto":
+                    self.var_types[safe_a] = t
+
         old_self_replacement = self.self_replacement
         if raw_name == "__init__":
              name = "new" + self.current_class
@@ -210,55 +514,198 @@ class NimNativeEmitter:
              ret_type = self.current_class
              self.self_replacement = "result"
              self.declared_vars.add("result")
+             self.function_level_vars.add("result")
+             self.var_types["result"] = self.current_class
 
         header = f"proc {name}*({', '.join(args)})"
         if ret_type != "void" and ret_type != "":
             header += f": {ret_type}"
-        elif "return " in str(stmt.get("body")):
+        elif "return " in str(body):
             header += ": auto"
         self._emit_line(header + " =")
-        
+
         self.indent += 1
         if raw_name == "__init__":
              self._emit_line(f"new(result)")
-        
-        body = stmt.get("body", [])
+
+        local_decls = self._collect_declared_locals(body)
+        for local_name in sorted(local_decls.keys()):
+            if local_name in self.declared_vars:
+                continue
+            mapped_t = self._map_type(local_decls.get(local_name))
+            if mapped_t == "auto" or mapped_t == "":
+                continue
+            self._emit_line(f"var {local_name}: {mapped_t} = {self._default_value_for_type(mapped_t)}")
+            self.declared_vars.add(local_name)
+            self.function_level_vars.add(local_name)
+            self.var_types[local_name] = mapped_t
+
         if not body:
             self._emit_line("discard")
         else:
+            self._enter_scope()
             for s in body:
                 if isinstance(s, dict):
                     self._emit_stmt(s)
+            self._leave_scope()
         self.indent -= 1
         self.self_replacement = old_self_replacement
         self.declared_vars = old_vars
+        self.var_types = old_var_types
+        self.function_level_vars = old_function_level_vars
+        self.scope_stack = old_scope_stack
+        self.next_scope_id = old_next_scope_id
+        self.scope_declared = old_scope_declared
         self.lines.append("")
 
     def _emit_class_def(self, stmt: dict[str, Any]) -> None:
         name = _safe_ident(stmt.get("name"), "Class")
         self.current_class = name
-        
-        self._emit_line(f"type {name}* = ref object")
-        self.indent += 1
+
         body = stmt.get("body", [])
-        has_fields = False
-        for s in body:
+        field_map: dict[str, str] = {}
+
+        def _put_field(field_name: str, field_type: str) -> None:
+            prev = field_map.get(field_name, "")
+            if prev == "" or prev == "auto":
+                field_map[field_name] = field_type
+
+        i = 0
+        while i < len(body):
+            s = body[i]
             if isinstance(s, dict) and s.get("kind") == "AnnAssign":
                 target = s.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     field_name = _safe_ident(target.get("id"))
                     field_type = self._map_type(s.get("annotation"))
-                    if not has_fields:
-                        has_fields = True
-                    self._emit_line(f"{field_name}*: {field_type}")
+                    _put_field(field_name, field_type)
+            i += 1
+
+        def _collect_init_fields(node: Any) -> None:
+            if not isinstance(node, dict):
+                return
+            nk = node.get("kind")
+            if nk in {"Assign", "AnnAssign"}:
+                target = node.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Attribute":
+                    value_any = target.get("value")
+                    if isinstance(value_any, dict) and value_any.get("kind") == "Name" and value_any.get("id") == "self":
+                        field_name = _safe_ident(target.get("attr"), "field")
+                        decl_type = node.get("decl_type")
+                        if self._is_unknown_decl_type(decl_type):
+                            decl_type = node.get("annotation")
+                        if self._is_unknown_decl_type(decl_type):
+                            val_any = node.get("value")
+                            if isinstance(val_any, dict):
+                                decl_type = val_any.get("resolved_type")
+                        field_type = self._map_type(decl_type)
+                        if field_type == "auto" or field_type == "":
+                            field_type = "int"
+                        _put_field(field_name, field_type)
+            for key in ("body", "orelse", "finalbody"):
+                child_any = node.get(key)
+                if isinstance(child_any, list):
+                    j = 0
+                    while j < len(child_any):
+                        _collect_init_fields(child_any[j])
+                        j += 1
+
+        i = 0
+        while i < len(body):
+            s = body[i]
+            if isinstance(s, dict) and s.get("kind") == "FunctionDef" and s.get("name") == "__init__":
+                fn_body_any = s.get("body")
+                fn_body = fn_body_any if isinstance(fn_body_any, list) else []
+                j = 0
+                while j < len(fn_body):
+                    _collect_init_fields(fn_body[j])
+                    j += 1
+            i += 1
+
+        self._emit_line(f"type {name}* = ref object")
+        self.indent += 1
+        has_fields = False
+        fields: list[tuple[str, str]] = []
+        for field_name in field_map.keys():
+            field_type = field_map[field_name]
+            fields.append((field_name, field_type))
+            if not has_fields:
+                has_fields = True
+            self._emit_line(f"{field_name}*: {field_type}")
         if not has_fields:
              self._emit_line("discard")
         self.indent -= 1
         self.lines.append("")
-        
+
+        has_init = False
+        methods: list[dict[str, Any]] = []
         for s in body:
             if isinstance(s, dict) and s.get("kind") == "FunctionDef":
-                self._emit_function_def(s)
+                methods.append(s)
+                if s.get("name") == "__init__":
+                    has_init = True
+        if not has_init:
+            ctor_args: list[str] = []
+            i = 0
+            while i < len(fields):
+                fld_name, fld_type = fields[i]
+                ctor_args.append(f"{fld_name}: {fld_type}")
+                i += 1
+            self._emit_line(f"proc new{name}*({', '.join(ctor_args)}): {name} =")
+            self.indent += 1
+            self._emit_line("new(result)")
+            i = 0
+            while i < len(fields):
+                fld_name, _ = fields[i]
+                self._emit_line(f"result.{fld_name} = {fld_name}")
+                i += 1
+            self.indent -= 1
+            self.lines.append("")
+
+        # Emit forward declarations for methods to avoid order dependency
+        i = 0
+        while i < len(methods):
+            fn = methods[i]
+            raw_name = fn.get("name")
+            if raw_name != "__init__":
+                mname = _safe_ident(raw_name, "fn")
+                arg_order_any = fn.get("arg_order")
+                arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+                arg_types_any = fn.get("arg_types")
+                arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+                params: list[str] = []
+                j = 0
+                while j < len(arg_order):
+                    arg = arg_order[j]
+                    if not isinstance(arg, str):
+                        j += 1
+                        continue
+                    safe_arg = _safe_ident(arg, "arg" + str(j))
+                    if safe_arg == "self":
+                        params.append(f"{safe_arg}: {name}")
+                    else:
+                        params.append(f"{safe_arg}: {self._map_type(arg_types.get(arg))}")
+                    j += 1
+                ret_type = self._map_type(fn.get("returns"))
+                if ret_type == "auto" or ret_type == "":
+                    ret_type = self._infer_return_type_from_body(fn.get("body"))
+                if ret_type == "seq[auto]" and isinstance(raw_name, str) and raw_name.startswith("new_"):
+                    linked_name = raw_name[4:]
+                    linked_type = field_map.get(linked_name, "")
+                    if linked_type != "":
+                        ret_type = linked_type
+                if isinstance(ret_type, str):
+                    fn["_nim_return_override"] = ret_type
+                header = f"proc {mname}*({', '.join(params)})"
+                if ret_type not in {"", "void", "auto"}:
+                    header += f": {ret_type}"
+                self._emit_line(header)
+            i += 1
+        if len(methods) > 0:
+            self.lines.append("")
+        
+        for s in methods:
+            self._emit_function_def(s)
         
         self.current_class = ""
 
@@ -273,6 +720,28 @@ class NimNativeEmitter:
                 self._emit_line("continue")
                 return
         expr = self._render_expr(value_node)
+        if isinstance(value_node, dict) and value_node.get("kind") == "Call":
+            call_name = ""
+            fn_any = value_node.get("func")
+            if isinstance(fn_any, dict):
+                if fn_any.get("kind") == "Name":
+                    raw = fn_any.get("id")
+                    call_name = raw if isinstance(raw, str) else ""
+                elif fn_any.get("kind") == "Attribute":
+                    raw = fn_any.get("attr")
+                    call_name = raw if isinstance(raw, str) else ""
+            if call_name == "skip_newlines":
+                self._emit_line(expr)
+                return
+            if call_name == "save_gif" or call_name == "pop":
+                self._emit_line("discard " + expr)
+                return
+            resolved = value_node.get("resolved_type")
+            if isinstance(resolved, str) and resolved not in {"", "None", "void", "unknown"}:
+                self._emit_line("discard " + expr)
+            else:
+                self._emit_line(expr)
+            return
         if expr.startswith("echo ") or expr.startswith("return ") or ".add(" in expr or "write_rgb_png(" in expr or "run_" in expr:
             self._emit_line(expr)
         else:
@@ -284,20 +753,100 @@ class NimNativeEmitter:
              targets = stmt.get("targets", [])
              if targets:
                  target_node = targets[0]
-        
+
+        if isinstance(target_node, dict) and target_node.get("kind") == "Tuple":
+            value_expr = self._render_expr(stmt.get("value"))
+            elements_any = target_node.get("elements")
+            elements = elements_any if isinstance(elements_any, list) else []
+            names: list[str] = []
+            i = 0
+            while i < len(elements):
+                elem = elements[i]
+                if isinstance(elem, dict) and elem.get("kind") == "Name":
+                    names.append(_safe_ident(elem.get("id"), "tmp" + str(i)))
+                i += 1
+            if len(names) > 0:
+                tuple_pat = "(" + ", ".join(names) + ")"
+                undeclared = [nm for nm in names if nm not in self.declared_vars]
+                if len(undeclared) > 0:
+                    j = 0
+                    while j < len(undeclared):
+                        self.declared_vars.add(undeclared[j])
+                        j += 1
+                    self._emit_line(f"var {tuple_pat} = {value_expr}")
+                else:
+                    self._emit_line(f"{tuple_pat} = {value_expr}")
+                return
+
         target = self._render_expr(target_node)
-        value = self._render_expr(stmt.get("value"))
+        value_node = stmt.get("value")
+        value = self._render_expr(value_node)
         if isinstance(target_node, dict) and target_node.get("kind") == "Subscript":
             subscript_type = target_node.get("resolved_type")
             if isinstance(subscript_type, str) and subscript_type in {"uint8", "byte"}:
                 value = f"uint8({value})"
-        
+
+        target_name = ""
         if target_node.get("kind") == "Name":
              name = _safe_ident(target_node.get("id"))
-             if name not in self.declared_vars:
+             target_name = name
+             if bool(stmt.get("declare")) and self.indent > 1:
+                  if name in self.function_level_vars:
+                      declared_t = self.var_types.get(name, "")
+                      if declared_t == "float" and _is_int_like_expr(value_node):
+                          value = f"float({value})"
+                      elif declared_t == "int" and _is_float_like_expr(value_node):
+                          value = f"int({value})"
+                      self._emit_line(f"{target} = {value}")
+                      return
+                  inferred_t = self._map_type(stmt.get("decl_type"))
+                  if inferred_t == "auto" and isinstance(value_node, dict):
+                      inferred_t = self._map_type(value_node.get("resolved_type"))
+                  if inferred_t != "auto" and inferred_t != "":
+                      self.var_types[name] = inferred_t
                   self.declared_vars.add(name)
+                  scope_key = self._scope_key(name)
+                  if scope_key in self.scope_declared:
+                      self._emit_line(f"{target} = {value}")
+                  else:
+                      self.scope_declared.add(scope_key)
+                      self._emit_line(f"var {target} = {value}")
+                  return
+             if name not in self.declared_vars:
+                  if self._emit_list_comp_assignment(
+                      target=target,
+                      value_node=value_node,
+                      decl_type="",
+                      declare_var=True,
+                  ):
+                      self.declared_vars.add(name)
+                      self.var_types[name] = "seq[auto]"
+                      return
+                  self.declared_vars.add(name)
+                  if self.indent <= 1:
+                      self.function_level_vars.add(name)
+                  inferred_t = self._map_type(stmt.get("decl_type"))
+                  if inferred_t == "auto" and isinstance(value_node, dict):
+                      inferred_t = self._map_type(value_node.get("resolved_type"))
+                  if inferred_t != "auto" and inferred_t != "":
+                      self.var_types[name] = inferred_t
                   self._emit_line(f"var {target} = {value}")
                   return
+
+        if target_name != "":
+            declared_t = self.var_types.get(target_name, "")
+            if declared_t == "float" and _is_int_like_expr(value_node):
+                value = f"float({value})"
+            elif declared_t == "int" and _is_float_like_expr(value_node):
+                value = f"int({value})"
+
+        if self._emit_list_comp_assignment(
+            target=target,
+            value_node=value_node,
+            decl_type="",
+            declare_var=False,
+        ):
+            return
 
         self._emit_line(f"{target} = {value}")
 
@@ -309,14 +858,62 @@ class NimNativeEmitter:
         
         if target_node.get("kind") == "Name":
              name = _safe_ident(target_node.get("id"))
-             if name not in self.declared_vars:
+             if bool(stmt.get("declare")) and self.indent > 1:
+                  if name in self.function_level_vars:
+                      if value_node:
+                          value = self._render_expr(value_node)
+                          self._emit_line(f"{target} = {value}")
+                      else:
+                          self._emit_line("discard")
+                      return
                   self.declared_vars.add(name)
+                  if t != "":
+                      self.var_types[name] = t
+                  scope_key = self._scope_key(name)
+                  if value_node:
+                      value = self._render_expr(value_node)
+                      if scope_key in self.scope_declared:
+                          self._emit_line(f"{target} = {value}")
+                      else:
+                          self.scope_declared.add(scope_key)
+                          self._emit_line(f"var {target}: {t} = {value}")
+                  else:
+                      if scope_key in self.scope_declared:
+                          self._emit_line("discard")
+                      else:
+                          self.scope_declared.add(scope_key)
+                          self._emit_line(f"var {target}: {t}")
+                  return
+             if name not in self.declared_vars:
+                  if self._emit_list_comp_assignment(
+                      target=target,
+                      value_node=value_node,
+                      decl_type=t,
+                      declare_var=True,
+                  ):
+                      self.declared_vars.add(name)
+                      if t != "":
+                          self.var_types[name] = t
+                      return
+                  self.declared_vars.add(name)
+                  if self.indent <= 1:
+                      self.function_level_vars.add(name)
                   if value_node:
                        value = self._render_expr(value_node)
                        self._emit_line(f"var {target}: {t} = {value}")
                   else:
                        self._emit_line(f"var {target}: {t}")
+                  if t != "":
+                      self.var_types[name] = t
                   return
+
+        if self._emit_list_comp_assignment(
+            target=target,
+            value_node=value_node,
+            decl_type=t,
+            declare_var=False,
+        ):
+            return
 
         if value_node:
             value = self._render_expr(value_node)
@@ -334,9 +931,11 @@ class NimNativeEmitter:
         test = self._render_truthy_expr(stmt.get("test"))
         self._emit_line(f"if {test}:")
         self.indent += 1
+        self._enter_scope()
         for s in stmt.get("body", []):
             if isinstance(s, dict):
                 self._emit_stmt(s)
+        self._leave_scope()
         self.indent -= 1
         orelse = stmt.get("orelse", [])
         if orelse:
@@ -345,18 +944,22 @@ class NimNativeEmitter:
             else:
                 self._emit_line("else:")
                 self.indent += 1
+                self._enter_scope()
                 for s in orelse:
                     if isinstance(s, dict):
                         self._emit_stmt(s)
+                self._leave_scope()
                 self.indent -= 1
 
     def _emit_elif(self, stmt: dict[str, Any]) -> None:
         test = self._render_truthy_expr(stmt.get("test"))
         self._emit_line(f"elif {test}:")
         self.indent += 1
+        self._enter_scope()
         for s in stmt.get("body", []):
             if isinstance(s, dict):
                 self._emit_stmt(s)
+        self._leave_scope()
         self.indent -= 1
         orelse = stmt.get("orelse", [])
         if orelse:
@@ -365,46 +968,143 @@ class NimNativeEmitter:
             else:
                 self._emit_line("else:")
                 self.indent += 1
+                self._enter_scope()
                 for s in orelse:
                     if isinstance(s, dict):
                         self._emit_stmt(s)
+                self._leave_scope()
                 self.indent -= 1
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         test = self._render_truthy_expr(stmt.get("test"))
         self._emit_line(f"while {test}:")
         self.indent += 1
+        self._enter_scope()
         for s in stmt.get("body", []):
             if isinstance(s, dict):
                 self._emit_stmt(s)
+        self._leave_scope()
         self.indent -= 1
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_plan = stmt.get("target_plan")
-        target_name = "it"
-        if isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
-            target_name = _safe_ident(target_plan.get("id"))
-        
-        self.declared_vars.add(target_name)
-        
         iter_plan = stmt.get("iter_plan")
+        target_name = "it"
+        tuple_targets: list[str] = []
+        if isinstance(target_plan, dict):
+            plan_kind = target_plan.get("kind")
+            if plan_kind == "NameTarget":
+                target_name = _safe_ident(target_plan.get("id"))
+            elif plan_kind == "TupleTarget":
+                elements_any = target_plan.get("elements")
+                elements = elements_any if isinstance(elements_any, list) else []
+                i = 0
+                while i < len(elements):
+                    elem = elements[i]
+                    if isinstance(elem, dict) and elem.get("kind") == "NameTarget":
+                        tuple_targets.append(_safe_ident(elem.get("id"), "it" + str(i)))
+                    i += 1
+
+        if len(tuple_targets) > 0 and isinstance(iter_plan, dict) and iter_plan.get("kind") == "RuntimeIterForPlan":
+            iter_expr_any = iter_plan.get("iter_expr")
+            if (
+                isinstance(iter_expr_any, dict)
+                and iter_expr_any.get("kind") == "Call"
+                and isinstance(iter_expr_any.get("func"), dict)
+                and iter_expr_any["func"].get("kind") == "Name"
+                and iter_expr_any["func"].get("id") == "enumerate"
+            ):
+                args_any = iter_expr_any.get("args")
+                args = args_any if isinstance(args_any, list) else []
+                if len(args) == 1 and len(tuple_targets) == 2:
+                    iterable = self._render_expr(args[0])
+                    self.declared_vars.add(tuple_targets[0])
+                    self.declared_vars.add(tuple_targets[1])
+                    self._emit_line(f"for {tuple_targets[0]}, {tuple_targets[1]} in pairs({iterable}):")
+                    self.indent += 1
+                    self._enter_scope()
+                    for s in stmt.get("body", []):
+                        if isinstance(s, dict):
+                            self._emit_stmt(s)
+                    self._leave_scope()
+                    self.indent -= 1
+                    return
+
+        self.declared_vars.add(target_name)
+
         if isinstance(iter_plan, dict) and iter_plan.get("kind") == "StaticRangeForPlan":
             start = self._render_expr(iter_plan.get("start"))
             stop = self._render_expr(iter_plan.get("stop"))
-            self._emit_line(f"for {target_name} in {start} ..< {stop}:")
+            step_node = iter_plan.get("step")
+            step_expr = self._render_expr(step_node)
+            step_const = _const_int_value(step_node)
+            if step_const == 1:
+                self._emit_line(f"for {target_name} in {start} ..< {stop}:")
+            elif step_const == -1:
+                self._emit_line(f"for {target_name} in countdown({start}, ({stop}) + 1):")
+            elif isinstance(step_const, int) and step_const > 1:
+                self._emit_line(f"for {target_name} in countup({start}, ({stop}) - 1, {step_const}):")
+            elif isinstance(step_const, int) and step_const < -1:
+                self._emit_line(f"for {target_name} in countdown({start}, ({stop}) + 1, {0 - step_const}):")
+            else:
+                self._emit_line(f"for {target_name} in py_range({start}, {stop}, {step_expr}):")
         else:
-             expr = self._render_expr(iter_plan.get("iter_expr") if isinstance(iter_plan, dict) else None)
-             self._emit_line(f"for {target_name} in {expr}:")
+            expr = self._render_expr(iter_plan.get("iter_expr") if isinstance(iter_plan, dict) else None)
+            self._emit_line(f"for {target_name} in {expr}:")
         
         self.indent += 1
+        self._enter_scope()
         for s in stmt.get("body", []):
             if isinstance(s, dict):
                 self._emit_stmt(s)
+        self._leave_scope()
         self.indent -= 1
 
     def _emit_raise(self, stmt: dict[str, Any]) -> None:
         exc = self._render_expr(stmt.get("exc"))
         self._emit_line(f"raise newException(Exception, {exc})")
+
+    def _emit_list_comp_assignment(
+        self,
+        *,
+        target: str,
+        value_node: Any,
+        decl_type: str,
+        declare_var: bool,
+    ) -> bool:
+        if not isinstance(value_node, dict) or value_node.get("kind") != "ListComp":
+            return False
+        gens_any = value_node.get("generators")
+        gens = gens_any if isinstance(gens_any, list) else []
+        if len(gens) != 1:
+            return False
+        gen = gens[0]
+        if not isinstance(gen, dict):
+            return False
+        ifs_any = gen.get("ifs")
+        ifs = ifs_any if isinstance(ifs_any, list) else []
+        if len(ifs) != 0:
+            return False
+        target_any = gen.get("target")
+        if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+            return False
+        loop_var = _safe_ident(target_any.get("id"), "__lc_it")
+        if loop_var == "_":
+            loop_var = "__lc_it"
+        iter_expr = self._render_expr(gen.get("iter"))
+        elt_expr = self._render_expr(value_node.get("elt"))
+        if declare_var:
+            if decl_type != "":
+                self._emit_line(f"var {target}: {decl_type} = @[]")
+            else:
+                self._emit_line(f"var {target} = @[]")
+        else:
+            self._emit_line(f"{target} = @[]")
+        self._emit_line(f"for {loop_var} in {iter_expr}:")
+        self.indent += 1
+        self._emit_line(f"{target}.add({elt_expr})")
+        self.indent -= 1
+        return True
 
     def _render_truthy_expr(self, expr_node: Any) -> str:
         if not isinstance(expr_node, dict):
@@ -434,6 +1134,8 @@ class NimNativeEmitter:
             name = expr.get("id")
             if name == "self" and self.self_replacement:
                  return self.self_replacement
+            if name == "main" and "main" not in self.function_names and "v_pytra_main" in self.function_names:
+                 return "v_pytra_main"
             return _safe_ident(name)
         elif kind == "UnaryOp":
             op = expr.get("op")
@@ -449,32 +1151,65 @@ class NimNativeEmitter:
             left = self._render_expr(left_node)
             right = self._render_expr(right_node)
             op_raw = expr.get("op")
+            resolved = expr.get("resolved_type")
             
             if op_raw == "Div":
                  # Nim / is for floats. If either is int, convert to float.
                  return f"(float({left}) / float({right}))"
             
             if op_raw == "Mod":
+                if isinstance(resolved, str) and resolved in {"int", "int64"}:
+                    return f"py_mod(int({left}), int({right}))"
                 return f"py_mod({left}, {right})"
+            if op_raw == "Mult":
+                if isinstance(left_node, dict) and left_node.get("kind") == "List":
+                    left_elts_any = left_node.get("elements")
+                    left_elts = left_elts_any if isinstance(left_elts_any, list) else []
+                    if len(left_elts) == 1:
+                        elt_expr = self._render_expr(left_elts[0])
+                        return f"newSeqWith(int({right}), {elt_expr})"
+                if isinstance(right_node, dict) and right_node.get("kind") == "List":
+                    right_elts_any = right_node.get("elements")
+                    right_elts = right_elts_any if isinstance(right_elts_any, list) else []
+                    if len(right_elts) == 1:
+                        elt_expr = self._render_expr(right_elts[0])
+                        return f"newSeqWith(int({left}), {elt_expr})"
             symbol = _binop_symbol(op_raw)
-            resolved = expr.get("resolved_type")
             if isinstance(resolved, str) and resolved in {"float", "float64"} and op_raw in {"Add", "Sub", "Mult"}:
                 return f"(float({left}) {symbol} float({right}))"
             if op_raw == "Add":
-                if isinstance(resolved, str) and resolved == "str":
-                    symbol = "&"
+                if (isinstance(resolved, str) and resolved == "str") or _is_string_like_expr(left_node, left) or _is_string_like_expr(right_node, right):
+                    return f"($({left}) & $({right}))"
             return f"({left} {symbol} {right})"
         elif kind == "BoolOp":
             op = "and" if expr.get("op") == "And" else "or"
             values = [self._render_truthy_expr(v) for v in expr.get("values", [])]
-            return f"({' {op} '.join(values)})"
+            if len(values) == 0:
+                return "false"
+            return "(" + (" " + op + " ").join(values) + ")"
         elif kind == "Compare":
-            left = self._render_expr(expr.get("left"))
+            left_node = expr.get("left")
+            left = self._render_expr(left_node)
             ops = expr.get("ops", [])
             comps = expr.get("comparators", [])
             if not ops: return left
             op = ops[0]
-            right = self._render_expr(comps[0])
+            right_node = comps[0]
+            right = self._render_expr(right_node)
+            if op == "In" or op == "NotIn":
+                in_expr = ""
+                right_t = right_node.get("resolved_type") if isinstance(right_node, dict) else ""
+                if isinstance(right_t, str) and right_t.startswith("dict["):
+                    in_expr = f"hasKey({right}, {left})"
+                else:
+                    in_expr = f"({left} in {right})"
+                if op == "NotIn":
+                    return f"(not {in_expr})"
+                return in_expr
+            if _is_uint8_expr(left_node) and not _is_uint8_expr(right_node):
+                left = f"int({left})"
+            if _is_uint8_expr(right_node) and not _is_uint8_expr(left_node):
+                right = f"int({right})"
             symbol = _cmp_symbol(op)
             return f"({left} {symbol} {right})"
         elif kind == "Call":
@@ -493,6 +1228,11 @@ class NimNativeEmitter:
                 k = self._render_expr(entry.get("key"))
                 v = self._render_expr(entry.get("value"))
                 pairs.append(f"{k}: {v}")
+            if len(pairs) == 0:
+                mapped = self._map_type(expr.get("resolved_type"))
+                if isinstance(mapped, str) and mapped.startswith("Table["):
+                    return self._default_value_for_type(mapped)
+                return "initTable[string, int]()"
             return f"{{ {', '.join(pairs)} }}.toTable"
         elif kind == "ListComp":
             elt = self._render_expr(expr.get("elt"))
@@ -508,6 +1248,30 @@ class NimNativeEmitter:
                     cond = " and ".join([self._render_truthy_expr(i) for i in ifs])
                     return f"(block: var res: seq[auto] = @[]; for {target} in {iter_expr}: (if {cond}: res.add({elt})); res)"
             return "@[] # complex ListComp"
+        elif kind == "IfExp":
+            test_expr = self._render_truthy_expr(expr.get("test"))
+            body_expr = self._render_expr(expr.get("body"))
+            else_expr = self._render_expr(expr.get("orelse"))
+            return f"(if {test_expr}: {body_expr} else: {else_expr})"
+        elif kind == "RangeExpr":
+            start = self._render_expr(expr.get("start"))
+            stop = self._render_expr(expr.get("stop"))
+            step_node = expr.get("step")
+            step_expr = self._render_expr(step_node)
+            step_const = _const_int_value(step_node)
+            if step_const == 1:
+                return f"({start} ..< {stop})"
+            if step_const == -1:
+                return f"countdown({start}, ({stop}) + 1)"
+            return f"py_range({start}, {stop}, {step_expr})"
+        elif kind == "ObjLen":
+            return f"{self._render_expr(expr.get('value'))}.len"
+        elif kind == "ObjStr":
+            return f"$({self._render_expr(expr.get('value'))})"
+        elif kind == "ObjBool":
+            return self._render_truthy_expr(expr.get("value"))
+        elif kind == "IsInstance":
+            return "false"
         elif kind == "Subscript":
             value = self._render_expr(expr.get("value"))
             slice_node = expr.get("slice")
@@ -517,15 +1281,27 @@ class NimNativeEmitter:
                 lower = self._render_expr(lower_node) if lower_node else "0"
                 upper = self._render_expr(upper_node) if upper_node else f"({value}.len)"
                 return f"{value}[{lower} ..< {upper}]"
+            idx_node = slice_node if isinstance(slice_node, dict) else None
             idx = self._render_expr(slice_node)
-            return f"{value}[{idx}]"
+            idx_const = _const_int_value(idx_node)
+            base = f"{value}[{idx}]"
+            if isinstance(idx_const, int) and idx_const < 0:
+                base = f"{value}[({value}.len + {idx})]"
+            resolved = expr.get("resolved_type")
+            if isinstance(resolved, str) and resolved == "str":
+                return f"$({base})"
+            return base
         elif kind == "Attribute":
             value_node = expr.get("value")
             value = self._render_expr(value_node)
             attr = _safe_ident(expr.get("attr"))
+            if value == "math" and attr == "pi":
+                return "PI"
             if value in ("png", "v_png") and attr == "write_rgb_png": return "write_rgb_png"
             return f"{value}.{attr}"
-        return f"/* unknown expr {kind} */"
+        elif kind == "Unbox" or kind == "Box":
+            return self._render_expr(expr.get("value"))
+        return "0"
 
     def _render_call(self, expr: dict[str, Any]) -> str:
         func = expr.get("func")
@@ -551,14 +1327,34 @@ class NimNativeEmitter:
             if name == "len":
                 return f"{args[0]}.len"
             if name == "int":
+                if len(args_nodes) > 0:
+                    arg0_node = args_nodes[0]
+                    if isinstance(arg0_node, dict):
+                        arg0_t = arg0_node.get("resolved_type")
+                        if isinstance(arg0_t, str) and arg0_t == "str":
+                            return f"parseInt({args[0]})"
                 return f"int({args[0]})"
             if name == "float":
+                if len(args_nodes) > 0:
+                    arg0_node = args_nodes[0]
+                    if isinstance(arg0_node, dict):
+                        arg0_t = arg0_node.get("resolved_type")
+                        if isinstance(arg0_t, str) and arg0_t == "str":
+                            return f"parseFloat({args[0]})"
                 return f"float({args[0]})"
             if name == "str":
                 return f"$( {args[0]} )"
             if name == "range":
                 if len(args) == 1: return f"0 ..< {args[0]}"
                 if len(args) == 2: return f"{args[0]} ..< {args[1]}"
+            if name == "enumerate":
+                if len(args) == 1:
+                    return f"pairs({args[0]})"
+                return "pairs(@[])"
+            if name in {"RuntimeError", "ValueError", "TypeError"}:
+                if len(args) >= 1:
+                    return args[0]
+                return _nim_string(name)
             if name == "perf_counter":
                 return "epochTime()"
             if name == "bytearray":
@@ -581,9 +1377,18 @@ class NimNativeEmitter:
                  if resolved == "bytearray":
                       return f"{value}.add(uint8({', '.join(args)}))"
                  return f"{value}.add({', '.join(args)})"
+            if attr == "get":
+                 if len(args) >= 2:
+                      return f"getOrDefault({value}, {args[0]}, {args[1]})"
+                 if len(args) == 1:
+                      return f"getOrDefault({value}, {args[0]})"
+            if attr == "isdigit":
+                 return f"py_isdigit({value})"
+            if attr == "isalpha":
+                 return f"py_isalpha({value})"
 
         func_expr = self._render_expr(func)
-        if func_expr == "math.sqrt": return f"sqrt({args[0]})"
+        if func_expr == "math.sqrt": return f"sqrt(float({args[0]}))"
         if func_expr == "math.fabs": return f"abs({args[0]})"
         
         return f"{func_expr}({', '.join(args)})"
