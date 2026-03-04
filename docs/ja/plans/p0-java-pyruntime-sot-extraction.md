@@ -82,7 +82,7 @@
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
-- [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
+- [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
 
 決定ログ:
 - 2026-03-05: ユーザー指示に基づき、`PyRuntime.java` の std/utils 実装残置を P0 として再計画化した。
@@ -94,3 +94,4 @@
 - 2026-03-05: `S3-01` の先行段として Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を撤去し、`runtime_call/resolved_runtime_call` 経由描画へ寄せた（`test_py2java_smoke` green, guardrail green）。
 - 2026-03-05: `S4-01` の先行段として `PyRuntime.java` から画像互換ラッパ（`pyWriteRGBPNG/pySaveGif/pyGrayscalePalette`）を削除し、公開名 `write_rgb_png/save_gif/grayscale_palette` のみを残した。
 - 2026-03-05: `S4-02` の先行段として `tools/check_java_pyruntime_boundary.py` を追加し、`PyRuntime.java` での画像互換ラッパ再混入を CI fail-fast（`run_local_ci.py` 組み込み）化した。
+- 2026-03-05: `S4-03` として `tools/runtime_parity_check.py --case-root sample --targets java --ignore-unstable-stdout` で `01_mandelbrot`, `05_mandelbrot_zoom`, `18_mini_language_interpreter` を再検証し pass（01/05 は artifact size+CRC32 一致）を確認した。
