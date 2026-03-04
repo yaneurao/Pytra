@@ -1314,7 +1314,21 @@ class JsEmitter(CodeEmitter):
         attr = self._safe_name(attr_raw)
         return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
 
+    def _resolved_runtime_call(self, expr: dict[str, Any]) -> str:
+        runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
+        if runtime_call != "":
+            return runtime_call
+        resolved_runtime_call = self.any_dict_get_str(expr, "resolved_runtime_call", "")
+        if resolved_runtime_call != "":
+            return resolved_runtime_call
+        return ""
+
     def _render_call(self, expr: dict[str, Any]) -> str:
+        semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
+        runtime_call = self._resolved_runtime_call(expr)
+        if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
+            raise RuntimeError("js emitter: unresolved stdlib runtime call: " + semantic_tag)
+
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
         fn_kind = self.any_dict_get_str(fn_node, "kind", "")
@@ -1385,6 +1399,10 @@ class JsEmitter(CodeEmitter):
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_expr = self.render_expr(owner_node)
             attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
+            semantic_tag = self.any_dict_get_str(expr_d, "semantic_tag", "")
+            runtime_call = self._resolved_runtime_call(expr_d)
+            if semantic_tag.startswith("stdlib.") and runtime_call == "":
+                raise RuntimeError("js emitter: unresolved stdlib runtime attribute: " + semantic_tag)
             return owner_expr + "." + attr
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")

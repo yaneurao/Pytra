@@ -209,6 +209,38 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("for (const [k, v] of pairs) {", js)
         self.assertIn("console.log(k, v);", js)
 
+    def test_js_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "save_gif"},
+                                "args": [],
+                                "keywords": [],
+                                "semantic_tag": "stdlib.fn.save_gif",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            transpile_to_js(east)
+        self.assertIn("unresolved stdlib runtime call", str(cm.exception))
+
     def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "ref_container_args.py"
