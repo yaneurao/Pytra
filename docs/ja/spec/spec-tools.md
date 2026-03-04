@@ -15,7 +15,7 @@
 ## 1. 日常運用で使うもの
 
 - `tools/run_local_ci.py`
-  - 目的: ローカル最小 CI（version gate + todo 優先度ガード + runtime 層分離ガード + non-C++ emitter runtime-call 直書きガード + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
+  - 目的: ローカル最小 CI（version gate + todo 優先度ガード + runtime 層分離ガード + non-C++ emitter runtime-call 直書きガード + emitter 禁止 runtime 実装シンボルガード + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
 - `tools/check_todo_priority.py`
   - 目的: `docs/ja/todo/index.md` / `docs/ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
 - `tools/check_runtime_cpp_layout.py`
@@ -69,6 +69,8 @@
   - 目的: `src/pytra/std/*.py` / `src/pytra/utils/*.py` を正本とする運用を検査し、`pytra-gen` 以外への手書き実装（現行ガード対象: `json/assertions/re/typing`）を fail させる。あわせて C++ `std/utils` 全体の責務境界（`pytra-gen` 生成物必須 + `pytra` forwarder + `pytra-core` 実装分離）を検証する。
 - `tools/check_emitter_runtimecall_guardrails.py`
   - 目的: non-C++ emitter の `if/elif` 文字列分岐における runtime/stdlib 関数名直書きの増分を検知し、allowlist 外を fail させる（`tools/emitter_runtimecall_guardrails_allowlist.txt` 基準）。
+- `tools/check_emitter_forbidden_runtime_symbols.py`
+  - 目的: `src/backends/*/emitter/*.py` における禁止 runtime 実装シンボル（`__pytra_write_rgb_png` / `__pytra_save_gif` / `__pytra_grayscale_palette`）の混入増分を検知し、allowlist 外を fail させる（`tools/emitter_forbidden_runtime_symbols_allowlist.txt` 基準）。
 
 ## 2. selfhost 関連
 

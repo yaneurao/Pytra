@@ -14,7 +14,7 @@ Its goals are:
 ## 1. Daily Operations
 
 - `tools/run_local_ci.py`
-  - Purpose: Run minimal local CI in one pass (version gates + runtime boundary guards + non-C++ emitter runtime-call guardrail + transpile regressions + unit tests + selfhost build + diff).
+  - Purpose: Run minimal local CI in one pass (version gates + runtime boundary guards + non-C++ emitter runtime-call guardrail + emitter forbidden runtime-implementation symbol guardrail + transpile regressions + unit tests + selfhost build + diff).
 - `tools/check_py2cpp_transpile.py`
   - Purpose: Batch-transpile `test/fixtures/` with `py2x.py --target cpp` and detect failures.
 - `tools/check_py2scala_transpile.py`
@@ -30,6 +30,8 @@ Its goals are:
   - Purpose: Enforce `src/pytra/std/*.py` and `src/pytra/utils/*.py` as source of truth, and fail on handwritten runtime implementations outside `pytra-gen` (currently guarded: `json/assertions/re/typing`). It also validates the full C++ `std/utils` runtime boundary (`pytra-gen` generated files + `pytra` forwarders + `pytra-core` split implementations).
 - `tools/check_emitter_runtimecall_guardrails.py`
   - Purpose: Detect newly added direct `if/elif` string branching for runtime/stdlib symbols in non-C++ emitters, and fail on entries outside `tools/emitter_runtimecall_guardrails_allowlist.txt`.
+- `tools/check_emitter_forbidden_runtime_symbols.py`
+  - Purpose: Detect newly added forbidden runtime-implementation symbols in `src/backends/*/emitter/*.py` (`__pytra_write_rgb_png` / `__pytra_save_gif` / `__pytra_grayscale_palette`) and fail on entries outside `tools/emitter_forbidden_runtime_symbols_allowlist.txt`.
 
 ## 2. Selfhost Related
 
