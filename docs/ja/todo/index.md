@@ -49,7 +49,7 @@
 11. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して `sample/01,05` parity を確認する。
 12. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 13. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-14. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+14. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 15. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 16. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 17. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
@@ -72,6 +72,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim emitter の `keywords` 伝播・`print` 空白整形・`break/continue` 制御文化・`bytearray/bytes/uint8` 型整合を修正し、`runtime_parity_sample_nim_0105_s2_retry5_20260304.json` で `sample/01,05` parity pass。`image_runtime_sot_audit_20260304_after_nim_s2_complete.json` で `nim: compliant_marker_present` を再確認して完了。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust runtime（`py_runtime.rs`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_rs_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_rs_s3_complete.json` で `rs: compliant_marker_present` を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go runtime（`py_runtime.go`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_go_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_go_s3_complete.json` で `go: compliant_marker_present` を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java runtime（`PyRuntime.java`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_java_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_java_s3_complete.json` で `java: compliant_marker_present` を確認。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 
