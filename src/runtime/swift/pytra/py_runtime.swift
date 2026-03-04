@@ -1,4 +1,6 @@
 // Swift 実行向け Node.js ランタイム補助。
+// source: src/pytra/utils/png.py
+// source: src/pytra/utils/gif.py
 
 import Foundation
 

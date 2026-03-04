@@ -69,7 +69,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-LUA] Lua の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
@@ -96,3 +96,4 @@
 - 2026-03-04: `S3-RS` 完了。`src/runtime/rs/pytra/built_in/py_runtime.rs` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_rs_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_rs_s3_complete.json` で `rs: compliant_marker_present` へ遷移。
 - 2026-03-04: `S3-GO` 完了。`src/runtime/go/pytra/py_runtime.go` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_go_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_go_s3_complete.json` で `go: compliant_marker_present` へ遷移。
 - 2026-03-04: `S3-JAVA` 完了。`src/runtime/java/pytra/built_in/PyRuntime.java` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_java_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_java_s3_complete.json` で `java: compliant_marker_present` へ遷移。
+- 2026-03-04: `S3-SWIFT` 完了。`src/runtime/swift/pytra/py_runtime.swift` へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`work/logs/runtime_parity_sample_swift_0105_s3_20260304.json` で `sample/01,05` parity pass を確認。`work/logs/image_runtime_sot_audit_20260304_after_swift_s3_complete.json` で `swift: compliant_marker_present` へ遷移。
