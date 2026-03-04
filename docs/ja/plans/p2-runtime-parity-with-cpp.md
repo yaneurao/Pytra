@@ -85,6 +85,8 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Kotlin/Swift runtime の `pyMath*` 戻り型を `Double` へ統一し、`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` を再通過。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity 再実行（`work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json`）で `case_pass=18/case_fail=0`（`ok:72`）を確認し、runtime 差由来 fail を固定した。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 先行実装（Ruby/PHP）として `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` runtime API を `pytra-core` へ追加。`runtime_parity_check --targets {ruby,php} 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Lua runtime に `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` API を追加し、`runtime_parity_check --targets lua 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime に `pyMath*` / `Path` API を追加し、`runtime_parity_check --targets scala 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。`pyJsonLoads|pyJsonDumps` は呼び出し口のみ追加（現状は `RuntimeException`）のため、次段で実装置換が必要。
 
 ## S1-01 実装（2026-03-03）
 
