@@ -32,6 +32,21 @@
 
 ## 未完了タスク
 
+### P0: 非C++ emitter のライブラリ関数名直書き再発防止（IR解決 + CIガード）
+
+文脈: [docs/ja/plans/p0-emitter-runtimecall-guardrails.md](../plans/p0-emitter-runtimecall-guardrails.md)
+
+1. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01] 非C++ emitter における runtime/stdlib 関数名の直書き分岐を撤去し、IR解決 + CIガードで再発を防止する。
+2. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 禁止/許可ルール（禁止文字列分岐・許可組み込み）を仕様化する。
+3. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存違反を言語別に棚卸しし、移行対象を確定する。
+4. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] static check（`check_emitter_runtimecall_guardrails.py`）を追加して違反を fail 化する。
+5. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail をローカルCI/CI 必須導線へ組み込む。
+6. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR の runtime API 解決経路を非C++ backend で共通利用できる形に整理する。
+7. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行する。
+8. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
+9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
+10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
+
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
 文脈: [docs/ja/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
