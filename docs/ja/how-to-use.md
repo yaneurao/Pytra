@@ -76,6 +76,16 @@ Windows では次の読み替えを行ってください。
 - 代表値は 2 回の**算術平均（average）**を使います（中央値は使いません）。
 - コンパイル時間は計測値に含めません。
 
+## Emitter変更時の必須ガード（Stop-Ship）
+
+- `src/backends/*/emitter/*.py` を変更した場合は、コミット前に次を必ず実行します。
+  - `python3 tools/check_emitter_runtimecall_guardrails.py`
+  - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+  - `python3 tools/check_noncpp_east3_contract.py`
+- 上記のいずれかが `FAIL` の場合、コミット/プッシュ禁止です（Stop-Ship）。
+- runtime/stdlib の呼び出し解決は EAST3 正本情報（`runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`）のみを使い、emitter 側に関数名・モジュール名の分岐/テーブルを増やしてはいけません。
+- `java` backend は strict 対象です。runtime dispatch 用の直書きシンボルは allowlist で許可せず、0件を維持します。
+
 ## non-C++ backend のコンテナ参照管理運用（v1）
 
 - 対象 backend: `cs/js/ts/go/swift/ruby/lua/php`（Rust/Kotlin は pilot 実装済み）。

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Guard against direct runtime/stdlib symbol branching in non-C++ emitters.
+"""Guard against direct runtime/stdlib dispatch literals in non-C++ emitters.
 
 Policy:
 - Non-C++ emitters must not hardcode runtime/stdlib dispatch with
-  `if/elif ... == "symbol"` style branching for guarded symbols.
+  direct `"symbol"` literals (branch/table/context-based dispatch).
 - Existing debt is tracked in an explicit allowlist.
 - New direct-branch occurrences fail this check.
 """
@@ -33,7 +33,32 @@ KEY_TOKENS = (
     "owner_mod",
     "imported_mod",
     "export_name",
+    "runtime_call",
+    "resolved_runtime_call",
+    "resolved_runtime_source",
+    "semantic_tag",
 )
+CONTEXT_TOKENS = KEY_TOKENS + (
+    "helper",
+    "dispatch",
+    "resolver",
+    "runtime",
+    "registry",
+    "import_symbols",
+)
+TABLE_NAME_HINTS = (
+    "helper",
+    "dispatch",
+    "runtime",
+    "resolver",
+    "registry",
+    "symbol",
+    "map",
+    "table",
+    "alias",
+    "binding",
+)
+STRICT_BACKENDS = {"java"}
 BANNED_SYMBOLS = (
     "Path",
     "dumps",
@@ -55,6 +80,8 @@ BANNED_SYMBOLS = (
 )
 
 BRANCH_RE = re.compile(r"^\s*(if|elif)\b")
+CASE_RE = re.compile(r"^\s*case\b")
+ASSIGN_RE = re.compile(r"^\s*([A-Za-z_]\w*)\s*(?::[^=]+)?=\s*(.+)$")
 
 
 @dataclass(frozen=True)
@@ -62,6 +89,7 @@ class Finding:
     rel_path: str
     line_no: int
     symbol: str
+    kind: str
     snippet: str
 
     @property
@@ -88,26 +116,111 @@ def _iter_emitter_files() -> list[Path]:
     return files
 
 
+def _has_symbol_literal(raw: str, symbol: str) -> bool:
+    return f'"{symbol}"' in raw or f"'{symbol}'" in raw
+
+
+def _backend_name(rel_path: str) -> str:
+    parts = rel_path.split("/")
+    if len(parts) >= 4 and parts[0] == "src" and parts[1] == "backends":
+        return parts[2]
+    return ""
+
+
+def _is_dispatch_var(name: str) -> bool:
+    lowered = name.lower()
+    return any(hint in lowered for hint in TABLE_NAME_HINTS)
+
+
+def _balance_delta(line: str) -> int:
+    return (
+        line.count("{")
+        + line.count("[")
+        + line.count("(")
+        - line.count("}")
+        - line.count("]")
+        - line.count(")")
+    )
+
+
+def _collect_dispatch_table_findings(rel_path: str, lines: list[str]) -> list[Finding]:
+    findings: list[Finding] = []
+    active_depth = 0
+    active_var = ""
+    for line_no, raw in enumerate(lines, start=1):
+        started_here = False
+        if active_depth <= 0:
+            active_depth = 0
+            active_var = ""
+            matched = ASSIGN_RE.match(raw)
+            if matched is None:
+                continue
+            var_name = matched.group(1)
+            rhs = matched.group(2)
+            if not _is_dispatch_var(var_name):
+                continue
+            if all(ch not in rhs for ch in "{[("):
+                continue
+            active_var = var_name
+            active_depth = _balance_delta(rhs)
+            started_here = True
+        for symbol in BANNED_SYMBOLS:
+            if _has_symbol_literal(raw, symbol):
+                findings.append(
+                    Finding(
+                        rel_path=rel_path,
+                        line_no=line_no,
+                        symbol=symbol,
+                        kind=f"dispatch_table:{active_var or 'unknown'}",
+                        snippet=raw.strip(),
+                    )
+                )
+        if active_var != "" and not started_here:
+            active_depth += _balance_delta(raw)
+        if active_var != "" and active_depth <= 0:
+            active_var = ""
+            active_depth = 0
+    return findings
+
+
 def _collect_findings() -> list[Finding]:
     findings: list[Finding] = []
     for path in _iter_emitter_files():
         rel_path = str(path.relative_to(ROOT))
-        for line_no, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-            if BRANCH_RE.match(raw) is None:
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for line_no, raw in enumerate(lines, start=1):
+            symbol_hits = [symbol for symbol in BANNED_SYMBOLS if _has_symbol_literal(raw, symbol)]
+            if len(symbol_hits) == 0:
                 continue
-            if not any(token in raw for token in KEY_TOKENS):
-                continue
-            for symbol in BANNED_SYMBOLS:
-                if f'"{symbol}"' in raw or f"'{symbol}'" in raw:
+            branch_like = BRANCH_RE.match(raw) is not None or CASE_RE.match(raw) is not None
+            if branch_like and any(token in raw for token in KEY_TOKENS):
+                for symbol in symbol_hits:
                     findings.append(
                         Finding(
                             rel_path=rel_path,
                             line_no=line_no,
                             symbol=symbol,
+                            kind="branch",
                             snippet=raw.strip(),
                         )
                     )
-    findings.sort(key=lambda item: item.key)
+                continue
+            if any(token in raw for token in CONTEXT_TOKENS):
+                for symbol in symbol_hits:
+                    findings.append(
+                        Finding(
+                            rel_path=rel_path,
+                            line_no=line_no,
+                            symbol=symbol,
+                            kind="context_literal",
+                            snippet=raw.strip(),
+                        )
+                    )
+        findings.extend(_collect_dispatch_table_findings(rel_path, lines))
+    uniq: dict[str, Finding] = {}
+    for item in findings:
+        uniq.setdefault(item.key, item)
+    findings = sorted(uniq.values(), key=lambda item: item.key)
     return findings
 
 
@@ -132,9 +245,19 @@ def _write_allowlist(path: Path, keys: list[str]) -> None:
     path.write_text("\n".join(header + keys) + "\n", encoding="utf-8")
 
 
+def _strict_backend_findings(findings: list[Finding]) -> list[Finding]:
+    out: list[Finding] = []
+    for item in findings:
+        backend = _backend_name(item.rel_path)
+        if backend in STRICT_BACKENDS:
+            out.append(item)
+    out.sort(key=lambda item: item.key)
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Guard non-C++ emitter runtime-call hardcoded branch growth"
+        description="Guard non-C++ emitter runtime-call hardcoded dispatch growth"
     )
     parser.add_argument(
         "--write-allowlist",
@@ -146,6 +269,22 @@ def main() -> int:
     findings = _collect_findings()
     keys = sorted(item.key for item in findings)
     finding_map = {item.key: item for item in findings}
+
+    strict_hits = _strict_backend_findings(findings)
+    if len(strict_hits) > 0:
+        print("[FAIL] strict backend emitter contains direct runtime-call dispatch literals:")
+        for finding in strict_hits:
+            print(
+                f"  - {finding.rel_path}:{finding.line_no} "
+                f"[{finding.symbol}] ({finding.kind}) {finding.snippet}"
+            )
+        strict_targets = ",".join(sorted(STRICT_BACKENDS))
+        print(
+            "Strict backends must keep zero direct dispatch literals; "
+            "resolve via EAST3 metadata only."
+        )
+        print(f"  strict backends: {strict_targets}")
+        return 1
 
     if args.write_allowlist:
         _write_allowlist(ALLOWLIST_PATH, keys)
@@ -166,10 +305,13 @@ def main() -> int:
     stale = sorted(key for key in allowed if key not in finding_map)
 
     if len(added) > 0:
-        print("[FAIL] new direct runtime-call branch(es) detected:")
+        print("[FAIL] new direct runtime-call dispatch literal(s) detected:")
         for key in added:
             finding = finding_map[key]
-            print(f"  - {finding.rel_path}:{finding.line_no} [{finding.symbol}] {finding.snippet}")
+            print(
+                f"  - {finding.rel_path}:{finding.line_no} "
+                f"[{finding.symbol}] ({finding.kind}) {finding.snippet}"
+            )
         print("Resolve via lower/IR runtime_call path, or explicitly refresh allowlist after review:")
         print("  python3 tools/check_emitter_runtimecall_guardrails.py --write-allowlist")
         return 1

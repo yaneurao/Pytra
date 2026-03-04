@@ -68,6 +68,16 @@ Notes:
 - Use the **arithmetic mean (average)** of the two measured runs as the representative value (do not use median).
 - Exclude compile time from runtime numbers.
 
+## Mandatory Emitter Guardrails (Stop-Ship)
+
+- If you modify `src/backends/*/emitter/*.py`, run the following before commit:
+  - `python3 tools/check_emitter_runtimecall_guardrails.py`
+  - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+  - `python3 tools/check_noncpp_east3_contract.py`
+- If any of them returns `FAIL`, do not commit/push (Stop-Ship).
+- Runtime/stdlib call resolution must use EAST3 canonical fields only (`runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`). Do not add per-symbol branches or dispatch tables in emitters.
+- `java` backend is strict: direct dispatch symbol literals are not allowlisted and must remain zero.
+
 ## `py2x.py` / `py2x-selfhost.py` Entry Split
 
 - Use `src/py2x.py` for normal host execution. Target backends are loaded lazily per selected language.
