@@ -107,6 +107,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Ruby emitter で `perf_counter/Path/png/gif/json/math` の call/attr 直書きを `runtime_call/resolved_runtime_call` 優先描画へ移行し、`test_py2rb_smoke.py` 20件 + guardrail + noncpp contract を通過した（runtimecall allowlist `83->72`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] C# emitter で `save_gif/write_rgb_png/grayscale_palette` の Name-call 直書きを import 解決経由の汎用ルーティングへ置換し、`json.loads/dumps` 分岐を属性汎用描画へ統一、`Path` 属性は `runtime_call(path_*)` 優先へ移行した（`test_py2cs_smoke.py` 43件 + guardrail + noncpp contract 通過、runtimecall allowlist `72->66`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] C# emitter の残件だった `Path/perf_counter/py_assert_*` 直書きを import解決 + 接頭辞分岐へ置換し、`_module_alias_target` の `pytra.std.pathlib` 固定判定も suffix 判定へ一般化した（`test_py2cs_smoke.py` 43件 + guardrail + noncpp contract 通過、runtimecall allowlist `66->58`）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Rust emitter で `pytra.utils.assertions` 固定判定を suffix 判定へ置換し、`py_assert_stdout` 専用分岐を `py_assert_` 接頭辞処理へ統合した（`test_py2rs_smoke.py` 29件 + guardrail + noncpp contract 通過、runtimecall allowlist `58->54`）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

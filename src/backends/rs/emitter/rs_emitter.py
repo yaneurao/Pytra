@@ -2171,6 +2171,15 @@ class RustEmitter(CodeEmitter):
             return ""
         return "crate::" + module_id.replace(".", "::")
 
+    def _is_assertions_module(self, module_id: str) -> bool:
+        if module_id == "":
+            return False
+        if module_id.endswith(".assertions"):
+            return True
+        if module_id == "assertions":
+            return True
+        return False
+
     def _collect_use_lines(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """import 情報を Rust `use` 行へ変換する。"""
         out: list[str] = []
@@ -2194,7 +2203,7 @@ class RustEmitter(CodeEmitter):
                 if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                     i += 1
                     continue
-                if module_id == "pytra.utils.assertions":
+                if self._is_assertions_module(module_id):
                     i += 1
                     continue
                 if binding_kind == "module" and module_id == "math":
@@ -2222,7 +2231,7 @@ class RustEmitter(CodeEmitter):
                     module_id = self.any_to_str(ent.get("name"))
                     if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                         continue
-                    if module_id == "pytra.utils.assertions":
+                    if self._is_assertions_module(module_id):
                         continue
                     if module_id == "math":
                         continue
@@ -2239,7 +2248,7 @@ class RustEmitter(CodeEmitter):
                 module_id = self.any_to_str(stmt.get("module"))
                 if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                     continue
-                if module_id == "pytra.utils.assertions":
+                if self._is_assertions_module(module_id):
                     continue
                 base_path = self._module_id_to_rust_use_path(module_id)
                 if base_path == "":
@@ -4225,9 +4234,10 @@ class RustEmitter(CodeEmitter):
         if fn_kind == "Name":
             fn_name_raw = self.any_dict_get_str(fn_node, "id", "")
             fn_name = self._safe_name(fn_name_raw)
-            if fn_name_raw == "py_assert_stdout":
-                return "(\"True\").to_string()"
             if fn_name_raw.startswith("py_assert_"):
+                assert_suffix = fn_name_raw[10:]
+                if assert_suffix == "stdout":
+                    return "(\"True\").to_string()"
                 if len(merged_args) == 0:
                     return "true"
                 return "({ let _ = (" + ", ".join(merged_args) + "); true })"
