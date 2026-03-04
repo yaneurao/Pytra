@@ -12,6 +12,7 @@ Current guarded module set:
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
 - typing (`TypeVar`)
+- C++ math shape (`pytra-gen/std/math.*` + `pytra-core/std/math-impl.*`)
 """
 
 from __future__ import annotations
@@ -136,6 +137,66 @@ def _is_generated_runtime(rel_path: str) -> bool:
     return "/pytra-gen/" in ("/" + rel_path)
 
 
+def _check_cpp_math_shape(violations: list[str]) -> None:
+    required = [
+        "src/runtime/cpp/pytra-gen/std/math.h",
+        "src/runtime/cpp/pytra-gen/std/math.cpp",
+        "src/runtime/cpp/pytra-core/std/math-impl.h",
+        "src/runtime/cpp/pytra-core/std/math-impl.cpp",
+        "src/runtime/cpp/pytra/std/math.h",
+        "src/runtime/cpp/pytra/std/math.cpp",
+    ]
+    for rel in required:
+        if not (ROOT / rel).exists():
+            violations.append(f"[math] missing required runtime file: {rel}")
+
+    gen_header = ROOT / "src/runtime/cpp/pytra-gen/std/math.h"
+    gen_source = ROOT / "src/runtime/cpp/pytra-gen/std/math.cpp"
+    marker = "source: src/pytra/std/math.py"
+    if gen_header.exists():
+        txt = gen_header.read_text(encoding="utf-8", errors="ignore")
+        if marker not in txt:
+            violations.append(
+                "[math] src/runtime/cpp/pytra-gen/std/math.h missing canonical source marker"
+            )
+    if gen_source.exists():
+        txt = gen_source.read_text(encoding="utf-8", errors="ignore")
+        if marker not in txt:
+            violations.append(
+                "[math] src/runtime/cpp/pytra-gen/std/math.cpp missing canonical source marker"
+            )
+
+    fw_header = ROOT / "src/runtime/cpp/pytra/std/math.h"
+    if fw_header.exists():
+        txt = fw_header.read_text(encoding="utf-8", errors="ignore")
+        if "runtime/cpp/pytra-gen/std/math.h" not in txt:
+            violations.append(
+                "[math] src/runtime/cpp/pytra/std/math.h must forward to pytra-gen/std/math.h"
+            )
+    fw_source = ROOT / "src/runtime/cpp/pytra/std/math.cpp"
+    if fw_source.exists():
+        txt = fw_source.read_text(encoding="utf-8", errors="ignore")
+        if "runtime/cpp/pytra-gen/std/math.cpp" not in txt:
+            violations.append(
+                "[math] src/runtime/cpp/pytra/std/math.cpp must forward to pytra-gen/std/math.cpp"
+            )
+
+    impl_header = ROOT / "src/runtime/cpp/pytra-core/std/math-impl.h"
+    if impl_header.exists():
+        txt = impl_header.read_text(encoding="utf-8", errors="ignore")
+        if "namespace pytra::std::math_impl" not in txt:
+            violations.append(
+                "[math] src/runtime/cpp/pytra-core/std/math-impl.h must define math_impl namespace"
+            )
+    impl_source = ROOT / "src/runtime/cpp/pytra-core/std/math-impl.cpp"
+    if impl_source.exists():
+        txt = impl_source.read_text(encoding="utf-8", errors="ignore")
+        if "namespace pytra::std::math_impl" not in txt:
+            violations.append(
+                "[math] src/runtime/cpp/pytra-core/std/math-impl.cpp must define math_impl namespace"
+            )
+
+
 def main() -> int:
     allow = _parse_allowlist()
 
@@ -166,6 +227,8 @@ def main() -> int:
                 used_allow.add((module_name, rel))
                 continue
             violations.append(f"[{module_name}] {rel}")
+
+    _check_cpp_math_shape(violations)
 
     for module_name, paths in allow.items():
         for rel in sorted(paths):
