@@ -12,7 +12,7 @@
   - `runtime/cpp/pytra/utils/<mod>.h`
   - `runtime/cpp/pytra/utils/<mod>.cpp`
   - Examples: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`, `runtime/cpp/pytra/utils/assertions.h/.cpp`
-  - `runtime/cpp/pytra/std/math.h` / `math.cpp` is generated from function signatures interpreted from `src/pytra/std/math.py` by `src/py2cpp.py`.
+  - `runtime/cpp/pytra/std/math.h` / `math.cpp` is generated from function signatures interpreted from `src/pytra/std/math.py` by `src/py2x.py --target cpp`.
 - Handwritten allowed:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`
   - `runtime/cpp/pytra/utils/<mod>-impl.cpp`
@@ -20,8 +20,8 @@
   - `<mod>.h/.cpp` are always regeneration targets (no manual edits).
   - `*-impl.cpp` is manually editable (excluded from regeneration).
   - `<mod>.cpp` delegates to functions in `*-impl.cpp`.
-  - `src/py2cpp.py` is the single source-of-truth generator. Do not add per-module ad-hoc generators.
-  - Use `py2cpp.py --emit-runtime-cpp` for generation to default runtime locations.
+  - `src/py2x.py --target cpp` is the single source-of-truth generator. Do not add per-module ad-hoc generators.
+  - Use `py2x.py --target cpp --emit-runtime-cpp` for generation to default runtime locations.
 
 ### 2. Fix Include Conventions
 
@@ -147,7 +147,7 @@ double sqrt(double x);
 
 #### 2.2 `.h/.cpp` Generation Flow from Python Input (Including Constants)
 
-When the following Python module is passed to `py2cpp.py`, both `.h` and `.cpp` are generated.
+When the following Python module is passed to `py2x.py --target cpp`, both `.h` and `.cpp` are generated.
 
 ```python
 # src/pytra/std/math.py
@@ -164,10 +164,10 @@ Generation commands (examples):
 
 ```bash
 # Generate directly into default runtime path
-python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp
+python3 src/py2x.py src/pytra/std/math.py --target cpp --emit-runtime-cpp
 
 # Generate to arbitrary path
-python3 src/py2cpp.py src/pytra/std/math.py \
+python3 src/py2x.py src/pytra/std/math.py --target cpp \
   -o /tmp/math.cpp \
   --header-output /tmp/math.h \
   --top-namespace pytra::std::math
@@ -231,12 +231,12 @@ Key points:
 - Generated `<mod>.h`:
   - Public API declarations only
   - Include guard and namespace definitions
-  - Generated from EAST via `py2cpp.py --header-output` (no manual edits)
+  - Generated from EAST via `py2x.py --target cpp --header-output` (no manual edits)
 - Generated `<mod>.cpp`:
   - `#include "<mod>.h"`
   - Do not include `#include "<mod>-impl.cpp"`; use link-time resolution via declarations
   - Contains transpiled Python logic and `*-impl` calls
-  - Generated with `py2cpp.py -o <mod>.cpp` (no manual edits)
+  - Generated with `py2x.py --target cpp -o <mod>.cpp` (no manual edits)
   - `pytra.utils.png` / `pytra.utils.gif` use bridge style:
     - Transpiled body goes under `namespace ...::generated`
     - Public APIs (`write_rgb_png`, `save_gif`, `grayscale_palette`) are exposed through bridge wrappers with type conversion

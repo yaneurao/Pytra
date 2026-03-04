@@ -53,7 +53,7 @@ This document describes the EAST specification aligned with the current implemen
 - `python src/toolchain/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: outputs formatted JSON.
 - `--human-output`: outputs a C++-style human-readable view.
-- `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EAST-based C++ generator.
+- `python3 src/py2x.py <input.py|east.json> --target cpp [-o output.cpp]`: EAST-based C++ generator.
 
 ## 3. Top-Level EAST Structure
 
@@ -94,7 +94,7 @@ This document describes the EAST specification aligned with the current implemen
 - `FunctionDef` / `ClassDef` include both `name` (renamed) and `original_name`.
 - `for ... in range(...)` is normalized to `ForRange`, preserving `start/stop/step/range_mode`.
 - `range(...)` is lowered into dedicated EAST representation during EAST construction; raw `Call(Name("range"), ...)` is never passed to downstream emitters.
-  - Therefore downstream emitters (including `py2cpp.py`) do not interpret Python `range` semantics directly; they only process normalized EAST nodes.
+  - Therefore downstream emitters (including `py2x.py --target cpp`) do not interpret Python `range` semantics directly; they only process normalized EAST nodes.
 - `range(...)` outside `for` loops is lowered to `RangeExpr` (including inside `ListComp`).
 
 ## 5. Common Node Attributes
@@ -193,7 +193,7 @@ Function nodes include:
   - Otherwise it emits Python-style value-selection form:
     - `a or b` -> `truthy(a) ? a : b`
     - `a and b` -> `truthy(a) ? b : a`
-  - Selection logic is handled by `src/py2cpp.py`; EAST does not lower this into new nodes.
+  - Selection logic is handled by `src/py2x.py`; EAST does not lower this into new nodes.
 
 About `range`:
 
@@ -292,7 +292,7 @@ Before generation, collect:
 
 - `test/fixtures`: 32/32 convertible by `src/toolchain/compiler/east.py` (`ok: true`)
 - `sample/py`: 16/16 convertible by `src/toolchain/compiler/east.py` (`ok: true`)
-- `sample/py`: 16/16 pass "convert -> compile -> run" via `src/py2cpp.py` (`ok`)
+- `sample/py`: 16/16 pass "convert -> compile -> run" via `src/py2x.py` (`ok`)
 
 ## 16. Phased Rollout Plan (EAST Migration)
 

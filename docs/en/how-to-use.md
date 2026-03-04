@@ -72,7 +72,7 @@ Notes:
 
 - Use `src/py2x.py` for normal host execution. Target backends are loaded lazily per selected language.
 - Use `src/py2x-selfhost.py` for selfhost execution. Backends are fixed to static eager imports only.
-- Existing `py2{lang}.py` wrappers continue to call `py2x.py` as the normal path.
+- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `py2x.py` / `py2x-selfhost.py`.
 
 ```bash
 # Normal execution (host-lazy)
@@ -84,15 +84,12 @@ python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_se
 
 ### Migration Note (`py2*.py` compatibility wrappers)
 
-- Existing wrappers such as `py2rs.py`, `py2js.py`, and `py2rb.py` are still kept for compatibility.
-- For new usage, treat `py2x.py --target <lang>` as the primary entrypoint, and wrappers as transitional compatibility paths.
+- Existing wrappers such as `py2rs.py`, `py2js.py`, and `py2rb.py` are deprecated compatibility paths.
+- For normal usage, treat `py2x.py --target <lang>` as the only primary entrypoint, and wrappers as phased-removal compatibility paths.
 - Layer options (`--lower-option`, `--optimizer-option`, `--emitter-option`) are standardized on the `py2x.py` interface.
 
 ```bash
-# Old (compat wrapper)
-python src/py2rs.py test/fixtures/core/add.py -o out/add_wrapper.rs
-
-# New (recommended)
+# Canonical entrypoint (recommended)
 python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 ```
 
@@ -390,7 +387,7 @@ Notes:
 
 </details>
 
-## Selfhost Verification Procedure (`py2cpp.py` -> `py2cpp.cpp`)
+## Selfhost Verification Procedure (C++ backend -> `py2cpp.cpp`)
 
 Prerequisites:
 - Run from project root.
@@ -412,7 +409,7 @@ Comparison steps when compilation succeeds:
 mkdir -p test/transpile/cpp2
 ./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
 
-# 3) Convert the same input with Python py2cpp
+# 3) Convert the same input with Python C++ backend
 python src/py2x.py --target cpp sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 4) Check generated diff (source diff is allowed; this is for inspection)
@@ -428,8 +425,8 @@ Notes:
 
 Failure investigation tips:
 - First classify `error:` lines in `build.all.log` into type-related (`std::any` / `optional`) vs syntax-related (missing lowering).
-- At failing lines in `selfhost/py2cpp.cpp`, verify that the original `src/py2cpp.py` has not introduced extra `Any` mixing.
-- `selfhost/py2cpp.py` may be stale; run `cp src/py2cpp.py selfhost/py2cpp.py` before each attempt.
+- At failing lines in `selfhost/py2cpp.cpp`, verify that the original `src/backends/cpp/cli.py` has not introduced extra `Any` mixing.
+- `selfhost/py2cpp.py` may be stale; run `python3 tools/prepare_selfhost_source.py` before each attempt.
 
 ## Conversion Check During CodeEmitter Work
 

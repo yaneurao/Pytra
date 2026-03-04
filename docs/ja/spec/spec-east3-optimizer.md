@@ -228,7 +228,7 @@ fail-closed 規則:
 1. まず既定 `O1` で EAST3 ダンプと trace を取得する。
 
 ```bash
-python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --dump-east3-before-opt work/logs/east3_before.json \
   --dump-east3-after-opt work/logs/east3_after.json \
   --dump-east3-opt-trace work/logs/east3_trace.txt
@@ -237,7 +237,7 @@ python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
 2. 問題が出たら `--east3-opt-pass` で pass を個別に無効化し、原因 pass を切り分ける（例: `-RangeForCanonicalizationPass`）。
 
 ```bash
-python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --east3-opt-level 2 \
   --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
 ```

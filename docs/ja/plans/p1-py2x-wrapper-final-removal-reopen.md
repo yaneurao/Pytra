@@ -74,7 +74,7 @@
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] wrapper 参照の残存箇所を `tools/test/docs/selfhost` で再棚卸しし、置換順を確定する。
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `tools/` の wrapper 直参照を `py2x` / backend module 参照へ置換する。
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test/unit` の wrapper ファイル依存テストを `py2x` 基準または backend module 基準へ置換する。
-- [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja` / `docs/en` の wrapper 名記述を `py2x` 正規入口へ更新する。
+- [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja` / `docs/en` の wrapper 名記述を `py2x` 正規入口へ更新する。
 - [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] `src/py2*.py` wrapper 群と `toolchain/compiler/py2x_wrapper.py` を削除する（`py2x.py` / `py2x-selfhost.py` は除外）。
 - [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] wrapper 再流入を検知する静的ガードを更新し、削除後構成を固定する。
 - [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] transpile/smoke 回帰を実行し、wrapper 撤去後の非退行を確認する。
@@ -85,3 +85,4 @@
 - 2026-03-04: `S2-01` の先行分として `tools/check_noncpp_east3_contract.py` の wrapper 実ファイル前提チェックを除去し、`py2x.py` + backend layer + smoke 契約検証へ整理した。合わせて `tools/check_transpiler_version_gate.py` の言語 direct dependency を `src/py2*.py` から `src/py2x.py` へ置換し、`tools/check_legacy_cli_references.py` の allowlist から上記2ファイルを除外して再流入を抑止した。
 - 2026-03-04: `S2-01` を完了。`tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` を `src/py2x.py --target <lang>` 基準へ更新し、JS/RS/CS の stage2/stage3 実行でも `--target` を明示。`tools/prepare_selfhost_source_cs.py` は `src/py2x.py -> selfhost/py2x_cs.py` seed 生成へ簡素化し、`tools/check_cs_single_source_selfhost_compile.py` も `py2x` 基準へ移行した。`rg -n \"py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim)\\.py\" tools` が 0 件、関連ツール実行（stage1/multistage/cs-single-source）はクラッシュなしを確認。
 - 2026-03-04: `S2-02` を完了。`test/unit/test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py` の wrapper import / wrapper 実ファイル文字列依存を backend module + `load_east3_document(..., target_lang=<lang>)` 基準へ置換し、Lua smoke の runtime 外出し（`dofile("py_runtime.lua")`）期待値へ追従。`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v`（298 tests）で `OK` を確認。
+- 2026-03-04: `S2-03` を完了。運用ドキュメントの実行例を `py2x.py --target <lang>` 基準へ統一し、`how-to-use` の互換ラッパ説明を非推奨/段階撤去方針へ更新。`spec-runtime/spec-options/spec-east/spec-east3-optimizer/spec-dev/spec-tools`（ja/en）で `src/py2cpp.py` 前提を `src/py2x.py --target cpp` または `src/backends/cpp/cli.py` へ置換し、selfhost 同期手順は `python3 tools/prepare_selfhost_source.py` を正本化。`rg -n \"python3?\\s+src/py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim|cpp)\\.py\" docs/ja docs/en --glob '!**/plans/**' --glob '!**/todo/**' --glob '!**/archive/**' --glob '!**/language/**'` が 0 件であることを確認。

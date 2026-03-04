@@ -159,7 +159,7 @@ Recommended trace payload:
 1. Start with default `O1`, and capture before/after EAST3 plus optimizer trace.
 
 ```bash
-python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --dump-east3-before-opt work/logs/east3_before.json \
   --dump-east3-after-opt work/logs/east3_after.json \
   --dump-east3-opt-trace work/logs/east3_trace.txt
@@ -168,7 +168,7 @@ python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
 2. If behavior regresses, isolate passes via `--east3-opt-pass` (example disables range-loop passes).
 
 ```bash
-python src/py2cpp.py sample/py/01_mandelbrot.py out.cpp \
+python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --east3-opt-level 2 \
   --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
 ```

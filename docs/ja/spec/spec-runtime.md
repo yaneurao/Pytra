@@ -43,7 +43,7 @@
   - `runtime/cpp/pytra/utils/<mod>.cpp`
   - 例: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`,
     `runtime/cpp/pytra/utils/assertions.h/.cpp`
-  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2cpp.py` で解釈した結果（関数シグネチャ）から生成する。
+  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2x.py --target cpp` で解釈した結果（関数シグネチャ）から生成する。
 - 手書き許可:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`
   - `runtime/cpp/pytra/utils/<mod>-impl.cpp`
@@ -51,8 +51,8 @@
   - `<mod>.h/.cpp` は常に再生成対象（手編集禁止）。
   - `*-impl.cpp` は手編集可能（再生成対象外）。
   - `<mod>.cpp` から `*-impl.cpp` の関数へ委譲する。
-  - 生成器は `src/py2cpp.py` のみを正とし、特定モジュール専用の生成スクリプトは追加しない。
-  - 既定出力先への生成は `py2cpp.py --emit-runtime-cpp` を使う。
+  - 生成器は `src/py2x.py --target cpp` のみを正とし、特定モジュール専用の生成スクリプトは追加しない。
+  - 既定出力先への生成は `py2x.py --target cpp --emit-runtime-cpp` を使う。
 
 ### 2. include規約を固定する
 
@@ -178,7 +178,7 @@ double sqrt(double x);
 
 #### 2.2 Python入力から `.h/.cpp` が生成される流れ（定数を含む）
 
-次の Python を入力として `py2cpp.py` を実行すると、`.h` と `.cpp` の両方が生成される。
+次の Python を入力として `py2x.py --target cpp` を実行すると、`.h` と `.cpp` の両方が生成される。
 
 ```python
 # src/pytra/std/math.py
@@ -195,10 +195,10 @@ def sqrt(x: float) -> float:
 
 ```bash
 # 既定パスへ直接生成
-python3 src/py2cpp.py src/pytra/std/math.py --emit-runtime-cpp
+python3 src/py2x.py src/pytra/std/math.py --target cpp --emit-runtime-cpp
 
 # 任意パスへ生成
-python3 src/py2cpp.py src/pytra/std/math.py \
+python3 src/py2x.py src/pytra/std/math.py --target cpp \
   -o /tmp/math.cpp \
   --header-output /tmp/math.h \
   --top-namespace pytra::std::math
@@ -263,12 +263,12 @@ float64 sqrt(float64 x) {
 - 生成 `<mod>.h`:
   - 公開 API 宣言のみ
   - include guard / namespace 定義
-  - `py2cpp.py --header-output` で EAST から生成する（手編集しない）
+  - `py2x.py --target cpp --header-output` で EAST から生成する（手編集しない）
 - 生成 `<mod>.cpp`:
   - `#include "<mod>.h"`
   - 必要なら `#include "<mod>-impl.cpp"` は行わず、関数宣言経由でリンク解決する
   - 変換された Python ロジック本体 + `*-impl` 呼び出し
-  - `py2cpp.py -o <mod>.cpp` で生成する（手編集しない）
+  - `py2x.py --target cpp -o <mod>.cpp` で生成する（手編集しない）
   - `pytra.utils.png` / `pytra.utils.gif` は bridge 方式:
     - 変換本体を `namespace ...::generated` に出力
     - 公開 API (`write_rgb_png`, `save_gif`, `grayscale_palette`) は bridge 関数で型変換して公開

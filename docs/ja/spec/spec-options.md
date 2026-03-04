@@ -13,13 +13,13 @@
 - 既定値は `native` 寄り（性能優先）とする。
 - Python 互換性を重視する場合は、`balanced` / `python` プリセットや個別オプションで明示的に opt-in する。
 - オプションは段階導入する。
-  - Phase 1: `py2cpp.py` 先行
+  - Phase 1: `py2x.py --target cpp` 先行
   - Phase 2: 共通 CLI（`src/toolchain/frontends/transpile_cli.py`）へ集約（`compiler/transpile_cli.py` は互換 shim）
   - Phase 3: LanguageProfile で言語別既定値を切替可能にする
 
 ## 2. 実装済みオプション（現状）
 
-`py2cpp.py` で有効:
+`py2x.py --target cpp` で有効:
 
 - `--negative-index-mode {always,const_only,off}`
   - `always`: 負数添字を常に Python 互換で処理
@@ -164,5 +164,5 @@
 
 更新後は次を確認する。
 
-1. `python src/py2cpp.py INPUT.py --dump-options` の出力が仕様通りであること
+1. `python3 src/py2x.py INPUT.py --target cpp --dump-options` の出力が仕様通りであること
 2. `test/unit/test_py2cpp_features.py` の該当オプション回帰が通ること

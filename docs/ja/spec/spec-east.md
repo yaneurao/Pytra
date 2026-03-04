@@ -60,7 +60,7 @@
 - `python src/toolchain/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: 整形 JSON を出力。
 - `--human-output`: C++風の人間可読ビューを出力。
-- `python src/py2cpp.py <input.py|east.json> [-o output.cpp]`: EASTベースの C++ 生成器。
+- `python3 src/py2x.py <input.py|east.json> --target cpp [-o output.cpp]`: EASTベースの C++ 生成器。
 
 ## 3. トップレベルEAST構造
 
@@ -107,7 +107,7 @@
 - 予約名 `main`, `py_main`, `__pytra_main`
 - `FunctionDef`/`ClassDef` は `name`（rename後）と `original_name` を持つ。
 - `for ... in range(...)` は `ForRange` に正規化され、`start/stop/step/range_mode` を保持。
-- `range(...)` は EAST 構築段階で専用表現へ lower し、後段（`py2cpp.py` など）へ生の `Call(Name("range"), ...)` を渡さない。
+- `range(...)` は EAST 構築段階で専用表現へ lower し、後段（`py2x.py --target cpp` など）へ生の `Call(Name("range"), ...)` を渡さない。
   - つまり、後段エミッタは Python 組み込み `range` の意味解釈を持たず、EAST の正規化済みノードのみを処理する。
 - `for` 以外の式位置 `range(...)` は `RangeExpr` へ lower する（`ListComp` 含む）。
 
@@ -204,7 +204,7 @@
   - 期待型が `bool` 以外のときは Python の値選択式として出力する。
     - `a or b` -> `truthy(a) ? a : b`
     - `a and b` -> `truthy(a) ? b : a`
-  - 値選択の判定・出力は `src/py2cpp.py` 側で行い、EAST では追加ノードへ lower しない。
+  - 値選択の判定・出力は `src/py2x.py` 側で行い、EAST では追加ノードへ lower しない。
 
 `range` について:
 
@@ -304,14 +304,14 @@
 
 - `test/fixtures` 32/32 を `src/toolchain/compiler/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/toolchain/compiler/east.py` で変換可能（`ok: true`）
-- `sample/py` 16/16 を `src/py2cpp.py` で「変換→コンパイル→実行」可能（`ok`）
+- `sample/py` 16/16 を `src/py2x.py` で「変換→コンパイル→実行」可能（`ok`）
 
 <a id="east-stages"></a>
 ## 16. 現行の段階構成（2026-02-24）
 
 - EAST は `EAST1 -> EAST2 -> EAST3` の三段で扱う。
 - 現行実装では `py2*.py` の既定経路を `EAST3` とする。
-- `py2cpp.py` は `--east-stage 3` のみ受理し、`--east-stage 2` はエラーで停止する。
+- `py2x.py --target cpp` は `--east-stage 3` のみ受理し、`--east-stage 2` はエラーで停止する。
 - 非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は `--east-stage 2` を移行互換モード（警告付き）として維持する。
 - `meta.dispatch_mode` は全段で保持し、意味論適用は `EAST2 -> EAST3` の 1 回のみとする。
 
@@ -363,7 +363,7 @@
 | EAST2 | EAST1 -> EAST2 正規化 API | `src/toolchain/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/toolchain/ir/east2.py` |
 | EAST3 | EAST2 -> EAST3 lower 本体 | `src/toolchain/compiler/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/toolchain/ir/east2_to_east3_lowering.py` |
 | EAST3 | EAST3 入口 API | `src/toolchain/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/toolchain/ir/east3.py` |
-| Bridge | backend 入口（C++） | `src/py2cpp.py`（`--east-stage 3` 専用） | `src/py2cpp.py`（`EAST3` 専用） |
+| Bridge | backend 入口（C++） | `src/py2x.py`（`--east-stage 3` 専用） | `src/py2x.py`（`EAST3` 専用） |
 | CLI 互換 | 旧 API 公開 | `src/toolchain/compiler/transpile_cli.py`（互換 shim） | `src/toolchain/frontends/transpile_cli.py`（実体） |
 
 <a id="east1-build-boundary"></a>
@@ -376,7 +376,7 @@
 - `core.py`: self-hosted parser 実装（低レイヤ、現行正本は `src/toolchain/ir/core.py`）
 - `east1_build.py`: build 入口（追加対象）
 - `east1.py`: stage 契約 helper（薄い API）
-- `py2cpp.py`: `_analyze_import_graph` / `build_module_east_map` は `East1BuildHelpers` への委譲のみを担当
+- `py2x.py --target cpp`: `_analyze_import_graph` / `build_module_east_map` は `East1BuildHelpers` への委譲のみを担当
 - `transpile_cli.py`: 実体は `src/toolchain/frontends/transpile_cli.py`。`src/toolchain/compiler/transpile_cli.py` は互換公開 thin wrapper。
 
 受け入れ条件:
@@ -392,13 +392,13 @@
 
 1. Phase 0: 契約テスト固定（`EAST3` ルート必須項目、`ForCore`/`iter_plan` 必須性、dispatch 反映点）
 2. Phase 1: API 分離（`east1.py` / `east2.py` / `east3.py` へ責務移管）
-3. Phase 2: `EAST3` 主経路化（`py2cpp.py` の再判断ロジック棚卸し）
+3. Phase 2: `EAST3` 主経路化（`py2x.py --target cpp` の再判断ロジック棚卸し）
 4. Phase 3: hook 分離（移行期間限定で stage 混在を解消）
 5. Phase 4: `EAST2` 経路縮退（互換モード化 -> 段階撤去）
 
 補足:
 - 各フェーズの進行管理は `docs/ja/todo/index.md` と `docs/ja/plans/plan-east123-migration.md` で行う。
-- `Phase 4` の現行運用: 全 `py2*.py` の既定は `--east-stage 3`。`py2cpp.py` は `--east-stage 2` を受理せずエラー停止、非 C++ 8変換器は `warning: --east-stage 2 is compatibility mode; default is 3.` を伴う互換経路を維持する。
+- `Phase 4` の現行運用: 全 `py2*.py` の既定は `--east-stage 3`。`py2x.py --target cpp` は `--east-stage 2` を受理せずエラー停止、非 C++ 8変換器は `warning: --east-stage 2 is compatibility mode; default is 3.` を伴う互換経路を維持する。
 
 ## 21. EAST導入の受け入れ基準
 

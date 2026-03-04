@@ -21,32 +21,32 @@
 - `tools/check_runtime_cpp_layout.py`
   - 目的: `src/runtime/cpp/pytra-gen/` は `AUTO-GENERATED` マーカー必須、`src/runtime/cpp/pytra-core/` は同マーカー禁止という責務分離ルールを検証する。
 - `tools/check_py2cpp_transpile.py`
-  - 目的: `test/fixtures/` を `py2cpp.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` を `py2x.py --target cpp` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）
 - `tools/check_py2rs_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2rs.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target rs` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2js_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2js.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target js` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2cs_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2cs.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target cs` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2go_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2go.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target go` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2java_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2java.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target java` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2ts_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2ts.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target ts` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2swift_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2swift.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target swift` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2kotlin_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2kotlin.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target kotlin` で一括変換し、失敗ケースを検出する。
 - `tools/check_py2scala_transpile.py`
-  - 目的: `test/fixtures/` と `sample/py` を `py2scala.py` で一括変換し、失敗ケースを検出する。
+  - 目的: `test/fixtures/` と `sample/py` を `py2x.py --target scala` で一括変換し、失敗ケースを検出する。
 - `tools/check_yanesdk_py2cpp_smoke.py`
-  - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2cpp.py` を通るか確認する。
+  - 目的: Yanesdk canonical 対象（`library 1本 + game 7本`）が `py2x.py --target cpp` を通るか確認する。
 - `tools/check_microgpt_original_py2cpp_regression.py`
   - 目的: 原本 `materials/refs/microgpt/microgpt-20260222.py` を固定入力にし、`py2cpp` の失敗ステージ（A〜F）または成功を検査して再発を検知する。
 - `tools/build_multi_cpp.py`
-  - 目的: `py2cpp.py --multi-file` が出力した `manifest.json` を読み、関連 `*.cpp` と runtime をまとめてビルドする。
+  - 目的: `py2x.py --target cpp --multi-file` が出力した `manifest.json` を読み、関連 `*.cpp` と runtime をまとめてビルドする。
 - `tools/gen_makefile_from_manifest.py`
   - 目的: `manifest.json` を受け取り、`all`, `run`, `clean` を含む `Makefile` を生成する。
 - `tools/verify_multi_file_outputs.py`
@@ -93,7 +93,7 @@
 
 ### 2.1 selfhost 暴走ガード（実装済み）
 
-selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発で実行が長時間化するケースを早期停止できるよう、以下のガードを `py2cpp.py` / 共通 CLI へ段階導入する。
+selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発で実行が長時間化するケースを早期停止できるよう、以下のガードを `py2x.py --target cpp` / 共通 CLI へ段階導入する。
 
 - `--guard-profile {off,default,strict}`
   - 既定は `default`。`off` は制限無効、`strict` は調査向けに低い上限を適用する。

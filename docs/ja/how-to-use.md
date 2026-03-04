@@ -101,7 +101,7 @@ Windows では次の読み替えを行ってください。
 
 - 通常実行は `src/py2x.py` を使います。target backend は必要言語のみ lazy import されます。
 - selfhost 実行は `src/py2x-selfhost.py` を使います。backend は static eager import 固定です。
-- 既存 `py2{lang}.py` ラッパは通常導線として `py2x.py` を呼び出します。
+- 既存 `py2{lang}.py` ラッパは移行互換用途のみで、通常運用の入口は `py2x.py` / `py2x-selfhost.py` に統一します。
 
 ```bash
 # 通常実行（host-lazy）
@@ -113,15 +113,12 @@ python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_se
 
 ### 移行メモ（`py2*.py` 互換ラッパ）
 
-- 既存の `py2rs.py`, `py2js.py`, `py2rb.py` などは削除せず、互換ラッパとして維持しています。
-- 新規運用は `py2x.py --target <lang>` を正規入口とし、ラッパは段階移行期間の互換導線として扱います。
+- 既存の `py2rs.py`, `py2js.py`, `py2rb.py` などは非推奨の互換ラッパです。
+- 正規運用は `py2x.py --target <lang>` を唯一の入口とし、互換ラッパは段階撤去対象として扱います。
 - 層別 option（`--lower-option`, `--optimizer-option`, `--emitter-option`）は `py2x.py` 側仕様で統一しています。
 
 ```bash
-# 旧（互換ラッパ）
-python src/py2rs.py test/fixtures/core/add.py -o out/add_wrapper.rs
-
-# 新（推奨）
+# 正規入口（推奨）
 python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 ```
 
@@ -433,7 +430,7 @@ g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cp
 
 </details>
 
-## selfhost 検証手順（`py2cpp.py` -> `py2cpp.cpp`）
+## selfhost 検証手順（C++ backend -> `py2cpp.cpp`）
 
 前提:
 - プロジェクトルートで実行する。
@@ -455,7 +452,7 @@ rg "error:" selfhost/build.all.log
 mkdir -p test/transpile/cpp2
 ./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
 
-# 3) Python 版 py2cpp でも同じ入力を変換
+# 3) Python 版 C++ backend でも同じ入力を変換
 python src/py2x.py --target cpp sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 4) 生成差分を確認（ソース差分は許容、まずは確認用）
@@ -471,8 +468,8 @@ python3 tools/check_selfhost_cpp_diff.py --show-diff
 
 失敗時の確認ポイント:
 - `build.all.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
-- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/py2cpp.py` の記述が `Any` 混在を増やしていないか確認する。
-- `selfhost/py2cpp.py` が古い場合があるため、毎回 `cp src/py2cpp.py selfhost/py2cpp.py` を先に実行する。
+- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/backends/cpp/cli.py` の記述が `Any` 混在を増やしていないか確認する。
+- `selfhost/py2cpp.py` が古い場合は、毎回 `python3 tools/prepare_selfhost_source.py` を先に実行して同期する。
 
 ## CodeEmitter 作業時の変換チェック
 

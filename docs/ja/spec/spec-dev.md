@@ -12,7 +12,7 @@
 ## 1. リポジトリ構成
 
 - `src/`
-  - `py2cs.py`, `py2cpp.py`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
+  - `py2cs.py`, `py2x.py --target cpp`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
   - `backends/common/`: 複数言語で共有する基底実装・共通ユーティリティ
   - backend 段階実装の標準ディレクトリは `src/backends/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
@@ -113,10 +113,10 @@
 - `import` / `from ... import ...` は EAST `meta.import_bindings` を正本として `using` 行へ変換します。
 - 主要型は `src/backends/cs/profiles/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
 
-## 3. C++ 変換仕様（`py2cpp.py`）
+## 3. C++ 変換仕様（`py2x.py --target cpp`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
-- `CppEmitter` 実装は `src/backends/cpp/emitter/cpp_emitter.py` へ分離され、`py2cpp.py` は CLI / オーケストレーション層として扱います。
+- `CppEmitter` 実装は `src/backends/cpp/emitter/cpp_emitter.py` へ分離され、`py2x.py --target cpp` は CLI / オーケストレーション層として扱います。
 - 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
@@ -166,7 +166,7 @@
 
 ### 3.0 複数ファイル出力と `manifest.json` / build（実装済み）
 
-- `py2cpp.py` の既定出力モードは `--multi-file` です（明示 `--single-file` 指定で単一 `.cpp` へ切替）。
+- `py2x.py --target cpp` の既定出力モードは `--multi-file` です（明示 `--single-file` 指定で単一 `.cpp` へ切替）。
 - 互換挙動として、出力先が `.cpp` で終わる場合はモード明示なしでも単一ファイル出力を選びます。
 - `--multi-file` 出力では `--output-dir`（未指定時は `out`）配下へ次を生成します。
   - `include/`（モジュールごとの `*.h`）
@@ -186,24 +186,24 @@
 
 ### py2cpp 共通化ガードルール
 
-- `src/py2cpp.py` へ新規ロジックを追加する場合は、先に「C++ 固有」か「言語非依存」かを分類します。
-- 言語非依存と判定した処理は `src/toolchain/compiler/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2cpp.py` へは直接追加しません。
-- `py2cpp.py` に残す処理は C++ 固有責務（型写像、runtime 名解決、header/include 生成、C++ 構文最適化）に限定します。
-- 例外として、後方互換の公開 API ラッパ（`load_east`, `_analyze_import_graph`, `build_module_east_map`, `dump_deps_graph_text`）のみ `py2cpp.py` に残置できます。これらは共通層 API への委譲に限定します。
-- 既存の `py2cpp.py` 汎用 helper を修正する場合も、同時に共通層移管可否を検討し、`docs/ja/plans/p1-py2cpp-reduction.md` の決定ログへ記録します。
-- 緊急 hotfix で例外的に `py2cpp.py` へ汎用 helper を暫定追加する場合は、実装箇所に `TEMP-CXX-HOTFIX` コメントと対応 `ID` を残します。
+- `src/backends/cpp/cli.py` へ新規ロジックを追加する場合は、先に「C++ 固有」か「言語非依存」かを分類します。
+- 言語非依存と判定した処理は `src/toolchain/compiler/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2x.py --target cpp` へは直接追加しません。
+- `py2x.py --target cpp` に残す処理は C++ 固有責務（型写像、runtime 名解決、header/include 生成、C++ 構文最適化）に限定します。
+- 例外として、後方互換の公開 API ラッパ（`load_east`, `_analyze_import_graph`, `build_module_east_map`, `dump_deps_graph_text`）のみ `py2x.py --target cpp` に残置できます。これらは共通層 API への委譲に限定します。
+- 既存の `py2x.py --target cpp` 汎用 helper を修正する場合も、同時に共通層移管可否を検討し、`docs/ja/plans/p1-py2cpp-reduction.md` の決定ログへ記録します。
+- 緊急 hotfix で例外的に `py2x.py --target cpp` へ汎用 helper を暫定追加する場合は、実装箇所に `TEMP-CXX-HOTFIX` コメントと対応 `ID` を残します。
 - 暫定追加した helper は「追加日から 7 日以内」または「次回 PATCH リリースまで」の早い方で、`src/toolchain/compiler/` 側へ後追い抽出します。
 - 後追い抽出完了まで、`docs/ja/todo/index.md` に抽出タスクを未完了で保持し、`tools/check_py2cpp_helper_guard.py` の allowlist 更新理由を `docs/ja/plans/p1-py2cpp-reduction.md` に記録します。
 - 上記の責務境界は `tools/check_py2cpp_boundary.py` で検証し、`tools/run_local_ci.py` で常時実行します。
-- `src/toolchain/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2cpp.py` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
+- `src/toolchain/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2x.py --target cpp` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
 - `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/toolchain/compiler/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
-- `py2cpp.py` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
+- `py2x.py --target cpp` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
 - 回帰は `test/unit/test_east1_build.py`・`test/unit/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
-- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'` を併用し、`py2cpp.py` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
+- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'` を併用し、`py2x.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
 
 ### 3.1 import と `runtime/cpp` 対応
 
-`py2cpp.py` は import 文に応じて include を生成します。
+`py2x.py --target cpp` は import 文に応じて include を生成します。
 
 - `import pytra.std.math` -> `#include "pytra/std/math.h"`
 - `import pytra.std.pathlib` -> `#include "pytra/std/pathlib.h"`
@@ -301,8 +301,8 @@
 - 対象: `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`（自動生成）。
 - 前提: `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
-  - `python3 src/py2cpp.py src/pytra/utils/png.py -o /tmp/png.cpp`
-  - `python3 src/py2cpp.py src/pytra/utils/gif.py -o /tmp/gif.cpp`
+  - `python3 src/py2x.py src/pytra/utils/png.py --target cpp -o /tmp/png.cpp`
+  - `python3 src/py2x.py src/pytra/utils/gif.py --target cpp -o /tmp/gif.cpp`
   - 生成物は `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
   - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
@@ -332,7 +332,7 @@
   - `selfhost/py2cpp.py` から生成した `selfhost/py2cpp.cpp` がコンパイル成功する。
   - その実行ファイルで `sample/py/01_mandelbrot.py` を C++ へ変換できる。
 - 推奨確認:
-  - `src/py2cpp.py` 生成版と `selfhost` 生成版の C++ ソース差分を確認する（差分自体は許容）。
+  - `src/backends/cpp/cli.py` 生成版と `selfhost` 生成版の C++ ソース差分を確認する（差分自体は許容）。
   - 変換後 C++ をコンパイル・実行し、Python 実行結果と一致することを確認する。
 
 ### 4.2 一致判定条件（selfhost / 通常比較）
@@ -349,11 +349,11 @@
 - `src/toolchain/compiler/east.py`: Python -> EAST JSON（正本）
 - `src/toolchain/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
 - `src/backends/common/emitter/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
-- `src/py2cpp.py`: EAST JSON -> C++
+- `src/backends/cpp/cli.py`: EAST JSON -> C++
 - `src/runtime/cpp/pytra/built_in/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
-  - `src/py2cpp.py` は正規化済み EAST を文字列化する
+  - `src/backends/cpp/cli.py` は正規化済み EAST を文字列化する
   - 言語非依存の補助ロジックは `CodeEmitter` 側へ段階的に集約する
 - 出力構成方針:
   - 最終ゴールは「モジュール単位の複数ファイル出力（`.h/.cpp`）」とする。
@@ -428,7 +428,7 @@
 - `src/backends/common/` には言語非依存で再利用される処理のみを配置します。
 - 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/backends/common/` に置きません。
 - ランタイム実体は `src/runtime/<lang>/pytra/` に配置し、`src/*_module/` 直下へ新規実体を追加しません。
-- `py2cpp.py` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
+- `py2x.py --target cpp` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。
 - CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/toolchain/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
 - selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
@@ -446,7 +446,7 @@
 
 ### 8.1 `--east-stage` 運用（実装同期）
 
-- `py2cpp.py` と非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は、既定を `--east-stage 3` に統一する。
-- `py2cpp.py` は `--east-stage 3` のみ受理し、`--east-stage 2` 指定時はエラー停止する。
+- `py2x.py --target cpp` と非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は、既定を `--east-stage 3` に統一する。
+- `py2x.py --target cpp` は `--east-stage 3` のみ受理し、`--east-stage 2` 指定時はエラー停止する。
 - 非 C++ 8変換器のみ、`--east-stage 2` を移行互換モードとして受理し、`warning: --east-stage 2 is compatibility mode; default is 3.` を出力する。
 - 回帰導線は `tools/check_py2cpp_transpile.py` と `tools/check_noncpp_east3_contract.py` を正本とする。
