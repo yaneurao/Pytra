@@ -101,3 +101,5 @@
 - 2026-03-05: `S4-02` 継続として `check_java_pyruntime_boundary.py` の禁止シンボルを image に加えて `pyPerfCounter` / `pyMath*` まで拡張した。
 - 2026-03-05: `S3-01` 継続として、`resolved_runtime_call` の画像系（`write_rgb_png/save_gif/grayscale_palette`）を `PngHelper/GifHelper` 直接呼び出しへ切り替え、Java emitter から `PyRuntime` 経由を撤去した。
 - 2026-03-05: `S4-01` 継続として、`PyRuntime.java` から `write_rgb_png/save_gif/grayscale_palette` 本体を削除し、`check_java_pyruntime_boundary.py` へ同名禁止シンボルを追加した（json/pathlib は継続課題）。
+- 2026-03-05: `S3-01` 継続として、`resolved_runtime_call` の `json.loads/json.dumps` を `json.*` 直接描画へ移行し、Java emitter の `PyRuntime.pyJson*` 依存を撤去した（Path は継続課題）。
+- 2026-03-05: `S4-01` 継続として、`PyRuntime.java` から `pyJsonDumps/pyJsonLoads/jsonStringify/jsonEscapeString/JsonParser` を削除し、境界ガードに JSON 禁止シンボルを追加した（pathlib は継続課題）。

@@ -179,10 +179,10 @@ class Py2JavaSmokeTest(unittest.TestCase):
             )
             east = load_east(src, parser_backend="self_hosted")
             java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("Object obj = PyRuntime.pyJsonLoads(s);", java)
-        self.assertIn("return PyRuntime.pyJsonDumps(obj);", java)
-        self.assertNotIn("json.loads(", java)
-        self.assertNotIn("json.dumps(", java)
+        self.assertIn("Object obj = json.loads(s);", java)
+        self.assertIn("return json.dumps(obj);", java)
+        self.assertNotIn("PyRuntime.pyJsonLoads(", java)
+        self.assertNotIn("PyRuntime.pyJsonDumps(", java)
 
     def test_java_native_emitter_uses_runtime_path_class(self) -> None:
         with tempfile.TemporaryDirectory() as td:

@@ -616,6 +616,8 @@ def _runtime_call_java_name(runtime_call: str) -> str:
 
 
 _RESOLVED_RUNTIME_HELPERS: dict[str, str] = {
+    "json.loads": "json.loads",
+    "json.dumps": "json.dumps",
     "write_rgb_png": "PngHelper.pyWriteRGBPNG",
     "save_gif": "GifHelper.pySaveGif",
     "grayscale_palette": "GifHelper.pyGrayscalePalette",
