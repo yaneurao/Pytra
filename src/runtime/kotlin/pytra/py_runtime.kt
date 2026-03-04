@@ -1,4 +1,6 @@
 // Kotlin native runtime helpers for Pytra-generated code.
+// source: src/pytra/utils/png.py
+// source: src/pytra/utils/gif.py
 
 import kotlin.math.*
 import java.io.File

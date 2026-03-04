@@ -51,7 +51,7 @@
 13. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 14. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 15. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-16. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+16. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 17. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 18. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-LUA] Lua image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 19. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-PHP] PHP image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
@@ -74,6 +74,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go runtime（`py_runtime.go`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_go_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_go_s3_complete.json` で `go: compliant_marker_present` を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java runtime（`PyRuntime.java`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_java_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_java_s3_complete.json` で `java: compliant_marker_present` を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift runtime（`py_runtime.swift`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_swift_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_swift_s3_complete.json` で `swift: compliant_marker_present` を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin runtime（`py_runtime.kt`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_kotlin_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_kotlin_s3_complete.json` で `kotlin: compliant_marker_present` を確認。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 
