@@ -159,7 +159,7 @@
 2. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] C++ runtime の必須 API カタログ（module/function/契約）を抽出する。
 3. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
 4. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` で優先度付けする。
-5. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` 不足 API を実装する。
+5. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` 不足 API を実装する。
 6. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: `json.loads/dumps` runtime API を追加し、Go emitter の `json.*` 呼び出しを runtime helper へ統一する。
 7. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
 8. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
@@ -180,6 +180,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `Path` クラス（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）を追加し、`Path(...)` 呼び出し生成がそのままコンパイル可能であることを `test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` で確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Go: runtime に `Path` wrapper（`NewPath/__pytra_as_Path` + method群）を追加し、Go emitter で keyword 引数値を一般呼び出しへ反映するよう修正。`pathlib` の `mkdir(parents=True, exist_ok=True)` が `mkdir(true, true)` へ降りることを `test_py2go_smoke.py` と `check_py2go_transpile.py` で確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `pyMath*` API（`sqrt/sin/cos/tan/exp/log/fabs/floor/ceil/pow/pi/e`）を追加し、emitter の `math.*` を runtime helper 経由へ統一。`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` で非退行確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1 完了: `go/java/kotlin/swift` で `json/pathlib/math/time` の不足 API 実装と emitter 接続を完了し、`test_py2{go,java,kotlin,swift}_smoke.py` + `check_py2{go,java,kotlin,swift}_transpile.py` で green を確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
