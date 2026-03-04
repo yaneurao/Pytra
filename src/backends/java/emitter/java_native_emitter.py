@@ -499,11 +499,35 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
-            return "Math.PI"
+            return "PyRuntime.pyMathPi()"
         if owner == "math" and attr == "e":
-            return "Math.E"
+            return "PyRuntime.pyMathE()"
     value = _render_expr(value_any)
     return value + "." + attr
+
+
+def _java_math_runtime_call(attr: str) -> str:
+    if attr == "sqrt":
+        return "PyRuntime.pyMathSqrt"
+    if attr == "sin":
+        return "PyRuntime.pyMathSin"
+    if attr == "cos":
+        return "PyRuntime.pyMathCos"
+    if attr == "tan":
+        return "PyRuntime.pyMathTan"
+    if attr == "exp":
+        return "PyRuntime.pyMathExp"
+    if attr == "log":
+        return "PyRuntime.pyMathLog"
+    if attr == "pow":
+        return "PyRuntime.pyMathPow"
+    if attr == "floor":
+        return "PyRuntime.pyMathFloor"
+    if attr == "ceil":
+        return "PyRuntime.pyMathCeil"
+    if attr in {"abs", "fabs"}:
+        return "PyRuntime.pyMathFabs"
+    return ""
 
 
 def _call_name(expr: dict[str, Any]) -> str:
@@ -688,7 +712,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 while i < len(args):
                     rendered_math_args.append(_render_expr(args[i]))
                     i += 1
-                return "Math." + attr_name + "(" + ", ".join(rendered_math_args) + ")"
+                runtime_math = _java_math_runtime_call(attr_name)
+                if runtime_math != "":
+                    return runtime_math + "(" + ", ".join(rendered_math_args) + ")"
             if owner == "json":
                 if attr_name == "loads":
                     if len(args) == 0:

@@ -78,6 +78,7 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Go: runtime に `Path` wrapper（`NewPath/__pytra_as_Path` + method群）を追加し、Go emitter で call keyword 値を一般呼び出しへ反映（`mkdir(parents=True, exist_ok=True)` が `mkdir(true, true)` へ降りる）する修正を適用。`test_py2go_smoke.py` と `check_py2go_transpile.py` を通過。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `pyMath*`（`sqrt/sin/cos/tan/exp/log/fabs/floor/ceil/pow/pi/e`）API を追加し、emitter の `math.*` 呼び出しを runtime helper 経由へ切替。`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` を通過。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）の `math/time/pathlib/json` 不足 API 実装を完了し、`test_py2{go,java,kotlin,swift}_smoke.py` と `check_py2{go,java,kotlin,swift}_transpile.py` を green で固定。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 化の先行実装として、Go/Java emitter の `math.*` 呼び出しを runtime helper (`pyMath*`) 経由へ統一。Go 側は `math` import 依存を emitter から除去し、`test_py2{go,java}_smoke.py` と `check_py2{go,java}_transpile.py` で非退行確認。
 
 ## S1-01 実装（2026-03-03）
 

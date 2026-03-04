@@ -554,18 +554,21 @@ func pyPerfCounter() any {
 	return float64(time.Now().UnixNano()) / 1_000_000_000.0
 }
 
-func pyMathSqrt(v any) any       { return math.Sqrt(pyToFloat(v)) }
-func pyMathSin(v any) any        { return math.Sin(pyToFloat(v)) }
-func pyMathCos(v any) any        { return math.Cos(pyToFloat(v)) }
-func pyMathTan(v any) any        { return math.Tan(pyToFloat(v)) }
-func pyMathExp(v any) any        { return math.Exp(pyToFloat(v)) }
-func pyMathLog(v any) any        { return math.Log(pyToFloat(v)) }
-func pyMathLog10(v any) any      { return math.Log10(pyToFloat(v)) }
-func pyMathFabs(v any) any       { return math.Abs(pyToFloat(v)) }
-func pyMathFloor(v any) any      { return float64(math.Floor(pyToFloat(v))) }
-func pyMathCeil(v any) any       { return float64(math.Ceil(pyToFloat(v))) }
-func pyMathPow(a any, b any) any { return math.Pow(pyToFloat(a), pyToFloat(b)) }
-func pyMathPi() any              { return math.Pi }
+func pyMathSqrt(v any) float64  { return math.Sqrt(pyToFloat(v)) }
+func pyMathSin(v any) float64   { return math.Sin(pyToFloat(v)) }
+func pyMathCos(v any) float64   { return math.Cos(pyToFloat(v)) }
+func pyMathTan(v any) float64   { return math.Tan(pyToFloat(v)) }
+func pyMathExp(v any) float64   { return math.Exp(pyToFloat(v)) }
+func pyMathLog(v any) float64   { return math.Log(pyToFloat(v)) }
+func pyMathLog10(v any) float64 { return math.Log10(pyToFloat(v)) }
+func pyMathFabs(v any) float64  { return math.Abs(pyToFloat(v)) }
+func pyMathFloor(v any) float64 { return float64(math.Floor(pyToFloat(v))) }
+func pyMathCeil(v any) float64  { return float64(math.Ceil(pyToFloat(v))) }
+func pyMathPow(a any, b any) float64 {
+	return math.Pow(pyToFloat(a), pyToFloat(b))
+}
+func pyMathPi() float64 { return math.Pi }
+func pyMathE() float64  { return math.E }
 
 // -------- pathlib helper --------
 

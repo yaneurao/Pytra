@@ -530,52 +530,56 @@ final class PyRuntime {
         return System.nanoTime() / 1_000_000_000.0;
     }
 
-    static Object pyMathSqrt(Object v) {
+    static double pyMathSqrt(Object v) {
         return Math.sqrt(pyToFloat(v));
     }
 
-    static Object pyMathSin(Object v) {
+    static double pyMathSin(Object v) {
         return Math.sin(pyToFloat(v));
     }
 
-    static Object pyMathCos(Object v) {
+    static double pyMathCos(Object v) {
         return Math.cos(pyToFloat(v));
     }
 
-    static Object pyMathTan(Object v) {
+    static double pyMathTan(Object v) {
         return Math.tan(pyToFloat(v));
     }
 
-    static Object pyMathExp(Object v) {
+    static double pyMathExp(Object v) {
         return Math.exp(pyToFloat(v));
     }
 
-    static Object pyMathLog(Object v) {
+    static double pyMathLog(Object v) {
         return Math.log(pyToFloat(v));
     }
 
-    static Object pyMathLog10(Object v) {
+    static double pyMathLog10(Object v) {
         return Math.log10(pyToFloat(v));
     }
 
-    static Object pyMathFabs(Object v) {
+    static double pyMathFabs(Object v) {
         return Math.abs(pyToFloat(v));
     }
 
-    static Object pyMathFloor(Object v) {
+    static double pyMathFloor(Object v) {
         return Math.floor(pyToFloat(v));
     }
 
-    static Object pyMathCeil(Object v) {
+    static double pyMathCeil(Object v) {
         return Math.ceil(pyToFloat(v));
     }
 
-    static Object pyMathPow(Object a, Object b) {
+    static double pyMathPow(Object a, Object b) {
         return Math.pow(pyToFloat(a), pyToFloat(b));
     }
 
-    static Object pyMathPi() {
+    static double pyMathPi() {
         return Math.PI;
+    }
+
+    static double pyMathE() {
+        return Math.E;
     }
 
     // --- pathlib ---

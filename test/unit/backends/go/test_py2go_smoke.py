@@ -87,11 +87,14 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("var a AnimalLike = NewLoudDog()", go)
         self.assertIn('return __pytra_str(("loud-" + self.Dog.speak()))', go)
 
-    def test_go_native_emitter_emits_math_import_only_when_used(self) -> None:
+    def test_go_native_emitter_routes_math_calls_via_runtime_helpers(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         go = transpile_to_go_native(east)
-        self.assertIn('    "math"', go)
+        self.assertIn("pyMathPi()", go)
+        self.assertIn("pyMathCos(__pytra_float(angle))", go)
+        self.assertIn("pyMathSin(__pytra_float(angle))", go)
+        self.assertNotIn("math.", go)
         self.assertNotIn("var _ = math.Pi", go)
 
     def test_go_native_emitter_maps_json_module_calls_to_runtime_helpers(self) -> None:
