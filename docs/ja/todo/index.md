@@ -114,18 +114,19 @@
 
 文脈: [docs/ja/plans/p1-py2x-unified-smoke-suite.md](../plans/p1-py2x-unified-smoke-suite.md)
 
-1. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01] `test_py2*_smoke.py` の共通観点を `py2x` ベースの共通 smoke へ統合し、全言語を1つの枠組みで検証できるようにする。
+1. [x] [ID: P1-PY2X-SMOKE-UNIFY-01] `test_py2*_smoke.py` の共通観点を `py2x` ベースの共通 smoke へ統合し、全言語を1つの枠組みで検証できるようにする。
 2. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` の共通観点と言語固有観点を棚卸しし、共通化対象を確定する。
 3. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-01] `py2x` target パラメタライズの共通 smoke テスト（新規）を追加する。
 4. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-02] 各言語 smoke から共通化済みケースを削減し、言語固有検証のみを残す。
 5. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-03] 共通 smoke と言語固有 smoke の責務境界をテストコード内コメントと計画書へ明記する。
 6. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-01] unit/transpile 回帰を実行し、統合後の非退行を確認する。
-7. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ smoke テスト運用ルールを反映する。
+7. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ smoke テスト運用ルールを反映する。
 - 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` 14本を棚卸しし、共通化対象を `(A) stage2拒否(14/14) (B) CLI最小成功(14/14) (C) load_east/profile(13/14, non-cpp) (D) add-fixture最小transpile(13/14, non-cpp)` に確定、言語固有 192件は残置方針を固定。
 - 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S2-01] `test_py2x_smoke_common.py` を追加し、全14言語の `CLI成功/stage2拒否` と non-cpp 13言語の `load_east default/from_json/add-fixture` 共通 smoke を `py2x --target` で集約（`test_py2x_smoke*.py` 6件 `OK`）。
 - 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S2-02] 14本の `test_py2*_smoke.py` から共通化済み 53 ケース（CLI成功/stage2拒否/load_east/add-fixture）を削減し、言語固有検証へ縮退。`test_py2*_smoke.py` 232件と `test_py2x_smoke*.py` 6件の両方で `OK`。
 - 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S2-03] 共通責務を `test_py2x_smoke_common.py` に、言語固有責務を各 `test_py2*_smoke.py` に明示するコメントを追加し、責務境界をテストコード上で固定。
 - 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S3-01] `check_noncpp_east3_contract.py` を共通smoke前提へ更新したうえで `check_py2{cpp..nim}_transpile.py` 全件、`test_py2x_smoke*.py` 6件、`test_py2*_smoke.py` 232件を再実行しすべて `OK`。
+- 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S3-02] `docs/ja/spec/spec-tools.md` と `docs/en/spec/spec-tools.md` に共通 smoke / 言語別 smoke の責務境界と推奨回帰順を追記し、運用ルールを文書化。
 
 ### P1: `test/unit` レイアウト再編と未使用テスト整理
 

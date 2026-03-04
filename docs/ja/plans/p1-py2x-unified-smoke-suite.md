@@ -57,7 +57,7 @@
 - [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-02] 各言語 smoke から共通化済みケースを削減し、言語固有検証のみを残す。
 - [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-03] 共通 smoke と言語固有 smoke の責務境界をテストコード内コメントと計画書へ明記する。
 - [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-01] unit/transpile 回帰を実行し、統合後の非退行を確認する。
-- [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ smoke テスト運用ルールを反映する。
+- [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ smoke テスト運用ルールを反映する。
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、「全言語を1つの smoke に統一」案を採用。検知力維持のため、最終形は「共通 smoke + 言語固有 smoke」の2層構成とする。
@@ -66,6 +66,7 @@
 - 2026-03-04: `S2-02` を完了。既存 `test_py2*_smoke.py` 14本から共通化済みケース（CLI成功/`--east-stage 2`拒否/`load_east default+json`/`add fixture`）を削減し、言語固有検証のみを残した。削減件数は 53 件（`py2cpp` 1件 + 非cpp 13言語×4件）。`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v` は 232 tests `OK`、`test_py2x_smoke*.py` は 6 tests `OK` を確認。
 - 2026-03-04: `S2-03` を完了。`test_py2x_smoke_common.py` のモジュールドキュメントに「共通責務」を明記し、`test_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim}_smoke.py` 14本に「言語固有責務のみを保持する」コメントを追加した。責務境界をコード上で明示した状態で、`test_py2x_smoke*.py`（6 tests）と `test_py2*_smoke.py`（232 tests）の `OK` を再確認。
 - 2026-03-04: `S3-01` を完了。回帰中に `check_py2js_transpile.py` が `check_noncpp_east3_contract.py` の旧前提（各言語 smoke に共通ケースが残る前提）で失敗したため、同スクリプトを新構成へ更新した。`test_py2x_smoke_common.py` の必須パターン検査を追加し、各言語 smoke には責務境界コメント必須 + 共通ケース関数禁止を適用。更新後に `check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim}_transpile.py` 全件 `OK`、`test_py2x_smoke*.py` 6件 `OK`、`test_py2*_smoke.py` 232件 `OK` を確認。
+- 2026-03-04: `S3-02` を完了。`docs/ja/spec/spec-tools.md` と `docs/en/spec/spec-tools.md` に「共通 smoke は `test_py2x_smoke_common.py`、言語別 smoke は言語固有契約のみ」の運用ルールを追記し、`check_noncpp_east3_contract.py` を含む推奨回帰順（共通 smoke -> 言語別 smoke -> transpile check）を明文化した。
 
 ## S1-01 棚卸し結果（2026-03-04）
 
