@@ -146,6 +146,18 @@ def _is_string_like_expr(node: Any, rendered: str) -> bool:
     txt = rendered.strip()
     return txt.startswith("$(") or txt.startswith('"')
 
+
+def _resolved_runtime_call(expr: dict[str, Any]) -> str:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call
+    resolved_any = expr.get("resolved_runtime_call")
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved
+    return ""
+
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
         self.east_doc = east_doc
@@ -1299,6 +1311,11 @@ class NimNativeEmitter:
             value_node = expr.get("value")
             value = self._render_expr(value_node)
             attr = _safe_ident(expr.get("attr"))
+            semantic_tag_any = expr.get("semantic_tag")
+            semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+            runtime_call = _resolved_runtime_call(expr)
+            if semantic_tag.startswith("stdlib.") and runtime_call == "":
+                raise RuntimeError("nim native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
             if value == "math" and attr == "pi":
                 return "PI"
             resolved_runtime_any = expr.get("resolved_runtime_call")
@@ -1324,6 +1341,11 @@ class NimNativeEmitter:
             if isinstance(kw, dict) and "value" in kw:
                 args.append(self._render_expr(kw.get("value")))
             i_kw += 1
+        semantic_tag_any = expr.get("semantic_tag")
+        semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+        runtime_call = _resolved_runtime_call(expr)
+        if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
+            raise RuntimeError("nim native emitter: unresolved stdlib runtime call: " + semantic_tag)
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
             if name == "print":
