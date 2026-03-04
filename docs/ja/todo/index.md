@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-04
+最終更新: 2026-03-05
 
 ## 文脈運用ルール
 
@@ -31,125 +31,6 @@
 
 
 ## 未完了タスク
-
-### P0: 画像runtime 構成是正（`pytra-core` / `pytra-gen` 分離 + 正本自動生成）
-
-文脈: [docs/ja/plans/p0-image-runtime-core-gen-rollout.md](../plans/p0-image-runtime-core-gen-rollout.md)
-
-1. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01] 全言語の画像runtimeを `pytra-core`（手書き）と `pytra-gen`（`src/pytra/utils/{png,gif}.py` 由来生成物）へ物理分離し、旧「marker中心」運用を廃止する。
-2. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` を誤った実現方式として廃止し、TODOから削除した履歴を計画書へ明記する。
-3. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] 画像runtimeの責務境界（`pytra-core` 禁止事項 / `pytra-gen` 必須事項 / 正本変更禁止）を `docs/ja/spec` と `docs/en/spec` に追記する。
-4. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 各バックエンド共通の生成導線（`png.py/gif.py -> <lang> runtime`）と出力先規約（`src/runtime/<lang>/{pytra-core,pytra-gen}`）を実装する。
-5. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] `tools/audit_image_runtime_sot.py` を「marker有無」から「`pytra-gen` 実体 + 生成痕跡 + core混入禁止」検査へ置換する。
-6. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] Rust runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.rs` から撤去する。
-7. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.go` から撤去する。
-8. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `PyRuntime.java` から撤去する。
-9. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] Swift runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.swift` から撤去する。
-10. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.kt` から撤去する。
-11. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.rb` から撤去する。
-12. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] Lua runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.lua` から撤去する。
-13. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.php` / `runtime/*.php` の責務境界に沿って再配置する。
-14. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.cs` 直埋めから撤去する。
-15. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
-16. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
-17. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.scala` 直埋めから撤去する。
-18. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.nim` 直埋めから撤去する。
-19. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
-20. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] 各backendの runtime copy hook / build手順を新レイアウトへ更新する。
-21. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] CI/ローカル検査へ「`pytra-core` に画像実装が混入したらfail」を追加する。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] `docs/ja/spec/spec-{codex,dev}.md` と `docs/en/spec/spec-{codex,dev}.md` に `pytra-core` / `pytra-gen` の責務境界（core直書き禁止・gen生成痕跡必須）を追記して完了。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] `tools/gen_image_runtime_from_canonical.py` を追加し、`png.py/gif.py -> src/runtime/<lang>/pytra-gen/...` の共通生成計画（14言語）を実装。`--dry-run` と `test_gen_image_runtime_from_canonical.py` で導線を検証。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] `tools/audit_image_runtime_sot.py` を core/gen 検査へ置換（`pytra-core` 混入禁止、`pytra-gen` の `source:` / `generated-by:` 必須、legacy配置検知）。`image_runtime_core_gen_audit_20260304_s2_02.json` を取得し baseline（`compliant=1/non_compliant=13`）を固定。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] `src/runtime/rs/pytra-core/built_in/py_runtime.rs` と `src/runtime/rs/pytra-gen/utils/image_runtime.rs` を追加し、Rust runtime hook を core+gen コピーへ変更。`runtime_parity_sample_rs_0105_core_gen_split_retry_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] `src/runtime/go/pytra-core/built_in/py_runtime.go` と `src/runtime/go/pytra-gen/utils/{png.go,gif.go}` を追加し、Go runtime hook を core+gen コピーへ変更。`runtime_parity_sample_go_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] `src/runtime/java/pytra-core/built_in/PyRuntime.java` と `src/runtime/java/pytra-gen/utils/{PngHelper.java,GifHelper.java}` を追加し、Java runtime hook を core+gen コピーへ変更。`runtime_parity_sample_java_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] `src/runtime/swift/pytra-core/built_in/py_runtime.swift` と `src/runtime/swift/pytra-gen/utils/image_runtime.swift` を追加し、Swift runtime hook を core+gen コピーへ変更。`runtime_parity_sample_swift_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] `src/runtime/kotlin/pytra-core/built_in/py_runtime.kt` と `src/runtime/kotlin/pytra-gen/utils/image_runtime.kt` を追加し、Kotlin runtime hook を core+gen コピーへ変更。`runtime_parity_sample_kotlin_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] `src/runtime/ruby/pytra-core/built_in/py_runtime.rb` と `src/runtime/ruby/pytra-gen/utils/image_runtime.rb` を追加し、Ruby runtime hook を core+gen コピーへ変更。`runtime_parity_sample_ruby_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] `src/runtime/lua/pytra-core/built_in/py_runtime.lua` と `src/runtime/lua/pytra-gen/utils/image_runtime.lua` を追加し、Lua runtime hook を core+gen コピーへ変更。`runtime_parity_sample_lua_0105_core_gen_split_20260304.json` で `sample/01 pass / 05 CRC mismatch`（legacy runtime と同値）を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] `src/runtime/php/pytra-core/{py_runtime.php,std/time.php}` と `src/runtime/php/pytra-gen/runtime/{png.php,gif.php}` を追加し、PHP runtime hook を core+gen ソースへ更新。`runtime_parity_sample_php_0105_core_gen_split_20260304_retry.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] `src/runtime/cs/pytra-core/{built_in,std}` と `src/runtime/cs/pytra-gen/utils` を導入し、`runtime_parity_check`・selfhost検証ツール群（`check_multilang_selfhost_stage1/multistage`, `check_cs_single_source_selfhost_compile`, `gen_cs_image_runtime_from_canonical`）を新レイアウトへ更新。`runtime_parity_sample_cs_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] `src/runtime/js/pytra-core/{built_in,std}` と `src/runtime/js/pytra-gen/utils` を追加し、`js_runtime_shims`・selfhost検証ツール・JS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_js_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` を追加し、TS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala runtime を `src/runtime/scala/pytra-core/built_in/py_runtime.scala` と `src/runtime/scala/pytra-gen/utils/image_runtime.scala` へ分離し、backend runtime hook と `runtime_parity_check` の実行導線を `py_runtime.scala + image_runtime.scala` へ更新。`runtime_parity_sample_scala_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `src/runtime/nim/pytra-core/built_in/py_runtime.nim` と `src/runtime/nim/pytra-gen/utils/image_runtime.nim` へ分離し、`py_runtime.nim` から `include "image_runtime.nim"` で画像runtimeを参照する構成へ更新。`runtime_parity_sample_nim_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] `cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim` の14言語で `sample/01,05` parity を再実行し、`work/logs/runtime_parity_sample_all_0105_core_gen_split_20260304_retry.json` で `case_pass=2/case_fail=0`（`ok:28`）を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] runtime copy/build 導線を新レイアウトへ更新（`backend_registry(_static)` の Scala/Nim core+gen copy、`runtime_parity_check` の C#/Scala 実行入力更新、`check_py2{scala,nim}_transpile` の runtime存在検証更新、JS/TS selfhost shim の core/gen 参照化）し、旧 `runtime/<lang>/pytra/` 固定参照は legacy ガード用途を除き撤去。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] `tools/audit_image_runtime_sot.py` に `--fail-on-core-mix` を追加し、`tools/run_local_ci.py` の必須ステップへ組み込み。`work/logs/image_runtime_core_gen_audit_20260304_s4_03_guardrail.json` で core 混入なし（fail条件未該当）を確認。
-
-### P0: 画像runtime 静的ガードレール導入（core混入禁止）
-
-文脈: [docs/ja/plans/p0-image-runtime-static-guardrails.md](../plans/p0-image-runtime-static-guardrails.md)
-
-1. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01] `pytra-core` への画像実装混入を静的検査で検知し、CI必須チェックとして固定する。
-2. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S1-01] 検査仕様（許可パス/禁止シンボル/必須marker/除外規則）を定義する。
-3. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S2-01] `tools/` に静的検査スクリプトを実装し、`pytra-core` 混入を fail できるようにする。
-4. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S2-02] `pytra-gen` 生成痕跡（`source:`/`generated-by:`）欠落を fail する検査を追加する。
-5. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S3-01] 検査スクリプトの unit test を追加する（正常系/違反系）。
-6. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S3-02] `tools/run_local_ci.py` と CI 導線に必須ジョブとして組み込む。
-7. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S4-01] 既存runtimeへ検査を適用し、全言語で green を確認する。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S4-01] `audit_image_runtime_sot.py` に `--fail-on-gen-markers` を追加し、`run_local_ci.py` を `--fail-on-core-mix --fail-on-gen-markers` へ更新。`test_audit_image_runtime_sot.py`（正常系+違反3系）と `work/logs/image_runtime_static_guardrails_20260304.json` で guardrail 条件の green を確認。
-
-### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
-
-文脈: [docs/ja/plans/p0-php-sample-parity-complete.md](../plans/p0-php-sample-parity-complete.md)
-
-1. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01] PHP の `sample` parity（stdout + artifact size + CRC32）を全18件で完了させる。
-2. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] PHP `sample` 全件 parity を再実行し、単独 target の最新 baseline を固定する。
-3. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] fail 8件（`05,06,08,10,11,12,14,16`）の artifact 差分をケース別に切り分ける。
-4. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-01] PHP GIF runtime を Python 実装準拠へ揃え、GIF 系 CRC mismatch を解消する。
-5. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-02] PHP PNG runtime を再検証し、必要な差分を修正する。
-6. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] PHP lower/emitter の画像出力入力（palette/frame/list/bytes 経路）を是正する。
-7. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] `sample/13` の stdout mismatch 再発有無を検証し、未解消なら根本修正する。
-8. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets php --all-samples` を再実行し、`case_pass=18` / `case_fail=0` を確認する。
-9. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] 修正内容に対応する回帰テストを追加して再発防止を固定する。
-10. [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-03] 生成ログと決定事項を計画書へ記録し、TODO の完了条件を明示する。
-- 進捗メモ: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-03] `save_gif` keyword 引数欠落と bit 演算崩れを PHP emitter で修正し、`work/logs/runtime_parity_sample_php_all_pass_20260304.json` で `case_pass=18/case_fail=0`（`ok:18`）を確認。
-
-### P1: `test/unit` レイアウト再編と未使用テスト整理
-
-文脈: [docs/ja/plans/p1-test-unit-layout-and-pruning.md](../plans/p1-test-unit-layout-and-pruning.md)
-
-1. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01] `test/unit` を責務別フォルダへ再編し、未使用テストを根拠付きで整理する。
-2. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
-3. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
-4. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
-5. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
-6. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
-7. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] 判定済みの未使用テストを削除または統合し、再発防止チェック（必要なら新規）を追加する。
-8. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] 主要 unit/transpile/selfhost 回帰を実行し、再編・整理後の非退行を確認する。
-9. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新しいテスト配置規約と運用手順を反映する。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` 71本を棚卸しし、移動マップを `backends/*:29, ir:10, tooling:5, selfhost:3, common:23` で確定。`S2-01` でこの分類に従って再編する。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] `test/unit/{common,backends/<lang>,ir,tooling,selfhost}` の目標配置・命名・discover運用規約を計画書に確定し、`test/unit` 直下直置き禁止を明文化。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] `test/unit/test_*.py` 71本を責務別ディレクトリへ移動し、`run_local_ci.py` と `check_noncpp_east3_contract.py` の固定参照を新パスへ更新。`backends` 名衝突回避のため `test/unit/backends` は非package運用とした。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `test_discovery_router` を手動ローダ化して非package再帰 discover を復旧し、`comment_fidelity` import 失敗を root helper 追加で解消。`go/swift/kotlin` の個別 discover も新パスで通過。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 参照スキャンで抽出した未使用候補（`test_pylib_*`, `test_east3_to_human_repr.py`）を個別 discover で再検証し、現役回帰として `維持` 判定。削除・統合候補は 0 件。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] `S3-01` 監査結果により削除・統合対象は 0 件のため no-op クローズ。再発防止は配置規約と discover ルータで継続運用。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] `test_py2x_smoke_common`, `py2{go,swift,kotlin}_smoke`, `selfhost/test_prepare_selfhost_source`, `check_noncpp_east3_contract --skip-transpile` を再実行し全通過を確認。
-- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] `docs/ja/spec` / `docs/en/spec` のテスト参照パスを新配置（`common/backends/ir/tooling/selfhost`）へ更新し運用手順を同期。
-
-### P1: Nim sample parity 完了化（runtime_parity_check 正式統合）
-
-文脈: [docs/ja/plans/p1-nim-sample-parity-complete.md](../plans/p1-nim-sample-parity-complete.md)
-
-1. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01] Nim を parity 回帰対象へ正式統合し、`sample` 18件の stdout + artifact（size + CRC32）一致を完了させる。
-2. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-01] `runtime_parity_check` に Nim target（transpile/run/toolchain 判定）を追加する。
-3. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-02] `regenerate_samples.py` に Nim を追加し、`sample/nim` 再生成導線を固定する。
-4. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-03] Nim `sample` 全件 parity を実行して失敗カテゴリを固定する。
-5. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] Nim runtime の PNG writer 手実装を撤去し、`src/pytra/utils/png.py` 正本由来の生成物へ置換する。
-6. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-02] Nim runtime の GIF writer 手実装を撤去し、`src/pytra/utils/gif.py` 正本由来の生成物へ置換する。
-7. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-03] Nim emitter/lower の画像出力経路と runtime 契約を整合させる。
-8. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-04] 残件ケース（例: `sample/18`）を最小修正で解消する。
-9. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets nim --all-samples` で `case_pass=18` / `case_fail=0` を確認する。
-10. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-02] Nim parity 契約の回帰テスト（CLI/smoke/transpile）を更新する。
-11. [x] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-03] 検証ログと運用手順を計画書へ記録し、クローズ条件を明文化する。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-01] `runtime_parity_check` に Nim target を追加し、モジュール名制約回避のため `case_<stem>.nim` 出力で実行可能化。`test_runtime_parity_check_cli.py` に Nim エントリ回帰を追加。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-02] `regenerate_samples.py --langs nim --force` を通し、`summary: total=18 skip=0 regen=18 fail=0` で Nim 再生成導線を固定。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-03] Nim sample parity baseline を実行し、`work/logs/runtime_parity_sample_nim_rebaseline_20260304.json` で `case_pass=0/case_fail=18`、`run_failed=16/output_mismatch=2` を固定。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] Nim runtime の `write_rgb_png` を pure Nim 実装へ置換し、`work/logs/runtime_nim_png_crc_check_20260304.json` で `sample/01` の PNG artifact `size+crc32` 一致を確認。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-02] Nim runtime に `grayscale_palette/save_gif` を実装し、`work/logs/runtime_nim_gif_crc_check_20260304.json` で GIF artifact の `size+crc32` 一致を確認。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] 運用是正により手実装完了を無効化。`png/gif` は Python正本由来のみ許可とし、`S2-01/S2-02` を「手実装撤去＋生成物置換」の未完了タスクとして再オープン。
-- 進捗メモ: [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-01] `nim_native_emitter` の式/制御/型/クラス生成を段階補完し、`py_runtime.nim` に `py_range/py_isdigit/py_isalpha` を追加。`work/logs/runtime_parity_sample_nim_all_pass_20260304_after_emitter_fixes.json` で `case_pass=18/case_fail=0`（stdout + artifact size + CRC32）を確認。
 
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
