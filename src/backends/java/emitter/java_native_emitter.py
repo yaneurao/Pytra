@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pytra.std.typing import Any
 from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
-from toolchain.compiler.stdlib.signature_registry import list_stdlib_function_runtime_calls
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -611,7 +610,6 @@ _RESOLVED_RUNTIME_HELPERS: dict[str, str] = {
     "Path": "pathlib.Path",
 }
 _ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
-_STDLIB_FUNCTION_RUNTIME_CALLS = set(list_stdlib_function_runtime_calls())
 
 
 def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
@@ -630,20 +628,30 @@ def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
     return ""
 
 
-def _render_call_via_runtime_call(runtime_call: str, runtime_source: str, args: list[Any]) -> str:
+def _render_call_via_runtime_call(
+    expr: dict[str, Any],
+    runtime_call: str,
+    runtime_source: str,
+    args: list[Any],
+) -> str:
     if runtime_call in _ASSERTION_RUNTIME_CALLS:
         return _java_string_literal("True")
     if runtime_call in _RESOLVED_RUNTIME_HELPERS:
         mapped_call = _render_resolved_runtime_call(runtime_call, args)
         if mapped_call != "":
             return mapped_call
-    if runtime_call in _STDLIB_FUNCTION_RUNTIME_CALLS:
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    if semantic_tag.startswith("stdlib.fn."):
+        fn_name = semantic_tag[len("stdlib.fn."):].strip()
+        if fn_name == "":
+            return ""
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_args.append(_render_expr(args[i]))
             i += 1
-        return "_impl." + runtime_call + "(" + ", ".join(rendered_args) + ")"
+        return "_impl." + fn_name + "(" + ", ".join(rendered_args) + ")"
     if runtime_source == "resolved_runtime_call":
         rendered_resolved = _render_resolved_runtime_call(runtime_call, args)
         if rendered_resolved != "":
@@ -655,13 +663,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
-        rendered_runtime = _render_call_via_runtime_call(runtime_call, runtime_source, args)
+        rendered_runtime = _render_call_via_runtime_call(expr, runtime_call, runtime_source, args)
         if rendered_runtime != "":
             return rendered_runtime
 
     callee_name = _call_name(expr)
-    if callee_name in _ASSERTION_RUNTIME_CALLS:
-        return _java_string_literal("True")
     if callee_name == "main" and len(args) == 0:
         return "__pytra_main()"
     if callee_name == "bytearray":

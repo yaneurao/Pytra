@@ -120,8 +120,6 @@ _OWNER_ATTRIBUTE_TYPES: dict[str, dict[str, str]] = {
     },
 }
 
-_ASSERTION_MODULE_IDS = {"pytra.utils.assertions", "pytra.std.test"}
-
 
 def _std_root() -> Path:
     return Path(__file__).resolve().parents[2] / "pytra" / "std"
@@ -329,15 +327,6 @@ def lookup_stdlib_function_runtime_call(function_name: str) -> str:
     return _FUNCTION_RUNTIME_CALLS.get(fn, "")
 
 
-def list_stdlib_function_runtime_calls() -> list[str]:
-    out: set[str] = set()
-    for runtime_call in _FUNCTION_RUNTIME_CALLS.values():
-        call = runtime_call.strip()
-        if call != "":
-            out.add(call)
-    return sorted(out)
-
-
 def lookup_stdlib_attribute_type(owner_type: str, attr_name: str) -> str:
     owner = owner_type.strip()
     attr = attr_name.strip()
@@ -404,10 +393,9 @@ def lookup_noncpp_module_attr_runtime_call(module_name: str, attr_name: str) -> 
 
 def list_noncpp_assertion_runtime_calls() -> list[str]:
     out: set[str] = set()
-    for key, runtime_call in _NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS.items():
-        module = key[0] if isinstance(key, tuple) and len(key) == 2 else ""
+    for runtime_call in _NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS.values():
         call = runtime_call.strip()
-        if module in _ASSERTION_MODULE_IDS and call != "":
+        if call.startswith("py_assert_"):
             out.add(call)
     return sorted(out)
 
@@ -419,7 +407,6 @@ def is_stdlib_path_type(type_name: str) -> bool:
 __all__ = [
     "is_stdlib_path_type",
     "list_noncpp_assertion_runtime_calls",
-    "list_stdlib_function_runtime_calls",
     "lookup_stdlib_attribute_type",
     "lookup_stdlib_function_return_type",
     "lookup_stdlib_function_runtime_call",
