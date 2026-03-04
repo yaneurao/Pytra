@@ -6,8 +6,8 @@ This script transpiles:
 - src/pytra/utils/gif.py
 
 and rewrites the generated `Program` class into runtime helpers:
-- src/runtime/cs/pytra/utils/png_helper.cs
-- src/runtime/cs/pytra/utils/gif_helper.cs
+- src/runtime/cs/pytra-gen/utils/png_helper.cs
+- src/runtime/cs/pytra-gen/utils/gif_helper.cs
 """
 
 from __future__ import annotations
@@ -122,8 +122,8 @@ def _rewrite_program_to_helper(cs_src: str, helper_name: str, source_rel: str) -
 
 def generate() -> None:
     pairs = [
-        ("src/pytra/utils/png.py", "png_helper", "src/runtime/cs/pytra/utils/png_helper.cs"),
-        ("src/pytra/utils/gif.py", "gif_helper", "src/runtime/cs/pytra/utils/gif_helper.cs"),
+        ("src/pytra/utils/png.py", "png_helper", "src/runtime/cs/pytra-gen/utils/png_helper.cs"),
+        ("src/pytra/utils/gif.py", "gif_helper", "src/runtime/cs/pytra-gen/utils/gif_helper.cs"),
     ]
     for src_rel, helper_name, out_rel in pairs:
         generated = _run_py2x(src_rel)

@@ -835,13 +835,13 @@ def _run_rs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
 
 def _cs_compile(src_cs: Path, out_exe: Path) -> tuple[bool, str]:
     runtime_files = [
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "py_runtime.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "time.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "math.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "png_helper.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "utils" / "gif_helper.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "pathlib.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra" / "std" / "json.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "py_runtime.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "time.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "math.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "png_helper.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "gif_helper.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-core" / "std" / "pathlib.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-core" / "std" / "json.cs",
     ]
     compile_cmd = ["mcs", "-langversion:latest", "-warn:0", "-out:" + str(out_exe), str(src_cs)]
     for runtime_file in runtime_files:

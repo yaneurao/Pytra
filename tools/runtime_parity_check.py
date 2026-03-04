@@ -259,12 +259,13 @@ def build_targets(
             ),
             run_cmd=(
                 f"mcs -warn:0 -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
-                "src/runtime/cs/pytra/built_in/py_runtime.cs "
-                "src/runtime/cs/pytra/built_in/time.cs "
-                "src/runtime/cs/pytra/built_in/math.cs "
-                "src/runtime/cs/pytra/utils/png_helper.cs "
-                "src/runtime/cs/pytra/utils/gif_helper.cs "
-                "src/runtime/cs/pytra/std/pathlib.cs "
+                "src/runtime/cs/pytra-core/built_in/py_runtime.cs "
+                "src/runtime/cs/pytra-core/built_in/time.cs "
+                "src/runtime/cs/pytra-core/built_in/math.cs "
+                "src/runtime/cs/pytra-gen/utils/png_helper.cs "
+                "src/runtime/cs/pytra-gen/utils/gif_helper.cs "
+                "src/runtime/cs/pytra-core/std/pathlib.cs "
+                "src/runtime/cs/pytra-core/std/json.cs "
                 f"&& mono test/transpile/obj/{case_stem}_cs.exe"
             ),
             needs=("python", "mcs", "mono"),

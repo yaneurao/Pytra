@@ -51,7 +51,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] Lua を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP を `pytra-core` / `pytra-gen` 分離へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 を `pytra-core` / `pytra-gen` 分離へ移行する。
@@ -73,3 +73,4 @@
 - 2026-03-04: `S3-RUBY` 完了。Ruby runtime を `pytra-core`/`pytra-gen` へ分離し、`py_runtime.rb` の画像本体（`__pytra_u16le` 以降）を `pytra-gen/utils/image_runtime.rb` へ移設。`py_runtime.rb` から `require_relative \"image_runtime\"` で読込む導線へ変更し、`backend_registry(_static)` の Ruby runtime hook を core+gen コピーへ更新。`work/logs/runtime_parity_sample_ruby_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-LUA` 完了。Lua runtime を `pytra-core`/`pytra-gen` へ分離し、`py_runtime.lua` の画像本体（`__pytra_u16le`〜`__pytra_png_module`）を `pytra-gen/utils/image_runtime.lua` へ移設。`py_runtime.lua` に相対 `dofile(\"image_runtime.lua\")` ローダを追加し、`backend_registry(_static)` の Lua runtime hook を core+gen コピーへ更新。`work/logs/runtime_parity_sample_lua_0105_core_gen_split_20260304.json` で `sample/01 pass / 05 CRC mismatch`（legacy runtime 同値）を確認。
 - 2026-03-04: `S3-PHP` 完了。PHP runtime を `pytra-core`/`pytra-gen` へ分離し、`py_runtime.php` は core helper のみに縮退、画像本体を `pytra-gen/runtime/{png.php,gif.php}` へ再配置（`grayscale_palette` を GIF 側へ集約）。`_copy_php_runtime` を新レイアウト読込へ更新し、`work/logs/runtime_parity_sample_php_0105_core_gen_split_20260304_retry.json` で `sample/01,05` parity pass を確認。
+- 2026-03-04: `S3-CS` 完了。C# runtime を `src/runtime/cs/pytra-core/{built_in,std}` と `src/runtime/cs/pytra-gen/utils` へ分離し、`tools/runtime_parity_check.py`・`tools/check_multilang_selfhost_stage1.py`・`tools/check_multilang_selfhost_multistage.py`・`tools/check_cs_single_source_selfhost_compile.py`・`tools/gen_cs_image_runtime_from_canonical.py` の参照を新レイアウトへ更新。`work/logs/runtime_parity_sample_cs_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
