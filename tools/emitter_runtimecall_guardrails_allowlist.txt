@@ -15,10 +15,6 @@ src/backends/cs/emitter/cs_emitter.py:2503:dumps
 src/backends/cs/emitter/cs_emitter.py:2748:Path
 src/backends/cs/emitter/cs_emitter.py:461:Path
 src/backends/cs/emitter/cs_emitter.py:461:pytra.std.pathlib
-src/backends/js/emitter/js_emitter.py:189:pytra.std.time
-src/backends/js/emitter/js_emitter.py:190:pytra.std.pathlib
-src/backends/js/emitter/js_emitter.py:192:pytra.utils.png
-src/backends/js/emitter/js_emitter.py:193:pytra.utils.gif
 src/backends/lua/emitter/lua_native_emitter.py:2080:save_gif
 src/backends/lua/emitter/lua_native_emitter.py:2153:save_gif
 src/backends/lua/emitter/lua_native_emitter.py:491:pytra.utils.png
