@@ -33,6 +33,8 @@ CORE_FORBIDDEN_SYMBOL_RE = re.compile(
 )
 SOURCE_MARKER_RE = re.compile(r"source:\s*src/pytra/utils/(png|gif)\.py", re.IGNORECASE)
 GENERATED_BY_RE = re.compile(r"generated-by:\s*", re.IGNORECASE)
+CORE_MIX_REASON = "core_contains_image_symbols"
+GEN_MARKER_MISSING_REASONS = {"gen_missing_image_symbols", "gen_missing_source_marker", "gen_missing_generated_by_marker"}
 UNRESOLVED_MARKER_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("unsupported_stmt", re.compile(r"unsupported stmt", re.IGNORECASE)),
     ("unknown_expr", re.compile(r"unknown expr", re.IGNORECASE)),
@@ -135,7 +137,7 @@ def _scan_runtime_layout(spec: LangSpec) -> dict[str, object]:
     if not gen_root.exists():
         reasons.append("gen_root_missing")
     if len(core_hits) > 0:
-        reasons.append("core_contains_image_symbols")
+        reasons.append(CORE_MIX_REASON)
     if len(gen_hits) == 0:
         reasons.append("gen_missing_image_symbols")
     if len(gen_missing_source) > 0:
@@ -226,6 +228,32 @@ def run_audit(probe_transpile: bool) -> dict[str, object]:
     return result
 
 
+def collect_guardrail_failures(
+    report: dict[str, object],
+    *,
+    fail_on_core_mix: bool,
+    fail_on_gen_markers: bool,
+    fail_on_non_compliant: bool,
+) -> dict[str, list[str]]:
+    failures: dict[str, list[str]] = {"core_mix": [], "gen_markers": [], "non_compliant": []}
+    langs = report.get("languages", {})
+    if not isinstance(langs, dict):
+        return failures
+    for lang in sorted(langs.keys()):
+        entry = langs.get(lang)
+        if not isinstance(entry, dict):
+            continue
+        reasons_any = entry.get("reasons")
+        reasons = reasons_any if isinstance(reasons_any, list) else []
+        if fail_on_core_mix and CORE_MIX_REASON in reasons:
+            failures["core_mix"].append(lang)
+        if fail_on_gen_markers and any(str(reason) in GEN_MARKER_MISSING_REASONS for reason in reasons):
+            failures["gen_markers"].append(lang)
+        if fail_on_non_compliant and len(reasons) > 0:
+            failures["non_compliant"].append(lang)
+    return failures
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="audit image runtime core/gen layout status")
     ap.add_argument("--probe-transpile", action="store_true", help="probe py2x transpile for src/pytra/utils/{png,gif}.py")
@@ -234,6 +262,16 @@ def main() -> int:
         "--fail-on-core-mix",
         action="store_true",
         help="exit non-zero if any pytra-core contains image encoder symbols",
+    )
+    ap.add_argument(
+        "--fail-on-gen-markers",
+        action="store_true",
+        help="exit non-zero if pytra-gen image runtime is missing source/generated-by markers",
+    )
+    ap.add_argument(
+        "--fail-on-non-compliant",
+        action="store_true",
+        help="exit non-zero if any language has non-compliant core/gen layout reasons",
     )
     args = ap.parse_args()
 
@@ -274,20 +312,21 @@ def main() -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    if args.fail_on_core_mix:
-        mixed_langs: list[str] = []
-        if isinstance(langs, dict):
-            for lang in sorted(langs.keys()):
-                entry = langs.get(lang)
-                if not isinstance(entry, dict):
-                    continue
-                reasons_any = entry.get("reasons")
-                reasons = reasons_any if isinstance(reasons_any, list) else []
-                if "core_contains_image_symbols" in reasons:
-                    mixed_langs.append(lang)
-        if len(mixed_langs) > 0:
-            print("[FAIL] pytra-core image symbol detected in: " + ", ".join(mixed_langs))
-            return 1
+    failures = collect_guardrail_failures(
+        report,
+        fail_on_core_mix=bool(args.fail_on_core_mix),
+        fail_on_gen_markers=bool(args.fail_on_gen_markers),
+        fail_on_non_compliant=bool(args.fail_on_non_compliant),
+    )
+    if len(failures["core_mix"]) > 0:
+        print("[FAIL] pytra-core image symbol detected in: " + ", ".join(failures["core_mix"]))
+        return 1
+    if len(failures["gen_markers"]) > 0:
+        print("[FAIL] pytra-gen marker missing in: " + ", ".join(failures["gen_markers"]))
+        return 1
+    if len(failures["non_compliant"]) > 0:
+        print("[FAIL] non-compliant core/gen layout in: " + ", ".join(failures["non_compliant"]))
+        return 1
     return 0
 
 
