@@ -282,10 +282,18 @@ class Py2JavaSmokeTest(unittest.TestCase):
         runtime_path = ROOT / "src" / "runtime" / "java" / "pytra-core" / "built_in" / "PyRuntime.java"
         png_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "png.java"
         gif_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "gif.java"
+        std_time = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "time.java"
+        std_json = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "json.java"
+        std_pathlib = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "pathlib.java"
+        std_math = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "math.java"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(png_helper.exists())
         self.assertTrue(gif_helper.exists())
+        self.assertTrue(std_time.exists())
+        self.assertTrue(std_json.exists())
+        self.assertTrue(std_pathlib.exists())
+        self.assertTrue(std_math.exists())
         self.assertFalse(legacy_path.exists())
 
 

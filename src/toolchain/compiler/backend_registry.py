@@ -87,6 +87,10 @@ def _runtime_java(output_path: Path) -> None:
     _copy_runtime_file("runtime/java/pytra-core/built_in/PyRuntime.java", output_path, "PyRuntime.java")
     _copy_runtime_file("runtime/java/pytra-gen/utils/png.java", output_path, "png.java")
     _copy_runtime_file("runtime/java/pytra-gen/utils/gif.java", output_path, "gif.java")
+    _copy_runtime_file("runtime/java/pytra-gen/std/time.java", output_path, "time.java")
+    _copy_runtime_file("runtime/java/pytra-gen/std/json.java", output_path, "json.java")
+    _copy_runtime_file("runtime/java/pytra-gen/std/pathlib.java", output_path, "pathlib.java")
+    _copy_runtime_file("runtime/java/pytra-gen/std/math.java", output_path, "math.java")
 
 
 def _runtime_kotlin(output_path: Path) -> None:
