@@ -81,4 +81,5 @@
 - 2026-03-04: ユーザー指示「言語別にTODOにP0で積んで実施」に基づき、本計画を新規起票。
 - 2026-03-04: `tools/audit_image_runtime_sot.py --probe-transpile` を実行し、`work/logs/image_runtime_sot_audit_20260304.json` で `languages=14, compliant=1, non_compliant=13` を固定。
 - 2026-03-04: 監査結果から `probe ok` 群（`cs/js/ts/scala/nim`）を先行着手、`probe fail` 群（`rs/go/java/swift/kotlin/ruby/lua/php`）を阻害要因解消フェーズへ分離した。
-- 2026-03-04: 正本 `src/pytra/utils/png.py` / `gif.py` を subset 正規化（`with`→`open/write/close`、`slice`→loop、`to_bytes`→`_append_u16le`、f-string除去）し、`work/logs/image_runtime_sot_audit_20260304_v4.json` で全14 target の `probe png/gif = ok` を確認。`tools/verify_image_runtime_parity.py` で Python正本とC++ runtime のバイト一致も維持した。
+- 2026-03-04: 正本 `src/pytra/utils/png.py` / `gif.py` を subset 正規化（`with`→`open/write/close`、`slice`→loop、`to_bytes`→`_append_u16le`、f-string除去）し、`work/logs/image_runtime_sot_audit_20260304_v4.json` で全14 target の `probe png/gif = ok` を確認。
+- 2026-03-04: `gif.py` の `_lzw_encode` を index-loop + `int(v)` へ追加正規化し、Nim probe に残っていた `unknown_expr` マーカーを解消（`work/logs/image_runtime_sot_audit_20260304_v6.json`）。`tools/verify_image_runtime_parity.py` は引き続き `True`。
