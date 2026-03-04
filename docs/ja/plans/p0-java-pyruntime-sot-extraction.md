@@ -81,7 +81,7 @@
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
 - [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
-- [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
+- [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
 - [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
 
 決定ログ:

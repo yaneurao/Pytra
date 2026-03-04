@@ -44,7 +44,7 @@
 6. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
 7. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
 8. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
-9. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
+9. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
 10. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を `runtime_call/resolved_runtime_call` 経路へ寄せたが、`json.*` 素通しは現行 `pytra-gen/std/json.java` 品質でコンパイル不成立のため一旦ロールバックし、継続課題として保持した。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] `test_py2java_smoke.py` に emitter ソース検査を追加し、`json/png/gif` の `runtime_call == \"...\"` 直書き分岐再混入を回帰検知化した。
