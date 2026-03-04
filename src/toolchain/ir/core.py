@@ -16,6 +16,8 @@ from toolchain.frontends.signature_registry import lookup_stdlib_function_return
 from toolchain.frontends.signature_registry import lookup_stdlib_function_runtime_call
 from toolchain.frontends.signature_registry import lookup_stdlib_imported_symbol_return_type
 from toolchain.frontends.signature_registry import lookup_stdlib_imported_symbol_runtime_call
+from toolchain.frontends.signature_registry import lookup_noncpp_imported_symbol_runtime_call
+from toolchain.frontends.signature_registry import lookup_noncpp_module_attr_runtime_call
 from toolchain.frontends.signature_registry import lookup_stdlib_method_runtime_call
 from toolchain.frontends.signature_registry import lookup_stdlib_method_return_type
 from toolchain.frontends.frontend_semantics import lookup_builtin_semantic_tag
@@ -44,6 +46,7 @@ _SH_FN_RETURNS: dict[str, str] = {}
 _SH_CLASS_METHOD_RETURNS: dict[str, dict[str, str]] = {}
 _SH_CLASS_BASE: dict[str, str | None] = {}
 _SH_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
+_SH_IMPORT_MODULES: dict[str, str] = {}
 _SH_TYPE_ALIASES: dict[str, str] = {
     "List": "list",
     "Dict": "dict",
@@ -1732,6 +1735,15 @@ def _sh_register_import_symbol(local_name: str, module_id: str, export_name: str
     _SH_IMPORT_SYMBOLS[local] = {"module": module, "name": export}
 
 
+def _sh_register_import_module(local_name: str, module_id: str) -> None:
+    """import で導入されたモジュール別名を式パーサ共有コンテキストへ反映する。"""
+    local = local_name.strip()
+    module = module_id.strip()
+    if local == "" or module == "":
+        return
+    _SH_IMPORT_MODULES[local] = module
+
+
 class _ShExprParser:
     src: str
     line_no: int
@@ -2535,6 +2547,11 @@ class _ShExprParser:
                     if fn_name != ""
                     else ""
                 )
+                noncpp_symbol_runtime_call = (
+                    lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)
+                    if fn_name != ""
+                    else ""
+                )
                 builtin_semantic_tag = lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""
                 stdlib_fn_semantic_tag = lookup_stdlib_function_semantic_tag(fn_name) if fn_name != "" else ""
                 stdlib_symbol_semantic_tag = (
@@ -2606,6 +2623,11 @@ class _ShExprParser:
                     payload["runtime_call"] = stdlib_symbol_runtime_call
                     if stdlib_symbol_semantic_tag != "":
                         payload["semantic_tag"] = stdlib_symbol_semantic_tag
+                elif noncpp_symbol_runtime_call != "":
+                    # C++ 互換を維持するため BuiltinCall へは降ろさず、
+                    # non-C++ backend 向けに解決済み runtime 名だけ注釈する。
+                    payload["resolved_runtime_call"] = noncpp_symbol_runtime_call
+                    payload["resolved_runtime_source"] = "import_symbol"
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
@@ -2700,6 +2722,27 @@ class _ShExprParser:
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
                     owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
+                    noncpp_module_runtime_call = ""
+                    if isinstance(owner, dict) and owner.get("kind") == "Name":
+                        owner_name = str(owner.get("id", "")).strip()
+                        if owner_name != "":
+                            if owner_name in _SH_IMPORT_MODULES:
+                                noncpp_module_runtime_call = lookup_noncpp_module_attr_runtime_call(
+                                    _SH_IMPORT_MODULES[owner_name],
+                                    attr,
+                                )
+                            if noncpp_module_runtime_call == "" and owner_name in _SH_IMPORT_SYMBOLS:
+                                binding = _SH_IMPORT_SYMBOLS[owner_name]
+                                mod_name = str(binding.get("module", "")).strip()
+                                sym_name = str(binding.get("name", "")).strip()
+                                if mod_name != "" and sym_name != "":
+                                    noncpp_module_runtime_call = lookup_noncpp_module_attr_runtime_call(
+                                        mod_name + "." + sym_name,
+                                        attr,
+                                    )
+                    if noncpp_module_runtime_call != "":
+                        payload["resolved_runtime_call"] = noncpp_module_runtime_call
+                        payload["resolved_runtime_source"] = "module_attr"
                     rc = lookup_stdlib_method_runtime_call(owner_t, attr)
                     if rc != "":
                         payload["lowered_kind"] = "BuiltinCall"
@@ -5388,6 +5431,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     class_base: dict[str, str | None] = {}
     fn_returns: dict[str, str] = {}
     pre_import_symbol_bindings: dict[str, dict[str, str]] = {}
+    pre_import_module_bindings: dict[str, str] = {}
     type_aliases: dict[str, str] = _sh_default_type_aliases()
 
     cur_cls: str | None = None
@@ -5400,6 +5444,23 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if cur_cls is not None and indent <= cur_cls_indent and not s.startswith("#"):
             cur_cls = None
         if cur_cls is None and indent == 0:
+            m_import = re.match(r"^import\s+(.+)$", s, flags=re.S)
+            if m_import is not None:
+                names_txt = re.strip_group(m_import, 1)
+                raw_parts: list[str] = []
+                for p in names_txt.split(","):
+                    p2 = p.strip()
+                    if p2 != "":
+                        raw_parts.append(p2)
+                for part in raw_parts:
+                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=True)
+                    if parsed_alias is None:
+                        continue
+                    mod_name, as_name_txt = parsed_alias
+                    bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
+                    if bind_name != "":
+                        pre_import_module_bindings[bind_name] = mod_name
+                continue
             m_import_from = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
             if m_import_from is not None:
                 mod_txt = re.strip_group(m_import_from, 1)
@@ -5482,6 +5543,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     _sh_set_parse_context(fn_returns, class_method_return_types, class_base, type_aliases)
     _SH_IMPORT_SYMBOLS.clear()
     _SH_IMPORT_SYMBOLS.update(pre_import_symbol_bindings)
+    _SH_IMPORT_MODULES.clear()
+    _SH_IMPORT_MODULES.update(pre_import_module_bindings)
 
     body_items: list[dict[str, Any]] = []
     main_stmts: list[dict[str, Any]] = []
@@ -5664,6 +5727,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_file=filename,
                     source_line=i,
                 )
+                _sh_register_import_module(bind_name, mod_name)
                 alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt

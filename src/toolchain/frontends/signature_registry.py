@@ -26,6 +26,28 @@ _IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
     ("pytra.std.pathlib", "Path"): "Path",
 }
 
+_NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
+    ("pytra.std.pathlib", "Path"): "Path",
+    ("pathlib", "Path"): "Path",
+    ("pytra.utils.png", "write_rgb_png"): "write_rgb_png",
+    ("pytra.utils.gif", "save_gif"): "save_gif",
+    ("pytra.utils.gif", "grayscale_palette"): "grayscale_palette",
+    ("pytra.utils.assertions", "py_assert_stdout"): "py_assert_stdout",
+    ("pytra.utils.assertions", "py_assert_eq"): "py_assert_eq",
+    ("pytra.utils.assertions", "py_assert_true"): "py_assert_true",
+    ("pytra.utils.assertions", "py_assert_all"): "py_assert_all",
+}
+
+_NONCPP_MODULE_ATTR_RUNTIME_CALLS: dict[tuple[str, str], str] = {
+    ("json", "loads"): "json.loads",
+    ("json", "dumps"): "json.dumps",
+    ("pytra.std.json", "loads"): "json.loads",
+    ("pytra.std.json", "dumps"): "json.dumps",
+    ("pytra.utils.png", "write_rgb_png"): "write_rgb_png",
+    ("pytra.utils.gif", "save_gif"): "save_gif",
+    ("pytra.utils.gif", "grayscale_palette"): "grayscale_palette",
+}
+
 _OWNER_METHOD_RUNTIME_CALLS: dict[str, dict[str, str]] = {
     "str": {
         "strip": "py_strip",
@@ -347,6 +369,24 @@ def lookup_stdlib_imported_symbol_runtime_call(
     return _IMPORTED_SYMBOL_RUNTIME_CALLS.get((module, symbol), "")
 
 
+def lookup_noncpp_imported_symbol_runtime_call(
+    local_name: str,
+    import_symbols: dict[str, dict[str, str]] | None,
+) -> str:
+    module, symbol = _resolve_imported_symbol(local_name, import_symbols)
+    if module == "" or symbol == "":
+        return ""
+    return _NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS.get((module, symbol), "")
+
+
+def lookup_noncpp_module_attr_runtime_call(module_name: str, attr_name: str) -> str:
+    module = module_name.strip()
+    attr = attr_name.strip()
+    if module == "" or attr == "":
+        return ""
+    return _NONCPP_MODULE_ATTR_RUNTIME_CALLS.get((module, attr), "")
+
+
 def is_stdlib_path_type(type_name: str) -> bool:
     return type_name.strip() == "Path"
 
@@ -358,6 +398,8 @@ __all__ = [
     "lookup_stdlib_function_runtime_call",
     "lookup_stdlib_imported_symbol_return_type",
     "lookup_stdlib_imported_symbol_runtime_call",
+    "lookup_noncpp_imported_symbol_runtime_call",
+    "lookup_noncpp_module_attr_runtime_call",
     "lookup_stdlib_method_runtime_call",
     "lookup_stdlib_method_return_type",
 ]

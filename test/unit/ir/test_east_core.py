@@ -186,6 +186,36 @@ def main() -> float:
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].get("resolved_type"), "float64")
 
+    def test_noncpp_runtime_call_annotations_for_import_symbol_and_module_attr(self) -> None:
+        src = """
+from pytra.std import json
+from pytra.utils import png, gif
+from pytra.utils.assertions import py_assert_stdout
+
+def main() -> None:
+    obj = json.loads("{\\"ok\\": true}")
+    txt = json.dumps(obj)
+    pixels: bytes = bytes([0, 0, 0])
+    png.write_rgb_png("x.png", 1, 1, pixels)
+    palette = gif.grayscale_palette()
+    gif.save_gif("x.gif", 1, 1, [pixels], palette, delay_cs=1, loop=0)
+    py_assert_stdout("ok", txt)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
+        resolved_runtime_calls = {
+            str(n.get("resolved_runtime_call"))
+            for n in calls
+            if isinstance(n.get("resolved_runtime_call"), str)
+            and str(n.get("resolved_runtime_call")) != ""
+        }
+        self.assertIn("json.loads", resolved_runtime_calls)
+        self.assertIn("json.dumps", resolved_runtime_calls)
+        self.assertIn("write_rgb_png", resolved_runtime_calls)
+        self.assertIn("save_gif", resolved_runtime_calls)
+        self.assertIn("grayscale_palette", resolved_runtime_calls)
+        self.assertIn("py_assert_stdout", resolved_runtime_calls)
+
     def test_core_does_not_reintroduce_perf_counter_direct_branch(self) -> None:
         core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
         src = core_path.read_text(encoding="utf-8")
