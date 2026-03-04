@@ -502,38 +502,15 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if runtime_call in {"path_parent", "path_name", "path_stem"}:
         value = _render_expr(value_any)
         return value + "." + attr + "()"
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner = _safe_ident(value_any.get("id"), "")
-        if owner == "math" and attr == "pi":
-            return "_m.pi"
-        if owner == "math" and attr == "e":
-            return "_m.e"
+    resolved_runtime_any = expr.get("resolved_runtime_call")
+    resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
+    if resolved_runtime != "":
+        resolved_source_any = expr.get("resolved_runtime_source")
+        resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
+        if resolved_source == "module_attr":
+            return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
-
-
-def _java_math_runtime_call(attr: str) -> str:
-    if attr == "sqrt":
-        return "_m.sqrt"
-    if attr == "sin":
-        return "_m.sin"
-    if attr == "cos":
-        return "_m.cos"
-    if attr == "tan":
-        return "_m.tan"
-    if attr == "exp":
-        return "_m.exp"
-    if attr == "log":
-        return "_m.log"
-    if attr == "pow":
-        return "_m.pow"
-    if attr == "floor":
-        return "_m.floor"
-    if attr == "ceil":
-        return "_m.ceil"
-    if attr in {"abs", "fabs"}:
-        return "_m.fabs"
-    return ""
 
 
 def _call_name(expr: dict[str, Any]) -> str:
@@ -844,15 +821,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         owner_any = func_any.get("value")
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
-            if owner == "math":
-                rendered_math_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_math_args.append(_render_expr(args[i]))
-                    i += 1
-                runtime_math = _java_math_runtime_call(attr_name)
-                if runtime_math != "":
-                    return runtime_math + "(" + ", ".join(rendered_math_args) + ")"
         owner_expr = _render_expr(func_any.get("value"))
         if attr_name == "append" and len(args) == 1:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
@@ -1246,13 +1214,6 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
     if resolved_inferred != "Object":
         return resolved_inferred
     if kind == "Call":
-        func_any = expr.get("func")
-        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-            owner_any = func_any.get("value")
-            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-                owner = _safe_ident(owner_any.get("id"), "")
-                if owner == "math":
-                    return "double"
         name = _call_name(expr)
         if name == "float":
             return "double"

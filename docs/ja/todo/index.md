@@ -76,7 +76,7 @@
 13. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 14. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 15. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
-16. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
+16. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
 17. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
 18. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
 19. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] EAST3 固定入力（`test/ir/*.json`）から backend-only 回帰を追加し、`math/Path` を含む解決済み runtime 呼び出しが emitter 直書きなしで通ることを固定する。
@@ -93,6 +93,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go emitter の PNG/GIF 呼び出しを `__pytra_*` 直参照から `pyWriteRGBPNG/pySaveGIF/pyGrayscalePalette`（宣言駆動）へ移行し、go smoke + sample parity（`01/05`）を再通過した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] `check_emitter_runtimecall_guardrails.py` を branch 以外（dispatch table/context literal）検知へ拡張し、strict backend（Java）は allowlist 例外なしで 0 件必須へ固定した。さらに `owner_type/attr` も検出対象へ追加した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] `Path.parent/name/stem` を IR（`BuiltinAttr + runtime_call=path_*`）で解決するよう変更し、Java emitter の `owner_type == "Path"` 分岐を撤去した（`test_east_core` / `test_py2java_smoke` 回帰追加）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter の `_java_math_runtime_call` と `owner == "math"` 分岐を撤去し、`math.pi/sin/cos` は通常の属性描画経路で出力するよう更新した。`test_py2java_smoke.py` に再発防止アサートを追加し、`check_emitter_runtimecall_guardrails.py` を再通過した。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
