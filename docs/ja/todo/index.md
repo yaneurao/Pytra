@@ -112,6 +112,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Lua emitter の import 分岐を `module_name/symbol` 固定比較から `mod/sym` ベース汎用分岐へ再編し、`save_gif` キーワード専用分岐を汎用 keyword 引数連結へ統合した（`test_py2lua_smoke.py` 31件 + guardrail + noncpp contract 通過、runtimecall allowlist `42->17`、forbidden allowlist `20->16`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Scala emitter を `runtime_call/resolved_runtime_call` 優先へ移行し、`Path/perf_counter/png/gif` の直書き分岐を撤去、Path 経路を `__pytra_path_*` へ統一した（`test_py2scala_smoke.py` 15件 + guardrail + noncpp contract 通過、runtimecall allowlist `17->0`、forbidden allowlist `16->10`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Scala で `semantic_tag=stdlib.*` かつ `runtime_call/resolved_runtime_call` 未解決時に `RuntimeError` を送出する fail-closed を導入し、`test_py2scala_smoke.py` に負例回帰（未解決 stdlib call）を追加した（16件通過）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Go でも同様に `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しを fail-closed 化し、`test_py2go_smoke.py` に未解決 stdlib call の負例回帰を追加した（16件通過）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
