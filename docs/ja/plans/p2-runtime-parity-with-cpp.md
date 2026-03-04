@@ -70,6 +70,7 @@
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] `src/runtime/<lang>/pytra` を棚卸しし、`native/mono/compat/missing` 分類の実装有無マトリクスと主要ギャップ（json/pathlib/gif/分離構成差）を確定。
 - 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] マトリクス結果を `Must/Should/Optional` へ優先度化し、Wave1/2/3 の実装順を固定。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Go runtime に `pyJsonLoads/pyJsonDumps` を実装（`encoding/json` + number preserving decode）し、Go emitter で `json.loads/json.dumps` を runtime helper へマップ。`test_py2go_smoke.py` と `check_py2go_transpile.py` の通過を確認。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `PyRuntime` に `pyJsonLoads/pyJsonDumps`（再帰JSON parser/stringify）を追加し、Java emitter の `json.loads/json.dumps` を runtime helper 経由へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` で回帰なしを確認。
 
 ## S1-01 実装（2026-03-03）
 

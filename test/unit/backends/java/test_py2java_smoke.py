@@ -166,6 +166,23 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("Math.cos(angle)", java)
         self.assertIn("Math.sin(angle)", java)
 
+    def test_java_native_emitter_maps_json_calls_to_runtime_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "json_case.py"
+            src.write_text(
+                "import json\n"
+                "def f(s: str) -> str:\n"
+                "    obj = json.loads(s)\n"
+                "    return json.dumps(obj)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("Object obj = PyRuntime.pyJsonLoads(s);", java)
+        self.assertIn("return PyRuntime.pyJsonDumps(obj);", java)
+        self.assertNotIn("json.loads(", java)
+        self.assertNotIn("json.dumps(", java)
+
     def test_java_binop_minimal_parentheses_and_rhs_grouping(self) -> None:
         simple_expr = {
             "kind": "BinOp",

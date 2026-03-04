@@ -681,6 +681,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_math_args.append(_render_expr(args[i]))
                     i += 1
                 return "Math." + attr_name + "(" + ", ".join(rendered_math_args) + ")"
+            if owner == "json":
+                if attr_name == "loads":
+                    if len(args) == 0:
+                        return "PyRuntime.pyJsonLoads(\"\")"
+                    return "PyRuntime.pyJsonLoads(" + _render_expr(args[0]) + ")"
+                if attr_name == "dumps":
+                    if len(args) == 0:
+                        return "PyRuntime.pyJsonDumps(\"\")"
+                    return "PyRuntime.pyJsonDumps(" + _render_expr(args[0]) + ")"
         owner_expr = _render_expr(func_any.get("value"))
         if attr_name == "append" and len(args) == 1:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
