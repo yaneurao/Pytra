@@ -31,6 +31,7 @@
 受け入れ基準:
 - 非C++ emitter に `pytra.std.*` / `pytra.utils.*` 由来関数名の文字列比較分岐が存在しない。
 - runtime/stdlib 呼び出しは lower 済みの解決情報（`runtime_call` 等）経由で emit される。
+- `math` を含む stdlib 呼び出しで、emitter 側に `owner == "math"` / `attr == "sqrt"` のようなモジュール専用解決分岐を持たない。
 - `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` の関数宣言（`write_rgb_png` / `save_gif` / `grayscale_palette`）を正本として解決し、emitter に backend 独自ラッパー名（例: `pyWriteRGBPNG`）や runtime 実装シンボル（例: `__pytra_write_rgb_png`）を直書きしない。
 - `resolved_runtime_call` は正本宣言名をそのまま使用し、emitter で `json.loads -> pyJsonLoads` のようなライブラリ依存 rename を行わない。
 - `pytra-core`（例: Java `PyRuntime.java`）には std/utils 実装本体を残さず、`pytra-gen` 生成物へ配置されている。
@@ -110,6 +111,12 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルを IR 解決経由へ統一、禁止ガード allowlist を継続縮退する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec` / `docs/en/spec` に責務境界（IR解決 vs emitter描画）を明文化する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から `math` 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`）を撤去し、EAST3 解決情報のみで描画する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] EAST3 固定入力（`test/ir/*.json`）から backend-only 回帰を追加し、`math` を含む解決済み runtime 呼び出しが emitter 直書きなしで通ることを固定する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] Emitter変更の Stop-Ship（必須3コマンド + FAIL時コミット禁止）を運用ルールへ固定し、レビュー checklist 化する。
 
 決定ログ:
 - 2026-03-05: ユーザー指示（5回目再発）に基づき、非C++ emitter のライブラリ関数名直書きを防ぐ P0 計画を起票。

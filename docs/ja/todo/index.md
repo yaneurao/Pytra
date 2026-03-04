@@ -75,6 +75,12 @@
 12. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
 13. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 14. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
+15. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
+16. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から `math` 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`）を撤去し、EAST3 解決情報のみで描画する。
+17. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
+18. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
+19. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] EAST3 固定入力（`test/ir/*.json`）から backend-only 回帰を追加し、`math` を含む解決済み runtime 呼び出しが emitter 直書きなしで通ることを固定する。
+20. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] Emitter変更の Stop-Ship（必須3コマンド + FAIL時コミット禁止）を運用ルールへ固定し、レビュー checklist 化する。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go emitter の `perf_counter/Path/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `105 -> 95` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Kotlin emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `95 -> 87` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Swift emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `87 -> 79` へ縮退。
