@@ -72,21 +72,21 @@ def _copy_runtime_file(src_rel: str, output_path: Path, dst_name: str) -> None:
 
 
 def _copy_php_runtime(output_path: Path) -> None:
-    src_root = _src_root() / "runtime" / "php" / "pytra"
+    src_root = _src_root() / "runtime" / "php"
     if not src_root.exists():
         raise RuntimeError("php runtime source root not found: " + str(src_root))
     dst_root = output_path.parent / "pytra"
     files = [
-        "py_runtime.php",
-        "runtime/png.php",
-        "runtime/gif.php",
-        "std/time.php",
+        ("pytra-core/py_runtime.php", "py_runtime.php"),
+        ("pytra-core/std/time.php", "std/time.php"),
+        ("pytra-gen/runtime/png.php", "runtime/png.php"),
+        ("pytra-gen/runtime/gif.php", "runtime/gif.php"),
     ]
-    for rel in files:
-        src = src_root / rel
+    for src_rel, dst_rel in files:
+        src = src_root / src_rel
         if not src.exists():
             raise RuntimeError("php runtime source missing: " + str(src))
-        dst = dst_root / rel
+        dst = dst_root / dst_rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
