@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-multilang-artifact-crc-align.md](../plans/p0-multilang-artifact-crc-align.md)
 
-1. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01] `sample` の artifact parity（size+CRC32）を `cpp,rs,cs,js,ts,go,java,swift,kotlin` で一致させる。
+1. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01] `sample` の artifact parity（size+CRC32）を `cpp,rs,cs,js,ts,go,java,swift,kotlin` で一致させる。
 2. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-01] Kotlin artifact gate 撤去後 baseline を固定し、失敗カテゴリを言語別にロックする。
 3. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] Swift toolchain 導入後の `--targets swift --all-samples` を完走して失敗カテゴリをロックする。
 4. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin `save_gif` no-op 経路を除去し、runtime GIF writer 実装で artifact_missing を解消する。
