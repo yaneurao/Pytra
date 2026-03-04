@@ -55,7 +55,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 を `pytra-core` / `pytra-gen` 分離へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語 `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] backend runtime copy hook / build手順を新レイアウトへ更新する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] `pytra-core` 画像実装混入禁止チェックを CI/ローカルへ導入する。
@@ -77,3 +77,4 @@
 - 2026-03-04: `S3-JS` 完了。JavaScript runtime を `src/runtime/js/pytra-core/{built_in,std}` と `src/runtime/js/pytra-gen/utils` へ分離し、`src/toolchain/compiler/js_runtime_shims.py` と JS selfhost 検証導線（`check_multilang_selfhost_stage1/multistage`）の runtime 参照を新パスへ更新。`test/unit/common/test_js_ts_runtime_dispatch.py` の JS runtime パスも同期し、`work/logs/runtime_parity_sample_js_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-TS` 完了。TypeScript runtime を `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` へ分離し、`test/unit/common/test_js_ts_runtime_dispatch.py` の TS runtime 参照を新パスへ更新。`work/logs/runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-SCALA` 完了。Scala runtime の画像実装を `src/runtime/scala/pytra-gen/utils/image_runtime.scala` へ切り出し、`src/runtime/scala/pytra-core/built_in/py_runtime.scala` には core/runtime 本体のみを残す構成へ再配置。`backend_registry(_static)` と `runtime_parity_check` を `py_runtime.scala + image_runtime.scala` 実行に更新し、`work/logs/runtime_parity_sample_scala_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 2026-03-04: `S3-NIM` 完了。Nim runtime の画像実装を `src/runtime/nim/pytra-gen/utils/image_runtime.nim` へ切り出し、`src/runtime/nim/pytra-core/built_in/py_runtime.nim` から `include "image_runtime.nim"` で読み込む構成へ更新。`backend_registry(_static)` の Nim runtime hook を core+gen コピーへ変更し、`work/logs/runtime_parity_sample_nim_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。

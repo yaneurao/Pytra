@@ -210,7 +210,8 @@ def _runtime_scala(output_path: Path) -> None:
 
 
 def _runtime_nim(output_path: Path) -> None:
-    _copy_runtime_file("runtime/nim/pytra/py_runtime.nim", output_path, "py_runtime.nim")
+    _copy_runtime_file("runtime/nim/pytra-core/built_in/py_runtime.nim", output_path, "py_runtime.nim")
+    _copy_runtime_file("runtime/nim/pytra-gen/utils/image_runtime.nim", output_path, "image_runtime.nim")
 
 
 BackendSpec = dict[str, Any]

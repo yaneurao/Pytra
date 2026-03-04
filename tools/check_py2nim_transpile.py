@@ -34,8 +34,11 @@ def _run_one(src: Path, out: Path) -> tuple[bool, str]:
     )
     if cp.returncode == 0:
         runtime_path = out.parent / "py_runtime.nim"
+        image_runtime_path = out.parent / "image_runtime.nim"
         if not runtime_path.exists():
             return False, "missing runtime file: py_runtime.nim"
+        if not image_runtime_path.exists():
+            return False, "missing runtime file: image_runtime.nim"
         return True, ""
     msg = cp.stderr.strip() or cp.stdout.strip()
     first = msg.splitlines()[0] if msg else "unknown error"

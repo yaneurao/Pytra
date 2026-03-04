@@ -53,7 +53,7 @@
 15. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
 16. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
 17. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.scala` 直埋めから撤去する。
-18. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.nim` 直埋めから撤去する。
+18. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.nim` 直埋めから撤去する。
 19. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
 20. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] 各backendの runtime copy hook / build手順を新レイアウトへ更新する。
 21. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] CI/ローカル検査へ「`pytra-core` に画像実装が混入したらfail」を追加する。
@@ -72,6 +72,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] `src/runtime/js/pytra-core/{built_in,std}` と `src/runtime/js/pytra-gen/utils` を追加し、`js_runtime_shims`・selfhost検証ツール・JS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_js_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` を追加し、TS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala runtime を `src/runtime/scala/pytra-core/built_in/py_runtime.scala` と `src/runtime/scala/pytra-gen/utils/image_runtime.scala` へ分離し、backend runtime hook と `runtime_parity_check` の実行導線を `py_runtime.scala + image_runtime.scala` へ更新。`runtime_parity_sample_scala_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `src/runtime/nim/pytra-core/built_in/py_runtime.nim` と `src/runtime/nim/pytra-gen/utils/image_runtime.nim` へ分離し、`py_runtime.nim` から `include "image_runtime.nim"` で画像runtimeを参照する構成へ更新。`runtime_parity_sample_nim_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 
 ### P0: 画像runtime 静的ガードレール導入（core混入禁止）
 
