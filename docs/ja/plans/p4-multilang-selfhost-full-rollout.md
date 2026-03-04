@@ -1,17 +1,17 @@
 # P4: 全言語 selfhost 完全化（低低優先）
 
-最終更新: 2026-03-02
+最終更新: 2026-03-05
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P4-MULTILANG-SH-01`
 
 背景:
 - 現状の multilang selfhost 状態では、C++ 以外に `stage1/stage2/stage3` の未達が残っている。
-- `rs/cs` は stage2 compile 失敗、`js` は stage3 失敗、`ts/go/java/swift/kotlin` は multistage runner 未定義、`ruby/lua/scala` は multistage 監視対象外のまま残っている。
+- `rs/cs` は stage2 compile 失敗、`js` は stage3 失敗、`ts/go/java/swift/kotlin` は multistage runner 未定義、`ruby/lua/scala/php/nim` は multistage 監視対象外のまま残っている。
 - 将来的に「全言語で自己変換チェーンが成立する」状態を作るため、低低優先で長期バックログ化する。
 
 目的:
-- `py2<lang>.py`（`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala`）の selfhost 成立条件を段階的に満たし、全言語で multistage 監視を通せる状態へ収束する。
+- `py2<lang>.py`（`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`）の selfhost 成立条件を段階的に満たし、全言語で multistage 監視を通せる状態へ収束する。
 
 対象:
 - `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` / `tools/check_multilang_selfhost_suite.py`
@@ -37,6 +37,7 @@
 決定ログ:
 - 2026-02-27: ユーザー要望により、全言語 selfhost 完全化を低低優先（P4）で TODO 追加する方針を確定した。
 - 2026-03-02: ユーザー要望により、selfhost 対象言語へ `ruby/lua/scala` を追加し、P4 の監視スコープを `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala` へ拡張した。
+- 2026-03-05: ユーザー要望により、selfhost 対象言語へ `php/nim` を追加し、P4 の監視スコープを `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim` へ拡張した。併せて「言語別の特例実装を増やさず、共通経路準拠で selfhost を達成する」方針を再確認した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-01`] `python3 tools/check_multilang_selfhost_suite.py` を再実行し、`docs/ja/plans/p1-multilang-selfhost-status.md` / `docs/ja/plans/p1-multilang-selfhost-multistage-status.md` を更新した。未達カテゴリを言語別に固定し、blocking chain を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-02`] `runner_not_defined` 対象（go/java/swift/kotlin）の multistage runner 契約を定義し、`check_multilang_selfhost_multistage.py` へ段階実装する API 形を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-01`] `src/py2rs.py` の括弧付き `from-import` を selfhost parser 互換の単一行 import へ修正し、`python3 tools/check_multilang_selfhost_stage1.py` / `python3 tools/check_multilang_selfhost_multistage.py` で `rs stage1=pass` を確認した。`rs` の先頭失敗は `stage1_transpile_fail` から `compile_fail`（stage2 build）へ遷移した。
@@ -124,7 +125,7 @@
 | kotlin | pass | skip | skip | `runner_not_defined` | multistage runner 未定義 |
 
 補足:
-- 上表の時点では `ruby/lua/scala` は checker 対象外で、未計測（監視未接続）だった。
+- 上表の時点では `ruby/lua/scala/php/nim` は checker 対象外で、未計測（監視未接続）だった。
 
 優先順（blocking chain）:
 1. `rs` の stage2 compile 失敗を解消（stage3 へ進めない）。
@@ -132,7 +133,7 @@
 3. `js` の stage2 依存 transpile 失敗を解消（stage3 へ進めない）。
 4. `ts` の preview-only を解消（stage2/stage3 の評価自体が blocked）。
 5. `go/java/swift/kotlin` の runner 契約を定義し、`runner_not_defined` を解消して multistage 監視対象へ昇格。
-6. `ruby/lua/scala` を multistage checker 対象へ追加し、監視未接続状態を解消。
+6. `ruby/lua/scala/php/nim` を multistage checker 対象へ追加し、監視未接続状態を解消。
 
 ## Runner 契約（S1-02）
 
@@ -160,6 +161,8 @@
 | ruby | build 不要（インタプリタ実行） | `ruby <stage*.rb> <input.py> -o <out.rb>` | `out.rb` が生成される |
 | lua | build 不要（インタプリタ実行） | `lua <stage*.lua> <input.py> -o <out.lua>` | `out.lua` が生成される |
 | scala | `scala run <runtime.scala> <stage*.scala> -- --help`（実行可能性確認） | `scala run <runtime.scala> <stage*.scala> -- <input.py> -o <out.scala>` | `out.scala` が生成される |
+| php | build 不要（インタプリタ実行） | `php <stage*.php> <input.py> -o <out.php>` | `out.php` が生成される |
+| nim | `nim c -o:<runner> <stage*.nim>` | `<runner> <input.py> -o <out.nim>` | `out.nim` が生成される |
 
 実装時の fail 分類ルール:
 - build 失敗: `compile_fail` / `stage2_compile_fail`
@@ -191,9 +194,9 @@
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] JS selfhost の stage2 依存 transpile 失敗を解消し、multistage を通す。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] TypeScript の preview-only 状態を解消し、selfhost 実行可能な生成モードへ移行する。
 - [ ] [ID: P4-MULTILANG-SH-01-S3-02] Go/Java/Swift/Kotlin の native backend 化タスクと接続し、selfhost 実行チェーンを有効化する。
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03] Ruby/Lua/Scala3 を selfhost multistage checker の対象へ追加し、runner 未定義/対象外を解消する。
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S1] `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py` の対象言語へ `ruby/lua/scala` を追加し、カテゴリ分類を実装する。
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S2] Ruby/Lua/Scala3 の stage2/stage3 runner 実装（build/run/出力欠落判定）を追加する。
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S3] `ruby/lua/scala` の初回 multistage baseline を作成し、言語別 blocker chain を固定する。
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03] Ruby/Lua/Scala3/PHP/Nim を selfhost multistage checker の対象へ追加し、runner 未定義/対象外を解消する。
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S1] `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py` の対象言語へ `ruby/lua/scala/php/nim` を追加し、カテゴリ分類を実装する。
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S2] Ruby/Lua/Scala3/PHP/Nim の stage2/stage3 runner 実装（build/run/出力欠落判定）を追加する。
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S3] `ruby/lua/scala/php/nim` の初回 multistage baseline を作成し、言語別 blocker chain を固定する。
 - [ ] [ID: P4-MULTILANG-SH-01-S4-01] 全言語 multistage 回帰を CI 導線へ統合し、失敗カテゴリの再発を常時検知できるようにする。
 - [ ] [ID: P4-MULTILANG-SH-01-S4-02] 完了判定テンプレート（各言語の stage 通過条件と除外条件）を文書化し、運用ルールを固定する。
