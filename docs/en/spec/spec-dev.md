@@ -229,7 +229,8 @@ Constraints:
 
 - `png` / `gif` use Python side (`src/pytra/utils/`) as source-of-truth implementation.
 - `*_module` implementations in each language should, in principle, use transpiled artifacts from that source-of-truth Python implementation.
-- Handwritten language-specific code should be minimized to required scope for performance/I/O reasons.
+- Handwritten per-language implementations of PNG/GIF encoder core are prohibited.
+- Per-language exceptions are limited to thin I/O/runtime adapters only (no duplication of encoder core logic).
 - Cross-language consistency is primarily judged by exact byte equality of generated files.
 - `src/pytra/utils/png.py` uses pure Python implementation independent of `binascii` / `zlib` / `struct` (CRC32/Adler32/DEFLATE stored block).
 - Acceptance criteria:
