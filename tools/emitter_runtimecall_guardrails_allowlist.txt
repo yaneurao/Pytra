@@ -26,10 +26,10 @@ src/backends/js/emitter/js_emitter.py:189:pytra.std.time
 src/backends/js/emitter/js_emitter.py:190:pytra.std.pathlib
 src/backends/js/emitter/js_emitter.py:192:pytra.utils.png
 src/backends/js/emitter/js_emitter.py:193:pytra.utils.gif
-src/backends/kotlin/emitter/kotlin_native_emitter.py:706:perf_counter
-src/backends/kotlin/emitter/kotlin_native_emitter.py:708:write_rgb_png
-src/backends/kotlin/emitter/kotlin_native_emitter.py:715:save_gif
-src/backends/kotlin/emitter/kotlin_native_emitter.py:722:grayscale_palette
+src/backends/kotlin/emitter/kotlin_native_emitter.py:724:perf_counter
+src/backends/kotlin/emitter/kotlin_native_emitter.py:726:write_rgb_png
+src/backends/kotlin/emitter/kotlin_native_emitter.py:733:save_gif
+src/backends/kotlin/emitter/kotlin_native_emitter.py:740:grayscale_palette
 src/backends/lua/emitter/lua_native_emitter.py:2080:save_gif
 src/backends/lua/emitter/lua_native_emitter.py:2153:save_gif
 src/backends/lua/emitter/lua_native_emitter.py:491:pytra.utils.png

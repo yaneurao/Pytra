@@ -145,6 +145,11 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertNotIn("json.loads(", kotlin)
         self.assertNotIn("json.dumps(", kotlin)
 
+    def test_kotlin_emitter_source_has_no_owner_math_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "kotlin" / "emitter" / "kotlin_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('owner == "math"', src)
+        self.assertNotIn("owner == 'math'", src)
+
     def test_kotlin_native_emitter_uses_runtime_path_class(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "path_case.py"
