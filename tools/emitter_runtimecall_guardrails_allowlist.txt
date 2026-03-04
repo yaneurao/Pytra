@@ -80,11 +80,3 @@ src/backends/scala/emitter/scala_native_emitter.py:942:save_gif
 src/backends/scala/emitter/scala_native_emitter.py:949:grayscale_palette
 src/backends/scala/emitter/scala_native_emitter.py:985:loads
 src/backends/scala/emitter/scala_native_emitter.py:987:dumps
-src/backends/swift/emitter/swift_native_emitter.py:713:perf_counter
-src/backends/swift/emitter/swift_native_emitter.py:773:write_rgb_png
-src/backends/swift/emitter/swift_native_emitter.py:780:save_gif
-src/backends/swift/emitter/swift_native_emitter.py:787:grayscale_palette
-src/backends/swift/emitter/swift_native_emitter.py:820:loads
-src/backends/swift/emitter/swift_native_emitter.py:824:dumps
-src/backends/swift/emitter/swift_native_emitter.py:833:write_rgb_png
-src/backends/swift/emitter/swift_native_emitter.py:840:save_gif
