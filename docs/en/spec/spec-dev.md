@@ -229,6 +229,9 @@ Constraints:
 
 - `png` / `gif` use Python side (`src/pytra/utils/`) as source-of-truth implementation.
 - `*_module` implementations in each language should, in principle, use transpiled artifacts from that source-of-truth Python implementation.
+- For all languages, split runtime layout into `src/runtime/<lang>/pytra-core/` (handwritten) and `src/runtime/<lang>/pytra-gen/` (generated from source-of-truth), and keep image runtime core only in `pytra-gen`.
+- Do not inline image encoder core into core-side files such as `py_runtime.*`; only thin delegation to `pytra-gen` APIs is allowed.
+- Image runtime files in `pytra-gen` must include generation trace markers (`source: src/pytra/utils/{png,gif}.py` and `generated-by: ...`), and hand-edit workflows are prohibited.
 - Handwritten per-language implementations of PNG/GIF encoder core are prohibited.
 - Per-language exceptions are limited to thin I/O/runtime adapters only (no duplication of encoder core logic).
 - Cross-language consistency is primarily judged by exact byte equality of generated files.

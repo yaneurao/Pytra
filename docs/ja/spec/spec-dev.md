@@ -284,6 +284,9 @@
 
 - `png` / `gif` は Python 側（`src/pytra/utils/`）を正本実装とします。
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
+- 全言語で `src/runtime/<lang>/pytra-core/`（手書き）と `src/runtime/<lang>/pytra-gen/`（正本由来生成物）を分離し、画像runtime本体は必ず `pytra-gen` 側へ置きます。
+- `py_runtime.*` など core 側ファイルへの画像エンコード本体直書きは禁止し、必要時は `pytra-gen` API への薄い委譲のみに限定します。
+- `pytra-gen` 側の画像runtimeには `source: src/pytra/utils/{png,gif}.py` と `generated-by: ...` を必須とし、手編集運用を禁止します。
 - `png/gif` エンコード本体を言語別に手書き実装してはいけません。
 - 言語別で許可するのは、最小の I/O アダプタ・ランタイム接続コードのみです（エンコード本体ロジックの複製は禁止）。
 - 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。

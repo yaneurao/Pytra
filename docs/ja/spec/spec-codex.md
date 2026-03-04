@@ -69,6 +69,9 @@
 - `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
 - `src/runtime/<lang>/pytra/` の `png/gif` 書き出し本体は、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とした生成物のみを許可し、言語別の手書き実装を禁止します。
 - `png/gif` で許可される言語差分は、入出力アダプタや最小のランタイム接続コードに限定し、エンコード本体ロジック（CRC32/Adler32/DEFLATE/LZW/chunk構築）を手で複製してはいけません。
+- 画像runtimeは C++ と同じ責務分離を全言語で強制します。`src/runtime/<lang>/pytra-core/` には手書きruntimeのみ、`src/runtime/<lang>/pytra-gen/` には `src/pytra/utils/{png,gif}.py` 由来の生成物のみを配置します。
+- `py_runtime.*` など core 側ファイルへ PNG/GIF エンコード本体（`write_rgb_png` / `save_gif` / `grayscale_palette`）を直書きしてはいけません。必要な場合は `pytra-gen` 側APIへの薄い委譲だけを許可します。
+- `pytra-gen` 側の画像runtime生成物には、生成元と生成導線が追跡できる印（例: `source: src/pytra/utils/png.py`, `source: src/pytra/utils/gif.py`, `generated-by: ...`）を必須とします。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
 - selfhost 対象コード（特に `src/toolchain/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。

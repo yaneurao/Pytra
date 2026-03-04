@@ -39,8 +39,8 @@
 
 ## 分解
 
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` 廃止を反映し、旧方式（marker中心）を無効化する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] `pytra-core` / `pytra-gen` 責務境界を spec に追記する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` 廃止を反映し、旧方式（marker中心）を無効化する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] `pytra-core` / `pytra-gen` 責務境界を spec に追記する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 画像runtime生成導線と出力先規約を全言語共通で実装する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] 監査スクリプトを新方式（物理分離・混入禁止）へ更新する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] Rust を `pytra-core` / `pytra-gen` 分離へ移行する。
@@ -62,3 +62,4 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` は「間違った実現方式」と判定してTODOから削除。新方式（`pytra-core` / `pytra-gen` 分離）へ再起票した。
+- 2026-03-04: `S1-02` 完了。`docs/ja/spec/spec-{codex,dev}.md` と `docs/en/spec/spec-{codex,dev}.md` に `pytra-core` / `pytra-gen` 境界（core直書き禁止、gen生成痕跡必須）を明文化した。

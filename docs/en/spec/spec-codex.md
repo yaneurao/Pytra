@@ -68,6 +68,9 @@ This document defines the operational rules Codex follows while working.
 - Treat `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` as generated from `src/pytra/utils/*.py`; do not edit by hand (auto-updated when running `py2cpp.py`).
 - For `src/runtime/<lang>/pytra/`, allow only source-of-truth-derived generated implementations for PNG/GIF writers (`src/pytra/utils/png.py`, `src/pytra/utils/gif.py`); handwritten per-language encoder implementations are prohibited.
 - The only allowed language-specific differences around PNG/GIF are thin I/O/runtime adapters. Do not hand-copy encoder core logic (CRC32/Adler32/DEFLATE/LZW/chunk assembly).
+- Enforce the same runtime boundary used by C++ for all languages: place handwritten runtime only under `src/runtime/<lang>/pytra-core/`, and place only generated artifacts derived from `src/pytra/utils/{png,gif}.py` under `src/runtime/<lang>/pytra-gen/`.
+- Do not inline PNG/GIF encoder core (`write_rgb_png` / `save_gif` / `grayscale_palette`) into core-side files such as `py_runtime.*`. Only thin delegation to `pytra-gen` APIs is allowed.
+- Image runtime artifacts in `pytra-gen` must carry generation trace markers (for example `source: src/pytra/utils/png.py`, `source: src/pytra/utils/gif.py`, and `generated-by: ...`).
 - Do not add Python-stdlib-equivalent functionality to `runtime/cpp` (not limited to `json`).
 - Keep `src/pytra/std/*.py` as the source of truth for Python-stdlib-equivalent functionality; use transpiled outputs in each target language.
 - In selfhost target code (especially `src/toolchain/compiler/east.py` family), do not use dynamic imports (`try/except ImportError` fallback or `importlib` lazy import).
