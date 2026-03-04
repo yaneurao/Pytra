@@ -51,7 +51,7 @@
 13. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.php` / `runtime/*.php` の責務境界に沿って再配置する。
 14. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.cs` 直埋めから撤去する。
 15. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
-16. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
+16. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
 17. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.scala` 直埋めから撤去する。
 18. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.nim` 直埋めから撤去する。
 19. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
@@ -70,6 +70,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] `src/runtime/php/pytra-core/{py_runtime.php,std/time.php}` と `src/runtime/php/pytra-gen/runtime/{png.php,gif.php}` を追加し、PHP runtime hook を core+gen ソースへ更新。`runtime_parity_sample_php_0105_core_gen_split_20260304_retry.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] `src/runtime/cs/pytra-core/{built_in,std}` と `src/runtime/cs/pytra-gen/utils` を導入し、`runtime_parity_check`・selfhost検証ツール群（`check_multilang_selfhost_stage1/multistage`, `check_cs_single_source_selfhost_compile`, `gen_cs_image_runtime_from_canonical`）を新レイアウトへ更新。`runtime_parity_sample_cs_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] `src/runtime/js/pytra-core/{built_in,std}` と `src/runtime/js/pytra-gen/utils` を追加し、`js_runtime_shims`・selfhost検証ツール・JS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_js_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` を追加し、TS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 
 ### P0: 画像runtime 静的ガードレール導入（core混入禁止）
 
