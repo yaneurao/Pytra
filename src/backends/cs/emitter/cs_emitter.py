@@ -458,8 +458,9 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.png_helper"
             if module_id == "pytra.utils" and export_name == "gif":
                 return "Pytra.CsModule.gif_helper"
-            if module_id in {"pathlib", "pytra.std.pathlib"} and export_name == "Path":
-                return "Pytra.CsModule.py_path"
+            if (module_id == "pathlib" or module_id.endswith(".pathlib")) and export_name != "":
+                if len(export_name) > 0 and export_name[0].isupper():
+                    return "Pytra.CsModule.py_path"
             return ""
         return ""
 
@@ -2363,36 +2364,42 @@ class CSharpEmitter(CodeEmitter):
         fn_name = self._safe_name(fn_name_raw)
         if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
             fn_name = "__pytra_main"
+        imported_sym = self._resolve_imported_symbol(fn_name_raw)
+        imported_mod = self.any_dict_get_str(imported_sym, "module", "")
+        imported_name = self.any_dict_get_str(imported_sym, "name", "")
         if fn_name_raw in self.class_names:
             return "new " + self._safe_name(fn_name_raw) + "(" + ", ".join(rendered_args) + ")"
-        if fn_name_raw == "Path":
+        if imported_mod == "pathlib" or imported_mod.endswith(".pathlib"):
             if len(rendered_args) == 0:
-                return "new Path(\"\")"
-            return "new Path(" + ", ".join(rendered_args) + ")"
+                return "new " + fn_name + "(\"\")"
+            return "new " + fn_name + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "isinstance":
             return self._render_isinstance_call(rendered_args, arg_nodes)
-        if fn_name_raw == "perf_counter":
-            return "Pytra.CsModule.time.perf_counter()"
+        if imported_mod == "time" or imported_mod.endswith(".time"):
+            symbol = imported_name if imported_name != "" else fn_name_raw
+            return "Pytra.CsModule.time." + self._safe_name(symbol) + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "print":
             if len(rendered_args) == 0:
                 return "System.Console.WriteLine()"
             if len(rendered_args) == 1:
                 return "System.Console.WriteLine(" + rendered_args[0] + ")"
             return "System.Console.WriteLine(string.Join(\" \", new object[] { " + ", ".join(rendered_args) + " }))"
-        if fn_name_raw == "py_assert_stdout":
-            return "true"
-        if fn_name_raw == "py_assert_eq":
-            if len(rendered_args) >= 2:
-                return "System.Object.Equals(" + rendered_args[0] + ", " + rendered_args[1] + ")"
-            return "false"
-        if fn_name_raw == "py_assert_true":
-            if len(rendered_args) >= 1:
-                return "Pytra.CsModule.py_runtime.py_bool(" + rendered_args[0] + ")"
-            return "false"
-        if fn_name_raw == "py_assert_all":
-            if len(rendered_args) >= 1:
-                return "System.Linq.Enumerable.All(" + rendered_args[0] + ", __x => System.Convert.ToBoolean(__x))"
-            return "false"
+        if fn_name_raw.startswith("py_assert_"):
+            suffix = fn_name_raw[10:]
+            if suffix == "stdout":
+                return "true"
+            if suffix == "eq":
+                if len(rendered_args) >= 2:
+                    return "System.Object.Equals(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+                return "false"
+            if suffix == "true":
+                if len(rendered_args) >= 1:
+                    return "Pytra.CsModule.py_runtime.py_bool(" + rendered_args[0] + ")"
+                return "false"
+            if suffix == "all":
+                if len(rendered_args) >= 1:
+                    return "System.Linq.Enumerable.All(" + rendered_args[0] + ", __x => System.Convert.ToBoolean(__x))"
+                return "false"
         if fn_name_raw == "len" and len(rendered_args) == 1:
             return self._render_len_call(rendered_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None)
         if fn_name_raw == "ord" and len(rendered_args) == 1:
@@ -2459,9 +2466,6 @@ class CSharpEmitter(CodeEmitter):
             if len(rendered_args) >= 1:
                 return "new System.Exception(" + rendered_args[0] + ")"
             return "new System.Exception(" + self.quote_string_literal(fn_name_raw) + ")"
-        imported_sym = self._resolve_imported_symbol(fn_name_raw)
-        imported_mod = self.any_dict_get_str(imported_sym, "module", "")
-        imported_name = self.any_dict_get_str(imported_sym, "name", "")
         if imported_mod.startswith("pytra.utils."):
             leaf = self._last_dotted_name(imported_mod)
             if leaf == "gif" or leaf == "png":
