@@ -1,151 +1,71 @@
-# P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
+# P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
-最終更新: 2026-03-04
+最終更新: 2026-03-05
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P2-RUNTIME-PARITY-CPP-01`
+- `docs/ja/todo/index.md` の `ID: P2-RUNTIME-PARITY-CPP-02`
 
 背景:
-- C++ runtime は `built_in/std/utils` で機能が分割され、`math/time/json/pathlib/random/re/sys/...` まで比較的広く実装されている。
-- 他言語 runtime は `py_runtime` 単体中心の言語が多く、C++ と同等の API 面/機能面カバレッジに達していない。
-- 既存 P1（runtime 外出し）は「inline helper 撤去」が目的であり、C++ 同等機能までを保証する計画ではない。
+- 旧P2（`P2-RUNTIME-PARITY-CPP-01`）は「同等化」を急ぐあまり、runtime 実装責務と生成責務の境界が曖昧になり、実装方針に誤りが混入した。
+- 具体的には、pure Python 正本からの機械生成を優先すべき箇所で、言語別に手書き実装・特別命名・monolithic 埋め込みが発生しやすい状態だった。
+- また、emitter がライブラリ関数名を文字列比較で直接分岐する経路が残り、IR 解決責務の逸脱が再発した。
 
 目的:
-- 「C++ runtime を仕様の正」として、他言語 runtime の API 契約と機能カバレッジを段階的に揃える。
-- backend ごとの差分を吸収する adapter 層を整備し、生成コード側は言語差を意識せず同等 API を呼べる状態にする。
+- C++ runtime との API 契約同等化を維持しつつ、実装方法を「SoT厳守」「生成優先」「責務分離」に再定義する。
+- runtime 同等化を、設計ルール + 静的ガード + parity 回帰で再発不能な形へ固定する。
 
 対象:
-- `src/runtime/{cs,go,java,js,ts,kotlin,swift,ruby,lua,scala,php,rs}/`
-- 必要な `src/backends/<lang>/emitter/*` の runtime 呼び出し面
-- parity 検証スクリプトと runtime 契約テスト
+- `src/runtime/<lang>/{pytra-core,pytra-gen}/`
+- `src/pytra/{std,utils}/`（正本モジュール）
+- `src/backends/*/emitter/*.py`（runtime 呼び出し経路）
+- `tools/`（監査・生成・parity・CI導線）
 
 非対象:
 - C++ runtime 自体の大規模再設計
-- EAST 仕様変更
-- すべての標準ライブラリを一度に完全移植（段階導入）
+- EAST 仕様全面刷新
+- 一括全言語移行（段階導入）
 
-受け入れ基準:
-- C++ runtime の「必須 API セット」に対して、各言語 runtime の実装有無が一覧化される。
-- 最低限の共通 API（`math/time/pathlib/json/png/gif` + core helper）について、各言語で同名または adapter 経由で同等契約を満たす。
-- `sample`/`test` の parity 検証で runtime 差由来 fail を段階的に削減できる。
-- runtime 差分を追跡する回帰チェック（欠落 API 検知）が追加される。
+## 注意事項（必読）
 
-実施方針:
-1. C++ runtime を基準に「必須 API カタログ」を確定する。
-2. 各言語 runtime の実装マップを作成し、欠落・挙動差を分類する。
-3. 欠落が多い領域（`math/time/pathlib/json` など）から順に埋める。
-4. emitter 側は言語固有呼び出しを adapter へ寄せ、API 名の揺れを縮退する。
-5. 機能追加ごとに parity/回帰を固定する。
+以下は「推奨」ではなく必須ルール:
 
-優先導入順（推奨）:
-- Wave 1: `go/java/kotlin/swift`（単一 runtime 依存が強く、差分吸収効果が高い）
-- Wave 2: `ruby/lua/scala/php`
-- Wave 3: `js/ts/cs/rs`（既存実装は比較的進んでいるため不足分の穴埋め）
+1. `src/pytra/std/*` / `src/pytra/utils/*` の pure Python 実装は正本（SoT）とし、対応機能を他言語で手書き再実装しない。
+2. SoT 由来コードは必ず `src/runtime/<lang>/pytra-gen/` に配置し、`pytra-core` へ混在させない。
+3. SoT 由来ファイル名は機械的素通し命名（例: `png.py -> png.<ext>`, `gif.py -> gif.<ext>`）を原則とし、helper 名の特別命名を禁止する。
+4. `pytra-core` には言語依存の基盤処理のみを置く。SoT で表現可能な API は `pytra-gen` へ寄せる。
+5. emitter で `callee_name == "..."` / `attr_name == "..."` による `pytra.std.*` / `pytra.utils.*` 関数名の直書き分岐を禁止する。
+6. runtime/stdlib 呼び出しの解決責務は lower/IR 側に置く。emitter は解決済みノード（`runtime_call` 系）を描画するだけに限定する。
+7. compiler/backends で Python 標準 `ast` モジュールに依存しない（selfhost 制約）。
+8. `pytra-gen` の生成物には `source:` と `generated-by:` marker を必須化し、監査で fail-fast する。
+9. parity 実行前に artifact を必ず掃除し、stdout だけでなく artifact サイズ/CRC32 も検証する。
+
+## 受け入れ基準
+
+- 旧P2（`P2-RUNTIME-PARITY-CPP-01`）は TODO 未完了一覧から除去され、新IDへ置換されている。
+- 新P2の実施に必要な禁止事項が文書化され、検査可能な形（スクリプト/CI）で管理される。
+- `pytra-gen` の命名・配置・marker に関する監査が全対象言語で通る。
+- 非C++ emitter の runtime 呼び出し経路で、ライブラリ関数名直書き分岐が段階撤去される。
+- parity 回帰（artifact サイズ/CRC32 含む）で runtime 差由来 fail が追跡可能になる。
 
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
+- `python3 tools/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers --fail-on-non-compliant`
+- `python3 tools/check_emitter_runtimecall_guardrails.py`
 - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --ignore-unstable-stdout`
-- 言語別 `check_py2*.py`（対象 backend）
 
 ## 分解
 
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] C++ runtime の必須 API カタログ（module/function/契約）を抽出し、正本一覧を作成する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] 各言語 runtime の実装有無マトリクスを作成し、欠落/互換/挙動差を分類する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] 同等化対象を `Must/Should/Optional` の3段階で優先度付けする。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）で `math/time/pathlib/json` の不足 API を実装・統一する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: `json.loads/dumps` runtime API を追加し、Go emitter の `json.*` 呼び出しを runtime helper へ統一する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で同様に不足 API を実装・統一する。
-- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Wave2 の emitter 呼び出しを adapter 経由へ寄せる。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-03] Wave2 の parity 回帰を追加し、runtime 差由来 fail を固定する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-01] Wave3（`js/ts/cs/rs`）で不足 API を補完し、契約差を解消する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-02] runtime API 欠落検知チェックを追加し、CI/ローカル回帰へ組み込む。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-03] `docs/ja/spec` / `docs/en/spec` に runtime 同等化ポリシーと進捗表を反映する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2（`P2-RUNTIME-PARITY-CPP-01`）を TODO 未完了一覧から削除し、新P2へ置換する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] SoT/pytra-core/pytra-gen の責務境界を `docs/ja/spec` に追記し、禁止事項を固定する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュール（`std/utils`）の「生成必須 / core許可」分類表を作成する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` 命名規約（素通し命名）違反を検知する静的チェックを追加する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] SoT marker（`source/generated-by`）と配置違反（core混在）チェックを強化し、CIへ統合する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、runtime API 呼び出しを IR 解決経路へ統一（emitter 直書き撤去）する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter 禁止ルール（ライブラリ名直書き）を lint 化し、PR/CI で fail-fast する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32）を再実施し、差分を固定する。
+- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] ルール違反の再発時に即検知できる運用手順（ローカル/CI）を `docs/ja/how-to-use` と `docs/en/how-to-use` に反映する。
 
 決定ログ:
-- 2026-03-02: ユーザー要望により、runtime 外出し（P1）とは別軸で「C++ 同等機能」を目的とする P2 計画を起票。
-- 2026-03-02: 「実装行数の一致」ではなく「API 契約・挙動同等」を完了判定に採用。
-- 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] `docs/ja/spec/spec-runtime.md` に C++ runtime 正本カタログ（core/math/time/pathlib/json/png/gif + timeit/random）を追加し、Wave の基準 API を固定。
-- 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] `src/runtime/<lang>/pytra` を棚卸しし、`native/mono/compat/missing` 分類の実装有無マトリクスと主要ギャップ（json/pathlib/gif/分離構成差）を確定。
-- 2026-03-03: [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] マトリクス結果を `Must/Should/Optional` へ優先度化し、Wave1/2/3 の実装順を固定。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Go runtime に `pyJsonLoads/pyJsonDumps` を実装（`encoding/json` + number preserving decode）し、Go emitter で `json.loads/json.dumps` を runtime helper へマップ。`test_py2go_smoke.py` と `check_py2go_transpile.py` の通過を確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `PyRuntime` に `pyJsonLoads/pyJsonDumps`（再帰JSON parser/stringify）を追加し、Java emitter の `json.loads/json.dumps` を runtime helper 経由へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` で回帰なしを確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin: `py_runtime.kt` に `pyJsonLoads/pyJsonDumps`（再帰JSON parser/stringify）を追加し、Kotlin emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2kotlin_smoke.py` と `check_py2kotlin_transpile.py` を通過。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Swift: `py_runtime.swift` に `pyJsonLoads/pyJsonDumps`（`JSONSerialization` + 互換型変換）を追加し、Swift emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2swift_smoke.py` と `check_py2swift_transpile.py` を通過。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `Path` を `PyRuntime.Path` として runtime に実装（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）し、Java emitter の型/ctor/isinstance を `PyRuntime.Path` へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` を通過。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `Path` クラス（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）を追加し、既存 emitter の `Path(...)` 出力がコンパイル可能になることを `test_py2{kotlin,swift}_smoke.py`・`check_py2{kotlin,swift}_transpile.py` で確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Go: runtime に `Path` wrapper（`NewPath/__pytra_as_Path` + method群）を追加し、Go emitter で call keyword 値を一般呼び出しへ反映（`mkdir(parents=True, exist_ok=True)` が `mkdir(true, true)` へ降りる）する修正を適用。`test_py2go_smoke.py` と `check_py2go_transpile.py` を通過。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `pyMath*`（`sqrt/sin/cos/tan/exp/log/fabs/floor/ceil/pow/pi/e`）API を追加し、emitter の `math.*` 呼び出しを runtime helper 経由へ切替。`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` を通過。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1（`go/java/kotlin/swift`）の `math/time/pathlib/json` 不足 API 実装を完了し、`test_py2{go,java,kotlin,swift}_smoke.py` と `check_py2{go,java,kotlin,swift}_transpile.py` を green で固定。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 化の先行実装として、Go/Java emitter の `math.*` 呼び出しを runtime helper (`pyMath*`) 経由へ統一。Go 側は `math` import 依存を emitter から除去し、`test_py2{go,java}_smoke.py` と `check_py2{go,java}_transpile.py` で非退行確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Java emitter の `perf_counter()` を `PyRuntime.pyPerfCounter()` adapter 経由へ統一し、`test_py2java_smoke.py`（`perf_counter` 専用ケース）と `check_py2java_transpile.py` で非退行確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 化完了: `go/java/kotlin/swift` の `math/time/pathlib/json` 呼び出しを runtime helper / runtime wrapper 経由へ統一し、言語固有 API 名揺れを emitter 内部へ封じ込めた。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity 初回実行（`work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03.json`）で `kotlin` のみ 6 件 `run_failed`（`06/10/11/14/15/16`）を確認。原因は Kotlin runtime `pyMath*` 戻り型が `Any?` のままで数値演算文脈に入れないこと。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Kotlin/Swift runtime の `pyMath*` 戻り型を `Double` へ統一し、`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` を再通過。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity 再実行（`work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json`）で `case_pass=18/case_fail=0`（`ok:72`）を確認し、runtime 差由来 fail を固定した。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 先行実装（Ruby/PHP）として `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` runtime API を `pytra-core` へ追加。`runtime_parity_check --targets {ruby,php} 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Lua runtime に `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` API を追加し、`runtime_parity_check --targets lua 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime に `pyMath*` / `Path` API を追加し、`runtime_parity_check --targets scala 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime の `pyJsonLoads|pyJsonDumps` を再帰 parser/stringify 実装へ置換し、`check_py2{lua,php,scala}_transpile.py`（`90/10/142` all green）と `runtime_parity_check --targets ruby,php,lua,scala 01_mandelbrot` で Wave2 4言語の回帰を固定。`S3-01` を完了。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Ruby/PHP/Scala emitter の `math/json/pathlib` を runtime adapter（`pyMath*` / `pyJson*` / `Path`）経由へ統一し、Lua emitter の import 解決も runtime adapter（`pyMath*` / `pyJson*` / `Path` / `__pytra_perf_counter`）へ寄せた。
-- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] `check_py2{lua,php,scala}_transpile.py` と `runtime_parity_check --targets ruby,php,lua,scala 01_mandelbrot` を再実行し、Wave2 adapter 化後の非退行（`ok:4`）を確認。`S3-02` を完了。
-
-## S1-01 実装（2026-03-03）
-
-- 反映先: `docs/ja/spec/spec-runtime.md` セクション「0. C++ runtime API 正本カタログ」。
-- 抽出結果:
-  - `Must`: `built_in/core`, `std/math`, `std/time`, `std/pathlib::Path`, `std/json`, `utils/png`, `utils/gif`
-  - `Should`: `std/timeit`, `std/random`
-- 正本パスを `pytra-core` / `pytra-gen` に固定し、`pytra/*` を forwarder 層として明記。
-
-## S1-02 実装（2026-03-03）
-
-判定キー:
-- `native`: 専用モジュール/名前空間として分離実装あり
-- `mono`: 単一 `py_runtime.*` 内に実装あり
-- `compat`: 言語標準 API へ直結（専用 runtime API なし）
-- `missing`: 実装未確認（呼び出し時は不足/代替挙動の可能性）
-
-| lang | core helper | math | time | pathlib | json | png | gif | 備考 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `cs` | mono | native | native | native | native | native | native | C++基準に最も近い分離構成。 |
-| `js` | mono | native | native | native | compat | native | native | `json` は専用 runtime なし（JS `JSON.*` 依存）。 |
-| `ts` | mono | native | native | native | compat | native | native | JS と同系統。 |
-| `go` | mono | mono | mono | mono | missing | mono | mono | 単一 `py_runtime.go` へ集中。 |
-| `java` | mono | mono | mono | mono | missing | mono | mono | 単一 `PyRuntime.java` へ集中。 |
-| `kotlin` | mono | missing | mono | missing | missing | mono | missing | 画像は PNG のみ確認。 |
-| `swift` | mono | missing | mono | missing | missing | mono | missing | 画像は PNG のみ確認。 |
-| `ruby` | mono | missing | mono | missing | missing | mono | mono | 単一 `py_runtime.rb`。 |
-| `lua` | mono | mono | mono | mono | missing | mono | mono | path/gif/png は monolithic helper。 |
-| `scala` | mono | compat | mono | mono | missing | mono | mono | math は言語標準利用中心。 |
-| `php` | mono | missing | native | missing | compat | native | native | `json_encode` 利用はあるが `loads/dumps` 契約不足。 |
-| `rs` | mono | mono | mono | mono | missing | mono | mono | `built_in/py_runtime.rs` に集約。 |
-| `nim` | mono | missing | mono | missing | missing | mono | missing | 現状は最小 runtime。 |
-
-欠落/互換/挙動差の主分類:
-1. `json` 欠落: `cs` 以外で C++ `loads/dumps` 契約と同名 API が不足（`js/ts/php` は標準 API 依存の compat）。
-2. `pathlib` 欠落: `kotlin/swift/ruby/php/nim` は C++ `Path` の最小 API 群に未到達。
-3. 画像 API 偏在: `kotlin/swift/nim` で `gif` 側が不足（`png` のみ）。
-4. 実装形態差: `go/java/rs/lua/scala/ruby` は monolithic runtime 集中で、`cs/js/ts` の分離構成と乖離。
-
-## S1-03 実装（2026-03-03）
-
-### Must（Wave1/2 先行）
-
-1. `json.loads/dumps` を `go/java/kotlin/swift/ruby/lua/scala/php/rs/nim` へ追加し、C++ 公開契約に合わせる。
-2. `pathlib.Path` 最小 API（`resolve/parent/name/stem/exists/mkdir/read_text/write_text`）を `kotlin/swift/ruby/php/nim` に追加する。
-3. `gif` API（`grayscale_palette/save_gif`）を `kotlin/swift/nim` に追加する。
-4. `math/time/pathlib/json/png/gif` の emitter 呼び出しを adapter 経由へ寄せ、名前揺れを吸収する。
-
-### Should（Wave2/3）
-
-1. monolithic 実装（`go/java/rs/lua/scala/ruby`）を `std/*` / `utils/*` 分離へ段階移行する。
-2. `timeit/random` の C++ 同等 API を不足言語へ補完する。
-3. `js/ts/php` の `json` compat 経路を専用 runtime API 名へ揃える。
-
-### Optional（後段）
-
-1. API 名一致後の挙動差（例外文言/誤差許容）を厳密化する。
-2. module 分離後の runtime 配置最適化（`profiles` と合わせた責務整理）を行う。
-3. parity 失敗時の runtime 欠落自動診断を `tools/` に追加する。
+- 2026-03-05: ユーザー指示により、旧P2を破棄し、SoT厳守・生成優先・責務分離を前提とする再設計版へ置換した。
