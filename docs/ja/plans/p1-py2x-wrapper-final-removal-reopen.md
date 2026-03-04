@@ -49,9 +49,29 @@
 - `python3 tools/check_py2php_transpile.py`
 - `python3 tools/check_py2nim_transpile.py`
 
+## S1-01 棚卸し結果（2026-03-04）
+
+- `tools`（最優先で置換）:
+  - direct CLI 参照: `check_noncpp_east3_contract.py`, `check_transpiler_version_gate.py`
+  - selfhost 参照: `check_multilang_selfhost_stage1.py`, `check_multilang_selfhost_multistage.py`, `prepare_selfhost_source_cs.py`, `check_cs_single_source_selfhost_compile.py`
+- `test/unit`（次点で置換）:
+  - wrapper module import 依存: `test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py`（13本）
+  - wrapper 実ファイル文字列依存（`ROOT / "src" / "py2*.py"` を読む検証）: `test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala}_smoke.py`（11本）
+- `docs`（実運用導線を先に置換）:
+  - user-facing: `docs/ja/how-to-use.md`, `docs/en/how-to-use.md`
+  - spec: `docs/ja/spec/*.md`, `docs/en/spec/*.md` に `py2*.py` 名が残存
+  - 履歴用途の `docs/*/plans` / `docs/*/todo/archive` は事実記録として維持し、`S2-03` では運用ドキュメント側を優先置換する
+
+置換順（確定）:
+1. `S2-01` で `tools` の direct wrapper 参照を `py2x.py` / `py2x-selfhost.py` と backend module 参照へ更新する。
+2. `S2-02` で `test/unit` の import/文字列依存を `py2x` 基準へ更新する。
+3. `S2-03` で `docs/ja|en` の運用・仕様ドキュメントを `py2x` 正規入口へ更新する。
+4. `S3-01` で `src/py2*.py` wrapper 群と `toolchain/compiler/py2x_wrapper.py` を削除する。
+5. `S3-02/S3-03` で再流入ガードと回帰を通して固定する。
+
 ## 分解
 
-- [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] wrapper 参照の残存箇所を `tools/test/docs/selfhost` で再棚卸しし、置換順を確定する。
+- [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] wrapper 参照の残存箇所を `tools/test/docs/selfhost` で再棚卸しし、置換順を確定する。
 - [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `tools/` の wrapper 直参照を `py2x` / backend module 参照へ置換する。
 - [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test/unit` の wrapper ファイル依存テストを `py2x` 基準または backend module 基準へ置換する。
 - [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja` / `docs/en` の wrapper 名記述を `py2x` 正規入口へ更新する。
@@ -61,3 +81,4 @@
 
 決定ログ:
 - 2026-03-04: archive 済み `P1-PY2X-SINGLE-ENTRY-01` を再開対象として差し戻し。完了条件を「`py2x` 導入」ではなく「legacy wrapper 実ファイル撤去」へ再定義した。
+- 2026-03-04: `S1-01` として wrapper 参照を `tools/test/docs/selfhost` で再棚卸しし、置換順を「tools -> test -> docs -> wrapper削除 -> guard/回帰」に確定した。
