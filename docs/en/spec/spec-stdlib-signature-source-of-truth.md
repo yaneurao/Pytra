@@ -40,5 +40,5 @@ Type representations are normalized in EAST-compatible form (e.g., `float -> flo
 
 ## 6. Verification
 
-- Pin reference-layer resolution results in `test/unit/test_stdlib_signature_registry.py`.
-- Pin `resolved_type` of `perf_counter` calls in `test/unit/test_east_core.py`.
+- Pin reference-layer resolution results in `test/unit/common/test_stdlib_signature_registry.py`.
+- Pin `resolved_type` of `perf_counter` calls in `test/unit/ir/test_east_core.py`.

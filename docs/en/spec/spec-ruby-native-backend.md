@@ -58,7 +58,7 @@ Forbidden:
 
 - `py2rb.py` generates `.rb` from EAST3 input.
 - minimal fixtures (`add` / `if_else` / `for_range`) transpile without failure.
-- `test/unit/test_py2rb_smoke.py` locks CLI/emitter skeleton behavior.
+- `test/unit/backends/rb/test_py2rb_smoke.py` locks CLI/emitter skeleton behavior.
 
 ## 7. Container Reference Management Boundary (v1)
 

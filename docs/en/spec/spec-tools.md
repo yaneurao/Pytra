@@ -61,12 +61,12 @@ Its goals are:
 
 ### 3.1 Smoke Test Operation (After `py2x` Unification)
 
-- Keep shared smoke coverage (CLI success, `--east-stage 2` rejection, `load_east`, add-fixture transpile) in `test/unit/test_py2x_smoke_common.py`.
-- Keep per-language suites (`test/unit/test_py2*_smoke.py`) focused on language-specific emitter/runtime contracts only.
+- Keep shared smoke coverage (CLI success, `--east-stage 2` rejection, `load_east`, add-fixture transpile) in `test/unit/common/test_py2x_smoke_common.py`.
+- Keep per-language suites (`test/unit/backends/<lang>/test_py2*_smoke.py`) focused on language-specific emitter/runtime contracts only.
 - Require the responsibility-boundary comment (`Language-specific smoke suite...`) in each per-language smoke file, and enforce this via `tools/check_noncpp_east3_contract.py`.
 - Recommended regression order:
-- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2x_smoke*.py'`
-- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py'`
+- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit/common -p 'test_py2x_smoke*.py'`
+- `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
 - `python3 tools/check_py2<lang>_transpile.py` (for affected targets)
 
 ## 4. Update Rules

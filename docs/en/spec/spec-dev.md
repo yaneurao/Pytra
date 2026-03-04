@@ -261,7 +261,7 @@ Constraints:
   - changes to defaults/format/rounding that diverge from Python source-of-truth
 - Acceptance criteria:
   - `python3 tools/verify_image_runtime_parity.py` returns `True` after change.
-  - `test/unit/test_image_runtime_parity.py` and `test/unit/test_py2cpp_features.py` pass.
+  - `test/unit/common/test_image_runtime_parity.py` and `test/unit/backends/cpp/test_py2cpp_features.py` pass.
 
 ## 4. Verification Procedure (C++)
 
@@ -306,7 +306,7 @@ Constraints:
 
 ### 5.1 CodeEmitter Test Policy
 
-- Regression coverage for `src/backends/common/emitter/code_emitter.py` is provided by `test/unit/test_code_emitter.py`.
+- Regression coverage for `src/backends/common/emitter/code_emitter.py` is provided by `test/unit/common/test_code_emitter.py`.
 - Main targets:
   - output buffer ops (`emit`, `emit_stmt_list`, `next_tmp`)
   - dynamic-input safety (`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`)

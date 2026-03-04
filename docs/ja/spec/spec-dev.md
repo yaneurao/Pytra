@@ -198,8 +198,8 @@
 - `src/toolchain/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2x.py --target cpp` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
 - `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/toolchain/compiler/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
 - `py2x.py --target cpp` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
-- 回帰は `test/unit/test_east1_build.py`・`test/unit/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
-- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py'` を併用し、`py2x.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
+- 回帰は `test/unit/ir/test_east1_build.py`・`test/unit/backends/cpp/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
+- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_smoke.py'` を併用し、`py2x.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
 
 ### 3.1 import と `runtime/cpp` 対応
 
@@ -316,7 +316,7 @@
   - Python 正本と異なる既定値・フォーマット・丸め方への変更。
 - 受け入れ条件:
   - 変更後に `python3 tools/verify_image_runtime_parity.py` が `True` を返すこと。
-  - `test/unit/test_image_runtime_parity.py` と `test/unit/test_py2cpp_features.py` を通過すること。
+  - `test/unit/common/test_image_runtime_parity.py` と `test/unit/backends/cpp/test_py2cpp_features.py` を通過すること。
 
 ## 4. 検証手順（C++）
 
@@ -361,7 +361,7 @@
 
 ### 5.1 CodeEmitter テスト方針
 
-- `src/backends/common/emitter/code_emitter.py` の回帰は `test/unit/test_code_emitter.py` で担保します。
+- `src/backends/common/emitter/code_emitter.py` の回帰は `test/unit/common/test_code_emitter.py` で担保します。
 - 主対象:
   - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
   - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）

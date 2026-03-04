@@ -56,7 +56,7 @@
 2. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
 3. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
 4. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
-5. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
+5. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
 6. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
 7. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] 判定済みの未使用テストを削除または統合し、再発防止チェック（必要なら新規）を追加する。
 8. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] 主要 unit/transpile/selfhost 回帰を実行し、再編・整理後の非退行を確認する。
@@ -64,6 +64,7 @@
 - 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` 71本を棚卸しし、移動マップを `backends/*:29, ir:10, tooling:5, selfhost:3, common:23` で確定。`S2-01` でこの分類に従って再編する。
 - 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] `test/unit/{common,backends/<lang>,ir,tooling,selfhost}` の目標配置・命名・discover運用規約を計画書に確定し、`test/unit` 直下直置き禁止を明文化。
 - 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] `test/unit/test_*.py` 71本を責務別ディレクトリへ移動し、`run_local_ci.py` と `check_noncpp_east3_contract.py` の固定参照を新パスへ更新。`backends` 名衝突回避のため `test/unit/backends` は非package運用とした。
+- 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `test_discovery_router` を手動ローダ化して非package再帰 discover を復旧し、`comment_fidelity` import 失敗を root helper 追加で解消。`go/swift/kotlin` の個別 discover も新パスで通過。
 
 ### P1: Nim sample parity 完了化（runtime_parity_check 正式統合）
 

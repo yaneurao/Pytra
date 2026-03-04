@@ -81,7 +81,7 @@ This document defines the operational rules Codex follows while working.
 - Use `-O3 -ffast-math -flto` for C++ in performance comparisons.
 - Keep generated artifact directories (`out/`, `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`) outside Git management.
 - `out/` is for local temporary outputs only; do not place irreproducible source-of-truth data there.
-- If `src/backends/common/emitter/code_emitter.py` is changed, run `test/unit/test_code_emitter.py` first to verify shared utility regressions.
+- If `src/backends/common/emitter/code_emitter.py` is changed, run `test/unit/common/test_code_emitter.py` first to verify shared utility regressions.
 - For `CodeEmitter` / `py2cpp` changes, pass both `python3 tools/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` before commit.
 - Committing while either of the two commands above fails is prohibited.
 - When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`), bump the corresponding version in `src/toolchain/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
@@ -94,7 +94,7 @@ This document defines the operational rules Codex follows while working.
 - For `#include "runtime/cpp/..."`, headers under `selfhost/` with the same path resolve first. Updating only `src/runtime/cpp` may not fix selfhost build.
 - Selfhost build logs may appear on stdout, so collect with `> selfhost/build.all.log 2>&1`.
 - In selfhost target code, confirm Python-only expressions do not leak into generated C++ (e.g., `super().__init__`, Python-style inheritance notation).
-- On runtime changes, besides `test/unit/test_py2cpp_features.py`, also verify selfhost regeneration and recompilation.
+- On runtime changes, besides `test/unit/backends/cpp/test_py2cpp_features.py`, also verify selfhost regeneration and recompilation.
 - Even in selfhost-target Python code, direct imports of standard modules are prohibited; use only shim modules in `src/pytra/std/` (e.g., `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`).
 - In selfhost-critical areas where reliability is prioritized, avoid branches relying on `continue` and literal-set membership like `x in {"a", "b"}`; prefer `if/elif` and explicit comparison (`x == "a" or x == "b"`).
 - For daily minimal regression, run `python3 tools/run_local_ci.py` and pass `check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff together.
