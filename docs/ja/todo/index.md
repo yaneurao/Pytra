@@ -40,7 +40,7 @@
 2. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語 image runtime の marker/probe 監査を実行し、ベースラインログを固定する。
 3. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止」を `docs/ja/spec` / `docs/en/spec` に明文化する。
 4. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 監査結果を言語別に分類し、`probe ok` / `probe fail` の着手順を確定する。
-5. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` を backend 互換 subset へ正規化し、全 target の transpile probe を green 化する。
+5. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
 6. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ 正本由来実装を基準系として再確認する。
 7. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 8. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
@@ -59,7 +59,8 @@
 21. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-02] 手書き混入検知を parity/CI 導線へ組み込み、再発防止を固定する。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] `python3 tools/audit_image_runtime_sot.py --probe-transpile --summary-json work/logs/image_runtime_sot_audit_20260304.json` を実行し、`languages=14/compliant=1/non_compliant=13` の基準値を記録。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] `probe ok: cs/js/ts/scala/nim`、`probe fail: rs/go/java/swift/kotlin/ruby/lua/php` に分割して言語別P0の着手順を確定。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] `src/pytra/utils/png.py` / `gif.py` の subset 正規化（`with/slice/to_bytes/f-string` 非依存化 + `_lzw_encode` の index-loop/int 化）を実施し、`work/logs/image_runtime_sot_audit_20260304_v6.json` で全 target `probe png/gif=ok` を確認。`python3 tools/verify_image_runtime_parity.py` も `True` で退行なし。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 2026-03-04 運用是正: `png.py/gif.py` のターゲット都合変更はルール違反のため取り消し。以後は正本不変で backend 側修正のみで green 化する。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 巻き戻し後に `work/logs/image_runtime_sot_audit_20260304_after_revert.json` を再取得し、`probe ok: cs/js/ts/scala/nim` / `probe fail: rs/go/java/swift/kotlin/ruby/lua/php` を再確認。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 

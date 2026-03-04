@@ -59,7 +59,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語の image runtime を自動監査し、marker/probe のベースラインログを固定する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止（正本由来のみ）」を `docs/ja/spec` / `docs/en/spec` へ明文化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 言語別の着手順（probe ok 群 / probe fail 群）を計画へ確定する。
-- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` を backend 互換 subset（`Try/Slice/to_bytes/f-string` 非依存）へ正規化し、全 target の transpile probe を green 化する。
+- [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ を正本準拠の基準実装として再確認し、他言語比較の基準を固定する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
@@ -81,5 +81,5 @@
 - 2026-03-04: ユーザー指示「言語別にTODOにP0で積んで実施」に基づき、本計画を新規起票。
 - 2026-03-04: `tools/audit_image_runtime_sot.py --probe-transpile` を実行し、`work/logs/image_runtime_sot_audit_20260304.json` で `languages=14, compliant=1, non_compliant=13` を固定。
 - 2026-03-04: 監査結果から `probe ok` 群（`cs/js/ts/scala/nim`）を先行着手、`probe fail` 群（`rs/go/java/swift/kotlin/ruby/lua/php`）を阻害要因解消フェーズへ分離した。
-- 2026-03-04: 正本 `src/pytra/utils/png.py` / `gif.py` を subset 正規化（`with`→`open/write/close`、`slice`→loop、`to_bytes`→`_append_u16le`、f-string除去）し、`work/logs/image_runtime_sot_audit_20260304_v4.json` で全14 target の `probe png/gif = ok` を確認。
-- 2026-03-04: `gif.py` の `_lzw_encode` を index-loop + `int(v)` へ追加正規化し、Nim probe に残っていた `unknown_expr` マーカーを解消（`work/logs/image_runtime_sot_audit_20260304_v6.json`）。`tools/verify_image_runtime_parity.py` は引き続き `True`。
+- 2026-03-04: 運用是正。`src/pytra/utils/png.py` / `gif.py` のターゲット都合変更は規約違反のため取り消し、`S1-04` は未完了へ戻した。以後は正本不変で backend 側修正のみを許可する。
+- 2026-03-04: 巻き戻し後に `tools/audit_image_runtime_sot.py --probe-transpile` を再実行し、`work/logs/image_runtime_sot_audit_20260304_after_revert.json` で baseline（`probe ok: cs/js/ts/scala/nim`, `probe fail: rs/go/java/swift/kotlin/ruby/lua/php`）へ復帰したことを確認。

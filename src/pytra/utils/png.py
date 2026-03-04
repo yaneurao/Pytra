@@ -53,20 +53,13 @@ def _zlib_deflate_store(data: bytes) -> bytes:
     pos = 0
     while pos < n:
         remain = n - pos
-        chunk_len = remain
-        if chunk_len > 65535:
-            chunk_len = 65535
-        final = 0
-        if (pos + chunk_len) >= n:
-            final = 1
+        chunk_len = 65535 if remain > 65535 else remain
+        final = 1 if (pos + chunk_len) >= n else 0
         # stored block: BTYPE=00, header bit field in LSB order (final in bit0)
         out.append(final)
         out.extend(_u16le(chunk_len))
         out.extend(_u16le(0xFFFF ^ chunk_len))
-        i = 0
-        while i < chunk_len:
-            out.append(data[pos + i])
-            i += 1
+        out.extend(data[pos : pos + chunk_len])
         pos += chunk_len
     out.extend(_u32be(_adler32(data)))
     return bytes(out)
@@ -90,7 +83,7 @@ def write_rgb_png(path: str, width: int, height: int, pixels: bytes | bytearray)
     raw = bytes(pixels)
     expected = width * height * 3
     if len(raw) != expected:
-        raise ValueError("pixels length mismatch: got=" + str(len(raw)) + " expected=" + str(expected))
+        raise ValueError(f"pixels length mismatch: got={len(raw)} expected={expected}")
 
     scanlines = bytearray()
     row_bytes = width * 3
@@ -98,10 +91,8 @@ def write_rgb_png(path: str, width: int, height: int, pixels: bytes | bytearray)
     while y < height:
         scanlines.append(0)  # filter type 0
         start = y * row_bytes
-        i = 0
-        while i < row_bytes:
-            scanlines.append(raw[start + i])
-            i += 1
+        end = start + row_bytes
+        scanlines.extend(raw[start:end])
         y += 1
 
     ihdr = _u32be(width) + _u32be(height) + bytes([8, 2, 0, 0, 0])
@@ -113,6 +104,5 @@ def write_rgb_png(path: str, width: int, height: int, pixels: bytes | bytearray)
     png.extend(_chunk(b"IDAT", idat))
     png.extend(_chunk(b"IEND", b""))
 
-    f = open(path, "wb")
-    f.write(png)
-    f.close()
+    with open(path, "wb") as f:
+        f.write(png)
