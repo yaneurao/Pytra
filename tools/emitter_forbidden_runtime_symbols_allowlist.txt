@@ -8,6 +8,6 @@ src/backends/lua/emitter/lua_native_emitter.py:1187:__pytra_write_rgb_png
 src/backends/lua/emitter/lua_native_emitter.py:1246:__pytra_write_rgb_png
 src/backends/lua/emitter/lua_native_emitter.py:1250:__pytra_write_rgb_png
 src/backends/lua/emitter/lua_native_emitter.py:993:__pytra_grayscale_palette
-src/backends/scala/emitter/scala_native_emitter.py:2755:__pytra_grayscale_palette
-src/backends/scala/emitter/scala_native_emitter.py:2767:__pytra_write_rgb_png
-src/backends/scala/emitter/scala_native_emitter.py:2836:__pytra_save_gif
+src/backends/scala/emitter/scala_native_emitter.py:2761:__pytra_grayscale_palette
+src/backends/scala/emitter/scala_native_emitter.py:2773:__pytra_write_rgb_png
+src/backends/scala/emitter/scala_native_emitter.py:2842:__pytra_save_gif

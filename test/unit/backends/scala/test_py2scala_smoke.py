@@ -145,6 +145,37 @@ class Py2ScalaSmokeTest(unittest.TestCase):
             transpile_to_scala_native(east)
         self.assertIn("unsupported stmt kind", str(cm.exception))
 
+    def test_scala_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "save_gif"},
+                                "args": [],
+                                "keywords": [],
+                                "semantic_tag": "stdlib.fn.save_gif",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "main_guard_body": [],
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            transpile_to_scala_native(east)
+        self.assertIn("unresolved stdlib runtime call", str(cm.exception))
+
     def test_sample_18_scala_output_has_no_unsupported_todo_marker(self) -> None:
         sample = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(sample, parser_backend="self_hosted")
