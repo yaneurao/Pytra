@@ -61,7 +61,7 @@
 
 文脈: [docs/ja/plans/p0-emitter-runtimecall-guardrails.md](../plans/p0-emitter-runtimecall-guardrails.md)
 
-1. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01] 非C++ emitter における runtime/stdlib 関数名の直書き分岐を撤去し、IR解決 + CIガードで再発を防止する。
+1. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01] 非C++ emitter における runtime/stdlib 関数名の直書き分岐を撤去し、IR解決 + CIガードで再発を防止する。
 2. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 禁止/許可ルール（禁止文字列分岐・許可組み込み）を仕様化する。
 3. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存違反を言語別に棚卸しし、移行対象を確定する。
 4. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] static check（`check_emitter_runtimecall_guardrails.py`）を追加して違反を fail 化する。
@@ -77,7 +77,7 @@
 14. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 15. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
 16. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
-17. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
+17. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
 18. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
 19. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] EAST3 固定入力（`test/ir/*.json`）から backend-only 回帰を追加し、`math/Path` を含む解決済み runtime 呼び出しが emitter 直書きなしで通ることを固定する。
 20. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] Emitter変更の Stop-Ship（必須3コマンド + FAIL時コミット禁止）を運用ルールへ固定し、レビュー checklist 化する。
