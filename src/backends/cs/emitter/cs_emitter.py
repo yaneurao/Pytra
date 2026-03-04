@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import ast
-
 from pytra.std.typing import Any
 
 from backends.cs.hooks.cs_hooks import build_cs_hooks
@@ -373,12 +371,63 @@ class CSharpEmitter(CodeEmitter):
             return ""
         if not (raw.startswith("b\"") or raw.startswith("b'")):
             return ""
-        try:
-            parsed = ast.literal_eval(raw)
-        except Exception:
+        if len(raw) < 3:
             return ""
-        if not isinstance(parsed, (bytes, bytearray)):
+        quote = raw[1]
+        if raw[-1] != quote:
             return ""
+        body = raw[2:-1]
+        parsed: list[int] = []
+        i = 0
+        while i < len(body):
+            ch = body[i]
+            if ch != "\\":
+                parsed.append(ord(ch) & 0xFF)
+                i += 1
+                continue
+            if i + 1 >= len(body):
+                parsed.append(ord("\\"))
+                i += 1
+                continue
+            nxt = body[i + 1]
+            if nxt == "x" and i + 3 < len(body):
+                h1 = body[i + 2]
+                h2 = body[i + 3]
+                hex_digits = "0123456789abcdefABCDEF"
+                if h1 in hex_digits and h2 in hex_digits:
+                    parsed.append(int(h1 + h2, 16))
+                    i += 4
+                    continue
+            if nxt >= "0" and nxt <= "7":
+                j = i + 1
+                oct_txt = ""
+                count = 0
+                while j < len(body) and count < 3 and body[j] >= "0" and body[j] <= "7":
+                    oct_txt += body[j]
+                    j += 1
+                    count += 1
+                if oct_txt != "":
+                    parsed.append(int(oct_txt, 8) & 0xFF)
+                    i = j
+                    continue
+            esc_map: dict[str, int] = {
+                "\\": ord("\\"),
+                "'": ord("'"),
+                '"': ord('"'),
+                "a": 7,
+                "b": 8,
+                "f": 12,
+                "n": 10,
+                "r": 13,
+                "t": 9,
+                "v": 11,
+            }
+            if nxt in esc_map:
+                parsed.append(esc_map[nxt])
+                i += 2
+                continue
+            parsed.append(ord(nxt) & 0xFF)
+            i += 2
         elems: list[str] = []
         for b in parsed:
             elems.append("(byte)" + str(int(b)))
