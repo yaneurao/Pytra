@@ -66,6 +66,8 @@ This document defines the operational rules Codex follows while working.
 - Consolidate generated-code helper functions in each target runtime (`src/runtime/<lang>/pytra/`) and do not duplicate-embed them into generated code.
 - Treat `src/*_module/` as compatibility layers and do not add new runtime implementation files there (planned for gradual removal).
 - Treat `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` as generated from `src/pytra/utils/*.py`; do not edit by hand (auto-updated when running `py2cpp.py`).
+- For `src/runtime/<lang>/pytra/`, allow only source-of-truth-derived generated implementations for PNG/GIF writers (`src/pytra/utils/png.py`, `src/pytra/utils/gif.py`); handwritten per-language encoder implementations are prohibited.
+- The only allowed language-specific differences around PNG/GIF are thin I/O/runtime adapters. Do not hand-copy encoder core logic (CRC32/Adler32/DEFLATE/LZW/chunk assembly).
 - Do not add Python-stdlib-equivalent functionality to `runtime/cpp` (not limited to `json`).
 - Keep `src/pytra/std/*.py` as the source of truth for Python-stdlib-equivalent functionality; use transpiled outputs in each target language.
 - In selfhost target code (especially `src/toolchain/compiler/east.py` family), do not use dynamic imports (`try/except ImportError` fallback or `importlib` lazy import).

@@ -67,6 +67,8 @@
 - 生成コードの補助関数は各ターゲット言語ランタイム（`src/runtime/<lang>/pytra/`）へ集約し、生成コードに重複埋め込みしません。
 - `src/*_module/` は互換レイヤ扱いとし、新規 runtime 実体ファイルを追加しません（段階撤去対象）。
 - `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
+- `src/runtime/<lang>/pytra/` の `png/gif` 書き出し本体は、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とした生成物のみを許可し、言語別の手書き実装を禁止します。
+- `png/gif` で許可される言語差分は、入出力アダプタや最小のランタイム接続コードに限定し、エンコード本体ロジック（CRC32/Adler32/DEFLATE/LZW/chunk構築）を手で複製してはいけません。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
 - selfhost 対象コード（特に `src/toolchain/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
