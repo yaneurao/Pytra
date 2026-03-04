@@ -52,6 +52,9 @@ Its goals are:
 - `tools/runtime_parity_check.py`
   - Purpose: Run runtime normalization/parity checks across multiple target languages.
   - Note: Unstable timing lines such as `elapsed_sec` / `elapsed` / `time_sec` are excluded from compare by default.
+  - Note: Artifact parity requires all of `exists + size + CRC32` on the `output:` artifact path.
+  - Note: Before each case run, stale artifacts with the same stem are purged from `sample/out`, `test/out`, and `out`.
+  - Note: Timeout handling kills the whole process group so child runners (for example `*_swift.out`) cannot leak.
 - `tools/check_scala_parity.py`
   - Purpose: Run Scala3 parity in one command for all `sample` cases and the positive fixture manifest.
   - Main options: `--skip-fixture`, `--fixture-manifest`, `--east3-opt-level`, `--summary-dir`

@@ -142,6 +142,7 @@
 - 2026-03-04: `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。`S3-01` の残件は Swift 全件完走と `cpp` 全件再実行のみ。
 - 2026-03-04: `tools/runtime_parity_check.py` の `run_shell` を `start_new_session=True` + `os.killpg(SIGKILL)` に変更し、timeout 時に子プロセス（`*_swift.out` など）が孤立しないよう修正。合わせて Swift 実行を `swiftc -O` へ変更。
 - 2026-03-04: Swift 再検証として `01..04` を実行し、artifact parity が 4/4 `ok` を確認（`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`）。一方 `--all-samples --cmd-timeout-sec 300` では `05/06/07` が timeout で `run_failed` となることを再確認し、残件を「重いケースの実行戦略（timeout または Swift 側高速化）」へ整理した。
+- 2026-03-04: `S3-02` として `test_runtime_parity_check_cli.py` に `swiftc -O` 回帰と timeout 時 process-group kill 回帰を追加。`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に artifact parity の必須条件（exists+size+CRC32）、stale artifact purge、timeout kill の運用ルールを明記した。
 
 ## 分解
 
@@ -158,4 +159,4 @@
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C#: image系 CRC mismatch の原因（writer仕様差 or 入力変換差）を切り分け、Python準拠バイナリへ合わせる。
 - [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++: sample/07,16 compile fail を修正し、06/12/14 の CRC mismatch 原因を潰して一致させる。
 - [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `cpp,rs,cs,js,ts,go,java,swift,kotlin` 全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
-- [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと `docs/ja/spec` に artifact parity 運用（CRC32必須）を反映する。
+- [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと `docs/ja/spec` に artifact parity 運用（CRC32必須）を反映する。

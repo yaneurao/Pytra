@@ -50,7 +50,7 @@
 12. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-09] C# image系 CRC mismatch を切り分け・修正する。
 13. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-10] C++ sample/07,16 compile fail と 06/12/14 CRC mismatch を修正する。
 14. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] 9言語全件で artifact parity を再実行し、`mismatch/run_failed/toolchain_missing=0` を確認する。
-15. [ ] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと仕様書へ CRC32 parity 運用ルールを反映する。
+15. [x] [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] 回帰テストと仕様書へ CRC32 parity 運用ルールを反映する。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-01] Kotlin emitter の `save_gif/grayscale_palette` を runtime 接続へ切替え、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer を追加。`--targets kotlin --all-samples` 再実行で `artifact_missing=0` を確認（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S2-02] Kotlin PNG writer を Python runtime と同じ stored-block zlib/chunk 仕様へ変更し、`01..04` の size/CRC mismatch を解消（`work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`）。残件は GIF 系 `artifact_crc32_mismatch` 8件。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S1-02] `runtime_parity_check.py` に `--cmd-timeout-sec` を追加して `--targets swift --all-samples` を完走化。`work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json` で `run_failed=17/artifact_missing=1` を固定。
@@ -68,6 +68,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Java で `keywords` 欠落、単項 `-` の括弧崩れ、PNG writer の `Deflater` 非互換（Python非準拠）を修正。stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。残件は Swift 全件完走と `cpp` 全件再実行。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `runtime_parity_check.py` の timeout 処理を process-group kill 化し、Swift 実行を `swiftc -O` へ変更。Swift `01..04` は 4/4 `ok`（`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`）だが、`--all-samples --cmd-timeout-sec 300` では `05/06/07` が timeout 残件。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-02] `test_runtime_parity_check_cli.py` に `swiftc -O` 回帰と timeout 時 process-group kill の回帰を追加し、`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` へ artifact parity（exists+size+CRC32）と stale artifact purge / timeout kill ルールを反映。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 

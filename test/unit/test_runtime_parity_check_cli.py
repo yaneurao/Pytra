@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import shlex
 import subprocess
 import sys
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -102,6 +105,29 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
             "scala run test/transpile/scala/py_runtime.scala test/transpile/scala/01_mandelbrot.scala",
         )
         self.assertEqual(scala_target.needs, ("python", "scala"))
+
+    def test_build_targets_swift_uses_optimized_compile_flag(self) -> None:
+        case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
+        swift_target = next(t for t in targets if t.name == "swift")
+        self.assertIn("swiftc -O ", swift_target.run_cmd)
+
+    def test_run_shell_timeout_kills_process_group(self) -> None:
+        marker = f"RPC_TIMEOUT_MARKER_{os.getpid()}"
+        py_cmd = (
+            "import subprocess, sys, time; "
+            + "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)', "
+            + repr(marker)
+            + "]); "
+            + "time.sleep(30)"
+        )
+        cmd = shlex.quote(sys.executable) + " -c " + shlex.quote(py_cmd)
+        cp = self.rpc.run_shell(cmd, ROOT, timeout_sec=1)
+        self.assertEqual(cp.returncode, 124)
+        self.assertIn("[TIMEOUT] exceeded 1s", cp.stderr)
+        time.sleep(0.2)
+        ps = subprocess.run(["ps", "-ef"], check=False, capture_output=True, text=True)
+        self.assertNotIn(marker, ps.stdout)
 
     def test_normalize_output_keeps_artifact_size_line(self) -> None:
         raw = "output: sample/out/x.png\nartifact_size: 123\nelapsed_sec: 0.12\n"
