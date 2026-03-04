@@ -262,8 +262,8 @@ def build_targets(
                 "src/runtime/cs/pytra-core/built_in/py_runtime.cs "
                 "src/runtime/cs/pytra-core/built_in/time.cs "
                 "src/runtime/cs/pytra-core/built_in/math.cs "
-                "src/runtime/cs/pytra-gen/utils/png_helper.cs "
-                "src/runtime/cs/pytra-gen/utils/gif_helper.cs "
+                "src/runtime/cs/pytra-gen/utils/png.cs "
+                "src/runtime/cs/pytra-gen/utils/gif.cs "
                 "src/runtime/cs/pytra-core/std/pathlib.cs "
                 "src/runtime/cs/pytra-core/std/json.cs "
                 f"&& mono test/transpile/obj/{case_stem}_cs.exe"
@@ -352,8 +352,8 @@ def build_targets(
             run_cmd=(
                 "javac test/transpile/java/Main.java "
                 "test/transpile/java/PyRuntime.java "
-                "test/transpile/java/PngHelper.java "
-                "test/transpile/java/GifHelper.java "
+                "test/transpile/java/png.java "
+                "test/transpile/java/gif.java "
                 "&& java -cp test/transpile/java Main"
             ),
             needs=("python", "javac", "java"),

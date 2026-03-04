@@ -249,7 +249,7 @@ python src/py2x.py --target cs test/fixtures/collections/iterable.py -o test/tra
 mcs -out:test/transpile/obj/iterable.exe \
   test/transpile/cs/iterable.cs \
   src/runtime/cs/pytra/built_in/py_runtime.cs src/runtime/cs/pytra/built_in/time.cs \
-  src/runtime/cs/pytra/utils/png_helper.cs src/runtime/cs/pytra/utils/gif_helper.cs src/runtime/cs/pytra/std/pathlib.cs
+  src/runtime/cs/pytra/utils/png.cs src/runtime/cs/pytra/utils/gif.cs src/runtime/cs/pytra/std/pathlib.cs
 mono test/transpile/obj/iterable.exe
 ```
 

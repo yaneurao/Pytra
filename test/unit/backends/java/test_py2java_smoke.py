@@ -280,8 +280,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "java" / "pytra-core" / "built_in" / "PyRuntime.java"
-        png_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "PngHelper.java"
-        gif_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "GifHelper.java"
+        png_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "png.java"
+        gif_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "gif.java"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(png_helper.exists())

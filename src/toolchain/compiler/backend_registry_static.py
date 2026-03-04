@@ -180,8 +180,8 @@ def _runtime_go(output_path: Path) -> None:
 
 def _runtime_java(output_path: Path) -> None:
     _copy_runtime_file("runtime/java/pytra-core/built_in/PyRuntime.java", output_path, "PyRuntime.java")
-    _copy_runtime_file("runtime/java/pytra-gen/utils/PngHelper.java", output_path, "PngHelper.java")
-    _copy_runtime_file("runtime/java/pytra-gen/utils/GifHelper.java", output_path, "GifHelper.java")
+    _copy_runtime_file("runtime/java/pytra-gen/utils/png.java", output_path, "png.java")
+    _copy_runtime_file("runtime/java/pytra-gen/utils/gif.java", output_path, "gif.java")
 
 
 def _runtime_kotlin(output_path: Path) -> None:

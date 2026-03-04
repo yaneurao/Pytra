@@ -798,8 +798,8 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
         ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "py_runtime.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "time.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "math.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "png_helper.cs",
-        ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "gif_helper.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "png.cs",
+        ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "gif.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra-core" / "std" / "pathlib.cs",
         ROOT / "src" / "runtime" / "cs" / "pytra-core" / "std" / "json.cs",
     ]

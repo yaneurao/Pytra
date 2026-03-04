@@ -34,9 +34,9 @@ Validation commands:
 `P1-RUNTIME-04` migration plan (non-Rust):
 
 1. Gradually migrate current assets (`src/*_module/`) to the following destinations.
-   - C#: `src/cs_module/{py_runtime.cs,pathlib.cs,png_helper.cs,gif_helper.cs,time.cs}` -> `src/runtime/cs/pytra/{built_in,std,utils}/...`
-   - JS: `src/js_module/{py_runtime.js,pathlib.js,png_helper.js,gif_helper.js,math.js,time.js}` -> `src/runtime/js/pytra/{built_in,std,utils}/...`
-   - TS: `src/ts_module/{py_runtime.ts,pathlib.ts,png_helper.ts,gif_helper.ts,math.ts,time.ts}` -> `src/runtime/ts/pytra/{built_in,std,utils}/...`
+   - C#: `src/cs_module/{py_runtime.cs,pathlib.cs,png.cs,gif.cs,time.cs}` -> `src/runtime/cs/pytra/{built_in,std,utils}/...`
+   - JS: `src/js_module/{py_runtime.js,pathlib.js,png.js,gif.js,math.js,time.js}` -> `src/runtime/js/pytra/{built_in,std,utils}/...`
+   - TS: `src/ts_module/{py_runtime.ts,pathlib.ts,png.ts,gif.ts,math.ts,time.ts}` -> `src/runtime/ts/pytra/{built_in,std,utils}/...`
    - Go: `src/go_module/py_runtime.go` -> `src/runtime/go/pytra/built_in/py_runtime.go`
    - Java: `src/java_module/PyRuntime.java` -> `src/runtime/java/pytra/built_in/PyRuntime.java`
    - Swift: `src/swift_module/py_runtime.swift` -> `src/runtime/swift/pytra/built_in/py_runtime.swift`

@@ -35,24 +35,24 @@ TARGET_OUTPUTS: dict[str, dict[str, str]] = {
         "gif": "src/runtime/rs/pytra-gen/utils/gif.rs",
     },
     "cs": {
-        "png": "src/runtime/cs/pytra-gen/utils/png_helper.cs",
-        "gif": "src/runtime/cs/pytra-gen/utils/gif_helper.cs",
+        "png": "src/runtime/cs/pytra-gen/utils/png.cs",
+        "gif": "src/runtime/cs/pytra-gen/utils/gif.cs",
     },
     "js": {
-        "png": "src/runtime/js/pytra-gen/utils/png_helper.js",
-        "gif": "src/runtime/js/pytra-gen/utils/gif_helper.js",
+        "png": "src/runtime/js/pytra-gen/utils/png.js",
+        "gif": "src/runtime/js/pytra-gen/utils/gif.js",
     },
     "ts": {
-        "png": "src/runtime/ts/pytra-gen/utils/png_helper.ts",
-        "gif": "src/runtime/ts/pytra-gen/utils/gif_helper.ts",
+        "png": "src/runtime/ts/pytra-gen/utils/png.ts",
+        "gif": "src/runtime/ts/pytra-gen/utils/gif.ts",
     },
     "go": {
         "png": "src/runtime/go/pytra-gen/utils/png.go",
         "gif": "src/runtime/go/pytra-gen/utils/gif.go",
     },
     "java": {
-        "png": "src/runtime/java/pytra-gen/utils/PngHelper.java",
-        "gif": "src/runtime/java/pytra-gen/utils/GifHelper.java",
+        "png": "src/runtime/java/pytra-gen/utils/png.java",
+        "gif": "src/runtime/java/pytra-gen/utils/gif.java",
     },
     "swift": {
         "png": "src/runtime/swift/pytra-gen/utils/png_helper.swift",

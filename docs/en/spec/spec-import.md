@@ -265,7 +265,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
   - `import math as m` -> `const m = require(.../math.js)`
   - `from time import perf_counter as pc` -> `const pc = perfCounter`
   - `from pathlib import Path as P` -> `const P = pathlib.Path`
-  - `from pytra.utils.gif import save_gif as sg` -> `const { save_gif: sg } = require(.../gif_helper.js)`
+  - `from pytra.utils.gif import save_gif as sg` -> `const { save_gif: sg } = require(.../gif.js)`
   - Add lazy emission based on reference counts (emit require only for used bindings).
 - Error policy:
   - Consume frontend-resolved import metadata; unresolved wildcard must be rejected in frontend before JS emission.
