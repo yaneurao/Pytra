@@ -215,57 +215,103 @@ def _call_name(expr: dict[str, Any]) -> str:
     return ""
 
 
-def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: Any) -> str:
+def _snake_to_pascal(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
+
+
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call, "runtime_call"
+    resolved_any = expr.get("resolved_runtime_call")
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved, "resolved_runtime_call"
+    return "", ""
+
+
+def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
+    call = runtime_call.strip()
+    if call == "":
+        return ""
+    dot = call.find(".")
+    if dot >= 0:
+        module_name = call[:dot].strip()
+        symbol_name = call[dot + 1 :].strip()
+        if module_name == "" or symbol_name == "":
+            return ""
+        return "py" + _snake_to_pascal(module_name) + _snake_to_pascal(symbol_name)
+    if runtime_source == "runtime_call":
+        return "__pytra_" + call
+    return "__pytra_" + call
+
+
+def _render_runtime_args(args: list[Any], keywords_any: Any) -> list[str]:
     keywords = keywords_any if isinstance(keywords_any, list) else []
-    if call_name == "write_rgb_png":
-        if len(keywords) != 0:
-            raise RuntimeError("php native emitter: write_rgb_png keyword args are unsupported")
-        if len(args) != 4:
-            raise RuntimeError("php native emitter: write_rgb_png expects 4 positional args")
-        rendered_png: list[str] = []
+    rendered: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered.append(_render_expr(args[i]))
+        i += 1
+    rendered_keywords: list[tuple[str, str]] = []
+    i = 0
+    while i < len(keywords):
+        kw_any = keywords[i]
+        if isinstance(kw_any, dict):
+            kw_name_any = kw_any.get("arg")
+            if isinstance(kw_name_any, str):
+                rendered_keywords.append((_safe_ident(kw_name_any, ""), _render_expr(kw_any.get("value"))))
+        i += 1
+    if len(rendered_keywords) > 1:
+        rendered_keywords.sort(key=lambda item: item[0])
+    i = 0
+    while i < len(rendered_keywords):
+        rendered.append(rendered_keywords[i][1])
+        i += 1
+    return rendered
+
+
+def _render_call_via_runtime_call(
+    runtime_call: str,
+    runtime_source: str,
+    semantic_tag: str,
+    args: list[Any],
+    keywords_any: Any,
+) -> str:
+    runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+    if runtime_symbol == "":
+        return ""
+
+    rendered_args = _render_runtime_args(args, keywords_any)
+    if runtime_source == "runtime_call":
+        if semantic_tag.startswith("stdlib.fn."):
+            return runtime_symbol + "(" + ", ".join(rendered_args) + ")"
+        return ""
+
+    if runtime_call.find(".") >= 0:
+        if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
+            return runtime_symbol + "()"
+        rendered_math_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_png.append(_render_expr(args[i]))
+            rendered_math_args.append(_render_expr(args[i]))
             i += 1
-        return "__pytra_write_rgb_png(" + ", ".join(rendered_png) + ")"
+        return runtime_symbol + "(" + ", ".join(rendered_math_args) + ")"
 
-    if call_name == "save_gif":
-        if len(args) < 5 or len(args) > 7:
-            raise RuntimeError("php native emitter: save_gif expects 5-7 positional args")
-        rendered_gif: list[str] = []
-        i = 0
-        while i < 5:
-            rendered_gif.append(_render_expr(args[i]))
-            i += 1
-        delay_expr = _render_expr(args[5]) if len(args) >= 6 else "4"
-        loop_expr = _render_expr(args[6]) if len(args) >= 7 else "0"
-        i = 0
-        while i < len(keywords):
-            kw_any = keywords[i]
-            if not isinstance(kw_any, dict):
-                i += 1
-                continue
-            kw_name_any = kw_any.get("arg")
-            if not isinstance(kw_name_any, str):
-                raise RuntimeError("php native emitter: save_gif keyword must be a name")
-            kw_name = _safe_ident(kw_name_any, "")
-            kw_val = _render_expr(kw_any.get("value"))
-            if kw_name == "delay_cs":
-                if len(args) >= 6:
-                    raise RuntimeError("php native emitter: save_gif duplicate delay_cs argument")
-                delay_expr = kw_val
-            elif kw_name == "loop":
-                if len(args) >= 7:
-                    raise RuntimeError("php native emitter: save_gif duplicate loop argument")
-                loop_expr = kw_val
-            else:
-                raise RuntimeError("php native emitter: unsupported save_gif keyword: " + kw_name)
-            i += 1
-        rendered_gif.append(delay_expr)
-        rendered_gif.append(loop_expr)
-        return "__pytra_save_gif(" + ", ".join(rendered_gif) + ")"
-
-    raise RuntimeError("php native emitter: unsupported image runtime call: " + call_name)
+    if runtime_source == "resolved_runtime_call":
+        if len(args) == 0:
+            return runtime_call + "()"
+        return runtime_symbol + "(" + ", ".join(rendered_args) + ")"
+    return ""
 
 
 def _render_isinstance_check(lhs_expr: str, typ_expr: Any) -> str:
@@ -386,6 +432,26 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
     keywords_any = expr.get("keywords")
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+
+    if semantic_tag == "stdlib.symbol.Path":
+        if len(args) == 0:
+            return "new Path(\"\")"
+        return "new Path(" + _render_expr(args[0]) + ")"
+
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if runtime_call != "":
+        rendered_runtime = _render_call_via_runtime_call(
+            runtime_call,
+            runtime_source,
+            semantic_tag,
+            args,
+            keywords_any,
+        )
+        if rendered_runtime != "":
+            return rendered_runtime
+
     callee_name = _call_name(expr)
 
     if callee_name.startswith("py_assert_"):
@@ -431,14 +497,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered.append(_render_expr(args[i]))
             i += 1
         return "max(" + ", ".join(rendered) + ")"
-    if callee_name == "perf_counter":
-        return "__pytra_perf_counter()"
-    if callee_name == "Path":
-        if len(args) == 0:
-            return "new Path(\"\")"
-        return "new Path(" + _render_expr(args[0]) + ")"
-    if callee_name in {"save_gif", "write_rgb_png"}:
-        return _render_image_runtime_call(callee_name, args, keywords_any)
     if callee_name == "isinstance":
         if len(args) < 2:
             return "false"
@@ -502,16 +560,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     return "pyMathCeil(" + ", ".join(rendered_math_args) + ")"
                 if attr_name == "abs" or attr_name == "fabs":
                     return "pyMathFabs(" + ", ".join(rendered_math_args) + ")"
-            if owner == "json":
-                rendered_json_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_json_args.append(_render_expr(args[i]))
-                    i += 1
-                if attr_name == "loads" and len(rendered_json_args) >= 1:
-                    return "pyJsonLoads(" + rendered_json_args[0] + ")"
-                if attr_name == "dumps" and len(rendered_json_args) >= 1:
-                    return "pyJsonDumps(" + rendered_json_args[0] + ")"
         owner_expr = _render_expr(owner_any)
         if attr_name == "get":
             if len(args) == 0:
@@ -527,8 +575,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_str_isdigit(" + owner_expr + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_str_isalpha(" + owner_expr + ")"
-        if attr_name in {"write_rgb_png", "save_gif"}:
-            return _render_image_runtime_call(attr_name, args, keywords_any)
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -621,6 +667,20 @@ def _render_expr(expr: Any) -> str:
     if kind == "Attribute":
         value_any = expr.get("value")
         attr = _safe_ident(expr.get("attr"), "field")
+        runtime_call, runtime_source = _resolved_runtime_call(expr)
+        if runtime_call != "":
+            if runtime_call == "path_parent":
+                return _render_expr(value_any) + "->parent"
+            if runtime_call == "path_name":
+                return _render_expr(value_any) + "->name"
+            if runtime_call == "path_stem":
+                return _render_expr(value_any) + "->stem"
+            if runtime_source == "resolved_runtime_call":
+                runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+                if runtime_symbol != "":
+                    if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
+                        return runtime_symbol + "()"
+                    return runtime_symbol
         if isinstance(value_any, dict) and value_any.get("kind") == "Name":
             owner = _safe_ident(value_any.get("id"), "")
             if owner == "math" and attr == "pi":

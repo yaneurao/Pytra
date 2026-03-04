@@ -12,8 +12,6 @@ src/backends/lua/emitter/lua_native_emitter.py:2080:__pytra_save_gif
 src/backends/lua/emitter/lua_native_emitter.py:594:__pytra_write_rgb_png
 src/backends/lua/emitter/lua_native_emitter.py:597:__pytra_save_gif
 src/backends/lua/emitter/lua_native_emitter.py:600:__pytra_grayscale_palette
-src/backends/php/emitter/php_native_emitter.py:230:__pytra_write_rgb_png
-src/backends/php/emitter/php_native_emitter.py:266:__pytra_save_gif
 src/backends/scala/emitter/scala_native_emitter.py:1026:__pytra_write_rgb_png
 src/backends/scala/emitter/scala_native_emitter.py:1033:__pytra_save_gif
 src/backends/scala/emitter/scala_native_emitter.py:1035:__pytra_grayscale_palette

@@ -103,6 +103,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] Java に加えて Go/Swift/Kotlin smoke へ `test/ir/java_math_path_runtime.east3.json` を使った backend-only 回帰を追加し、`math.sin/math.pi` と `Path.parent/name/stem` の描画経路を EAST3 解決情報のみで固定した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] JS emitter の module path map から `pytra.std.time` / `pytra.std.pathlib` / `pytra.utils.png` / `pytra.utils.gif` の直書きキーを削除し、汎用 path 解決へ統一した（`test_py2js_smoke.py` 21件 + guardrail + noncpp contract 通過、runtimecall allowlist `99->95`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Nim emitter の `save_gif` / `write_rgb_png` 直書き分岐を `semantic_tag` / `resolved_runtime_call` 駆動へ置換し、`test_py2nim_smoke.py` 2件 + guardrail + noncpp contract を通過した（runtimecall allowlist `95->93`）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] PHP emitter の `resolved_runtime_call` 描画を汎用ルールへ統一し、`save_gif` キーワード順序の保持と `grayscale_palette` 0引数呼び出しを直書き分岐なしで通過させた（`test_py2php_smoke.py` 9件 + guardrail + noncpp contract 通過、forbidden-symbol allowlist `22->20`）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
