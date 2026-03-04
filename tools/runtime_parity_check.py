@@ -367,6 +367,7 @@ def build_targets(
             ),
             run_cmd=(
                 f"swiftc -O test/transpile/swift/{case_stem}.swift test/transpile/swift/py_runtime.swift "
+                f"test/transpile/swift/image_runtime.swift "
                 f"-o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out"
             ),
             needs=("python", "swiftc"),

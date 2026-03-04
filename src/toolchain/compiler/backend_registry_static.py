@@ -189,7 +189,8 @@ def _runtime_kotlin(output_path: Path) -> None:
 
 
 def _runtime_swift(output_path: Path) -> None:
-    _copy_runtime_file("runtime/swift/pytra/py_runtime.swift", output_path, "py_runtime.swift")
+    _copy_runtime_file("runtime/swift/pytra-core/built_in/py_runtime.swift", output_path, "py_runtime.swift")
+    _copy_runtime_file("runtime/swift/pytra-gen/utils/image_runtime.swift", output_path, "image_runtime.swift")
 
 
 def _runtime_ruby(output_path: Path) -> None:
