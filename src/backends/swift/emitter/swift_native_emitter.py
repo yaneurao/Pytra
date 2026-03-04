@@ -1867,6 +1867,41 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "Raise":
         return [indent + "fatalError(\"pytra raise\")"]
 
+    if kind == "Try":
+        lines: list[str] = []
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent, ctx=ctx))
+            i += 1
+        handlers_any = stmt.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        i = 0
+        while i < len(handlers):
+            h = handlers[i]
+            if isinstance(h, dict):
+                h_body_any = h.get("body")
+                h_body = h_body_any if isinstance(h_body_any, list) else []
+                j = 0
+                while j < len(h_body):
+                    lines.extend(_emit_stmt(h_body[j], indent=indent, ctx=ctx))
+                    j += 1
+            i += 1
+        orelse_any = stmt.get("orelse")
+        orelse = orelse_any if isinstance(orelse_any, list) else []
+        i = 0
+        while i < len(orelse):
+            lines.extend(_emit_stmt(orelse[i], indent=indent, ctx=ctx))
+            i += 1
+        final_any = stmt.get("finalbody")
+        final = final_any if isinstance(final_any, list) else []
+        i = 0
+        while i < len(final):
+            lines.extend(_emit_stmt(final[i], indent=indent, ctx=ctx))
+            i += 1
+        return lines
+
     raise RuntimeError("swift native emitter: unsupported stmt kind: " + str(kind))
 
 

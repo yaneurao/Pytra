@@ -1356,6 +1356,29 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "raise RuntimeError, \"pytra raise\""]
         return [indent + "raise RuntimeError, __pytra_str(" + _render_expr(exc_any) + ")"]
 
+    if kind == "Try":
+        lines: list[str] = []
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        lines.extend(_emit_stmt_list(body, indent=indent, ctx=ctx))
+        handlers_any = stmt.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        i = 0
+        while i < len(handlers):
+            h = handlers[i]
+            if isinstance(h, dict):
+                h_body_any = h.get("body")
+                h_body = h_body_any if isinstance(h_body_any, list) else []
+                lines.extend(_emit_stmt_list(h_body, indent=indent, ctx=ctx))
+            i += 1
+        orelse_any = stmt.get("orelse")
+        orelse = orelse_any if isinstance(orelse_any, list) else []
+        lines.extend(_emit_stmt_list(orelse, indent=indent, ctx=ctx))
+        final_any = stmt.get("finalbody")
+        final = final_any if isinstance(final_any, list) else []
+        lines.extend(_emit_stmt_list(final, indent=indent, ctx=ctx))
+        return lines
+
     raise RuntimeError("ruby native emitter: unsupported stmt kind: " + str(kind))
 
 
