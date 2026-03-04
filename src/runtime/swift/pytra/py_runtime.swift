@@ -541,6 +541,28 @@ func __pytra_as_dict(_ v: Any?) -> [AnyHashable: Any] {
     return [:]
 }
 
+func __pytra_dict_get(_ dictAny: Any?, _ key: Any?, _ defaultValue: Any?) -> Any {
+    if let dict = dictAny as? [AnyHashable: Any] {
+        let k = AnyHashable(__pytra_str(key))
+        if let v = dict[k] {
+            return v
+        }
+    }
+    return defaultValue as Any
+}
+
+func __pytra_enumerate(_ v: Any?) -> [Any] {
+    let arr = __pytra_as_list(v)
+    var out: [Any] = []
+    out.reserveCapacity(arr.count)
+    var i: Int64 = 0
+    while i < Int64(arr.count) {
+        out.append([i, arr[Int(i)]])
+        i += 1
+    }
+    return out
+}
+
 func __pytra_pop_last(_ v: [Any]) -> [Any] {
     if v.isEmpty { return v }
     return Array(v.dropLast())

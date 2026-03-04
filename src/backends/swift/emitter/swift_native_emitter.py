@@ -49,6 +49,7 @@ _SWIFT_KEYWORDS = {
 _CLASS_NAMES: set[str] = set()
 _CLASS_BASES: dict[str, str] = {}
 _CLASS_METHODS: dict[str, set[str]] = {}
+_MAIN_CALL_ALIAS: str = ""
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -683,6 +684,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
 
     callee_name = _call_name(expr)
+    fn_any = expr.get("func")
+    if (
+        callee_name == "main"
+        and _MAIN_CALL_ALIAS != ""
+        and isinstance(fn_any, dict)
+        and fn_any.get("kind") == "Name"
+    ):
+        rendered_main_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_main_args.append(_render_expr(args[i]))
+            i += 1
+        return _MAIN_CALL_ALIAS + "(" + ", ".join(rendered_main_args) + ")"
     if callee_name.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0
@@ -728,6 +742,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "Int64(0)"
         return "__pytra_len(" + _render_expr(args[0]) + ")"
+    if callee_name == "enumerate":
+        if len(args) == 0:
+            return "__pytra_enumerate([])"
+        return "__pytra_enumerate(" + _render_expr(args[0]) + ")"
     if callee_name == "min":
         if len(args) == 0:
             return "Int64(0)"
@@ -811,6 +829,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_gif_args.append(_render_expr(args[i]))
                 i += 1
             return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
+        if attr_name == "get":
+            if len(args) >= 2:
+                return "__pytra_dict_get(" + owner_expr + ", " + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ")"
+            if len(args) == 1:
+                return "__pytra_dict_get(" + owner_expr + ", " + _render_expr(args[0]) + ", __pytra_any_default())"
+            return "__pytra_any_default()"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -902,13 +926,28 @@ def _render_expr(expr: Any) -> str:
         return "[" + ", ".join(rendered) + "]"
 
     if kind == "Dict":
+        parts: list[str] = []
+        entries_any = expr.get("entries")
+        entries = entries_any if isinstance(entries_any, list) else []
+        if len(entries) > 0:
+            i = 0
+            while i < len(entries):
+                entry = entries[i]
+                if isinstance(entry, dict):
+                    key_node = entry.get("key")
+                    val_node = entry.get("value")
+                    if key_node is not None and val_node is not None:
+                        parts.append("AnyHashable(__pytra_str(" + _render_expr(key_node) + ")): " + _render_expr(val_node))
+                i += 1
+            if len(parts) == 0:
+                return "[:]"
+            return "[" + ", ".join(parts) + "]"
         keys_any = expr.get("keys")
         vals_any = expr.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
         if len(keys) == 0 or len(vals) == 0:
             return "[:]"
-        parts: list[str] = []
         i = 0
         while i < len(keys) and i < len(vals):
             parts.append("AnyHashable(__pytra_str(" + _render_expr(keys[i]) + ")): " + _render_expr(vals[i]))
@@ -1355,9 +1394,14 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             target_name = _safe_ident(target_plan_any.get("id"), "item")
             if target_name == "_":
                 target_name = _fresh_tmp(ctx, "item")
-            lines.append(indent + "    let " + target_name + " = " + iter_tmp + "[Int(" + idx_tmp + ")]")
+            target_type = _swift_type(target_plan_any.get("target_type"), allow_void=False)
+            rhs = iter_tmp + "[Int(" + idx_tmp + ")]"
+            if target_type == "Any":
+                lines.append(indent + "    let " + target_name + " = " + rhs)
+            else:
+                lines.append(indent + "    let " + target_name + ": " + target_type + " = " + _cast_from_any(rhs, target_type))
             _declared_set(body_ctx).add(target_name)
-            _type_map(body_ctx)[target_name] = "Any"
+            _type_map(body_ctx)[target_name] = target_type
         elif target_kind == "TupleTarget":
             tuple_tmp = _fresh_tmp(ctx, "tuple")
             lines.append(indent + "    let " + tuple_tmp + " = __pytra_as_list(" + iter_tmp + "[Int(" + idx_tmp + ")])")
@@ -1370,9 +1414,14 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                     raise RuntimeError("swift native emitter: unsupported RuntimeIter tuple target element")
                 name = _safe_ident(elem.get("id"), "item_" + str(i))
                 if name != "_":
-                    lines.append(indent + "    let " + name + " = " + tuple_tmp + "[Int(" + str(i) + ")]")
+                    elem_type = _swift_type(elem.get("target_type"), allow_void=False)
+                    rhs = tuple_tmp + "[Int(" + str(i) + ")]"
+                    if elem_type == "Any":
+                        lines.append(indent + "    let " + name + " = " + rhs)
+                    else:
+                        lines.append(indent + "    let " + name + ": " + elem_type + " = " + _cast_from_any(rhs, elem_type))
                     _declared_set(body_ctx).add(name)
-                    _type_map(body_ctx)[name] = "Any"
+                    _type_map(body_ctx)[name] = elem_type
                 i += 1
         else:
             raise RuntimeError("swift native emitter: unsupported RuntimeIter target_plan")
@@ -1495,6 +1544,8 @@ def _emit_subscript_store(target: dict[str, Any], value_expr: str, *, indent: st
                 indent + "    " + owner_name + "[" + idx_tmp + "] = " + value_expr,
                 indent + "}",
             ]
+        if owner_type == "[AnyHashable: Any]":
+            return [indent + owner_name + "[AnyHashable(__pytra_str(" + index_expr + "))] = " + value_expr]
     return [indent + "__pytra_setIndex(" + owner_expr + ", " + index_expr + ", " + value_expr + ")"]
 
 
@@ -1928,6 +1979,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
+    field_specs: list[tuple[str, str, str]] = []
     for raw_name, raw_type in field_types.items():
         if not isinstance(raw_name, str):
             continue
@@ -1936,6 +1988,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         default = _default_return_expr(field_type)
         if default == "":
             default = "__pytra_any_default()"
+        field_specs.append((field_name, field_type, default))
         lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default)
 
     body_any = cls.get("body")
@@ -1965,7 +2018,20 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         lines.append(indent + "    init() {")
         if base_name != "":
             lines.append(indent + "        super.init()")
+        for field_name, _, default in field_specs:
+            lines.append(indent + "        self." + field_name + " = " + default)
         lines.append(indent + "    }")
+        if len(field_specs) > 0:
+            lines.append("")
+            params: list[str] = []
+            for field_name, field_type, _ in field_specs:
+                params.append("_ " + field_name + ": " + field_type)
+            lines.append(indent + "    init(" + ", ".join(params) + ") {")
+            if base_name != "":
+                lines.append(indent + "        super.init()")
+            for field_name, _, _ in field_specs:
+                lines.append(indent + "        self." + field_name + " = " + field_name)
+            lines.append(indent + "    }")
 
     lines.append(indent + "}")
     return lines
@@ -2273,9 +2339,11 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     global _CLASS_NAMES
     global _CLASS_BASES
     global _CLASS_METHODS
+    global _MAIN_CALL_ALIAS
     _CLASS_NAMES = set()
     _CLASS_BASES = {}
     _CLASS_METHODS = {}
+    _MAIN_CALL_ALIAS = ""
     i = 0
     while i < len(classes):
         cls = classes[i]
@@ -2333,16 +2401,46 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         lines.extend(_emit_function(functions[i], indent="", receiver_name=None))
         i += 1
 
+    has_user_main = False
+    has_pytra_main = False
+    user_main_symbol = "main"
+    i = 0
+    while i < len(functions):
+        fn_name = _safe_ident(functions[i].get("name"), "")
+        if fn_name == "main":
+            has_user_main = True
+            user_main_symbol = "main"
+            break
+        if fn_name == "__pytra_main":
+            has_pytra_main = True
+        i += 1
+    if not has_user_main and has_pytra_main:
+        has_user_main = True
+        user_main_symbol = "__pytra_main"
+        _MAIN_CALL_ALIAS = "__pytra_main"
+    if has_user_main:
+        lines.append("")
+        lines.append("func __pytra_entry_main() {")
+        lines.append("    " + user_main_symbol + "()")
+        lines.append("}")
+
+    has_main_guard = len(main_guard) > 0
+    if has_main_guard:
+        lines.append("")
+        lines.append("func __pytra_entry_guard() {")
+        guard_ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
+        i = 0
+        while i < len(main_guard):
+            lines.extend(_emit_stmt(main_guard[i], indent="    ", ctx=guard_ctx))
+            i += 1
+        lines.append("}")
+
     lines.append("")
     lines.append("@main")
     lines.append("struct Main {")
     lines.append("    static func main() {")
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
-    if len(main_guard) > 0:
-        i = 0
-        while i < len(main_guard):
-            lines.extend(_emit_stmt(main_guard[i], indent="        ", ctx=ctx))
-            i += 1
+    if has_main_guard:
+        lines.append("        __pytra_entry_guard()")
     else:
         has_case_main = False
         i = 0
@@ -2353,6 +2451,8 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
             i += 1
         if has_case_main:
             lines.append("        _case_main()")
+        elif has_user_main:
+            lines.append("        __pytra_entry_main()")
     lines.append("    }")
     lines.append("}")
     lines.append("")
