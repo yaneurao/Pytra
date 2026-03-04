@@ -299,6 +299,12 @@ def main() -> int:
 
     allowed = _read_allowlist(ALLOWLIST_PATH)
     if len(allowed) == 0:
+        if len(keys) == 0:
+            print(
+                "[OK] emitter runtime-call guardrails passed",
+                "(no findings; allowlist empty)",
+            )
+            return 0
         print(f"[FAIL] allowlist missing or empty: {ALLOWLIST_PATH.relative_to(ROOT)}")
         print("run: python3 tools/check_emitter_runtimecall_guardrails.py --write-allowlist")
         return 1

@@ -109,7 +109,7 @@ def _arraybuffer_elem_scala_type(py_type_name: str) -> str:
     if py_type_name == "str":
         return "String"
     if py_type_name == "Path":
-        return "Path"
+        return "String"
     return "Any"
 
 
@@ -211,7 +211,7 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
     if type_name == "str":
         return "String"
     if type_name == "Path":
-        return "Path"
+        return "String"
     if type_name.startswith("list["):
         return _list_scala_type(type_name)
     if type_name.startswith("tuple["):
@@ -606,7 +606,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
         right_type = right_resolved_any if isinstance(right_resolved_any, str) else ""
 
     if op == "Div" and (resolved == "Path" or left_type == "Path" or right_type == "Path"):
-        return "Path(__pytra_path_join(" + left_expr + ", " + right_expr + "))"
+        return "__pytra_path_join(" + left_expr + ", " + right_expr + ")"
 
     if op == "Div":
         return _join_binop_expr(
@@ -793,33 +793,239 @@ def _math_call_name(attr: str) -> str:
     if attr == "ceil":
         return "pyMathCeil"
     if attr == "abs":
-        return "pyMathFabs"
+        return "scala.math.abs"
     if attr == "fabs":
-        return "pyMathFabs"
+        return "scala.math.abs"
     return _safe_ident(attr, "call")
+
+
+def _snake_to_pascal(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
+
+
+def _camel_to_snake(name: str) -> str:
+    if name == "":
+        return ""
+    out: list[str] = []
+    i = 0
+    while i < len(name):
+        ch = name[i]
+        if ch.isupper():
+            if i > 0:
+                prev = name[i - 1]
+                if prev != "_" and (prev.islower() or (i + 1 < len(name) and name[i + 1].islower())):
+                    out.append("_")
+            out.append(ch.lower())
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call, "runtime_call"
+    resolved_any = expr.get("resolved_runtime_call")
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved, "resolved_runtime_call"
+    return "", ""
+
+
+def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
+    name = runtime_call.strip()
+    if name == "":
+        return ""
+    canonical = name.replace("::", ".")
+    dot = canonical.find(".")
+    if dot >= 0:
+        module_name = canonical[:dot].strip()
+        symbol_name = canonical[dot + 1 :].strip()
+        if module_name == "" or symbol_name == "":
+            return ""
+        if runtime_source == "runtime_call":
+            if canonical.endswith("filesystem.exists"):
+                return "__pytra_path_exists"
+            if canonical.endswith("filesystem.create_directories"):
+                return "__pytra_path_mkdir"
+            return ""
+        if module_name == "math":
+            if symbol_name == "pi":
+                return "scala.math.Pi"
+            if symbol_name == "e":
+                return "scala.math.E"
+            if symbol_name == "fabs":
+                return "scala.math.abs"
+            return "scala.math." + symbol_name
+        return "py" + _snake_to_pascal(module_name) + _snake_to_pascal(symbol_name)
+    normalized = _camel_to_snake(name)
+    if runtime_source == "runtime_call":
+        if normalized == "py_write_text":
+            return "__pytra_path_write_text"
+        if normalized == "py_read_text":
+            return "__pytra_path_read_text"
+        if normalized == "path":
+            return "__pytra_path_new"
+        if normalized in {"path_parent", "path_name", "path_stem", "write_rgb_png", "save_gif", "grayscale_palette", "perf_counter"}:
+            return "__pytra_" + normalized
+        if normalized.startswith("py_"):
+            return "__pytra_" + normalized[3:]
+        return ""
+    if normalized.startswith("py_assert_"):
+        return normalized
+    return "__pytra_" + normalized
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
-    attr = _safe_ident(expr.get("attr"), "field")
-    owner_type = ""
-    if isinstance(value_any, dict):
-        owner_type_any = value_any.get("resolved_type")
-        owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
+    field = _safe_ident(expr.get("attr"), "field")
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if runtime_call != "":
+        runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+        if runtime_symbol != "":
+            if runtime_call in {"path_parent", "path_name", "path_stem"}:
+                return runtime_symbol + "(" + _render_expr(value_any) + ")"
+            if runtime_source == "resolved_runtime_call":
+                return runtime_symbol
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
-        if owner == "math" and attr == "pi":
-            return "pyMathPi()"
-        if owner == "math" and attr == "e":
-            return "pyMathE()"
+        if owner == "math" and field == "pi":
+            return "scala.math.Pi"
+        if owner == "math" and field == "e":
+            return "scala.math.E"
     value = _render_expr(value_any)
-    if owner_type == "Path" and attr == "name":
-        return value + ".name"
-    if owner_type == "Path" and attr == "stem":
-        return value + ".stem"
-    if owner_type == "Path" and attr == "parent":
-        return value + ".parent"
-    return value + "." + attr
+    return value + "." + field
+
+
+def _call_arg_nodes(expr: dict[str, Any]) -> tuple[list[Any], Any]:
+    args_any = expr.get("args")
+    args = args_any if isinstance(args_any, list) else []
+    out: list[Any] = []
+    i = 0
+    while i < len(args):
+        out.append(args[i])
+        i += 1
+    keywords_any = expr.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if len(keywords) > 0:
+        j = 0
+        while j < len(keywords):
+            kw = keywords[j]
+            if isinstance(kw, dict):
+                out.append(kw.get("value"))
+            else:
+                out.append(kw)
+            j += 1
+        return out, keywords_any
+    kw_values_any = expr.get("kw_values")
+    kw_values = kw_values_any if isinstance(kw_values_any, list) else []
+    if len(kw_values) > 0:
+        j = 0
+        while j < len(kw_values):
+            out.append(kw_values[j])
+            j += 1
+        return out, kw_values_any
+    kw_nodes_any = expr.get("kw_nodes")
+    kw_nodes = kw_nodes_any if isinstance(kw_nodes_any, list) else []
+    j = 0
+    while j < len(kw_nodes):
+        node = kw_nodes[j]
+        if isinstance(node, dict):
+            if node.get("kind") == "keyword":
+                out.append(node.get("value"))
+            else:
+                out.append(node)
+        else:
+            out.append(node)
+        j += 1
+    return out, kw_nodes_any
+
+
+def _render_runtime_args(semantic_tag: str, args: list[Any], keywords_any: Any) -> list[str]:
+    if semantic_tag == "stdlib.symbol.save_gif":
+        rendered: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered.append(_render_expr(args[i]))
+            i += 1
+        if len(rendered) < 5:
+            return rendered
+        if len(rendered) >= 7:
+            return rendered
+        delay_expr = rendered[5] if len(rendered) >= 6 else "4L"
+        loop_expr = rendered[6] if len(rendered) >= 7 else "0L"
+        keywords = keywords_any if isinstance(keywords_any, list) else []
+        k = 0
+        while k < len(keywords):
+            kw = keywords[k]
+            if not isinstance(kw, dict):
+                k += 1
+                continue
+            kw_name_any = kw.get("arg")
+            kw_name = kw_name_any if isinstance(kw_name_any, str) else ""
+            kw_val = _render_expr(kw.get("value"))
+            if kw_name == "delay_cs":
+                delay_expr = kw_val
+            elif kw_name == "loop":
+                loop_expr = kw_val
+            k += 1
+        return rendered[:5] + [delay_expr, loop_expr]
+    rendered: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered.append(_render_expr(args[i]))
+        i += 1
+    return rendered
+
+
+def _render_call_via_runtime_call(
+    runtime_call: str,
+    runtime_source: str,
+    semantic_tag: str,
+    args: list[Any],
+    keywords_any: Any,
+) -> str:
+    if runtime_call.startswith("py_assert_"):
+        rendered_assert_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_assert_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
+    if runtime_source == "runtime_call":
+        if not semantic_tag.startswith("stdlib."):
+            return ""
+        runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+        if runtime_symbol == "":
+            return ""
+        rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+        return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
+    runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+    if runtime_symbol == "":
+        return ""
+    rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+    if runtime_call.find(".") >= 0:
+        if runtime_symbol in {"scala.math.Pi", "scala.math.E"} and len(rendered_runtime_args) == 0:
+            return runtime_symbol
+        if runtime_symbol.startswith("scala.math."):
+            rendered_math_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
+                i += 1
+            return runtime_symbol + "(" + ", ".join(rendered_math_args) + ")"
+        return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
+    return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
 
 
 def _call_name(expr: dict[str, Any]) -> str:
@@ -837,22 +1043,10 @@ def _call_name(expr: dict[str, Any]) -> str:
 
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
-    args_any = expr.get("args")
-    args = args_any if isinstance(args_any, list) else []
-    kw_values: list[Any] = []
-    keywords_any = expr.get("keywords")
-    keywords = keywords_any if isinstance(keywords_any, list) else []
-    i_kw = 0
-    while i_kw < len(keywords):
-        kw = keywords[i_kw]
-        if isinstance(kw, dict) and "value" in kw:
-            kw_values.append(kw.get("value"))
-        i_kw += 1
-    if len(kw_values) > 0:
-        args = args + kw_values
+    args, keywords_any = _call_arg_nodes(expr)
+    callee = _call_name(expr)
 
-    callee_name = _call_name(expr)
-    if callee_name == "super":
+    if callee == "super":
         if len(args) == 0:
             return "super"
         rendered_super_args: list[str] = []
@@ -861,28 +1055,37 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_super_args.append(_render_expr(args[i]))
             i += 1
         return "super(" + ", ".join(rendered_super_args) + ")"
-    if callee_name.startswith("py_assert_"):
+
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if runtime_call != "":
+        rendered_runtime = _render_call_via_runtime_call(
+            runtime_call,
+            runtime_source,
+            semantic_tag,
+            args,
+            keywords_any,
+        )
+        if rendered_runtime != "":
+            return rendered_runtime
+
+    if callee.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
-    if callee_name == "perf_counter":
-        return "__pytra_perf_counter()"
-    if callee_name == "Path":
-        if len(args) == 0:
-            return "Path(\"\")"
-        return "Path(" + _render_expr(args[0]) + ")"
-    if callee_name == "bytearray":
+    if callee == "bytearray":
         if len(args) == 0:
             return "mutable.ArrayBuffer[Long]()"
         return "__pytra_bytearray(" + _render_expr(args[0]) + ")"
-    if callee_name == "bytes":
+    if callee == "bytes":
         if len(args) == 0:
             return "mutable.ArrayBuffer[Long]()"
         return "__pytra_bytes(" + _render_expr(args[0]) + ")"
-    if callee_name == "int":
+    if callee == "int":
         if len(args) == 0:
             return "0L"
         arg0 = args[0]
@@ -890,7 +1093,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if _has_resolved_type(arg0, {"int", "int64", "uint8"}):
             return rendered_arg0
         return _to_int_expr(rendered_arg0)
-    if callee_name == "float":
+    if callee == "float":
         if len(args) == 0:
             return "0.0"
         arg0 = args[0]
@@ -898,23 +1101,23 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if _has_resolved_type(arg0, {"float", "float64"}):
             return rendered_arg0
         return _to_float_expr(rendered_arg0)
-    if callee_name == "bool":
+    if callee == "bool":
         if len(args) == 0:
             return "false"
         return _to_truthy_expr(_render_expr(args[0]))
-    if callee_name == "str":
+    if callee == "str":
         if len(args) == 0:
             return '""'
         return _to_str_expr(_render_expr(args[0]))
-    if callee_name == "len":
+    if callee == "len":
         if len(args) == 0:
             return "0L"
         return "__pytra_len(" + _render_expr(args[0]) + ")"
-    if callee_name == "enumerate":
+    if callee == "enumerate":
         if len(args) == 0:
             return "mutable.ArrayBuffer[Any]()"
         return "__pytra_enumerate(" + _render_expr(args[0]) + ")"
-    if callee_name == "min":
+    if callee == "min":
         if len(args) == 0:
             return "0L"
         cur = _render_expr(args[0])
@@ -923,7 +1126,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_min(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name == "max":
+    if callee == "max":
         if len(args) == 0:
             return "0L"
         cur = _render_expr(args[0])
@@ -932,39 +1135,23 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name == "write_rgb_png":
-        rendered_args_png: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_args_png.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_write_rgb_png(" + ", ".join(rendered_args_png) + ")"
-    if callee_name == "save_gif":
-        rendered_args_gif: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_args_gif.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_save_gif(" + ", ".join(rendered_args_gif) + ")"
-    if callee_name == "grayscale_palette":
-        return "__pytra_grayscale_palette()"
-    if callee_name == "print":
+    if callee == "print":
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_print(" + ", ".join(rendered_args) + ")"
-    if callee_name in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError"}:
+    if callee in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError"}:
         if len(args) == 0:
             return '""'
         return _render_expr(args[0])
 
     func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-        attr_name = _safe_ident(func_any.get("attr"), "")
+        method = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
-        if attr_name == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
+        if method == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) in {"super", "super_"}:
                 return "__pytra_noop()"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
@@ -975,22 +1162,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 while i < len(args):
                     rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
                     i += 1
-                return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
-            if owner == "json":
-                rendered_json_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_json_args.append(_render_expr(args[i]))
-                    i += 1
-                if attr_name == "loads" and len(rendered_json_args) >= 1:
-                    return "pyJsonLoads(" + rendered_json_args[0] + ")"
-                if attr_name == "dumps" and len(rendered_json_args) >= 1:
-                    return "pyJsonDumps(" + rendered_json_args[0] + ")"
-        if attr_name == "isdigit" and len(args) == 0:
+                return _math_call_name(method) + "(" + ", ".join(rendered_math_args) + ")"
+        if method == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
-        if attr_name == "isalpha" and len(args) == 0:
+        if method == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
-        if attr_name == "get":
+        if method == "get":
             if len(args) == 0:
                 return "__pytra_any_default()"
             key_expr = _render_expr(args[0])
@@ -999,62 +1176,29 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 default_expr = _render_expr(args[1])
             owner_expr = _render_expr(owner_any)
             return "__pytra_as_dict(" + owner_expr + ").getOrElse(__pytra_str(" + key_expr + "), " + default_expr + ")"
-        owner_type = ""
-        if isinstance(owner_any, dict):
-            owner_type_any = owner_any.get("resolved_type")
-            owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
         owner_expr = _render_expr(owner_any)
-        if owner_type == "Path" and attr_name == "exists" and len(args) == 0:
-            return owner_expr + ".exists()"
-        if owner_type == "Path" and attr_name == "mkdir":
-            rendered_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_args.append(_render_expr(args[i]))
-                i += 1
-            return owner_expr + ".mkdir(" + ", ".join(rendered_args) + ")"
-        if owner_type == "Path" and attr_name == "write_text" and len(args) >= 1:
-            return owner_expr + ".write_text(" + _render_expr(args[0]) + ")"
-        if owner_type == "Path" and attr_name == "read_text" and len(args) == 0:
-            return owner_expr + ".read_text()"
-        if attr_name == "write_rgb_png":
-            rendered_args_png: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_args_png.append(_render_expr(args[i]))
-                i += 1
-            return "__pytra_write_rgb_png(" + ", ".join(rendered_args_png) + ")"
-        if attr_name == "save_gif":
-            rendered_args_gif: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_args_gif.append(_render_expr(args[i]))
-                i += 1
-            return "__pytra_save_gif(" + ", ".join(rendered_args_gif) + ")"
-        if attr_name == "grayscale_palette" and len(args) == 0:
-            return "__pytra_grayscale_palette()"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_args.append(_render_expr(args[i]))
             i += 1
-        return owner_expr + "." + attr_name + "(" + ", ".join(rendered_args) + ")"
+        return owner_expr + "." + method + "(" + ", ".join(rendered_args) + ")"
 
-    if callee_name in _CLASS_NAMES:
+    if callee in _CLASS_NAMES:
         rendered_ctor_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_ctor_args.append(_render_expr(args[i]))
             i += 1
-        return "new " + callee_name + "(" + ", ".join(rendered_ctor_args) + ")"
+        return "new " + callee + "(" + ", ".join(rendered_ctor_args) + ")"
 
     rendered_args = []
     i = 0
     while i < len(args):
         rendered_args.append(_render_expr(args[i]))
         i += 1
-    if callee_name != "":
-        return callee_name + "(" + ", ".join(rendered_args) + ")"
+    if callee != "":
+        return callee + "(" + ", ".join(rendered_args) + ")"
     func_expr = _render_expr(expr.get("func"))
     return func_expr + "(" + ", ".join(rendered_args) + ")"
 
@@ -1319,9 +1463,22 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         if ident in type_map:
             return type_map[ident]
     if kind == "Call":
+        runtime_call, runtime_source = _resolved_runtime_call(expr)
+        if runtime_call != "":
+            runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+            if runtime_symbol in {"scala.math.Pi", "scala.math.E"}:
+                return "Double"
+            if runtime_symbol.startswith("scala.math."):
+                return "Double"
+            if runtime_symbol in {"__pytra_perf_counter", "__pytra_float"}:
+                return "Double"
+            if runtime_symbol == "__pytra_int":
+                return "Long"
+            if runtime_symbol == "__pytra_truthy":
+                return "Boolean"
+            if runtime_symbol in {"__pytra_path_new", "__pytra_path_join", "__pytra_path_parent", "__pytra_path_name", "__pytra_path_stem"}:
+                return "String"
         name = _call_name(expr)
-        if name == "perf_counter":
-            return "Double"
         if name == "int":
             return "Long"
         if name == "float":
@@ -1330,8 +1487,6 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
             return "Boolean"
         if name == "str":
             return "String"
-        if name == "Path":
-            return "Path"
         if name == "bytearray" or name == "bytes":
             return "mutable.ArrayBuffer[Long]"
         if name == "len":
@@ -1423,6 +1578,26 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
     if kind in {"Compare", "BoolOp", "IsInstance"}:
         return target_type == "Boolean"
     if kind == "Call":
+        runtime_call, runtime_source = _resolved_runtime_call(value_expr)
+        if runtime_call != "":
+            runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+            if target_type == "Double" and (
+                runtime_symbol.startswith("scala.math.")
+                or runtime_symbol in {"scala.math.Pi", "scala.math.E", "__pytra_perf_counter", "__pytra_float"}
+            ):
+                return True
+            if target_type == "Long" and runtime_symbol == "__pytra_int":
+                return True
+            if target_type == "Boolean" and runtime_symbol == "__pytra_truthy":
+                return True
+            if target_type == "String" and runtime_symbol in {
+                "__pytra_path_new",
+                "__pytra_path_join",
+                "__pytra_path_parent",
+                "__pytra_path_name",
+                "__pytra_path_stem",
+            }:
+                return True
         callee = _call_name(value_expr)
         if callee == "int":
             return target_type == "Long"
@@ -1432,8 +1607,6 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             return target_type == "Boolean"
         if callee == "str":
             return target_type == "String"
-        if callee == "perf_counter":
-            return target_type == "Double"
         if callee == "len":
             return target_type == "Long"
         resolved = _scala_type(value_expr.get("resolved_type"), allow_void=False)

@@ -107,9 +107,9 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐（`write_rgb_png/save_gif/grayscale_palette/json.*` 等）を解決済み経路へ移行し、SoT 宣言名をそのまま描画する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter からライブラリ依存 rename（wrapper 名生成・互換名変換）を撤去し、IR 解決シンボル素通し描画へ統一する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] Java runtime cleanup と接続し、`PyRuntime.java` 依存の std/utils 呼び出し経路を排除した状態で Java smoke/parity を再固定する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] 残り非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] 残り非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`png.py/gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボルの直書きを撤去する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルを IR 解決経由へ統一、禁止ガード allowlist を継続縮退する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルを IR 解決経由へ統一、禁止ガード allowlist を継続縮退する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec` / `docs/en/spec` に責務境界（IR解決 vs emitter描画）を明文化する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
@@ -156,3 +156,4 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2`] Rust emitter の import/use 生成で `pytra.utils.assertions` 直書き判定を helper（suffix 判定）へ置換し、`_render_call` の `py_assert_stdout` 専用分岐を `py_assert_` 接頭辞処理へ吸収した。挙動は維持したまま guardrail の直書き文字列を縮退し、`test_py2rs_smoke.py`（29件）+ guardrail 3本を再通過、runtimecall allowlist を `58->54` へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2`] Rust emitter の `save_gif/write_rgb_png` 直比較を撤去し、`pytra.utils.(gif|png)` 判定 + 引数個数ベース共通参照化（`_apply_image_runtime_ref_args`）へ置換した。Name-call と Attribute-call の両経路で同一ロジックを共有し、`pytra.utils.gif/png`・`save_gif/write_rgb_png` 文字列直書きを大幅縮退した。`test_py2rs_smoke.py`（29件）+ guardrail 3本を再通過し、runtimecall allowlist を `54->42` に更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2`] Lua emitter の import 解決節を `module_name/symbol` 依存の固定比較から `mod/sym` ベースへ再編し、`pytra.utils.*` は leaf 由来の汎用 module/symbol 解決へ統合した。合わせて `_render_call` の `save_gif` keyword 専用分岐を廃止し、汎用 keyword 位置引数連結へ変更して call/attribute 両経路の直書きを削減した。`test_py2lua_smoke.py`（31件）+ guardrail 3本を再通過し、runtimecall allowlist を `42->17`（残り Scala のみ）、forbidden-symbol allowlist を `20->16` へ更新した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2`] Scala emitter を `runtime_call/resolved_runtime_call` 優先へ移行し、`Path/perf_counter/png/gif` の Name/Attribute 直書きを撤去した。`Path` は `String` 値経路へ統一し、`path_parent/name/stem` と `mkdir/exists/write_text/read_text` は `__pytra_path_*` helper 描画へ集約した。`test_py2scala_smoke.py`（15件）+ guardrail 3本を再通過し、runtimecall allowlist を `17->0`、forbidden-symbol allowlist を `16->10` へ縮退した。

@@ -70,9 +70,9 @@
 7. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行し、SoT 宣言名をそのまま描画する。
 8. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter からライブラリ依存 rename（wrapper 名生成・互換名変換）を撤去し、IR 解決シンボル素通し描画へ統一する。
 9. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] Java runtime cleanup と接続し、`PyRuntime.java` 依存の std/utils 呼び出し経路を排除した状態で Java smoke/parity を再固定する。
-10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
+10. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
 11. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`src/pytra/utils/png.py` / `gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボル直書きを撤去する。
-12. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
+12. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
 13. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 14. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 15. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
@@ -110,6 +110,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Rust emitter で `pytra.utils.assertions` 固定判定を suffix 判定へ置換し、`py_assert_stdout` 専用分岐を `py_assert_` 接頭辞処理へ統合した（`test_py2rs_smoke.py` 29件 + guardrail + noncpp contract 通過、runtimecall allowlist `58->54`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Rust emitter の `save_gif/write_rgb_png` 固定比較を `pytra.utils.(gif|png)` モジュール判定 + 引数個数ベース共通処理へ一般化し、Name/Attribute 両経路の直書きを縮退した（`test_py2rs_smoke.py` 29件 + guardrail + noncpp contract 通過、runtimecall allowlist `54->42`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Lua emitter の import 分岐を `module_name/symbol` 固定比較から `mod/sym` ベース汎用分岐へ再編し、`save_gif` キーワード専用分岐を汎用 keyword 引数連結へ統合した（`test_py2lua_smoke.py` 31件 + guardrail + noncpp contract 通過、runtimecall allowlist `42->17`、forbidden allowlist `20->16`）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Scala emitter を `runtime_call/resolved_runtime_call` 優先へ移行し、`Path/perf_counter/png/gif` の直書き分岐を撤去、Path 経路を `__pytra_path_*` へ統一した（`test_py2scala_smoke.py` 15件 + guardrail + noncpp contract 通過、runtimecall allowlist `17->0`、forbidden allowlist `16->10`）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
