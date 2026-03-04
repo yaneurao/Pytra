@@ -55,7 +55,7 @@
 
 - [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` の現行テストを責務分類（common/backends/ir/tooling/selfhost）で棚卸しし、移動マップを確定する。
 - [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] 目標ディレクトリ規約を定義し、命名・配置ルールを決定する。
-- [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
+- [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] テストファイルを新ディレクトリへ移動し、`tools/` / `docs/` の参照パスを一括更新する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] `unittest discover` と個別実行導線が新構成で通るように CI/ローカルスクリプトを更新する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] 未使用テスト候補を抽出し、`削除/統合/維持` を判定する監査メモを作成する。
 - [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] 判定済みの未使用テストを削除または統合し、再発防止チェック（必要なら新規）を追加する。
@@ -66,6 +66,7 @@
 - 2026-03-04: ユーザー指示により、`test/unit` の責務別フォルダ再編と未使用テスト整理を P1 タスクとして起票した。削除は必ず監査根拠付きで段階実施する方針を採用。
 - 2026-03-04: `S1-01` を完了。`test/unit` 71本を責務分類し、移動マップを確定した。分類結果は `backends/*:29, ir:10, tooling:5, selfhost:3, common:23`。`S2-01` ではこのマップに従ってディレクトリ再編を実施する。
 - 2026-03-04: `S1-02` を完了。`test/unit` の目標配置規約を `責務ディレクトリ + 命名規約 + discover/実行規約 + 追加時チェック` で固定し、`S2` 以降の移動判断基準を確定した。
+- 2026-03-04: `S2-01` を完了。`test/unit/test_*.py` 71本を `common/backends/<lang>/ir/tooling/selfhost` へ `git mv` し、`tools/run_local_ci.py` と `tools/check_noncpp_east3_contract.py` の固定テストパスを新配置へ更新した。`test/unit/backends` を package 化すると `src/backends` と名前衝突するため、`__init__.py` は置かない方針を採用（discover 導線は `S2-02` で更新）。
 
 ## S1-01 棚卸し結果（2026-03-04）
 

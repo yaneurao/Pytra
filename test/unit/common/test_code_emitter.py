@@ -1,0 +1,1409 @@
+"""Regression tests for shared CodeEmitter utilities."""
+
+from __future__ import annotations
+
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from typing import Any
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from src.backends.common.emitter.code_emitter import CodeEmitter, EmitterHooks
+
+
+class _DummyEmitter(CodeEmitter):
+    def emit_stmt(self, stmt: Any) -> None:
+        self.emit(f"stmt:{self.any_to_str(stmt)}")
+
+    def render_expr(self, expr: Any) -> str:
+        if isinstance(expr, dict):
+            rep = expr.get("repr")
+            if isinstance(rep, str):
+                return rep
+        return "<?>"
+
+
+class _HookedEmitter(_DummyEmitter):
+    def hook_on_emit_stmt(self, stmt: dict[str, Any]) -> Any:
+        if isinstance(stmt, dict) and stmt.get("kind") == "Pass":
+            self.emit("// hooked")
+            return True
+        return None
+
+    def hook_on_emit_stmt_kind(self, kind: str, stmt: dict[str, Any]) -> Any:
+        if kind == "Return":
+            self.emit("// hooked-kind-return")
+            return True
+        return None
+
+    def hook_on_stmt_omit_braces(
+        self,
+        kind: str,
+        stmt: dict[str, Any],
+        default_value: bool,
+    ) -> bool:
+        _ = stmt
+        _ = default_value
+        if kind == "If":
+            return True
+        return False
+
+    def hook_on_for_range_mode(self, stmt: dict[str, Any], default_mode: str) -> str:
+        _ = stmt
+        _ = default_mode
+        return "ascending"
+
+    def hook_on_render_call(
+        self,
+        call_node: dict[str, Any],
+        func_node: dict[str, Any],
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+    ) -> Any:
+        if func_node.get("kind") == "Name" and func_node.get("id") == "hooked":
+            return "hooked_call()"
+        return None
+
+    def hook_on_render_module_method(
+        self,
+        module_name: str,
+        attr: str,
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> Any:
+        if module_name == "pytra.std.math" and attr == "sqrt":
+            _ = rendered_kwargs
+            _ = arg_nodes
+            return "hooked_module_method(" + ",".join(rendered_args) + ")"
+        return None
+
+    def hook_on_render_object_method(
+        self,
+        owner_type: str,
+        owner_expr: str,
+        attr: str,
+        rendered_args: list[str],
+    ) -> Any:
+        if owner_type == "str" and owner_expr == "s" and attr == "strip" and rendered_args == []:
+            return "hooked_object_method()"
+        return None
+
+    def hook_on_render_class_method(
+        self,
+        owner_type: str,
+        attr: str,
+        func_node: dict[str, Any],
+        rendered_args: list[str],
+        rendered_kwargs: dict[str, str],
+        arg_nodes: list[Any],
+    ) -> Any:
+        _ = func_node
+        _ = rendered_kwargs
+        _ = arg_nodes
+        if owner_type == "Cls" and attr == "make" and rendered_args == ["x"]:
+            return "hooked_class_method(x)"
+        return None
+
+    def hook_on_render_expr_kind(
+        self,
+        kind: str,
+        expr_node: dict[str, Any],
+    ) -> Any:
+        if kind == "MagicExpr":
+            return "magic_expr()"
+        return None
+
+    def hook_on_render_expr_complex(self, expr_node: dict[str, Any]) -> Any:
+        if expr_node.get("kind") == "JoinedStr":
+            return "complex_expr()"
+        return None
+
+    def hook_on_render_binop(
+        self,
+        binop_node: dict[str, Any],
+        left: str,
+        right: str,
+    ) -> Any:
+        if binop_node.get("kind") == "BinOp":
+            return f"hooked_binop({left}, {right})"
+        return None
+
+
+class CodeEmitterTest(unittest.TestCase):
+    class _KindLike:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+        def __str__(self) -> str:
+            return self.text
+
+    def test_emit_and_emit_stmt_list_and_next_tmp(self) -> None:
+        em = _DummyEmitter({})
+        em.emit("root")
+        em.indent = 1
+        em.emit("child")
+        em.emit_stmt_list(["a", "b"])
+        self.assertEqual(
+            em.lines,
+            [
+                "root",
+                "    child",
+                "    stmt:a",
+                "    stmt:b",
+            ],
+        )
+        self.assertEqual(em.next_tmp(), "__tmp_1")
+        self.assertEqual(em.next_tmp("v"), "v_2")
+
+    def test_any_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.any_dict_get({"x": 1}, "x", 9), 1)
+        self.assertEqual(em.any_dict_get({"x": 1}, "y", 9), 9)
+        self.assertEqual(em.any_dict_get(3, "x", 9), 9)
+
+        self.assertEqual(em.any_to_dict({"a": 1}), {"a": 1})
+        self.assertIsNone(em.any_to_dict([]))
+
+        self.assertEqual(em.any_to_list([1, 2]), [1, 2])
+        self.assertEqual(em.any_to_list({"x": 1}), [])
+        self.assertEqual(em.any_to_dict_list([{"x": 1}, 2, "s"]), [{"x": 1}])
+        self.assertEqual(em.any_to_dict_list(None), [])
+
+        self.assertEqual(em.any_to_str("abc"), "abc")
+        self.assertEqual(em.any_to_str(10), "")
+
+    def test_any_helpers_boundary_cases(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.any_to_dict_or_empty({"k": 1}), {"k": 1})
+        self.assertEqual(em.any_to_dict_or_empty(None), {})
+        self.assertEqual(em.any_to_dict_or_empty([]), {})
+        self.assertEqual(em.any_to_dict_or_empty("x"), {})
+        self.assertEqual(em.any_to_dict_or_empty(0), {})
+
+        self.assertEqual(em.any_to_list(["a", 1]), ["a", 1])
+        self.assertEqual(em.any_to_list(None), [])
+        self.assertEqual(em.any_to_list({"x": 1}), [])
+        self.assertEqual(em.any_to_dict_list([{"x": 1}, None, {"y": 2}]), [{"x": 1}, {"y": 2}])
+        self.assertEqual(em.any_to_str_dict_or_empty({"a": "b", "c": 1}), {"a": "b", "c": ""})
+        self.assertEqual(em.any_to_str_dict_or_empty(None), {})
+
+        self.assertEqual(em.any_dict_get_str({"x": "ok"}, "x", "ng"), "ok")
+        self.assertEqual(em.any_dict_get_str({"x": 1}, "x", "ng"), "ng")
+        self.assertEqual(em.any_dict_get_str(None, "x", "ng"), "ng")
+        self.assertEqual(em.any_dict_get_int({"x": 2}, "x", 9), 2)
+        self.assertEqual(em.any_dict_get_int({"x": "2"}, "x", 9), 9)
+        self.assertEqual(em.any_dict_get_int(None, "x", 9), 9)
+        self.assertTrue(em.any_dict_get_bool({"x": True}, "x", False))
+        self.assertFalse(em.any_dict_get_bool({"x": 1}, "x", False))
+        self.assertEqual(em.any_dict_get_list({"x": [1, 2]}, "x"), [1, 2])
+        self.assertEqual(em.any_dict_get_list({"x": "not-list"}, "x"), [])
+        self.assertEqual(em.any_dict_get_dict({"x": {"k": 1}}, "x"), {"k": 1})
+        self.assertEqual(em.any_dict_get_dict({"x": 3}, "x"), {})
+
+    def test_merge_call_args(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.merge_call_args(["a", "b"], {}), ["a", "b"])
+        self.assertEqual(
+            em.merge_call_args(["a"], {"k1": "x", "k2": "y"}),
+            ["a", "x", "y"],
+        )
+        self.assertEqual(
+            em.merge_call_kw_values(["a"], ["x", "y"]),
+            ["a", "x", "y"],
+        )
+        self.assertEqual(
+            em.merge_call_arg_nodes([{"k": 1}], ["n1", "n2"]),
+            [{"k": 1}, "n1", "n2"],
+        )
+        self.assertEqual(
+            em._dict_stmt_list([{"x": 1}, 2, "s", {"y": 2}]),
+            [{"x": 1}, {"y": 2}],
+        )
+        unpacked = em.unpack_prepared_call_parts(
+            {
+                "fn": {"kind": "Name", "id": "f"},
+                "fn_name": "f",
+                "arg_nodes": [{"kind": "Name", "id": "x"}],
+                "args": ["x"],
+                "kw": {"k": "v"},
+                "kw_values": ["v"],
+                "kw_nodes": [{"kind": "Constant", "value": 1}],
+                "first_arg": {"kind": "Name", "id": "x"},
+            }
+        )
+        self.assertEqual(unpacked.get("fn"), {"kind": "Name", "id": "f"})
+        self.assertEqual(unpacked.get("fn_name"), "f")
+        self.assertEqual(unpacked.get("arg_nodes"), [{"kind": "Name", "id": "x"}])
+        self.assertEqual(unpacked.get("args"), ["x"])
+        self.assertEqual(unpacked.get("kw"), {"k": "v"})
+        self.assertEqual(unpacked.get("kw_values"), ["v"])
+        self.assertEqual(unpacked.get("kw_nodes"), [{"kind": "Constant", "value": 1}])
+
+    def test_node_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertTrue(em.is_name({"kind": "Name", "id": "x"}))
+        self.assertTrue(em.is_name({"kind": "Name", "id": "x"}, "x"))
+        self.assertFalse(em.is_name({"kind": "Name", "id": "x"}, "y"))
+        self.assertFalse(em.is_name("x"))
+
+        self.assertTrue(em.is_call({"kind": "Call"}))
+        self.assertFalse(em.is_call({"kind": "Name"}))
+
+        self.assertTrue(em.is_attr({"kind": "Attribute", "attr": "append"}))
+        self.assertTrue(em.is_attr({"kind": "Attribute", "attr": "append"}, "append"))
+        self.assertFalse(em.is_attr({"kind": "Attribute", "attr": "append"}, "pop"))
+        self.assertFalse(em.is_attr({"kind": "Call"}, "append"))
+
+        self.assertEqual(em.get_expr_type({"resolved_type": "int64"}), "int64")
+        self.assertEqual(em.get_expr_type({"resolved_type": 3}), "")
+        self.assertEqual(em.get_expr_type(None), "")
+        self.assertEqual(em.get_expr_type({"resolved_type": self._KindLike("list[int64]")}), "list[int64]")
+        self.assertEqual(em.node_kind({"kind": "Call"}), "Call")
+        self.assertEqual(em.node_kind({"kind": self._KindLike("Attribute")}), "Attribute")
+        self.assertEqual(em.node_kind({"kind": 1}), "")
+        self.assertEqual(
+            em.render_name_ref({"kind": "Name", "id": "class"}, {"class"}, "py_", {}, "_"),
+            "py_class",
+        )
+        self.assertEqual(
+            em.render_name_ref({"kind": "Name", "id": self._KindLike("value")}, set(), "_", {}, "_"),
+            "value",
+        )
+        self.assertEqual(em.render_name_ref({}, set(), "_", {}, "_"), "_")
+
+    def test_scope_and_expr_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.current_scope(), set())
+        em.current_scope().add("x")
+        self.assertTrue(em.is_declared("x"))
+        em.scope_stack.append(set(["y"]))
+        self.assertTrue(em.is_declared("x"))
+        self.assertTrue(em.is_declared("y"))
+        self.assertFalse(em.is_declared("z"))
+
+        self.assertTrue(em._is_identifier_expr("abc_1"))
+        self.assertFalse(em._is_identifier_expr("1abc"))
+        self.assertFalse(em._is_identifier_expr("a-b"))
+
+        self.assertEqual(em._strip_outer_parens(" ( (x + 1) ) "), "x + 1")
+        self.assertEqual(em._strip_outer_parens("(x) + (y)"), "(x) + (y)")
+        self.assertEqual(em._strip_outer_parens('(")")'), '")"')
+
+        self.assertTrue(em.is_plain_name_expr({"kind": "Name", "id": "v"}))
+        self.assertFalse(em.is_plain_name_expr({"kind": "Call"}))
+        self.assertTrue(em._expr_repr_eq({"repr": "a + b "}, {"repr": "a + b"}))
+        self.assertFalse(em._expr_repr_eq({"repr": "a + b"}, {"repr": "a - b"}))
+        self.assertTrue(em._contains_text("abcdef", "cd"))
+        self.assertFalse(em._contains_text("abcdef", "xy"))
+        self.assertEqual(em._last_dotted_name("a.b.c"), "c")
+        self.assertEqual(em._last_dotted_name("name"), "name")
+
+    def test_tuple_elements_supports_both_fields(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.tuple_elements({"elements": [1, 2]}), [1, 2])
+        self.assertEqual(em.tuple_elements({"elts": [3, 4]}), [3, 4])
+        self.assertEqual(em.tuple_elements({}), [])
+
+    def test_render_boolop_common(self) -> None:
+        em = _DummyEmitter({})
+        vals = [{"repr": "a"}, {"repr": "b"}]
+        self.assertEqual(em.render_boolop_common(vals, "And"), "(a && b)")
+        self.assertEqual(em.render_boolop_common(vals, "Or"), "(a || b)")
+        self.assertEqual(em.render_boolop_common([], "And"), "false")
+        self.assertEqual(
+            em.render_boolop_chain_common(vals, "And", wrap_each=True, wrap_whole=False),
+            "(a) && (b)",
+        )
+
+    def test_render_compare_chain_common(self) -> None:
+        em = _DummyEmitter({})
+        comps = [{"repr": "b"}, {"repr": "c"}]
+        cmp_map = {"Lt": "<", "Eq": "=="}
+        self.assertEqual(
+            em.render_compare_chain_common("a", ["Lt", "Eq"], comps, cmp_map),
+            "((a < b) && (b == c))",
+        )
+        self.assertEqual(
+            em.render_compare_chain_common(
+                "x",
+                ["In"],
+                [{"repr": "ys"}],
+                cmp_map,
+                in_pattern="{right}.contains({left})",
+            ),
+            "(ys.contains(x))",
+        )
+        self.assertEqual(
+            em.render_compare_chain_from_rendered(
+                "a",
+                ["Lt", "Eq"],
+                ["b", "c"],
+                cmp_map,
+                empty_literal="false",
+                wrap_terms=False,
+                wrap_whole=False,
+            ),
+            "a < b && b == c",
+        )
+
+    def test_string_literal_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.escape_string_for_literal("a\"b\\c\nd"), "a\\\"b\\\\c\\nd")
+        self.assertEqual(em.quote_string_literal("abc"), "\"abc\"")
+        self.assertEqual(em.quote_string_literal("a\nb"), "\"a\\nb\"")
+
+    def test_dep_collection_helpers(self) -> None:
+        em = CodeEmitter({})
+        em.require_dep("math")
+        em.require_dep("json")
+        em.require_dep("math")
+        em.require_dep_any("time")
+        em.require_dep_any(42)
+        em.require_deps(["pathlib", "json", ""])
+        self.assertEqual(em.finalize_deps(), ["json", "math", "pathlib", "time"])
+        self.assertEqual(em.finalize_deps(stable_sort=False), ["math", "json", "time", "pathlib"])
+
+    def test_load_profile_with_includes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src = root / "src"
+            prof_dir = src / "backends" / "x" / "profiles"
+            prof_dir.mkdir(parents=True, exist_ok=True)
+            (prof_dir / "types.json").write_text('{"types":{"int64":"long"}}', encoding="utf-8")
+            (prof_dir / "operators.json").write_text('{"operators":{"binop":{"Add":"+"}}}', encoding="utf-8")
+            (prof_dir / "profile.json").write_text(
+                '{"include":["types.json","operators.json"],"syntax":{"expr_stmt":"{expr};"}}',
+                encoding="utf-8",
+            )
+            fake_anchor = str(src / "backends" / "x" / "emitter.py")
+            merged = CodeEmitter.load_profile_with_includes(
+                "src/backends/x/profiles/profile.json",
+                anchor_file=fake_anchor,
+            )
+            self.assertEqual(merged.get("types"), {"int64": "long"})
+            self.assertEqual(merged.get("operators"), {"binop": {"Add": "+"}})
+            self.assertEqual(merged.get("syntax"), {"expr_stmt": "{expr};"})
+
+    def test_import_resolution_helpers(self) -> None:
+        em = CodeEmitter(
+            {
+                "meta": {
+                    "qualified_symbol_refs": [
+                        {"module_id": "m.a", "symbol": "f", "local_name": "af"},
+                    ],
+                    "import_bindings": [
+                        {
+                            "module_id": "m.b",
+                            "export_name": "g",
+                            "local_name": "bg",
+                            "binding_kind": "symbol",
+                        },
+                    ],
+                }
+            }
+        )
+        em.import_modules = {"m": "pkg.mod"}
+        em.import_symbols = {"s": {"module": "pkg.sym", "name": "fn"}}
+        self.assertEqual(em._resolve_imported_module_name("m"), "pkg.mod")
+        self.assertEqual(em._resolve_imported_module_name("s"), "pkg.sym.fn")
+        self.assertEqual(em._resolve_imported_module_name("x"), "")
+        self.assertEqual(em._resolve_imported_symbol("s"), {"module": "pkg.sym", "name": "fn"})
+        self.assertEqual(em._resolve_imported_symbol("af"), {"module": "m.a", "name": "f"})
+        self.assertEqual(em._resolve_imported_symbol("bg"), {"module": "m.b", "name": "g"})
+        self.assertEqual(em._resolve_imported_symbol("none"), {})
+
+    def test_load_import_bindings_from_meta(self) -> None:
+        em = CodeEmitter({})
+        meta = {
+            "import_bindings": [
+                {
+                    "binding_kind": "module",
+                    "local_name": "m",
+                    "module_id": "pytra.std.math",
+                },
+                {
+                    "binding_kind": "symbol",
+                    "local_name": "sqrt",
+                    "module_id": "pytra.std.math",
+                    "export_name": "sqrt",
+                },
+            ]
+        }
+        em.load_import_bindings_from_meta(meta)
+        self.assertEqual(em.import_modules, {"m": "pytra.std.math"})
+        self.assertEqual(em.import_symbols, {"sqrt": {"module": "pytra.std.math", "name": "sqrt"}})
+        self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
+        self.assertEqual(em._resolve_imported_module_name("sqrt"), "pytra.std.math.sqrt")
+
+    def test_load_import_bindings_from_import_resolution_meta(self) -> None:
+        em = CodeEmitter({})
+        meta = {
+            "import_resolution": {
+                "schema_version": 1,
+                "bindings": [
+                    {
+                        "binding_kind": "module",
+                        "local_name": "m",
+                        "module_id": "pytra.std.math",
+                    },
+                    {
+                        "binding_kind": "symbol",
+                        "local_name": "sqrt",
+                        "module_id": "pytra.std.math",
+                        "export_name": "sqrt",
+                    },
+                ],
+                "qualified_refs": [
+                    {
+                        "module_id": "pytra.std.math",
+                        "symbol": "sqrt",
+                        "local_name": "sqrt",
+                    }
+                ],
+            }
+        }
+        em.load_import_bindings_from_meta(meta)
+        self.assertEqual(em.import_modules, {"m": "pytra.std.math"})
+        self.assertEqual(em.import_symbols, {"sqrt": {"module": "pytra.std.math", "name": "sqrt"}})
+        self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
+        self.assertEqual(em._resolve_imported_module_name("sqrt"), "pytra.std.math.sqrt")
+
+    def test_imported_module_name_fallback_via_meta(self) -> None:
+        em = CodeEmitter(
+            {
+                "meta": {
+                    "qualified_symbol_refs": [
+                        {"module_id": "pytra.utils", "symbol": "png", "local_name": "png"},
+                    ],
+                    "import_bindings": [
+                        {
+                            "module_id": "pytra.std",
+                            "export_name": "math",
+                            "local_name": "m",
+                            "binding_kind": "symbol",
+                        },
+                    ],
+                }
+            }
+        )
+        self.assertEqual(em.import_symbols, {})
+        self.assertEqual(em._resolve_imported_module_name("png"), "pytra.utils.png")
+        self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
+
+    def test_attribute_owner_context_and_type_helpers(self) -> None:
+        em = _DummyEmitter({})
+        em.import_modules = {"png": "pytra.utils.png"}
+        owner_ctx = em.resolve_attribute_owner_context(
+            {"kind": "Name", "id": "png", "repr": "png"},
+            "png",
+        )
+        self.assertEqual(owner_ctx.get("kind"), "Name")
+        self.assertEqual(owner_ctx.get("expr"), "png")
+        self.assertEqual(owner_ctx.get("module"), "pytra.utils.png")
+        self.assertEqual(em.attr_name({"kind": "Attribute", "attr": "write_rgb_png"}), "write_rgb_png")
+        self.assertEqual(em.attr_name({"kind": "Attribute", "attr": None}), "")
+        declared = {"items": "list[int64]"}
+        owner_t = em.resolve_attribute_owner_type(
+            {"kind": "Name", "id": "items", "resolved_type": "unknown"},
+            {"kind": "Name", "id": "items"},
+            declared,
+        )
+        self.assertEqual(owner_t, "list[int64]")
+        call_ctx = em.resolve_call_attribute_context(
+            {"kind": "Name", "id": "items", "repr": "items"},
+            "items",
+            {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": "items", "repr": "items"},
+                "attr": "append",
+            },
+            declared,
+        )
+        self.assertEqual(call_ctx.get("owner_expr"), "items")
+        self.assertEqual(call_ctx.get("owner_mod"), "")
+        self.assertEqual(call_ctx.get("owner_type"), "list[int64]")
+        self.assertEqual(call_ctx.get("attr"), "append")
+        owner_t_unknown = em.resolve_attribute_owner_type(
+            {"kind": "Name", "id": "x", "resolved_type": "unknown"},
+            {"kind": "Name", "id": "x"},
+            {"x": "unknown"},
+        )
+        self.assertEqual(owner_t_unknown, "unknown")
+
+    def test_can_runtime_cast_target(self) -> None:
+        em = CodeEmitter({})
+        self.assertFalse(em._can_runtime_cast_target(""))
+        self.assertFalse(em._can_runtime_cast_target("unknown"))
+        self.assertFalse(em._can_runtime_cast_target("Any"))
+        self.assertFalse(em._can_runtime_cast_target("object"))
+        self.assertFalse(em._can_runtime_cast_target("int64|None"))
+        self.assertTrue(em._can_runtime_cast_target("int64"))
+        self.assertTrue(em._can_runtime_cast_target("float64"))
+        self.assertTrue(em.is_boxed_object_expr("make_object(x)"))
+        self.assertTrue(em.is_boxed_object_expr("object{}"))
+        self.assertFalse(em.is_boxed_object_expr("x"))
+        self.assertEqual(
+            em.infer_rendered_arg_type("(x)", "unknown", {"x": "list[int64]"}),
+            "list[int64]",
+        )
+        self.assertEqual(
+            em.infer_rendered_arg_type("x", "int64", {"x": "list[int64]"}),
+            "int64",
+        )
+        self.assertTrue(em._is_std_runtime_call("std::sqrt"))
+        self.assertTrue(em._is_std_runtime_call("::std::abs"))
+        self.assertFalse(em._is_std_runtime_call("py_len"))
+
+    def test_validate_call_receiver_or_raise(self) -> None:
+        em = CodeEmitter({})
+        em.validate_call_receiver_or_raise({"kind": "Name", "id": "f"})
+        em.validate_call_receiver_or_raise(
+            {
+                "kind": "Attribute",
+                "attr": "append",
+                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            }
+        )
+        with self.assertRaises(RuntimeError):
+            em.validate_call_receiver_or_raise(
+                {
+                    "kind": "Attribute",
+                    "attr": "append",
+                    "value": {"kind": "Name", "id": "v", "resolved_type": "object"},
+                }
+            )
+
+    def test_trivia_and_cond_helpers(self) -> None:
+        em = _DummyEmitter(
+            {
+                "module_leading_trivia": [
+                    {"kind": "comment", "text": "file header"},
+                    {"kind": "blank", "count": 1},
+                ]
+            }
+        )
+        em.emit_module_leading_trivia()
+        em.emit_leading_comments(
+            {
+                "leading_trivia": [
+                    "invalid",
+                    {"kind": "comment", "text": "stmt comment"},
+                    {"kind": "blank", "count": 2},
+                ]
+            }
+        )
+        self.assertEqual(
+            em.lines,
+            [
+                "// file header",
+                "",
+                "// stmt comment",
+                "",
+                "",
+            ],
+        )
+
+        self.assertEqual(
+            em.render_cond({"resolved_type": "bool", "repr": "(flag)"}),
+            "flag",
+        )
+        self.assertEqual(
+            em.render_cond({"resolved_type": "list[int64]", "repr": " (xs) "}),
+            "py_len(xs) != 0",
+        )
+        self.assertEqual(em.render_cond(None), "false")
+
+        # Base CodeEmitter.render_expr returns an empty string, so
+        # lock the repr-fallback path here (for selfhost stabilization).
+        em_base = CodeEmitter({})
+        self.assertEqual(
+            em_base.render_cond(
+                {
+                    "resolved_type": self._KindLike("str"),
+                    "repr": self._KindLike("xs"),
+                }
+            ),
+            "py_len(xs) != 0",
+        )
+        self.assertEqual(
+            em_base.render_cond(
+                {
+                    "resolved_type": self._KindLike("bool"),
+                    "repr": self._KindLike("(flag)"),
+                }
+            ),
+            "flag",
+        )
+
+    def test_negative_index_and_super_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertTrue(em._is_negative_const_index({"kind": "Constant", "value": -1}))
+        self.assertTrue(
+            em._is_negative_const_index(
+                {
+                    "kind": "UnaryOp",
+                    "op": "USub",
+                    "operand": {"kind": "Constant", "value": 2},
+                }
+            )
+        )
+        self.assertFalse(em._is_negative_const_index({"kind": "Constant", "value": 0}))
+        self.assertFalse(em._is_negative_const_index({"kind": "Name", "id": "i"}))
+
+        super_init = {
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "attr": "__init__",
+                "value": {
+                    "kind": "Call",
+                    "func": {"kind": "Name", "id": "super"},
+                    "args": [],
+                    "keywords": [],
+                },
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertTrue(em._is_redundant_super_init_call(super_init))
+        super_init_dynamic_kind = {
+            "kind": self._KindLike("Call"),
+            "func": {
+                "kind": self._KindLike("Attribute"),
+                "attr": "__init__",
+                "value": {
+                    "kind": self._KindLike("Call"),
+                    "func": {"kind": self._KindLike("Name"), "id": "super"},
+                    "args": [],
+                    "keywords": [],
+                },
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertTrue(em._is_redundant_super_init_call(super_init_dynamic_kind))
+        not_super = {
+            "kind": "Call",
+            "func": {"kind": "Name", "id": "f"},
+            "args": [],
+            "keywords": [],
+        }
+        self.assertFalse(em._is_redundant_super_init_call(not_super))
+
+    def test_literal_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._one_char_str_const({"kind": "Constant", "value": "a"}), "a")
+        self.assertEqual(em._one_char_str_const({"kind": "Constant", "value": "\\n"}), "\n")
+        self.assertEqual(em._one_char_str_const({"kind": "Constant", "value": "ab"}), "")
+        self.assertEqual(em._const_int_literal({"kind": "Constant", "value": 12}), 12)
+        self.assertEqual(
+            em._const_int_literal(
+                {
+                    "kind": "UnaryOp",
+                    "op": "USub",
+                    "operand": {"kind": "Constant", "value": 7},
+                }
+            ),
+            -7,
+        )
+        self.assertIsNone(em._const_int_literal({"kind": "Constant", "value": "x"}))
+
+    def test_prepare_call_parts_and_ifexp_helpers(self) -> None:
+        class _CastEmitter(_DummyEmitter):
+            def apply_cast(self, rendered_expr: str, to_type: str) -> str:
+                return f"cast<{to_type}>({rendered_expr})"
+
+        em = _CastEmitter({})
+        call_node = {
+            "kind": "Call",
+            "func": {"kind": "Name", "repr": "fn"},
+            "args": [{"kind": "Name", "repr": "a"}],
+            "keywords": [
+                {"arg": "k", "value": {"kind": "Name", "repr": "b"}},
+            ],
+        }
+        parts = em._prepare_call_parts(call_node)
+        self.assertEqual(parts.get("fn_name"), "fn")
+        self.assertEqual(parts.get("args"), ["a"])
+        self.assertEqual(parts.get("kw_values"), ["b"])
+        self.assertEqual(parts.get("kw"), {"k": "b"})
+        call_ctx = em.prepare_call_context(call_node)
+        self.assertEqual(call_ctx.get("fn_name"), "fn")
+        self.assertEqual(call_ctx.get("args"), ["a"])
+        self.assertEqual(call_ctx.get("kw_values"), ["b"])
+        self.assertEqual(call_ctx.get("kw"), {"k": "b"})
+
+        ifexp = {
+            "kind": "IfExp",
+            "test": {"kind": "Name", "repr": "cond"},
+            "body": {"kind": "Name", "repr": "x"},
+            "orelse": {"kind": "Name", "repr": "y"},
+            "casts": [
+                {"on": "body", "to": "int64"},
+                {"on": "orelse", "to": "str"},
+            ],
+        }
+        self.assertEqual(
+            em._render_ifexp_expr(ifexp),
+            "(cond ? cast<int64>(x) : cast<str>(y))",
+        )
+        self.assertEqual(
+            em.render_ifexp_common("true", "a", "b", fold_bool_literal=True),
+            "a",
+        )
+        self.assertEqual(
+            em.render_ifexp_common("false", "a", "b", fold_bool_literal=True),
+            "b",
+        )
+        self.assertEqual(
+            em.render_ifexp_common(
+                "cond",
+                "a",
+                "b",
+                test_node={"kind": "Constant", "value": True},
+                fold_bool_literal=True,
+            ),
+            "a",
+        )
+
+    def test_split_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.split_generic(""), [])
+        self.assertEqual(
+            em.split_generic("dict[str, list[int64]], set[str], int64"),
+            ["dict[str, list[int64]]", "set[str]", "int64"],
+        )
+        self.assertEqual(em.split_union("int64|str|None"), ["int64", "str", "None"])
+        self.assertEqual(
+            em.split_union("list[int64|str]|dict[str, list[int64|str]]|None"),
+            ["list[int64|str]", "dict[str, list[int64|str]]", "None"],
+        )
+
+    def test_binop_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._binop_precedence("Mult"), 12)
+        self.assertEqual(em._binop_precedence("Add"), 11)
+        self.assertEqual(em._binop_precedence("BitOr"), 7)
+        self.assertEqual(em._binop_precedence("Unknown"), 0)
+
+        child = {"kind": "BinOp", "op": "Add"}
+        wrapped = em._wrap_for_binop_operand("a + b", child, "Mult")
+        self.assertEqual(wrapped, "(a + b)")
+        right_same_prec = em._wrap_for_binop_operand("a - b", {"kind": "BinOp", "op": "Sub"}, "Sub", True)
+        self.assertEqual(right_same_prec, "(a - b)")
+        no_wrap = em._wrap_for_binop_operand("x", {"kind": "Name", "id": "x"}, "Add")
+        self.assertEqual(no_wrap, "x")
+        self.assertTrue(em._opt_ge(2))
+        em.opt_level = "1"
+        self.assertTrue(em._opt_ge(1))
+        self.assertFalse(em._opt_ge(2))
+
+    def test_type_helpers(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em.normalize_type_name("byte"), "uint8")
+        self.assertEqual(em.normalize_type_name("any"), "Any")
+        self.assertEqual(em.normalize_type_name("object"), "object")
+        self.assertEqual(em.normalize_type_name("int64"), "int64")
+        self.assertEqual(em.normalize_type_name(1), "")
+
+        self.assertTrue(em.is_any_like_type("Any"))
+        self.assertTrue(em.is_any_like_type("object"))
+        self.assertTrue(em.is_any_like_type("unknown"))
+        self.assertTrue(em.is_any_like_type("str|Any|None"))
+        self.assertFalse(em.is_any_like_type("str|int64"))
+
+        self.assertTrue(em.is_list_type("list[int64]"))
+        self.assertTrue(em.is_set_type("set[str]"))
+        self.assertTrue(em.is_dict_type("dict[str, int64]"))
+        self.assertFalse(em.is_list_type("str"))
+
+        self.assertTrue(em.is_indexable_sequence_type("list[int64]"))
+        self.assertTrue(em.is_indexable_sequence_type("str"))
+        self.assertTrue(em.is_indexable_sequence_type("bytes"))
+        self.assertTrue(em.is_indexable_sequence_type("bytearray"))
+        self.assertFalse(em.is_indexable_sequence_type("dict[str, int64]"))
+
+        loaded = CodeEmitter.load_type_map(
+            {"types": {"types": {"str": "String"}, "int64": "long"}},
+            {"int64": "i64", "bool": "bool"},
+        )
+        self.assertEqual(loaded["str"], "String")
+        self.assertEqual(loaded["int64"], "i64")
+        self.assertEqual(loaded["bool"], "bool")
+
+        norm_t, mapped = em.normalize_type_and_lookup_map("int", {"int64": "i64"})
+        self.assertEqual(norm_t, "int64")
+        self.assertEqual(mapped, "i64")
+
+        union_non_none, union_has_none = em.split_union_non_none("str|None|str|unknown")
+        self.assertEqual(union_non_none, ["str", "unknown"])
+        self.assertTrue(union_has_none)
+
+        self.assertEqual(em.type_generic_args("list[int|None]", "list"), ["int64|None"])
+        self.assertEqual(em.type_generic_args("dict[str, int]", "dict"), ["str", "int64"])
+        self.assertEqual(em.type_generic_args("tuple[int, str]", "tuple"), ["int64", "str"])
+
+    def test_render_truthy_cond_common(self) -> None:
+        em = _DummyEmitter({})
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(s)", "resolved_type": "str"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "s.Length != 0",
+        )
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(xs)", "resolved_type": "list[int]"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "xs.Count != 0",
+        )
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(n)", "resolved_type": "int"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "n != 0",
+        )
+        self.assertEqual(
+            em.render_truthy_cond_common(
+                {"kind": "Name", "repr": "(flag)", "resolved_type": "bool"},
+                str_non_empty_pattern="{expr}.Length != 0",
+                collection_non_empty_pattern="{expr}.Count != 0",
+                number_non_zero_pattern="{expr} != 0",
+            ),
+            "flag",
+        )
+
+    def test_forbidden_object_receiver_rule(self) -> None:
+        em = CodeEmitter({})
+        self.assertTrue(em.is_forbidden_object_receiver_type("Any"))
+        self.assertTrue(em.is_forbidden_object_receiver_type("object"))
+        self.assertTrue(em.is_forbidden_object_receiver_type("int64|object|None"))
+        self.assertTrue(em.is_forbidden_object_receiver_type("str|any"))
+        self.assertFalse(em.is_forbidden_object_receiver_type("str|int64|None"))
+
+    def test_profile_syntax_helpers(self) -> None:
+        em = CodeEmitter(
+            {},
+            profile={
+                "syntax": {
+                    "if_open": "IF({cond})",
+                }
+            },
+        )
+        self.assertEqual(em.syntax_text("if_open", "if ({cond}) {"), "IF({cond})")
+        self.assertEqual(em.syntax_line("if_open", "if ({cond}) {", {"cond": "x"}), "IF(x)")
+        self.assertEqual(em.syntax_line("missing", "while ({cond}) {", {"cond": "y"}), "while (y) {")
+
+    def test_emit_block_open_close_helpers(self) -> None:
+        em = CodeEmitter({})
+        em.emit_function_open("int64", "f", "int64 x")
+        em.emit_ctor_open("Point", "int64 x, int64 y")
+        em.emit_dtor_open("Point")
+        em.emit_class_open("Point", "")
+        em.emit_class_close()
+        em.emit_block_close()
+        self.assertEqual(
+            em.lines,
+            [
+                "int64 f(int64 x) {",
+                "Point(int64 x, int64 y) {",
+                "~Point() {",
+                "struct Point {",
+                "};",
+                "}",
+            ],
+        )
+
+    def test_emit_scoped_stmt_list_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit("before")
+        em.emit_scoped_stmt_list(["a", "b"], {"x"})
+        em.emit("after")
+        self.assertEqual(
+            em.lines,
+            [
+                "before",
+                "    stmt:a",
+                "    stmt:b",
+                "after",
+            ],
+        )
+
+    def test_emit_scoped_stmt_list_no_longer_exposes_scope_normalizer(self) -> None:
+        em = _DummyEmitter({})
+        self.assertFalse(hasattr(em, "_normalize_scope_names"))
+
+    def test_emit_with_scope_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit("before")
+        em.emit_with_scope({"x"}, ["a", "b"])
+        em.emit("after")
+        self.assertEqual(
+            em.lines,
+            [
+                "before",
+                "    stmt:a",
+                "    stmt:b",
+                "after",
+            ],
+        )
+
+    def test_emit_scoped_block_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_scoped_block("if (cond) {", ["a", "b"], {"x"})
+        self.assertEqual(
+            em.lines,
+            [
+                "if (cond) {",
+                "    stmt:a",
+                "    stmt:b",
+                "}",
+            ],
+        )
+
+    def test_emit_tuple_assign_with_tmp_helper(self) -> None:
+        em = _DummyEmitter({})
+        target = {
+            "kind": "Tuple",
+            "elements": [
+                {"kind": "Name", "repr": "a"},
+                {"kind": "Name", "repr": "b"},
+            ],
+        }
+        handled = em.emit_tuple_assign_with_tmp(
+            target,
+            "rhs",
+            tmp_prefix="__tmp",
+            tmp_decl_template="const {tmp} = {value};",
+            item_expr_template="{tmp}[{index}]",
+            assign_template="{target} = {item};",
+            index_offset=0,
+        )
+        self.assertTrue(handled)
+        self.assertEqual(
+            em.lines,
+            [
+                "const __tmp_1 = rhs;",
+                "a = __tmp_1[0];",
+                "b = __tmp_1[1];",
+            ],
+        )
+        self.assertFalse(em.emit_tuple_assign_with_tmp({"kind": "Name", "repr": "x"}, "rhs"))
+
+    def test_emit_if_stmt_skeleton_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_if_stmt_skeleton(
+            "cond",
+            ["a"],
+            ["b"],
+            if_open_default="if ({cond}) {",
+            else_open_default="} else {",
+        )
+        self.assertEqual(
+            em.lines,
+            [
+                "if (cond) {",
+                "    stmt:a",
+                "} else {",
+                "    stmt:b",
+                "}",
+            ],
+        )
+
+    def test_emit_scoped_block_with_tail_lines_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_scoped_block_with_tail_lines(
+            "while (cond) {",
+            ["a"],
+            {"i"},
+            ["i += 1;"],
+        )
+        self.assertEqual(
+            em.lines,
+            [
+                "while (cond) {",
+                "    stmt:a",
+                "    i += 1;",
+                "}",
+            ],
+        )
+
+    def test_emit_while_stmt_skeleton_helper(self) -> None:
+        em = _DummyEmitter({})
+        em.emit_while_stmt_skeleton("cond", ["a"], while_open_default="while ({cond}) {")
+        self.assertEqual(
+            em.lines,
+            [
+                "while (cond) {",
+                "    stmt:a",
+                "}",
+            ],
+        )
+
+    def test_prepare_if_stmt_parts_helper(self) -> None:
+        class _IfPartsEmitter(_DummyEmitter):
+            def render_cond(self, expr: Any) -> str:
+                _ = expr
+                return ""
+
+        em = _IfPartsEmitter({})
+        cond, body, orelse = em.prepare_if_stmt_parts(
+            {
+                "kind": "If",
+                "test": {"kind": "Name", "id": "x"},
+                "body": [{"kind": "Expr", "repr": "a"}, "skip"],
+                "orelse": [{"kind": "Expr", "repr": "b"}],
+            },
+            cond_empty_default="fallback_cond",
+        )
+        self.assertEqual(cond, "fallback_cond")
+        self.assertEqual(body, [{"kind": "Expr", "repr": "a"}])
+        self.assertEqual(orelse, [{"kind": "Expr", "repr": "b"}])
+
+    def test_prepare_while_stmt_parts_helper(self) -> None:
+        class _WhilePartsEmitter(_DummyEmitter):
+            def render_cond(self, expr: Any) -> str:
+                _ = expr
+                return ""
+
+        em = _WhilePartsEmitter({})
+        cond, body = em.prepare_while_stmt_parts(
+            {
+                "kind": "While",
+                "test": {"kind": "Name", "id": "x"},
+                "body": [{"kind": "Expr", "repr": "a"}, 1],
+            },
+            cond_empty_default="fallback_while",
+        )
+        self.assertEqual(cond, "fallback_while")
+        self.assertEqual(body, [{"kind": "Expr", "repr": "a"}])
+
+    def test_assignment_helper_primitives(self) -> None:
+        em = CodeEmitter({})
+        target = em.primary_assign_target({"target": {"kind": "Name", "id": "x"}})
+        self.assertEqual(target, {"kind": "Name", "id": "x"})
+        target2 = em.primary_assign_target({"targets": [{"kind": "Name", "id": "y"}]})
+        self.assertEqual(target2, {"kind": "Name", "id": "y"})
+        target3 = em.primary_assign_target({})
+        self.assertEqual(target3, {})
+
+        self.assertTrue(em.stmt_declare_flag({"declare": 1}, False))
+        self.assertFalse(em.stmt_declare_flag({"declare": 0}, True))
+        self.assertTrue(em.stmt_declare_flag({}, True))
+        self.assertTrue(em.should_declare_name_binding({"declare": True}, "x", False))
+        em.declare_in_current_scope("x")
+        self.assertFalse(em.should_declare_name_binding({"declare": True}, "x", False))
+        self.assertFalse(em.should_declare_name_binding({"declare": False}, "y", True))
+        self.assertTrue(em.should_declare_name_binding({"declare": 1}, "z", False))
+        self.assertFalse(em.should_declare_name_binding({"declare": 0}, "w", True))
+
+        dummy = _DummyEmitter({})
+        target_txt, value_txt, op_txt = dummy.render_augassign_basic(
+            {"target": {"repr": "lhs"}, "value": {"repr": "rhs"}, "op": "Add"},
+            {"Add": "+="},
+            "+=",
+        )
+        self.assertEqual(target_txt, "lhs")
+        self.assertEqual(value_txt, "rhs")
+        self.assertEqual(op_txt, "+=")
+        self.assertEqual(
+            em.fallback_tuple_target_names_from_repr({"kind": "Tuple", "repr": "a, _b2, 3x"}),
+            ["a", "_b2"],
+        )
+        self.assertEqual(
+            em.fallback_tuple_target_names_from_stmt(
+                {"kind": "Tuple", "repr": "a, 1x"},
+                {"kind": "Assign", "repr": "(a, b,1x)=c"},
+            ),
+            ["a", "b"],
+        )
+        self.assertEqual(
+            em.target_bound_names(
+                {
+                    "kind": "Tuple",
+                    "elements": [
+                        {"kind": "Name", "id": "a"},
+                        {"kind": "Name", "id": "b"},
+                        {"kind": "Constant", "value": 1},
+                    ],
+                }
+            ),
+            {"a", "b"},
+        )
+
+    def test_hook_invocation_helpers(self) -> None:
+        em = _HookedEmitter({})
+        stmt_handled = em.hook_on_emit_stmt({"kind": "Pass"})
+        self.assertTrue(stmt_handled)
+        self.assertIn("// hooked", em.lines)
+        kind_handled = em.hook_on_emit_stmt_kind("Return", {"kind": "Return"})
+        self.assertTrue(kind_handled)
+        self.assertIn("// hooked-kind-return", em.lines)
+        self.assertTrue(em.hook_on_stmt_omit_braces("If", {"kind": "If"}, False))
+        self.assertFalse(em.hook_on_stmt_omit_braces("While", {"kind": "While"}, True))
+        self.assertEqual(em.hook_on_for_range_mode({"kind": "ForRange"}, "dynamic"), "ascending")
+        hook_call = em.hook_on_render_call(
+            {"kind": "Call"},
+            {"kind": "Name", "id": "hooked"},
+            [],
+            {},
+        )
+        self.assertEqual(hook_call, "hooked_call()")
+        hook_mod = em.hook_on_render_module_method("pytra.std.math", "sqrt", ["x"], {}, [])
+        self.assertEqual(hook_mod, "hooked_module_method(x)")
+        hook_obj = em.hook_on_render_object_method("str", "s", "strip", [])
+        self.assertEqual(hook_obj, "hooked_object_method()")
+        hook_cls = em.hook_on_render_class_method(
+            "Cls",
+            "make",
+            {"kind": "Attribute", "value": {"kind": "Name", "id": "Cls"}, "attr": "make"},
+            ["x"],
+            {},
+            [],
+        )
+        self.assertEqual(hook_cls, "hooked_class_method(x)")
+        hook_binop = em.hook_on_render_binop({"kind": "BinOp"}, "x", "y")
+        self.assertEqual(hook_binop, "hooked_binop(x, y)")
+        hook_expr = em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"})
+        self.assertEqual(hook_expr, "magic_expr()")
+        hook_complex = em.hook_on_render_expr_complex({"kind": "JoinedStr"})
+        self.assertEqual(hook_complex, "complex_expr()")
+
+    def test_emit_stmt_kind_fallback_path_in_base(self) -> None:
+        class _FallbackEmitter(CodeEmitter):
+            def _emit_stmt_kind_fallback(self, kind: str, stmt: dict[str, Any]) -> bool:
+                _ = stmt
+                return kind == "Continue"
+
+        em = _FallbackEmitter({})
+        self.assertTrue(em.hook_on_emit_stmt_kind("Continue", {"kind": "Continue"}))
+        self.assertIsNone(em.hook_on_emit_stmt_kind("UnknownKind", {"kind": "UnknownKind"}))
+
+    def test_hook_invocation_helpers_with_dict_hooks(self) -> None:
+        calls: list[str] = []
+
+        def on_emit_stmt(_em: CodeEmitter, stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt:" + str(stmt.get("kind")))
+            return True
+
+        def on_emit_stmt_kind(_em: CodeEmitter, kind: str, _stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt_kind:" + kind)
+            return True
+
+        def on_emit_stmt_return(_em: CodeEmitter, kind: str, _stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt_return:" + kind)
+            return True
+
+        def on_stmt_omit_braces(
+            _em: CodeEmitter,
+            kind: str,
+            _stmt: dict[str, Any],
+            _default_value: bool,
+        ) -> Any:
+            calls.append("stmt_omit_braces:" + kind)
+            return kind == "If"
+
+        def on_for_range_mode(_em: CodeEmitter, _stmt: dict[str, Any], _default_mode: str) -> Any:
+            calls.append("for_range_mode")
+            return "descending"
+
+        def on_render_call(
+            _em: CodeEmitter,
+            _call_node: dict[str, Any],
+            _func_node: dict[str, Any],
+            _rendered_args: list[str],
+            _rendered_kwargs: dict[str, str],
+        ) -> Any:
+            calls.append("render_call")
+            return "dict_hook_call()"
+
+        def on_render_module_method(
+            _em: CodeEmitter,
+            _module_name: str,
+            _attr: str,
+            _rendered_args: list[str],
+            _rendered_kwargs: dict[str, str],
+            _arg_nodes: list[Any],
+        ) -> Any:
+            calls.append("render_module_method")
+            return "dict_hook_module_method()"
+
+        def on_render_object_method(
+            _em: CodeEmitter,
+            _owner_type: str,
+            _owner_expr: str,
+            _attr: str,
+            _rendered_args: list[str],
+        ) -> Any:
+            calls.append("render_object_method")
+            return "dict_hook_object_method()"
+
+        def on_render_class_method(
+            _em: CodeEmitter,
+            _owner_type: str,
+            _attr: str,
+            _func_node: dict[str, Any],
+            _rendered_args: list[str],
+            _rendered_kwargs: dict[str, str],
+            _arg_nodes: list[Any],
+        ) -> Any:
+            calls.append("render_class_method")
+            return "dict_hook_class_method()"
+
+        def on_render_expr_kind(_em: CodeEmitter, kind: str, _expr_node: dict[str, Any]) -> Any:
+            calls.append("render_expr_kind:" + kind)
+            return "dict_hook_expr()"
+
+        def on_render_expr_name(_em: CodeEmitter, kind: str, _expr_node: dict[str, Any]) -> Any:
+            calls.append("render_expr_name:" + kind)
+            return "dict_hook_expr_name()"
+
+        def on_render_expr_complex(_em: CodeEmitter, _expr_node: dict[str, Any]) -> Any:
+            calls.append("render_expr_complex")
+            return "dict_hook_complex()"
+
+        def on_render_binop(
+            _em: CodeEmitter,
+            _binop_node: dict[str, Any],
+            _left: str,
+            _right: str,
+        ) -> Any:
+            calls.append("render_binop")
+            return "dict_hook_binop()"
+
+        hooks: dict[str, Any] = {
+            "on_emit_stmt": on_emit_stmt,
+            "on_emit_stmt_kind": on_emit_stmt_kind,
+            "on_emit_stmt_return": on_emit_stmt_return,
+            "on_stmt_omit_braces": on_stmt_omit_braces,
+            "on_for_range_mode": on_for_range_mode,
+            "on_render_call": on_render_call,
+            "on_render_module_method": on_render_module_method,
+            "on_render_object_method": on_render_object_method,
+            "on_render_class_method": on_render_class_method,
+            "on_render_binop": on_render_binop,
+            "on_render_expr_kind": on_render_expr_kind,
+            "on_render_expr_name": on_render_expr_name,
+            "on_render_expr_complex": on_render_expr_complex,
+        }
+        em = CodeEmitter({}, {}, hooks)
+        self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertTrue(em.hook_on_emit_stmt_kind("Return", {"kind": "Return"}))
+        self.assertTrue(em.hook_on_emit_stmt_kind("Break", {"kind": "Break"}))
+        self.assertTrue(em.hook_on_stmt_omit_braces("If", {"kind": "If"}, False))
+        self.assertEqual(em.hook_on_for_range_mode({"kind": "ForRange"}, "dynamic"), "descending")
+        self.assertEqual(
+            em.hook_on_render_call({"kind": "Call"}, {"kind": "Name"}, [], {}),
+            "dict_hook_call()",
+        )
+        self.assertEqual(
+            em.hook_on_render_module_method("pytra.std.math", "sqrt", ["x"], {}, []),
+            "dict_hook_module_method()",
+        )
+        self.assertEqual(
+            em.hook_on_render_object_method("str", "s", "strip", []),
+            "dict_hook_object_method()",
+        )
+        self.assertEqual(
+            em.hook_on_render_class_method(
+                "Cls",
+                "make",
+                {"kind": "Attribute", "value": {"kind": "Name", "id": "Cls"}, "attr": "make"},
+                ["x"],
+                {},
+                [],
+            ),
+            "dict_hook_class_method()",
+        )
+        self.assertEqual(
+            em.hook_on_render_binop({"kind": "BinOp"}, "l", "r"),
+            "dict_hook_binop()",
+        )
+        self.assertEqual(
+            em.hook_on_render_expr_kind("MagicExpr", {"kind": "MagicExpr"}),
+            "dict_hook_expr()",
+        )
+        self.assertEqual(
+            em.hook_on_render_expr_kind_specific("Name", {"kind": "Name", "id": "x"}),
+            "dict_hook_expr_name()",
+        )
+        self.assertEqual(
+            em.hook_on_render_expr_complex({"kind": "JoinedStr"}),
+            "dict_hook_complex()",
+        )
+        self.assertIn("emit_stmt:Pass", calls)
+        self.assertIn("emit_stmt_return:Return", calls)
+        self.assertIn("emit_stmt_kind:Break", calls)
+        self.assertIn("stmt_omit_braces:If", calls)
+        self.assertIn("for_range_mode", calls)
+        self.assertIn("render_call", calls)
+        self.assertIn("render_module_method", calls)
+        self.assertIn("render_object_method", calls)
+        self.assertIn("render_class_method", calls)
+        self.assertIn("render_binop", calls)
+        self.assertIn("render_expr_kind:MagicExpr", calls)
+        self.assertIn("render_expr_name:Name", calls)
+        self.assertIn("render_expr_complex", calls)
+
+    def test_render_expr_kind_hook_name_normalization(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._render_expr_kind_hook_name("Name"), "on_render_expr_name")
+        self.assertEqual(em._render_expr_kind_hook_name("IfExp"), "on_render_expr_if_exp")
+        self.assertEqual(em._render_expr_kind_hook_name("ListComp"), "on_render_expr_list_comp")
+        self.assertEqual(em._render_expr_kind_hook_name(""), "")
+
+    def test_stmt_kind_hook_name_normalization(self) -> None:
+        em = CodeEmitter({})
+        self.assertEqual(em._stmt_kind_hook_name("Assign"), "on_emit_stmt_assign")
+        self.assertEqual(em._stmt_kind_hook_name("IfExp"), "on_emit_stmt_if_exp")
+        self.assertEqual(em._stmt_kind_hook_name(""), "")
+
+    def test_dynamic_hook_disable_switch(self) -> None:
+        calls: list[str] = []
+
+        def on_emit_stmt(_em: CodeEmitter, stmt: dict[str, Any]) -> Any:
+            calls.append("emit_stmt:" + str(stmt.get("kind")))
+            return True
+
+        hooks: dict[str, Any] = {"on_emit_stmt": on_emit_stmt}
+        em = CodeEmitter({}, {}, hooks)
+        self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertEqual(calls, ["emit_stmt:Pass"])
+
+        em.set_dynamic_hooks_enabled(False)
+        self.assertIsNone(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertEqual(calls, ["emit_stmt:Pass"])
+
+        em.set_dynamic_hooks_enabled(True)
+        self.assertTrue(em.hook_on_emit_stmt({"kind": "Pass"}))
+        self.assertEqual(calls, ["emit_stmt:Pass", "emit_stmt:Pass"])
+
+    def test_emitter_hooks_container(self) -> None:
+        hooks = EmitterHooks()
+        hooks.add("", None)
+        hooks.add("on_render_call", "fn1")
+        hooks.add("on_render_expr_kind", "fn2")
+        out = hooks.to_dict()
+        self.assertNotIn("", out)
+        self.assertEqual(out.get("on_render_call"), "fn1")
+        self.assertEqual(out.get("on_render_expr_kind"), "fn2")
+
+
+if __name__ == "__main__":
+    unittest.main()

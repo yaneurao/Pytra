@@ -1,0 +1,241 @@
+"""py2java (EAST based) smoke tests."""
+
+# Language-specific smoke suite.
+# Shared py2x target-parameterized checks live in test_py2x_smoke_common.py.
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from backends.java.emitter import load_java_profile, transpile_to_java
+from toolchain.compiler.transpile_cli import load_east3_document
+from backends.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
+from src.toolchain.compiler.east_parts.core import convert_path
+from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+
+
+def load_east(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "3",
+    object_dispatch_mode: str = "native",
+    east3_opt_level: str = "1",
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+):
+    if east_stage != "3":
+        raise RuntimeError("unsupported east_stage: " + east_stage)
+    doc3 = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang="java",
+    )
+    return doc3 if isinstance(doc3, dict) else {}
+
+
+def find_fixture_case(stem: str) -> Path:
+    matches = sorted((ROOT / "test" / "fixtures").rglob(f"{stem}.py"))
+    if not matches:
+        raise FileNotFoundError(f"missing fixture: {stem}")
+    return matches[0]
+
+
+class Py2JavaSmokeTest(unittest.TestCase):
+    def test_load_java_profile_contains_core_sections(self) -> None:
+        profile = load_java_profile()
+        self.assertIn("types", profile)
+        self.assertIn("operators", profile)
+        self.assertIn("syntax", profile)
+        self.assertIn("runtime_calls", profile)
+
+    def test_java_native_emitter_skeleton_handles_module_function_class(self) -> None:
+        fixture = find_fixture_case("inheritance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("public final class Main", java)
+        self.assertIn("public static class Animal", java)
+        self.assertIn("public static class Dog extends Animal", java)
+        self.assertIn('return this.sound() + "-bark";', java)
+        self.assertIn("public static void _case_main()", java)
+        self.assertIn("Dog d = new Dog();", java)
+        self.assertIn('System.out.println("True");', java)
+
+    def test_java_native_emitter_lowers_super_method_call_without_super_constructor_syntax(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn('return "loud-" + super.speak();', java)
+        self.assertNotIn("super().speak()", java)
+
+    def test_java_native_emitter_skeleton_maps_simple_int_signature(self) -> None:
+        fixture = find_fixture_case("add")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("public static long add(long a, long b)", java)
+        self.assertIn("return a + b;", java)
+        self.assertIn('System.out.println("True");', java)
+
+    def test_module_leading_comments_are_emitted(self) -> None:
+        sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        assert_no_generated_comments(self, java)
+        assert_sample01_module_comments(self, java, prefix="//")
+
+    def test_java_native_emitter_lowers_if_and_forcore(self) -> None:
+        if_fixture = find_fixture_case("if_else")
+        if_east = load_east(if_fixture, parser_backend="self_hosted")
+        if_java = transpile_to_java_native(if_east, class_name="Main")
+        self.assertIn(
+            "public static long abs_like(long n) {\n"
+            "        if ((n < 0L)) {\n"
+            "            return (-(n));\n"
+            "        } else {\n"
+            "            return n;\n"
+            "        }\n"
+            "    }",
+            if_java,
+        )
+
+        for_fixture = find_fixture_case("for_range")
+        for_east = load_east(for_fixture, parser_backend="self_hosted")
+        for_java = transpile_to_java_native(for_east, class_name="Main")
+        self.assertIn("for (long i = 0L;", for_java)
+        self.assertIn("total += i;", for_java)
+
+    def test_java_native_emitter_omits_step_tmp_for_constant_range_steps(self) -> None:
+        for_fixture = find_fixture_case("for_range")
+        for_east = load_east(for_fixture, parser_backend="self_hosted")
+        for_java = transpile_to_java_native(for_east, class_name="Main")
+        self.assertNotIn("__step_", for_java)
+        self.assertIn("for (long i = 0L; i < n; i += 1L)", for_java)
+
+        down_fixture = find_fixture_case("range_downcount_len_minus1")
+        down_east = load_east(down_fixture, parser_backend="self_hosted")
+        down_java = transpile_to_java_native(down_east, class_name="Main")
+        self.assertNotIn("__step_", down_java)
+        self.assertIn("for (long i = ((long)(xs.size())) - 1L; i > (-(1L)); i -= 1L)", down_java)
+
+    def test_java_native_emitter_uses_main_guard_body_for_sample_entry(self) -> None:
+        sample = ROOT / "sample" / "py" / "17_monte_carlo_pi.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("run_integer_benchmark();", java)
+
+    def test_java_native_emitter_handles_bytearray_cast_and_runtime_noop(self) -> None:
+        sample = ROOT / "sample" / "py" / "03_julia_set.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();", java)
+        self.assertIn("pixels.add(r);", java)
+        self.assertIn("r = PyRuntime.__pytra_int(", java)
+        self.assertIn("PyRuntime.pyWriteRGBPNG(out_path, width, height, pixels);", java)
+
+    def test_java_native_emitter_allocates_sized_bytearray_for_subscript_set(self) -> None:
+        sample = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("PyRuntime.__pytra_bytearray(width * height)", java)
+        self.assertIn("frame.set((int)(", java)
+
+    def test_java_native_emitter_maps_math_calls_to_java_math(self) -> None:
+        sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("double angle = 2.0 * Math.PI * t;", java)
+        self.assertIn("Math.cos(angle)", java)
+        self.assertIn("Math.sin(angle)", java)
+
+    def test_java_binop_minimal_parentheses_and_rhs_grouping(self) -> None:
+        simple_expr = {
+            "kind": "BinOp",
+            "op": "Mult",
+            "left": {"kind": "Name", "id": "x"},
+            "right": {"kind": "Name", "id": "y"},
+        }
+        self.assertEqual(_render_expr(simple_expr), "x * y")
+
+        grouped_rhs = {
+            "kind": "BinOp",
+            "op": "Sub",
+            "left": {"kind": "Name", "id": "a"},
+            "right": {
+                "kind": "BinOp",
+                "op": "Sub",
+                "left": {"kind": "Name", "id": "b"},
+                "right": {"kind": "Name", "id": "c"},
+            },
+        }
+        self.assertEqual(_render_expr(grouped_rhs), "a - (b - c)")
+
+    def test_java_native_emitter_lowers_listcomp_and_repeat_list_init(self) -> None:
+        sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("grid = new java.util.ArrayList<", java)
+        self.assertIn("grid.add(PyRuntime.__pytra_list_repeat(0L, w));", java)
+
+    def test_java_native_emitter_maps_min_max_and_list_truthy(self) -> None:
+        sample = ROOT / "sample" / "py" / "14_raymarching_light_cycle.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn("Math.max(", java)
+        self.assertIn("Math.min(", java)
+
+        sample2 = ROOT / "sample" / "py" / "13_maze_generation_steps.py"
+        east2 = load_east(sample2, parser_backend="self_hosted")
+        java2 = transpile_to_java_native(east2, class_name="Main")
+        self.assertIn("while (((stack) != null && !(stack).isEmpty()))", java2)
+
+    def test_java_native_emitter_lowers_tuple_subscript_swap_assignment(self) -> None:
+        sample = ROOT / "sample" / "py" / "12_sort_visualizer.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertGreaterEqual(java.count("values.set((int)("), 2)
+        self.assertIn("__tuple_", java)
+
+    def test_java_native_emitter_lowers_len_and_subscript_set(self) -> None:
+        sample = ROOT / "sample" / "py" / "07_game_of_life_loop.py"
+        east = load_east(sample, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertIn(".size()", java)
+        self.assertIn(".set((int)(", java)
+
+    def test_java_native_emitter_rejects_non_module_root(self) -> None:
+        with self.assertRaises(RuntimeError):
+            transpile_to_java_native({"kind": "FunctionDef"}, class_name="Main")
+
+    def test_py2java_does_not_import_src_common(self) -> None:
+        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        self.assertNotIn("src.common", src)
+        self.assertNotIn("from common.", src)
+
+    def test_java_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "java" / "pytra" / "built_in" / "PyRuntime.java"
+        legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
+        self.assertTrue(runtime_path.exists())
+        self.assertFalse(legacy_path.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

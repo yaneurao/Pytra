@@ -22,62 +22,62 @@ class Target:
 TARGETS: list[Target] = [
     Target(
         "rs",
-        "test/unit/test_py2rs_smoke.py",
+        "test/unit/backends/rs/test_py2rs_smoke.py",
         "tools/check_py2rs_transpile.py",
     ),
     Target(
         "cs",
-        "test/unit/test_py2cs_smoke.py",
+        "test/unit/backends/cs/test_py2cs_smoke.py",
         "tools/check_py2cs_transpile.py",
     ),
     Target(
         "js",
-        "test/unit/test_py2js_smoke.py",
+        "test/unit/backends/js/test_py2js_smoke.py",
         "tools/check_py2js_transpile.py",
     ),
     Target(
         "ts",
-        "test/unit/test_py2ts_smoke.py",
+        "test/unit/backends/ts/test_py2ts_smoke.py",
         "tools/check_py2ts_transpile.py",
     ),
     Target(
         "go",
-        "test/unit/test_py2go_smoke.py",
+        "test/unit/backends/go/test_py2go_smoke.py",
         "tools/check_py2go_transpile.py",
     ),
     Target(
         "java",
-        "test/unit/test_py2java_smoke.py",
+        "test/unit/backends/java/test_py2java_smoke.py",
         "tools/check_py2java_transpile.py",
     ),
     Target(
         "kotlin",
-        "test/unit/test_py2kotlin_smoke.py",
+        "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
         "tools/check_py2kotlin_transpile.py",
     ),
     Target(
         "swift",
-        "test/unit/test_py2swift_smoke.py",
+        "test/unit/backends/swift/test_py2swift_smoke.py",
         "tools/check_py2swift_transpile.py",
     ),
     Target(
         "ruby",
-        "test/unit/test_py2rb_smoke.py",
+        "test/unit/backends/rb/test_py2rb_smoke.py",
         "tools/check_py2rb_transpile.py",
     ),
     Target(
         "lua",
-        "test/unit/test_py2lua_smoke.py",
+        "test/unit/backends/lua/test_py2lua_smoke.py",
         "tools/check_py2lua_transpile.py",
     ),
     Target(
         "php",
-        "test/unit/test_py2php_smoke.py",
+        "test/unit/backends/php/test_py2php_smoke.py",
         "tools/check_py2php_transpile.py",
     ),
     Target(
         "scala",
-        "test/unit/test_py2scala_smoke.py",
+        "test/unit/backends/scala/test_py2scala_smoke.py",
         "tools/check_py2scala_transpile.py",
     ),
 ]
@@ -94,7 +94,7 @@ PY2X_REQUIRED_PATTERNS = [
     "emit_source(",
 ]
 
-COMMON_SMOKE_PATH = "test/unit/test_py2x_smoke_common.py"
+COMMON_SMOKE_PATH = "test/unit/common/test_py2x_smoke_common.py"
 
 COMMON_SMOKE_REQUIRED_PATTERNS = [
     "test_cli_smoke_generates_output_for_all_targets",

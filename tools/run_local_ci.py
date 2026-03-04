@@ -35,9 +35,9 @@ def main() -> int:
         ["python3", "tools/check_multilang_selfhost_suite.py"],
         ["python3", "tools/check_py2cpp_transpile.py"],
         ["python3", "tools/check_noncpp_east3_contract.py"],
-        ["python3", "test/unit/test_code_emitter.py"],
-        ["python3", "test/unit/test_py2cpp_features.py"],
-        ["python3", "test/unit/test_py2cpp_smoke.py"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/common", "-p", "test_code_emitter.py"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/cpp", "-p", "test_py2cpp_features.py"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/cpp", "-p", "test_py2cpp_smoke.py"],
         ["python3", "tools/build_selfhost.py"],
         [
             "python3",
