@@ -12,7 +12,7 @@ def load_cs_profile() -> dict[str, Any]:
     """C# 用 profile を読み込む。"""
     return CodeEmitter.load_profile_with_includes(
         "src/backends/cs/profiles/profile.json",
-        "src/py2cs.py",
+        "src/py2x.py",
     )
 
 
@@ -29,7 +29,7 @@ class CSharpEmitter(CodeEmitter):
     """EAST を C# ソースへ変換するエミッタ。"""
 
     def __init__(self, east_doc: dict[str, Any]) -> None:
-        profile = CodeEmitter.load_profile_with_includes("src/backends/cs/profiles/profile.json", "src/py2cs.py")
+        profile = CodeEmitter.load_profile_with_includes("src/backends/cs/profiles/profile.json", "src/py2x.py")
         hooks: dict[str, Any] = {}
         self.init_base_state(east_doc, profile, hooks)
         self.type_map = CodeEmitter.load_type_map(profile)
