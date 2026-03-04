@@ -16,7 +16,35 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2php import load_east, load_php_profile, transpile_to_php, transpile_to_php_native
+from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
+from toolchain.compiler.transpile_cli import load_east3_document
+
+
+def load_east(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "3",
+    object_dispatch_mode: str = "native",
+    east3_opt_level: str = "1",
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+):
+    if east_stage != "3":
+        raise RuntimeError("unsupported east_stage: " + east_stage)
+    doc3 = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang="php",
+    )
+    return doc3 if isinstance(doc3, dict) else {}
 
 
 def find_fixture_case(stem: str) -> Path:

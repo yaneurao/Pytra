@@ -16,9 +16,37 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.py2lua import load_east, load_lua_profile, transpile_to_lua, transpile_to_lua_native
+from backends.lua.emitter import load_lua_profile, transpile_to_lua, transpile_to_lua_native
+from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.compiler.east_parts.core import convert_path
 from comment_fidelity import assert_no_generated_comments
+
+
+def load_east(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "3",
+    object_dispatch_mode: str = "native",
+    east3_opt_level: str = "1",
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+):
+    if east_stage != "3":
+        raise RuntimeError("unsupported east_stage: " + east_stage)
+    doc3 = load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang="lua",
+    )
+    return doc3 if isinstance(doc3, dict) else {}
 
 
 def find_fixture_case(stem: str) -> Path:
@@ -185,7 +213,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2lua_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2lua.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
@@ -246,8 +274,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local function __pytra_str_isdigit(s)", lua)
-        self.assertIn("local function __pytra_str_isalpha(s)", lua)
         self.assertIn("(function(__tbl, __key, __default) local __val = __tbl[__key]; if __val == nil then return __default end; return __val end)(d, s, 0)", lua)
         self.assertIn("__pytra_str_isdigit(s)", lua)
         self.assertIn("__pytra_str_isalpha(s)", lua)
@@ -285,7 +311,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local function __pytra_contains(container, value)", lua)
         self.assertIn("__pytra_contains(d, k)", lua)
         self.assertIn("__pytra_contains(xs, v)", lua)
         self.assertIn("(not __pytra_contains(\"abc\", k))", lua)
@@ -353,7 +378,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local function __pytra_repeat_seq(a, b)", lua)
         self.assertIn("__pytra_repeat_seq({ 0 }, n)", lua)
 
     def test_lowering_supports_enumerate_and_max(self) -> None:
@@ -385,7 +409,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local function __pytra_truthy(v)", lua)
         self.assertIn("return __pytra_truthy(xs)", lua)
 
     def test_lowering_supports_ifexp_joinedstr_and_attribute_call(self) -> None:
@@ -492,13 +515,12 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local py_assert_stdout = function(expected, fn) return true end", lua)
+        self.assertIn("dofile((debug.getinfo(1, \"S\").source:sub(2):match(\"^(.*[\\\\/])\") or \"\") .. \"py_runtime.lua\")", lua)
+        self.assertIn("local py_assert_stdout = function(", lua)
         self.assertIn("local py_assert_eq = function(a, b, _label) return a == b end", lua)
         self.assertIn("local py_assert_true = function(v, _label) return not not v end", lua)
         self.assertIn("local py_assert_all = function(checks, _label)", lua)
-        self.assertIn("local function __pytra_perf_counter()", lua)
         self.assertIn("local perf_counter = __pytra_perf_counter", lua)
-        self.assertIn("local function __pytra_write_rgb_png(path, width, height, pixels)", lua)
         self.assertIn("local png = __pytra_png_module()", lua)
         self.assertIn('png.write_rgb_png("x.png", 1, 1, "")', lua)
         self.assertNotIn("write_rgb_png = function(...) end", lua)
@@ -508,7 +530,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         lua = transpile_to_lua_native(east)
-        self.assertIn("local function __pytra_perf_counter()", lua)
+        self.assertIn("dofile((debug.getinfo(1, \"S\").source:sub(2):match(\"^(.*[\\\\/])\") or \"\") .. \"py_runtime.lua\")", lua)
         self.assertIn("local perf_counter = __pytra_perf_counter", lua)
         self.assertIn("local png = __pytra_png_module()", lua)
         self.assertNotIn("write_rgb_png = function(...) end", lua)
@@ -525,7 +547,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local function __pytra_gif_module()", lua)
+        self.assertIn("dofile((debug.getinfo(1, \"S\").source:sub(2):match(\"^(.*[\\\\/])\") or \"\") .. \"py_runtime.lua\")", lua)
         self.assertIn("local gif = __pytra_gif_module()", lua)
 
     def test_import_lowering_fails_closed_for_unknown_pytra_symbol(self) -> None:
