@@ -39,7 +39,7 @@
 1. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01] 全言語の画像runtimeを `pytra-core`（手書き）と `pytra-gen`（`src/pytra/utils/{png,gif}.py` 由来生成物）へ物理分離し、旧「marker中心」運用を廃止する。
 2. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` を誤った実現方式として廃止し、TODOから削除した履歴を計画書へ明記する。
 3. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] 画像runtimeの責務境界（`pytra-core` 禁止事項 / `pytra-gen` 必須事項 / 正本変更禁止）を `docs/ja/spec` と `docs/en/spec` に追記する。
-4. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 各バックエンド共通の生成導線（`png.py/gif.py -> <lang> runtime`）と出力先規約（`src/runtime/<lang>/{pytra-core,pytra-gen}`）を実装する。
+4. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 各バックエンド共通の生成導線（`png.py/gif.py -> <lang> runtime`）と出力先規約（`src/runtime/<lang>/{pytra-core,pytra-gen}`）を実装する。
 5. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] `tools/audit_image_runtime_sot.py` を「marker有無」から「`pytra-gen` 実体 + 生成痕跡 + core混入禁止」検査へ置換する。
 6. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] Rust runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.rs` から撤去する。
 7. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.go` から撤去する。
@@ -58,6 +58,7 @@
 20. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] 各backendの runtime copy hook / build手順を新レイアウトへ更新する。
 21. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] CI/ローカル検査へ「`pytra-core` に画像実装が混入したらfail」を追加する。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] `docs/ja/spec/spec-{codex,dev}.md` と `docs/en/spec/spec-{codex,dev}.md` に `pytra-core` / `pytra-gen` の責務境界（core直書き禁止・gen生成痕跡必須）を追記して完了。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] `tools/gen_image_runtime_from_canonical.py` を追加し、`png.py/gif.py -> src/runtime/<lang>/pytra-gen/...` の共通生成計画（14言語）を実装。`--dry-run` と `test_gen_image_runtime_from_canonical.py` で導線を検証。
 
 ### P0: 画像runtime 静的ガードレール導入（core混入禁止）
 
