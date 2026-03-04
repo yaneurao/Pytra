@@ -109,6 +109,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] C# emitter の残件だった `Path/perf_counter/py_assert_*` 直書きを import解決 + 接頭辞分岐へ置換し、`_module_alias_target` の `pytra.std.pathlib` 固定判定も suffix 判定へ一般化した（`test_py2cs_smoke.py` 43件 + guardrail + noncpp contract 通過、runtimecall allowlist `66->58`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Rust emitter で `pytra.utils.assertions` 固定判定を suffix 判定へ置換し、`py_assert_stdout` 専用分岐を `py_assert_` 接頭辞処理へ統合した（`test_py2rs_smoke.py` 29件 + guardrail + noncpp contract 通過、runtimecall allowlist `58->54`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Rust emitter の `save_gif/write_rgb_png` 固定比較を `pytra.utils.(gif|png)` モジュール判定 + 引数個数ベース共通処理へ一般化し、Name/Attribute 両経路の直書きを縮退した（`test_py2rs_smoke.py` 29件 + guardrail + noncpp contract 通過、runtimecall allowlist `54->42`）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Lua emitter の import 分岐を `module_name/symbol` 固定比較から `mod/sym` ベース汎用分岐へ再編し、`save_gif` キーワード専用分岐を汎用 keyword 引数連結へ統合した（`test_py2lua_smoke.py` 31件 + guardrail + noncpp contract 通過、runtimecall allowlist `42->17`、forbidden allowlist `20->16`）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

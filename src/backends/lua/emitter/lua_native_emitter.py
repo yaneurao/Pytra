@@ -466,147 +466,134 @@ class LuaNativeEmitter:
                 for ent in names:
                     if not isinstance(ent, dict):
                         continue
-                    module_name = ent.get("name")
-                    if not isinstance(module_name, str) or module_name == "":
+                    mod = ent.get("name")
+                    if not isinstance(mod, str) or mod == "":
                         continue
                     asname = ent.get("asname")
-                    alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
+                    alias = asname if isinstance(asname, str) and asname != "" else mod.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
-                    if module_name == "math":
+                    if mod == "math":
                         import_lines.append(
                             "local "
                             + alias_txt
                             + " = { sqrt = pyMathSqrt, sin = pyMathSin, cos = pyMathCos, tan = pyMathTan, exp = pyMathExp, log = pyMathLog, pow = pyMathPow, floor = pyMathFloor, ceil = pyMathCeil, abs = pyMathFabs, fabs = pyMathFabs, pi = pyMathPi(), e = pyMathE() }"
                         )
                         continue
-                    if module_name == "json":
+                    if mod == "json":
                         import_lines.append("local " + alias_txt + " = { loads = pyJsonLoads, dumps = pyJsonDumps }")
                         continue
-                    if module_name == "pathlib":
+                    if mod == "pathlib":
                         import_lines.append("local " + alias_txt + " = { Path = Path }")
                         continue
-                    if module_name == "time":
+                    if mod == "time":
                         import_lines.append("local " + alias_txt + " = { perf_counter = __pytra_perf_counter }")
                         continue
-                    if module_name == "pytra.utils.png":
-                        import_lines.append("local " + alias_txt + " = __pytra_png_module()")
+                    if mod.startswith("pytra.utils."):
+                        leaf = _safe_ident(mod.split(".")[-1], "utils")
+                        import_lines.append("local " + alias_txt + " = __pytra_" + leaf + "_module()")
                         continue
-                    if module_name == "pytra.utils.gif":
-                        import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
-                        continue
-                    if module_name.startswith("pytra."):
-                        raise RuntimeError("lang=lua unresolved import module: " + module_name)
-                    import_lines.append("-- import " + module_name + " as " + alias_txt + " (not yet mapped)")
+                    if mod.startswith("pytra."):
+                        raise RuntimeError("lang=lua unresolved import module: " + mod)
+                    import_lines.append("-- import " + mod + " as " + alias_txt + " (not yet mapped)")
                 continue
             if kind == "ImportFrom":
-                module_name = stmt.get("module")
-                if not isinstance(module_name, str):
+                mod = stmt.get("module")
+                if not isinstance(mod, str):
                     continue
                 names_any = stmt.get("names")
                 names = names_any if isinstance(names_any, list) else []
                 for ent in names:
                     if not isinstance(ent, dict):
                         continue
-                    symbol = ent.get("name")
-                    if not isinstance(symbol, str) or symbol == "":
+                    sym = ent.get("name")
+                    if not isinstance(sym, str) or sym == "":
                         continue
                     asname = ent.get("asname")
-                    alias = asname if isinstance(asname, str) and asname != "" else symbol
-                    alias_txt = _safe_ident(alias, symbol)
-                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_stdout":
+                    alias = asname if isinstance(asname, str) and asname != "" else sym
+                    alias_txt = _safe_ident(alias, sym)
+                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_stdout":
                         import_lines.append(
                             "local py_assert_stdout = function(_expected, _fn) return true end"
                         )
                         continue
-                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_eq":
+                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_eq":
                         import_lines.append("local " + alias_txt + " = function(a, b, _label) return a == b end")
                         continue
-                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_true":
+                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_true":
                         import_lines.append("local " + alias_txt + " = function(v, _label) return not not v end")
                         continue
-                    if module_name in {"pytra.utils.assertions", "pytra.std.test"} and symbol == "py_assert_all":
+                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_all":
                         import_lines.append(
                             "local "
                             + alias_txt
                             + " = function(checks, _label) if checks == nil then return false end; for i = 1, #checks do if not checks[i] then return false end end; return true end"
                         )
                         continue
-                    if module_name == "time" and symbol == "perf_counter":
+                    if mod == "time" and sym == "perf_counter":
                         import_lines.append("local " + alias_txt + " = __pytra_perf_counter")
                         continue
-                    if module_name == "math":
-                        if symbol == "sqrt":
+                    if mod == "math":
+                        if sym == "sqrt":
                             import_lines.append("local " + alias_txt + " = pyMathSqrt")
                             continue
-                        if symbol == "sin":
+                        if sym == "sin":
                             import_lines.append("local " + alias_txt + " = pyMathSin")
                             continue
-                        if symbol == "cos":
+                        if sym == "cos":
                             import_lines.append("local " + alias_txt + " = pyMathCos")
                             continue
-                        if symbol == "tan":
+                        if sym == "tan":
                             import_lines.append("local " + alias_txt + " = pyMathTan")
                             continue
-                        if symbol == "exp":
+                        if sym == "exp":
                             import_lines.append("local " + alias_txt + " = pyMathExp")
                             continue
-                        if symbol == "log":
+                        if sym == "log":
                             import_lines.append("local " + alias_txt + " = pyMathLog")
                             continue
-                        if symbol == "pow":
+                        if sym == "pow":
                             import_lines.append("local " + alias_txt + " = pyMathPow")
                             continue
-                        if symbol == "floor":
+                        if sym == "floor":
                             import_lines.append("local " + alias_txt + " = pyMathFloor")
                             continue
-                        if symbol == "ceil":
+                        if sym == "ceil":
                             import_lines.append("local " + alias_txt + " = pyMathCeil")
                             continue
-                        if symbol in {"abs", "fabs"}:
+                        if sym in {"abs", "fabs"}:
                             import_lines.append("local " + alias_txt + " = pyMathFabs")
                             continue
-                        if symbol == "pi":
+                        if sym == "pi":
                             import_lines.append("local " + alias_txt + " = pyMathPi()")
                             continue
-                        if symbol == "e":
+                        if sym == "e":
                             import_lines.append("local " + alias_txt + " = pyMathE()")
                             continue
-                        import_lines.append("local " + alias_txt + " = __pytra_math_module()." + _safe_ident(symbol, symbol))
+                        import_lines.append("local " + alias_txt + " = __pytra_math_module()." + _safe_ident(sym, sym))
                         continue
-                    if module_name == "json":
-                        if symbol == "loads":
+                    if mod == "json":
+                        if sym == "loads":
                             import_lines.append("local " + alias_txt + " = pyJsonLoads")
                             continue
-                        if symbol == "dumps":
+                        if sym == "dumps":
                             import_lines.append("local " + alias_txt + " = pyJsonDumps")
                             continue
                         continue
-                    if module_name == "pathlib" and symbol == "Path":
+                    if mod == "pathlib" and sym == "Path":
                         import_lines.append("local " + alias_txt + " = Path")
                         continue
-                    if module_name == "pytra.utils" and symbol == "png":
-                        import_lines.append("local " + alias_txt + " = __pytra_png_module()")
+                    if mod == "pytra.utils" and sym in {"png", "gif"}:
+                        import_lines.append("local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym) + "_module()")
                         continue
-                    if module_name == "pytra.utils" and symbol == "gif":
-                        import_lines.append("local " + alias_txt + " = __pytra_gif_module()")
+                    if mod.startswith("pytra.utils."):
+                        import_lines.append("local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym))
                         continue
-                    if module_name == "pytra.utils.png" and symbol == "write_rgb_png":
-                        import_lines.append("local " + alias_txt + " = __pytra_write_rgb_png")
-                        continue
-                    if module_name == "pytra.utils.gif" and symbol == "save_gif":
-                        import_lines.append("local " + alias_txt + " = __pytra_save_gif")
-                        continue
-                    if module_name == "pytra.utils.gif" and symbol == "grayscale_palette":
-                        import_lines.append("local " + alias_txt + " = __pytra_grayscale_palette")
-                        continue
-                    if module_name == "pytra.utils.gif":
-                        raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)
-                    if module_name.startswith("pytra."):
-                        raise RuntimeError("lang=lua unresolved import symbol: " + module_name + "." + symbol)
-                    if module_name == "time":
-                        raise RuntimeError("lang=lua unresolved import symbol: time." + symbol)
+                    if mod.startswith("pytra."):
+                        raise RuntimeError("lang=lua unresolved import symbol: " + mod + "." + sym)
+                    if mod == "time":
+                        raise RuntimeError("lang=lua unresolved import symbol: time." + sym)
                     import_lines.append(
-                        "-- from " + module_name + " import " + symbol + " as " + alias_txt + " (not yet mapped)"
+                        "-- from " + mod + " import " + sym + " as " + alias_txt + " (not yet mapped)"
                     )
         for line in import_lines:
             self._emit_line(line)
@@ -2066,21 +2053,20 @@ class LuaNativeEmitter:
         for arg in args:
             rendered_args.append(self._render_expr(arg))
         kw_rendered: dict[str, str] = {}
+        kw_values_in_order: list[str] = []
         for kw_any in keywords:
             if not isinstance(kw_any, dict):
                 continue
             key_any = kw_any.get("arg")
             if not isinstance(key_any, str) or key_any == "":
                 continue
-            kw_rendered[key_any] = self._render_expr(kw_any.get("value"))
+            rendered_kw = self._render_expr(kw_any.get("value"))
+            kw_rendered[key_any] = rendered_kw
+            kw_values_in_order.append(rendered_kw)
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             fn_name = _safe_ident(func_any.get("id"), "fn")
             if fn_name == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
                 fn_name = "__pytra_main"
-            if fn_name in {"save_gif", "__pytra_save_gif"} and len(keywords) > 0:
-                delay = kw_rendered.get("delay_cs", "4")
-                loop = kw_rendered.get("loop", "0")
-                return fn_name + "(" + ", ".join(rendered_args + [delay, loop]) + ")"
             if fn_name == "print":
                 return "__pytra_print(" + ", ".join(rendered_args) + ")"
             if fn_name == "int":
@@ -2131,7 +2117,7 @@ class LuaNativeEmitter:
                 return "__pytra_bytes(" + rendered_args[0] + ")"
             if fn_name in self.class_names:
                 return fn_name + ".new(" + ", ".join(rendered_args) + ")"
-            return fn_name + "(" + ", ".join(rendered_args) + ")"
+            return fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
             owner_node = func_any.get("value")
             attr = _safe_ident(func_any.get("attr"), "call")
@@ -2150,14 +2136,10 @@ class LuaNativeEmitter:
             owner_type = ""
             if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
                 owner_type = owner_node.get("resolved_type") or ""
-            if attr == "save_gif" and len(keywords) > 0:
-                delay = kw_rendered.get("delay_cs", "4")
-                loop = kw_rendered.get("loop", "0")
-                return owner + "." + attr + "(" + ", ".join(rendered_args + [delay, loop]) + ")"
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:
-                    return owner + "." + attr + "(" + ", ".join(rendered_args) + ")"
+                    return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             if attr == "get":
                 key = rendered_args[0] if len(rendered_args) >= 1 else "nil"
                 default = rendered_args[1] if len(rendered_args) >= 2 else "nil"
@@ -2186,7 +2168,7 @@ class LuaNativeEmitter:
                 if len(rendered_args) == 0:
                     return "table.remove(" + owner + ")"
                 return "table.remove(" + owner + ", (" + rendered_args[0] + ") + 1)"
-            return owner + ":" + attr + "(" + ", ".join(rendered_args) + ")"
+            return owner + ":" + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
         raise RuntimeError("lang=lua unsupported call target")
 
     def _render_constant(self, value: Any) -> str:
