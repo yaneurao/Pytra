@@ -592,38 +592,47 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
     return "(" + delim.join(rendered) + ")"
 
 
-def _math_call_name(attr: str) -> str:
-    if attr == "sqrt":
-        return "pyMathSqrt"
-    if attr == "sin":
-        return "pyMathSin"
-    if attr == "cos":
-        return "pyMathCos"
-    if attr == "tan":
-        return "pyMathTan"
-    if attr == "exp":
-        return "pyMathExp"
-    if attr == "log":
-        return "pyMathLog"
-    if attr == "pow":
-        return "pyMathPow"
-    if attr == "floor":
-        return "pyMathFloor"
-    if attr == "ceil":
-        return "pyMathCeil"
-    if attr == "abs":
-        return "pyMathFabs"
-    return _safe_ident(attr, "call")
+def _snake_to_pascal_basic(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
 
 
-def _math_runtime_wrapper(runtime_call: str) -> str:
-    if runtime_call == "math.pi":
-        return "pyMathPi"
-    if runtime_call == "math.e":
-        return "pyMathE"
-    if runtime_call.startswith("math."):
-        return _math_call_name(runtime_call[len("math."):])
-    return ""
+def _snake_to_go_helper_name(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            if len(part) <= 3:
+                out.append(part.upper())
+            else:
+                out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
+
+
+def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
+    name = runtime_call.strip()
+    if name == "":
+        return ""
+    dot = name.find(".")
+    if dot >= 0:
+        module_name = name[:dot].strip()
+        symbol_name = name[dot + 1 :].strip()
+        if module_name == "" or symbol_name == "":
+            return ""
+        return "py" + _snake_to_pascal_basic(module_name) + _snake_to_pascal_basic(symbol_name)
+    if runtime_source == "resolved_runtime_call":
+        return "py" + _snake_to_go_helper_name(name)
+    return "__pytra_" + name
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
@@ -635,13 +644,11 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         resolved_source_any = expr.get("resolved_runtime_source")
         resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
         if resolved_source == "module_attr":
-            wrapped = _math_runtime_wrapper(resolved_runtime)
-            if wrapped == "pyMathPi":
-                return "__pytra_float(pyMathPi())"
-            if wrapped == "pyMathE":
-                return "__pytra_float(pyMathE())"
-            if wrapped != "":
-                return wrapped
+            runtime_symbol = _resolved_runtime_symbol(resolved_runtime, "resolved_runtime_call")
+            if runtime_symbol != "":
+                if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
+                    return "__pytra_float(" + runtime_symbol + "())"
+                return runtime_symbol
             return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
@@ -656,27 +663,19 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(func_any.get("id"), "")
 
 
-def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: Any) -> str:
+def _render_runtime_args(
+    semantic_tag: str,
+    args: list[Any],
+    keywords_any: Any,
+) -> list[str]:
     keywords = keywords_any if isinstance(keywords_any, list) else []
-    if call_name == "write_rgb_png":
-        if len(keywords) != 0:
-            raise RuntimeError("go native emitter: write_rgb_png keyword args are unsupported")
-        if len(args) != 4:
-            raise RuntimeError("go native emitter: write_rgb_png expects 4 positional args")
-        rendered_png: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_png.append(_render_expr(args[i]))
-            i += 1
-        return "pyWriteRGBPNG(" + ", ".join(rendered_png) + ")"
-
-    if call_name == "save_gif":
+    if semantic_tag == "stdlib.symbol.save_gif":
         if len(args) < 5 or len(args) > 7:
             raise RuntimeError("go native emitter: save_gif expects 5-7 positional args")
-        rendered_gif: list[str] = []
+        rendered: list[str] = []
         i = 0
         while i < 5:
-            rendered_gif.append(_render_expr(args[i]))
+            rendered.append(_render_expr(args[i]))
             i += 1
         delay_expr = _render_expr(args[5]) if len(args) >= 6 else "int64(4)"
         loop_expr = _render_expr(args[6]) if len(args) >= 7 else "int64(0)"
@@ -702,23 +701,36 @@ def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: An
             else:
                 raise RuntimeError("go native emitter: unsupported save_gif keyword: " + kw_name)
             i += 1
-        rendered_gif.append(delay_expr)
-        rendered_gif.append(loop_expr)
-        return "pySaveGIF(" + ", ".join(rendered_gif) + ")"
+        rendered.append(delay_expr)
+        rendered.append(loop_expr)
+        return rendered
+    rendered: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered.append(_render_expr(args[i]))
+        i += 1
+    return rendered
 
-    raise RuntimeError("go native emitter: unsupported image runtime call: " + call_name)
 
-
-def _resolved_runtime_call_name(expr: dict[str, Any]) -> str:
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     runtime_call_any = expr.get("runtime_call")
     runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
     if runtime_call != "":
-        return runtime_call
+        return runtime_call, "runtime_call"
     resolved_any = expr.get("resolved_runtime_call")
-    return resolved_any if isinstance(resolved_any, str) else ""
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved, "resolved_runtime_call"
+    return "", ""
 
 
-def _render_call_via_runtime_call(runtime_call: str, args: list[Any], keywords_any: Any) -> str:
+def _render_call_via_runtime_call(
+    runtime_call: str,
+    runtime_source: str,
+    semantic_tag: str,
+    args: list[Any],
+    keywords_any: Any,
+) -> str:
     if runtime_call.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0
@@ -726,39 +738,28 @@ def _render_call_via_runtime_call(runtime_call: str, args: list[Any], keywords_a
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
-    if runtime_call == "perf_counter":
-        return "__pytra_perf_counter()"
-    if runtime_call == "Path":
-        if len(args) == 0:
-            return "NewPath(\"\")"
-        return "NewPath(" + _render_expr(args[0]) + ")"
-    if runtime_call in {"write_rgb_png", "save_gif"}:
-        return _render_image_runtime_call(runtime_call, args, keywords_any)
-    if runtime_call == "grayscale_palette":
-        if len(args) != 0:
-            raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
-        return "pyGrayscalePalette()"
-    if runtime_call == "json.loads":
-        if len(args) == 0:
-            return "pyJsonLoads(\"\")"
-        return "pyJsonLoads(" + _render_expr(args[0]) + ")"
-    if runtime_call == "json.dumps":
-        if len(args) == 0:
-            return "pyJsonDumps(nil)"
-        return "pyJsonDumps(" + _render_expr(args[0]) + ")"
-    wrapped = _math_runtime_wrapper(runtime_call)
-    if wrapped != "":
-        if wrapped == "pyMathPi":
-            return "__pytra_float(pyMathPi())"
-        if wrapped == "pyMathE":
-            return "__pytra_float(pyMathE())"
-        rendered_math_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_math_args.append(_coerce_float_expr(args[i], _render_expr(args[i])))
-            i += 1
-        return wrapped + "(" + ", ".join(rendered_math_args) + ")"
-    return ""
+    if runtime_source == "runtime_call":
+        if semantic_tag.startswith("stdlib.fn."):
+            runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+            rendered_std_args = _render_runtime_args(semantic_tag, args, keywords_any)
+            return runtime_symbol + "(" + ", ".join(rendered_std_args) + ")"
+        return ""
+    runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+    if runtime_symbol == "":
+        return ""
+    rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+    if runtime_call.find(".") >= 0:
+        if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
+            return "__pytra_float(" + runtime_symbol + "())"
+        if runtime_symbol.startswith("pyMath"):
+            rendered_math_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_math_args.append(_coerce_float_expr(args[i], _render_expr(args[i])))
+                i += 1
+            return runtime_symbol + "(" + ", ".join(rendered_math_args) + ")"
+        return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
+    return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
 
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
@@ -776,9 +777,22 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 args_with_keywords.append(value_any)
         kw_i += 1
 
-    runtime_call = _resolved_runtime_call_name(expr)
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    if semantic_tag == "stdlib.symbol.Path":
+        if len(args) == 0:
+            return "NewPath(\"\")"
+        return "NewPath(" + _render_expr(args[0]) + ")"
+
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
-        rendered_runtime = _render_call_via_runtime_call(runtime_call, args, keywords_any)
+        rendered_runtime = _render_call_via_runtime_call(
+            runtime_call,
+            runtime_source,
+            semantic_tag,
+            args,
+            keywords_any,
+        )
         if rendered_runtime != "":
             return rendered_runtime
 

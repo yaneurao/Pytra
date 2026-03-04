@@ -101,6 +101,18 @@ class Py2GoSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "go" / "emitter" / "go_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        banned_runtime_literals = [
+            "write_rgb_png",
+            "save_gif",
+            "grayscale_palette",
+            "perf_counter",
+            "json.loads",
+            "json.dumps",
+            "Path",
+        ]
+        for symbol in banned_runtime_literals:
+            self.assertNotIn(f'runtime_call == "{symbol}"', src)
+            self.assertNotIn(f"runtime_call == '{symbol}'", src)
 
     def test_go_native_emitter_maps_json_module_calls_to_runtime_helpers(self) -> None:
         with tempfile.TemporaryDirectory() as td:

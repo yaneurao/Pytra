@@ -108,7 +108,7 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter からライブラリ依存 rename（wrapper 名生成・互換名変換）を撤去し、IR 解決シンボル素通し描画へ統一する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] Java runtime cleanup と接続し、`PyRuntime.java` 依存の std/utils 呼び出し経路を排除した状態で Java smoke/parity を再固定する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] 残り非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`png.py/gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボルの直書きを撤去する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`png.py/gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボルの直書きを撤去する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルを IR 解決経由へ統一、禁止ガード allowlist を継続縮退する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec` / `docs/en/spec` に責務境界（IR解決 vs emitter描画）を明文化する。
@@ -143,3 +143,5 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Go/Swift/Kotlin emitter で `owner == "math"` 分岐を撤去し、`resolved_runtime_call=math.*` 優先の経路へ移行した。既存 `pyMath*` runtime への接続は維持しつつ、各言語 smoke に source-level 再発防止アサートを追加した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07`] 固定入力 `test/ir/java_math_path_runtime.east3.json` を追加し、`test_py2java_smoke.py::test_java_native_emitter_backend_only_ir_fixture_resolves_math_and_path` で backend-only 回帰を導入した。IR 側では module-attr call の戻り型推論を補強し、`math.sin(math.pi)` が `double` 経路で描画されることを固定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08`] `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に Stop-Ship チェックリストを追加し、必須3コマンド・FAIL時コミット禁止・レビュー確認項目を明文化した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1`] Swift/Kotlin emitter の `runtime_call == "write_rgb_png|save_gif|grayscale_palette|json.loads|json.dumps|perf_counter|Path"` 分岐を撤去し、`resolved_runtime_call` と `semantic_tag` から runtime シンボルを導出する経路へ置換した。`test_py2swift_smoke.py`（12件）/`test_py2kotlin_smoke.py`（14件）と guardrail 3本を再通過し、allowlist を runtimecall `114->106`・forbidden symbol `28->22` へ更新した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1`] Go emitter でも `runtime_call` 直書き分岐を撤去し、`resolved_runtime_call` + `semantic_tag` から runtime シンボルを導出する経路へ統一した。`save_gif` の既定引数補完は semantic-tag（`stdlib.symbol.save_gif`）で維持し、`test_py2go_smoke.py`（14件）と guardrail 3本を再通過した。allowlist は runtimecall `114->99` まで縮退した。

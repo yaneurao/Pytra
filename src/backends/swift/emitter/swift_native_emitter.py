@@ -581,38 +581,30 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
     return "(" + delim.join(rendered) + ")"
 
 
-def _math_call_name(attr: str) -> str:
-    if attr == "sqrt":
-        return "pyMathSqrt"
-    if attr == "sin":
-        return "pyMathSin"
-    if attr == "cos":
-        return "pyMathCos"
-    if attr == "tan":
-        return "pyMathTan"
-    if attr == "exp":
-        return "pyMathExp"
-    if attr == "log":
-        return "pyMathLog"
-    if attr == "pow":
-        return "pyMathPow"
-    if attr == "floor":
-        return "pyMathFloor"
-    if attr == "ceil":
-        return "pyMathCeil"
-    if attr == "abs":
-        return "pyMathFabs"
-    return _safe_ident(attr, "call")
+def _snake_to_pascal(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
 
 
-def _math_runtime_wrapper(runtime_call: str) -> str:
-    if runtime_call == "math.pi":
-        return "pyMathPi"
-    if runtime_call == "math.e":
-        return "pyMathE"
-    if runtime_call.startswith("math."):
-        return _math_call_name(runtime_call[len("math."):])
-    return ""
+def _resolved_runtime_symbol(runtime_call: str) -> str:
+    name = runtime_call.strip()
+    if name == "":
+        return ""
+    dot = name.find(".")
+    if dot >= 0:
+        module_name = name[:dot].strip()
+        symbol_name = name[dot + 1 :].strip()
+        if module_name == "" or symbol_name == "":
+            return ""
+        return "py" + _snake_to_pascal(module_name) + _snake_to_pascal(symbol_name)
+    return "__pytra_" + name
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
@@ -624,13 +616,11 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         resolved_source_any = expr.get("resolved_runtime_source")
         resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
         if resolved_source == "module_attr":
-            wrapped = _math_runtime_wrapper(resolved_runtime)
-            if wrapped == "pyMathPi":
-                return "__pytra_float(pyMathPi())"
-            if wrapped == "pyMathE":
-                return "__pytra_float(pyMathE())"
-            if wrapped != "":
-                return wrapped
+            runtime_symbol = _resolved_runtime_symbol(resolved_runtime)
+            if runtime_symbol != "":
+                if resolved_runtime.endswith(".pi") or resolved_runtime.endswith(".e"):
+                    return runtime_symbol + "()"
+                return runtime_symbol
             return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
@@ -704,16 +694,24 @@ def _class_has_base_method(class_name: str, method_name: str) -> bool:
     return False
 
 
-def _resolved_runtime_call_name(expr: dict[str, Any]) -> str:
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     runtime_call_any = expr.get("runtime_call")
     runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
     if runtime_call != "":
-        return runtime_call
+        return runtime_call, "runtime_call"
     resolved_any = expr.get("resolved_runtime_call")
-    return resolved_any if isinstance(resolved_any, str) else ""
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved, "resolved_runtime_call"
+    return "", ""
 
 
-def _render_call_via_runtime_call(runtime_call: str, args: list[Any]) -> str:
+def _render_call_via_runtime_call(
+    runtime_call: str,
+    runtime_source: str,
+    semantic_tag: str,
+    args: list[Any],
+) -> str:
     if runtime_call.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0
@@ -721,45 +719,39 @@ def _render_call_via_runtime_call(runtime_call: str, args: list[Any]) -> str:
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
-    if runtime_call == "perf_counter":
-        return "__pytra_perf_counter()"
-    if runtime_call == "write_rgb_png":
-        rendered_png_args: list[str] = []
+    if runtime_source == "runtime_call":
+        if semantic_tag.startswith("stdlib.fn."):
+            runtime_symbol = _resolved_runtime_symbol(runtime_call)
+            if runtime_symbol == "":
+                return ""
+            rendered_runtime_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_runtime_args.append(_render_expr(args[i]))
+                i += 1
+            return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
+        return ""
+    runtime_symbol = _resolved_runtime_symbol(runtime_call)
+    if runtime_symbol == "":
+        return ""
+    if runtime_call.find(".") >= 0:
+        rendered_call_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_png_args.append(_render_expr(args[i]))
+            rendered_arg = _render_expr(args[i])
+            if runtime_symbol.startswith("pyMath"):
+                rendered_arg = _to_float_expr(rendered_arg)
+            rendered_call_args.append(rendered_arg)
             i += 1
-        return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
-    if runtime_call == "save_gif":
-        rendered_gif_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_gif_args.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
-    if runtime_call == "grayscale_palette":
-        return "__pytra_grayscale_palette()"
-    if runtime_call == "json.loads":
-        if len(args) == 0:
-            return "pyJsonLoads(\"\")"
-        return "pyJsonLoads(" + _render_expr(args[0]) + ")"
-    if runtime_call == "json.dumps":
-        if len(args) == 0:
-            return "pyJsonDumps(\"\")"
-        return "pyJsonDumps(" + _render_expr(args[0]) + ")"
-    wrapped = _math_runtime_wrapper(runtime_call)
-    if wrapped != "":
-        if wrapped == "pyMathPi":
-            return "__pytra_float(pyMathPi())"
-        if wrapped == "pyMathE":
-            return "__pytra_float(pyMathE())"
-        rendered_math_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
-            i += 1
-        return wrapped + "(" + ", ".join(rendered_math_args) + ")"
-    return ""
+        if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
+            return "__pytra_float(" + runtime_symbol + "())"
+        return runtime_symbol + "(" + ", ".join(rendered_call_args) + ")"
+    rendered_runtime_args: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered_runtime_args.append(_render_expr(args[i]))
+        i += 1
+    return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
 
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
@@ -779,9 +771,20 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_main_args.append(_render_expr(args[i]))
             i += 1
         return _MAIN_CALL_ALIAS + "(" + ", ".join(rendered_main_args) + ")"
-    runtime_call = _resolved_runtime_call_name(expr)
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    if semantic_tag == "stdlib.symbol.Path":
+        if len(args) == 0:
+            return "Path(\"\")"
+        return "Path(" + _render_expr(args[0]) + ")"
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
-        rendered_runtime = _render_call_via_runtime_call(runtime_call, args)
+        rendered_runtime = _render_call_via_runtime_call(
+            runtime_call,
+            runtime_source,
+            semantic_tag,
+            args,
+        )
         if rendered_runtime != "":
             return rendered_runtime
     if callee_name.startswith("py_assert_"):

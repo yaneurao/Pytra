@@ -118,6 +118,18 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "swift" / "emitter" / "swift_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        banned_runtime_literals = [
+            "write_rgb_png",
+            "save_gif",
+            "grayscale_palette",
+            "perf_counter",
+            "json.loads",
+            "json.dumps",
+            "Path",
+        ]
+        for symbol in banned_runtime_literals:
+            self.assertNotIn(f'runtime_call == "{symbol}"', src)
+            self.assertNotIn(f"runtime_call == '{symbol}'", src)
 
     def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
         src = """
