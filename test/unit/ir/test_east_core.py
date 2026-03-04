@@ -13,6 +13,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
+
 from src.toolchain.compiler.east import convert_source_to_east_with_backend
 from src.toolchain.compiler.east import EastBuildError
 
@@ -217,22 +219,19 @@ def main() -> None:
         self.assertIn("py_assert_stdout", resolved_runtime_calls)
 
     def test_core_does_not_reintroduce_perf_counter_direct_branch(self) -> None:
-        core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
-        src = core_path.read_text(encoding="utf-8")
+        src = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertNotIn('fn_name == "perf_counter"', src)
         self.assertNotIn("fn_name == 'perf_counter'", src)
 
     def test_core_does_not_reintroduce_path_direct_branches(self) -> None:
-        core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
-        src = core_path.read_text(encoding="utf-8")
+        src = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertNotIn('fn_name == "Path"', src)
         self.assertNotIn("fn_name == 'Path'", src)
         self.assertNotIn('owner_t == "Path"', src)
         self.assertNotIn("owner_t == 'Path'", src)
 
     def test_core_semantic_tag_mapping_is_adapter_driven(self) -> None:
-        core_path = ROOT / "src" / "pytra" / "compiler" / "east_parts" / "core.py"
-        src = core_path.read_text(encoding="utf-8")
+        src = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("lookup_builtin_semantic_tag", src)
         self.assertIn("lookup_stdlib_function_semantic_tag", src)
         self.assertIn("lookup_stdlib_symbol_semantic_tag", src)
