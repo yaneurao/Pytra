@@ -319,6 +319,319 @@ function __pytra_path_mt:read_text()
     return data
 end
 
+function Path(v)
+    return __pytra_path_new(v)
+end
+
+function pyMathSqrt(v)
+    return math.sqrt(__pytra_float(v))
+end
+
+function pyMathSin(v)
+    return math.sin(__pytra_float(v))
+end
+
+function pyMathCos(v)
+    return math.cos(__pytra_float(v))
+end
+
+function pyMathTan(v)
+    return math.tan(__pytra_float(v))
+end
+
+function pyMathExp(v)
+    return math.exp(__pytra_float(v))
+end
+
+function pyMathLog(v)
+    return math.log(__pytra_float(v))
+end
+
+function pyMathFabs(v)
+    return math.abs(__pytra_float(v))
+end
+
+function pyMathFloor(v)
+    return math.floor(__pytra_float(v))
+end
+
+function pyMathCeil(v)
+    return math.ceil(__pytra_float(v))
+end
+
+function pyMathPow(a, b)
+    return __pytra_float(a) ^ __pytra_float(b)
+end
+
+function pyMathPi()
+    return math.pi
+end
+
+function pyMathE()
+    return math.exp(1.0)
+end
+
+local __pytra_json_null = { __pytra_json_null = true }
+
+local function __pytra_json_is_null(v)
+    return type(v) == "table" and v.__pytra_json_null == true
+end
+
+local function __pytra_json_skip_ws(text, i)
+    local n = #text
+    while i <= n do
+        local ch = string.sub(text, i, i)
+        if ch ~= " " and ch ~= "\t" and ch ~= "\r" and ch ~= "\n" then
+            break
+        end
+        i = i + 1
+    end
+    return i
+end
+
+local function __pytra_json_utf8(cp)
+    if cp <= 0x7F then
+        return string.char(cp)
+    end
+    if cp <= 0x7FF then
+        local b1 = 0xC0 + math.floor(cp / 0x40)
+        local b2 = 0x80 + (cp % 0x40)
+        return string.char(b1, b2)
+    end
+    local b1 = 0xE0 + math.floor(cp / 0x1000)
+    local b2 = 0x80 + (math.floor(cp / 0x40) % 0x40)
+    local b3 = 0x80 + (cp % 0x40)
+    return string.char(b1, b2, b3)
+end
+
+local function __pytra_json_parse_string(text, i)
+    local n = #text
+    i = i + 1
+    local out = {}
+    while i <= n do
+        local ch = string.sub(text, i, i)
+        if ch == "\"" then
+            return table.concat(out), i + 1
+        end
+        if ch == "\\" then
+            i = i + 1
+            if i > n then
+                error("invalid json string escape")
+            end
+            local esc = string.sub(text, i, i)
+            if esc == "\"" then
+                out[#out + 1] = "\""
+            elseif esc == "\\" then
+                out[#out + 1] = "\\"
+            elseif esc == "/" then
+                out[#out + 1] = "/"
+            elseif esc == "b" then
+                out[#out + 1] = "\b"
+            elseif esc == "f" then
+                out[#out + 1] = "\f"
+            elseif esc == "n" then
+                out[#out + 1] = "\n"
+            elseif esc == "r" then
+                out[#out + 1] = "\r"
+            elseif esc == "t" then
+                out[#out + 1] = "\t"
+            elseif esc == "u" then
+                if i + 4 > n then
+                    error("invalid json unicode escape")
+                end
+                local hx = string.sub(text, i + 1, i + 4)
+                local cp = tonumber(hx, 16)
+                if cp == nil then
+                    error("invalid json unicode escape")
+                end
+                out[#out + 1] = __pytra_json_utf8(cp)
+                i = i + 4
+            else
+                error("invalid json escape")
+            end
+        else
+            out[#out + 1] = ch
+        end
+        i = i + 1
+    end
+    error("unterminated json string")
+end
+
+local __pytra_json_parse_value
+
+local function __pytra_json_parse_array(text, i)
+    local out = {}
+    i = __pytra_json_skip_ws(text, i + 1)
+    if string.sub(text, i, i) == "]" then
+        return out, i + 1
+    end
+    while true do
+        local v
+        v, i = __pytra_json_parse_value(text, i)
+        out[#out + 1] = v
+        i = __pytra_json_skip_ws(text, i)
+        local ch = string.sub(text, i, i)
+        if ch == "]" then
+            return out, i + 1
+        end
+        if ch ~= "," then
+            error("invalid json array separator")
+        end
+        i = __pytra_json_skip_ws(text, i + 1)
+    end
+end
+
+local function __pytra_json_parse_object(text, i)
+    local out = {}
+    i = __pytra_json_skip_ws(text, i + 1)
+    if string.sub(text, i, i) == "}" then
+        return out, i + 1
+    end
+    while true do
+        if string.sub(text, i, i) ~= "\"" then
+            error("invalid json object key")
+        end
+        local k
+        k, i = __pytra_json_parse_string(text, i)
+        i = __pytra_json_skip_ws(text, i)
+        if string.sub(text, i, i) ~= ":" then
+            error("invalid json object: missing ':'")
+        end
+        i = __pytra_json_skip_ws(text, i + 1)
+        local v
+        v, i = __pytra_json_parse_value(text, i)
+        out[k] = v
+        i = __pytra_json_skip_ws(text, i)
+        local ch = string.sub(text, i, i)
+        if ch == "}" then
+            return out, i + 1
+        end
+        if ch ~= "," then
+            error("invalid json object separator")
+        end
+        i = __pytra_json_skip_ws(text, i + 1)
+    end
+end
+
+__pytra_json_parse_value = function(text, i)
+    i = __pytra_json_skip_ws(text, i)
+    local ch = string.sub(text, i, i)
+    if ch == "{" then
+        return __pytra_json_parse_object(text, i)
+    end
+    if ch == "[" then
+        return __pytra_json_parse_array(text, i)
+    end
+    if ch == "\"" then
+        return __pytra_json_parse_string(text, i)
+    end
+    if string.sub(text, i, i + 3) == "true" then
+        return true, i + 4
+    end
+    if string.sub(text, i, i + 4) == "false" then
+        return false, i + 5
+    end
+    if string.sub(text, i, i + 3) == "null" then
+        return __pytra_json_null, i + 4
+    end
+    local token = string.match(string.sub(text, i), "^%-?%d+%.?%d*[eE]?[%+%-]?%d*")
+    if token == nil or token == "" then
+        error("invalid json number")
+    end
+    local num = tonumber(token)
+    if num == nil then
+        error("invalid json number")
+    end
+    return num, i + #token
+end
+
+local function __pytra_json_escape_string(s)
+    local out = { "\"" }
+    for i = 1, #s do
+        local ch = string.sub(s, i, i)
+        if ch == "\"" then
+            out[#out + 1] = "\\\""
+        elseif ch == "\\" then
+            out[#out + 1] = "\\\\"
+        elseif ch == "\b" then
+            out[#out + 1] = "\\b"
+        elseif ch == "\f" then
+            out[#out + 1] = "\\f"
+        elseif ch == "\n" then
+            out[#out + 1] = "\\n"
+        elseif ch == "\r" then
+            out[#out + 1] = "\\r"
+        elseif ch == "\t" then
+            out[#out + 1] = "\\t"
+        else
+            out[#out + 1] = ch
+        end
+    end
+    out[#out + 1] = "\""
+    return table.concat(out)
+end
+
+local function __pytra_json_is_array(tbl)
+    local n = 0
+    for k, _ in pairs(tbl) do
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k then
+            return false, 0
+        end
+        if k > n then n = k end
+    end
+    for i = 1, n do
+        if rawget(tbl, i) == nil then
+            return false, 0
+        end
+    end
+    return true, n
+end
+
+local function __pytra_json_encode(v)
+    if v == nil or __pytra_json_is_null(v) then
+        return "null"
+    end
+    local tv = type(v)
+    if tv == "boolean" then
+        return v and "true" or "false"
+    end
+    if tv == "number" then
+        return tostring(v)
+    end
+    if tv == "string" then
+        return __pytra_json_escape_string(v)
+    end
+    if tv == "table" then
+        local is_arr, n = __pytra_json_is_array(v)
+        local parts = {}
+        if is_arr then
+            for i = 1, n do
+                parts[#parts + 1] = __pytra_json_encode(v[i])
+            end
+            return "[" .. table.concat(parts, ",") .. "]"
+        end
+        for k, item in pairs(v) do
+            parts[#parts + 1] = __pytra_json_escape_string(tostring(k)) .. ":" .. __pytra_json_encode(item)
+        end
+        return "{" .. table.concat(parts, ",") .. "}"
+    end
+    return __pytra_json_escape_string(tostring(v))
+end
+
+function pyJsonLoads(v)
+    local text = tostring(v)
+    local out, i = __pytra_json_parse_value(text, 1)
+    i = __pytra_json_skip_ws(text, i)
+    if i <= #text then
+        error("invalid json: trailing characters")
+    end
+    return out
+end
+
+function pyJsonDumps(v)
+    return __pytra_json_encode(v)
+end
+
 function __pytra_isinstance(obj, class_tbl)
     if type(obj) ~= "table" then
         return false

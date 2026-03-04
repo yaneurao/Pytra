@@ -365,3 +365,55 @@ def __pytra_is_bool(v: Any): Boolean = v.isInstanceOf[Boolean]
 def __pytra_is_str(v: Any): Boolean = v.isInstanceOf[String]
 
 def __pytra_is_list(v: Any): Boolean = v.isInstanceOf[scala.collection.Seq[?]]
+
+def pyMathSqrt(v: Any): Double = scala.math.sqrt(__pytra_float(v))
+def pyMathSin(v: Any): Double = scala.math.sin(__pytra_float(v))
+def pyMathCos(v: Any): Double = scala.math.cos(__pytra_float(v))
+def pyMathTan(v: Any): Double = scala.math.tan(__pytra_float(v))
+def pyMathExp(v: Any): Double = scala.math.exp(__pytra_float(v))
+def pyMathLog(v: Any): Double = scala.math.log(__pytra_float(v))
+def pyMathFabs(v: Any): Double = scala.math.abs(__pytra_float(v))
+def pyMathFloor(v: Any): Double = scala.math.floor(__pytra_float(v))
+def pyMathCeil(v: Any): Double = scala.math.ceil(__pytra_float(v))
+def pyMathPow(a: Any, b: Any): Double = scala.math.pow(__pytra_float(a), __pytra_float(b))
+def pyMathPi(): Double = scala.math.Pi
+def pyMathE(): Double = scala.math.E
+
+class Path(v: Any) {
+    private val _value: String = __pytra_str(v)
+
+    def /(rhs: Any): Path = Path(__pytra_path_join(_value, __pytra_str(rhs)))
+    def resolve(): Path = Path(Paths.get(_value).toAbsolutePath.normalize.toString)
+    def exists(): Boolean = __pytra_path_exists(_value)
+    def mkdir(parents: Boolean = false, exist_ok: Boolean = false): Unit = {
+        if (parents) {
+            __pytra_path_mkdir(_value)
+            return
+        }
+        if (exist_ok && __pytra_path_exists(_value)) return
+        Files.createDirectory(Paths.get(_value))
+    }
+    def write_text(text: Any, encoding: String = "utf-8"): Unit = __pytra_path_write_text(_value, text)
+    def read_text(encoding: String = "utf-8"): String = __pytra_path_read_text(_value)
+
+    def name: String = __pytra_path_name(_value)
+    def stem: String = __pytra_path_stem(_value)
+    def parent: Path = {
+        val p = __pytra_path_parent(_value)
+        if (p == "" || p == _value) Path(".") else Path(p)
+    }
+
+    override def toString: String = _value
+}
+
+object Path {
+    def apply(v: Any): Path = new Path(v)
+}
+
+def pyJsonLoads(v: Any): Any = {
+    throw new RuntimeException("json.loads is not implemented in scala runtime yet")
+}
+
+def pyJsonDumps(v: Any): String = {
+    throw new RuntimeException("json.dumps is not implemented in scala runtime yet")
+}
