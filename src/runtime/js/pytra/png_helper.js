@@ -1,3 +1,4 @@
+// source: src/pytra/utils/png.py
 // PNG 画像出力ヘルパ（JavaScript版）。
 
 const fs = require("node:fs");
