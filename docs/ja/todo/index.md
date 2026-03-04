@@ -41,9 +41,9 @@
 3. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-02] `PyRuntime.java` 内の SoT 由来実装を棚卸しし、削除対象と移管先（`pytra-gen/std|utils`）を確定する。
 4. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-01] `src/pytra/std/{time,json,pathlib,math}.py` の Java 生成導線を整備し、`src/runtime/java/pytra-gen/std/*.java` を生成可能にする。
 5. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-02] Java runtime 配布導線（backend registry / runtime hook）を `pytra-core + pytra-gen/std + pytra-gen/utils` 前提へ更新する。
-6. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
+6. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
 7. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
-8. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
+8. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
 9. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
 10. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を `runtime_call/resolved_runtime_call` 経路へ寄せたが、`json.*` 素通しは現行 `pytra-gen/std/json.java` 品質でコンパイル不成立のため一旦ロールバックし、継続課題として保持した。
@@ -54,6 +54,8 @@
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から `write_rgb_png/save_gif/grayscale_palette` 本体を削除し、`tools/check_java_pyruntime_boundary.py` で再混入禁止を fail-fast 化した（json/pathlib は残課題）。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から `pyJsonDumps/pyJsonLoads/jsonStringify/jsonEscapeString/JsonParser` を除去し、境界ガードへ JSON 禁止シンボルを追加した（pathlib は残課題）。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] `tools/check_java_pyruntime_boundary.py` を `run_local_ci.py` へ組み込み済み。禁止シンボルは image 互換ラッパ + `pyPerfCounter` / `pyMath*` まで拡張した（json/pathlib は継続）。
+- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] `Path` 解決を `pathlib.Path` 直描画へ移行し、Java emitter の `PyRuntime.Path` 依存とライブラリ依存 rename（`pyCamel` 変換）を撤去した。
+- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から `Path/pyPath*` を除去し、JSON/image/time/math と合わせて std/utils 実装本体の core 残置を解消した。Java smoke/parity（`sample/01,05,18`）再確認済み。
 
 ### P0: 非C++ emitter のライブラリ関数名直書き再発防止（IR解決 + CIガード）
 
