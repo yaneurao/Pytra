@@ -733,7 +733,11 @@ class NimNativeEmitter:
             if call_name == "skip_newlines":
                 self._emit_line(expr)
                 return
-            if call_name == "save_gif" or call_name == "pop":
+            semantic_tag = ""
+            semantic_tag_any = value_node.get("semantic_tag")
+            if isinstance(semantic_tag_any, str):
+                semantic_tag = semantic_tag_any
+            if semantic_tag == "stdlib.symbol.save_gif" or call_name == "pop":
                 self._emit_line("discard " + expr)
                 return
             resolved = value_node.get("resolved_type")
@@ -1297,7 +1301,12 @@ class NimNativeEmitter:
             attr = _safe_ident(expr.get("attr"))
             if value == "math" and attr == "pi":
                 return "PI"
-            if value in ("png", "v_png") and attr == "write_rgb_png": return "write_rgb_png"
+            resolved_runtime_any = expr.get("resolved_runtime_call")
+            resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
+            resolved_source_any = expr.get("resolved_runtime_source")
+            resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
+            if resolved_source == "module_attr" and resolved_runtime != "" and "." not in resolved_runtime:
+                return _safe_ident(resolved_runtime)
             return f"{value}.{attr}"
         elif kind == "Unbox" or kind == "Box":
             return self._render_expr(expr.get("value"))

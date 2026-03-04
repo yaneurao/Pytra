@@ -40,8 +40,6 @@ src/backends/lua/emitter/lua_native_emitter.py:596:save_gif
 src/backends/lua/emitter/lua_native_emitter.py:599:grayscale_palette
 src/backends/lua/emitter/lua_native_emitter.py:599:pytra.utils.gif
 src/backends/lua/emitter/lua_native_emitter.py:602:pytra.utils.gif
-src/backends/nim/emitter/nim_native_emitter.py:1300:write_rgb_png
-src/backends/nim/emitter/nim_native_emitter.py:736:save_gif
 src/backends/php/emitter/php_native_emitter.py:220:write_rgb_png
 src/backends/php/emitter/php_native_emitter.py:232:save_gif
 src/backends/php/emitter/php_native_emitter.py:434:perf_counter
