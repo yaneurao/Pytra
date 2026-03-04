@@ -63,7 +63,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ を正本準拠の基準実装として再確認し、他言語比較の基準を固定する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
-- [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
+- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
@@ -90,3 +90,4 @@
 - 2026-03-04: `S1-04` 追加前進。`go/java/swift/kotlin/ruby/php` native emitter に `Try` 縮退出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_try_wave1.json` で `probe fail` を `lua` のみへ縮小。`Try` 非対応起因の fail は解消済み。
 - 2026-03-04: `S1-04` 完了。Lua emitter に `Try` 縮退と table/bytes slice 出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_lua_try_slice.json` で全14言語 `probe(png/gif)=ok` を確認。
 - 2026-03-04: `S2-JS` 完了。`src/runtime/js/pytra/{png_helper.js,gif_helper.js}` に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、`work/logs/runtime_parity_sample_js_0105_s2_20260304.json` で `sample/01,05` parity pass、`work/logs/image_runtime_sot_audit_20260304_after_js_marker.json` で `js: compliant_marker_present` を確認。
+- 2026-03-04: `S2-TS` 完了。`src/runtime/ts/pytra/{png_helper.ts,gif_helper.ts}` に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、`work/logs/runtime_parity_sample_ts_0105_s2_20260304.json` で `sample/01,05` parity pass、`work/logs/image_runtime_sot_audit_20260304_after_ts_marker.json` で `ts: compliant_marker_present` を確認。

@@ -1,3 +1,4 @@
+// source: src/pytra/utils/gif.py
 // GIF 画像出力ヘルパ（TypeScript版）。
 
 import fs from "node:fs";
