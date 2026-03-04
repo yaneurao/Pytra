@@ -112,7 +112,7 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルを IR 解決経由へ統一、禁止ガード allowlist を継続縮退する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec` / `docs/en/spec` に責務境界（IR解決 vs emitter描画）を明文化する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
@@ -169,3 +169,4 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03`] TS backend（JS 経由）でも未解決 stdlib 呼び出しが fail-closed になることを `test_py2ts_smoke.py` の負例回帰で固定した。`transpile_to_typescript` が `transpile_to_js` の `RuntimeError` をそのまま伝播することを確認した（TS smoke 14件 green）。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03`] Rust emitter にも fail-closed を展開し、`semantic_tag=stdlib.*` かつ `runtime_call/resolved_runtime_call` 未解決の Call/Attribute を即 `RuntimeError` とした。`test_py2rs_smoke.py` に未解決 stdlib call の負例を追加し、Rust smoke 30件 green を確認した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03`] Lua emitter にも fail-closed を展開し、`semantic_tag=stdlib.*` かつ `runtime_call/resolved_runtime_call` 未解決の Call/Attribute を即 `RuntimeError` とした。`test_py2lua_smoke.py` に未解決 stdlib call の負例を追加し、Lua smoke 32件 green を確認した。既存 forbidden-symbol 負債の行番号ずれに合わせ allowlist を再生成した（件数は 10 のまま）。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03`] non-C++ 全 backend（`java/cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）で fail-closed を有効化し、各言語 smoke 負例を追加したため `S4-03` を完了扱いに更新した。
