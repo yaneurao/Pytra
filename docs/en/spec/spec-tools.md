@@ -14,7 +14,7 @@ Its goals are:
 ## 1. Daily Operations
 
 - `tools/run_local_ci.py`
-  - Purpose: Run minimal local CI in one pass (transpile regressions + unit tests + selfhost build + diff).
+  - Purpose: Run minimal local CI in one pass (version gates + runtime boundary guards + non-C++ emitter runtime-call guardrail + transpile regressions + unit tests + selfhost build + diff).
 - `tools/check_py2cpp_transpile.py`
   - Purpose: Batch-transpile `test/fixtures/` with `py2x.py --target cpp` and detect failures.
 - `tools/check_py2scala_transpile.py`
@@ -28,6 +28,8 @@ Its goals are:
   - Purpose: Verify parity between Python source-of-truth image runtime (PNG/GIF) and C++ side.
 - `tools/check_runtime_std_sot_guard.py`
   - Purpose: Enforce `src/pytra/std/*.py` and `src/pytra/utils/*.py` as source of truth, and fail on handwritten runtime implementations outside `pytra-gen` (currently guarded: `json/assertions/re/typing`). It also validates the full C++ `std/utils` runtime boundary (`pytra-gen` generated files + `pytra` forwarders + `pytra-core` split implementations).
+- `tools/check_emitter_runtimecall_guardrails.py`
+  - Purpose: Detect newly added direct `if/elif` string branching for runtime/stdlib symbols in non-C++ emitters, and fail on entries outside `tools/emitter_runtimecall_guardrails_allowlist.txt`.
 
 ## 2. Selfhost Related
 
