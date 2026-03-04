@@ -1,0 +1,64 @@
+# P0: 画像runtime 構成是正（`pytra-core` / `pytra-gen` 分離 + 正本自動生成）
+
+最終更新: 2026-03-04
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-IMAGE-RUNTIME-CORE-GEN-01`
+
+背景:
+- 既存の `P0-IMAGE-RUNTIME-SOT-LANG-01` は、marker 付与中心で「正本由来」を扱っており、`py_runtime.*` へ生成相当コードを直埋めする運用を許してしまっている。
+- ユーザー方針として、画像runtime（`png.py` / `gif.py` 由来）は C++ と同様に `pytra-gen` へ隔離し、`pytra-core` には手書き共通runtimeのみを置く必要がある。
+- したがって、旧P0は実現方式が誤っており、TODOから除去して新方式へ再起票する。
+
+目的:
+- 全言語 runtime の画像実装を `pytra-core` から排除し、`pytra-gen`（正本自動生成物）へ統一する。
+- backend/runtime hook/parity/監査を新レイアウト前提に再固定し、再発を機械的に防止する。
+
+対象:
+- `src/runtime/<lang>/...`（画像runtime配置）
+- 画像runtime生成導線（`src/pytra/utils/png.py`, `src/pytra/utils/gif.py` からの生成）
+- backend runtime copy hook
+- `tools/audit_image_runtime_sot.py` と parity 導線
+- `docs/ja/spec` / `docs/en/spec`
+
+非対象:
+- 画像以外の runtime API 大規模改修
+- README ベンチマーク表更新
+- C++ 既存 `pytra-core/pytra-gen` レイアウトの再設計
+
+受け入れ基準:
+- 全言語で、画像runtime実装本体（`write_rgb_png`/`save_gif`/`grayscale_palette`）が `pytra-gen` 側にのみ存在する。
+- `pytra-core` 側には画像実装本体が存在せず、必要な橋渡しコードのみ許可される。
+- 生成物には `source: src/pytra/utils/{png,gif}.py` と生成痕跡が残り、`tools/audit_image_runtime_sot.py` で検査可能である。
+- `sample/01` と `sample/05` の parity（stdout + artifact size + CRC32）が全対象言語で通る。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/audit_image_runtime_sot.py --probe-transpile --summary-json <log>`
+- `python3 tools/runtime_parity_check.py --case-root sample --targets <lang> 01_mandelbrot 05_mandelbrot_zoom --ignore-unstable-stdout --summary-json <log>`
+
+## 分解
+
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` 廃止を反映し、旧方式（marker中心）を無効化する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] `pytra-core` / `pytra-gen` 責務境界を spec に追記する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 画像runtime生成導線と出力先規約を全言語共通で実装する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] 監査スクリプトを新方式（物理分離・混入禁止）へ更新する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] Rust を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] Swift を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] Lua を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語 `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] backend runtime copy hook / build手順を新レイアウトへ更新する。
+- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] `pytra-core` 画像実装混入禁止チェックを CI/ローカルへ導入する。
+
+決定ログ:
+- 2026-03-04: ユーザー指示により、旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` は「間違った実現方式」と判定してTODOから削除。新方式（`pytra-core` / `pytra-gen` 分離）へ再起票した。

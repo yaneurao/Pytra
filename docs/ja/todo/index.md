@@ -32,49 +32,31 @@
 
 ## 未完了タスク
 
-### P0: PNG/GIF runtime 正本運用の言語別ロールアウト
+### P0: 画像runtime 構成是正（`pytra-core` / `pytra-gen` 分離 + 正本自動生成）
 
-文脈: [docs/ja/plans/p0-image-runtime-sot-lang-rollout.md](../plans/p0-image-runtime-sot-lang-rollout.md)
+文脈: [docs/ja/plans/p0-image-runtime-core-gen-rollout.md](../plans/p0-image-runtime-core-gen-rollout.md)
 
-1. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01] PNG/GIF runtime を全言語で `src/pytra/utils/{png,gif}.py` 正本由来生成へ統一し、手書き実装を撤去する。
-2. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語 image runtime の marker/probe 監査を実行し、ベースラインログを固定する。
-3. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止」を `docs/ja/spec` / `docs/en/spec` に明文化する。
-4. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 監査結果を言語別に分類し、`probe ok` / `probe fail` の着手順を確定する。
-5. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
-6. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ 正本由来実装を基準系として再確認する。
-7. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-8. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-9. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-10. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-11. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して `sample/01,05` parity を確認する。
-12. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-13. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-14. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-15. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-16. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-17. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-18. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-LUA] Lua image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-19. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-PHP] PHP image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-20. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-01] 全言語監査を再実行し、未解決件数を 0 にする。
-21. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-02] 手書き混入検知を parity/CI 導線へ組み込み、再発防止を固定する。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] `python3 tools/audit_image_runtime_sot.py --probe-transpile --summary-json work/logs/image_runtime_sot_audit_20260304.json` を実行し、`languages=14/compliant=1/non_compliant=13` の基準値を記録。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] `probe ok: cs/js/ts/scala/nim`、`probe fail: rs/go/java/swift/kotlin/ruby/lua/php` に分割して言語別P0の着手順を確定。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 2026-03-04 運用是正: `png.py/gif.py` のターゲット都合変更はルール違反のため取り消し。以後は正本不変で backend 側修正のみで green 化する。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 巻き戻し後に `work/logs/image_runtime_sot_audit_20260304_after_revert.json` を再取得し、`probe ok: cs/js/ts/scala/nim` / `probe fail: rs/go/java/swift/kotlin/ruby/lua/php` を再確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] Rust emitter に `Try` 縮退出力を追加して `png.py/gif.py` の transpile probe を復旧。`work/logs/image_runtime_sot_audit_20260304_after_rs_try.json` で `probe ok: cpp/cs/js/ts/scala/nim/rs`、`probe fail: go/java/swift/kotlin/ruby/lua/php` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] `go/java/swift/kotlin/ruby/php` emitter にも `Try` 縮退出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_try_wave1.json` で `probe fail` を `lua` のみに削減（`probe ok: cpp/cs/js/ts/scala/nim/rs/go/java/swift/kotlin/ruby/php`）。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] Lua emitter の `Try/Slice` を backend 側で対応し、`work/logs/image_runtime_sot_audit_20260304_after_lua_try_slice.json` で全14言語 `probe(png/gif)=ok` を確認して完了。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] backend 側修正（C# emitter の `bytes/extend/to_bytes/shadow` 対応、`py_runtime.py_int_to_bytes` 追加、`tools/gen_cs_image_runtime_from_canonical.py` 追加）を実施。生成helper差し替えは compile fail のため巻き戻し、`work/logs/runtime_parity_sample_cs_0105_after_restore_20260304.json` で `01/05` parity pass を再確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# emitter/runtime を補強（`list+list` concat、`open`、shift/cmp 型整合、`py_bytes(object)`）し、`tools/gen_cs_image_runtime_from_canonical.py` で `png_helper.cs/gif_helper.cs` を正本由来へ再生成。`runtime_parity_check`（`sample/01_mandelbrot`,`05_mandelbrot_zoom`）で pass、`image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] `png_helper.js/gif_helper.js` に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、`runtime_parity_sample_js_0105_s2_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_js_marker.json` で `js: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] `png_helper.ts/gif_helper.ts` に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、`runtime_parity_sample_ts_0105_s2_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_ts_marker.json` で `ts: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala runtime に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、keyword 引数を落としていた Scala emitter の call lower を修正。`runtime_parity_sample_scala_0105_s2_retry_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_scala_marker.json` で `scala: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim emitter の `keywords` 伝播・`print` 空白整形・`break/continue` 制御文化・`bytearray/bytes/uint8` 型整合を修正し、`runtime_parity_sample_nim_0105_s2_retry5_20260304.json` で `sample/01,05` parity pass。`image_runtime_sot_audit_20260304_after_nim_s2_complete.json` で `nim: compliant_marker_present` を再確認して完了。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust runtime（`py_runtime.rs`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_rs_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_rs_s3_complete.json` で `rs: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go runtime（`py_runtime.go`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_go_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_go_s3_complete.json` で `go: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java runtime（`PyRuntime.java`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_java_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_java_s3_complete.json` で `java: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift runtime（`py_runtime.swift`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_swift_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_swift_s3_complete.json` で `swift: compliant_marker_present` を確認。
-- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin runtime（`py_runtime.kt`）へ SoT marker（`source: src/pytra/utils/{png,gif}.py`）を追記し、`runtime_parity_sample_kotlin_0105_s3_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_kotlin_s3_complete.json` で `kotlin: compliant_marker_present` を確認。
+1. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01] 全言語の画像runtimeを `pytra-core`（手書き）と `pytra-gen`（`src/pytra/utils/{png,gif}.py` 由来生成物）へ物理分離し、旧「marker中心」運用を廃止する。
+2. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` を誤った実現方式として廃止し、TODOから削除した履歴を計画書へ明記する。
+3. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] 画像runtimeの責務境界（`pytra-core` 禁止事項 / `pytra-gen` 必須事項 / 正本変更禁止）を `docs/ja/spec` と `docs/en/spec` に追記する。
+4. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 各バックエンド共通の生成導線（`png.py/gif.py -> <lang> runtime`）と出力先規約（`src/runtime/<lang>/{pytra-core,pytra-gen}`）を実装する。
+5. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] `tools/audit_image_runtime_sot.py` を「marker有無」から「`pytra-gen` 実体 + 生成痕跡 + core混入禁止」検査へ置換する。
+6. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RS] Rust runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.rs` から撤去する。
+7. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.go` から撤去する。
+8. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `PyRuntime.java` から撤去する。
+9. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] Swift runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.swift` から撤去する。
+10. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.kt` から撤去する。
+11. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.rb` から撤去する。
+12. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] Lua runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.lua` から撤去する。
+13. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.php` / `runtime/*.php` の責務境界に沿って再配置する。
+14. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.cs` 直埋めから撤去する。
+15. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
+16. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
+17. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.scala` 直埋めから撤去する。
+18. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.nim` 直埋めから撤去する。
+19. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
+20. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] 各backendの runtime copy hook / build手順を新レイアウトへ更新する。
+21. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] CI/ローカル検査へ「`pytra-core` に画像実装が混入したらfail」を追加する。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 
