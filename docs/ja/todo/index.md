@@ -45,7 +45,7 @@
 7. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 8. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 9. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-10. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+10. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 11. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して `sample/01,05` parity を確認する。
 12. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 13. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
@@ -68,6 +68,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# emitter/runtime を補強（`list+list` concat、`open`、shift/cmp 型整合、`py_bytes(object)`）し、`tools/gen_cs_image_runtime_from_canonical.py` で `png_helper.cs/gif_helper.cs` を正本由来へ再生成。`runtime_parity_check`（`sample/01_mandelbrot`,`05_mandelbrot_zoom`）で pass、`image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] `png_helper.js/gif_helper.js` に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、`runtime_parity_sample_js_0105_s2_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_js_marker.json` で `js: compliant_marker_present` を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] `png_helper.ts/gif_helper.ts` に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、`runtime_parity_sample_ts_0105_s2_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_ts_marker.json` で `ts: compliant_marker_present` を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala runtime に SoT marker（`source: src/pytra/utils/{png,gif}.py`）を付与し、keyword 引数を落としていた Scala emitter の call lower を修正。`runtime_parity_sample_scala_0105_s2_retry_20260304.json` で `sample/01,05` parity pass、`image_runtime_sot_audit_20260304_after_scala_marker.json` で `scala: compliant_marker_present` を確認。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 

@@ -837,6 +837,17 @@ def _call_name(expr: dict[str, Any]) -> str:
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
+    kw_values: list[Any] = []
+    keywords_any = expr.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    i_kw = 0
+    while i_kw < len(keywords):
+        kw = keywords[i_kw]
+        if isinstance(kw, dict) and "value" in kw:
+            kw_values.append(kw.get("value"))
+        i_kw += 1
+    if len(kw_values) > 0:
+        args = args + kw_values
 
     callee_name = _call_name(expr)
     if callee_name == "super":

@@ -101,7 +101,7 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         scala = transpile_to_scala_native(east)
-        self.assertIn("__pytra_save_gif(out_path, width, height, frames, julia_palette())", scala)
+        self.assertIn("__pytra_save_gif(out_path, width, height, frames, julia_palette(), 8L, 0L)", scala)
         self.assertNotIn("__pytra_noop(out_path, width, height, frames, julia_palette())", scala)
         self.assertNotIn("def __pytra_save_gif(", scala)
 

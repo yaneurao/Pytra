@@ -1,5 +1,7 @@
 // Auto-generated canonical Scala runtime for Pytra native backend.
 // Source of truth: src/runtime/scala/pytra/py_runtime.scala
+// source: src/pytra/utils/png.py
+// source: src/pytra/utils/gif.py
 
 import scala.collection.mutable
 import java.nio.file.{Files, Paths}
