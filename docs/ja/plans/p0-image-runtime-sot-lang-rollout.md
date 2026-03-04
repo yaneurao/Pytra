@@ -59,7 +59,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語の image runtime を自動監査し、marker/probe のベースラインログを固定する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止（正本由来のみ）」を `docs/ja/spec` / `docs/en/spec` へ明文化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 言語別の着手順（probe ok 群 / probe fail 群）を計画へ確定する。
-- [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
+- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ を正本準拠の基準実装として再確認し、他言語比較の基準を固定する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
@@ -88,3 +88,4 @@
 - 2026-03-04: `S2-CS` 完了。`CSharpEmitter` に `list+list` concat / `open()` / shift-cast / compare 括弧を追加し、`py_runtime.cs` に `PyFile`, `open`, `py_bytes(object)`, `py_concat` を追加。`tools/gen_cs_image_runtime_from_canonical.py` 再生成後、`work/logs/runtime_parity_sample_cs_0105_canonical_retry_20260304.json` で `sample/01,05` pass、`work/logs/image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。
 - 2026-03-04: `S1-04` 前進。Rust emitter の未対応 `Try` を backend 側で縮退実装し、`src/pytra/utils/png.py` / `gif.py` の Rust transpile probe を green 化。`work/logs/image_runtime_sot_audit_20260304_after_rs_try.json` で `probe ok` が `cpp/cs/js/ts/scala/nim/rs` まで拡大したことを確認。
 - 2026-03-04: `S1-04` 追加前進。`go/java/swift/kotlin/ruby/php` native emitter に `Try` 縮退出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_try_wave1.json` で `probe fail` を `lua` のみへ縮小。`Try` 非対応起因の fail は解消済み。
+- 2026-03-04: `S1-04` 完了。Lua emitter に `Try` 縮退と table/bytes slice 出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_lua_try_slice.json` で全14言語 `probe(png/gif)=ok` を確認。

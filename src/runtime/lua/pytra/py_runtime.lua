@@ -121,6 +121,50 @@ function __pytra_bytes(v)
     return {}
 end
 
+function __pytra_slice(seq, start_idx, stop_idx)
+    if type(seq) == "string" then
+        local n = #seq
+        local i = tonumber(start_idx) or 0
+        local j = stop_idx
+        if j == nil then
+            j = n
+        else
+            j = tonumber(j) or n
+        end
+        if i < 0 then i = i + n end
+        if j < 0 then j = j + n end
+        if i < 0 then i = 0 end
+        if j < 0 then j = 0 end
+        if i > n then i = n end
+        if j > n then j = n end
+        return string.sub(seq, math.floor(i) + 1, math.floor(j))
+    end
+    if type(seq) ~= "table" then
+        return {}
+    end
+    local n = #seq
+    local i = tonumber(start_idx) or 0
+    local j = stop_idx
+    if j == nil then
+        j = n
+    else
+        j = tonumber(j) or n
+    end
+    if i < 0 then i = i + n end
+    if j < 0 then j = j + n end
+    if i < 0 then i = 0 end
+    if j < 0 then j = 0 end
+    if i > n then i = n end
+    if j > n then j = n end
+    local out = {}
+    local from = math.floor(i) + 1
+    local to = math.floor(j)
+    for k = from, to do
+        out[#out + 1] = seq[k]
+    end
+    return out
+end
+
 function __pytra_contains(container, value)
     local t = type(container)
     if t == "table" then

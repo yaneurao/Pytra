@@ -1393,6 +1393,35 @@ class LuaNativeEmitter:
             else:
                 self._emit_line('error("error")')
             return
+        if kind == "Try":
+            body = self._dict_list(stmt.get("body"))
+            i = 0
+            while i < len(body):
+                self._emit_stmt(body[i])
+                i += 1
+            handlers_any = stmt.get("handlers")
+            handlers = handlers_any if isinstance(handlers_any, list) else []
+            i = 0
+            while i < len(handlers):
+                h = handlers[i]
+                if isinstance(h, dict):
+                    h_body = self._dict_list(h.get("body"))
+                    j = 0
+                    while j < len(h_body):
+                        self._emit_stmt(h_body[j])
+                        j += 1
+                i += 1
+            orelse = self._dict_list(stmt.get("orelse"))
+            i = 0
+            while i < len(orelse):
+                self._emit_stmt(orelse[i])
+                i += 1
+            finalbody = self._dict_list(stmt.get("finalbody"))
+            i = 0
+            while i < len(finalbody):
+                self._emit_stmt(finalbody[i])
+                i += 1
+            return
         if kind == "If":
             self._emit_if(stmt)
             return
@@ -1888,10 +1917,12 @@ class LuaNativeEmitter:
                 lower_node = index_node.get("lower")
                 upper_node = index_node.get("upper")
                 lower = self._render_expr(lower_node) if isinstance(lower_node, dict) else "0"
-                upper = self._render_expr(upper_node) if isinstance(upper_node, dict) else ("#" + owner)
+                upper = self._render_expr(upper_node) if isinstance(upper_node, dict) else "nil"
                 if owner_type == "str":
+                    if upper == "nil":
+                        upper = "#" + owner
                     return "string.sub(" + owner + ", (" + lower + ") + 1, " + upper + ")"
-                raise RuntimeError("lang=lua unsupported expr kind: Slice")
+                return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
             index = self._render_expr(index_node)
             if owner_type.startswith("dict["):
                 return owner + "[" + index + "]"

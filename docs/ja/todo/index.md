@@ -40,7 +40,7 @@
 2. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語 image runtime の marker/probe 監査を実行し、ベースラインログを固定する。
 3. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止」を `docs/ja/spec` / `docs/en/spec` に明文化する。
 4. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 監査結果を言語別に分類し、`probe ok` / `probe fail` の着手順を確定する。
-5. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
+5. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` は変更せず、backend 側修正のみで全 target の transpile probe を green 化する。
 6. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ 正本由来実装を基準系として再確認する。
 7. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
 8. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
@@ -63,6 +63,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 巻き戻し後に `work/logs/image_runtime_sot_audit_20260304_after_revert.json` を再取得し、`probe ok: cs/js/ts/scala/nim` / `probe fail: rs/go/java/swift/kotlin/ruby/lua/php` を再確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] Rust emitter に `Try` 縮退出力を追加して `png.py/gif.py` の transpile probe を復旧。`work/logs/image_runtime_sot_audit_20260304_after_rs_try.json` で `probe ok: cpp/cs/js/ts/scala/nim/rs`、`probe fail: go/java/swift/kotlin/ruby/lua/php` を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] `go/java/swift/kotlin/ruby/php` emitter にも `Try` 縮退出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_try_wave1.json` で `probe fail` を `lua` のみに削減（`probe ok: cpp/cs/js/ts/scala/nim/rs/go/java/swift/kotlin/ruby/php`）。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] Lua emitter の `Try/Slice` を backend 側で対応し、`work/logs/image_runtime_sot_audit_20260304_after_lua_try_slice.json` で全14言語 `probe(png/gif)=ok` を確認して完了。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] backend 側修正（C# emitter の `bytes/extend/to_bytes/shadow` 対応、`py_runtime.py_int_to_bytes` 追加、`tools/gen_cs_image_runtime_from_canonical.py` 追加）を実施。生成helper差し替えは compile fail のため巻き戻し、`work/logs/runtime_parity_sample_cs_0105_after_restore_20260304.json` で `01/05` parity pass を再確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# emitter/runtime を補強（`list+list` concat、`open`、shift/cmp 型整合、`py_bytes(object)`）し、`tools/gen_cs_image_runtime_from_canonical.py` で `png_helper.cs/gif_helper.cs` を正本由来へ再生成。`runtime_parity_check`（`sample/01_mandelbrot`,`05_mandelbrot_zoom`）で pass、`image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。
 
