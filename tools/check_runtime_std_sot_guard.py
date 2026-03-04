@@ -12,7 +12,7 @@ Current guarded module set:
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
 - typing (`TypeVar`)
-- C++ math shape (`pytra-gen/std/math.*` + `pytra-core/std/math-impl.*`)
+- C++ std/utils runtime shape (`pytra-gen` generated modules + forwarders + required core impl split)
 """
 
 from __future__ import annotations
@@ -94,6 +94,57 @@ RULES: dict[str, GuardRule] = {
     ),
 }
 
+CPP_GENERATED_STD_MODULES = [
+    "dataclasses",
+    "glob",
+    "json",
+    "math",
+    "os",
+    "pathlib",
+    "random",
+    "re",
+    "sys",
+    "time",
+    "timeit",
+    "traceback",
+    "typing",
+]
+
+CPP_GENERATED_UTILS_MODULES = [
+    "assertions",
+    "gif",
+    "png",
+]
+
+# module basename -> canonical Python source path.
+CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
+    "dataclasses": "src/pytra/std/dataclasses.py",
+    "glob": "src/pytra/std/glob.py",
+    "json": "src/pytra/std/json.py",
+    "math": "src/pytra/std/math.py",
+    "os": "src/pytra/std/os.py",
+    "pathlib": "src/pytra/std/pathlib.py",
+    "random": "src/pytra/std/random.py",
+    "re": "src/pytra/std/re.py",
+    "sys": "src/pytra/std/sys.py",
+    "time": "src/pytra/std/time.py",
+    "timeit": "src/pytra/std/timeit.py",
+    "traceback": "src/pytra/std/traceback.py",
+    "typing": "src/pytra/std/typing.py",
+    "assertions": "src/pytra/utils/assertions.py",
+    "gif": "src/pytra/utils/gif.py",
+    "png": "src/pytra/utils/png.py",
+}
+
+# forwarder basename -> required pytra-core target file.
+CPP_REQUIRED_CORE_IMPL_FORWARDERS: dict[str, str] = {
+    "dataclasses-impl.h": "src/runtime/cpp/pytra-core/std/dataclasses-impl.h",
+    "math-impl.h": "src/runtime/cpp/pytra-core/std/math-impl.h",
+    "math-impl.cpp": "src/runtime/cpp/pytra-core/std/math-impl.cpp",
+    "time-impl.h": "src/runtime/cpp/pytra-core/std/time-impl.h",
+    "time-impl.cpp": "src/runtime/cpp/pytra-core/std/time-impl.cpp",
+}
+
 
 def _parse_allowlist() -> dict[str, set[str]]:
     out: dict[str, set[str]] = {}
@@ -137,64 +188,77 @@ def _is_generated_runtime(rel_path: str) -> bool:
     return "/pytra-gen/" in ("/" + rel_path)
 
 
-def _check_cpp_math_shape(violations: list[str]) -> None:
-    required = [
-        "src/runtime/cpp/pytra-gen/std/math.h",
-        "src/runtime/cpp/pytra-gen/std/math.cpp",
-        "src/runtime/cpp/pytra-core/std/math-impl.h",
-        "src/runtime/cpp/pytra-core/std/math-impl.cpp",
-        "src/runtime/cpp/pytra/std/math.h",
-        "src/runtime/cpp/pytra/std/math.cpp",
-    ]
-    for rel in required:
-        if not (ROOT / rel).exists():
-            violations.append(f"[math] missing required runtime file: {rel}")
+def _check_cpp_runtime_shape(violations: list[str]) -> None:
+    # 1) Generated std/utils modules must exist under pytra-gen with canonical source marker.
+    for module_name in CPP_GENERATED_STD_MODULES:
+        source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
+        for ext in ("h", "cpp"):
+            gen_rel = f"src/runtime/cpp/pytra-gen/std/{module_name}.{ext}"
+            gen_path = ROOT / gen_rel
+            if not gen_path.exists():
+                violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
+                continue
+            txt = gen_path.read_text(encoding="utf-8", errors="ignore")
+            marker = "source: " + source_rel
+            if marker not in txt:
+                violations.append(
+                    f"[{module_name}] {gen_rel} missing canonical source marker ({marker})"
+                )
 
-    gen_header = ROOT / "src/runtime/cpp/pytra-gen/std/math.h"
-    gen_source = ROOT / "src/runtime/cpp/pytra-gen/std/math.cpp"
-    marker = "source: src/pytra/std/math.py"
-    if gen_header.exists():
-        txt = gen_header.read_text(encoding="utf-8", errors="ignore")
-        if marker not in txt:
-            violations.append(
-                "[math] src/runtime/cpp/pytra-gen/std/math.h missing canonical source marker"
-            )
-    if gen_source.exists():
-        txt = gen_source.read_text(encoding="utf-8", errors="ignore")
-        if marker not in txt:
-            violations.append(
-                "[math] src/runtime/cpp/pytra-gen/std/math.cpp missing canonical source marker"
-            )
+    for module_name in CPP_GENERATED_UTILS_MODULES:
+        source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
+        for ext in ("h", "cpp"):
+            gen_rel = f"src/runtime/cpp/pytra-gen/utils/{module_name}.{ext}"
+            gen_path = ROOT / gen_rel
+            if not gen_path.exists():
+                violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
+                continue
+            txt = gen_path.read_text(encoding="utf-8", errors="ignore")
+            marker = "source: " + source_rel
+            if marker not in txt:
+                violations.append(
+                    f"[{module_name}] {gen_rel} missing canonical source marker ({marker})"
+                )
 
-    fw_header = ROOT / "src/runtime/cpp/pytra/std/math.h"
-    if fw_header.exists():
-        txt = fw_header.read_text(encoding="utf-8", errors="ignore")
-        if "runtime/cpp/pytra-gen/std/math.h" not in txt:
-            violations.append(
-                "[math] src/runtime/cpp/pytra/std/math.h must forward to pytra-gen/std/math.h"
-            )
-    fw_source = ROOT / "src/runtime/cpp/pytra/std/math.cpp"
-    if fw_source.exists():
-        txt = fw_source.read_text(encoding="utf-8", errors="ignore")
-        if "runtime/cpp/pytra-gen/std/math.cpp" not in txt:
-            violations.append(
-                "[math] src/runtime/cpp/pytra/std/math.cpp must forward to pytra-gen/std/math.cpp"
-            )
+    # 2) Compatibility layer under src/runtime/cpp/pytra must be forwarder-only to pytra-gen.
+    for module_name in CPP_GENERATED_STD_MODULES:
+        for ext in ("h", "cpp"):
+            fw_rel = f"src/runtime/cpp/pytra/std/{module_name}.{ext}"
+            fw_path = ROOT / fw_rel
+            if not fw_path.exists():
+                violations.append(f"[{module_name}] missing forwarder file: {fw_rel}")
+                continue
+            txt = fw_path.read_text(encoding="utf-8", errors="ignore")
+            expected = f"runtime/cpp/pytra-gen/std/{module_name}.{ext}"
+            if expected not in txt:
+                violations.append(f"[{module_name}] {fw_rel} must forward to {expected}")
 
-    impl_header = ROOT / "src/runtime/cpp/pytra-core/std/math-impl.h"
-    if impl_header.exists():
-        txt = impl_header.read_text(encoding="utf-8", errors="ignore")
-        if "namespace pytra::std::math_impl" not in txt:
-            violations.append(
-                "[math] src/runtime/cpp/pytra-core/std/math-impl.h must define math_impl namespace"
-            )
-    impl_source = ROOT / "src/runtime/cpp/pytra-core/std/math-impl.cpp"
-    if impl_source.exists():
-        txt = impl_source.read_text(encoding="utf-8", errors="ignore")
-        if "namespace pytra::std::math_impl" not in txt:
-            violations.append(
-                "[math] src/runtime/cpp/pytra-core/std/math-impl.cpp must define math_impl namespace"
-            )
+    for module_name in CPP_GENERATED_UTILS_MODULES:
+        for ext in ("h", "cpp"):
+            fw_rel = f"src/runtime/cpp/pytra/utils/{module_name}.{ext}"
+            fw_path = ROOT / fw_rel
+            if not fw_path.exists():
+                violations.append(f"[{module_name}] missing forwarder file: {fw_rel}")
+                continue
+            txt = fw_path.read_text(encoding="utf-8", errors="ignore")
+            expected = f"runtime/cpp/pytra-gen/utils/{module_name}.{ext}"
+            if expected not in txt:
+                violations.append(f"[{module_name}] {fw_rel} must forward to {expected}")
+
+    # 3) Required handwritten impl split must remain under pytra-core, with pytra forwarders.
+    for fw_name, core_rel in CPP_REQUIRED_CORE_IMPL_FORWARDERS.items():
+        core_path = ROOT / core_rel
+        if not core_path.exists():
+            violations.append(f"[cpp-core-impl] missing core implementation file: {core_rel}")
+        fw_rel = "src/runtime/cpp/pytra/std/" + fw_name
+        fw_path = ROOT / fw_rel
+        if not fw_path.exists():
+            violations.append(f"[cpp-core-impl] missing forwarder file: {fw_rel}")
+            continue
+        txt = fw_path.read_text(encoding="utf-8", errors="ignore")
+        expected = core_rel.replace("src/", "")
+        if expected not in txt:
+            violations.append(f"[cpp-core-impl] {fw_rel} must forward to {expected}")
 
 
 def main() -> int:
@@ -228,7 +292,7 @@ def main() -> int:
                 continue
             violations.append(f"[{module_name}] {rel}")
 
-    _check_cpp_math_shape(violations)
+    _check_cpp_runtime_shape(violations)
 
     for module_name, paths in allow.items():
         for rel in sorted(paths):
