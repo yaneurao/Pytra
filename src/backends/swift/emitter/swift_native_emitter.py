@@ -409,6 +409,16 @@ def _bin_op_symbol(op: Any) -> str:
         return "%"
     if op == "FloorDiv":
         return "/"
+    if op == "LShift":
+        return "<<"
+    if op == "RShift":
+        return ">>"
+    if op == "BitAnd":
+        return "&"
+    if op == "BitOr":
+        return "|"
+    if op == "BitXor":
+        return "^"
     return "+"
 
 
@@ -610,6 +620,50 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(func_any.get("id"), "")
 
 
+def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
+    args_any = expr.get("args")
+    args = args_any if isinstance(args_any, list) else []
+    out: list[Any] = []
+    i = 0
+    while i < len(args):
+        out.append(args[i])
+        i += 1
+    keywords_any = expr.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if len(keywords) > 0:
+        j = 0
+        while j < len(keywords):
+            kw = keywords[j]
+            if isinstance(kw, dict):
+                out.append(kw.get("value"))
+            else:
+                out.append(kw)
+            j += 1
+        return out
+    kw_values_any = expr.get("kw_values")
+    kw_values = kw_values_any if isinstance(kw_values_any, list) else []
+    if len(kw_values) > 0:
+        j = 0
+        while j < len(kw_values):
+            out.append(kw_values[j])
+            j += 1
+        return out
+    kw_nodes_any = expr.get("kw_nodes")
+    kw_nodes = kw_nodes_any if isinstance(kw_nodes_any, list) else []
+    j = 0
+    while j < len(kw_nodes):
+        node = kw_nodes[j]
+        if isinstance(node, dict):
+            if node.get("kind") == "keyword":
+                out.append(node.get("value"))
+            else:
+                out.append(node)
+        else:
+            out.append(node)
+        j += 1
+    return out
+
+
 def _class_has_base_method(class_name: str, method_name: str) -> bool:
     seen: set[str] = set()
     cur = _CLASS_BASES.get(class_name, "")
@@ -623,8 +677,7 @@ def _class_has_base_method(class_name: str, method_name: str) -> bool:
 
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
-    args_any = expr.get("args")
-    args = args_any if isinstance(args_any, list) else []
+    args = _call_arg_nodes(expr)
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
@@ -698,14 +751,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
     if callee_name == "save_gif":
-        rendered_noop_args: list[str] = []
+        rendered_gif_args: list[str] = []
         i = 0
         while i < len(args):
-            rendered_noop_args.append(_render_expr(args[i]))
+            rendered_gif_args.append(_render_expr(args[i]))
             i += 1
-        return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+        return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
     if callee_name == "grayscale_palette":
-        return "[]"
+        return "__pytra_grayscale_palette()"
     if callee_name == "print":
         rendered_args: list[str] = []
         i = 0
@@ -749,12 +802,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 i += 1
             return "__pytra_write_rgb_png(" + ", ".join(rendered_png_args) + ")"
         if attr_name == "save_gif":
-            rendered_noop_args: list[str] = []
+            rendered_gif_args: list[str] = []
             i = 0
             while i < len(args):
-                rendered_noop_args.append(_render_expr(args[i]))
+                rendered_gif_args.append(_render_expr(args[i]))
                 i += 1
-            return "__pytra_noop(" + ", ".join(rendered_noop_args) + ")"
+            return "__pytra_save_gif(" + ", ".join(rendered_gif_args) + ")"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -1081,7 +1134,26 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         if name == "len":
             return "Int64"
         if name in {"min", "max"}:
-            return "Int64"
+            args_any = expr.get("args")
+            args = args_any if isinstance(args_any, list) else []
+            saw_float = False
+            saw_int = False
+            i = 0
+            while i < len(args):
+                at = _infer_swift_type(args[i], type_map)
+                if at == "Double":
+                    saw_float = True
+                elif at == "Int64":
+                    saw_int = True
+                i += 1
+            if saw_float:
+                return "Double"
+            if saw_int:
+                return "Int64"
+            resolved = _swift_type(expr.get("resolved_type"), allow_void=False)
+            if resolved in {"Int64", "Double"}:
+                return resolved
+            return "Any"
         if name in _CLASS_NAMES:
             return name
     if kind == "BinOp":

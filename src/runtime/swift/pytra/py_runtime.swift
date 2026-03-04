@@ -343,6 +343,158 @@ func __pytra_write_rgb_png(_ path: Any?, _ width: Any?, _ height: Any?, _ pixels
     try? Data(png).write(to: outURL)
 }
 
+func __pytra_to_bytes(_ v: Any?) -> [UInt8] {
+    if let arr = v as? [UInt8] {
+        return arr
+    }
+    if let arr = v as? [Any] {
+        var out: [UInt8] = []
+        out.reserveCapacity(arr.count)
+        for item in arr {
+            out.append(__pytra_to_u8(item))
+        }
+        return out
+    }
+    if let data = v as? Data {
+        return [UInt8](data)
+    }
+    if let s = v as? String {
+        return [UInt8](s.utf8)
+    }
+    return []
+}
+
+func __pytra_lzw_encode(_ data: [UInt8], _ minCodeSize: Int = 8) -> [UInt8] {
+    if data.isEmpty {
+        return []
+    }
+    let clearCode = 1 << minCodeSize
+    let endCode = clearCode + 1
+    let codeSize = minCodeSize + 1
+
+    var out: [UInt8] = []
+    var bitBuffer = 0
+    var bitCount = 0
+
+    func emit(_ code: Int) {
+        bitBuffer |= (code << bitCount)
+        bitCount += codeSize
+        while bitCount >= 8 {
+            out.append(UInt8(bitBuffer & 0xFF))
+            bitBuffer >>= 8
+            bitCount -= 8
+        }
+    }
+
+    emit(clearCode)
+    for v in data {
+        emit(Int(v))
+        emit(clearCode)
+    }
+    emit(endCode)
+    if bitCount > 0 {
+        out.append(UInt8(bitBuffer & 0xFF))
+    }
+    return out
+}
+
+func __pytra_append_u16le(_ out: inout [UInt8], _ value: Int) {
+    let v = UInt16(truncatingIfNeeded: value)
+    out.append(UInt8(v & 0xFF))
+    out.append(UInt8((v >> 8) & 0xFF))
+}
+
+func __pytra_grayscale_palette() -> [Any] {
+    var p: [Any] = []
+    p.reserveCapacity(256 * 3)
+    var i: Int64 = 0
+    while i < 256 {
+        p.append(i)
+        p.append(i)
+        p.append(i)
+        i += 1
+    }
+    return p
+}
+
+func __pytra_save_gif(
+    _ path: Any?,
+    _ width: Any?,
+    _ height: Any?,
+    _ frames: Any?,
+    _ palette: Any?,
+    _ delayCs: Any? = Int64(4),
+    _ loop: Any? = Int64(0)
+) {
+    let outPath = __pytra_str(path)
+    let w = Int(__pytra_int(width))
+    let h = Int(__pytra_int(height))
+    if w <= 0 || h <= 0 {
+        return
+    }
+
+    let pal = __pytra_to_bytes(palette)
+    if pal.count != 256 * 3 {
+        return
+    }
+
+    let frameBytes = w * h
+    let dcs = Int(__pytra_int(delayCs))
+    let lp = Int(__pytra_int(loop))
+    let frs = __pytra_as_list(frames)
+
+    var out: [UInt8] = []
+    out.append(contentsOf: [UInt8]("GIF89a".utf8))
+    __pytra_append_u16le(&out, w)
+    __pytra_append_u16le(&out, h)
+    out.append(0xF7)
+    out.append(0)
+    out.append(0)
+    out.append(contentsOf: pal)
+    out.append(contentsOf: [0x21, 0xFF, 0x0B])
+    out.append(contentsOf: [UInt8]("NETSCAPE2.0".utf8))
+    out.append(0x03)
+    out.append(0x01)
+    __pytra_append_u16le(&out, lp)
+    out.append(0x00)
+
+    for frAny in frs {
+        let fr = __pytra_to_bytes(frAny)
+        if fr.count != frameBytes {
+            return
+        }
+        out.append(contentsOf: [0x21, 0xF9, 0x04, 0x00])
+        __pytra_append_u16le(&out, dcs)
+        out.append(0x00)
+        out.append(0x00)
+        out.append(0x2C)
+        __pytra_append_u16le(&out, 0)
+        __pytra_append_u16le(&out, 0)
+        __pytra_append_u16le(&out, w)
+        __pytra_append_u16le(&out, h)
+        out.append(0x00)
+        out.append(0x08)
+
+        let compressed = __pytra_lzw_encode(fr, 8)
+        var pos = 0
+        while pos < compressed.count {
+            let len = min(255, compressed.count - pos)
+            out.append(UInt8(len))
+            out.append(contentsOf: compressed[pos..<(pos + len)])
+            pos += len
+        }
+        out.append(0x00)
+    }
+    out.append(0x3B)
+
+    let outURL = URL(fileURLWithPath: outPath)
+    let parent = outURL.deletingLastPathComponent()
+    if parent.path != "" && parent.path != "." {
+        try? FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+    }
+    try? Data(out).write(to: outURL)
+}
+
 func __pytra_bytearray(_ initValue: Any?) -> [Any] {
     if let i = initValue as? Int64 {
         return Array(repeating: Int64(0), count: max(0, Int(i)))

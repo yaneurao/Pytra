@@ -140,6 +140,8 @@
 - 2026-03-04: Kotlin emitter で `keywords`（`save_gif(delay_cs, loop)`）を位置引数へ合流し、`BitAnd/BitOr/BitXor/LShift/RShift` の演算子マッピング欠落を修正。`shl/shr` 右辺を `.toInt()` へ正規化して compile fail を解消し、`--targets kotlin --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`）。
 - 2026-03-04: Java emitter で `keywords` 合流、単項 `-` の括弧崩れ（`-(a+b)`→`-a+b`）修正、`BitAnd/BitOr/BitXor/LShift/RShift` マッピング追加を実施。Java runtime の PNG writer を `Deflater` 依存から Python準拠 stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
 - 2026-03-04: `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。`S3-01` の残件は Swift 全件完走と `cpp` 全件再実行のみ。
+- 2026-03-04: `tools/runtime_parity_check.py` の `run_shell` を `start_new_session=True` + `os.killpg(SIGKILL)` に変更し、timeout 時に子プロセス（`*_swift.out` など）が孤立しないよう修正。合わせて Swift 実行を `swiftc -O` へ変更。
+- 2026-03-04: Swift 再検証として `01..04` を実行し、artifact parity が 4/4 `ok` を確認（`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`）。一方 `--all-samples --cmd-timeout-sec 300` では `05/06/07` が timeout で `run_failed` となることを再確認し、残件を「重いケースの実行戦略（timeout または Swift 側高速化）」へ整理した。
 
 ## 分解
 

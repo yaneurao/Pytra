@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import signal
 import shlex
 import shutil
 import subprocess
@@ -55,20 +56,32 @@ def run_shell(
     proc_env = os.environ.copy()
     if env is not None:
         proc_env.update(env)
+    proc = subprocess.Popen(
+        cmd,
+        cwd=cwd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=proc_env,
+        start_new_session=True,
+    )
     try:
-        return subprocess.run(
-            cmd,
-            cwd=cwd,
-            shell=True,
-            check=False,
-            capture_output=True,
-            text=True,
-            env=proc_env,
-            timeout=timeout_sec,
+        stdout_text, stderr_text = proc.communicate(timeout=timeout_sec)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=int(proc.returncode or 0),
+            stdout=stdout_text,
+            stderr=stderr_text,
         )
-    except subprocess.TimeoutExpired as exc:
-        stdout_text = exc.stdout if isinstance(exc.stdout, str) else ""
-        stderr_text = exc.stderr if isinstance(exc.stderr, str) else ""
+    except subprocess.TimeoutExpired:
+        # Kill the whole process group so compiled runners spawned by the shell
+        # cannot continue running in the background.
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        stdout_text, stderr_text = proc.communicate()
         timeout_note = f"[TIMEOUT] exceeded {timeout_sec}s: {cmd}"
         if stderr_text == "":
             stderr_text = timeout_note
@@ -341,7 +354,7 @@ def build_targets(
                 opt_arg,
             ),
             run_cmd=(
-                f"swiftc test/transpile/swift/{case_stem}.swift test/transpile/swift/py_runtime.swift "
+                f"swiftc -O test/transpile/swift/{case_stem}.swift test/transpile/swift/py_runtime.swift "
                 f"-o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out"
             ),
             needs=("python", "swiftc"),

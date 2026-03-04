@@ -67,6 +67,7 @@
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Kotlin で `keywords` 欠落（`save_gif(delay_cs=..., loop=...)`）と bit演算（`>>`, `<<`, `&`, `|`, `^`）の誤変換を修正し、`shl/shr` の右辺 `Int` 化も追加。`--targets kotlin --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] Java で `keywords` 欠落、単項 `-` の括弧崩れ、PNG writer の `Deflater` 非互換（Python非準拠）を修正。stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
 - 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。残件は Swift 全件完走と `cpp` 全件再実行。
+- 進捗メモ: [ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01-S3-01] `runtime_parity_check.py` の timeout 処理を process-group kill 化し、Swift 実行を `swiftc -O` へ変更。Swift `01..04` は 4/4 `ok`（`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`）だが、`--all-samples --cmd-timeout-sec 300` では `05/06/07` が timeout 残件。
 
 ### P0: sample/13 PHP parity 不一致（frames 147→2）原因調査
 
