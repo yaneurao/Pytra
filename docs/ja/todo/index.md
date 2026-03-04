@@ -40,24 +40,26 @@
 2. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語 image runtime の marker/probe 監査を実行し、ベースラインログを固定する。
 3. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止」を `docs/ja/spec` / `docs/en/spec` に明文化する。
 4. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 監査結果を言語別に分類し、`probe ok` / `probe fail` の着手順を確定する。
-5. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ 正本由来実装を基準系として再確認する。
-6. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-7. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-8. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-9. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
-10. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して `sample/01,05` parity を確認する。
-11. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-12. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-13. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-14. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-15. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-16. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-17. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-LUA] Lua の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-18. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-PHP] PHP の `png.py/gif.py` 変換阻害を解消し、正本由来生成へ移行する。
-19. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-01] 全言語監査を再実行し、未解決件数を 0 にする。
-20. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-02] 手書き混入検知を parity/CI 導線へ組み込み、再発防止を固定する。
+5. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` を backend 互換 subset へ正規化し、全 target の transpile probe を green 化する。
+6. [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ 正本由来実装を基準系として再確認する。
+7. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+8. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+9. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-TS] TypeScript image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+10. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-SCALA] Scala3 image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+11. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-NIM] Nim image helper 手書きを撤去し、正本由来生成へ置換して `sample/01,05` parity を確認する。
+12. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RS] Rust image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+13. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-GO] Go image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+14. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-JAVA] Java image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+15. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-SWIFT] Swift image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+16. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-KOTLIN] Kotlin image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+17. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-RUBY] Ruby image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+18. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-LUA] Lua image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+19. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S3-PHP] PHP image helper を正本由来生成へ切替し、`sample/01,05` parity を確認する。
+20. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-01] 全言語監査を再実行し、未解決件数を 0 にする。
+21. [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S4-02] 手書き混入検知を parity/CI 導線へ組み込み、再発防止を固定する。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] `python3 tools/audit_image_runtime_sot.py --probe-transpile --summary-json work/logs/image_runtime_sot_audit_20260304.json` を実行し、`languages=14/compliant=1/non_compliant=13` の基準値を記録。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] `probe ok: cs/js/ts/scala/nim`、`probe fail: rs/go/java/swift/kotlin/ruby/lua/php` に分割して言語別P0の着手順を確定。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] `src/pytra/utils/png.py` / `gif.py` の subset 正規化（`with/slice/to_bytes/f-string` 非依存化）を実施し、`work/logs/image_runtime_sot_audit_20260304_v4.json` で全 target `probe png/gif=ok` を確認。`python3 tools/verify_image_runtime_parity.py` も `True` で退行なし。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 

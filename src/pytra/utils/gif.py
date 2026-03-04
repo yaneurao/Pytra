@@ -66,6 +66,10 @@ def grayscale_palette() -> bytes:
         i += 1
     return bytes(p)
 
+def _append_u16le(out: bytearray, value: int) -> None:
+    out.append(value & 0xFF)
+    out.append((value >> 8) & 0xFF)
+
 
 def save_gif(
     path: str,
@@ -86,8 +90,8 @@ def save_gif(
 
     out = bytearray()
     out.extend(b"GIF89a")
-    out.extend(width.to_bytes(2, "little"))
-    out.extend(height.to_bytes(2, "little"))
+    _append_u16le(out, width)
+    _append_u16le(out, height)
     out.append(0xF7)  # GCT flag=1, color resolution=7, table size=7 (256)
     out.append(0)  # background index
     out.append(0)  # pixel aspect ratio
@@ -95,32 +99,38 @@ def save_gif(
 
     # Netscape loop extension
     out.extend(b"\x21\xFF\x0BNETSCAPE2.0\x03\x01")
-    out.extend(loop.to_bytes(2, "little"))
+    _append_u16le(out, loop)
     out.append(0)
 
     for fr in frames:
         out.extend(b"\x21\xF9\x04\x00")
-        out.extend(delay_cs.to_bytes(2, "little"))
+        _append_u16le(out, delay_cs)
         out.extend(b"\x00\x00")
 
         out.append(0x2C)
-        out.extend((0).to_bytes(2, "little"))
-        out.extend((0).to_bytes(2, "little"))
-        out.extend(width.to_bytes(2, "little"))
-        out.extend(height.to_bytes(2, "little"))
+        _append_u16le(out, 0)
+        _append_u16le(out, 0)
+        _append_u16le(out, width)
+        _append_u16le(out, height)
         out.append(0)  # no local color table
 
         out.append(8)  # min LZW code size
         compressed = _lzw_encode(fr, 8)
         pos = 0
         while pos < len(compressed):
-            chunk = compressed[pos : pos + 255]
-            out.append(len(chunk))
-            out.extend(chunk)
-            pos += len(chunk)
+            chunk_len = len(compressed) - pos
+            if chunk_len > 255:
+                chunk_len = 255
+            out.append(chunk_len)
+            i = 0
+            while i < chunk_len:
+                out.append(compressed[pos + i])
+                i += 1
+            pos += chunk_len
         out.append(0)
 
     out.append(0x3B)
 
-    with open(path, "wb") as f:
-        f.write(out)
+    f = open(path, "wb")
+    f.write(out)
+    f.close()

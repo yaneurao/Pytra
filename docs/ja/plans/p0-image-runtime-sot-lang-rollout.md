@@ -45,20 +45,21 @@
 | ts | missing | ok/ok | 生成パイプライン化 + marker 付与 |
 | scala | missing | ok/ok | 生成パイプライン化 + marker 付与 |
 | nim | missing | ok/ok | 手書き撤去・生成置換 |
-| rs | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| go | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| java | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| swift | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| kotlin | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| ruby | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| lua | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
-| php | missing | fail/fail | `png.py`/`gif.py` 変換阻害を解消 |
+| rs | missing | ok/ok | 生成置換 + parity 固定 |
+| go | missing | ok/ok | 生成置換 + parity 固定 |
+| java | missing | ok/ok | 生成置換 + parity 固定 |
+| swift | missing | ok/ok | 生成置換 + parity 固定 |
+| kotlin | missing | ok/ok | 生成置換 + parity 固定 |
+| ruby | missing | ok/ok | 生成置換 + parity 固定 |
+| lua | missing | ok/ok | 生成置換 + parity 固定 |
+| php | missing | ok/ok | 生成置換 + parity 固定 |
 
 ## 分解
 
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-01] 全言語の image runtime を自動監査し、marker/probe のベースラインログを固定する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-02] 「画像 writer 手書き禁止（正本由来のみ）」を `docs/ja/spec` / `docs/en/spec` へ明文化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-03] 言語別の着手順（probe ok 群 / probe fail 群）を計画へ確定する。
+- [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S1-04] 正本 `png.py/gif.py` を backend 互換 subset（`Try/Slice/to_bytes/f-string` 非依存）へ正規化し、全 target の transpile probe を green 化する。
 - [x] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CPP] C++ を正本準拠の基準実装として再確認し、他言語比較の基準を固定する。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-CS] C# image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
 - [ ] [ID: P0-IMAGE-RUNTIME-SOT-LANG-01-S2-JS] JavaScript image helper を正本由来生成へ切替し、`sample/01,05` parity を通す。
@@ -80,3 +81,4 @@
 - 2026-03-04: ユーザー指示「言語別にTODOにP0で積んで実施」に基づき、本計画を新規起票。
 - 2026-03-04: `tools/audit_image_runtime_sot.py --probe-transpile` を実行し、`work/logs/image_runtime_sot_audit_20260304.json` で `languages=14, compliant=1, non_compliant=13` を固定。
 - 2026-03-04: 監査結果から `probe ok` 群（`cs/js/ts/scala/nim`）を先行着手、`probe fail` 群（`rs/go/java/swift/kotlin/ruby/lua/php`）を阻害要因解消フェーズへ分離した。
+- 2026-03-04: 正本 `src/pytra/utils/png.py` / `gif.py` を subset 正規化（`with`→`open/write/close`、`slice`→loop、`to_bytes`→`_append_u16le`、f-string除去）し、`work/logs/image_runtime_sot_audit_20260304_v4.json` で全14 target の `probe png/gif = ok` を確認。`tools/verify_image_runtime_parity.py` で Python正本とC++ runtime のバイト一致も維持した。

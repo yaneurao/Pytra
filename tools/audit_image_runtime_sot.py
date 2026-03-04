@@ -24,6 +24,13 @@ IMAGE_SYMBOL_RE = re.compile(
     r"(write_rgb_png|save_gif|grayscale_palette|py_write_rgb_png|py_save_gif|py_grayscale_palette)"
 )
 PYTRA_UTILS_SOURCE_RE = re.compile(r"source:\s*src/pytra/utils/(png|gif)\.py", re.IGNORECASE)
+UNRESOLVED_MARKER_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("unsupported_stmt", re.compile(r"unsupported stmt", re.IGNORECASE)),
+    ("unknown_expr", re.compile(r"unknown expr", re.IGNORECASE)),
+    ("fstring_residual", re.compile(r"\bf\"")),
+    ("python_to_bytes_call", re.compile(r"\.to_bytes\(")),
+    ("python_extend_method", re.compile(r"\.extend\(")),
+)
 
 
 @dataclass(frozen=True)
@@ -85,6 +92,22 @@ def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
+def _collect_output_text(path: Path) -> str:
+    if path.is_file():
+        return path.read_text(encoding="utf-8", errors="ignore")
+    if not path.is_dir():
+        return ""
+    parts: list[str] = []
+    for child in sorted(path.rglob("*")):
+        if not child.is_file():
+            continue
+        # Binary-like outputs are not useful for marker scan.
+        if child.suffix.lower() in {".o", ".a", ".so", ".dll", ".exe"}:
+            continue
+        parts.append(child.read_text(encoding="utf-8", errors="ignore"))
+    return "\n".join(parts)
+
+
 def _scan_runtime(paths: tuple[str, ...]) -> tuple[list[dict[str, object]], bool]:
     rows: list[dict[str, object]] = []
     has_marker = False
@@ -110,6 +133,7 @@ def _scan_runtime(paths: tuple[str, ...]) -> tuple[list[dict[str, object]], bool
 
 def _probe_transpile(target: str, module_rel: str) -> dict[str, object]:
     src = ROOT / module_rel
+    out_text = ""
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / f"probe_{target}.txt"
         cp = subprocess.run(
@@ -118,12 +142,26 @@ def _probe_transpile(target: str, module_rel: str) -> dict[str, object]:
             capture_output=True,
             text=True,
         )
+        if cp.returncode == 0 and out.exists():
+            out_text = _collect_output_text(out)
     ok = cp.returncode == 0
     msg = ""
+    risk_counts: dict[str, int] = {}
     if not ok:
         msg_raw = cp.stderr.strip() or cp.stdout.strip() or f"exit={cp.returncode}"
-        msg = msg_raw.splitlines()[0]
-    return {"ok": ok, "error": msg}
+        lines = [ln.strip() for ln in msg_raw.splitlines() if ln.strip() != ""]
+        msg = lines[-1] if len(lines) > 0 else msg_raw
+    else:
+        for key, pat in UNRESOLVED_MARKER_PATTERNS:
+            hits = len(pat.findall(out_text))
+            if hits > 0:
+                risk_counts[key] = hits
+    return {
+        "ok": ok,
+        "error": msg,
+        "risk_counts": risk_counts,
+        "risk_total": sum(risk_counts.values()),
+    }
 
 
 def run_audit(probe_transpile: bool) -> dict[str, object]:
@@ -203,4 +241,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
