@@ -200,7 +200,8 @@ def _runtime_ruby(output_path: Path) -> None:
 
 
 def _runtime_lua(output_path: Path) -> None:
-    _copy_runtime_file("runtime/lua/pytra/py_runtime.lua", output_path, "py_runtime.lua")
+    _copy_runtime_file("runtime/lua/pytra-core/built_in/py_runtime.lua", output_path, "py_runtime.lua")
+    _copy_runtime_file("runtime/lua/pytra-gen/utils/image_runtime.lua", output_path, "image_runtime.lua")
 
 
 def _runtime_scala(output_path: Path) -> None:
