@@ -7,12 +7,6 @@ src/backends/cs/emitter/cs_emitter.py:2382:py_assert_stdout
 src/backends/cs/emitter/cs_emitter.py:2384:py_assert_eq
 src/backends/cs/emitter/cs_emitter.py:2388:py_assert_true
 src/backends/cs/emitter/cs_emitter.py:2392:py_assert_all
-src/backends/cs/emitter/cs_emitter.py:2462:save_gif
-src/backends/cs/emitter/cs_emitter.py:2464:grayscale_palette
-src/backends/cs/emitter/cs_emitter.py:2466:write_rgb_png
-src/backends/cs/emitter/cs_emitter.py:2501:loads
-src/backends/cs/emitter/cs_emitter.py:2503:dumps
-src/backends/cs/emitter/cs_emitter.py:2748:Path
 src/backends/cs/emitter/cs_emitter.py:461:Path
 src/backends/cs/emitter/cs_emitter.py:461:pytra.std.pathlib
 src/backends/lua/emitter/lua_native_emitter.py:2080:save_gif

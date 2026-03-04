@@ -2459,12 +2459,15 @@ class CSharpEmitter(CodeEmitter):
             if len(rendered_args) >= 1:
                 return "new System.Exception(" + rendered_args[0] + ")"
             return "new System.Exception(" + self.quote_string_literal(fn_name_raw) + ")"
-        if fn_name_raw == "save_gif":
-            return "Pytra.CsModule.gif_helper.save_gif(" + ", ".join(rendered_args) + ")"
-        if fn_name_raw == "grayscale_palette":
-            return "Pytra.CsModule.gif_helper.grayscale_palette(" + ", ".join(rendered_args) + ")"
-        if fn_name_raw == "write_rgb_png":
-            return "Pytra.CsModule.png_helper.write_rgb_png(" + ", ".join(rendered_args) + ")"
+        imported_sym = self._resolve_imported_symbol(fn_name_raw)
+        imported_mod = self.any_dict_get_str(imported_sym, "module", "")
+        imported_name = self.any_dict_get_str(imported_sym, "name", "")
+        if imported_mod.startswith("pytra.utils."):
+            leaf = self._last_dotted_name(imported_mod)
+            if leaf == "gif" or leaf == "png":
+                helper = leaf + "_helper"
+                symbol = imported_name if imported_name != "" else fn_name_raw
+                return "Pytra.CsModule." + helper + "." + self._safe_name(symbol) + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "enumerate":
             self.needs_enumerate_helper = True
             src_expr = rendered_args[0] if len(rendered_args) > 0 else "new System.Collections.Generic.List<object>()"
@@ -2498,10 +2501,7 @@ class CSharpEmitter(CodeEmitter):
         if owner_name == "time" and not self.is_declared(owner_name):
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "json" and not self.is_declared(owner_name):
-            if attr_raw == "loads" and len(rendered_args) >= 1:
-                return "Pytra.CsModule.json.loads(" + rendered_args[0] + ")"
-            if attr_raw == "dumps" and len(rendered_args) >= 1:
-                return "Pytra.CsModule.json.dumps(" + rendered_args[0] + ")"
+            return "Pytra.CsModule.json." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "sys" and attr_raw == "exit" and not self.is_declared(owner_name):
             if len(rendered_args) >= 1:
                 return "System.Environment.Exit(System.Convert.ToInt32(" + rendered_args[0] + "))"
@@ -2732,6 +2732,13 @@ class CSharpEmitter(CodeEmitter):
             owner_kind = self.any_dict_get_str(owner_node, "kind", "")
             owner_name = self.any_dict_get_str(owner_node, "id", "")
             attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
+            runtime_call = self.any_dict_get_str(expr_d, "runtime_call", "")
+            if runtime_call == "path_parent":
+                return self.render_expr(owner_node) + ".parent()"
+            if runtime_call == "path_name":
+                return self.render_expr(owner_node) + ".name()"
+            if runtime_call == "path_stem":
+                return self.render_expr(owner_node) + ".stem()"
             if owner_kind == "Name" and owner_name == "self" and self.in_method_scope:
                 return "this." + attr
             if owner_kind == "Name" and owner_name == "math" and not self.is_declared(owner_name):
@@ -2744,14 +2751,6 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.time." + attr
             if owner_kind == "Name" and owner_name == "sys" and attr == "argv" and not self.is_declared(owner_name):
                 return "args"
-            owner_type = self.get_expr_type(owner_node)
-            if owner_type == "Path":
-                if attr == "parent":
-                    return self.render_expr(owner_node) + ".parent()"
-                if attr == "name":
-                    return self.render_expr(owner_node) + ".name()"
-                if attr == "stem":
-                    return self.render_expr(owner_node) + ".stem()"
             return self.render_expr(owner_node) + "." + attr
 
         if kind == "UnaryOp":
