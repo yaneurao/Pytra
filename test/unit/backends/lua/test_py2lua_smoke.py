@@ -142,6 +142,38 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("Dog.speak(self)", lua)
         self.assertNotIn("super()", lua)
 
+    def test_lua_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "save_gif"},
+                                "args": [],
+                                "keywords": [],
+                                "semantic_tag": "stdlib.fn.save_gif",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            transpile_to_lua_native(east)
+        self.assertIn("unresolved stdlib runtime call", str(cm.exception))
+
     def test_transpile_downcount_range_fixture_uses_descending_upper_bound(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")
