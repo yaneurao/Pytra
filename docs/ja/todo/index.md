@@ -115,12 +115,13 @@
 文脈: [docs/ja/plans/p1-py2x-unified-smoke-suite.md](../plans/p1-py2x-unified-smoke-suite.md)
 
 1. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01] `test_py2*_smoke.py` の共通観点を `py2x` ベースの共通 smoke へ統合し、全言語を1つの枠組みで検証できるようにする。
-2. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` の共通観点と言語固有観点を棚卸しし、共通化対象を確定する。
+2. [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` の共通観点と言語固有観点を棚卸しし、共通化対象を確定する。
 3. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-01] `py2x` target パラメタライズの共通 smoke テスト（新規）を追加する。
 4. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-02] 各言語 smoke から共通化済みケースを削減し、言語固有検証のみを残す。
 5. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-03] 共通 smoke と言語固有 smoke の責務境界をテストコード内コメントと計画書へ明記する。
 6. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-01] unit/transpile 回帰を実行し、統合後の非退行を確認する。
 7. [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S3-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ smoke テスト運用ルールを反映する。
+- 進捗メモ: [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` 14本を棚卸しし、共通化対象を `(A) stage2拒否(14/14) (B) CLI最小成功(14/14) (C) load_east/profile(13/14, non-cpp) (D) add-fixture最小transpile(13/14, non-cpp)` に確定、言語固有 192件は残置方針を固定。
 
 ### P1: `test/unit` レイアウト再編と未使用テスト整理
 

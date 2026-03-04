@@ -52,7 +52,7 @@
 
 ## 分解
 
-- [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` の共通観点と言語固有観点を棚卸しし、共通化対象を確定する。
+- [x] [ID: P1-PY2X-SMOKE-UNIFY-01-S1-01] `test_py2*_smoke.py` の共通観点と言語固有観点を棚卸しし、共通化対象を確定する。
 - [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-01] `py2x` target パラメタライズの共通 smoke テスト（新規）を追加する。
 - [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-02] 各言語 smoke から共通化済みケースを削減し、言語固有検証のみを残す。
 - [ ] [ID: P1-PY2X-SMOKE-UNIFY-01-S2-03] 共通 smoke と言語固有 smoke の責務境界をテストコード内コメントと計画書へ明記する。
@@ -61,3 +61,18 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、「全言語を1つの smoke に統一」案を採用。検知力維持のため、最終形は「共通 smoke + 言語固有 smoke」の2層構成とする。
+- 2026-03-04: `S1-01` を完了。`test/unit/test_py2*_smoke.py`（14本）のテスト名を棚卸しし、共通化対象を確定した。共通 smoke へ寄せる対象は `(A) stage2拒否`（14/14）, `(B) CLI最小成功`（14/14）, `(C) load_east default/from_json + profile読込`（13/14）, `(D) add fixture 最小 transpile`（13/14）。`py2cpp` は `load_east/profile` 系を持たないため、共通 smoke では `target=cpp` に対しては `py2x` CLI 検証 + stage2拒否を必須、`load_east/profile` は non-cpp 13言語を必須にする方針を確定した。固有観点は重複を除いて 192 件あり、`S2-02` で各言語 smoke から共通観点のみ削減する。
+
+## S1-01 棚卸し結果（2026-03-04）
+
+- 対象: `test/unit/test_py2*_smoke.py` 14本（`cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim`）
+- 集計結果（関数名ベース）:
+  - 共通候補A: `stage2` 拒否系テスト 14/14
+  - 共通候補B: CLI最小成功系テスト 14/14（命名差あり）
+  - 共通候補C: `load_east_defaults_to_stage3...` + `load_east_from_json` + `load_<lang>_profile_contains_core_sections` 13/14（cpp除く）
+  - 共通候補D: `transpile_add_fixture_*` 13/14（cpp除く）
+  - 言語固有テスト: 192件（主に emitter/runtime 契約）
+- `S2-01` で追加する共通 smoke の最小責務:
+  - 全14言語: `py2x` CLI最小成功 / `--east-stage 2` 拒否
+  - 非cpp 13言語: `load_east` default/from_json / profile / add-fixture transpile
+- `S2-02` では各言語 smoke から上記共通責務のみ削減し、固有契約（コード生成断片・runtime接続・言語固有回帰）は残置する。
