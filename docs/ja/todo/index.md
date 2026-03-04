@@ -46,7 +46,7 @@
 8. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
 9. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
 10. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
-- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を `runtime_call/resolved_runtime_call` 経路へ寄せ、`json.loads/json.dumps` は解決シンボル素通し描画へ移行した（完全撤去は継続）。
+- 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を `runtime_call/resolved_runtime_call` 経路へ寄せたが、`json.*` 素通しは現行 `pytra-gen/std/json.java` 品質でコンパイル不成立のため一旦ロールバックし、継続課題として保持した。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から画像互換ラッパ（`pyWriteRGBPNG/pySaveGif/pyGrayscalePalette`）を削除し、公開名のみへ縮退した。
 - 進捗メモ: [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] `tools/check_java_pyruntime_boundary.py` を追加し、画像互換ラッパ再混入を `run_local_ci.py` で fail-fast 化した（禁止シンボルは段階拡張予定）。
 
