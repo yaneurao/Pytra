@@ -15,17 +15,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PREPARE_CS_SELFHOST = ROOT / "tools" / "prepare_selfhost_source_cs.py"
-CS_SELFHOST_ENTRY = ROOT / "selfhost" / "py2cs.py"
-PY2CS_CLI = ROOT / "src" / "py2cs.py"
-PY2JS_CLI = ROOT / "src" / "py2js.py"
+PY2X_CLI = ROOT / "src" / "py2x.py"
+PY2X_SRC = ROOT / "src" / "py2x.py"
 
 
 @dataclass
 class LangSpec:
     lang: str
-    cli: str
-    src: str
     ext: str
 
 
@@ -39,14 +35,14 @@ class StatusRow:
 
 
 LANGS: list[LangSpec] = [
-    LangSpec("rs", "src/py2rs.py", "src/py2rs.py", ".rs"),
-    LangSpec("cs", "src/py2cs.py", "src/py2cs.py", ".cs"),
-    LangSpec("js", "src/py2js.py", "src/py2js.py", ".js"),
-    LangSpec("ts", "src/py2ts.py", "src/py2ts.py", ".ts"),
-    LangSpec("go", "src/py2go.py", "src/py2go.py", ".go"),
-    LangSpec("java", "src/py2java.py", "src/py2java.py", ".java"),
-    LangSpec("swift", "src/py2swift.py", "src/py2swift.py", ".swift"),
-    LangSpec("kotlin", "src/py2kotlin.py", "src/py2kotlin.py", ".kt"),
+    LangSpec("rs", ".rs"),
+    LangSpec("cs", ".cs"),
+    LangSpec("js", ".js"),
+    LangSpec("ts", ".ts"),
+    LangSpec("go", ".go"),
+    LangSpec("java", ".java"),
+    LangSpec("swift", ".swift"),
+    LangSpec("kotlin", ".kt"),
 ]
 
 
@@ -670,7 +666,6 @@ def _prepare_js_stage2_tree(stage2_root: Path, entry_py: Path) -> tuple[bool, st
     stage2_src_root.mkdir(parents=True, exist_ok=True)
     _copy_js_runtime(stage2_src_root)
 
-    py2js_cli = ROOT / "src" / "py2js.py"
     repo_src_root = ROOT / "src"
     queue: list[Path] = [entry_py]
     emitted: set[str] = set()
@@ -689,7 +684,17 @@ def _prepare_js_stage2_tree(stage2_root: Path, entry_py: Path) -> tuple[bool, st
         out_js = stage2_src_root / rel_py.with_suffix(".js")
         out_js.parent.mkdir(parents=True, exist_ok=True)
         if not out_js.exists():
-            ok_emit, msg_emit = _run(["python3", str(py2js_cli), str(py_src), "-o", str(out_js)])
+            ok_emit, msg_emit = _run(
+                [
+                    "python3",
+                    str(PY2X_CLI),
+                    str(py_src),
+                    "--target",
+                    "js",
+                    "-o",
+                    str(out_js),
+                ]
+            )
             if not ok_emit:
                 return False, "js stage2 emit failed at " + rel_key + ": " + msg_emit, entry_js
         js_text = out_js.read_text(encoding="utf-8")
@@ -735,8 +740,10 @@ def _run_js_stage2(sample_py: Path, stage2_tmp_dir: Path, entry_py: Path) -> tup
         ok_json, msg_json = _run(
             [
                 "python3",
-                str(PY2JS_CLI),
+                str(PY2X_CLI),
                 str(sample_py),
+                "--target",
+                "js",
                 "-o",
                 str(host_tmp),
                 "--dump-east3-after-opt",
@@ -750,7 +757,10 @@ def _run_js_stage2(sample_py: Path, stage2_tmp_dir: Path, entry_py: Path) -> tup
         sample_input = sample_json
 
     out2 = js_root / "js_stage2_out.js"
-    ok_run, msg_run = _run(["node", str(entry_js), str(sample_input), "-o", str(out2)], cwd=js_root)
+    ok_run, msg_run = _run(
+        ["node", str(entry_js), str(sample_input), "--target", "js", "-o", str(out2)],
+        cwd=js_root,
+    )
     if ok_run and out2.exists():
         return "pass", "sample/py/01 transpile ok"
     if msg_run != "":
@@ -769,7 +779,7 @@ def _run_rs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
         return "fail", msg_build
 
     out2 = stage2_tmp_dir / "rs_stage2_out.rs"
-    ok_run, msg_run = _run([str(out_bin), str(sample_py), "-o", str(out2)])
+    ok_run, msg_run = _run([str(out_bin), str(sample_py), "--target", "rs", "-o", str(out2)])
     if ok_run and out2.exists():
         return "pass", "sample/py/01 transpile ok"
     if msg_run != "":
@@ -807,8 +817,10 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
         ok_json, msg_json = _run(
             [
                 "python3",
-                str(PY2CS_CLI),
+                str(PY2X_CLI),
                 str(sample_py),
+                "--target",
+                "cs",
                 "-o",
                 str(host_tmp),
                 "--dump-east3-after-opt",
@@ -822,7 +834,7 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
         sample_input = sample_json
 
     out2 = stage2_tmp_dir / "cs_stage2_out.cs"
-    ok_run, msg_run = _run(["mono", str(out_exe), str(sample_input), "-o", str(out2)])
+    ok_run, msg_run = _run(["mono", str(out_exe), str(sample_input), "--target", "cs", "-o", str(out2)])
     if ok_run and out2.exists():
         out2_text = out2.read_text(encoding="utf-8")
         if _is_cs_empty_skeleton(out2_text):
@@ -831,15 +843,6 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
     if msg_run != "":
         return "fail", msg_run
     return "fail", "stage2 output missing"
-
-
-def _prepare_cs_selfhost_source() -> tuple[bool, str]:
-    ok_prepare, msg_prepare = _run(["python3", str(PREPARE_CS_SELFHOST)])
-    if not ok_prepare:
-        return False, msg_prepare
-    if not CS_SELFHOST_ENTRY.exists():
-        return False, "selfhost/py2cs.py missing after prepare"
-    return True, ""
 
 
 def _render_report(rows: list[StatusRow], out_path: Path) -> None:
@@ -873,7 +876,7 @@ def _render_report(rows: list[StatusRow], out_path: Path) -> None:
         )
     lines.append("")
     lines.append("備考:")
-    lines.append("- `stage1`: `src/py2<lang>.py` を同言語へ自己変換できるか。")
+    lines.append("- `stage1`: `src/py2x.py --target <lang>` を同言語へ自己変換できるか。")
     lines.append("- `generated_mode`: 生成物が preview かどうか。")
     lines.append("- `stage2`: 生成された変換器で `sample/py/01_mandelbrot.py` を再変換できるか。")
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -901,18 +904,11 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         for spec in LANGS:
-            cli = ROOT / spec.cli
-            src = ROOT / spec.src
-            if spec.lang == "cs":
-                ok_prepare_cs, msg_prepare_cs = _prepare_cs_selfhost_source()
-                if not ok_prepare_cs:
-                    rows.append(StatusRow(spec.lang, "fail", "unknown", "skip", msg_prepare_cs))
-                    stage1_fail += 1
-                    continue
-                src = CS_SELFHOST_ENTRY
+            cli = PY2X_CLI
+            src = PY2X_SRC
             out1 = tmp / f"{spec.lang}_selfhost_stage1{spec.ext}"
 
-            ok1, msg1 = _run(["python3", str(cli), str(src), "-o", str(out1)])
+            ok1, msg1 = _run(["python3", str(cli), str(src), "--target", spec.lang, "-o", str(out1)])
             if not ok1:
                 rows.append(StatusRow(spec.lang, "fail", "unknown", "skip", msg1))
                 stage1_fail += 1

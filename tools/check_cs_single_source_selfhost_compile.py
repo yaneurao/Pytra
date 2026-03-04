@@ -14,8 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PREPARE = ROOT / "tools" / "prepare_selfhost_source_cs.py"
-PY2CS = ROOT / "src" / "py2cs.py"
-SELFHOST_PY2CS = ROOT / "selfhost" / "py2cs.py"
+PY2X = ROOT / "src" / "py2x.py"
+SELFHOST_PY2X_CS = ROOT / "selfhost" / "py2x_cs.py"
 RUNTIME_FILES = [
     ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "py_runtime.cs",
     ROOT / "src" / "runtime" / "cs" / "pytra" / "built_in" / "time.cs",
@@ -155,7 +155,17 @@ def main() -> int:
         tmp = Path(td)
         stage1_cs = tmp / "cs_selfhost_full_stage1.cs"
         stage1_exe = tmp / "cs_selfhost_full_stage1.exe"
-        rc_transpile, _, err_transpile = _run(["python3", str(PY2CS), str(SELFHOST_PY2CS), "-o", str(stage1_cs)])
+        rc_transpile, _, err_transpile = _run(
+            [
+                "python3",
+                str(PY2X),
+                str(SELFHOST_PY2X_CS),
+                "--target",
+                "cs",
+                "-o",
+                str(stage1_cs),
+            ]
+        )
         transpile_msg = err_transpile.strip()
 
         code_counts: Counter[str] = Counter()

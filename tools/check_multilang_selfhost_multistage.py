@@ -15,17 +15,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PREPARE_CS_SELFHOST = ROOT / "tools" / "prepare_selfhost_source_cs.py"
-CS_SELFHOST_ENTRY = ROOT / "selfhost" / "py2cs.py"
-PY2CS_CLI = ROOT / "src" / "py2cs.py"
-PY2JS_CLI = ROOT / "src" / "py2js.py"
+PY2X_CLI = ROOT / "src" / "py2x.py"
+PY2X_SRC = ROOT / "src" / "py2x.py"
 
 
 @dataclass
 class LangSpec:
     lang: str
-    cli: str
-    src: str
     ext: str
 
 
@@ -40,14 +36,14 @@ class StatusRow:
 
 
 LANGS: list[LangSpec] = [
-    LangSpec("rs", "src/py2rs.py", "src/py2rs.py", ".rs"),
-    LangSpec("cs", "src/py2cs.py", "src/py2cs.py", ".cs"),
-    LangSpec("js", "src/py2js.py", "src/py2js.py", ".js"),
-    LangSpec("ts", "src/py2ts.py", "src/py2ts.py", ".ts"),
-    LangSpec("go", "src/py2go.py", "src/py2go.py", ".go"),
-    LangSpec("java", "src/py2java.py", "src/py2java.py", ".java"),
-    LangSpec("swift", "src/py2swift.py", "src/py2swift.py", ".swift"),
-    LangSpec("kotlin", "src/py2kotlin.py", "src/py2kotlin.py", ".kt"),
+    LangSpec("rs", ".rs"),
+    LangSpec("cs", ".cs"),
+    LangSpec("js", ".js"),
+    LangSpec("ts", ".ts"),
+    LangSpec("go", ".go"),
+    LangSpec("java", ".java"),
+    LangSpec("swift", ".swift"),
+    LangSpec("kotlin", ".kt"),
 ]
 
 
@@ -671,7 +667,6 @@ def _prepare_js_tree(stage_root: Path, entry_py: Path) -> tuple[bool, str, Path]
     stage_src_root.mkdir(parents=True, exist_ok=True)
     _copy_js_runtime(stage_src_root)
 
-    py2js_cli = ROOT / "src" / "py2js.py"
     repo_src_root = ROOT / "src"
     queue: list[Path] = [entry_py]
     emitted: set[str] = set()
@@ -690,7 +685,17 @@ def _prepare_js_tree(stage_root: Path, entry_py: Path) -> tuple[bool, str, Path]
         out_js = stage_src_root / rel_py.with_suffix(".js")
         out_js.parent.mkdir(parents=True, exist_ok=True)
         if not out_js.exists():
-            ok_emit, msg_emit = _run(["python3", str(py2js_cli), str(py_src), "-o", str(out_js)])
+            ok_emit, msg_emit = _run(
+                [
+                    "python3",
+                    str(PY2X_CLI),
+                    str(py_src),
+                    "--target",
+                    "js",
+                    "-o",
+                    str(out_js),
+                ]
+            )
             if not ok_emit:
                 return False, "js multistage emit failed at " + rel_key + ": " + msg_emit, entry_js
         js_text = out_js.read_text(encoding="utf-8")
@@ -735,8 +740,10 @@ def _run_js_multistage(stage_tmp: Path, src_py: Path, sample_py: Path) -> tuple[
         ok_stage2_json, msg_stage2_json = _run(
             [
                 "python3",
-                str(PY2JS_CLI),
+                str(PY2X_CLI),
                 str(src_py),
+                "--target",
+                "js",
                 "-o",
                 str(stage2_host_tmp),
                 "--dump-east3-after-opt",
@@ -750,7 +757,10 @@ def _run_js_multistage(stage_tmp: Path, src_py: Path, sample_py: Path) -> tuple[
         stage2_input = stage2_src_json
 
     stage2_src = js_root / "src" / "py2js_stage2.js"
-    ok_stage2, msg_stage2 = _run(["node", str(entry_js), str(stage2_input), "-o", str(stage2_src)], cwd=js_root)
+    ok_stage2, msg_stage2 = _run(
+        ["node", str(entry_js), str(stage2_input), "--target", "js", "-o", str(stage2_src)],
+        cwd=js_root,
+    )
     if not ok_stage2:
         return "fail", "skip", "self_retranspile_fail", msg_stage2
     if not stage2_src.exists():
@@ -763,8 +773,10 @@ def _run_js_multistage(stage_tmp: Path, src_py: Path, sample_py: Path) -> tuple[
         ok_stage3_json, msg_stage3_json = _run(
             [
                 "python3",
-                str(PY2JS_CLI),
+                str(PY2X_CLI),
                 str(sample_py),
+                "--target",
+                "js",
                 "-o",
                 str(stage3_host_tmp),
                 "--dump-east3-after-opt",
@@ -778,7 +790,10 @@ def _run_js_multistage(stage_tmp: Path, src_py: Path, sample_py: Path) -> tuple[
         stage3_input = stage3_sample_json
 
     stage3_out = js_root / "js_stage3_sample.js"
-    ok_stage3, msg_stage3 = _run(["node", str(stage2_src), str(stage3_input), "-o", str(stage3_out)], cwd=js_root)
+    ok_stage3, msg_stage3 = _run(
+        ["node", str(stage2_src), str(stage3_input), "--target", "js", "-o", str(stage3_out)],
+        cwd=js_root,
+    )
     if not ok_stage3:
         return "pass", "fail", "sample_transpile_fail", msg_stage3
     if not stage3_out.exists():
@@ -797,7 +812,7 @@ def _run_rs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         return "fail", "skip", "compile_fail", msg_build1
 
     stage2_src = stage_tmp / "py2rs_stage2.rs"
-    ok_stage2, msg_stage2 = _run([str(stage1_bin), str(src_py), "-o", str(stage2_src)])
+    ok_stage2, msg_stage2 = _run([str(stage1_bin), str(src_py), "--target", "rs", "-o", str(stage2_src)])
     if not ok_stage2:
         return "fail", "skip", "self_retranspile_fail", msg_stage2
     if not stage2_src.exists():
@@ -809,7 +824,7 @@ def _run_rs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         return "pass", "fail", "stage2_compile_fail", msg_build2
 
     stage3_out = stage_tmp / "rs_stage3_sample.rs"
-    ok_stage3, msg_stage3 = _run([str(stage2_bin), str(sample_py), "-o", str(stage3_out)])
+    ok_stage3, msg_stage3 = _run([str(stage2_bin), str(sample_py), "--target", "rs", "-o", str(stage3_out)])
     if not ok_stage3:
         return "pass", "fail", "sample_transpile_fail", msg_stage3
     if not stage3_out.exists():
@@ -834,15 +849,6 @@ def _cs_compile(src_cs: Path, out_exe: Path) -> tuple[bool, str]:
     return _run(compile_cmd)
 
 
-def _prepare_cs_selfhost_source() -> tuple[bool, str]:
-    ok_prepare, msg_prepare = _run(["python3", str(PREPARE_CS_SELFHOST)])
-    if not ok_prepare:
-        return False, msg_prepare
-    if not CS_SELFHOST_ENTRY.exists():
-        return False, "selfhost/py2cs.py missing after prepare"
-    return True, ""
-
-
 def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_py: Path) -> tuple[str, str, str, str]:
     if shutil.which("mcs") is None or shutil.which("mono") is None:
         return "blocked", "blocked", "toolchain_missing", "mcs/mono not found"
@@ -859,8 +865,10 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         ok_src_json, msg_src_json = _run(
             [
                 "python3",
-                str(PY2CS_CLI),
+                str(PY2X_CLI),
                 str(src_py),
+                "--target",
+                "cs",
                 "-o",
                 str(src_host_tmp),
                 "--dump-east3-after-opt",
@@ -874,7 +882,9 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         src_input = src_json
 
     stage2_src = stage_tmp / "py2cs_stage2.cs"
-    ok_stage2, msg_stage2 = _run(["mono", str(stage1_exe), str(src_input), "-o", str(stage2_src)])
+    ok_stage2, msg_stage2 = _run(
+        ["mono", str(stage1_exe), str(src_input), "--target", "cs", "-o", str(stage2_src)]
+    )
     if not ok_stage2:
         return "fail", "skip", "self_retranspile_fail", msg_stage2
     if not stage2_src.exists():
@@ -895,8 +905,10 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         ok_sample_json, msg_sample_json = _run(
             [
                 "python3",
-                str(PY2CS_CLI),
+                str(PY2X_CLI),
                 str(sample_py),
+                "--target",
+                "cs",
                 "-o",
                 str(sample_host_tmp),
                 "--dump-east3-after-opt",
@@ -910,7 +922,9 @@ def _run_cs_multistage(stage_tmp: Path, stage1_out: Path, src_py: Path, sample_p
         sample_input = sample_json
 
     stage3_out = stage_tmp / "cs_stage3_sample.cs"
-    ok_stage3, msg_stage3 = _run(["mono", str(stage2_exe), str(sample_input), "-o", str(stage3_out)])
+    ok_stage3, msg_stage3 = _run(
+        ["mono", str(stage2_exe), str(sample_input), "--target", "cs", "-o", str(stage3_out)]
+    )
     if not ok_stage3:
         return "pass", "fail", "sample_transpile_fail", msg_stage3
     if not stage3_out.exists():
@@ -982,17 +996,13 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         for spec in LANGS:
-            cli = ROOT / spec.cli
-            src = ROOT / spec.src
-            if spec.lang == "cs":
-                ok_prepare_cs, msg_prepare_cs = _prepare_cs_selfhost_source()
-                if not ok_prepare_cs:
-                    rows.append(StatusRow(spec.lang, "fail", "skip", "skip", "stage1_transpile_fail", msg_prepare_cs))
-                    continue
-                src = CS_SELFHOST_ENTRY
+            cli = PY2X_CLI
+            src = PY2X_SRC
             stage1_out = tmp / f"{spec.lang}_stage1{spec.ext}"
 
-            ok_stage1, msg_stage1 = _run(["python3", str(cli), str(src), "-o", str(stage1_out)])
+            ok_stage1, msg_stage1 = _run(
+                ["python3", str(cli), str(src), "--target", spec.lang, "-o", str(stage1_out)]
+            )
             if not ok_stage1:
                 rows.append(StatusRow(spec.lang, "fail", "skip", "skip", "stage1_transpile_fail", msg_stage1))
                 continue
