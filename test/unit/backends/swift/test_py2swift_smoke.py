@@ -195,6 +195,38 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
         self.assertIn("var s: String = __pytra_str(p.stem)", swift)
         self.assertIn("var x: Double = pyMathSin(__pytra_float(pyMathPi()))", swift)
 
+    def test_swift_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "save_gif"},
+                                "args": [],
+                                "keywords": [],
+                                "semantic_tag": "stdlib.fn.save_gif",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            transpile_to_swift_native(east)
+        self.assertIn("unresolved stdlib runtime call", str(cm.exception))
+
     def test_py2swift_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
