@@ -115,6 +115,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Go でも同様に `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しを fail-closed 化し、`test_py2go_smoke.py` に未解決 stdlib call の負例回帰を追加した（16件通過）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Kotlin にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2kotlin_smoke.py` に未解決 stdlib call の負例回帰を追加した（16件通過）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Swift にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2swift_smoke.py` に未解決 stdlib call の負例回帰を追加した（14件通過）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] Ruby にも `semantic_tag=stdlib.*` + 未解決 runtime 呼び出しの fail-closed を展開し、`test_py2rb_smoke.py` に未解決 stdlib call の負例回帰を追加した（21件通過）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

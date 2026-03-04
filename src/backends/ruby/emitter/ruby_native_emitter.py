@@ -483,7 +483,11 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if semantic_tag.startswith("stdlib.") and runtime_call == "":
+        raise RuntimeError("ruby native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
     if runtime_call == "path_parent":
         return _render_expr(expr.get("value")) + ".parent"
     if runtime_call == "path_name":
@@ -681,6 +685,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if semantic_tag.startswith("stdlib.") and runtime_call == "":
+        raise RuntimeError("ruby native emitter: unresolved stdlib runtime call: " + semantic_tag)
 
     if semantic_tag == "stdlib.symbol.Path":
         rendered_path_args = _render_positional_call_args(args)
@@ -688,7 +695,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "Path.new(\"\")"
         return "Path.new(" + ", ".join(rendered_path_args) + ")"
 
-    runtime_call, runtime_source = _resolved_runtime_call(expr)
     runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
     if runtime_symbol != "":
         rendered_runtime_args = _render_positional_call_args(args)
