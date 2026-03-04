@@ -38,7 +38,7 @@
 
 1. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01] 非C++ emitter における runtime/stdlib 関数名の直書き分岐を撤去し、IR解決 + CIガードで再発を防止する。
 2. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 禁止/許可ルール（禁止文字列分岐・許可組み込み）を仕様化する。
-3. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存違反を言語別に棚卸しし、移行対象を確定する。
+3. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存違反を言語別に棚卸しし、移行対象を確定する。
 4. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] static check（`check_emitter_runtimecall_guardrails.py`）を追加して違反を fail 化する。
 5. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail をローカルCI/CI 必須導線へ組み込む。
 6. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR の runtime API 解決経路を非C++ backend で共通利用できる形に整理する。
