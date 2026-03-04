@@ -382,6 +382,7 @@ def build_targets(
             ),
             run_cmd=(
                 f"kotlinc test/transpile/kotlin/{case_stem}.kt test/transpile/kotlin/py_runtime.kt "
+                f"test/transpile/kotlin/image_runtime.kt "
                 f"-include-runtime -d test/transpile/obj/{case_stem}_kotlin.jar "
                 f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"
             ),

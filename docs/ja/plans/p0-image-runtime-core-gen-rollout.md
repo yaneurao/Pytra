@@ -47,7 +47,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] Swift を `pytra-core` / `pytra-gen` 分離へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] Lua を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP を `pytra-core` / `pytra-gen` 分離へ移行する。
@@ -69,3 +69,4 @@
 - 2026-03-04: `S3-GO` 完了。Go runtime を `pytra-core`/`pytra-gen` へ分離し、画像本体を `pytra-gen/utils/{png.go,gif.go}` へ移設。`backend_registry(_static)` と `runtime_parity_check` の Go 実行導線を `py_runtime.go + png.go + gif.go` に更新し、`work/logs/runtime_parity_sample_go_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-JAVA` 完了。Java runtime を `pytra-core`/`pytra-gen` へ分離し、`PyRuntime.java` の画像本体を `pytra-gen/utils/{PngHelper.java,GifHelper.java}` へ移設。`backend_registry(_static)` と `runtime_parity_check` の Java 実行導線を `PyRuntime + PngHelper + GifHelper` へ更新し、`work/logs/runtime_parity_sample_java_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-SWIFT` 完了。Swift runtime を `pytra-core`/`pytra-gen` へ分離し、`py_runtime.swift` の画像本体（`__pytra_to_u8`〜`__pytra_save_gif`）を `pytra-gen/utils/image_runtime.swift` へ移設。`backend_registry(_static)` と `runtime_parity_check` の Swift 実行導線を `py_runtime + image_runtime` へ更新し、`work/logs/runtime_parity_sample_swift_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 2026-03-04: `S3-KOTLIN` 完了。Kotlin runtime を `pytra-core`/`pytra-gen` へ分離し、`py_runtime.kt` の画像本体（`__pytra_write_rgb_png`〜`__pytra_save_gif`）を `pytra-gen/utils/image_runtime.kt` へ移設。`backend_registry(_static)` と `runtime_parity_check` の Kotlin 実行導線を `py_runtime + image_runtime` へ更新し、`work/logs/runtime_parity_sample_kotlin_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。

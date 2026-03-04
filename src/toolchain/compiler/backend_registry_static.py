@@ -185,7 +185,8 @@ def _runtime_java(output_path: Path) -> None:
 
 
 def _runtime_kotlin(output_path: Path) -> None:
-    _copy_runtime_file("runtime/kotlin/pytra/py_runtime.kt", output_path, "py_runtime.kt")
+    _copy_runtime_file("runtime/kotlin/pytra-core/built_in/py_runtime.kt", output_path, "py_runtime.kt")
+    _copy_runtime_file("runtime/kotlin/pytra-gen/utils/image_runtime.kt", output_path, "image_runtime.kt")
 
 
 def _runtime_swift(output_path: Path) -> None:

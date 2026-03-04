@@ -45,7 +45,7 @@
 7. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] Go runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.go` から撤去する。
 8. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] Java runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `PyRuntime.java` から撤去する。
 9. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] Swift runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.swift` から撤去する。
-10. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.kt` から撤去する。
+10. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] Kotlin runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.kt` から撤去する。
 11. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-RUBY] Ruby runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.rb` から撤去する。
 12. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-LUA] Lua runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.lua` から撤去する。
 13. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-PHP] PHP runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.php` / `runtime/*.php` の責務境界に沿って再配置する。
@@ -64,6 +64,7 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-GO] `src/runtime/go/pytra-core/built_in/py_runtime.go` と `src/runtime/go/pytra-gen/utils/{png.go,gif.go}` を追加し、Go runtime hook を core+gen コピーへ変更。`runtime_parity_sample_go_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JAVA] `src/runtime/java/pytra-core/built_in/PyRuntime.java` と `src/runtime/java/pytra-gen/utils/{PngHelper.java,GifHelper.java}` を追加し、Java runtime hook を core+gen コピーへ変更。`runtime_parity_sample_java_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SWIFT] `src/runtime/swift/pytra-core/built_in/py_runtime.swift` と `src/runtime/swift/pytra-gen/utils/image_runtime.swift` を追加し、Swift runtime hook を core+gen コピーへ変更。`runtime_parity_sample_swift_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-KOTLIN] `src/runtime/kotlin/pytra-core/built_in/py_runtime.kt` と `src/runtime/kotlin/pytra-gen/utils/image_runtime.kt` を追加し、Kotlin runtime hook を core+gen コピーへ変更。`runtime_parity_sample_kotlin_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 
 ### P0: 画像runtime 静的ガードレール導入（core混入禁止）
 
