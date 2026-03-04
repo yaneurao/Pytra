@@ -158,13 +158,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("PyRuntime.__pytra_bytearray(width * height)", java)
         self.assertIn("frame.set((int)(", java)
 
-    def test_java_native_emitter_maps_math_calls_to_java_math(self) -> None:
+    def test_java_native_emitter_routes_math_calls_via_runtime_helpers(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("double angle = 2.0 * Math.PI * t;", java)
-        self.assertIn("Math.cos(angle)", java)
-        self.assertIn("Math.sin(angle)", java)
+        self.assertIn("double angle = 2.0 * PyRuntime.pyMathPi() * t;", java)
+        self.assertIn("PyRuntime.pyMathCos(angle)", java)
+        self.assertIn("PyRuntime.pyMathSin(angle)", java)
 
     def test_java_native_emitter_maps_json_calls_to_runtime_helpers(self) -> None:
         with tempfile.TemporaryDirectory() as td:

@@ -149,13 +149,6 @@ def _int_constant_value(expr_any: Any) -> int | None:
 
 def _collect_go_deps(collector: CodeEmitter, node_any: Any) -> None:
     if isinstance(node_any, dict):
-        kind = node_any.get("kind")
-        if kind == "Attribute":
-            owner_any = node_any.get("value")
-            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-                owner = _safe_ident(owner_any.get("id"), "")
-                if owner == "math":
-                    collector.require_dep("math")
         for child_any in node_any.values():
             _collect_go_deps(collector, child_any)
         return
@@ -601,25 +594,25 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 
 def _math_call_name(attr: str) -> str:
     if attr == "sqrt":
-        return "Sqrt"
+        return "pyMathSqrt"
     if attr == "sin":
-        return "Sin"
+        return "pyMathSin"
     if attr == "cos":
-        return "Cos"
+        return "pyMathCos"
     if attr == "tan":
-        return "Tan"
+        return "pyMathTan"
     if attr == "exp":
-        return "Exp"
+        return "pyMathExp"
     if attr == "log":
-        return "Log"
+        return "pyMathLog"
     if attr == "pow":
-        return "Pow"
+        return "pyMathPow"
     if attr == "floor":
-        return "Floor"
+        return "pyMathFloor"
     if attr == "ceil":
-        return "Ceil"
+        return "pyMathCeil"
     if attr == "abs":
-        return "Abs"
+        return "pyMathFabs"
     return _safe_ident(attr, "call")
 
 
@@ -629,9 +622,9 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
-            return "math.Pi"
+            return "__pytra_float(pyMathPi())"
         if owner == "math" and attr == "e":
-            return "math.E"
+            return "__pytra_float(pyMathE())"
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -822,7 +815,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 while i < len(args):
                     rendered_math_args.append(_coerce_float_expr(args[i], _render_expr(args[i])))
                     i += 1
-                return "math." + _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
+                return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
             if owner == "json":
                 if attr_name == "loads":
                     if len(args) == 0:
