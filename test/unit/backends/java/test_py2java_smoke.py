@@ -351,6 +351,9 @@ class Py2JavaSmokeTest(unittest.TestCase):
             "_java_math_runtime_call(",
             'attr in {"parent", "name", "stem"}',
             "attr in {'parent', 'name', 'stem'}",
+            "_render_call_via_runtime_call(expr,",
+            "_render_resolved_runtime_call(expr,",
+            "_call_name(expr).strip()",
         ]
         for marker in forbidden:
             with self.subTest(marker=marker):

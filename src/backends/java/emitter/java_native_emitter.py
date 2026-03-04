@@ -640,7 +640,37 @@ def _symbol_binding(local_name: str) -> tuple[str, str]:
     return module_id, symbol
 
 
-def _render_resolved_runtime_call(expr: dict[str, Any], runtime_call: str, runtime_source: str, args: list[Any]) -> str:
+def _resolved_call_binding(expr: dict[str, Any]) -> tuple[str, str]:
+    func_any = expr.get("func")
+    if not isinstance(func_any, dict):
+        return "", ""
+    kind = func_any.get("kind")
+    if kind == "Name":
+        callee = _safe_ident(func_any.get("id"), "")
+        return _symbol_binding(callee)
+    if kind == "Attribute":
+        owner_any = func_any.get("value")
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+            owner_alias = _safe_ident(owner_any.get("id"), "")
+            owner_module, owner_symbol = _symbol_binding(owner_alias)
+            module_id = owner_module
+            if owner_symbol != "":
+                if module_id != "":
+                    module_id = module_id + "." + owner_symbol
+                else:
+                    module_id = owner_symbol
+            symbol_name = _safe_ident(func_any.get("attr"), "")
+            return module_id, symbol_name
+    return "", ""
+
+
+def _render_resolved_runtime_call(
+    runtime_call: str,
+    runtime_source: str,
+    args: list[Any],
+    binding_module: str,
+    binding_symbol: str,
+) -> str:
     runtime_name = runtime_call.strip()
     if runtime_name == "":
         return ""
@@ -651,30 +681,16 @@ def _render_resolved_runtime_call(expr: dict[str, Any], runtime_call: str, runti
         i += 1
     joined = ", ".join(rendered_args)
     if runtime_source == "module_attr":
-        func_any = expr.get("func")
-        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-            owner_any = func_any.get("value")
-            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-                owner_alias = _safe_ident(owner_any.get("id"), "")
-                owner_module, owner_symbol = _symbol_binding(owner_alias)
-                module_id = owner_module
-                if owner_symbol != "":
-                    if module_id != "":
-                        module_id = module_id + "." + owner_symbol
-                    else:
-                        module_id = owner_symbol
-                if module_id.startswith("pytra.utils."):
-                    class_name = _utils_module_class_name(module_id)
-                    if class_name != "":
-                        method_name = "py" + _snake_to_java_camel(runtime_name)
-                        return class_name + "." + method_name + "(" + joined + ")"
-    if runtime_source == "import_symbol":
-        callee = _call_name(expr).strip()
-        module_id, symbol_name = _symbol_binding(callee)
-        if module_id.startswith("pytra.utils.") and symbol_name != "":
-            class_name = _utils_module_class_name(module_id)
+        if binding_module.startswith("pytra.utils."):
+            class_name = _utils_module_class_name(binding_module)
             if class_name != "":
-                method_name = "py" + _snake_to_java_camel(symbol_name)
+                method_name = "py" + _snake_to_java_camel(runtime_name)
+                return class_name + "." + method_name + "(" + joined + ")"
+    if runtime_source == "import_symbol":
+        if binding_module.startswith("pytra.utils.") and binding_symbol != "":
+            class_name = _utils_module_class_name(binding_module)
+            if class_name != "":
+                method_name = "py" + _snake_to_java_camel(binding_symbol)
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_name.find(".") >= 0:
         return runtime_name + "(" + joined + ")"
@@ -682,15 +698,15 @@ def _render_resolved_runtime_call(expr: dict[str, Any], runtime_call: str, runti
 
 
 def _render_call_via_runtime_call(
-    expr: dict[str, Any],
     runtime_call: str,
     runtime_source: str,
+    semantic_tag: str,
     args: list[Any],
+    binding_module: str,
+    binding_symbol: str,
 ) -> str:
     if runtime_call in _ASSERTION_RUNTIME_CALLS:
         return _java_string_literal("True")
-    semantic_tag_any = expr.get("semantic_tag")
-    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     if semantic_tag == "stdlib.symbol.Path":
         if len(args) == 0:
             return "new pathlib.Path(\"\")"
@@ -706,7 +722,13 @@ def _render_call_via_runtime_call(
             i += 1
         return "_impl." + fn_name + "(" + ", ".join(rendered_args) + ")"
     if runtime_source != "runtime_call":
-        rendered_resolved = _render_resolved_runtime_call(expr, runtime_call, runtime_source, args)
+        rendered_resolved = _render_resolved_runtime_call(
+            runtime_call,
+            runtime_source,
+            args,
+            binding_module,
+            binding_symbol,
+        )
         if rendered_resolved != "":
             return rendered_resolved
     return ""
@@ -714,9 +736,19 @@ def _render_call_via_runtime_call(
 
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    binding_module, binding_symbol = _resolved_call_binding(expr)
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
-        rendered_runtime = _render_call_via_runtime_call(expr, runtime_call, runtime_source, args)
+        rendered_runtime = _render_call_via_runtime_call(
+            runtime_call,
+            runtime_source,
+            semantic_tag,
+            args,
+            binding_module,
+            binding_symbol,
+        )
         if rendered_runtime != "":
             return rendered_runtime
 
