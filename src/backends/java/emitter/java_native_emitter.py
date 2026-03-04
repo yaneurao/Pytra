@@ -615,7 +615,23 @@ def _runtime_call_java_name(runtime_call: str) -> str:
     return name
 
 
+_RESOLVED_RUNTIME_HELPERS: dict[str, str] = {
+    "write_rgb_png": "PngHelper.pyWriteRGBPNG",
+    "save_gif": "GifHelper.pySaveGif",
+    "grayscale_palette": "GifHelper.pyGrayscalePalette",
+}
+
+
 def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
+    rendered_args: list[str] = []
+    i = 0
+    while i < len(args):
+        rendered_args.append(_render_expr(args[i]))
+        i += 1
+    helper_name = _RESOLVED_RUNTIME_HELPERS.get(runtime_call)
+    if isinstance(helper_name, str) and helper_name != "":
+        return helper_name + "(" + ", ".join(rendered_args) + ")"
+
     method_name = _runtime_call_java_name(runtime_call)
     if "." in runtime_call:
         parts = method_name.split("_")
@@ -630,11 +646,6 @@ def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
             method_name = "py" + camel
     if method_name == "":
         return ""
-    rendered_args: list[str] = []
-    i = 0
-    while i < len(args):
-        rendered_args.append(_render_expr(args[i]))
-        i += 1
     return "PyRuntime." + method_name + "(" + ", ".join(rendered_args) + ")"
 
 

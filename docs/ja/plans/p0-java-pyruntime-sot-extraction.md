@@ -99,3 +99,5 @@
 - 2026-03-05: `S4-03` として `tools/runtime_parity_check.py --case-root sample --targets java --ignore-unstable-stdout` で `01_mandelbrot`, `05_mandelbrot_zoom`, `18_mini_language_interpreter` を再検証し pass（01/05 は artifact size+CRC32 一致）を確認した。
 - 2026-03-05: `S4-01` 継続として `pyPerfCounter` / `pyMath*` を `PyRuntime.java` から除去し、`pytra-core/std/{time_impl.java,math_impl.java}`（`_impl`, `_m`）へ移管した。Java parity 実行導線は `_impl.java` / `_m.java` を含める形へ更新した。
 - 2026-03-05: `S4-02` 継続として `check_java_pyruntime_boundary.py` の禁止シンボルを image に加えて `pyPerfCounter` / `pyMath*` まで拡張した。
+- 2026-03-05: `S3-01` 継続として、`resolved_runtime_call` の画像系（`write_rgb_png/save_gif/grayscale_palette`）を `PngHelper/GifHelper` 直接呼び出しへ切り替え、Java emitter から `PyRuntime` 経由を撤去した。
+- 2026-03-05: `S4-01` 継続として、`PyRuntime.java` から `write_rgb_png/save_gif/grayscale_palette` 本体を削除し、`check_java_pyruntime_boundary.py` へ同名禁止シンボルを追加した（json/pathlib は継続課題）。

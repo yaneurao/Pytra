@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "src/runtime/java/pytra-core/built_in/PyRuntime.java"
 
 FORBIDDEN: dict[str, re.Pattern[str]] = {
+    "core_utils_png.write_rgb_png": re.compile(r"\bstatic\s+[^\n;]*\bwrite_rgb_png\s*\("),
+    "core_utils_gif.save_gif": re.compile(r"\bstatic\s+[^\n;]*\bsave_gif\s*\("),
+    "core_utils_gif.grayscale_palette": re.compile(r"\bstatic\s+[^\n;]*\bgrayscale_palette\s*\("),
     "legacy_image_wrapper.pyWriteRGBPNG": re.compile(r"\bstatic\s+[^\n;]*\bpyWriteRGBPNG\s*\("),
     "legacy_image_wrapper.pySaveGif": re.compile(r"\bstatic\s+[^\n;]*\bpySaveGif\s*\("),
     "legacy_image_wrapper.pyGrayscalePalette": re.compile(r"\bstatic\s+[^\n;]*\bpyGrayscalePalette\s*\("),
