@@ -123,6 +123,7 @@ class NimNativeEmitter:
         if t == "bool": return "bool"
         if t == "None": return "void"
         if t == "bytearray": return "seq[uint8]"
+        if t == "bytes": return "seq[uint8]"
         if t.startswith("list["):
             inner = self._map_type(t[5:-1])
             return f"seq[{inner}]"
@@ -262,7 +263,16 @@ class NimNativeEmitter:
         self.current_class = ""
 
     def _emit_expr_stmt(self, stmt: dict[str, Any]) -> None:
-        expr = self._render_expr(stmt.get("value"))
+        value_node = stmt.get("value")
+        if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+            control_name = value_node.get("id")
+            if control_name == "break":
+                self._emit_line("break")
+                return
+            if control_name == "continue":
+                self._emit_line("continue")
+                return
+        expr = self._render_expr(value_node)
         if expr.startswith("echo ") or expr.startswith("return ") or ".add(" in expr or "write_rgb_png(" in expr or "run_" in expr:
             self._emit_line(expr)
         else:
@@ -277,6 +287,10 @@ class NimNativeEmitter:
         
         target = self._render_expr(target_node)
         value = self._render_expr(stmt.get("value"))
+        if isinstance(target_node, dict) and target_node.get("kind") == "Subscript":
+            subscript_type = target_node.get("resolved_type")
+            if isinstance(subscript_type, str) and subscript_type in {"uint8", "byte"}:
+                value = f"uint8({value})"
         
         if target_node.get("kind") == "Name":
              name = _safe_ident(target_node.get("id"))
@@ -443,8 +457,10 @@ class NimNativeEmitter:
             if op_raw == "Mod":
                 return f"py_mod({left}, {right})"
             symbol = _binop_symbol(op_raw)
+            resolved = expr.get("resolved_type")
+            if isinstance(resolved, str) and resolved in {"float", "float64"} and op_raw in {"Add", "Sub", "Mult"}:
+                return f"(float({left}) {symbol} float({right}))"
             if op_raw == "Add":
-                resolved = expr.get("resolved_type")
                 if isinstance(resolved, str) and resolved == "str":
                     symbol = "&"
             return f"({left} {symbol} {right})"
@@ -513,11 +529,25 @@ class NimNativeEmitter:
 
     def _render_call(self, expr: dict[str, Any]) -> str:
         func = expr.get("func")
-        args = [self._render_expr(a) for a in expr.get("args", [])]
+        args_nodes = expr.get("args", [])
+        args = [self._render_expr(a) for a in args_nodes]
+        kw_any = expr.get("keywords")
+        keywords = kw_any if isinstance(kw_any, list) else []
+        i_kw = 0
+        while i_kw < len(keywords):
+            kw = keywords[i_kw]
+            if isinstance(kw, dict) and "value" in kw:
+                args.append(self._render_expr(kw.get("value")))
+            i_kw += 1
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
             if name == "print":
-                return f"echo {', '.join(args)}"
+                if len(args) == 0:
+                    return "echo \"\""
+                if len(args) == 1:
+                    return f"echo py_str({args[0]})"
+                joined = " & \" \" & ".join([f"py_str({a})" for a in args])
+                return f"echo {joined}"
             if name == "len":
                 return f"{args[0]}.len"
             if name == "int":
@@ -532,7 +562,13 @@ class NimNativeEmitter:
             if name == "perf_counter":
                 return "epochTime()"
             if name == "bytearray":
-                 return "newSeq[uint8]()"
+                 if len(args) == 0:
+                     return "newSeq[uint8]()"
+                 return f"newSeq[uint8](int({args[0]}))"
+            if name == "bytes":
+                if len(args) == 0:
+                    return "@[]"
+                return args[0]
             if name in self.class_names:
                  return f"new{name}({', '.join(args)})"
         
