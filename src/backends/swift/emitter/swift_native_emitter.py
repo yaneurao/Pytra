@@ -615,9 +615,12 @@ def _call_name(expr: dict[str, Any]) -> str:
     func_any = expr.get("func")
     if not isinstance(func_any, dict):
         return ""
-    if func_any.get("kind") != "Name":
-        return ""
-    return _safe_ident(func_any.get("id"), "")
+    kind = func_any.get("kind")
+    if kind == "Name":
+        return _safe_ident(func_any.get("id"), "")
+    if kind == "Attribute":
+        return _safe_ident(func_any.get("attr"), "")
+    return ""
 
 
 def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
@@ -1133,6 +1136,23 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
             return "[Any]"
         if name == "len":
             return "Int64"
+        if name in {
+            "sin",
+            "cos",
+            "tan",
+            "asin",
+            "acos",
+            "atan",
+            "atan2",
+            "sqrt",
+            "exp",
+            "log",
+            "log10",
+            "floor",
+            "ceil",
+            "pow",
+        }:
+            return "Double"
         if name in {"min", "max"}:
             args_any = expr.get("args")
             args = args_any if isinstance(args_any, list) else []
@@ -1413,14 +1433,69 @@ def _emit_tuple_assign(
             else:
                 lines.append(indent + name + " = " + casted)
         elif kind == "Subscript":
-            owner = _render_expr(elem.get("value"))
-            index = _render_expr(elem.get("slice"))
-            lines.append(indent + "__pytra_setIndex(" + owner + ", " + index + ", " + casted + ")")
+            lines.extend(_emit_subscript_store(elem, casted, indent=indent, ctx=ctx))
         else:
             return None
         i += 1
 
     return lines
+
+
+def _emit_subscript_store(target: dict[str, Any], value_expr: str, *, indent: str, ctx: dict[str, Any]) -> list[str]:
+    owner_node = target.get("value")
+    owner_expr = _render_expr(owner_node)
+    index_expr = _render_expr(target.get("slice"))
+    # Fast path for nested list store: grid[y][x] = v
+    # Keep mutation in-place by materializing inner list and writing it back.
+    if isinstance(owner_node, dict) and owner_node.get("kind") == "Subscript":
+        outer_owner_node = owner_node.get("value")
+        outer_index_expr = _render_expr(owner_node.get("slice"))
+        if isinstance(outer_owner_node, dict) and outer_owner_node.get("kind") == "Name":
+            outer_name = _safe_ident(outer_owner_node.get("id"), "")
+            outer_type_any = _type_map(ctx).get(outer_name)
+            outer_type = outer_type_any if isinstance(outer_type_any, str) else ""
+            if outer_type == "[Any]":
+                outer_idx_tmp = _fresh_tmp(ctx, "idx")
+                inner_tmp = _fresh_tmp(ctx, "inner")
+                inner_idx_tmp = _fresh_tmp(ctx, "idx")
+                return [
+                    indent
+                    + "let "
+                    + outer_idx_tmp
+                    + " = Int(__pytra_index(__pytra_int("
+                    + outer_index_expr
+                    + "), Int64("
+                    + outer_name
+                    + ".count)))",
+                    indent + "if " + outer_idx_tmp + " >= 0 && " + outer_idx_tmp + " < " + outer_name + ".count {",
+                    indent + "    var " + inner_tmp + ": [Any] = __pytra_as_list(" + outer_name + "[" + outer_idx_tmp + "])",
+                    indent
+                    + "    let "
+                    + inner_idx_tmp
+                    + " = Int(__pytra_index(__pytra_int("
+                    + index_expr
+                    + "), Int64("
+                    + inner_tmp
+                    + ".count)))",
+                    indent + "    if " + inner_idx_tmp + " >= 0 && " + inner_idx_tmp + " < " + inner_tmp + ".count {",
+                    indent + "        " + inner_tmp + "[" + inner_idx_tmp + "] = " + value_expr,
+                    indent + "        " + outer_name + "[" + outer_idx_tmp + "] = " + inner_tmp,
+                    indent + "    }",
+                    indent + "}",
+                ]
+    if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+        owner_name = _safe_ident(owner_node.get("id"), "")
+        owner_type_any = _type_map(ctx).get(owner_name)
+        owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
+        if owner_type == "[Any]":
+            idx_tmp = _fresh_tmp(ctx, "idx")
+            return [
+                indent + "let " + idx_tmp + " = Int(__pytra_index(__pytra_int(" + index_expr + "), Int64(" + owner_name + ".count)))",
+                indent + "if " + idx_tmp + " >= 0 && " + idx_tmp + " < " + owner_name + ".count {",
+                indent + "    " + owner_name + "[" + idx_tmp + "] = " + value_expr,
+                indent + "}",
+            ]
+    return [indent + "__pytra_setIndex(" + owner_expr + ", " + index_expr + ", " + value_expr + ")"]
 
 
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
@@ -1568,10 +1643,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
             tgt = targets[0]
-            owner = _render_expr(tgt.get("value"))
-            index = _render_expr(tgt.get("slice"))
             value = _render_expr(stmt.get("value"))
-            return [indent + "__pytra_setIndex(" + owner + ", " + index + ", " + value + ")"]
+            return _emit_subscript_store(tgt, value, indent=indent, ctx=ctx)
 
         lhs = _target_name(targets[0])
         declared = _declared_set(ctx)

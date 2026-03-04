@@ -143,6 +143,8 @@
 - 2026-03-04: `tools/runtime_parity_check.py` の `run_shell` を `start_new_session=True` + `os.killpg(SIGKILL)` に変更し、timeout 時に子プロセス（`*_swift.out` など）が孤立しないよう修正。合わせて Swift 実行を `swiftc -O` へ変更。
 - 2026-03-04: Swift 再検証として `01..04` を実行し、artifact parity が 4/4 `ok` を確認（`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`）。一方 `--all-samples --cmd-timeout-sec 300` では `05/06/07` が timeout で `run_failed` となることを再確認し、残件を「重いケースの実行戦略（timeout または Swift 側高速化）」へ整理した。
 - 2026-03-04: `S3-02` として `test_runtime_parity_check_cli.py` に `swiftc -O` 回帰と timeout 時 process-group kill 回帰を追加。`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に artifact parity の必須条件（exists+size+CRC32）、stale artifact purge、timeout kill の運用ルールを明記した。
+- 2026-03-04: Swift emitter に `Subscript` 代入 fast-path（`Name` への直接添字代入 + `grid[y][x]` write-back）を追加し、`__pytra_setIndex(Any, ...)` の値コピー経路を回避。`05..09` の timeout/CRC失敗が解消し、`--targets swift --all-samples --cmd-timeout-sec 300` は `case_pass=11` まで前進（`work/logs/runtime_parity_sample_swift_all_after_subscript_store_opt_20260304.json`）。
+- 2026-03-04: Swift `_call_name` が `Attribute` を解決していなかったため `math.sqrt/sin/...` の型推論が `Any` に落ちる問題を修正。`10/14/15/16` は 4件すべて `ok` を確認（`work/logs/runtime_parity_sample_swift_10_14_15_16_after_callname_attr_20260304.json`）。
 
 ## 分解
 
