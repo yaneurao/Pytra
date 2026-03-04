@@ -2819,6 +2819,9 @@ class RustEmitter(CodeEmitter):
         if kind == "ForCore":
             self._emit_for_core(stmt)
             return
+        if kind == "Try":
+            self._emit_try(stmt)
+            return
         if kind == "Import" or kind == "ImportFrom":
             return
 
@@ -2848,6 +2851,36 @@ class RustEmitter(CodeEmitter):
         self.assumed_non_negative_vars = prev_assumed_non_negative
         self.assumed_positive_vars = prev_assumed_positive
         self._emit_if_else_chain(else_stmts)
+
+    def _emit_try(self, stmt: dict[str, Any]) -> None:
+        """Try/Finally を Rust の逐次ブロックへ縮退して出力する。"""
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        orelse_stmts = self._dict_stmt_list(stmt.get("orelse"))
+        final_stmts = self._dict_stmt_list(stmt.get("finalbody"))
+        handlers = self.any_to_list(stmt.get("handlers"))
+
+        # Rust backend では例外機構を持たないため、Try は逐次実行へ縮退する。
+        self.emit("{")
+        self.emit_scoped_stmt_list(body_stmts, set())
+        self.emit("}")
+        if len(handlers) > 0:
+            i = 0
+            while i < len(handlers):
+                h = self.any_to_dict_or_empty(handlers[i])
+                h_body = self._dict_stmt_list(h.get("body"))
+                if len(h_body) > 0:
+                    self.emit("{")
+                    self.emit_scoped_stmt_list(h_body, set())
+                    self.emit("}")
+                i += 1
+        if len(orelse_stmts) > 0:
+            self.emit("{")
+            self.emit_scoped_stmt_list(orelse_stmts, set())
+            self.emit("}")
+        if len(final_stmts) > 0:
+            self.emit("{")
+            self.emit_scoped_stmt_list(final_stmts, set())
+            self.emit("}")
 
     def _emit_if_else_chain(self, else_stmts: list[dict[str, Any]]) -> None:
         if len(else_stmts) == 0:
