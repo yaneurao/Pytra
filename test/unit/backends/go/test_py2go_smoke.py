@@ -154,7 +154,7 @@ class Py2GoSmokeTest(unittest.TestCase):
         sample_png = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east_png = load_east(sample_png, parser_backend="self_hosted")
         go_png = transpile_to_go_native(east_png)
-        self.assertIn("__pytra_write_rgb_png(out_path, width, height, pixels)", go_png)
+        self.assertIn("pyWriteRGBPNG(out_path, width, height, pixels)", go_png)
         self.assertNotIn("__pytra_noop(out_path, width, height, pixels)", go_png)
         self.assertIn("pixels = append(pixels, r)", go_png)
         self.assertNotIn("append(__pytra_as_list(pixels), r)", go_png)
@@ -162,8 +162,8 @@ class Py2GoSmokeTest(unittest.TestCase):
         sample_gif = ROOT / "sample" / "py" / "05_mandelbrot_zoom.py"
         east_gif = load_east(sample_gif, parser_backend="self_hosted")
         go_gif = transpile_to_go_native(east_gif)
-        self.assertIn("__pytra_grayscale_palette()", go_gif)
-        self.assertIn("__pytra_save_gif(", go_gif)
+        self.assertIn("pyGrayscalePalette()", go_gif)
+        self.assertIn("pySaveGIF(", go_gif)
         self.assertNotIn("__pytra_noop(out_path, width, height, frames", go_gif)
 
     def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:

@@ -650,7 +650,7 @@ def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: An
         while i < len(args):
             rendered_png.append(_render_expr(args[i]))
             i += 1
-        return "__pytra_write_rgb_png(" + ", ".join(rendered_png) + ")"
+        return "pyWriteRGBPNG(" + ", ".join(rendered_png) + ")"
 
     if call_name == "save_gif":
         if len(args) < 5 or len(args) > 7:
@@ -686,7 +686,7 @@ def _render_image_runtime_call(call_name: str, args: list[Any], keywords_any: An
             i += 1
         rendered_gif.append(delay_expr)
         rendered_gif.append(loop_expr)
-        return "__pytra_save_gif(" + ", ".join(rendered_gif) + ")"
+        return "pySaveGIF(" + ", ".join(rendered_gif) + ")"
 
     raise RuntimeError("go native emitter: unsupported image runtime call: " + call_name)
 
@@ -719,7 +719,7 @@ def _render_call_via_runtime_call(runtime_call: str, args: list[Any], keywords_a
     if runtime_call == "grayscale_palette":
         if len(args) != 0:
             raise RuntimeError("go native emitter: grayscale_palette does not take arguments")
-        return "__pytra_grayscale_palette()"
+        return "pyGrayscalePalette()"
     if runtime_call == "json.loads":
         if len(args) == 0:
             return "pyJsonLoads(\"\")"

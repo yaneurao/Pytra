@@ -84,6 +84,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の `Path/json/png/gif` は `resolved_runtime_call` 宣言名マップ経由へ統一し、`PyRuntime.*` 依存を排除した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter のライブラリ依存 rename（`json.loads -> pyJsonLoads` 等）を撤去し、未マップ `resolved_runtime_call` は描画しない fail-closed 運用へ変更した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] `PyRuntime.java` の std/utils 残置（Path/json/image/time/math）除去後に Java smoke と sample parity（`01/05/18`）を再固定した。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go emitter の PNG/GIF 呼び出しを `__pytra_*` 直参照から `pyWriteRGBPNG/pySaveGIF/pyGrayscalePalette`（宣言駆動）へ移行し、go smoke + sample parity（`01/05`）を再通過した。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

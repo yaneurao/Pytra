@@ -128,3 +128,4 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02`] Java emitter の `Path/json/png/gif` を `resolved_runtime_call` 宣言名マップへ統一し、`PyRuntime.*` 依存を撤去した（`pathlib.Path` 直描画化を含む）。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1`] Java emitter のライブラリ依存 rename（`json.loads -> pyJsonLoads` 等）を削除し、未マップ `resolved_runtime_call` は描画しない fail-closed 方針へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2`] Java runtime cleanup 後の `PyRuntime.java`（std/utils 残置なし）で smoke/parity（`01/05/18`）を再固定する段取りを明文化した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1`] Go emitter の PNG/GIF 呼び出しを `__pytra_*` 直参照から `pyWriteRGBPNG/pySaveGIF/pyGrayscalePalette`（宣言駆動）へ移行し、`test_py2go_smoke.py` と sample parity（`01/05`）の再通過を確認した（Kotlin/Swift は未着手）。
