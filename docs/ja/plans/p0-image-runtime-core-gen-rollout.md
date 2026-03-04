@@ -56,9 +56,9 @@
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim を `pytra-core` / `pytra-gen` 分離へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語 `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] backend runtime copy hook / build手順を新レイアウトへ更新する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] `pytra-core` 画像実装混入禁止チェックを CI/ローカルへ導入する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語 `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] backend runtime copy hook / build手順を新レイアウトへ更新する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] `pytra-core` 画像実装混入禁止チェックを CI/ローカルへ導入する。
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` は「間違った実現方式」と判定してTODOから削除。新方式（`pytra-core` / `pytra-gen` 分離）へ再起票した。
@@ -78,3 +78,6 @@
 - 2026-03-04: `S3-TS` 完了。TypeScript runtime を `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` へ分離し、`test/unit/common/test_js_ts_runtime_dispatch.py` の TS runtime 参照を新パスへ更新。`work/logs/runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-SCALA` 完了。Scala runtime の画像実装を `src/runtime/scala/pytra-gen/utils/image_runtime.scala` へ切り出し、`src/runtime/scala/pytra-core/built_in/py_runtime.scala` には core/runtime 本体のみを残す構成へ再配置。`backend_registry(_static)` と `runtime_parity_check` を `py_runtime.scala + image_runtime.scala` 実行に更新し、`work/logs/runtime_parity_sample_scala_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-NIM` 完了。Nim runtime の画像実装を `src/runtime/nim/pytra-gen/utils/image_runtime.nim` へ切り出し、`src/runtime/nim/pytra-core/built_in/py_runtime.nim` から `include "image_runtime.nim"` で読み込む構成へ更新。`backend_registry(_static)` の Nim runtime hook を core+gen コピーへ変更し、`work/logs/runtime_parity_sample_nim_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 2026-03-04: `S4-01` 完了。`cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim` の14言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再実行。Lua `sample/05` の CRC 差分は Lua emitter が `save_gif(delay_cs, loop)` keyword を落としていたことが原因で、`_render_call` で `save_gif` keyword を位置引数へ正規化する修正後、`work/logs/runtime_parity_sample_all_0105_core_gen_split_20260304_retry.json` で `case_pass=2/case_fail=0` を確認。
+- 2026-03-04: `S4-02` 完了。runtime copy/build 導線を新レイアウトへ統一（`backend_registry(_static)` の Scala/Nim core+gen copy、`runtime_parity_check` の C#/Scala 実行入力更新、`check_py2{scala,nim}_transpile` の runtime存在検証更新、JS/TS selfhost shim の core/gen 参照化）。`rg "runtime/(cs|js|ts|scala|nim)/pytra/"` 監査で、旧固定参照は legacy ガード用途のみに限定されたことを確認。
+- 2026-03-04: `S4-03` 完了。`tools/audit_image_runtime_sot.py` に `--fail-on-core-mix`（`core_contains_image_symbols` を検知したら終了コード1）を追加し、`tools/run_local_ci.py` の必須チェックに組み込み。`work/logs/image_runtime_core_gen_audit_20260304_s4_03_guardrail.json` で core 混入 fail 条件が未該当であることを確認。

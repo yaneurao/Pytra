@@ -2009,13 +2009,27 @@ class LuaNativeEmitter:
         func_any = expr.get("func")
         args_any = expr.get("args")
         args = args_any if isinstance(args_any, list) else []
+        keywords_any = expr.get("keywords")
+        keywords = keywords_any if isinstance(keywords_any, list) else []
         rendered_args: list[str] = []
         for arg in args:
             rendered_args.append(self._render_expr(arg))
+        kw_rendered: dict[str, str] = {}
+        for kw_any in keywords:
+            if not isinstance(kw_any, dict):
+                continue
+            key_any = kw_any.get("arg")
+            if not isinstance(key_any, str) or key_any == "":
+                continue
+            kw_rendered[key_any] = self._render_expr(kw_any.get("value"))
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             fn_name = _safe_ident(func_any.get("id"), "fn")
             if fn_name == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
                 fn_name = "__pytra_main"
+            if fn_name in {"save_gif", "__pytra_save_gif"} and len(keywords) > 0:
+                delay = kw_rendered.get("delay_cs", "4")
+                loop = kw_rendered.get("loop", "0")
+                return fn_name + "(" + ", ".join(rendered_args + [delay, loop]) + ")"
             if fn_name == "print":
                 return "__pytra_print(" + ", ".join(rendered_args) + ")"
             if fn_name == "int":
@@ -2085,6 +2099,10 @@ class LuaNativeEmitter:
             owner_type = ""
             if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
                 owner_type = owner_node.get("resolved_type") or ""
+            if attr == "save_gif" and len(keywords) > 0:
+                delay = kw_rendered.get("delay_cs", "4")
+                loop = kw_rendered.get("loop", "0")
+                return owner + "." + attr + "(" + ", ".join(rendered_args + [delay, loop]) + ")"
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:

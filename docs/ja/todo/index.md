@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-image-runtime-core-gen-rollout.md](../plans/p0-image-runtime-core-gen-rollout.md)
 
-1. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01] 全言語の画像runtimeを `pytra-core`（手書き）と `pytra-gen`（`src/pytra/utils/{png,gif}.py` 由来生成物）へ物理分離し、旧「marker中心」運用を廃止する。
+1. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01] 全言語の画像runtimeを `pytra-core`（手書き）と `pytra-gen`（`src/pytra/utils/{png,gif}.py` 由来生成物）へ物理分離し、旧「marker中心」運用を廃止する。
 2. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-01] 旧 `P0-IMAGE-RUNTIME-SOT-LANG-01` を誤った実現方式として廃止し、TODOから削除した履歴を計画書へ明記する。
 3. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] 画像runtimeの責務境界（`pytra-core` 禁止事項 / `pytra-gen` 必須事項 / 正本変更禁止）を `docs/ja/spec` と `docs/en/spec` に追記する。
 4. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] 各バックエンド共通の生成導線（`png.py/gif.py -> <lang> runtime`）と出力先規約（`src/runtime/<lang>/{pytra-core,pytra-gen}`）を実装する。
@@ -54,9 +54,9 @@
 16. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像helperを生成物ディレクトリへ集約する。
 17. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.scala` 直埋めから撤去する。
 18. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `pytra-core` / `pytra-gen` 分離へ移行し、画像関数を `py_runtime.nim` 直埋めから撤去する。
-19. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
-20. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] 各backendの runtime copy hook / build手順を新レイアウトへ更新する。
-21. [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] CI/ローカル検査へ「`pytra-core` に画像実装が混入したらfail」を追加する。
+19. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語で `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
+20. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] 各backendの runtime copy hook / build手順を新レイアウトへ更新する。
+21. [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] CI/ローカル検査へ「`pytra-core` に画像実装が混入したらfail」を追加する。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S1-02] `docs/ja/spec/spec-{codex,dev}.md` と `docs/en/spec/spec-{codex,dev}.md` に `pytra-core` / `pytra-gen` の責務境界（core直書き禁止・gen生成痕跡必須）を追記して完了。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-01] `tools/gen_image_runtime_from_canonical.py` を追加し、`png.py/gif.py -> src/runtime/<lang>/pytra-gen/...` の共通生成計画（14言語）を実装。`--dry-run` と `test_gen_image_runtime_from_canonical.py` で導線を検証。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S2-02] `tools/audit_image_runtime_sot.py` を core/gen 検査へ置換（`pytra-core` 混入禁止、`pytra-gen` の `source:` / `generated-by:` 必須、legacy配置検知）。`image_runtime_core_gen_audit_20260304_s2_02.json` を取得し baseline（`compliant=1/non_compliant=13`）を固定。
@@ -73,6 +73,9 @@
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` を追加し、TS runtime dispatch test の参照を新レイアウトへ更新。`runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala runtime を `src/runtime/scala/pytra-core/built_in/py_runtime.scala` と `src/runtime/scala/pytra-gen/utils/image_runtime.scala` へ分離し、backend runtime hook と `runtime_parity_check` の実行導線を `py_runtime.scala + image_runtime.scala` へ更新。`runtime_parity_sample_scala_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim runtime を `src/runtime/nim/pytra-core/built_in/py_runtime.nim` と `src/runtime/nim/pytra-gen/utils/image_runtime.nim` へ分離し、`py_runtime.nim` から `include "image_runtime.nim"` で画像runtimeを参照する構成へ更新。`runtime_parity_sample_nim_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] `cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim` の14言語で `sample/01,05` parity を再実行し、`work/logs/runtime_parity_sample_all_0105_core_gen_split_20260304_retry.json` で `case_pass=2/case_fail=0`（`ok:28`）を確認。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] runtime copy/build 導線を新レイアウトへ更新（`backend_registry(_static)` の Scala/Nim core+gen copy、`runtime_parity_check` の C#/Scala 実行入力更新、`check_py2{scala,nim}_transpile` の runtime存在検証更新、JS/TS selfhost shim の core/gen 参照化）し、旧 `runtime/<lang>/pytra/` 固定参照は legacy ガード用途を除き撤去。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-03] `tools/audit_image_runtime_sot.py` に `--fail-on-core-mix` を追加し、`tools/run_local_ci.py` の必須ステップへ組み込み。`work/logs/image_runtime_core_gen_audit_20260304_s4_03_guardrail.json` で core 混入なし（fail条件未該当）を確認。
 
 ### P0: 画像runtime 静的ガードレール導入（core混入禁止）
 

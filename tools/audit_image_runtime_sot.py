@@ -230,6 +230,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="audit image runtime core/gen layout status")
     ap.add_argument("--probe-transpile", action="store_true", help="probe py2x transpile for src/pytra/utils/{png,gif}.py")
     ap.add_argument("--summary-json", default="", help="optional output path for json summary")
+    ap.add_argument(
+        "--fail-on-core-mix",
+        action="store_true",
+        help="exit non-zero if any pytra-core contains image encoder symbols",
+    )
     args = ap.parse_args()
 
     report = run_audit(args.probe_transpile)
@@ -268,6 +273,21 @@ def main() -> int:
         out = Path(args.summary_json)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    if args.fail_on_core_mix:
+        mixed_langs: list[str] = []
+        if isinstance(langs, dict):
+            for lang in sorted(langs.keys()):
+                entry = langs.get(lang)
+                if not isinstance(entry, dict):
+                    continue
+                reasons_any = entry.get("reasons")
+                reasons = reasons_any if isinstance(reasons_any, list) else []
+                if "core_contains_image_symbols" in reasons:
+                    mixed_langs.append(lang)
+        if len(mixed_langs) > 0:
+            print("[FAIL] pytra-core image symbol detected in: " + ", ".join(mixed_langs))
+            return 1
     return 0
 
 
