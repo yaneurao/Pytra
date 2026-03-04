@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Fail-fast guard for unexpected legacy `py2*.py` references.
+"""Fail-fast guard for legacy `py2*.py` wrapper reintroduction.
 
-This guard freezes current legacy reference locations until `S3-02` removes
-the wrappers entirely. New files introducing `src/py2*.py` path literals or
-`import py2*` usage fail this check.
+The canonical CLI entrypoints are `src/py2x.py` and `src/py2x-selfhost.py`.
+Any reintroduced `src/py2*.py` wrapper file, path literal, or `import py2*`
+reference (except `py2x`) should fail fast.
 """
 
 from __future__ import annotations
@@ -15,31 +15,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCAN_DIRS = [ROOT / "src", ROOT / "tools", ROOT / "test"]
+SRC_ROOT = ROOT / "src"
+
+CANONICAL_PY2_ENTRYPOINTS = {"py2x.py", "py2x-selfhost.py"}
+REMOVED_WRAPPER_MODULES = {
+    ROOT / "src" / "toolchain" / "compiler" / "py2x_wrapper.py",
+}
 
 # `src/py2x.py` / `src/py2x-selfhost.py` are canonical entrypoints and excluded.
 LEGACY_CLI_PATH_RE = re.compile(r"src/py2(?!x(?:-selfhost)?\.py)[A-Za-z0-9_]*\.py")
 # `import py2x` / `from py2x ...` are canonical and excluded.
 LEGACY_CLI_IMPORT_RE = re.compile(r"(?m)^\s*(?:from|import)\s+(py2(?!x(?:\b|_))\w+)")
 
-ALLOWED_PATH_REF_FILES = {
-    "src/backends/cpp/emitter/header_builder.py",
-    "src/backends/cpp/emitter/profile_loader.py",
-    "src/backends/cpp/emitter/runtime_paths.py",
-    "src/backends/cs/emitter/cs_emitter.py",
-    "tools/check_multilang_selfhost_multistage.py",
-    "tools/check_multilang_selfhost_stage1.py",
-    "tools/check_py2cpp_boundary.py",
-    "tools/check_py2cpp_helper_guard.py",
-    "tools/check_py2cpp_transpile.py",
-}
+ALLOWED_PATH_REF_FILES: set[str] = set()
 
-ALLOWED_IMPORT_REF_FILES = {
-    "src/backends/cpp/emitter/__init__.py",
-    "src/py2x.py",
-    "src/toolchain/compiler/backend_registry_static.py",
-    "test/unit/test_error_classification_cross_lang.py",
-    "tools/benchmark_cpp_list_models.py",
-}
+ALLOWED_IMPORT_REF_FILES: set[str] = set()
 
 
 def _iter_py_files() -> list[Path]:
@@ -56,8 +46,22 @@ def _rel(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
 
 
+def _find_reintroduced_wrapper_files() -> list[str]:
+    hits: list[str] = []
+    for path in sorted(SRC_ROOT.glob("py2*.py")):
+        if path.name in CANONICAL_PY2_ENTRYPOINTS:
+            continue
+        hits.append(_rel(path))
+    for removed_module in sorted(REMOVED_WRAPPER_MODULES):
+        if removed_module.exists():
+            hits.append(_rel(removed_module))
+    return hits
+
+
 def main() -> int:
     unexpected: list[str] = []
+    for rel in _find_reintroduced_wrapper_files():
+        unexpected.append(f"wrapper-file {rel}")
     for p in _iter_py_files():
         rel = _rel(p)
         txt = p.read_text(encoding="utf-8")
@@ -69,10 +73,10 @@ def main() -> int:
             unexpected.append(f"import-ref {rel}: {import_hits[0]}")
 
     if len(unexpected) > 0:
-        print("[FAIL] unexpected legacy CLI reference(s) detected:")
+        print("[FAIL] legacy py2 wrapper reintroduction detected:")
         for line in unexpected:
             print(" -", line)
-        print("Add migration to py2x/py2x-selfhost or update this guard intentionally.")
+        print("Use src/py2x.py or src/py2x-selfhost.py as canonical entrypoints.")
         return 1
 
     print("[OK] legacy CLI reference guard passed")
