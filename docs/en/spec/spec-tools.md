@@ -59,6 +59,16 @@ Its goals are:
   - Purpose: Run Scala3 parity in one command for all `sample` cases and the positive fixture manifest.
   - Main options: `--skip-fixture`, `--fixture-manifest`, `--east3-opt-level`, `--summary-dir`
 
+### 3.1 Smoke Test Operation (After `py2x` Unification)
+
+- Keep shared smoke coverage (CLI success, `--east-stage 2` rejection, `load_east`, add-fixture transpile) in `test/unit/test_py2x_smoke_common.py`.
+- Keep per-language suites (`test/unit/test_py2*_smoke.py`) focused on language-specific emitter/runtime contracts only.
+- Require the responsibility-boundary comment (`Language-specific smoke suite...`) in each per-language smoke file, and enforce this via `tools/check_noncpp_east3_contract.py`.
+- Recommended regression order:
+- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2x_smoke*.py'`
+- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py'`
+- `python3 tools/check_py2<lang>_transpile.py` (for affected targets)
+
 ## 4. Update Rules
 
 - When adding a new script under `tools/`, update this `docs/en/spec/spec-tools.md` at the same time.
