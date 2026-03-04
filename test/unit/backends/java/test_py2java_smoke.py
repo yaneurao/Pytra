@@ -159,13 +159,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("PyRuntime.__pytra_bytearray(width * height)", java)
         self.assertIn("frame.set((int)(", java)
 
-    def test_java_native_emitter_routes_math_calls_via_runtime_helpers(self) -> None:
+    def test_java_native_emitter_routes_math_calls_without_java_emitter_special_case(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("double angle = 2.0 * _m.pi * t;", java)
-        self.assertIn("_m.cos(angle)", java)
-        self.assertIn("_m.sin(angle)", java)
+        self.assertIn("double angle = 2.0 * math.pi * t;", java)
+        self.assertIn("math.cos(angle)", java)
+        self.assertIn("math.sin(angle)", java)
 
     def test_java_native_emitter_maps_json_calls_to_runtime_helpers(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -334,6 +334,9 @@ class Py2JavaSmokeTest(unittest.TestCase):
             'callee_name.startswith("py_assert_")',
             'owner_type == "Path"',
             "owner_type == 'Path'",
+            'owner == "math"',
+            "owner == 'math'",
+            "_java_math_runtime_call(",
             'attr in {"parent", "name", "stem"}',
             "attr in {'parent', 'name', 'stem'}",
         ]

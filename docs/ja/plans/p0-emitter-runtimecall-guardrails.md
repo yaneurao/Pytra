@@ -113,7 +113,7 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec` / `docs/en/spec` に責務境界（IR解決 vs emitter描画）を明文化する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03] `runtime_call/resolved_runtime_call` 未解決時は fail-closed（黙ってフォールバックしない）を non-C++ emitter 共通で強制する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter から stdlib 専用解決ロジック（例: `_java_math_runtime_call`, `owner == "math"`, `owner_type == "Path"`）を撤去し、EAST3 解決情報のみで描画する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05] emitter API を「解決済み Call IR 描画専用」に制限し、生 `callee/owner/attr` 分岐を書けない境界へ段階移行する（Java 先行）。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] guardrail を「分岐以外（dispatch table/context literal）」も検知する形へ拡張し、strict backend（Java）では allowlist 例外を禁止する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] EAST3 固定入力（`test/ir/*.json`）から backend-only 回帰を追加し、`math/Path` を含む解決済み runtime 呼び出しが emitter 直書きなしで通ることを固定する。
@@ -139,3 +139,4 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1`] Go emitter の PNG/GIF 呼び出しを `__pytra_*` 直参照から `pyWriteRGBPNG/pySaveGIF/pyGrayscalePalette`（宣言駆動）へ移行し、`test_py2go_smoke.py` と sample parity（`01/05`）の再通過を確認した（Kotlin/Swift は未着手）。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06`] `check_emitter_runtimecall_guardrails.py` を branch 以外（dispatch table/context literal）も検知するよう拡張し、strict backend（Java）は allowlist 例外なしの 0 件必須に固定した。回帰用に `test_check_emitter_runtimecall_guardrails.py` を追加し、`run_local_ci.py` へ組み込んだ。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04`] `Path.parent/name/stem` の解決を Java emitter の `owner_type == "Path"` 分岐から IR 側（`BuiltinAttr + runtime_call=path_parent/path_name/path_stem`）へ移し、Java emitter の型分岐を撤去した。`test_east_core.py` と `test_py2java_smoke.py` に回帰を追加した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04`] Java emitter の `_java_math_runtime_call` と `owner == "math"` 分岐を撤去し、`math.*` 呼び出しは通常の属性経路（特例なし）で描画するよう更新した。`test_py2java_smoke.py` に再発防止アサート（`owner == "math"` / `_java_math_runtime_call` 禁止）を追加し、`check_emitter_runtimecall_guardrails.py` を再通過した。
