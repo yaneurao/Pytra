@@ -601,31 +601,50 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
-_RESOLVED_RUNTIME_HELPERS: dict[str, str] = {
-    "json.loads": "json.loads",
-    "json.dumps": "json.dumps",
-    "write_rgb_png": "PngHelper.pyWriteRGBPNG",
-    "save_gif": "GifHelper.pySaveGif",
-    "grayscale_palette": "GifHelper.pyGrayscalePalette",
-    "Path": "pathlib.Path",
-}
 _ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
 
 
+def _snake_to_java_camel(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            if len(part) <= 3:
+                out.append(part.upper())
+            else:
+                out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
+
+
+def _runtime_helper_class_for_call_name(call_name: str) -> str:
+    lowered = call_name.strip().lower()
+    if lowered.find("png") >= 0:
+        return "PngHelper"
+    if lowered.find("gif") >= 0 or lowered.find("palette") >= 0:
+        return "GifHelper"
+    return ""
+
+
 def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
+    runtime_name = runtime_call.strip()
+    if runtime_name == "":
+        return ""
     rendered_args: list[str] = []
     i = 0
     while i < len(args):
         rendered_args.append(_render_expr(args[i]))
         i += 1
-    helper_name = _RESOLVED_RUNTIME_HELPERS.get(runtime_call)
-    if isinstance(helper_name, str) and helper_name != "":
-        if helper_name == "pathlib.Path":
-            if len(rendered_args) == 0:
-                return "new pathlib.Path(\"\")"
-            return "new pathlib.Path(" + rendered_args[0] + ")"
-        return helper_name + "(" + ", ".join(rendered_args) + ")"
-    return ""
+    joined = ", ".join(rendered_args)
+    if runtime_name.find(".") >= 0:
+        return runtime_name + "(" + joined + ")"
+    helper_class = _runtime_helper_class_for_call_name(runtime_name)
+    if helper_class != "":
+        helper_method = "py" + _snake_to_java_camel(runtime_name)
+        return helper_class + "." + helper_method + "(" + joined + ")"
+    return runtime_name + "(" + joined + ")"
 
 
 def _render_call_via_runtime_call(
@@ -636,12 +655,12 @@ def _render_call_via_runtime_call(
 ) -> str:
     if runtime_call in _ASSERTION_RUNTIME_CALLS:
         return _java_string_literal("True")
-    if runtime_call in _RESOLVED_RUNTIME_HELPERS:
-        mapped_call = _render_resolved_runtime_call(runtime_call, args)
-        if mapped_call != "":
-            return mapped_call
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    if semantic_tag == "stdlib.symbol.Path":
+        if len(args) == 0:
+            return "new pathlib.Path(\"\")"
+        return "new pathlib.Path(" + _render_expr(args[0]) + ")"
     if semantic_tag.startswith("stdlib.fn."):
         fn_name = semantic_tag[len("stdlib.fn."):].strip()
         if fn_name == "":

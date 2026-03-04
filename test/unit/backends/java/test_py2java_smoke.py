@@ -319,6 +319,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
                 self.assertNotIn(marker, src)
         self.assertNotIn("py_assert_", src)
         self.assertNotIn('"perf_counter"', src)
+        self.assertNotIn("_RESOLVED_RUNTIME_HELPERS", src)
 
 
 if __name__ == "__main__":
