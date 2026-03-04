@@ -216,3 +216,134 @@ function __pytra_list_repeat($v, int $count): array {
     }
     return $out;
 }
+
+function pyMathSqrt($v): float {
+    return sqrt(__pytra_float($v));
+}
+
+function pyMathSin($v): float {
+    return sin(__pytra_float($v));
+}
+
+function pyMathCos($v): float {
+    return cos(__pytra_float($v));
+}
+
+function pyMathTan($v): float {
+    return tan(__pytra_float($v));
+}
+
+function pyMathExp($v): float {
+    return exp(__pytra_float($v));
+}
+
+function pyMathLog($v): float {
+    return log(__pytra_float($v));
+}
+
+function pyMathFabs($v): float {
+    return abs(__pytra_float($v));
+}
+
+function pyMathFloor($v): float {
+    return floor(__pytra_float($v));
+}
+
+function pyMathCeil($v): float {
+    return ceil(__pytra_float($v));
+}
+
+function pyMathPow($a, $b): float {
+    return pow(__pytra_float($a), __pytra_float($b));
+}
+
+function pyMathPi(): float {
+    return M_PI;
+}
+
+function pyMathE(): float {
+    return M_E;
+}
+
+function pyJsonLoads($v) {
+    $text = (string)$v;
+    return json_decode($text, true, 512, JSON_THROW_ON_ERROR);
+}
+
+function pyJsonDumps($v): string {
+    return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+}
+
+class Path {
+    public string $path;
+    public string $name;
+    public string $stem;
+    public ?Path $parent;
+
+    public function __construct($value) {
+        $this->path = (string)$value;
+        $this->name = basename($this->path);
+        $dot = strrpos($this->name, '.');
+        $this->stem = ($dot === false || $dot === 0) ? $this->name : substr($this->name, 0, $dot);
+        $parentTxt = dirname($this->path);
+        if ($parentTxt === '' || $parentTxt === $this->path) {
+            $this->parent = null;
+        } else {
+            $this->parent = new Path($parentTxt);
+        }
+    }
+
+    public function __toString(): string {
+        return $this->path;
+    }
+
+    public function resolve(): Path {
+        $resolved = realpath($this->path);
+        if ($resolved === false) {
+            $resolved = $this->path;
+        }
+        return new Path($resolved);
+    }
+
+    public function exists(): bool {
+        return file_exists($this->path);
+    }
+
+    public function mkdir($parents = false, $exist_ok = false): void {
+        if ($exist_ok && file_exists($this->path)) {
+            return;
+        }
+        if ((bool)$parents) {
+            if (@mkdir($this->path, 0777, true)) {
+                return;
+            }
+            if ((bool)$exist_ok && is_dir($this->path)) {
+                return;
+            }
+            throw new RuntimeException("mkdir failed: " . $this->path);
+        }
+        if (@mkdir($this->path)) {
+            return;
+        }
+        if ((bool)$exist_ok && is_dir($this->path)) {
+            return;
+        }
+        throw new RuntimeException("mkdir failed: " . $this->path);
+    }
+
+    public function write_text($text, $encoding = "utf-8"): int {
+        $bytes = file_put_contents($this->path, (string)$text);
+        if ($bytes === false) {
+            throw new RuntimeException("write_text failed: " . $this->path);
+        }
+        return $bytes;
+    }
+
+    public function read_text($encoding = "utf-8"): string {
+        $data = file_get_contents($this->path);
+        if ($data === false) {
+            throw new RuntimeException("read_text failed: " . $this->path);
+        }
+        return $data;
+    }
+}

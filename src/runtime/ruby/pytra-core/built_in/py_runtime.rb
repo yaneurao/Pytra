@@ -1,5 +1,8 @@
 # Ruby native backend runtime helpers.
 
+require "json"
+require "pathname"
+
 def __pytra_noop(*args)
   _ = args
   nil
@@ -210,6 +213,130 @@ def __pytra_print(*args)
     return
   end
   puts(args.map { |x| __pytra_str(x) }.join(" "))
+end
+
+def pyMathSqrt(v)
+  Math.sqrt(__pytra_float(v))
+end
+
+def pyMathSin(v)
+  Math.sin(__pytra_float(v))
+end
+
+def pyMathCos(v)
+  Math.cos(__pytra_float(v))
+end
+
+def pyMathTan(v)
+  Math.tan(__pytra_float(v))
+end
+
+def pyMathExp(v)
+  Math.exp(__pytra_float(v))
+end
+
+def pyMathLog(v)
+  Math.log(__pytra_float(v))
+end
+
+def pyMathFabs(v)
+  __pytra_float(v).abs
+end
+
+def pyMathFloor(v)
+  __pytra_float(v).floor.to_f
+end
+
+def pyMathCeil(v)
+  __pytra_float(v).ceil.to_f
+end
+
+def pyMathPow(a, b)
+  __pytra_float(a)**__pytra_float(b)
+end
+
+def pyMathPi
+  Math::PI
+end
+
+def pyMathE
+  Math::E
+end
+
+def pyJsonLoads(v)
+  JSON.parse(__pytra_str(v))
+end
+
+def pyJsonDumps(v)
+  JSON.generate(v)
+end
+
+class Path
+  attr_reader :path
+
+  def initialize(v)
+    @path = __pytra_str(v)
+  end
+
+  def to_s
+    @path
+  end
+
+  def /(rhs)
+    rhs_txt = rhs.is_a?(Path) ? rhs.to_s : __pytra_str(rhs)
+    Path.new(File.join(@path, rhs_txt))
+  end
+
+  def resolve
+    Path.new(File.expand_path(@path))
+  end
+
+  def parent
+    txt = File.dirname(@path)
+    txt = "." if txt.nil? || txt.empty?
+    Path.new(txt)
+  end
+
+  def name
+    File.basename(@path)
+  end
+
+  def stem
+    nm = name
+    idx = nm.rindex(".")
+    return nm if idx.nil? || idx == 0
+    nm[0...idx]
+  end
+
+  def exists
+    File.exist?(@path)
+  end
+
+  def mkdir(parents = false, exist_ok = false)
+    if parents
+      begin
+        Dir.mkdir(@path)
+      rescue Errno::EEXIST
+        raise unless exist_ok
+      rescue Errno::ENOENT
+        require "fileutils"
+        FileUtils.mkdir_p(@path)
+      end
+      return
+    end
+    return if exist_ok && File.exist?(@path)
+    Dir.mkdir(@path)
+  rescue Errno::EEXIST
+    raise unless exist_ok
+  end
+
+  def write_text(text, encoding = "utf-8")
+    File.write(@path, __pytra_str(text), mode: "w", encoding: encoding)
+  end
+
+  def read_text(encoding = "utf-8")
+    File.read(@path, mode: "r", encoding: encoding)
+  end
 end
 
 require_relative "image_runtime"

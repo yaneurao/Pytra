@@ -185,6 +185,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Java emitter の `perf_counter()` を `PyRuntime.pyPerfCounter()` adapter 経由へ統一。`test_py2java_smoke.py`（`perf_counter` ケース）と `check_py2java_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 adapter 完了: `go/java/kotlin/swift` の `math/time/pathlib/json` 呼び出しを runtime helper / runtime wrapper 経由へ統一し、言語固有 API 名揺れを emitter 内部に閉じ込めた。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity を `go/java/kotlin/swift` で再実行し、初回ログ（`...s2_03.json`）の Kotlin 6件 run_failed を `pyMath*` 戻り型 `Double` 統一で解消。再計測ログ `work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json` で `case_pass=18/case_fail=0`（`ok:72`）を確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 先行（Ruby/PHP）として `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` runtime API を `pytra-core` に追加し、`runtime_parity_check --targets ruby,php 01_mandelbrot` で artifact（size+CRC32）一致を確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 

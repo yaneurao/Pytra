@@ -84,6 +84,7 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity 初回実行（`work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03.json`）で `kotlin` のみ 6 件 `run_failed`（`06/10/11/14/15/16`）を確認。原因は Kotlin runtime `pyMath*` 戻り型が `Any?` のままで数値演算文脈に入れないこと。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Kotlin/Swift runtime の `pyMath*` 戻り型を `Double` へ統一し、`test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` を再通過。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 parity 再実行（`work/logs/runtime_parity_wave1_go_java_kotlin_swift_20260304_s2_03_retry.json`）で `case_pass=18/case_fail=0`（`ok:72`）を確認し、runtime 差由来 fail を固定した。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2 先行実装（Ruby/PHP）として `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` runtime API を `pytra-core` へ追加。`runtime_parity_check --targets {ruby,php} 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
 
 ## S1-01 実装（2026-03-03）
 
