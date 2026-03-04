@@ -1,6 +1,6 @@
 # P1-MQ-05 Multistage Selfhost Status
 
-Measurement date: 2026-03-01
+Measurement date: 2026-03-02
 
 Command:
 
@@ -11,8 +11,8 @@ python3 tools/check_multilang_selfhost_multistage.py
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
 | rs | pass | fail | skip | compile_fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
-| cs | pass | pass | pass | pass | stage2/stage3 sample transpile ok |
-| js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: raise _make_east_build_error( |
+| cs | pass | fail | skip | compile_fail | /tmp/tmp9nds6tmk/cs_stage1.cs(197,19): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?) |
+| js | pass | pass | fail | sample_transpile_fail | SyntaxError: Unexpected token '{' |
 | ts | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | go | pass | skip | skip | runner_not_defined | multistage runner is not defined |
 | java | pass | skip | skip | runner_not_defined | multistage runner is not defined |
