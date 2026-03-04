@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+
 from pytra.std.typing import Any
 
 from backends.cs.hooks.cs_hooks import build_cs_hooks
@@ -364,6 +366,23 @@ class CSharpEmitter(CodeEmitter):
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
+
+    def _render_bytes_literal_expr(self, raw_repr: str) -> str:
+        raw = raw_repr.strip()
+        if raw == "":
+            return ""
+        if not (raw.startswith("b\"") or raw.startswith("b'")):
+            return ""
+        try:
+            parsed = ast.literal_eval(raw)
+        except Exception:
+            return ""
+        if not isinstance(parsed, (bytes, bytearray)):
+            return ""
+        elems: list[str] = []
+        for b in parsed:
+            elems.append("(byte)" + str(int(b)))
+        return "new System.Collections.Generic.List<byte> { " + ", ".join(elems) + " }"
 
     def _module_id_to_cs_namespace(self, module_id: str) -> str:
         """Python 形式モジュール名を C# namespace 文字列へ変換する。"""
@@ -2392,20 +2411,20 @@ class CSharpEmitter(CodeEmitter):
                 if attr_raw == "__init__":
                     return "base(" + ", ".join(rendered_args) + ")"
                 return "base." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "math":
+        if owner_name == "math" and not self.is_declared(owner_name):
             return "Pytra.CsModule.math." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "png":
+        if owner_name == "png" and not self.is_declared(owner_name):
             return "Pytra.CsModule.png_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "gif":
+        if owner_name == "gif" and not self.is_declared(owner_name):
             return "Pytra.CsModule.gif_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "time":
+        if owner_name == "time" and not self.is_declared(owner_name):
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "json":
+        if owner_name == "json" and not self.is_declared(owner_name):
             if attr_raw == "loads" and len(rendered_args) >= 1:
                 return "Pytra.CsModule.json.loads(" + rendered_args[0] + ")"
             if attr_raw == "dumps" and len(rendered_args) >= 1:
                 return "Pytra.CsModule.json.dumps(" + rendered_args[0] + ")"
-        if owner_name == "sys" and attr_raw == "exit":
+        if owner_name == "sys" and attr_raw == "exit" and not self.is_declared(owner_name):
             if len(rendered_args) >= 1:
                 return "System.Environment.Exit(System.Convert.ToInt32(" + rendered_args[0] + "))"
             return "System.Environment.Exit(0)"
@@ -2424,6 +2443,17 @@ class CSharpEmitter(CodeEmitter):
                 return owner_expr + ".EndsWith(" + rendered_args[0] + ")"
             if attr_raw == "startswith" and len(rendered_args) == 1:
                 return owner_expr + ".StartsWith(" + rendered_args[0] + ")"
+
+        if attr_raw == "to_bytes" and len(rendered_args) >= 2:
+            return (
+                "Pytra.CsModule.py_runtime.py_int_to_bytes("
+                + owner_expr
+                + ", System.Convert.ToInt32("
+                + rendered_args[0]
+                + "), "
+                + rendered_args[1]
+                + ")"
+            )
 
         if attr_raw in {"strip", "lstrip", "splitlines", "split", "replace", "find", "rfind"}:
             str_owner = owner_expr
@@ -2476,6 +2506,8 @@ class CSharpEmitter(CodeEmitter):
                 if owner_type in {"bytes", "bytearray"}:
                     return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"
                 return owner_expr + ".Add(" + rendered_args[0] + ")"
+            if attr_raw == "extend" and len(rendered_args) == 1:
+                return owner_expr + ".AddRange(" + rendered_args[0] + ")"
             if attr_raw == "clear" and len(rendered_args) == 0:
                 return owner_expr + ".Clear()"
             if attr_raw == "pop" and len(rendered_args) == 0:
@@ -2592,6 +2624,9 @@ class CSharpEmitter(CodeEmitter):
             tag, non_str = self.render_constant_non_string_common(expr, expr_d, "null", "null")
             if tag == "1":
                 return non_str
+            bytes_expr = self._render_bytes_literal_expr(self.any_to_str(expr_d.get("repr")))
+            if bytes_expr != "":
+                return bytes_expr
             return self.quote_string_literal(self.any_to_str(expr_d.get("value")))
 
         if kind == "JoinedStr":
@@ -2621,15 +2656,15 @@ class CSharpEmitter(CodeEmitter):
             attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
             if owner_kind == "Name" and owner_name == "self" and self.in_method_scope:
                 return "this." + attr
-            if owner_kind == "Name" and owner_name == "math":
+            if owner_kind == "Name" and owner_name == "math" and not self.is_declared(owner_name):
                 return "Pytra.CsModule.math." + attr
-            if owner_kind == "Name" and owner_name == "png":
+            if owner_kind == "Name" and owner_name == "png" and not self.is_declared(owner_name):
                 return "Pytra.CsModule.png_helper." + attr
-            if owner_kind == "Name" and owner_name == "gif":
+            if owner_kind == "Name" and owner_name == "gif" and not self.is_declared(owner_name):
                 return "Pytra.CsModule.gif_helper." + attr
-            if owner_kind == "Name" and owner_name == "time":
+            if owner_kind == "Name" and owner_name == "time" and not self.is_declared(owner_name):
                 return "Pytra.CsModule.time." + attr
-            if owner_kind == "Name" and owner_name == "sys" and attr == "argv":
+            if owner_kind == "Name" and owner_name == "sys" and attr == "argv" and not self.is_declared(owner_name):
                 return "args"
             owner_type = self.get_expr_type(owner_node)
             if owner_type == "Path":

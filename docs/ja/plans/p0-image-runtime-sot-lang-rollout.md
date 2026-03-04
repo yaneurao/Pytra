@@ -83,3 +83,5 @@
 - 2026-03-04: 監査結果から `probe ok` 群（`cs/js/ts/scala/nim`）を先行着手、`probe fail` 群（`rs/go/java/swift/kotlin/ruby/lua/php`）を阻害要因解消フェーズへ分離した。
 - 2026-03-04: 運用是正。`src/pytra/utils/png.py` / `gif.py` のターゲット都合変更は規約違反のため取り消し、`S1-04` は未完了へ戻した。以後は正本不変で backend 側修正のみを許可する。
 - 2026-03-04: 巻き戻し後に `tools/audit_image_runtime_sot.py --probe-transpile` を再実行し、`work/logs/image_runtime_sot_audit_20260304_after_revert.json` で baseline（`probe ok: cs/js/ts/scala/nim`, `probe fail: rs/go/java/swift/kotlin/ruby/lua/php`）へ復帰したことを確認。
+- 2026-03-04: `S2-CS` 着手として backend 側の受け皿を実装（`CSharpEmitter` に `bytes literal` / `list.extend` / `int.to_bytes` / module alias shadow 回避を追加、`py_runtime.cs` に `py_int_to_bytes` を追加）。さらに `tools/gen_cs_image_runtime_from_canonical.py` を追加して正本から C# helper 生成を試行。
+- 2026-03-04: 生成 helper への実差し替えは compile fail で未完了。主因は C# emitter 由来の追加未対応（`List<byte> + List<byte>`、`long` と shift 演算の型整合、`PyFile/open` 経路）。差し替えは巻き戻し済みで、`work/logs/runtime_parity_sample_cs_0105_after_restore_20260304.json` で `01/05` parity pass を確認。

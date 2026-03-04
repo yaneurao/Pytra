@@ -414,6 +414,29 @@ namespace Pytra.CsModule
             return new List<byte>(source);
         }
 
+        public static List<byte> py_int_to_bytes(object valueLike, object lengthLike, object byteorderLike)
+        {
+            long value = Convert.ToInt64(valueLike, CultureInfo.InvariantCulture);
+            int length = Convert.ToInt32(lengthLike, CultureInfo.InvariantCulture);
+            string byteorder = Convert.ToString(byteorderLike, CultureInfo.InvariantCulture) ?? "little";
+            if (length < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(lengthLike));
+            }
+            var outv = new List<byte>(length);
+            long cur = value;
+            for (int i = 0; i < length; i++)
+            {
+                outv.Add((byte)(cur & 0xFF));
+                cur >>= 8;
+            }
+            if (byteorder == "big")
+            {
+                outv.Reverse();
+            }
+            return outv;
+        }
+
         public static T py_get<T>(List<T> source, object indexLike)
         {
             int idx = NormalizeIndex(Convert.ToInt64(indexLike), source.Count);
