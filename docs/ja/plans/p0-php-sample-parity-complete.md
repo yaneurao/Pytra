@@ -42,15 +42,21 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、PHP parity 全件完了を P0 で再起票。既存ログ上の未達（`artifact_crc32_mismatch` 8件）を baseline として採用。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] `work/logs/runtime_parity_sample_php_rebaseline_20260304_rerun.json` を再生成し、`case_pass=10` / `case_fail=8`（`artifact_crc32_mismatch` のみ）を再確認。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] `out/diag_php/05_{py,php}.gif` の先頭差分が byte 804（GCE delay）であることを確認し、`save_gif(delay_cs=..., loop=...)` の keyword が PHP 出力で欠落していると特定。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] `src/backends/php/emitter/php_native_emitter.py` に `_render_image_runtime_call` を追加し、`save_gif`/`write_rgb_png` の keyword/引数検証と `delay_cs`,`loop` の正規化を実装。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] 再検証で残件 `sample/16` のみ不一致となり、GIF先頭差分が byte 13（palette）であることを確認。`palette_332` のビット演算が PHP emitter で `+` に崩れていたため、`BitAnd/BitOr/BitXor/LShift/RShift` を演算子マップへ追加。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] `test/unit/test_py2php_smoke.py` に `save_gif` keyword 引数順序と `sample/16` ビット演算維持の回帰テストを追加。`python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py'` で 9 件 pass。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `work/logs/runtime_parity_sample_php_case16_after_bitops_20260304.json` で `sample/16` 単独 pass を確認後、`work/logs/runtime_parity_sample_php_all_pass_20260304.json` で `case_pass=18` / `case_fail=0` / `category_counts={ok:18}` を達成。
 
 ## 分解
 
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] PHP `sample` 全件 parity を再実行し、単独 target の最新 baseline（失敗ケースとカテゴリ）を固定する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] fail 8件（`05,06,08,10,11,12,14,16`）の artifact 差分をケース別に切り分け、`PNG/GIF runtime` と `lower/emitter` のどちらが原因かを分類する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-01] PHP GIF runtime（フレーム順序・LZW・拡張ブロック）を Python 実装準拠へ揃え、GIF 系 CRC mismatch を解消する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-02] PHP PNG runtime（chunk 構築・圧縮経路・CRC 計算）を再検証し、必要な差分を修正する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] PHP lower/emitter の画像出力入力（palette/frame/list/bytes 経路）を是正し、runtime へ渡すデータ差分を解消する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] `sample/13` の stdout mismatch 再発有無を検証し、未解消なら根本原因を修正する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets php --all-samples` を再実行し、`case_pass=18` / `case_fail=0` を確認する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] 修正内容に対応する回帰テスト（unit または parity 用チェック）を追加して再発防止を固定する。
-- [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-03] 生成ログと決定事項を計画書へ記録し、TODO の完了条件を明示してクローズ可能状態にする。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] PHP `sample` 全件 parity を再実行し、単独 target の最新 baseline（失敗ケースとカテゴリ）を固定する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] fail 8件（`05,06,08,10,11,12,14,16`）の artifact 差分をケース別に切り分け、`PNG/GIF runtime` と `lower/emitter` のどちらが原因かを分類する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-01] PHP GIF runtime（フレーム順序・LZW・拡張ブロック）を Python 実装準拠へ揃え、GIF 系 CRC mismatch を解消する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-02] PHP PNG runtime（chunk 構築・圧縮経路・CRC 計算）を再検証し、必要な差分を修正する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] PHP lower/emitter の画像出力入力（palette/frame/list/bytes 経路）を是正し、runtime へ渡すデータ差分を解消する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] `sample/13` の stdout mismatch 再発有無を検証し、未解消なら根本原因を修正する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets php --all-samples` を再実行し、`case_pass=18` / `case_fail=0` を確認する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] 修正内容に対応する回帰テスト（unit または parity 用チェック）を追加して再発防止を固定する。
+- [x] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-03] 生成ログと決定事項を計画書へ記録し、TODO の完了条件を明示してクローズ可能状態にする。
