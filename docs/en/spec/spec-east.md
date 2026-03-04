@@ -211,6 +211,18 @@ About `lowered_kind: BuiltinCall`:
   - `write_rgb_png`, `save_gif`, `grayscale_palette`
   - `py_isdigit`, `py_isalpha`
 
+Required boundary for `runtime_call` / `resolved_runtime_call`:
+
+- Treat `runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`, and `semantic_tag` as canonical EAST3-resolved data.
+- Backends/emitters must only render these resolved fields and must not re-resolve function/module symbols.
+- If new information is required and EAST3 cannot represent it yet, extend the EAST3 schema first.
+
+Prohibited:
+
+- Adding per-symbol direct branches such as `if runtime_call == "perf_counter"` in emitters or frontends/signature registry.
+- Embedding runtime-dispatch tables (for example `py_assert_*`, `json.loads`, `write_rgb_png`) in emitters or frontends/signature registry.
+- Moving call-resolution rules into backend code because EAST3 is "not enough".
+
 For `.get(...).items()` on `dict[str, Any]`:
 
 - C++ generation assumes `dict[str, object]` and recursively converts `Dict`/`List` literal values via `make_object(...)` at initialization.

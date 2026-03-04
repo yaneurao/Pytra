@@ -14,10 +14,17 @@
 - 参照層: `src/toolchain/frontends/signature_registry.py`。
 - 利用側: `src/toolchain/ir/core.py` は参照層 API 経由で型を取得する。
 
+参照層の責務（必須）:
+
+- `signature_registry` は「戻り値型・メソッド型・import 解決補助」の参照に限定する。
+- runtime dispatch の最終決定は `EAST3`（`runtime_call` / `resolved_runtime_call` / `semantic_tag`）に載せ、backend はその解決済み情報のみを利用する。
+- `signature_registry` は backend 向けの個別シンボル分岐表を保持しない。
+
 禁止事項:
 
 - `core.py` に `perf_counter -> float64` のような戻り値型を直書きすること。
 - 同一シンボルについて `pytra/std` と compiler に別定義を持つこと。
+- `signature_registry` に `py_assert_*` / `perf_counter` / `json.loads` / `write_rgb_png` などの runtime dispatch 文字列を backend 用規則として直書きすること。
 
 ## 3. 取得単位
 

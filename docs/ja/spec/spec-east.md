@@ -222,6 +222,18 @@
   - `write_rgb_png`, `save_gif`, `grayscale_palette`
   - `py_isdigit`, `py_isalpha`
 
+`runtime_call` / `resolved_runtime_call` の責務境界（必須）:
+
+- `runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`, `semantic_tag` は EAST3 の正本情報として扱う。
+- backend/emitter はこの解決済み情報を描画するだけに限定し、関数名・モジュール名の再解決をしない。
+- EAST3 で表現されていない情報が必要になった場合は、まず EAST3 スキーマを拡張し、スキーマ側へ情報を載せる。
+
+禁止事項:
+
+- emitter や frontends/sig registry に `if runtime_call == "perf_counter"` のような個別シンボル直書き分岐を置くこと。
+- emitter や frontends/sig registry に `py_assert_*` / `json.loads` / `write_rgb_png` 等の runtime dispatch 用テーブルを埋めること。
+- 「EAST3では不足している」という理由で、呼び出し解決ルールを backend 側へ持ち込むこと。
+
 `dict[str, Any]` の `.get(...).items()` について:
 
 - C++ 生成時は `dict[str, object]` を前提に、`Dict`/`List` リテラル値を `make_object(...)` で再帰変換して初期化する。

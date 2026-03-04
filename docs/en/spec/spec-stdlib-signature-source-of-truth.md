@@ -14,10 +14,17 @@ This document defines the contract for `P0-STDLIB-SOT-01`: making `pytra/std` th
 - Reference layer: `src/toolchain/compiler/stdlib/signature_registry.py`.
 - Consumer side: `src/toolchain/compiler/east_parts/core.py` retrieves types through the reference-layer API.
 
+Required reference-layer responsibility:
+
+- `signature_registry` is limited to reference concerns (return/method type lookup and import-resolution assistance).
+- Final runtime dispatch decisions must be materialized in EAST3 (`runtime_call`, `resolved_runtime_call`, `semantic_tag`), and backends consume only those resolved fields.
+- `signature_registry` must not contain backend-specific per-symbol runtime-dispatch rules.
+
 Prohibited:
 
 - Hardcoding return types in `core.py`, such as `perf_counter -> float64`.
 - Keeping separate definitions for the same symbol in both `pytra/std` and compiler.
+- Hardcoding backend runtime-dispatch strings in `signature_registry` for symbols such as `py_assert_*`, `perf_counter`, `json.loads`, or `write_rgb_png`.
 
 ## 3. Retrieval Unit
 
