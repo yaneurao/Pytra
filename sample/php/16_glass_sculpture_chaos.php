@@ -117,9 +117,18 @@ function render_frame($width, $height, $frame_id, $frames_n) {
     $look_x = 0.0;
     $look_y = 0.35;
     $look_z = 0.0;
-    $_ = normalize(($look_x - $cam_x), ($look_y - $cam_y), ($look_z - $cam_z));
-    $_ = normalize($fwd_z, 0.0, (-$fwd_x));
-    $_ = normalize((($right_y * $fwd_z) - ($right_z * $fwd_y)), (($right_z * $fwd_x) - ($right_x * $fwd_z)), (($right_x * $fwd_y) - ($right_y * $fwd_x)));
+    $__pytra_unpack_0 = normalize(($look_x - $cam_x), ($look_y - $cam_y), ($look_z - $cam_z));
+    $fwd_x = ($__pytra_unpack_0[0] ?? null);
+    $fwd_y = ($__pytra_unpack_0[1] ?? null);
+    $fwd_z = ($__pytra_unpack_0[2] ?? null);
+    $__pytra_unpack_0 = normalize($fwd_z, 0.0, (-$fwd_x));
+    $right_x = ($__pytra_unpack_0[0] ?? null);
+    $right_y = ($__pytra_unpack_0[1] ?? null);
+    $right_z = ($__pytra_unpack_0[2] ?? null);
+    $__pytra_unpack_0 = normalize((($right_y * $fwd_z) - ($right_z * $fwd_y)), (($right_z * $fwd_x) - ($right_x * $fwd_z)), (($right_x * $fwd_y) - ($right_y * $fwd_x)));
+    $up_x = ($__pytra_unpack_0[0] ?? null);
+    $up_y = ($__pytra_unpack_0[1] ?? null);
+    $up_z = ($__pytra_unpack_0[2] ?? null);
     $s0x = (0.9 * cos((1.3 * $tphase)));
     $s0y = (0.15 + (0.35 * sin((1.7 * $tphase))));
     $s0z = (0.9 * sin((1.3 * $tphase)));
@@ -146,7 +155,10 @@ function render_frame($width, $height, $frame_id, $frames_n) {
             $rx = ($fwd_x + ($fov * (($sx * $right_x) + ($sy * $up_x))));
             $ry = ($fwd_y + ($fov * (($sx * $right_y) + ($sy * $up_y))));
             $rz = ($fwd_z + ($fov * (($sx * $right_z) + ($sy * $up_z))));
-            $_ = normalize($rx, $ry, $rz);
+            $__pytra_unpack_0 = normalize($rx, $ry, $rz);
+            $dx = ($__pytra_unpack_0[0] ?? null);
+            $dy = ($__pytra_unpack_0[1] ?? null);
+            $dz = ($__pytra_unpack_0[2] ?? null);
             $best_t = 1000000000.0;
             $hit_kind = 0;
             $r = 0.0;
@@ -175,7 +187,10 @@ function render_frame($width, $height, $frame_id, $frames_n) {
                 $hit_kind = 4;
             }
             if (($hit_kind == 0)) {
-                $_ = sky_color($dx, $dy, $dz, $tphase);
+                $__pytra_unpack_0 = sky_color($dx, $dy, $dz, $tphase);
+                $r = ($__pytra_unpack_0[0] ?? null);
+                $g = ($__pytra_unpack_0[1] ?? null);
+                $b = ($__pytra_unpack_0[2] ?? null);
             } else {
                 if (($hit_kind == 1)) {
                     $hx = ($cam_x + ($best_t * $dx));
@@ -189,7 +204,10 @@ function render_frame($width, $height, $frame_id, $frames_n) {
                     $lxv = ($lx - $hx);
                     $lyv = ($ly - (-1.2));
                     $lzv = ($lz - $hz);
-                    $_ = normalize($lxv, $lyv, $lzv);
+                    $__pytra_unpack_0 = normalize($lxv, $lyv, $lzv);
+                    $ldx = ($__pytra_unpack_0[0] ?? null);
+                    $ldy = ($__pytra_unpack_0[1] ?? null);
+                    $ldz = ($__pytra_unpack_0[2] ?? null);
                     $ndotl = max($ldy, 0.0);
                     $ldist2 = ((($lxv * $lxv) + ($lyv * $lyv)) + ($lzv * $lzv));
                     $glow = (8.0 / (1.0 + $ldist2));
@@ -222,11 +240,26 @@ function render_frame($width, $height, $frame_id, $frames_n) {
                     $hx = ($cam_x + ($best_t * $dx));
                     $hy = ($cam_y + ($best_t * $dy));
                     $hz = ($cam_z + ($best_t * $dz));
-                    $_ = normalize((($hx - $cx) / $rad), (($hy - $cy) / $rad), (($hz - $cz) / $rad));
-                    $_ = reflect($dx, $dy, $dz, $nx, $ny, $nz);
-                    $_ = refract($dx, $dy, $dz, $nx, $ny, $nz, (1.0 / 1.45));
-                    $_ = sky_color($rdx, $rdy, $rdz, $tphase);
-                    $_ = sky_color($tdx, $tdy, $tdz, ($tphase + 0.8));
+                    $__pytra_unpack_0 = normalize((($hx - $cx) / $rad), (($hy - $cy) / $rad), (($hz - $cz) / $rad));
+                    $nx = ($__pytra_unpack_0[0] ?? null);
+                    $ny = ($__pytra_unpack_0[1] ?? null);
+                    $nz = ($__pytra_unpack_0[2] ?? null);
+                    $__pytra_unpack_0 = reflect($dx, $dy, $dz, $nx, $ny, $nz);
+                    $rdx = ($__pytra_unpack_0[0] ?? null);
+                    $rdy = ($__pytra_unpack_0[1] ?? null);
+                    $rdz = ($__pytra_unpack_0[2] ?? null);
+                    $__pytra_unpack_0 = refract($dx, $dy, $dz, $nx, $ny, $nz, (1.0 / 1.45));
+                    $tdx = ($__pytra_unpack_0[0] ?? null);
+                    $tdy = ($__pytra_unpack_0[1] ?? null);
+                    $tdz = ($__pytra_unpack_0[2] ?? null);
+                    $__pytra_unpack_0 = sky_color($rdx, $rdy, $rdz, $tphase);
+                    $sr = ($__pytra_unpack_0[0] ?? null);
+                    $sg = ($__pytra_unpack_0[1] ?? null);
+                    $sb = ($__pytra_unpack_0[2] ?? null);
+                    $__pytra_unpack_0 = sky_color($tdx, $tdy, $tdz, ($tphase + 0.8));
+                    $tr = ($__pytra_unpack_0[0] ?? null);
+                    $tg = ($__pytra_unpack_0[1] ?? null);
+                    $tb = ($__pytra_unpack_0[2] ?? null);
                     $cosi = max((-((($dx * $nx) + ($dy * $ny)) + ($dz * $nz))), 0.0);
                     $fr = schlick($cosi, 0.04);
                     $r = (($tr * (1.0 - $fr)) + ($sr * $fr));
@@ -235,9 +268,15 @@ function render_frame($width, $height, $frame_id, $frames_n) {
                     $lxv = ($lx - $hx);
                     $lyv = ($ly - $hy);
                     $lzv = ($lz - $hz);
-                    $_ = normalize($lxv, $lyv, $lzv);
+                    $__pytra_unpack_0 = normalize($lxv, $lyv, $lzv);
+                    $ldx = ($__pytra_unpack_0[0] ?? null);
+                    $ldy = ($__pytra_unpack_0[1] ?? null);
+                    $ldz = ($__pytra_unpack_0[2] ?? null);
                     $ndotl = max(((($nx * $ldx) + ($ny * $ldy)) + ($nz * $ldz)), 0.0);
-                    $_ = normalize(($ldx - $dx), ($ldy - $dy), ($ldz - $dz));
+                    $__pytra_unpack_0 = normalize(($ldx - $dx), ($ldy - $dy), ($ldz - $dz));
+                    $hvx = ($__pytra_unpack_0[0] ?? null);
+                    $hvy = ($__pytra_unpack_0[1] ?? null);
+                    $hvz = ($__pytra_unpack_0[2] ?? null);
                     $ndoth = max(((($nx * $hvx) + ($ny * $hvy)) + ($nz * $hvz)), 0.0);
                     $spec = ($ndoth * $ndoth);
                     $spec = ($spec * $spec);
@@ -283,7 +322,7 @@ function run_16_glass_sculpture_chaos() {
     for ($i = 0; $i < $frames_n; $i += 1) {
         $frames[] = render_frame($width, $height, $i, $frames_n);
     }
-    __pytra_noop($out_path, $width, $height, $frames, palette_332());
+    __pytra_save_gif($out_path, $width, $height, $frames, palette_332());
     $elapsed = (__pytra_perf_counter() - $start);
     __pytra_print("output:", $out_path);
     __pytra_print("frames:", $frames_n);
