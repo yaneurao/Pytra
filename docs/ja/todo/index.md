@@ -62,6 +62,22 @@
 9. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] `docs/ja/spec`（必要なら `docs/en/spec`）へ新しいテスト配置規約と運用手順を反映する。
 - 進捗メモ: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] `test/unit` 71本を棚卸しし、移動マップを `backends/*:29, ir:10, tooling:5, selfhost:3, common:23` で確定。`S2-01` でこの分類に従って再編する。
 
+### P1: Nim sample parity 完了化（runtime_parity_check 正式統合）
+
+文脈: [docs/ja/plans/p1-nim-sample-parity-complete.md](../plans/p1-nim-sample-parity-complete.md)
+
+1. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01] Nim を parity 回帰対象へ正式統合し、`sample` 18件の stdout + artifact（size + CRC32）一致を完了させる。
+2. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-01] `runtime_parity_check` に Nim target（transpile/run/toolchain 判定）を追加する。
+3. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-02] `regenerate_samples.py` に Nim を追加し、`sample/nim` 再生成導線を固定する。
+4. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-03] Nim `sample` 全件 parity を実行して失敗カテゴリを固定する。
+5. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] Nim runtime の PNG writer を Python 準拠バイナリへ実装する。
+6. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-02] Nim runtime の GIF writer（`grayscale_palette` 含む）を実装する。
+7. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-03] Nim emitter/lower の画像出力経路と runtime 契約を整合させる。
+8. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-04] 残件ケース（例: `sample/18`）を最小修正で解消する。
+9. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-01] `--targets nim --all-samples` で `case_pass=18` / `case_fail=0` を確認する。
+10. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-02] Nim parity 契約の回帰テスト（CLI/smoke/transpile）を更新する。
+11. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-03] 検証ログと運用手順を計画書へ記録し、クローズ条件を明文化する。
+
 ### P2: 多言語 runtime の C++ 同等化（API 契約・機能カバレッジ統一）
 
 文脈: [docs/ja/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
