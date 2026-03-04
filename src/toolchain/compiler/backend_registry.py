@@ -78,7 +78,9 @@ def _runtime_rs(output_path: Path) -> None:
 
 
 def _runtime_go(output_path: Path) -> None:
-    _copy_runtime_file("runtime/go/pytra/py_runtime.go", output_path, "py_runtime.go")
+    _copy_runtime_file("runtime/go/pytra-core/built_in/py_runtime.go", output_path, "py_runtime.go")
+    _copy_runtime_file("runtime/go/pytra-gen/utils/png.go", output_path, "png.go")
+    _copy_runtime_file("runtime/go/pytra-gen/utils/gif.go", output_path, "gif.go")
 
 
 def _runtime_java(output_path: Path) -> None:

@@ -332,7 +332,12 @@ def build_targets(
                 f"test/transpile/go/{case_stem}.go",
                 opt_arg,
             ),
-            run_cmd=f"go run test/transpile/go/{case_stem}.go test/transpile/go/py_runtime.go",
+            run_cmd=(
+                f"go run test/transpile/go/{case_stem}.go "
+                "test/transpile/go/py_runtime.go "
+                "test/transpile/go/png.go "
+                "test/transpile/go/gif.go"
+            ),
             needs=("python", "go"),
         ),
         Target(
