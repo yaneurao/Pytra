@@ -54,7 +54,7 @@
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-CS] C# を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-JS] JavaScript を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-TS] TypeScript を `pytra-core` / `pytra-gen` 分離へ移行する。
-- [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 を `pytra-core` / `pytra-gen` 分離へ移行する。
+- [x] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-SCALA] Scala3 を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S3-NIM] Nim を `pytra-core` / `pytra-gen` 分離へ移行する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-01] 全言語 `sample/01,05` parity（stdout + artifact size + CRC32）を再確認する。
 - [ ] [ID: P0-IMAGE-RUNTIME-CORE-GEN-01-S4-02] backend runtime copy hook / build手順を新レイアウトへ更新する。
@@ -76,3 +76,4 @@
 - 2026-03-04: `S3-CS` 完了。C# runtime を `src/runtime/cs/pytra-core/{built_in,std}` と `src/runtime/cs/pytra-gen/utils` へ分離し、`tools/runtime_parity_check.py`・`tools/check_multilang_selfhost_stage1.py`・`tools/check_multilang_selfhost_multistage.py`・`tools/check_cs_single_source_selfhost_compile.py`・`tools/gen_cs_image_runtime_from_canonical.py` の参照を新レイアウトへ更新。`work/logs/runtime_parity_sample_cs_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-JS` 完了。JavaScript runtime を `src/runtime/js/pytra-core/{built_in,std}` と `src/runtime/js/pytra-gen/utils` へ分離し、`src/toolchain/compiler/js_runtime_shims.py` と JS selfhost 検証導線（`check_multilang_selfhost_stage1/multistage`）の runtime 参照を新パスへ更新。`test/unit/common/test_js_ts_runtime_dispatch.py` の JS runtime パスも同期し、`work/logs/runtime_parity_sample_js_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
 - 2026-03-04: `S3-TS` 完了。TypeScript runtime を `src/runtime/ts/pytra-core/{built_in,std}` と `src/runtime/ts/pytra-gen/utils` へ分離し、`test/unit/common/test_js_ts_runtime_dispatch.py` の TS runtime 参照を新パスへ更新。`work/logs/runtime_parity_sample_ts_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。
+- 2026-03-04: `S3-SCALA` 完了。Scala runtime の画像実装を `src/runtime/scala/pytra-gen/utils/image_runtime.scala` へ切り出し、`src/runtime/scala/pytra-core/built_in/py_runtime.scala` には core/runtime 本体のみを残す構成へ再配置。`backend_registry(_static)` と `runtime_parity_check` を `py_runtime.scala + image_runtime.scala` 実行に更新し、`work/logs/runtime_parity_sample_scala_0105_core_gen_split_20260304.json` で `sample/01,05` parity pass を確認。

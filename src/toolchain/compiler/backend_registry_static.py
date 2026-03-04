@@ -205,7 +205,8 @@ def _runtime_lua(output_path: Path) -> None:
 
 
 def _runtime_scala(output_path: Path) -> None:
-    _copy_runtime_file("runtime/scala/pytra/py_runtime.scala", output_path, "py_runtime.scala")
+    _copy_runtime_file("runtime/scala/pytra-core/built_in/py_runtime.scala", output_path, "py_runtime.scala")
+    _copy_runtime_file("runtime/scala/pytra-gen/utils/image_runtime.scala", output_path, "image_runtime.scala")
 
 
 def _runtime_nim(output_path: Path) -> None:

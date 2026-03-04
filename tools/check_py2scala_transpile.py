@@ -105,10 +105,18 @@ def _run_one(src: Path, out: Path) -> RunResult:
         )
     if cp.returncode == 0:
         runtime_path = out.parent / "py_runtime.scala"
+        image_runtime_path = out.parent / "image_runtime.scala"
         if not runtime_path.exists():
             return RunResult(
                 ok=False,
                 message="missing runtime file: py_runtime.scala",
+                raw="",
+                category="",
+            )
+        if not image_runtime_path.exists():
+            return RunResult(
+                ok=False,
+                message="missing runtime file: image_runtime.scala",
                 raw="",
                 category="",
             )

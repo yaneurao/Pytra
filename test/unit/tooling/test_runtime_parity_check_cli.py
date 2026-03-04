@@ -102,7 +102,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertIn("test/transpile/scala/01_mandelbrot.scala", scala_target.transpile_cmd)
         self.assertEqual(
             scala_target.run_cmd,
-            "scala run test/transpile/scala/py_runtime.scala test/transpile/scala/01_mandelbrot.scala",
+            "scala run test/transpile/scala/py_runtime.scala test/transpile/scala/image_runtime.scala test/transpile/scala/01_mandelbrot.scala",
         )
         self.assertEqual(scala_target.needs, ("python", "scala"))
 

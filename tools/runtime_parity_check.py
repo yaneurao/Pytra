@@ -397,7 +397,10 @@ def build_targets(
                 f"test/transpile/scala/{case_stem}.scala",
                 opt_arg,
             ),
-            run_cmd=f"scala run test/transpile/scala/py_runtime.scala test/transpile/scala/{case_stem}.scala",
+            run_cmd=(
+                "scala run test/transpile/scala/py_runtime.scala "
+                f"test/transpile/scala/image_runtime.scala test/transpile/scala/{case_stem}.scala"
+            ),
             needs=("python", "scala"),
         ),
         Target(
