@@ -32,6 +32,21 @@
 
 ## 未完了タスク
 
+### P0: Java `PyRuntime` から std/utils 実装を除去（SoT正本化）
+
+文脈: [docs/ja/plans/p0-java-pyruntime-sot-extraction.md](../plans/p0-java-pyruntime-sot-extraction.md)
+
+1. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01] Java runtime を `pytra-core` / `pytra-gen` 境界へ再収束させ、`PyRuntime.java` から SoT 由来実装を除去する。
+2. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-01] Java runtime の責務境界（`pytra-core`/`pytra-gen`）と禁止シンボルを仕様として固定する。
+3. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-02] `PyRuntime.java` 内の SoT 由来実装を棚卸しし、削除対象と移管先（`pytra-gen/std|utils`）を確定する。
+4. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-01] `src/pytra/std/{time,json,pathlib,math}.py` の Java 生成導線を整備し、`src/runtime/java/pytra-gen/std/*.java` を生成可能にする。
+5. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-02] Java runtime 配布導線（backend registry / runtime hook）を `pytra-core + pytra-gen/std + pytra-gen/utils` 前提へ更新する。
+6. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
+7. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
+8. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
+9. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
+10. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
+
 ### P0: 非C++ emitter のライブラリ関数名直書き再発防止（IR解決 + CIガード）
 
 文脈: [docs/ja/plans/p0-emitter-runtimecall-guardrails.md](../plans/p0-emitter-runtimecall-guardrails.md)
@@ -42,12 +57,14 @@
 4. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] static check（`check_emitter_runtimecall_guardrails.py`）を追加して違反を fail 化する。
 5. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail をローカルCI/CI 必須導線へ組み込む。
 6. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR の runtime API 解決経路を非C++ backend で共通利用できる形に整理する。
-7. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行する。
-8. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
-9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`src/pytra/utils/png.py` / `gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボル直書きを撤去する。
-10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
-11. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
-12. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
+7. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行し、SoT 宣言名をそのまま描画する。
+8. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter からライブラリ依存 rename（wrapper 名生成・互換名変換）を撤去し、IR 解決シンボル素通し描画へ統一する。
+9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] `P0-JAVA-PYRUNTIME-SOT-01` と接続し、`PyRuntime.java` 依存の std/utils 呼び出し経路を排除した状態で Java smoke/parity を再固定する。
+10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
+11. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`src/pytra/utils/png.py` / `gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボル直書きを撤去する。
+12. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
+13. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
+14. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go emitter の `perf_counter/Path/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `105 -> 95` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Kotlin emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `95 -> 87` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Swift emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `87 -> 79` へ縮退。
