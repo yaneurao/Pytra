@@ -94,6 +94,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-06] `check_emitter_runtimecall_guardrails.py` を branch 以外（dispatch table/context literal）検知へ拡張し、strict backend（Java）は allowlist 例外なしで 0 件必須へ固定した。さらに `owner_type/attr` も検出対象へ追加した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] `Path.parent/name/stem` を IR（`BuiltinAttr + runtime_call=path_*`）で解決するよう変更し、Java emitter の `owner_type == "Path"` 分岐を撤去した（`test_east_core` / `test_py2java_smoke` 回帰追加）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-04] Java emitter の `_java_math_runtime_call` と `owner == "math"` 分岐を撤去し、`math.pi/sin/cos` は通常の属性描画経路で出力するよう更新した。`test_py2java_smoke.py` に再発防止アサートを追加し、`check_emitter_runtimecall_guardrails.py` を再通過した。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go/Swift/Kotlin emitter の `owner == "math"` 分岐を撤去し、`resolved_runtime_call=math.*` を優先する描画経路へ移行した（既存 `pyMath*` runtime への接続は維持）。各言語 smoke に再発防止アサートを追加した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-07] 固定 IR 入力 `test/ir/java_math_path_runtime.east3.json`（`test/fixtures/stdlib/math_path_runtime_ir.py` 由来）を追加し、Java backend-only 回帰で `math.sin/math.pi` と `Path.parent/name/stem` が emitter 直書きなしで描画されることを固定した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-08] `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に「Emitter変更 Stop-Ship チェックリスト」を追加し、必須3コマンド・FAIL時コミット禁止・レビュー時確認項目を運用ルールとして固定した。
 
