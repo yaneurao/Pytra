@@ -615,33 +615,27 @@ def _runtime_call_java_name(runtime_call: str) -> str:
     return name
 
 
-def _runtime_call_java_path(runtime_call: str) -> str:
-    if runtime_call == "":
-        return ""
-    parts = runtime_call.split(".")
-    out: list[str] = []
-    i = 0
-    while i < len(parts):
-        piece = _runtime_call_java_name(parts[i])
-        if piece == "":
-            return ""
-        out.append(piece)
-        i += 1
-    return ".".join(out)
-
-
 def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
-    rendered_target = _runtime_call_java_path(runtime_call)
-    if rendered_target == "":
+    method_name = _runtime_call_java_name(runtime_call)
+    if "." in runtime_call:
+        parts = method_name.split("_")
+        camel = ""
+        i = 0
+        while i < len(parts):
+            part = parts[i]
+            if part != "":
+                camel += part[0].upper() + part[1:]
+            i += 1
+        if camel != "":
+            method_name = "py" + camel
+    if method_name == "":
         return ""
     rendered_args: list[str] = []
     i = 0
     while i < len(args):
         rendered_args.append(_render_expr(args[i]))
         i += 1
-    if "." in rendered_target:
-        return rendered_target + "(" + ", ".join(rendered_args) + ")"
-    return "PyRuntime." + rendered_target + "(" + ", ".join(rendered_args) + ")"
+    return "PyRuntime." + method_name + "(" + ", ".join(rendered_args) + ")"
 
 
 def _render_call_via_runtime_call(runtime_call: str, runtime_source: str, args: list[Any]) -> str:
