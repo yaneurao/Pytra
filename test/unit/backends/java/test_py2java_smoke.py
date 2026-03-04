@@ -305,15 +305,20 @@ class Py2JavaSmokeTest(unittest.TestCase):
         src_path = ROOT / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
         src = src_path.read_text(encoding="utf-8")
         forbidden = [
+            'runtime_call == "perf_counter"',
             'runtime_call == "json.loads"',
             'runtime_call == "json.dumps"',
             'runtime_call == "write_rgb_png"',
             'runtime_call == "save_gif"',
             'runtime_call == "grayscale_palette"',
+            'runtime_call.startswith("py_assert_")',
+            'callee_name.startswith("py_assert_")',
         ]
         for marker in forbidden:
             with self.subTest(marker=marker):
                 self.assertNotIn(marker, src)
+        self.assertNotIn("py_assert_", src)
+        self.assertNotIn('"perf_counter"', src)
 
 
 if __name__ == "__main__":

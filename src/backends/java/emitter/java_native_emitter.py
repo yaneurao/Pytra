@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pytra.std.typing import Any
+from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
+from toolchain.compiler.stdlib.signature_registry import list_stdlib_function_runtime_calls
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -608,6 +610,8 @@ _RESOLVED_RUNTIME_HELPERS: dict[str, str] = {
     "grayscale_palette": "GifHelper.pyGrayscalePalette",
     "Path": "pathlib.Path",
 }
+_ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
+_STDLIB_FUNCTION_RUNTIME_CALLS = set(list_stdlib_function_runtime_calls())
 
 
 def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
@@ -627,18 +631,23 @@ def _render_resolved_runtime_call(runtime_call: str, args: list[Any]) -> str:
 
 
 def _render_call_via_runtime_call(runtime_call: str, runtime_source: str, args: list[Any]) -> str:
-    if runtime_call.startswith("py_assert_"):
+    if runtime_call in _ASSERTION_RUNTIME_CALLS:
         return _java_string_literal("True")
     if runtime_call in _RESOLVED_RUNTIME_HELPERS:
         mapped_call = _render_resolved_runtime_call(runtime_call, args)
         if mapped_call != "":
             return mapped_call
+    if runtime_call in _STDLIB_FUNCTION_RUNTIME_CALLS:
+        rendered_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_args.append(_render_expr(args[i]))
+            i += 1
+        return "_impl." + runtime_call + "(" + ", ".join(rendered_args) + ")"
     if runtime_source == "resolved_runtime_call":
         rendered_resolved = _render_resolved_runtime_call(runtime_call, args)
         if rendered_resolved != "":
             return rendered_resolved
-    if runtime_call == "perf_counter":
-        return "_impl.perf_counter()"
     return ""
 
 
@@ -651,7 +660,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return rendered_runtime
 
     callee_name = _call_name(expr)
-    if callee_name.startswith("py_assert_"):
+    if callee_name in _ASSERTION_RUNTIME_CALLS:
         return _java_string_literal("True")
     if callee_name == "main" and len(args) == 0:
         return "__pytra_main()"
@@ -1151,6 +1160,9 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
         inferred = _java_type(target, allow_void=False)
         if inferred != "Object":
             return inferred
+    resolved_inferred = _java_type(expr.get("resolved_type"), allow_void=False)
+    if resolved_inferred != "Object":
+        return resolved_inferred
     if kind == "Call":
         func_any = expr.get("func")
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
@@ -1160,8 +1172,6 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
                 if owner == "math":
                     return "double"
         name = _call_name(expr)
-        if name == "perf_counter":
-            return "double"
         if name == "float":
             return "double"
         if name == "int":
