@@ -97,6 +97,11 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertNotIn("math.", go)
         self.assertNotIn("var _ = math.Pi", go)
 
+    def test_go_emitter_source_has_no_owner_math_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "go" / "emitter" / "go_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('owner == "math"', src)
+        self.assertNotIn("owner == 'math'", src)
+
     def test_go_native_emitter_maps_json_module_calls_to_runtime_helpers(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "json_calls.py"
