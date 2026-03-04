@@ -106,8 +106,10 @@ def _arraybuffer_elem_scala_type(py_type_name: str) -> str:
         return "Double"
     if py_type_name == "bool":
         return "Boolean"
-    if py_type_name in {"str", "Path"}:
+    if py_type_name == "str":
         return "String"
+    if py_type_name == "Path":
+        return "Path"
     return "Any"
 
 
@@ -209,7 +211,7 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
     if type_name == "str":
         return "String"
     if type_name == "Path":
-        return "String"
+        return "Path"
     if type_name.startswith("list["):
         return _list_scala_type(type_name)
     if type_name.startswith("tuple["):
@@ -604,7 +606,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
         right_type = right_resolved_any if isinstance(right_resolved_any, str) else ""
 
     if op == "Div" and (resolved == "Path" or left_type == "Path" or right_type == "Path"):
-        return "__pytra_path_join(" + left_expr + ", " + right_expr + ")"
+        return "Path(__pytra_path_join(" + left_expr + ", " + right_expr + "))"
 
     if op == "Div":
         return _join_binop_expr(
@@ -773,27 +775,27 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 
 def _math_call_name(attr: str) -> str:
     if attr == "sqrt":
-        return "scala.math.sqrt"
+        return "pyMathSqrt"
     if attr == "sin":
-        return "scala.math.sin"
+        return "pyMathSin"
     if attr == "cos":
-        return "scala.math.cos"
+        return "pyMathCos"
     if attr == "tan":
-        return "scala.math.tan"
+        return "pyMathTan"
     if attr == "exp":
-        return "scala.math.exp"
+        return "pyMathExp"
     if attr == "log":
-        return "scala.math.log"
+        return "pyMathLog"
     if attr == "pow":
-        return "scala.math.pow"
+        return "pyMathPow"
     if attr == "floor":
-        return "scala.math.floor"
+        return "pyMathFloor"
     if attr == "ceil":
-        return "scala.math.ceil"
+        return "pyMathCeil"
     if attr == "abs":
-        return "scala.math.abs"
+        return "pyMathFabs"
     if attr == "fabs":
-        return "scala.math.abs"
+        return "pyMathFabs"
     return _safe_ident(attr, "call")
 
 
@@ -807,16 +809,16 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner = _safe_ident(value_any.get("id"), "")
         if owner == "math" and attr == "pi":
-            return "Math.PI"
+            return "pyMathPi()"
         if owner == "math" and attr == "e":
-            return "Math.E"
+            return "pyMathE()"
     value = _render_expr(value_any)
     if owner_type == "Path" and attr == "name":
-        return "__pytra_path_name(" + value + ")"
+        return value + ".name"
     if owner_type == "Path" and attr == "stem":
-        return "__pytra_path_stem(" + value + ")"
+        return value + ".stem"
     if owner_type == "Path" and attr == "parent":
-        return "__pytra_path_parent(" + value + ")"
+        return value + ".parent"
     return value + "." + attr
 
 
@@ -870,8 +872,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "__pytra_perf_counter()"
     if callee_name == "Path":
         if len(args) == 0:
-            return "__pytra_path_new(\"\")"
-        return "__pytra_path_new(" + _render_expr(args[0]) + ")"
+            return "Path(\"\")"
+        return "Path(" + _render_expr(args[0]) + ")"
     if callee_name == "bytearray":
         if len(args) == 0:
             return "mutable.ArrayBuffer[Long]()"
@@ -973,9 +975,17 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 while i < len(args):
                     rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
                     i += 1
-                if attr_name == "pow" and len(rendered_math_args) == 2:
-                    return "scala.math.pow(" + rendered_math_args[0] + ", " + rendered_math_args[1] + ")"
                 return _math_call_name(attr_name) + "(" + ", ".join(rendered_math_args) + ")"
+            if owner == "json":
+                rendered_json_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_json_args.append(_render_expr(args[i]))
+                    i += 1
+                if attr_name == "loads" and len(rendered_json_args) >= 1:
+                    return "pyJsonLoads(" + rendered_json_args[0] + ")"
+                if attr_name == "dumps" and len(rendered_json_args) >= 1:
+                    return "pyJsonDumps(" + rendered_json_args[0] + ")"
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:
@@ -995,13 +1005,18 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
         owner_expr = _render_expr(owner_any)
         if owner_type == "Path" and attr_name == "exists" and len(args) == 0:
-            return "__pytra_path_exists(" + owner_expr + ")"
+            return owner_expr + ".exists()"
         if owner_type == "Path" and attr_name == "mkdir":
-            return "__pytra_path_mkdir(" + owner_expr + ")"
+            rendered_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_args.append(_render_expr(args[i]))
+                i += 1
+            return owner_expr + ".mkdir(" + ", ".join(rendered_args) + ")"
         if owner_type == "Path" and attr_name == "write_text" and len(args) >= 1:
-            return "__pytra_path_write_text(" + owner_expr + ", " + _render_expr(args[0]) + ")"
+            return owner_expr + ".write_text(" + _render_expr(args[0]) + ")"
         if owner_type == "Path" and attr_name == "read_text" and len(args) == 0:
-            return "__pytra_path_read_text(" + owner_expr + ")"
+            return owner_expr + ".read_text()"
         if attr_name == "write_rgb_png":
             rendered_args_png: list[str] = []
             i = 0
@@ -1316,7 +1331,7 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         if name == "str":
             return "String"
         if name == "Path":
-            return "String"
+            return "Path"
         if name == "bytearray" or name == "bytes":
             return "mutable.ArrayBuffer[Long]"
         if name == "len":

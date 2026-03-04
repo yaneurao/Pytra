@@ -433,6 +433,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return "max(" + ", ".join(rendered) + ")"
     if callee_name == "perf_counter":
         return "__pytra_perf_counter()"
+    if callee_name == "Path":
+        if len(args) == 0:
+            return "new Path(\"\")"
+        return "new Path(" + _render_expr(args[0]) + ")"
     if callee_name in {"save_gif", "write_rgb_png"}:
         return _render_image_runtime_call(callee_name, args, keywords_any)
     if callee_name == "isinstance":
@@ -475,8 +479,39 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_math_args.append(_render_expr(args[i]))
                     i += 1
                 if attr_name == "pi":
-                    return "M_PI"
-                return attr_name + "(" + ", ".join(rendered_math_args) + ")"
+                    return "pyMathPi()"
+                if attr_name == "e":
+                    return "pyMathE()"
+                if attr_name == "sqrt":
+                    return "pyMathSqrt(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "sin":
+                    return "pyMathSin(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "cos":
+                    return "pyMathCos(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "tan":
+                    return "pyMathTan(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "exp":
+                    return "pyMathExp(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "log":
+                    return "pyMathLog(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "pow":
+                    return "pyMathPow(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "floor":
+                    return "pyMathFloor(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "ceil":
+                    return "pyMathCeil(" + ", ".join(rendered_math_args) + ")"
+                if attr_name == "abs" or attr_name == "fabs":
+                    return "pyMathFabs(" + ", ".join(rendered_math_args) + ")"
+            if owner == "json":
+                rendered_json_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_json_args.append(_render_expr(args[i]))
+                    i += 1
+                if attr_name == "loads" and len(rendered_json_args) >= 1:
+                    return "pyJsonLoads(" + rendered_json_args[0] + ")"
+                if attr_name == "dumps" and len(rendered_json_args) >= 1:
+                    return "pyJsonDumps(" + rendered_json_args[0] + ")"
         owner_expr = _render_expr(owner_any)
         if attr_name == "get":
             if len(args) == 0:
@@ -589,7 +624,9 @@ def _render_expr(expr: Any) -> str:
         if isinstance(value_any, dict) and value_any.get("kind") == "Name":
             owner = _safe_ident(value_any.get("id"), "")
             if owner == "math" and attr == "pi":
-                return "M_PI"
+                return "pyMathPi()"
+            if owner == "math" and attr == "e":
+                return "pyMathE()"
         return _render_expr(value_any) + "->" + attr
     if kind == "Subscript":
         owner = _render_expr(expr.get("value"))

@@ -473,10 +473,17 @@ class LuaNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
                     if module_name == "math":
-                        import_lines.append("local " + alias_txt + " = __pytra_math_module()")
+                        import_lines.append(
+                            "local "
+                            + alias_txt
+                            + " = { sqrt = pyMathSqrt, sin = pyMathSin, cos = pyMathCos, tan = pyMathTan, exp = pyMathExp, log = pyMathLog, pow = pyMathPow, floor = pyMathFloor, ceil = pyMathCeil, abs = pyMathFabs, fabs = pyMathFabs, pi = pyMathPi(), e = pyMathE() }"
+                        )
+                        continue
+                    if module_name == "json":
+                        import_lines.append("local " + alias_txt + " = { loads = pyJsonLoads, dumps = pyJsonDumps }")
                         continue
                     if module_name == "pathlib":
-                        import_lines.append("local " + alias_txt + " = { Path = __pytra_path_new }")
+                        import_lines.append("local " + alias_txt + " = { Path = Path }")
                         continue
                     if module_name == "time":
                         import_lines.append("local " + alias_txt + " = { perf_counter = __pytra_perf_counter }")
@@ -528,10 +535,54 @@ class LuaNativeEmitter:
                         import_lines.append("local " + alias_txt + " = __pytra_perf_counter")
                         continue
                     if module_name == "math":
+                        if symbol == "sqrt":
+                            import_lines.append("local " + alias_txt + " = pyMathSqrt")
+                            continue
+                        if symbol == "sin":
+                            import_lines.append("local " + alias_txt + " = pyMathSin")
+                            continue
+                        if symbol == "cos":
+                            import_lines.append("local " + alias_txt + " = pyMathCos")
+                            continue
+                        if symbol == "tan":
+                            import_lines.append("local " + alias_txt + " = pyMathTan")
+                            continue
+                        if symbol == "exp":
+                            import_lines.append("local " + alias_txt + " = pyMathExp")
+                            continue
+                        if symbol == "log":
+                            import_lines.append("local " + alias_txt + " = pyMathLog")
+                            continue
+                        if symbol == "pow":
+                            import_lines.append("local " + alias_txt + " = pyMathPow")
+                            continue
+                        if symbol == "floor":
+                            import_lines.append("local " + alias_txt + " = pyMathFloor")
+                            continue
+                        if symbol == "ceil":
+                            import_lines.append("local " + alias_txt + " = pyMathCeil")
+                            continue
+                        if symbol in {"abs", "fabs"}:
+                            import_lines.append("local " + alias_txt + " = pyMathFabs")
+                            continue
+                        if symbol == "pi":
+                            import_lines.append("local " + alias_txt + " = pyMathPi()")
+                            continue
+                        if symbol == "e":
+                            import_lines.append("local " + alias_txt + " = pyMathE()")
+                            continue
                         import_lines.append("local " + alias_txt + " = __pytra_math_module()." + _safe_ident(symbol, symbol))
                         continue
+                    if module_name == "json":
+                        if symbol == "loads":
+                            import_lines.append("local " + alias_txt + " = pyJsonLoads")
+                            continue
+                        if symbol == "dumps":
+                            import_lines.append("local " + alias_txt + " = pyJsonDumps")
+                            continue
+                        continue
                     if module_name == "pathlib" and symbol == "Path":
-                        import_lines.append("local " + alias_txt + " = __pytra_path_new")
+                        import_lines.append("local " + alias_txt + " = Path")
                         continue
                     if module_name == "pytra.utils" and symbol == "png":
                         import_lines.append("local " + alias_txt + " = __pytra_png_module()")

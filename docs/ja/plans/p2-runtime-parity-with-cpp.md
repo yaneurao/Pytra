@@ -57,7 +57,7 @@
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Wave1 の emitter 呼び出しを adapter 経由へ寄せ、API 名揺れを吸収する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Wave1 の parity 回帰を追加し、runtime 差由来 fail を固定する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Wave2（`ruby/lua/scala/php`）で同様に不足 API を実装・統一する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Wave2 の emitter 呼び出しを adapter 経由へ寄せる。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Wave2 の emitter 呼び出しを adapter 経由へ寄せる。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-03] Wave2 の parity 回帰を追加し、runtime 差由来 fail を固定する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-01] Wave3（`js/ts/cs/rs`）で不足 API を補完し、契約差を解消する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-02] runtime API 欠落検知チェックを追加し、CI/ローカル回帰へ組み込む。
@@ -88,6 +88,8 @@
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Lua runtime に `pyMath*` / `pyJsonLoads|pyJsonDumps` / `Path` API を追加し、`runtime_parity_check --targets lua 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime に `pyMath*` / `Path` API を追加し、`runtime_parity_check --targets scala 01_mandelbrot` で `artifact_size+CRC32` 一致を確認。
 - 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] Scala runtime の `pyJsonLoads|pyJsonDumps` を再帰 parser/stringify 実装へ置換し、`check_py2{lua,php,scala}_transpile.py`（`90/10/142` all green）と `runtime_parity_check --targets ruby,php,lua,scala 01_mandelbrot` で Wave2 4言語の回帰を固定。`S3-01` を完了。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Ruby/PHP/Scala emitter の `math/json/pathlib` を runtime adapter（`pyMath*` / `pyJson*` / `Path`）経由へ統一し、Lua emitter の import 解決も runtime adapter（`pyMath*` / `pyJson*` / `Path` / `__pytra_perf_counter`）へ寄せた。
+- 2026-03-04: [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] `check_py2{lua,php,scala}_transpile.py` と `runtime_parity_check --targets ruby,php,lua,scala 01_mandelbrot` を再実行し、Wave2 adapter 化後の非退行（`ok:4`）を確認。`S3-02` を完了。
 
 ## S1-01 実装（2026-03-03）
 
