@@ -64,15 +64,6 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_uses_native_output(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        go = transpile_to_go(east)
-        self.assertIn("package main", go)
-        assert_no_generated_comments(self, go)
-        self.assertNotIn("func __pytra_truthy(v any) bool {", go)
-        self.assertNotIn('exec.Command("node"', go)
-
     def test_go_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -169,70 +160,6 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("var b map[any]any = __pytra_as_dict((func() map[any]any {", go)
         self.assertNotIn("var a []any = __pytra_as_list(xs)", go)
         self.assertNotIn("var b map[any]any = __pytra_as_dict(ys)", go)
-
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = convert_path(fixture)
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            go = transpile_to_go_native(loaded)
-        self.assertIn("package main", go)
-
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
-
-    def test_cli_smoke_defaults_to_native_without_sidecar(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_go = Path(td) / "if_else.go"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "go", str(fixture), "-o", str(out_go)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_go.exists())
-            self.assertFalse(out_js.exists())
-            txt = out_go.read_text(encoding="utf-8")
-            self.assertIn("package main", txt)
-            self.assertNotIn("Auto-generated Pytra Go native source from EAST3.", txt)
-            self.assertNotIn("func __pytra_truthy(v any) bool {", txt)
-            runtime_go = Path(td) / "py_runtime.go"
-            self.assertTrue(runtime_go.exists())
-            runtime_txt = runtime_go.read_text(encoding="utf-8")
-            self.assertIn("func __pytra_truthy(v any) bool {", runtime_txt)
-            self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_go = Path(td) / "if_else.go"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "go", str(fixture), "-o", str(out_go), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2go_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")

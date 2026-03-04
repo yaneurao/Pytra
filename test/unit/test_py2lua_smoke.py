@@ -64,15 +64,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_uses_native_output(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        lua = transpile_to_lua(east)
-        assert_no_generated_comments(self, lua)
-        self.assertIn("function add(a, b)", lua)
-        self.assertIn("print(add(3, 4))", lua)
-        self.assertNotIn("node ", lua)
-
     def test_transpile_if_else_fixture_contains_lua_if(self) -> None:
         fixture = find_fixture_case("if_else")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -154,63 +145,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
         lua = transpile_to_lua_native(east)
         self.assertIn("for i = (#(xs) - 1), ((-1)) + 1, (-1) do", lua)
         self.assertNotIn("for i = (#(xs) - 1), ((-1)) - 1, (-1) do", lua)
-
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = convert_path(fixture)
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            lua = transpile_to_lua_native(loaded)
-        self.assertIn("function add(a, b)", lua)
-
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
-
-    def test_cli_smoke_defaults_to_native_without_sidecar(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_lua = Path(td) / "if_else.lua"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "lua", str(fixture), "-o", str(out_lua)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_lua.exists())
-            self.assertFalse(out_js.exists())
-            txt = out_lua.read_text(encoding="utf-8")
-            self.assertNotIn("Auto-generated Pytra Lua native source from EAST3.", txt)
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_lua = Path(td) / "if_else.lua"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "lua", str(fixture), "-o", str(out_lua), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2lua_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")

@@ -44,20 +44,6 @@ class Py2CppSmokeTest(unittest.TestCase):
                 break
         self.assertTrue(has_emitter_import)
 
-    def test_default_run_has_no_stage2_compat_warning(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            src_py = Path(tmpdir) / "ok.py"
-            out_cpp = Path(tmpdir) / "ok.cpp"
-            src_py.write_text("print(1)\n", encoding="utf-8")
-            proc = subprocess.run(
-                ["python3", str(PY2X), str(src_py), "--target", "cpp", "-o", str(out_cpp)],
-                cwd=ROOT,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
-            self.assertNotIn(STAGE2_COMPAT_WARNING, proc.stderr)
-
     def test_stage2_mode_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             src_py = Path(tmpdir) / "ok.py"

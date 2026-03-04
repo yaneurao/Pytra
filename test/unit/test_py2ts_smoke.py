@@ -65,36 +65,12 @@ class Py2TsSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_contains_function_signature(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        ts = transpile_to_typescript(east)
-        assert_no_generated_comments(self, ts)
-        self.assertIn("function add(a, b) {", ts)
-
     def test_comment_fidelity_preserves_source_comments(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
         assert_no_generated_comments(self, ts)
         assert_sample01_module_comments(self, ts, prefix="//")
-
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = convert_path(fixture)
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            ts = transpile_to_typescript(loaded)
-        self.assertIn("function add(a, b)", ts)
-
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
 
     def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
         fixture = find_fixture_case("import_time_from")
@@ -120,44 +96,6 @@ class Py2TsSmokeTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
             self.assertTrue((Path(td) / "pytra" / "py_runtime.js").exists())
-
-    def test_cli_smoke_generates_ts_file(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_ts = Path(td) / "if_else.ts"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_ts.exists())
-            txt = out_ts.read_text(encoding="utf-8")
-            self.assertIn("function abs_like", txt)
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_ts = Path(td) / "if_else.ts"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2ts_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")

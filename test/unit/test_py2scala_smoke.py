@@ -63,13 +63,6 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_uses_native_output(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        scala = transpile_to_scala(east)
-        self.assertIn("def main(args: Array[String]): Unit", scala)
-        self.assertNotIn("Auto-generated Pytra Scala 3 native source from EAST3.", scala)
-
     def test_scala_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -129,16 +122,6 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("__pytra_int(255.0 * (1.0 - t))", scala)
         self.assertNotIn("__pytra_int(255.0 * 1.0 - t)", scala)
 
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = convert_path(fixture)
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            scala = transpile_to_scala_native(loaded)
-        self.assertIn("def main(args: Array[String]): Unit", scala)
-
     def test_scala_native_emitter_fail_closed_on_unsupported_stmt_kind(self) -> None:
         east = {
             "kind": "Module",
@@ -193,13 +176,6 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("scala.math.abs", scala)
         self.assertNotIn("fabs(", scala)
 
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
-
     def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
         east = {
             "kind": "Module",
@@ -245,48 +221,6 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("while (i > 3L) {", scala)
         self.assertNotIn("while ((i > 3L)) {", scala)
         self.assertNotIn("while ((i < 3L)) {", scala)
-
-    def test_cli_smoke_defaults_to_native_without_sidecar(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_scala = Path(td) / "if_else.scala"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "scala", str(fixture), "-o", str(out_scala)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_scala.exists())
-            self.assertFalse(out_js.exists())
-            txt = out_scala.read_text(encoding="utf-8")
-            self.assertIn("def main(args: Array[String]): Unit", txt)
-            self.assertNotIn("Auto-generated Pytra Scala 3 native source from EAST3.", txt)
-            self.assertFalse((Path(td) / "pytra" / "runtime.js").exists())
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_scala = Path(td) / "if_else.scala"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "scala", str(fixture), "-o", str(out_scala), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2scala_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")

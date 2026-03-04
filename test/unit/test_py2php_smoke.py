@@ -62,14 +62,6 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_uses_native_output(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        php = transpile_to_php(east)
-        self.assertIn("require_once __DIR__ . '/pytra/py_runtime.php';", php)
-        self.assertIn("function add($a, $b)", php)
-        self.assertIn("__pytra_print(add(3, 4));", php)
-
     def test_transpile_for_range_fixture_contains_static_for(self) -> None:
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -105,66 +97,6 @@ class Py2PhpSmokeTest(unittest.TestCase):
         php = transpile_to_php_native(east)
         self.assertIn("($cat instanceof Dog)", php)
         self.assertIn("($dog instanceof Animal)", php)
-
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            php = transpile_to_php_native(loaded)
-        self.assertIn("function add($a, $b)", php)
-
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
-
-    def test_cli_smoke_defaults_to_native_and_copies_runtime_tree(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_php = Path(td) / "if_else.php"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "php", str(fixture), "-o", str(out_php)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_php.exists())
-            txt = out_php.read_text(encoding="utf-8")
-            self.assertIn("require_once __DIR__ . '/pytra/py_runtime.php';", txt)
-            self.assertTrue((Path(td) / "pytra" / "py_runtime.php").exists())
-            self.assertTrue((Path(td) / "pytra" / "runtime" / "png.php").exists())
-            self.assertTrue((Path(td) / "pytra" / "runtime" / "gif.php").exists())
-            self.assertTrue((Path(td) / "pytra" / "std" / "time.php").exists())
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_php = Path(td) / "if_else.php"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "php", str(fixture), "-o", str(out_php), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
-
 
 if __name__ == "__main__":
     unittest.main()

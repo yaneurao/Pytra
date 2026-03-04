@@ -72,16 +72,6 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_uses_native_output(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        ruby = transpile_to_ruby(east)
-        assert_no_generated_comments(self, ruby)
-        self.assertIn('require_relative "py_runtime"', ruby)
-        self.assertIn("def add(a, b)", ruby)
-        self.assertNotIn("def __pytra_truthy(v)", ruby)
-        self.assertNotIn('exec.Command("node"', ruby)
-
     def test_ruby_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -96,69 +86,6 @@ class Py2RbSmokeTest(unittest.TestCase):
         ruby = transpile_to_ruby_native(east)
         assert_no_generated_comments(self, ruby)
         assert_sample01_module_comments(self, ruby, prefix="#")
-
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = convert_path(fixture)
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            ruby = transpile_to_ruby_native(loaded)
-        self.assertIn("def add(a, b)", ruby)
-
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
-
-    def test_cli_smoke_defaults_to_native_without_sidecar(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_rb = Path(td) / "if_else.rb"
-            out_js = Path(td) / "if_else.js"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_rb.exists())
-            self.assertFalse(out_js.exists())
-            txt = out_rb.read_text(encoding="utf-8")
-            self.assertNotIn("Auto-generated Pytra Ruby native source from EAST3.", txt)
-            self.assertIn('require_relative "py_runtime"', txt)
-            self.assertNotIn("def __pytra_truthy(v)", txt)
-            runtime_rb = Path(td) / "py_runtime.rb"
-            self.assertTrue(runtime_rb.exists())
-            runtime_txt = runtime_rb.read_text(encoding="utf-8")
-            self.assertIn("def __pytra_truthy(v)", runtime_txt)
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_rb = Path(td) / "if_else.rb"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_py2rb_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")

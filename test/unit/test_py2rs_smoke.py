@@ -65,15 +65,6 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_add_fixture_contains_function_signature(self) -> None:
-        fixture = find_fixture_case("add")
-        east = load_east(fixture, parser_backend="self_hosted")
-        rust = transpile_to_rust(east)
-        assert_no_generated_comments(self, rust)
-        self.assertIn("fn add(a: i64, b: i64) -> i64 {", rust)
-        self.assertIn("fn _case_main()", rust)
-        self.assertIn("fn main()", rust)
-
     def test_comment_fidelity_preserves_source_comments(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
@@ -90,16 +81,6 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertNotIn("i = __for_i_", rust)
         self.assertNotIn("while i < n {", rust)
 
-    def test_load_east_from_json(self) -> None:
-        fixture = find_fixture_case("add")
-        east = convert_path(fixture)
-        with tempfile.TemporaryDirectory() as td:
-            east_json = Path(td) / "case.east.json"
-            east_json.write_text(json.dumps(east), encoding="utf-8")
-            loaded = load_east(east_json)
-            rust = transpile_to_rust(loaded)
-        self.assertIn("fn add(a: i64, b: i64)", rust)
-
     def test_load_east_from_json_wrapper_payload(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
@@ -110,13 +91,6 @@ class Py2RsSmokeTest(unittest.TestCase):
             loaded = load_east(east_json)
             rust = transpile_to_rust(loaded)
         self.assertIn("fn add(a: i64, b: i64)", rust)
-
-    def test_load_east_defaults_to_stage3_entry_and_returns_east3_shape(self) -> None:
-        fixture = find_fixture_case("for_range")
-        loaded = load_east(fixture, parser_backend="self_hosted")
-        self.assertIsInstance(loaded, dict)
-        self.assertEqual(loaded.get("kind"), "Module")
-        self.assertEqual(loaded.get("east_stage"), 3)
 
     def test_for_core_static_range_plan_is_emitted(self) -> None:
         east = {
@@ -444,46 +418,6 @@ class Py2RsSmokeTest(unittest.TestCase):
         rust = transpile_to_rust(east)
         self.assertIn("PyAny::Int((1) as i64)", rust)
         self.assertIn("py_any_to_i64(&y)", rust)
-
-    def test_cli_smoke_generates_rs_file(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_rs = Path(td) / "if_else.rs"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "rs", str(fixture), "-o", str(out_rs)],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue(out_rs.exists())
-            runtime_rs = Path(td) / "py_runtime.rs"
-            self.assertTrue(runtime_rs.exists())
-            txt = out_rs.read_text(encoding="utf-8")
-            self.assertIn("fn abs_like", txt)
-
-    def test_cli_rejects_stage2_compat_mode(self) -> None:
-        fixture = find_fixture_case("if_else")
-        with tempfile.TemporaryDirectory() as td:
-            out_rs = Path(td) / "if_else.rs"
-            env = dict(os.environ)
-            py_path = str(ROOT / "src")
-            old = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-            proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "rs", str(fixture), "-o", str(out_rs), "--east-stage", "2"],
-                cwd=ROOT,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertIn("--east-stage 2 is no longer supported; use EAST3 (default).", proc.stderr)
 
     def test_imports_emit_use_lines(self) -> None:
         fixture = find_fixture_case("from_pytra_std_import_math")
