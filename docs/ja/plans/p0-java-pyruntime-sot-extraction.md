@@ -92,3 +92,4 @@
 - 2026-03-05: `S2-01` として `tools/gen_java_std_runtime_from_canonical.py` を追加し、`src/pytra/std/{time,json,pathlib,math}.py` から `src/runtime/java/pytra-gen/std/*.java` を機械生成できる状態を固定した（`--check` 対応）。
 - 2026-03-05: `S2-02` として Java runtime hook（host/static backend registry）を `pytra-core + pytra-gen/utils + pytra-gen/std` 配布へ更新した。
 - 2026-03-05: `S3-01` の先行段として Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を撤去し、`runtime_call/resolved_runtime_call` 経由描画へ寄せた（`test_py2java_smoke` green, guardrail green）。
+- 2026-03-05: `S4-01` の先行段として `PyRuntime.java` から画像互換ラッパ（`pyWriteRGBPNG/pySaveGif/pyGrayscalePalette`）を削除し、公開名 `write_rgb_png/save_gif/grayscale_palette` のみを残した。

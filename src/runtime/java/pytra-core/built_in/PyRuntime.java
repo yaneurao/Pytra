@@ -1081,19 +1081,6 @@ final class PyRuntime {
         save_gif(path, width, height, frames, palette, 4L, 0L);
     }
 
-    // ---- legacy java emitter helper compatibility ----
-    static void pyWriteRGBPNG(Object path, Object width, Object height, Object pixels) {
-        write_rgb_png(path, width, height, pixels);
-    }
-
-    static ArrayList<Long> pyGrayscalePalette() {
-        return grayscale_palette();
-    }
-
-    static void pySaveGif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs, Object loop) {
-        save_gif(path, width, height, frames, palette, delayCs, loop);
-    }
-
     static void __pytra_noop(Object... args) {
     }
 
