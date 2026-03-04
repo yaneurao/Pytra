@@ -25,8 +25,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-IMAGE_SYMBOL_RE = re.compile(
+GEN_IMAGE_SYMBOL_RE = re.compile(
     r"(write_rgb_png|save_gif|grayscale_palette|py_write_rgb_png|py_save_gif|py_grayscale_palette|__pytra_write_rgb_png|__pytra_save_gif|__pytra_grayscale_palette)"
+)
+CORE_FORBIDDEN_SYMBOL_RE = re.compile(
+    r"(__pytra_write_rgb_png|__pytra_save_gif|__pytra_grayscale_palette|png_crc32|png_adler32|gif_lzw_encode|zlib_store_compress|pytraGifLzwEncode|pytraCrc32|pytraAdler32)"
 )
 SOURCE_MARKER_RE = re.compile(r"source:\s*src/pytra/utils/(png|gif)\.py", re.IGNORECASE)
 GENERATED_BY_RE = re.compile(r"generated-by:\s*", re.IGNORECASE)
@@ -82,7 +85,7 @@ def _collect_output_text(path: Path) -> str:
     return "\n".join(parts)
 
 
-def _scan_tree_for_symbols(root: Path) -> list[str]:
+def _scan_tree_for_symbols(root: Path, symbol_re: re.Pattern[str]) -> list[str]:
     hits: list[str] = []
     if not root.exists() or not root.is_dir():
         return hits
@@ -90,7 +93,7 @@ def _scan_tree_for_symbols(root: Path) -> list[str]:
         if not child.is_file():
             continue
         txt = _read_text(child)
-        if IMAGE_SYMBOL_RE.search(txt) is not None:
+        if symbol_re.search(txt) is not None:
             hits.append(str(child.relative_to(ROOT)))
     return hits
 
@@ -105,7 +108,7 @@ def _scan_gen_markers(gen_root: Path) -> tuple[list[str], list[str], list[str]]:
         if not child.is_file():
             continue
         txt = _read_text(child)
-        if IMAGE_SYMBOL_RE.search(txt) is None:
+        if GEN_IMAGE_SYMBOL_RE.search(txt) is None:
             continue
         rel = str(child.relative_to(ROOT))
         image_files.append(rel)
@@ -122,9 +125,9 @@ def _scan_runtime_layout(spec: LangSpec) -> dict[str, object]:
     gen_root = runtime_root / "pytra-gen"
     legacy_root = runtime_root / "pytra"
 
-    core_hits = _scan_tree_for_symbols(core_root)
+    core_hits = _scan_tree_for_symbols(core_root, CORE_FORBIDDEN_SYMBOL_RE)
     gen_hits, gen_missing_source, gen_missing_generated_by = _scan_gen_markers(gen_root)
-    legacy_hits = _scan_tree_for_symbols(legacy_root)
+    legacy_hits = _scan_tree_for_symbols(legacy_root, GEN_IMAGE_SYMBOL_RE)
 
     reasons: list[str] = []
     if not core_root.exists():

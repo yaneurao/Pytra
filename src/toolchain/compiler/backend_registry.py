@@ -73,7 +73,8 @@ def _runtime_js_shims(output_path: Path) -> None:
 
 
 def _runtime_rs(output_path: Path) -> None:
-    _copy_runtime_file("runtime/rs/pytra/built_in/py_runtime.rs", output_path, "py_runtime.rs")
+    _copy_runtime_file("runtime/rs/pytra-core/built_in/py_runtime.rs", output_path, "py_runtime.rs")
+    _copy_runtime_file("runtime/rs/pytra-gen/utils/image_runtime.rs", output_path, "image_runtime.rs")
 
 
 def _runtime_go(output_path: Path) -> None:
