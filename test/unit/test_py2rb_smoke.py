@@ -1,5 +1,8 @@
 """py2rb (EAST based) smoke tests."""
 
+# Language-specific smoke suite.
+# Shared py2x target-parameterized checks live in test_py2x_smoke_common.py.
+
 from __future__ import annotations
 
 import json

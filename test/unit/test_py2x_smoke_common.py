@@ -1,4 +1,8 @@
-"""Common smoke tests shared across py2x backend targets."""
+"""Common smoke tests shared across py2x backend targets.
+
+Per-language smoke suites should keep only language-specific assertions.
+Shared CLI/load_east/add-fixture checks belong to this file.
+"""
 
 from __future__ import annotations
 

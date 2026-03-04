@@ -1,5 +1,8 @@
 """Smoke tests for py2cpp CLI stage selection behavior."""
 
+# Language-specific smoke suite.
+# Shared py2x target-parameterized checks live in test_py2x_smoke_common.py.
+
 from __future__ import annotations
 
 import ast
