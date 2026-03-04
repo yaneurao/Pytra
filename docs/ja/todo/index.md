@@ -67,8 +67,8 @@
 4. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] static check（`check_emitter_runtimecall_guardrails.py`）を追加して違反を fail 化する。
 5. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail をローカルCI/CI 必須導線へ組み込む。
 6. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR の runtime API 解決経路を非C++ backend で共通利用できる形に整理する。
-7. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行し、SoT 宣言名をそのまま描画する。
-8. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter からライブラリ依存 rename（wrapper 名生成・互換名変換）を撤去し、IR 解決シンボル素通し描画へ統一する。
+7. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行し、SoT 宣言名をそのまま描画する。
+8. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter からライブラリ依存 rename（wrapper 名生成・互換名変換）を撤去し、IR 解決シンボル素通し描画へ統一する。
 9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] `P0-JAVA-PYRUNTIME-SOT-01` と接続し、`PyRuntime.java` 依存の std/utils 呼び出し経路を排除した状態で Java smoke/parity を再固定する。
 10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
 11. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`src/pytra/utils/png.py` / `gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボル直書きを撤去する。
@@ -81,6 +81,9 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] emitter 内での `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` 混入を監視する `check_emitter_forbidden_runtime_symbols.py` を追加し、`run_local_ci.py` 経由で CI fail-fast 化（baseline 31件）した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] 上記 Go/Kotlin/Swift の移行は runtime 実装シンボル直参照を残しており、完了条件未達として `S3-03-R1/R2` に再編してやり直す。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] `pyWriteRGBPNG` など公開wrapper名直書きへの置換案は採用せず、`png.py/gif.py` 宣言正本で解決する宣言駆動方針へ計画を更新した。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の `Path/json/png/gif` は `resolved_runtime_call` 宣言名マップ経由へ統一し、`PyRuntime.*` 依存を排除した。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R1] Java emitter のライブラリ依存 rename（`json.loads -> pyJsonLoads` 等）を撤去し、未マップ `resolved_runtime_call` は描画しない fail-closed 運用へ変更した。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02-R2] `PyRuntime.java` の std/utils 残置（Path/json/image/time/math）除去後に Java smoke と sample parity（`01/05/18`）を再固定した。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
