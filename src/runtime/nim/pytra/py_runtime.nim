@@ -1,4 +1,6 @@
 # Nim runtime for Pytra
+# source: src/pytra/utils/png.py
+# source: src/pytra/utils/gif.py
 import std/os
 import std/times
 import std/tables
