@@ -76,7 +76,7 @@
 
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-01] Java runtime の責務境界（`pytra-core`/`pytra-gen`）と禁止シンボルを仕様として固定する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-02] `PyRuntime.java` 内の SoT 由来実装を棚卸しし、削除対象と移管先（`pytra-gen/std|utils`）を確定する。
-- [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-01] `src/pytra/std/{time,json,pathlib,math}.py` の Java 生成導線を整備し、`src/runtime/java/pytra-gen/std/*.java` を生成可能にする。
+- [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-01] `src/pytra/std/{time,json,pathlib,math}.py` の Java 生成導線を整備し、`src/runtime/java/pytra-gen/std/*.java` を生成可能にする。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-02] Java runtime 配布導線（backend registry / runtime hook）を `pytra-core + pytra-gen/std + pytra-gen/utils` 前提へ更新する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
@@ -89,3 +89,4 @@
 - 2026-03-05: `perf_counter` だけでなく `json/pathlib/time/math/png/gif` 全体を `PyRuntime.java` から除去対象に含める方針を確定した。
 - 2026-03-05: `S1-01` として Java runtime の責務境界を `pytra-core` / `pytra-gen/std` / `pytra-gen/utils` に固定し、禁止事項（core 側 std/utils 実装・emitter 直書き）を明文化した。
 - 2026-03-05: `S1-02` として `PyRuntime.java` 内の SoT 由来シンボル棚卸し（time/math/pathlib/json/image）と移管先を確定した。
+- 2026-03-05: `S2-01` として `tools/gen_java_std_runtime_from_canonical.py` を追加し、`src/pytra/std/{time,json,pathlib,math}.py` から `src/runtime/java/pytra-gen/std/*.java` を機械生成できる状態を固定した（`--check` 対応）。
