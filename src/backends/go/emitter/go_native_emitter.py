@@ -702,6 +702,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
     keywords_any = expr.get("keywords")
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    args_with_keywords: list[Any] = list(args)
+    kw_i = 0
+    while kw_i < len(keywords):
+        kw_any = keywords[kw_i]
+        if isinstance(kw_any, dict):
+            value_any = kw_any.get("value")
+            if value_any is not None:
+                args_with_keywords.append(value_any)
+        kw_i += 1
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
@@ -745,6 +755,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "[]any{}"
         return "__pytra_enumerate(" + _render_expr(args[0]) + ")"
+    if callee_name == "Path":
+        if len(args) == 0:
+            return "NewPath(\"\")"
+        return "NewPath(" + _render_expr(args[0]) + ")"
     if callee_name == "min":
         if len(args) == 0:
             return "int64(0)"
@@ -791,8 +805,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 recv = _CURRENT_RECEIVER_VAR if _CURRENT_RECEIVER_VAR != "" else "self"
                 rendered_super_args: list[str] = []
                 i = 0
-                while i < len(args):
-                    rendered_super_args.append(_render_expr(args[i]))
+                while i < len(args_with_keywords):
+                    rendered_super_args.append(_render_expr(args_with_keywords[i]))
                     i += 1
                 if attr_name == "__init__":
                     if base_name != "":
@@ -847,24 +861,24 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_grayscale_palette()"
         rendered_args: list[str] = []
         i = 0
-        while i < len(args):
-            rendered_args.append(_render_expr(args[i]))
+        while i < len(args_with_keywords):
+            rendered_args.append(_render_expr(args_with_keywords[i]))
             i += 1
         return owner_expr + "." + attr_name + "(" + ", ".join(rendered_args) + ")"
 
     if callee_name in _CLASS_NAMES:
         rendered_ctor_args: list[str] = []
         i = 0
-        while i < len(args):
-            rendered_ctor_args.append(_render_expr(args[i]))
+        while i < len(args_with_keywords):
+            rendered_ctor_args.append(_render_expr(args_with_keywords[i]))
             i += 1
         return "New" + callee_name + "(" + ", ".join(rendered_ctor_args) + ")"
 
     func_expr = _render_expr(expr.get("func"))
     rendered_args: list[str] = []
     i = 0
-    while i < len(args):
-        rendered_args.append(_render_expr(args[i]))
+    while i < len(args_with_keywords):
+        rendered_args.append(_render_expr(args_with_keywords[i]))
         i += 1
     return func_expr + "(" + ", ".join(rendered_args) + ")"
 

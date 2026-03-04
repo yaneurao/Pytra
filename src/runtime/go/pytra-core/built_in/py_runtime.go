@@ -42,6 +42,13 @@ func pyToString(v any) string {
 			parts = append(parts, pyToString(k)+": "+pyToString(v))
 		}
 		return "{" + strings.Join(parts, ", ") + "}"
+	case Path:
+		return x.value
+	case *Path:
+		if x == nil {
+			return ""
+		}
+		return x.value
 	case pyPath:
 		return x.value
 	default:
@@ -566,8 +573,91 @@ type pyPath struct {
 	value string
 }
 
+type Path struct {
+	value  string
+	parent *Path
+	name   string
+	stem   string
+}
+
+func __pytra_new_path(value string, shallowParent bool) *Path {
+	p := &Path{value: value}
+	base := filepath.Base(value)
+	p.name = base
+	ext := filepath.Ext(base)
+	p.stem = strings.TrimSuffix(base, ext)
+	parentText := filepath.Dir(value)
+	if parentText == value {
+		p.parent = p
+	} else if shallowParent {
+		p.parent = p
+	} else {
+		p.parent = __pytra_new_path(parentText, true)
+	}
+	return p
+}
+
+func NewPath(v any) *Path {
+	return __pytra_new_path(pyPathString(v), false)
+}
+
+func __pytra_as_Path(v any) *Path {
+	if p, ok := v.(*Path); ok {
+		return p
+	}
+	if p, ok := v.(Path); ok {
+		cp := p
+		return &cp
+	}
+	return NewPath(v)
+}
+
+func (p *Path) String() string {
+	if p == nil {
+		return ""
+	}
+	return p.value
+}
+
+func (p *Path) exists() any {
+	return pyPathExists(p)
+}
+
+func (p *Path) read_text() any {
+	return pyPathReadText(p)
+}
+
+func (p *Path) write_text(content any) any {
+	return pyPathWriteText(p, content)
+}
+
+func (p *Path) mkdir(args ...any) any {
+	parents := any(false)
+	existOK := any(false)
+	if len(args) >= 1 {
+		parents = args[0]
+	}
+	if len(args) >= 2 {
+		existOK = args[1]
+	}
+	return pyPathMkdir(p, parents, existOK)
+}
+
+func (p *Path) resolve() any {
+	return pyPathResolve(p)
+}
+
 func pyPathString(v any) string {
 	if p, ok := v.(pyPath); ok {
+		return p.value
+	}
+	if p, ok := v.(Path); ok {
+		return p.value
+	}
+	if p, ok := v.(*Path); ok {
+		if p == nil {
+			return ""
+		}
 		return p.value
 	}
 	return pyToString(v)
@@ -657,6 +747,13 @@ func pyToJSONValue(v any) any {
 		return x
 	case string:
 		return x
+	case Path:
+		return x.value
+	case *Path:
+		if x == nil {
+			return ""
+		}
+		return x.value
 	case pyPath:
 		return x.value
 	case []byte:

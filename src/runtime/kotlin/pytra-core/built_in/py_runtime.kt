@@ -1,6 +1,7 @@
 // Kotlin native runtime helpers for Pytra-generated code.
 import kotlin.math.*
 import java.io.File
+import java.nio.file.Paths
 
 fun __pytra_noop(vararg args: Any?) { }
 
@@ -591,5 +592,68 @@ private class __PytraJsonParser(private val text: String) {
 
     private fun isDigit(ch: Char): Boolean {
         return ch >= '0' && ch <= '9'
+    }
+}
+
+// --- pathlib ---
+
+class Path(raw: Any?) {
+    val value: String = __pytra_str(raw)
+
+    val parent: Path
+        get() {
+            val parentText = File(value).parent ?: ""
+            return Path(parentText)
+        }
+
+    val name: String
+        get() {
+            return File(value).name
+        }
+
+    val stem: String
+        get() {
+            val n = name
+            val idx = n.lastIndexOf('.')
+            if (idx <= 0) return n
+            return n.substring(0, idx)
+        }
+
+    fun exists(): Boolean {
+        return File(value).exists()
+    }
+
+    fun read_text(): String {
+        return File(value).readText(Charsets.UTF_8)
+    }
+
+    fun write_text(content: Any?): Any? {
+        val outFile = File(value)
+        val parentDir = outFile.parentFile
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs()
+        }
+        outFile.writeText(__pytra_str(content), Charsets.UTF_8)
+        return null
+    }
+
+    fun mkdir(parents: Any? = false, exist_ok: Any? = false): Any? {
+        val dir = File(value)
+        val ok = if (__pytra_truthy(parents)) dir.mkdirs() else dir.mkdir()
+        if (!ok && dir.exists() && __pytra_truthy(exist_ok)) {
+            return null
+        }
+        if (!dir.exists()) {
+            throw RuntimeException("Path.mkdir failed: " + value)
+        }
+        return null
+    }
+
+    fun resolve(): Path {
+        return Path(Paths.get(value).toAbsolutePath().normalize().toString())
+    }
+
+    override fun toString(): String {
+        return value
     }
 }

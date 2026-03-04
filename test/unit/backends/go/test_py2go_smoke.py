@@ -109,6 +109,23 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("pyJsonDumps(v)", go)
         self.assertIn("pyJsonLoads(s)", go)
 
+    def test_go_native_emitter_uses_runtime_path_wrapper(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "path_case.py"
+            src.write_text(
+                "from pathlib import Path\n"
+                "def f() -> bool:\n"
+                "    p = Path('tmp/a.txt')\n"
+                "    p.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    return p.exists()\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            go = transpile_to_go_native(east)
+        self.assertIn("var p *Path = __pytra_as_Path(NewPath(\"tmp/a.txt\"))", go)
+        self.assertIn("p.parent.mkdir(true, true)", go)
+        self.assertIn("return __pytra_truthy(p.exists())", go)
+
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")

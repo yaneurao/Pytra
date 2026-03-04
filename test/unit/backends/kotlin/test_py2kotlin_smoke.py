@@ -137,6 +137,23 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertNotIn("json.loads(", kotlin)
         self.assertNotIn("json.dumps(", kotlin)
 
+    def test_kotlin_native_emitter_uses_runtime_path_class(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "path_case.py"
+            src.write_text(
+                "from pathlib import Path\n"
+                "def f() -> bool:\n"
+                "    p = Path('tmp/a.txt')\n"
+                "    p.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    return p.exists()\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            kotlin = transpile_to_kotlin_native(east)
+        self.assertIn("var p: Path = Path(\"tmp/a.txt\")", kotlin)
+        self.assertIn("p.parent.mkdir(true, true)", kotlin)
+        self.assertIn("return p.exists()", kotlin)
+
     def test_dict_literal_entries_are_materialized(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "dict_literal_entries.py"

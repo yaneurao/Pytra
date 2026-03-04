@@ -391,3 +391,89 @@ private func __pytra_json_from_foundation(_ value: Any) -> Any? {
     }
     return value
 }
+
+// --- pathlib ---
+
+final class Path: CustomStringConvertible {
+    let value: String
+
+    init(_ raw: Any?) {
+        self.value = __pytra_str(raw)
+    }
+
+    var parent: Path {
+        let url = URL(fileURLWithPath: value)
+        let parentURL = url.deletingLastPathComponent()
+        let parentPath = parentURL.path
+        if parentPath == value {
+            return self
+        }
+        return Path(parentPath)
+    }
+
+    var name: String {
+        let url = URL(fileURLWithPath: value)
+        return url.lastPathComponent
+    }
+
+    var stem: String {
+        let n = name
+        if let idx = n.lastIndex(of: ".") {
+            if idx > n.startIndex {
+                return String(n[..<idx])
+            }
+        }
+        return n
+    }
+
+    func exists() -> Bool {
+        return FileManager.default.fileExists(atPath: value)
+    }
+
+    func read_text() -> String {
+        do {
+            return try String(contentsOfFile: value, encoding: .utf8)
+        } catch {
+            fatalError("Path.read_text failed: \(error)")
+        }
+    }
+
+    @discardableResult
+    func write_text(_ content: Any?) -> Any? {
+        let outURL = URL(fileURLWithPath: value)
+        let parentURL = outURL.deletingLastPathComponent()
+        if parentURL.path != "" && parentURL.path != "." {
+            try? FileManager.default.createDirectory(at: parentURL, withIntermediateDirectories: true)
+        }
+        do {
+            try __pytra_str(content).write(to: outURL, atomically: true, encoding: .utf8)
+            return nil
+        } catch {
+            fatalError("Path.write_text failed: \(error)")
+        }
+    }
+
+    @discardableResult
+    func mkdir(_ parents: Any? = false, _ exist_ok: Any? = false) -> Any? {
+        let dirURL = URL(fileURLWithPath: value)
+        let withIntermediate = __pytra_truthy(parents)
+        do {
+            try FileManager.default.createDirectory(at: dirURL, withIntermediateDirectories: withIntermediate)
+            return nil
+        } catch {
+            if __pytra_truthy(exist_ok) && FileManager.default.fileExists(atPath: value) {
+                return nil
+            }
+            fatalError("Path.mkdir failed: \(error)")
+        }
+    }
+
+    func resolve() -> Path {
+        let abs = URL(fileURLWithPath: value).standardizedFileURL.path
+        return Path(abs)
+    }
+
+    var description: String {
+        return value
+    }
+}

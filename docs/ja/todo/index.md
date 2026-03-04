@@ -177,6 +177,8 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin: `py_runtime.kt` に `pyJsonLoads/pyJsonDumps` を追加し、Kotlin emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2kotlin_smoke.py` と `check_py2kotlin_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Swift: `py_runtime.swift` に `pyJsonLoads/pyJsonDumps` を追加し、Swift emitter の `json.loads/json.dumps` を helper 経由へ統一。`test_py2swift_smoke.py` と `check_py2swift_transpile.py` で非退行確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Java: `Path` runtime を `PyRuntime.Path`（`parent/name/stem` と `exists/read_text/write_text/mkdir/resolve`）として実装し、Java emitter の `Path` 型/ctor/isinstance を `PyRuntime.Path` へ統一。`test_py2java_smoke.py` と `check_py2java_transpile.py` で非退行確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Kotlin/Swift: runtime に `Path` クラス（`parent/name/stem` + `exists/read_text/write_text/mkdir/resolve`）を追加し、`Path(...)` 呼び出し生成がそのままコンパイル可能であることを `test_py2{kotlin,swift}_smoke.py` と `check_py2{kotlin,swift}_transpile.py` で確認。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] Wave1-Go: runtime に `Path` wrapper（`NewPath/__pytra_as_Path` + method群）を追加し、Go emitter で keyword 引数値を一般呼び出しへ反映するよう修正。`pathlib` の `mkdir(parents=True, exist_ok=True)` が `mkdir(true, true)` へ降りることを `test_py2go_smoke.py` と `check_py2go_transpile.py` で確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 

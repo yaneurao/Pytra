@@ -143,6 +143,23 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
         self.assertNotIn("json.loads(", swift)
         self.assertNotIn("json.dumps(", swift)
 
+    def test_swift_native_emitter_uses_runtime_path_class(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "path_case.py"
+            src.write_text(
+                "from pathlib import Path\n"
+                "def f() -> bool:\n"
+                "    p = Path('tmp/a.txt')\n"
+                "    p.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    return p.exists()\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            swift = transpile_to_swift_native(east)
+        self.assertIn("var p: Path = Path(\"tmp/a.txt\")", swift)
+        self.assertIn("p.parent.mkdir(true, true)", swift)
+        self.assertIn("return p.exists()", swift)
+
     def test_py2swift_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
