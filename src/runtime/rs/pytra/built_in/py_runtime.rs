@@ -1,6 +1,8 @@
 // Rust 変換先で共通利用するランタイム補助。
 // - Python 互換の print 表示（bool は True/False）
 // - time.perf_counter 相当
+// source: src/pytra/utils/png.py
+// source: src/pytra/utils/gif.py
 
 use std::hash::Hash;
 use std::fs;
