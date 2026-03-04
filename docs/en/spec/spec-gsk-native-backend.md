@@ -76,3 +76,16 @@ Forbidden in default path:
 - Keep generation native-only and emit neither `.js` sidecars nor JS runtime shims.
 - Scope default CI regressions, sample regeneration, and parity checks to native paths only.
 - Unsupported input on the default path must fail closed; automatic or manual sidecar fallback is not available.
+
+## 8. Container Reference Management Boundary (v1)
+
+- Shared terms:
+  - `container_ref_boundary`: any path that flows into `Any/object/unknown/union(including any)`.
+  - `typed_non_escape_value_path`: a typed, local non-escape path.
+- Operational rules:
+  - Treat `container_ref_boundary` as reference semantics and avoid unnecessary implicit copies.
+  - Allow shallow-copy materialization on `typed_non_escape_value_path` (prioritize alias separation).
+  - When classification is ambiguous, fail closed to `container_ref_boundary`.
+- Rollback:
+  - If generated output causes issues, force ref-boundary by moving input-side type annotations to `Any/object`.
+  - Use both `check_py2{go,swift,kotlin}_transpile.py` and `runtime_parity_check.py` for verification.

@@ -60,3 +60,14 @@ Prohibited:
 - `py2lua.py` can generate `.lua` from EAST3.
 - Conversion does not fail on minimal fixtures (`add` / `if_else` / `for_range`).
 - Pin regressions with `tools/check_py2lua_transpile.py` and `test/unit/test_py2lua_smoke.py`.
+
+## 7. Container Reference Management Boundary (v1)
+
+- Treat containers that flow into the `object/Any/unknown` boundary as a reference boundary (ref-boundary).
+- For typed, local non-escape `AnnAssign/Assign(Name)`, allow shallow-copy materialization.
+  - list/tuple/set/bytes/bytearray: copy by index-walk over the sequence storage.
+  - dict: copy key/value pairs via `pairs` traversal.
+- When classification is ambiguous, fail closed to the ref-boundary side.
+- Rollback:
+  - On problematic cases, move input Python annotations to `Any/object`, or switch to explicit copies (`list(...)` / `dict(...)`).
+  - Verify with both `python3 tools/check_py2lua_transpile.py` and `python3 tools/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 18_mini_language_interpreter`.
