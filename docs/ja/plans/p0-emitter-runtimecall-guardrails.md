@@ -28,6 +28,7 @@
 受け入れ基準:
 - 非C++ emitter に `pytra.std.*` / `pytra.utils.*` 由来関数名の文字列比較分岐が存在しない。
 - runtime/stdlib 呼び出しは lower 済みの解決情報（`runtime_call` 等）経由で emit される。
+- `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` の関数宣言（`write_rgb_png` / `save_gif` / `grayscale_palette`）を正本として解決し、emitter に backend 独自ラッパー名（例: `pyWriteRGBPNG`）や runtime 実装シンボル（例: `__pytra_write_rgb_png`）を直書きしない。
 - 例外許可は `len/print/isinstance/range` 等の言語組み込み橋渡しに限定され、許可リストで管理される。
 - 静的チェックが CI/ローカル必須導線に統合され、違反時は fail する。
 - 代表 backend 群で transpile/smoke/parity 回帰が green。
@@ -98,8 +99,8 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR 側の runtime API 解決経路（`runtime_call` 系）を非C++ backend 共通で利用できる形に整理する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐（`write_rgb_png/save_gif/grayscale_palette/json.*` 等）を解決済み経路へ移行する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] 残り非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift の移行をやり直し、emitter から `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` 直参照を撤去する。
-- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）から同種の runtime 実装シンボル直参照を撤去し、禁止ガード allowlist を継続縮退する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`png.py/gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボルの直書きを撤去する。
+- [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルを IR 解決経由へ統一、禁止ガード allowlist を継続縮退する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 - [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] `docs/ja/spec` / `docs/en/spec` に責務境界（IR解決 vs emitter描画）を明文化する。
 
@@ -116,3 +117,4 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Swift emitter の同種分岐（`perf_counter/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2swift_smoke.py`（11件）を通過し、guardrail allowlist を `87 -> 79` へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] `tools/check_emitter_forbidden_runtime_symbols.py` を追加し、`src/backends/*/emitter/*.py` における `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` の混入増分を CI fail 化した。`tools/run_local_ci.py` と `docs/ja|en/spec/spec-tools.md` へ導線を追加し、baseline allowlist（31件）を固定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] タスク見直しの結果、Go/Kotlin/Swift の上記移行は runtime 実装シンボル（`__pytra_*`）直参照を emitter 側に残しており完了条件未達と判断。`S3-03-R1/R2` を追加して未完了として再実施する方針に戻した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] 「公開wrapper名（例: `pyWriteRGBPNG`）へ置換する」案は、`png.py/gif.py` 宣言を正本にした解決責務分離に反するため却下。途中差分は破棄し、`S3-03-R1/R2` を宣言駆動移行として再定義した。

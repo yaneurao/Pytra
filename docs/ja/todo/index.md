@@ -44,8 +44,8 @@
 6. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR の runtime API 解決経路を非C++ backend で共通利用できる形に整理する。
 7. [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐を解決済み経路へ移行する。
 8. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Java 以外の非C++ emitter（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）の直書き分岐を段階撤去する。
-9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift の `runtime_call` 経路移行をやり直し、emitter から `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` 直参照を撤去する。
-10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）からも同種の runtime 実装シンボル直参照を撤去し、禁止ガードの allowlist を縮退させる。
+9. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R1] Go/Kotlin/Swift を宣言駆動（`src/pytra/utils/png.py` / `gif.py` 正本）へ再移行し、emitter から backend 独自ラッパー名・runtime 実装シンボル直書きを撤去する。
+10. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] 残り非C++ emitter（`cs/js/ts/rs/ruby/lua/scala/php/nim`）へ同方針を展開し、`png.py/gif.py` 由来シンボルの IR 解決経路統一と禁止ガード allowlist 縮退を完了する。
 11. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-01] unit/smoke/parity 回帰を整備し、再発検知を固定する。
 12. [ ] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-02] docs（`spec`）へ責務境界を明文化する。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Go emitter の `perf_counter/Path/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `105 -> 95` へ縮退。
@@ -53,6 +53,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] Swift emitter の `perf_counter/json.*` と PNG/GIF runtime 呼び出しを `runtime_call/resolved_runtime_call` 経路へ移行し、guardrail baseline を `87 -> 79` へ縮退。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] emitter 内での `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` 混入を監視する `check_emitter_forbidden_runtime_symbols.py` を追加し、`run_local_ci.py` 経由で CI fail-fast 化（baseline 31件）した。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] 上記 Go/Kotlin/Swift の移行は runtime 実装シンボル直参照を残しており、完了条件未達として `S3-03-R1/R2` に再編してやり直す。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03] `pyWriteRGBPNG` など公開wrapper名直書きへの置換案は採用せず、`png.py/gif.py` 宣言正本で解決する宣言駆動方針へ計画を更新した。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
