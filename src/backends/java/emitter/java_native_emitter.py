@@ -583,16 +583,59 @@ def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
     return out
 
 
+def _resolved_runtime_call_name(expr: dict[str, Any]) -> str:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call
+    resolved_any = expr.get("resolved_runtime_call")
+    return resolved_any if isinstance(resolved_any, str) else ""
+
+
+def _render_call_via_runtime_call(runtime_call: str, args: list[Any]) -> str:
+    if runtime_call.startswith("py_assert_"):
+        return _java_string_literal("True")
+    if runtime_call == "perf_counter":
+        return "PyRuntime.pyPerfCounter()"
+    if runtime_call == "Path":
+        if len(args) == 0:
+            return "new PyRuntime.Path(\"\")"
+        return "new PyRuntime.Path(" + _render_expr(args[0]) + ")"
+    if runtime_call == "write_rgb_png":
+        rendered_png_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_png_args.append(_render_expr(args[i]))
+            i += 1
+        return "PyRuntime.pyWriteRGBPNG(" + ", ".join(rendered_png_args) + ")"
+    if runtime_call == "save_gif":
+        return _render_save_gif_call(args)
+    if runtime_call == "grayscale_palette":
+        return "PyRuntime.pyGrayscalePalette()"
+    if runtime_call == "json.loads":
+        if len(args) == 0:
+            return "PyRuntime.pyJsonLoads(\"\")"
+        return "PyRuntime.pyJsonLoads(" + _render_expr(args[0]) + ")"
+    if runtime_call == "json.dumps":
+        if len(args) == 0:
+            return "PyRuntime.pyJsonDumps(\"\")"
+        return "PyRuntime.pyJsonDumps(" + _render_expr(args[0]) + ")"
+    return ""
+
+
 def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
+    runtime_call = _resolved_runtime_call_name(expr)
+    if runtime_call != "":
+        rendered_runtime = _render_call_via_runtime_call(runtime_call, args)
+        if rendered_runtime != "":
+            return rendered_runtime
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
         return _java_string_literal("True")
     if callee_name == "main" and len(args) == 0:
         return "__pytra_main()"
-    if callee_name == "perf_counter":
-        return "PyRuntime.pyPerfCounter()"
     if callee_name == "bytearray":
         if len(args) == 0:
             return "new java.util.ArrayList<Long>()"
@@ -659,21 +702,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         lhs = _render_expr(args[0])
         typ = args[1]
         return _render_isinstance_check(lhs, typ)
-    if callee_name == "Path":
-        if len(args) == 0:
-            return "new PyRuntime.Path(\"\")"
-        return "new PyRuntime.Path(" + _render_expr(args[0]) + ")"
-    if callee_name == "write_rgb_png":
-        rendered_png_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_png_args.append(_render_expr(args[i]))
-            i += 1
-        return "PyRuntime.pyWriteRGBPNG(" + ", ".join(rendered_png_args) + ")"
-    if callee_name == "save_gif":
-        return _render_save_gif_call(args)
-    if callee_name == "grayscale_palette":
-        return "PyRuntime.pyGrayscalePalette()"
     if callee_name == "print":
         if len(args) == 0:
             return "System.out.println()"
@@ -715,15 +743,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 runtime_math = _java_math_runtime_call(attr_name)
                 if runtime_math != "":
                     return runtime_math + "(" + ", ".join(rendered_math_args) + ")"
-            if owner == "json":
-                if attr_name == "loads":
-                    if len(args) == 0:
-                        return "PyRuntime.pyJsonLoads(\"\")"
-                    return "PyRuntime.pyJsonLoads(" + _render_expr(args[0]) + ")"
-                if attr_name == "dumps":
-                    if len(args) == 0:
-                        return "PyRuntime.pyJsonDumps(\"\")"
-                    return "PyRuntime.pyJsonDumps(" + _render_expr(args[0]) + ")"
         owner_expr = _render_expr(func_any.get("value"))
         if attr_name == "append" and len(args) == 1:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
@@ -752,15 +771,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if fallback_type != "Object":
                     resolved_type = fallback_type
             return _cast_from_object(base, resolved_type)
-        if attr_name in {"write_rgb_png", "save_gif"}:
-            if attr_name == "write_rgb_png":
-                rendered_png_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_png_args.append(_render_expr(args[i]))
-                    i += 1
-                return "PyRuntime.pyWriteRGBPNG(" + ", ".join(rendered_png_args) + ")"
-            return _render_save_gif_call(args)
     if callee_name != "" and callee_name[0].isupper():
         rendered_ctor_args: list[str] = []
         i = 0

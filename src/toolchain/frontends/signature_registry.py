@@ -29,6 +29,10 @@ _IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
 _NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
     ("pytra.std.pathlib", "Path"): "Path",
     ("pathlib", "Path"): "Path",
+    ("pytra.std.json", "loads"): "json.loads",
+    ("pytra.std.json", "dumps"): "json.dumps",
+    ("json", "loads"): "json.loads",
+    ("json", "dumps"): "json.dumps",
     ("pytra.utils.png", "write_rgb_png"): "write_rgb_png",
     ("pytra.utils.gif", "save_gif"): "save_gif",
     ("pytra.utils.gif", "grayscale_palette"): "grayscale_palette",
