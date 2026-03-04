@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-java-pyruntime-sot-extraction.md](../plans/p0-java-pyruntime-sot-extraction.md)
 
-1. [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01] Java runtime を `pytra-core` / `pytra-gen` 境界へ再収束させ、`PyRuntime.java` から SoT 由来実装を除去する。
+1. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01] Java runtime を `pytra-core` / `pytra-gen` 境界へ再収束させ、`PyRuntime.java` から SoT 由来実装を除去する。
 2. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-01] Java runtime の責務境界（`pytra-core`/`pytra-gen`）と禁止シンボルを仕様として固定する。
 3. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S1-02] `PyRuntime.java` 内の SoT 由来実装を棚卸しし、削除対象と移管先（`pytra-gen/std|utils`）を確定する。
 4. [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S2-01] `src/pytra/std/{time,json,pathlib,math}.py` の Java 生成導線を整備し、`src/runtime/java/pytra-gen/std/*.java` を生成可能にする。
