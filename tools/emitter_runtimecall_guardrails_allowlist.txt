@@ -56,17 +56,6 @@ src/backends/rs/emitter/rs_emitter.py:4423:pytra.utils.gif
 src/backends/rs/emitter/rs_emitter.py:4423:pytra.utils.png
 src/backends/rs/emitter/rs_emitter.py:4428:write_rgb_png
 src/backends/rs/emitter/rs_emitter.py:4430:save_gif
-src/backends/ruby/emitter/ruby_native_emitter.py:645:py_assert_stdout
-src/backends/ruby/emitter/ruby_native_emitter.py:647:perf_counter
-src/backends/ruby/emitter/ruby_native_emitter.py:649:Path
-src/backends/ruby/emitter/ruby_native_emitter.py:727:write_rgb_png
-src/backends/ruby/emitter/ruby_native_emitter.py:730:save_gif
-src/backends/ruby/emitter/ruby_native_emitter.py:733:grayscale_palette
-src/backends/ruby/emitter/ruby_native_emitter.py:802:loads
-src/backends/ruby/emitter/ruby_native_emitter.py:804:dumps
-src/backends/ruby/emitter/ruby_native_emitter.py:807:write_rgb_png
-src/backends/ruby/emitter/ruby_native_emitter.py:810:save_gif
-src/backends/ruby/emitter/ruby_native_emitter.py:813:grayscale_palette
 src/backends/scala/emitter/scala_native_emitter.py:1007:Path
 src/backends/scala/emitter/scala_native_emitter.py:1009:Path
 src/backends/scala/emitter/scala_native_emitter.py:1016:Path

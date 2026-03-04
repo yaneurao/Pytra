@@ -173,6 +173,46 @@ def _call_name(expr: dict[str, Any]) -> str:
     return _safe_ident(func_any.get("id"), "")
 
 
+def _snake_to_pascal(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            out.append(part[0].upper() + part[1:])
+        i += 1
+    return "".join(out)
+
+
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
+    runtime_call_any = expr.get("runtime_call")
+    runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
+    if runtime_call != "":
+        return runtime_call, "runtime_call"
+    resolved_any = expr.get("resolved_runtime_call")
+    resolved = resolved_any if isinstance(resolved_any, str) else ""
+    if resolved != "":
+        return resolved, "resolved_runtime_call"
+    return "", ""
+
+
+def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
+    call = runtime_call.strip()
+    if call == "":
+        return ""
+    dot = call.find(".")
+    if dot >= 0:
+        module_name = call[:dot].strip()
+        symbol_name = call[dot + 1 :].strip()
+        if module_name == "" or symbol_name == "":
+            return ""
+        return "py" + _snake_to_pascal(module_name) + _snake_to_pascal(symbol_name)
+    if runtime_source == "runtime_call":
+        return "__pytra_" + call
+    return call
+
+
 def _render_positional_call_args(args: list[Any]) -> list[str]:
     rendered: list[str] = []
     i = 0
@@ -196,16 +236,6 @@ def _render_keyword_call_args(expr: dict[str, Any]) -> dict[str, str]:
                 out[arg_name] = _render_expr(value_any)
         i += 1
     return out
-
-
-def _render_save_gif_call_args(expr: dict[str, Any], args: list[Any]) -> list[str]:
-    rendered = _render_positional_call_args(args)
-    kw = _render_keyword_call_args(expr)
-    if len(rendered) < 6:
-        rendered.append(kw.get("delay_cs", "4"))
-    if len(rendered) < 7:
-        rendered.append(kw.get("loop", "0"))
-    return rendered
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -453,14 +483,21 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
+    if runtime_call == "path_parent":
+        return _render_expr(expr.get("value")) + ".parent"
+    if runtime_call == "path_name":
+        return _render_expr(expr.get("value")) + ".name"
+    if runtime_call == "path_stem":
+        return _render_expr(expr.get("value")) + ".stem"
+    runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+    if runtime_symbol != "":
+        if runtime_symbol in {"pyMathPi", "pyMathE"}:
+            return runtime_symbol + "()"
+        return runtime_symbol
+
     value = _render_expr(expr.get("value"))
     attr = _safe_ident(expr.get("attr"), "field")
-    if isinstance(expr.get("value"), dict) and expr.get("value", {}).get("kind") == "Name":
-        owner = _safe_ident(expr.get("value", {}).get("id"), "")
-        if owner == "math" and attr == "pi":
-            return "pyMathPi()"
-        if owner == "math" and attr == "e":
-            return "pyMathE()"
     return value + "." + attr
 
 
@@ -639,17 +676,36 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args_any = expr.get("args")
     args = args_any if isinstance(args_any, list) else []
     callee_name = _call_name(expr)
-
     if callee_name.startswith("py_assert_"):
-        return "__pytra_assert()"
-    if callee_name == "py_assert_stdout":
         return "true"
-    if callee_name == "perf_counter":
-        return "__pytra_perf_counter()"
-    if callee_name == "Path":
-        if len(args) == 0:
+
+    semantic_tag_any = expr.get("semantic_tag")
+    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+
+    if semantic_tag == "stdlib.symbol.Path":
+        rendered_path_args = _render_positional_call_args(args)
+        if len(rendered_path_args) == 0:
             return "Path.new(\"\")"
-        return "Path.new(" + _render_expr(args[0]) + ")"
+        return "Path.new(" + ", ".join(rendered_path_args) + ")"
+
+    runtime_call, runtime_source = _resolved_runtime_call(expr)
+    runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+    if runtime_symbol != "":
+        rendered_runtime_args = _render_positional_call_args(args)
+        kw_runtime = _render_keyword_call_args(expr)
+        if len(kw_runtime) > 0:
+            kw_names = list(kw_runtime.keys())
+            kw_names.sort()
+            i = 0
+            while i < len(kw_names):
+                rendered_runtime_args.append(kw_runtime[kw_names[i]])
+                i += 1
+        if runtime_source == "runtime_call":
+            if semantic_tag.startswith("stdlib.fn."):
+                return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
+        elif runtime_source == "resolved_runtime_call":
+            return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
+
     if callee_name == "bytearray":
         if len(args) == 0:
             return "__pytra_bytearray()"
@@ -724,14 +780,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
-    if callee_name == "write_rgb_png":
-        rendered_png = _render_positional_call_args(args)
-        return "write_rgb_png(" + ", ".join(rendered_png) + ")"
-    if callee_name == "save_gif":
-        rendered_gif = _render_save_gif_call_args(expr, args)
-        return "save_gif(" + ", ".join(rendered_gif) + ")"
-    if callee_name == "grayscale_palette":
-        return "grayscale_palette()"
     if callee_name == "print":
         rendered_print: list[str] = []
         i = 0
@@ -767,51 +815,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         owner = _render_expr(owner_any)
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_name = _safe_ident(owner_any.get("id"), "")
-            if owner_name == "math":
-                rendered_math: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_math.append(_render_float_cast(args[i]))
-                    i += 1
-                if attr_name == "sqrt":
-                    return "pyMathSqrt(" + ", ".join(rendered_math) + ")"
-                if attr_name == "sin":
-                    return "pyMathSin(" + ", ".join(rendered_math) + ")"
-                if attr_name == "cos":
-                    return "pyMathCos(" + ", ".join(rendered_math) + ")"
-                if attr_name == "tan":
-                    return "pyMathTan(" + ", ".join(rendered_math) + ")"
-                if attr_name == "exp":
-                    return "pyMathExp(" + ", ".join(rendered_math) + ")"
-                if attr_name == "log":
-                    return "pyMathLog(" + ", ".join(rendered_math) + ")"
-                if attr_name == "pow" and len(rendered_math) == 2:
-                    return "pyMathPow(" + rendered_math[0] + ", " + rendered_math[1] + ")"
-                if attr_name == "floor":
-                    return "pyMathFloor(" + rendered_math[0] + ")"
-                if attr_name == "ceil":
-                    return "pyMathCeil(" + rendered_math[0] + ")"
-                if attr_name == "abs":
-                    return "pyMathFabs(" + rendered_math[0] + ")"
-            if owner_name == "json":
-                rendered_json: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_json.append(_render_expr(args[i]))
-                    i += 1
-                if attr_name == "loads" and len(rendered_json) >= 1:
-                    return "pyJsonLoads(" + rendered_json[0] + ")"
-                if attr_name == "dumps" and len(rendered_json) >= 1:
-                    return "pyJsonDumps(" + rendered_json[0] + ")"
-            if owner_name in {"png", "gif"}:
-                if attr_name == "write_rgb_png":
-                    rendered_png = _render_positional_call_args(args)
-                    return "write_rgb_png(" + ", ".join(rendered_png) + ")"
-                if attr_name == "save_gif":
-                    rendered_gif = _render_save_gif_call_args(expr, args)
-                    return "save_gif(" + ", ".join(rendered_gif) + ")"
-                if attr_name == "grayscale_palette":
-                    return "grayscale_palette()"
+            _ = owner_name
         if attr_name == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + owner + ")"
         if attr_name == "isalpha" and len(args) == 0:

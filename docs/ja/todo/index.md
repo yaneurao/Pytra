@@ -104,6 +104,7 @@
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] JS emitter の module path map から `pytra.std.time` / `pytra.std.pathlib` / `pytra.utils.png` / `pytra.utils.gif` の直書きキーを削除し、汎用 path 解決へ統一した（`test_py2js_smoke.py` 21件 + guardrail + noncpp contract 通過、runtimecall allowlist `99->95`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Nim emitter の `save_gif` / `write_rgb_png` 直書き分岐を `semantic_tag` / `resolved_runtime_call` 駆動へ置換し、`test_py2nim_smoke.py` 2件 + guardrail + noncpp contract を通過した（runtimecall allowlist `95->93`）。
 - 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] PHP emitter の `resolved_runtime_call` 描画を汎用ルールへ統一し、`save_gif` キーワード順序の保持と `grayscale_palette` 0引数呼び出しを直書き分岐なしで通過させた（`test_py2php_smoke.py` 9件 + guardrail + noncpp contract 通過、forbidden-symbol allowlist `22->20`）。
+- 進捗メモ: [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03-R2] Ruby emitter で `perf_counter/Path/png/gif/json/math` の call/attr 直書きを `runtime_call/resolved_runtime_call` 優先描画へ移行し、`test_py2rb_smoke.py` 20件 + guardrail + noncpp contract を通過した（runtimecall allowlist `83->72`）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
