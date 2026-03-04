@@ -81,13 +81,14 @@
 
 文脈: [docs/ja/plans/p0-image-runtime-static-guardrails.md](../plans/p0-image-runtime-static-guardrails.md)
 
-1. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01] `pytra-core` への画像実装混入を静的検査で検知し、CI必須チェックとして固定する。
-2. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S1-01] 検査仕様（許可パス/禁止シンボル/必須marker/除外規則）を定義する。
-3. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S2-01] `tools/` に静的検査スクリプトを実装し、`pytra-core` 混入を fail できるようにする。
-4. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S2-02] `pytra-gen` 生成痕跡（`source:`/`generated-by:`）欠落を fail する検査を追加する。
-5. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S3-01] 検査スクリプトの unit test を追加する（正常系/違反系）。
-6. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S3-02] `tools/run_local_ci.py` と CI 導線に必須ジョブとして組み込む。
-7. [ ] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S4-01] 既存runtimeへ検査を適用し、全言語で green を確認する。
+1. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01] `pytra-core` への画像実装混入を静的検査で検知し、CI必須チェックとして固定する。
+2. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S1-01] 検査仕様（許可パス/禁止シンボル/必須marker/除外規則）を定義する。
+3. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S2-01] `tools/` に静的検査スクリプトを実装し、`pytra-core` 混入を fail できるようにする。
+4. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S2-02] `pytra-gen` 生成痕跡（`source:`/`generated-by:`）欠落を fail する検査を追加する。
+5. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S3-01] 検査スクリプトの unit test を追加する（正常系/違反系）。
+6. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S3-02] `tools/run_local_ci.py` と CI 導線に必須ジョブとして組み込む。
+7. [x] [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S4-01] 既存runtimeへ検査を適用し、全言語で green を確認する。
+- 進捗メモ: [ID: P0-IMAGE-RUNTIME-STATIC-GUARDRAILS-01-S4-01] `audit_image_runtime_sot.py` に `--fail-on-gen-markers` を追加し、`run_local_ci.py` を `--fail-on-core-mix --fail-on-gen-markers` へ更新。`test_audit_image_runtime_sot.py`（正常系+違反3系）と `work/logs/image_runtime_static_guardrails_20260304.json` で guardrail 条件の green を確認。
 
 ### P0: PHP sample parity 全件完了（stdout + artifact CRC32）
 
