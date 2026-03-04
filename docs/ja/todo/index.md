@@ -92,14 +92,14 @@
 
 文脈: [docs/ja/plans/p1-py2x-wrapper-final-removal-reopen.md](../plans/p1-py2x-wrapper-final-removal-reopen.md)
 
-1. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01] archive 済みの `py2x` 統一タスクを再開し、残存する legacy wrapper（`py2rs.py`, `py2cs.py`, ...）を完全撤去する。
+1. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01] archive 済みの `py2x` 統一タスクを再開し、残存する legacy wrapper（`py2rs.py`, `py2cs.py`, ...）を完全撤去する。
 2. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] wrapper 参照の残存箇所を `tools/test/docs/selfhost` で再棚卸しし、置換順を確定する。
 3. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `tools/` の wrapper 直参照を `py2x` / backend module 参照へ置換する。
 4. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] `test/unit` の wrapper ファイル依存テストを `py2x` 基準または backend module 基準へ置換する。
 5. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja` / `docs/en` の wrapper 名記述を `py2x` 正規入口へ更新する。
 6. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] `src/py2*.py` wrapper 群と `toolchain/compiler/py2x_wrapper.py` を削除する（`py2x.py` / `py2x-selfhost.py` は除外）。
 7. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] wrapper 再流入を検知する静的ガードを更新し、削除後構成を固定する。
-8. [ ] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] transpile/smoke 回帰を実行し、wrapper 撤去後の非退行を確認する。
+8. [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] transpile/smoke 回帰を実行し、wrapper 撤去後の非退行を確認する。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01] archive からの差し戻し。`src/py2*.py` 実ファイルと wrapper 依存（`tools/check_multilang_selfhost_stage1.py`, `tools/check_noncpp_east3_contract.py`, `test/unit/test_py2*_smoke.py`）残存を確認し、完了判定を再オープンした。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S1-01] `tools/test/docs/selfhost` の wrapper 参照を再棚卸しし、置換順を `tools -> test -> docs -> wrapper削除 -> guard/回帰` に確定。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] `check_noncpp_east3_contract.py` と `check_transpiler_version_gate.py` の direct wrapper 参照を `py2x` 基準へ置換し、`check_legacy_cli_references.py` の allowlist から2ファイルを除外して再流入防止を強化（selfhost系 `tools/*` は継続対応）。
@@ -108,6 +108,7 @@
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] `docs/ja|en` の実行例を `py2x.py --target <lang>` 基準へ統一し、`how-to-use` の互換ラッパ案内と `spec-runtime/spec-options/spec-east/spec-east3-optimizer/spec-dev/spec-tools` の `py2cpp.py` 前提記述を更新。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] `src/py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}.py` と `toolchain/compiler/py2x_wrapper.py` を削除し、`test_error_classification_cross_lang` の backend直呼び化・`cs_emitter` の anchor 修正後に smoke 298件と legacy guard を通過。
 - 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] `check_legacy_cli_references.py` を wrapper実ファイル再流入検知つきへ強化し、`src/py2x.py` / `src/py2x-selfhost.py` 以外の `src/py2*.py` と `toolchain/compiler/py2x_wrapper.py` を fail-fast で禁止する構成に固定。
+- 進捗メモ: [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] 14本の `check_py2*_transpile.py` と `test_py2*_smoke.py`（298件）を再実行してすべて `OK` を確認し、wrapper撤去後の非退行を完了。
 
 ### P1: `py2x` 共通 smoke テスト統合（全言語）
 
