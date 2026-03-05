@@ -186,7 +186,41 @@ class Py2GoSmokeTest(unittest.TestCase):
         }
         with self.assertRaises(RuntimeError) as cm:
             transpile_to_go_native(east)
-        self.assertIn("unresolved stdlib runtime call", str(cm.exception))
+        self.assertIn("unresolved stdlib runtime", str(cm.exception))
+
+    def test_go_native_emitter_fail_closed_on_unresolved_resolved_runtime_call(self) -> None:
+        east = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "_case_main",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "save_gif"},
+                                "args": [],
+                                "keywords": [],
+                                "semantic_tag": "stdlib.fn.save_gif",
+                                "resolved_runtime_call": "save_gif_not_registered",
+                                "resolved_runtime_source": "resolved_runtime_call",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "main_guard_body": [],
+            "meta": {},
+        }
+        with self.assertRaises(RuntimeError) as cm:
+            transpile_to_go_native(east)
+        self.assertIn("unresolved stdlib runtime", str(cm.exception))
 
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"

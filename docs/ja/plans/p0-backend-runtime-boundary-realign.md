@@ -81,7 +81,7 @@ S1-01 分類結果（違反タイプ別）:
 - [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
 - [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter 内のフォールバック経路を fail-closed 化し、未解決時の推測レンダリングを禁止する。
 - [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を `tools/` に追加し、CI 必須導線へ統合する。
-- [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新し、設計是正の非退行を固定する。
+- [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新し、設計是正の非退行を固定する。
 
 決定ログ:
 - 2026-03-05: ユーザー指摘に基づき、目的を「文字列撤去」から「責務境界の設計是正」へ修正した。`math/gif/png` 検索は症状検知ガードとして再定義した。
@@ -99,3 +99,4 @@ S1-01 分類結果（違反タイプ別）:
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `kotlin` でも `resolved_runtime_call` 空振り時の stdlib fallback を例外化し、call/attribute 両方で fail-closed を補強。`test_py2kotlin_smoke.py`（16件）回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `js/cs/nim` でも `resolved_runtime_call` 空振り時の stdlib fallback を例外化し、call/attribute 推測レンダリングを停止。`js`/`nim` smoke は green、`cs` は既存 baseline（`failures=11`）維持で新規悪化なし。これにより fail-closed 適用対象を `go/php/kotlin/js/cs/nim` へ拡大し、`S2-03` を完了。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] CI導線（`tools/run_local_ci.py`）上の guard 実行を再検証し、`check_emitter_forbidden_runtime_symbols.py` を「findings=0 のとき空allowlist許容」に修正。`check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` / `test_check_emitter_runtimecall_guardrails.py` の3系統を通過確認し、ガードを常時実行可能状態へ固定。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] `go/php/kotlin/js/cs/nim` smoke へ `resolved_runtime_call` 空振り fail-closed 回帰を追加。追加テストで露見した `go/php/kotlin/cs` の推測レンダリング漏れを修正（`semantic_tag` tail と `resolved_runtime_call` の整合チェックを導入）し、`test_py2{go,php,kotlin,js,nim,cs}_smoke.py`（合計117件）を全通過。あわせて `check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` / `test_check_emitter_runtimecall_guardrails.py` / `test_runtime_parity_check_cli.py` を再実行して非退行を固定。

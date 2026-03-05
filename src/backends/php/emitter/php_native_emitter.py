@@ -239,6 +239,18 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
+def _resolved_runtime_matches_semantic_tag(runtime_call: str, semantic_tag: str) -> bool:
+    if not semantic_tag.startswith("stdlib."):
+        return True
+    tail = semantic_tag.rsplit(".", 1)[-1].strip()
+    call = runtime_call.strip()
+    if tail == "" or call == "":
+        return False
+    if call == tail:
+        return True
+    return call.endswith("." + tail)
+
+
 def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
     call = runtime_call.strip()
     if call == "":
@@ -296,6 +308,9 @@ def _render_call_via_runtime_call(
         if semantic_tag.startswith("stdlib.fn."):
             return runtime_symbol + "(" + ", ".join(rendered_args) + ")"
         return ""
+    if runtime_source == "resolved_runtime_call":
+        if not _resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+            return ""
 
     if runtime_call.find(".") >= 0:
         if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
