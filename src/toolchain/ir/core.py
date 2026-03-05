@@ -6,7 +6,7 @@ from __future__ import annotations
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import re
-from pytra.std.dataclasses import dataclass
+from dataclasses import dataclass
 from typing import Any
 from pytra.std.pathlib import Path
 from pytra.std import sys

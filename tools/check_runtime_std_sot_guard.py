@@ -87,7 +87,6 @@ RULES: dict[str, GuardRule] = {
 
 CPP_GENERATED_STD_MODULES = [
     "argparse",
-    "dataclasses",
     "glob",
     "json",
     "math",
@@ -156,7 +155,6 @@ CPP_UTILS_SOURCE_LOCATIONS: dict[str, str] = {
 # module basename -> canonical Python source path.
 CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "argparse": "src/pytra/std/argparse.py",
-    "dataclasses": "src/pytra/std/dataclasses.py",
     "glob": "src/pytra/std/glob.py",
     "json": "src/pytra/std/json.py",
     "math": "src/pytra/std/math.py",
@@ -174,7 +172,6 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
 
 # required handwritten core files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
-    "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
     "glob-manual.cpp": "src/runtime/cpp/std/glob-manual.cpp",
     "math-manual.cpp": "src/runtime/cpp/std/math-manual.cpp",
     "os-manual.cpp": "src/runtime/cpp/std/os-manual.cpp",

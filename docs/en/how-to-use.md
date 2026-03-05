@@ -163,7 +163,7 @@ Use only the target language section you need.
 python src/py2x.py --target cpp test/fixtures/collections/iterable.py -o test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
   src/runtime/cpp/pytra/utils/png.cpp src/runtime/cpp/pytra/utils/gif.cpp src/runtime/cpp/pytra/std/math.cpp src/runtime/cpp/pytra/std/math-impl.cpp \
-  src/runtime/cpp/pytra/std/time.cpp src/runtime/cpp/pytra/std/pathlib.cpp src/runtime/cpp/pytra/std/dataclasses.cpp \
+  src/runtime/cpp/pytra/std/time.cpp src/runtime/cpp/pytra/std/pathlib.cpp \
   src/runtime/cpp/pytra/built_in/gc.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out

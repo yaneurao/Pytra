@@ -52,8 +52,6 @@
   - 定数: `S`
   - class: `Match`
   - 関数: `match(pattern, text, flags=0)`, `sub(pattern, repl, text, flags=0)`
-- `pytra.std.dataclasses`（`dataclasses` 代替・最小実装）
-  - デコレータ: `dataclass`
 - `pytra.std.enum`（`enum` 代替・最小実装）
   - class: `Enum`, `IntEnum`, `IntFlag`
   - 制約: クラス本体のメンバーは `NAME = expr` 形式を使用してください。

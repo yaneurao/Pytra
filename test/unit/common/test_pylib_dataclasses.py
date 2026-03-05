@@ -1,4 +1,4 @@
-"""Minimal compatibility tests for pytra.std.dataclasses."""
+"""Minimal compatibility tests for stdlib dataclasses usage."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.pytra.std.dataclasses import dataclass
+from dataclasses import dataclass
 
 
 @dataclass
@@ -49,4 +49,3 @@ class PylibDataclassesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

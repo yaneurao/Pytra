@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.dataclasses import dataclass
+from dataclasses import dataclass
 from typing import Any
 
 from toolchain.ir.core import EastBuildError, convert_path, convert_source_to_east_with_backend

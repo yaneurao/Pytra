@@ -44,8 +44,6 @@ If you call functions/classes not listed here, transpilation-time errors or targ
   - constant: `S`
   - class: `Match`
   - functions: `match(pattern, text, flags=0)`, `sub(pattern, repl, text, flags=0)`
-- `pytra.std.dataclasses` (`dataclasses` replacement, minimal implementation)
-  - decorator: `dataclass`
 - `pytra.std.enum` (`enum` replacement, minimal implementation)
   - classes: `Enum`, `IntEnum`, `IntFlag`
   - constraint: Use `NAME = expr` form for class-body members.

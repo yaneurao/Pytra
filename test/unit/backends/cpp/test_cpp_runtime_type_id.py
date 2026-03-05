@@ -21,7 +21,6 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/pytra/std/math.cpp",
     "src/runtime/cpp/pytra/std/math-impl.cpp",
     "src/runtime/cpp/pytra/std/random.cpp",
-    "src/runtime/cpp/pytra/std/dataclasses.cpp",
     "src/runtime/cpp/pytra/std/glob.cpp",
     "src/runtime/cpp/pytra/std/json.cpp",
     "src/runtime/cpp/pytra/std/re.cpp",
