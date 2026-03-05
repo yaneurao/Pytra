@@ -70,7 +70,7 @@
 4. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュールの「生成必須 / core許可」分類表を作成する。
 5. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` の素通し命名違反を検知する静的チェックを追加する。
 6. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] marker（`source/generated-by`）・配置違反（core混在）監査を強化し、CIへ統合する。
-7. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
+7. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
 8. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、emitter の直書き runtime 関数分岐を IR 解決経路へ移行する。
 9. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
 10. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter でのライブラリ関数名直書き禁止を lint 化し、PR/CI で fail-fast 化する。
@@ -81,6 +81,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] `docs/ja/spec/spec-runtime.md` に `std/utils` モジュール分類表を追加し、`argparse..typing` + `assertions/gif/png` を生成必須、`dataclasses_impl/math_impl/time_impl` を core許可（impl境界）として固定した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `tools/check_runtime_pytra_gen_naming.py` を追加し、`pytra-gen/std|utils` の素通し命名・配置違反を検知できるようにした。`tools/runtime_pytra_gen_naming_allowlist.txt`（11件）で既存負債を明示し、`test_check_runtime_pytra_gen_naming.py` と本体スクリプト実行を通過。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] `tools/check_runtime_core_gen_markers.py` を追加して全言語 `pytra-gen` marker 必須/`pytra-core` 混在禁止を監査可能化し、`tools/run_local_ci.py` に `check_runtime_core_gen_markers.py` と `check_runtime_pytra_gen_naming.py` を統合。`test_check_runtime_core_gen_markers.py` と両ガード実行を通過（baseline allowlist: marker=1, naming=11）。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `work/logs/runtime_core_sot_reimpl_inventory_20260305_s2_03.tsv` を作成して `pytra-core` 再実装痕跡（10ファイル）を棚卸しし、`docs/ja/plans/p2-runtime-parity-with-cpp.md` に言語別移管ウェーブ（JSON系/画像系/core境界）を追記した。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
