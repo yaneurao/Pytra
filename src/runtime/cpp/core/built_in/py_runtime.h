@@ -28,7 +28,6 @@
 #include "bytes_util.h"
 #include "exceptions.h"
 #include "io.h"
-#include "path.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
 
 // type_id は target 非依存で stable な型判定キーとして扱う。
@@ -737,10 +736,6 @@ static inline ::std::string py_to_string(const ::std::any& v) {
     if (const auto* p = ::std::any_cast<float32>(&v)) return ::std::to_string(*p);
     if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? "True" : "False";
     return "<any>";
-}
-
-static inline ::std::string py_to_string(const Path& v) {
-    return v.string();
 }
 
 static inline ::std::string py_to_string(const object& v) {
@@ -2979,19 +2974,6 @@ static inline str py_slice(const ::std::any& v, int64 lo, int64 up) {
 
 static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) {
     return py_slice(v, lo, py_to_int64(up));
-}
-
-// Path 読み書き・文字列メソッド互換ヘルパ。
-static inline void py_write_text(const Path& p, const str& s) {
-    ::std::ofstream ofs(p.native());
-    ofs << s;
-}
-
-static inline str py_read_text(const Path& p) {
-    ::std::ifstream ifs(p.native());
-    ::std::stringstream ss;
-    ss << ifs.rdbuf();
-    return ss.str();
 }
 
 static inline str py_lstrip(const str& s) {

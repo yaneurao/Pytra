@@ -180,7 +180,9 @@ class CppRuntimeExprEmitter:
                 arg_nodes = self.any_to_list(expr_d.get("args"))
                 for arg_node in arg_nodes:
                     path_args.append(self.render_expr(arg_node))
-            return f"Path({join_str_list(', ', path_args)})"
+            if len(path_args) == 0:
+                return 'pytra::std::pathlib::Path("")'
+            return f"pytra::std::pathlib::Path({join_str_list(', ', path_args)})"
         if op == "runtime_error":
             if self.any_dict_has(expr_d, "message"):
                 message_expr = self.render_expr(expr_d.get("message"))

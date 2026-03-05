@@ -1151,7 +1151,7 @@ class CppEmitter(
         if t == "bytearray":
             return "bytearray()"
         if t == "Path":
-            return "Path()"
+            return 'pytra::std::pathlib::Path("")'
         cpp_t = self._cpp_type_text(t)
         if cpp_t.startswith("::std::optional<"):
             return "::std::nullopt"
@@ -2631,7 +2631,7 @@ class CppEmitter(
             ):
                 raise self._make_missing_symbol_import_error(base_name, attr)
         bt = self.get_expr_type(expr_d.get("value"))
-        if bt == "Path" and attr in {"name", "stem", "parent"}:
+        if bt in {"Path", "pytra::std::pathlib::Path"} and attr in {"name", "stem", "parent"}:
             return f"{base}.{attr}()"
         if (
             self.current_class_name is not None
