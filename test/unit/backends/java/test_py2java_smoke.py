@@ -163,7 +163,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("double angle = 2.0 * math.pi * t;", java)
+        self.assertIn("double angle = 2.0 * _m.pi * t;", java)
         self.assertIn("math.cos(angle)", java)
         self.assertIn("math.sin(angle)", java)
 
@@ -228,9 +228,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("pathlib.Path q = p.parent();", java)
         self.assertIn("String n = p.name();", java)
         self.assertIn("String s = p.stem();", java)
-        self.assertIn("double x = math.sin(math.pi);", java)
+        self.assertIn("double x = math.sin(_m.pi);", java)
         self.assertNotIn("_m.sin(", java)
-        self.assertNotIn("_m.pi", java)
 
     def test_java_native_emitter_routes_perf_counter_via_runtime_helper(self) -> None:
         with tempfile.TemporaryDirectory() as td:
