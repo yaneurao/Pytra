@@ -24,6 +24,29 @@
   - `src/backends/rs/emitter/rs_emitter.py`
   - `src/backends/scala/emitter/scala_native_emitter.py`
 
+S1-01 分類結果（違反タイプ別）:
+- 監査生ログ: `work/logs/backend_boundary_audit_hits_20260305_s1_01.txt`（179件）
+- 分類CSV: `work/logs/backend_boundary_audit_classified_20260305_s1_01.csv`
+
+| backend file | branch | dispatch | runtime実装混在 | total |
+| --- | ---: | ---: | ---: | ---: |
+| `src/backends/lua/emitter/lua_native_emitter.py` | 4 | 25 | 20 | 49 |
+| `src/backends/scala/emitter/scala_native_emitter.py` | 12 | 16 | 11 | 39 |
+| `src/backends/rs/emitter/rs_emitter.py` | 2 | 15 | 14 | 31 |
+| `src/backends/cs/emitter/cs_emitter.py` | 11 | 9 | 0 | 20 |
+| `src/backends/php/emitter/php_native_emitter.py` | 3 | 15 | 0 | 18 |
+| `src/backends/go/emitter/go_native_emitter.py` | 2 | 8 | 0 | 10 |
+| `src/backends/nim/emitter/nim_native_emitter.py` | 5 | 0 | 1 | 6 |
+| `src/backends/js/emitter/js_emitter.py` | 0 | 0 | 2 | 2 |
+| `src/backends/kotlin/emitter/kotlin_native_emitter.py` | 1 | 0 | 1 | 2 |
+| `src/backends/cpp/emitter/cpp_emitter.py` | 1 | 0 | 0 | 1 |
+| `src/backends/cpp/emitter/module.py` | 0 | 1 | 0 | 1 |
+
+修正順序（S1-01 確定）:
+1. `lua -> scala -> rs`（`runtime実装混在` が高密度）
+2. `cs -> php -> go`（分岐/dispatch の比率が高い）
+3. `nim -> js -> kotlin -> cpp`（低密度残件）
+
 目的:
 - backend の責務境界を是正し、runtime/stdlib の解決ロジックを emitter から除去する。
 - `math/gif/png` 検出は「設計違反の検知ガード」として扱い、再発を CI で fail-fast にする。
@@ -52,7 +75,7 @@
 
 ## 分解
 
-- [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に「境界違反タイプ（分岐/dispatch/runtime実装混在）」へ分類し、修正順序を確定する。
+- [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に「境界違反タイプ（分岐/dispatch/runtime実装混在）」へ分類し、修正順序を確定する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend の解決済み呼び出し契約（call/attr/module/type）を明文化し、emitter API 制約を固定する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正し、runtime/stdlib 分岐を解決済み描画へ置換する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
@@ -62,3 +85,4 @@
 
 決定ログ:
 - 2026-03-05: ユーザー指摘に基づき、目的を「文字列撤去」から「責務境界の設計是正」へ修正した。`math/gif/png` 検索は症状検知ガードとして再定義した。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 179件を `branch/dispatch/runtime実装混在` へ分類し、`lua -> scala -> rs` を先行是正順に確定した（分類CSVを `work/logs/backend_boundary_audit_classified_20260305_s1_01.csv` に固定）。
