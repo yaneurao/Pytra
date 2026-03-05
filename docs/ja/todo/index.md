@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-runtime-root-reset-cpp-parity.md](../plans/p0-runtime-root-reset-cpp-parity.md)
 
-1. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01] 旧 runtime を `src/runtime2` へ退避し、新 `src/runtime/cpp/{core,gen}` で C++ parity を復旧する。
+1. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01] 旧 runtime を `src/runtime2` へ退避し、新 `src/runtime/cpp/{core,gen}` で C++ parity を復旧する。
 2. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、移行影響範囲を固定する。
 3. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新 `src/runtime/cpp/{core,gen}` を作成する。
 4. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガードを追加する。
