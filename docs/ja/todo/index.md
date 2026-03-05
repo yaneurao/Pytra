@@ -32,6 +32,24 @@
 
 ## 未完了タスク
 
+### P0: runtime ルート再編（`runtime2` 退避 + 新 `runtime/` 再構築）で C++ parity を先行復旧（最優先）
+
+文脈: [docs/ja/plans/p0-runtime-root-reset-cpp-parity.md](../plans/p0-runtime-root-reset-cpp-parity.md)
+
+1. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01] 旧 runtime を `src/runtime2` へ退避し、新 `src/runtime/cpp/{core,gen}` で C++ parity を復旧する。
+2. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、移行影響範囲を固定する。
+3. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新 `src/runtime/cpp/{core,gen}` を作成する。
+4. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガードを追加する。
+5. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime/include 解決を `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
+6. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
+7. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
+8. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
+9. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理する。
+10. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture` を通過させる。
+11. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過させる。
+12. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail を潰し切り、再実行で安定通過を確認する。
+13. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
+
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 
 文脈: [docs/ja/plans/p0-pytra-cli-boundary-and-dispatch-removal.md](../plans/p0-pytra-cli-boundary-and-dispatch-removal.md)
