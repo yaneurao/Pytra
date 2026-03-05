@@ -388,6 +388,40 @@ if __name__ == "__main__":
         self.assertIsInstance(target, dict)
         self.assertEqual(target.get("id"), "import_modules")
 
+    def test_future_annotations_is_not_emitted_to_east_imports(self) -> None:
+        src = """
+from __future__ import annotations
+from pytra.std import json
+
+def main() -> int:
+    x: "int" = 1
+    _ = json.dumps({"x": x})
+    return x
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        import_from_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict)
+            and n.get("kind") == "ImportFrom"
+        ]
+        future_nodes = [n for n in import_from_nodes if n.get("module") == "__future__"]
+        self.assertEqual(future_nodes, [])
+        meta = east.get("meta", {})
+        import_bindings = meta.get("import_bindings", [])
+        self.assertIsInstance(import_bindings, list)
+        for ent in import_bindings:
+            if isinstance(ent, dict):
+                self.assertNotEqual(ent.get("module_id"), "__future__")
+
+    def test_future_non_annotations_is_rejected(self) -> None:
+        src = """
+from __future__ import generator_stop
+"""
+        with self.assertRaises((EastBuildError, RuntimeError)) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("__future__", str(cm.exception))
+
     def test_builtin_call_nodes_always_have_runtime_call(self) -> None:
         src = """
 from pathlib import Path

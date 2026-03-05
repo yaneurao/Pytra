@@ -6,6 +6,12 @@
 
 Read `docs/en/spec/spec-runtime.md` first.
 
+## `__future__` Import Handling (EAST Stage)
+
+- `from __future__ import annotations` is accepted as a frontend-only directive, but it is not emitted into EAST.
+- This directive must not remain in `meta.import_bindings`, `meta.import_symbols`, or `meta.qualified_symbol_refs`.
+- Other `__future__` features (for example `generator_stop`) and `from __future__ import *` are rejected as `unsupported_syntax` (fail-closed).
+
 This document defines how syntax like the following is converted in `py2cpp.py`.
 
 ```python

@@ -7,6 +7,12 @@
 
 まず、docs/ja/spec/spec-runtime.md も読むこと。
 
+## `__future__` import の扱い（EAST 段階）
+
+- `from __future__ import annotations` は frontend 専用ディレクティブとして受理するが、EAST には出力しない。
+- 上記ディレクティブは `meta.import_bindings` / `meta.import_symbols` / `meta.qualified_symbol_refs` にも残さない。
+- `__future__` の他機能（例: `generator_stop`）や `from __future__ import *` は `unsupported_syntax` として fail-closed で拒否する。
+
 ## Yanesdk 重複配置の扱い（運用ルール）
 
 - `materials/refs/Yanesdk/yanesdk/yanesdk.py` を正本とする。
