@@ -28,7 +28,7 @@ class _PathModule:
         return _os.path.exists(p)
 
 
-path = _PathModule()
+path: object = _PathModule()
 
 
 def getcwd() -> str:
@@ -41,4 +41,3 @@ def mkdir(p: str) -> None:
 
 def makedirs(p: str, exist_ok: bool = False) -> None:
     _os.makedirs(p, exist_ok=exist_ok)
-

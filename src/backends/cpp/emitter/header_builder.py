@@ -193,6 +193,8 @@ def _header_cpp_type_from_east(
     if t in class_names:
         return t
     prim: dict[str, str] = {
+        "int": "int64",
+        "float": "float64",
         "int8": "int8",
         "uint8": "uint8",
         "int16": "int16",
@@ -207,6 +209,7 @@ def _header_cpp_type_from_east(
         "str": "str",
         "bytes": "bytes",
         "bytearray": "bytearray",
+        "Path": "pytra::std::pathlib::Path",
         "None": "void",
         "Any": "object",
         "object": "object",
@@ -331,7 +334,7 @@ def _header_none_default_expr_for_type(east_t: str) -> str:
     if txt == "bytearray":
         return "bytearray()"
     if txt == "Path":
-        return "Path()"
+        return "pytra::std::pathlib::Path(\"\")"
     cpp_t = _header_cpp_type_from_east(txt, set(), set())
     if cpp_t.startswith("::std::optional<"):
         return "::std::nullopt"

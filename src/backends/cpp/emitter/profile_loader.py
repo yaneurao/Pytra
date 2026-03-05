@@ -115,7 +115,7 @@ def load_cpp_type_map(profile: dict[str, Any] = {}) -> dict[str, str]:
         "str": "str",
         "bytes": "bytes",
         "bytearray": "bytearray",
-        "Path": "Path",
+        "Path": "pytra::std::pathlib::Path",
         "Exception": "::std::runtime_error",
         "Any": "object",
         "object": "object",

@@ -45,7 +45,7 @@
 7. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
 8. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
 9. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理する。
-10. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture` を通過させる。
+10. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture` を通過させる。
 11. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過させる。
 12. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail を潰し切り、再実行で安定通過を確認する。
 13. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
@@ -55,6 +55,8 @@
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime include 解決を `runtime/cpp/core` + `runtime/cpp/gen` へ切替し、`sample/py/01_mandelbrot.py` の再変換結果が `#include "runtime/cpp/core/built_in/py_runtime.h"` / `runtime/cpp/gen/...` になることを確認。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] `tools/runtime_generation_manifest.json` の C++ 出力先を `src/runtime/cpp/gen/...` へ更新し、`gen_runtime_from_manifest.py --targets cpp --items utils/png,utils/gif` で再生成した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build導線（`gen_makefile_from_manifest.py` / `build_multi_cpp.py` / `verify_sample_outputs.py` / `verify_image_runtime_parity.py`）を `core+gen` へ更新し、`pytra-cli --target cpp --build` の実ビルドで `src/runtime/cpp/{core,gen}` のみを用いることを確認。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture --summary-json work/logs/p0_runtime_root_reset_cpp_fixture_20260305_s401.json` を実行し、`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` の 3件すべてで `pass` を確認した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] sample parity をケース分割で再実行し、`01-05,07-13,15,17,18` は artifact size+CRC32 一致、`06_julia_parameter_sweep`・`14_raymarching_light_cycle`・`16_glass_sculpture_chaos` の 3件のみ GIF CRC32 mismatch が残存することを確認した。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 

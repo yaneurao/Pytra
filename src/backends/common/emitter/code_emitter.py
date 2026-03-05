@@ -2290,7 +2290,13 @@ class CodeEmitter:
             wrapped_owner_expr = f"({owner_expr})"
         owner_module = ""
         if owner_kind in {"Name", "Attribute"}:
-            owner_module = self._resolve_imported_module_name(owner_expr)
+            owner_name_raw = self._raw_dotted_owner_name(owner_node)
+            if owner_name_raw != "":
+                owner_module = self._resolve_imported_module_name(owner_name_raw)
+            if owner_module == "":
+                owner_module = self._resolve_imported_module_name(owner_expr)
+            if owner_module == "":
+                owner_module = self._cpp_expr_to_module_name(owner_expr)
             if owner_module == "" and self._text_has_prefix(owner_expr, "pytra."):
                 owner_module = owner_expr
         out: dict[str, Any] = {}
@@ -2299,6 +2305,20 @@ class CodeEmitter:
         out["expr"] = wrapped_owner_expr
         out["module"] = owner_module
         return out
+
+    def _raw_dotted_owner_name(self, owner_node: dict[str, Any]) -> str:
+        """Name/Attribute owner を未レンダリングのドット区切り文字列へ復元する。"""
+        kind = self._node_kind_from_dict(owner_node)
+        if kind == "Name":
+            return self.any_dict_get_str(owner_node, "id", "")
+        if kind != "Attribute":
+            return ""
+        base_node = self.any_to_dict_or_empty(owner_node.get("value"))
+        base_name = self._raw_dotted_owner_name(base_node)
+        attr = self.attr_name(owner_node)
+        if base_name == "" or attr == "":
+            return ""
+        return base_name + "." + attr
 
     def resolve_call_attribute_context(
         self,

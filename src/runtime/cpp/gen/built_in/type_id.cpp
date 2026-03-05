@@ -179,9 +179,30 @@ void _recompute_type_ranges() {
     }
 }
 
+void _mark_type_ranges_dirty() {
+    py_set_at(_TYPE_STATE, "ranges_dirty", make_object(1));
+}
+
+void _mark_type_ranges_clean() {
+    py_set_at(_TYPE_STATE, "ranges_dirty", make_object(0));
+}
+
+bool _is_type_ranges_dirty() {
+    return _TYPE_STATE.get("ranges_dirty", 1) != 0;
+}
+
+void _ensure_type_ranges() {
+    if (_is_type_ranges_dirty()) {
+        _recompute_type_ranges();
+        _mark_type_ranges_clean();
+    }
+}
+
 void _ensure_builtins() {
     if (!py_contains(_TYPE_STATE, "next_user_type_id"))
         py_set_at(_TYPE_STATE, "next_user_type_id", make_object(_tid_user_base()));
+    if (!py_contains(_TYPE_STATE, "ranges_dirty"))
+        py_set_at(_TYPE_STATE, "ranges_dirty", make_object(1));
     if (py_len(_TYPE_IDS) > 0)
         return;
     _register_type_node(_tid_none(), -(1));
@@ -194,6 +215,7 @@ void _ensure_builtins() {
     _register_type_node(_tid_dict(), _tid_object());
     _register_type_node(_tid_set(), _tid_object());
     _recompute_type_ranges();
+    _mark_type_ranges_clean();
 }
 
 int64 _normalize_base_type_id(int64 base_type_id) {
@@ -217,7 +239,7 @@ int64 py_tid_register_class_type(int64 base_type_id) {
     py_set_at(_TYPE_STATE, "next_user_type_id", make_object(tid + 1));
     
     _register_type_node(tid, base_tid);
-    _recompute_type_ranges();
+    _mark_type_ranges_dirty();
     return tid;
 }
 
@@ -259,6 +281,7 @@ int64 py_tid_runtime_type_id(const object& value) {
 bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
     /* Check nominal subtype relation by type_id order range. */
     _ensure_builtins();
+    _ensure_type_ranges();
     if (!py_contains(_TYPE_ORDER, actual_type_id))
         return false;
     if (!py_contains(_TYPE_ORDER, expected_type_id))
@@ -287,6 +310,7 @@ void _py_reset_type_registry_for_test() {
     _TYPE_MAX.clear();
     _TYPE_STATE.clear();
     py_set_at(_TYPE_STATE, "next_user_type_id", make_object(_tid_user_base()));
+    py_set_at(_TYPE_STATE, "ranges_dirty", make_object(1));
     _ensure_builtins();
 }
 

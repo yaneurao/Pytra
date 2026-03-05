@@ -178,7 +178,6 @@ class CppCallEmitter:
             "perf_counter",
             "Exception",
             "RuntimeError",
-            "Path",
             "open",
             "iter",
             "next",
@@ -347,6 +346,14 @@ class CppCallEmitter:
         if len(module_arg_names) > 0 and len(kw) > 0:
             merged_args = self._merge_args_with_kw_by_name(args, kw, module_arg_names)
             merged_arg_nodes = self._merge_arg_nodes_with_kw_by_name(arg_nodes, kw, kw_nodes, module_arg_names)
+        mapped_runtime = self._lookup_module_attr_runtime_call(owner_mod, attr)
+        if mapped_runtime != "":
+            call_args = merged_args
+            if self._contains_text(mapped_runtime, "::"):
+                call_args = self._coerce_args_for_module_function(owner_mod, attr, call_args, merged_arg_nodes)
+            if attr.startswith("py_assert_"):
+                call_args = self._coerce_py_assert_args(attr, call_args, merged_arg_nodes)
+            return f"{mapped_runtime}({join_str_list(', ', call_args)})"
         owner_mod_norm = owner_mod
         if owner_mod_norm in self.module_namespace_map:
             mapped = self._render_call_module_method_with_namespace(
@@ -504,7 +511,7 @@ class CppCallEmitter:
         kw: dict[str, str],
         arg_nodes: list[Any],
     ) -> str | None:
-        """`super().method(...)` を `Base::method(*this, ...)` へ変換する。"""
+        """`super().method(...)` を `Base::method(...)` へ変換する。"""
         if not self._is_super_call_expr(owner_obj):
             return None
         base = self.current_class_base_name
@@ -515,8 +522,8 @@ class CppCallEmitter:
         call_args = self.merge_call_args(args, kw)
         call_args = self._coerce_args_for_class_method(base, attr, call_args, arg_nodes)
         if len(call_args) == 0:
-            return f"{base}::{attr}(*this)"
-        return f"{base}::{attr}(*this, {join_str_list(', ', call_args)})"
+            return f"{base}::{attr}()"
+        return f"{base}::{attr}({join_str_list(', ', call_args)})"
 
     def _render_call_attribute(
         self,

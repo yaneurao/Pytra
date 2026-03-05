@@ -9,7 +9,7 @@ namespace pytra::std::os {
 
 struct _PathModule;
 
-extern _PathModule path;
+extern object path;
 
 str getcwd();
 void mkdir(const str& p);

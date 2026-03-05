@@ -53,7 +53,7 @@
 - [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
 - [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
 - [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理し、責務境界を固定する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] C++ fixture parity を通過させる（stdout + artifact size/CRC32）。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] C++ fixture parity を通過させる（stdout + artifact size/CRC32）。
 - [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] C++ sample parity（`--all-samples`）を通過させる（stdout + artifact size/CRC32）。
 - [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail の原因を潰し切り、再実行で安定通過を確認する。
 - [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] runtime レイアウト変更を `docs/ja/spec` に反映し、運用手順（生成/検証）を更新する。
@@ -67,3 +67,6 @@
 - 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S2-01`] C++ backend の include 解決を `runtime/cpp/core` + `runtime/cpp/gen` 前提へ更新。`cpp/cli.py`・`emitter/{runtime_paths,module,multifile_writer,header_builder}.py` の `runtime/cpp/pytra*` 参照を撤去し、`sample/py/01_mandelbrot.py` の再変換で include が `core/gen` 経路へ切り替わることを確認。
 - 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S2-02`] runtime manifest の C++ 出力先を `src/runtime/cpp/gen/...` に更新し、`tools/gen_runtime_from_manifest.py --targets cpp --items utils/png,utils/gif` で再生成して `pytra-gen` 経路の再作成を防止。
 - 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S2-03`] `tools/gen_makefile_from_manifest.py` / `tools/build_multi_cpp.py` / `tools/verify_sample_outputs.py` / `tools/verify_image_runtime_parity.py` を `runtime/cpp/{core,gen}` 前提へ更新。さらに `src/runtime/cpp/{core,gen}` 内 include を新パスへ正規化し、`python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp --build --output-dir out/p0_s203_build` で `core+gen` のみを用いたビルド通過を確認。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S3-01`] `Path` の import/module-attr 解決（`os.path`, `sys.stdout/stderr`）を `CodeEmitter/CppCallEmitter` で補強し、`runtime/cpp/gen/std/{os,pathlib,sys,json}.cpp` と `gen/built_in/type_id.cpp` を SoT から再生成した。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S4-01`] `tools/runtime_parity_check.py --targets cpp --case-root fixture --summary-json work/logs/p0_runtime_root_reset_cpp_fixture_20260305_s401.json` を通過（`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` = 3/3）。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S4-02`] sample parity をケース分割で再実行し、`01-05,07-13,15,17,18` は一致。`06_julia_parameter_sweep`・`14_raymarching_light_cycle`・`16_glass_sculpture_chaos` で GIF artifact CRC32 mismatch が残ることを固定した。

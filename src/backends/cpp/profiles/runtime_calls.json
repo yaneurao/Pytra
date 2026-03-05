@@ -9,7 +9,20 @@
         "abspath": "py_os_path_abspath",
         "exists": "py_os_path_exists"
       },
+      "os.path": {
+        "join": "py_os_path_join",
+        "basename": "py_os_path_basename",
+        "dirname": "py_os_path_dirname",
+        "splitext": "py_os_path_splitext",
+        "abspath": "py_os_path_abspath",
+        "exists": "py_os_path_exists"
+      },
       "pytra.std.os": {
+        "getcwd": "py_os_getcwd",
+        "mkdir": "py_os_mkdir",
+        "makedirs": "py_os_makedirs"
+      },
+      "os": {
         "getcwd": "py_os_getcwd",
         "mkdir": "py_os_mkdir",
         "makedirs": "py_os_makedirs"
@@ -22,6 +35,18 @@
       },
       "pytra.std.sys": {
         "argv": "py_runtime_argv()"
+      },
+      "pytra.std.sys.stderr": {
+        "write": "py_runtime_write_stderr"
+      },
+      "pytra.std.sys.stdout": {
+        "write": "py_runtime_write_stdout"
+      },
+      "sys.stderr": {
+        "write": "py_runtime_write_stderr"
+      },
+      "sys.stdout": {
+        "write": "py_runtime_write_stdout"
       }
     }
   }

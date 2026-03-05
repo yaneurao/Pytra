@@ -72,7 +72,7 @@ namespace pytra::std::sys {
             py_runtime_write_stderr(text);
         }
         catch (const ::std::exception& ex) {
-            pytra::std::sys::stderr.write(text);
+            py_runtime_write_stderr(text);
         }
     }
     
@@ -81,7 +81,7 @@ namespace pytra::std::sys {
             py_runtime_write_stdout(text);
         }
         catch (const ::std::exception& ex) {
-            pytra::std::sys::stdout.write(text);
+            py_runtime_write_stdout(text);
         }
     }
     

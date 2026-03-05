@@ -2596,8 +2596,28 @@ static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(b
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/gen/built_in/type_id.h"
 
+static inline dict<uint32, uint32>& py_runtime_user_type_base_registry() {
+    static dict<uint32, uint32> user_type_base{};
+    return user_type_base;
+}
+
+static inline uint32& py_runtime_next_user_type_id() {
+    static uint32 next_user_type_id = 1000;
+    return next_user_type_id;
+}
+
 static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJECT) {
-    return static_cast<uint32>(py_tid_register_class_type(static_cast<int64>(base_type_id)));
+    // NOTE:
+    // Avoid cross-TU static initialization order issues by keeping user type
+    // registry in function-local statics (initialized on first use).
+    auto& user_type_base = py_runtime_user_type_base_registry();
+    uint32 tid = py_runtime_next_user_type_id();
+    while (user_type_base.find(tid) != user_type_base.end()) {
+        ++tid;
+    }
+    py_runtime_next_user_type_id() = tid + 1;
+    user_type_base[tid] = base_type_id;
+    return tid;
 }
 
 // Backward-compatible overload for pre-migration generated sources.
@@ -2620,11 +2640,35 @@ static inline uint32 py_register_class_type(const list<uint32>& bases) {
     }
 
 static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
-    return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
+    if (actual_type_id == expected_type_id) return true;
+    if (actual_type_id == PYTRA_TID_BOOL) {
+        if (expected_type_id == PYTRA_TID_INT || expected_type_id == PYTRA_TID_OBJECT) return true;
+    }
+    if (actual_type_id == PYTRA_TID_INT) return expected_type_id == PYTRA_TID_OBJECT;
+    if (actual_type_id == PYTRA_TID_FLOAT) return expected_type_id == PYTRA_TID_OBJECT;
+    if (actual_type_id == PYTRA_TID_STR) return expected_type_id == PYTRA_TID_OBJECT;
+    if (actual_type_id == PYTRA_TID_LIST) return expected_type_id == PYTRA_TID_OBJECT;
+    if (actual_type_id == PYTRA_TID_DICT) return expected_type_id == PYTRA_TID_OBJECT;
+    if (actual_type_id == PYTRA_TID_SET) return expected_type_id == PYTRA_TID_OBJECT;
+
+    auto& user_type_base = py_runtime_user_type_base_registry();
+    uint32 cur = actual_type_id;
+    int guard = 0;
+    while (guard < 4096) {
+        auto it = user_type_base.find(cur);
+        if (it == user_type_base.end()) break;
+        uint32 base = it->second;
+        if (base == expected_type_id) return true;
+        if (expected_type_id == PYTRA_TID_OBJECT && base == PYTRA_TID_OBJECT) return true;
+        if (base == cur) break;
+        cur = base;
+        ++guard;
+    }
+    return false;
 }
 
 static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
-    return py_tid_issubclass(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
+    return py_is_subtype(actual_type_id, expected_type_id);
 }
 
 static inline uint32 py_runtime_type_id(const object& v) {

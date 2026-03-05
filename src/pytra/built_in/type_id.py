@@ -167,9 +167,29 @@ def _recompute_type_ranges() -> None:
         i += 1
 
 
+def _mark_type_ranges_dirty() -> None:
+    _TYPE_STATE["ranges_dirty"] = 1
+
+
+def _mark_type_ranges_clean() -> None:
+    _TYPE_STATE["ranges_dirty"] = 0
+
+
+def _is_type_ranges_dirty() -> bool:
+    return _TYPE_STATE.get("ranges_dirty", 1) != 0
+
+
+def _ensure_type_ranges() -> None:
+    if _is_type_ranges_dirty():
+        _recompute_type_ranges()
+        _mark_type_ranges_clean()
+
+
 def _ensure_builtins() -> None:
     if "next_user_type_id" not in _TYPE_STATE:
         _TYPE_STATE["next_user_type_id"] = _tid_user_base()
+    if "ranges_dirty" not in _TYPE_STATE:
+        _TYPE_STATE["ranges_dirty"] = 1
     if len(_TYPE_IDS) > 0:
         return
 
@@ -183,6 +203,7 @@ def _ensure_builtins() -> None:
     _register_type_node(_tid_dict(), _tid_object())
     _register_type_node(_tid_set(), _tid_object())
     _recompute_type_ranges()
+    _mark_type_ranges_clean()
 
 
 def _normalize_base_type_id(base_type_id: int) -> int:
@@ -205,7 +226,7 @@ def py_tid_register_class_type(base_type_id: int = _tid_object()) -> int:
     _TYPE_STATE["next_user_type_id"] = tid + 1
 
     _register_type_node(tid, base_tid)
-    _recompute_type_ranges()
+    _mark_type_ranges_dirty()
     return tid
 
 
@@ -246,6 +267,7 @@ def py_tid_runtime_type_id(value: Any) -> int:
 def py_tid_is_subtype(actual_type_id: int, expected_type_id: int) -> bool:
     """Check nominal subtype relation by type_id order range."""
     _ensure_builtins()
+    _ensure_type_ranges()
     if actual_type_id not in _TYPE_ORDER:
         return False
     if expected_type_id not in _TYPE_ORDER:
@@ -274,4 +296,5 @@ def _py_reset_type_registry_for_test() -> None:
     _TYPE_MAX.clear()
     _TYPE_STATE.clear()
     _TYPE_STATE["next_user_type_id"] = _tid_user_base()
+    _TYPE_STATE["ranges_dirty"] = 1
     _ensure_builtins()

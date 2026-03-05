@@ -132,8 +132,8 @@ class CppBinaryOperatorEmitter:
                 elif on == "right" and to_t != "":
                     right_t = to_t
                 i += 1
-            if left_t == "Path" and right_t in {"str", "Path"}:
-                return f"{left} / {right}"
+            if left_t in {"Path", "pytra::std::pathlib::Path"} and right_t in {"str", "Path", "pytra::std::pathlib::Path"}:
+                return f"({left}).__truediv__({right})"
             if left_t in {"float32", "float64"} and right_t in {"float32", "float64"}:
                 return f"{left} / {right}"
             return f"py_div({left}, {right})"

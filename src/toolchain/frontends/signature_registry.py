@@ -22,13 +22,9 @@ _IMPORTED_SYMBOL_RETURNS: dict[tuple[str, str], str] = {
 }
 
 _IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
-    ("pathlib", "Path"): "Path",
-    ("pytra.std.pathlib", "Path"): "Path",
 }
 
 _NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
-    ("pytra.std.pathlib", "Path"): "Path",
-    ("pathlib", "Path"): "Path",
     ("pytra.std.json", "loads"): "json.loads",
     ("pytra.std.json", "dumps"): "json.dumps",
     ("json", "loads"): "json.loads",

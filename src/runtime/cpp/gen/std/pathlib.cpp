@@ -1,7 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/pathlib.py
-// generated-by: src/py2cpp.py
-
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include "runtime/cpp/gen/std/pathlib.h"
@@ -11,16 +10,11 @@
 
 namespace pytra::std::pathlib {
 
-    /* Pure Python Path helper compatible with a subset of pathlib.Path. */
-    
-    
-    
-    
     struct Path {
         str _value;
         
         Path(const str& value) {
-            this->_value = make_object(value);
+            this->_value = value;
         }
         str __str__() {
             return this->_value;
@@ -35,13 +29,13 @@ namespace pytra::std::pathlib {
             return Path(py_os_path_join(this->_value, rhs));
         }
         Path parent() {
-            ::std::any parent_txt = make_object(py_os_path_dirname(this->_value));
+            auto parent_txt = py_os_path_dirname(this->_value);
             if (parent_txt == "")
-                parent_txt = make_object(".");
+                parent_txt = ".";
             return Path(parent_txt);
         }
         list<Path> parents() {
-            list<Path> out = list<Path>{};
+            list<Path> out = {};
             str current = py_to_string(py_os_path_dirname(this->_value));
             while (true) {
                 if (current == "")
@@ -57,27 +51,27 @@ namespace pytra::std::pathlib {
             return out;
         }
         str name() {
-            return py_to_string(py_os_path_basename(this->_value));
+            return py_os_path_basename(this->_value);
         }
         str suffix() {
             auto __tuple_1 = py_os_path_splitext(py_os_path_basename(this->_value));
-            auto _ = ::std::get<0>(__tuple_1);
-            auto ext = ::std::get<1>(__tuple_1);
-            return py_to_string(ext);
+            auto _ = py_at(__tuple_1, 0);
+            auto ext = py_at(__tuple_1, 1);
+            return ext;
         }
         str stem() {
             auto __tuple_2 = py_os_path_splitext(py_os_path_basename(this->_value));
-            auto root = ::std::get<0>(__tuple_2);
-            auto _ = ::std::get<1>(__tuple_2);
-            return py_to_string(root);
+            auto root = py_at(__tuple_2, 0);
+            auto _ = py_at(__tuple_2, 1);
+            return root;
         }
         Path resolve() {
             return Path(py_os_path_abspath(this->_value));
         }
         bool exists() {
-            return py_to_bool(py_os_path_exists(this->_value));
+            return py_os_path_exists(this->_value);
         }
-        void mkdir(bool parents, bool exist_ok) {
+        void mkdir(bool parents = false, bool exist_ok = false) {
             if (parents) {
                 py_os_makedirs(this->_value, exist_ok);
                 return;
@@ -86,16 +80,16 @@ namespace pytra::std::pathlib {
                 return;
             py_os_mkdir(this->_value);
         }
-        str read_text(const str& encoding) {
+        str read_text(const str& encoding = "utf-8") {
             pytra::runtime::cpp::base::PyFile f = open(this->_value, "r");
             {
                 auto __finally_3 = py_make_scope_exit([&]() {
                     f.close();
                 });
-                return py_to_string(f.read());
+                return f.read();
             }
         }
-        int64 write_text(const str& text, const str& encoding) {
+        int64 write_text(const str& text, const str& encoding = "utf-8") {
             pytra::runtime::cpp::base::PyFile f = open(this->_value, "w");
             {
                 auto __finally_4 = py_make_scope_exit([&]() {
@@ -105,15 +99,24 @@ namespace pytra::std::pathlib {
             }
         }
         list<Path> glob(const str& pattern) {
-            list<str> paths = static_cast<list<str>>(py_glob_glob(py_os_path_join(this->_value, pattern)));
-            list<Path> out = list<Path>{};
-            for (str p : paths)
+            list<str> paths = py_to_str_list_from_object(py_glob_glob(py_os_path_join(this->_value, pattern)));
+            list<Path> out = {};
+            for (object __itobj_5 : py_dyn_range(paths)) {
+                str p = py_to_string(__itobj_5);
                 out.append(Path(Path(p)));
+            }
             return out;
         }
         Path cwd() {
             return Path(py_os_getcwd());
         }
     };
+    
+    static void __pytra_module_init() {
+        static bool __initialized = false;
+        if (__initialized) return;
+        __initialized = true;
+        /* Pure Python Path helper compatible with a subset of pathlib.Path. */
+    }
     
 }  // namespace pytra::std::pathlib

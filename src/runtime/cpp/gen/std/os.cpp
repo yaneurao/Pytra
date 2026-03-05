@@ -7,42 +7,42 @@
 
 namespace pytra::std::os {
 
-    _PathModule path;
+    object path;
     
     struct _PathModule {
         str join(const str& a, const str& b) {
-            return pytra::std::os::path.join(a, b);
+            return py_os_path_join(a, b);
         }
         str dirname(const str& p) {
-            return pytra::std::os::path.dirname(p);
+            return py_os_path_dirname(p);
         }
         str basename(const str& p) {
-            return pytra::std::os::path.basename(p);
+            return py_os_path_basename(p);
         }
         ::std::tuple<str, str> splitext(const str& p) {
-            auto __tuple_1 = pytra::std::os::path.splitext(p);
+            auto __tuple_1 = py_os_path_splitext(p);
             auto root = py_at(__tuple_1, 0);
             auto ext = py_at(__tuple_1, 1);
             return ::std::make_tuple(root, ext);
         }
         str abspath(const str& p) {
-            return pytra::std::os::path.abspath(p);
+            return py_os_path_abspath(p);
         }
         bool exists(const str& p) {
-            return pytra::std::os::path.exists(p);
+            return py_os_path_exists(p);
         }
     };
     
     str getcwd() {
-        return pytra::std::os::getcwd();
+        return py_os_getcwd();
     }
     
     void mkdir(const str& p) {
-        pytra::std::os::mkdir(p);
+        py_os_mkdir(p);
     }
     
     void makedirs(const str& p, bool exist_ok = false) {
-        pytra::std::os::makedirs(p, exist_ok);
+        py_os_makedirs(p, exist_ok);
     }
     
     static void __pytra_module_init() {
@@ -50,7 +50,7 @@ namespace pytra::std::os {
         if (__initialized) return;
         __initialized = true;
         /* Minimal os shim for selfhost-friendly imports. */
-        path = _PathModule();
+        path = make_object(_PathModule());
     }
     
 }  // namespace pytra::std::os
