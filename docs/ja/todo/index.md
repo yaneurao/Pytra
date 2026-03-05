@@ -146,6 +146,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java emitter の直書き runtime 分岐残存を監査し、`check_emitter_runtimecall_guardrails.py`（strict java）と `test_py2java_smoke.py`（25件）で IR 解決経路への収束状態を再確認して完了に更新した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] 非Java backend について `check_emitter_runtimecall_guardrails.py`（全backend no findings）と smoke 再実行（`rs/rb/lua/scala/swift/ts=127件`、加えて本ターン実施済み `go/php/kotlin/js/nim/cs=117件`）を通過し、IR解決経路 + fail-closed 方針の展開完了を確認した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] lint 導線として `check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` を `tools/run_local_ci.py` 必須ステップへ固定済みであることを再確認し、strict backend(`java`)の fail-fast 条件と合わせて PR/CI 側の拒否条件を確定した。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] sample parity 全件再実行を開始し、`01-03` の時点で `js/ts/go/nim/java/cpp` のブロッカーを確認（`js/png.js` f-string残存、`go/png.go` 文字列崩れ、Nim module名制約、Java `tmp` class名、C++ runtime link競合）。`rs/cs/ruby/lua/php/swift/kotlin/scala` は同区間で artifact size/CRC32 一致を確認。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
