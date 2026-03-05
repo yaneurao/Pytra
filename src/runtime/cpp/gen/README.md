@@ -1,6 +1,6 @@
 # pytra-gen
 
-`src/runtime/cpp/pytra-gen/` は C++ runtime の自動生成レイヤ専用です。
+`src/runtime/cpp/gen/` は C++ runtime の自動生成レイヤ専用です。
 
 ## ルール
 
@@ -10,4 +10,4 @@
 
 ## 目的
 
-- `src/runtime/cpp/pytra-core/`（手書き）との責務分離を明示し、移行時の配置先を固定する。
+- `src/runtime/cpp/core/`（手書き）との責務分離を明示し、移行時の配置先を固定する。

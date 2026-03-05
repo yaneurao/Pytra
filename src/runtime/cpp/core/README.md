@@ -1,12 +1,12 @@
 # pytra-core
 
-`src/runtime/cpp/pytra-core/` は C++ runtime の手書きコア実装専用です。
+`src/runtime/cpp/core/` は C++ runtime の手書きコア実装専用です。
 
 ## ルール
 
 - `AUTO-GENERATED FILE. DO NOT EDIT.` ヘッダを持つファイルは置かない。
 - GC/ABI/低レベル補助など、生成しにくい最小コアのみを配置する。
-- `src/runtime/cpp/pytra-gen/` から include される前提で、依存方向は `pytra-gen -> pytra-core` を維持する。
+- `src/runtime/cpp/gen/` から include される前提で、依存方向は `gen -> core` を維持する。
 
 ## 目的
 

@@ -2,9 +2,9 @@
 // source: src/pytra/std/typing.py
 // generated-by: src/py2cpp.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/std/typing.h"
+#include "runtime/cpp/gen/std/typing.h"
 
 
 namespace pytra::std::typing {

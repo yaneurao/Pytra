@@ -2,11 +2,11 @@
 // source: src/pytra/std/random.py
 // generated-by: src/py2cpp.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/std/random.h"
+#include "runtime/cpp/gen/std/random.h"
 
-#include "pytra/std/math.h"
+#include "runtime/cpp/gen/std/math.h"
 
 namespace pytra::std::random {
 

@@ -1,7 +1,7 @@
 #ifndef PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_IMPL_H
 #define PYTRA_RUNTIME_CPP_PYTRA_STD_DATACLASSES_IMPL_H
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
 namespace pytra::std::dataclasses_impl {
 

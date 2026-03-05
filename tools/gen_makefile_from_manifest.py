@@ -72,10 +72,17 @@ def _collect_sources(manifest: dict[str, object], manifest_dir: Path) -> list[st
 
 
 def _collect_runtime_sources() -> list[str]:
-    runtime_root = ROOT / "src" / "runtime" / "cpp" / "pytra"
-    if not runtime_root.exists():
-        raise RuntimeError(f"runtime source root not found: {runtime_root}")
-    return sorted(str(p) for p in runtime_root.rglob("*.cpp"))
+    out: list[str] = []
+    roots = [
+        ROOT / "src" / "runtime" / "cpp" / "core",
+        ROOT / "src" / "runtime" / "cpp" / "gen",
+    ]
+    for runtime_root in roots:
+        if not runtime_root.exists():
+            raise RuntimeError(f"runtime source root not found: {runtime_root}")
+        out.extend(sorted(str(p) for p in runtime_root.rglob("*.cpp")))
+    # keep deterministic order while avoiding duplicates
+    return sorted(set(out))
 
 
 def _as_makefile_path(manifest_path: Path, output: str) -> Path:

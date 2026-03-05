@@ -1,11 +1,11 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/built_in/type_id.py
 // generated-by: src/py2cpp.py
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/built_in/type_id.h"
+#include "runtime/cpp/gen/built_in/type_id.h"
 
-#include "pytra/std/typing.h"
+#include "runtime/cpp/gen/std/typing.h"
 
 struct TypeRegistryState {
     list<int64> type_ids = list<int64>{};

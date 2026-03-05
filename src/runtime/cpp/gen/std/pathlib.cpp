@@ -2,12 +2,12 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: src/py2cpp.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/std/pathlib.h"
+#include "runtime/cpp/gen/std/pathlib.h"
 
-#include "pytra/std/glob.h"
-#include "pytra/std/os.h"
+#include "runtime/cpp/gen/std/glob.h"
+#include "runtime/cpp/gen/std/os.h"
 
 namespace pytra::std::pathlib {
 

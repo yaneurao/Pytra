@@ -2,11 +2,11 @@
 // source: src/pytra/std/timeit.py
 // generated-by: src/py2cpp.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/std/timeit.h"
+#include "runtime/cpp/gen/std/timeit.h"
 
-#include "pytra/std/time.h"
+#include "runtime/cpp/gen/std/time.h"
 
 namespace pytra::std::timeit {
 

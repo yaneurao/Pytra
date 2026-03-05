@@ -2,9 +2,9 @@
 // source: src/pytra/std/glob.py
 // generated-by: src/py2cpp.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/std/glob.h"
+#include "runtime/cpp/gen/std/glob.h"
 
 namespace pytra::std::glob {
 

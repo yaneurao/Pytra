@@ -2,16 +2,16 @@
 // source: src/pytra/compiler/east_parts/core.py
 // generated-by: src/py2cpp.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "pytra/compiler/east_parts/core.h"
+#include "runtime/cpp/gen/compiler/east_parts/core.h"
 
-#include "pytra/std/dataclasses.h"
-#include "pytra/std/json.h"
-#include "pytra/std/pathlib.h"
-#include "pytra/std/re.h"
-#include "pytra/std/sys.h"
-#include "pytra/std/typing.h"
+#include "runtime/cpp/gen/std/dataclasses.h"
+#include "runtime/cpp/gen/std/json.h"
+#include "runtime/cpp/gen/std/pathlib.h"
+#include "runtime/cpp/gen/std/re.h"
+#include "runtime/cpp/gen/std/sys.h"
+#include "runtime/cpp/gen/std/typing.h"
 
 namespace pytra::compiler::east_parts::core {
 

@@ -10,10 +10,16 @@ from pathlib import Path
 
 
 def _runtime_cpp_sources() -> list[str]:
-    """runtime/cpp の C++ 実装ファイル一覧を返す（モジュール個別列挙を避ける）。"""
+    """runtime/cpp/{core,gen} の C++ 実装ファイル一覧を返す。"""
     out: list[str] = []
-    for p in sorted(Path("src/runtime/cpp/pytra").rglob("*.cpp")):
-        out.append(p.as_posix())
+    seen: set[str] = set()
+    for root in (Path("src/runtime/cpp/core"), Path("src/runtime/cpp/gen")):
+        for p in sorted(root.rglob("*.cpp")):
+            rel = p.as_posix()
+            if rel in seen:
+                continue
+            seen.add(rel)
+            out.append(rel)
     return out
 
 

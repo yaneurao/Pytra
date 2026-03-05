@@ -2415,7 +2415,7 @@ static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(
 static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
 
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
-#include "runtime/cpp/pytra/built_in/type_id.h"
+#include "runtime/cpp/gen/built_in/type_id.h"
 
 static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJECT) {
     return static_cast<uint32>(py_tid_register_class_type(static_cast<int64>(base_type_id)));
