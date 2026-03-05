@@ -57,6 +57,7 @@
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build導線（`gen_makefile_from_manifest.py` / `build_multi_cpp.py` / `verify_sample_outputs.py` / `verify_image_runtime_parity.py`）を `core+gen` へ更新し、`pytra-cli --target cpp --build` の実ビルドで `src/runtime/cpp/{core,gen}` のみを用いることを確認。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture --summary-json work/logs/p0_runtime_root_reset_cpp_fixture_20260305_s401.json` を実行し、`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` の 3件すべてで `pass` を確認した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] sample parity をケース分割で再実行し、`01-05,07-13,15,17,18` は artifact size+CRC32 一致、`06_julia_parameter_sweep`・`14_raymarching_light_cycle`・`16_glass_sculpture_chaos` の 3件のみ GIF CRC32 mismatch が残存することを確認した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] `src/runtime/cpp/gen/std/math.cpp` の `pi/e` を宣言時初期化へ変更して module init 未呼び出し差分を解消し、`tools/runtime_parity_check.py --targets cpp --case-root sample 06_julia_parameter_sweep 14_raymarching_light_cycle 16_glass_sculpture_chaos` の3件を再実行してすべて `pass` を確認した。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 

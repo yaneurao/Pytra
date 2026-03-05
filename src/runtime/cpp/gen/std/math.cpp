@@ -9,8 +9,8 @@
 
 namespace pytra::std::math {
 
-    float64 pi;
-    float64 e;
+    float64 pi = py_to<float64>(pytra::std::math_impl::pi);
+    float64 e = py_to<float64>(pytra::std::math_impl::e);
     
     float64 sqrt(float64 x) {
         return pytra::std::math_impl::sqrt(x);
@@ -61,8 +61,6 @@ namespace pytra::std::math {
         if (__initialized) return;
         __initialized = true;
         /* pytra.std.math: thin wrapper over native math_impl module. */
-        pi = py_to<float64>(pytra::std::math_impl::pi);
-        e = py_to<float64>(pytra::std::math_impl::e);
     }
     
 }  // namespace pytra::std::math
