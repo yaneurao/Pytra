@@ -11,10 +11,16 @@ import signal
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 import zlib
 from dataclasses import dataclass
 from pathlib import Path
+
+if str((Path(__file__).resolve().parents[1] / "src")) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from toolchain.compiler.pytra_cli_profiles import get_target_profile, list_parity_targets
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "test" / "fixtures"
@@ -221,46 +227,15 @@ def build_targets(
             parts.append("--run")
         return " ".join(parts)
 
-    needs_map: dict[str, tuple[str, ...]] = {
-        "cpp": ("python", "make", "g++"),
-        "rs": ("python", "rustc"),
-        "cs": ("python", "mcs", "mono"),
-        "js": ("python", "node"),
-        "ruby": ("python", "ruby"),
-        "lua": ("python", "lua"),
-        "php": ("python", "php"),
-        "ts": ("python", "node", "npx"),
-        "go": ("python", "go"),
-        "java": ("python", "javac", "java"),
-        "swift": ("python", "swiftc"),
-        "kotlin": ("python", "kotlinc", "java"),
-        "scala": ("python", "scala"),
-        "nim": ("python", "nim"),
-    }
-    order = [
-        "cpp",
-        "rs",
-        "cs",
-        "js",
-        "ruby",
-        "lua",
-        "php",
-        "ts",
-        "go",
-        "java",
-        "swift",
-        "kotlin",
-        "scala",
-        "nim",
-    ]
     out: list[Target] = []
-    for name in order:
+    for name in list_parity_targets():
+        profile = get_target_profile(name)
         out.append(
             Target(
                 name=name,
                 transpile_cmd=_pytra_cmd(name, build=False, run=False),
                 run_cmd=_pytra_cmd(name, build=True, run=True),
-                needs=needs_map[name],
+                needs=profile.runner_needs,
             )
         )
     return out

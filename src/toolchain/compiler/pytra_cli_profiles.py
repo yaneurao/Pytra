@@ -52,23 +52,24 @@ class TargetProfile:
     build_driver: str
     fixed_output_name: str
     allow_codegen_opt: bool
+    runner_needs: tuple[str, ...]
 
 
 _TARGET_PROFILES: dict[str, TargetProfile] = {
-    "cpp": TargetProfile(target="cpp", extension=".cpp", build_driver="cpp_make", fixed_output_name="", allow_codegen_opt=True),
-    "rs": TargetProfile(target="rs", extension=".rs", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "cs": TargetProfile(target="cs", extension=".cs", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "js": TargetProfile(target="js", extension=".js", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "ts": TargetProfile(target="ts", extension=".ts", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "go": TargetProfile(target="go", extension=".go", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "java": TargetProfile(target="java", extension=".java", build_driver="noncpp", fixed_output_name="Main.java", allow_codegen_opt=False),
-    "swift": TargetProfile(target="swift", extension=".swift", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "kotlin": TargetProfile(target="kotlin", extension=".kt", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "scala": TargetProfile(target="scala", extension=".scala", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "lua": TargetProfile(target="lua", extension=".lua", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "ruby": TargetProfile(target="ruby", extension=".rb", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "php": TargetProfile(target="php", extension=".php", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
-    "nim": TargetProfile(target="nim", extension=".nim", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "cpp": TargetProfile(target="cpp", extension=".cpp", build_driver="cpp_make", fixed_output_name="", allow_codegen_opt=True, runner_needs=("python", "make", "g++")),
+    "rs": TargetProfile(target="rs", extension=".rs", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "rustc")),
+    "cs": TargetProfile(target="cs", extension=".cs", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "mcs", "mono")),
+    "js": TargetProfile(target="js", extension=".js", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "node")),
+    "ts": TargetProfile(target="ts", extension=".ts", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "node", "npx")),
+    "go": TargetProfile(target="go", extension=".go", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "go")),
+    "java": TargetProfile(target="java", extension=".java", build_driver="noncpp", fixed_output_name="Main.java", allow_codegen_opt=False, runner_needs=("python", "javac", "java")),
+    "swift": TargetProfile(target="swift", extension=".swift", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "swiftc")),
+    "kotlin": TargetProfile(target="kotlin", extension=".kt", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "kotlinc", "java")),
+    "scala": TargetProfile(target="scala", extension=".scala", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "scala")),
+    "lua": TargetProfile(target="lua", extension=".lua", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "lua")),
+    "ruby": TargetProfile(target="ruby", extension=".rb", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "ruby")),
+    "php": TargetProfile(target="php", extension=".php", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "php")),
+    "nim": TargetProfile(target="nim", extension=".nim", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "nim")),
 }
 
 
@@ -77,6 +78,15 @@ def get_target_profile(target: str) -> TargetProfile:
     if isinstance(profile, TargetProfile):
         return profile
     raise RuntimeError("unsupported target profile: " + target)
+
+
+def list_supported_targets() -> list[str]:
+    return list(SUPPORTED_TARGETS)
+
+
+def list_parity_targets() -> list[str]:
+    # Keep parity output order stable for existing logs and README refresh tooling.
+    return ["cpp", "rs", "cs", "js", "ruby", "lua", "php", "ts", "go", "java", "swift", "kotlin", "scala", "nim"]
 
 
 def validate_profile_option_compatibility(

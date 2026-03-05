@@ -48,7 +48,7 @@
 - [x] [ID: P0-PYTRA-CLI-REALIGN-01-S2-01] target 固有 build/run/transpile 契約を `toolchain` 側のプロファイル定義へ抽出する。
 - [x] [ID: P0-PYTRA-CLI-REALIGN-01-S2-02] `src/pytra-cli.py` を「引数正規化 + プロファイル解決 + 共通実行」のみに縮退し、target 分岐を撤去する。
 - [x] [ID: P0-PYTRA-CLI-REALIGN-01-S2-03] `--codegen-opt` など target 非互換オプションの受理条件をプロファイルベースで検証し、fail-fast を統一する。
-- [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S3-01] parity/tooling をプロファイル駆動の新CLI契約へ追従させ、target 直書き重複を削減する。
+- [x] [ID: P0-PYTRA-CLI-REALIGN-01-S3-01] parity/tooling をプロファイル駆動の新CLI契約へ追従させ、target 直書き重複を削減する。
 - [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S3-02] unit/parity/docs を更新し、回帰を固定する。
 
 決定ログ:
@@ -57,3 +57,4 @@
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-01`] `src/toolchain/compiler/pytra_cli_profiles.py` を新設し、target 固有の出力拡張子・出力パス決定・non-cpp build/run コマンド契約を CLI 本体から抽出。`src/pytra-cli.py` は契約参照へ切替え、`test_pytra_cli.py` / `test_pytra_cli_profiles.py` を通過。
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-02`] `src/pytra-cli.py` の `target == ...` 分岐を撤去し、`TargetProfile.build_driver` を使った共通ディスパッチへ移行。transpile/build の target 依存は `pytra_cli_profiles.py` に集約。
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-03`] `validate_profile_option_compatibility()` を追加して profile ベース fail-fast を導入し、`--codegen-opt` の non-cpp 禁止と non-cpp `--build` 時の `--compiler/--std/--opt/--exe` 禁止を固定。`test_pytra_cli.py` / `test_pytra_cli_profiles.py` を拡張して回帰を追加。
+- 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S3-01`] `tools/runtime_parity_check.py` の target order/needs の直書きを `pytra_cli_profiles` 参照へ置換し、parity の target 契約重複を削減。`test_runtime_parity_check_cli.py` を新CLI契約期待値へ更新し、tooling unit が通過。

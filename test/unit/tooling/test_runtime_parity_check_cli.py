@@ -85,10 +85,11 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         names = {t.name for t in targets}
         self.assertIn("ruby", names)
         ruby_target = next(t for t in targets if t.name == "ruby")
-        self.assertIn("src/py2x.py", ruby_target.transpile_cmd)
+        self.assertIn("src/pytra-cli.py", ruby_target.transpile_cmd)
         self.assertIn("--target ruby", ruby_target.transpile_cmd)
-        self.assertIn("test/transpile/ruby/01_mandelbrot.rb", ruby_target.transpile_cmd)
-        self.assertEqual(ruby_target.run_cmd, "ruby test/transpile/ruby/01_mandelbrot.rb")
+        self.assertIn("--output-dir test/transpile/ruby/01_mandelbrot", ruby_target.transpile_cmd)
+        self.assertIn("src/pytra-cli.py", ruby_target.run_cmd)
+        self.assertIn("--build --run", ruby_target.run_cmd)
         self.assertEqual(ruby_target.needs, ("python", "ruby"))
 
     def test_build_targets_includes_scala_entry(self) -> None:
@@ -97,13 +98,11 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         names = {t.name for t in targets}
         self.assertIn("scala", names)
         scala_target = next(t for t in targets if t.name == "scala")
-        self.assertIn("src/py2x.py", scala_target.transpile_cmd)
+        self.assertIn("src/pytra-cli.py", scala_target.transpile_cmd)
         self.assertIn("--target scala", scala_target.transpile_cmd)
-        self.assertIn("test/transpile/scala/01_mandelbrot.scala", scala_target.transpile_cmd)
-        self.assertEqual(
-            scala_target.run_cmd,
-            "scala run test/transpile/scala/py_runtime.scala test/transpile/scala/image_runtime.scala test/transpile/scala/01_mandelbrot.scala",
-        )
+        self.assertIn("--output-dir test/transpile/scala/01_mandelbrot", scala_target.transpile_cmd)
+        self.assertIn("src/pytra-cli.py", scala_target.run_cmd)
+        self.assertIn("--build --run", scala_target.run_cmd)
         self.assertEqual(scala_target.needs, ("python", "scala"))
 
     def test_build_targets_includes_nim_entry(self) -> None:
@@ -112,18 +111,20 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         names = {t.name for t in targets}
         self.assertIn("nim", names)
         nim_target = next(t for t in targets if t.name == "nim")
-        self.assertIn("src/py2x.py", nim_target.transpile_cmd)
+        self.assertIn("src/pytra-cli.py", nim_target.transpile_cmd)
         self.assertIn("--target nim", nim_target.transpile_cmd)
-        self.assertIn("test/transpile/nim/case_01_mandelbrot.nim", nim_target.transpile_cmd)
-        self.assertIn("nim c --hints:off --verbosity:0", nim_target.run_cmd)
-        self.assertIn("-r test/transpile/nim/case_01_mandelbrot.nim", nim_target.run_cmd)
+        self.assertIn("--output-dir test/transpile/nim/01_mandelbrot", nim_target.transpile_cmd)
+        self.assertIn("src/pytra-cli.py", nim_target.run_cmd)
+        self.assertIn("--build --run", nim_target.run_cmd)
         self.assertEqual(nim_target.needs, ("python", "nim"))
 
     def test_build_targets_swift_uses_optimized_compile_flag(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
         targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
         swift_target = next(t for t in targets if t.name == "swift")
-        self.assertIn("swiftc -O ", swift_target.run_cmd)
+        self.assertIn("src/pytra-cli.py", swift_target.run_cmd)
+        self.assertIn("--target swift", swift_target.run_cmd)
+        self.assertIn("--build --run", swift_target.run_cmd)
 
     def test_run_shell_timeout_kills_process_group(self) -> None:
         marker = f"RPC_TIMEOUT_MARKER_{os.getpid()}"
