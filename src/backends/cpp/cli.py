@@ -362,9 +362,10 @@ def build_cpp_header_from_east(
     source_path: Path,
     output_path: Path,
     top_namespace: str = "",
+    cpp_text: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
-    return _build_cpp_header_from_east(east_module, source_path, output_path, top_namespace)
+    return _build_cpp_header_from_east(east_module, source_path, output_path, top_namespace, cpp_text)
 
 
 def _strip_decorator_head(decorator_name: str) -> str:
@@ -465,6 +466,16 @@ def _is_runtime_module_extern_only(east_module: dict[str, Any]) -> bool:
             continue
         return False
     return saw_extern_decl
+
+
+def _has_top_level_class_defs(east_module: dict[str, Any]) -> bool:
+    """module body に top-level ClassDef があるかを返す。"""
+    body_any = east_module.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    for stmt in body:
+        if isinstance(stmt, dict) and dict_any_get_str(stmt, "kind") == "ClassDef":
+            return True
+    return False
 
 
 def _strip_extern_decls_from_stmt(stmt: Any) -> Any:
@@ -898,7 +909,7 @@ def main(argv: list[str]) -> int:
             mkdirs_for_cli(path_parent_text(hdr_out))
             cpp_emit_module = _build_cpp_emit_module_without_extern_decls(east_module)
             if not _has_cpp_emit_definitions(cpp_emit_module):
-                hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
+                hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns, "")
                 generated_lines_runtime = count_text_lines(hdr_txt_runtime)
                 check_guard_limit(
                     "emit",
@@ -933,23 +944,25 @@ def main(argv: list[str]) -> int:
                 dump_cpp_opt_trace,
                 cpp_list_model_opt,
             )
-            own_runtime_header_prefix = "runtime/cpp/" if is_root_runtime_output else "runtime/cpp/gen/"
-            own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
-            legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
-            if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:
-                cpp_txt_runtime = cpp_txt_runtime.replace(legacy_runtime_header, own_runtime_header)
-            if own_runtime_header not in cpp_txt_runtime:
-                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
-                new_runtime_include = (
-                    '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
-                )
-                cpp_txt_runtime = replace_first(
-                    cpp_txt_runtime,
-                    old_runtime_include,
-                    new_runtime_include,
-                )
+            has_top_level_classes = _has_top_level_class_defs(cpp_emit_module)
+            if not has_top_level_classes:
+                own_runtime_header_prefix = "runtime/cpp/" if is_root_runtime_output else "runtime/cpp/gen/"
+                own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
+                legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
+                if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:
+                    cpp_txt_runtime = cpp_txt_runtime.replace(legacy_runtime_header, own_runtime_header)
+                if own_runtime_header not in cpp_txt_runtime:
+                    old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
+                    new_runtime_include = (
+                        '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                    )
+                    cpp_txt_runtime = replace_first(
+                        cpp_txt_runtime,
+                        old_runtime_include,
+                        new_runtime_include,
+                    )
             cpp_txt_runtime = _prepend_generated_cpp_banner(cpp_txt_runtime, input_path)
-            hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
+            hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns, cpp_txt_runtime)
             generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
@@ -983,7 +996,7 @@ def main(argv: list[str]) -> int:
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
                 mkdirs_for_cli(path_parent_text(hdr_path))
-                hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt)
+                hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt, cpp)
                 generated_lines_single = count_text_lines(cpp) + count_text_lines(hdr_txt)
                 check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
                 write_text_file(hdr_path, hdr_txt)

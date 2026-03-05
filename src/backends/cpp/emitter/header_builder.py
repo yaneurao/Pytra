@@ -19,9 +19,12 @@ def build_cpp_header_from_east(
     source_path: Path,
     output_path: Path,
     top_namespace: str = "",
+    cpp_text: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
     body = dict_any_get_dict_list(east_module, "body")
+    class_blocks = _extract_cpp_class_blocks(cpp_text, top_namespace)
+    class_block_names = _extract_class_names_from_blocks(class_blocks)
 
     class_lines: list[str] = []
     fn_lines: list[str] = []
@@ -58,7 +61,7 @@ def build_cpp_header_from_east(
         kind = dict_any_get_str(st, "kind")
         if kind == "ClassDef":
             cls_name = dict_any_get_str(st, "name")
-            if cls_name != "" and cls_name not in seen_classes:
+            if cls_name != "" and cls_name not in seen_classes and cls_name not in class_block_names:
                 class_lines.append("struct " + cls_name + ";")
                 seen_classes.add(cls_name)
         elif kind == "FunctionDef":
@@ -142,6 +145,9 @@ def build_cpp_header_from_east(
         includes.append("#include <unordered_map>")
     if has_std_uset:
         includes.append("#include <unordered_set>")
+    for include_line in _extract_cpp_include_lines(cpp_text, output_path):
+        if include_line not in includes:
+            includes.append(include_line)
 
     guard = _header_guard_from_path(str(output_path))
     lines: list[str] = []
@@ -152,6 +158,9 @@ def build_cpp_header_from_east(
     lines.append("#ifndef " + guard)
     lines.append("#define " + guard)
     lines.append("")
+    if _header_requires_py_runtime_include(used_types) or len(class_blocks) > 0:
+        lines.append("#include \"runtime/cpp/core/built_in/py_runtime.h\"")
+        lines.append("")
     for include in includes:
         lines.append(include)
     if len(includes) > 0:
@@ -159,6 +168,10 @@ def build_cpp_header_from_east(
     ns = top_namespace.strip()
     if ns != "":
         lines.append("namespace " + ns + " {")
+        lines.append("")
+    for class_block in class_blocks:
+        for part_line in class_block.splitlines():
+            lines.append(part_line)
         lines.append("")
     for class_line in class_lines:
         lines.append(class_line)
@@ -177,6 +190,141 @@ def build_cpp_header_from_east(
     lines.append("#endif  // " + guard)
     lines.append("")
     return join_str_list("\n", lines)
+
+
+def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
+    """生成済み C++ からヘッダに必要な include 行を抽出する。"""
+    if cpp_text.strip() == "":
+        return []
+    own_name = str(output_path).replace("\\", "/").split("/")[-1]
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in cpp_text.splitlines():
+        line = raw.strip()
+        if not line.startswith("#include "):
+            continue
+        if own_name != "" and line.endswith('"' + own_name + '"'):
+            continue
+        if line == '#include "runtime/cpp/core/built_in/py_runtime.h"':
+            continue
+        if line in seen:
+            continue
+        seen.add(line)
+        out.append(line)
+    return out
+
+
+def _extract_class_names_from_blocks(class_blocks: list[str]) -> set[str]:
+    """抽出済み class/struct block からクラス名集合を得る。"""
+    out: set[str] = set()
+    for block in class_blocks:
+        lines = block.splitlines()
+        if len(lines) == 0:
+            continue
+        head = lines[0].strip()
+        if head.startswith("struct "):
+            tail = head[7:]
+        elif head.startswith("class "):
+            tail = head[6:]
+        else:
+            continue
+        name = ""
+        for ch in tail:
+            if (ch >= "A" and ch <= "Z") or (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9") or ch == "_":
+                name += ch
+            else:
+                break
+        if name != "":
+            out.add(name)
+    return out
+
+
+def _extract_cpp_class_blocks(cpp_text: str, top_namespace: str) -> list[str]:
+    """生成済み C++ から top-level class/struct 本文を抽出する。"""
+    if cpp_text.strip() == "":
+        return []
+    lines = cpp_text.splitlines()
+    if len(lines) == 0:
+        return []
+    start = 0
+    end = len(lines)
+    ns = top_namespace.strip()
+    if ns != "":
+        ns_open = "namespace " + ns + " {"
+        ns_idx = -1
+        for i, raw in enumerate(lines):
+            if raw.strip() == ns_open:
+                ns_idx = i
+                break
+        if ns_idx < 0:
+            return []
+        start = ns_idx + 1
+        depth = lines[ns_idx].count("{") - lines[ns_idx].count("}")
+        for i in range(ns_idx + 1, len(lines)):
+            depth += lines[i].count("{") - lines[i].count("}")
+            if depth <= 0:
+                end = i
+                break
+    for i in range(start, end):
+        if "static void __pytra_module_init()" in lines[i]:
+            end = i
+            break
+    blocks: list[str] = []
+    i = start
+    while i < end:
+        raw = lines[i]
+        stripped = raw.lstrip()
+        if not (stripped.startswith("struct ") or stripped.startswith("class ")):
+            i += 1
+            continue
+        if "{" not in raw:
+            i += 1
+            continue
+        depth = raw.count("{") - raw.count("}")
+        block_lines: list[str] = [raw]
+        i += 1
+        while i < end:
+            line = lines[i]
+            block_lines.append(line)
+            depth += line.count("{") - line.count("}")
+            if depth <= 0 and line.strip().endswith("};"):
+                i += 1
+                break
+            i += 1
+        blocks.append(join_str_list("\n", block_lines))
+    return blocks
+
+
+def _header_requires_py_runtime_include(used_types: set[str]) -> bool:
+    """生成ヘッダが runtime 型定義を必要とするか判定する。"""
+    runtime_markers = (
+        "int8",
+        "uint8",
+        "int16",
+        "uint16",
+        "int32",
+        "uint32",
+        "int64",
+        "uint64",
+        "float32",
+        "float64",
+        "str",
+        "bytes",
+        "bytearray",
+        "object",
+        "list<",
+        "dict<",
+        "set<",
+        "rc<",
+    )
+    for t in used_types:
+        txt = t.strip()
+        if txt in {"", "void", "bool"}:
+            continue
+        for marker in runtime_markers:
+            if marker in txt:
+                return True
+    return False
 
 
 def _header_cpp_type_from_east(
