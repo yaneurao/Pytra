@@ -11,54 +11,54 @@ e: float = extern(_m.e)
 
 @extern
 def sqrt(x: float) -> float:
-    pass
+    return _m.sqrt(x)
 
 
 @extern
 def sin(x: float) -> float:
-    pass
+    return _m.sin(x)
 
 
 @extern
 def cos(x: float) -> float:
-    pass
+    return _m.cos(x)
 
 
 @extern
 def tan(x: float) -> float:
-    pass
+    return _m.tan(x)
 
 
 @extern
 def exp(x: float) -> float:
-    pass
+    return _m.exp(x)
 
 
 @extern
 def log(x: float) -> float:
-    pass
+    return _m.log(x)
 
 
 @extern
 def log10(x: float) -> float:
-    pass
+    return _m.log10(x)
 
 
 @extern
 def fabs(x: float) -> float:
-    pass
+    return _m.fabs(x)
 
 
 @extern
 def floor(x: float) -> float:
-    pass
+    return _m.floor(x)
 
 
 @extern
 def ceil(x: float) -> float:
-    pass
+    return _m.ceil(x)
 
 
 @extern
 def pow(x: float, y: float) -> float:
-    pass
+    return _m.pow(x, y)
