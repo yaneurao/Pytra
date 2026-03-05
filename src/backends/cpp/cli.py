@@ -830,10 +830,10 @@ def main(argv: list[str]) -> int:
             ns = top_namespace_opt
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
-            # Transitional placement:
-            # keep core/gen layout, but std/math is temporarily hosted at
-            # runtime/cpp/std/ for extern header + handwritten cpp pairing.
-            out_root = Path("src/runtime/cpp") if module_tail == "std/math" else RUNTIME_CPP_GEN_ROOT
+            # std モジュールは `runtime/cpp/std/` を正本生成先とする。
+            # utils/compiler/built_in は従来どおり `runtime/cpp/gen/` を使う。
+            is_std_runtime_output = module_tail == "std" or module_tail.startswith("std/")
+            out_root = Path("src/runtime/cpp") if is_std_runtime_output else RUNTIME_CPP_GEN_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(hdr_out))
@@ -874,7 +874,11 @@ def main(argv: list[str]) -> int:
                 dump_cpp_opt_trace,
                 cpp_list_model_opt,
             )
-            own_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
+            own_runtime_header_prefix = "runtime/cpp/" if is_std_runtime_output else "runtime/cpp/gen/"
+            own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
+            legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
+            if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:
+                cpp_txt_runtime = cpp_txt_runtime.replace(legacy_runtime_header, own_runtime_header)
             if own_runtime_header not in cpp_txt_runtime:
                 old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
                 new_runtime_include = (

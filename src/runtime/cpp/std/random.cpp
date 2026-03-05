@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/std/random.h"
+#include "runtime/cpp/std/random.h"
 
 #include "runtime/cpp/std/math.h"
 
@@ -12,7 +12,12 @@ namespace pytra::std::random {
     list<int64> _state_box;
     list<int64> _gauss_has_spare;
     list<float64> _gauss_spare;
-    list<str> __all__;
+    
+    /* pytra.std.random: minimal deterministic random helpers.
+
+This module is intentionally self-contained and avoids Python stdlib imports,
+so it can be transpiled to target runtimes.
+ */
     
     void seed(int64 value) {
         /* Set generator seed (32-bit). */
@@ -133,15 +138,9 @@ namespace pytra::std::random {
         static bool __initialized = false;
         if (__initialized) return;
         __initialized = true;
-        /* pytra.std.random: minimal deterministic random helpers.
-
-This module is intentionally self-contained and avoids Python stdlib imports,
-so it can be transpiled to target runtimes.
- */
         _state_box = list<int64>{2463534242};
         _gauss_has_spare = list<int64>{0};
         _gauss_spare = list<float64>{0.0};
-        __all__ = list<str>{"seed", "random", "randint", "choices", "gauss", "shuffle"};
     }
     
     namespace {

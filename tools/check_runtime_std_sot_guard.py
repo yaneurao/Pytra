@@ -116,6 +116,11 @@ CPP_HEADER_ONLY_STD_MODULES = {
 
 CPP_STD_HEADER_LOCATIONS: dict[str, str] = {
     "math": "src/runtime/cpp/std/math.h",
+    "random": "src/runtime/cpp/std/random.h",
+}
+
+CPP_STD_SOURCE_LOCATIONS: dict[str, str] = {
+    "random": "src/runtime/cpp/std/random.cpp",
 }
 
 CPP_GENERATED_UTILS_MODULES = [
@@ -204,8 +209,11 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
         for ext in ("h", "cpp"):
             gen_rel = f"src/runtime/cpp/gen/std/{module_name}.{ext}"
             custom_hdr_rel = CPP_STD_HEADER_LOCATIONS.get(module_name)
+            custom_src_rel = CPP_STD_SOURCE_LOCATIONS.get(module_name)
             if ext == "h" and isinstance(custom_hdr_rel, str) and custom_hdr_rel != "":
                 gen_rel = custom_hdr_rel
+            if ext == "cpp" and isinstance(custom_src_rel, str) and custom_src_rel != "":
+                gen_rel = custom_src_rel
             gen_path = ROOT / gen_rel
             if ext == "cpp" and module_name in CPP_HEADER_ONLY_STD_MODULES:
                 if gen_path.exists():
