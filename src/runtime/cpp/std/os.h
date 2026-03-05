@@ -9,8 +9,6 @@
 
 namespace pytra::std::os {
 
-extern object path;
-
 str getcwd();
 void mkdir(const str& p);
 void makedirs(const str& p, bool exist_ok);

@@ -39,6 +39,22 @@ Treat `import ... as __m` / `from ... import ... as __f` as host-only imports wh
 - A single-underscore alias (`_name`) is not host-only and must remain a normal import.
 - In `src/pytra/std/*.py`, use `as __name` when delegating to host stdlib implementations.
 
+## 0.68 Stdlib Submodule Implementation Rule (`os.path`, etc.)
+
+Implement stdlib submodules such as `os.path` as independent SoT modules, not as `object`-typed attributes.
+
+Required:
+
+- Split each submodule into `src/pytra/std/<name>.py` (example: `os.path` -> `src/pytra/std/os_path.py`).
+- Parent modules must reference submodules through module imports (example: `from pytra.std import os_path as path`).
+- Calls must stay as module-function calls (example: `path.join(...)`). Backends only render already-resolved module/symbol information.
+- If native implementation is required, declare functions with `@extern` in the submodule and place C++ bodies in `*-manual.cpp`.
+
+Prohibited:
+
+- Storing submodules into `object` variables such as `path: object = extern(__os.path)`.
+- Adding emitter/runtime special-case branches tied to concrete submodule names.
+
 ### 1. Clarify Responsibility Split Between Generated Artifacts and Handwritten Implementations
 
 - Auto-generated:

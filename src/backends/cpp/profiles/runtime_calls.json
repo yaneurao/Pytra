@@ -2,30 +2,30 @@
   "runtime_calls": {
     "module_attr_call": {
       "pytra.std.os.path": {
-        "join": "py_os_path_join",
-        "basename": "py_os_path_basename",
-        "dirname": "py_os_path_dirname",
-        "splitext": "py_os_path_splitext",
-        "abspath": "py_os_path_abspath",
-        "exists": "py_os_path_exists"
+        "join": "pytra::std::os_path::join",
+        "basename": "pytra::std::os_path::basename",
+        "dirname": "pytra::std::os_path::dirname",
+        "splitext": "pytra::std::os_path::splitext",
+        "abspath": "pytra::std::os_path::abspath",
+        "exists": "pytra::std::os_path::exists"
       },
       "os.path": {
-        "join": "py_os_path_join",
-        "basename": "py_os_path_basename",
-        "dirname": "py_os_path_dirname",
-        "splitext": "py_os_path_splitext",
-        "abspath": "py_os_path_abspath",
-        "exists": "py_os_path_exists"
+        "join": "pytra::std::os_path::join",
+        "basename": "pytra::std::os_path::basename",
+        "dirname": "pytra::std::os_path::dirname",
+        "splitext": "pytra::std::os_path::splitext",
+        "abspath": "pytra::std::os_path::abspath",
+        "exists": "pytra::std::os_path::exists"
       },
       "pytra.std.os": {
-        "getcwd": "py_os_getcwd",
-        "mkdir": "py_os_mkdir",
-        "makedirs": "py_os_makedirs"
+        "getcwd": "pytra::std::os::getcwd",
+        "mkdir": "pytra::std::os::mkdir",
+        "makedirs": "pytra::std::os::makedirs"
       },
       "os": {
-        "getcwd": "py_os_getcwd",
-        "mkdir": "py_os_mkdir",
-        "makedirs": "py_os_makedirs"
+        "getcwd": "pytra::std::os::getcwd",
+        "mkdir": "pytra::std::os::mkdir",
+        "makedirs": "pytra::std::os::makedirs"
       },
       "pytra.std.glob": {
         "glob": "py_glob_glob"

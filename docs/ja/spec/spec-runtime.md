@@ -115,6 +115,22 @@
 - alias が `_name`（`_` 1個）で始まるだけの import は host-only ではない。通常 import として扱う。
 - `src/pytra/std/*.py` でホスト標準ライブラリに委譲する場合は `as __name` を使う。
 
+### 0.68 標準ライブラリのサブモジュール実装規約（`os.path` など）
+
+`os.path` のような標準ライブラリのサブモジュールは、`object` 属性として扱わず、SoT 上の独立モジュールとして実装する。
+
+必須:
+
+- サブモジュールは `src/pytra/std/<name>.py` に分離する（例: `os.path` は `src/pytra/std/os_path.py`）。
+- 親モジュールはモジュール import で参照する（例: `from pytra.std import os_path as path`）。
+- 呼び出しは「モジュール関数呼び出し」として表現する（例: `path.join(...)`）。backend は解決済み module/symbol を描画するだけとする。
+- ネイティブ実装が必要な関数はサブモジュール側で `@extern` 宣言し、C++ では `*-manual.cpp` に実体を置く。
+
+禁止:
+
+- `path: object = extern(__os.path)` のような「サブモジュールを object 変数へ格納する」実装。
+- emitter/runtime でサブモジュール名に依存した特別分岐を追加する実装。
+
 ### 0.7 C++ runtime（core/gen）運用手順
 
 再生成:
