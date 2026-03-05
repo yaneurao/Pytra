@@ -1,13 +1,9 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/pathlib.py
-// generated-by: tools/gen_java_std_runtime_from_canonical.py
+// generated-by: tools/gen_runtime_from_manifest.py
 
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/pathlib.py
-// generated-by: tools/gen_java_std_runtime_from_canonical.py
-
-public final class pathlib {
-    private pathlib() {
+public final class tmp {
+    private tmp() {
     }
 
 
@@ -30,11 +26,11 @@ public final class pathlib {
             return this._value;
         }
 
-        public PyRuntime.Path __truediv__(String rhs) {
+        public pathlib.Path __truediv__(String rhs) {
             return new Path(os.path.join(this._value, rhs));
         }
 
-        public PyRuntime.Path parent() {
+        public pathlib.Path parent() {
             Object parent_txt = os.path.dirname(this._value);
             if ((java.util.Objects.equals(parent_txt, ""))) {
                 parent_txt = ".";
@@ -42,8 +38,8 @@ public final class pathlib {
             return new Path(parent_txt);
         }
 
-        public java.util.ArrayList<PyRuntime.Path> parents() {
-            java.util.ArrayList<PyRuntime.Path> out = new java.util.ArrayList<PyRuntime.Path>();
+        public java.util.ArrayList<pathlib.Path> parents() {
+            java.util.ArrayList<pathlib.Path> out = new java.util.ArrayList<pathlib.Path>();
             String current = os.path.dirname(this._value);
             while (true) {
                 if ((java.util.Objects.equals(current, ""))) {
@@ -55,7 +51,7 @@ public final class pathlib {
                     next_current = ".";
                 }
                 if ((java.util.Objects.equals(next_current, current))) {
-                    break;
+                    _break;
                 }
                 current = next_current;
             }
@@ -80,7 +76,7 @@ public final class pathlib {
             return root;
         }
 
-        public PyRuntime.Path resolve() {
+        public pathlib.Path resolve() {
             return new Path(os.path.abspath(this._value));
         }
 
@@ -113,9 +109,9 @@ public final class pathlib {
             return 0L;
         }
 
-        public java.util.ArrayList<PyRuntime.Path> glob(String pattern) {
+        public java.util.ArrayList<pathlib.Path> glob(String pattern) {
             java.util.ArrayList<String> paths = py_glob.glob(os.path.join(this._value, pattern));
-            java.util.ArrayList<PyRuntime.Path> out = new java.util.ArrayList<PyRuntime.Path>();
+            java.util.ArrayList<pathlib.Path> out = new java.util.ArrayList<pathlib.Path>();
             java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(paths));
             for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
                 String p = String.valueOf(__iter_0.get((int)(__iter_i_1)));
@@ -124,7 +120,7 @@ public final class pathlib {
             return out;
         }
 
-        public PyRuntime.Path cwd() {
+        public pathlib.Path cwd() {
             return new Path(os.getcwd());
         }
     }

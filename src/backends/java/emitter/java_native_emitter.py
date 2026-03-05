@@ -6,6 +6,60 @@ from pytra.std.typing import Any
 from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
 
 
+_JAVA_RESERVED_WORDS = {
+    "abstract",
+    "assert",
+    "boolean",
+    "break",
+    "byte",
+    "case",
+    "catch",
+    "char",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "double",
+    "else",
+    "enum",
+    "extends",
+    "final",
+    "finally",
+    "float",
+    "for",
+    "goto",
+    "if",
+    "implements",
+    "import",
+    "instanceof",
+    "int",
+    "interface",
+    "long",
+    "native",
+    "new",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "short",
+    "static",
+    "strictfp",
+    "super",
+    "switch",
+    "synchronized",
+    "this",
+    "throw",
+    "throws",
+    "transient",
+    "try",
+    "void",
+    "volatile",
+    "while",
+}
+
+
 def _safe_ident(name: Any, fallback: str) -> str:
     if not isinstance(name, str):
         return fallback
@@ -26,6 +80,8 @@ def _safe_ident(name: Any, fallback: str) -> str:
     if out == "_":
         out = "__"
     if out[0].isdigit():
+        out = "_" + out
+    if out in _JAVA_RESERVED_WORDS:
         out = "_" + out
     return out
 
@@ -177,6 +233,87 @@ def _java_string_literal(text: str) -> str:
     return '"' + out + '"'
 
 
+def _render_bytes_literal_expr(raw_repr: Any) -> str:
+    if not isinstance(raw_repr, str):
+        return ""
+    raw = raw_repr.strip()
+    if raw == "":
+        return ""
+    if not (raw.startswith("b\"") or raw.startswith("b'")):
+        return ""
+    if len(raw) < 3:
+        return ""
+    quote = raw[1]
+    if raw[-1] != quote:
+        return ""
+    body = raw[2:-1]
+    parsed: list[int] = []
+    i = 0
+    while i < len(body):
+        ch = body[i]
+        if ch != "\\":
+            parsed.append(ord(ch) & 0xFF)
+            i += 1
+            continue
+        if i + 1 >= len(body):
+            parsed.append(ord("\\"))
+            i += 1
+            continue
+        nxt = body[i + 1]
+        if nxt == "x" and i + 3 < len(body):
+            h1 = body[i + 2]
+            h2 = body[i + 3]
+            hex_digits = "0123456789abcdefABCDEF"
+            if h1 in hex_digits and h2 in hex_digits:
+                parsed.append(int(h1 + h2, 16))
+                i += 4
+                continue
+        if nxt >= "0" and nxt <= "7":
+            j = i + 1
+            oct_txt = ""
+            count = 0
+            while j < len(body) and count < 3 and body[j] >= "0" and body[j] <= "7":
+                oct_txt += body[j]
+                j += 1
+                count += 1
+            if oct_txt != "":
+                parsed.append(int(oct_txt, 8) & 0xFF)
+                i = j
+                continue
+        esc_map: dict[str, int] = {
+            "\\": ord("\\"),
+            "'": ord("'"),
+            '"': ord('"'),
+            "a": 7,
+            "b": 8,
+            "f": 12,
+            "n": 10,
+            "r": 13,
+            "t": 9,
+            "v": 11,
+        }
+        if nxt in esc_map:
+            parsed.append(esc_map[nxt])
+            i += 2
+            continue
+        parsed.append(ord(nxt) & 0xFF)
+        i += 2
+    elems: list[str] = []
+    j = 0
+    while j < len(parsed):
+        elems.append(str(int(parsed[j])) + "L")
+        j += 1
+    if len(elems) == 0:
+        return "new java.util.ArrayList<Long>()"
+    return "new java.util.ArrayList<Long>(java.util.Arrays.asList(" + ", ".join(elems) + "))"
+
+
+def _is_java_list_like_type(t: Any) -> bool:
+    if not isinstance(t, str):
+        return False
+    return t.startswith("list[") or t in {"bytes", "bytearray"}
+
+
 def _module_leading_comment_lines(
     east_doc: dict[str, Any],
     prefix: str,
@@ -239,6 +376,10 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
+    raw_repr = expr.get("repr")
+    bytes_literal = _render_bytes_literal_expr(raw_repr)
+    if bytes_literal != "":
+        return bytes_literal
     if "value" not in expr:
         return "null"
     value = expr.get("value")
@@ -371,9 +512,16 @@ def _maybe_parenthesize_binop_child(child: Any, child_expr: str, parent_prec: in
 
 def _render_binop_expr(expr: dict[str, Any]) -> str:
     op_name = expr.get("op")
+    left_any = expr.get("left")
+    right_any = expr.get("right")
+    if op_name == "Add":
+        left_t = left_any.get("resolved_type") if isinstance(left_any, dict) else ""
+        right_t = right_any.get("resolved_type") if isinstance(right_any, dict) else ""
+        if _is_java_list_like_type(left_t) or _is_java_list_like_type(right_t):
+            left = _render_expr(left_any)
+            right = _render_expr(right_any)
+            return "PyRuntime.__pytra_list_concat(" + left + ", " + right + ")"
     if op_name == "Mult":
-        left_any = expr.get("left")
-        right_any = expr.get("right")
         if isinstance(left_any, dict) and left_any.get("kind") == "List":
             elems_any = left_any.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
@@ -384,8 +532,6 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             elems = elems_any if isinstance(elems_any, list) else []
             if len(elems) == 1:
                 return "PyRuntime.__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
-    left_any = expr.get("left")
-    right_any = expr.get("right")
     left = _render_expr(left_any)
     right = _render_expr(right_any)
     casts_any = expr.get("casts")
@@ -508,10 +654,6 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         resolved_source_any = expr.get("resolved_runtime_source")
         resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
         if resolved_source == "module_attr":
-            if resolved_runtime == "math.pi":
-                return "_m.pi"
-            if resolved_runtime == "math.e":
-                return "_m.e"
             return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
@@ -876,6 +1018,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         owner_expr = _render_expr(func_any.get("value"))
         if attr_name == "append" and len(args) == 1:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
+        if attr_name == "extend" and len(args) == 1:
+            return owner_expr + ".addAll(" + _render_expr(args[0]) + ")"
         if attr_name == "pop":
             if len(args) == 0:
                 return owner_expr + ".remove(" + owner_expr + ".size() - 1)"
@@ -1115,6 +1259,30 @@ def _render_expr(expr: Any) -> str:
                     + "))"
                 )
                 return "PyRuntime.__pytra_str_slice(" + owner_expr + ", " + start + ", " + stop + ")"
+            if isinstance(owner_type, str) and _is_java_list_like_type(owner_type):
+                start = (
+                    "((("
+                    + lower_expr
+                    + ") < 0L) ? (((long)("
+                    + owner_expr
+                    + ".size())) + ("
+                    + lower_expr
+                    + ")) : ("
+                    + lower_expr
+                    + "))"
+                )
+                stop = (
+                    "((("
+                    + upper_expr
+                    + ") < 0L) ? (((long)("
+                    + owner_expr
+                    + ".size())) + ("
+                    + upper_expr
+                    + ")) : ("
+                    + upper_expr
+                    + "))"
+                )
+                return "PyRuntime.__pytra_list_slice(" + owner_expr + ", " + start + ", " + stop + ")"
             return owner_expr
         index_expr = _render_expr(index_any)
         base = ""
@@ -2268,6 +2436,46 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
         module_comments = _module_leading_comment_lines(east_doc, "// ", indent="    ")
         if len(module_comments) > 0:
             lines.extend(module_comments)
+            lines.append("")
+
+        module_static_field_names: set[str] = set()
+        i = 0
+        while i < len(body_any):
+            node = body_any[i]
+            if isinstance(node, dict):
+                kind = node.get("kind")
+                target = node.get("target")
+                if not isinstance(target, dict):
+                    targets_any = node.get("targets")
+                    if isinstance(targets_any, list) and len(targets_any) > 0 and isinstance(targets_any[0], dict):
+                        target = targets_any[0]
+                if kind in {"AnnAssign", "Assign"} and isinstance(target, dict) and target.get("kind") == "Name":
+                    if kind == "AnnAssign" and node.get("value") is None:
+                        i += 1
+                        continue
+                    field_name = _safe_ident(target.get("id"), "value")
+                    field_type = _java_type(node.get("decl_type") or node.get("annotation"), allow_void=False)
+                    if field_type == "Object":
+                        field_type = _infer_java_type_from_expr_node(node.get("value"))
+                    if field_type == "void":
+                        field_type = "Object"
+                    field_expr = node.get("value")
+                    field_value = _render_expr(field_expr)
+                    typed_ctor = _typed_empty_ctor(field_expr, field_type)
+                    if isinstance(typed_ctor, str):
+                        field_value = typed_ctor
+                    if field_value == "null" and field_type == "long":
+                        field_value = "0L"
+                    if field_value == "null" and field_type == "double":
+                        field_value = "0.0"
+                    if field_value == "null" and field_type == "boolean":
+                        field_value = "false"
+                    if field_value == "null" and field_type == "String":
+                        field_value = '""'
+                    lines.append("    public static " + field_type + " " + field_name + " = " + field_value + ";")
+                    module_static_field_names.add(field_name)
+            i += 1
+        if len(module_static_field_names) > 0:
             lines.append("")
 
         i = 0

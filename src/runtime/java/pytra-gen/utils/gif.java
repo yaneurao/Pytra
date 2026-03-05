@@ -1,124 +1,125 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/gif.py
-// generated-by: tools/gen_image_runtime_from_canonical.py
+// generated-by: tools/gen_runtime_from_manifest.py
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-
-final class GifHelper {
-    private GifHelper() {
+public final class tmp {
+    private tmp() {
     }
 
-    static byte[] pyLzwEncode(byte[] data, int minCodeSize) {
-        if (data.length == 0) {
-            return new byte[0];
-        }
-        int clearCode = 1 << minCodeSize;
-        int endCode = clearCode + 1;
-        int codeSize = minCodeSize + 1;
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int bitBuffer = 0;
-        int bitCount = 0;
-        int[] codes = new int[data.length * 2 + 2];
-        int k = 0;
-        codes[k++] = clearCode;
-        for (byte b : data) {
-            codes[k++] = b & 0xff;
-            codes[k++] = clearCode;
+    public static java.util.ArrayList<Long> _lzw_encode(java.util.ArrayList<Long> data, long min_code_size) {
+        if ((((long)(data.size())) == 0L)) {
+            return new java.util.ArrayList<Long>();
         }
-        codes[k++] = endCode;
-        for (int i = 0; i < k; i++) {
-            int code = codes[i];
-            bitBuffer |= (code << bitCount);
-            bitCount += codeSize;
-            while (bitCount >= 8) {
-                out.write(bitBuffer & 0xff);
-                bitBuffer >>>= 8;
-                bitCount -= 8;
+        long clear_code = 1L << min_code_size;
+        long end_code = clear_code + 1L;
+        long code_size = min_code_size + 1L;
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        long bit_buffer = 0L;
+        long bit_count = 0L;
+        bit_buffer += clear_code << bit_count;
+        bit_count += code_size;
+        while ((bit_count >= 8L)) {
+            out.add(bit_buffer & 255L);
+            bit_buffer += 8L;
+            bit_count -= 8L;
+        }
+        code_size = min_code_size + 1L;
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(data));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            uint8 v = ((uint8)(__iter_0.get((int)(__iter_i_1))));
+            bit_buffer += v << bit_count;
+            bit_count += code_size;
+            while ((bit_count >= 8L)) {
+                out.add(bit_buffer & 255L);
+                bit_buffer += 8L;
+                bit_count -= 8L;
+            }
+            bit_buffer += clear_code << bit_count;
+            bit_count += code_size;
+            while ((bit_count >= 8L)) {
+                out.add(bit_buffer & 255L);
+                bit_buffer += 8L;
+                bit_count -= 8L;
+            }
+            code_size = min_code_size + 1L;
+        }
+        bit_buffer += end_code << bit_count;
+        bit_count += code_size;
+        while ((bit_count >= 8L)) {
+            out.add(bit_buffer & 255L);
+            bit_buffer += 8L;
+            bit_count -= 8L;
+        }
+        if ((bit_count > 0L)) {
+            out.add(bit_buffer & 255L);
+        }
+        return new java.util.ArrayList<Long>(out);
+    }
+
+    public static java.util.ArrayList<Long> grayscale_palette() {
+        java.util.ArrayList<Long> p = new java.util.ArrayList<Long>();
+        long i = 0L;
+        while ((i < 256L)) {
+            p.add(i);
+            p.add(i);
+            p.add(i);
+            i += 1L;
+        }
+        return new java.util.ArrayList<Long>(p);
+    }
+
+    public static void save_gif(String path, long width, long height, java.util.ArrayList<java.util.ArrayList<Long>> frames, java.util.ArrayList<Long> palette, long delay_cs, long loop) {
+        if ((((long)(palette.size())) != 256L * 3L)) {
+            throw new RuntimeException(PyRuntime.pyToString("palette must be 256*3 bytes"));
+        }
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(frames));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            java.util.ArrayList<Long> fr = ((java.util.ArrayList<Long>)(__iter_0.get((int)(__iter_i_1))));
+            if ((((long)(fr.size())) != width * height)) {
+                throw new RuntimeException(PyRuntime.pyToString("frame size mismatch"));
             }
         }
-        if (bitCount > 0) {
-            out.write(bitBuffer & 0xff);
-        }
-        return out.toByteArray();
-    }
-
-    static ArrayList<Long> pyGrayscalePalette() {
-        ArrayList<Long> p = new ArrayList<>(256 * 3);
-        for (int i = 0; i < 256; i++) {
-            long v = i;
-            p.add(v);
-            p.add(v);
-            p.add(v);
-        }
-        return p;
-    }
-
-    static void pySaveGif(Object path, Object width, Object height, Object frames, Object palette, Object delayCs, Object loop) {
-        int w = PyRuntime.pyToInt(width);
-        int h = PyRuntime.pyToInt(height);
-        int frameBytes = w * h;
-        byte[] pal = PngHelper.pyToBytes(palette);
-        if (pal.length != 256 * 3) {
-            throw new RuntimeException("palette must be 256*3 bytes");
-        }
-        int dcs = PyRuntime.pyToInt(delayCs);
-        int lp = PyRuntime.pyToInt(loop);
-
-        List<Object> frs = PyRuntime.pyIter(frames);
-
-        try (FileOutputStream fos = new FileOutputStream(PyRuntime.pyToString(path))) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            out.write("GIF89a".getBytes(StandardCharsets.US_ASCII));
-            out.write(w & 0xff);
-            out.write((w >>> 8) & 0xff);
-            out.write(h & 0xff);
-            out.write((h >>> 8) & 0xff);
-            out.write(0xF7);
-            out.write(0);
-            out.write(0);
-            out.write(pal);
-            out.write(new byte[] { 0x21, (byte) 0xFF, 0x0B });
-            out.write("NETSCAPE2.0".getBytes(StandardCharsets.US_ASCII));
-            out.write(new byte[] { 0x03, 0x01, (byte) (lp & 0xff), (byte) ((lp >>> 8) & 0xff), 0x00 });
-
-            for (Object frAny : frs) {
-                byte[] fr = PngHelper.pyToBytes(frAny);
-                if (fr.length != frameBytes) {
-                    throw new RuntimeException("frame size mismatch");
-                }
-                out.write(new byte[] { 0x21, (byte) 0xF9, 0x04, 0x00, (byte) (dcs & 0xff), (byte) ((dcs >>> 8) & 0xff), 0x00, 0x00 });
-                out.write(0x2C);
-                out.write(0);
-                out.write(0);
-                out.write(0);
-                out.write(0);
-                out.write(w & 0xff);
-                out.write((w >>> 8) & 0xff);
-                out.write(h & 0xff);
-                out.write((h >>> 8) & 0xff);
-                out.write(0x00);
-                out.write(0x08);
-                byte[] compressed = pyLzwEncode(fr, 8);
-                int pos = 0;
-                while (pos < compressed.length) {
-                    int len = Math.min(255, compressed.length - pos);
-                    out.write(len);
-                    out.write(compressed, pos, len);
-                    pos += len;
-                }
-                out.write(0x00);
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        out.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(71L, 73L, 70L, 56L, 57L, 97L)));
+        out.addAll(width.to_bytes(2L, "little"));
+        out.addAll(height.to_bytes(2L, "little"));
+        out.add(247L);
+        out.add(0L);
+        out.add(0L);
+        out.addAll(palette);
+        out.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(33L, 255L, 11L, 78L, 69L, 84L, 83L, 67L, 65L, 80L, 69L, 50L, 46L, 48L, 3L, 1L)));
+        out.addAll(loop.to_bytes(2L, "little"));
+        out.add(0L);
+        java.util.ArrayList<Object> __iter_2 = ((java.util.ArrayList<Object>)(Object)(frames));
+        for (long __iter_i_3 = 0L; __iter_i_3 < ((long)(__iter_2.size())); __iter_i_3 += 1L) {
+            java.util.ArrayList<Long> fr = ((java.util.ArrayList<Long>)(__iter_2.get((int)(__iter_i_3))));
+            out.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(33L, 249L, 4L, 0L)));
+            out.addAll(delay_cs.to_bytes(2L, "little"));
+            out.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(0L, 0L)));
+            out.add(44L);
+            out.addAll(0L.to_bytes(2L, "little"));
+            out.addAll(0L.to_bytes(2L, "little"));
+            out.addAll(width.to_bytes(2L, "little"));
+            out.addAll(height.to_bytes(2L, "little"));
+            out.add(0L);
+            out.add(8L);
+            java.util.ArrayList<Long> compressed = _lzw_encode(fr, 8L);
+            long pos = 0L;
+            while ((pos < ((long)(compressed.size())))) {
+                java.util.ArrayList<Long> chunk = PyRuntime.__pytra_list_slice(compressed, (((pos) < 0L) ? (((long)(compressed.size())) + (pos)) : (pos)), (((pos + 255L) < 0L) ? (((long)(compressed.size())) + (pos + 255L)) : (pos + 255L)));
+                out.add(((long)(chunk.size())));
+                out.addAll(chunk);
+                pos += ((long)(chunk.size()));
             }
-            out.write(0x3B);
-            fos.write(out.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            out.add(0L);
         }
+        out.add(59L);
+        PyFile f = open(path, "wb");
+        f.write(out);
+        f.close();
     }
 
+    public static void main(String[] args) {
+    }
 }
