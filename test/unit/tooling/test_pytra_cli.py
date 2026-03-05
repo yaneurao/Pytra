@@ -193,3 +193,21 @@ class PytraCliTest(unittest.TestCase):
             self.assertIn("scala", calls[0][0])
             out_idx = calls[0][0].index("--output")
             self.assertEqual(Path(calls[0][0][out_idx + 1]), out_dir / "my_case.scala")
+
+    def test_codegen_opt_rejected_for_noncpp_target(self) -> None:
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            with patch.object(pytra_cli_mod.subprocess, "run"):
+                rc = pytra_cli_mod.main([str(src), "--target", "rs", "--codegen-opt", "2"])
+        self.assertEqual(rc, 1)
+
+    def test_cpp_build_only_options_rejected_for_noncpp_build(self) -> None:
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            with patch.object(pytra_cli_mod.subprocess, "run"):
+                rc = pytra_cli_mod.main(
+                    [str(src), "--target", "rs", "--build", "--compiler", "clang++"]
+                )
+        self.assertEqual(rc, 1)

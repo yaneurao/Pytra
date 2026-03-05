@@ -10,7 +10,12 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from toolchain.compiler.pytra_cli_profiles import make_noncpp_build_plan, resolve_output_path
+from toolchain.compiler.pytra_cli_profiles import (
+    get_target_profile,
+    make_noncpp_build_plan,
+    resolve_output_path,
+    validate_profile_option_compatibility,
+)
 
 
 class PytraCliProfilesTest(unittest.TestCase):
@@ -62,6 +67,32 @@ class PytraCliProfilesTest(unittest.TestCase):
         self.assertIsNotNone(plan.build_cmd)
         self.assertIn("-r", plan.build_cmd)
         self.assertIsNone(plan.run_cmd)
+
+    def test_validate_profile_option_compatibility_rejects_codegen_opt_for_noncpp(self) -> None:
+        profile = get_target_profile("rs")
+        err = validate_profile_option_compatibility(
+            profile,
+            codegen_opt=2,
+            build=False,
+            compiler="g++",
+            std="c++20",
+            opt="-O2",
+            exe="app.out",
+        )
+        self.assertIn("--codegen-opt", err)
+
+    def test_validate_profile_option_compatibility_rejects_cpp_build_opts_for_noncpp(self) -> None:
+        profile = get_target_profile("go")
+        err = validate_profile_option_compatibility(
+            profile,
+            codegen_opt=None,
+            build=True,
+            compiler="clang++",
+            std="c++20",
+            opt="-O2",
+            exe="app.out",
+        )
+        self.assertIn("--compiler/--std/--opt/--exe", err)
 
 
 if __name__ == "__main__":
