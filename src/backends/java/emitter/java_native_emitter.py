@@ -508,6 +508,10 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         resolved_source_any = expr.get("resolved_runtime_source")
         resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
         if resolved_source == "module_attr":
+            if resolved_runtime == "math.pi":
+                return "_m.pi"
+            if resolved_runtime == "math.e":
+                return "_m.e"
             return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
@@ -601,6 +605,22 @@ def _snake_to_java_camel(name: str) -> str:
     return "".join(out)
 
 
+def _snake_to_java_runtime_method(name: str) -> str:
+    parts = name.split("_")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        part = parts[i].strip()
+        if part != "":
+            low = part.lower()
+            if low == "rgb" or low == "png":
+                out.append(low.upper())
+            else:
+                out.append(low[0].upper() + low[1:])
+        i += 1
+    return "".join(out)
+
+
 def _snake_to_pascal_basic(name: str) -> str:
     parts = name.split("_")
     out: list[str] = []
@@ -684,13 +704,13 @@ def _render_resolved_runtime_call(
         if binding_module.startswith("pytra.utils."):
             class_name = _utils_module_class_name(binding_module)
             if class_name != "":
-                method_name = "py" + _snake_to_java_camel(runtime_name)
+                method_name = "py" + _snake_to_java_runtime_method(runtime_name)
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_source == "import_symbol":
         if binding_module.startswith("pytra.utils.") and binding_symbol != "":
             class_name = _utils_module_class_name(binding_module)
             if class_name != "":
-                method_name = "py" + _snake_to_java_camel(binding_symbol)
+                method_name = "py" + _snake_to_java_runtime_method(binding_symbol)
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_name.find(".") >= 0:
         return runtime_name + "(" + joined + ")"
