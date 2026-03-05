@@ -636,6 +636,14 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                 if resolved_runtime.endswith(".pi") or resolved_runtime.endswith(".e"):
                     return runtime_symbol + "()"
                 return runtime_symbol
+            if semantic_tag.startswith("stdlib."):
+                raise RuntimeError(
+                    "kotlin native emitter: unresolved stdlib runtime attribute mapping: "
+                    + semantic_tag
+                    + " ("
+                    + resolved_runtime
+                    + ")"
+                )
             return resolved_runtime
     value = _render_expr(value_any)
     return value + "." + attr
@@ -781,6 +789,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         )
         if rendered_runtime != "":
             return rendered_runtime
+        if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+            raise RuntimeError(
+                "kotlin native emitter: unresolved stdlib runtime mapping: "
+                + semantic_tag
+                + " ("
+                + runtime_call
+                + ")"
+            )
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
