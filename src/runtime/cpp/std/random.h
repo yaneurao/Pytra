@@ -5,12 +5,13 @@
 #ifndef PYTRA_STD_RANDOM_H
 #define PYTRA_STD_RANDOM_H
 
+#include "runtime/cpp/core/built_in/py_runtime.h"
+
 namespace pytra::std::random {
 
 extern list<int64> _state_box;
 extern list<int64> _gauss_has_spare;
 extern list<float64> _gauss_spare;
-extern list<str> __all__;
 
 void seed(int64 value);
 int64 _next_u31();

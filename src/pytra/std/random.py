@@ -118,6 +118,3 @@ def shuffle(xs: list[int]) -> None:
             xs[i] = xs[j]
             xs[j] = tmp
         i -= 1
-
-
-__all__ = ["seed", "random", "randint", "choices", "gauss", "shuffle"]
