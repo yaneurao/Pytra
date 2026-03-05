@@ -33,6 +33,52 @@
 - `pytra::std::json` / `pytra::utils::{png,gif}` は内部補助関数を含むが、多言語同等化で必須なのは公開 API。
 - `Path` は現状 `pytra-gen/std/pathlib.h` の宣言が薄く、`.cpp` 側 struct 実体が実効 API になっている。Wave1 で宣言/実体の整合も合わせて正規化対象とする。
 
+### 0.5 SoT / pytra-core / pytra-gen の責務境界（P2-RUNTIME-PARITY-CPP-02-S1-02）
+
+この節は全言語共通の必須ルールであり、例外は allowlist と監査ログで明示した場合のみ許可する。
+
+- SoT（唯一正本）
+  - `src/pytra/std/*.py`
+  - `src/pytra/utils/*.py`
+- runtime 配置（全言語共通）
+  - `src/runtime/<lang>/pytra-core/`: 言語依存の最小基盤（I/O, FS, 時刻, VM/SDK 接着など）
+  - `src/runtime/<lang>/pytra-gen/`: SoT 由来の生成物のみ（手編集禁止）
+
+必須:
+
+- SoT で表現可能な API は `pytra-gen` に配置し、`pytra-core` に同等ロジックを手書きしない。
+- `pytra-gen` 生成物は機械的素通し命名を維持する（例: `png.py -> png.<ext>`, `gif.py -> gif.<ext>`）。
+- `pytra-gen` 生成物に `source:` / `generated-by:` marker を残し、生成元追跡を必須化する。
+- runtime/stdlib 呼び出し解決は EAST3（`runtime_call` / `resolved_runtime_call` / `resolved_runtime_source`）を正本とし、backend/emitter は解決済み情報の描画に限定する。
+
+禁止:
+
+- `pytra-core` への SoT 同等機能の再実装（`json/assertions/re/typing/png/gif` 等）。
+- SoT 由来ファイルの特別命名（例: `GifHelper`, `PngHelper`）や runtime への埋め込み。
+- emitter でのライブラリ関数名直書き分岐（`callee_name == "..."`, `attr_name == "..."`, 固定 dispatch table）。
+
+監査/CI:
+
+- `python3 tools/check_runtime_std_sot_guard.py`
+- `python3 tools/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers`
+- `python3 tools/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+
+### 0.6 `std/utils` モジュール分類表（P2-RUNTIME-PARITY-CPP-02-S1-03）
+
+以下は `src/pytra/std/*.py` / `src/pytra/utils/*.py` を起点にした分類で、全言語共通で適用する。
+
+| モジュール | 区分 | 配置ルール | 備考 |
+| --- | --- | --- | --- |
+| `argparse`, `dataclasses`, `enum`, `glob`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `sys`, `time`, `timeit`, `traceback`, `typing` | 生成必須 | `src/runtime/<lang>/pytra-gen/std/<mod>.<ext>` | SoT 由来。`pytra-core` へ同等ロジックを置かない。 |
+| `assertions`, `gif`, `png` | 生成必須 | `src/runtime/<lang>/pytra-gen/utils/<mod>.<ext>` | 画像/検証ロジックは必ず生成物を使う。 |
+| `dataclasses_impl`, `math_impl`, `time_impl` | core許可（impl境界） | `src/runtime/<lang>/pytra-core/std/*-impl.<ext>` | 言語/SDK 依存 primitive のみ許可。公開 API 本体は `pytra-gen` 側。 |
+
+補足:
+
+- `*_impl` は「ネイティブ依存の最小 primitive 層」であり、SoT 本体の代替実装ではない。
+- `pytra-core` 側に同名 API の本体を増やす場合は、`S2-03`（棚卸し+移管計画）で明示審査する。
+
 
 ### 1. 生成物と手書き実装の責務分離を明文化する
 

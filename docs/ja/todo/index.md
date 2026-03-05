@@ -66,8 +66,8 @@
 
 1. [ ] [ID: P2-RUNTIME-PARITY-CPP-02] 多言語 runtime 同等化を「SoT厳守・生成優先・責務分離」の前提で再設計し、再発不能な運用へ置換する。
 2. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2（`P2-RUNTIME-PARITY-CPP-01`）を未完了一覧から削除し、新P2へ置換する。
-3. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] SoT/pytra-core/pytra-gen の責務境界と禁止事項を `docs/ja/spec` に明文化する。
-4. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュールの「生成必須 / core許可」分類表を作成する。
+3. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] SoT/pytra-core/pytra-gen の責務境界と禁止事項を `docs/ja/spec` に明文化する。
+4. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュールの「生成必須 / core許可」分類表を作成する。
 5. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` の素通し命名違反を検知する静的チェックを追加する。
 6. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] marker（`source/generated-by`）・配置違反（core混在）監査を強化し、CIへ統合する。
 7. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
@@ -77,6 +77,8 @@
 11. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32 含む）を再実施し、差分を固定する。
 12. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] 運用手順（ローカル/CI）を `docs/ja` / `docs/en` に反映する。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2の未完了一覧残置を整理し、`docs/en/todo/index.md` / `docs/en/plans/p2-runtime-parity-with-cpp.md` を新P2（`...-CPP-02`）へ置換した。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] `docs/ja/spec/spec-runtime.md` に全言語共通の SoT/pytra-core/pytra-gen 責務境界節を追加し、必須事項（生成優先・marker・EAST3解決済み描画）と禁止事項（core 再実装・特別命名・emitter 直書き分岐）および監査コマンドを固定した。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] `docs/ja/spec/spec-runtime.md` に `std/utils` モジュール分類表を追加し、`argparse..typing` + `assertions/gif/png` を生成必須、`dataclasses_impl/math_impl/time_impl` を core許可（impl境界）として固定した。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
