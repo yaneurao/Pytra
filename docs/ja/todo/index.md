@@ -182,6 +182,8 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] sample parity 全件再実行を開始し、`01-03` の時点で `js/ts/go/nim/java/cpp` のブロッカーを確認（`js/png.js` f-string残存、`go/png.go` 文字列崩れ、Nim module名制約、Java `tmp` class名、C++ runtime link競合）。`rs/cs/ruby/lua/php/swift/kotlin/scala` は同区間で artifact size/CRC32 一致を確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `png.py` 正本を backend 互換寄りに修正して `js/ts/go` の `pytra-gen/utils/png.*` を再生成。`01_mandelbrot` 再検証で `js/ts` は構文エラーを脱して `write_rgb_png` export未解決へ、`go` は文字列崩れ解消後に `extend/main重複/pyWriteRGBPNG未定義` が残る段階まで前進。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `runtime_parity_check.py` に target別出力ディレクトリの事前削除を追加し、`01_mandelbrot/02_raytrace_spheres` を `js,ts,go,cpp,java,nim` で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample01_02_focus_20260305_after_freshfix.json`）。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `src/runtime2/{rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim}` を `src/runtime/` へ復旧し、`runtime source not found` 系エラーを解消した。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] PHP runtime の `resolved_runtime_call` シンボル解決と `pytra-gen/runtime/{png,gif}.php` の append-list 参照渡し化を修正し、`01_mandelbrot` / `02_raytrace_spheres` を 14 target で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample01_02_all_targets_after_php_runtime_fixes_20260305.json`）。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
