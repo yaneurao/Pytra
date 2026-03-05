@@ -32,6 +32,19 @@
 
 ## 未完了タスク
 
+### P0: backend の runtime/stdlib 責務境界を再設計する（設計是正）
+
+文脈: [docs/ja/plans/p0-backend-runtime-boundary-realign.md](../plans/p0-backend-runtime-boundary-realign.md)
+
+1. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01] backend の runtime/stdlib 解決責務漏れを是正し、EAST3 解決済み描画へ再収束する。
+2. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に違反タイプへ分類し、修正順序を確定する。
+3. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend 解決済み呼び出し契約（call/attr/module/type）を固定する。
+4. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正する。
+5. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
+6. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter のフォールバックを fail-closed 化し、推測レンダリングを禁止する。
+7. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を CI 必須導線へ追加する。
+8. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新して非退行を固定する。
+
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
 文脈: [docs/ja/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
