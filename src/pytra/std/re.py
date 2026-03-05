@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+# `re.S` (`re.DOTALL`) compatibility flag.
+# In CPython this makes `.` match newlines; current minimal matcher keeps this
+# constant for source compatibility even when flags are not fully interpreted.
 S = 1
 
 
