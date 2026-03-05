@@ -12,8 +12,11 @@ from pathlib import Path
 
 from toolchain.compiler.pytra_cli_profiles import (
     SUPPORTED_TARGETS,
+    TargetProfile,
+    get_target_profile,
     make_noncpp_build_plan,
     resolve_output_path as resolve_profile_output_path,
+    validate_profile_option_compatibility,
 )
 
 
@@ -87,13 +90,13 @@ def _require_make_available() -> str:
     return make_path
 
 
-def _resolve_output_path(input_path: Path, target: str, args: argparse.Namespace) -> Path:
-    return resolve_profile_output_path(input_path, target, args.output, args.output_dir)
+def _resolve_output_path(input_path: Path, profile: TargetProfile, args: argparse.Namespace) -> Path:
+    return resolve_profile_output_path(input_path, profile.target, args.output, args.output_dir)
 
 
 def _run_py2x_target(
     input_path: Path,
-    target: str,
+    profile: TargetProfile,
     output_path: Path,
     argv: list[str],
     *,
@@ -105,7 +108,7 @@ def _run_py2x_target(
         str(PY2X),
         str(input_path),
         "--target",
-        target,
+        profile.target,
         "--output",
         str(output_path),
     ]
@@ -113,19 +116,19 @@ def _run_py2x_target(
     return _run(cmd, cwd=Path.cwd(), stdout_to_stderr=stdout_to_stderr)
 
 
-def _build_noncpp(input_path: Path, target: str, args: argparse.Namespace, passthrough: list[str]) -> int:
-    output_path = _resolve_output_path(input_path, target, args)
+def _build_noncpp(input_path: Path, profile: TargetProfile, args: argparse.Namespace, passthrough: list[str]) -> int:
+    output_path = _resolve_output_path(input_path, profile, args)
     if output_path.exists() and output_path.is_dir():
         print(f"error: output path is a directory: {output_path}", file=sys.stderr)
         return 1
 
-    rc = _run_py2x_target(input_path, target, output_path, passthrough, stdout_to_stderr=True)
+    rc = _run_py2x_target(input_path, profile, output_path, passthrough, stdout_to_stderr=True)
     if rc != 0:
         return rc
 
     plan = make_noncpp_build_plan(
         root=ROOT,
-        target=target,
+        target=profile.target,
         output_path=output_path,
         source_stem=input_path.stem,
         run_after_build=args.run,
@@ -274,6 +277,23 @@ def main(argv: list[str]) -> int:
     if not input_path.exists():
         print(f"error: input not found: {input_path}", file=sys.stderr)
         return 1
+    try:
+        profile = get_target_profile(args.target)
+    except RuntimeError as ex:
+        print("error: " + str(ex), file=sys.stderr)
+        return 1
+    incompat = validate_profile_option_compatibility(
+        profile,
+        codegen_opt=args.codegen_opt,
+        build=bool(args.build),
+        compiler=args.compiler,
+        std=args.std,
+        opt=args.opt,
+        exe=args.exe,
+    )
+    if incompat != "":
+        print("error: " + incompat, file=sys.stderr)
+        return 1
 
     passthrough_args: list[str] = []
     codegen_opt = args.codegen_opt
@@ -281,29 +301,32 @@ def main(argv: list[str]) -> int:
         passthrough_args.extend([f"-O{codegen_opt}"])
     if args.build:
         passthrough_args.extend(passthrough)
-        if args.target != "cpp":
-            return _build_noncpp(input_path, args.target, args, passthrough_args)
-        if args.output != "":
-            print("error: --output is not supported with --build. Use --exe", file=sys.stderr)
-            return 1
-        if not args.output_dir:
-            print("error: --output-dir is required for --build", file=sys.stderr)
-            return 1
-        if args.compiler == "" or args.std == "" or args.opt == "":
-            # Keep consistent with earlier strict CLI behavior and fail early for
-            # obviously broken values.
-            print("error: invalid build options", file=sys.stderr)
-            return 1
-        return _build_cpp(input_path, args, passthrough_args)
+        if profile.build_driver == "noncpp":
+            return _build_noncpp(input_path, profile, args, passthrough_args)
+        if profile.build_driver == "cpp_make":
+            if args.output != "":
+                print("error: --output is not supported with --build. Use --exe", file=sys.stderr)
+                return 1
+            if not args.output_dir:
+                print("error: --output-dir is required for --build", file=sys.stderr)
+                return 1
+            if args.compiler == "" or args.std == "" or args.opt == "":
+                # Keep consistent with earlier strict CLI behavior and fail early for
+                # obviously broken values.
+                print("error: invalid build options", file=sys.stderr)
+                return 1
+            return _build_cpp(input_path, args, passthrough_args)
+        print("error: unsupported build driver: " + profile.build_driver, file=sys.stderr)
+        return 1
 
     passthrough_args.extend(passthrough)
-    if args.target == "cpp":
+    if profile.build_driver == "cpp_make":
         return _transpile_cpp(input_path, args, passthrough_args)
-    output_path = _resolve_output_path(input_path, args.target, args)
+    output_path = _resolve_output_path(input_path, profile, args)
     if output_path.exists() and output_path.is_dir():
         print(f"error: output path is a directory: {output_path}", file=sys.stderr)
         return 1
-    return _run_py2x_target(input_path, args.target, output_path, passthrough_args)
+    return _run_py2x_target(input_path, profile, output_path, passthrough_args)
 
 
 if __name__ == "__main__":

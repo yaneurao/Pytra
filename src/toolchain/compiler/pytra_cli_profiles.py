@@ -46,6 +46,58 @@ TARGET_EXT: dict[str, str] = {
 
 
 @dataclass(frozen=True)
+class TargetProfile:
+    target: str
+    extension: str
+    build_driver: str
+    fixed_output_name: str
+    allow_codegen_opt: bool
+
+
+_TARGET_PROFILES: dict[str, TargetProfile] = {
+    "cpp": TargetProfile(target="cpp", extension=".cpp", build_driver="cpp_make", fixed_output_name="", allow_codegen_opt=True),
+    "rs": TargetProfile(target="rs", extension=".rs", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "cs": TargetProfile(target="cs", extension=".cs", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "js": TargetProfile(target="js", extension=".js", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "ts": TargetProfile(target="ts", extension=".ts", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "go": TargetProfile(target="go", extension=".go", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "java": TargetProfile(target="java", extension=".java", build_driver="noncpp", fixed_output_name="Main.java", allow_codegen_opt=False),
+    "swift": TargetProfile(target="swift", extension=".swift", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "kotlin": TargetProfile(target="kotlin", extension=".kt", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "scala": TargetProfile(target="scala", extension=".scala", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "lua": TargetProfile(target="lua", extension=".lua", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "ruby": TargetProfile(target="ruby", extension=".rb", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "php": TargetProfile(target="php", extension=".php", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+    "nim": TargetProfile(target="nim", extension=".nim", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False),
+}
+
+
+def get_target_profile(target: str) -> TargetProfile:
+    profile = _TARGET_PROFILES.get(target)
+    if isinstance(profile, TargetProfile):
+        return profile
+    raise RuntimeError("unsupported target profile: " + target)
+
+
+def validate_profile_option_compatibility(
+    profile: TargetProfile,
+    *,
+    codegen_opt: int | None,
+    build: bool,
+    compiler: str,
+    std: str,
+    opt: str,
+    exe: str,
+) -> str:
+    if codegen_opt is not None and not profile.allow_codegen_opt:
+        return "--codegen-opt is supported only for target cpp"
+    if profile.build_driver == "noncpp" and build:
+        if compiler != "g++" or std != "c++20" or opt != "-O2" or exe != "app.out":
+            return "--compiler/--std/--opt/--exe are supported only for target cpp --build"
+    return ""
+
+
+@dataclass(frozen=True)
 class NonCppBuildPlan:
     build_cmd: list[str] | None
     run_cmd: list[str] | None
@@ -54,11 +106,12 @@ class NonCppBuildPlan:
 def resolve_output_path(input_path: Path, target: str, output: str, output_dir: str) -> Path:
     if output != "":
         return Path(output)
+    profile = get_target_profile(target)
     out_dir = Path(output_dir) if output_dir != "" else Path("out")
+    if profile.fixed_output_name != "":
+        return out_dir / profile.fixed_output_name
     stem = input_path.stem if input_path.stem != "" else "output"
-    if target == "java":
-        return out_dir / "Main.java"
-    ext = TARGET_EXT.get(target, "")
+    ext = profile.extension
     if ext == "":
         return out_dir / stem
     return out_dir / f"{stem}{ext}"
