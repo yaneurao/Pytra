@@ -42,7 +42,7 @@
 
 ## 分解
 
-- [ ] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加品質検証）を棚卸しして統一仕様を定義する。
+- [x] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加品質検証）を棚卸しして統一仕様を定義する。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式（ケース集合、許容失敗、追加検証フック）を設計する。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` を実装し、`--target` で全言語の共通検証を実行可能にする。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
@@ -52,3 +52,24 @@
 
 決定ログ:
 - 2026-03-05: ユーザー指示により、言語別 checker 群は将来削除前提とし、`--target` 駆動の単一 checker へ統合する方針を確定。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-01`] `check_py2*_transpile.py` 14本の差分を棚卸しし、差分軸を「ケース集合（全fixture+sample or 明示CASES）」「expected-fail 形式（単純集合 or 構造化spec）」「追加品質フック（scala sample01 / php sample18）」「追加CLI（`--skip-east3-contract-tests` / `--check-multi-file` / `--check-yanesdk-smoke` / stage2 probe）」へ固定した。
+
+## S1-01 棚卸し結果（固定）
+
+| checker | ケース集合 | expected-fail | 追加検証 / 追加CLI |
+| --- | --- | --- | --- |
+| `cpp` | 全 `fixtures+sample` | 6件（単純集合） | `--check-multi-file`, `--check-yanesdk-smoke`, stage2 probe |
+| `js` / `ts` | 全 `fixtures+sample` | 各8件（単純集合） | `--skip-east3-contract-tests` |
+| `cs` | 全 `fixtures+sample` | 8件（単純集合） | 追加なし |
+| `go` / `java` / `kotlin` / `rb` / `rs` / `swift` | 全 `fixtures+sample` | 各10件（単純集合） | `rb` のみ stage2 probe |
+| `lua` | 全 `fixtures+sample` | 53件（単純集合） | stage2 probe |
+| `scala` | 全 `fixtures+sample` | 構造化 `ExpectedFailureSpec`（カテゴリ+部分一致） | `sample/01` 品質フック |
+| `php` | 明示 `CASES` 9件 | なし | `sample/18` 品質フック + stage2 probe |
+| `nim` | 明示 `CASES` 6件 | なし | stage2 probe |
+
+### 統一仕様への入力（S1-01 結論）
+
+1. 単一 checker は `profile.case_mode = all|explicit` を持ち、`explicit` は `cases[]` で指定する。
+2. expected-fail は `profile.expected_failures` を `{"path": {"category": "...", "contains": "..."}}` の構造化形式へ統一し、単純集合は `category=expected_failure` へ正規化する。
+3. 追加品質検証は `profile.quality_hooks[]`（`sample01_scala`, `sample18_php` など）へ分離し、本体は hook dispatcher のみ持つ。
+4. 追加CLIは `profile.flags`（`check_multi_file`, `check_yanesdk_smoke`, `skip_east3_contract_tests`, `stage2_probe`）へ収束させる。

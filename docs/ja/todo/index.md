@@ -106,13 +106,14 @@
 文脈: [docs/ja/plans/p2-checker-unification.md](../plans/p2-checker-unification.md)
 
 1. [ ] [ID: P2-CHECKER-UNIFY-01] checker を `tools/check_py2x_transpile.py --target <lang>` へ統合し、言語別 `check_py2*.py` を段階撤去する。
-2. [ ] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加検証）を棚卸しして統一仕様を定義する。
+2. [x] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加検証）を棚卸しして統一仕様を定義する。
 3. [ ] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式を設計する。
 4. [ ] [ID: P2-CHECKER-UNIFY-01-S2-01] 単一 checker 本体（`check_py2x_transpile.py`）を実装する。
 5. [ ] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化して新checkerへ委譲させる。
 6. [ ] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker へ置換する。
 7. [ ] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
 8. [ ] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰で非退行を固定する。
+- 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S1-01] `check_py2*_transpile.py` 14本を棚卸しし、差分軸を `case_mode(all|explicit)` / 構造化expected-fail / 品質hook / 追加CLIフラグへ固定。統一仕様を `p2-checker-unification.md` に反映。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
