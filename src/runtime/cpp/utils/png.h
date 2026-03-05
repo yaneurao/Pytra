@@ -5,6 +5,8 @@
 #ifndef PYTRA_UTILS_PNG_H
 #define PYTRA_UTILS_PNG_H
 
+#include "runtime/cpp/core/built_in/py_runtime.h"
+
 namespace pytra::utils::png {
 
 void _png_append_list(const list<int64>& dst, const list<int64>& src);

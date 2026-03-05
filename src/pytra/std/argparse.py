@@ -9,8 +9,10 @@ from pytra.std.typing import Any
 class Namespace:
     """Simple argparse.Namespace compatible container."""
 
-    def __init__(self, **kwargs: Any) -> None:
-        for k, v in kwargs.items():
+    def __init__(self, values: dict[str, Any] | None = None) -> None:
+        if values is None:
+            return
+        for k, v in values.items():
             setattr(self, k, v)
 
 
@@ -46,15 +48,27 @@ class ArgumentParser:
 
     def add_argument(
         self,
-        *names: str,
+        name0: str,
+        name1: str = "",
+        name2: str = "",
+        name3: str = "",
         help: str | None = None,
         action: str | None = None,
         choices: list[str] | None = None,
         default: Any = None,
     ) -> None:
+        names: list[str] = []
+        if name0 != "":
+            names.append(name0)
+        if name1 != "":
+            names.append(name1)
+        if name2 != "":
+            names.append(name2)
+        if name3 != "":
+            names.append(name3)
         if len(names) == 0:
             raise ValueError("add_argument requires at least one name")
-        spec = _ArgSpec(list(names), action=action, choices=choices, default=default, help_text=help)
+        spec = _ArgSpec(names, action=action, choices=choices, default=default, help_text=help)
         self._specs.append(spec)
 
     def _fail(self, msg: str) -> None:

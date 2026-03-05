@@ -5,9 +5,9 @@
 #ifndef PYTRA_STD_OS_H
 #define PYTRA_STD_OS_H
 
-namespace pytra::std::os {
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
-struct _PathModule;
+namespace pytra::std::os {
 
 extern object path;
 

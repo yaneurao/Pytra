@@ -3,11 +3,13 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/utils/gif.h"
+#include "runtime/cpp/utils/gif.h"
 
 
 namespace pytra::utils::gif {
 
+    /* アニメーションGIFを書き出すための最小ヘルパー。 */
+    
     void _gif_append_list(list<int64>& dst, const list<int64>& src) {
         int64 i = 0;
         int64 n = py_len(src);
@@ -150,19 +152,5 @@ namespace pytra::utils::gif {
             f.write(bytes(out));
         }
     }
-    
-    static void __pytra_module_init() {
-        static bool __initialized = false;
-        if (__initialized) return;
-        __initialized = true;
-        /* アニメーションGIFを書き出すための最小ヘルパー。 */
-    }
-    
-    namespace {
-        struct __pytra_module_initializer {
-            __pytra_module_initializer() { __pytra_module_init(); }
-        };
-        static const __pytra_module_initializer __pytra_module_initializer_instance{};
-    }  // namespace
     
 }  // namespace pytra::utils::gif

@@ -3,11 +3,17 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/utils/png.h"
+#include "runtime/cpp/utils/png.h"
 
 
 namespace pytra::utils::png {
 
+    /* PNG 書き出しユーティリティ（Python実行用）。
+
+このモジュールは sample/py のスクリプトから利用し、
+RGB 8bit バッファを PNG ファイルとして保存する。
+ */
+    
     void _png_append_list(list<int64>& dst, const list<int64>& src) {
         int64 i = 0;
         int64 n = py_len(src);
@@ -139,23 +145,5 @@ namespace pytra::utils::png {
             f.write(bytes(png));
         }
     }
-    
-    static void __pytra_module_init() {
-        static bool __initialized = false;
-        if (__initialized) return;
-        __initialized = true;
-        /* PNG 書き出しユーティリティ（Python実行用）。
-
-このモジュールは sample/py のスクリプトから利用し、
-RGB 8bit バッファを PNG ファイルとして保存する。
- */
-    }
-    
-    namespace {
-        struct __pytra_module_initializer {
-            __pytra_module_initializer() { __pytra_module_init(); }
-        };
-        static const __pytra_module_initializer __pytra_module_initializer_instance{};
-    }  // namespace
     
 }  // namespace pytra::utils::png

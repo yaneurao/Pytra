@@ -95,6 +95,7 @@ RULES: dict[str, GuardRule] = {
 }
 
 CPP_GENERATED_STD_MODULES = [
+    "argparse",
     "dataclasses",
     "glob",
     "json",
@@ -112,15 +113,35 @@ CPP_GENERATED_STD_MODULES = [
 
 CPP_HEADER_ONLY_STD_MODULES = {
     "math",
+    "glob",
+    "os",
+    "sys",
+    "time",
 }
 
 CPP_STD_HEADER_LOCATIONS: dict[str, str] = {
+    "argparse": "src/runtime/cpp/std/argparse.h",
+    "glob": "src/runtime/cpp/std/glob.h",
+    "json": "src/runtime/cpp/std/json.h",
     "math": "src/runtime/cpp/std/math.h",
+    "os": "src/runtime/cpp/std/os.h",
     "random": "src/runtime/cpp/std/random.h",
+    "re": "src/runtime/cpp/std/re.h",
+    "sys": "src/runtime/cpp/std/sys.h",
+    "time": "src/runtime/cpp/std/time.h",
+    "timeit": "src/runtime/cpp/std/timeit.h",
 }
 
 CPP_STD_SOURCE_LOCATIONS: dict[str, str] = {
+    "argparse": "src/runtime/cpp/std/argparse.cpp",
+    "glob": "src/runtime/cpp/std/glob.cpp",
+    "json": "src/runtime/cpp/std/json.cpp",
+    "os": "src/runtime/cpp/std/os.cpp",
     "random": "src/runtime/cpp/std/random.cpp",
+    "re": "src/runtime/cpp/std/re.cpp",
+    "sys": "src/runtime/cpp/std/sys.cpp",
+    "time": "src/runtime/cpp/std/time.cpp",
+    "timeit": "src/runtime/cpp/std/timeit.cpp",
 }
 
 CPP_GENERATED_UTILS_MODULES = [
@@ -129,8 +150,19 @@ CPP_GENERATED_UTILS_MODULES = [
     "png",
 ]
 
+CPP_UTILS_HEADER_LOCATIONS: dict[str, str] = {
+    "gif": "src/runtime/cpp/utils/gif.h",
+    "png": "src/runtime/cpp/utils/png.h",
+}
+
+CPP_UTILS_SOURCE_LOCATIONS: dict[str, str] = {
+    "gif": "src/runtime/cpp/utils/gif.cpp",
+    "png": "src/runtime/cpp/utils/png.cpp",
+}
+
 # module basename -> canonical Python source path.
 CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
+    "argparse": "src/pytra/std/argparse.py",
     "dataclasses": "src/pytra/std/dataclasses.py",
     "glob": "src/pytra/std/glob.py",
     "json": "src/pytra/std/json.py",
@@ -152,7 +184,9 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
 # required handwritten core files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
     "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
+    "glob-manual.cpp": "src/runtime/cpp/std/glob-manual.cpp",
     "math-manual.cpp": "src/runtime/cpp/std/math-manual.cpp",
+    "os-manual.cpp": "src/runtime/cpp/std/os-manual.cpp",
     "time-manual.cpp": "src/runtime/cpp/std/time-manual.cpp",
 }
 
@@ -235,6 +269,12 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
         source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
         for ext in ("h", "cpp"):
             gen_rel = f"src/runtime/cpp/gen/utils/{module_name}.{ext}"
+            custom_hdr_rel = CPP_UTILS_HEADER_LOCATIONS.get(module_name)
+            custom_src_rel = CPP_UTILS_SOURCE_LOCATIONS.get(module_name)
+            if ext == "h" and isinstance(custom_hdr_rel, str) and custom_hdr_rel != "":
+                gen_rel = custom_hdr_rel
+            if ext == "cpp" and isinstance(custom_src_rel, str) and custom_src_rel != "":
+                gen_rel = custom_src_rel
             gen_path = ROOT / gen_rel
             if not gen_path.exists():
                 violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")

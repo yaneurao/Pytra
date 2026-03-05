@@ -5,6 +5,8 @@
 #ifndef PYTRA_UTILS_GIF_H
 #define PYTRA_UTILS_GIF_H
 
+#include "runtime/cpp/core/built_in/py_runtime.h"
+
 namespace pytra::utils::gif {
 
 void _gif_append_list(const list<int64>& dst, const list<int64>& src);

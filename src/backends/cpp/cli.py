@@ -833,7 +833,9 @@ def main(argv: list[str]) -> int:
             # std モジュールは `runtime/cpp/std/` を正本生成先とする。
             # utils/compiler/built_in は従来どおり `runtime/cpp/gen/` を使う。
             is_std_runtime_output = module_tail == "std" or module_tail.startswith("std/")
-            out_root = Path("src/runtime/cpp") if is_std_runtime_output else RUNTIME_CPP_GEN_ROOT
+            is_root_utils_runtime_output = rel_tail == "utils/png" or rel_tail == "utils/gif"
+            is_root_runtime_output = is_std_runtime_output or is_root_utils_runtime_output
+            out_root = Path("src/runtime/cpp") if is_root_runtime_output else RUNTIME_CPP_GEN_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(hdr_out))
@@ -874,7 +876,7 @@ def main(argv: list[str]) -> int:
                 dump_cpp_opt_trace,
                 cpp_list_model_opt,
             )
-            own_runtime_header_prefix = "runtime/cpp/" if is_std_runtime_output else "runtime/cpp/gen/"
+            own_runtime_header_prefix = "runtime/cpp/" if is_root_runtime_output else "runtime/cpp/gen/"
             own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
             legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
             if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:

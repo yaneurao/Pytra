@@ -1,10 +1,11 @@
-"""Minimal glob shim for selfhost-friendly imports."""
+"""pytra.std.glob: extern-marked glob subset with Python runtime fallback."""
 
 from __future__ import annotations
 
-import glob as _glob
+from pytra.std import extern
 
+import glob as __glob
 
+@extern
 def glob(pattern: str) -> list[str]:
-    return _glob.glob(pattern)
-
+    return __glob.glob(pattern)
