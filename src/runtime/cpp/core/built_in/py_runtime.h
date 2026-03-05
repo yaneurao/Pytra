@@ -1474,6 +1474,166 @@ static inline const T& py_at(const list<T>& v, int64 idx) {
     return v[static_cast<::std::size_t>(idx)];
 }
 
+template <class T>
+static inline T py_list_item_cast(const object& item) {
+    return py_to<T>(item);
+}
+
+template <class T>
+static inline T py_list_item_cast(const ::std::any& item) {
+    return py_to<T>(item);
+}
+
+template <class T>
+static inline T py_list_item_cast(const char* item) {
+    if constexpr (::std::is_same_v<T, str>) {
+        return str(item);
+    } else if constexpr (::std::is_convertible_v<const char*, T>) {
+        return static_cast<T>(item);
+    } else {
+        return py_to<T>(make_object(str(item)));
+    }
+}
+
+template <class T, class U>
+static inline T py_list_item_cast(const U& item) {
+    if constexpr (::std::is_same_v<T, U>) {
+        return item;
+    } else if constexpr (::std::is_convertible_v<U, T>) {
+        return static_cast<T>(item);
+    } else {
+        return T(item);
+    }
+}
+
+template <class T, class U>
+static inline void py_append(list<T>& v, const U& item) {
+    v.append(py_list_item_cast<T>(item));
+}
+
+template <class T>
+struct py_is_list_type : ::std::false_type {};
+
+template <class T>
+struct py_is_list_type<list<T>> : ::std::true_type {
+    using item_type = T;
+};
+
+template <class T>
+static inline list<T> py_to_typed_list_from_object(
+    const object& value,
+    const char* ctx = "py_to_typed_list_from_object") {
+    const list<object>* src = obj_to_list_ptr(value);
+    if (src == nullptr) {
+        throw ::std::runtime_error(::std::string(ctx) + ": object is not list");
+    }
+    list<T> out{};
+    out.reserve(src->size());
+    for (const object& item : *src) {
+        out.append(py_to<T>(item));
+    }
+    return out;
+}
+
+template <class K>
+static inline K py_dict_key_cast(const object& key) {
+    return py_to<K>(key);
+}
+
+template <class K>
+static inline K py_dict_key_cast(const ::std::any& key) {
+    return py_to<K>(key);
+}
+
+template <class K>
+static inline K py_dict_key_cast(const char* key) {
+    if constexpr (::std::is_same_v<K, str>) {
+        return str(key);
+    } else if constexpr (::std::is_convertible_v<const char*, K>) {
+        return static_cast<K>(key);
+    } else {
+        return py_to<K>(make_object(str(key)));
+    }
+}
+
+template <class K, class Q>
+static inline K py_dict_key_cast(const Q& key) {
+    if constexpr (::std::is_same_v<K, Q>) {
+        return key;
+    } else if constexpr (::std::is_convertible_v<Q, K>) {
+        return static_cast<K>(key);
+    } else {
+        return K(key);
+    }
+}
+
+template <class V>
+static inline V py_dict_value_cast(const object& value) {
+    if constexpr (::std::is_same_v<V, object>) {
+        return value;
+    } else if constexpr (
+        ::std::is_arithmetic_v<V>
+        || ::std::is_same_v<V, bool>
+        || ::std::is_same_v<V, str>) {
+        return py_to<V>(value);
+    } else {
+        return V(value);
+    }
+}
+
+template <class V>
+static inline V py_dict_value_cast(const ::std::any& value) {
+    if (const auto* p = ::std::any_cast<V>(&value)) {
+        return *p;
+    }
+    if (const auto* p = ::std::any_cast<object>(&value)) {
+        return py_dict_value_cast<V>(*p);
+    }
+    return py_to<V>(value);
+}
+
+template <class V>
+static inline V py_dict_value_cast(const char* value) {
+    if constexpr (::std::is_same_v<V, str>) {
+        return str(value);
+    } else if constexpr (::std::is_convertible_v<const char*, V>) {
+        return static_cast<V>(value);
+    } else {
+        return py_to<V>(make_object(str(value)));
+    }
+}
+
+template <class V, class U>
+static inline V py_dict_value_cast(const U& value) {
+    if constexpr (::std::is_same_v<V, U>) {
+        return value;
+    } else if constexpr (::std::is_convertible_v<U, V>) {
+        return static_cast<V>(value);
+    } else {
+        return V(value);
+    }
+}
+
+template <class K, class V, class Q>
+static inline V& py_at(dict<K, V>& d, const Q& key) {
+    const K k = py_dict_key_cast<K>(key);
+    auto it = d.find(k);
+    if (it == d.end()) {
+        throw ::std::out_of_range("dict key not found");
+    }
+    return it->second;
+}
+
+template <class K, class V, class Q>
+static inline const V& py_at(const dict<K, V>& d, const Q& key) {
+    const K k = py_dict_key_cast<K>(key);
+    auto it = d.find(k);
+    if (it == d.end()) {
+        throw ::std::out_of_range("dict key not found");
+    }
+    return it->second;
+}
+
 static inline object py_at(const object& v, int64 idx) {
     if (const auto* lst = obj_to_list_ptr(v)) {
         return py_at(*lst, idx);
@@ -1525,6 +1685,25 @@ static inline void py_set_at(const object& v, int64 idx, const object& item) {
         throw ::std::out_of_range("list index out of range");
     }
     p->value[static_cast<::std::size_t>(pos)] = item;
+}
+
+template <class T, class I, class U>
+static inline void py_set_at(list<T>& v, I idx, const U& item) {
+    int64 pos = py_to<int64>(idx);
+    const int64 n = static_cast<int64>(v.size());
+    if (pos < 0) {
+        pos += n;
+    }
+    if (pos < 0 || pos >= n) {
+        throw ::std::out_of_range("list index out of range");
+    }
+    v[static_cast<::std::size_t>(pos)] = py_list_item_cast<T>(item);
+}
+
+template <class K, class V, class Q, class U>
+static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
+    const K k = py_dict_key_cast<K>(key);
+    d[k] = py_dict_value_cast<V>(item);
 }
 
 static inline void py_extend(const object& v, const object& items) {
@@ -2459,6 +2638,28 @@ static inline uint32 py_runtime_type_id(const object& v) {
     return out;
 }
 
+static inline object getattr(
+    const object& value,
+    const str& name,
+    const ::std::optional<object>& default_value = ::std::nullopt) {
+    if (!value) {
+        if (default_value.has_value()) return *default_value;
+        return object{};
+    }
+    if (name == str("PYTRA_TYPE_ID")) {
+        return make_object(static_cast<int64>(value->py_type_id()));
+    }
+    if (default_value.has_value()) return *default_value;
+    return object{};
+}
+
+static inline object getattr(
+    const object& value,
+    const char* name,
+    const ::std::optional<object>& default_value = ::std::nullopt) {
+    return getattr(value, str(name), default_value);
+}
+
 template <class T>
 static inline uint32 py_runtime_type_id(const T& v) {
     if (py_is_none(v)) return PYTRA_TID_NONE;
@@ -3359,7 +3560,7 @@ static inline object sum(const object& values) {
 
 template <class K, class V, class Q>
 static inline bool py_contains(const dict<K, V>& d, const Q& key) {
-    return d.find(static_cast<K>(key)) != d.end();
+    return d.find(py_dict_key_cast<K>(key)) != d.end();
 }
 
 template <class V, class Q>

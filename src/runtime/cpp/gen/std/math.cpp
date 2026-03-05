@@ -1,7 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/math.py
-// generated-by: src/py2cpp.py
-
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include "runtime/cpp/gen/std/math.h"
@@ -10,10 +9,8 @@
 
 namespace pytra::std::math {
 
-    float64 pi = pytra::std::math_impl::pi;
-    float64 e = pytra::std::math_impl::e;
-    
-    
+    float64 pi;
+    float64 e;
     
     float64 sqrt(float64 x) {
         return pytra::std::math_impl::sqrt(x);
@@ -64,6 +61,8 @@ namespace pytra::std::math {
         if (__initialized) return;
         __initialized = true;
         /* pytra.std.math: thin wrapper over native math_impl module. */
+        pi = py_to<float64>(pytra::std::math_impl::pi);
+        e = py_to<float64>(pytra::std::math_impl::e);
     }
     
 }  // namespace pytra::std::math

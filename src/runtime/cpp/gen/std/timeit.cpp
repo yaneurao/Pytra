@@ -1,7 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/timeit.py
-// generated-by: src/py2cpp.py
-
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include "runtime/cpp/gen/std/timeit.h"
@@ -10,15 +9,19 @@
 
 namespace pytra::std::timeit {
 
-    /* pytra.std.timeit compatibility shim. */
-    
-    
+    list<str> __all__;
     
     float64 default_timer() {
         /* `timeit.default_timer` compatible entrypoint. */
         return pytra::std::time::perf_counter();
     }
     
-    list<str> __all__ = list<str>{"default_timer"};
+    static void __pytra_module_init() {
+        static bool __initialized = false;
+        if (__initialized) return;
+        __initialized = true;
+        /* pytra.std.timeit compatibility shim. */
+        __all__ = list<str>{"default_timer"};
+    }
     
 }  // namespace pytra::std::timeit

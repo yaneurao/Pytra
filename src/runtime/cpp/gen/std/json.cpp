@@ -1,7 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/json.py
-// generated-by: src/py2cpp.py
-
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include "runtime/cpp/gen/std/json.h"
@@ -10,15 +9,9 @@
 
 namespace pytra::std::json {
 
-    /* Pure Python JSON utilities for selfhost-friendly transpilation. */
-    
-    
-    
-    str _EMPTY = "";
-    
-    str _COMMA_NL = ",\n";
-    
-    str _HEX_DIGITS = "0123456789abcdef";
+    str _EMPTY;
+    str _COMMA_NL;
+    str _HEX_DIGITS;
     
     bool _is_ws(const str& ch) {
         return (ch == " ") || (ch == "\t") || (ch == "\r") || (ch == "\n");
@@ -72,99 +65,99 @@ namespace pytra::std::json {
         return p0 + p1 + p2 + p3;
     }
     
-    struct _JsonParser : public PyObj {
-        inline static str text;
-        inline static int64 n;
-        inline static int64 i;
+    struct _JsonParser {
+        str text;
+        int64 n;
+        int64 i;
         
         _JsonParser(const str& text) {
-            _JsonParser::text = text;
-            _JsonParser::n = py_len(text);
-            _JsonParser::i = 0;
+            this->text = text;
+            this->n = py_len(text);
+            this->i = 0;
         }
         object parse() {
             this->_skip_ws();
             object out = make_object(this->_parse_value());
             this->_skip_ws();
-            if (_JsonParser::i != _JsonParser::n)
+            if (this->i != this->n)
                 throw ValueError("invalid json: trailing characters");
             return out;
         }
         void _skip_ws() {
-            while ((_JsonParser::i < _JsonParser::n) && (_is_ws(_JsonParser::text[_JsonParser::i]))) {
-                _JsonParser::i++;
+            while ((this->i < this->n) && (_is_ws(this->text[this->i]))) {
+                this->i++;
             }
         }
         object _parse_value() {
-            if (_JsonParser::i >= _JsonParser::n)
+            if (this->i >= this->n)
                 throw ValueError("invalid json: unexpected end");
-            str ch = _JsonParser::text[_JsonParser::i];
+            str ch = this->text[this->i];
             if (ch == "{")
                 return make_object(this->_parse_object());
             if (ch == "[")
                 return make_object(this->_parse_array());
             if (ch == "\"")
                 return make_object(this->_parse_string());
-            if ((ch == "t") && (py_slice(_JsonParser::text, _JsonParser::i, _JsonParser::i + 4) == "true")) {
-                _JsonParser::i += 4;
+            if ((ch == "t") && (py_slice(this->text, this->i, this->i + 4) == "true")) {
+                this->i += 4;
                 return make_object(true);
             }
-            if ((ch == "f") && (py_slice(_JsonParser::text, _JsonParser::i, _JsonParser::i + 5) == "false")) {
-                _JsonParser::i += 5;
+            if ((ch == "f") && (py_slice(this->text, this->i, this->i + 5) == "false")) {
+                this->i += 5;
                 return make_object(false);
             }
-            if ((ch == "n") && (py_slice(_JsonParser::text, _JsonParser::i, _JsonParser::i + 4) == "null")) {
-                _JsonParser::i += 4;
+            if ((ch == "n") && (py_slice(this->text, this->i, this->i + 4) == "null")) {
+                this->i += 4;
                 return make_object(::std::nullopt);
             }
             return this->_parse_number();
         }
         dict<str, object> _parse_object() {
             dict<str, object> out = dict<str, object>{};
-            _JsonParser::i++;
+            this->i++;
             this->_skip_ws();
-            if ((_JsonParser::i < _JsonParser::n) && (_JsonParser::text.at(_JsonParser::i) == '}')) {
-                _JsonParser::i++;
+            if ((this->i < this->n) && (this->text[this->i] == "}")) {
+                this->i++;
                 return out;
             }
             while (true) {
                 this->_skip_ws();
-                if ((_JsonParser::i >= _JsonParser::n) || (_JsonParser::text.at(_JsonParser::i) != '"'))
+                if ((this->i >= this->n) || (this->text[this->i] != "\""))
                     throw ValueError("invalid json object key");
                 str key = this->_parse_string();
                 this->_skip_ws();
-                if ((_JsonParser::i >= _JsonParser::n) || (_JsonParser::text.at(_JsonParser::i) != ':'))
+                if ((this->i >= this->n) || (this->text[this->i] != ":"))
                     throw ValueError("invalid json object: missing ':'");
-                _JsonParser::i++;
+                this->i++;
                 this->_skip_ws();
-                out[py_to_string(key)] = make_object(this->_parse_value());
+                out[key] = make_object(this->_parse_value());
                 this->_skip_ws();
-                if (_JsonParser::i >= _JsonParser::n)
+                if (this->i >= this->n)
                     throw ValueError("invalid json object: unexpected end");
-                str ch = _JsonParser::text[_JsonParser::i];
-                _JsonParser::i++;
+                str ch = this->text[this->i];
+                this->i++;
                 if (ch == "}")
                     return out;
                 if (ch != ",")
                     throw ValueError("invalid json object separator");
             }
         }
-        list<object> _parse_array() {
+        object _parse_array() {
             list<object> out = list<object>{};
-            _JsonParser::i++;
+            this->i++;
             this->_skip_ws();
-            if ((_JsonParser::i < _JsonParser::n) && (_JsonParser::text.at(_JsonParser::i) == ']')) {
-                _JsonParser::i++;
+            if ((this->i < this->n) && (this->text[this->i] == "]")) {
+                this->i++;
                 return out;
             }
             while (true) {
                 this->_skip_ws();
                 out.append(this->_parse_value());
                 this->_skip_ws();
-                if (_JsonParser::i >= _JsonParser::n)
+                if (this->i >= this->n)
                     throw ValueError("invalid json array: unexpected end");
-                str ch = _JsonParser::text[_JsonParser::i];
-                _JsonParser::i++;
+                str ch = this->text[this->i];
+                this->i++;
                 if (ch == "]")
                     return out;
                 if (ch != ",")
@@ -172,110 +165,94 @@ namespace pytra::std::json {
             }
         }
         str _parse_string() {
-            if (_JsonParser::text.at(_JsonParser::i) != '"')
+            if (this->text[this->i] != "\"")
                 throw ValueError("invalid json string");
-            _JsonParser::i++;
-            list<str> out_chars = list<str>{};
-            while (_JsonParser::i < _JsonParser::n) {
-                str ch = _JsonParser::text[_JsonParser::i];
-                _JsonParser::i++;
+            this->i++;
+            list<str> out_chars = {};
+            while (this->i < this->n) {
+                str ch = this->text[this->i];
+                this->i++;
                 if (ch == "\"")
-                    return py_to_string(_EMPTY.join(out_chars));
+                    return _EMPTY.join(out_chars);
                 if (ch == "\\") {
-                    if (_JsonParser::i >= _JsonParser::n)
+                    if (this->i >= this->n)
                         throw ValueError("invalid json string escape");
-                    str esc = _JsonParser::text[_JsonParser::i];
-                    _JsonParser::i++;
+                    str esc = this->text[this->i];
+                    this->i++;
                     if (esc == "\"") {
                         out_chars.append(str("\""));
+                    } else if (esc == "\\") {
+                        out_chars.append(str("\\"));
+                    } else if (esc == "/") {
+                        out_chars.append(str("/"));
+                    } else if (esc == "b") {
+                        out_chars.append(str(""));
+                    } else if (esc == "f") {
+                        out_chars.append(str(""));
+                    } else if (esc == "n") {
+                        out_chars.append(str("\n"));
+                    } else if (esc == "r") {
+                        out_chars.append(str("\r"));
+                    } else if (esc == "t") {
+                        out_chars.append(str("\t"));
+                    } else if (esc == "u") {
+                        if (this->i + 4 > this->n)
+                            throw ValueError("invalid json unicode escape");
+                        str hx = py_slice(this->text, this->i, this->i + 4);
+                        this->i += 4;
+                        out_chars.append(str(py_chr(_int_from_hex4(hx))));
                     } else {
-                        if (esc == "\\") {
-                            out_chars.append(str("\\"));
-                        } else {
-                            if (esc == "/") {
-                                out_chars.append(str("/"));
-                            } else {
-                                if (esc == "b") {
-                                    out_chars.append(str(""));
-                                } else {
-                                    if (esc == "f") {
-                                        out_chars.append(str(""));
-                                    } else {
-                                        if (esc == "n") {
-                                            out_chars.append(str("\n"));
-                                        } else {
-                                            if (esc == "r") {
-                                                out_chars.append(str("\r"));
-                                            } else {
-                                                if (esc == "t") {
-                                                    out_chars.append(str("\t"));
-                                                } else {
-                                                    if (esc == "u") {
-                                                        if (_JsonParser::i + 4 > _JsonParser::n)
-                                                            throw ValueError("invalid json unicode escape");
-                                                        str hx = py_slice(_JsonParser::text, _JsonParser::i, _JsonParser::i + 4);
-                                                        _JsonParser::i += 4;
-                                                        out_chars.append(str(py_chr(_int_from_hex4(hx))));
-                                                    } else {
-                                                        throw ValueError("invalid json escape");
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        throw ValueError("invalid json escape");
                     }
                 } else {
-                    out_chars.append(str(ch));
+                    out_chars.append(ch);
                 }
             }
             throw ValueError("unterminated json string");
         }
         object _parse_number() {
-            int64 start = _JsonParser::i;
-            if (_JsonParser::text.at(_JsonParser::i) == '-')
-                _JsonParser::i++;
-            if (_JsonParser::i >= _JsonParser::n)
+            int64 start = this->i;
+            if (this->text[this->i] == "-")
+                this->i++;
+            if (this->i >= this->n)
                 throw ValueError("invalid json number");
-            if (_JsonParser::text.at(_JsonParser::i) == '0') {
-                _JsonParser::i++;
+            if (this->text[this->i] == "0") {
+                this->i++;
             } else {
-                if (!(_is_digit(_JsonParser::text[_JsonParser::i])))
+                if (!(_is_digit(this->text[this->i])))
                     throw ValueError("invalid json number");
-                while ((_JsonParser::i < _JsonParser::n) && (_is_digit(_JsonParser::text[_JsonParser::i]))) {
-                    _JsonParser::i++;
+                while ((this->i < this->n) && (_is_digit(this->text[this->i]))) {
+                    this->i++;
                 }
             }
             bool is_float = false;
-            if ((_JsonParser::i < _JsonParser::n) && (_JsonParser::text.at(_JsonParser::i) == '.')) {
+            if ((this->i < this->n) && (this->text[this->i] == ".")) {
                 is_float = true;
-                _JsonParser::i++;
-                if ((_JsonParser::i >= _JsonParser::n) || (!(_is_digit(_JsonParser::text[_JsonParser::i]))))
+                this->i++;
+                if ((this->i >= this->n) || (!(_is_digit(this->text[this->i]))))
                     throw ValueError("invalid json number");
-                while ((_JsonParser::i < _JsonParser::n) && (_is_digit(_JsonParser::text[_JsonParser::i]))) {
-                    _JsonParser::i++;
+                while ((this->i < this->n) && (_is_digit(this->text[this->i]))) {
+                    this->i++;
                 }
             }
-            if (_JsonParser::i < _JsonParser::n) {
-                str exp_ch = _JsonParser::text[_JsonParser::i];
+            if (this->i < this->n) {
+                str exp_ch = this->text[this->i];
                 if ((exp_ch == "e") || (exp_ch == "E")) {
                     is_float = true;
-                    _JsonParser::i++;
-                    if (_JsonParser::i < _JsonParser::n) {
-                        str sign = _JsonParser::text[_JsonParser::i];
+                    this->i++;
+                    if (this->i < this->n) {
+                        str sign = this->text[this->i];
                         if ((sign == "+") || (sign == "-"))
-                            _JsonParser::i++;
+                            this->i++;
                     }
-                    if ((_JsonParser::i >= _JsonParser::n) || (!(_is_digit(_JsonParser::text[_JsonParser::i]))))
+                    if ((this->i >= this->n) || (!(_is_digit(this->text[this->i]))))
                         throw ValueError("invalid json exponent");
-                    while ((_JsonParser::i < _JsonParser::n) && (_is_digit(_JsonParser::text[_JsonParser::i]))) {
-                        _JsonParser::i++;
+                    while ((this->i < this->n) && (_is_digit(this->text[this->i]))) {
+                        this->i++;
                     }
                 }
             }
-            str token = py_slice(_JsonParser::text, start, _JsonParser::i);
+            str token = py_slice(this->text, start, this->i);
             if (is_float) {
                 float64 num_f = py_to_float64(token);
                 return make_object(num_f);
@@ -286,121 +263,108 @@ namespace pytra::std::json {
     };
     
     object loads(const str& text) {
-        return ::rc_new<_JsonParser>(text)->parse();
+        return _JsonParser(text).parse();
     }
     
     str _escape_str(const str& s, bool ensure_ascii) {
         list<str> out = list<str>{"\""};
         for (str ch : s) {
-            int64 code = int64(py_to_int64(py_ord(ch)));
+            int64 code = py_to<int64>(py_ord(ch));
             if (ch == "\"") {
                 out.append(str("\\\""));
+            } else if (ch == "\\") {
+                out.append(str("\\\\"));
+            } else if (ch == "") {
+                out.append(str("\\b"));
+            } else if (ch == "") {
+                out.append(str("\\f"));
+            } else if (ch == "\n") {
+                out.append(str("\\n"));
+            } else if (ch == "\r") {
+                out.append(str("\\r"));
+            } else if (ch == "\t") {
+                out.append(str("\\t"));
+            } else if ((ensure_ascii) && (code > 0x7F)) {
+                out.append(str("\\u" + _hex4(code)));
             } else {
-                if (ch == "\\") {
-                    out.append(str("\\\\"));
-                } else {
-                    if (ch == "") {
-                        out.append(str("\\b"));
-                    } else {
-                        if (ch == "") {
-                            out.append(str("\\f"));
-                        } else {
-                            if (ch == "\n") {
-                                out.append(str("\\n"));
-                            } else {
-                                if (ch == "\r") {
-                                    out.append(str("\\r"));
-                                } else {
-                                    if (ch == "\t") {
-                                        out.append(str("\\t"));
-                                    } else {
-                                        if ((ensure_ascii) && (code > 0x7F))
-                                            out.append(str("\\u" + _hex4(code)));
-                                        else
-                                            out.append(str(ch));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                out.append(ch);
             }
         }
         out.append(str("\""));
-        return py_to_string(_EMPTY.join(out));
+        return _EMPTY.join(out);
     }
     
-    str _dump_json_list(const list<object>& values, bool ensure_ascii, const ::std::optional<int>& indent, const str& item_sep, const str& key_sep, int64 level) {
+    str _dump_json_list(const object& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_len(values) == 0)
             return "[]";
         if (py_is_none(indent)) {
-            list<str> dumped = list<str>{};
-            for (object x : values) {
-                str dumped_txt = py_to_string(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level));
-                dumped.append(str(dumped_txt));
+            list<str> dumped = {};
+            for (object x : py_dyn_range(values)) {
+                str dumped_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
+                dumped.append(dumped_txt);
             }
-            return py_to_string("[" + str(item_sep).join(dumped) + "]");
+            return "[" + str(item_sep).join(dumped) + "]";
         }
         int64 indent_i = py_to_int64(indent);
-        list<str> inner = list<str>{};
-        for (object x : values) {
-            str prefix = py_to_string(py_repeat(" ", indent_i * (level + 1)));
-            str value_txt = py_to_string(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1));
+        list<str> inner = {};
+        for (object x : py_dyn_range(values)) {
+            str prefix = py_repeat(" ", indent_i * (level + 1));
+            str value_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
             inner.append(str(prefix + value_txt));
         }
-        return py_to_string("[\n" + _COMMA_NL.join(inner) + "\n" + py_repeat(" ", indent_i * level) + "]");
+        return "[\n" + _COMMA_NL.join(inner) + "\n" + py_repeat(" ", indent_i * level) + "]";
     }
     
-    str _dump_json_dict(const dict<str, object>& values, bool ensure_ascii, const ::std::optional<int>& indent, const str& item_sep, const str& key_sep, int64 level) {
+    str _dump_json_dict(const dict<str, object>& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_len(values) == 0)
             return "{}";
         if (py_is_none(indent)) {
-            list<str> parts = list<str>{};
-            for (auto __it_1 : values) {
-                auto k = ::std::get<0>(__it_1);
-                auto x = ::std::get<1>(__it_1);
-                str k_txt = _escape_str(py_to_string(k), ensure_ascii);
-                str v_txt = py_to_string(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level));
+            list<str> parts = {};
+            for (::std::tuple<str, object> __itobj_1 : values) {
+                str k = py_to_string(py_at(__itobj_1, 0));
+                auto x = py_at(__itobj_1, 1);
+                str k_txt = _escape_str(k, ensure_ascii);
+                str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
                 parts.append(str(k_txt + key_sep + v_txt));
             }
-            return py_to_string("{" + str(item_sep).join(parts) + "}");
+            return "{" + str(item_sep).join(parts) + "}";
         }
         int64 indent_i = py_to_int64(indent);
-        list<str> inner = list<str>{};
-        for (auto __it_2 : values) {
-            auto k = ::std::get<0>(__it_2);
-            auto x = ::std::get<1>(__it_2);
-            str prefix = py_to_string(py_repeat(" ", indent_i * (level + 1)));
-            str k_txt = _escape_str(py_to_string(k), ensure_ascii);
-            str v_txt = py_to_string(_dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1));
+        list<str> inner = {};
+        for (::std::tuple<str, object> __itobj_2 : values) {
+            str k = py_to_string(py_at(__itobj_2, 0));
+            auto x = py_at(__itobj_2, 1);
+            str prefix = py_repeat(" ", indent_i * (level + 1));
+            str k_txt = _escape_str(k, ensure_ascii);
+            str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
             inner.append(str(prefix + k_txt + key_sep + v_txt));
         }
-        return py_to_string("{\n" + _COMMA_NL.join(inner) + "\n" + py_repeat(" ", indent_i * level) + "}");
+        return "{\n" + _COMMA_NL.join(inner) + "\n" + py_repeat(" ", indent_i * level) + "}";
     }
     
-    str _dump_json_value(const object& v, bool ensure_ascii, const ::std::optional<int>& indent, const str& item_sep, const str& key_sep, int64 level) {
+    str _dump_json_value(const object& v, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_is_none(v))
             return "null";
-        if (py_is_bool(v))
+        if (py_isinstance(v, PYTRA_TID_BOOL))
             return (v ? "true" : "false");
-        if (py_is_int(v))
+        if (py_isinstance(v, PYTRA_TID_INT))
             return py_to_string(v);
-        if (py_is_float(v))
+        if (py_isinstance(v, PYTRA_TID_FLOAT))
             return py_to_string(v);
-        if (py_is_str(v))
+        if (py_isinstance(v, PYTRA_TID_STR))
             return _escape_str(py_to_string(v), ensure_ascii);
-        if (py_is_list(v)) {
-            list<object> as_list = list<object>(v);
-            return py_to_string(_dump_json_list(as_list, ensure_ascii, indent, item_sep, key_sep, level));
+        if (py_isinstance(v, PYTRA_TID_LIST)) {
+            object as_list = make_object(list<object>(v));
+            return _dump_json_list(as_list, ensure_ascii, indent, item_sep, key_sep, level);
         }
-        if (py_is_dict(v)) {
+        if (py_isinstance(v, PYTRA_TID_DICT)) {
             dict<str, object> as_dict = dict<str, object>(v);
-            return py_to_string(_dump_json_dict(as_dict, ensure_ascii, indent, item_sep, key_sep, level));
+            return _dump_json_dict(as_dict, ensure_ascii, indent, item_sep, key_sep, level);
         }
         throw TypeError("json.dumps unsupported type");
     }
     
-    str dumps(const object& obj, bool ensure_ascii, const ::std::optional<int>& indent, const ::std::optional<::std::tuple<str, str>>& separators) {
+    str dumps(const object& obj, bool ensure_ascii = true, const ::std::optional<int64>& indent = ::std::nullopt, const ::std::optional<::std::tuple<str, str>>& separators = ::std::nullopt) {
         str item_sep = ",";
         str key_sep = (py_is_none(indent) ? ":" : ": ");
         if (!py_is_none(separators)) {
@@ -408,7 +372,17 @@ namespace pytra::std::json {
             item_sep = ::std::get<0>(__tuple_3);
             key_sep = ::std::get<1>(__tuple_3);
         }
-        return py_to_string(_dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0));
+        return _dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0);
+    }
+    
+    static void __pytra_module_init() {
+        static bool __initialized = false;
+        if (__initialized) return;
+        __initialized = true;
+        /* Pure Python JSON utilities for selfhost-friendly transpilation. */
+        _EMPTY = "";
+        _COMMA_NL = ",\n";
+        _HEX_DIGITS = "0123456789abcdef";
     }
     
 }  // namespace pytra::std::json

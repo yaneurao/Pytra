@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/typing.py
-// generated-by: src/py2cpp.py
+// generated-by: src/backends/cpp/cli.py
 
 #ifndef PYTRA_STD_TYPING_H
 #define PYTRA_STD_TYPING_H

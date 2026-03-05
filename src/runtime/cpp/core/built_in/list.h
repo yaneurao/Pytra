@@ -6,6 +6,9 @@
 #include "container_common.h"
 
 template <class T>
+object make_object(const T& v);
+
+template <class T>
 class list {
 public:
     using value_type = T;
@@ -72,6 +75,7 @@ public:
 
     operator const ::std::vector<T>&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator ::std::vector<T>&() { return data_; }              // NOLINT(google-explicit-constructor)
+    operator object() const { return make_object(*this); }      // NOLINT(google-explicit-constructor)
     template <class U = T, ::std::enable_if_t<::std::is_same_v<U, object>, int> = 0>
     list& operator=(const object& v) {
         if (const auto* p = obj_to_list_ptr(v)) data_ = *p;

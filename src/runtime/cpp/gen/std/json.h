@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/json.py
-// generated-by: src/py2cpp.py
+// generated-by: src/backends/cpp/cli.py
 
 #ifndef PYTRA_STD_JSON_H
 #define PYTRA_STD_JSON_H
@@ -26,7 +26,7 @@ str _escape_str(const str& s, bool ensure_ascii);
 str _dump_json_list(const list<object>& values, bool ensure_ascii, const ::std::optional<int>& indent, const str& item_sep, const str& key_sep, int64 level);
 str _dump_json_dict(const dict<str, object>& values, bool ensure_ascii, const ::std::optional<int>& indent, const str& item_sep, const str& key_sep, int64 level);
 str _dump_json_value(const object& v, bool ensure_ascii, const ::std::optional<int>& indent, const str& item_sep, const str& key_sep, int64 level);
-str dumps(const object& obj, bool ensure_ascii = true, const ::std::optional<int>& indent = ::std::nullopt, const ::std::optional<::std::tuple<str, str>>& separators = ::std::nullopt);
+str dumps(const object& obj, bool ensure_ascii, const ::std::optional<int>& indent, const ::std::optional<::std::tuple<str, str>>& separators);
 
 }  // namespace pytra::std::json
 

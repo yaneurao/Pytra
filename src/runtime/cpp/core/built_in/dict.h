@@ -47,6 +47,7 @@ public:
 
     operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
+    operator object() const { return make_object(*this); }  // NOLINT(google-explicit-constructor)
     template <class KK = K, ::std::enable_if_t<::std::is_same_v<KK, str>, int> = 0>
     dict& operator=(const object& v) {
         data_.clear();

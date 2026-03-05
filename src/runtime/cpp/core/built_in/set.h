@@ -6,6 +6,9 @@
 #include "container_common.h"
 
 template <class T>
+object make_object(const T& v);
+
+template <class T>
 class set {
 public:
     using base_type = ::std::unordered_set<T>;
@@ -27,6 +30,7 @@ public:
 
     operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
+    operator object() const { return make_object(*this); }  // NOLINT(google-explicit-constructor)
 
     iterator begin() { return data_.begin(); }
     iterator end() { return data_.end(); }

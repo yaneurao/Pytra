@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/assertions.py
-// generated-by: src/py2cpp.py
+// generated-by: src/backends/cpp/cli.py
 
 #ifndef PYTRA_UTILS_ASSERTIONS_H
 #define PYTRA_UTILS_ASSERTIONS_H
