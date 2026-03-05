@@ -147,16 +147,16 @@ def _is_string_like_expr(node: Any, rendered: str) -> bool:
     return txt.startswith("$(") or txt.startswith('"')
 
 
-def _resolved_runtime_call(expr: dict[str, Any]) -> str:
+def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     runtime_call_any = expr.get("runtime_call")
     runtime_call = runtime_call_any if isinstance(runtime_call_any, str) else ""
     if runtime_call != "":
-        return runtime_call
+        return runtime_call, "runtime_call"
     resolved_any = expr.get("resolved_runtime_call")
     resolved = resolved_any if isinstance(resolved_any, str) else ""
     if resolved != "":
-        return resolved
-    return ""
+        return resolved, "resolved_runtime_call"
+    return "", ""
 
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
@@ -1309,7 +1309,7 @@ class NimNativeEmitter:
             attr = _safe_ident(expr.get("attr"))
             semantic_tag_any = expr.get("semantic_tag")
             semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
-            runtime_call = _resolved_runtime_call(expr)
+            runtime_call, runtime_source = _resolved_runtime_call(expr)
             if semantic_tag.startswith("stdlib.") and runtime_call == "":
                 raise RuntimeError("nim native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
             resolved_runtime_any = expr.get("resolved_runtime_call")
@@ -1318,6 +1318,14 @@ class NimNativeEmitter:
             resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
             if resolved_source == "module_attr" and resolved_runtime != "" and "." not in resolved_runtime:
                 return _safe_ident(resolved_runtime)
+            if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+                raise RuntimeError(
+                    "nim native emitter: unresolved stdlib runtime attribute mapping: "
+                    + semantic_tag
+                    + " ("
+                    + runtime_call
+                    + ")"
+                )
             return f"{value}.{attr}"
         elif kind == "Unbox" or kind == "Box":
             return self._render_expr(expr.get("value"))
@@ -1337,7 +1345,7 @@ class NimNativeEmitter:
             i_kw += 1
         semantic_tag_any = expr.get("semantic_tag")
         semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
-        runtime_call = _resolved_runtime_call(expr)
+        runtime_call, runtime_source = _resolved_runtime_call(expr)
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("nim native emitter: unresolved stdlib runtime call: " + semantic_tag)
         if isinstance(func, dict) and func.get("kind") == "Name":
@@ -1412,6 +1420,14 @@ class NimNativeEmitter:
             if attr == "isalpha":
                  return f"py_isalpha({value})"
 
+        if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+            raise RuntimeError(
+                "nim native emitter: unresolved stdlib runtime mapping: "
+                + semantic_tag
+                + " ("
+                + runtime_call
+                + ")"
+            )
         func_expr = self._render_expr(func)
         return f"{func_expr}({', '.join(args)})"
 
