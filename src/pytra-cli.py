@@ -138,7 +138,7 @@ def _build_noncpp(input_path: Path, profile: TargetProfile, args: argparse.Names
         if rc != 0:
             return rc
     if isinstance(plan.run_cmd, list):
-        return _run(plan.run_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+        return _run(plan.run_cmd, cwd=Path.cwd())
     return 0
 
 

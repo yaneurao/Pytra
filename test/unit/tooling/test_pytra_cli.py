@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import subprocess
 import sys
@@ -211,3 +212,41 @@ class PytraCliTest(unittest.TestCase):
                     [str(src), "--target", "rs", "--build", "--compiler", "clang++"]
                 )
         self.assertEqual(rc, 1)
+
+    def test_build_noncpp_run_command_keeps_stdout(self) -> None:
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            profile = pytra_cli_mod.TargetProfile(
+                target="java",
+                extension=".java",
+                build_driver="noncpp",
+                fixed_output_name="Main.java",
+                allow_codegen_opt=False,
+                runner_needs=("python", "javac", "java"),
+            )
+            args = argparse.Namespace(output="", output_dir=str(Path(work) / "out"), run=True)
+            calls: list[bool] = []
+
+            def _fake_run(
+                cmd: list[str],
+                cwd: Path | None = None,
+                timeout: float | None = None,
+                *,
+                stdout_to_stderr: bool = False,
+            ) -> int:
+                _ = cmd
+                _ = cwd
+                _ = timeout
+                calls.append(bool(stdout_to_stderr))
+                return 0
+
+            with patch.object(pytra_cli_mod, "_run_py2x_target", return_value=0), patch.object(
+                pytra_cli_mod,
+                "make_noncpp_build_plan",
+                return_value=type("Plan", (), {"build_cmd": ["javac", "Main.java"], "run_cmd": ["java", "Main"]})(),
+            ), patch.object(pytra_cli_mod, "_run", side_effect=_fake_run):
+                rc = pytra_cli_mod._build_noncpp(src, profile, args, [])
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(calls, [True, False])
