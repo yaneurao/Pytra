@@ -193,7 +193,10 @@ def build_cpp_header_from_east(
         includes.append("#include <unordered_map>")
     if has_std_uset:
         includes.append("#include <unordered_set>")
-    for include_line in _extract_cpp_include_lines(cpp_text, output_path):
+    decl_text = join_str_list("\n", class_blocks + class_lines + var_lines + fn_lines)
+    include_lines = _extract_cpp_include_lines(cpp_text, output_path)
+    include_lines = _filter_cpp_include_lines_for_header(include_lines, decl_text, top_namespace)
+    for include_line in include_lines:
         if include_line not in includes:
             includes.append(include_line)
 
@@ -561,6 +564,111 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
         seen.add(line)
         out.append(line)
     return out
+
+
+def _filter_cpp_include_lines_for_header(
+    include_lines: list[str],
+    decl_text: str,
+    top_namespace: str,
+) -> list[str]:
+    """ヘッダ宣言で実使用する include のみを残す。"""
+    if len(include_lines) == 0:
+        return []
+    if decl_text.strip() == "":
+        return []
+    out: list[str] = []
+    ns = top_namespace.strip()
+    for include_line in include_lines:
+        if _header_decl_uses_include(include_line, decl_text, ns):
+            out.append(include_line)
+    return out
+
+
+def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: str) -> bool:
+    """宣言テキストが当該 include 由来シンボルを参照しているか判定する。"""
+    q0 = include_line.find("\"")
+    q1 = include_line.rfind("\"")
+    if q0 < 0 or q1 <= q0:
+        # system include / 非標準形式は保守的に保持
+        return True
+    inc_path = include_line[q0 + 1 : q1].replace("\\", "/")
+    parts = inc_path.split("/")
+    if len(parts) == 0:
+        return True
+    file_name = parts[-1]
+    dot = file_name.rfind(".")
+    stem = file_name[:dot] if dot >= 0 else file_name
+    if stem == "":
+        return True
+
+    # runtime/cpp/<bucket>/<module>.h -> namespace prefix を導出
+    ns_prefix = ""
+    is_runtime_cpp_include = len(parts) >= 4 and parts[0] == "runtime" and parts[1] == "cpp"
+    if is_runtime_cpp_include:
+        bucket = parts[2]
+        module_tail = "/".join(parts[3:])
+        dot2 = module_tail.rfind(".")
+        module_tail = module_tail[:dot2] if dot2 >= 0 else module_tail
+        module_ns = module_tail.replace("/", "::")
+        if bucket == "std":
+            ns_prefix = "pytra::std::" + module_ns
+        elif bucket == "utils":
+            ns_prefix = "pytra::utils::" + module_ns
+        elif bucket == "compiler":
+            ns_prefix = "pytra::compiler::" + module_ns
+        elif bucket == "built_in":
+            ns_prefix = "pytra::built_in::" + module_ns
+        elif bucket == "gen" and len(parts) >= 5:
+            sub = parts[3]
+            rest_tail = "/".join(parts[4:])
+            dot3 = rest_tail.rfind(".")
+            rest_tail = rest_tail[:dot3] if dot3 >= 0 else rest_tail
+            rest_ns = rest_tail.replace("/", "::")
+            if sub == "std":
+                ns_prefix = "pytra::std::" + rest_ns
+            elif sub == "utils":
+                ns_prefix = "pytra::utils::" + rest_ns
+            elif sub == "compiler":
+                ns_prefix = "pytra::compiler::" + rest_ns
+            elif sub == "built_in":
+                ns_prefix = "pytra::built_in::" + rest_ns
+
+    if ns_prefix != "":
+        if ns_prefix + "::" in decl_text:
+            return True
+        if ns_prefix in decl_text:
+            return True
+        if top_namespace != "" and ns_prefix == top_namespace:
+            # 同一 namespace 自体の include は宣言だけでは判別しにくいため保持
+            return True
+
+    if is_runtime_cpp_include:
+        # runtime/cpp 配下は namespace 参照でのみ判定し、識別子名の偶然一致は無視する。
+        return False
+
+    # fallback: file stem が識別子として現れるなら保持
+    return _contains_identifier_token(decl_text, stem)
+
+
+def _contains_identifier_token(text: str, token: str) -> bool:
+    """`token` が識別子境界で現れるかを判定する。"""
+    if token == "":
+        return False
+    i = 0
+    n = len(text)
+    m = len(token)
+    while i + m <= n:
+        if text[i : i + m] == token:
+            left_ok = i == 0 or not _is_ident_char(text[i - 1])
+            right_ok = i + m == n or not _is_ident_char(text[i + m])
+            if left_ok and right_ok:
+                return True
+        i += 1
+    return False
+
+
+def _is_ident_char(ch: str) -> bool:
+    return (ch >= "A" and ch <= "Z") or (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9") or ch == "_"
 
 
 def _extract_class_names_from_blocks(class_blocks: list[str]) -> set[str]:

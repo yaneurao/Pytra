@@ -7,10 +7,6 @@
 
 #include "runtime/cpp/core/built_in/py_types.h"
 
-#include "runtime/cpp/std/glob.h"
-#include "runtime/cpp/std/os.h"
-#include "runtime/cpp/std/os_path.h"
-
 namespace pytra::std::pathlib {
 
     struct Path {

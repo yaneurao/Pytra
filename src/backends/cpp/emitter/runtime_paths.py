@@ -163,8 +163,7 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
         return "runtime/cpp/gen/" + rel_hdr
 
     if module_name_norm == "pytra.std.pathlib":
-        # `Path` クラスの実体定義が必要なため、利用側では実装単位を直接取り込む。
-        return "runtime/cpp/gen/std/pathlib.cpp"
+        return _pick("std/pathlib.h")
     if module_name_norm.startswith("pytra.std."):
         return _pick("std/" + module_tail_to_cpp_header_path(module_name_norm[10:]))
     if module_name_norm.startswith("pytra.utils."):
