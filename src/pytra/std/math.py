@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from pytra.std import extern
+
 import pytra.std.math_impl as _m
 
 pi: float = _m.pi
 e: float = _m.e
 
-
+@extern
 def sqrt(x: float) -> float:
-    return _m.sqrt(x)
+    pass
 
 
 def sin(x: float) -> float:
