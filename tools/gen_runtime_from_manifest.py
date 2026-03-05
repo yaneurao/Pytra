@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -244,6 +245,30 @@ def rewrite_cs_program_to_helper(cs_src: str, helper_name: str) -> str:
     return text.replace("Program.", helper_name + ".")
 
 
+def rewrite_js_program_to_cjs_module(js_src: str) -> str:
+    # Runtime modules are emitted as script-like JS; normalize Python-style
+    # list method calls to native JS array methods.
+    js_src = re.sub(
+        r"\b([A-Za-z_][A-Za-z0-9_]*)\.extend\(([^;\n]+)\);",
+        r"\1 = \1.concat(\2);",
+        js_src,
+    )
+
+    if "module.exports" in js_src:
+        return js_src
+    names: list[str] = []
+    for m in re.finditer(r"(?m)^function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", js_src):
+        name = m.group(1)
+        if name not in names:
+            names.append(name)
+    public_names = [name for name in names if not name.startswith("_")]
+    if len(public_names) == 0:
+        return js_src
+    body = js_src.rstrip("\n")
+    exports = "module.exports = {" + ", ".join(public_names) + "};\n"
+    return body + "\n\n" + exports
+
+
 def inject_generated_header(text: str, target: str, source_rel: str) -> str:
     prefix = COMMENT_PREFIX.get(target)
     if prefix is None:
@@ -273,6 +298,8 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for cs_program_to_helper: " + item.item_id)
         generated = rewrite_cs_program_to_helper(generated, item.helper_name)
+    elif item.postprocess == "js_program_to_cjs_module":
+        generated = rewrite_js_program_to_cjs_module(generated)
     elif item.postprocess != "":
         raise RuntimeError("unknown postprocess: " + item.postprocess)
     return inject_generated_header(generated, item.target, item.source_rel)

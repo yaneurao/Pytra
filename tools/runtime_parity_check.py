@@ -112,14 +112,25 @@ def can_run(target: Target) -> bool:
     return True
 
 
-def _normalize_output_for_compare(stdout_text: str) -> str:
+def _normalize_output_for_compare(stdout_text: str, target_name: str = "") -> str:
     lines: list[str] = []
     for line in stdout_text.splitlines():
         low = line.strip().lower()
         if low.startswith("elapsed_sec:") or low.startswith("elapsed:") or low.startswith("time_sec:"):
             continue
+        if target_name == "nim" and "warning:" in low:
+            continue
         lines.append(line)
     return "\n".join(lines)
+
+
+def _target_output_text(target_name: str, cp: subprocess.CompletedProcess[str]) -> str:
+    out = cp.stdout or ""
+    if target_name == "nim" and out.strip() == "":
+        # nim `c -r` prints program stdout together with compiler diagnostics
+        # to stderr; parity compare should consume that stream.
+        return cp.stderr or ""
+    return out
 
 
 def _parse_output_path(stdout_text: str) -> str:
@@ -328,7 +339,8 @@ def check_case(
                 _record(target.name, "run_failed", msg)
                 continue
 
-            actual = _normalize_output_for_compare(rr.stdout)
+            raw_actual_output = _target_output_text(target.name, rr)
+            actual = _normalize_output_for_compare(raw_actual_output, target.name)
             if actual != expected:
                 _record(target.name, "output_mismatch", "stdout mismatch")
                 mismatches.append(
@@ -343,7 +355,7 @@ def check_case(
                 _record(target.name, "ok", "")
                 continue
 
-            actual_out_txt = _parse_output_path(rr.stdout)
+            actual_out_txt = _parse_output_path(raw_actual_output)
             if expected_artifact_size is None:
                 if actual_out_txt != "":
                     actual_artifact_path = _resolve_output_path(work, actual_out_txt)

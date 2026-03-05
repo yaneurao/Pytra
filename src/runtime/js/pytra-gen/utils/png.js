@@ -46,7 +46,7 @@ function _u32be(v) {
 function _zlib_deflate_store(data) {
     let out = [];
     // zlib header: CMF=0x78(Deflate, 32K window), FLG=0x01(check bits OK, fastest)
-    out.extend((Array.isArray(([0x78, 0x01])) ? ([0x78, 0x01]).slice() : Array.from(([0x78, 0x01]))));
+    out = out.concat((Array.isArray(([0x78, 0x01])) ? ([0x78, 0x01]).slice() : Array.from(([0x78, 0x01]))));
     let n = (data).length;
     let pos = 0;
     while (pos < n) {
@@ -55,12 +55,12 @@ function _zlib_deflate_store(data) {
         let final = (pos + chunk_len >= n ? 1 : 0);
         // stored block: BTYPE=00, header bit field in LSB order (final in bit0)
         out.push(final);
-        out.extend(_u16le(chunk_len));
-        out.extend(_u16le(0xFFFF ^ chunk_len));
-        out.extend(data.slice(pos, pos + chunk_len));
+        out = out.concat(_u16le(chunk_len));
+        out = out.concat(_u16le(0xFFFF ^ chunk_len));
+        out = out.concat(data.slice(pos, pos + chunk_len));
         pos += chunk_len;
     }
-    out.extend(_u32be(_adler32(data)));
+    out = out.concat(_u32be(_adler32(data)));
     return (Array.isArray((out)) ? (out).slice() : Array.from((out)));
 }
 
@@ -83,17 +83,17 @@ function write_rgb_png(path, width, height, pixels) {
         scanlines.push(0);
         let start = y * row_bytes;
         let end = start + row_bytes;
-        scanlines.extend(raw.slice(start, end));
+        scanlines = scanlines.concat(raw.slice(start, end));
         y += 1;
     }
     let ihdr = _u32be(width) + _u32be(height) + (Array.isArray(([8, 2, 0, 0, 0])) ? ([8, 2, 0, 0, 0]).slice() : Array.from(([8, 2, 0, 0, 0])));
     let idat = _zlib_deflate_store((Array.isArray((scanlines)) ? (scanlines).slice() : Array.from((scanlines))));
     
     let png = [];
-    png.extend((Array.isArray(([137, 80, 78, 71, 13, 10, 26, 10])) ? ([137, 80, 78, 71, 13, 10, 26, 10]).slice() : Array.from(([137, 80, 78, 71, 13, 10, 26, 10]))));
-    png.extend(_chunk((Array.isArray(([73, 72, 68, 82])) ? ([73, 72, 68, 82]).slice() : Array.from(([73, 72, 68, 82]))), ihdr));
-    png.extend(_chunk((Array.isArray(([73, 68, 65, 84])) ? ([73, 68, 65, 84]).slice() : Array.from(([73, 68, 65, 84]))), idat));
-    png.extend(_chunk((Array.isArray(([73, 69, 78, 68])) ? ([73, 69, 78, 68]).slice() : Array.from(([73, 69, 78, 68]))), ""));
+    png = png.concat((Array.isArray(([137, 80, 78, 71, 13, 10, 26, 10])) ? ([137, 80, 78, 71, 13, 10, 26, 10]).slice() : Array.from(([137, 80, 78, 71, 13, 10, 26, 10]))));
+    png = png.concat(_chunk((Array.isArray(([73, 72, 68, 82])) ? ([73, 72, 68, 82]).slice() : Array.from(([73, 72, 68, 82]))), ihdr));
+    png = png.concat(_chunk((Array.isArray(([73, 68, 65, 84])) ? ([73, 68, 65, 84]).slice() : Array.from(([73, 68, 65, 84]))), idat));
+    png = png.concat(_chunk((Array.isArray(([73, 69, 78, 68])) ? ([73, 69, 78, 68]).slice() : Array.from(([73, 69, 78, 68]))), ""));
     
     let f = open(path, "wb");
     try {
@@ -104,3 +104,5 @@ function write_rgb_png(path, width, height, pixels) {
 }
 
 "PNG 書き出しユーティリティ（Python実行用）。\n\nこのモジュールは sample/py のスクリプトから利用し、\nRGB 8bit バッファを PNG ファイルとして保存する。\n";
+
+module.exports = {write_rgb_png};

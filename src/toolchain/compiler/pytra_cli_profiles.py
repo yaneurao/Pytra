@@ -69,7 +69,7 @@ _TARGET_PROFILES: dict[str, TargetProfile] = {
     "lua": TargetProfile(target="lua", extension=".lua", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "lua")),
     "ruby": TargetProfile(target="ruby", extension=".rb", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "ruby")),
     "php": TargetProfile(target="php", extension=".php", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "php")),
-    "nim": TargetProfile(target="nim", extension=".nim", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "nim")),
+    "nim": TargetProfile(target="nim", extension=".nim", build_driver="noncpp", fixed_output_name="main.nim", allow_codegen_opt=False, runner_needs=("python", "nim")),
 }
 
 

@@ -15,7 +15,11 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "png_helper"
         },
-        { "target": "js", "output": "src/runtime/js/pytra-gen/utils/png.js" },
+        {
+          "target": "js",
+          "output": "src/runtime/js/pytra-gen/utils/png.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
         { "target": "ts", "output": "src/runtime/ts/pytra-gen/utils/png.ts" },
         { "target": "go", "output": "src/runtime/go/pytra-gen/utils/png.go" },
         { "target": "java", "output": "src/runtime/java/pytra-gen/utils/png.java" },
@@ -41,7 +45,11 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "gif_helper"
         },
-        { "target": "js", "output": "src/runtime/js/pytra-gen/utils/gif.js" },
+        {
+          "target": "js",
+          "output": "src/runtime/js/pytra-gen/utils/gif.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
         { "target": "ts", "output": "src/runtime/ts/pytra-gen/utils/gif.ts" },
         { "target": "go", "output": "src/runtime/go/pytra-gen/utils/gif.go" },
         { "target": "java", "output": "src/runtime/java/pytra-gen/utils/gif.java" },

@@ -1,123 +1,127 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/gif.py
-// generated-by: tools/gen_image_runtime_from_canonical.py
-// GIF 画像出力ヘルパ（JavaScript版）。
+// generated-by: tools/gen_runtime_from_manifest.py
 
-const fs = require("node:fs");
-const path = require("node:path");
+function _lzw_encode(data, min_code_size) {
+    if ((data).length === 0) {
+        return "";
+    }
+    let clear_code = 1 << min_code_size;
+    let end_code = clear_code + 1;
+    
+    let code_size = min_code_size + 1;
+    
+    let out = [];
+    let bit_buffer = 0;
+    let bit_count = 0;
+    
+    bit_buffer |= clear_code << bit_count;
+    bit_count += code_size;
+    while (bit_count >= 8) {
+        out.push(bit_buffer & 0xFF);
+        bit_buffer >>= 8;
+        bit_count -= 8;
+    }
+    code_size = min_code_size + 1;
+    
+    for (const v of data) {
+        bit_buffer |= v << bit_count;
+        bit_count += code_size;
+        while (bit_count >= 8) {
+            out.push(bit_buffer & 0xFF);
+            bit_buffer >>= 8;
+            bit_count -= 8;
+        }
+        bit_buffer |= clear_code << bit_count;
+        bit_count += code_size;
+        while (bit_count >= 8) {
+            out.push(bit_buffer & 0xFF);
+            bit_buffer >>= 8;
+            bit_count -= 8;
+        }
+        code_size = min_code_size + 1;
+    }
+    bit_buffer |= end_code << bit_count;
+    bit_count += code_size;
+    while (bit_count >= 8) {
+        out.push(bit_buffer & 0xFF);
+        bit_buffer >>= 8;
+        bit_count -= 8;
+    }
+    if (bit_count > 0) {
+        out.push(bit_buffer & 0xFF);
+    }
+    return (Array.isArray((out)) ? (out).slice() : Array.from((out)));
+}
 
 function grayscale_palette() {
-  const p = new Array(256 * 3);
-  for (let i = 0; i < 256; i += 1) {
-    p[i * 3] = i;
-    p[i * 3 + 1] = i;
-    p[i * 3 + 2] = i;
-  }
-  return p;
-}
-
-function lzwEncode(data, minCodeSize) {
-  if (data.length === 0) {
-    return [];
-  }
-  const clearCode = 1 << minCodeSize;
-  const endCode = clearCode + 1;
-  const codeSize = minCodeSize + 1;
-  const out = [];
-
-  let bitBuffer = 0;
-  let bitCount = 0;
-
-  function emit(code) {
-    bitBuffer |= code << bitCount;
-    bitCount += codeSize;
-    while (bitCount >= 8) {
-      out.push(bitBuffer & 0xff);
-      bitBuffer >>>= 8;
-      bitCount -= 8;
+    let p = [];
+    let i = 0;
+    while (i < 256) {
+        p.push(i);
+        p.push(i);
+        p.push(i);
+        i += 1;
     }
-  }
-
-  emit(clearCode);
-  for (let i = 0; i < data.length; i += 1) {
-    emit(data[i]);
-    emit(clearCode);
-  }
-  emit(endCode);
-  if (bitCount > 0) {
-    out.push(bitBuffer & 0xff);
-  }
-  return out;
+    return (Array.isArray((p)) ? (p).slice() : Array.from((p)));
 }
 
-function pushU16LE(out, v) {
-  out.push(v & 0xff);
-  out.push((v >>> 8) & 0xff);
-}
-
-function save_gif(outPath, width, height, frames, palette, delay_cs = 4, loop = 0) {
-  if (palette.length !== 256 * 3) {
-    throw new Error("palette must be 256*3 bytes");
-  }
-  const frameBytes = width * height;
-  for (const frame of frames) {
-    if (frame.length !== frameBytes) {
-      throw new Error("frame size mismatch");
+function save_gif(path, width, height, frames, palette, delay_cs, loop) {
+    if ((palette).length !== 256 * 3) {
+        throw new Error("palette must be 256*3 bytes");
     }
-  }
-
-  const chunks = [];
-  const writeByte = (v) => chunks.push(Buffer.from([v & 0xff]));
-  const writeU16 = (v) => {
-    const b = Buffer.allocUnsafe(2);
-    b[0] = v & 0xff;
-    b[1] = (v >>> 8) & 0xff;
-    chunks.push(b);
-  };
-  const writeBytes = (arr) => chunks.push(Buffer.from(arr));
-
-  chunks.push(Buffer.from("GIF89a", "ascii"));
-  writeU16(width);
-  writeU16(height);
-  writeByte(0xf7);
-  writeByte(0);
-  writeByte(0);
-  writeBytes(palette);
-
-  writeBytes([0x21, 0xff, 0x0b]);
-  chunks.push(Buffer.from("NETSCAPE2.0", "ascii"));
-  writeBytes([0x03, 0x01]);
-  writeU16(loop);
-  writeByte(0x00);
-
-  for (const frame of frames) {
-    writeBytes([0x21, 0xf9, 0x04, 0x00]);
-    writeU16(delay_cs);
-    writeByte(0x00);
-    writeByte(0x00);
-
-    writeByte(0x2c);
-    writeU16(0);
-    writeU16(0);
-    writeU16(width);
-    writeU16(height);
-    writeByte(0x00);
-
-    writeByte(8);
-    const compressed = lzwEncode(frame, 8);
-    let pos = 0;
-    while (pos < compressed.length) {
-      const len = Math.min(255, compressed.length - pos);
-      writeByte(len);
-      writeBytes(compressed.slice(pos, pos + len));
-      pos += len;
+    for (const fr of frames) {
+        if ((fr).length !== width * height) {
+            throw new Error("frame size mismatch");
+        }
     }
-    writeByte(0x00);
-  }
-
-  writeByte(0x3b);
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, Buffer.concat(chunks));
+    let out = [];
+    out = out.concat("GIF89a");
+    out = out.concat(width.to_bytes(2, "little"));
+    out = out.concat(height.to_bytes(2, "little"));
+    out.push(0xF7);
+    out.push(0);
+    out.push(0);
+    out = out.concat(palette);
+    
+    // Netscape loop extension
+    out = out.concat("x21xFFx0BNETSCAPE2.0x03x01");
+    out = out.concat(loop.to_bytes(2, "little"));
+    out.push(0);
+    
+    for (const fr of frames) {
+        out = out.concat("x21xF9x04x00");
+        out = out.concat(delay_cs.to_bytes(2, "little"));
+        out = out.concat("x00x00");
+        
+        out.push(0x2C);
+        out = out.concat((0).to_bytes(2, "little"));
+        out = out.concat((0).to_bytes(2, "little"));
+        out = out.concat(width.to_bytes(2, "little"));
+        out = out.concat(height.to_bytes(2, "little"));
+        out.push(0);
+        
+        out.push(8);
+        let compressed = _lzw_encode(fr, 8);
+        let pos = 0;
+        while (pos < (compressed).length) {
+            let chunk = compressed.slice(pos, pos + 255);
+            out.push((chunk).length);
+            out = out.concat(chunk);
+            pos += (chunk).length;
+        }
+        out.push(0);
+    }
+    out.push(0x3B);
+    
+    let f = open(path, "wb");
+    try {
+        f.write(out);
+    } finally {
+        f.close();
+    }
 }
 
-module.exports = { grayscale_palette, save_gif };
+"アニメーションGIFを書き出すための最小ヘルパー。";
+
+module.exports = {grayscale_palette, save_gif};
