@@ -67,6 +67,8 @@
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
 - `tools/check_runtime_std_sot_guard.py`
   - 目的: `src/pytra/std/*.py` / `src/pytra/utils/*.py` を正本とする運用を検査し、`pytra-gen` 以外への手書き実装（現行ガード対象: `json/assertions/re/typing`）を fail させる。あわせて C++ `std/utils` 全体の責務境界（`pytra-gen` 生成物必須 + `pytra` forwarder + `pytra-core` 実装分離）を検証する。
+- `tools/check_runtime_pytra_gen_naming.py`
+  - 目的: `src/runtime/*/pytra-gen/` の `std|utils` 配置と素通し命名（`<module>.py -> <module>.<ext>`）を検査し、`image_runtime.*` / `runtime/*.php` などの命名・配置違反増分を fail させる（`tools/runtime_pytra_gen_naming_allowlist.txt` 基準）。
 - `tools/check_emitter_runtimecall_guardrails.py`
   - 目的: non-C++ emitter の `if/elif` 文字列分岐における runtime/stdlib 関数名直書きの増分を検知し、allowlist 外を fail させる（`tools/emitter_runtimecall_guardrails_allowlist.txt` 基準）。
 - `tools/check_emitter_forbidden_runtime_symbols.py`

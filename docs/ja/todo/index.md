@@ -68,7 +68,7 @@
 2. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2（`P2-RUNTIME-PARITY-CPP-01`）を未完了一覧から削除し、新P2へ置換する。
 3. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] SoT/pytra-core/pytra-gen の責務境界と禁止事項を `docs/ja/spec` に明文化する。
 4. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュールの「生成必須 / core許可」分類表を作成する。
-5. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` の素通し命名違反を検知する静的チェックを追加する。
+5. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` の素通し命名違反を検知する静的チェックを追加する。
 6. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] marker（`source/generated-by`）・配置違反（core混在）監査を強化し、CIへ統合する。
 7. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
 8. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、emitter の直書き runtime 関数分岐を IR 解決経路へ移行する。
@@ -79,6 +79,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2の未完了一覧残置を整理し、`docs/en/todo/index.md` / `docs/en/plans/p2-runtime-parity-with-cpp.md` を新P2（`...-CPP-02`）へ置換した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] `docs/ja/spec/spec-runtime.md` に全言語共通の SoT/pytra-core/pytra-gen 責務境界節を追加し、必須事項（生成優先・marker・EAST3解決済み描画）と禁止事項（core 再実装・特別命名・emitter 直書き分岐）および監査コマンドを固定した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] `docs/ja/spec/spec-runtime.md` に `std/utils` モジュール分類表を追加し、`argparse..typing` + `assertions/gif/png` を生成必須、`dataclasses_impl/math_impl/time_impl` を core許可（impl境界）として固定した。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `tools/check_runtime_pytra_gen_naming.py` を追加し、`pytra-gen/std|utils` の素通し命名・配置違反を検知できるようにした。`tools/runtime_pytra_gen_naming_allowlist.txt`（11件）で既存負債を明示し、`test_check_runtime_pytra_gen_naming.py` と本体スクリプト実行を通過。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
