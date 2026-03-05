@@ -2,7 +2,7 @@
 // source: src/pytra/utils/png.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
 
 namespace pytra::utils::png {

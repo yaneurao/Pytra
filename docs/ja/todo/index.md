@@ -41,7 +41,7 @@
 3. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新 `src/runtime/cpp/{core,gen}` を作成する。
 4. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガードを追加する。
 5. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime/include 解決を `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
-6. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
+6. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
 7. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
 8. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
 9. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理する。
@@ -53,6 +53,7 @@
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime -> src/runtime2` を移動し、`src/runtime/cpp/core`（旧 `pytra-core`）と `src/runtime/cpp/gen`（旧 `pytra-gen`）を新設。旧 `src/runtime2/cpp/pytra` shim を隔離した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `tools/check_runtime2_references_absent.py` を追加し、`run_local_ci.py` と tooling unit test（`test_check_runtime2_references_absent.py`）へ統合して `src/runtime2` 参照の再流入を fail-fast 化。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime include 解決を `runtime/cpp/core` + `runtime/cpp/gen` へ切替し、`sample/py/01_mandelbrot.py` の再変換結果が `#include "runtime/cpp/core/built_in/py_runtime.h"` / `runtime/cpp/gen/...` になることを確認。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] `tools/runtime_generation_manifest.json` の C++ 出力先を `src/runtime/cpp/gen/...` へ更新し、`gen_runtime_from_manifest.py --targets cpp --items utils/png,utils/gif` で再生成した。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 
