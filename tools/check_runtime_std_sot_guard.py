@@ -147,7 +147,7 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
 # required handwritten core files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
     "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
-    "math.cpp": "src/runtime/cpp/std/math.cpp",
+    "math-manual.cpp": "src/runtime/cpp/std/math-manual.cpp",
     "time-impl.h": "src/runtime/cpp/core/std/time-impl.h",
     "time-impl.cpp": "src/runtime/cpp/core/std/time-impl.cpp",
 }
