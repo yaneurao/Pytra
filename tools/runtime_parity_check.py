@@ -207,7 +207,7 @@ def build_targets(
         out_dir = f"test/transpile/{target}/{case_stem}"
         parts: list[str] = [
             "python",
-            "src/pytra_cli.py",
+            "src/pytra-cli.py",
             shlex.quote(case_src),
             "--target",
             shlex.quote(target),

@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 
-# /src/pytra_cli.py -> project root is parents[1]
+# /src/pytra-cli.py -> project root is parents[1]
 ROOT = Path(__file__).resolve().parents[1]
 PY2X = ROOT / "src" / "py2x.py"
 GEN_MAKEFILE = ROOT / "tools" / "gen_makefile_from_manifest.py"

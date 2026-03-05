@@ -32,6 +32,20 @@
 
 ## 未完了タスク
 
+### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
+
+文脈: [docs/ja/plans/p0-pytra-cli-boundary-and-dispatch-removal.md](../plans/p0-pytra-cli-boundary-and-dispatch-removal.md)
+
+1. [ ] [ID: P0-PYTRA-CLI-REALIGN-01] `pytra-cli` を backend プロファイル駆動へ再編し、CLI 本体から target 言語ごとの分岐を撤去する。
+2. [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S1-01] CLI本体 / backendプロファイル / 実行runner の責務境界を文書化し、禁止事項を固定する。
+3. [x] [ID: P0-PYTRA-CLI-REALIGN-01-S1-02] `src/pytra-cli.py` へ命名統一し、`./pytra` / parity / tooling 参照を更新する。
+4. [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S2-01] target 固有 build/run/transpile 契約を `toolchain` 側プロファイルへ抽出する。
+5. [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S2-02] `src/pytra-cli.py` を共通ディスパッチ専用へ縮退し、target 分岐を撤去する。
+6. [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S2-03] target 非互換オプション（例: `--codegen-opt`）をプロファイル検証で fail-fast 化する。
+7. [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S3-01] parity/tooling を新CLI契約へ追従させ、target 直書き重複を削減する。
+8. [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S3-02] unit/parity/docs を更新し、回帰を固定する。
+- 進捗メモ: [ID: P0-PYTRA-CLI-REALIGN-01-S1-02] `src/pytra_cli.py` を廃止して `src/pytra-cli.py` へ命名統一し、`./pytra` / `tools/runtime_parity_check.py` / `test_pytra_cli` / 利用ドキュメントの参照先を更新。
+
 ### P0: backend の runtime/stdlib 責務境界を再設計する（設計是正）
 
 文脈: [docs/ja/plans/p0-backend-runtime-boundary-realign.md](../plans/p0-backend-runtime-boundary-realign.md)
