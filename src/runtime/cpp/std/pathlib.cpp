@@ -1,4 +1,9 @@
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/pathlib.py
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
+
+#include "runtime/cpp/std/pathlib.h"
 
 #include "runtime/cpp/std/glob.h"
 #include "runtime/cpp/std/os.h"
@@ -111,9 +116,3 @@ namespace pytra::std::pathlib {
     };
     
 }  // namespace pytra::std::pathlib
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    using namespace pytra::std::pathlib;
-    return 0;
-}

@@ -467,6 +467,61 @@ def _is_runtime_module_extern_only(east_module: dict[str, Any]) -> bool:
     return saw_extern_decl
 
 
+def _strip_extern_decls_from_stmt(stmt: Any) -> Any:
+    """stmt から `@extern` 宣言を再帰的に除去した copy を返す（除去時は None）。"""
+    if not isinstance(stmt, dict):
+        return stmt
+    kind = dict_any_get_str(stmt, "kind")
+    if _is_extern_function_decl(stmt) or _is_extern_variable_decl(stmt):
+        return None
+    if kind == "ClassDef":
+        copied = dict(stmt)
+        body_any = copied.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        new_body: list[Any] = []
+        for child in body:
+            kept = _strip_extern_decls_from_stmt(child)
+            if kept is not None:
+                new_body.append(kept)
+        copied["body"] = new_body
+        return copied
+    return dict(stmt)
+
+
+def _build_cpp_emit_module_without_extern_decls(east_module: dict[str, Any]) -> dict[str, Any]:
+    """`@extern` 宣言を除いた C++ 実体生成用 EAST module を返す。"""
+    copied = dict(east_module)
+    body_any = copied.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    new_body: list[Any] = []
+    for stmt in body:
+        kept = _strip_extern_decls_from_stmt(stmt)
+        if kept is not None:
+            new_body.append(kept)
+    copied["body"] = new_body
+    return copied
+
+
+def _has_cpp_emit_definitions(east_module: dict[str, Any]) -> bool:
+    """`@extern` 除去後 module に `.cpp` 実体が存在するかを返す。"""
+    body_any = east_module.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            continue
+        kind = dict_any_get_str(stmt, "kind")
+        if kind in {"Import", "ImportFrom", "Pass"}:
+            continue
+        if kind == "Expr":
+            expr = stmt.get("value")
+            if isinstance(expr, dict) and dict_any_get_str(expr, "kind") == "Constant" and isinstance(
+                expr.get("value"), str
+            ):
+                continue
+        return True
+    return False
+
+
 
 
 def _analyze_import_graph(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
@@ -841,8 +896,8 @@ def main(argv: list[str]) -> int:
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(hdr_out))
-            extern_only_runtime_module = _is_runtime_module_extern_only(east_module)
-            if extern_only_runtime_module:
+            cpp_emit_module = _build_cpp_emit_module_without_extern_decls(east_module)
+            if not _has_cpp_emit_definitions(cpp_emit_module):
                 hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
                 generated_lines_runtime = count_text_lines(hdr_txt_runtime)
                 check_guard_limit(
@@ -854,12 +909,12 @@ def main(argv: list[str]) -> int:
                 )
                 write_text_file(hdr_out, hdr_txt_runtime)
                 print("generated: " + str(hdr_out))
-                print("skipped: header-only extern module (no .cpp): " + str(cpp_out))
+                print("skipped: header-only runtime module (no emit definitions): " + str(cpp_out))
                 return 0
             mkdirs_for_cli(path_parent_text(cpp_out))
             runtime_ns_map: dict[str, str] = {}
             cpp_txt_runtime: str = _transpile_to_cpp_with_map(
-                east_module,
+                cpp_emit_module,
                 runtime_ns_map,
                 negative_index_mode,
                 bounds_check_mode,

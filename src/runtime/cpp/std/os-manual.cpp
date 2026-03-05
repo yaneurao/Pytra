@@ -4,44 +4,26 @@
 
 namespace pytra::std::os {
 
-struct PathModule {
-    str join(const str& a, const str& b) {
-        return py_os_path_join(a, b);
-    }
-
-    str dirname(const str& p) {
-        return py_os_path_dirname(p);
-    }
-
-    str basename(const str& p) {
-        return py_os_path_basename(p);
-    }
-
-    ::std::tuple<str, str> splitext(const str& p) {
-        return py_os_path_splitext(p);
-    }
-
-    str abspath(const str& p) {
-        return py_os_path_abspath(p);
-    }
-
-    bool exists(const str& p) {
-        return py_os_path_exists(p);
-    }
-};
-
-object path = make_object(PathModule{});
-
 str getcwd() {
-    return py_os_getcwd();
+    return str(::std::filesystem::current_path().generic_string());
 }
 
 void mkdir(const str& p) {
-    py_os_mkdir(p);
+    const ::std::filesystem::path target(p.std());
+    ::std::error_code ec;
+    const bool created = ::std::filesystem::create_directory(target, ec);
+    if (!created && !::std::filesystem::exists(target, ec)) {
+        throw ::std::runtime_error("mkdir failed: " + p.std());
+    }
 }
 
 void makedirs(const str& p, bool exist_ok) {
-    py_os_makedirs(p, exist_ok);
+    const ::std::filesystem::path target(p.std());
+    ::std::error_code ec;
+    const bool created = ::std::filesystem::create_directories(target, ec);
+    if (!created && !exist_ok && !::std::filesystem::exists(target, ec)) {
+        throw ::std::runtime_error("makedirs failed: " + p.std());
+    }
 }
 
 }  // namespace pytra::std::os
