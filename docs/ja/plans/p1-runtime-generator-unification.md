@@ -52,7 +52,7 @@
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] 既存 3 スクリプトの呼び出し元を新導線へ置換する。
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] 既存 3 スクリプトを削除し、関連ドキュメントを更新する。
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] 再導入防止ガード（special generator 禁止）を CI に追加する。
-- [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] runtime 監査 + parity 回帰を実施し、非退行を固定する。
+- [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] runtime 監査 + parity 回帰を実施し、非退行を固定する。
 
 決定ログ:
 - 2026-03-05: ユーザー指示により、`tools/gen_*_from_canonical.py` の言語別特殊化は設計違反として扱い、P1で統廃合する方針を確定。

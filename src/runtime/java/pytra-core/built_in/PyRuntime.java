@@ -2,8 +2,10 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -527,6 +529,59 @@ final class PyRuntime {
     static void __pytra_noop(Object... args) {
     }
 
+    static final class PyFile {
+        private final String path;
+        private final String mode;
+        private final String encoding;
+
+        PyFile(String path, String mode, String encoding) {
+            this.path = path;
+            this.mode = mode;
+            this.encoding = encoding == null || encoding.isEmpty() ? "utf-8" : encoding;
+        }
+
+        String read() {
+            try {
+                return Files.readString(Paths.get(path), java.nio.charset.Charset.forName(encoding));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        long write(Object value) {
+            try {
+                if (mode.contains("b")) {
+                    java.util.ArrayList<Long> src = __pytra_bytearray(value);
+                    byte[] bytes = new byte[src.size()];
+                    int i = 0;
+                    while (i < src.size()) {
+                        bytes[i] = (byte) (src.get(i) & 0xFFL);
+                        i += 1;
+                    }
+                    Files.write(Paths.get(path), bytes);
+                    return bytes.length;
+                }
+                String text = String.valueOf(value);
+                byte[] bytes = text.getBytes(java.nio.charset.Charset.forName(encoding));
+                Files.write(Paths.get(path), bytes);
+                return text.length();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        void close() {
+        }
+    }
+
+    static PyFile open(String path, String mode) {
+        return new PyFile(path, mode, "utf-8");
+    }
+
+    static PyFile open(String path, String mode, String encoding) {
+        return new PyFile(path, mode, encoding);
+    }
+
     static long __pytra_int(Object value) {
         if (value == null) {
             return 0L;
@@ -549,6 +604,24 @@ final class PyRuntime {
             }
         }
         return 0L;
+    }
+
+    static java.util.ArrayList<Long> __pytra_int_to_bytes(Object value, Object length, Object byteorder) {
+        long v = __pytra_int(value);
+        long n = __pytra_int(length);
+        String order = String.valueOf(byteorder);
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        long i = 0L;
+        while (i < n) {
+            long b = v & 255L;
+            out.add(b);
+            v = v >> 8L;
+            i += 1L;
+        }
+        if (!java.util.Objects.equals(order, "little")) {
+            java.util.Collections.reverse(out);
+        }
+        return out;
     }
 
     static long __pytra_len(Object value) {
