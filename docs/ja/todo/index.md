@@ -46,8 +46,8 @@
 8. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
 9. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理する。
 10. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture` を通過させる。
-11. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過させる。
-12. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail を潰し切り、再実行で安定通過を確認する。
+11. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過させる。
+12. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail を潰し切り、再実行で安定通過を確認する。
 13. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] `work/logs/p0_runtime_root_reset_cpp_ref_inventory_targets_20260305_s1_01.txt`（50件）を固定し、影響範囲を `src/backends/cpp/*` / `src/toolchain/compiler/*` / `tools/*` に確定。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime -> src/runtime2` を移動し、`src/runtime/cpp/core`（旧 `pytra-core`）と `src/runtime/cpp/gen`（旧 `pytra-gen`）を新設。旧 `src/runtime2/cpp/pytra` shim を隔離した。
@@ -58,6 +58,7 @@
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture --summary-json work/logs/p0_runtime_root_reset_cpp_fixture_20260305_s401.json` を実行し、`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` の 3件すべてで `pass` を確認した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] sample parity をケース分割で再実行し、`01-05,07-13,15,17,18` は artifact size+CRC32 一致、`06_julia_parameter_sweep`・`14_raymarching_light_cycle`・`16_glass_sculpture_chaos` の 3件のみ GIF CRC32 mismatch が残存することを確認した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] `src/runtime/cpp/gen/std/math.cpp` の `pi/e` を宣言時初期化へ変更して module init 未呼び出し差分を解消し、`tools/runtime_parity_check.py --targets cpp --case-root sample 06_julia_parameter_sweep 14_raymarching_light_cycle 16_glass_sculpture_chaos` の3件を再実行してすべて `pass` を確認した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] sample 18件を分割再実行（`01,18` / `11` / `06,14,16` / `02,03,04,05,07,08,09,10` / `12,13,15,17`）し、artifact size+CRC32 を含めて `pass=18, fail=0` を確認した。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 
