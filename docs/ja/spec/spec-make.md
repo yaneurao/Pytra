@@ -4,14 +4,14 @@
 
 ## 2026-02-24 照合メモ
 
-- `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` / `./pytra` は実装済みで、`--target cpp --build` の導線を `./pytra` 経由で提供します。
+- `src/pytra_cli.py` / `tools/gen_makefile_from_manifest.py` / `./pytra` は実装済みで、`--target cpp --build` の導線を `./pytra` 経由で提供します。
 - `--multi-file` の `manifest.json` 契約と `tools/build_multi_cpp.py` 導線については仕様として継続しています（`docs/ja/spec/spec-dev.md` / `docs/ja/spec/spec-tools.md`）。
 - 本文は実装済み仕様として運用し、将来案として扱う部分は追加タスクとして分離されます。
 
 ## 1. 決定事項
 
 - ユーザー入口は `./pytra`（拡張子なしランチャー）とする。
-- 実処理本体は `src/pytra/cli.py`（`python -m pytra.cli`）とする。
+- 実処理本体は `src/pytra_cli.py`（`python -m pytra_cli`）とする。
 - `py2cpp.py` はトランスパイル backend として維持し、build オーケストレーション責務は持たせない。
 - C++ の build は `manifest.json` 正本 + `Makefile` 生成 + `make` 実行で行う。
 - `PYTHONPATH` 手動設定は不要にする（`./pytra` が内部で設定）。
@@ -35,7 +35,7 @@
 リポジトリルートに `pytra`（拡張子なし実行ファイル）を配置し、次を行う。
 
 1. `ROOT/src` を `PYTHONPATH` へ追加。
-2. `python3 -m pytra.cli "$@"` を実行。
+2. `python3 -m pytra_cli "$@"` を実行。
 
 意図:
 
@@ -44,8 +44,8 @@
 
 ### 4.2 実体 CLI
 
-- 実体は `src/pytra/cli.py`。
-- 直接実行形は `python3 -m pytra.cli ...`。
+- 実体は `src/pytra_cli.py`。
+- 直接実行形は `python3 -m pytra_cli ...`。
 
 ## 5. 共通 CLI 仕様（v1）
 
@@ -158,7 +158,7 @@
 ## 11. 段階導入
 
 1. Phase 1: `tools/gen_makefile_from_manifest.py` を追加する。
-2. Phase 2: `src/pytra/cli.py` を追加し、`--target cpp --build` を実装する。
+2. Phase 2: `src/pytra_cli.py` を追加し、`--target cpp --build` を実装する。
 3. Phase 3: ルートランチャー `./pytra` を追加し、`PYTHONPATH` 設定を内包する。
 4. Phase 4: `--run`、`--codegen-opt`、必要なら `--jobs` を追加する。
 

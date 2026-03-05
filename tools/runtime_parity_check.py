@@ -195,233 +195,75 @@ def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool) -> t
     return ["math_extended", "pathlib_extended", "inheritance_virtual_dispatch_multilang"], ""
 
 
-def runtime_cpp_sources_shell() -> str:
-    """runtime/cpp の C++ 実装ファイルをシェル引数文字列で返す。"""
-    paths: list[str] = []
-    for p in sorted((ROOT / "src" / "runtime" / "cpp" / "base").glob("*.cpp")):
-        paths.append(shlex.quote(p.relative_to(ROOT).as_posix()))
-    for p in sorted((ROOT / "src" / "runtime" / "cpp" / "pytra").rglob("*.cpp")):
-        paths.append(shlex.quote(p.relative_to(ROOT).as_posix()))
-    return " ".join(paths)
-
-
-def py2x_transpile_cmd(case_src: str, target: str, out_path: str, opt_arg: str) -> str:
-    return (
-        f"python src/py2x.py {shlex.quote(case_src)} --target {shlex.quote(target)} "
-        f"-o {shlex.quote(out_path)} {opt_arg}"
-    )
-
-
 def build_targets(
     case_stem: str,
     case_path: Path,
     east3_opt_level: str,
 ) -> list[Target]:
     case_src = case_path.as_posix()
-    runtime_srcs = runtime_cpp_sources_shell()
     opt_arg = "--east3-opt-level " + shlex.quote(str(east3_opt_level))
-    nim_unit = f"case_{case_stem}"
-    return [
-        Target(
-            name="cpp",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "cpp",
-                f"test/transpile/cpp/{case_stem}.cpp",
-                opt_arg,
-            ),
-            run_cmd=(
-                f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case_stem}.cpp "
-                "-I src/runtime/cpp "
-                f"{runtime_srcs} "
-                f"-o test/transpile/obj/{case_stem}_cpp.out && test/transpile/obj/{case_stem}_cpp.out"
-            ),
-            needs=("python", "g++"),
-        ),
-        Target(
-            name="rs",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "rs",
-                f"test/transpile/rs/{case_stem}.rs",
-                opt_arg,
-            ),
-            run_cmd=f"rustc -O test/transpile/rs/{case_stem}.rs -o test/transpile/obj/{case_stem}_rs.out && test/transpile/obj/{case_stem}_rs.out",
-            needs=("python", "rustc"),
-        ),
-        Target(
-            name="cs",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "cs",
-                f"test/transpile/cs/{case_stem}.cs",
-                opt_arg,
-            ),
-            run_cmd=(
-                f"mcs -warn:0 -out:test/transpile/obj/{case_stem}_cs.exe test/transpile/cs/{case_stem}.cs "
-                "src/runtime/cs/pytra-core/built_in/py_runtime.cs "
-                "src/runtime/cs/pytra-core/built_in/time.cs "
-                "src/runtime/cs/pytra-core/built_in/math.cs "
-                "src/runtime/cs/pytra-gen/utils/png.cs "
-                "src/runtime/cs/pytra-gen/utils/gif.cs "
-                "src/runtime/cs/pytra-core/std/pathlib.cs "
-                "src/runtime/cs/pytra-core/std/json.cs "
-                f"&& mono test/transpile/obj/{case_stem}_cs.exe"
-            ),
-            needs=("python", "mcs", "mono"),
-        ),
-        Target(
-            name="js",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "js",
-                f"test/transpile/js/{case_stem}.js",
-                opt_arg,
-            ),
-            run_cmd=f"node test/transpile/js/{case_stem}.js",
-            needs=("python", "node"),
-        ),
-        Target(
-            name="ruby",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "ruby",
-                f"test/transpile/ruby/{case_stem}.rb",
-                opt_arg,
-            ),
-            run_cmd=f"ruby test/transpile/ruby/{case_stem}.rb",
-            needs=("python", "ruby"),
-        ),
-        Target(
-            name="lua",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "lua",
-                f"test/transpile/lua/{case_stem}.lua",
-                opt_arg,
-            ),
-            run_cmd=f"lua test/transpile/lua/{case_stem}.lua",
-            needs=("python", "lua"),
-        ),
-        Target(
-            name="php",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "php",
-                f"test/transpile/php/{case_stem}.php",
-                opt_arg,
-            ),
-            run_cmd=f"php test/transpile/php/{case_stem}.php",
-            needs=("python", "php"),
-        ),
-        Target(
-            name="ts",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "ts",
-                f"test/transpile/ts/{case_stem}.ts",
-                opt_arg,
-            ),
-            run_cmd=f"npx -y tsx test/transpile/ts/{case_stem}.ts",
-            needs=("python", "node", "npx"),
-        ),
-        Target(
-            name="go",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "go",
-                f"test/transpile/go/{case_stem}.go",
-                opt_arg,
-            ),
-            run_cmd=(
-                f"go run test/transpile/go/{case_stem}.go "
-                "test/transpile/go/py_runtime.go "
-                "test/transpile/go/png.go "
-                "test/transpile/go/gif.go"
-            ),
-            needs=("python", "go"),
-        ),
-        Target(
-            name="java",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "java",
-                "test/transpile/java/Main.java",
-                opt_arg,
-            ),
-            run_cmd=(
-                "javac test/transpile/java/Main.java "
-                "test/transpile/java/PyRuntime.java "
-                "test/transpile/java/png.java "
-                "test/transpile/java/gif.java "
-                "test/transpile/java/math.java "
-                "test/transpile/java/_impl.java "
-                "test/transpile/java/_m.java "
-                "&& java -cp test/transpile/java Main"
-            ),
-            needs=("python", "javac", "java"),
-        ),
-        Target(
-            name="swift",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "swift",
-                f"test/transpile/swift/{case_stem}.swift",
-                opt_arg,
-            ),
-            run_cmd=(
-                f"swiftc -O test/transpile/swift/{case_stem}.swift test/transpile/swift/py_runtime.swift "
-                f"test/transpile/swift/image_runtime.swift "
-                f"-o test/transpile/obj/{case_stem}_swift.out && test/transpile/obj/{case_stem}_swift.out"
-            ),
-            needs=("python", "swiftc"),
-        ),
-        Target(
-            name="kotlin",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "kotlin",
-                f"test/transpile/kotlin/{case_stem}.kt",
-                opt_arg,
-            ),
-            run_cmd=(
-                f"kotlinc test/transpile/kotlin/{case_stem}.kt test/transpile/kotlin/py_runtime.kt "
-                f"test/transpile/kotlin/image_runtime.kt "
-                f"-include-runtime -d test/transpile/obj/{case_stem}_kotlin.jar "
-                f"&& java -jar test/transpile/obj/{case_stem}_kotlin.jar"
-            ),
-            needs=("python", "kotlinc", "java"),
-        ),
-        Target(
-            name="scala",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "scala",
-                f"test/transpile/scala/{case_stem}.scala",
-                opt_arg,
-            ),
-            run_cmd=(
-                "scala run test/transpile/scala/py_runtime.scala "
-                f"test/transpile/scala/image_runtime.scala test/transpile/scala/{case_stem}.scala"
-            ),
-            needs=("python", "scala"),
-        ),
-        Target(
-            name="nim",
-            transpile_cmd=py2x_transpile_cmd(
-                case_src,
-                "nim",
-                f"test/transpile/nim/{nim_unit}.nim",
-                opt_arg,
-            ),
-            run_cmd=(
-                f"nim c --hints:off --verbosity:0 "
-                f"--nimcache:test/transpile/obj/nimcache_{nim_unit} "
-                f"-r test/transpile/nim/{nim_unit}.nim"
-            ),
-            needs=("python", "nim"),
-        ),
+
+    def _pytra_cmd(target: str, *, build: bool, run: bool) -> str:
+        out_dir = f"test/transpile/{target}/{case_stem}"
+        parts: list[str] = [
+            "python",
+            "src/pytra_cli.py",
+            shlex.quote(case_src),
+            "--target",
+            shlex.quote(target),
+            "--output-dir",
+            shlex.quote(out_dir),
+            opt_arg,
+        ]
+        if build:
+            parts.append("--build")
+        if run:
+            parts.append("--run")
+        return " ".join(parts)
+
+    needs_map: dict[str, tuple[str, ...]] = {
+        "cpp": ("python", "make", "g++"),
+        "rs": ("python", "rustc"),
+        "cs": ("python", "mcs", "mono"),
+        "js": ("python", "node"),
+        "ruby": ("python", "ruby"),
+        "lua": ("python", "lua"),
+        "php": ("python", "php"),
+        "ts": ("python", "node", "npx"),
+        "go": ("python", "go"),
+        "java": ("python", "javac", "java"),
+        "swift": ("python", "swiftc"),
+        "kotlin": ("python", "kotlinc", "java"),
+        "scala": ("python", "scala"),
+        "nim": ("python", "nim"),
+    }
+    order = [
+        "cpp",
+        "rs",
+        "cs",
+        "js",
+        "ruby",
+        "lua",
+        "php",
+        "ts",
+        "go",
+        "java",
+        "swift",
+        "kotlin",
+        "scala",
+        "nim",
     ]
+    out: list[Target] = []
+    for name in order:
+        out.append(
+            Target(
+                name=name,
+                transpile_cmd=_pytra_cmd(name, build=False, run=False),
+                run_cmd=_pytra_cmd(name, build=True, run=True),
+                needs=needs_map[name],
+            )
+        )
+    return out
 
 
 def check_case(
