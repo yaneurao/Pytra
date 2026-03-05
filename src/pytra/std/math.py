@@ -1,10 +1,10 @@
-"""pytra.std.math: thin wrapper over native math_impl module."""
+"""pytra.std.math: extern-marked math API with Python runtime fallback."""
 
 from __future__ import annotations
 
 from pytra.std import extern
 
-import pytra.std.math_impl as _m
+import math as _m
 
 pi: float = extern(_m.pi)
 e: float = extern(_m.e)
