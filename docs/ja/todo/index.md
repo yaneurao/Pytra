@@ -36,7 +36,7 @@
 
 文脈: [docs/ja/plans/p0-pytra-cli-boundary-and-dispatch-removal.md](../plans/p0-pytra-cli-boundary-and-dispatch-removal.md)
 
-1. [ ] [ID: P0-PYTRA-CLI-REALIGN-01] `pytra-cli` を backend プロファイル駆動へ再編し、CLI 本体から target 言語ごとの分岐を撤去する。
+1. [x] [ID: P0-PYTRA-CLI-REALIGN-01] `pytra-cli` を backend プロファイル駆動へ再編し、CLI 本体から target 言語ごとの分岐を撤去する。
 2. [x] [ID: P0-PYTRA-CLI-REALIGN-01-S1-01] CLI本体 / backendプロファイル / 実行runner の責務境界を文書化し、禁止事項を固定する。
 3. [x] [ID: P0-PYTRA-CLI-REALIGN-01-S1-02] `src/pytra-cli.py` へ命名統一し、`./pytra` / parity / tooling 参照を更新する。
 4. [x] [ID: P0-PYTRA-CLI-REALIGN-01-S2-01] target 固有 build/run/transpile 契約を `toolchain` 側プロファイルへ抽出する。
