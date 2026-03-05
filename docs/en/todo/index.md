@@ -78,28 +78,22 @@ Context: [docs/ja/plans/p1-nim-sample-parity-complete.md](../plans/p1-nim-sample
 10. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-02] Update regression tests for the Nim parity contract (CLI/smoke/transpile).
 11. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-03] Record verification logs and operational steps in the plan and document close conditions explicitly.
 
-### P2: Achieve C++ parity across multi-language runtimes (unify API contracts and feature coverage)
+### P2: Multi-language runtime parity with C++ (redesign: strict SoT + generation-first)
 
-Context: [docs/ja/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
+Context: [docs/en/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
 
-1. [ ] [ID: P2-RUNTIME-PARITY-CPP-01] Using C++ runtime as the baseline, progressively equalize API contracts and feature coverage in other language runtimes.
-2. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] Extract the required C++ runtime API catalog (module/function/contract).
-3. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] Build an implementation-presence matrix for each language runtime and classify missing/compatible/behavioral differences.
-4. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] Prioritize equalization targets as `Must/Should/Optional`.
-5. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01] In Wave1 (`go/java/kotlin/swift`), implement missing APIs in `math/time/pathlib/json`.
-6. [x] [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Wave1-Go: add `json.loads/dumps` runtime APIs and unify Go emitter `json.*` calls through runtime helpers.
-7. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-02] Move Wave1 emitter calls through adapters to absorb API naming variations.
-8. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S2-03] Add parity regressions for Wave1 and lock failures caused by runtime differences.
-9. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-01] In Wave2 (`ruby/lua/scala/php`), implement missing APIs.
-10. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-02] Move Wave2 emitter calls through adapters.
-11. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S3-03] Add Wave2 parity regressions and lock failures caused by runtime differences.
-12. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-01] In Wave3 (`js/ts/cs/rs`), fill missing APIs and resolve contract differences.
-13. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-02] Add checks for missing runtime APIs and integrate them into CI/local regressions.
-14. [ ] [ID: P2-RUNTIME-PARITY-CPP-01-S4-03] Reflect runtime equalization policy and progress tables in `docs/ja/spec` / `docs/en/spec`.
-- Progress memo: [ID: P2-RUNTIME-PARITY-CPP-01-S1-01] Added the canonical C++ runtime API catalog (Must/Should) to `docs/ja/spec/spec-runtime.md` and fixed the baseline APIs for wave-based equalization.
-- Progress memo: [ID: P2-RUNTIME-PARITY-CPP-01-S1-02] Converted inventory results of `src/runtime/<lang>/pytra` into a `native/mono/compat/missing` matrix and classified major gaps (`json/pathlib/gif`).
-- Progress memo: [ID: P2-RUNTIME-PARITY-CPP-01-S1-03] Prioritized matrix diffs into `Must/Should/Optional` and finalized Wave1/2/3 order (`json/pathlib/gif` first).
-- Progress memo: [ID: P2-RUNTIME-PARITY-CPP-01-S2-01-S1-01] Added `pyJsonLoads/pyJsonDumps` to Go runtime and unified Go emitter `json.loads/json.dumps` via runtime helpers. Confirmed non-regression with `test_py2go_smoke.py` and `check_py2go_transpile.py`.
+1. [ ] [ID: P2-RUNTIME-PARITY-CPP-02] Redesign multi-language runtime parity under strict SoT, generation-first, and boundary separation rules.
+2. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] Remove old P2 (`P2-RUNTIME-PARITY-CPP-01`) from the unfinished TODO list and replace it with the new P2.
+3. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] Document SoT/pytra-core/pytra-gen boundaries and prohibitions in `docs/ja/spec`.
+4. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] Create a classification table of target modules (`std/utils`) as `must-generate` vs `core-allowed`.
+5. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] Add a static check for `pytra-gen` naming rule violations (passthrough naming).
+6. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] Strengthen marker checks (`source/generated-by`) and placement checks (core/gen mix), then integrate into CI.
+7. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] Audit SoT re-implementation residues inside `pytra-core` and feed the findings into a migration plan to `pytra-gen`.
+8. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Use Java as the first target and unify runtime API calls to the IR-resolved path (remove emitter hardcoding).
+9. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Apply the same policy to non-C++ backends (`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`).
+10. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] Lint emitter prohibitions (runtime/library hardcoded names) and fail-fast in PR/CI.
+11. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] Re-run sample parity for all target languages including artifact size + CRC32 and lock diffs.
+12. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] Reflect operation procedures (local/CI) in `docs/ja` and `docs/en`.
 
 ### P4: Full selfhost completion for all languages (Very very low priority)
 

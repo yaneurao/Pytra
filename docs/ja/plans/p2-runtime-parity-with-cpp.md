@@ -55,7 +55,7 @@
 
 ## 分解
 
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2（`P2-RUNTIME-PARITY-CPP-01`）を TODO 未完了一覧から削除し、新P2へ置換する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2（`P2-RUNTIME-PARITY-CPP-01`）を TODO 未完了一覧から削除し、新P2へ置換する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] SoT/pytra-core/pytra-gen の責務境界を `docs/ja/spec` に追記し、禁止事項を固定する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュール（`std/utils`）の「生成必須 / core許可」分類表を作成する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` 命名規約（素通し命名）違反を検知する静的チェックを追加する。
@@ -69,3 +69,4 @@
 
 決定ログ:
 - 2026-03-05: ユーザー指示により、旧P2を破棄し、SoT厳守・生成優先・責務分離を前提とする再設計版へ置換した。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S1-01`] 旧P2の未完了残置（`docs/en/todo/index.md` / `docs/en/plans/p2-runtime-parity-with-cpp.md`）を新P2構成へ置換し、旧IDの未完了一覧参照を解消した。
