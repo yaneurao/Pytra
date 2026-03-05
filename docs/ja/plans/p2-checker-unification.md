@@ -45,7 +45,7 @@
 - [x] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加品質検証）を棚卸しして統一仕様を定義する。
 - [x] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式（ケース集合、許容失敗、追加検証フック）を設計する。
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` を実装し、`--target` で全言語の共通検証を実行可能にする。
-- [ ] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
+- [x] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker に置換する。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰を実行し、単一化後の非退行を固定する。
@@ -56,6 +56,7 @@
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-02`] 単一 checker 用 profile 形式を `target / case_mode / cases / expected_failures / quality_hooks / flags / stage2_probe` で固定し、単純 expected-fail 一覧を構造化 `expected_failures` へ正規化する仕様を確定した。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] `tools/check_py2x_transpile.py` と `tools/check_py2x_profiles.json` を追加し、共通実行器（cases解決・expected-fail skip/validate・quality hook・stage2 probe）を実装。まず `cpp/java/scala` profile を移植し、`sample/py/01_mandelbrot.py` で3target smoke 通過を確認した。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] profile を `cpp/cs/go/java/js/kotlin/lua/nim/php/ruby/rs/scala/swift/ts` へ拡張し、`php_sample18` 品質フック・runtime sidecar 内容検証・`cpp_emitter_separation` preflight を共通実行器へ追加。`--skip-east3-contract-tests` 付きで `sample/py/01_mandelbrot.py` 全target smoke（14件）を通過して S2-01 を完了。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-02`] `check_py2cpp/cs/go/java/js/kotlin/lua/nim/php/rb/rs/scala/swift/ts` を互換ラッパ化し、実処理を `check_py2x_transpile.py --target` へ委譲。`cpp` 互換維持のため unified 側へ `--check-multi-file-imports` / `--check-yanesdk-smoke` を追加し、`nim/cpp/js` ラッパ実行（`js` は `--skip-east3-contract-tests`）で委譲結果が旧導線と整合することを確認。
 
 ## S1-01 棚卸し結果（固定）
 

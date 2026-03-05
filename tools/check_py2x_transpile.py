@@ -79,6 +79,31 @@ def _run_one(*, src: Path, out: Path, target: str) -> RunResult:
     return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
 
 
+def _run_one_multifile(*, src: Path, out_dir: Path, target: str) -> RunResult:
+    cp = subprocess.run(
+        [
+            "python3",
+            str(PY2X),
+            str(src),
+            "--target",
+            target,
+            "--multi-file",
+            "--output-dir",
+            str(out_dir),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    compat_warning = "warning: --east-stage 2 is compatibility mode; default is 3."
+    if cp.returncode == 0 and compat_warning in cp.stderr:
+        return RunResult(False, "unexpected stage2 compatibility warning in default run", cp.stderr, "")
+    if cp.returncode == 0:
+        return RunResult(True, "", "", "")
+    raw = (cp.stderr or "").strip() or (cp.stdout or "").strip()
+    return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
+
+
 def _run_stage2_probe(*, src: Path, out: Path, target: str, expected_fragment: str) -> tuple[bool, str]:
     cp = subprocess.run(
         ["python3", str(PY2X), str(src), "--target", target, "--east-stage", "2", "-o", str(out)],
@@ -134,6 +159,32 @@ def _load_profiles(profile_path: Path) -> dict[str, dict[str, object]]:
     for key, value in profiles_any.items():
         if isinstance(key, str) and isinstance(value, dict):
             out[key] = value
+    return out
+
+
+def _has_import_statement(src: Path) -> bool:
+    text = src.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("import ") or s.startswith("from "):
+            return True
+    return False
+
+
+def _collect_yanesdk_smoke_files() -> list[Path]:
+    out: list[Path] = []
+    lib = ROOT / "Yanesdk" / "yanesdk" / "yanesdk.py"
+    if lib.exists():
+        out.append(lib)
+    docs_root = ROOT / "Yanesdk" / "docs"
+    if docs_root.exists():
+        docs_games: list[Path] = []
+        for p in sorted(docs_root.rglob("*.py")):
+            if p.name == "yanesdk.py":
+                continue
+            docs_games.append(p)
+        if len(docs_games) > 0:
+            out.append(docs_games[0])
     return out
 
 
@@ -275,6 +326,16 @@ def main() -> int:
         action="store_true",
         help="skip EAST3 contract preflight regardless of profile flag",
     )
+    ap.add_argument(
+        "--check-multi-file-imports",
+        action="store_true",
+        help="also run --multi-file check for sample files that contain import/from (cpp only)",
+    )
+    ap.add_argument(
+        "--check-yanesdk-smoke",
+        action="store_true",
+        help="also run reduced Yanesdk smoke cases (cpp only)",
+    )
     ap.add_argument("--verbose", action="store_true", help="print passing files")
     args = ap.parse_args()
 
@@ -284,6 +345,9 @@ def main() -> int:
     profile = profiles.get(target)
     if not isinstance(profile, dict):
         print("[FAIL] target profile not found: " + target)
+        return 1
+    if target != "cpp" and (args.check_multi_file_imports or args.check_yanesdk_smoke):
+        print("[FAIL] --check-multi-file-imports / --check-yanesdk-smoke are supported only for --target cpp")
         return 1
 
     ok_preflight, preflight_msg = _run_preflight_hooks(profile)
@@ -303,6 +367,10 @@ def main() -> int:
     expected_mode = _to_str(profile.get("expected_mode"))
     quality_any = profile.get("quality_hooks")
     quality_hooks = quality_any if isinstance(quality_any, list) else []
+    flags_any = profile.get("flags")
+    flags = flags_any if isinstance(flags_any, dict) else {}
+    check_multi_file = args.check_multi_file_imports or bool(flags.get("check_multi_file", False))
+    check_yanesdk = args.check_yanesdk_smoke or bool(flags.get("check_yanesdk_smoke", False))
 
     fails: list[tuple[str, str]] = []
     ok = 0
@@ -311,6 +379,7 @@ def main() -> int:
     expected_checked = 0
     expected_ok = 0
 
+    sample_files = sorted((ROOT / "sample" / "py").glob("*.py"))
     with tempfile.TemporaryDirectory() as tmpdir:
         out = Path(tmpdir) / ("out." + target)
         i = 0
@@ -394,6 +463,39 @@ def main() -> int:
             if args.verbose:
                 print("OK", rel)
             i += 1
+
+        if target == "cpp" and check_yanesdk:
+            yanesdk_files = _collect_yanesdk_smoke_files()
+            y = 0
+            while y < len(yanesdk_files):
+                src = yanesdk_files[y]
+                rel = str(src.relative_to(ROOT)).replace("\\", "/")
+                total += 1
+                result = _run_one(src=src, out=out, target=target)
+                if result.ok:
+                    ok += 1
+                    if args.verbose:
+                        print("OK", rel, "[yanesdk]")
+                else:
+                    fails.append((rel + " [yanesdk]", result.message))
+                y += 1
+
+        if target == "cpp" and check_multi_file:
+            m = 0
+            while m < len(sample_files):
+                src = sample_files[m]
+                rel = str(src.relative_to(ROOT)).replace("\\", "/")
+                if _has_import_statement(src):
+                    total += 1
+                    out_dir = Path(tmpdir) / "multi_out"
+                    result = _run_one_multifile(src=src, out_dir=out_dir, target=target)
+                    if result.ok:
+                        ok += 1
+                        if args.verbose:
+                            print("OK", rel, "[multi-file]")
+                    else:
+                        fails.append((rel + " [multi-file]", result.message))
+                m += 1
 
         stage2_any = profile.get("stage2_probe")
         stage2 = stage2_any if isinstance(stage2_any, dict) else {}
