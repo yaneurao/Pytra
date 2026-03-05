@@ -61,3 +61,4 @@
 決定ログ:
 - 2026-03-05: ユーザー指示により、後方互換を捨てて `src/runtime -> src/runtime2` 退避後に新 `src/runtime` を構築する方針を採用。
 - 2026-03-05: 初期スコープは C++ の parity 復旧までに限定し、他言語展開は C++ 完了後に別 ID で段階化する。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S1-01`] 参照棚卸しを実施し、`work/logs/p0_runtime_root_reset_cpp_ref_inventory_targets_20260305_s1_01.txt`（50件）を固定した。影響範囲は `src/backends/cpp/*`, `src/toolchain/compiler/*`, `tools/*` に集中し、移行順序を「(1) emitter/cli include-path, (2) toolchain copy/build manifest, (3) tools 監査/検証スクリプト」に確定。
