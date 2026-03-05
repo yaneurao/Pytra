@@ -207,3 +207,26 @@
 - `out/` はローカル生成物ディレクトリとして運用し、Git 管理しません。
 - `py2cpp.py` は backend として維持し、共通 CLI から呼び出す。
 - 将来は `pip install -e .` + console script 化を行うと `./pytra` なしでも `pytra ...` 実行に移行できる。
+
+## 14. `pytra-cli` 責務境界（P0 固定仕様）
+
+`src/pytra-cli.py` は「入口の共通制御」に限定し、target ごとの build/run 実装を内包しない。
+
+- CLI 本体（`src/pytra-cli.py`）
+  - 役割: 引数正規化、入力検証、プロファイル解決、共通 runner 呼び出し。
+  - 許可: `toolchain` 側 profile へ target 名を渡すこと。
+  - 禁止: target 固有のコンパイラ/ランタイム/実行コマンドを直書きすること。
+- backend プロファイル（`src/toolchain/compiler/*`）
+  - 役割: target 固有の transpile/build/run 契約を宣言（必要ツール、出力命名、補助 runtime ファイル）。
+  - 許可: target 固有のコマンド/ファイル名/拡張子定義。
+  - 禁止: CLI 引数パースや標準入出力制御など入口責務の再実装。
+- 実行 runner（CLI 共通）
+  - 役割: subprocess 実行、stdout/stderr 伝播、終了コード処理、timeout 管理。
+  - 許可: profile が返した command/cwd/env を機械的に実行すること。
+  - 禁止: target 名を見て分岐し、別コマンドへ書き換えること。
+
+### 14.1 禁止事項（CI で監視）
+
+- `src/pytra-cli.py` に `if/elif target == "...":` 形式の分岐を新規追加してはならない。
+- `src/pytra-cli.py` に `<lang>` 固有 runtime ファイルパス（例: `py_runtime.kt`, `png.java`）を直書きしてはならない。
+- `tools/runtime_parity_check.py` など周辺ツールで target 固有 build/run コマンドを重複定義してはならない（`pytra-cli` 経由に統一）。

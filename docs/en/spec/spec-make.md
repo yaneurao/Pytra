@@ -205,3 +205,26 @@ Exit non-zero in the following cases:
 - Operate `out/` as a local generated-artifact directory and do not version it.
 - Keep `py2cpp.py` as backend and invoke it through common CLI.
 - In future, `pip install -e .` + console script can allow migration from `./pytra` to direct `pytra ...` execution.
+
+## 14. `pytra-cli` responsibility boundaries (P0 fixed contract)
+
+`src/pytra-cli.py` must stay as the common entry controller and must not embed per-target build/run implementations.
+
+- CLI core (`src/pytra-cli.py`)
+  - Role: argument normalization, input validation, profile resolution, and invoking the shared runner.
+  - Allowed: pass the target name to the `toolchain` profile layer.
+  - Forbidden: hard-code target-specific compiler/runtime/run commands.
+- Backend profiles (`src/toolchain/compiler/*`)
+  - Role: declare target-specific transpile/build/run contracts (required tools, output naming, runtime companion files).
+  - Allowed: define target-specific command lines, filenames, and extensions.
+  - Forbidden: re-implement entrypoint concerns such as CLI parsing and stdout/stderr handling.
+- Execution runner (shared in CLI layer)
+  - Role: subprocess execution, stdout/stderr forwarding, return-code handling, timeout handling.
+  - Allowed: execute profile-provided `command/cwd/env` mechanically.
+  - Forbidden: inspect target names and rewrite commands with ad-hoc branching.
+
+### 14.1 Forbidden patterns (CI guard target)
+
+- Do not add new `if/elif target == "...":` branches in `src/pytra-cli.py`.
+- Do not hard-code `<lang>` runtime file paths in `src/pytra-cli.py` (for example, `py_runtime.kt`, `png.java`).
+- Do not duplicate per-target build/run command definitions in tooling scripts such as `tools/runtime_parity_check.py`; route via `pytra-cli`.
