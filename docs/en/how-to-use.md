@@ -53,6 +53,7 @@ Notes:
 
 - Do not directly import Python standard-library modules such as `json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, `dataclasses`, or `enum`.
 - Exception: `typing` imports are allowed as annotation-only no-op imports (`import typing`, `from typing import ...`) and are not kept as runtime/dependency imports.
+- Exception: `dataclasses` imports are allowed as decorator-resolution no-op imports (`import dataclasses`, `from dataclasses import ...`) and are not kept as runtime/dependency imports.
 - Allowed imports are:
   - Modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`)
   - User-authored `.py` modules
@@ -179,7 +180,7 @@ Notes:
 - Example: `src/pytra/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` and `src/runtime/cpp/pytra/std/math.h`.
 - Example: `src/pytra/compiler/east_parts/core.py` -> `src/runtime/cpp/pytra/compiler/east_parts/core.cpp` and `src/runtime/cpp/pytra/compiler/east_parts/core.h`.
 - `src/pytra/utils/png.py` and `src/pytra/utils/gif.py` are generated with the bridge style, with type-conversion wrappers around runtime public APIs.
-- `src/pytra/std/json.py`, `src/pytra/std/typing.py`, and `src/pytra/utils/assertions.py` also generate `.h/.cpp`.
+- `src/pytra/std/json.py` and `src/pytra/utils/assertions.py` also generate `.h/.cpp`.
 - Missing native processing should be complemented in `*-impl.cpp` (example: `src/runtime/cpp/pytra/std/math-impl.cpp`).
 - `png.write_rgb_png(...)` always outputs PNG (PPM output is removed).
 - Use `python src/py2x.py --target cpp INPUT.py --dump-deps` to inspect import dependencies (`modules/symbols` and `graph`).

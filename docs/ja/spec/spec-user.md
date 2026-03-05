@@ -45,6 +45,7 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
 - トランスパイル対象コードでは、Python 標準モジュールの直接 import は原則非推奨です。
   - 推奨は `pytra.std.*` の明示 import です。
   - ただし `typing` は注釈専用 no-op import として許可します（`import typing` / `from typing import ...` は依存解決に残さない）。
+  - `dataclasses` も decorator 解決専用 no-op import として許可します（`import dataclasses` / `from dataclasses import ...` は依存解決に残さない）。
   - `math` / `random` / `timeit` / `enum` などの実行時利用は、`pytra.std.*` 対応 shim へ正規化して扱います。
 - import 可能なのは `src/pytra/` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。

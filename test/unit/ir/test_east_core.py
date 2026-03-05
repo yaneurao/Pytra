@@ -726,6 +726,51 @@ class Box:
         self.assertEqual(len(classes), 1)
         self.assertEqual(classes[0].get("class_storage_hint"), "ref")
 
+    def test_std_dataclasses_imports_are_noop_and_decorator_resolves(self) -> None:
+        src = """
+import dataclasses as dc
+from dataclasses import dataclass as d
+
+@dc.dataclass(eq=False)
+class A:
+    x: int
+
+@d(init=False, frozen=True)
+class B:
+    y: int
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+
+        import_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") in {"Import", "ImportFrom"}
+        ]
+        self.assertEqual(import_nodes, [])
+
+        import_bindings = east.get("meta", {}).get("import_bindings", [])
+        self.assertIsInstance(import_bindings, list)
+        for ent in import_bindings:
+            if isinstance(ent, dict):
+                self.assertNotEqual(ent.get("module_id"), "dataclasses")
+
+        classes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") in {"A", "B"}
+        ]
+        self.assertEqual(len(classes), 2)
+        by_name = {str(c.get("name")): c for c in classes}
+        self.assertTrue(bool(by_name["A"].get("dataclass")))
+        self.assertTrue(bool(by_name["B"].get("dataclass")))
+        opts_a = by_name["A"].get("dataclass_options", {})
+        opts_b = by_name["B"].get("dataclass_options", {})
+        self.assertIsInstance(opts_a, dict)
+        self.assertIsInstance(opts_b, dict)
+        self.assertEqual(opts_a.get("eq"), False)
+        self.assertEqual(opts_b.get("init"), False)
+        self.assertEqual(opts_b.get("frozen"), True)
+
     def test_enum_members_are_parsed_in_class_body(self) -> None:
         src = """
 from pytra.std.enum import Enum

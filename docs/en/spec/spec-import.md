@@ -19,6 +19,13 @@ Read `docs/en/spec/spec-runtime.md` first.
 - Imported typing aliases (for example `List`, `Dict`, `Any`, `Optional`) are used only by frontend type-alias resolution.
 - No runtime include/import dependency should be introduced from `typing` imports.
 
+## `dataclasses` Import Handling (decorator-resolution no-op)
+
+- `import dataclasses` / `import dataclasses as ...` and `from dataclasses import ...` are accepted only for decorator resolution.
+- These `dataclasses` imports are not emitted into EAST, `meta.import_bindings`, or dependency graphs (no-op import).
+- `@dataclass` / `@dataclass(...)` / `@dataclasses.dataclass(...)` are handled as dataclass-class markers in EAST.
+- Decorator arguments are accepted only in keyword-bool form (`name=True/False`).
+
 This document defines how syntax like the following is converted in `py2cpp.py`.
 
 ```python

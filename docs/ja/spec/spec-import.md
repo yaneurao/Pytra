@@ -20,6 +20,13 @@
 - `typing` から取り込んだ別名（例: `List`, `Dict`, `Any`, `Optional`）は frontend の型エイリアス解決だけに使う。
 - 実行時依存（runtime include / import 依存）として `typing` を要求しない。
 
+## `dataclasses` import の扱い（decorator 解決専用 no-op）
+
+- `import dataclasses` / `import dataclasses as ...` と `from dataclasses import ...` は decorator 解決専用として受理する。
+- 上記 `dataclasses` import は EAST / `meta.import_bindings` / 依存解決には残さない（no-op import）。
+- `@dataclass` / `@dataclass(...)` / `@dataclasses.dataclass(...)` は EAST 側で dataclass class として処理する。
+- decorator 引数は keyword bool 形式（`name=True/False`）のみ受理する。
+
 ## Yanesdk 重複配置の扱い（運用ルール）
 
 - `materials/refs/Yanesdk/yanesdk/yanesdk.py` を正本とする。
