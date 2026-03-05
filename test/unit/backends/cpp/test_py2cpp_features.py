@@ -2807,6 +2807,7 @@ if __name__ == "__main__":
             src_py = find_fixture_case(stem)
             out_cpp = work / f"{stem}.cpp"
             out_exe = work / f"{stem}.out"
+            (work / "out").mkdir(parents=True, exist_ok=True)
             try:
                 print(f"  [fixture:{stem}] transpile", flush=True)
                 transpile(src_py, out_cpp)

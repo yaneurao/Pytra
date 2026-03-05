@@ -295,6 +295,7 @@ def check_case(
         work = Path(tmpdir)
         (work / "src").symlink_to(ROOT / "src", target_is_directory=True)
         (work / "test").symlink_to(ROOT / "test", target_is_directory=True)
+        (work / "out").mkdir(parents=True, exist_ok=True)
         if case_root == "sample":
             # Keep outputs isolated in temp dir while reusing sample sources.
             (work / "sample").mkdir(parents=True, exist_ok=True)
