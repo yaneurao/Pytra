@@ -77,7 +77,7 @@ S1-01 分類結果（違反タイプ別）:
 
 - [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に「境界違反タイプ（分岐/dispatch/runtime実装混在）」へ分類し、修正順序を確定する。
 - [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend の解決済み呼び出し契約（call/attr/module/type）を明文化し、emitter API 制約を固定する。
-- [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正し、runtime/stdlib 分岐を解決済み描画へ置換する。
+- [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正し、runtime/stdlib 分岐を解決済み描画へ置換する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter 内のフォールバック経路を fail-closed 化し、未解決時の推測レンダリングを禁止する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を `tools/` に追加し、CI 必須導線へ統合する。
@@ -89,3 +89,4 @@ S1-01 分類結果（違反タイプ別）:
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend の固定契約（`Call/Attribute` の解決済み属性、優先順位、`resolved_runtime_source`、fail-closed、emitter API 制約）を追記し、再解決禁止を仕様化した。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用の runtime 実装混在ブロック（`_emit_math_runtime_helpers` / `_emit_path_runtime_helpers` / `_emit_gif_runtime_helpers` / `_emit_png_runtime_helpers`）を削除。`math|gif|png` ヒットは `49 -> 8`、全 backend 合計は `179 -> 138` に縮退。`python3 test/unit/backends/lua/test_py2lua_smoke.py`（32件）で回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` に残留していた未使用 inline runtime helper 群（`_emit_runtime_helpers` / `_emit_runtime_helpers_minimal` など）を削除し、`rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を撤去。`math|gif|png` ヒットは `scala: 39 -> 29`、`rs: 31 -> 4`、全 backend 合計は `138 -> 101` に縮退。`python3 test/unit/backends/scala/test_py2scala_smoke.py`（16件）と `python3 test/unit/backends/rs/test_py2rs_smoke.py`（30件）で回帰 green を確認。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` から `owner=="math"` による生AST再解決フォールバック（attribute/call/type推論）を撤去し、解決済み runtime_call 経路へ統一。`math|gif|png` ヒットは `scala: 29 -> 16`、全 backend 合計は `101 -> 88` に縮退し、`test_py2scala_smoke.py`（16件）再通過を確認。

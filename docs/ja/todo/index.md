@@ -39,7 +39,7 @@
 1. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01] backend の runtime/stdlib 解決責務漏れを是正し、EAST3 解決済み描画へ再収束する。
 2. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に違反タイプへ分類し、修正順序を確定する。
 3. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend 解決済み呼び出し契約（call/attr/module/type）を固定する。
-4. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正する。
+4. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正する。
 5. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
 6. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter のフォールバックを fail-closed 化し、推測レンダリングを禁止する。
 7. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を CI 必須導線へ追加する。
@@ -48,6 +48,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend 固定契約（解決済み属性、解決優先順位、fail-closed、emitter API 制約）を追記した。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用 runtime実装混在ブロックを削除し、`math|gif|png` ヒットを `49 -> 8` に縮退。`test_py2lua_smoke.py`（32件）通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` の未使用 inline runtime helper 群と `rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を削除し、`scala:39 -> 29` / `rs:31 -> 4`、全 backend 合計 `138 -> 101` へ縮退。`test_py2scala_smoke.py`（16件）/ `test_py2rs_smoke.py`（30件）通過。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` の `owner=="math"` 再解決フォールバックを撤去し、`scala` ヒットを `29 -> 16`、全 backend 合計を `101 -> 88` に縮退。`test_py2scala_smoke.py`（16件）再通過を確認。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

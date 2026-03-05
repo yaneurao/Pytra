@@ -773,32 +773,6 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
     return "(" + delim.join(rendered) + ")"
 
 
-def _math_call_name(attr: str) -> str:
-    if attr == "sqrt":
-        return "pyMathSqrt"
-    if attr == "sin":
-        return "pyMathSin"
-    if attr == "cos":
-        return "pyMathCos"
-    if attr == "tan":
-        return "pyMathTan"
-    if attr == "exp":
-        return "pyMathExp"
-    if attr == "log":
-        return "pyMathLog"
-    if attr == "pow":
-        return "pyMathPow"
-    if attr == "floor":
-        return "pyMathFloor"
-    if attr == "ceil":
-        return "pyMathCeil"
-    if attr == "abs":
-        return "scala.math.abs"
-    if attr == "fabs":
-        return "scala.math.abs"
-    return _safe_ident(attr, "call")
-
-
 def _snake_to_pascal(name: str) -> str:
     parts = name.split("_")
     out: list[str] = []
@@ -901,12 +875,6 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                 return runtime_symbol + "(" + _render_expr(value_any) + ")"
             if runtime_source == "resolved_runtime_call":
                 return runtime_symbol
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner = _safe_ident(value_any.get("id"), "")
-        if owner == "math" and field == "pi":
-            return "scala.math.Pi"
-        if owner == "math" and field == "e":
-            return "scala.math.E"
     value = _render_expr(value_any)
     return value + "." + field
 
@@ -1160,15 +1128,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if method == "__init__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) in {"super", "super_"}:
                 return "__pytra_noop()"
-        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-            owner = _safe_ident(owner_any.get("id"), "")
-            if owner == "math":
-                rendered_math_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
-                    i += 1
-                return _math_call_name(method) + "(" + ", ".join(rendered_math_args) + ")"
         if method == "isdigit" and len(args) == 0:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if method == "isalpha" and len(args) == 0:
@@ -1517,13 +1476,7 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         func_any = expr.get("func")
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
             owner_any = func_any.get("value")
-            owner_name = ""
-            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-                owner_name = _safe_ident(owner_any.get("id"), "")
             attr_name = _safe_ident(func_any.get("attr"), "")
-            if owner_name == "math":
-                if attr_name in {"sqrt", "sin", "cos", "tan", "exp", "log", "pow", "floor", "ceil", "abs", "fabs"}:
-                    return "Double"
             if attr_name in {"isdigit", "isalpha"}:
                 return "Boolean"
     if kind == "BinOp":
@@ -2664,7 +2617,6 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.append("import scala.collection.mutable")
     lines.append("import scala.util.boundary, boundary.break")
-    lines.append("import scala.math.*")
     lines.append("import java.nio.file.{Files, Paths}")
     lines.append("")
     module_comments = _module_leading_comment_lines(east_doc, "// ")
