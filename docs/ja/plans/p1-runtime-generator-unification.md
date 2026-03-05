@@ -48,7 +48,7 @@
 
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-01] 既存 generator 3本の責務差分（入出力、後処理、命名ルール）を棚卸しし、単一導線へ移せる要件を固定する。
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-02] runtime生成の宣言設定（対象モジュール、target、出力先、marker）を定義し、言語分岐を設定ファイルへ移す。
-- [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] 汎用 generator（単一スクリプト）を実装し、`pytra-cli`/`py2x` を呼ぶ共通導線へ統合する。
+- [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] 汎用 generator（単一スクリプト）を実装し、`pytra-cli`/`py2x` を呼ぶ共通導線へ統合する。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] 既存 3 スクリプトの呼び出し元を新導線へ置換する。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] 既存 3 スクリプトを削除し、関連ドキュメントを更新する。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] 再導入防止ガード（special generator 禁止）を CI に追加する。
@@ -58,6 +58,7 @@
 - 2026-03-05: ユーザー指示により、`tools/gen_*_from_canonical.py` の言語別特殊化は設計違反として扱い、P1で統廃合する方針を確定。
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S1-01`] 3スクリプトの差分棚卸しを実施し、単一導線へ移す固定要件を確定した。
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S1-02`] `tools/runtime_generation_manifest.json` を追加し、対象 module / target / 出力先 / 追加後処理（C# helper 変換）を宣言化した。
+- 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S2-01`] `tools/gen_runtime_from_manifest.py` を追加し、manifest 駆動で `py2x` 実行・header marker 付与・C# helper 後処理を単一導線化。`test_gen_runtime_from_manifest.py` / `test_runtime_generation_manifest.py` を通過。
 
 ## S1-01 棚卸し結果（固定）
 
