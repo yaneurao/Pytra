@@ -1240,14 +1240,7 @@ def _infer_kotlin_type(expr: Any, type_map: dict[str, str] | None = None) -> str
             return name
         func_any = expr.get("func")
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-            owner_any = func_any.get("value")
-            owner_name = ""
-            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-                owner_name = _safe_ident(owner_any.get("id"), "")
             attr_name = _safe_ident(func_any.get("attr"), "")
-            if owner_name == "math":
-                if attr_name in {"sqrt", "sin", "cos", "tan", "exp", "log", "pow", "floor", "ceil", "abs"}:
-                    return "Double"
             if attr_name in {"isdigit", "isalpha"}:
                 return "Boolean"
     if kind == "BinOp":
@@ -2486,7 +2479,6 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
         i += 1
 
     lines: list[str] = []
-    lines.append("import kotlin.math.*")
     lines.append("")
     module_comments = _module_leading_comment_lines(east_doc, "// ")
     if len(module_comments) > 0:

@@ -1316,8 +1316,6 @@ class NimNativeEmitter:
             runtime_call = _resolved_runtime_call(expr)
             if semantic_tag.startswith("stdlib.") and runtime_call == "":
                 raise RuntimeError("nim native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
-            if value == "math" and attr == "pi":
-                return "PI"
             resolved_runtime_any = expr.get("resolved_runtime_call")
             resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
             resolved_source_any = expr.get("resolved_runtime_source")
@@ -1419,9 +1417,6 @@ class NimNativeEmitter:
                  return f"py_isalpha({value})"
 
         func_expr = self._render_expr(func)
-        if func_expr == "math.sqrt": return f"sqrt(float({args[0]}))"
-        if func_expr == "math.fabs": return f"abs({args[0]})"
-        
         return f"{func_expr}({', '.join(args)})"
 
 def transpile_to_nim_native(east_doc: dict[str, Any]) -> str:
