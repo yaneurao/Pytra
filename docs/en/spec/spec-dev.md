@@ -51,9 +51,6 @@ Names starting with `_` are treated as internal. The following are public APIs.
 - `pytra.std.sys`
   - Variables: `argv`, `path`, `stderr`, `stdout`
   - Functions: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
-- `pytra.std.typing`
-  - Type names: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
-  - Functions: `TypeVar`
 - `pytra.std.os`
   - Variable: `path` (`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`)
   - Functions: `getcwd`, `mkdir`, `makedirs`
@@ -189,7 +186,6 @@ Main helper module implementations:
 - `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
 - `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
 - `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/json.cpp`
-- `src/runtime/cpp/pytra/std/typing.h`, `src/runtime/cpp/pytra/std/typing.cpp`
 - `src/runtime/cpp/pytra/built_in/gc.h`, `src/runtime/cpp/pytra/built_in/gc.cpp`
 - `src/runtime/cpp/pytra/std/sys.h`, `src/runtime/cpp/pytra/std/sys.cpp`
 - `src/runtime/cpp/pytra/utils/png.h`, `src/runtime/cpp/pytra/utils/png.cpp`

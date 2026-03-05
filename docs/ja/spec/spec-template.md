@@ -4,7 +4,7 @@
 特に、`.py` に直接書く **template 定義 + 明示インスタンス化** を正規手段として扱う。
 
 > 2026-02-23 照合ステータス:
-> - 採用: `pytra.std.typing.TypeVar` は最小 shim（`str` を返す）として提供する。
+> - 採用: `typing.TypeVar` は注釈専用（template 機能は未提供）として扱う。
 > - 保留: `@template` / `@instantiate`、compile-time branch、実体化エラー契約、生成量ガードなど template 本体仕様。
 > - 非採用: §16 の「採用記法」という断定表現（現時点では記法採用を確定していないため）。
 
@@ -198,7 +198,7 @@ template 関連の失敗は次を使用する。
 
 ## 15. 現状実装との差分（2026-02-22 時点）
 
-- `pytra.std.typing.TypeVar` は runtime shim（`str` を返す最小実装）であり、型パラメータ機能は未提供。
+- `typing.TypeVar` は注釈専用であり、型パラメータ機能は未提供。
 - self-hosted parser は template 専用構文/API 解釈を未実装。
 - 本仕様は、今後の template 実装に向けた設計基準として扱う。
 
@@ -251,9 +251,9 @@ class Box:
 ## 17. 採否整理（2026-02-23）
 
 採用（既存正規仕様へ移管）:
-- `TypeVar` は template 機能ではなく typing 互換 shim として提供する。
+- `TypeVar` は template 機能ではなく注釈専用として扱う。
   - 移管先: `docs/ja/spec/spec-pylib-modules.md`
-  - 補足: 実装は `src/pytra/std/typing.py` の `TypeVar(name: str) -> str`。
+  - 補足: 実装上は `typing.TypeVar` を注釈解決で扱う。
 
 保留（草案維持）:
 - §1〜§14 の template 本体仕様（構文、解決、エラー契約、実体化上限、検証要件、段階導入）。

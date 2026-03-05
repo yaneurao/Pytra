@@ -6,7 +6,7 @@ This entrypoint keeps static backend imports by using backend_registry_static.
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from toolchain.compiler.backend_registry_static import apply_runtime_hook
 from toolchain.compiler.backend_registry_static import default_output_path

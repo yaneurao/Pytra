@@ -6,7 +6,6 @@
 #include "runtime/cpp/gen/std/dataclasses.h"
 
 #include "runtime/cpp/core/std/dataclasses-impl.h"
-#include "runtime/cpp/gen/std/typing.h"
 
 namespace pytra::std::dataclasses {
 

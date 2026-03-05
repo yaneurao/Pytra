@@ -62,7 +62,7 @@ Prohibited:
   - `runtime/cpp/pytra/std/<mod>.cpp`
   - `runtime/cpp/pytra/utils/<mod>.h`
   - `runtime/cpp/pytra/utils/<mod>.cpp`
-  - Examples: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`, `runtime/cpp/pytra/utils/assertions.h/.cpp`
+  - Examples: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/utils/assertions.h/.cpp`
   - `runtime/cpp/pytra/std/math.h` / `math.cpp` is generated from function signatures interpreted from `src/pytra/std/math.py` by `src/py2x.py --target cpp`.
 - Handwritten allowed:
   - `runtime/cpp/pytra/std/<mod>-impl.cpp`

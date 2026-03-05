@@ -7,7 +7,7 @@ It can also accept a Python source file and internally run src/toolchain/compile
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 from toolchain.frontends.east1_build import East1BuildHelpers
 from toolchain.compiler.transpile_cli import (
     check_analyze_stage_guards,

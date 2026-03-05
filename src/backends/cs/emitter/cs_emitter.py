@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from backends.cs.hooks.cs_hooks import build_cs_hooks
 from backends.common.emitter.code_emitter import CodeEmitter

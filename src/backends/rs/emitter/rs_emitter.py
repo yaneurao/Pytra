@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from backends.rs.hooks.rs_hooks import build_rs_hooks
 from backends.common.emitter.code_emitter import CodeEmitter

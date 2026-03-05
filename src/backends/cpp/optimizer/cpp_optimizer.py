@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from pytra.std import time
-from pytra.std.typing import Any
+from typing import Any
 
 from backends.cpp.optimizer.context import CppOptContext
 from backends.cpp.optimizer.context import CppOptimizerPass

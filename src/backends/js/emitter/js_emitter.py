@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pytra.std import json
 from pytra.std.pathlib import Path
-from pytra.std.typing import Any
+from typing import Any
 
 from backends.js.hooks.js_hooks import build_js_hooks
 from backends.common.emitter.code_emitter import CodeEmitter

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 def render_cpp_opt_trace(report: dict[str, Any]) -> str:

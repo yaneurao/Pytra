@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from toolchain.compiler.backend_registry import (
     apply_runtime_hook,

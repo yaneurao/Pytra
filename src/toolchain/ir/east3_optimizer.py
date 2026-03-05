@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from pytra.std import time
-from pytra.std.typing import Any
+from typing import Any
 
 
 PASS_NAME_RE = re.compile(r"^[A-Za-z0-9_]+$")

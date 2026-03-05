@@ -18,7 +18,7 @@ from toolchain.frontends.transpile_cli import path_parent_text
 from toolchain.frontends.transpile_cli import rel_disp_for_graph
 from toolchain.frontends.transpile_cli import resolve_module_name_for_graph
 from pytra.std.pathlib import Path
-from pytra.std.typing import Any
+from typing import Any
 
 
 def build_east1_document(

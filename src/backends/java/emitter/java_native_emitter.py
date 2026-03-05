@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
 
 

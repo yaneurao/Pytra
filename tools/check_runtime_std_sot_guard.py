@@ -11,7 +11,6 @@ Current guarded module set:
 - json (`pyJsonLoads` / `pyJsonDumps`)
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
-- typing (`TypeVar`)
 - C++ std/utils runtime shape (`gen` generated modules + required core impl split)
 """
 
@@ -84,14 +83,6 @@ RULES: dict[str, GuardRule] = {
             re.compile(r"/std/re\.[^/]+$"),
         ],
     ),
-    "typing": GuardRule(
-        text_patterns=[
-            re.compile(r"\bTypeVar\s*\("),
-        ],
-        path_patterns=[
-            re.compile(r"/std/typing\.[^/]+$"),
-        ],
-    ),
 }
 
 CPP_GENERATED_STD_MODULES = [
@@ -107,7 +98,6 @@ CPP_GENERATED_STD_MODULES = [
     "sys",
     "time",
     "timeit",
-    "typing",
 ]
 
 CPP_HEADER_ONLY_STD_MODULES = {
@@ -177,7 +167,6 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "sys": "src/pytra/std/sys.py",
     "time": "src/pytra/std/time.py",
     "timeit": "src/pytra/std/timeit.py",
-    "typing": "src/pytra/std/typing.py",
     "assertions": "src/pytra/utils/assertions.py",
     "gif": "src/pytra/utils/gif.py",
     "png": "src/pytra/utils/png.py",

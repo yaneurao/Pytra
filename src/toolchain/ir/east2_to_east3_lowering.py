@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 _LEGACY_COMPAT_BRIDGE_ENABLED = True

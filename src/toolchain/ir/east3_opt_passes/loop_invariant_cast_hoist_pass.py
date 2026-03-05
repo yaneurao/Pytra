@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 
-from pytra.std.typing import Any
+from typing import Any
 
 from toolchain.ir.east3_optimizer import East3OptimizerPass
 from toolchain.ir.east3_optimizer import PassContext

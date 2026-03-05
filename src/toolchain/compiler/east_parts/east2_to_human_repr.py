@@ -2,7 +2,7 @@
 """EAST2 human-representation renderer helpers."""
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 from pytra.std import json
 
 from .core import FLOAT_TYPES, INT_TYPES

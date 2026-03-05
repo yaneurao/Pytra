@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pytra.std.pathlib import Path
-from pytra.std.typing import Any
+from typing import Any
 
 
 def normalize_east1_root_document(east_doc: dict[str, object]) -> dict[str, object]:

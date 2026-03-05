@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 class CppAnalysisEmitter:

@@ -39,7 +39,7 @@
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
 
 - トランスパイル対象コードでの標準モジュール直接 import は原則非推奨とし、`pytra.std.*` 明示 import を推奨します。
-- 互換 shim が存在する標準モジュール（`math` / `random` / `timeit` / `typing` / `enum` など）は、変換時に `pytra.std.*` へ正規化可能です。
+- 互換 shim が存在する標準モジュール（`math` / `random` / `timeit` / `enum` など）は、変換時に `pytra.std.*` へ正規化可能です。
 - import は `pytra.*` とユーザー自作モジュール（`.py`）を許可します。
 
 - `pytra.utils.assertions`
@@ -52,9 +52,6 @@
 - `pytra.std.sys`
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`
-- `pytra.std.typing`
-  - 型名: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
-  - 関数: `TypeVar`
 - `pytra.std.math`
   - 定数: `pi`, `e`
   - 関数: `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `fabs`, `floor`, `ceil`, `pow`
@@ -239,7 +236,6 @@
 - `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
 - `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
 - `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/json.cpp`
-- `src/runtime/cpp/pytra/std/typing.h`, `src/runtime/cpp/pytra/std/typing.cpp`
 - `src/runtime/cpp/pytra/built_in/gc.h`, `src/runtime/cpp/pytra/built_in/gc.cpp`
 - `src/runtime/cpp/pytra/std/sys.h`, `src/runtime/cpp/pytra/std/sys.cpp`
 - `src/runtime/cpp/pytra/utils/png.h`, `src/runtime/cpp/pytra/utils/png.cpp`

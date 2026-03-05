@@ -7,7 +7,7 @@ from toolchain.ir.east3_optimizer import optimize_east3_document
 from toolchain.ir.east3_optimizer import render_east3_opt_trace
 from pytra.std import json
 from pytra.std.pathlib import Path
-from pytra.std.typing import Any
+from typing import Any
 
 
 def lower_east2_to_east3_document(

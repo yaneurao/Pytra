@@ -12,7 +12,7 @@ from pytra.std import json
 from pytra.std import os
 from pytra.std import sys
 from pytra.std.pathlib import Path
-from pytra.std.typing import Iterable
+from typing import Iterable
 
 
 def add_common_transpile_args(

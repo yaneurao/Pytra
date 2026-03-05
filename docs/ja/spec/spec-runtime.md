@@ -163,7 +163,7 @@
   - `runtime/cpp/gen/std/<mod>.cpp`
   - `runtime/cpp/gen/utils/<mod>.h`
   - `runtime/cpp/gen/utils/<mod>.cpp`
-  - 例: `runtime/cpp/gen/std/json.h/.cpp`, `runtime/cpp/gen/std/typing.h/.cpp`,
+  - 例: `runtime/cpp/gen/std/json.h/.cpp`,
     `runtime/cpp/gen/utils/assertions.h/.cpp`
   - `runtime/cpp/gen/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2x.py --target cpp` で解釈した結果（関数シグネチャ）から生成する。
 - 手書き許可:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from backends.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
 

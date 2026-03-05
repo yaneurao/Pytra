@@ -508,7 +508,7 @@ def g(a: int, b: int) -> int:
 
     def test_ref_container_args_materialize_value_path_with_to_vec_or_clone(self) -> None:
         src = """
-from pytra.std.typing import Any
+from typing import Any
 
 def f(xs: list[int], ys: list[Any]) -> int:
     a: list[int] = xs
@@ -545,7 +545,7 @@ def f(xs: list[int], ys: list[Any]) -> int:
 
     def test_isinstance_lowering_for_any_uses_type_id_runtime_api(self) -> None:
         src = """
-from pytra.std.typing import Any
+from typing import Any
 
 def is_int(x: Any) -> bool:
     return isinstance(x, int)
@@ -639,7 +639,7 @@ def is_a(x: B) -> bool:
 
     def test_isinstance_lowering_for_object_type(self) -> None:
         src = """
-from pytra.std.typing import Any
+from typing import Any
 
 def from_static(x: int) -> bool:
     return isinstance(x, object)
@@ -658,7 +658,7 @@ def from_any(x: Any) -> bool:
 
     def test_isinstance_tuple_lowering_for_any_uses_or_of_type_id_checks(self) -> None:
         src = """
-from pytra.std.typing import Any
+from typing import Any
 
 def f(x: Any) -> bool:
     return isinstance(x, (int, dict))
@@ -676,7 +676,7 @@ def f(x: Any) -> bool:
 
     def test_isinstance_set_lowering_for_any_uses_type_id_runtime_api(self) -> None:
         src = """
-from pytra.std.typing import Any
+from typing import Any
 
 def f(x: Any) -> bool:
     return isinstance(x, set)

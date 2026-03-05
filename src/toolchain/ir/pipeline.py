@@ -6,7 +6,7 @@ existing implementations remain in ``toolchain.compiler.east_parts``.
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3 as _lower_east2_to_east3
 from toolchain.ir.east3_optimizer import optimize_east3_document

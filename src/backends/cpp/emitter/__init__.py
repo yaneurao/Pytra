@@ -8,7 +8,7 @@ from backends.cpp.emitter.cpp_emitter import (
     install_py2cpp_runtime_symbols,
 )
 from backends.cpp.emitter.profile_loader import load_cpp_profile
-from pytra.std.typing import Any
+from typing import Any
 
 __all__ = [
     "CppEmitter",

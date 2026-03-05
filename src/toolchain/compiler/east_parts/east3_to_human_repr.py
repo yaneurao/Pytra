@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 from .east2_to_human_repr import (
     _cpp_type_name,

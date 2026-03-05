@@ -193,7 +193,7 @@ At minimum, pass:
 
 ## 15. Gap against current implementation (as of 2026-02-22)
 
-- `pytra.std.typing.TypeVar` is a runtime shim (minimal `str` return) and does not provide full type-parameter functionality.
+- `typing.TypeVar` is annotation-only in current Pytra (no template-level semantics are provided yet).
 - The self-hosted parser does not yet implement template-specific syntax/API interpretation.
 - This specification is treated as the design baseline for upcoming template implementation.
 

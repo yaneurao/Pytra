@@ -1,4 +1,4 @@
-from pytra.std.typing import Callable  # type:ignore
+from typing import Callable  # type:ignore
 
 
 def takes_cb(cb: Callable) -> bool:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 from pytra.std.pathlib import Path
 
 from toolchain.compiler.east_parts.core import convert_path

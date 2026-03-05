@@ -6,7 +6,7 @@ Keep package import side effects minimal to avoid cycles with
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 def add_common_transpile_args(*args: Any, **kwargs: Any) -> None:

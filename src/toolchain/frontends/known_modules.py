@@ -6,7 +6,7 @@ files under ``src/pytra/utils``).
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 KNOWN_MODULE_SPECS: dict[str, dict[str, Any]] = {

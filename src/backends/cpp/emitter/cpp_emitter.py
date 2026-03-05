@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytra.std import json
 from pytra.std import os
-from pytra.std.typing import Any
+from typing import Any
 from pytra.std.pathlib import Path
 
 from backends.common.emitter.code_emitter import CodeEmitter
