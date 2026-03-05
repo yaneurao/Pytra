@@ -48,7 +48,7 @@
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker に置換する。
 - [x] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
-- [ ] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰を実行し、単一化後の非退行を固定する。
+- [x] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰を実行し、単一化後の非退行を固定する。
 
 決定ログ:
 - 2026-03-05: ユーザー指示により、言語別 checker 群は将来削除前提とし、`--target` 駆動の単一 checker へ統合する方針を確定。
@@ -59,6 +59,7 @@
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-02`] `check_py2cpp/cs/go/java/js/kotlin/lua/nim/php/rb/rs/scala/swift/ts` を互換ラッパ化し、実処理を `check_py2x_transpile.py --target` へ委譲。`cpp` 互換維持のため unified 側へ `--check-multi-file-imports` / `--check-yanesdk-smoke` を追加し、`nim/cpp/js` ラッパ実行（`js` は `--skip-east3-contract-tests`）で委譲結果が旧導線と整合することを確認。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-03`] `run_local_ci.py`・`check_noncpp_east3_contract.py`・`check_gsk_native_regression.py` の checker 呼び出しを `check_py2x_transpile.py --target ...` へ置換。`check_noncpp` からの `js/ts` 呼び出しは `--skip-east3-contract-tests` を付与して再帰を回避し、unified 側 preflight も旧仕様（`test_east2_to_east3_lowering.py` / `test_east3_cpp_bridge.py`）へ戻して非循環化した。`check_noncpp --skip-transpile` + `check_py2js_transpile.py` + `check_py2ts_transpile.py` を通過。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S3-01`] 旧 `tools/check_py2{cpp,cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_transpile.py` を削除し、`tools/check_legacy_transpile_checkers_absent.py` + `test_check_legacy_transpile_checkers_absent.py` を追加して再導入を fail-fast 化。`run_local_ci.py` に新ガードを統合し、Scala checker unit は `check_py2x_transpile.py` の profile 検証へ移行した。
+- 2026-03-05: 回帰セット（`py_compile`、`test_check_legacy_transpile_checkers_absent.py`、`test_check_py2scala_transpile.py`、`check_legacy_transpile_checkers_absent.py`、`check_noncpp_east3_contract.py --skip-transpile`、`check_py2x_transpile.py --target cpp/java/scala/js/ts`）を再実行し全通過。単一 checker への置換後も `cpp/java/scala` の全ケース回帰が維持されることを確認した。
 
 ## S1-01 棚卸し結果（固定）
 
