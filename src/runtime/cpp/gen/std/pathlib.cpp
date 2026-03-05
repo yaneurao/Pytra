@@ -119,4 +119,11 @@ namespace pytra::std::pathlib {
         /* Pure Python Path helper compatible with a subset of pathlib.Path. */
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::pathlib

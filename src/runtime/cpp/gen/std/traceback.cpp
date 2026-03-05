@@ -33,4 +33,11 @@ namespace pytra::std::traceback {
         __all__ = list<str>{"format_exc"};
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::traceback

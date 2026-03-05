@@ -24,4 +24,11 @@ namespace pytra::std::timeit {
         __all__ = list<str>{"default_timer"};
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::timeit

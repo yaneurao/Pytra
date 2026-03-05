@@ -151,4 +151,11 @@ RGB 8bit バッファを PNG ファイルとして保存する。
  */
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::utils::png

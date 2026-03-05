@@ -22,4 +22,11 @@ namespace pytra::std::dataclasses {
         /* pytra.std.dataclasses: thin wrapper over dataclasses_impl. */
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::dataclasses
