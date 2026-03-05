@@ -714,6 +714,23 @@ def _render_runtime_args(
     while i < len(args):
         rendered.append(_render_expr(args[i]))
         i += 1
+    # Non-stdlib resolved runtime calls can still carry keyword args.
+    # Keep argument order stable by sorting keyword names.
+    rendered_keywords: list[tuple[str, str]] = []
+    i = 0
+    while i < len(keywords):
+        kw_any = keywords[i]
+        if isinstance(kw_any, dict):
+            kw_name_any = kw_any.get("arg")
+            if isinstance(kw_name_any, str):
+                rendered_keywords.append((_safe_ident(kw_name_any, ""), _render_expr(kw_any.get("value"))))
+        i += 1
+    if len(rendered_keywords) > 1:
+        rendered_keywords.sort(key=lambda item: item[0])
+    i = 0
+    while i < len(rendered_keywords):
+        rendered.append(rendered_keywords[i][1])
+        i += 1
     return rendered
 
 
