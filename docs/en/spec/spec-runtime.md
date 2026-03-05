@@ -4,6 +4,24 @@
 
 # Runtime Specification
 
+## 0.65 Naming Rule for Handwritten Runtime Files (Collision Avoidance)
+
+For modules that still generate `<mod>.cpp`, handwritten implementation must never share that basename.
+
+- Generated-only:
+  - `<mod>.h`
+  - `<mod>.cpp`
+- Handwritten-only:
+  - `<mod>-manual.h`
+  - `<mod>-manual.cpp`
+
+Operational rules:
+
+- `<mod>.cpp` produced by the generator is not manually editable.
+- When handwritten logic is required, implement it only in the `-manual` side and call it from generated code.
+- Existing `*-impl` files may remain temporarily during migration, but new files must use `-manual`.
+- The final unified naming target is `-manual`.
+
 ### 1. Clarify Responsibility Split Between Generated Artifacts and Handwritten Implementations
 
 - Auto-generated:
