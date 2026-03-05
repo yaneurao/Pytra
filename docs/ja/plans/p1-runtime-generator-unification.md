@@ -51,7 +51,7 @@
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] 汎用 generator（単一スクリプト）を実装し、`pytra-cli`/`py2x` を呼ぶ共通導線へ統合する。
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] 既存 3 スクリプトの呼び出し元を新導線へ置換する。
 - [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] 既存 3 スクリプトを削除し、関連ドキュメントを更新する。
-- [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] 再導入防止ガード（special generator 禁止）を CI に追加する。
+- [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] 再導入防止ガード（special generator 禁止）を CI に追加する。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] runtime 監査 + parity 回帰を実施し、非退行を固定する。
 
 決定ログ:
@@ -61,6 +61,7 @@
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S2-01`] `tools/gen_runtime_from_manifest.py` を追加し、manifest 駆動で `py2x` 実行・header marker 付与・C# helper 後処理を単一導線化。`test_gen_runtime_from_manifest.py` / `test_runtime_generation_manifest.py` を通過。
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S2-02`] 旧 `gen_image` 系 unit test の導線を `gen_runtime_from_manifest` 呼び出しへ置換し、呼び出し側の正規経路を新 generator へ寄せた。
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S2-03`] 旧特殊 generator 3本（`gen_image_runtime_from_canonical.py` / `gen_java_std_runtime_from_canonical.py` / `gen_cs_image_runtime_from_canonical.py`）を削除し、`test_audit_image_runtime_sot.py` の `generated-by` 期待値を `tools/gen_runtime_from_manifest.py` へ更新した。
+- 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S3-01`] `tools/check_runtime_special_generators_absent.py` を追加し、`tools/run_local_ci.py` へ統合。`gen_*_from_canonical.py` 再導入を fail-fast 化し、`test_check_runtime_special_generators_absent.py` で回帰固定した。
 
 ## S1-01 棚卸し結果（固定）
 
