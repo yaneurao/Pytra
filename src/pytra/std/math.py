@@ -4,61 +4,61 @@ from __future__ import annotations
 
 from pytra.std import extern
 
-import math as _m
+import math as __m
 
-pi: float = extern(_m.pi)
-e: float = extern(_m.e)
+pi: float = extern(__m.pi)
+e: float = extern(__m.e)
 
 @extern
 def sqrt(x: float) -> float:
-    return _m.sqrt(x)
+    return __m.sqrt(x)
 
 
 @extern
 def sin(x: float) -> float:
-    return _m.sin(x)
+    return __m.sin(x)
 
 
 @extern
 def cos(x: float) -> float:
-    return _m.cos(x)
+    return __m.cos(x)
 
 
 @extern
 def tan(x: float) -> float:
-    return _m.tan(x)
+    return __m.tan(x)
 
 
 @extern
 def exp(x: float) -> float:
-    return _m.exp(x)
+    return __m.exp(x)
 
 
 @extern
 def log(x: float) -> float:
-    return _m.log(x)
+    return __m.log(x)
 
 
 @extern
 def log10(x: float) -> float:
-    return _m.log10(x)
+    return __m.log10(x)
 
 
 @extern
 def fabs(x: float) -> float:
-    return _m.fabs(x)
+    return __m.fabs(x)
 
 
 @extern
 def floor(x: float) -> float:
-    return _m.floor(x)
+    return __m.floor(x)
 
 
 @extern
 def ceil(x: float) -> float:
-    return _m.ceil(x)
+    return __m.ceil(x)
 
 
 @extern
 def pow(x: float, y: float) -> float:
-    return _m.pow(x, y)
+    return __m.pow(x, y)

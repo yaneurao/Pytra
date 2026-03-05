@@ -1725,6 +1725,12 @@ def _sh_append_import_binding(
     )
 
 
+def _sh_is_host_only_alias(local_name: str) -> bool:
+    """`__name` 形式の host-only import alias か判定する。"""
+    local = local_name.strip()
+    return local.startswith("__") and local != ""
+
+
 def _sh_register_import_symbol(local_name: str, module_id: str, export_name: str) -> None:
     """from-import で導入されたシンボル解決情報を式パーサ共有コンテキストへ反映する。"""
     local = local_name.strip()
@@ -4860,20 +4866,25 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         hint="Use `import module` or `import module as alias` form.",
                     )
                 mod_name, as_name_txt = parsed_alias
+                bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
+                _sh_register_import_module(bind_name, mod_name)
+                if _sh_is_host_only_alias(bind_name):
+                    continue
                 alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt
                 aliases.append(alias_item)
-            pending_blank_count = _sh_push_stmt_with_trivia(
-                stmts,
-                pending_leading_trivia,
-                pending_blank_count,
-                {
-                    "kind": "Import",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
-                    "names": aliases,
-                },
-            )
+            if len(aliases) > 0:
+                pending_blank_count = _sh_push_stmt_with_trivia(
+                    stmts,
+                    pending_leading_trivia,
+                    pending_blank_count,
+                    {
+                        "kind": "Import",
+                        "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                        "names": aliases,
+                    },
+                )
             continue
 
         if s.startswith("from "):
@@ -4970,22 +4981,25 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 sym_name, as_name_txt = parsed_alias
                 bind_name = as_name_txt if as_name_txt != "" else sym_name
                 _sh_register_import_symbol(bind_name, mod_name, sym_name)
+                if _sh_is_host_only_alias(bind_name):
+                    continue
                 alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt
                 aliases.append(alias_item)
-            pending_blank_count = _sh_push_stmt_with_trivia(
-                stmts,
-                pending_leading_trivia,
-                pending_blank_count,
-                {
-                    "kind": "ImportFrom",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
-                    "module": mod_name,
-                    "names": aliases,
-                    "level": 0,
-                },
-            )
+            if len(aliases) > 0:
+                pending_blank_count = _sh_push_stmt_with_trivia(
+                    stmts,
+                    pending_leading_trivia,
+                    pending_blank_count,
+                    {
+                        "kind": "ImportFrom",
+                        "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                        "module": mod_name,
+                        "names": aliases,
+                        "level": 0,
+                    },
+                )
             continue
 
         if s.startswith("with ") and s.endswith(":"):
@@ -5805,6 +5819,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     )
                 mod_name, as_name_txt = parsed_alias
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
+                _sh_register_import_module(bind_name, mod_name)
+                if _sh_is_host_only_alias(bind_name):
+                    continue
                 _sh_append_import_binding(
                     import_bindings=import_bindings,
                     import_binding_names=import_binding_names,
@@ -5815,18 +5832,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_file=filename,
                     source_line=i,
                 )
-                _sh_register_import_module(bind_name, mod_name)
                 alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt
                 aliases.append(alias_item)
-            body_items.append(
-                {
-                    "kind": "Import",
-                    "source_span": _sh_span(i, 0, len(ln)),
-                    "names": aliases,
-                }
-            )
+            if len(aliases) > 0:
+                body_items.append(
+                    {
+                        "kind": "Import",
+                        "source_span": _sh_span(i, 0, len(ln)),
+                        "names": aliases,
+                    }
+                )
             i = logical_end + 1
             continue
         if s.startswith("from "):
@@ -5932,6 +5949,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
                 sym_name, as_name_txt = parsed_alias
                 bind_name = as_name_txt if as_name_txt != "" else sym_name
+                if _sh_is_host_only_alias(bind_name):
+                    _sh_register_import_symbol(bind_name, mod_name, sym_name)
+                    continue
                 # `Enum/IntEnum/IntFlag` は class 定義の lowering で吸収されるため、
                 # 依存ヘッダ解決用の ImportBinding には積まない。
                 if not (mod_name == "pytra.std.enum" and sym_name in {"Enum", "IntEnum", "IntFlag"}):
@@ -5954,15 +5974,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 if as_name_txt != "":
                     alias_item["asname"] = as_name_txt
                 aliases.append(alias_item)
-            body_items.append(
-                {
-                    "kind": "ImportFrom",
-                    "source_span": _sh_span(i, 0, len(ln)),
-                    "module": mod_name,
-                    "names": aliases,
-                    "level": 0,
-                }
-            )
+            if len(aliases) > 0:
+                body_items.append(
+                    {
+                        "kind": "ImportFrom",
+                        "source_span": _sh_span(i, 0, len(ln)),
+                        "module": mod_name,
+                        "names": aliases,
+                        "level": 0,
+                    }
+                )
             i = logical_end + 1
             continue
         cls_hdr_info = _sh_parse_class_header_base_list(s)

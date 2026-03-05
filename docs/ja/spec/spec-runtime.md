@@ -98,6 +98,23 @@
 - 既存の `*-impl` は移行中の暫定互換として残存しうるが、新規追加は `-manual` を使う。
 - 将来の統一命名は `-manual` を正とする。
 
+### 0.66 `src/pytra` での `__all__` 禁止ルール
+
+`src/pytra/**/*.py` では `__all__` を定義してはならない。
+
+- selfhost 実装・変換器実装の単純性を優先し、公開シンボル制御は `__all__` ではなくトップレベル定義の有無で表現する。
+- runtime SoT モジュール（`src/pytra/std`, `src/pytra/utils`, `src/pytra/built_in`）も同様に `__all__` を使わない。
+- 既存モジュールに `__all__` が残っている場合は削除し、生成物側で必要な補助状態（例: `__all__` 変数生成）を持ち込まない。
+
+### 0.67 host-only import alias 規約（`as __name`）
+
+`import ... as __m` / `from ... import ... as __f` のように alias が `__` で始まる import は、host-only import として扱う。
+
+- host-only import は Python 実行時補助（主に `@extern` 関数のフォールバック本体評価）専用とする。
+- トランスパイラは host-only import を EAST の `Import` / `ImportFrom` として出力しない。
+- alias が `_name`（`_` 1個）で始まるだけの import は host-only ではない。通常 import として扱う。
+- `src/pytra/std/*.py` でホスト標準ライブラリに委譲する場合は `as __name` を使う。
+
 ### 0.7 C++ runtime（core/gen）運用手順
 
 再生成:

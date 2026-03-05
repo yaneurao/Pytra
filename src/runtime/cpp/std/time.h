@@ -7,8 +7,6 @@
 
 namespace pytra::std::time {
 
-extern list<str> __all__;
-
 float64 perf_counter();
 
 }  // namespace pytra::std::time

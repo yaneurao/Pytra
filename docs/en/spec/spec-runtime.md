@@ -22,6 +22,23 @@ Operational rules:
 - Existing `*-impl` files may remain temporarily during migration, but new files must use `-manual`.
 - The final unified naming target is `-manual`.
 
+## 0.66 `__all__` Prohibition in `src/pytra`
+
+Do not define `__all__` in `src/pytra/**/*.py`.
+
+- Prioritize simplicity for selfhost/transpiler implementation; model exported symbols by top-level definitions, not by `__all__`.
+- This rule applies equally to runtime SoT modules (`src/pytra/std`, `src/pytra/utils`, `src/pytra/built_in`).
+- If an existing module still has `__all__`, remove it and avoid reintroducing generated-side helper state derived from `__all__`.
+
+## 0.67 Host-Only Import Alias Rule (`as __name`)
+
+Treat `import ... as __m` / `from ... import ... as __f` as host-only imports when the alias starts with `__`.
+
+- Host-only imports are for Python-runtime fallback only (mainly `@extern` fallback bodies).
+- The transpiler must not emit host-only imports as EAST `Import` / `ImportFrom` nodes.
+- A single-underscore alias (`_name`) is not host-only and must remain a normal import.
+- In `src/pytra/std/*.py`, use `as __name` when delegating to host stdlib implementations.
+
 ### 1. Clarify Responsibility Split Between Generated Artifacts and Handwritten Implementations
 
 - Auto-generated:

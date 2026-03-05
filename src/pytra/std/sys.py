@@ -1,85 +1,41 @@
-"""Minimal sys shim for Pytra.
-
-Python 実行時は `list` を保持する軽量実装として振る舞い、
-トランスパイル時は `py_runtime_*` ランタイム関数へ接続される。
-"""
+"""pytra.std.sys: extern-marked sys API with Python runtime fallback."""
 
 from __future__ import annotations
 
-import sys as _host_sys
-from pytra.std.typing import Any
+from pytra.std import extern
 
-argv: list[str] = []
-path: list[str] = []
-stderr: object = None
-stdout: object = None
+import sys as __s
 
-# Python 実行時のホスト値
-argv = _host_sys.argv
-path = _host_sys.path
-stderr = _host_sys.stderr
-stdout = _host_sys.stdout
+argv: list[str] = extern(__s.argv)
+path: list[str] = extern(__s.path)
+stderr: object = extern(__s.stderr)
+stdout: object = extern(__s.stdout)
 
 
+@extern
 def exit(code: int = 0) -> None:
-    try:
-        py_runtime_exit(code)
-    except NameError:
-        _host_sys.exit(code)
+    __s.exit(code)
 
 
-def _to_str_list_fallback(values: Any) -> list[str]:
-    try:
-        return py_to_str_list_from_object(values)
-    except NameError:
-        pass
-    out: list[str] = []
-    if isinstance(values, list):
-        src = list(values)
-        for v in src:
-            out.append(str(v))
-    return out
-
-
-def set_argv(values: Any) -> None:
-    vals: list[str] = []
-    try:
-        vals = py_to_str_list_from_any(values)
-    except NameError:
-        vals = _to_str_list_fallback(values)
+@extern
+def set_argv(values: list[str]) -> None:
     argv.clear()
-    for v in vals:
+    for v in values:
         argv.append(v)
 
 
-def set_path(values: Any) -> None:
-    vals: list[str] = []
-    try:
-        vals = py_to_str_list_from_any(values)
-    except NameError:
-        vals = _to_str_list_fallback(values)
+@extern
+def set_path(values: list[str]) -> None:
     path.clear()
-    for v in vals:
+    for v in values:
         path.append(v)
 
 
-def write_stderr_impl(text: str) -> None:
-    try:
-        py_runtime_write_stderr(text)
-    except NameError:
-        _host_sys.stderr.write(text)
-
-
-def write_stdout_impl(text: str) -> None:
-    try:
-        py_runtime_write_stdout(text)
-    except NameError:
-        _host_sys.stdout.write(text)
-
-
+@extern
 def write_stderr(text: str) -> None:
-    write_stderr_impl(text)
+    __s.stderr.write(text)
 
 
+@extern
 def write_stdout(text: str) -> None:
-    write_stdout_impl(text)
+    __s.stdout.write(text)
