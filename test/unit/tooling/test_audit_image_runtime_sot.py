@@ -48,7 +48,7 @@ class AuditImageRuntimeSotTest(unittest.TestCase):
                 core_text="def py_truthy(v):\n    return bool(v)\n",
                 gen_text=(
                     "// source: src/pytra/utils/png.py\n"
-                    "// generated-by: tools/gen_image_runtime_from_canonical.py\n"
+                    "// generated-by: tools/gen_runtime_from_manifest.py\n"
                     "def __pytra_write_rgb_png():\n"
                     "    pass\n"
                 ),
@@ -70,7 +70,7 @@ class AuditImageRuntimeSotTest(unittest.TestCase):
                 core_text="int png_crc32 = 0;\n",
                 gen_text=(
                     "// source: src/pytra/utils/gif.py\n"
-                    "// generated-by: tools/gen_image_runtime_from_canonical.py\n"
+                    "// generated-by: tools/gen_runtime_from_manifest.py\n"
                     "def __pytra_save_gif():\n"
                     "    pass\n"
                 ),
@@ -90,7 +90,7 @@ class AuditImageRuntimeSotTest(unittest.TestCase):
                 runtime_root,
                 core_text="def py_truthy(v):\n    return bool(v)\n",
                 gen_text=(
-                    "// generated-by: tools/gen_image_runtime_from_canonical.py\n"
+                    "// generated-by: tools/gen_runtime_from_manifest.py\n"
                     "def __pytra_write_rgb_png():\n"
                     "    pass\n"
                 ),

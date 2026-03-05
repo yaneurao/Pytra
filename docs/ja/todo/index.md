@@ -89,13 +89,14 @@
 3. [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-02] target/出力先/marker を持つ宣言設定を定義し、コード内分岐を設定へ移す。
 4. [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] 汎用 generator（単一スクリプト）を実装し、`pytra-cli`/`py2x` 呼び出しへ統合する。
 5. [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] 既存呼び出し元を新導線へ置換する。
-6. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] `tools/gen_image_runtime_from_canonical.py` / `tools/gen_java_std_runtime_from_canonical.py` / `tools/gen_cs_image_runtime_from_canonical.py` を削除する。
+6. [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] `tools/gen_image_runtime_from_canonical.py` / `tools/gen_java_std_runtime_from_canonical.py` / `tools/gen_cs_image_runtime_from_canonical.py` を削除する。
 7. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] 特殊 generator 再導入禁止ガードを CI へ追加する。
 8. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] runtime監査 + parity 回帰で非退行を固定する。
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S1-01] `gen_image/gen_java_std/gen_cs_image` の入出力・命名・後処理差分を計画書へ棚卸しし、単一導線へ移す固定要件を確定。
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S1-02] `tools/runtime_generation_manifest.json` を追加し、module/target/output/marker/postprocess（cs helper）を宣言設定化。manifest構造の unit test を追加。
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] `tools/gen_runtime_from_manifest.py` を追加し、manifest 駆動で `py2x` 生成 + marker 付与 + `cs_program_to_helper` 後処理を共通化。tooling unit（`test_gen_runtime_from_manifest.py`）を追加。
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] `test_gen_image_runtime_from_canonical.py` の参照先を新 generator に置換し、既存呼び出し導線を `gen_runtime_from_manifest` へ寄せた。
+- 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] 旧特殊 generator 3本を削除し、`test_audit_image_runtime_sot.py` の `generated-by` 期待値を `tools/gen_runtime_from_manifest.py` へ更新。
 
 ### P2: `check_py2*` checker の単一化（`--target` + プロファイル）
 
