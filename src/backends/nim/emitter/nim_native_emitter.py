@@ -1307,6 +1307,14 @@ class NimNativeEmitter:
             value_node = expr.get("value")
             value = self._render_expr(value_node)
             attr = _safe_ident(expr.get("attr"))
+            if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+                owner_any = value_node.get("id")
+                owner = owner_any if isinstance(owner_any, str) else ""
+                if owner == "math":
+                    if attr == "pi":
+                        return "PI"
+                    if attr == "e":
+                        return "E"
             semantic_tag_any = expr.get("semantic_tag")
             semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
             runtime_call, runtime_source = _resolved_runtime_call(expr)

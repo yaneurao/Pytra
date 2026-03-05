@@ -206,7 +206,7 @@ proc save_gif*(
   palette: seq[uint8],
   delay_cs: int = 4,
   loop: int = 0,
-): int =
+) =
   let framePixels = width * height
   if palette.len != 256 * 3:
     raise newException(ValueError, "palette must be 256*3 bytes")
@@ -264,4 +264,3 @@ proc save_gif*(
 
   buf.add(0x3B'u8)
   pytraWriteBytes(path, buf)
-  return 0
