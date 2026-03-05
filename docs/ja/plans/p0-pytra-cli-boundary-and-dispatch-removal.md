@@ -45,7 +45,7 @@
 
 - [x] [ID: P0-PYTRA-CLI-REALIGN-01-S1-01] `pytra-cli` の責務境界（CLI本体 / backendプロファイル / 実行runner）を文書化し、禁止事項（target分岐直書き）を固定する。
 - [x] [ID: P0-PYTRA-CLI-REALIGN-01-S1-02] CLI 実体を `src/pytra-cli.py` 命名へ統一し、`./pytra` / parity / tooling 参照を更新する。
-- [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S2-01] target 固有 build/run/transpile 契約を `toolchain` 側のプロファイル定義へ抽出する。
+- [x] [ID: P0-PYTRA-CLI-REALIGN-01-S2-01] target 固有 build/run/transpile 契約を `toolchain` 側のプロファイル定義へ抽出する。
 - [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S2-02] `src/pytra-cli.py` を「引数正規化 + プロファイル解決 + 共通実行」のみに縮退し、target 分岐を撤去する。
 - [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S2-03] `--codegen-opt` など target 非互換オプションの受理条件をプロファイルベースで検証し、fail-fast を統一する。
 - [ ] [ID: P0-PYTRA-CLI-REALIGN-01-S3-01] parity/tooling をプロファイル駆動の新CLI契約へ追従させ、target 直書き重複を削減する。
@@ -54,3 +54,4 @@
 決定ログ:
 - 2026-03-05: ユーザー指示により、`pytra_cli.py` ではなく `pytra-cli.py` を正式名称とし、CLI から target ごとの分岐実装を排除する方針を確定。
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S1-01`] `docs/ja/spec/spec-make.md` / `docs/en/spec/spec-make.md` に `pytra-cli` 境界節を追加し、CLI本体・backendプロファイル・実行runnerの責務/禁止事項（target分岐直書き禁止、runtimeファイル直書き禁止、tooling重複禁止）を固定した。
+- 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-01`] `src/toolchain/compiler/pytra_cli_profiles.py` を新設し、target 固有の出力拡張子・出力パス決定・non-cpp build/run コマンド契約を CLI 本体から抽出。`src/pytra-cli.py` は契約参照へ切替え、`test_pytra_cli.py` / `test_pytra_cli_profiles.py` を通過。

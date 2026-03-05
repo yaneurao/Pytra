@@ -9,7 +9,12 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+
+from toolchain.compiler.pytra_cli_profiles import (
+    SUPPORTED_TARGETS,
+    make_noncpp_build_plan,
+    resolve_output_path as resolve_profile_output_path,
+)
 
 
 # /src/pytra-cli.py -> project root is parents[1]
@@ -23,39 +28,6 @@ DEFAULT_EXE = "app.out"
 DEFAULT_STD = "c++20"
 DEFAULT_COMPILER = "g++"
 DEFAULT_OPT = "-O2"
-SUPPORTED_TARGETS = [
-    "cpp",
-    "rs",
-    "cs",
-    "js",
-    "ts",
-    "go",
-    "java",
-    "swift",
-    "kotlin",
-    "scala",
-    "lua",
-    "ruby",
-    "php",
-    "nim",
-]
-TARGET_EXT: dict[str, str] = {
-    "cpp": ".cpp",
-    "rs": ".rs",
-    "cs": ".cs",
-    "js": ".js",
-    "ts": ".ts",
-    "go": ".go",
-    "java": ".java",
-    "swift": ".swift",
-    "kotlin": ".kt",
-    "scala": ".scala",
-    "lua": ".lua",
-    "ruby": ".rb",
-    "php": ".php",
-    "nim": ".nim",
-}
-
 _OPT_SHORT_RE = re.compile(r"^-O[0-3]$")
 
 
@@ -116,16 +88,7 @@ def _require_make_available() -> str:
 
 
 def _resolve_output_path(input_path: Path, target: str, args: argparse.Namespace) -> Path:
-    if args.output != "":
-        return Path(args.output)
-    out_dir = Path(args.output_dir) if args.output_dir else Path(DEFAULT_OUTPUT_DIR)
-    stem = input_path.stem if input_path.stem != "" else "output"
-    if target == "java":
-        return out_dir / "Main.java"
-    ext = TARGET_EXT.get(target, "")
-    if ext == "":
-        return out_dir / stem
-    return out_dir / f"{stem}{ext}"
+    return resolve_profile_output_path(input_path, target, args.output, args.output_dir)
 
 
 def _run_py2x_target(
@@ -150,22 +113,6 @@ def _run_py2x_target(
     return _run(cmd, cwd=Path.cwd(), stdout_to_stderr=stdout_to_stderr)
 
 
-def _run_interpreter_build(output_path: Path, target: str, run_after_build: bool) -> int:
-    if not run_after_build:
-        return 0
-    if target == "js":
-        return _run(["node", str(output_path)], cwd=Path.cwd())
-    if target == "ts":
-        return _run(["npx", "-y", "tsx", str(output_path)], cwd=Path.cwd())
-    if target == "ruby":
-        return _run(["ruby", str(output_path)], cwd=Path.cwd())
-    if target == "lua":
-        return _run(["lua", str(output_path)], cwd=Path.cwd())
-    if target == "php":
-        return _run(["php", str(output_path)], cwd=Path.cwd())
-    return 0
-
-
 def _build_noncpp(input_path: Path, target: str, args: argparse.Namespace, passthrough: list[str]) -> int:
     output_path = _resolve_output_path(input_path, target, args)
     if output_path.exists() and output_path.is_dir():
@@ -176,155 +123,20 @@ def _build_noncpp(input_path: Path, target: str, args: argparse.Namespace, passt
     if rc != 0:
         return rc
 
-    if target in {"js", "ts", "ruby", "lua", "php"}:
-        return _run_interpreter_build(output_path, target, args.run)
-
-    out_dir = output_path.parent
-    stem = input_path.stem if input_path.stem != "" else "output"
-
-    if target == "rs":
-        exe_path = out_dir / f"{stem}_rs.out"
-        rc = _run(
-            ["rustc", "-O", str(output_path), "-o", str(exe_path)],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-        if rc != 0 or not args.run:
+    plan = make_noncpp_build_plan(
+        root=ROOT,
+        target=target,
+        output_path=output_path,
+        source_stem=input_path.stem,
+        run_after_build=args.run,
+    )
+    if isinstance(plan.build_cmd, list):
+        rc = _run(plan.build_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+        if rc != 0:
             return rc
-        return _run([str(exe_path)], cwd=Path.cwd())
-
-    if target == "cs":
-        exe_path = out_dir / f"{stem}_cs.exe"
-        rc = _run(
-            [
-                "mcs",
-                "-warn:0",
-                f"-out:{exe_path}",
-                str(output_path),
-                str(ROOT / "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
-                str(ROOT / "src/runtime/cs/pytra-core/built_in/time.cs"),
-                str(ROOT / "src/runtime/cs/pytra-core/built_in/math.cs"),
-                str(ROOT / "src/runtime/cs/pytra-gen/utils/png.cs"),
-                str(ROOT / "src/runtime/cs/pytra-gen/utils/gif.cs"),
-                str(ROOT / "src/runtime/cs/pytra-core/std/pathlib.cs"),
-                str(ROOT / "src/runtime/cs/pytra-core/std/json.cs"),
-            ],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-        if rc != 0 or not args.run:
-            return rc
-        return _run(["mono", str(exe_path)], cwd=Path.cwd())
-
-    if target == "go":
-        exe_path = out_dir / f"{stem}_go.out"
-        rc = _run(
-            [
-                "go",
-                "build",
-                "-o",
-                str(exe_path),
-                str(output_path),
-                str(out_dir / "py_runtime.go"),
-                str(out_dir / "png.go"),
-                str(out_dir / "gif.go"),
-            ],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-        if rc != 0 or not args.run:
-            return rc
-        return _run([str(exe_path)], cwd=Path.cwd())
-
-    if target == "java":
-        rc = _run(
-            [
-                "javac",
-                "-sourcepath",
-                str(out_dir),
-                str(out_dir / "Main.java"),
-                str(out_dir / "PyRuntime.java"),
-                str(out_dir / "png.java"),
-                str(out_dir / "gif.java"),
-            ],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-        if rc != 0 or not args.run:
-            return rc
-        return _run(["java", "-cp", str(out_dir), "Main"], cwd=Path.cwd())
-
-    if target == "swift":
-        exe_path = out_dir / f"{stem}_swift.out"
-        rc = _run(
-            [
-                "swiftc",
-                "-O",
-                str(output_path),
-                str(out_dir / "py_runtime.swift"),
-                str(out_dir / "image_runtime.swift"),
-                "-o",
-                str(exe_path),
-            ],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-        if rc != 0 or not args.run:
-            return rc
-        return _run([str(exe_path)], cwd=Path.cwd())
-
-    if target == "kotlin":
-        jar_path = out_dir / f"{stem}_kotlin.jar"
-        rc = _run(
-            [
-                "kotlinc",
-                str(output_path),
-                str(out_dir / "py_runtime.kt"),
-                str(out_dir / "image_runtime.kt"),
-                "-include-runtime",
-                "-d",
-                str(jar_path),
-            ],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-        if rc != 0 or not args.run:
-            return rc
-        return _run(["java", "-jar", str(jar_path)], cwd=Path.cwd())
-
-    if target == "scala":
-        if not args.run:
-            return 0
-        return _run(
-            [
-                "scala",
-                "run",
-                str(out_dir / "py_runtime.scala"),
-                str(out_dir / "image_runtime.scala"),
-                str(output_path),
-            ],
-            cwd=Path.cwd(),
-            stdout_to_stderr=True,
-        )
-
-    if target == "nim":
-        exe_path = out_dir / f"{stem}_nim.out"
-        nimcache_path = out_dir / f"nimcache_{stem}"
-        cmd = [
-            "nim",
-            "c",
-            "--hints:off",
-            "--verbosity:0",
-            f"--nimcache:{nimcache_path}",
-            f"-o:{exe_path}",
-        ]
-        if args.run:
-            cmd.append("-r")
-        cmd.append(str(output_path))
-        return _run(cmd, cwd=Path.cwd(), stdout_to_stderr=True)
-
-    print(f"error: unsupported build target: {target}", file=sys.stderr)
-    return 1
+    if isinstance(plan.run_cmd, list):
+        return _run(plan.run_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    return 0
 
 
 def _manifest_path(output_dir: Path, args: argparse.Namespace) -> Path:
@@ -432,48 +244,6 @@ def _transpile_cpp(input_path: Path, args: argparse.Namespace, passthrough: list
     return _run(cmd, cwd=Path.cwd())
 
 
-def _resolve_rs_output_path(input_path: Path, args: argparse.Namespace) -> Path:
-    if args.output != "":
-        return Path(args.output)
-    out_dir = Path(args.output_dir) if args.output_dir else Path(DEFAULT_OUTPUT_DIR)
-    stem = input_path.stem
-    if stem == "":
-        stem = "output"
-    return out_dir / f"{stem}.rs"
-
-
-def _transpile_rs(input_path: Path, args: argparse.Namespace, passthrough: list[str]) -> int:
-    output_path = _resolve_rs_output_path(input_path, args)
-    if output_path.exists() and output_path.is_dir():
-        print(f"error: output path is a directory: {output_path}", file=sys.stderr)
-        return 1
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [PYTHON, str(PY2X), str(input_path), "--target", "rs", "--output", str(output_path)]
-    cmd.extend(passthrough)
-    return _run(cmd, cwd=Path.cwd())
-
-
-def _resolve_scala_output_path(input_path: Path, args: argparse.Namespace) -> Path:
-    if args.output != "":
-        return Path(args.output)
-    out_dir = Path(args.output_dir) if args.output_dir else Path(DEFAULT_OUTPUT_DIR)
-    stem = input_path.stem
-    if stem == "":
-        stem = "output"
-    return out_dir / f"{stem}.scala"
-
-
-def _transpile_scala(input_path: Path, args: argparse.Namespace, passthrough: list[str]) -> int:
-    output_path = _resolve_scala_output_path(input_path, args)
-    if output_path.exists() and output_path.is_dir():
-        print(f"error: output path is a directory: {output_path}", file=sys.stderr)
-        return 1
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [PYTHON, str(PY2X), str(input_path), "--target", "scala", "--output", str(output_path)]
-    cmd.extend(passthrough)
-    return _run(cmd, cwd=Path.cwd())
-
-
 def _parse(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     argv = _normalize_args(argv)
     ap = argparse.ArgumentParser(description="pytra unified CLI (v1)")
@@ -529,18 +299,11 @@ def main(argv: list[str]) -> int:
     passthrough_args.extend(passthrough)
     if args.target == "cpp":
         return _transpile_cpp(input_path, args, passthrough_args)
-    if args.target == "rs":
-        return _transpile_rs(input_path, args, passthrough_args)
-    if args.target in {"cs", "js", "ts", "go", "java", "swift", "kotlin", "lua", "ruby", "php", "nim"}:
-        output_path = _resolve_output_path(input_path, args.target, args)
-        if output_path.exists() and output_path.is_dir():
-            print(f"error: output path is a directory: {output_path}", file=sys.stderr)
-            return 1
-        return _run_py2x_target(input_path, args.target, output_path, passthrough_args)
-    if args.target == "scala":
-        return _transpile_scala(input_path, args, passthrough_args)
-    print(f"error: unsupported target: {args.target}", file=sys.stderr)
-    return 1
+    output_path = _resolve_output_path(input_path, args.target, args)
+    if output_path.exists() and output_path.is_dir():
+        print(f"error: output path is a directory: {output_path}", file=sys.stderr)
+        return 1
+    return _run_py2x_target(input_path, args.target, output_path, passthrough_args)
 
 
 if __name__ == "__main__":
