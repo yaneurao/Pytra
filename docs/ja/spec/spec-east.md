@@ -234,6 +234,30 @@
 - emitter や frontends/sig registry に `py_assert_*` / `json.loads` / `write_rgb_png` 等の runtime dispatch 用テーブルを埋めること。
 - 「EAST3では不足している」という理由で、呼び出し解決ルールを backend 側へ持ち込むこと。
 
+EAST3 -> backend の解決済み呼び出し契約（固定）:
+
+- 対象ノード:
+  - `Call`
+  - `Attribute`（`Path.parent/name/stem` 等の属性アクセスを含む）
+- backend が参照してよい解決済み属性:
+  - `semantic_tag`
+  - `runtime_call`
+  - `resolved_runtime_call`
+  - `resolved_runtime_source`
+  - `resolved_type`
+- 解決優先順位:
+  1. `runtime_call`（空でない場合）
+  2. `resolved_runtime_call`（`runtime_call` が空の場合）
+  3. 上記が両方空で `semantic_tag` が `stdlib.*` のときは fail-closed（暗黙フォールバック禁止）
+- `resolved_runtime_source` 契約:
+  - `import_symbol`: `from ... import ...` 経由で解決
+  - `module_attr`: `module.symbol` 経由で解決
+  - （後方互換として）`runtime_call` / `resolved_runtime_call` の文字列を返す実装は許容するが、新規実装では `import_symbol` / `module_attr` を優先する。
+- backend API 制約:
+  - emitter は `Call/Attribute` の生 `callee/owner/attr` 名で stdlib/runtime の意味解釈をしない。
+  - emitter の runtime-call 描画 API は「解決済み属性を入力に受ける」形に限定し、生 AST ノード依存の再解決ロジックを持たない。
+  - `resolved_type` を使った型選択は許可するが、モジュール名・関数名の逆引きは許可しない。
+
 運用上の強制（CI）:
 
 - `python3 tools/check_emitter_runtimecall_guardrails.py`

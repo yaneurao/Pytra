@@ -76,7 +76,7 @@ S1-01 分類結果（違反タイプ別）:
 ## 分解
 
 - [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に「境界違反タイプ（分岐/dispatch/runtime実装混在）」へ分類し、修正順序を確定する。
-- [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend の解決済み呼び出し契約（call/attr/module/type）を明文化し、emitter API 制約を固定する。
+- [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend の解決済み呼び出し契約（call/attr/module/type）を明文化し、emitter API 制約を固定する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正し、runtime/stdlib 分岐を解決済み描画へ置換する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
 - [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter 内のフォールバック経路を fail-closed 化し、未解決時の推測レンダリングを禁止する。
@@ -86,3 +86,4 @@ S1-01 分類結果（違反タイプ別）:
 決定ログ:
 - 2026-03-05: ユーザー指摘に基づき、目的を「文字列撤去」から「責務境界の設計是正」へ修正した。`math/gif/png` 検索は症状検知ガードとして再定義した。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 179件を `branch/dispatch/runtime実装混在` へ分類し、`lua -> scala -> rs` を先行是正順に確定した（分類CSVを `work/logs/backend_boundary_audit_classified_20260305_s1_01.csv` に固定）。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend の固定契約（`Call/Attribute` の解決済み属性、優先順位、`resolved_runtime_source`、fail-closed、emitter API 制約）を追記し、再解決禁止を仕様化した。
