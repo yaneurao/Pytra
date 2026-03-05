@@ -166,8 +166,8 @@
 8. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、emitter の直書き runtime 関数分岐を IR 解決経路へ移行する。
 9. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
 10. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter でのライブラリ関数名直書き禁止を lint 化し、PR/CI で fail-fast 化する。
-11. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32 含む）を再実施し、差分を固定する。
-12. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] 運用手順（ローカル/CI）を `docs/ja` / `docs/en` に反映する。
+11. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32 含む）を再実施し、差分を固定する。
+12. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] 運用手順（ローカル/CI）を `docs/ja` / `docs/en` に反映する。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2の未完了一覧残置を整理し、`docs/en/todo/index.md` / `docs/en/plans/p2-runtime-parity-with-cpp.md` を新P2（`...-CPP-02`）へ置換した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] `docs/ja/spec/spec-runtime.md` に全言語共通の SoT/pytra-core/pytra-gen 責務境界節を追加し、必須事項（生成優先・marker・EAST3解決済み描画）と禁止事項（core 再実装・特別命名・emitter 直書き分岐）および監査コマンドを固定した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] `docs/ja/spec/spec-runtime.md` に `std/utils` モジュール分類表を追加し、`argparse..typing` + `assertions/gif/png` を生成必須、`dataclasses_impl/math_impl/time_impl` を core許可（impl境界）として固定した。
@@ -185,6 +185,8 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `src/runtime2/{rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim}` を `src/runtime/` へ復旧し、`runtime source not found` 系エラーを解消した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] PHP runtime の `resolved_runtime_call` シンボル解決と `pytra-gen/runtime/{png,gif}.php` の append-list 参照渡し化を修正し、`01_mandelbrot` / `02_raytrace_spheres` を 14 target で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample01_02_all_targets_after_php_runtime_fixes_20260305.json`）。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] Nim の `save_gif` 戻り値型（`int`）と `math.pi` 変換を修正し、`04_orbit_trap_julia`〜`06_julia_parameter_sweep` を 14 target で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample04_06_all_targets_after_nim_fix_20260305.json`）。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] Lua/Ruby/Scala/Nim/PHP/Scala の残failを是正（Lua: ifexp truthy + bit演算 + local scope、Ruby/Scala: bit演算、Scala: stdlib.method owner注入、Nim: `sqrt(int)` cast、PHP: `stdlib.method.pop` fallback）し、`01-03/04-06/07-09/10-12/13-15/16-18` の分割再実行で全14target `pass=18, fail=0` を確認（`work/logs/runtime_parity_sample01_03_all_targets_after_lua_decl_fix_20260305.json`, `work/logs/runtime_parity_sample04_06_all_targets_after_lua_decl_fix_20260305.json`, `work/logs/runtime_parity_sample07_09_all_targets_after_lua_scope_fix_20260305.json`, `work/logs/runtime_parity_sample10_12_all_targets_after_lua_nim_fix_20260305.json`, `work/logs/runtime_parity_sample13_15_all_targets_after_php_pop_fix_20260305.json`, `work/logs/runtime_parity_sample16_18_all_targets_after_fixes_20260305.json`）。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` に runtime parity runbook（全14target 実行コマンド、artifact `size/CRC32` 検証、stale artifact 自動削除、推奨ケース分割）を追記し、ローカル/CI 共通運用手順を固定した。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 

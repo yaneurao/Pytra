@@ -68,6 +68,29 @@ Notes:
 - Use the **arithmetic mean (average)** of the two measured runs as the representative value (do not use median).
 - Exclude compile time from runtime numbers.
 
+## Runtime Parity Runbook (sample, all targets)
+
+- `tools/runtime_parity_check.py` validates not only stdout but also artifact `size` and `CRC32` from each `output:` path.
+- During parity runs, stale artifacts are purged per case from `sample/out`, `test/out`, `out`, and `test/transpile/<target>/<case>`.
+- Unstable timing lines such as `elapsed_sec` are excluded by default (`--ignore-unstable-stdout` is compatibility-only).
+- Full 14-target check:
+
+```bash
+python3 tools/runtime_parity_check.py \
+  --case-root sample \
+  --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim \
+  --all-samples \
+  --summary-json work/logs/runtime_parity_sample_all_targets.json
+```
+
+- Recommended split (faster iteration):
+  - `01-03`: `01_mandelbrot 02_raytrace_spheres 03_julia_set`
+  - `04-06`: `04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep`
+  - `07-09`: `07_game_of_life_loop 08_langtons_ant 09_fire_simulation`
+  - `10-12`: `10_plasma_effect 11_lissajous_particles 12_sort_visualizer`
+  - `13-15`: `13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop`
+  - `16-18`: `16_glass_sculpture_chaos 17_monte_carlo_pi 18_mini_language_interpreter`
+
 ## Mandatory Emitter Guardrails (Stop-Ship)
 
 - If you modify `src/backends/*/emitter/*.py`, run the following before commit:

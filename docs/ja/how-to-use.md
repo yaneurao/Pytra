@@ -76,6 +76,29 @@ Windows では次の読み替えを行ってください。
 - 代表値は 2 回の**算術平均（average）**を使います（中央値は使いません）。
 - コンパイル時間は計測値に含めません。
 
+## runtime parity 運用（sample, 全target）
+
+- `tools/runtime_parity_check.py` は stdout だけでなく、`output:` で示された artifact の `size` と `CRC32` まで比較します。
+- parity 実行時は case ごとに `sample/out`, `test/out`, `out`, `test/transpile/<target>/<case>` の stale artifact を自動削除します。
+- `elapsed_sec` などの不安定行は既定で比較対象外です（`--ignore-unstable-stdout` は互換フラグ）。
+- 全14targetを一括検証する場合:
+
+```bash
+python3 tools/runtime_parity_check.py \
+  --case-root sample \
+  --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim \
+  --all-samples \
+  --summary-json work/logs/runtime_parity_sample_all_targets.json
+```
+
+- 実行時間短縮のためにケースを分割する場合（運用例）:
+  - `01-03`: `01_mandelbrot 02_raytrace_spheres 03_julia_set`
+  - `04-06`: `04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep`
+  - `07-09`: `07_game_of_life_loop 08_langtons_ant 09_fire_simulation`
+  - `10-12`: `10_plasma_effect 11_lissajous_particles 12_sort_visualizer`
+  - `13-15`: `13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop`
+  - `16-18`: `16_glass_sculpture_chaos 17_monte_carlo_pi 18_mini_language_interpreter`
+
 ## Emitter変更時の必須ガード（Stop-Ship）
 
 - `src/backends/*/emitter/*.py` を変更した場合は、コミット前に次を必ず実行します。

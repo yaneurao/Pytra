@@ -64,8 +64,8 @@
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、runtime API 呼び出しを IR 解決経路へ統一（emitter 直書き撤去）する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter 禁止ルール（ライブラリ名直書き）を lint 化し、PR/CI で fail-fast する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32）を再実施し、差分を固定する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] ルール違反の再発時に即検知できる運用手順（ローカル/CI）を `docs/ja/how-to-use` と `docs/en/how-to-use` に反映する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32）を再実施し、差分を固定する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] ルール違反の再発時に即検知できる運用手順（ローカル/CI）を `docs/ja/how-to-use` と `docs/en/how-to-use` に反映する。
 
 ## S2-03 棚卸し結果（2026-03-05）
 
@@ -109,3 +109,9 @@
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] C++先行移行時に退避していた非C++ runtime を `src/runtime2/{rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim}` から `src/runtime/` へ復旧し、`backend_registry` runtime hook の `runtime source not found` 連鎖を解消した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] PHP で `write_rgb_png/save_gif` が不一致だったため、`php_native_emitter` の `resolved_runtime_call`（単一シンボルのみ raw 名採用）を修正し、`gen_runtime_from_manifest.py` の PHP postprocess に `_*_append_list(&$dst, ...)` 参照渡し化を追加。`runtime/php/pytra-core/py_runtime.php` に `open`/`PyFile`/bytes変換を補強して `sample/01,02` の 14target parity（artifact size+CRC32）一致を確認（`work/logs/runtime_parity_sample01_02_all_targets_after_php_runtime_fixes_20260305.json`）。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] Nim の残差分として `save_gif` の戻り値 `int`（式文未discardエラー）と `math.pi`（`PI` への正規化不足）を修正。`nim_native_emitter.py` と `runtime/nim/{pytra,pytra-gen}/utils` を更新し、`runtime_parity_check.py` で `04,05,06` の 14target parity（artifact size+CRC32）一致を確認（`work/logs/runtime_parity_sample04_06_all_targets_after_nim_fix_20260305.json`）。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] `07-09` で Lua artifact mismatch を確認し、`lua_native_emitter.py` の `IfExp` を `__pytra_truthy` ベース遅延評価へ修正。再実行で `07/08/09` の 14target artifact size+CRC32 一致を確認（`work/logs/runtime_parity_sample07_09_all_targets_after_lua_scope_fix_20260305.json`）。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] `10-12` の残failとして `nim: math.sqrt(int)` と `lua: max/min 解決衝突` を修正（Nim emitter に `sqrt` float cast、Lua emitter に `_G.math.max/min`）。`10/11/12` の 14target artifact size+CRC32 一致を確認（`work/logs/runtime_parity_sample10_12_all_targets_after_lua_nim_fix_20260305.json`）。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] `13-15` の `php: stdlib.method.pop` unresolved を修正して fallback 経路を有効化。`13/14/15` の 14target artifact size+CRC32 一致を確認（`work/logs/runtime_parity_sample13_15_all_targets_after_php_pop_fix_20260305.json`）。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] `16-18` の残failを修正（Ruby/Scala/Lua: bit演算記号マップ、Scala: `stdlib.method.*` に `runtime_owner` 注入、Lua: 関数内初回代入の `local` 化 + 宣言-only 追跡）。`16/17/18` の 14target artifact size+CRC32 一致を確認（`work/logs/runtime_parity_sample16_18_all_targets_after_fixes_20260305.json`）。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] 変更影響の回帰確認として `01-03` と `04-06` を全14targetで再実行し、artifact size+CRC32 一致を確認（`work/logs/runtime_parity_sample01_03_all_targets_after_lua_decl_fix_20260305.json`, `work/logs/runtime_parity_sample04_06_all_targets_after_lua_decl_fix_20260305.json`）。これにより sample 18件全てで `pass=18, fail=0` を固定。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-02`] `docs/ja/how-to-use.md` / `docs/en/how-to-use.md` に parity runbook 節を追加し、全14target実行コマンド、artifact size+CRC32 比較、stale artifact 自動削除、推奨ケース分割を明文化した。
