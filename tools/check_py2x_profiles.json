@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "profiles": {
+    "cpp": {
+      "target": "cpp",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/signature/ng_kwargs.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_object_receiver.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_posonly.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_varargs.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_untyped_param.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/typing/any_class_alias.py": {"category": "expected_failure", "contains": ""}
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "forbid_generated_contains": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": true,
+        "source": "sample/py/01_mandelbrot.py",
+        "expected_fragment": "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
+      }
+    },
+    "java": {
+      "target": "java",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/finally.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/control/try_raise.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/control/yield_generator_min.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/core/tuple_assign.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_kwargs.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_object_receiver.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_posonly.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_varargs.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/signature/ng_untyped_param.py": {"category": "expected_failure", "contains": ""},
+        "test/fixtures/typing/any_class_alias.py": {"category": "expected_failure", "contains": ""}
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "forbid_generated_contains": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "scala": {
+      "target": "scala",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "validate",
+      "expected_failures": {
+        "test/fixtures/signature/ng_kwargs.py": {"category": "user_syntax_error", "contains": "variadic kwargs parameter"},
+        "test/fixtures/signature/ng_object_receiver.py": {"category": "unsupported_by_design", "contains": "object receiver attribute/method access is forbidden"},
+        "test/fixtures/signature/ng_posonly.py": {"category": "user_syntax_error", "contains": "positional-only marker '/'"},
+        "test/fixtures/signature/ng_varargs.py": {"category": "user_syntax_error", "contains": "variadic args parameter"},
+        "test/fixtures/typing/any_class_alias.py": {"category": "unsupported_by_design", "contains": "object receiver attribute/method access is forbidden"}
+      },
+      "quality_hooks": [
+        "scala_sample01"
+      ],
+      "required_runtime_files": [
+        "py_runtime.scala",
+        "image_runtime.scala"
+      ],
+      "forbid_generated_contains": [
+        "def __pytra_truthy(",
+        "def __pytra_int("
+      ],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    }
+  }
+}

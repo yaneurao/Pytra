@@ -54,6 +54,7 @@
 - 2026-03-05: ユーザー指示により、言語別 checker 群は将来削除前提とし、`--target` 駆動の単一 checker へ統合する方針を確定。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-01`] `check_py2*_transpile.py` 14本の差分を棚卸しし、差分軸を「ケース集合（全fixture+sample or 明示CASES）」「expected-fail 形式（単純集合 or 構造化spec）」「追加品質フック（scala sample01 / php sample18）」「追加CLI（`--skip-east3-contract-tests` / `--check-multi-file` / `--check-yanesdk-smoke` / stage2 probe）」へ固定した。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-02`] 単一 checker 用 profile 形式を `target / case_mode / cases / expected_failures / quality_hooks / flags / stage2_probe` で固定し、単純 expected-fail 一覧を構造化 `expected_failures` へ正規化する仕様を確定した。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] `tools/check_py2x_transpile.py` と `tools/check_py2x_profiles.json` を追加し、共通実行器（cases解決・expected-fail skip/validate・quality hook・stage2 probe）を実装。まず `cpp/java/scala` profile を移植し、`sample/py/01_mandelbrot.py` で3target smoke 通過を確認した。
 
 ## S1-01 棚卸し結果（固定）
 

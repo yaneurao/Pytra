@@ -115,6 +115,7 @@
 8. [ ] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰で非退行を固定する。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S1-01] `check_py2*_transpile.py` 14本を棚卸しし、差分軸を `case_mode(all|explicit)` / 構造化expected-fail / 品質hook / 追加CLIフラグへ固定。統一仕様を `p2-checker-unification.md` に反映。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S1-02] 単一checker profile 仕様を `target/case_mode/cases/expected_failures/quality_hooks/flags/stage2_probe` で固定し、単純expected-fail集合の正規化規則を定義。
+- 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` + `check_py2x_profiles.json` を追加し、共通実行器を実装。`cpp/java/scala` profile を移植し `sample/py/01_mandelbrot.py` smoke（3target）通過を確認。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
