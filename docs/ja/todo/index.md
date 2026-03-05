@@ -99,6 +99,7 @@
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] 旧特殊 generator 3本を削除し、`test_audit_image_runtime_sot.py` の `generated-by` 期待値を `tools/gen_runtime_from_manifest.py` へ更新。
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] `tools/check_runtime_special_generators_absent.py` を追加し、`run_local_ci.py` に統合。`gen_*_from_canonical.py` 再導入をCIで fail-fast 化。
 - 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] runtime監査を再実行し `check_runtime_std_sot_guard.py` の stale allowlist 1件（`json src/runtime/java/pytra-core/built_in/PyRuntime.java`）を解消。parity（`cpp,java,ruby,lua,php` の `01_mandelbrot`）は `java` の `png.py` 変換構文崩れで継続対応中。
+- 進捗メモ: [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] `gen_runtime_from_manifest.py` を runtime hook 非依存化して Java `pytra-gen/utils/png.java,gif.java` を再生成。`java_native_emitter.py`/`PyRuntime.java` を補強したが、parity は `tmp class名`, `PngHelper`, `uint8`, `open/PyFile` など Java 側の残課題で未完了。
 
 ### P2: `check_py2*` checker の単一化（`--target` + プロファイル）
 

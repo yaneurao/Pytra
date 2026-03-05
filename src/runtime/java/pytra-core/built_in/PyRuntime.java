@@ -652,6 +652,47 @@ final class PyRuntime {
         return out;
     }
 
+    static <T> java.util.ArrayList<T> __pytra_list_concat(java.util.List<? extends T> left, java.util.List<? extends T> right) {
+        java.util.ArrayList<T> out = new java.util.ArrayList<T>(left.size() + right.size());
+        out.addAll(left);
+        out.addAll(right);
+        return out;
+    }
+
+    static <T> java.util.ArrayList<T> __pytra_list_slice(java.util.List<T> src, long start, long stop) {
+        long n = src.size();
+        long lo = start;
+        long hi = stop;
+        if (lo < 0L) {
+            lo += n;
+        }
+        if (hi < 0L) {
+            hi += n;
+        }
+        if (lo < 0L) {
+            lo = 0L;
+        }
+        if (hi < 0L) {
+            hi = 0L;
+        }
+        if (lo > n) {
+            lo = n;
+        }
+        if (hi > n) {
+            hi = n;
+        }
+        if (hi < lo) {
+            hi = lo;
+        }
+        java.util.ArrayList<T> out = new java.util.ArrayList<T>((int) (hi - lo));
+        long i = lo;
+        while (i < hi) {
+            out.add(src.get((int) i));
+            i += 1L;
+        }
+        return out;
+    }
+
     static java.util.HashMap<Object, Object> __pytra_dict_of(Object... kv) {
         java.util.HashMap<Object, Object> out = new java.util.HashMap<Object, Object>();
         int i = 0;

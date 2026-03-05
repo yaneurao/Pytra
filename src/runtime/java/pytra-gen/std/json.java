@@ -1,14 +1,14 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/json.py
-// generated-by: tools/gen_java_std_runtime_from_canonical.py
+// generated-by: tools/gen_runtime_from_manifest.py
 
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/json.py
-// generated-by: tools/gen_java_std_runtime_from_canonical.py
-
-public final class json {
-    private json() {
+public final class tmp {
+    private tmp() {
     }
+
+    public static String _EMPTY = "";
+    public static String _COMMA_NL = ",\n";
+    public static String _HEX_DIGITS = "0123456789abcdef";
 
 
     public static class _JsonParser {
@@ -168,8 +168,7 @@ public final class json {
                                             out_chars.add("\n");
                                         } else {
                                             if ((java.util.Objects.equals(esc, "r"))) {
-                                                out_chars.add("
-");
+                                                out_chars.add("");
                                             } else {
                                                 if ((java.util.Objects.equals(esc, "t"))) {
                                                     out_chars.add("	");
@@ -249,17 +248,16 @@ public final class json {
             }
             String token = PyRuntime.__pytra_str_slice(this.text, (((start) < 0L) ? (((long)(this.text.length())) + (start)) : (start)), (((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)));
             if (is_float) {
-                double num_f = ((double)(token));
+                double num_f = _float(token);
                 return num_f;
             }
-            long num_i = PyRuntime.__pytra_int(token);
+            long num_i = _int(token);
             return num_i;
         }
     }
 
     public static boolean _is_ws(String ch) {
-        return ((java.util.Objects.equals(ch, " ")) || (java.util.Objects.equals(ch, "	")) || (java.util.Objects.equals(ch, "
-")) || (java.util.Objects.equals(ch, "\n")));
+        return ((java.util.Objects.equals(ch, " ")) || (java.util.Objects.equals(ch, "	")) || (java.util.Objects.equals(ch, "")) || (java.util.Objects.equals(ch, "\n")));
     }
 
     public static boolean _is_digit(String ch) {
@@ -268,7 +266,7 @@ public final class json {
 
     public static long _hex_value(String ch) {
         if (((ch >= "0") && (ch <= "9"))) {
-            return PyRuntime.__pytra_int(ch);
+            return _int(ch);
         }
         if (((java.util.Objects.equals(ch, "a")) || (java.util.Objects.equals(ch, "A")))) {
             return 10L;
@@ -343,8 +341,7 @@ public final class json {
                             if ((java.util.Objects.equals(ch, "\n"))) {
                                 out.add("\\n");
                             } else {
-                                if ((java.util.Objects.equals(ch, "
-"))) {
+                                if ((java.util.Objects.equals(ch, ""))) {
                                     out.add("\\r");
                                 } else {
                                     if ((java.util.Objects.equals(ch, "	"))) {
@@ -381,7 +378,7 @@ public final class json {
             }
             return "[" + item_sep.join(dumped) + "]";
         }
-        long indent_i = PyRuntime.__pytra_int(indent);
+        long indent_i = _int(indent);
         java.util.ArrayList<String> inner = new java.util.ArrayList<String>();
         java.util.ArrayList<Object> __iter_2 = ((java.util.ArrayList<Object>)(Object)(values));
         for (long __iter_i_3 = 0L; __iter_i_3 < ((long)(__iter_2.size())); __iter_i_3 += 1L) {
@@ -410,7 +407,7 @@ public final class json {
             }
             return "{" + item_sep.join(parts) + "}";
         }
-        long indent_i = PyRuntime.__pytra_int(indent);
+        long indent_i = _int(indent);
         java.util.ArrayList<String> inner = new java.util.ArrayList<String>();
         java.util.ArrayList<Object> __iter_3 = ((java.util.ArrayList<Object>)(Object)(values.items()));
         for (long __iter_i_4 = 0L; __iter_i_4 < ((long)(__iter_3.size())); __iter_i_4 += 1L) {

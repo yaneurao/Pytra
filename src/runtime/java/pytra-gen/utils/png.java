@@ -1,137 +1,110 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/png.py
-// generated-by: tools/gen_image_runtime_from_canonical.py
+// generated-by: tools/gen_runtime_from_manifest.py
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.zip.CRC32;
-
-final class PngHelper {
-    private PngHelper() {
+public final class tmp {
+    private tmp() {
     }
 
-    static byte[] pyToBytes(Object v) {
-        if (v instanceof byte[] b) {
-            return b;
-        }
-        if (v instanceof List<?> list) {
-            byte[] out = new byte[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                out[i] = (byte) PyRuntime.pyToInt(list.get(i));
+
+    public static long _crc32(java.util.ArrayList<Long> data) {
+        long crc = 4294967295L;
+        long poly = 3988292384L;
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(data));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            uint8 b = ((uint8)(__iter_0.get((int)(__iter_i_1))));
+            crc += b;
+            long i = 0L;
+            while ((i < 8L)) {
+                if ((crc & 1L != 0L)) {
+                    crc = crc >> 1L ^ poly;
+                } else {
+                    crc += 1L;
+                }
+                i += 1L;
             }
-            return out;
         }
-        if (v instanceof String s) {
-            return s.getBytes(StandardCharsets.UTF_8);
-        }
-        throw new RuntimeException("cannot convert to bytes");
+        return crc ^ 4294967295L;
     }
 
-    static byte[] pyChunk(String chunkType, byte[] data) {
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            int n = data.length;
-            out.write((n >>> 24) & 0xff);
-            out.write((n >>> 16) & 0xff);
-            out.write((n >>> 8) & 0xff);
-            out.write(n & 0xff);
-            byte[] typeBytes = chunkType.getBytes(StandardCharsets.US_ASCII);
-            out.write(typeBytes);
-            out.write(data);
-            CRC32 crc = new CRC32();
-            crc.update(typeBytes);
-            crc.update(data);
-            long c = crc.getValue();
-            out.write((int) ((c >>> 24) & 0xff));
-            out.write((int) ((c >>> 16) & 0xff));
-            out.write((int) ((c >>> 8) & 0xff));
-            out.write((int) (c & 0xff));
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    static int pyAdler32(byte[] data) {
-        final int mod = 65521;
-        int s1 = 1;
-        int s2 = 0;
-        for (byte b : data) {
-            s1 += (b & 0xff);
-            if (s1 >= mod) {
+    public static long _adler32(java.util.ArrayList<Long> data) {
+        long mod = 65521L;
+        long s1 = 1L;
+        long s2 = 0L;
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(data));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            uint8 b = ((uint8)(__iter_0.get((int)(__iter_i_1))));
+            s1 += b;
+            if ((s1 >= mod)) {
                 s1 -= mod;
             }
             s2 += s1;
             s2 %= mod;
         }
-        return (s2 << 16) | s1;
+        return (s2 << 16L | s1) & 4294967295L;
     }
 
-    static byte[] pyZlibDeflateStore(byte[] data) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        out.write(0x78);
-        out.write(0x01);
-        int n = data.length;
-        int pos = 0;
-        while (pos < n) {
-            int remain = n - pos;
-            int chunkLen = Math.min(remain, 65535);
-            int fin = (pos + chunkLen >= n) ? 1 : 0;
-            out.write(fin);
-            out.write(chunkLen & 0xff);
-            out.write((chunkLen >>> 8) & 0xff);
-            int nlen = 0xFFFF ^ chunkLen;
-            out.write(nlen & 0xff);
-            out.write((nlen >>> 8) & 0xff);
-            out.write(data, pos, chunkLen);
-            pos += chunkLen;
-        }
-        int adler = pyAdler32(data);
-        out.write((adler >>> 24) & 0xff);
-        out.write((adler >>> 16) & 0xff);
-        out.write((adler >>> 8) & 0xff);
-        out.write(adler & 0xff);
-        return out.toByteArray();
+    public static java.util.ArrayList<Long> _u16le(long v) {
+        return new java.util.ArrayList<Long>(new java.util.ArrayList<Long>(java.util.Arrays.asList(v & 255L, v >> 8L & 255L)));
     }
 
-    static void pyWriteRGBPNG(Object path, Object width, Object height, Object pixels) {
-        int w = PyRuntime.pyToInt(width);
-        int h = PyRuntime.pyToInt(height);
-        byte[] raw = pyToBytes(pixels);
-        int expected = w * h * 3;
-        if (raw.length != expected) {
-            throw new RuntimeException("pixels length mismatch");
-        }
-
-        byte[] scan = new byte[h * (1 + w * 3)];
-        int rowBytes = w * 3;
-        int pos = 0;
-        for (int y = 0; y < h; y++) {
-            scan[pos++] = 0;
-            int start = y * rowBytes;
-            System.arraycopy(raw, start, scan, pos, rowBytes);
-            pos += rowBytes;
-        }
-
-        byte[] idat = pyZlibDeflateStore(scan);
-
-        byte[] ihdr = new byte[] {
-                (byte) (w >>> 24), (byte) (w >>> 16), (byte) (w >>> 8), (byte) w,
-                (byte) (h >>> 24), (byte) (h >>> 16), (byte) (h >>> 8), (byte) h,
-                8, 2, 0, 0, 0
-        };
-
-        try (FileOutputStream fos = new FileOutputStream(PyRuntime.pyToString(path))) {
-            fos.write(new byte[] { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' });
-            fos.write(pyChunk("IHDR", ihdr));
-            fos.write(pyChunk("IDAT", idat));
-            fos.write(pyChunk("IEND", new byte[0]));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static java.util.ArrayList<Long> _u32be(long v) {
+        return new java.util.ArrayList<Long>(new java.util.ArrayList<Long>(java.util.Arrays.asList(v >> 24L & 255L, v >> 16L & 255L, v >> 8L & 255L, v & 255L)));
     }
 
+    public static java.util.ArrayList<Long> _zlib_deflate_store(java.util.ArrayList<Long> data) {
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        out.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(120L, 1L)));
+        long n = ((long)(data.size()));
+        long pos = 0L;
+        while ((pos < n)) {
+            long remain = n - pos;
+            long chunk_len = (((remain > 65535L)) ? (65535L) : (remain));
+            long _final = (((pos + chunk_len >= n)) ? (1L) : (0L));
+            out.add(_final);
+            out.addAll(_u16le(chunk_len));
+            out.addAll(_u16le(65535L ^ chunk_len));
+            out.addAll(PyRuntime.__pytra_list_slice(data, (((pos) < 0L) ? (((long)(data.size())) + (pos)) : (pos)), (((pos + chunk_len) < 0L) ? (((long)(data.size())) + (pos + chunk_len)) : (pos + chunk_len))));
+            pos += chunk_len;
+        }
+        out.addAll(_u32be(_adler32(data)));
+        return new java.util.ArrayList<Long>(out);
+    }
+
+    public static java.util.ArrayList<Long> _chunk(java.util.ArrayList<Long> chunk_type, java.util.ArrayList<Long> data) {
+        java.util.ArrayList<Long> length = _u32be(((long)(data.size())));
+        long crc = _crc32(PyRuntime.__pytra_list_concat(chunk_type, data)) & 4294967295L;
+        return PyRuntime.__pytra_list_concat(PyRuntime.__pytra_list_concat(PyRuntime.__pytra_list_concat(length, chunk_type), data), _u32be(crc));
+    }
+
+    public static void write_rgb_png(String path, long width, long height, Object pixels) {
+        java.util.ArrayList<Long> raw = new java.util.ArrayList<Long>(pixels);
+        long expected = width * height * 3L;
+        if ((((long)(raw.size())) != expected)) {
+            throw new RuntimeException(PyRuntime.pyToString(null));
+        }
+        java.util.ArrayList<Long> scanlines = new java.util.ArrayList<Long>();
+        long row_bytes = width * 3L;
+        long y = 0L;
+        while ((y < height)) {
+            scanlines.add(0L);
+            long start = y * row_bytes;
+            long end = start + row_bytes;
+            scanlines.addAll(PyRuntime.__pytra_list_slice(raw, (((start) < 0L) ? (((long)(raw.size())) + (start)) : (start)), (((end) < 0L) ? (((long)(raw.size())) + (end)) : (end))));
+            y += 1L;
+        }
+        java.util.ArrayList<Long> ihdr = PyRuntime.__pytra_list_concat(PyRuntime.__pytra_list_concat(_u32be(width), _u32be(height)), new java.util.ArrayList<Long>(new java.util.ArrayList<Long>(java.util.Arrays.asList(8L, 2L, 0L, 0L, 0L))));
+        java.util.ArrayList<Long> idat = _zlib_deflate_store(new java.util.ArrayList<Long>(scanlines));
+        java.util.ArrayList<Long> png = new java.util.ArrayList<Long>();
+        png.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(137L, 80L, 78L, 71L, 13L, 10L, 26L, 10L)));
+        png.addAll(_chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 72L, 68L, 82L)), ihdr));
+        png.addAll(_chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 68L, 65L, 84L)), idat));
+        png.addAll(_chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 69L, 78L, 68L)), new java.util.ArrayList<Long>()));
+        PyFile f = open(path, "wb");
+        f.write(png);
+        f.close();
+    }
+
+    public static void main(String[] args) {
+    }
 }

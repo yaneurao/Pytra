@@ -10,13 +10,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from toolchain.compiler.backend_registry import emit_source, get_backend_spec, lower_ir, optimize_ir, resolve_layer_options
+from toolchain.frontends.python_frontend import load_east3_document
+
+
 DEFAULT_MANIFEST = ROOT / "tools" / "runtime_generation_manifest.json"
 GENERATED_BY = "tools/gen_runtime_from_manifest.py"
 
@@ -136,18 +144,24 @@ def build_generation_plan(
 
 def run_py2x(target: str, source_rel: str, ext_hint: str) -> str:
     src = ROOT / source_rel
+    spec = get_backend_spec(target)
+    target_lang = str(spec.get("target_lang", target))
+    east_doc = load_east3_document(
+        src,
+        parser_backend="self_hosted",
+        target_lang=target_lang,
+    )
+    lower_options = resolve_layer_options(spec, "lower", {})
+    optimizer_options = resolve_layer_options(spec, "optimizer", {})
+    emitter_options = resolve_layer_options(spec, "emitter", {})
+    ir = lower_ir(spec, east_doc, lower_options)
+    ir = optimize_ir(spec, ir, optimizer_options)
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / ("tmp" + ext_hint)
-        cp = subprocess.run(
-            ["python3", "src/py2x.py", str(src), "--target", target, "-o", str(out)],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        if cp.returncode != 0:
-            msg = cp.stderr.strip() or cp.stdout.strip() or ("exit=" + str(cp.returncode))
-            raise RuntimeError("py2x failed [" + target + ":" + source_rel + "]: " + msg)
-        return out.read_text(encoding="utf-8")
+        out_text = emit_source(spec, ir, out, emitter_options)
+        if out_text == "":
+            return out.read_text(encoding="utf-8")
+        return out_text
 
 
 def _skip_cs_main_method(body_lines: list[str]) -> list[str]:
