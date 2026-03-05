@@ -59,7 +59,7 @@
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] SoT/pytra-core/pytra-gen の責務境界を `docs/ja/spec` に追記し、禁止事項を固定する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] 対象モジュール（`std/utils`）の「生成必須 / core許可」分類表を作成する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` 命名規約（素通し命名）違反を検知する静的チェックを追加する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] SoT marker（`source/generated-by`）と配置違反（core混在）チェックを強化し、CIへ統合する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] SoT marker（`source/generated-by`）と配置違反（core混在）チェックを強化し、CIへ統合する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、runtime API 呼び出しを IR 解決経路へ統一（emitter 直書き撤去）する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
@@ -73,3 +73,4 @@
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S1-02`] `docs/ja/spec/spec-runtime.md` に「SoT / pytra-core / pytra-gen の責務境界」節を追加し、全言語共通の必須事項（生成優先、marker 必須、EAST3 解決済み描画）と禁止事項（core 再実装、特別命名、emitter 直書き分岐）を明文化。あわせて監査コマンドを固定した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S1-03`] `docs/ja/spec/spec-runtime.md` に `std/utils` 分類表を追記し、`argparse..typing` と `assertions/gif/png` を生成必須、`dataclasses_impl/math_impl/time_impl` を `pytra-core` 許可（impl境界）として明示した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-01`] `tools/check_runtime_pytra_gen_naming.py` を追加し、`pytra-gen` 配下の `std|utils` 素通し命名/配置違反を静的検出可能にした。既存負債は `tools/runtime_pytra_gen_naming_allowlist.txt`（11件）で明示し、`test/unit/tooling/test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-02`] `tools/check_runtime_core_gen_markers.py` を追加し、全言語 `pytra-gen` の `source/generated-by` marker 必須と `pytra-core` への generated marker 混在禁止を静的監査化。`tools/run_local_ci.py` へ `check_runtime_core_gen_markers.py` と `check_runtime_pytra_gen_naming.py` を組み込み、`test_check_runtime_core_gen_markers.py` / `test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
