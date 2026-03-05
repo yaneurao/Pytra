@@ -1,151 +1,143 @@
 <?php
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/gif.py
-// generated-by: tools/gen_image_runtime_from_canonical.py
+// generated-by: tools/gen_runtime_from_manifest.py
+
 declare(strict_types=1);
 
-function grayscale_palette(): array {
+require_once __DIR__ . '/pytra/py_runtime.php';
+
+function _gif_append_list($dst, $src) {
+    $i = 0;
+    $n = __pytra_len($src);
+    while (($i < $n)) {
+        $dst[] = $src[__pytra_index($src, $i)];
+        $i += 1;
+    }
+}
+
+function _gif_u16le($v) {
+    return [($v & 255), (($v >> 8) & 255)];
+}
+
+function _lzw_encode($data, $min_code_size) {
+    if ((__pytra_len($data) == 0)) {
+        return bytes([]);
+    }
+    $clear_code = (1 << $min_code_size);
+    $end_code = ($clear_code + 1);
+    $code_size = ($min_code_size + 1);
     $out = [];
+    $bit_buffer = 0;
+    $bit_count = 0;
+    $bit_buffer |= ($clear_code << $bit_count);
+    $bit_count += $code_size;
+    while (($bit_count >= 8)) {
+        $out[] = ($bit_buffer & 255);
+        $bit_buffer = ($bit_buffer >> 8);
+        $bit_count -= 8;
+    }
+    $code_size = ($min_code_size + 1);
+    foreach ($data as $v) {
+        $bit_buffer |= ($v << $bit_count);
+        $bit_count += $code_size;
+        while (($bit_count >= 8)) {
+            $out[] = ($bit_buffer & 255);
+            $bit_buffer = ($bit_buffer >> 8);
+            $bit_count -= 8;
+        }
+        $bit_buffer |= ($clear_code << $bit_count);
+        $bit_count += $code_size;
+        while (($bit_count >= 8)) {
+            $out[] = ($bit_buffer & 255);
+            $bit_buffer = ($bit_buffer >> 8);
+            $bit_count -= 8;
+        }
+        $code_size = ($min_code_size + 1);
+    }
+    $bit_buffer |= ($end_code << $bit_count);
+    $bit_count += $code_size;
+    while (($bit_count >= 8)) {
+        $out[] = ($bit_buffer & 255);
+        $bit_buffer = ($bit_buffer >> 8);
+        $bit_count -= 8;
+    }
+    if (($bit_count > 0)) {
+        $out[] = ($bit_buffer & 255);
+    }
+    return bytes($out);
+}
+
+function grayscale_palette() {
+    $p = [];
     $i = 0;
-    while ($i < 256) {
-        $out[] = $i;
-        $out[] = $i;
-        $out[] = $i;
+    while (($i < 256)) {
+        $p[] = $i;
+        $p[] = $i;
+        $p[] = $i;
         $i += 1;
     }
-    return $out;
+    return bytes($p);
 }
 
-function __pytra_gif_u16le(int $v): string {
-    $x = $v & 0xFFFF;
-    return chr($x & 0xFF) . chr(($x >> 8) & 0xFF);
-}
-
-function __pytra_gif_to_bytes($v): string {
-    if (is_string($v)) {
-        return $v;
+function save_gif($path, $width, $height, $frames, $palette, $delay_cs, $loop) {
+    if ((__pytra_len($palette) != (256 * 3))) {
+        throw new Exception(strval(ValueError("palette must be 256*3 bytes")));
     }
-    if (!is_array($v)) {
-        return '';
-    }
-    if (count($v) === 0) {
-        return '';
-    }
-    $out = '';
-    $chunk = [];
-    foreach ($v as $item) {
-        $chunk[] = ((int)$item) & 0xFF;
-        if (count($chunk) >= 4096) {
-            $out .= pack('C*', ...$chunk);
-            $chunk = [];
+    $frame_lists = [];
+    foreach ($frames as $fr) {
+        $fr_list = [];
+        foreach ($fr as $v) {
+            $fr_list[] = ((int)($v));
         }
-    }
-    if (count($chunk) > 0) {
-        $out .= pack('C*', ...$chunk);
-    }
-    return $out;
-}
-
-function __pytra_gif_emit_code(string &$out, int &$bitBuffer, int &$bitCount, int $code, int $bits): void {
-    $bitBuffer |= ($code << $bitCount);
-    $bitCount += $bits;
-    while ($bitCount >= 8) {
-        $out .= chr($bitBuffer & 0xFF);
-        $bitBuffer >>= 8;
-        $bitCount -= 8;
-    }
-}
-
-function __pytra_gif_lzw_encode(string $data, int $minCodeSize = 8): string {
-    $n = strlen($data);
-    if ($n === 0) {
-        return '';
-    }
-
-    $clearCode = 1 << $minCodeSize;
-    $endCode = $clearCode + 1;
-    $codeSize = $minCodeSize + 1;
-    $out = '';
-    $bitBuffer = 0;
-    $bitCount = 0;
-
-    __pytra_gif_emit_code($out, $bitBuffer, $bitCount, $clearCode, $codeSize);
-    $i = 0;
-    while ($i < $n) {
-        __pytra_gif_emit_code($out, $bitBuffer, $bitCount, ord($data[$i]), $codeSize);
-        __pytra_gif_emit_code($out, $bitBuffer, $bitCount, $clearCode, $codeSize);
-        $i += 1;
-    }
-    __pytra_gif_emit_code($out, $bitBuffer, $bitCount, $endCode, $codeSize);
-    if ($bitCount > 0) {
-        $out .= chr($bitBuffer & 0xFF);
-    }
-    return $out;
-}
-
-function __pytra_save_gif($_path, $_width, $_height, $_frames, $_palette = [], $_delay_cs = 4, $_loop = 0) {
-    $path = (string)$_path;
-    $width = (int)$_width;
-    $height = (int)$_height;
-    $delayCs = (int)$_delay_cs;
-    $loop = (int)$_loop;
-
-    $palette = __pytra_gif_to_bytes($_palette);
-    if (strlen($palette) !== 256 * 3) {
-        throw new InvalidArgumentException('palette must be 256*3 bytes');
-    }
-
-    $framePixels = $width * $height;
-    $frames = is_array($_frames) ? array_values($_frames) : [];
-    $normalizedFrames = [];
-    foreach ($frames as $frame) {
-        $fr = __pytra_gif_to_bytes($frame);
-        if (strlen($fr) !== $framePixels) {
-            throw new InvalidArgumentException('frame size mismatch');
+        if ((__pytra_len($fr_list) != ($width * $height))) {
+            throw new Exception(strval(ValueError("frame size mismatch")));
         }
-        $normalizedFrames[] = $fr;
+        $frame_lists[] = $fr_list;
     }
-
-    $out = "GIF89a";
-    $out .= __pytra_gif_u16le($width);
-    $out .= __pytra_gif_u16le($height);
-    $out .= "\xF7";  // GCT flag=1, color resolution=7, table size=7 (256).
-    $out .= "\x00";  // background color index.
-    $out .= "\x00";  // pixel aspect ratio.
-    $out .= $palette;
-
-    // Netscape loop extension.
-    $out .= "\x21\xFF\x0BNETSCAPE2.0\x03\x01";
-    $out .= __pytra_gif_u16le($loop);
-    $out .= "\x00";
-
-    foreach ($normalizedFrames as $fr) {
-        $out .= "\x21\xF9\x04\x00";
-        $out .= __pytra_gif_u16le($delayCs);
-        $out .= "\x00\x00";
-
-        $out .= "\x2C";
-        $out .= __pytra_gif_u16le(0);
-        $out .= __pytra_gif_u16le(0);
-        $out .= __pytra_gif_u16le($width);
-        $out .= __pytra_gif_u16le($height);
-        $out .= "\x00";
-
-        $out .= "\x08";
-        $compressed = __pytra_gif_lzw_encode($fr, 8);
-        $n = strlen($compressed);
+    $palette_list = [];
+    foreach ($palette as $v) {
+        $palette_list[] = ((int)($v));
+    }
+    $out = [];
+    _gif_append_list($out, [71, 73, 70, 56, 57, 97]);
+    _gif_append_list($out, _gif_u16le($width));
+    _gif_append_list($out, _gif_u16le($height));
+    $out[] = 247;
+    $out[] = 0;
+    $out[] = 0;
+    _gif_append_list($out, $palette_list);
+    _gif_append_list($out, [33, 255, 11, 78, 69, 84, 83, 67, 65, 80, 69, 50, 46, 48, 3, 1]);
+    _gif_append_list($out, _gif_u16le($loop));
+    $out[] = 0;
+    foreach ($frame_lists as $fr_list) {
+        _gif_append_list($out, [33, 249, 4, 0]);
+        _gif_append_list($out, _gif_u16le($delay_cs));
+        _gif_append_list($out, [0, 0]);
+        $out[] = 44;
+        _gif_append_list($out, _gif_u16le(0));
+        _gif_append_list($out, _gif_u16le(0));
+        _gif_append_list($out, _gif_u16le($width));
+        _gif_append_list($out, _gif_u16le($height));
+        $out[] = 0;
+        $out[] = 8;
+        $compressed = _lzw_encode(bytes($fr_list), 8);
         $pos = 0;
-        while ($pos < $n) {
-            $chunk = substr($compressed, $pos, 255);
-            $chunkLen = strlen($chunk);
-            $out .= chr($chunkLen);
-            $out .= $chunk;
-            $pos += $chunkLen;
+        while (($pos < __pytra_len($compressed))) {
+            $remain = (__pytra_len($compressed) - $pos);
+            $chunk_len = (($remain > 255) ? 255 : $remain);
+            $out[] = $chunk_len;
+            $i = 0;
+            while (($i < $chunk_len)) {
+                $out[] = $compressed[__pytra_index($compressed, ($pos + $i))];
+                $i += 1;
+            }
+            $pos += $chunk_len;
         }
-        $out .= "\x00";
+        $out[] = 0;
     }
-
-    $out .= "\x3B";
-    file_put_contents($path, $out);
-    return null;
+    $out[] = 59;
+    $f = open($path, "wb");
+    $f->write(bytes($out));
+    $f->close();
 }

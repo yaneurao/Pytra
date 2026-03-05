@@ -245,14 +245,49 @@ def rewrite_cs_program_to_helper(cs_src: str, helper_name: str) -> str:
     return text.replace("Program.", helper_name + ".")
 
 
+def _strip_trailing_string_literal_expr(text: str) -> str:
+    lines = text.splitlines()
+    if len(lines) == 0:
+        return text
+    literal_re = re.compile(r"""^\s*(["']).*\1;\s*$""")
+    while len(lines) > 0 and literal_re.match(lines[-1]):
+        lines.pop()
+    if len(lines) == 0:
+        return ""
+    return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+
+def _remove_block_by_signature(lines: list[str], signature_re: re.Pattern[str]) -> list[str]:
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if signature_re.match(line.strip()):
+            brace_depth = 0
+            seen_open = False
+            while i < len(lines):
+                cur = lines[i]
+                if "{" in cur:
+                    seen_open = True
+                brace_depth += cur.count("{")
+                brace_depth -= cur.count("}")
+                i += 1
+                if seen_open and brace_depth <= 0:
+                    break
+            continue
+        out.append(line)
+        i += 1
+    return out
+
+
 def rewrite_js_program_to_cjs_module(js_src: str) -> str:
-    # Runtime modules are emitted as script-like JS; normalize Python-style
-    # list method calls to native JS array methods.
+    js_src = _strip_trailing_string_literal_expr(js_src)
     js_src = re.sub(
         r"\b([A-Za-z_][A-Za-z0-9_]*)\.extend\(([^;\n]+)\);",
         r"\1 = \1.concat(\2);",
         js_src,
     )
+    js_src = re.sub(r"(?<!>)>>(?!>)", ">>>", js_src)
 
     if "module.exports" in js_src:
         return js_src
@@ -265,8 +300,84 @@ def rewrite_js_program_to_cjs_module(js_src: str) -> str:
     if len(public_names) == 0:
         return js_src
     body = js_src.rstrip("\n")
+    if "function open(" not in body:
+        prelude = (
+            "const fs = require('node:fs');\n"
+            "const path = require('node:path');\n"
+            "function open(pathLike, mode) {\n"
+            "    const filePath = String(pathLike);\n"
+            "    const writeMode = String(mode || 'wb');\n"
+            "    return {\n"
+            "        write(data) {\n"
+            "            const bytes = Array.isArray(data) ? data : Array.from(data || []);\n"
+            "            fs.mkdirSync(path.dirname(filePath), { recursive: true });\n"
+            "            const flag = (writeMode === 'ab' || writeMode === 'a') ? 'a' : 'w';\n"
+            "            fs.writeFileSync(filePath, Buffer.from(bytes), { flag });\n"
+            "        },\n"
+            "        close() {},\n"
+            "    };\n"
+            "}\n\n"
+        )
+        body = prelude + body
     exports = "module.exports = {" + ", ".join(public_names) + "};\n"
     return body + "\n\n" + exports
+
+
+def rewrite_go_program_to_library(go_src: str) -> str:
+    lines = _strip_trailing_string_literal_expr(go_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^func\s+main\s*\("))
+    text = "\n".join(lines)
+    text = re.sub(
+        r"(?m)^(\s*)_(?:[A-Za-z0-9]+_)?append_list\((\w+),\s*(.+)\)$",
+        r"\1\2 = append(\2, \3...)",
+        text,
+    )
+    text = re.sub(
+        r"(?m)^(\s*)_ = open\(",
+        r"\1f := open(",
+        text,
+    )
+    return text.rstrip() + "\n"
+
+
+def rewrite_php_program_to_library(php_src: str) -> str:
+    lines = _strip_trailing_string_literal_expr(php_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
+    out: list[str] = []
+    for line in lines:
+        if line.strip() == "__pytra_main();":
+            continue
+        out.append(line)
+    return "\n".join(out).rstrip() + "\n"
+
+
+def rewrite_cpp_program_to_namespace(cpp_src: str, namespace_name: str) -> str:
+    lines = _strip_trailing_string_literal_expr(cpp_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^static\s+void\s+__pytra_module_init\s*\("))
+    lines = _remove_block_by_signature(lines, re.compile(r"^int\s+main\s*\("))
+
+    include_lines: list[str] = []
+    body_lines: list[str] = []
+    in_body = False
+    for line in lines:
+        if not in_body and (line.startswith("#") or line.strip() == ""):
+            include_lines.append(line)
+            continue
+        in_body = True
+        body_lines.append(line)
+
+    out: list[str] = []
+    out.extend(include_lines)
+    if len(out) > 0 and out[-1].strip() != "":
+        out.append("")
+    out.append("namespace " + namespace_name + " {")
+    out.append("")
+    out.extend(body_lines)
+    if len(out) > 0 and out[-1].strip() != "":
+        out.append("")
+    out.append("}  // namespace " + namespace_name)
+    out.append("")
+    return "\n".join(out)
 
 
 def inject_generated_header(text: str, target: str, source_rel: str) -> str:
@@ -300,6 +411,14 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_cs_program_to_helper(generated, item.helper_name)
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
+    elif item.postprocess == "go_program_to_library":
+        generated = rewrite_go_program_to_library(generated)
+    elif item.postprocess == "php_program_to_library":
+        generated = rewrite_php_program_to_library(generated)
+    elif item.postprocess == "cpp_program_to_namespace":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name(namespace) for cpp_program_to_namespace: " + item.item_id)
+        generated = rewrite_cpp_program_to_namespace(generated, item.helper_name)
     elif item.postprocess != "":
         raise RuntimeError("unknown postprocess: " + item.postprocess)
     return inject_generated_header(generated, item.target, item.source_rel)

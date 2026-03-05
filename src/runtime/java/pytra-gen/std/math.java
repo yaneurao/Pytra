@@ -1,14 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/math.py
-// generated-by: tools/gen_java_std_runtime_from_canonical.py
-
-// AUTO-GENERATED FILE. DO NOT EDIT.
-// source: src/pytra/std/math.py
-// generated-by: tools/gen_java_std_runtime_from_canonical.py
+// generated-by: tools/gen_runtime_from_manifest.py
 
 public final class math {
     private math() {
     }
+
+    public static double pi = _m.pi;
+    public static double e = _m.e;
 
 
     public static double sqrt(double x) {

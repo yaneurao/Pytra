@@ -7,7 +7,12 @@
       "source": "src/pytra/utils/png.py",
       "bucket": "utils",
       "targets": [
-        { "target": "cpp", "output": "src/runtime/cpp/pytra-gen/utils/png.cpp" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/pytra-gen/utils/png.cpp",
+          "postprocess": "cpp_program_to_namespace",
+          "helper_name": "pytra::utils::png"
+        },
         { "target": "rs", "output": "src/runtime/rs/pytra-gen/utils/png.rs" },
         {
           "target": "cs",
@@ -20,15 +25,27 @@
           "output": "src/runtime/js/pytra-gen/utils/png.js",
           "postprocess": "js_program_to_cjs_module"
         },
-        { "target": "ts", "output": "src/runtime/ts/pytra-gen/utils/png.ts" },
-        { "target": "go", "output": "src/runtime/go/pytra-gen/utils/png.go" },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/pytra-gen/utils/png.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "go",
+          "output": "src/runtime/go/pytra-gen/utils/png.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/pytra-gen/utils/png.java" },
         { "target": "swift", "output": "src/runtime/swift/pytra-gen/utils/png_helper.swift" },
         { "target": "kotlin", "output": "src/runtime/kotlin/pytra-gen/utils/png_helper.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/png_helper.rb" },
         { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/png_helper.lua" },
         { "target": "scala", "output": "src/runtime/scala/pytra-gen/utils/png_helper.scala" },
-        { "target": "php", "output": "src/runtime/php/pytra-gen/runtime/png.php" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/pytra-gen/runtime/png.php",
+          "postprocess": "php_program_to_library"
+        },
         { "target": "nim", "output": "src/runtime/nim/pytra-gen/utils/png_helper.nim" }
       ]
     },
@@ -37,7 +54,12 @@
       "source": "src/pytra/utils/gif.py",
       "bucket": "utils",
       "targets": [
-        { "target": "cpp", "output": "src/runtime/cpp/pytra-gen/utils/gif.cpp" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/pytra-gen/utils/gif.cpp",
+          "postprocess": "cpp_program_to_namespace",
+          "helper_name": "pytra::utils::gif"
+        },
         { "target": "rs", "output": "src/runtime/rs/pytra-gen/utils/gif.rs" },
         {
           "target": "cs",
@@ -50,15 +72,27 @@
           "output": "src/runtime/js/pytra-gen/utils/gif.js",
           "postprocess": "js_program_to_cjs_module"
         },
-        { "target": "ts", "output": "src/runtime/ts/pytra-gen/utils/gif.ts" },
-        { "target": "go", "output": "src/runtime/go/pytra-gen/utils/gif.go" },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/pytra-gen/utils/gif.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "go",
+          "output": "src/runtime/go/pytra-gen/utils/gif.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/pytra-gen/utils/gif.java" },
         { "target": "swift", "output": "src/runtime/swift/pytra-gen/utils/gif_helper.swift" },
         { "target": "kotlin", "output": "src/runtime/kotlin/pytra-gen/utils/gif_helper.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/gif_helper.rb" },
         { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/gif_helper.lua" },
         { "target": "scala", "output": "src/runtime/scala/pytra-gen/utils/gif_helper.scala" },
-        { "target": "php", "output": "src/runtime/php/pytra-gen/runtime/gif.php" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/pytra-gen/runtime/gif.php",
+          "postprocess": "php_program_to_library"
+        },
         { "target": "nim", "output": "src/runtime/nim/pytra-gen/utils/gif_helper.nim" }
       ]
     },

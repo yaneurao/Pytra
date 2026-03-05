@@ -2,8 +2,8 @@
 // source: src/pytra/std/json.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-public final class tmp {
-    private tmp() {
+public final class json {
+    private json() {
     }
 
     public static String _EMPTY = "";
@@ -26,20 +26,20 @@ public final class tmp {
             this._skip_ws();
             Object out = this._parse_value();
             this._skip_ws();
-            if ((this.i != this.n)) {
+            if (((this.i) != (this.n))) {
                 throw new RuntimeException(PyRuntime.pyToString("invalid json: trailing characters"));
             }
             return out;
         }
 
         public void _skip_ws() {
-            while (((this.i < this.n) && _is_ws(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
+            while ((((this.i) < (this.n)) && _is_ws(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
                 this.i += 1L;
             }
         }
 
         public Object _parse_value() {
-            if ((this.i >= this.n)) {
+            if (((this.i) >= (this.n))) {
                 throw new RuntimeException(PyRuntime.pyToString("invalid json: unexpected end"));
             }
             String ch = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
@@ -71,25 +71,25 @@ public final class tmp {
             java.util.HashMap<String, Object> out = new java.util.HashMap<String, Object>();
             this.i += 1L;
             this._skip_ws();
-            if (((this.i < this.n) && (java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "}")))) {
+            if ((((this.i) < (this.n)) && (java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "}")))) {
                 this.i += 1L;
                 return out;
             }
             while (true) {
                 this._skip_ws();
-                if (((this.i >= this.n) || (!(java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "\""))))) {
+                if ((((this.i) >= (this.n)) || (!(java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "\""))))) {
                     throw new RuntimeException(PyRuntime.pyToString("invalid json object key"));
                 }
                 String key = this._parse_string();
                 this._skip_ws();
-                if (((this.i >= this.n) || (!(java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), ":"))))) {
+                if ((((this.i) >= (this.n)) || (!(java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), ":"))))) {
                     throw new RuntimeException(PyRuntime.pyToString("invalid json object: missing ':'"));
                 }
                 this.i += 1L;
                 this._skip_ws();
                 out.put(key, this._parse_value());
                 this._skip_ws();
-                if ((this.i >= this.n)) {
+                if (((this.i) >= (this.n))) {
                     throw new RuntimeException(PyRuntime.pyToString("invalid json object: unexpected end"));
                 }
                 String ch = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
@@ -108,7 +108,7 @@ public final class tmp {
             java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
             this.i += 1L;
             this._skip_ws();
-            if (((this.i < this.n) && (java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "]")))) {
+            if ((((this.i) < (this.n)) && (java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "]")))) {
                 this.i += 1L;
                 return out;
             }
@@ -116,7 +116,7 @@ public final class tmp {
                 this._skip_ws();
                 out.add(this._parse_value());
                 this._skip_ws();
-                if ((this.i >= this.n)) {
+                if (((this.i) >= (this.n))) {
                     throw new RuntimeException(PyRuntime.pyToString("invalid json array: unexpected end"));
                 }
                 String ch = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
@@ -137,14 +137,14 @@ public final class tmp {
             }
             this.i += 1L;
             java.util.ArrayList<String> out_chars = new java.util.ArrayList<String>();
-            while ((this.i < this.n)) {
+            while (((this.i) < (this.n))) {
                 String ch = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
                 this.i += 1L;
                 if ((java.util.Objects.equals(ch, "\""))) {
                     return _EMPTY.join(out_chars);
                 }
                 if ((java.util.Objects.equals(ch, "\\"))) {
-                    if ((this.i >= this.n)) {
+                    if (((this.i) >= (this.n))) {
                         throw new RuntimeException(PyRuntime.pyToString("invalid json string escape"));
                     }
                     String esc = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
@@ -174,7 +174,7 @@ public final class tmp {
                                                     out_chars.add("	");
                                                 } else {
                                                     if ((java.util.Objects.equals(esc, "u"))) {
-                                                        if ((this.i + 4L > this.n)) {
+                                                        if (((this.i + 4L) > (this.n))) {
                                                             throw new RuntimeException(PyRuntime.pyToString("invalid json unicode escape"));
                                                         }
                                                         String hx = PyRuntime.__pytra_str_slice(this.text, (((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)), (((this.i + 4L) < 0L) ? (((long)(this.text.length())) + (this.i + 4L)) : (this.i + 4L)));
@@ -203,7 +203,7 @@ public final class tmp {
             if ((java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "-"))) {
                 this.i += 1L;
             }
-            if ((this.i >= this.n)) {
+            if (((this.i) >= (this.n))) {
                 throw new RuntimeException(PyRuntime.pyToString("invalid json number"));
             }
             if ((java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), "0"))) {
@@ -212,46 +212,46 @@ public final class tmp {
                 if ((!_is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
                     throw new RuntimeException(PyRuntime.pyToString("invalid json number"));
                 }
-                while (((this.i < this.n) && _is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
+                while ((((this.i) < (this.n)) && _is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
                     this.i += 1L;
                 }
             }
             boolean is_float = false;
-            if (((this.i < this.n) && (java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), ".")))) {
+            if ((((this.i) < (this.n)) && (java.util.Objects.equals(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))), ".")))) {
                 is_float = true;
                 this.i += 1L;
-                if (((this.i >= this.n) || (!_is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))))))) {
+                if ((((this.i) >= (this.n)) || (!_is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))))))) {
                     throw new RuntimeException(PyRuntime.pyToString("invalid json number"));
                 }
-                while (((this.i < this.n) && _is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
+                while ((((this.i) < (this.n)) && _is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
                     this.i += 1L;
                 }
             }
-            if ((this.i < this.n)) {
+            if (((this.i) < (this.n))) {
                 String exp_ch = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
                 if (((java.util.Objects.equals(exp_ch, "e")) || (java.util.Objects.equals(exp_ch, "E")))) {
                     is_float = true;
                     this.i += 1L;
-                    if ((this.i < this.n)) {
+                    if (((this.i) < (this.n))) {
                         String sign = String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))));
                         if (((java.util.Objects.equals(sign, "+")) || (java.util.Objects.equals(sign, "-")))) {
                             this.i += 1L;
                         }
                     }
-                    if (((this.i >= this.n) || (!_is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))))))) {
+                    if ((((this.i) >= (this.n)) || (!_is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)))))))))) {
                         throw new RuntimeException(PyRuntime.pyToString("invalid json exponent"));
                     }
-                    while (((this.i < this.n) && _is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
+                    while ((((this.i) < (this.n)) && _is_digit(String.valueOf(String.valueOf(this.text.charAt((int)((((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i))))))))) {
                         this.i += 1L;
                     }
                 }
             }
             String token = PyRuntime.__pytra_str_slice(this.text, (((start) < 0L) ? (((long)(this.text.length())) + (start)) : (start)), (((this.i) < 0L) ? (((long)(this.text.length())) + (this.i)) : (this.i)));
             if (is_float) {
-                double num_f = _float(token);
+                double num_f = ((double)(PyRuntime.pyToFloat(token)));
                 return num_f;
             }
-            long num_i = _int(token);
+            long num_i = PyRuntime.__pytra_int(token);
             return num_i;
         }
     }
@@ -261,12 +261,12 @@ public final class tmp {
     }
 
     public static boolean _is_digit(String ch) {
-        return ((ch >= "0") && (ch <= "9"));
+        return (((ch) >= ("0")) && ((ch) <= ("9")));
     }
 
     public static long _hex_value(String ch) {
-        if (((ch >= "0") && (ch <= "9"))) {
-            return _int(ch);
+        if ((((ch) >= ("0")) && ((ch) <= ("9")))) {
+            return PyRuntime.__pytra_int(ch);
         }
         if (((java.util.Objects.equals(ch, "a")) || (java.util.Objects.equals(ch, "A")))) {
             return 10L;
@@ -290,7 +290,7 @@ public final class tmp {
     }
 
     public static long _int_from_hex4(String hx) {
-        if ((((long)(hx.length())) != 4L)) {
+        if (((((long)(hx.length()))) != (4L))) {
             throw new RuntimeException(PyRuntime.pyToString("invalid json unicode escape"));
         }
         long v0 = _hex_value(PyRuntime.__pytra_str_slice(hx, (((0L) < 0L) ? (((long)(hx.length())) + (0L)) : (0L)), (((1L) < 0L) ? (((long)(hx.length())) + (1L)) : (1L))));
@@ -347,7 +347,7 @@ public final class tmp {
                                     if ((java.util.Objects.equals(ch, "	"))) {
                                         out.add("\\t");
                                     } else {
-                                        if ((ensure_ascii && (code > 127L))) {
+                                        if ((ensure_ascii && ((code) > (127L)))) {
                                             out.add("\\u" + _hex4(code));
                                         } else {
                                             out.add(ch);
@@ -365,10 +365,10 @@ public final class tmp {
     }
 
     public static String _dump_json_list(java.util.ArrayList<Object> values, boolean ensure_ascii, Object indent, String item_sep, String key_sep, long level) {
-        if ((((long)(values.size())) == 0L)) {
+        if (((((long)(values.size()))) == (0L))) {
             return "[]";
         }
-        if ((indent == null)) {
+        if (((indent) == (null))) {
             java.util.ArrayList<String> dumped = new java.util.ArrayList<String>();
             java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(values));
             for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
@@ -378,7 +378,7 @@ public final class tmp {
             }
             return "[" + item_sep.join(dumped) + "]";
         }
-        long indent_i = _int(indent);
+        long indent_i = PyRuntime.__pytra_int(indent);
         java.util.ArrayList<String> inner = new java.util.ArrayList<String>();
         java.util.ArrayList<Object> __iter_2 = ((java.util.ArrayList<Object>)(Object)(values));
         for (long __iter_i_3 = 0L; __iter_i_3 < ((long)(__iter_2.size())); __iter_i_3 += 1L) {
@@ -391,10 +391,10 @@ public final class tmp {
     }
 
     public static String _dump_json_dict(java.util.HashMap<String, Object> values, boolean ensure_ascii, Object indent, String item_sep, String key_sep, long level) {
-        if ((((long)(values.size())) == 0L)) {
+        if (((((long)(values.size()))) == (0L))) {
             return "{}";
         }
-        if ((indent == null)) {
+        if (((indent) == (null))) {
             java.util.ArrayList<String> parts = new java.util.ArrayList<String>();
             java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(values.items()));
             for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
@@ -407,7 +407,7 @@ public final class tmp {
             }
             return "{" + item_sep.join(parts) + "}";
         }
-        long indent_i = _int(indent);
+        long indent_i = PyRuntime.__pytra_int(indent);
         java.util.ArrayList<String> inner = new java.util.ArrayList<String>();
         java.util.ArrayList<Object> __iter_3 = ((java.util.ArrayList<Object>)(Object)(values.items()));
         for (long __iter_i_4 = 0L; __iter_i_4 < ((long)(__iter_3.size())); __iter_i_4 += 1L) {
@@ -423,7 +423,7 @@ public final class tmp {
     }
 
     public static String _dump_json_value(Object v, boolean ensure_ascii, Object indent, String item_sep, String key_sep, long level) {
-        if ((v == null)) {
+        if (((v) == (null))) {
             return "null";
         }
         if ((((Object)(v)) instanceof PYTRA_TID_BOOL)) {
@@ -451,8 +451,8 @@ public final class tmp {
 
     public static String dumps(Any obj, boolean ensure_ascii, Object indent, Object separators) {
         String item_sep = ",";
-        String key_sep = (((indent == null)) ? (":") : (": "));
-        if ((separators == null)) {
+        String key_sep = ((((indent) == (null))) ? (":") : (": "));
+        if (((separators) == (null))) {
             java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(separators));
             item_sep = __tuple_0.get(0);
             key_sep = __tuple_0.get(1);

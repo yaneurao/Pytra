@@ -734,6 +734,55 @@ func pyPathMkdir(v any, parents any, existOK any) any {
 	return nil
 }
 
+func __pytra_any_to_bytes(v any) []byte {
+	switch t := v.(type) {
+	case []byte:
+		out := make([]byte, len(t))
+		copy(out, t)
+		return out
+	case []any:
+		out := make([]byte, 0, len(t))
+		i := 0
+		for i < len(t) {
+			out = append(out, byte(__pytra_int(t[i])))
+			i += 1
+		}
+		return out
+	case string:
+		return []byte(t)
+	default:
+		return []byte(pyToString(v))
+	}
+}
+
+type PyFile struct {
+	path string
+	mode string
+}
+
+func open(path any, mode string) PyFile {
+	return PyFile{path: pyPathString(path), mode: mode}
+}
+
+func (f PyFile) write(data any) {
+	bytes := __pytra_any_to_bytes(data)
+	dir := filepath.Dir(f.path)
+	if dir != "" && dir != "." {
+		_ = os.MkdirAll(dir, 0o755)
+	}
+	if f.mode == "ab" || f.mode == "a" {
+		existing, err := os.ReadFile(f.path)
+		if err == nil {
+			bytes = append(existing, bytes...)
+		}
+	}
+	if err := os.WriteFile(f.path, bytes, 0o644); err != nil {
+		panic(err)
+	}
+}
+
+func (f PyFile) close() {}
+
 // -------- json helper --------
 
 func pyToJSONValue(v any) any {
@@ -1224,16 +1273,44 @@ func __pytra_dict_get_default(container any, key any, defaultValue any) any {
 }
 
 func __pytra_grayscale_palette() []any {
-	raw := pyGrayscalePalette()
+	raw := grayscale_palette()
 	return __pytra_bytes(raw)
 }
 
 func __pytra_write_rgb_png(path any, width any, height any, pixels any) {
-	pyWriteRGBPNG(path, width, height, pixels)
+	write_rgb_png(pyToString(path), __pytra_int(width), __pytra_int(height), __pytra_as_list(pixels))
 }
 
 func __pytra_save_gif(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
-	pySaveGIF(path, width, height, frames, palette, delayCS, loop)
+	save_gif(
+		pyToString(path),
+		__pytra_int(width),
+		__pytra_int(height),
+		__pytra_as_list(frames),
+		__pytra_as_list(palette),
+		__pytra_int(delayCS),
+		__pytra_int(loop),
+	)
+}
+
+func pyGrayscalePalette() []any {
+	return grayscale_palette()
+}
+
+func pyWriteRGBPNG(path any, width any, height any, pixels any) {
+	write_rgb_png(pyToString(path), __pytra_int(width), __pytra_int(height), __pytra_as_list(pixels))
+}
+
+func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
+	save_gif(
+		pyToString(path),
+		__pytra_int(width),
+		__pytra_int(height),
+		__pytra_as_list(frames),
+		__pytra_as_list(palette),
+		__pytra_int(delayCS),
+		__pytra_int(loop),
+	)
 }
 
 func __pytra_pop_last(v []any) []any {

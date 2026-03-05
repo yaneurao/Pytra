@@ -2,8 +2,8 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-public final class tmp {
-    private tmp() {
+public final class pathlib {
+    private pathlib() {
     }
 
 
@@ -96,14 +96,14 @@ public final class tmp {
         }
 
         public String read_text(String encoding) {
-            PyFile f = open(this._value, "r", encoding);
+            PyRuntime.PyFile f = PyRuntime.open(this._value, "r", encoding);
             return f.read();
             f.close();
             return "";
         }
 
         public long write_text(String text, String encoding) {
-            PyFile f = open(this._value, "w", encoding);
+            PyRuntime.PyFile f = PyRuntime.open(this._value, "w", encoding);
             return f.write(text);
             f.close();
             return 0L;

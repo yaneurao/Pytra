@@ -7,19 +7,29 @@ public final class png {
     }
 
 
+    public static void _png_append_list(java.util.ArrayList<Long> dst, java.util.ArrayList<Long> src) {
+        long i = 0L;
+        long n = ((long)(src.size()));
+        while (((i) < (n))) {
+            dst.add(((Long)(src.get((int)((((i) < 0L) ? (((long)(src.size())) + (i)) : (i)))))));
+            i += 1L;
+        }
+    }
+
     public static long _crc32(java.util.ArrayList<Long> data) {
         long crc = 4294967295L;
         long poly = 3988292384L;
         java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(data));
         for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
             long b = ((Long)(__iter_0.get((int)(__iter_i_1))));
-            crc ^= b;
+            crc = crc ^ b;
             long i = 0L;
             while (((i) < (8L))) {
-                if (((crc & 1L) != (0L))) {
+                long lowbit = crc & 1L;
+                if (((lowbit) != (0L))) {
                     crc = crc >> 1L ^ poly;
                 } else {
-                    crc >>= 1L;
+                    crc = crc >> 1L;
                 }
                 i += 1L;
             }
@@ -39,22 +49,22 @@ public final class png {
                 s1 -= mod;
             }
             s2 += s1;
-            s2 %= mod;
+            s2 = s2 % mod;
         }
         return (s2 << 16L | s1) & 4294967295L;
     }
 
-    public static java.util.ArrayList<Long> _u16le(long v) {
-        return PyRuntime.__pytra_bytearray(new java.util.ArrayList<Long>(java.util.Arrays.asList(v & 255L, v >> 8L & 255L)));
+    public static java.util.ArrayList<Long> _png_u16le(long v) {
+        return new java.util.ArrayList<Long>(java.util.Arrays.asList(v & 255L, v >> 8L & 255L));
     }
 
-    public static java.util.ArrayList<Long> _u32be(long v) {
-        return PyRuntime.__pytra_bytearray(new java.util.ArrayList<Long>(java.util.Arrays.asList(v >> 24L & 255L, v >> 16L & 255L, v >> 8L & 255L, v & 255L)));
+    public static java.util.ArrayList<Long> _png_u32be(long v) {
+        return new java.util.ArrayList<Long>(java.util.Arrays.asList(v >> 24L & 255L, v >> 16L & 255L, v >> 8L & 255L, v & 255L));
     }
 
     public static java.util.ArrayList<Long> _zlib_deflate_store(java.util.ArrayList<Long> data) {
         java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
-        out.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(120L, 1L)));
+        _png_append_list(out, new java.util.ArrayList<Long>(java.util.Arrays.asList(120L, 1L)));
         long n = ((long)(data.size()));
         long pos = 0L;
         while (((pos) < (n))) {
@@ -62,26 +72,43 @@ public final class png {
             long chunk_len = ((((remain) > (65535L))) ? (65535L) : (remain));
             long _final = ((((pos + chunk_len) >= (n))) ? (1L) : (0L));
             out.add(_final);
-            out.addAll(_u16le(chunk_len));
-            out.addAll(_u16le(65535L ^ chunk_len));
-            out.addAll(PyRuntime.__pytra_list_slice(data, (((pos) < 0L) ? (((long)(data.size())) + (pos)) : (pos)), (((pos + chunk_len) < 0L) ? (((long)(data.size())) + (pos + chunk_len)) : (pos + chunk_len))));
+            _png_append_list(out, _png_u16le(chunk_len));
+            _png_append_list(out, _png_u16le(65535L ^ chunk_len));
+            long i = pos;
+            long end = pos + chunk_len;
+            while (((i) < (end))) {
+                out.add(((Long)(data.get((int)((((i) < 0L) ? (((long)(data.size())) + (i)) : (i)))))));
+                i += 1L;
+            }
             pos += chunk_len;
         }
-        out.addAll(_u32be(_adler32(data)));
-        return PyRuntime.__pytra_bytearray(out);
+        _png_append_list(out, _png_u32be(_adler32(data)));
+        return out;
     }
 
     public static java.util.ArrayList<Long> _chunk(java.util.ArrayList<Long> chunk_type, java.util.ArrayList<Long> data) {
-        java.util.ArrayList<Long> length = _u32be(((long)(data.size())));
-        long crc = _crc32(PyRuntime.__pytra_list_concat(chunk_type, data)) & 4294967295L;
-        return PyRuntime.__pytra_list_concat(PyRuntime.__pytra_list_concat(PyRuntime.__pytra_list_concat(length, chunk_type), data), _u32be(crc));
+        java.util.ArrayList<Long> crc_input = new java.util.ArrayList<Long>();
+        _png_append_list(crc_input, chunk_type);
+        _png_append_list(crc_input, data);
+        long crc = _crc32(crc_input) & 4294967295L;
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        _png_append_list(out, _png_u32be(((long)(data.size()))));
+        _png_append_list(out, chunk_type);
+        _png_append_list(out, data);
+        _png_append_list(out, _png_u32be(crc));
+        return out;
     }
 
-    public static void write_rgb_png(String path, long width, long height, Object pixels) {
-        java.util.ArrayList<Long> raw = PyRuntime.__pytra_bytearray(pixels);
+    public static void write_rgb_png(String path, long width, long height, java.util.ArrayList<Long> pixels) {
+        java.util.ArrayList<Long> raw = new java.util.ArrayList<Long>();
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(pixels));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            long b = ((Long)(__iter_0.get((int)(__iter_i_1))));
+            raw.add(PyRuntime.__pytra_int(b));
+        }
         long expected = width * height * 3L;
         if (((((long)(raw.size()))) != (expected))) {
-            throw new RuntimeException(PyRuntime.pyToString(null));
+            throw new RuntimeException(PyRuntime.pyToString("pixels length mismatch: got=" + String.valueOf(((long)(raw.size()))) + " expected=" + String.valueOf(expected)));
         }
         java.util.ArrayList<Long> scanlines = new java.util.ArrayList<Long>();
         long row_bytes = width * 3L;
@@ -90,18 +117,26 @@ public final class png {
             scanlines.add(0L);
             long start = y * row_bytes;
             long end = start + row_bytes;
-            scanlines.addAll(PyRuntime.__pytra_list_slice(raw, (((start) < 0L) ? (((long)(raw.size())) + (start)) : (start)), (((end) < 0L) ? (((long)(raw.size())) + (end)) : (end))));
+            long i = start;
+            while (((i) < (end))) {
+                scanlines.add(((Long)(raw.get((int)((((i) < 0L) ? (((long)(raw.size())) + (i)) : (i)))))));
+                i += 1L;
+            }
             y += 1L;
         }
-        java.util.ArrayList<Long> ihdr = PyRuntime.__pytra_list_concat(PyRuntime.__pytra_list_concat(_u32be(width), _u32be(height)), PyRuntime.__pytra_bytearray(new java.util.ArrayList<Long>(java.util.Arrays.asList(8L, 2L, 0L, 0L, 0L))));
-        java.util.ArrayList<Long> idat = _zlib_deflate_store(PyRuntime.__pytra_bytearray(scanlines));
+        java.util.ArrayList<Long> ihdr = new java.util.ArrayList<Long>();
+        _png_append_list(ihdr, _png_u32be(width));
+        _png_append_list(ihdr, _png_u32be(height));
+        _png_append_list(ihdr, new java.util.ArrayList<Long>(java.util.Arrays.asList(8L, 2L, 0L, 0L, 0L)));
+        java.util.ArrayList<Long> idat = _zlib_deflate_store(scanlines);
         java.util.ArrayList<Long> png = new java.util.ArrayList<Long>();
-        png.addAll(new java.util.ArrayList<Long>(java.util.Arrays.asList(137L, 80L, 78L, 71L, 13L, 10L, 26L, 10L)));
-        png.addAll(_chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 72L, 68L, 82L)), ihdr));
-        png.addAll(_chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 68L, 65L, 84L)), idat));
-        png.addAll(_chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 69L, 78L, 68L)), new java.util.ArrayList<Long>()));
+        _png_append_list(png, new java.util.ArrayList<Long>(java.util.Arrays.asList(137L, 80L, 78L, 71L, 13L, 10L, 26L, 10L)));
+        _png_append_list(png, _chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 72L, 68L, 82L)), ihdr));
+        _png_append_list(png, _chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 68L, 65L, 84L)), idat));
+        java.util.ArrayList<Long> iend_data = new java.util.ArrayList<Long>();
+        _png_append_list(png, _chunk(new java.util.ArrayList<Long>(java.util.Arrays.asList(73L, 69L, 78L, 68L)), iend_data));
         PyRuntime.PyFile f = PyRuntime.open(path, "wb");
-        f.write(png);
+        f.write(PyRuntime.__pytra_bytearray(png));
         f.close();
     }
 

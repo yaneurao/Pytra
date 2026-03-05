@@ -468,6 +468,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         )
         if rendered_runtime != "":
             return rendered_runtime
+        if semantic_tag.startswith("stdlib.method."):
+            runtime_call = ""
+            runtime_source = ""
         if semantic_tag.startswith("stdlib."):
             raise RuntimeError(
                 "php native emitter: unresolved stdlib runtime mapping: "

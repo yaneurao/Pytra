@@ -144,7 +144,7 @@ def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
 
 
 def _load_cpp_spec() -> BackendSpec:
-    transpile_to_cpp = _load_callable("py2cpp", "transpile_to_cpp")
+    transpile_to_cpp = _load_callable("backends.cpp.cli", "transpile_to_cpp")
 
     def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
         opts = emitter_options if isinstance(emitter_options, dict) else {}

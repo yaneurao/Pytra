@@ -2,17 +2,43 @@
 // source: src/pytra/utils/png.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
+const fs = require('node:fs');
+const path = require('node:path');
+function open(pathLike, mode) {
+    const filePath = String(pathLike);
+    const writeMode = String(mode || 'wb');
+    return {
+        write(data) {
+            const bytes = Array.isArray(data) ? data : Array.from(data || []);
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            const flag = (writeMode === 'ab' || writeMode === 'a') ? 'a' : 'w';
+            fs.writeFileSync(filePath, Buffer.from(bytes), { flag });
+        },
+        close() {},
+    };
+}
+
+function _png_append_list(dst, src) {
+    let i = 0;
+    let n = (src).length;
+    while (i < n) {
+        dst.push(src[(((i) < 0) ? ((src).length + (i)) : (i))]);
+        i += 1;
+    }
+}
+
 function _crc32(data) {
     let crc = 0xFFFFFFFF;
     let poly = 0xEDB88320;
     for (const b of data) {
-        crc ^= b;
+        crc = crc ^ b;
         let i = 0;
         while (i < 8) {
-            if (crc & 1 !== 0) {
-                crc = crc >> 1 ^ poly;
+            let lowbit = crc & 1;
+            if (lowbit !== 0) {
+                crc = crc >>> 1 ^ poly;
             } else {
-                crc >>= 1;
+                crc = crc >>> 1;
             }
             i += 1;
         }
@@ -30,48 +56,61 @@ function _adler32(data) {
             s1 -= mod;
         }
         s2 += s1;
-        s2 %= mod;
+        s2 = s2 % mod;
     }
     return (s2 << 16 | s1) & 0xFFFFFFFF;
 }
 
-function _u16le(v) {
-    return (Array.isArray(([v & 0xFF, v >> 8 & 0xFF])) ? ([v & 0xFF, v >> 8 & 0xFF]).slice() : Array.from(([v & 0xFF, v >> 8 & 0xFF])));
+function _png_u16le(v) {
+    return [v & 0xFF, v >>> 8 & 0xFF];
 }
 
-function _u32be(v) {
-    return (Array.isArray(([v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF])) ? ([v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF]).slice() : Array.from(([v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF])));
+function _png_u32be(v) {
+    return [v >>> 24 & 0xFF, v >>> 16 & 0xFF, v >>> 8 & 0xFF, v & 0xFF];
 }
 
 function _zlib_deflate_store(data) {
     let out = [];
-    // zlib header: CMF=0x78(Deflate, 32K window), FLG=0x01(check bits OK, fastest)
-    out = out.concat((Array.isArray(([0x78, 0x01])) ? ([0x78, 0x01]).slice() : Array.from(([0x78, 0x01]))));
+    _png_append_list(out, [0x78, 0x01]);
     let n = (data).length;
     let pos = 0;
     while (pos < n) {
         let remain = n - pos;
         let chunk_len = (remain > 65535 ? 65535 : remain);
         let final = (pos + chunk_len >= n ? 1 : 0);
-        // stored block: BTYPE=00, header bit field in LSB order (final in bit0)
         out.push(final);
-        out = out.concat(_u16le(chunk_len));
-        out = out.concat(_u16le(0xFFFF ^ chunk_len));
-        out = out.concat(data.slice(pos, pos + chunk_len));
+        _png_append_list(out, _png_u16le(chunk_len));
+        _png_append_list(out, _png_u16le(0xFFFF ^ chunk_len));
+        let i = pos;
+        let end = pos + chunk_len;
+        while (i < end) {
+            out.push(data[(((i) < 0) ? ((data).length + (i)) : (i))]);
+            i += 1;
+        }
         pos += chunk_len;
     }
-    out = out.concat(_u32be(_adler32(data)));
-    return (Array.isArray((out)) ? (out).slice() : Array.from((out)));
+    _png_append_list(out, _png_u32be(_adler32(data)));
+    return out;
 }
 
 function _chunk(chunk_type, data) {
-    let length = _u32be((data).length);
-    let crc = _crc32(chunk_type + data) & 0xFFFFFFFF;
-    return length + chunk_type + data + _u32be(crc);
+    let crc_input = [];
+    _png_append_list(crc_input, chunk_type);
+    _png_append_list(crc_input, data);
+    let crc = _crc32(crc_input) & 0xFFFFFFFF;
+    let out = [];
+    _png_append_list(out, _png_u32be((data).length));
+    _png_append_list(out, chunk_type);
+    _png_append_list(out, data);
+    _png_append_list(out, _png_u32be(crc));
+    return out;
 }
 
 function write_rgb_png(path, width, height, pixels) {
-    let raw = (Array.isArray((pixels)) ? (pixels).slice() : Array.from((pixels)));
+    let raw = [];
+    for (const b of pixels) {
+        raw.push(Math.trunc(Number(b)));
+    }
     let expected = width * height * 3;
     if ((raw).length !== expected) {
         throw new Error("pixels length mismatch: got=" + String((raw).length) + " expected=" + String(expected));
@@ -83,26 +122,32 @@ function write_rgb_png(path, width, height, pixels) {
         scanlines.push(0);
         let start = y * row_bytes;
         let end = start + row_bytes;
-        scanlines = scanlines.concat(raw.slice(start, end));
+        let i = start;
+        while (i < end) {
+            scanlines.push(raw[(((i) < 0) ? ((raw).length + (i)) : (i))]);
+            i += 1;
+        }
         y += 1;
     }
-    let ihdr = _u32be(width) + _u32be(height) + (Array.isArray(([8, 2, 0, 0, 0])) ? ([8, 2, 0, 0, 0]).slice() : Array.from(([8, 2, 0, 0, 0])));
-    let idat = _zlib_deflate_store((Array.isArray((scanlines)) ? (scanlines).slice() : Array.from((scanlines))));
+    let ihdr = [];
+    _png_append_list(ihdr, _png_u32be(width));
+    _png_append_list(ihdr, _png_u32be(height));
+    _png_append_list(ihdr, [8, 2, 0, 0, 0]);
+    let idat = _zlib_deflate_store(scanlines);
     
     let png = [];
-    png = png.concat((Array.isArray(([137, 80, 78, 71, 13, 10, 26, 10])) ? ([137, 80, 78, 71, 13, 10, 26, 10]).slice() : Array.from(([137, 80, 78, 71, 13, 10, 26, 10]))));
-    png = png.concat(_chunk((Array.isArray(([73, 72, 68, 82])) ? ([73, 72, 68, 82]).slice() : Array.from(([73, 72, 68, 82]))), ihdr));
-    png = png.concat(_chunk((Array.isArray(([73, 68, 65, 84])) ? ([73, 68, 65, 84]).slice() : Array.from(([73, 68, 65, 84]))), idat));
-    png = png.concat(_chunk((Array.isArray(([73, 69, 78, 68])) ? ([73, 69, 78, 68]).slice() : Array.from(([73, 69, 78, 68]))), ""));
+    _png_append_list(png, [137, 80, 78, 71, 13, 10, 26, 10]);
+    _png_append_list(png, _chunk([73, 72, 68, 82], ihdr));
+    _png_append_list(png, _chunk([73, 68, 65, 84], idat));
+    let iend_data = [];
+    _png_append_list(png, _chunk([73, 69, 78, 68], iend_data));
     
     let f = open(path, "wb");
     try {
-        f.write(png);
+        f.write((Array.isArray((png)) ? (png).slice() : Array.from((png))));
     } finally {
         f.close();
     }
 }
-
-"PNG 書き出しユーティリティ（Python実行用）。\n\nこのモジュールは sample/py のスクリプトから利用し、\nRGB 8bit バッファを PNG ファイルとして保存する。\n";
 
 module.exports = {write_rgb_png};
