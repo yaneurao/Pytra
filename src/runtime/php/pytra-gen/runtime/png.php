@@ -5,7 +5,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/pytra/py_runtime.php';
+require_once dirname(__DIR__) . '/py_runtime.php';
 
 function _png_append_list($dst, $src) {
     $i = 0;

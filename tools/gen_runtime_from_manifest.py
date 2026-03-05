@@ -345,6 +345,10 @@ def rewrite_php_program_to_library(php_src: str) -> str:
     lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
     out: list[str] = []
     for line in lines:
+        line = line.replace(
+            "require_once __DIR__ . '/pytra/py_runtime.php';",
+            "require_once dirname(__DIR__) . '/py_runtime.php';",
+        )
         if line.strip() == "__pytra_main();":
             continue
         out.append(line)

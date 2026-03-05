@@ -1954,6 +1954,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "return " + rendered + ";"]
         return [indent + "return;"]
     if kind == "Expr":
+        value_node = stmt.get("value")
+        if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+            ident_any = value_node.get("id")
+            ident = ident_any if isinstance(ident_any, str) else ""
+            if ident == "break":
+                return [indent + "break;"]
+            if ident == "continue":
+                return [indent + "continue;"]
         return [indent + _render_expr(stmt.get("value")) + ";"]
     if kind == "AnnAssign":
         target_any = stmt.get("target")
