@@ -35,6 +35,7 @@ class Target:
     run_cmd: str
     needs: tuple[str, ...]
     ignore_artifacts: bool = False
+    output_dir: str = ""
 
 
 @dataclass
@@ -220,8 +221,10 @@ def build_targets(
     case_src = case_path.as_posix()
     opt_arg = "--east3-opt-level " + shlex.quote(str(east3_opt_level))
 
-    def _pytra_cmd(target: str, *, build: bool, run: bool) -> str:
-        out_dir = f"test/transpile/{target}/{case_stem}"
+    def _output_dir_for_target(target: str) -> str:
+        return f"test/transpile/{target}/{case_stem}"
+
+    def _pytra_cmd(target: str, out_dir: str, *, build: bool, run: bool) -> str:
         parts: list[str] = [
             "python",
             "src/pytra-cli.py",
@@ -241,12 +244,14 @@ def build_targets(
     out: list[Target] = []
     for name in list_parity_targets():
         profile = get_target_profile(name)
+        out_dir = _output_dir_for_target(name)
         out.append(
             Target(
                 name=name,
-                transpile_cmd=_pytra_cmd(name, build=False, run=False),
-                run_cmd=_pytra_cmd(name, build=True, run=True),
+                transpile_cmd=_pytra_cmd(name, out_dir, build=False, run=False),
+                run_cmd=_pytra_cmd(name, out_dir, build=True, run=True),
                 needs=profile.runner_needs,
+                output_dir=out_dir,
             )
         )
     return out
@@ -320,6 +325,12 @@ def check_case(
                 print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
                 _record(target.name, "toolchain_missing", "missing toolchain")
                 continue
+
+            # Always wipe previous transpile outputs for this target/case pair.
+            if target.output_dir != "":
+                target_out_dir = work / target.output_dir
+                if target_out_dir.exists():
+                    shutil.rmtree(target_out_dir)
 
             tr = run_shell(target.transpile_cmd, cwd=work, timeout_sec=cmd_timeout_sec)
             if tr.returncode != 0:

@@ -150,6 +150,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `nim` の invalid module name を修正（出力名 `main.nim` 固定 + parity側 `stderr` 取り込み）。`01/02` の nim parity は artifact size+CRC32 一致で通過し、残failは `js/ts, go, cpp(02), java(02)` に収束。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] sample parity 全件再実行を開始し、`01-03` の時点で `js/ts/go/nim/java/cpp` のブロッカーを確認（`js/png.js` f-string残存、`go/png.go` 文字列崩れ、Nim module名制約、Java `tmp` class名、C++ runtime link競合）。`rs/cs/ruby/lua/php/swift/kotlin/scala` は同区間で artifact size/CRC32 一致を確認。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `png.py` 正本を backend 互換寄りに修正して `js/ts/go` の `pytra-gen/utils/png.*` を再生成。`01_mandelbrot` 再検証で `js/ts` は構文エラーを脱して `write_rgb_png` export未解決へ、`go` は文字列崩れ解消後に `extend/main重複/pyWriteRGBPNG未定義` が残る段階まで前進。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `runtime_parity_check.py` に target別出力ディレクトリの事前削除を追加し、`01_mandelbrot/02_raytrace_spheres` を `js,ts,go,cpp,java,nim` で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample01_02_focus_20260305_after_freshfix.json`）。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
