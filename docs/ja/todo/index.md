@@ -110,14 +110,16 @@
 3. [x] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式を設計する。
 4. [x] [ID: P2-CHECKER-UNIFY-01-S2-01] 単一 checker 本体（`check_py2x_transpile.py`）を実装する。
 5. [x] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化して新checkerへ委譲させる。
-6. [ ] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker へ置換する。
-7. [ ] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
+6. [x] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker へ置換する。
+7. [x] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
 8. [ ] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰で非退行を固定する。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S1-01] `check_py2*_transpile.py` 14本を棚卸しし、差分軸を `case_mode(all|explicit)` / 構造化expected-fail / 品質hook / 追加CLIフラグへ固定。統一仕様を `p2-checker-unification.md` に反映。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S1-02] 単一checker profile 仕様を `target/case_mode/cases/expected_failures/quality_hooks/flags/stage2_probe` で固定し、単純expected-fail集合の正規化規則を定義。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` + `check_py2x_profiles.json` を追加し、共通実行器を実装。`cpp/java/scala` profile を移植し `sample/py/01_mandelbrot.py` smoke（3target）通過を確認。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S2-01] profile を全14targetへ展開し、`php_sample18`/runtime sidecar 検証/`cpp_emitter_separation` preflight を共通化。`--skip-east3-contract-tests` 付き `sample/py/01_mandelbrot.py` smoke（14target）を通過。
 - 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` 14本を互換ラッパ化し、`check_py2x_transpile.py --target` へ委譲。`cpp` 互換の `--check-multi-file-imports/--check-yanesdk-smoke` も unified 側へ移植し、`nim/cpp/js` ラッパ経路の実行を確認。
+- 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / `check_noncpp_east3_contract.py` / `check_gsk_native_regression.py` の checker 呼び出しを `check_py2x_transpile.py --target` へ置換し、`js/ts` は preflight 再帰回避のため `--skip-east3-contract-tests` を付与。`check_noncpp --skip-transpile`・`check_py2js_transpile.py`・`check_py2ts_transpile.py` を通過。
+- 進捗メモ: [ID: P2-CHECKER-UNIFY-01-S3-01] 旧 `check_py2*.py` 14本を削除し、`check_legacy_transpile_checkers_absent.py` + tooling unit test を追加。`run_local_ci.py` に再導入防止ガードを統合し、Scala checker unit は `check_py2x_transpile.py` 前提へ移行。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
