@@ -745,11 +745,7 @@ class NimNativeEmitter:
             if call_name == "skip_newlines":
                 self._emit_line(expr)
                 return
-            semantic_tag = ""
-            semantic_tag_any = value_node.get("semantic_tag")
-            if isinstance(semantic_tag_any, str):
-                semantic_tag = semantic_tag_any
-            if semantic_tag == "stdlib.symbol.save_gif" or call_name == "pop":
+            if call_name == "pop":
                 self._emit_line("discard " + expr)
                 return
             resolved = value_node.get("resolved_type")
@@ -758,7 +754,7 @@ class NimNativeEmitter:
             else:
                 self._emit_line(expr)
             return
-        if expr.startswith("echo ") or expr.startswith("return ") or ".add(" in expr or "write_rgb_png(" in expr or "run_" in expr:
+        if expr.startswith("echo ") or expr.startswith("return ") or ".add(" in expr or "run_" in expr:
             self._emit_line(expr)
         else:
             self._emit_line("discard " + expr)
