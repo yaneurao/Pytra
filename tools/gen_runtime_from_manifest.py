@@ -142,7 +142,7 @@ def build_generation_plan(
     return out
 
 
-def run_py2x(target: str, source_rel: str, ext_hint: str) -> str:
+def run_py2x(target: str, source_rel: str, output_rel: str) -> str:
     src = ROOT / source_rel
     spec = get_backend_spec(target)
     target_lang = str(spec.get("target_lang", target))
@@ -156,8 +156,12 @@ def run_py2x(target: str, source_rel: str, ext_hint: str) -> str:
     emitter_options = resolve_layer_options(spec, "emitter", {})
     ir = lower_ir(spec, east_doc, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
+    out_name = Path(output_rel).name
+    out_suffix = Path(output_rel).suffix
+    if out_name == "":
+        out_name = "tmp" + out_suffix
     with tempfile.TemporaryDirectory() as td:
-        out = Path(td) / ("tmp" + ext_hint)
+        out = Path(td) / out_name
         out_text = emit_source(spec, ir, out, emitter_options)
         if out_text == "":
             return out.read_text(encoding="utf-8")
@@ -264,8 +268,7 @@ def inject_generated_header(text: str, target: str, source_rel: str) -> str:
 
 
 def render_item(item: GenerationItem) -> str:
-    ext_hint = Path(item.output_rel).suffix
-    generated = run_py2x(item.target, item.source_rel, ext_hint)
+    generated = run_py2x(item.target, item.source_rel, item.output_rel)
     if item.postprocess == "cs_program_to_helper":
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for cs_program_to_helper: " + item.item_id)

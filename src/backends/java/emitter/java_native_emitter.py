@@ -125,7 +125,7 @@ def _split_type_args(type_name: str, prefix: str) -> list[str]:
 def _java_ref_type(type_name: Any) -> str:
     if not isinstance(type_name, str):
         return "Object"
-    if type_name in {"int", "int64"}:
+    if type_name in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
         return "Long"
     if type_name in {"float", "float64"}:
         return "Double"
@@ -135,6 +135,8 @@ def _java_ref_type(type_name: Any) -> str:
         return "String"
     if type_name == "Path":
         return "pathlib.Path"
+    if type_name == "PyFile":
+        return "PyRuntime.PyFile"
     if type_name in {"bytes", "bytearray"}:
         return "java.util.ArrayList<Long>"
     if type_name.startswith("list["):
@@ -163,7 +165,7 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "void" if allow_void else "Object"
     if type_name in {"unknown", "object", "any"}:
         return "Object"
-    if type_name in {"int", "int64"}:
+    if type_name in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
         return "long"
     if type_name in {"float", "float64"}:
         return "double"
@@ -173,6 +175,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "String"
     if type_name == "Path":
         return "pathlib.Path"
+    if type_name == "PyFile":
+        return "PyRuntime.PyFile"
     if type_name == "bytes":
         return "java.util.ArrayList<Long>"
     if type_name == "bytearray":
@@ -613,9 +617,9 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
                     expr_txt = "!(" + expr_txt + ")"
                 parts.append("(" + expr_txt + ")")
             else:
-                parts.append("(" + cur_left + " " + _compare_op_symbol(op) + " " + right + ")")
+                parts.append("((" + cur_left + ") " + _compare_op_symbol(op) + " (" + right + "))")
         else:
-            parts.append("(" + cur_left + " " + _compare_op_symbol(op) + " " + right + ")")
+            parts.append("((" + cur_left + ") " + _compare_op_symbol(op) + " (" + right + "))")
         cur_left = right
         i += 1
     if len(parts) == 0:
@@ -783,10 +787,7 @@ def _utils_module_class_name(module_id: str) -> str:
     leaf = parts[len(parts) - 1]
     if leaf == "":
         return ""
-    base = _snake_to_pascal_basic(leaf)
-    if base == "":
-        return ""
-    return base + "Helper"
+    return _safe_ident(leaf, "runtime_mod")
 
 
 def _symbol_binding(local_name: str) -> tuple[str, str]:
@@ -846,13 +847,13 @@ def _render_resolved_runtime_call(
         if binding_module.startswith("pytra.utils."):
             class_name = _utils_module_class_name(binding_module)
             if class_name != "":
-                method_name = "py" + _snake_to_java_runtime_method(runtime_name)
+                method_name = _safe_ident(runtime_name, "runtime_call")
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_source == "import_symbol":
         if binding_module.startswith("pytra.utils.") and binding_symbol != "":
             class_name = _utils_module_class_name(binding_module)
             if class_name != "":
-                method_name = "py" + _snake_to_java_runtime_method(binding_symbol)
+                method_name = _safe_ident(binding_symbol, "runtime_call")
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_name.find(".") >= 0:
         return runtime_name + "(" + joined + ")"
@@ -873,6 +874,13 @@ def _render_call_via_runtime_call(
         if len(args) == 0:
             return "new pathlib.Path(\"\")"
         return "new pathlib.Path(" + _render_expr(args[0]) + ")"
+    if semantic_tag == "io.open":
+        rendered_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_args.append(_render_expr(args[i]))
+            i += 1
+        return "PyRuntime.open(" + ", ".join(rendered_args) + ")"
     if semantic_tag.startswith("stdlib.fn."):
         fn_name = semantic_tag[len("stdlib.fn."):].strip()
         if fn_name == "":
@@ -924,8 +932,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "bytes":
         if len(args) == 0:
             return "new java.util.ArrayList<Long>()"
-        return "new java.util.ArrayList<Long>(" + _render_expr(args[0]) + ")"
+        return "PyRuntime.__pytra_bytearray(" + _render_expr(args[0]) + ")"
     if callee_name == "int":
+        if len(args) == 0:
+            return "0L"
+        return "PyRuntime.__pytra_int(" + _render_expr(args[0]) + ")"
+    if callee_name == "_int":
         if len(args) == 0:
             return "0L"
         return "PyRuntime.__pytra_int(" + _render_expr(args[0]) + ")"
@@ -933,6 +945,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "0.0"
         return "((double)(" + _render_expr(args[0]) + "))"
+    if callee_name == "_float":
+        if len(args) == 0:
+            return "0.0"
+        return "((double)(PyRuntime.pyToFloat(" + _render_expr(args[0]) + ")))"
     if callee_name == "bool":
         if len(args) == 0:
             return "false"
@@ -1028,6 +1044,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "PyRuntime.__pytra_str_isdigit(" + owner_expr + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "PyRuntime.__pytra_str_isalpha(" + owner_expr + ")"
+        if attr_name == "to_bytes" and len(args) >= 2:
+            return (
+                "PyRuntime.__pytra_int_to_bytes("
+                + owner_expr
+                + ", "
+                + _render_expr(args[0])
+                + ", "
+                + _render_expr(args[1])
+                + ")"
+            )
         if attr_name == "get" and len(args) == 2:
             base = (
                 "PyRuntime.__pytra_dict_get_default("
@@ -1388,6 +1414,16 @@ def _augassign_op(op: Any) -> str:
         return "/="
     if op == "Mod":
         return "%="
+    if op == "BitAnd":
+        return "&="
+    if op == "BitOr":
+        return "|="
+    if op == "BitXor":
+        return "^="
+    if op == "LShift":
+        return "<<="
+    if op == "RShift":
+        return ">>="
     return "+="
 
 
