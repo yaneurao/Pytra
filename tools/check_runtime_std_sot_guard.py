@@ -110,6 +110,10 @@ CPP_GENERATED_STD_MODULES = [
     "typing",
 ]
 
+CPP_HEADER_ONLY_STD_MODULES = {
+    "math",
+}
+
 CPP_GENERATED_UTILS_MODULES = [
     "assertions",
     "gif",
@@ -139,6 +143,7 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
 # required handwritten core impl files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
     "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
+    "math.cpp": "src/runtime/cpp/core/std/math.cpp",
     "math-impl.h": "src/runtime/cpp/core/std/math-impl.h",
     "math-impl.cpp": "src/runtime/cpp/core/std/math-impl.cpp",
     "time-impl.h": "src/runtime/cpp/core/std/time-impl.h",
@@ -198,6 +203,12 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
         for ext in ("h", "cpp"):
             gen_rel = f"src/runtime/cpp/gen/std/{module_name}.{ext}"
             gen_path = ROOT / gen_rel
+            if ext == "cpp" and module_name in CPP_HEADER_ONLY_STD_MODULES:
+                if gen_path.exists():
+                    violations.append(
+                        f"[{module_name}] header-only module must not generate runtime source: {gen_rel}"
+                    )
+                continue
             if not gen_path.exists():
                 violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
                 continue

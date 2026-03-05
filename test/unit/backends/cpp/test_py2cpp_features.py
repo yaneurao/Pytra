@@ -171,6 +171,49 @@ def inc(x: int) -> int:
             east = load_east(src_py)
         self.assertFalse(_is_runtime_module_extern_only(east))
 
+    def test_emit_runtime_cpp_skips_cpp_for_extern_only_module(self) -> None:
+        rel_src = Path("src/pytra/std/__tmp_extern_header_only_test.py")
+        src_py = ROOT / rel_src
+        hdr_out = ROOT / "src/runtime/cpp/gen/std/__tmp_extern_header_only_test.h"
+        cpp_out = ROOT / "src/runtime/cpp/gen/std/__tmp_extern_header_only_test.cpp"
+        src = """
+from pytra.std import extern
+
+pi: float = extern(3.141592653589793)
+
+@extern
+def sin(x: float) -> float:
+    return x
+"""
+        try:
+            src_py.write_text(src, encoding="utf-8")
+            if hdr_out.exists():
+                hdr_out.unlink()
+            if cpp_out.exists():
+                cpp_out.unlink()
+            cp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "src/py2x.py", "--target", "cpp",
+                    str(rel_src),
+                    "--emit-runtime-cpp",
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="emit-runtime-cpp extern-only",
+            )
+            self.assertEqual(cp.returncode, 0, msg=cp.stderr)
+            self.assertIn("skipped: header-only extern module", cp.stdout)
+            self.assertTrue(hdr_out.exists())
+            self.assertFalse(cpp_out.exists())
+        finally:
+            if src_py.exists():
+                src_py.unlink()
+            if hdr_out.exists():
+                hdr_out.unlink()
+            if cpp_out.exists():
+                cpp_out.unlink()
+
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.set_dynamic_hooks_enabled(False)
