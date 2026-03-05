@@ -5,7 +5,7 @@
 
 #include "runtime/cpp/gen/std/random.h"
 
-#include "runtime/cpp/gen/std/math.h"
+#include "runtime/cpp/std/math.h"
 
 namespace pytra::std::random {
 

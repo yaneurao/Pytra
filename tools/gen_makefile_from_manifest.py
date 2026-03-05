@@ -76,6 +76,7 @@ def _collect_runtime_sources() -> list[str]:
     roots = [
         ROOT / "src" / "runtime" / "cpp" / "core",
         ROOT / "src" / "runtime" / "cpp" / "gen",
+        ROOT / "src" / "runtime" / "cpp" / "std",
     ]
     for runtime_root in roots:
         if not runtime_root.exists():

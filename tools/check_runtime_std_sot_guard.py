@@ -114,6 +114,10 @@ CPP_HEADER_ONLY_STD_MODULES = {
     "math",
 }
 
+CPP_STD_HEADER_LOCATIONS: dict[str, str] = {
+    "math": "src/runtime/cpp/std/math.h",
+}
+
 CPP_GENERATED_UTILS_MODULES = [
     "assertions",
     "gif",
@@ -143,7 +147,7 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
 # required handwritten core files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
     "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
-    "math.cpp": "src/runtime/cpp/core/std/math.cpp",
+    "math.cpp": "src/runtime/cpp/std/math.cpp",
     "time-impl.h": "src/runtime/cpp/core/std/time-impl.h",
     "time-impl.cpp": "src/runtime/cpp/core/std/time-impl.cpp",
 }
@@ -200,6 +204,9 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
         source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
         for ext in ("h", "cpp"):
             gen_rel = f"src/runtime/cpp/gen/std/{module_name}.{ext}"
+            custom_hdr_rel = CPP_STD_HEADER_LOCATIONS.get(module_name)
+            if ext == "h" and isinstance(custom_hdr_rel, str) and custom_hdr_rel != "":
+                gen_rel = custom_hdr_rel
             gen_path = ROOT / gen_rel
             if ext == "cpp" and module_name in CPP_HEADER_ONLY_STD_MODULES:
                 if gen_path.exists():

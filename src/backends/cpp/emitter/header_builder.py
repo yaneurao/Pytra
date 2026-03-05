@@ -269,18 +269,24 @@ def _header_cpp_type_from_east(
 def _header_guard_from_path(path: str) -> str:
     """ヘッダパスから include guard を生成する。"""
     src = path.replace("\\", "/")
+    prefix0 = "src/runtime/cpp/"
     prefix1 = "src/runtime/cpp/core/"
     prefix2 = "src/runtime/cpp/gen/"
+    prefix00 = "runtime/cpp/"
     prefix3 = "runtime/cpp/core/"
     prefix4 = "runtime/cpp/gen/"
     if src.startswith(prefix1):
         src = src[len(prefix1) :]
     elif src.startswith(prefix2):
         src = src[len(prefix2) :]
+    elif src.startswith(prefix0):
+        src = src[len(prefix0) :]
     elif src.startswith(prefix3):
         src = src[len(prefix3) :]
     elif src.startswith(prefix4):
         src = src[len(prefix4) :]
+    elif src.startswith(prefix00):
+        src = src[len(prefix00) :]
     src = "PYTRA_" + src.upper()
     out_chars: list[str] = []
     i = 0
