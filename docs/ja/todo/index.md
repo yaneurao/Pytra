@@ -39,7 +39,7 @@
 1. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01] 旧 runtime を `src/runtime2` へ退避し、新 `src/runtime/cpp/{core,gen}` で C++ parity を復旧する。
 2. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、移行影響範囲を固定する。
 3. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新 `src/runtime/cpp/{core,gen}` を作成する。
-4. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガードを追加する。
+4. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガードを追加する。
 5. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime/include 解決を `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
 6. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
 7. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
@@ -51,6 +51,7 @@
 13. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] `work/logs/p0_runtime_root_reset_cpp_ref_inventory_targets_20260305_s1_01.txt`（50件）を固定し、影響範囲を `src/backends/cpp/*` / `src/toolchain/compiler/*` / `tools/*` に確定。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime -> src/runtime2` を移動し、`src/runtime/cpp/core`（旧 `pytra-core`）と `src/runtime/cpp/gen`（旧 `pytra-gen`）を新設。旧 `src/runtime2/cpp/pytra` shim を隔離した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `tools/check_runtime2_references_absent.py` を追加し、`run_local_ci.py` と tooling unit test（`test_check_runtime2_references_absent.py`）へ統合して `src/runtime2` 参照の再流入を fail-fast 化。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 
