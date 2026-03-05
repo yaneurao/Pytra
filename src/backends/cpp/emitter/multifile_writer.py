@@ -60,7 +60,7 @@ def write_multi_file_cpp(
     prelude_txt = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
     prelude_txt += "#ifndef PYTRA_MULTI_PRELUDE_H\n"
     prelude_txt += "#define PYTRA_MULTI_PRELUDE_H\n\n"
-    prelude_txt += "#include \"runtime/cpp/pytra/built_in/py_runtime.h\"\n\n"
+    prelude_txt += "#include \"runtime/cpp/core/built_in/py_runtime.h\"\n\n"
     prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
     generated_lines_total = 0
     generated_lines_total += count_text_lines(prelude_txt)
@@ -177,7 +177,7 @@ def write_multi_file_cpp(
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
         cpp_txt = replace_first(
             cpp_txt,
-            '#include "runtime/cpp/pytra/built_in/py_runtime.h"',
+            '#include "runtime/cpp/core/built_in/py_runtime.h"',
             '#include "pytra_multi_prelude.h"',
         )
         # ユーザーモジュール import 呼び出しを解決するため、参照先関数の前方宣言を補う。

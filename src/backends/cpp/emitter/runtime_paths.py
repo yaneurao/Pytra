@@ -6,8 +6,10 @@ from toolchain.compiler.transpile_cli import join_str_list
 from toolchain.compiler.transpile_cli import python_module_exists_under
 
 
-RUNTIME_CPP_COMPAT_ROOT: Path = Path("src/runtime/cpp/pytra")
-RUNTIME_CPP_GEN_ROOT: Path = Path("src/runtime/cpp/pytra-gen")
+RUNTIME_CPP_CORE_ROOT: Path = Path("src/runtime/cpp/core")
+RUNTIME_CPP_GEN_ROOT: Path = Path("src/runtime/cpp/gen")
+# Legacy name kept as alias while callers are being updated.
+RUNTIME_CPP_COMPAT_ROOT: Path = RUNTIME_CPP_CORE_ROOT
 RUNTIME_STD_SOURCE_ROOT: Path = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT: Path = Path("src/pytra/utils")
 RUNTIME_COMPILER_SOURCE_ROOT: Path = Path("src/toolchain/compiler")
@@ -39,9 +41,9 @@ def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
 
     def _exists_under_runtime_roots(rel_hdr: str) -> bool:
-        compat_hdr = join_runtime_path(RUNTIME_CPP_COMPAT_ROOT, rel_hdr)
+        core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)
         gen_hdr = join_runtime_path(RUNTIME_CPP_GEN_ROOT, rel_hdr)
-        return compat_hdr.exists() or gen_hdr.exists()
+        return core_hdr.exists() or gen_hdr.exists()
 
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
@@ -146,15 +148,24 @@ def runtime_namespace_for_tail(module_tail: str) -> str:
 
 def module_name_to_cpp_include(module_name_norm: str) -> str:
     """`pytra.std|utils|compiler|built_in` 名を C++ include 形式へ変換する。"""
+    def _pick(rel_hdr: str) -> str:
+        core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)
+        gen_hdr = join_runtime_path(RUNTIME_CPP_GEN_ROOT, rel_hdr)
+        if core_hdr.exists():
+            return "runtime/cpp/core/" + rel_hdr
+        if gen_hdr.exists():
+            return "runtime/cpp/gen/" + rel_hdr
+        return "runtime/cpp/gen/" + rel_hdr
+
     if module_name_norm.startswith("pytra.std."):
-        return "pytra/std/" + module_tail_to_cpp_header_path(module_name_norm[10:])
+        return _pick("std/" + module_tail_to_cpp_header_path(module_name_norm[10:]))
     if module_name_norm.startswith("pytra.utils."):
-        return "pytra/utils/" + module_tail_to_cpp_header_path(module_name_norm[12:])
+        return _pick("utils/" + module_tail_to_cpp_header_path(module_name_norm[12:]))
     if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
-        return "pytra/compiler/" + module_tail_to_cpp_header_path(module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:])
+        return _pick("compiler/" + module_tail_to_cpp_header_path(module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]))
     if module_name_norm.startswith("pytra.built_in."):
-        return "pytra/built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:])
-    return "pytra/" + module_name_norm.replace(".", "/") + ".h"
+        return _pick("built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:]))
+    return "runtime/cpp/gen/" + module_name_norm.replace(".", "/") + ".h"
 
 
 def runtime_module_has_header(module_name_norm: str) -> bool:
