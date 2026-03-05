@@ -530,38 +530,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if attr_name == "__init__":
                 return "parent::__construct(" + ", ".join(rendered_super_args) + ")"
             return "parent::" + attr_name + "(" + ", ".join(rendered_super_args) + ")"
-        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-            owner = _safe_ident(owner_any.get("id"), "")
-            if owner == "math":
-                rendered_math_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_math_args.append(_render_expr(args[i]))
-                    i += 1
-                if attr_name == "pi":
-                    return "pyMathPi()"
-                if attr_name == "e":
-                    return "pyMathE()"
-                if attr_name == "sqrt":
-                    return "pyMathSqrt(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "sin":
-                    return "pyMathSin(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "cos":
-                    return "pyMathCos(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "tan":
-                    return "pyMathTan(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "exp":
-                    return "pyMathExp(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "log":
-                    return "pyMathLog(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "pow":
-                    return "pyMathPow(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "floor":
-                    return "pyMathFloor(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "ceil":
-                    return "pyMathCeil(" + ", ".join(rendered_math_args) + ")"
-                if attr_name == "abs" or attr_name == "fabs":
-                    return "pyMathFabs(" + ", ".join(rendered_math_args) + ")"
         owner_expr = _render_expr(owner_any)
         if attr_name == "get":
             if len(args) == 0:
@@ -687,12 +655,6 @@ def _render_expr(expr: Any) -> str:
                     if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
                         return runtime_symbol + "()"
                     return runtime_symbol
-        if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-            owner = _safe_ident(value_any.get("id"), "")
-            if owner == "math" and attr == "pi":
-                return "pyMathPi()"
-            if owner == "math" and attr == "e":
-                return "pyMathE()"
         return _render_expr(value_any) + "->" + attr
     if kind == "Subscript":
         owner = _render_expr(expr.get("value"))

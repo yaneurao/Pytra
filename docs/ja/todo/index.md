@@ -49,6 +49,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用 runtime実装混在ブロックを削除し、`math|gif|png` ヒットを `49 -> 8` に縮退。`test_py2lua_smoke.py`（32件）通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` の未使用 inline runtime helper 群と `rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を削除し、`scala:39 -> 29` / `rs:31 -> 4`、全 backend 合計 `138 -> 101` へ縮退。`test_py2scala_smoke.py`（16件）/ `test_py2rs_smoke.py`（30件）通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` の `owner=="math"` 再解決フォールバックを撤去し、`scala` ヒットを `29 -> 16`、全 backend 合計を `101 -> 88` に縮退。`test_py2scala_smoke.py`（16件）再通過を確認。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `php_native_emitter.py` / `go_native_emitter.py` の `owner=="math"` 生AST再解決フォールバックを撤去し、`php+go` ヒットを `28 -> 12`、全 backend 合計を `88 -> 72` に縮退。`test_py2php_smoke.py`（10件）/ `test_py2go_smoke.py`（16件）通過。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

@@ -1408,13 +1408,7 @@ def _infer_go_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         func_any = expr.get("func")
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
             owner_any = func_any.get("value")
-            owner_name = ""
-            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-                owner_name = _safe_ident(owner_any.get("id"), "")
             attr_name = _safe_ident(func_any.get("attr"), "")
-            if owner_name == "math":
-                if attr_name in {"sqrt", "sin", "cos", "tan", "exp", "log", "pow", "floor", "ceil", "abs"}:
-                    return "float64"
             if attr_name in {"isdigit", "isalpha"}:
                 return "bool"
     if kind == "BinOp":
