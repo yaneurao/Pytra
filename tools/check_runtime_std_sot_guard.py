@@ -140,12 +140,10 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "png": "src/pytra/utils/png.py",
 }
 
-# required handwritten core impl files.
+# required handwritten core files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
     "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
     "math.cpp": "src/runtime/cpp/core/std/math.cpp",
-    "math-impl.h": "src/runtime/cpp/core/std/math-impl.h",
-    "math-impl.cpp": "src/runtime/cpp/core/std/math-impl.cpp",
     "time-impl.h": "src/runtime/cpp/core/std/time-impl.h",
     "time-impl.cpp": "src/runtime/cpp/core/std/time-impl.cpp",
 }

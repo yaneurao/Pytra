@@ -56,3 +56,4 @@
 - 2026-03-06: `src/runtime/cpp/core/std/math.cpp` を正本として追加し、`src/runtime/cpp/gen/std/math.cpp` を削除した。`tools/check_runtime_std_sot_guard.py` も header-only (`math`) 契約を検証するよう更新した。
 - 2026-03-06: 回帰として `test_emit_runtime_cpp_skips_cpp_for_extern_only_module` を追加し、`math.h` 生成 + `.cpp` 非生成を固定した。
 - 2026-03-06: `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture --ignore-unstable-stdout`（3/3 pass）、`--case-root sample 01_mandelbrot 16_glass_sculpture_chaos --ignore-unstable-stdout`（2/2 pass）を確認した。
+- 2026-03-06: `math-impl` 中間層を廃止し、`src/runtime/cpp/core/std/math.cpp` が `<cmath>` を直接呼ぶ実装に一本化した。`src/runtime/cpp/core/std/math-impl.h/.cpp` は削除した。
