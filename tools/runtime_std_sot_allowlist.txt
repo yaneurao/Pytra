@@ -9,7 +9,6 @@ json src/runtime/cs/pytra-core/std/json.cs
 json src/runtime/cs/pytra/std/json.cs
 json src/runtime/go/pytra-core/built_in/py_runtime.go
 json src/runtime/go/pytra/py_runtime.go
-json src/runtime/java/pytra-core/built_in/PyRuntime.java
 json src/runtime/kotlin/pytra-core/built_in/py_runtime.kt
 json src/runtime/lua/pytra-core/built_in/py_runtime.lua
 json src/runtime/php/pytra-core/py_runtime.php
