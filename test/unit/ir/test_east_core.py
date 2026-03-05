@@ -431,6 +431,63 @@ def main() -> int:
             if isinstance(ent, dict):
                 self.assertNotEqual(ent.get("module_id"), "__future__")
 
+    def test_typing_imports_are_annotation_only_noop(self) -> None:
+        src = """
+import typing
+from typing import Any as A, List as L
+from pytra.std import json
+
+def main(xs: L[int]) -> A:
+    _ = json.dumps({"n": len(xs)})
+    return xs
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        import_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") in {"Import", "ImportFrom"}
+        ]
+        self.assertEqual(len(import_nodes), 1)
+        self.assertEqual(import_nodes[0].get("kind"), "ImportFrom")
+        self.assertEqual(import_nodes[0].get("module"), "pytra.std")
+
+        meta = east.get("meta", {})
+        import_bindings = meta.get("import_bindings", [])
+        self.assertIsInstance(import_bindings, list)
+        module_ids = [
+            str(ent.get("module_id"))
+            for ent in import_bindings
+            if isinstance(ent, dict) and isinstance(ent.get("module_id"), str)
+        ]
+        self.assertNotIn("typing", module_ids)
+        self.assertIn("pytra.std", module_ids)
+
+    def test_typing_alias_is_resolved_without_runtime_import(self) -> None:
+        src = """
+from typing import List as L
+
+def main() -> None:
+    ys: L[int] = []
+    print(ys)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        fn = next(
+            n
+            for n in east.get("body", [])
+            if isinstance(n, dict)
+            and n.get("kind") == "FunctionDef"
+            and (n.get("original_name") == "main" or n.get("name") == "main")
+        )
+        ann_assigns = [
+            st for st in fn.get("body", []) if isinstance(st, dict) and st.get("kind") == "AnnAssign"
+        ]
+        self.assertEqual(len(ann_assigns), 1)
+        self.assertEqual(ann_assigns[0].get("annotation"), "list[int64]")
+        self.assertEqual(ann_assigns[0].get("value", {}).get("resolved_type"), "list[unknown]")
+
+        import_bindings = east.get("meta", {}).get("import_bindings", [])
+        self.assertEqual(import_bindings, [])
+
     def test_future_non_annotations_is_rejected(self) -> None:
         src = """
 from __future__ import generator_stop
