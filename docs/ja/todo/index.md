@@ -184,6 +184,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `runtime_parity_check.py` に target別出力ディレクトリの事前削除を追加し、`01_mandelbrot/02_raytrace_spheres` を `js,ts,go,cpp,java,nim` で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample01_02_focus_20260305_after_freshfix.json`）。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] `src/runtime2/{rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim}` を `src/runtime/` へ復旧し、`runtime source not found` 系エラーを解消した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] PHP runtime の `resolved_runtime_call` シンボル解決と `pytra-gen/runtime/{png,gif}.php` の append-list 参照渡し化を修正し、`01_mandelbrot` / `02_raytrace_spheres` を 14 target で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample01_02_all_targets_after_php_runtime_fixes_20260305.json`）。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] Nim の `save_gif` 戻り値型（`int`）と `math.pi` 変換を修正し、`04_orbit_trap_julia`〜`06_julia_parameter_sweep` を 14 target で再実行して artifact size/CRC32 一致を確認（`work/logs/runtime_parity_sample04_06_all_targets_after_nim_fix_20260305.json`）。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
