@@ -74,6 +74,19 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] `run_local_ci.py` に組み込み済みの guard群（`check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py`）を実運用検証し、`forbidden` 側を「findings=0 なら空allowlist許容」に修正。両ガード + tooling unit test 通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] `go/php/kotlin/js/cs/nim` smoke に `resolved_runtime_call` 空振り fail-closed 回帰を追加し、`go/php/kotlin/js/nim/cs` smoke（合計117件）・`check_emitter_runtimecall_guardrails.py`・`check_emitter_forbidden_runtime_symbols.py`・tooling（`test_check_emitter_runtimecall_guardrails.py` / `test_runtime_parity_check_cli.py`）を通過。あわせて `go/php/kotlin/cs` emitter に semantic_tag 整合チェックを追加し、`resolved_runtime_call` 推測レンダリング漏れを是正。
 
+### P1: runtime generator の単一化（特殊スクリプト撤去）
+
+文脈: [docs/ja/plans/p1-runtime-generator-unification.md](../plans/p1-runtime-generator-unification.md)
+
+1. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01] runtime生成導線を `pytra-cli`/`py2x` 正規経路へ統合し、言語別特殊 generator を撤去する。
+2. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-01] 既存 generator 3本（image/java/cs）の責務差分を棚卸しし、統合要件を固定する。
+3. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-02] target/出力先/marker を持つ宣言設定を定義し、コード内分岐を設定へ移す。
+4. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] 汎用 generator（単一スクリプト）を実装し、`pytra-cli`/`py2x` 呼び出しへ統合する。
+5. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] 既存呼び出し元を新導線へ置換する。
+6. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] `tools/gen_image_runtime_from_canonical.py` / `tools/gen_java_std_runtime_from_canonical.py` / `tools/gen_cs_image_runtime_from_canonical.py` を削除する。
+7. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-01] 特殊 generator 再導入禁止ガードを CI へ追加する。
+8. [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S3-02] runtime監査 + parity 回帰で非退行を固定する。
+
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
 文脈: [docs/ja/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
