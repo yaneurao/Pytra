@@ -5,4 +5,4 @@ set -eu
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PYTHONPATH="${ROOT}/src:${PYTHONPATH:-}"
 
-exec python3 -m pytra.cli "$@"
+exec python3 -m pytra_cli "$@"

@@ -9,7 +9,7 @@ This document defines the operational specification to consolidate the C++ build
 ## 1. Decisions
 
 - The user entry point is `./pytra` (extensionless launcher).
-- The main implementation entry point is `src/pytra/cli.py` (`python -m pytra.cli`).
+- The main implementation entry point is `src/pytra_cli.py` (`python -m pytra_cli`).
 - `py2cpp.py` remains as the transpile backend and does not own build orchestration responsibility.
 - C++ build uses: canonical `manifest.json` + generated `Makefile` + `make` execution.
 - Manual `PYTHONPATH` setup is unnecessary (`./pytra` sets it internally).
@@ -33,7 +33,7 @@ This document defines the operational specification to consolidate the C++ build
 Place executable `pytra` (without extension) at repository root, and do the following:
 
 1. Add `ROOT/src` to `PYTHONPATH`.
-2. Execute `python3 -m pytra.cli "$@"`.
+2. Execute `python3 -m pytra_cli "$@"`.
 
 Intent:
 
@@ -42,8 +42,8 @@ Intent:
 
 ### 4.2 actual CLI
 
-- Runtime entry implementation is `src/pytra/cli.py`.
-- Direct invocation form is `python3 -m pytra.cli ...`.
+- Runtime entry implementation is `src/pytra_cli.py`.
+- Direct invocation form is `python3 -m pytra_cli ...`.
 
 ## 5. Common CLI specification (v1)
 
@@ -156,7 +156,7 @@ Exit non-zero in the following cases:
 ## 11. Phased introduction
 
 1. Phase 1: add `tools/gen_makefile_from_manifest.py`.
-2. Phase 2: add `src/pytra/cli.py` and implement `--target cpp --build`.
+2. Phase 2: add `src/pytra_cli.py` and implement `--target cpp --build`.
 3. Phase 3: add root launcher `./pytra` with built-in `PYTHONPATH` setup.
 4. Phase 4: add `--run`, `--codegen-opt`, and optionally `--jobs`.
 

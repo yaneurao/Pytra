@@ -27,7 +27,7 @@ Windows では次の読み替えを行ってください。
 
 ## 統合CLI（`./pytra`）の使い方
 
-ルートの `./pytra` は、`python3 -m pytra.cli` を呼び出す統合CLIランチャーです。
+ルートの `./pytra` は、`python3 -m pytra_cli` を呼び出す統合CLIランチャーです。
 
 ```bash
 # ヘルプ

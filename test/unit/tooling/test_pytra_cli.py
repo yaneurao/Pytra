@@ -1,4 +1,4 @@
-"""Regression tests for src/pytra/cli.py."""
+"""Regression tests for src/pytra_cli.py."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import src.pytra.cli as pytra_cli_mod
+import src.pytra_cli as pytra_cli_mod
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 if str(ROOT) not in sys.path:
@@ -73,7 +73,7 @@ class PytraCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as work:
             input_py = Path(work) / "hello.py"
             input_py.write_text("print(1)\\n", encoding="utf-8")
-            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+            with patch("src.pytra_cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main(
                     [
                         str(input_py),
@@ -99,13 +99,20 @@ class PytraCliTest(unittest.TestCase):
             self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
             self.assertIn("make", rendered[2])
 
-    def test_build_cpp_rejects_non_cpp_target(self) -> None:
-        with patch("src.pytra.cli.subprocess.run"):
-            rc = pytra_cli_mod.main(["test/fixtures/core/top_level.py", "--target", "rs", "--build"])
-        self.assertEqual(rc, 1)
+    def test_build_noncpp_target_is_supported(self) -> None:
+        calls: list[tuple[list[str], str | None]] = []
+        runner = self._fake_run(calls)
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            out_dir = Path(work) / "out_rs"
+            with patch("src.pytra_cli.subprocess.run", side_effect=runner):
+                rc = pytra_cli_mod.main([str(src), "--target", "rs", "--build", "--output-dir", str(out_dir)])
+        self.assertEqual(rc, 0)
+        self.assertTrue(any(call[0] and call[0][0] == "rustc" for call in calls))
 
     def test_build_cpp_rejects_output_with_build(self) -> None:
-        with patch("src.pytra.cli.subprocess.run"):
+        with patch("src.pytra_cli.subprocess.run"):
             rc = pytra_cli_mod.main(
                 [
                     "test/fixtures/core/top_level.py",
@@ -123,7 +130,7 @@ class PytraCliTest(unittest.TestCase):
         runner = self._fake_run(calls)
         with tempfile.TemporaryDirectory() as work:
             output = Path(work) / "main.cpp"
-            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+            with patch("src.pytra_cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main(
                     ["test/fixtures/core/top_level.py", "--target", "cpp", "--output", str(output)]
                 )
@@ -137,7 +144,7 @@ class PytraCliTest(unittest.TestCase):
         runner = self._fake_run(calls)
         with tempfile.TemporaryDirectory() as work:
             output = Path(work) / "main.rs"
-            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+            with patch("src.pytra_cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main(
                     ["test/fixtures/core/top_level.py", "--target", "rs", "--output", str(output)]
                 )
@@ -156,7 +163,7 @@ class PytraCliTest(unittest.TestCase):
             src = Path(work) / "my_case.py"
             src.write_text("print(1)\\n", encoding="utf-8")
             out_dir = Path(work) / "out_rs"
-            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+            with patch("src.pytra_cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main([str(src), "--target", "rs", "--output-dir", str(out_dir)])
             self.assertEqual(rc, 0)
             self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))
@@ -172,7 +179,7 @@ class PytraCliTest(unittest.TestCase):
             src = Path(work) / "my_case.py"
             src.write_text("print(1)\\n", encoding="utf-8")
             out_dir = Path(work) / "out_scala"
-            with patch("src.pytra.cli.subprocess.run", side_effect=runner):
+            with patch("src.pytra_cli.subprocess.run", side_effect=runner):
                 rc = pytra_cli_mod.main([str(src), "--target", "scala", "--output-dir", str(out_dir)])
             self.assertEqual(rc, 0)
             self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))

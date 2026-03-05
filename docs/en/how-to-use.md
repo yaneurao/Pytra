@@ -26,7 +26,7 @@ For Windows, rewrite commands as follows.
 
 ## Unified CLI (`./pytra`) Usage
 
-Root `./pytra` is a unified launcher that calls `python3 -m pytra.cli`.
+Root `./pytra` is a unified launcher that calls `python3 -m pytra_cli`.
 
 ```bash
 # Help
