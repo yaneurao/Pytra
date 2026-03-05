@@ -61,7 +61,7 @@
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] `pytra-gen` 命名規約（素通し命名）違反を検知する静的チェックを追加する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] SoT marker（`source/generated-by`）と配置違反（core混在）チェックを強化し、CIへ統合する。
 - [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
-- [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、runtime API 呼び出しを IR 解決経路へ統一（emitter 直書き撤去）する。
+- [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、runtime API 呼び出しを IR 解決経路へ統一（emitter 直書き撤去）する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter 禁止ルール（ライブラリ名直書き）を lint 化し、PR/CI で fail-fast する。
 - [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32）を再実施し、差分を固定する。
@@ -98,3 +98,4 @@
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-01`] `tools/check_runtime_pytra_gen_naming.py` を追加し、`pytra-gen` 配下の `std|utils` 素通し命名/配置違反を静的検出可能にした。既存負債は `tools/runtime_pytra_gen_naming_allowlist.txt`（11件）で明示し、`test/unit/tooling/test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-02`] `tools/check_runtime_core_gen_markers.py` を追加し、全言語 `pytra-gen` の `source/generated-by` marker 必須と `pytra-core` への generated marker 混在禁止を静的監査化。`tools/run_local_ci.py` へ `check_runtime_core_gen_markers.py` と `check_runtime_pytra_gen_naming.py` を組み込み、`test_check_runtime_core_gen_markers.py` / `test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-03`] `work/logs/runtime_core_sot_reimpl_inventory_20260305_s2_03.tsv` で `pytra-core` 再実装痕跡を棚卸し（10ファイル）。JSON系（8言語）と画像系（`rs/go`）へ分類し、`pytra-gen` 移管の Wave-A/B/C を計画へ反映した。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S3-01`] Java 先行移行の再監査として `check_emitter_runtimecall_guardrails.py`（strict backend=`java`）と `test_py2java_smoke.py`（25件）を実行し、直書き runtime 分岐の再流入がないことを確認。`_render_resolved_runtime_call` 経路と `resolved_runtime_call` 契約を維持しているため `S3-01` を完了扱いへ更新した。
