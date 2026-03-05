@@ -5,6 +5,8 @@
 #ifndef PYTRA_STD_SYS_H
 #define PYTRA_STD_SYS_H
 
+#include "runtime/cpp/core/built_in/py_types.h"
+
 namespace pytra::std::sys {
 
 extern list<str> argv;
@@ -13,11 +15,8 @@ extern object stderr;
 extern object stdout;
 
 void exit(int64 code);
-list<str> _to_str_list_fallback(const object& values);
-void set_argv(const object& values);
-void set_path(const object& values);
-void write_stderr_impl(const str& text);
-void write_stdout_impl(const str& text);
+void set_argv(const list<str>& values);
+void set_path(const list<str>& values);
 void write_stderr(const str& text);
 void write_stdout(const str& text);
 

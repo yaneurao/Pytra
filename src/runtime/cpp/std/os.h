@@ -5,7 +5,7 @@
 #ifndef PYTRA_STD_OS_H
 #define PYTRA_STD_OS_H
 
-#include "runtime/cpp/core/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_types.h"
 
 namespace pytra::std::os {
 

@@ -28,7 +28,7 @@
         "makedirs": "pytra::std::os::makedirs"
       },
       "pytra.std.glob": {
-        "glob": "py_glob_glob"
+        "glob": "pytra::std::glob::glob"
       },
       "pytra.std.argparse": {
         "ArgumentParser": "::ArgumentParser"

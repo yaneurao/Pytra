@@ -1,5 +1,3 @@
-#include "runtime/cpp/core/built_in/py_runtime.h"
-
 #include <cmath>
 
 #include "runtime/cpp/std/math.h"

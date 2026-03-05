@@ -24,51 +24,12 @@
 #include <utility>
 #include <vector>
 
-using int8 = ::std::int8_t;
-using uint8 = ::std::uint8_t;
-using int16 = ::std::int16_t;
-using uint16 = ::std::uint16_t;
-using int32 = ::std::int32_t;
-using uint32 = ::std::uint32_t;
-using int64 = ::std::int64_t;
-using uint64 = ::std::uint64_t;
-using float32 = float;
-using float64 = double;
-// 上の型エイリアスは EAST 側の固定幅型名（int64 など）を C++ 基本型へ対応付ける。
-
+#include "py_types.h"
 #include "bytes_util.h"
 #include "exceptions.h"
-#include "gc.h"
 #include "io.h"
-using PyObj = pytra::gc::PyObj;
-using PyFile = pytra::runtime::cpp::base::PyFile;
-
-template <class T>
-using rc = pytra::gc::RcHandle<T>;
-using object = rc<PyObj>;
-
-template <class T, class... Args>
-static inline rc<T> rc_new(Args&&... args) {
-    return rc<T>::adopt(pytra::gc::rc_new<T>(::std::forward<Args>(args)...));
-}
-
-class str;
-class PyListObj;
-template <class T> class list;
-template <class K, class V> class dict;
-static inline str obj_to_str(const object& v);
-static inline dict<str, object> obj_to_dict(const object& v);
-static inline const dict<str, object>* obj_to_dict_ptr(const object& v);
-static inline const list<object>* obj_to_list_ptr(const object& v);
-static inline const list<object>* obj_to_set_ptr(const object& v);
-template <class T> static inline object make_object(const T& v);
-template <class T, class... Args> static inline object object_new(Args&&... args);
-
-#include "str.h"
 #include "path.h"
-#include "list.h"
-#include "dict.h"
-#include "set.h"
+using PyFile = pytra::runtime::cpp::base::PyFile;
 
 // type_id は target 非依存で stable な型判定キーとして扱う。
 // 予約領域（0-999）は runtime 組み込み型に割り当てる。
@@ -647,7 +608,7 @@ static inline bool obj_to_bool(const object& v) {
     return v->py_truthy();
 }
 
-static inline str obj_to_str(const object& v) {
+inline str obj_to_str(const object& v) {
     if (!v) return "None";
     return str(v->py_str());
 }
@@ -660,12 +621,12 @@ static inline str obj_to_str_or_raise(const object& v, const char* ctx = "obj_to
     return obj_to_str(v);
 }
 
-static inline const dict<str, object>* obj_to_dict_ptr(const object& v) {
+inline const dict<str, object>* obj_to_dict_ptr(const object& v) {
     if (const auto* p = py_obj_cast<PyDictObj>(v)) return &(p->value);
     return nullptr;
 }
 
-static inline const list<object>* obj_to_list_ptr(const object& v) {
+inline const list<object>* obj_to_list_ptr(const object& v) {
     const auto p = obj_to_rc<PyListObj>(v);
     if (p) return &(p->value);
     return nullptr;
@@ -675,12 +636,12 @@ static inline rc<PyListObj> obj_to_list_obj(const object& v) {
     return obj_to_rc<PyListObj>(v);
 }
 
-static inline const list<object>* obj_to_set_ptr(const object& v) {
+inline const list<object>* obj_to_set_ptr(const object& v) {
     if (const auto* p = py_obj_cast<PySetObj>(v)) return &(p->value);
     return nullptr;
 }
 
-static inline dict<str, object> obj_to_dict(const object& v) {
+inline dict<str, object> obj_to_dict(const object& v) {
     if (const auto* p = obj_to_dict_ptr(v)) return *p;
     return {};
 }
@@ -1253,56 +1214,6 @@ struct _PyUrllibCompat {
 };
 
 inline _PyUrllibCompat urllib{};
-
-static inline bool py_glob_match_simple(const str& text, const str& pattern) {
-    const ::std::string s = text.std();
-    const ::std::string p = pattern.std();
-    ::std::size_t si = 0;
-    ::std::size_t pi = 0;
-    ::std::size_t star = ::std::string::npos;
-    ::std::size_t mark = 0;
-    while (si < s.size()) {
-        if (pi < p.size() && (p[pi] == '?' || p[pi] == s[si])) {
-            ++si;
-            ++pi;
-            continue;
-        }
-        if (pi < p.size() && p[pi] == '*') {
-            star = pi++;
-            mark = si;
-            continue;
-        }
-        if (star != ::std::string::npos) {
-            pi = star + 1;
-            si = ++mark;
-            continue;
-        }
-        return false;
-    }
-    while (pi < p.size() && p[pi] == '*') ++pi;
-    return pi == p.size();
-}
-
-static inline list<str> py_glob_glob(const str& pattern) {
-    const ::std::string pat = pattern.std();
-    const ::std::size_t sep = pat.find_last_of("/\\");
-    const ::std::string dir = (sep == ::std::string::npos) ? "." : pat.substr(0, sep);
-    const ::std::string mask = (sep == ::std::string::npos) ? pat : pat.substr(sep + 1);
-    list<str> out{};
-    ::std::error_code ec{};
-    if (mask.find('*') == ::std::string::npos && mask.find('?') == ::std::string::npos) {
-        const ::std::filesystem::path single = ::std::filesystem::path(pat);
-        if (::std::filesystem::exists(single, ec)) out.append(str(single.generic_string()));
-        return out;
-    }
-    for (const auto& ent : ::std::filesystem::directory_iterator(::std::filesystem::path(dir), ec)) {
-        if (ec) break;
-        const str name(ent.path().filename().generic_string());
-        if (!py_glob_match_simple(name, str(mask))) continue;
-        out.append(str(ent.path().generic_string()));
-    }
-    return out;
-}
 
 // list / str の添字・スライス互換ヘルパ。
 template <class T>

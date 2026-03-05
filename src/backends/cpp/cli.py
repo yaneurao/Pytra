@@ -50,6 +50,7 @@ from backends.cpp.emitter.profile_loader import load_cpp_cmp_ops as _load_cpp_cm
 from backends.cpp.emitter.profile_loader import load_cpp_aug_ops as _load_cpp_aug_ops
 from backends.cpp.emitter.profile_loader import load_cpp_aug_bin as _load_cpp_aug_bin
 from backends.cpp.emitter.header_builder import build_cpp_header_from_east as _build_cpp_header_from_east
+from backends.cpp.emitter.header_builder import split_cpp_inline_class_defs as _split_cpp_inline_class_defs
 from backends.cpp.emitter.multifile_writer import write_multi_file_cpp as _write_multi_file_cpp_impl
 from backends.cpp.optimizer import parse_cpp_opt_pass_overrides
 
@@ -366,6 +367,15 @@ def build_cpp_header_from_east(
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
     return _build_cpp_header_from_east(east_module, source_path, output_path, top_namespace, cpp_text)
+
+
+def split_cpp_inline_class_defs(
+    cpp_text: str,
+    top_namespace: str = "",
+    keep_class_decls: bool = True,
+) -> str:
+    """`struct/class` 内 inline method 定義を宣言 + out-of-class 定義へ分離する。"""
+    return _split_cpp_inline_class_defs(cpp_text, top_namespace, keep_class_decls)
 
 
 def _strip_decorator_head(decorator_name: str) -> str:
@@ -944,25 +954,44 @@ def main(argv: list[str]) -> int:
                 dump_cpp_opt_trace,
                 cpp_list_model_opt,
             )
-            has_top_level_classes = _has_top_level_class_defs(cpp_emit_module)
-            if not has_top_level_classes:
-                own_runtime_header_prefix = "runtime/cpp/" if is_root_runtime_output else "runtime/cpp/gen/"
-                own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
-                legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
-                if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:
-                    cpp_txt_runtime = cpp_txt_runtime.replace(legacy_runtime_header, own_runtime_header)
-                if own_runtime_header not in cpp_txt_runtime:
-                    old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
-                    new_runtime_include = (
-                        '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
-                    )
-                    cpp_txt_runtime = replace_first(
-                        cpp_txt_runtime,
-                        old_runtime_include,
-                        new_runtime_include,
-                    )
+            cpp_txt_runtime_for_header = split_cpp_inline_class_defs(cpp_txt_runtime, ns, True)
+            cpp_txt_runtime = split_cpp_inline_class_defs(cpp_txt_runtime, ns, False)
+            own_runtime_header_prefix = "runtime/cpp/" if is_root_runtime_output else "runtime/cpp/gen/"
+            own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
+            legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
+            if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:
+                cpp_txt_runtime = cpp_txt_runtime.replace(legacy_runtime_header, own_runtime_header)
+            if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime_for_header:
+                cpp_txt_runtime_for_header = cpp_txt_runtime_for_header.replace(legacy_runtime_header, own_runtime_header)
+            if own_runtime_header not in cpp_txt_runtime:
+                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
+                new_runtime_include = (
+                    '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                )
+                cpp_txt_runtime = replace_first(
+                    cpp_txt_runtime,
+                    old_runtime_include,
+                    new_runtime_include,
+                )
+            if own_runtime_header not in cpp_txt_runtime_for_header:
+                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
+                new_runtime_include = (
+                    '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                )
+                cpp_txt_runtime_for_header = replace_first(
+                    cpp_txt_runtime_for_header,
+                    old_runtime_include,
+                    new_runtime_include,
+                )
             cpp_txt_runtime = _prepend_generated_cpp_banner(cpp_txt_runtime, input_path)
-            hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns, cpp_txt_runtime)
+            cpp_txt_runtime_for_header = _prepend_generated_cpp_banner(cpp_txt_runtime_for_header, input_path)
+            hdr_txt_runtime = build_cpp_header_from_east(
+                east_module,
+                input_path,
+                hdr_out,
+                ns,
+                cpp_txt_runtime_for_header,
+            )
             generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
@@ -992,6 +1021,7 @@ def main(argv: list[str]) -> int:
                 dump_cpp_opt_trace,
                 cpp_list_model_opt,
             )
+            cpp = split_cpp_inline_class_defs(cpp, top_namespace_opt)
             check_guard_limit("emit", "max_generated_lines", count_text_lines(cpp), guard_limits, str(input_path))
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)

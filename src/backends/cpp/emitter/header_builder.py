@@ -14,6 +14,54 @@ from toolchain.compiler.transpile_cli import (
 from pytra.std.pathlib import Path
 
 
+def split_cpp_inline_class_defs(
+    cpp_text: str,
+    top_namespace: str = "",
+    keep_class_decls: bool = True,
+) -> str:
+    """`struct/class` 内 inline method 定義を out-of-class 実装へ分離する。"""
+    if cpp_text.strip() == "":
+        return cpp_text
+    lines = cpp_text.splitlines()
+    if len(lines) == 0:
+        return cpp_text
+    start, end = _namespace_body_span(lines, top_namespace)
+    if start < 0 or end <= start:
+        return cpp_text
+    out_lines: list[str] = []
+    i = 0
+    while i < len(lines):
+        if i < start or i >= end:
+            out_lines.append(lines[i])
+            i += 1
+            continue
+        raw = lines[i]
+        stripped = raw.lstrip()
+        if not ((stripped.startswith("struct ") or stripped.startswith("class ")) and "{" in raw):
+            out_lines.append(raw)
+            i += 1
+            continue
+        cls_start = i
+        depth = raw.count("{") - raw.count("}")
+        cls_lines: list[str] = [raw]
+        i += 1
+        while i < end and depth > 0:
+            cur = lines[i]
+            cls_lines.append(cur)
+            depth += cur.count("{") - cur.count("}")
+            i += 1
+        decl_lines, def_lines = _split_single_class_block(cls_lines)
+        if keep_class_decls:
+            out_lines.extend(decl_lines)
+        if len(def_lines) > 0:
+            if len(out_lines) > 0 and out_lines[-1] != "":
+                out_lines.append("")
+            out_lines.extend(def_lines)
+        if i == cls_start:
+            i += 1
+    return join_str_list("\n", out_lines) + ("\n" if cpp_text.endswith("\n") else "")
+
+
 def build_cpp_header_from_east(
     east_module: dict[str, Any],
     source_path: Path,
@@ -158,8 +206,9 @@ def build_cpp_header_from_east(
     lines.append("#ifndef " + guard)
     lines.append("#define " + guard)
     lines.append("")
-    if _header_requires_py_runtime_include(used_types) or len(class_blocks) > 0:
-        lines.append("#include \"runtime/cpp/core/built_in/py_runtime.h\"")
+    runtime_types_include = _header_runtime_types_include(used_types, len(class_blocks) > 0)
+    if runtime_types_include != "":
+        lines.append('#include "runtime/cpp/core/built_in/' + runtime_types_include + '"')
         lines.append("")
     for include in includes:
         lines.append(include)
@@ -192,6 +241,301 @@ def build_cpp_header_from_east(
     return join_str_list("\n", lines)
 
 
+def _namespace_body_span(lines: list[str], top_namespace: str) -> tuple[int, int]:
+    """namespace 本体行範囲（start, end）を返す。未解決時は全体範囲。"""
+    if len(lines) == 0:
+        return -1, -1
+    ns = top_namespace.strip()
+    if ns == "":
+        return 0, len(lines)
+    ns_open = "namespace " + ns + " {"
+    ns_idx = -1
+    for i, raw in enumerate(lines):
+        if raw.strip() == ns_open:
+            ns_idx = i
+            break
+    if ns_idx < 0:
+        return 0, len(lines)
+    start = ns_idx + 1
+    end = len(lines)
+    depth = lines[ns_idx].count("{") - lines[ns_idx].count("}")
+    for i in range(ns_idx + 1, len(lines)):
+        depth += lines[i].count("{") - lines[i].count("}")
+        if depth <= 0:
+            end = i
+            break
+    for i in range(start, end):
+        if "static void __pytra_module_init()" in lines[i]:
+            end = i
+            break
+    return start, end
+
+
+def _split_single_class_block(class_lines: list[str]) -> tuple[list[str], list[str]]:
+    """単一 class/struct block を宣言部と out-of-class 定義へ分離する。"""
+    if len(class_lines) < 2:
+        return class_lines, []
+    head = class_lines[0]
+    tail = class_lines[-1]
+    cls_name = _extract_class_name_from_header(head)
+    if cls_name == "":
+        return class_lines, []
+    inner = class_lines[1:-1]
+    decl_lines: list[str] = [head]
+    def_lines: list[str] = []
+    i = 0
+    while i < len(inner):
+        line = inner[i]
+        stripped = line.strip()
+        if stripped == "":
+            decl_lines.append(line)
+            i += 1
+            continue
+        if _is_class_method_start_line(stripped):
+            method_lines, next_i = _collect_brace_block(inner, i)
+            decl_sig = _method_decl_signature(method_lines[0])
+            if decl_sig == "":
+                decl_lines.extend(method_lines)
+                i = next_i
+                continue
+            decl_lines.append(decl_sig)
+            method_def = _build_out_of_class_method_def(method_lines, cls_name)
+            if len(method_def) > 0:
+                if len(def_lines) > 0:
+                    def_lines.append("")
+                def_lines.extend(method_def)
+            i = next_i
+            continue
+        decl_lines.append(line)
+        i += 1
+    decl_lines.append(tail)
+    return decl_lines, def_lines
+
+
+def _extract_class_name_from_header(line: str) -> str:
+    stripped = line.strip()
+    if stripped.startswith("struct "):
+        tail = stripped[7:]
+    elif stripped.startswith("class "):
+        tail = stripped[6:]
+    else:
+        return ""
+    name = ""
+    for ch in tail:
+        if (ch >= "A" and ch <= "Z") or (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9") or ch == "_":
+            name += ch
+        else:
+            break
+    return name
+
+
+def _is_class_method_start_line(stripped: str) -> bool:
+    if "{" not in stripped:
+        return False
+    if not stripped.endswith("{"):
+        return False
+    if "(" not in stripped or ")" not in stripped:
+        return False
+    bad_prefixes = ("if ", "for ", "while ", "switch ", "else", "do ", "try", "catch", "namespace ")
+    for bad in bad_prefixes:
+        if stripped.startswith(bad):
+            return False
+    return True
+
+
+def _collect_brace_block(lines: list[str], start_idx: int) -> tuple[list[str], int]:
+    out: list[str] = []
+    depth = 0
+    i = start_idx
+    while i < len(lines):
+        line = lines[i]
+        out.append(line)
+        depth += line.count("{") - line.count("}")
+        i += 1
+        if depth <= 0:
+            break
+    return out, i
+
+
+def _method_decl_signature(first_line: str) -> str:
+    prefix = first_line
+    pos = prefix.rfind("{")
+    if pos < 0:
+        return ""
+    return prefix[:pos].rstrip() + ";"
+
+
+def _remove_method_decl_only_keywords(sig: str) -> str:
+    txt = sig
+    for token in [" override", " final"]:
+        txt = txt.replace(token, "")
+    prefixes = ["virtual ", "inline ", "static ", "constexpr ", "friend "]
+    changed = True
+    while changed:
+        changed = False
+        stripped = txt.lstrip()
+        lead = txt[: len(txt) - len(stripped)]
+        for p in prefixes:
+            if stripped.startswith(p):
+                stripped = stripped[len(p) :]
+                txt = lead + stripped
+                changed = True
+                break
+    return txt
+
+
+def _build_out_of_class_method_def(method_lines: list[str], cls_name: str) -> list[str]:
+    if len(method_lines) == 0:
+        return []
+    first = method_lines[0]
+    last = method_lines[-1].strip()
+    if not last.endswith("}"):
+        return method_lines
+    decl = first
+    pos = decl.rfind("{")
+    if pos < 0:
+        return method_lines
+    sig = decl[:pos].rstrip()
+    sig = _remove_method_decl_only_keywords(sig)
+    paren = sig.find("(")
+    if paren < 0:
+        return method_lines
+    head = sig[:paren].rstrip()
+    tail = sig[paren:]
+    sp = head.rfind(" ")
+    if sp >= 0:
+        ret = head[:sp].strip()
+        name = head[sp + 1 :].strip()
+    else:
+        ret = ""
+        name = head.strip()
+    if name == "":
+        return method_lines
+    tail = _strip_default_args_from_method_tail(tail)
+    def_head = cls_name + "::" + name if ret == "" else (ret + " " + cls_name + "::" + name)
+    out: list[str] = []
+    out.append("    " + def_head + tail + " {")
+    for inner in method_lines[1:-1]:
+        if inner.startswith("        "):
+            out.append("    " + inner[4:])
+        else:
+            out.append(inner)
+    out.append("    }")
+    return out
+
+
+def _strip_default_args_from_method_tail(tail: str) -> str:
+    """`(T a = x, U b = y) ...` から `.cpp` 定義向けに既定引数を除去する。"""
+    lp = tail.find("(")
+    if lp < 0:
+        return tail
+    depth = 0
+    rp = -1
+    i = lp
+    while i < len(tail):
+        ch = tail[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                rp = i
+                break
+        i += 1
+    if rp < 0:
+        return tail
+    params_txt = tail[lp + 1 : rp]
+    suffix = tail[rp + 1 :]
+    parts = _split_top_level_params(params_txt)
+    if len(parts) == 0:
+        return "()" + suffix
+    clean_parts: list[str] = []
+    for part in parts:
+        p = part.strip()
+        if p == "":
+            continue
+        eq_pos = _find_top_level_equal(p)
+        if eq_pos >= 0:
+            p = p[:eq_pos].rstrip()
+        clean_parts.append(p)
+    return "(" + join_str_list(", ", clean_parts) + ")" + suffix
+
+
+def _split_top_level_params(params_txt: str) -> list[str]:
+    out: list[str] = []
+    cur_chars: list[str] = []
+    ang = 0
+    par = 0
+    brk = 0
+    brc = 0
+    i = 0
+    while i < len(params_txt):
+        ch = params_txt[i]
+        if ch == "<":
+            ang += 1
+        elif ch == ">":
+            if ang > 0:
+                ang -= 1
+        elif ch == "(":
+            par += 1
+        elif ch == ")":
+            if par > 0:
+                par -= 1
+        elif ch == "[":
+            brk += 1
+        elif ch == "]":
+            if brk > 0:
+                brk -= 1
+        elif ch == "{":
+            brc += 1
+        elif ch == "}":
+            if brc > 0:
+                brc -= 1
+        if ch == "," and ang == 0 and par == 0 and brk == 0 and brc == 0:
+            out.append("".join(cur_chars))
+            cur_chars = []
+            i += 1
+            continue
+        cur_chars.append(ch)
+        i += 1
+    out.append("".join(cur_chars))
+    return out
+
+
+def _find_top_level_equal(text: str) -> int:
+    ang = 0
+    par = 0
+    brk = 0
+    brc = 0
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "<":
+            ang += 1
+        elif ch == ">":
+            if ang > 0:
+                ang -= 1
+        elif ch == "(":
+            par += 1
+        elif ch == ")":
+            if par > 0:
+                par -= 1
+        elif ch == "[":
+            brk += 1
+        elif ch == "]":
+            if brk > 0:
+                brk -= 1
+        elif ch == "{":
+            brc += 1
+        elif ch == "}":
+            if brc > 0:
+                brc -= 1
+        elif ch == "=" and ang == 0 and par == 0 and brk == 0 and brc == 0:
+            return i
+        i += 1
+    return -1
+
+
 def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
     """生成済み C++ からヘッダに必要な include 行を抽出する。"""
     if cpp_text.strip() == "":
@@ -203,8 +547,13 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
         line = raw.strip()
         if not line.startswith("#include "):
             continue
-        if own_name != "" and line.endswith('"' + own_name + '"'):
-            continue
+        if own_name != "":
+            q0 = line.find("\"")
+            q1 = line.rfind("\"")
+            if q0 >= 0 and q1 > q0:
+                inc_path = line[q0 + 1 : q1].replace("\\", "/")
+                if inc_path.split("/")[-1] == own_name:
+                    continue
         if line == '#include "runtime/cpp/core/built_in/py_runtime.h"':
             continue
         if line in seen:
@@ -295,9 +644,11 @@ def _extract_cpp_class_blocks(cpp_text: str, top_namespace: str) -> list[str]:
     return blocks
 
 
-def _header_requires_py_runtime_include(used_types: set[str]) -> bool:
-    """生成ヘッダが runtime 型定義を必要とするか判定する。"""
-    runtime_markers = (
+def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) -> str:
+    """生成ヘッダが必要とする最小 runtime 型ヘッダ名を返す。"""
+    if has_class_blocks:
+        return "py_types.h"
+    scalar_markers = (
         "int8",
         "uint8",
         "int16",
@@ -308,6 +659,8 @@ def _header_requires_py_runtime_include(used_types: set[str]) -> bool:
         "uint64",
         "float32",
         "float64",
+    )
+    rich_markers = (
         "str",
         "bytes",
         "bytearray",
@@ -317,14 +670,27 @@ def _header_requires_py_runtime_include(used_types: set[str]) -> bool:
         "set<",
         "rc<",
     )
+    needs_scalar = False
+    needs_rich = False
     for t in used_types:
         txt = t.strip()
         if txt in {"", "void", "bool"}:
             continue
-        for marker in runtime_markers:
+        for marker in rich_markers:
             if marker in txt:
-                return True
-    return False
+                needs_rich = True
+                break
+        if needs_rich:
+            break
+        for marker in scalar_markers:
+            if marker in txt:
+                needs_scalar = True
+                break
+    if needs_rich:
+        return "py_types.h"
+    if needs_scalar:
+        return "py_scalar_types.h"
+    return ""
 
 
 def _header_cpp_type_from_east(

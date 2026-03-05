@@ -97,7 +97,7 @@ namespace pytra::std::pathlib {
             }
         }
         list<Path> glob(const str& pattern) {
-            list<str> paths = py_to_str_list_from_object(py_glob_glob(pytra::std::os_path::join(this->_value, pattern)));
+            list<str> paths = py_to_str_list_from_object(pytra::std::glob::glob(py_to_string(pytra::std::os_path::join(this->_value, pattern))));
             list<Path> out = {};
             for (object __itobj_5 : py_dyn_range(paths)) {
                 str p = py_to_string(__itobj_5);
