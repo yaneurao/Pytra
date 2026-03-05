@@ -8,7 +8,7 @@ Design notes:
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 _MISSING: Any = object()
 

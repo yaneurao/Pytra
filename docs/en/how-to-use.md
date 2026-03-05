@@ -51,7 +51,8 @@ Notes:
 
 ## Constraints To Check First
 
-- Do not directly import Python standard-library modules such as `json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, or `enum`.
+- Do not directly import Python standard-library modules such as `json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, `dataclasses`, or `enum`.
+- Exception: `typing` imports are allowed as annotation-only no-op imports (`import typing`, `from typing import ...`) and are not kept as runtime/dependency imports.
 - Allowed imports are:
   - Modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`)
   - User-authored `.py` modules

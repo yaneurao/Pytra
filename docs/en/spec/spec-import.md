@@ -12,6 +12,13 @@ Read `docs/en/spec/spec-runtime.md` first.
 - This directive must not remain in `meta.import_bindings`, `meta.import_symbols`, or `meta.qualified_symbol_refs`.
 - Other `__future__` features (for example `generator_stop`) and `from __future__ import *` are rejected as `unsupported_syntax` (fail-closed).
 
+## `typing` Import Handling (annotation-only no-op)
+
+- `import typing` and `from typing import ...` are accepted for annotation resolution only.
+- These `typing` imports are not emitted into EAST, `meta.import_bindings`, or dependency graphs (no-op import).
+- Imported typing aliases (for example `List`, `Dict`, `Any`, `Optional`) are used only by frontend type-alias resolution.
+- No runtime include/import dependency should be introduced from `typing` imports.
+
 This document defines how syntax like the following is converted in `py2cpp.py`.
 
 ```python

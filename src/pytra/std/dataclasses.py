@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytra.std.dataclasses_impl as _impl
-from pytra.std.typing import Any
+from typing import Any
 
 
 def dataclass(

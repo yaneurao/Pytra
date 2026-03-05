@@ -61,7 +61,8 @@ Windows では次の読み替えを行ってください。
 ## 最初に確認する制約
 
 - Python の標準ライブラリ直接 import は原則非推奨です。`pytra.std.*` を使ってください。
-- ただし `math` / `random` / `timeit` / `typing` / `enum` など、`pytra.std.*` に対応 shim がある一部モジュールは正規化して扱えます。
+- ただし `typing` だけは注釈専用 no-op import として許可します（`import typing` / `from typing import ...` は依存解決に残しません）。
+- `math` / `random` / `timeit` / `enum` などの実行時利用は `pytra.std.*` 対応 shim に正規化して扱います。
 - `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - サポート済みモジュール一覧と API は [モジュール一覧](./spec/spec-pylib-modules.md) を参照してください。

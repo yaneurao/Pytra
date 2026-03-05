@@ -79,7 +79,8 @@
 - selfhost 対象コード（`src/` 配下のトランスパイラ本体・backend・IR 実装）では、Python 標準 `ast` モジュール（`import ast` / `from ast ...`）への依存を禁止します。
 - `ast` ベース解析が必要な場合は、EAST ノード走査または既存の selfhost 対応 parser/IR 情報で代替します。
 - 例外: `tools/` と `test/` の検査・テストコードは selfhost 非対象のため `ast` 利用を許可します。
-- トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re` など）の `import` を全面禁止とします。
+- トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re` など）の `import` を禁止します。
+- 例外として `typing`（`import typing`, `from typing import ...`）は注釈専用 no-op import として許可します。
 - トランスパイル対象コードが import できるのは `src/pytra/std/`・`src/pytra/utils/` モジュールと、ユーザー自作 `.py` モジュールです。
 
 ## 6. テスト・最適化ルール

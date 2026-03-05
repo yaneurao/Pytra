@@ -13,6 +13,13 @@
 - 上記ディレクティブは `meta.import_bindings` / `meta.import_symbols` / `meta.qualified_symbol_refs` にも残さない。
 - `__future__` の他機能（例: `generator_stop`）や `from __future__ import *` は `unsupported_syntax` として fail-closed で拒否する。
 
+## `typing` import の扱い（注釈専用 no-op）
+
+- `import typing` と `from typing import ...` は注釈解決専用として受理する。
+- 上記 `typing` import は EAST / `meta.import_bindings` / 依存解決には残さない（no-op import）。
+- `typing` から取り込んだ別名（例: `List`, `Dict`, `Any`, `Optional`）は frontend の型エイリアス解決だけに使う。
+- 実行時依存（runtime include / import 依存）として `typing` を要求しない。
+
 ## Yanesdk 重複配置の扱い（運用ルール）
 
 - `materials/refs/Yanesdk/yanesdk/yanesdk.py` を正本とする。

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 class EnumMeta(type):
@@ -104,4 +104,3 @@ class IntFlag(IntEnum):
 
     def __invert__(self) -> "IntFlag":
         return self.__class__._coerce_or_make(~int(self))
-

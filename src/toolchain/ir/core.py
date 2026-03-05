@@ -4866,6 +4866,9 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         hint="Use `import module` or `import module as alias` form.",
                     )
                 mod_name, as_name_txt = parsed_alias
+                if mod_name == "typing":
+                    # `typing` は注釈専用モジュールとして扱い、EAST 依存には積まない。
+                    continue
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                 _sh_register_import_module(bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
@@ -4903,6 +4906,9 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
         if m_import_from is not None:
             mod_name = re.strip_group(m_import_from, 1)
             names_txt = re.strip_group(m_import_from, 2)
+            if mod_name == "typing":
+                # `from typing import ...` は注釈解決専用で、EAST には出力しない。
+                continue
             if mod_name == "__future__":
                 if names_txt == "*":
                     raise _make_east_build_error(
@@ -5818,6 +5824,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         hint="Use `import module` or `import module as alias` form.",
                     )
                 mod_name, as_name_txt = parsed_alias
+                if mod_name == "typing":
+                    # `typing` は注釈専用モジュールとして扱い、ImportBinding/EAST へは出さない。
+                    continue
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                 _sh_register_import_module(bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
@@ -5862,6 +5871,25 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if m_import_from is not None:
             mod_name = re.strip_group(m_import_from, 1)
             names_txt = re.strip_group(m_import_from, 2)
+            if mod_name == "typing":
+                # `typing` の from-import は型別名解決にだけ使い、依存/AST には残さない。
+                raw_parts_typing: list[str] = []
+                if names_txt != "*":
+                    for p in names_txt.split(","):
+                        p2: str = p.strip()
+                        if p2 != "":
+                            raw_parts_typing.append(p2)
+                for part in raw_parts_typing:
+                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                    if parsed_alias is None:
+                        continue
+                    sym_name, as_name_txt = parsed_alias
+                    alias_name = as_name_txt if as_name_txt != "" else sym_name
+                    target = _sh_typing_alias_to_type_name(sym_name)
+                    if target != "":
+                        type_aliases[alias_name] = target
+                i = logical_end + 1
+                continue
             if mod_name == "__future__":
                 if names_txt == "*":
                     raise _make_east_build_error(
