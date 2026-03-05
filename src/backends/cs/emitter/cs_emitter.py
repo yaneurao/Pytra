@@ -2634,6 +2634,17 @@ class CSharpEmitter(CodeEmitter):
         attr = self._safe_name(attr_raw)
         return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
 
+    def _resolved_runtime_matches_semantic_tag(self, runtime_call: str, semantic_tag: str) -> bool:
+        if not semantic_tag.startswith("stdlib."):
+            return True
+        tail = semantic_tag.rsplit(".", 1)[-1].strip()
+        call = runtime_call.strip()
+        if tail == "" or call == "":
+            return False
+        if call == tail:
+            return True
+        return call.endswith("." + tail)
+
     def _render_call(self, expr: dict[str, Any]) -> str:
         semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
@@ -2643,6 +2654,15 @@ class CSharpEmitter(CodeEmitter):
             runtime_source = "resolved_runtime_call" if runtime_call != "" else ""
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("csharp emitter: unresolved stdlib runtime call: " + semantic_tag)
+        if runtime_source == "resolved_runtime_call" and semantic_tag.startswith("stdlib."):
+            if not self._resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+                raise RuntimeError(
+                    "csharp emitter: unresolved stdlib runtime mapping: "
+                    + semantic_tag
+                    + " ("
+                    + runtime_call
+                    + ")"
+                )
 
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))

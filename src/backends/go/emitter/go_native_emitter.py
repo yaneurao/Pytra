@@ -729,6 +729,18 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
+def _resolved_runtime_matches_semantic_tag(runtime_call: str, semantic_tag: str) -> bool:
+    if not semantic_tag.startswith("stdlib."):
+        return True
+    tail = semantic_tag.rsplit(".", 1)[-1].strip()
+    call = runtime_call.strip()
+    if tail == "" or call == "":
+        return False
+    if call == tail:
+        return True
+    return call.endswith("." + tail)
+
+
 def _render_call_via_runtime_call(
     runtime_call: str,
     runtime_source: str,
@@ -749,6 +761,9 @@ def _render_call_via_runtime_call(
             rendered_std_args = _render_runtime_args(semantic_tag, args, keywords_any)
             return runtime_symbol + "(" + ", ".join(rendered_std_args) + ")"
         return ""
+    if runtime_source == "resolved_runtime_call":
+        if not _resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+            return ""
     runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
     if runtime_symbol == "":
         return ""

@@ -36,14 +36,14 @@
 
 文脈: [docs/ja/plans/p0-backend-runtime-boundary-realign.md](../plans/p0-backend-runtime-boundary-realign.md)
 
-1. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01] backend の runtime/stdlib 解決責務漏れを是正し、EAST3 解決済み描画へ再収束する。
+1. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01] backend の runtime/stdlib 解決責務漏れを是正し、EAST3 解決済み描画へ再収束する。
 2. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に違反タイプへ分類し、修正順序を確定する。
 3. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend 解決済み呼び出し契約（call/attr/module/type）を固定する。
 4. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正する。
 5. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
 6. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter のフォールバックを fail-closed 化し、推測レンダリングを禁止する。
 7. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を CI 必須導線へ追加する。
-8. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新して非退行を固定する。
+8. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新して非退行を固定する。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] `work/logs/backend_boundary_audit_hits_20260305_s1_01.txt`（179件）を `branch/dispatch/runtime実装混在` に分類し、`lua -> scala -> rs` を先行是正順として固定。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend 固定契約（解決済み属性、解決優先順位、fail-closed、emitter API 制約）を追記した。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用 runtime実装混在ブロックを削除し、`math|gif|png` ヒットを `49 -> 8` に縮退。`test_py2lua_smoke.py`（32件）通過。
@@ -58,6 +58,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `kotlin` でも `resolved_runtime_call` の空振り時フォールバックを例外化し、stdlib call/attribute の fail-closed を補強。`test_py2kotlin_smoke.py`（16件）通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `js/cs/nim` でも `resolved_runtime_call` 空振り時の stdlib fallback を例外化し、call/attribute の推測レンダリングを停止。`test_py2js_smoke.py`（22件）/`test_py2nim_smoke.py`（3件）通過、`test_py2cs_smoke.py` は既存 baseline の `failures=11` を維持（新規悪化なし）。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] `run_local_ci.py` に組み込み済みの guard群（`check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py`）を実運用検証し、`forbidden` 側を「findings=0 なら空allowlist許容」に修正。両ガード + tooling unit test 通過。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] `go/php/kotlin/js/cs/nim` smoke に `resolved_runtime_call` 空振り fail-closed 回帰を追加し、`go/php/kotlin/js/nim/cs` smoke（合計117件）・`check_emitter_runtimecall_guardrails.py`・`check_emitter_forbidden_runtime_symbols.py`・tooling（`test_check_emitter_runtimecall_guardrails.py` / `test_runtime_parity_check_cli.py`）を通過。あわせて `go/php/kotlin/cs` emitter に semantic_tag 整合チェックを追加し、`resolved_runtime_call` 推測レンダリング漏れを是正。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
