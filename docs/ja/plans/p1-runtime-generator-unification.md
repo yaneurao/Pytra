@@ -62,6 +62,7 @@
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S2-02`] 旧 `gen_image` 系 unit test の導線を `gen_runtime_from_manifest` 呼び出しへ置換し、呼び出し側の正規経路を新 generator へ寄せた。
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S2-03`] 旧特殊 generator 3本（`gen_image_runtime_from_canonical.py` / `gen_java_std_runtime_from_canonical.py` / `gen_cs_image_runtime_from_canonical.py`）を削除し、`test_audit_image_runtime_sot.py` の `generated-by` 期待値を `tools/gen_runtime_from_manifest.py` へ更新した。
 - 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S3-01`] `tools/check_runtime_special_generators_absent.py` を追加し、`tools/run_local_ci.py` へ統合。`gen_*_from_canonical.py` 再導入を fail-fast 化し、`test_check_runtime_special_generators_absent.py` で回帰固定した。
+- 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S3-02`] 監査系チェックを再実行し、`check_runtime_std_sot_guard.py` の stale allowlist（`json src/runtime/java/pytra-core/built_in/PyRuntime.java`）を除去。`runtime_parity_check --targets cpp,java,ruby,lua,php 01_mandelbrot` は `java` が `png.java` 構文崩れ（`long final`, 文字列エスケープ崩れ）で失敗し、`S3-02` は継続。
 
 ## S1-01 棚卸し結果（固定）
 
