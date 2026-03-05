@@ -48,7 +48,7 @@ def _zlib_deflate_store(data: bytes) -> bytes:
     """非圧縮 DEFLATE(stored block) を使って zlib ストリームを作る。"""
     out = bytearray()
     # zlib header: CMF=0x78(Deflate, 32K window), FLG=0x01(check bits OK, fastest)
-    out.extend(b"\x78\x01")
+    out.extend(bytes([0x78, 0x01]))
     n = len(data)
     pos = 0
     while pos < n:
@@ -83,7 +83,7 @@ def write_rgb_png(path: str, width: int, height: int, pixels: bytes | bytearray)
     raw = bytes(pixels)
     expected = width * height * 3
     if len(raw) != expected:
-        raise ValueError(f"pixels length mismatch: got={len(raw)} expected={expected}")
+        raise ValueError("pixels length mismatch: got=" + str(len(raw)) + " expected=" + str(expected))
 
     scanlines = bytearray()
     row_bytes = width * 3
@@ -99,10 +99,10 @@ def write_rgb_png(path: str, width: int, height: int, pixels: bytes | bytearray)
     idat = _zlib_deflate_store(bytes(scanlines))
 
     png = bytearray()
-    png.extend(b"\x89PNG\r\n\x1a\n")
-    png.extend(_chunk(b"IHDR", ihdr))
-    png.extend(_chunk(b"IDAT", idat))
-    png.extend(_chunk(b"IEND", b""))
+    png.extend(bytes([137, 80, 78, 71, 13, 10, 26, 10]))
+    png.extend(_chunk(bytes([73, 72, 68, 82]), ihdr))
+    png.extend(_chunk(bytes([73, 68, 65, 84]), idat))
+    png.extend(_chunk(bytes([73, 69, 78, 68]), b""))
 
     with open(path, "wb") as f:
         f.write(png)

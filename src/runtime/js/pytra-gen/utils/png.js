@@ -1,106 +1,106 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/png.py
-// generated-by: tools/gen_image_runtime_from_canonical.py
-// PNG 画像出力ヘルパ（JavaScript版）。
+// generated-by: tools/gen_runtime_from_manifest.py
 
-const fs = require("node:fs");
-const path = require("node:path");
-
-function u16le(v) {
-  return Buffer.from([v & 0xff, (v >>> 8) & 0xff]);
-}
-
-function u32be(v) {
-  return Buffer.from([(v >>> 24) & 0xff, (v >>> 16) & 0xff, (v >>> 8) & 0xff, v & 0xff]);
-}
-
-function crc32(buf) {
-  let crc = 0xffffffff;
-  for (let i = 0; i < buf.length; i += 1) {
-    crc ^= buf[i];
-    for (let j = 0; j < 8; j += 1) {
-      if ((crc & 1) !== 0) {
-        crc = (crc >>> 1) ^ 0xedb88320;
-      } else {
-        crc >>>= 1;
-      }
+function _crc32(data) {
+    let crc = 0xFFFFFFFF;
+    let poly = 0xEDB88320;
+    for (const b of data) {
+        crc ^= b;
+        let i = 0;
+        while (i < 8) {
+            if (crc & 1 !== 0) {
+                crc = crc >> 1 ^ poly;
+            } else {
+                crc >>= 1;
+            }
+            i += 1;
+        }
     }
-  }
-  return (~crc) >>> 0;
+    return crc ^ 0xFFFFFFFF;
 }
 
-function adler32(buf) {
-  const mod = 65521;
-  let s1 = 1;
-  let s2 = 0;
-  for (let i = 0; i < buf.length; i += 1) {
-    s1 += buf[i];
-    if (s1 >= mod) {
-      s1 -= mod;
+function _adler32(data) {
+    let mod = 65521;
+    let s1 = 1;
+    let s2 = 0;
+    for (const b of data) {
+        s1 += b;
+        if (s1 >= mod) {
+            s1 -= mod;
+        }
+        s2 += s1;
+        s2 %= mod;
     }
-    s2 += s1;
-    s2 %= mod;
-  }
-  return (((s2 << 16) >>> 0) | (s1 & 0xffff)) >>> 0;
+    return (s2 << 16 | s1) & 0xFFFFFFFF;
 }
 
-function zlibDeflateStore(data) {
-  const out = [];
-  out.push(Buffer.from([0x78, 0x01]));
-  let pos = 0;
-  while (pos < data.length) {
-    const remain = data.length - pos;
-    const chunkLen = remain > 65535 ? 65535 : remain;
-    const final = pos + chunkLen >= data.length ? 1 : 0;
-    out.push(Buffer.from([final]));
-    out.push(u16le(chunkLen));
-    out.push(u16le((0xffff ^ chunkLen) & 0xffff));
-    out.push(data.subarray(pos, pos + chunkLen));
-    pos += chunkLen;
-  }
-  out.push(u32be(adler32(data)));
-  return Buffer.concat(out);
+function _u16le(v) {
+    return (Array.isArray(([v & 0xFF, v >> 8 & 0xFF])) ? ([v & 0xFF, v >> 8 & 0xFF]).slice() : Array.from(([v & 0xFF, v >> 8 & 0xFF])));
 }
 
-function chunk(chunkType, data) {
-  const crcInput = Buffer.concat([Buffer.from(chunkType, "ascii"), data]);
-  return Buffer.concat([u32be(data.length >>> 0), Buffer.from(chunkType, "ascii"), data, u32be(crc32(crcInput))]);
+function _u32be(v) {
+    return (Array.isArray(([v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF])) ? ([v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF]).slice() : Array.from(([v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF])));
 }
 
-function write_rgb_png(outPath, width, height, pixels) {
-  const raw = Buffer.from(pixels);
-  const expected = width * height * 3;
-  if (raw.length !== expected) {
-    throw new Error(`pixels length mismatch: got=${raw.length} expected=${expected}`);
-  }
-
-  const rowBytes = width * 3;
-  const scanlines = Buffer.alloc(height * (rowBytes + 1));
-  for (let y = 0; y < height; y += 1) {
-    const dst = y * (rowBytes + 1);
-    scanlines[dst] = 0;
-    raw.copy(scanlines, dst + 1, y * rowBytes, (y + 1) * rowBytes);
-  }
-
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0);
-  ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8;
-  ihdr[9] = 2;
-  ihdr[10] = 0;
-  ihdr[11] = 0;
-  ihdr[12] = 0;
-
-  const idat = zlibDeflateStore(scanlines);
-  const png = Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", ihdr),
-    chunk("IDAT", idat),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
-
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, png);
+function _zlib_deflate_store(data) {
+    let out = [];
+    // zlib header: CMF=0x78(Deflate, 32K window), FLG=0x01(check bits OK, fastest)
+    out.extend((Array.isArray(([0x78, 0x01])) ? ([0x78, 0x01]).slice() : Array.from(([0x78, 0x01]))));
+    let n = (data).length;
+    let pos = 0;
+    while (pos < n) {
+        let remain = n - pos;
+        let chunk_len = (remain > 65535 ? 65535 : remain);
+        let final = (pos + chunk_len >= n ? 1 : 0);
+        // stored block: BTYPE=00, header bit field in LSB order (final in bit0)
+        out.push(final);
+        out.extend(_u16le(chunk_len));
+        out.extend(_u16le(0xFFFF ^ chunk_len));
+        out.extend(data.slice(pos, pos + chunk_len));
+        pos += chunk_len;
+    }
+    out.extend(_u32be(_adler32(data)));
+    return (Array.isArray((out)) ? (out).slice() : Array.from((out)));
 }
 
-module.exports = { write_rgb_png };
+function _chunk(chunk_type, data) {
+    let length = _u32be((data).length);
+    let crc = _crc32(chunk_type + data) & 0xFFFFFFFF;
+    return length + chunk_type + data + _u32be(crc);
+}
+
+function write_rgb_png(path, width, height, pixels) {
+    let raw = (Array.isArray((pixels)) ? (pixels).slice() : Array.from((pixels)));
+    let expected = width * height * 3;
+    if ((raw).length !== expected) {
+        throw new Error("pixels length mismatch: got=" + String((raw).length) + " expected=" + String(expected));
+    }
+    let scanlines = [];
+    let row_bytes = width * 3;
+    let y = 0;
+    while (y < height) {
+        scanlines.push(0);
+        let start = y * row_bytes;
+        let end = start + row_bytes;
+        scanlines.extend(raw.slice(start, end));
+        y += 1;
+    }
+    let ihdr = _u32be(width) + _u32be(height) + (Array.isArray(([8, 2, 0, 0, 0])) ? ([8, 2, 0, 0, 0]).slice() : Array.from(([8, 2, 0, 0, 0])));
+    let idat = _zlib_deflate_store((Array.isArray((scanlines)) ? (scanlines).slice() : Array.from((scanlines))));
+    
+    let png = [];
+    png.extend((Array.isArray(([137, 80, 78, 71, 13, 10, 26, 10])) ? ([137, 80, 78, 71, 13, 10, 26, 10]).slice() : Array.from(([137, 80, 78, 71, 13, 10, 26, 10]))));
+    png.extend(_chunk((Array.isArray(([73, 72, 68, 82])) ? ([73, 72, 68, 82]).slice() : Array.from(([73, 72, 68, 82]))), ihdr));
+    png.extend(_chunk((Array.isArray(([73, 68, 65, 84])) ? ([73, 68, 65, 84]).slice() : Array.from(([73, 68, 65, 84]))), idat));
+    png.extend(_chunk((Array.isArray(([73, 69, 78, 68])) ? ([73, 69, 78, 68]).slice() : Array.from(([73, 69, 78, 68]))), ""));
+    
+    let f = open(path, "wb");
+    try {
+        f.write(png);
+    } finally {
+        f.close();
+    }
+}
+
+"PNG 書き出しユーティリティ（Python実行用）。\n\nこのモジュールは sample/py のスクリプトから利用し、\nRGB 8bit バッファを PNG ファイルとして保存する。\n";
