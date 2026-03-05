@@ -72,6 +72,16 @@ def _binop_symbol(op: str) -> str:
         return "/"
     if op == "Mod":
         return "%"
+    if op == "LShift":
+        return "<<"
+    if op == "RShift":
+        return ">>"
+    if op == "BitAnd":
+        return "&"
+    if op == "BitOr":
+        return "|"
+    if op == "BitXor":
+        return "~"
     if op == "FloorDiv":
         return "//"
     return "+"
@@ -114,6 +124,7 @@ class LuaNativeEmitter:
         self.current_class_base_name: str = ""
         self._local_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
+        self._local_var_stack: list[set[str]] = []
 
     def _current_type_map(self) -> dict[str, str]:
         if len(self._local_type_stack) == 0:
@@ -124,6 +135,11 @@ class LuaNativeEmitter:
         if len(self._ref_var_stack) == 0:
             return set()
         return self._ref_var_stack[-1]
+
+    def _current_local_vars(self) -> set[str]:
+        if len(self._local_var_stack) == 0:
+            return set()
+        return self._local_var_stack[-1]
 
     def _container_kind_from_decl_type(self, type_name: Any) -> str:
         if not isinstance(type_name, str):
@@ -142,6 +158,7 @@ class LuaNativeEmitter:
     def _push_function_context(self, stmt: dict[str, Any], arg_names: list[str], arg_order: list[Any]) -> None:
         type_map: dict[str, str] = {}
         ref_vars: set[str] = set()
+        local_vars: set[str] = set(arg_names)
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
         i = 0
@@ -159,12 +176,15 @@ class LuaNativeEmitter:
             i += 1
         self._local_type_stack.append(type_map)
         self._ref_var_stack.append(ref_vars)
+        self._local_var_stack.append(local_vars)
 
     def _pop_function_context(self) -> None:
         if len(self._local_type_stack) > 0:
             self._local_type_stack.pop()
         if len(self._ref_var_stack) > 0:
             self._ref_var_stack.pop()
+        if len(self._local_var_stack) > 0:
+            self._local_var_stack.pop()
 
     def _materialize_container_value_from_ref(self, value_any: Any, *, target_name: str, target_decl_type: Any) -> str | None:
         if target_name == "":
@@ -845,6 +865,8 @@ class LuaNativeEmitter:
                     if decl_type in _NIL_FREE_DECL_TYPES:
                         if decl_type != "":
                             self._current_type_map()[target_name] = decl_type
+                        if len(self._local_var_stack) > 0:
+                            self._current_local_vars().add(target_name)
                         self._emit_line("local " + target)
                         return
                 materialized = self._materialize_container_value_from_ref(
@@ -856,6 +878,8 @@ class LuaNativeEmitter:
                     value = materialized
                 if decl_type != "":
                     self._current_type_map()[target_name] = decl_type
+                if len(self._local_var_stack) > 0:
+                    self._current_local_vars().add(target_name)
                 self._emit_line("local " + target + " = " + value)
             else:
                 self._emit_line(target + " = " + value)
@@ -884,6 +908,10 @@ class LuaNativeEmitter:
                         value = materialized
                     if isinstance(decl_type_any, str) and decl_type != "":
                         self._current_type_map()[target_name] = decl_type
+                    if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
+                        self._current_local_vars().add(target_name)
+                        self._emit_line("local " + target + " = " + value)
+                        return
                 self._emit_line(target + " = " + value)
                 return
             targets = stmt.get("targets")
@@ -909,6 +937,10 @@ class LuaNativeEmitter:
                         value = materialized
                     if isinstance(decl_type_any, str) and decl_type != "":
                         self._current_type_map()[target_name] = decl_type
+                    if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
+                        self._current_local_vars().add(target_name)
+                        self._emit_line("local " + target + " = " + value)
+                        return
                 self._emit_line(target + " = " + value)
                 return
             raise RuntimeError("lang=lua unsupported assign shape")
@@ -1273,6 +1305,17 @@ class LuaNativeEmitter:
             elem_any = elems[i]
             if isinstance(elem_any, dict):
                 target_txt = self._render_target(elem_any)
+                if (
+                    isinstance(elem_any, dict)
+                    and elem_any.get("kind") == "Name"
+                    and len(self._local_var_stack) > 0
+                ):
+                    target_name = _safe_ident(elem_any.get("id"), "value")
+                    if target_name not in self._current_local_vars():
+                        self._current_local_vars().add(target_name)
+                        self._emit_line("local " + target_txt + " = " + tmp_name + "[" + str(i + 1) + "]")
+                        i += 1
+                        continue
                 self._emit_line(target_txt + " = " + tmp_name + "[" + str(i + 1) + "]")
             i += 1
 
@@ -1528,7 +1571,17 @@ class LuaNativeEmitter:
             test = self._render_expr(expr_any.get("test"))
             body = self._render_expr(expr_any.get("body"))
             orelse = self._render_expr(expr_any.get("orelse"))
-            return "((" + test + ") and (" + body + ") or (" + orelse + "))"
+            return (
+                "(function() "
+                + "if __pytra_truthy("
+                + test
+                + ") then return ("
+                + body
+                + ") else return ("
+                + orelse
+                + ") end "
+                + "end)()"
+            )
         if kind == "JoinedStr":
             values_any = expr_any.get("values")
             values = values_any if isinstance(values_any, list) else []
@@ -1622,11 +1675,11 @@ class LuaNativeEmitter:
             if fn_name == "max":
                 if len(rendered_args) == 0:
                     return "0"
-                return "math.max(" + ", ".join(rendered_args) + ")"
+                return "_G.math.max(" + ", ".join(rendered_args) + ")"
             if fn_name == "min":
                 if len(rendered_args) == 0:
                     return "0"
-                return "math.min(" + ", ".join(rendered_args) + ")"
+                return "_G.math.min(" + ", ".join(rendered_args) + ")"
             if fn_name == "enumerate":
                 if len(rendered_args) == 0:
                     return "{}"

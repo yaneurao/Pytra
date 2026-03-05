@@ -69,7 +69,11 @@ end
 
 function __pytra_int(v)
     if v == nil then return 0 end
-    return math.floor(tonumber(v) or 0)
+    local n = tonumber(v) or 0
+    if n >= 0 then
+        return math.floor(n)
+    end
+    return math.ceil(n)
 end
 
 function __pytra_float(v)

@@ -1413,6 +1413,11 @@ class NimNativeEmitter:
             value_node = func.get("value")
             value = self._render_expr(value_node)
             attr = func.get("attr")
+            if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+                owner_any = value_node.get("id")
+                owner = owner_any if isinstance(owner_any, str) else ""
+                if owner == "math" and attr == "sqrt" and len(args) == 1:
+                    return f"math.sqrt(float({args[0]}))"
             if attr == "append":
                  resolved = value_node.get("resolved_type")
                  if resolved == "bytearray":

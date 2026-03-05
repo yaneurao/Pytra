@@ -143,6 +143,16 @@ def _bin_op_symbol(op: Any) -> str:
         return "/"
     if op == "Mod":
         return "%"
+    if op == "LShift":
+        return "<<"
+    if op == "RShift":
+        return ">>"
+    if op == "BitAnd":
+        return "&"
+    if op == "BitOr":
+        return "|"
+    if op == "BitXor":
+        return "^"
     if op == "FloorDiv":
         return "/"
     return "+"
@@ -417,6 +427,14 @@ def _bin_op_precedence(op: Any) -> int:
         return 20
     if op in {"Add", "Sub"}:
         return 10
+    if op in {"LShift", "RShift"}:
+        return 9
+    if op == "BitAnd":
+        return 8
+    if op == "BitXor":
+        return 7
+    if op == "BitOr":
+        return 6
     return 0
 
 
@@ -429,7 +447,7 @@ def _wrap_binop_operand_if_needed(text: str, node: Any, parent_op: Any, *, is_ri
     need_wrap = False
     if child_prec < parent_prec:
         need_wrap = True
-    elif child_prec == parent_prec and is_right and parent_op in {"Sub", "Div", "FloorDiv", "Mod"}:
+    elif child_prec == parent_prec and is_right and parent_op in {"Sub", "Div", "FloorDiv", "Mod", "LShift", "RShift"}:
         need_wrap = True
     if not need_wrap:
         return text

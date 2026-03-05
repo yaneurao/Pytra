@@ -502,6 +502,16 @@ def _bin_op_symbol(op: Any) -> str:
         return "/"
     if op == "Mod":
         return "%"
+    if op == "LShift":
+        return "<<"
+    if op == "RShift":
+        return ">>"
+    if op == "BitAnd":
+        return "&"
+    if op == "BitXor":
+        return "^"
+    if op == "BitOr":
+        return "|"
     if op == "FloorDiv":
         return "/"
     return "+"
@@ -966,6 +976,7 @@ def _render_call_via_runtime_call(
     semantic_tag: str,
     args: list[Any],
     keywords_any: Any,
+    call_expr: dict[str, Any] | None = None,
 ) -> str:
     if runtime_call.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
@@ -974,6 +985,18 @@ def _render_call_via_runtime_call(
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
+    def _inject_method_owner(rendered_args: list[str]) -> list[str]:
+        if not semantic_tag.startswith("stdlib.method.") or not isinstance(call_expr, dict):
+            return rendered_args
+        owner_any = call_expr.get("runtime_owner")
+        if not isinstance(owner_any, dict):
+            func_any = call_expr.get("func")
+            if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+                owner_any = func_any.get("value")
+        if isinstance(owner_any, dict):
+            return [_render_expr(owner_any)] + rendered_args
+        return rendered_args
+
     if runtime_source == "runtime_call":
         if not semantic_tag.startswith("stdlib."):
             return ""
@@ -981,11 +1004,13 @@ def _render_call_via_runtime_call(
         if runtime_symbol == "":
             return ""
         rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+        rendered_runtime_args = _inject_method_owner(rendered_runtime_args)
         return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
     runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
     if runtime_symbol == "":
         return ""
     rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+    rendered_runtime_args = _inject_method_owner(rendered_runtime_args)
     if runtime_call.find(".") >= 0:
         if runtime_symbol in {"scala.math.Pi", "scala.math.E"} and len(rendered_runtime_args) == 0:
             return runtime_symbol
@@ -1040,6 +1065,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             semantic_tag,
             args,
             keywords_any,
+            call_expr=expr,
         )
         if rendered_runtime != "":
             return rendered_runtime
