@@ -22,17 +22,25 @@ class ImageRuntimeParityTest(unittest.TestCase):
         self.assertEqual(lines[-1], "True")
 
     def test_runtime_parity_check_does_not_leak_png_to_repo_root(self) -> None:
-        leaked = ROOT / "import_pytra_runtime_png.png"
-        if leaked.exists():
-            leaked.unlink()
-        cp = subprocess.run(
-            ["python3", "tools/runtime_parity_check.py", "import_pytra_runtime_png", "--targets", "cpp"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(cp.returncode, 0, msg=(cp.stderr + "\n" + cp.stdout))
-        self.assertFalse(leaked.exists())
+        leaked_root = ROOT / "import_pytra_runtime_png.png"
+        leaked_out = ROOT / "out" / "import_pytra_runtime_png.png"
+        for leaked in (leaked_root, leaked_out):
+            if leaked.exists():
+                leaked.unlink()
+        try:
+            cp = subprocess.run(
+                ["python3", "tools/runtime_parity_check.py", "import_pytra_runtime_png", "--targets", "cpp"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(cp.returncode, 0, msg=(cp.stderr + "\n" + cp.stdout))
+            self.assertFalse(leaked_root.exists())
+            self.assertFalse(leaked_out.exists())
+        finally:
+            for leaked in (leaked_root, leaked_out):
+                if leaked.exists():
+                    leaked.unlink()
 
 
 if __name__ == "__main__":

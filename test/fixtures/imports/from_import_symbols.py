@@ -8,7 +8,7 @@ from time import perf_counter
 
 def run_case() -> None:
     t0: float = perf_counter()
-    out_path = "from_import_symbols.png"
+    out_path = "out/from_import_symbols.png"
     pixels = bytearray([0, 0, 0, 255, 255, 255, 32, 64, 128])
     write_rgb_png(out_path, 1, 3, pixels)
     t1: float = perf_counter()
