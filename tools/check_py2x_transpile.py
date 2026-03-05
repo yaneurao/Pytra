@@ -18,6 +18,16 @@ PY2X = ROOT / "src" / "py2x.py"
 PROFILE_PATH = ROOT / "tools" / "check_py2x_profiles.json"
 USER_ERROR_RE = re.compile(r"__PYTRA_USER_ERROR__\|([^|]+)\|([^\r\n]+)")
 STAGE2_REMOVED_FRAGMENT = "--east-stage 2 is no longer supported; use EAST3 (default)."
+PHP_SAMPLE18_REL = "sample/py/18_mini_language_interpreter.py"
+PHP_SAMPLE18_REQUIRED_FRAGMENTS = [
+    '$single_char_token_tags = ["+" => 1',
+    "array_key_exists($node->name, $env)",
+    "public function __construct($kind, $text, $pos, $number_value)",
+    "public function __construct($kind, $value, $name, $op, $left, $right, $kind_tag, $op_tag)",
+    "public function __construct($kind, $name, $expr_index, $kind_tag)",
+    "function __pytra_entry_main(): void {",
+    "__pytra_entry_main();",
+]
 
 
 @dataclass(frozen=True)
@@ -98,6 +108,20 @@ def _run_quality_hook(hook: str, rel: str, out: Path) -> str:
         if "__pytra_int(height)" in text or "__pytra_int(width)" in text or "__pytra_int(max_iter)" in text:
             return "sample/01 quality regression: typed range bound cast reintroduced"
         return ""
+    if hook == "php_sample18":
+        if rel != PHP_SAMPLE18_REL:
+            return ""
+        text = out.read_text(encoding="utf-8")
+        i = 0
+        while i < len(PHP_SAMPLE18_REQUIRED_FRAGMENTS):
+            frag = PHP_SAMPLE18_REQUIRED_FRAGMENTS[i]
+            if frag not in text:
+                return "sample18 missing fragment: " + frag
+            i += 1
+        return ""
+    if hook == "":
+        return ""
+    return "unknown quality hook: " + hook
     return ""
 
 
@@ -159,6 +183,26 @@ def _validate_runtime_side_files(profile: dict[str, object], out: Path) -> str:
     return ""
 
 
+def _validate_runtime_side_file_contains(profile: dict[str, object], out: Path) -> str:
+    required_any = profile.get("required_runtime_file_contains")
+    required = required_any if isinstance(required_any, dict) else {}
+    for rel, fragments_any in required.items():
+        if not isinstance(rel, str):
+            continue
+        fragments = fragments_any if isinstance(fragments_any, list) else []
+        side = out.parent / rel
+        if not side.exists():
+            return "missing runtime file for contains-check: " + rel
+        text = side.read_text(encoding="utf-8")
+        i = 0
+        while i < len(fragments):
+            frag = _to_str(fragments[i])
+            if frag != "" and frag not in text:
+                return "runtime file missing fragment: " + rel + " :: " + frag
+            i += 1
+    return ""
+
+
 def _validate_forbid_fragments(profile: dict[str, object], out: Path) -> str:
     frags_any = profile.get("forbid_generated_contains")
     frags = frags_any if isinstance(frags_any, list) else []
@@ -174,7 +218,36 @@ def _validate_forbid_fragments(profile: dict[str, object], out: Path) -> str:
     return ""
 
 
-def _run_east3_contract_preflight(profile: dict[str, object]) -> tuple[bool, str]:
+def _run_preflight_hook(hook: str) -> str:
+    if hook == "cpp_emitter_separation":
+        cpp_cli = ROOT / "src" / "backends" / "cpp" / "cli.py"
+        text = cpp_cli.read_text(encoding="utf-8")
+        if "class CppEmitter" in text:
+            return "class CppEmitter must not be implemented in src/backends/cpp/cli.py"
+        if "from backends.cpp.emitter import CppEmitter" not in text:
+            return "missing import from backends.cpp.emitter import CppEmitter"
+        return ""
+    if hook == "":
+        return ""
+    return "unknown preflight hook: " + hook
+
+
+def _run_preflight_hooks(profile: dict[str, object]) -> tuple[bool, str]:
+    hooks_any = profile.get("preflight_hooks")
+    hooks = hooks_any if isinstance(hooks_any, list) else []
+    i = 0
+    while i < len(hooks):
+        hook = _to_str(hooks[i])
+        msg = _run_preflight_hook(hook)
+        if msg != "":
+            return False, msg
+        i += 1
+    return True, ""
+
+
+def _run_east3_contract_preflight(profile: dict[str, object], *, skip: bool) -> tuple[bool, str]:
+    if skip:
+        return True, ""
     flags_any = profile.get("flags")
     flags = flags_any if isinstance(flags_any, dict) else {}
     if bool(flags.get("skip_east3_contract_tests", False)):
@@ -197,6 +270,11 @@ def main() -> int:
     ap.add_argument("--profiles", default=str(PROFILE_PATH), help="profile json path")
     ap.add_argument("--include-expected-failures", action="store_true", help="do not skip expected-fail cases (skip-mode only)")
     ap.add_argument("--cases", default="", help="comma separated relative source paths (override profile cases)")
+    ap.add_argument(
+        "--skip-east3-contract-tests",
+        action="store_true",
+        help="skip EAST3 contract preflight regardless of profile flag",
+    )
     ap.add_argument("--verbose", action="store_true", help="print passing files")
     args = ap.parse_args()
 
@@ -208,7 +286,12 @@ def main() -> int:
         print("[FAIL] target profile not found: " + target)
         return 1
 
-    ok_preflight, preflight_msg = _run_east3_contract_preflight(profile)
+    ok_preflight, preflight_msg = _run_preflight_hooks(profile)
+    if not ok_preflight:
+        print("[FAIL] " + preflight_msg)
+        return 1
+
+    ok_preflight, preflight_msg = _run_east3_contract_preflight(profile, skip=args.skip_east3_contract_tests)
     if not ok_preflight:
         print("[FAIL] " + preflight_msg)
         return 1
@@ -280,6 +363,11 @@ def main() -> int:
             rt_err = _validate_runtime_side_files(profile, out)
             if rt_err != "":
                 fails.append((rel, rt_err))
+                i += 1
+                continue
+            rt_contains_err = _validate_runtime_side_file_contains(profile, out)
+            if rt_contains_err != "":
+                fails.append((rel, rt_contains_err))
                 i += 1
                 continue
             frag_err = _validate_forbid_fragments(profile, out)

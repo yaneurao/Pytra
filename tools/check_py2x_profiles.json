@@ -7,16 +7,38 @@
       "cases": [],
       "expected_mode": "skip",
       "expected_failures": {
-        "test/fixtures/signature/ng_kwargs.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_object_receiver.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_posonly.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_varargs.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_untyped_param.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/typing/any_class_alias.py": {"category": "expected_failure", "contains": ""}
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
       },
       "quality_hooks": [],
       "required_runtime_files": [],
+      "required_runtime_file_contains": {},
       "forbid_generated_contains": [],
+      "preflight_hooks": [
+        "cpp_emitter_separation"
+      ],
       "flags": {
         "skip_east3_contract_tests": true,
         "check_multi_file": false,
@@ -28,26 +50,742 @@
         "expected_fragment": "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
       }
     },
+    "cs": {
+      "target": "cs",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "go": {
+      "target": "go",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [
+        "TODO: 専用 GoEmitter 実装へ段階移行する。"
+      ],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
     "java": {
       "target": "java",
       "case_mode": "all",
       "cases": [],
       "expected_mode": "skip",
       "expected_failures": {
-        "test/fixtures/control/finally.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/control/try_raise.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/control/yield_generator_min.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/core/tuple_assign.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_kwargs.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_object_receiver.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_posonly.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_varargs.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/signature/ng_untyped_param.py": {"category": "expected_failure", "contains": ""},
-        "test/fixtures/typing/any_class_alias.py": {"category": "expected_failure", "contains": ""}
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
       },
       "quality_hooks": [],
       "required_runtime_files": [],
+      "required_runtime_file_contains": {},
       "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "js": {
+      "target": "js",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": false,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "kotlin": {
+      "target": "kotlin",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [
+        "py_runtime.kt"
+      ],
+      "required_runtime_file_contains": {
+        "py_runtime.kt": [
+          "fun __pytra_truthy(v: Any?): Boolean"
+        ]
+      },
+      "forbid_generated_contains": [
+        "TODO: 専用 KotlinEmitter 実装へ段階移行する。",
+        "fun __pytra_truthy(v: Any?): Boolean"
+      ],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "lua": {
+      "target": "lua",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/collections/comprehension.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_dict_set.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_filter.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_if_chain.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_ifexp.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_nested.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_range_step.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/comprehension_range_step_like.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/in_membership.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/collections/slice_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/lambda_as_arg.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/lambda_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/lambda_capture_multiargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/lambda_ifexp.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/lambda_immediate.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/lambda_local_state.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/imports/bom_from_import.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/imports/from_pytra_std_import_math.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/imports/type_ignore_from_import.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/microgpt/microgpt_compat_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ok_generator_tuple_target.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ok_lambda_default.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ok_list_concat_comp.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ok_multi_for_comp.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ok_top_level_tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ok_tuple_of_list_comp.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/argparse_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/dataclasses_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/enum_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/json_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/os_glob_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/pytra_std_import_math.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/re_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/sys_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/typing_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/strings/str_slice.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_dict_items.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_list_mixed.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_none.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/bytearray_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/enum_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/intenum_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/intflag_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [
+        "py_runtime.lua"
+      ],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [
+        "local function __pytra_truthy(",
+        "function __pytra_truthy("
+      ],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": true,
+        "source": "sample/py/01_mandelbrot.py",
+        "expected_fragment": "--east-stage 2 is no longer supported; use EAST3 (default)."
+      }
+    },
+    "nim": {
+      "target": "nim",
+      "case_mode": "explicit",
+      "cases": [
+        "test/fixtures/core/add.py",
+        "test/fixtures/control/if_else.py",
+        "test/fixtures/control/for_range.py",
+        "test/fixtures/control/range_downcount_len_minus1.py",
+        "test/fixtures/oop/inheritance.py",
+        "sample/py/01_mandelbrot.py"
+      ],
+      "expected_mode": "skip",
+      "expected_failures": {},
+      "quality_hooks": [],
+      "required_runtime_files": [
+        "py_runtime.nim",
+        "image_runtime.nim"
+      ],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": true,
+        "source": "test/fixtures/core/add.py",
+        "expected_fragment": "--east-stage 2 is no longer supported; use EAST3 (default)."
+      }
+    },
+    "php": {
+      "target": "php",
+      "case_mode": "explicit",
+      "cases": [
+        "test/fixtures/core/add.py",
+        "test/fixtures/control/if_else.py",
+        "test/fixtures/control/for_range.py",
+        "test/fixtures/control/range_downcount_len_minus1.py",
+        "test/fixtures/oop/inheritance.py",
+        "test/fixtures/oop/inheritance_virtual_dispatch_multilang.py",
+        "test/fixtures/oop/is_instance.py",
+        "sample/py/01_mandelbrot.py",
+        "sample/py/18_mini_language_interpreter.py"
+      ],
+      "expected_mode": "skip",
+      "expected_failures": {},
+      "quality_hooks": [
+        "php_sample18"
+      ],
+      "required_runtime_files": [
+        "pytra/py_runtime.php",
+        "pytra/runtime/png.php",
+        "pytra/runtime/gif.php",
+        "pytra/std/time.php"
+      ],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": true,
+        "source": "test/fixtures/core/add.py",
+        "expected_fragment": "--east-stage 2 is no longer supported; use EAST3 (default)."
+      }
+    },
+    "ruby": {
+      "target": "ruby",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": true,
+        "source": "sample/py/01_mandelbrot.py",
+        "expected_fragment": "--east-stage 2 is no longer supported; use EAST3 (default)."
+      }
+    },
+    "rs": {
+      "target": "rs",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
       "flags": {
         "skip_east3_contract_tests": true,
         "check_multi_file": false,
@@ -65,11 +803,26 @@
       "cases": [],
       "expected_mode": "validate",
       "expected_failures": {
-        "test/fixtures/signature/ng_kwargs.py": {"category": "user_syntax_error", "contains": "variadic kwargs parameter"},
-        "test/fixtures/signature/ng_object_receiver.py": {"category": "unsupported_by_design", "contains": "object receiver attribute/method access is forbidden"},
-        "test/fixtures/signature/ng_posonly.py": {"category": "user_syntax_error", "contains": "positional-only marker '/'"},
-        "test/fixtures/signature/ng_varargs.py": {"category": "user_syntax_error", "contains": "variadic args parameter"},
-        "test/fixtures/typing/any_class_alias.py": {"category": "unsupported_by_design", "contains": "object receiver attribute/method access is forbidden"}
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "user_syntax_error",
+          "contains": "variadic kwargs parameter"
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "unsupported_by_design",
+          "contains": "object receiver attribute/method access is forbidden"
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "user_syntax_error",
+          "contains": "positional-only marker '/'"
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "user_syntax_error",
+          "contains": "variadic args parameter"
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "unsupported_by_design",
+          "contains": "object receiver attribute/method access is forbidden"
+        }
       },
       "quality_hooks": [
         "scala_sample01"
@@ -78,12 +831,134 @@
         "py_runtime.scala",
         "image_runtime.scala"
       ],
+      "required_runtime_file_contains": {},
       "forbid_generated_contains": [
         "def __pytra_truthy(",
         "def __pytra_int("
       ],
+      "preflight_hooks": [],
       "flags": {
         "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "swift": {
+      "target": "swift",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/finally.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/try_raise.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [
+        "TODO: 専用 SwiftEmitter 実装へ段階移行する。"
+      ],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
+    },
+    "ts": {
+      "target": "ts",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/control/yield_generator_min.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/core/tuple_assign.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": false,
         "check_multi_file": false,
         "check_yanesdk_smoke": false
       },
