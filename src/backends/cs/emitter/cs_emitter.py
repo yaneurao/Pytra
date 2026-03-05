@@ -2496,12 +2496,6 @@ class CSharpEmitter(CodeEmitter):
                 if attr_raw == "__init__":
                     return "base(" + ", ".join(rendered_args) + ")"
                 return "base." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "math" and not self.is_declared(owner_name):
-            return "Pytra.CsModule.math." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "png" and not self.is_declared(owner_name):
-            return "Pytra.CsModule.png_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "gif" and not self.is_declared(owner_name):
-            return "Pytra.CsModule.gif_helper." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "time" and not self.is_declared(owner_name):
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "json" and not self.is_declared(owner_name):
@@ -2757,12 +2751,6 @@ class CSharpEmitter(CodeEmitter):
                 return self.render_expr(owner_node) + ".stem()"
             if owner_kind == "Name" and owner_name == "self" and self.in_method_scope:
                 return "this." + attr
-            if owner_kind == "Name" and owner_name == "math" and not self.is_declared(owner_name):
-                return "Pytra.CsModule.math." + attr
-            if owner_kind == "Name" and owner_name == "png" and not self.is_declared(owner_name):
-                return "Pytra.CsModule.png_helper." + attr
-            if owner_kind == "Name" and owner_name == "gif" and not self.is_declared(owner_name):
-                return "Pytra.CsModule.gif_helper." + attr
             if owner_kind == "Name" and owner_name == "time" and not self.is_declared(owner_name):
                 return "Pytra.CsModule.time." + attr
             if owner_kind == "Name" and owner_name == "sys" and attr == "argv" and not self.is_declared(owner_name):

@@ -51,6 +51,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` の `owner=="math"` 再解決フォールバックを撤去し、`scala` ヒットを `29 -> 16`、全 backend 合計を `101 -> 88` に縮退。`test_py2scala_smoke.py`（16件）再通過を確認。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `php_native_emitter.py` / `go_native_emitter.py` の `owner=="math"` 生AST再解決フォールバックを撤去し、`php+go` ヒットを `28 -> 12`、全 backend 合計を `88 -> 72` に縮退。`test_py2php_smoke.py`（10件）/ `test_py2go_smoke.py`（16件）通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `kotlin_native_emitter.py` / `nim_native_emitter.py` の `math` 生AST再解決フォールバック（型推論・call/attr）を撤去し、`kotlin+nim` ヒットを `8 -> 3`、全 backend 合計を `72 -> 67` に縮退。`test_py2kotlin_smoke.py`（16件）/ `test_py2nim_smoke.py`（3件）通過。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs_emitter.py` の `owner=="math/png/gif"` 生ASTフォールバック（call/attr）を撤去し、`cs` ヒットを `20 -> 8`、全 backend 合計を `67 -> 55` に縮退。`test_py2cs_smoke.py` は既存 baseline と同じ `failures=11` を維持（新規悪化なし）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
