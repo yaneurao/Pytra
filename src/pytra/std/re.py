@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-# `re.S` (`re.DOTALL`) compatibility flag.
-# In CPython this makes `.` match newlines; current minimal matcher keeps this
-# constant for source compatibility even when flags are not fully interpreted.
+# `re.S` (`re.DOTALL`) 互換フラグ。
+# CPython では `.` が改行にもマッチするようになる。
+# この最小実装では flags の完全解釈は未対応だが、ソース互換のため定数を保持する。
 S = 1
 
 
