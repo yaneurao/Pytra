@@ -14,41 +14,51 @@ def sqrt(x: float) -> float:
     pass
 
 
+@extern
 def sin(x: float) -> float:
-    return _m.sin(x)
+    pass
 
 
+@extern
 def cos(x: float) -> float:
-    return _m.cos(x)
+    pass
 
 
+@extern
 def tan(x: float) -> float:
-    return _m.tan(x)
+    pass
 
 
+@extern
 def exp(x: float) -> float:
-    return _m.exp(x)
+    pass
 
 
+@extern
 def log(x: float) -> float:
-    return _m.log(x)
+    pass
 
 
+@extern
 def log10(x: float) -> float:
-    return _m.log10(x)
+    pass
 
 
+@extern
 def fabs(x: float) -> float:
-    return _m.fabs(x)
+    pass
 
 
+@extern
 def floor(x: float) -> float:
-    return _m.floor(x)
+    pass
 
 
+@extern
 def ceil(x: float) -> float:
-    return _m.ceil(x)
+    pass
 
 
+@extern
 def pow(x: float, y: float) -> float:
-    return _m.pow(x, y)
+    pass
