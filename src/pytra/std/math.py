@@ -6,8 +6,8 @@ from pytra.std import extern
 
 import pytra.std.math_impl as _m
 
-pi: float = _m.pi
-e: float = _m.e
+pi: float = extern(_m.pi)
+e: float = extern(_m.e)
 
 @extern
 def sqrt(x: float) -> float:
