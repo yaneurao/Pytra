@@ -144,4 +144,11 @@ so it can be transpiled to target runtimes.
         __all__ = list<str>{"seed", "random", "randint", "choices", "gauss", "shuffle"};
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::random

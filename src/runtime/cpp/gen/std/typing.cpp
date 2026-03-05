@@ -48,4 +48,11 @@ type annotations so core modules avoid direct stdlib `typing` imports.
         TypeAlias = "TypeAlias";
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::typing

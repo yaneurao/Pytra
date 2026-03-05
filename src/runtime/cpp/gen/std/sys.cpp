@@ -112,4 +112,11 @@ Python 実行時は `list` を保持する軽量実装として振る舞い、
         stdout = make_object(pytra::std::sys::stdout);
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::sys

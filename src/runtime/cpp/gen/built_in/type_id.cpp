@@ -327,3 +327,10 @@ static void __pytra_module_init() {
     _TYPE_MAX = {};
     _TYPE_STATE = {};
 }
+
+namespace {
+    struct __pytra_module_initializer {
+        __pytra_module_initializer() { __pytra_module_init(); }
+    };
+    static const __pytra_module_initializer __pytra_module_initializer_instance{};
+}  // namespace

@@ -887,6 +887,20 @@ class CppEmitter(
             self.indent -= 1
             self.emit("}")
             self.emit("")
+            # runtime モジュール（--emit-runtime-cpp, emit_main=False）では
+            # main() 経由で module init が呼ばれないため、静的初期化で1度だけ実行する。
+            if not self.emit_main:
+                self.emit("namespace {")
+                self.indent += 1
+                self.emit("struct __pytra_module_initializer {")
+                self.indent += 1
+                self.emit("__pytra_module_initializer() { __pytra_module_init(); }")
+                self.indent -= 1
+                self.emit("};")
+                self.emit("static const __pytra_module_initializer __pytra_module_initializer_instance{};")
+                self.indent -= 1
+                self.emit("}  // namespace")
+                self.emit("")
 
         if self.emit_main:
             if self.top_namespace != "":

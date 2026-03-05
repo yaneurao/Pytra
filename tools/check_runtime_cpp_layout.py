@@ -2,8 +2,8 @@
 """Verify C++ runtime layer separation rules.
 
 Rules:
-- `src/runtime/cpp/pytra-gen/**/*.h|cpp` must contain the auto-generated marker.
-- `src/runtime/cpp/pytra-core/**/*.h|cpp` must NOT contain the auto-generated marker.
+- `src/runtime/cpp/gen/**/*.h|cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/core/**/*.h|cpp` must NOT contain the auto-generated marker.
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GEN_DIR = ROOT / "src/runtime/cpp/pytra-gen"
-CORE_DIR = ROOT / "src/runtime/cpp/pytra-core"
+GEN_DIR = ROOT / "src/runtime/cpp/gen"
+CORE_DIR = ROOT / "src/runtime/cpp/core"
 MARKER = "AUTO-GENERATED FILE. DO NOT EDIT."
 TARGET_SUFFIXES = {".h", ".cpp"}
 
@@ -54,22 +54,20 @@ def main() -> int:
 
     if missing_marker or unexpected_marker:
         print("[FAIL] runtime cpp layout guard failed")
-        print(
-            f"  scanned: pytra-gen={len(gen_files)} files, pytra-core={len(core_files)} files"
-        )
+        print(f"  scanned: gen={len(gen_files)} files, core={len(core_files)} files")
         if missing_marker:
-            print("  pytra-gen files missing marker:")
+            print("  gen files missing marker:")
             for item in missing_marker:
                 print(f"    - {item}")
         if unexpected_marker:
-            print("  pytra-core files containing marker:")
+            print("  core files containing marker:")
             for item in unexpected_marker:
                 print(f"    - {item}")
         return 1
 
     print("[OK] runtime cpp layout guard passed")
-    print(f"  pytra-gen files with marker: {len(gen_files)}")
-    print(f"  pytra-core files without marker: {len(core_files)}")
+    print(f"  gen files with marker: {len(gen_files)}")
+    print(f"  core files without marker: {len(core_files)}")
     return 0
 
 

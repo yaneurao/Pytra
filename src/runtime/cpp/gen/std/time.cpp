@@ -23,4 +23,11 @@ namespace pytra::std::time {
         __all__ = list<str>{"perf_counter"};
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::time

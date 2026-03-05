@@ -515,4 +515,11 @@ namespace pytra::std::re {
         S = 1;
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::re

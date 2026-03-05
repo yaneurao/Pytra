@@ -385,4 +385,11 @@ namespace pytra::std::json {
         _HEX_DIGITS = "0123456789abcdef";
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::json

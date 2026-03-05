@@ -18,4 +18,11 @@ namespace pytra::std::glob {
         /* Minimal glob shim for selfhost-friendly imports. */
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::std::glob

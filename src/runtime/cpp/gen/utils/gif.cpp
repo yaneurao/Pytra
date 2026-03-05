@@ -158,4 +158,11 @@ namespace pytra::utils::gif {
         /* アニメーションGIFを書き出すための最小ヘルパー。 */
     }
     
+    namespace {
+        struct __pytra_module_initializer {
+            __pytra_module_initializer() { __pytra_module_init(); }
+        };
+        static const __pytra_module_initializer __pytra_module_initializer_instance{};
+    }  // namespace
+    
 }  // namespace pytra::utils::gif

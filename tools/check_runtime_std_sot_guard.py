@@ -12,7 +12,7 @@ Current guarded module set:
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
 - typing (`TypeVar`)
-- C++ std/utils runtime shape (`pytra-gen` generated modules + forwarders + required core impl split)
+- C++ std/utils runtime shape (`gen` generated modules + required core impl split)
 """
 
 from __future__ import annotations
@@ -136,13 +136,13 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "png": "src/pytra/utils/png.py",
 }
 
-# forwarder basename -> required pytra-core target file.
-CPP_REQUIRED_CORE_IMPL_FORWARDERS: dict[str, str] = {
-    "dataclasses-impl.h": "src/runtime/cpp/pytra-core/std/dataclasses-impl.h",
-    "math-impl.h": "src/runtime/cpp/pytra-core/std/math-impl.h",
-    "math-impl.cpp": "src/runtime/cpp/pytra-core/std/math-impl.cpp",
-    "time-impl.h": "src/runtime/cpp/pytra-core/std/time-impl.h",
-    "time-impl.cpp": "src/runtime/cpp/pytra-core/std/time-impl.cpp",
+# required handwritten core impl files.
+CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
+    "dataclasses-impl.h": "src/runtime/cpp/core/std/dataclasses-impl.h",
+    "math-impl.h": "src/runtime/cpp/core/std/math-impl.h",
+    "math-impl.cpp": "src/runtime/cpp/core/std/math-impl.cpp",
+    "time-impl.h": "src/runtime/cpp/core/std/time-impl.h",
+    "time-impl.cpp": "src/runtime/cpp/core/std/time-impl.cpp",
 }
 
 
@@ -184,16 +184,19 @@ def _iter_runtime_files() -> list[Path]:
 
 
 def _is_generated_runtime(rel_path: str) -> bool:
-    # Keep this strict and path-based; generated artifacts must live in pytra-gen.
-    return "/pytra-gen/" in ("/" + rel_path)
+    # Keep this strict and path-based.
+    if "/pytra-gen/" in ("/" + rel_path):
+        return True
+    # C++ runtime has migrated to core/gen layout.
+    return rel_path.startswith("src/runtime/cpp/gen/")
 
 
 def _check_cpp_runtime_shape(violations: list[str]) -> None:
-    # 1) Generated std/utils modules must exist under pytra-gen with canonical source marker.
+    # 1) Generated std/utils modules must exist under gen with canonical source marker.
     for module_name in CPP_GENERATED_STD_MODULES:
         source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
         for ext in ("h", "cpp"):
-            gen_rel = f"src/runtime/cpp/pytra-gen/std/{module_name}.{ext}"
+            gen_rel = f"src/runtime/cpp/gen/std/{module_name}.{ext}"
             gen_path = ROOT / gen_rel
             if not gen_path.exists():
                 violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
@@ -208,7 +211,7 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
     for module_name in CPP_GENERATED_UTILS_MODULES:
         source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
         for ext in ("h", "cpp"):
-            gen_rel = f"src/runtime/cpp/pytra-gen/utils/{module_name}.{ext}"
+            gen_rel = f"src/runtime/cpp/gen/utils/{module_name}.{ext}"
             gen_path = ROOT / gen_rel
             if not gen_path.exists():
                 violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
@@ -220,45 +223,11 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
                     f"[{module_name}] {gen_rel} missing canonical source marker ({marker})"
                 )
 
-    # 2) Compatibility layer under src/runtime/cpp/pytra must be forwarder-only to pytra-gen.
-    for module_name in CPP_GENERATED_STD_MODULES:
-        for ext in ("h", "cpp"):
-            fw_rel = f"src/runtime/cpp/pytra/std/{module_name}.{ext}"
-            fw_path = ROOT / fw_rel
-            if not fw_path.exists():
-                violations.append(f"[{module_name}] missing forwarder file: {fw_rel}")
-                continue
-            txt = fw_path.read_text(encoding="utf-8", errors="ignore")
-            expected = f"runtime/cpp/pytra-gen/std/{module_name}.{ext}"
-            if expected not in txt:
-                violations.append(f"[{module_name}] {fw_rel} must forward to {expected}")
-
-    for module_name in CPP_GENERATED_UTILS_MODULES:
-        for ext in ("h", "cpp"):
-            fw_rel = f"src/runtime/cpp/pytra/utils/{module_name}.{ext}"
-            fw_path = ROOT / fw_rel
-            if not fw_path.exists():
-                violations.append(f"[{module_name}] missing forwarder file: {fw_rel}")
-                continue
-            txt = fw_path.read_text(encoding="utf-8", errors="ignore")
-            expected = f"runtime/cpp/pytra-gen/utils/{module_name}.{ext}"
-            if expected not in txt:
-                violations.append(f"[{module_name}] {fw_rel} must forward to {expected}")
-
-    # 3) Required handwritten impl split must remain under pytra-core, with pytra forwarders.
-    for fw_name, core_rel in CPP_REQUIRED_CORE_IMPL_FORWARDERS.items():
+    # 2) Required handwritten impl split must remain under core.
+    for _name, core_rel in CPP_REQUIRED_CORE_IMPL_FILES.items():
         core_path = ROOT / core_rel
         if not core_path.exists():
             violations.append(f"[cpp-core-impl] missing core implementation file: {core_rel}")
-        fw_rel = "src/runtime/cpp/pytra/std/" + fw_name
-        fw_path = ROOT / fw_rel
-        if not fw_path.exists():
-            violations.append(f"[cpp-core-impl] missing forwarder file: {fw_rel}")
-            continue
-        txt = fw_path.read_text(encoding="utf-8", errors="ignore")
-        expected = core_rel.replace("src/", "")
-        if expected not in txt:
-            violations.append(f"[cpp-core-impl] {fw_rel} must forward to {expected}")
 
 
 def main() -> int:
@@ -305,9 +274,7 @@ def main() -> int:
             print("  disallowed handwritten runtime implementation detected:")
             for item in violations:
                 print("    - " + item)
-            print(
-                "  fix: move implementation to src/pytra/* canonical source and generate under pytra-gen"
-            )
+            print("  fix: move implementation to src/pytra/* canonical source and generate runtime artifacts")
         if stale_allow:
             print("  stale allowlist entries (remove them):")
             for item in stale_allow:

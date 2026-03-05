@@ -3,23 +3,4 @@
 #
 # NOTE:
 # - New entries are prohibited unless accompanied by an explicit TODO/plan ID.
-# - Remove entries as each language migrates to pytra-gen from src/pytra canonical sources.
-
-json src/runtime/cs/pytra-core/std/json.cs
-json src/runtime/cs/pytra/std/json.cs
-json src/runtime/go/pytra-core/built_in/py_runtime.go
-json src/runtime/go/pytra/py_runtime.go
-json src/runtime/kotlin/pytra-core/built_in/py_runtime.kt
-json src/runtime/lua/pytra-core/built_in/py_runtime.lua
-json src/runtime/php/pytra-core/py_runtime.php
-json src/runtime/ruby/pytra-core/built_in/py_runtime.rb
-json src/runtime/scala/pytra-core/built_in/py_runtime.scala
-json src/runtime/swift/pytra-core/built_in/py_runtime.swift
-
-# C++ forwarder compatibility layer (no handwritten logic; include-only bridge).
-assertions src/runtime/cpp/pytra/utils/assertions.h
-assertions src/runtime/cpp/pytra/utils/assertions.cpp
-re src/runtime/cpp/pytra/std/re.h
-re src/runtime/cpp/pytra/std/re.cpp
-typing src/runtime/cpp/pytra/std/typing.h
-typing src/runtime/cpp/pytra/std/typing.cpp
+# - Keep this file empty unless a verified transitional exception is required.
