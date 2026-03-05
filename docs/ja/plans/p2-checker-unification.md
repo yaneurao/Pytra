@@ -43,7 +43,7 @@
 ## 分解
 
 - [x] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加品質検証）を棚卸しして統一仕様を定義する。
-- [ ] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式（ケース集合、許容失敗、追加検証フック）を設計する。
+- [x] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式（ケース集合、許容失敗、追加検証フック）を設計する。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` を実装し、`--target` で全言語の共通検証を実行可能にする。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker に置換する。
@@ -53,6 +53,7 @@
 決定ログ:
 - 2026-03-05: ユーザー指示により、言語別 checker 群は将来削除前提とし、`--target` 駆動の単一 checker へ統合する方針を確定。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-01`] `check_py2*_transpile.py` 14本の差分を棚卸しし、差分軸を「ケース集合（全fixture+sample or 明示CASES）」「expected-fail 形式（単純集合 or 構造化spec）」「追加品質フック（scala sample01 / php sample18）」「追加CLI（`--skip-east3-contract-tests` / `--check-multi-file` / `--check-yanesdk-smoke` / stage2 probe）」へ固定した。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-02`] 単一 checker 用 profile 形式を `target / case_mode / cases / expected_failures / quality_hooks / flags / stage2_probe` で固定し、単純 expected-fail 一覧を構造化 `expected_failures` へ正規化する仕様を確定した。
 
 ## S1-01 棚卸し結果（固定）
 
@@ -73,3 +74,35 @@
 2. expected-fail は `profile.expected_failures` を `{"path": {"category": "...", "contains": "..."}}` の構造化形式へ統一し、単純集合は `category=expected_failure` へ正規化する。
 3. 追加品質検証は `profile.quality_hooks[]`（`sample01_scala`, `sample18_php` など）へ分離し、本体は hook dispatcher のみ持つ。
 4. 追加CLIは `profile.flags`（`check_multi_file`, `check_yanesdk_smoke`, `skip_east3_contract_tests`, `stage2_probe`）へ収束させる。
+
+## S1-02 profile 仕様（固定）
+
+```json
+{
+  "target": "java",
+  "case_mode": "all",
+  "cases": [],
+  "expected_failures": {
+    "test/fixtures/signature/ng_kwargs.py": {
+      "category": "expected_failure",
+      "contains": ""
+    }
+  },
+  "quality_hooks": [],
+  "flags": {
+    "check_multi_file": false,
+    "check_yanesdk_smoke": false,
+    "skip_east3_contract_tests": false
+  },
+  "stage2_probe": {
+    "enabled": false,
+    "source": ""
+  }
+}
+```
+
+1. `case_mode`: `all` は `test/fixtures/**/*.py + sample/py/*.py`、`explicit` は `cases[]` のみを検証。
+2. `expected_failures`: すべて `path -> {category, contains}` 形式へ統一。旧「単純集合」は `category=expected_failure` / `contains=\"\"` へ変換。
+3. `quality_hooks`: 言語固有の品質検証（`scala_sample01`, `php_sample18` など）を checker 本体から分離。
+4. `flags`: 旧 checker の追加CLI分岐（multi-file/yanesdk/skip-east3-contract）をここへ移す。
+5. `stage2_probe`: 旧 checker の `--east-stage 2` 互換検証を profile 側で有効化する。
