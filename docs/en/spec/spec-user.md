@@ -38,6 +38,7 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
 - `from ... import *` (wildcard import) is supported (relative import is still unsupported).
 - In transpilation target code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.
 - Exception: `typing` imports (`import typing`, `from typing import ...`) are allowed as annotation-only no-op imports and are removed from runtime/dependency import resolution.
+- Exception: `dataclasses` imports (`import dataclasses`, `from dataclasses import ...`) are allowed as decorator-resolution no-op imports and are removed from runtime/dependency import resolution.
 - Importable modules are modules under `src/pytra/` and user-authored `.py` modules.
 - User module import is legal by specification, but multi-file dependency resolution is still under staged implementation.
 - Attribute access/method calls on `object` type (including `Any`-derived routes) are prohibited.

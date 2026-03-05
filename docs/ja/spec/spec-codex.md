@@ -81,6 +81,7 @@
 - 例外: `tools/` と `test/` の検査・テストコードは selfhost 非対象のため `ast` 利用を許可します。
 - トランスパイル対象の Python コードでは、Python 標準モジュール（`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re` など）の `import` を禁止します。
 - 例外として `typing`（`import typing`, `from typing import ...`）は注釈専用 no-op import として許可します。
+- 例外として `dataclasses`（`import dataclasses`, `from dataclasses import ...`）は decorator 解決専用 no-op import として許可します。
 - トランスパイル対象コードが import できるのは `src/pytra/std/`・`src/pytra/utils/` モジュールと、ユーザー自作 `.py` モジュールです。
 
 ## 6. テスト・最適化ルール
@@ -105,7 +106,7 @@
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> selfhost/build.all.log 2>&1` で統合取得する。
 - selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
 - ランタイム変更時は `test/unit/backends/cpp/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
-- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pytra/std/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。
+- selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pytra/std/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。`typing` だけは注釈専用 no-op import として直接 import を許可する。
 - selfhost 向けに確実性を優先する箇所では、`continue` に依存した分岐や `x in {"a", "b"}` のようなリテラル集合 membership を避け、`if/elif` と明示比較（`x == "a" or x == "b"`）を優先する。
 - 日次の最小回帰は `python3 tools/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。
 

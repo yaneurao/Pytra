@@ -80,6 +80,7 @@ This document defines the operational rules Codex follows while working.
 - Exception: `tools/` and `test/` checks/tests are outside selfhost targets, so `ast` usage is allowed there.
 - In transpile-target Python code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.
 - Exception: `typing` (`import typing`, `from typing import ...`) is allowed as an annotation-only no-op import.
+- Exception: `dataclasses` (`import dataclasses`, `from dataclasses import ...`) is allowed as a decorator-resolution no-op import.
 - Transpile-target code may import only `src/pytra/std/`, `src/pytra/utils/`, and user-authored `.py` modules.
 
 ## 6. Test and Optimization Rules
@@ -104,7 +105,7 @@ This document defines the operational rules Codex follows while working.
 - Selfhost build logs may appear on stdout, so collect with `> selfhost/build.all.log 2>&1`.
 - In selfhost target code, confirm Python-only expressions do not leak into generated C++ (e.g., `super().__init__`, Python-style inheritance notation).
 - On runtime changes, besides `test/unit/backends/cpp/test_py2cpp_features.py`, also verify selfhost regeneration and recompilation.
-- Even in selfhost-target Python code, direct imports of standard modules are prohibited; use only shim modules in `src/pytra/std/` (e.g., `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.typing`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`).
+- Even in selfhost-target Python code, direct imports of standard modules are prohibited; use only shim modules in `src/pytra/std/` (e.g., `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`). `typing` is the only exception and is allowed as an annotation-only no-op import.
 - In selfhost-critical areas where reliability is prioritized, avoid branches relying on `continue` and literal-set membership like `x in {"a", "b"}`; prefer `if/elif` and explicit comparison (`x == "a" or x == "b"`).
 - For daily minimal regression, run `python3 tools/run_local_ci.py` and pass `check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff together.
 

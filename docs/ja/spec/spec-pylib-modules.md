@@ -15,6 +15,7 @@
   - 目的: Python 標準モジュール（`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum` など）の**代替実装**を提供するための領域です。
   - 方針: トランスパイル対象コードで Python 標準モジュールを直接 `import` せず、`pytra.std.*` を使えるようにします。
   - 注記: `typing` は注釈専用 no-op import として扱うため、通常は `import typing` / `from typing import ...` をそのまま使えます。
+  - 注記: `dataclasses` は decorator 解決専用 no-op import として扱えます（`import dataclasses` / `from dataclasses import ...`）。
   - ルール: Python 標準モジュール代替は原則として `src/pytra/std/` に配置します。
 - `src/pytra/utils/`:
   - 目的: Pytra 固有の機能（例: EAST 変換、画像出力ヘルパー、アサーション補助）を提供するための領域です。
@@ -38,11 +39,6 @@
 - `pytra.std.sys`（`sys` 代替）
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit(code=0)`, `set_argv(values)`, `set_path(values)`, `write_stderr(text)`, `write_stdout(text)`
-- `pytra.std.typing`（`typing` 代替）
-  - 型エイリアス: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
-  - 関数: `TypeVar(name)`
-  - 現状: `TypeVar(name)` は最小 shim（`name` をそのまま返す）であり、template 型パラメータ機能は提供しません。
-  - 位置づけ: 後方互換用モジュールです。新規コードでは `typing` の直接 import（注釈専用 no-op）を優先します。
 - `pytra.std.os`（`os` 代替・最小実装）
   - 変数: `path`
   - `path` の主なメンバー: `join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`

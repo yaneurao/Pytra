@@ -14,6 +14,7 @@ If you call functions/classes not listed here, transpilation-time errors or targ
   - Purpose: Area for providing **alternative implementations** of Python standard modules (`json`, `pathlib`, `sys`, `typing`, `os`, `glob`, `argparse`, `re`, `dataclasses`, `enum`, etc.).
   - Policy: In transpilation target code, avoid importing Python standard modules directly and use `pytra.std.*` instead.
   - Note: `typing` is treated as an annotation-only no-op import, so `import typing` / `from typing import ...` can be used directly in normal cases.
+  - Note: `dataclasses` can be treated as a decorator-resolution no-op import (`import dataclasses`, `from dataclasses import ...`).
   - Rule: Python-standard-module alternatives should, in principle, be placed in `src/pytra/std/`.
 - `src/pytra/utils/`:
   - Purpose: Area for Pytra-specific features (e.g., EAST conversion, image output helpers, assertion helpers).
@@ -30,10 +31,6 @@ If you call functions/classes not listed here, transpilation-time errors or targ
 - `pytra.std.sys` (`sys` replacement)
   - variables: `argv`, `path`, `stderr`, `stdout`
   - functions: `exit(code=0)`, `set_argv(values)`, `set_path(values)`, `write_stderr(text)`, `write_stdout(text)`
-- `pytra.std.typing` (`typing` replacement)
-  - type aliases: `Any`, `List`, `Set`, `Dict`, `Tuple`, `Iterable`, `Sequence`, `Mapping`, `Optional`, `Union`, `Callable`, `TypeAlias`
-  - function: `TypeVar(name)`
-  - status: compatibility shim. Prefer direct `typing` imports (annotation-only no-op) in new code.
 - `pytra.std.os` (`os` replacement, minimal implementation)
   - variable: `path`
   - main `path` members: `join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`

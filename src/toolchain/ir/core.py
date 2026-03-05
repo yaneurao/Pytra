@@ -7,7 +7,7 @@ from pytra.std import argparse
 from pytra.std import json
 from pytra.std import re
 from pytra.std.dataclasses import dataclass
-from pytra.std.typing import Any
+from typing import Any
 from pytra.std.pathlib import Path
 from pytra.std import sys
 from toolchain.frontends.signature_registry import is_stdlib_path_type
@@ -371,6 +371,155 @@ def _sh_parse_import_alias(text: str, *, allow_dotted_name: bool) -> tuple[str, 
     if alias_txt != "" and not _sh_is_identifier(alias_txt):
         return None
     return name_txt, alias_txt
+
+
+def _sh_parse_decorator_head_and_args(text: str) -> tuple[str, str]:
+    """`decorator` / `decorator(...)` を (head, args_txt_or_empty) に分解する。"""
+    raw = text.strip()
+    if raw == "":
+        return "", ""
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    lp = -1
+    for i, ch in enumerate(raw):
+        if in_str is not None:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == in_str:
+                in_str = None
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            continue
+        if ch in {"(", "[", "{"}:
+            if ch == "(" and depth == 0:
+                lp = i
+                break
+            depth += 1
+            continue
+        if ch in {")", "]", "}"}:
+            depth -= 1
+            continue
+    if lp < 0:
+        return raw, ""
+    if not raw.endswith(")"):
+        return raw, ""
+    depth = 0
+    in_str = None
+    esc = False
+    rp = -1
+    i = lp
+    while i < len(raw):
+        ch = raw[i]
+        if in_str is not None:
+            if esc:
+                esc = False
+                i += 1
+                continue
+            if ch == "\\":
+                esc = True
+                i += 1
+                continue
+            if ch == in_str:
+                in_str = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            i += 1
+            continue
+        if ch == "(":
+            depth += 1
+            i += 1
+            continue
+        if ch == ")":
+            depth -= 1
+            if depth == 0:
+                rp = i
+                break
+            i += 1
+            continue
+        i += 1
+    if rp < 0 or rp != len(raw) - 1:
+        return raw, ""
+    head = raw[:lp].strip()
+    if head == "":
+        return raw, ""
+    return head, raw[lp + 1 : rp].strip()
+
+
+def _sh_is_dataclass_decorator(
+    decorator_text: str,
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> bool:
+    """decorator 文字列が dataclass 系（標準 dataclasses 由来）か判定する。"""
+    head, _args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+    if head == "":
+        return False
+    if head == "dataclass":
+        return True
+    if head.endswith(".dataclass"):
+        owner = head[:-len(".dataclass")]
+        if owner == "dataclasses":
+            return True
+        mod_name = import_module_bindings.get(owner, "")
+        return mod_name == "dataclasses"
+    ent = import_symbol_bindings.get(head)
+    if not isinstance(ent, dict):
+        return False
+    mod_name = str(ent.get("module", ""))
+    sym_name = str(ent.get("name", ""))
+    return mod_name == "dataclasses" and sym_name == "dataclass"
+
+
+def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_text: str) -> dict[str, bool]:
+    """`@dataclass(...)` の keyword bool オプションを抽出する。"""
+    out: dict[str, bool] = {}
+    if args_txt.strip() == "":
+        return out
+    parts = _sh_split_top_commas(args_txt)
+    for part_raw in parts:
+        part = part_raw.strip()
+        if part == "":
+            continue
+        kv = _sh_split_top_level_assign(part)
+        if kv is None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"unsupported dataclass decorator argument: {part}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use keyword bool args only: dataclass(init=..., repr=..., eq=...).",
+            )
+        key, val = kv
+        k = key.strip()
+        v = val.strip()
+        if not _sh_is_identifier(k):
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"invalid dataclass option name: {k}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use identifier keyword options: dataclass(name=True/False, ...).",
+            )
+        if v == "True":
+            out[k] = True
+            continue
+        if v == "False":
+            out[k] = False
+            continue
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message=f"dataclass option must be bool literal: {k}={v}",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint="Use True/False literal values.",
+        )
+    return out
 
 
 def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
@@ -4869,6 +5018,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 if mod_name == "typing":
                     # `typing` は注釈専用モジュールとして扱い、EAST 依存には積まない。
                     continue
+                if mod_name == "dataclasses":
+                    # `dataclasses` は decorator 解決専用モジュールとして扱い、EAST 依存には積まない。
+                    bind_name_dc = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
+                    _sh_register_import_module(bind_name_dc, mod_name)
+                    continue
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                 _sh_register_import_module(bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
@@ -4908,6 +5062,22 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             names_txt = re.strip_group(m_import_from, 2)
             if mod_name == "typing":
                 # `from typing import ...` は注釈解決専用で、EAST には出力しない。
+                continue
+            if mod_name == "dataclasses":
+                # `from dataclasses import ...` は decorator 解決専用で、EAST には出力しない。
+                if names_txt != "*":
+                    raw_parts_dc: list[str] = []
+                    for p in names_txt.split(","):
+                        p2: str = p.strip()
+                        if p2 != "":
+                            raw_parts_dc.append(p2)
+                    for part in raw_parts_dc:
+                        parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                        if parsed_alias is None:
+                            continue
+                        sym_name, as_name_txt = parsed_alias
+                        bind_name_dc = as_name_txt if as_name_txt != "" else sym_name
+                        _sh_register_import_symbol(bind_name_dc, mod_name, sym_name)
                 continue
             if mod_name == "__future__":
                 if names_txt == "*":
@@ -5470,7 +5640,7 @@ def _sh_is_value_safe_dataclass_field_type(type_name: str) -> bool:
         inner = t[6:-1].strip()
         if inner == "":
             return True
-        parts = _sh_split_top_level_commas(inner)
+        parts = _sh_split_top_commas(inner)
         if len(parts) == 0:
             return False
         for part in parts:
@@ -5651,6 +5821,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     import_binding_names: set[str] = set()
     first_item_attached = False
     pending_dataclass = False
+    pending_dataclass_options: dict[str, bool] = {}
     pending_top_level_decorators: list[str] = []
 
     top_lines: list[tuple[int, str]] = []
@@ -5682,8 +5853,21 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             continue
         if s.startswith("@"):
             dec_name = s[1:].strip()
-            if dec_name == "dataclass":
+            if _sh_is_dataclass_decorator(
+                dec_name,
+                import_module_bindings=import_module_bindings,
+                import_symbol_bindings=import_symbol_bindings,
+            ):
                 pending_dataclass = True
+                _dec_head, args_txt = _sh_parse_decorator_head_and_args(dec_name)
+                if args_txt != "":
+                    parsed_opts = _sh_parse_dataclass_decorator_options(
+                        args_txt,
+                        line_no=i,
+                        line_text=ln,
+                    )
+                    for k_opt, v_opt in parsed_opts.items():
+                        pending_dataclass_options[k_opt] = v_opt
             elif dec_name != "":
                 pending_top_level_decorators.append(dec_name)
             i += 1
@@ -5827,6 +6011,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 if mod_name == "typing":
                     # `typing` は注釈専用モジュールとして扱い、ImportBinding/EAST へは出さない。
                     continue
+                if mod_name == "dataclasses":
+                    # `dataclasses` は decorator 解決専用モジュールとして扱う（no-op import）。
+                    bind_name_dc = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
+                    import_module_bindings[bind_name_dc] = mod_name
+                    _sh_register_import_module(bind_name_dc, mod_name)
+                    continue
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                 _sh_register_import_module(bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
@@ -5888,6 +6078,41 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     target = _sh_typing_alias_to_type_name(sym_name)
                     if target != "":
                         type_aliases[alias_name] = target
+                i = logical_end + 1
+                continue
+            if mod_name == "dataclasses":
+                # `from dataclasses import ...` は decorator 解決専用で、依存/AST には残さない。
+                if names_txt == "*":
+                    i = logical_end + 1
+                    continue
+                raw_parts_dc: list[str] = []
+                for p in names_txt.split(","):
+                    p2: str = p.strip()
+                    if p2 != "":
+                        raw_parts_dc.append(p2)
+                if len(raw_parts_dc) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="from-import statement has no symbol names",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use `from module import name` form.",
+                    )
+                for part in raw_parts_dc:
+                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                    if parsed_alias is None:
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"unsupported from-import clause: {part}",
+                            source_span=_sh_span(i, 0, len(ln)),
+                            hint="Use `from module import name` or `... as alias`.",
+                        )
+                    sym_name, as_name_txt = parsed_alias
+                    bind_name_dc = as_name_txt if as_name_txt != "" else sym_name
+                    import_symbol_bindings[bind_name_dc] = {
+                        "module": mod_name,
+                        "name": sym_name,
+                    }
+                    _sh_register_import_symbol(bind_name_dc, mod_name, sym_name)
                 i = logical_end + 1
                 continue
             if mod_name == "__future__":
@@ -6394,6 +6619,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "field_types": field_types,
                 "body": class_body,
             }
+            if len(pending_dataclass_options) > 0:
+                cls_item["dataclass_options"] = dict(pending_dataclass_options)
             static_field_names: set[str] = set()
             if not pending_dataclass:
                 for st in class_body:
@@ -6431,6 +6658,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             else:
                 cls_item["class_storage_hint"] = "ref"
             pending_dataclass = False
+            pending_dataclass_options.clear()
             if not first_item_attached:
                 cls_item["leading_comments"] = list(leading_file_comments)
                 cls_item["leading_trivia"] = list(leading_file_trivia)

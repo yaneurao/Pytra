@@ -62,6 +62,7 @@ Windows では次の読み替えを行ってください。
 
 - Python の標準ライブラリ直接 import は原則非推奨です。`pytra.std.*` を使ってください。
 - ただし `typing` だけは注釈専用 no-op import として許可します（`import typing` / `from typing import ...` は依存解決に残しません）。
+- `dataclasses` も decorator 解決専用 no-op import として許可します（`import dataclasses` / `from dataclasses import ...` は依存解決に残しません）。
 - `math` / `random` / `timeit` / `enum` などの実行時利用は `pytra.std.*` 対応 shim に正規化して扱います。
 - `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
@@ -206,7 +207,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - 例: `src/pytra/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` と `src/runtime/cpp/pytra/std/math.h`。
 - 例: `src/pytra/compiler/east_parts/core.py` -> `src/runtime/cpp/pytra/compiler/east_parts/core.cpp` と `src/runtime/cpp/pytra/compiler/east_parts/core.h`。
 - `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。
-- `src/pytra/std/json.py` / `src/pytra/std/typing.py` / `src/pytra/utils/assertions.py` も `.h/.cpp` を生成します。
+- `src/pytra/std/json.py` / `src/pytra/utils/assertions.py` も `.h/.cpp` を生成します。
 - 不足するネイティブ処理は `*-impl.cpp`（例: `src/runtime/cpp/pytra/std/math-impl.cpp`）で補完します。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2x.py --target cpp INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。
