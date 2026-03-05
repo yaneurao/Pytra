@@ -73,7 +73,7 @@
 7. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `pytra-core` 内の SoT 再実装痕跡を棚卸しし、`pytra-gen` 移管計画へ反映する。
 8. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java を先行対象として、emitter の直書き runtime 関数分岐を IR 解決経路へ移行する。
 9. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Java 以外の非C++ backend（`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）へ同方針を展開する。
-10. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter でのライブラリ関数名直書き禁止を lint 化し、PR/CI で fail-fast 化する。
+10. [x] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] emitter でのライブラリ関数名直書き禁止を lint 化し、PR/CI で fail-fast 化する。
 11. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] 全対象言語で sample parity（artifact size+CRC32 含む）を再実施し、差分を固定する。
 12. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] 運用手順（ローカル/CI）を `docs/ja` / `docs/en` に反映する。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] 旧P2の未完了一覧残置を整理し、`docs/en/todo/index.md` / `docs/en/plans/p2-runtime-parity-with-cpp.md` を新P2（`...-CPP-02`）へ置換した。
@@ -84,6 +84,7 @@
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] `work/logs/runtime_core_sot_reimpl_inventory_20260305_s2_03.tsv` を作成して `pytra-core` 再実装痕跡（10ファイル）を棚卸しし、`docs/ja/plans/p2-runtime-parity-with-cpp.md` に言語別移管ウェーブ（JSON系/画像系/core境界）を追記した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Java emitter の直書き runtime 分岐残存を監査し、`check_emitter_runtimecall_guardrails.py`（strict java）と `test_py2java_smoke.py`（25件）で IR 解決経路への収束状態を再確認して完了に更新した。
 - 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] 非Java backend について `check_emitter_runtimecall_guardrails.py`（全backend no findings）と smoke 再実行（`rs/rb/lua/scala/swift/ts=127件`、加えて本ターン実施済み `go/php/kotlin/js/nim/cs=117件`）を通過し、IR解決経路 + fail-closed 方針の展開完了を確認した。
+- 進捗メモ: [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] lint 導線として `check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` を `tools/run_local_ci.py` 必須ステップへ固定済みであることを再確認し、strict backend(`java`)の fail-fast 条件と合わせて PR/CI 側の拒否条件を確定した。
 
 ### P4: 全言語 selfhost 完全化（低低優先）
 
