@@ -110,6 +110,8 @@
 - `range(...)` は EAST 構築段階で専用表現へ lower し、後段（`py2x.py --target cpp` など）へ生の `Call(Name("range"), ...)` を渡さない。
   - つまり、後段エミッタは Python 組み込み `range` の意味解釈を持たず、EAST の正規化済みノードのみを処理する。
 - `for` 以外の式位置 `range(...)` は `RangeExpr` へ lower する（`ListComp` 含む）。
+- `from __future__ import annotations` は frontend 専用ディレクティブとして受理し、EAST ノード/`meta.import_*` には出力しない。
+- `__future__` の他機能や `from __future__ import *` は `unsupported_syntax` として fail-closed で拒否する。
 
 ## 5. ノード共通属性
 

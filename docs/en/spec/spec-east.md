@@ -96,6 +96,8 @@ This document describes the EAST specification aligned with the current implemen
 - `range(...)` is lowered into dedicated EAST representation during EAST construction; raw `Call(Name("range"), ...)` is never passed to downstream emitters.
   - Therefore downstream emitters (including `py2x.py --target cpp`) do not interpret Python `range` semantics directly; they only process normalized EAST nodes.
 - `range(...)` outside `for` loops is lowered to `RangeExpr` (including inside `ListComp`).
+- `from __future__ import annotations` is accepted as a frontend-only directive and is not emitted into EAST nodes or `meta.import_*`.
+- Other `__future__` features and `from __future__ import *` are rejected as `unsupported_syntax` (fail-closed).
 
 ## 5. Common Node Attributes
 

@@ -4892,6 +4892,45 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
         if m_import_from is not None:
             mod_name = re.strip_group(m_import_from, 1)
             names_txt = re.strip_group(m_import_from, 2)
+            if mod_name == "__future__":
+                if names_txt == "*":
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="from __future__ import * is not supported",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use `from __future__ import annotations` only.",
+                    )
+                raw_parts: list[str] = []
+                for p in names_txt.split(","):
+                    p2: str = p.strip()
+                    if p2 != "":
+                        raw_parts.append(p2)
+                if len(raw_parts) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="from-import statement has no symbol names",
+                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                        hint="Use `from module import name` form.",
+                    )
+                for part in raw_parts:
+                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                    if parsed_alias is None:
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"unsupported from-import clause: {part}",
+                            source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                            hint="Use `from module import name` or `... as alias`.",
+                        )
+                    sym_name, as_name_txt = parsed_alias
+                    if sym_name != "annotations" or as_name_txt != "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"unsupported __future__ feature: {part}",
+                            source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                            hint="Only `from __future__ import annotations` is supported.",
+                        )
+                # `from __future__ import annotations` is frontend-only and does not appear in EAST.
+                continue
             if names_txt == "*":
                 pending_blank_count = _sh_push_stmt_with_trivia(
                     stmts,
@@ -5795,6 +5834,46 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if m_import_from is not None:
             mod_name = re.strip_group(m_import_from, 1)
             names_txt = re.strip_group(m_import_from, 2)
+            if mod_name == "__future__":
+                if names_txt == "*":
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="from __future__ import * is not supported",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use `from __future__ import annotations` only.",
+                    )
+                raw_parts: list[str] = []
+                for p in names_txt.split(","):
+                    p2: str = p.strip()
+                    if p2 != "":
+                        raw_parts.append(p2)
+                if len(raw_parts) == 0:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="from-import statement has no symbol names",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use `from module import name` form.",
+                    )
+                for part in raw_parts:
+                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
+                    if parsed_alias is None:
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"unsupported from-import clause: {part}",
+                            source_span=_sh_span(i, 0, len(ln)),
+                            hint="Use `from module import name` or `... as alias`.",
+                        )
+                    sym_name, as_name_txt = parsed_alias
+                    if sym_name != "annotations" or as_name_txt != "":
+                        raise _make_east_build_error(
+                            kind="unsupported_syntax",
+                            message=f"unsupported __future__ feature: {part}",
+                            source_span=_sh_span(i, 0, len(ln)),
+                            hint="Only `from __future__ import annotations` is supported.",
+                        )
+                # `from __future__ import annotations` is frontend-only and does not appear in EAST.
+                i = logical_end + 1
+                continue
             if names_txt == "*":
                 wildcard_local = "__wildcard__" + mod_name.replace(".", "_")
                 _sh_append_import_binding(
