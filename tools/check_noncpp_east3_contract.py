@@ -16,69 +16,81 @@ ROOT = Path(__file__).resolve().parents[1]
 class Target:
     lang: str
     smoke_rel: str
-    transpile_check_rel: str
+    transpile_check_cmd: list[str]
 
 
 TARGETS: list[Target] = [
     Target(
         "rs",
         "test/unit/backends/rs/test_py2rs_smoke.py",
-        "tools/check_py2rs_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "rs"],
     ),
     Target(
         "cs",
         "test/unit/backends/cs/test_py2cs_smoke.py",
-        "tools/check_py2cs_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "cs"],
     ),
     Target(
         "js",
         "test/unit/backends/js/test_py2js_smoke.py",
-        "tools/check_py2js_transpile.py",
+        [
+            "python3",
+            "tools/check_py2x_transpile.py",
+            "--target",
+            "js",
+            "--skip-east3-contract-tests",
+        ],
     ),
     Target(
         "ts",
         "test/unit/backends/ts/test_py2ts_smoke.py",
-        "tools/check_py2ts_transpile.py",
+        [
+            "python3",
+            "tools/check_py2x_transpile.py",
+            "--target",
+            "ts",
+            "--skip-east3-contract-tests",
+        ],
     ),
     Target(
         "go",
         "test/unit/backends/go/test_py2go_smoke.py",
-        "tools/check_py2go_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "go"],
     ),
     Target(
         "java",
         "test/unit/backends/java/test_py2java_smoke.py",
-        "tools/check_py2java_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "java"],
     ),
     Target(
         "kotlin",
         "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
-        "tools/check_py2kotlin_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "kotlin"],
     ),
     Target(
         "swift",
         "test/unit/backends/swift/test_py2swift_smoke.py",
-        "tools/check_py2swift_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "swift"],
     ),
     Target(
         "ruby",
         "test/unit/backends/rb/test_py2rb_smoke.py",
-        "tools/check_py2rb_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "ruby"],
     ),
     Target(
         "lua",
         "test/unit/backends/lua/test_py2lua_smoke.py",
-        "tools/check_py2lua_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "lua"],
     ),
     Target(
         "php",
         "test/unit/backends/php/test_py2php_smoke.py",
-        "tools/check_py2php_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "php"],
     ),
     Target(
         "scala",
         "test/unit/backends/scala/test_py2scala_smoke.py",
-        "tools/check_py2scala_transpile.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "scala"],
     ),
 ]
 
@@ -255,7 +267,7 @@ def main() -> int:
 
     transpile_failures: list[str] = []
     for target in TARGETS:
-        ok, msg = _run(["python3", target.transpile_check_rel])
+        ok, msg = _run(target.transpile_check_cmd)
         if not ok:
             transpile_failures.append(f"{target.lang}: {msg}")
     if transpile_failures:

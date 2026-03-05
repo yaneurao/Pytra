@@ -21,6 +21,7 @@ def main() -> int:
     steps: list[list[str]] = [
         ["python3", "tools/check_transpiler_version_gate.py"],
         ["python3", "tools/check_legacy_cli_references.py"],
+        ["python3", "tools/check_legacy_transpile_checkers_absent.py"],
         ["python3", "tools/check_todo_priority.py"],
         ["python3", "tools/check_py2cpp_boundary.py"],
         ["python3", "tools/check_east_stage_boundary.py"],
@@ -52,7 +53,7 @@ def main() -> int:
         ["python3", "tools/check_sample_regen_clean.py"],
         ["python3", "tools/check_multilang_quality_regression.py"],
         ["python3", "tools/check_multilang_selfhost_suite.py"],
-        ["python3", "tools/check_py2cpp_transpile.py"],
+        ["python3", "tools/check_py2x_transpile.py", "--target", "cpp"],
         ["python3", "tools/check_noncpp_east3_contract.py"],
         ["python3", "-m", "unittest", "discover", "-s", "test/unit/common", "-p", "test_code_emitter.py"],
         ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/cpp", "-p", "test_py2cpp_features.py"],

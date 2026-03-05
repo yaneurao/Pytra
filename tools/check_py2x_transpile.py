@@ -303,16 +303,42 @@ def _run_east3_contract_preflight(profile: dict[str, object], *, skip: bool) -> 
     flags = flags_any if isinstance(flags_any, dict) else {}
     if bool(flags.get("skip_east3_contract_tests", False)):
         return True, ""
-    cp = subprocess.run(
-        ["python3", "tools/check_noncpp_east3_contract.py"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    if cp.returncode == 0:
-        return True, ""
-    msg = cp.stderr.strip() or cp.stdout.strip() or "check_noncpp_east3_contract.py failed"
-    return False, msg
+    checks = [
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "test/unit",
+            "-p",
+            "test_east2_to_east3_lowering.py",
+        ],
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "test/unit",
+            "-p",
+            "test_east3_cpp_bridge.py",
+        ],
+    ]
+    i = 0
+    while i < len(checks):
+        cp = subprocess.run(
+            checks[i],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if cp.returncode != 0:
+            msg = cp.stderr.strip() or cp.stdout.strip() or "east3 contract preflight failed"
+            first = msg.splitlines()[0] if msg else "unknown error"
+            return False, first
+        i += 1
+    return True, ""
 
 
 def main() -> int:

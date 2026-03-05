@@ -46,8 +46,8 @@
 - [x] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式（ケース集合、許容失敗、追加検証フック）を設計する。
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` を実装し、`--target` で全言語の共通検証を実行可能にする。
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
-- [ ] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker に置換する。
-- [ ] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
+- [x] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker に置換する。
+- [x] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
 - [ ] [ID: P2-CHECKER-UNIFY-01-S3-02] unit/CI 回帰を実行し、単一化後の非退行を固定する。
 
 決定ログ:
@@ -57,6 +57,8 @@
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] `tools/check_py2x_transpile.py` と `tools/check_py2x_profiles.json` を追加し、共通実行器（cases解決・expected-fail skip/validate・quality hook・stage2 probe）を実装。まず `cpp/java/scala` profile を移植し、`sample/py/01_mandelbrot.py` で3target smoke 通過を確認した。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] profile を `cpp/cs/go/java/js/kotlin/lua/nim/php/ruby/rs/scala/swift/ts` へ拡張し、`php_sample18` 品質フック・runtime sidecar 内容検証・`cpp_emitter_separation` preflight を共通実行器へ追加。`--skip-east3-contract-tests` 付きで `sample/py/01_mandelbrot.py` 全target smoke（14件）を通過して S2-01 を完了。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-02`] `check_py2cpp/cs/go/java/js/kotlin/lua/nim/php/rb/rs/scala/swift/ts` を互換ラッパ化し、実処理を `check_py2x_transpile.py --target` へ委譲。`cpp` 互換維持のため unified 側へ `--check-multi-file-imports` / `--check-yanesdk-smoke` を追加し、`nim/cpp/js` ラッパ実行（`js` は `--skip-east3-contract-tests`）で委譲結果が旧導線と整合することを確認。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-03`] `run_local_ci.py`・`check_noncpp_east3_contract.py`・`check_gsk_native_regression.py` の checker 呼び出しを `check_py2x_transpile.py --target ...` へ置換。`check_noncpp` からの `js/ts` 呼び出しは `--skip-east3-contract-tests` を付与して再帰を回避し、unified 側 preflight も旧仕様（`test_east2_to_east3_lowering.py` / `test_east3_cpp_bridge.py`）へ戻して非循環化した。`check_noncpp --skip-transpile` + `check_py2js_transpile.py` + `check_py2ts_transpile.py` を通過。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S3-01`] 旧 `tools/check_py2{cpp,cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_transpile.py` を削除し、`tools/check_legacy_transpile_checkers_absent.py` + `test_check_legacy_transpile_checkers_absent.py` を追加して再導入を fail-fast 化。`run_local_ci.py` に新ガードを統合し、Scala checker unit は `check_py2x_transpile.py` の profile 検証へ移行した。
 
 ## S1-01 棚卸し結果（固定）
 
