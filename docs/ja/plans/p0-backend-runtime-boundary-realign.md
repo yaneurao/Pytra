@@ -87,3 +87,4 @@ S1-01 分類結果（違反タイプ別）:
 - 2026-03-05: ユーザー指摘に基づき、目的を「文字列撤去」から「責務境界の設計是正」へ修正した。`math/gif/png` 検索は症状検知ガードとして再定義した。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 179件を `branch/dispatch/runtime実装混在` へ分類し、`lua -> scala -> rs` を先行是正順に確定した（分類CSVを `work/logs/backend_boundary_audit_classified_20260305_s1_01.csv` に固定）。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend の固定契約（`Call/Attribute` の解決済み属性、優先順位、`resolved_runtime_source`、fail-closed、emitter API 制約）を追記し、再解決禁止を仕様化した。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用の runtime 実装混在ブロック（`_emit_math_runtime_helpers` / `_emit_path_runtime_helpers` / `_emit_gif_runtime_helpers` / `_emit_png_runtime_helpers`）を削除。`math|gif|png` ヒットは `49 -> 8`、全 backend 合計は `179 -> 138` に縮退。`python3 test/unit/backends/lua/test_py2lua_smoke.py`（32件）で回帰 green を確認。
