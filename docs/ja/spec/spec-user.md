@@ -44,7 +44,7 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
 - `# type:ignore` はコメントとして扱い、構文/意味解釈には使いません。
 - トランスパイル対象コードでは、Python 標準モジュールの直接 import は原則非推奨です。
   - 推奨は `pytra.std.*` の明示 import です。
-  - ただし `math` / `random` / `timeit` / `traceback` / `typing` / `enum` など、`pytra.std.*` に対応 shim がある一部モジュールは正規化して扱えます。
+  - ただし `math` / `random` / `timeit` / `typing` / `enum` など、`pytra.std.*` に対応 shim がある一部モジュールは正規化して扱えます。
 - import 可能なのは `src/pytra/` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
 - `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。

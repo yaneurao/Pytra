@@ -26,7 +26,6 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/pytra/std/re.cpp",
     "src/runtime/cpp/pytra/std/sys.cpp",
     "src/runtime/cpp/pytra/std/timeit.cpp",
-    "src/runtime/cpp/pytra/std/traceback.cpp",
     "src/runtime/cpp/pytra/std/typing.cpp",
     "src/runtime/cpp/pytra/built_in/io.cpp",
     "src/runtime/cpp/pytra/built_in/bytes_util.cpp",

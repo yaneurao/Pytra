@@ -59,7 +59,6 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/pytra/std/re.cpp",
     "src/runtime/cpp/pytra/std/sys.cpp",
     "src/runtime/cpp/pytra/std/timeit.cpp",
-    "src/runtime/cpp/pytra/std/traceback.cpp",
     "src/runtime/cpp/pytra/std/typing.cpp",
     "src/runtime/cpp/pytra/built_in/io.cpp",
     "src/runtime/cpp/pytra/built_in/bytes_util.cpp",
@@ -2623,7 +2622,7 @@ def f() -> int:
             browser_dialog_res = resolve_module_name("browser.widgets.dialog", root)
         self.assertEqual(random_res.get("status"), "known")
         self.assertEqual(timeit_res.get("status"), "known")
-        self.assertEqual(traceback_res.get("status"), "known")
+        self.assertEqual(traceback_res.get("status"), "missing")
         self.assertEqual(browser_res.get("status"), "known")
         self.assertEqual(browser_dialog_res.get("status"), "known")
 

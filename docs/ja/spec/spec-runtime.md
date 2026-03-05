@@ -71,7 +71,7 @@
 
 | モジュール | 区分 | 配置ルール | 備考 |
 | --- | --- | --- | --- |
-| `argparse`, `dataclasses`, `enum`, `glob`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `sys`, `time`, `timeit`, `traceback`, `typing` | 生成必須 | `src/runtime/<lang>/pytra-gen/std/<mod>.<ext>` | SoT 由来。`pytra-core` へ同等ロジックを置かない。 |
+| `argparse`, `dataclasses`, `enum`, `glob`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `sys`, `time`, `timeit`, `typing` | 生成必須 | `src/runtime/<lang>/pytra-gen/std/<mod>.<ext>` | SoT 由来。`pytra-core` へ同等ロジックを置かない。 |
 | `assertions`, `gif`, `png` | 生成必須 | `src/runtime/<lang>/pytra-gen/utils/<mod>.<ext>` | 画像/検証ロジックは必ず生成物を使う。 |
 | `dataclasses_impl`, `math_impl`, `time_impl` | core許可（impl境界） | `src/runtime/<lang>/pytra-core/std/*-impl.<ext>` | 言語/SDK 依存 primitive のみ許可。公開 API 本体は `pytra-gen` 側。 |
 

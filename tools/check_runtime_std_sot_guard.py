@@ -107,7 +107,6 @@ CPP_GENERATED_STD_MODULES = [
     "sys",
     "time",
     "timeit",
-    "traceback",
     "typing",
 ]
 
@@ -178,7 +177,6 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "sys": "src/pytra/std/sys.py",
     "time": "src/pytra/std/time.py",
     "timeit": "src/pytra/std/timeit.py",
-    "traceback": "src/pytra/std/traceback.py",
     "typing": "src/pytra/std/typing.py",
     "assertions": "src/pytra/utils/assertions.py",
     "gif": "src/pytra/utils/gif.py",

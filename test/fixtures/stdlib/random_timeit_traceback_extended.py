@@ -1,6 +1,5 @@
 import random
 from timeit import default_timer as timer
-import traceback
 
 
 def main() -> None:
@@ -14,7 +13,6 @@ def main() -> None:
     g1: float = random.gauss(0.0, 1.0)
     random.shuffle(xs)
     t0: float = timer()
-    txt: str = traceback.format_exc()
     ok_picked: bool = len(picked) == 1
     for v in picked:
         if not (1 <= v <= 4):
@@ -33,7 +31,6 @@ def main() -> None:
         and ok_gauss
         and ok_shuffle
         and (t0 >= 0.0)
-        and isinstance(txt, str)
     )
     print(ok)
 

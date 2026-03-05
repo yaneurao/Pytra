@@ -39,7 +39,7 @@
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
 
 - トランスパイル対象コードでの標準モジュール直接 import は原則非推奨とし、`pytra.std.*` 明示 import を推奨します。
-- 互換 shim が存在する標準モジュール（`math` / `random` / `timeit` / `traceback` / `typing` / `enum` など）は、変換時に `pytra.std.*` へ正規化可能です。
+- 互換 shim が存在する標準モジュール（`math` / `random` / `timeit` / `typing` / `enum` など）は、変換時に `pytra.std.*` へ正規化可能です。
 - import は `pytra.*` とユーザー自作モジュール（`.py`）を許可します。
 
 - `pytra.utils.assertions`
@@ -64,8 +64,6 @@
   - 関数: `default_timer`
 - `pytra.std.random`
   - 関数: `seed`, `random`, `randint`
-- `pytra.std.traceback`
-  - 関数: `format_exc`
 - `pytra.std.os`
   - 変数: `path`（`join`, `dirname`, `basename`, `splitext`, `abspath`, `exists`）
   - 関数: `getcwd`, `mkdir`, `makedirs`
@@ -237,7 +235,6 @@
 - `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp`
 - `src/runtime/cpp/pytra/std/random.h`, `src/runtime/cpp/pytra/std/random.cpp`
 - `src/runtime/cpp/pytra/std/timeit.h`, `src/runtime/cpp/pytra/std/timeit.cpp`
-- `src/runtime/cpp/pytra/std/traceback.h`, `src/runtime/cpp/pytra/std/traceback.cpp`
 - `src/runtime/cpp/pytra/std/pathlib.h`, `src/runtime/cpp/pytra/std/pathlib.cpp`
 - `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
 - `src/runtime/cpp/pytra/std/dataclasses.h`, `src/runtime/cpp/pytra/std/dataclasses.cpp`
