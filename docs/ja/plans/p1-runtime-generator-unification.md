@@ -46,8 +46,8 @@
 
 ## 分解
 
-- [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-01] 既存 generator 3本の責務差分（入出力、後処理、命名ルール）を棚卸しし、単一導線へ移せる要件を固定する。
-- [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-02] runtime生成の宣言設定（対象モジュール、target、出力先、marker）を定義し、言語分岐を設定ファイルへ移す。
+- [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-01] 既存 generator 3本の責務差分（入出力、後処理、命名ルール）を棚卸しし、単一導線へ移せる要件を固定する。
+- [x] [ID: P1-RUNTIME-GEN-UNIFY-01-S1-02] runtime生成の宣言設定（対象モジュール、target、出力先、marker）を定義し、言語分岐を設定ファイルへ移す。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-01] 汎用 generator（単一スクリプト）を実装し、`pytra-cli`/`py2x` を呼ぶ共通導線へ統合する。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-02] 既存 3 スクリプトの呼び出し元を新導線へ置換する。
 - [ ] [ID: P1-RUNTIME-GEN-UNIFY-01-S2-03] 既存 3 スクリプトを削除し、関連ドキュメントを更新する。
@@ -56,3 +56,20 @@
 
 決定ログ:
 - 2026-03-05: ユーザー指示により、`tools/gen_*_from_canonical.py` の言語別特殊化は設計違反として扱い、P1で統廃合する方針を確定。
+- 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S1-01`] 3スクリプトの差分棚卸しを実施し、単一導線へ移す固定要件を確定した。
+- 2026-03-05: [ID: `P1-RUNTIME-GEN-UNIFY-01-S1-02`] `tools/runtime_generation_manifest.json` を追加し、対象 module / target / 出力先 / 追加後処理（C# helper 変換）を宣言化した。
+
+## S1-01 棚卸し結果（固定）
+
+| 既存スクリプト | 対象 SoT | 対象 target | 主な後処理/差分 |
+| --- | --- | --- | --- |
+| `tools/gen_image_runtime_from_canonical.py` | `src/pytra/utils/{png,gif}.py` | `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim` | target ごとに出力先命名が分岐。`cs` は `Program` -> `*_helper` へ AST 文字列書換え。header marker を付与。 |
+| `tools/gen_java_std_runtime_from_canonical.py` | `src/pytra/std/{time,json,pathlib,math}.py` | `java` | Java std 4モジュールのみ専用実装。header marker を別スクリプト名で付与。 |
+| `tools/gen_cs_image_runtime_from_canonical.py` | `src/pytra/utils/{png,gif}.py` | `cs` | 画像runtime専用の C# 書換え（`Program` -> `png_helper/gif_helper`）を単体で再実装。 |
+
+### 単一導線へ移す固定要件
+
+1. 対象モジュール・target・出力先は宣言設定で管理し、スクリプト本体に言語別分岐を埋め込まない。
+2. 追加後処理（例: C# helper 変換）は「必要対象だけ manifest で宣言」し、汎用生成器の共通 hook として扱う。
+3. marker 契約（`source:` / `generated-by:`）は単一生成器名で統一する。
+4. 出力先バケット（`pytra-gen/std` or `pytra-gen/utils`）と命名ルールは manifest 正本に寄せる。
