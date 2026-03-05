@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p0-runtime-root-reset-cpp-parity.md](../plans/p0-runtime-root-reset-cpp-parity.md)
 
 1. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01] 旧 runtime を `src/runtime2` へ退避し、新 `src/runtime/cpp/{core,gen}` で C++ parity を復旧する。
-2. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、移行影響範囲を固定する。
+2. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、移行影響範囲を固定する。
 3. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新 `src/runtime/cpp/{core,gen}` を作成する。
 4. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガードを追加する。
 5. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime/include 解決を `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
@@ -49,6 +49,7 @@
 11. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過させる。
 12. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail を潰し切り、再実行で安定通過を確認する。
 13. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] `work/logs/p0_runtime_root_reset_cpp_ref_inventory_targets_20260305_s1_01.txt`（50件）を固定し、影響範囲を `src/backends/cpp/*` / `src/toolchain/compiler/*` / `tools/*` に確定。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 
