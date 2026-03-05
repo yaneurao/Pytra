@@ -9,9 +9,9 @@
 `P2-RUNTIME-PARITY-CPP-01` の Wave 設計では、ここを「他言語 runtime 同等化」の基準 API とする。
 
 - 正本配置:
-  - core helper: `src/runtime/cpp/pytra-core/built_in/py_runtime.h`
-  - 生成 runtime: `src/runtime/cpp/pytra-gen/{std,utils}/*.h`
-  - 互換 forwarder: `src/runtime/cpp/pytra/{std,utils,built_in}/*.h`（`pytra-core` / `pytra-gen` へ委譲）
+  - core helper: `src/runtime/cpp/core/built_in/py_runtime.h`
+  - 生成 runtime: `src/runtime/cpp/gen/{std,utils}/*.h`
+  - `src/runtime/cpp/pytra/` 互換 forwarder 層は廃止済み（新規追加禁止）
 - 受理ルール:
   - API 名と引数契約は C++ を正本とする。
   - 他言語は同名 API か adapter 経由で同等契約を満たす。
@@ -31,7 +31,7 @@
 
 注記:
 - `pytra::std::json` / `pytra::utils::{png,gif}` は内部補助関数を含むが、多言語同等化で必須なのは公開 API。
-- `Path` は現状 `pytra-gen/std/pathlib.h` の宣言が薄く、`.cpp` 側 struct 実体が実効 API になっている。Wave1 で宣言/実体の整合も合わせて正規化対象とする。
+- `Path` は現状 `gen/std/pathlib.h` の宣言が薄く、`.cpp` 側 struct 実体が実効 API になっている。Wave1 で宣言/実体の整合も合わせて正規化対象とする。
 
 ### 0.5 SoT / pytra-core / pytra-gen の責務境界（P2-RUNTIME-PARITY-CPP-02-S1-02）
 
@@ -43,6 +43,7 @@
 - runtime 配置（全言語共通）
   - `src/runtime/<lang>/pytra-core/`: 言語依存の最小基盤（I/O, FS, 時刻, VM/SDK 接着など）
   - `src/runtime/<lang>/pytra-gen/`: SoT 由来の生成物のみ（手編集禁止）
+  - C++ は新レイアウトとして `src/runtime/cpp/core/` / `src/runtime/cpp/gen/` を使用する（`pytra-core/pytra-gen` の C++ 側旧名は廃止）。
 
 必須:
 
@@ -79,20 +80,44 @@
 - `*_impl` は「ネイティブ依存の最小 primitive 層」であり、SoT 本体の代替実装ではない。
 - `pytra-core` 側に同名 API の本体を増やす場合は、`S2-03`（棚卸し+移管計画）で明示審査する。
 
+### 0.7 C++ runtime（core/gen）運用手順
+
+再生成:
+
+- SoT 由来モジュールは `--emit-runtime-cpp` で `src/runtime/cpp/gen/` に直接再生成する。
+- 例:
+  - `python3 src/py2x.py src/pytra/std/math.py --target cpp --emit-runtime-cpp`
+  - `python3 src/py2x.py src/pytra/utils/png.py --target cpp --emit-runtime-cpp`
+  - `python3 src/py2x.py src/pytra/built_in/type_id.py --target cpp --emit-runtime-cpp`
+
+検証（最低限）:
+
+- `python3 tools/check_runtime_cpp_layout.py`
+- `python3 tools/check_runtime_std_sot_guard.py`
+- `python3 tools/check_runtime_core_gen_markers.py`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+
+禁止事項:
+
+- `src/runtime/cpp/gen/` の手編集
+- `src/runtime/cpp/core/` への SoT 同等ロジック再実装
+- `src/runtime/cpp/pytra/` 互換 forwarder の再導入
+
 
 ### 1. 生成物と手書き実装の責務分離を明文化する
 
 - 自動生成:
-  - `runtime/cpp/pytra/std/<mod>.h`
-  - `runtime/cpp/pytra/std/<mod>.cpp`
-  - `runtime/cpp/pytra/utils/<mod>.h`
-  - `runtime/cpp/pytra/utils/<mod>.cpp`
-  - 例: `runtime/cpp/pytra/std/json.h/.cpp`, `runtime/cpp/pytra/std/typing.h/.cpp`,
-    `runtime/cpp/pytra/utils/assertions.h/.cpp`
-  - `runtime/cpp/pytra/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2x.py --target cpp` で解釈した結果（関数シグネチャ）から生成する。
+  - `runtime/cpp/gen/std/<mod>.h`
+  - `runtime/cpp/gen/std/<mod>.cpp`
+  - `runtime/cpp/gen/utils/<mod>.h`
+  - `runtime/cpp/gen/utils/<mod>.cpp`
+  - 例: `runtime/cpp/gen/std/json.h/.cpp`, `runtime/cpp/gen/std/typing.h/.cpp`,
+    `runtime/cpp/gen/utils/assertions.h/.cpp`
+  - `runtime/cpp/gen/std/math.h` / `math.cpp` は `src/pytra/std/math.py` を `src/py2x.py --target cpp` で解釈した結果（関数シグネチャ）から生成する。
 - 手書き許可:
-  - `runtime/cpp/pytra/std/<mod>-impl.cpp`
-  - `runtime/cpp/pytra/utils/<mod>-impl.cpp`
+  - `runtime/cpp/core/std/<mod>-impl.cpp`
+  - `runtime/cpp/core/utils/<mod>-impl.cpp`
 - ルール:
   - `<mod>.h/.cpp` は常に再生成対象（手編集禁止）。
   - `*-impl.cpp` は手編集可能（再生成対象外）。
@@ -111,15 +136,15 @@
   - 例: `import pytra.std.math` -> `#include "pytra/std/math.h"`。
   - 例: `import pytra.utils.png` -> `#include "pytra/utils/png.h"`。
   - コンパイル時は `src/runtime/cpp` を include ルート（`-I`）として渡す。
-  - 組み込み基盤ヘッダは `runtime/cpp/pytra/built_in/py_runtime.h` を正本とする。
-  - `runtime/cpp/pytra/built_in/*.h` の相互 include は同一ディレクトリ相対（例: `#include "str.h"`）で記述する。
+  - 組み込み基盤ヘッダは `runtime/cpp/core/built_in/py_runtime.h` を正本とする。
+  - `runtime/cpp/core/built_in/*.h` の相互 include は同一ディレクトリ相対（例: `#include "str.h"`）で記述する。
 
 #### 2.0 built_in ヘッダの guard ルール
 
-- `runtime/cpp/pytra/built_in/*.h` の include guard は、`runtime/cpp/pytra/` 以降の相対パスから生成する。
+- `runtime/cpp/core/built_in/*.h` の include guard は、`runtime/cpp/core/` 以降の相対パスから生成する。
   - 変換規則: `/` と `.` と `-` を `_` に置換し、英大文字化し、先頭に `PYTRA_` を付ける。
-  - 例: `runtime/cpp/pytra/built_in/list.h` -> `PYTRA_BUILT_IN_LIST_H`
-  - 例: `runtime/cpp/pytra/built_in/py_runtime.h` -> `PYTRA_BUILT_IN_PY_RUNTIME_H`
+  - 例: `runtime/cpp/core/built_in/list.h` -> `PYTRA_BUILT_IN_LIST_H`
+  - 例: `runtime/cpp/core/built_in/py_runtime.h` -> `PYTRA_BUILT_IN_PY_RUNTIME_H`
 
 #### 2.1 モジュール名変換ルール（自作モジュール向け）
 
@@ -130,7 +155,7 @@
 - 末尾が `_impl` のモジュールだけは、include パスで `_impl -> -impl` に写像する。
 - namespace は `_impl` のまま維持する（`-impl` にはしない）。
 - `.h` 出力は「モジュール単位」で作成される。
-  - 生成先: `runtime/cpp/pytra/std/<mod>.h` または `runtime/cpp/pytra/utils/<mod>.h`
+  - 生成先: `runtime/cpp/gen/std/<mod>.h` または `runtime/cpp/gen/utils/<mod>.h`
   - モジュールのトップレベル関数は宣言になる（定義は `.cpp`）
   - モジュールのトップレベル定数/変数は `extern` 宣言になる（実体は `.cpp`）
 
@@ -154,7 +179,7 @@ double now() {
 `pytra.std.time` 側の `.h` は次の形になる:
 
 ```cpp
-// runtime/cpp/pytra/std/time.h
+// runtime/cpp/gen/std/time.h
 namespace pytra::std::time {
 double perf_counter();
 }  // namespace pytra::std::time
@@ -214,7 +239,7 @@ float64 f(float64 x) {
 定数を持つモジュールの `.h` は `extern` 宣言になる:
 
 ```cpp
-// runtime/cpp/pytra/std/math.h
+// runtime/cpp/gen/std/math.h
 namespace pytra::std::math {
 extern double pi;
 extern double e;
@@ -327,7 +352,7 @@ float64 sqrt(float64 x) {
 
 - 各モジュールで最低限次を満たすこと:
   1. Python実行結果と C++ 実行結果が一致する
-  2. `runtime/cpp/pytra/std` と `runtime/cpp/pytra/utils` に対応する import 形式（`import` / `from ... import ...`）の両方が通る
+  2. `runtime/cpp/gen/std` と `runtime/cpp/gen/utils` に対応する import 形式（`import` / `from ... import ...`）の両方が通る
   3. 生成物を削除して再生成しても差分が安定する（再現可能）
 
 ### 7. 将来の多言語展開を見据えた命名
@@ -338,7 +363,7 @@ float64 sqrt(float64 x) {
 
 ### 8. 現行配置の固定
 
-- C++ ランタイム実体は `runtime/cpp/pytra/std/*` と `runtime/cpp/pytra/utils/*` を正とする。
+- C++ ランタイム実体は `runtime/cpp/gen/std/*` と `runtime/cpp/gen/utils/*` を正とする。
 - include は現時点で上記パスを直接参照する方式に固定する。
 - 将来レイアウト変更を行う場合は、本仕様を先に更新してから実装変更する。
 
@@ -355,7 +380,7 @@ float64 sqrt(float64 x) {
   - `import` / モジュール変数代入 / 関数本体を「フォルダ名だけで」無視してはならない。
   - 例: `pi = _m.pi`、`def sqrt(...): return _m.sqrt(...)` は意味を持つ記述として扱う。
 - ネイティブ実装への差し替えは、明示的境界でのみ許可する。
-  - 生成物（例: `runtime/cpp/pytra/std/math.h/.cpp`）から手書き実装（例: `py_math.h/.cpp` または `*-impl.cpp`）へ委譲する。
+  - 生成物（例: `runtime/cpp/gen/std/math.h/.cpp`）から手書き実装（例: `py_math.h/.cpp` または `*-impl.cpp`）へ委譲する。
   - 暗黙ルール（「このフォルダ配下は関数宣言以外を無視」など）は禁止する。
 - 公式モジュールとユーザー自作モジュールには同じ変換ルールを適用する。
   - 公式のみ特別扱いして、ユーザー側で同等構成を再現不能にしてはならない。

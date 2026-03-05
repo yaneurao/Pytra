@@ -43,12 +43,12 @@
 5. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の runtime/include 解決を `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
 6. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
 7. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
-8. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
-9. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理する。
+8. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
+9. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理する。
 10. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture` を通過させる。
 11. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過させる。
 12. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail を潰し切り、再実行で安定通過を確認する。
-13. [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
+13. [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec` の runtime レイアウトと運用手順（生成/検証）を更新する。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] `work/logs/p0_runtime_root_reset_cpp_ref_inventory_targets_20260305_s1_01.txt`（50件）を固定し、影響範囲を `src/backends/cpp/*` / `src/toolchain/compiler/*` / `tools/*` に確定。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime -> src/runtime2` を移動し、`src/runtime/cpp/core`（旧 `pytra-core`）と `src/runtime/cpp/gen`（旧 `pytra-gen`）を新設。旧 `src/runtime2/cpp/pytra` shim を隔離した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `tools/check_runtime2_references_absent.py` を追加し、`run_local_ci.py` と tooling unit test（`test_check_runtime2_references_absent.py`）へ統合して `src/runtime2` 参照の再流入を fail-fast 化。
@@ -56,9 +56,12 @@
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] `tools/runtime_generation_manifest.json` の C++ 出力先を `src/runtime/cpp/gen/...` へ更新し、`gen_runtime_from_manifest.py --targets cpp --items utils/png,utils/gif` で再生成した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build導線（`gen_makefile_from_manifest.py` / `build_multi_cpp.py` / `verify_sample_outputs.py` / `verify_image_runtime_parity.py`）を `core+gen` へ更新し、`pytra-cli --target cpp --build` の実ビルドで `src/runtime/cpp/{core,gen}` のみを用いることを確認。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] `tools/runtime_parity_check.py --targets cpp --case-root fixture --summary-json work/logs/p0_runtime_root_reset_cpp_fixture_20260305_s401.json` を実行し、`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` の 3件すべてで `pass` を確認した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] `src/pytra/std/*`・`src/pytra/utils/*`・`src/pytra/built_in/type_id.py`・`src/toolchain/compiler/east_parts/core.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/gen/` のみ更新されることを確認した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] `tools/check_runtime_cpp_layout.py`・`tools/check_runtime_std_sot_guard.py` を `core/gen` レイアウト前提へ更新し、`cpp/core` 手書き層と `cpp/gen` 生成層の責務境界検査を通過させた。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] sample parity をケース分割で再実行し、`01-05,07-13,15,17,18` は artifact size+CRC32 一致、`06_julia_parameter_sweep`・`14_raymarching_light_cycle`・`16_glass_sculpture_chaos` の 3件のみ GIF CRC32 mismatch が残存することを確認した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] `src/runtime/cpp/gen/std/math.cpp` の `pi/e` を宣言時初期化へ変更して module init 未呼び出し差分を解消し、`tools/runtime_parity_check.py --targets cpp --case-root sample 06_julia_parameter_sweep 14_raymarching_light_cycle 16_glass_sculpture_chaos` の3件を再実行してすべて `pass` を確認した。
 - 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] sample 18件を分割再実行（`01,18` / `11` / `06,14,16` / `02,03,04,05,07,08,09,10` / `12,13,15,17`）し、artifact size+CRC32 を含めて `pass=18, fail=0` を確認した。
+- 進捗メモ: [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] `docs/ja/spec/spec-runtime.md` を `runtime/cpp/{core,gen}` 前提へ更新し、`--emit-runtime-cpp` 再生成手順と guard/parity 検証コマンド、`src/runtime/cpp/pytra/` 再導入禁止を明文化した。
 
 ### P0: `pytra-cli` 責務再編（命名統一 + target分岐撤去）（最優先）
 

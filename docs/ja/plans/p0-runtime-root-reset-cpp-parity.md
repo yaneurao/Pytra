@@ -45,18 +45,18 @@
 
 ## 分解
 
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、`runtime/cpp/{core,gen}` へ移行する影響範囲を固定する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新規 `src/runtime/cpp/{core,gen}` を作成する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガード（CI/静的チェック）を追加し、新実装が旧treeへ依存しないことを強制する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の include/runtime 解決パスを `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理し、責務境界を固定する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-01] C++ runtime 参照点（backend/toolchain/tools）を棚卸しし、`runtime/cpp/{core,gen}` へ移行する影響範囲を固定する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-02] `src/runtime` を `src/runtime2` へ `git mv` し、新規 `src/runtime/cpp/{core,gen}` を作成する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S1-03] `src/runtime2` 参照禁止ガード（CI/静的チェック）を追加し、新実装が旧treeへ依存しないことを強制する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-01] C++ backend の include/runtime 解決パスを `core/gen` 前提へ更新し、`pytra` shim 経路を削除する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-02] runtime generator（manifest/出力先/marker）を `runtime/cpp/gen` へ切り替える。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S2-03] C++ build manifest/コピー導線を `runtime/cpp/core` + `runtime/cpp/gen` のみに統一する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-01] C++ 必要 runtime（std/utils）を SoT から再生成し、`gen/` のみへ配置する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S3-02] C++ 固有手書き実装（`*-impl.*`）を `core/` へ整理し、責務境界を固定する。
 - [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-01] C++ fixture parity を通過させる（stdout + artifact size/CRC32）。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] C++ sample parity（`--all-samples`）を通過させる（stdout + artifact size/CRC32）。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail の原因を潰し切り、再実行で安定通過を確認する。
-- [ ] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] runtime レイアウト変更を `docs/ja/spec` に反映し、運用手順（生成/検証）を更新する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-02] C++ sample parity（`--all-samples`）を通過させる（stdout + artifact size/CRC32）。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S4-03] parity fail の原因を潰し切り、再実行で安定通過を確認する。
+- [x] [ID: P0-RUNTIME-ROOT-RESET-CPP-01-S5-01] runtime レイアウト変更を `docs/ja/spec` に反映し、運用手順（生成/検証）を更新する。
 
 決定ログ:
 - 2026-03-05: ユーザー指示により、後方互換を捨てて `src/runtime -> src/runtime2` 退避後に新 `src/runtime` を構築する方針を採用。
@@ -71,3 +71,6 @@
 - 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S4-01`] `tools/runtime_parity_check.py --targets cpp --case-root fixture --summary-json work/logs/p0_runtime_root_reset_cpp_fixture_20260305_s401.json` を通過（`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` = 3/3）。
 - 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S4-02`] sample parity をケース分割で再実行し、`01-05,07-13,15,17,18` は一致。`06_julia_parameter_sweep`・`14_raymarching_light_cycle`・`16_glass_sculpture_chaos` で GIF artifact CRC32 mismatch が残ることを固定した。
 - 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S4-03`] GIF mismatch 3件の共通要因を `math.pi/e` の未初期化参照（`__pytra_module_init` 未呼び出し）と特定し、`src/runtime/cpp/gen/std/math.cpp` の `pi/e` を宣言時初期化へ変更。`tools/runtime_parity_check.py --targets cpp --case-root sample 06_julia_parameter_sweep 14_raymarching_light_cycle 16_glass_sculpture_chaos` を再実行して 3/3 pass を確認。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S3-01`] `src/pytra/std/*`・`src/pytra/utils/*`・`src/pytra/built_in/type_id.py`・`src/toolchain/compiler/east_parts/core.py` を `--emit-runtime-cpp` で再生成し、`src/runtime/cpp/gen/*.cpp` のみが更新されることを確認した。あわせて `CppEmitter` に runtime module 用の静的 `__pytra_module_init` 呼び出しを追加して、再生成後も `math.pi/e` 初期化差分が再発しない形へ固定した。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S3-02`] `tools/check_runtime_cpp_layout.py` と `tools/check_runtime_std_sot_guard.py` を `runtime/cpp/{core,gen}` 前提へ更新し、旧 `pytra-core/pytra-gen/pytra` forwarder 仮定を撤去した。`check_runtime_cpp_layout.py` / `check_runtime_std_sot_guard.py` / `check_runtime_core_gen_markers.py` を通過。
+- 2026-03-05: [ID: `P0-RUNTIME-ROOT-RESET-CPP-01-S5-01`] `docs/ja/spec/spec-runtime.md` を `runtime/cpp/{core,gen}` 前提へ更新し、SoT再生成（`--emit-runtime-cpp`）と guard/parity 検証コマンド、`src/runtime/cpp/pytra` 再導入禁止を運用手順として明文化した。
