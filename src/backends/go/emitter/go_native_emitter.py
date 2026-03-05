@@ -802,6 +802,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         )
         if rendered_runtime != "":
             return rendered_runtime
+        if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+            raise RuntimeError(
+                "go native emitter: unresolved stdlib runtime mapping: "
+                + semantic_tag
+                + " ("
+                + runtime_call
+                + ")"
+            )
 
     callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):

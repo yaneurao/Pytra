@@ -54,6 +54,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs_emitter.py` の `owner=="math/png/gif"` 生ASTフォールバック（call/attr）を撤去し、`cs` ヒットを `20 -> 8`、全 backend 合計を `67 -> 55` に縮退。`test_py2cs_smoke.py` は既存 baseline と同じ `failures=11` を維持（新規悪化なし）。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `nim_native_emitter.py` の式文フォールバックから `save_gif` / `write_rgb_png` 直判定を撤去し、`nim` ヒットを `3 -> 1`、全 backend 合計を `55 -> 53` に縮退。`test_py2nim_smoke.py`（3件）再通過を確認。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] 残ヒット（`go/cs/js/cpp`）は import/runtime map 解決・診断文字列・互換コメントに分類し、生AST再解決フォールバックは対象 backend で撤去完了。以降は `S2-03`（fail-closed 強化）/`S3-01`（CIガード）で拘束する。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `php/go` で stdlib runtime_call の空振り時フォールバックを縮退し、`resolved_runtime_call` 経路は fail-closed 化。`go` の `runtime_call=std::filesystem::*`（legacy表現）は現状 target解決不足のため従来フォールバックを維持し、`test_py2php_smoke.py`（10件）/`test_py2go_smoke.py`（16件）は通過。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 

@@ -453,6 +453,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         )
         if rendered_runtime != "":
             return rendered_runtime
+        if semantic_tag.startswith("stdlib."):
+            raise RuntimeError(
+                "php native emitter: unresolved stdlib runtime mapping: "
+                + semantic_tag
+                + " ("
+                + runtime_call
+                + ")"
+            )
 
     callee_name = _call_name(expr)
 
@@ -655,6 +663,14 @@ def _render_expr(expr: Any) -> str:
                     if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
                         return runtime_symbol + "()"
                     return runtime_symbol
+            if semantic_tag.startswith("stdlib."):
+                raise RuntimeError(
+                    "php native emitter: unresolved stdlib runtime attribute mapping: "
+                    + semantic_tag
+                    + " ("
+                    + runtime_call
+                    + ")"
+                )
         return _render_expr(value_any) + "->" + attr
     if kind == "Subscript":
         owner = _render_expr(expr.get("value"))
