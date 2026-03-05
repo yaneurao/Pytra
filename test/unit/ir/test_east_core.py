@@ -30,6 +30,23 @@ def _walk(node: Any):
 
 
 class EastCoreTest(unittest.TestCase):
+    def test_top_level_extern_decorator_is_preserved(self) -> None:
+        src = """
+from pytra.std import extern
+
+@extern
+def f(x: float) -> float:
+    return x
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"
+        ]
+        self.assertEqual(len(funcs), 1)
+        self.assertEqual(funcs[0].get("decorators"), ["extern"])
+
     def test_quoted_type_annotation_is_normalized(self) -> None:
         src = """
 def f(p: "Path", xs: "list[int]") -> "Path":

@@ -367,6 +367,106 @@ def build_cpp_header_from_east(
     return _build_cpp_header_from_east(east_module, source_path, output_path, top_namespace)
 
 
+def _strip_decorator_head(decorator_name: str) -> str:
+    """`@decorator(...)` 形式から識別子部分のみを取り出す。"""
+    head = decorator_name.strip()
+    paren = head.find("(")
+    if paren >= 0:
+        head = head[:paren].strip()
+    return head
+
+
+def _is_extern_symbol_name(name: str) -> bool:
+    """`extern` シンボル名かを判定する。"""
+    if name == "":
+        return False
+    simple = name
+    dot_pos = simple.rfind(".")
+    if dot_pos >= 0:
+        simple = simple[dot_pos + 1 :]
+    return simple == "extern"
+
+
+def _is_extern_decorator_name(decorator_name: str) -> bool:
+    """decorator 文字列が `extern` を指すかを判定する。"""
+    return _is_extern_symbol_name(_strip_decorator_head(decorator_name))
+
+
+def _unwrap_extern_probe_expr(expr: Any) -> Any:
+    """extern 判定時に `Unbox` ラッパを剥がす。"""
+    cur = expr
+    while isinstance(cur, dict) and dict_any_get_str(cur, "kind") == "Unbox":
+        inner = cur.get("value")
+        if not isinstance(inner, dict):
+            break
+        cur = inner
+    return cur
+
+
+def _is_extern_call_expr(expr: Any) -> bool:
+    """`extern(...)` 呼び出し式かを判定する。"""
+    core = _unwrap_extern_probe_expr(expr)
+    if not isinstance(core, dict) or dict_any_get_str(core, "kind") != "Call":
+        return False
+    fn_expr = core.get("func")
+    if not isinstance(fn_expr, dict):
+        return False
+    fn_kind = dict_any_get_str(fn_expr, "kind")
+    if fn_kind == "Name":
+        return _is_extern_symbol_name(dict_any_get_str(fn_expr, "id"))
+    if fn_kind == "Attribute":
+        return _is_extern_symbol_name(dict_any_get_str(fn_expr, "attr"))
+    return False
+
+
+def _is_extern_function_decl(stmt: Any) -> bool:
+    """FunctionDef が `@extern` 宣言かを判定する。"""
+    if not isinstance(stmt, dict) or dict_any_get_str(stmt, "kind") != "FunctionDef":
+        return False
+    decorators = stmt.get("decorators")
+    if not isinstance(decorators, list):
+        return False
+    for decorator in decorators:
+        if isinstance(decorator, str) and _is_extern_decorator_name(decorator):
+            return True
+    return False
+
+
+def _is_extern_variable_decl(stmt: Any) -> bool:
+    """Assign/AnnAssign が `extern(...)` 初期化の宣言かを判定する。"""
+    if not isinstance(stmt, dict):
+        return False
+    kind = dict_any_get_str(stmt, "kind")
+    if kind not in {"Assign", "AnnAssign"}:
+        return False
+    return _is_extern_call_expr(stmt.get("value"))
+
+
+def _is_runtime_module_extern_only(east_module: dict[str, Any]) -> bool:
+    """runtime モジュールが extern 宣言のみで構成されるかを判定する。"""
+    body_any = east_module.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    saw_extern_decl = False
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            continue
+        kind = dict_any_get_str(stmt, "kind")
+        if kind in {"Import", "ImportFrom"}:
+            continue
+        if kind == "Expr":
+            expr = stmt.get("value")
+            if isinstance(expr, dict) and dict_any_get_str(expr, "kind") == "Constant" and isinstance(
+                expr.get("value"), str
+            ):
+                continue
+            return False
+        if _is_extern_function_decl(stmt) or _is_extern_variable_decl(stmt):
+            saw_extern_decl = True
+            continue
+        return False
+    return saw_extern_decl
+
+
 
 
 def _analyze_import_graph(entry_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
@@ -733,8 +833,23 @@ def main(argv: list[str]) -> int:
             out_root = RUNTIME_CPP_GEN_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
-            mkdirs_for_cli(path_parent_text(cpp_out))
             mkdirs_for_cli(path_parent_text(hdr_out))
+            extern_only_runtime_module = _is_runtime_module_extern_only(east_module)
+            if extern_only_runtime_module:
+                hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns)
+                generated_lines_runtime = count_text_lines(hdr_txt_runtime)
+                check_guard_limit(
+                    "emit",
+                    "max_generated_lines",
+                    generated_lines_runtime,
+                    guard_limits,
+                    str(input_path),
+                )
+                write_text_file(hdr_out, hdr_txt_runtime)
+                print("generated: " + str(hdr_out))
+                print("skipped: header-only extern module (no .cpp): " + str(cpp_out))
+                return 0
+            mkdirs_for_cli(path_parent_text(cpp_out))
             runtime_ns_map: dict[str, str] = {}
             cpp_txt_runtime: str = _transpile_to_cpp_with_map(
                 east_module,

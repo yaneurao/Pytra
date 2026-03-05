@@ -5631,6 +5631,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     import_binding_names: set[str] = set()
     first_item_attached = False
     pending_dataclass = False
+    pending_top_level_decorators: list[str] = []
 
     top_lines: list[tuple[int, str]] = []
     line_idx = 1
@@ -5657,6 +5658,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i += 1
             continue
         if ln.startswith(" "):
+            i += 1
+            continue
+        if s.startswith("@"):
+            dec_name = s[1:].strip()
+            if dec_name == "dataclass":
+                pending_dataclass = True
+            elif dec_name != "":
+                pending_top_level_decorators.append(dec_name)
             i += 1
             continue
 
@@ -5734,6 +5743,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             col=default_col,
                             name_types=dict(arg_types),
                         )
+            fn_decorators = list(pending_top_level_decorators)
+            pending_top_level_decorators = []
             item: dict[str, Any] = {
                 "kind": "FunctionDef",
                 "name": fn_name,
@@ -5753,6 +5764,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "is_generator": 1 if is_generator else 0,
                 "yield_value_type": yield_value_type,
             }
+            if len(fn_decorators) > 0:
+                item["decorators"] = fn_decorators
             fn_returns[fn_name] = fn_ret_effective
             _SH_FN_RETURNS[fn_name] = fn_ret_effective
             if not first_item_attached:
@@ -5763,10 +5776,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        if s == "@dataclass":
-            pending_dataclass = True
-            i += 1
-            continue
+        if len(pending_top_level_decorators) > 0:
+            pending_top_level_decorators = []
         m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
         if m_import is not None:
             names_txt = re.strip_group(m_import, 1)
@@ -5954,10 +5965,6 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             )
             i = logical_end + 1
             continue
-        if s.startswith("@"):
-            i += 1
-            continue
-
         cls_hdr_info = _sh_parse_class_header_base_list(s)
         if cls_hdr_info is not None:
             cls_name_info, bases_info = cls_hdr_info
