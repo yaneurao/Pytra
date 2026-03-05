@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/utils/assertions.h"
+#include "runtime/cpp/utils/assertions.h"
 
 
 namespace pytra::utils::assertions {

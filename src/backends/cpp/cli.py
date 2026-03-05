@@ -833,7 +833,9 @@ def main(argv: list[str]) -> int:
             # std モジュールは `runtime/cpp/std/` を正本生成先とする。
             # utils/compiler/built_in は従来どおり `runtime/cpp/gen/` を使う。
             is_std_runtime_output = module_tail == "std" or module_tail.startswith("std/")
-            is_root_utils_runtime_output = rel_tail == "utils/png" or rel_tail == "utils/gif"
+            is_root_utils_runtime_output = (
+                rel_tail == "utils/assertions" or rel_tail == "utils/png" or rel_tail == "utils/gif"
+            )
             is_root_runtime_output = is_std_runtime_output or is_root_utils_runtime_output
             out_root = Path("src/runtime/cpp") if is_root_runtime_output else RUNTIME_CPP_GEN_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")

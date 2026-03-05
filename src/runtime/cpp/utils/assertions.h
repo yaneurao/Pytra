@@ -5,6 +5,8 @@
 #ifndef PYTRA_UTILS_ASSERTIONS_H
 #define PYTRA_UTILS_ASSERTIONS_H
 
+#include "runtime/cpp/core/built_in/py_runtime.h"
+
 namespace pytra::utils::assertions {
 
 bool _eq_any(const object& actual, const object& expected);

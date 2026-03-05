@@ -151,11 +151,13 @@ CPP_GENERATED_UTILS_MODULES = [
 ]
 
 CPP_UTILS_HEADER_LOCATIONS: dict[str, str] = {
+    "assertions": "src/runtime/cpp/utils/assertions.h",
     "gif": "src/runtime/cpp/utils/gif.h",
     "png": "src/runtime/cpp/utils/png.h",
 }
 
 CPP_UTILS_SOURCE_LOCATIONS: dict[str, str] = {
+    "assertions": "src/runtime/cpp/utils/assertions.cpp",
     "gif": "src/runtime/cpp/utils/gif.cpp",
     "png": "src/runtime/cpp/utils/png.cpp",
 }
@@ -189,6 +191,12 @@ CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
     "os-manual.cpp": "src/runtime/cpp/std/os-manual.cpp",
     "time-manual.cpp": "src/runtime/cpp/std/time-manual.cpp",
 }
+
+CPP_ROOT_GENERATED_RUNTIME_FILES: set[str] = set()
+CPP_ROOT_GENERATED_RUNTIME_FILES.update(CPP_STD_HEADER_LOCATIONS.values())
+CPP_ROOT_GENERATED_RUNTIME_FILES.update(CPP_STD_SOURCE_LOCATIONS.values())
+CPP_ROOT_GENERATED_RUNTIME_FILES.update(CPP_UTILS_HEADER_LOCATIONS.values())
+CPP_ROOT_GENERATED_RUNTIME_FILES.update(CPP_UTILS_SOURCE_LOCATIONS.values())
 
 
 def _parse_allowlist() -> dict[str, set[str]]:
@@ -233,7 +241,10 @@ def _is_generated_runtime(rel_path: str) -> bool:
     if "/pytra-gen/" in ("/" + rel_path):
         return True
     # C++ runtime has migrated to core/gen layout.
-    return rel_path.startswith("src/runtime/cpp/gen/")
+    if rel_path.startswith("src/runtime/cpp/gen/"):
+        return True
+    # C++ root std/utils generated files (migrated out of gen/).
+    return rel_path in CPP_ROOT_GENERATED_RUNTIME_FILES
 
 
 def _check_cpp_runtime_shape(violations: list[str]) -> None:
