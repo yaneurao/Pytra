@@ -2637,8 +2637,10 @@ class CSharpEmitter(CodeEmitter):
     def _render_call(self, expr: dict[str, Any]) -> str:
         semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
+        runtime_source = "runtime_call"
         if runtime_call == "":
             runtime_call = self.any_dict_get_str(expr, "resolved_runtime_call", "")
+            runtime_source = "resolved_runtime_call" if runtime_call != "" else ""
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("csharp emitter: unresolved stdlib runtime call: " + semantic_tag)
 
@@ -2677,6 +2679,14 @@ class CSharpEmitter(CodeEmitter):
             owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
             attr_raw = self.any_dict_get_str(fn_node, "attr", "")
             return self._render_attr_call(owner_node, attr_raw, rendered_args)
+        if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+            raise RuntimeError(
+                "csharp emitter: unresolved stdlib runtime mapping: "
+                + semantic_tag
+                + " ("
+                + runtime_call
+                + ")"
+            )
 
         fn_expr = self.render_expr(fn_node)
         return fn_expr + "(" + ", ".join(rendered_args) + ")"
@@ -2738,9 +2748,11 @@ class CSharpEmitter(CodeEmitter):
             owner_name = self.any_dict_get_str(owner_node, "id", "")
             attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
             runtime_call = self.any_dict_get_str(expr_d, "runtime_call", "")
+            runtime_source = "runtime_call"
             semantic_tag = self.any_dict_get_str(expr_d, "semantic_tag", "")
             if runtime_call == "":
                 runtime_call = self.any_dict_get_str(expr_d, "resolved_runtime_call", "")
+                runtime_source = "resolved_runtime_call" if runtime_call != "" else ""
             if semantic_tag.startswith("stdlib.") and runtime_call == "":
                 raise RuntimeError("csharp emitter: unresolved stdlib runtime attribute: " + semantic_tag)
             if runtime_call == "path_parent":
@@ -2755,6 +2767,14 @@ class CSharpEmitter(CodeEmitter):
                 return "Pytra.CsModule.time." + attr
             if owner_kind == "Name" and owner_name == "sys" and attr == "argv" and not self.is_declared(owner_name):
                 return "args"
+            if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+                raise RuntimeError(
+                    "csharp emitter: unresolved stdlib runtime attribute mapping: "
+                    + semantic_tag
+                    + " ("
+                    + runtime_call
+                    + ")"
+                )
             return self.render_expr(owner_node) + "." + attr
 
         if kind == "UnaryOp":

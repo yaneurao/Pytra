@@ -41,7 +41,7 @@
 3. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend 解決済み呼び出し契約（call/attr/module/type）を固定する。
 4. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正する。
 5. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
-6. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter のフォールバックを fail-closed 化し、推測レンダリングを禁止する。
+6. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter のフォールバックを fail-closed 化し、推測レンダリングを禁止する。
 7. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を CI 必須導線へ追加する。
 8. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新して非退行を固定する。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] `work/logs/backend_boundary_audit_hits_20260305_s1_01.txt`（179件）を `branch/dispatch/runtime実装混在` に分類し、`lua -> scala -> rs` を先行是正順として固定。
@@ -56,6 +56,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] 残ヒット（`go/cs/js/cpp`）は import/runtime map 解決・診断文字列・互換コメントに分類し、生AST再解決フォールバックは対象 backend で撤去完了。以降は `S2-03`（fail-closed 強化）/`S3-01`（CIガード）で拘束する。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `php/go` で stdlib runtime_call の空振り時フォールバックを縮退し、`resolved_runtime_call` 経路は fail-closed 化。`go` の `runtime_call=std::filesystem::*`（legacy表現）は現状 target解決不足のため従来フォールバックを維持し、`test_py2php_smoke.py`（10件）/`test_py2go_smoke.py`（16件）は通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `kotlin` でも `resolved_runtime_call` の空振り時フォールバックを例外化し、stdlib call/attribute の fail-closed を補強。`test_py2kotlin_smoke.py`（16件）通過。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `js/cs/nim` でも `resolved_runtime_call` 空振り時の stdlib fallback を例外化し、call/attribute の推測レンダリングを停止。`test_py2js_smoke.py`（22件）/`test_py2nim_smoke.py`（3件）通過、`test_py2cs_smoke.py` は既存 baseline の `failures=11` を維持（新規悪化なし）。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
