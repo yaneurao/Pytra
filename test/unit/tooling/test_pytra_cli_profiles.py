@@ -12,6 +12,8 @@ if str(ROOT / "src") not in sys.path:
 
 from toolchain.compiler.pytra_cli_profiles import (
     get_target_profile,
+    list_parity_targets,
+    list_supported_targets,
     make_noncpp_build_plan,
     resolve_output_path,
     validate_profile_option_compatibility,
@@ -93,6 +95,18 @@ class PytraCliProfilesTest(unittest.TestCase):
             exe="app.out",
         )
         self.assertIn("--compiler/--std/--opt/--exe", err)
+
+    def test_target_lists_are_stable(self) -> None:
+        supported = list_supported_targets()
+        self.assertIn("cpp", supported)
+        self.assertIn("nim", supported)
+        parity = list_parity_targets()
+        self.assertEqual(parity[0], "cpp")
+        self.assertEqual(parity[-1], "nim")
+
+    def test_runner_needs_are_defined(self) -> None:
+        profile = get_target_profile("kotlin")
+        self.assertEqual(profile.runner_needs, ("python", "kotlinc", "java"))
 
 
 if __name__ == "__main__":
