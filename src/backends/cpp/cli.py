@@ -58,7 +58,6 @@ build_module_type_schema = East1BuildHelpers.build_module_type_schema
 from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
 
-from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_COMPAT_ROOT
 from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_GEN_ROOT
 from backends.cpp.emitter.runtime_paths import is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
 from backends.cpp.emitter.runtime_paths import join_runtime_path as _join_runtime_path_impl
@@ -133,7 +132,7 @@ SCOPE_NESTING_KINDS: set[str] = {
 }
 
 
-CPP_HEADER = """#include "runtime/cpp/pytra/built_in/py_runtime.h"
+CPP_HEADER = """#include "runtime/cpp/core/built_in/py_runtime.h"
 
 """
 
@@ -732,15 +731,10 @@ def main(argv: list[str]) -> int:
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
             out_root = RUNTIME_CPP_GEN_ROOT
-            compat_root = RUNTIME_CPP_COMPAT_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
-            compat_cpp_out = _join_runtime_path(compat_root, rel_tail + ".cpp")
-            compat_hdr_out = _join_runtime_path(compat_root, rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(cpp_out))
             mkdirs_for_cli(path_parent_text(hdr_out))
-            mkdirs_for_cli(path_parent_text(compat_cpp_out))
-            mkdirs_for_cli(path_parent_text(compat_hdr_out))
             runtime_ns_map: dict[str, str] = {}
             cpp_txt_runtime: str = _transpile_to_cpp_with_map(
                 east_module,
@@ -762,11 +756,11 @@ def main(argv: list[str]) -> int:
                 dump_cpp_opt_trace,
                 cpp_list_model_opt,
             )
-            own_runtime_header = '#include "pytra/' + rel_tail + '.h"'
+            own_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
-                old_runtime_include = '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n'
+                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/pytra/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime = replace_first(
                     cpp_txt_runtime,
@@ -779,34 +773,8 @@ def main(argv: list[str]) -> int:
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
             write_text_file(hdr_out, hdr_txt_runtime)
-            compat_hdr_txt = (
-                join_str_list(
-                    "\n",
-                    [
-                        "// FORWARDER: generated runtime header moved to pytra-gen.",
-                        "#pragma once",
-                        "",
-                        f'#include "runtime/cpp/pytra-gen/{rel_tail}.h"',
-                    ],
-                )
-                + "\n"
-            )
-            compat_cpp_txt = (
-                join_str_list(
-                    "\n",
-                    [
-                        "// FORWARDER TU: generated runtime source moved to pytra-gen.",
-                        f'#include "runtime/cpp/pytra-gen/{rel_tail}.cpp"',
-                    ],
-                )
-                + "\n"
-            )
-            write_text_file(compat_hdr_out, compat_hdr_txt)
-            write_text_file(compat_cpp_out, compat_cpp_txt)
             print("generated: " + str(hdr_out))
             print("generated: " + str(cpp_out))
-            print("updated: " + str(compat_hdr_out))
-            print("updated: " + str(compat_cpp_out))
             return 0
         if single_file:
             empty_ns: dict[str, str] = {}

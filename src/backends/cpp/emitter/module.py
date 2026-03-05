@@ -4,6 +4,7 @@ from pathlib import Path
 
 from pytra.std.typing import Any
 from backends.cpp.emitter.runtime_paths import (
+    module_name_to_cpp_include as _module_name_to_cpp_include_impl,
     module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
     runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl,
 )
@@ -44,19 +45,19 @@ class CppModuleEmitter:
         if module_name_norm.startswith("pytra.std."):
             tail = module_name_norm[10:]
             if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return "pytra/std/" + _module_tail_to_cpp_header_path(tail)
+                return _module_name_to_cpp_include_impl(module_name_norm)
         if module_name_norm.startswith("pytra.utils."):
             tail = module_name_norm[12:]
             if python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return "pytra/utils/" + _module_tail_to_cpp_header_path(tail)
+                return _module_name_to_cpp_include_impl(module_name_norm)
         if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
             tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
             if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return "pytra/compiler/" + _module_tail_to_cpp_header_path(tail)
+                return _module_name_to_cpp_include_impl(module_name_norm)
         if module_name_norm.startswith("pytra.built_in."):
             tail = module_name_norm[15:]
             if python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return "pytra/built_in/" + _module_tail_to_cpp_header_path(tail)
+                return _module_name_to_cpp_include_impl(module_name_norm)
         if module_name_norm.find(".") < 0:
             # Accept bare stdlib-style imports such as `import math` / `import time`.
             bare_tail = module_name_norm
@@ -65,7 +66,7 @@ class CppModuleEmitter:
                 python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, bare_tail)
                 and _runtime_cpp_header_exists_for_module(mapped_module)
             ):
-                return "pytra/std/" + _module_tail_to_cpp_header_path(bare_tail)
+                return _module_name_to_cpp_include_impl(mapped_module)
         return ""
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
@@ -102,16 +103,16 @@ class CppModuleEmitter:
             ):
                 return "pytra::std::" + bare_tail.replace(".", "::")
         inc = self._module_name_to_cpp_include(module_name_norm)
-        if inc.startswith("pytra/std/") and inc.endswith(".h"):
-            tail: str = inc[10 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("runtime/cpp/gen/std/") and inc.endswith(".h"):
+            tail: str = inc[20 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::" + tail
-        if inc.startswith("pytra/utils/") and inc.endswith(".h"):
-            tail: str = inc[12 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("runtime/cpp/gen/utils/") and inc.endswith(".h"):
+            tail: str = inc[22 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::utils::" + tail
-        if inc.startswith("pytra/compiler/") and inc.endswith(".h"):
-            tail = inc[15 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("runtime/cpp/gen/compiler/") and inc.endswith(".h"):
+            tail = inc[25 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::compiler::" + tail
         return ""
