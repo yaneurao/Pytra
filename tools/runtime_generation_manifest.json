@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "generated_by": "tools/gen_runtime_from_manifest.py",
+  "items": [
+    {
+      "id": "utils/png",
+      "source": "src/pytra/utils/png.py",
+      "bucket": "utils",
+      "targets": [
+        { "target": "cpp", "output": "src/runtime/cpp/pytra-gen/utils/png.cpp" },
+        { "target": "rs", "output": "src/runtime/rs/pytra-gen/utils/png.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/pytra-gen/utils/png.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "png_helper"
+        },
+        { "target": "js", "output": "src/runtime/js/pytra-gen/utils/png.js" },
+        { "target": "ts", "output": "src/runtime/ts/pytra-gen/utils/png.ts" },
+        { "target": "go", "output": "src/runtime/go/pytra-gen/utils/png.go" },
+        { "target": "java", "output": "src/runtime/java/pytra-gen/utils/png.java" },
+        { "target": "swift", "output": "src/runtime/swift/pytra-gen/utils/png_helper.swift" },
+        { "target": "kotlin", "output": "src/runtime/kotlin/pytra-gen/utils/png_helper.kt" },
+        { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/png_helper.rb" },
+        { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/png_helper.lua" },
+        { "target": "scala", "output": "src/runtime/scala/pytra-gen/utils/png_helper.scala" },
+        { "target": "php", "output": "src/runtime/php/pytra-gen/runtime/png.php" },
+        { "target": "nim", "output": "src/runtime/nim/pytra-gen/utils/png_helper.nim" }
+      ]
+    },
+    {
+      "id": "utils/gif",
+      "source": "src/pytra/utils/gif.py",
+      "bucket": "utils",
+      "targets": [
+        { "target": "cpp", "output": "src/runtime/cpp/pytra-gen/utils/gif.cpp" },
+        { "target": "rs", "output": "src/runtime/rs/pytra-gen/utils/gif.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/pytra-gen/utils/gif.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "gif_helper"
+        },
+        { "target": "js", "output": "src/runtime/js/pytra-gen/utils/gif.js" },
+        { "target": "ts", "output": "src/runtime/ts/pytra-gen/utils/gif.ts" },
+        { "target": "go", "output": "src/runtime/go/pytra-gen/utils/gif.go" },
+        { "target": "java", "output": "src/runtime/java/pytra-gen/utils/gif.java" },
+        { "target": "swift", "output": "src/runtime/swift/pytra-gen/utils/gif_helper.swift" },
+        { "target": "kotlin", "output": "src/runtime/kotlin/pytra-gen/utils/gif_helper.kt" },
+        { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/gif_helper.rb" },
+        { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/gif_helper.lua" },
+        { "target": "scala", "output": "src/runtime/scala/pytra-gen/utils/gif_helper.scala" },
+        { "target": "php", "output": "src/runtime/php/pytra-gen/runtime/gif.php" },
+        { "target": "nim", "output": "src/runtime/nim/pytra-gen/utils/gif_helper.nim" }
+      ]
+    },
+    {
+      "id": "std/time",
+      "source": "src/pytra/std/time.py",
+      "bucket": "std",
+      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/time.java" }]
+    },
+    {
+      "id": "std/json",
+      "source": "src/pytra/std/json.py",
+      "bucket": "std",
+      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/json.java" }]
+    },
+    {
+      "id": "std/pathlib",
+      "source": "src/pytra/std/pathlib.py",
+      "bucket": "std",
+      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/pathlib.java" }]
+    },
+    {
+      "id": "std/math",
+      "source": "src/pytra/std/math.py",
+      "bucket": "std",
+      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/math.java" }]
+    }
+  ]
+}
