@@ -42,12 +42,17 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-EXTERN-HDRONLY-01-S1-01] `@extern` 関数/変数の EAST 属性契約を整理し、C++ backend が参照する最小フラグを固定する。
-- [ ] [ID: P0-CPP-EXTERN-HDRONLY-01-S1-02] C++ runtime 生成で extern-only module 判定を実装し、`gen/*.cpp` 生成を抑止する。
-- [ ] [ID: P0-CPP-EXTERN-HDRONLY-01-S2-01] `math` 実体を `runtime/cpp/core/std/math.cpp` 正本へ移し、`gen/std/math.cpp` 依存を撤去する。
-- [ ] [ID: P0-CPP-EXTERN-HDRONLY-01-S2-02] build manifest / backend registry を `math` core 実体参照へ更新する。
-- [ ] [ID: P0-CPP-EXTERN-HDRONLY-01-S3-01] `math.h` 生成と `.cpp` 非生成を固定する unit 回帰を追加する。
-- [ ] [ID: P0-CPP-EXTERN-HDRONLY-01-S3-02] C++ fixture/sample parity で非退行を確認し、決定ログへ記録する。
+- [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S1-01] `@extern` 関数/変数の EAST 属性契約を整理し、C++ backend が参照する最小フラグを固定する。
+- [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S1-02] C++ runtime 生成で extern-only module 判定を実装し、`gen/*.cpp` 生成を抑止する。
+- [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S2-01] `math` 実体を `runtime/cpp/core/std/math.cpp` 正本へ移し、`gen/std/math.cpp` 依存を撤去する。
+- [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S2-02] build manifest / backend registry を `math` core 実体参照へ更新する。
+- [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S3-01] `math.h` 生成と `.cpp` 非生成を固定する unit 回帰を追加する。
+- [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S3-02] C++ fixture/sample parity で非退行を確認し、決定ログへ記録する。
 
 決定ログ:
 - 2026-03-06: ユーザー指示により、`@extern` モジュールは `gen` 側 `.h` のみを生成し、実体は `core` 事前配置を正本とする方針を採用した（`math` 先行）。
+- 2026-03-06: self_hosted parser でトップレベル decorator を保持するように変更し、`pytra.std.math` の `@extern` を `FunctionDef.decorators=["extern"]` として EAST へ渡す契約に統一した。
+- 2026-03-06: C++ backend に extern-only 判定を実装し、`python3 src/py2x.py --target cpp src/pytra/std/math.py --emit-runtime-cpp` で `src/runtime/cpp/gen/std/math.h` のみ生成、`.cpp` は `skipped` 表示になることを確認した。
+- 2026-03-06: `src/runtime/cpp/core/std/math.cpp` を正本として追加し、`src/runtime/cpp/gen/std/math.cpp` を削除した。`tools/check_runtime_std_sot_guard.py` も header-only (`math`) 契約を検証するよう更新した。
+- 2026-03-06: 回帰として `test_emit_runtime_cpp_skips_cpp_for_extern_only_module` を追加し、`math.h` 生成 + `.cpp` 非生成を固定した。
+- 2026-03-06: `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture --ignore-unstable-stdout`（3/3 pass）、`--case-root sample 01_mandelbrot 16_glass_sculpture_chaos --ignore-unstable-stdout`（2/2 pass）を確認した。
