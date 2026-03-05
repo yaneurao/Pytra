@@ -40,7 +40,7 @@
 2. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 監査ヒットを backend 別に違反タイプへ分類し、修正順序を確定する。
 3. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] EAST3 -> backend 解決済み呼び出し契約（call/attr/module/type）を固定する。
 4. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua/scala/rs` の高密度違反箇所を先行是正する。
-5. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
+5. [x] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs/php/go/nim/kotlin/js/cpp` の残件を同方針で是正する。
 6. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] emitter のフォールバックを fail-closed 化し、推測レンダリングを禁止する。
 7. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] 責務境界ガード（禁止分岐/禁止文字列/禁止dispatch）を CI 必須導線へ追加する。
 8. [ ] [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] unit/smoke/parity 回帰を更新して非退行を固定する。
@@ -53,6 +53,7 @@
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `kotlin_native_emitter.py` / `nim_native_emitter.py` の `math` 生AST再解決フォールバック（型推論・call/attr）を撤去し、`kotlin+nim` ヒットを `8 -> 3`、全 backend 合計を `72 -> 67` に縮退。`test_py2kotlin_smoke.py`（16件）/ `test_py2nim_smoke.py`（3件）通過。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `cs_emitter.py` の `owner=="math/png/gif"` 生ASTフォールバック（call/attr）を撤去し、`cs` ヒットを `20 -> 8`、全 backend 合計を `67 -> 55` に縮退。`test_py2cs_smoke.py` は既存 baseline と同じ `failures=11` を維持（新規悪化なし）。
 - 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `nim_native_emitter.py` の式文フォールバックから `save_gif` / `write_rgb_png` 直判定を撤去し、`nim` ヒットを `3 -> 1`、全 backend 合計を `55 -> 53` に縮退。`test_py2nim_smoke.py`（3件）再通過を確認。
+- 進捗メモ: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] 残ヒット（`go/cs/js/cpp`）は import/runtime map 解決・診断文字列・互換コメントに分類し、生AST再解決フォールバックは対象 backend で撤去完了。以降は `S2-03`（fail-closed 強化）/`S3-01`（CIガード）で拘束する。
 
 ### P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
