@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/sys.py
-// generated-by: src/py2cpp.py
+// generated-by: src/backends/cpp/cli.py
 
 #ifndef PYTRA_STD_SYS_H
 #define PYTRA_STD_SYS_H
@@ -12,7 +12,7 @@ extern list<str> path;
 extern object stderr;
 extern object stdout;
 
-void exit(int64 code = 0);
+void exit(int64 code);
 list<str> _to_str_list_fallback(const object& values);
 void set_argv(const object& values);
 void set_path(const object& values);

@@ -1,7 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/dataclasses.py
-// generated-by: src/py2cpp.py
-
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include "runtime/cpp/gen/std/dataclasses.h"
@@ -11,14 +10,16 @@
 
 namespace pytra::std::dataclasses {
 
-    /* pytra.std.dataclasses: thin wrapper over dataclasses_impl. */
-    
-    
-    
-    
-    object dataclass(const object& _cls, bool init, bool repr, bool eq) {
+    object dataclass(const object& _cls, bool init = true, bool repr = true, bool eq = true) {
         /* `@dataclass` の最小互換入口。実装本体は dataclasses_impl 側。 */
-        return pytra::std::dataclasses_impl::dataclass(_cls, init, repr, eq);
+        return make_object(pytra::std::dataclasses_impl::dataclass(_cls, init, repr, eq));
+    }
+    
+    static void __pytra_module_init() {
+        static bool __initialized = false;
+        if (__initialized) return;
+        __initialized = true;
+        /* pytra.std.dataclasses: thin wrapper over dataclasses_impl. */
     }
     
 }  // namespace pytra::std::dataclasses

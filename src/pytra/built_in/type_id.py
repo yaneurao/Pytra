@@ -109,6 +109,7 @@ def _register_type_node(type_id: int, base_type_id: int) -> None:
     children = _TYPE_CHILDREN[base_type_id]
     if not _contains_int(children, type_id):
         children.append(type_id)
+        _TYPE_CHILDREN[base_type_id] = children
 
 
 def _sorted_child_type_ids(type_id: int) -> list[int]:
@@ -211,8 +212,9 @@ def py_tid_register_class_type(base_type_id: int = _tid_object()) -> int:
 def _try_runtime_tagged_type_id(value: Any) -> int:
     tagged = getattr(value, "PYTRA_TYPE_ID", None)
     if isinstance(tagged, int):
-        if tagged in _TYPE_BASE:
-            return tagged
+        tagged_id = int(tagged)
+        if tagged_id in _TYPE_BASE:
+            return tagged_id
     return -1
 
 

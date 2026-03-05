@@ -853,10 +853,12 @@ class CppEmitter(
                 module_runtime_dicts.append(stmt)
         module_globals = self._collect_module_global_decls(module_runtime)
 
+        module_global_names: set[str] = set()
         for g_name, g_ty in module_globals:
             self.emit(f"{self._cpp_type_text(g_ty)} {g_name};")
             self.declare_in_current_scope(g_name)
             self.declared_var_types[g_name] = g_ty
+            module_global_names.add(g_name)
         if len(module_globals) > 0:
             self.emit("")
 
@@ -878,7 +880,8 @@ class CppEmitter(
             self.emit("static bool __initialized = false;")
             self.emit("if (__initialized) return;")
             self.emit("__initialized = true;")
-            self.scope_stack.append(set())
+            # module init 内で top-level 代入を実行する際、global 変数の再宣言を防ぐ。
+            self.scope_stack.append(set(module_global_names))
             self.emit_stmt_list(module_runtime_dicts)
             self.scope_stack.pop()
             self.indent -= 1
@@ -1648,7 +1651,7 @@ class CppEmitter(
             rv = self._rewrite_empty_collection_literal_for_typed_target(rv, value_node, ret_t)
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
-        if self.is_any_like_type(ret_t) and (not self.is_any_like_type(expr_t)):
+        if self.is_any_like_type(ret_t):
             rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
             rv = self._coerce_any_expr_to_target_via_unbox(
@@ -2427,6 +2430,11 @@ class CppEmitter(
         # `source_node` の型が unknown でも、描画済みテキストが既知変数なら
         # 宣言型ヒントから再判定して過剰 boxing を避ける。
         src_t = self.infer_rendered_arg_type(expr_txt, src_t, self.declared_var_types)
+        if self.is_any_like_type(src_t):
+            rendered_name = self._strip_outer_parens(self._trim_ws(expr_txt))
+            declared_t = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(rendered_name, "")))
+            if declared_t not in {"", "unknown"} and (not self.is_any_like_type(declared_t)):
+                src_t = declared_t
         if self.is_any_like_type(src_t):
             return expr_txt
         return f"make_object({expr_txt})"

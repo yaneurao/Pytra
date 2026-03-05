@@ -1,13 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/utils/assertions.py
-// generated-by: src/py2cpp.py
-
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
+
+#include "runtime/cpp/gen/utils/assertions.h"
 
 
 namespace pytra::utils::assertions {
 
-    
     bool _eq_any(const object& actual, const object& expected) {
         try {
             return py_to_string(actual) == py_to_string(expected);
@@ -17,7 +17,7 @@ namespace pytra::utils::assertions {
         }
     }
     
-    bool py_assert_true(bool cond, const str& label) {
+    bool py_assert_true(bool cond, const str& label = "") {
         if (cond)
             return true;
         if (label != "")
@@ -27,7 +27,7 @@ namespace pytra::utils::assertions {
         return false;
     }
     
-    bool py_assert_eq(const object& actual, const object& expected, const str& label) {
+    bool py_assert_eq(const object& actual, const object& expected, const str& label = "") {
         bool ok = _eq_any(actual, expected);
         if (ok)
             return true;
@@ -38,8 +38,9 @@ namespace pytra::utils::assertions {
         return false;
     }
     
-    bool py_assert_all(const list<bool>& results, const str& label) {
-        for (bool v : results) {
+    bool py_assert_all(const list<bool>& results, const str& label = "") {
+        for (object __itobj_1 : py_dyn_range(results)) {
+            bool v = py_to<bool>(__itobj_1);
             if (!(v)) {
                 if (label != "")
                     py_print("[assert_all] " + label + ": False");
@@ -53,7 +54,7 @@ namespace pytra::utils::assertions {
     
     bool py_assert_stdout(const list<str>& expected_lines, const object& fn) {
         list<str> _ = expected_lines;
-        _ = static_cast<list<str>>(fn);
+        _ = py_to_str_list_from_object(fn);
         // self_hosted parser / runtime 互換優先: stdout capture は未実装。
         return true;
     }

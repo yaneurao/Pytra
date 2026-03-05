@@ -1,35 +1,19 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/built_in/type_id.py
-// generated-by: src/py2cpp.py
+// generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include "runtime/cpp/gen/built_in/type_id.h"
 
 #include "runtime/cpp/gen/std/typing.h"
 
-struct TypeRegistryState {
-    list<int64> type_ids = list<int64>{};
-    dict<int64, int64> type_base = dict<int64, int64>{};
-    dict<int64, list<int64>> type_children = dict<int64, list<int64>>{};
-    dict<int64, int64> type_order = dict<int64, int64>{};
-    dict<int64, int64> type_min = dict<int64, int64>{};
-    dict<int64, int64> type_max = dict<int64, int64>{};
-    dict<str, int64> type_state = dict<str, int64>{};
-};
-
-static inline TypeRegistryState& _type_registry_state() {
-    static TypeRegistryState state{};
-    return state;
-}
-
-#define _TYPE_IDS (_type_registry_state().type_ids)
-#define _TYPE_BASE (_type_registry_state().type_base)
-#define _TYPE_CHILDREN (_type_registry_state().type_children)
-#define _TYPE_ORDER (_type_registry_state().type_order)
-#define _TYPE_MIN (_type_registry_state().type_min)
-#define _TYPE_MAX (_type_registry_state().type_max)
-#define _TYPE_STATE (_type_registry_state().type_state)
-
+list<int64> _TYPE_IDS;
+dict<int64, int64> _TYPE_BASE;
+dict<int64, list<int64>> _TYPE_CHILDREN;
+dict<int64, int64> _TYPE_ORDER;
+dict<int64, int64> _TYPE_MIN;
+dict<int64, int64> _TYPE_MAX;
+dict<str, int64> _TYPE_STATE;
 
 int64 _tid_none() {
     return 0;
@@ -72,13 +56,13 @@ int64 _tid_user_base() {
 }
 
 list<int64> _make_int_list_0() {
-    list<int64> out = list<int64>{};
+    list<int64> out = {};
     return out;
 }
 
 list<int64> _make_int_list_1(int64 a0) {
-    list<int64> out = list<int64>{};
-    out.append(int64(a0));
+    list<int64> out = {};
+    out.append(a0);
     return out;
 }
 
@@ -93,7 +77,7 @@ bool _contains_int(const list<int64>& items, int64 value) {
 }
 
 list<int64> _copy_int_list(const list<int64>& items) {
-    list<int64> out = list<int64>{};
+    list<int64> out = {};
     int64 i = 0;
     while (i < py_len(items)) {
         out.append(int64(items[i]));
@@ -122,34 +106,36 @@ list<int64> _sorted_ints(const list<int64>& items) {
 
 void _register_type_node(int64 type_id, int64 base_type_id) {
     if (!(_contains_int(_TYPE_IDS, type_id)))
-        _TYPE_IDS.append(type_id);
-    _TYPE_BASE[type_id] = base_type_id;
+        py_append(_TYPE_IDS, make_object(type_id));
+    py_set_at(_TYPE_BASE, type_id, make_object(base_type_id));
     if (!py_contains(_TYPE_CHILDREN, type_id))
-        _TYPE_CHILDREN[type_id] = _make_int_list_0();
+        py_set_at(_TYPE_CHILDREN, type_id, make_object(_make_int_list_0()));
     if (base_type_id < 0)
         return;
     if (!py_contains(_TYPE_CHILDREN, base_type_id))
-        _TYPE_CHILDREN[base_type_id] = _make_int_list_0();
-    auto& children = _TYPE_CHILDREN[base_type_id];
-    if (!(_contains_int(children, type_id)))
-        children.append(type_id);
+        py_set_at(_TYPE_CHILDREN, base_type_id, make_object(_make_int_list_0()));
+    auto children = py_at(_TYPE_CHILDREN, py_to<int64>(base_type_id));
+    if (!(_contains_int(children, type_id))) {
+        py_append(children, make_object(type_id));
+        py_set_at(_TYPE_CHILDREN, base_type_id, make_object(children));
+    }
 }
 
 list<int64> _sorted_child_type_ids(int64 type_id) {
     list<int64> children = _make_int_list_0();
     if (py_contains(_TYPE_CHILDREN, type_id))
-        children = _TYPE_CHILDREN[type_id];
+        children = list<int64>(py_at(_TYPE_CHILDREN, py_to<int64>(type_id)));
     return _sorted_ints(children);
 }
 
 list<int64> _collect_root_type_ids() {
-    list<int64> roots = list<int64>{};
+    list<int64> roots = {};
     int64 i = 0;
     while (i < py_len(_TYPE_IDS)) {
-        auto tid = py_at(_TYPE_IDS, py_to_int64(i));
-        int64 base_tid = -1;
+        auto tid = py_at(_TYPE_IDS, py_to<int64>(i));
+        int64 base_tid = -(1);
         if (py_contains(_TYPE_BASE, tid))
-            base_tid = _TYPE_BASE[tid];
+            base_tid = py_to<int64>(py_at(_TYPE_BASE, py_to<int64>(tid)));
         if ((base_tid < 0) || (!py_contains(_TYPE_BASE, base_tid)))
             roots.append(int64(tid));
         i++;
@@ -158,8 +144,8 @@ list<int64> _collect_root_type_ids() {
 }
 
 int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order) {
-    _TYPE_ORDER[type_id] = next_order;
-    _TYPE_MIN[type_id] = next_order;
+    py_set_at(_TYPE_ORDER, type_id, make_object(next_order));
+    py_set_at(_TYPE_MIN, type_id, make_object(next_order));
     int64 cur = next_order + 1;
     list<int64> children = _sorted_child_type_ids(type_id);
     int64 i = 0;
@@ -167,7 +153,7 @@ int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order) {
         cur = _assign_type_ranges_dfs(children[i], cur);
         i++;
     }
-    _TYPE_MAX[type_id] = cur - 1;
+    py_set_at(_TYPE_MAX, type_id, make_object(cur - 1));
     return cur;
 }
 
@@ -195,11 +181,11 @@ void _recompute_type_ranges() {
 
 void _ensure_builtins() {
     if (!py_contains(_TYPE_STATE, "next_user_type_id"))
-        _TYPE_STATE["next_user_type_id"] = _tid_user_base();
+        py_set_at(_TYPE_STATE, "next_user_type_id", make_object(_tid_user_base()));
     if (py_len(_TYPE_IDS) > 0)
         return;
-    _register_type_node(_tid_none(), -1);
-    _register_type_node(_tid_object(), -1);
+    _register_type_node(_tid_none(), -(1));
+    _register_type_node(_tid_object(), -(1));
     _register_type_node(_tid_int(), _tid_object());
     _register_type_node(_tid_bool(), _tid_int());
     _register_type_node(_tid_float(), _tid_object());
@@ -228,7 +214,7 @@ int64 py_tid_register_class_type(int64 base_type_id) {
     while (py_contains(_TYPE_BASE, tid)) {
         tid++;
     }
-    _TYPE_STATE["next_user_type_id"] = tid + 1;
+    py_set_at(_TYPE_STATE, "next_user_type_id", make_object(tid + 1));
     
     _register_type_node(tid, base_tid);
     _recompute_type_ranges();
@@ -236,8 +222,13 @@ int64 py_tid_register_class_type(int64 base_type_id) {
 }
 
 int64 _try_runtime_tagged_type_id(const object& value) {
-    (void)value;
-    return -1;
+    auto tagged = getattr(value, "PYTRA_TYPE_ID", ::std::nullopt);
+    if (py_isinstance(tagged, PYTRA_TID_INT)) {
+        int64 tagged_id = py_to_int64(tagged);
+        if (py_contains(_TYPE_BASE, tagged_id))
+            return tagged_id;
+    }
+    return -(1);
 }
 
 int64 py_tid_runtime_type_id(const object& value) {
@@ -272,18 +263,18 @@ bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
         return false;
     if (!py_contains(_TYPE_ORDER, expected_type_id))
         return false;
-    auto actual_order = _TYPE_ORDER[actual_type_id];
-    auto expected_min = _TYPE_MIN[expected_type_id];
-    auto expected_max = _TYPE_MAX[expected_type_id];
+    auto actual_order = py_at(_TYPE_ORDER, py_to<int64>(actual_type_id));
+    auto expected_min = py_at(_TYPE_MIN, py_to<int64>(expected_type_id));
+    auto expected_max = py_at(_TYPE_MAX, py_to<int64>(expected_type_id));
     return (expected_min <= actual_order) && (actual_order <= expected_max);
 }
 
 bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id) {
-    return py_tid_is_subtype(actual_type_id, expected_type_id);
+    return py_is_subtype(actual_type_id, expected_type_id);
 }
 
 bool py_tid_isinstance(const object& value, int64 expected_type_id) {
-    return py_tid_is_subtype(py_tid_runtime_type_id(value), expected_type_id);
+    return py_is_subtype(py_runtime_type_id(value), expected_type_id);
 }
 
 void _py_reset_type_registry_for_test() {
@@ -295,6 +286,20 @@ void _py_reset_type_registry_for_test() {
     _TYPE_MIN.clear();
     _TYPE_MAX.clear();
     _TYPE_STATE.clear();
-    _TYPE_STATE["next_user_type_id"] = _tid_user_base();
+    py_set_at(_TYPE_STATE, "next_user_type_id", make_object(_tid_user_base()));
     _ensure_builtins();
+}
+
+static void __pytra_module_init() {
+    static bool __initialized = false;
+    if (__initialized) return;
+    __initialized = true;
+    /* Pure-Python source-of-truth for single-inheritance type_id range semantics. */
+    _TYPE_IDS = {};
+    _TYPE_BASE = {};
+    _TYPE_CHILDREN = {};
+    _TYPE_ORDER = {};
+    _TYPE_MIN = {};
+    _TYPE_MAX = {};
+    _TYPE_STATE = {};
 }
