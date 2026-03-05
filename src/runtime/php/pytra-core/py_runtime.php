@@ -202,6 +202,63 @@ function bytes($v = null): array {
     return bytearray($v);
 }
 
+function __pytra_bytes_to_string($v): string {
+    if (is_string($v)) {
+        return $v;
+    }
+    if (is_array($v)) {
+        if (count($v) === 0) {
+            return '';
+        }
+        $out = '';
+        $chunk = [];
+        foreach ($v as $item) {
+            $chunk[] = ((int)$item) & 0xFF;
+            if (count($chunk) >= 4096) {
+                $out .= pack('C*', ...$chunk);
+                $chunk = [];
+            }
+        }
+        if (count($chunk) > 0) {
+            $out .= pack('C*', ...$chunk);
+        }
+        return $out;
+    }
+    return (string)$v;
+}
+
+class PyFile {
+    private $handle;
+
+    public function __construct(string $path, string $mode = 'r') {
+        $h = @fopen($path, $mode);
+        if ($h === false) {
+            throw new RuntimeException("open failed: " . $path);
+        }
+        $this->handle = $h;
+    }
+
+    public function write($data): int {
+        $s = __pytra_bytes_to_string($data);
+        $w = fwrite($this->handle, $s);
+        if ($w === false) {
+            throw new RuntimeException("write failed");
+        }
+        return $w;
+    }
+
+    public function close(): void {
+        if ($this->handle !== null) {
+            fclose($this->handle);
+            $this->handle = null;
+        }
+    }
+}
+
+function open($path, $mode = 'r'): PyFile {
+    return new PyFile((string)$path, (string)$mode);
+}
+
 function __pytra_list_repeat($v, int $count): array {
     if (!is_array($v) || $count <= 0) {
         return [];

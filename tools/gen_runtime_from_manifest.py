@@ -352,7 +352,14 @@ def rewrite_php_program_to_library(php_src: str) -> str:
         if line.strip() == "__pytra_main();":
             continue
         out.append(line)
-    return "\n".join(out).rstrip() + "\n"
+    text = "\n".join(out)
+    # PHP 配列は値渡しが既定のため、生成 helper の append_list は参照渡し化する。
+    text = re.sub(
+        r"(?m)^function\s+(_[A-Za-z0-9]+_append_list)\(\$([A-Za-z_][A-Za-z0-9_]*),\s*(\$[A-Za-z_][A-Za-z0-9_]*)\)\s*\{",
+        r"function \1(&$\2, \3) {",
+        text,
+    )
+    return text.rstrip() + "\n"
 
 
 def rewrite_cpp_program_to_namespace(cpp_src: str, namespace_name: str) -> str:

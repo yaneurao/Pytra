@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/py_runtime.php';
 
-function _png_append_list($dst, $src) {
+function _png_append_list(&$dst, $src) {
     $i = 0;
     $n = __pytra_len($src);
     while (($i < $n)) {

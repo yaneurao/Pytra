@@ -255,6 +255,9 @@ def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
     call = runtime_call.strip()
     if call == "":
         return ""
+    if runtime_source == "resolved_runtime_call" and call.find(".") < 0:
+        # resolved_runtime_call が単一シンボルの場合は lower/IR 側で確定済み。
+        return call
     dot = call.find(".")
     if dot >= 0:
         module_name = call[:dot].strip()
