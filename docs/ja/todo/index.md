@@ -32,4 +32,16 @@
 
 ## 未完了タスク
 
-現在、未完了タスクはありません。
+### P0: C++ unit 回帰の根本修復（SoT/IR/Emitter/Runtime 契約の整流）
+
+文脈: [docs/ja/plans/p0-cpp-unit-regression-recovery.md](../plans/p0-cpp-unit-regression-recovery.md)
+
+1. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01] C++ unit 回帰を、SoT/IR/Emitter/Runtime 契約の順で根本修復し、unit + fixture/sample parity を再緑化する。
+2. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S1-01] failing test を「generated runtime」「import/include 解決」「container 意味論」「emitter/CLI 契約」に再分類し、修正責務の所属レイヤを固定する。
+3. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-01] `json` generated runtime の破綻を、SoT と C++ runtime 生成契約の修正で解消する（`.gen.*` 手修正禁止）。
+4. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-02] `argparse` generated runtime の破綻を、SoT・reserved name 回避・class/member emission 契約の修正で解消する。
+5. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-01] `pytra.utils.{png,gif}` と `pytra.std.{time,pathlib}` の import 解決・include dedupe/sort・one-to-one module include 契約を修正する。
+6. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-02] `os.path` / `glob` 系 runtime helper 呼び出しを、owner/module metadata に基づく解決へ戻し、C++ emitter の特例依存を減らす。
+7. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S4-01] `dict.items()` / `dict.get()` / `any()` / dict/set comprehension の container-view・iterator 意味論を、built_in SoT と runtime adapter の整合で修正する。
+8. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S4-02] `mod_mode`、stmt dispatch fallback、CLI `dump-options` / error category の C++ emitter 契約を整理し、option 反映と診断整合を修正する。
+9. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S5-01] C++ unit 全体、fixture parity、sample parity を再実行し、回帰が残らないことを確認して docs/ja/todo を更新する。
