@@ -9,14 +9,15 @@ import sys
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from cpp_runtime_deps import ROOT
+from cpp_runtime_deps import collect_runtime_cpp_sources
+
+
 SRC_INCLUDE = ROOT / "src"
 RUNTIME_INCLUDE = ROOT / "src" / "runtime" / "cpp"
 
 
 _OPT_SHORT_RE = re.compile(r"^-O[0-3]$")
-_INCLUDE_RE = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
-
 
 def _normalize_argv(argv: list[str]) -> list[str]:
     normalized: list[str] = []
@@ -72,83 +73,8 @@ def _collect_sources(manifest: dict[str, object], manifest_dir: Path) -> list[st
     return sources
 
 
-def _resolve_include(current_path: Path, include_txt: str, include_dir: Path) -> Path | None:
-    if include_txt.startswith("runtime/cpp/"):
-        cand = ROOT / "src" / include_txt
-        return cand if cand.exists() else None
-    search_roots = [
-        current_path.parent,
-        include_dir,
-        ROOT / "src",
-    ]
-    for base in search_roots:
-        cand = base / include_txt
-        if cand.exists():
-            return cand
-    return None
-
-
-def _runtime_include_targets(path: Path, include_dir: Path) -> list[Path]:
-    if not path.exists():
-        return []
-    out: list[Path] = []
-    for inc in _INCLUDE_RE.findall(path.read_text(encoding="utf-8")):
-        resolved = _resolve_include(path, inc, include_dir)
-        if resolved is not None and str(resolved).startswith(str(RUNTIME_INCLUDE)):
-            out.append(resolved)
-    return out
-
-
-def _discover_runtime_headers(sources: list[str], include_dir: Path) -> list[Path]:
-    seed = RUNTIME_INCLUDE / "core" / "py_runtime.ext.h"
-    queue: list[Path] = [seed]
-    seen: set[Path] = set()
-    ordered: list[Path] = []
-    for src_txt in sources:
-        src_path = Path(src_txt)
-        if not src_path.is_absolute():
-            src_path = (ROOT / src_path).resolve()
-        if not src_path.exists():
-            continue
-        queue.extend(_runtime_include_targets(src_path, include_dir))
-    while queue:
-        header = queue.pop(0)
-        if header in seen or not header.exists():
-            continue
-        seen.add(header)
-        ordered.append(header)
-        queue.extend(_runtime_include_targets(header, include_dir))
-    return ordered
-
-
-def _runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
-    name = header.name
-    if name.endswith(".gen.h"):
-        stem = name[:-len(".gen.h")]
-        return [
-            header.with_name(stem + ".gen.cpp"),
-            header.with_name(stem + ".ext.cpp"),
-        ]
-    if name.endswith(".ext.h"):
-        stem = name[:-len(".ext.h")]
-        return [header.with_name(stem + ".ext.cpp")]
-    return []
-
-
 def _collect_runtime_sources(sources: list[str], include_dir: Path) -> list[str]:
-    out: list[str] = []
-    seen_headers: set[Path] = set()
-    queue: list[Path] = _discover_runtime_headers(sources, include_dir)
-    while queue:
-        header = queue.pop(0)
-        if header in seen_headers:
-            continue
-        seen_headers.add(header)
-        for runtime_src in _runtime_cpp_candidates_from_header(header):
-            if runtime_src.exists():
-                out.append(str(runtime_src))
-                queue.extend(_runtime_include_targets(runtime_src, include_dir))
-    return sorted(set(out))
+    return sorted(set(str(ROOT / rel) for rel in collect_runtime_cpp_sources(sources, include_dir)))
 
 
 def _as_makefile_path(manifest_path: Path, output: str) -> Path:
