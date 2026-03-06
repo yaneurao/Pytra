@@ -34,7 +34,7 @@ int64 _normalize_index(int64 idx, int64 n) {
     return out;
 }
 
-str py_bi_lstrip(const str& s) {
+str py_lstrip(const str& s) {
     int64 i = 0;
     int64 n = py_len(s);
     while ((i < n) && (_is_space(s[i]))) {
@@ -43,7 +43,7 @@ str py_bi_lstrip(const str& s) {
     return py_slice(s, i, n);
 }
 
-str py_bi_lstrip_chars(const str& s, const str& chars) {
+str py_lstrip_chars(const str& s, const str& chars) {
     int64 i = 0;
     int64 n = py_len(s);
     while ((i < n) && (_contains_char(chars, s[i]))) {
@@ -52,7 +52,7 @@ str py_bi_lstrip_chars(const str& s, const str& chars) {
     return py_slice(s, i, n);
 }
 
-str py_bi_rstrip(const str& s) {
+str py_rstrip(const str& s) {
     int64 n = py_len(s);
     int64 i = n - 1;
     while ((i >= 0) && (_is_space(s[i]))) {
@@ -61,7 +61,7 @@ str py_bi_rstrip(const str& s) {
     return py_slice(s, 0, i + 1);
 }
 
-str py_bi_rstrip_chars(const str& s, const str& chars) {
+str py_rstrip_chars(const str& s, const str& chars) {
     int64 n = py_len(s);
     int64 i = n - 1;
     while ((i >= 0) && (_contains_char(chars, s[i]))) {
@@ -70,15 +70,15 @@ str py_bi_rstrip_chars(const str& s, const str& chars) {
     return py_slice(s, 0, i + 1);
 }
 
-str py_bi_strip(const str& s) {
-    return py_bi_rstrip(py_bi_lstrip(s));
+str py_strip(const str& s) {
+    return py_rstrip(py_lstrip(s));
 }
 
-str py_bi_strip_chars(const str& s, const str& chars) {
-    return py_bi_rstrip_chars(py_bi_lstrip_chars(s, chars), chars);
+str py_strip_chars(const str& s, const str& chars) {
+    return py_rstrip_chars(py_lstrip_chars(s, chars), chars);
 }
 
-bool py_bi_startswith(const str& s, const str& prefix) {
+bool py_startswith(const str& s, const str& prefix) {
     int64 n = py_len(s);
     int64 m = py_len(prefix);
     if (m > n)
@@ -92,7 +92,7 @@ bool py_bi_startswith(const str& s, const str& prefix) {
     return true;
 }
 
-bool py_bi_endswith(const str& s, const str& suffix) {
+bool py_endswith(const str& s, const str& suffix) {
     int64 n = py_len(s);
     int64 m = py_len(suffix);
     if (m > n)
@@ -107,11 +107,11 @@ bool py_bi_endswith(const str& s, const str& suffix) {
     return true;
 }
 
-int64 py_bi_find(const str& s, const str& needle) {
-    return py_bi_find_window(s, needle, 0, py_len(s));
+int64 py_find(const str& s, const str& needle) {
+    return py_find_window(s, needle, 0, py_len(s));
 }
 
-int64 py_bi_find_window(const str& s, const str& needle, int64 start, int64 end) {
+int64 py_find_window(const str& s, const str& needle, int64 start, int64 end) {
     int64 n = py_len(s);
     int64 m = py_len(needle);
     int64 lo = _normalize_index(start, n);
@@ -139,11 +139,11 @@ int64 py_bi_find_window(const str& s, const str& needle, int64 start, int64 end)
     return -(1);
 }
 
-int64 py_bi_rfind(const str& s, const str& needle) {
-    return py_bi_rfind_window(s, needle, 0, py_len(s));
+int64 py_rfind(const str& s, const str& needle) {
+    return py_rfind_window(s, needle, 0, py_len(s));
 }
 
-int64 py_bi_rfind_window(const str& s, const str& needle, int64 start, int64 end) {
+int64 py_rfind_window(const str& s, const str& needle, int64 start, int64 end) {
     int64 n = py_len(s);
     int64 m = py_len(needle);
     int64 lo = _normalize_index(start, n);
@@ -170,7 +170,7 @@ int64 py_bi_rfind_window(const str& s, const str& needle, int64 start, int64 end
     return -(1);
 }
 
-str py_bi_replace(const str& s, const str& oldv, const str& newv) {
+str py_replace(const str& s, const str& oldv, const str& newv) {
     if (oldv == "")
         return s;
     str out = "";
@@ -178,7 +178,7 @@ str py_bi_replace(const str& s, const str& oldv, const str& newv) {
     int64 m = py_len(oldv);
     int64 i = 0;
     while (i < n) {
-        if ((i + m <= n) && (py_bi_find_window(s, oldv, i, i + m) == i)) {
+        if ((i + m <= n) && (py_find_window(s, oldv, i, i + m) == i)) {
             out += newv;
             i += m;
         } else {

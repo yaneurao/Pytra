@@ -26,7 +26,7 @@ def _normalize_index(idx: int, n: int) -> int:
     return out
 
 
-def py_bi_lstrip(s: str) -> str:
+def py_lstrip(s: str) -> str:
     i = 0
     n = len(s)
     while i < n and _is_space(s[i]):
@@ -34,7 +34,7 @@ def py_bi_lstrip(s: str) -> str:
     return s[i:n]
 
 
-def py_bi_lstrip_chars(s: str, chars: str) -> str:
+def py_lstrip_chars(s: str, chars: str) -> str:
     i = 0
     n = len(s)
     while i < n and _contains_char(chars, s[i]):
@@ -42,7 +42,7 @@ def py_bi_lstrip_chars(s: str, chars: str) -> str:
     return s[i:n]
 
 
-def py_bi_rstrip(s: str) -> str:
+def py_rstrip(s: str) -> str:
     n = len(s)
     i = n - 1
     while i >= 0 and _is_space(s[i]):
@@ -50,7 +50,7 @@ def py_bi_rstrip(s: str) -> str:
     return s[0 : i + 1]
 
 
-def py_bi_rstrip_chars(s: str, chars: str) -> str:
+def py_rstrip_chars(s: str, chars: str) -> str:
     n = len(s)
     i = n - 1
     while i >= 0 and _contains_char(chars, s[i]):
@@ -58,15 +58,15 @@ def py_bi_rstrip_chars(s: str, chars: str) -> str:
     return s[0 : i + 1]
 
 
-def py_bi_strip(s: str) -> str:
-    return py_bi_rstrip(py_bi_lstrip(s))
+def py_strip(s: str) -> str:
+    return py_rstrip(py_lstrip(s))
 
 
-def py_bi_strip_chars(s: str, chars: str) -> str:
-    return py_bi_rstrip_chars(py_bi_lstrip_chars(s, chars), chars)
+def py_strip_chars(s: str, chars: str) -> str:
+    return py_rstrip_chars(py_lstrip_chars(s, chars), chars)
 
 
-def py_bi_startswith(s: str, prefix: str) -> bool:
+def py_startswith(s: str, prefix: str) -> bool:
     n = len(s)
     m = len(prefix)
     if m > n:
@@ -79,7 +79,7 @@ def py_bi_startswith(s: str, prefix: str) -> bool:
     return True
 
 
-def py_bi_endswith(s: str, suffix: str) -> bool:
+def py_endswith(s: str, suffix: str) -> bool:
     n = len(s)
     m = len(suffix)
     if m > n:
@@ -93,11 +93,11 @@ def py_bi_endswith(s: str, suffix: str) -> bool:
     return True
 
 
-def py_bi_find(s: str, needle: str) -> int:
-    return py_bi_find_window(s, needle, 0, len(s))
+def py_find(s: str, needle: str) -> int:
+    return py_find_window(s, needle, 0, len(s))
 
 
-def py_bi_find_window(s: str, needle: str, start: int, end: int) -> int:
+def py_find_window(s: str, needle: str, start: int, end: int) -> int:
     n = len(s)
     m = len(needle)
     lo = _normalize_index(start, n)
@@ -122,11 +122,11 @@ def py_bi_find_window(s: str, needle: str, start: int, end: int) -> int:
     return -1
 
 
-def py_bi_rfind(s: str, needle: str) -> int:
-    return py_bi_rfind_window(s, needle, 0, len(s))
+def py_rfind(s: str, needle: str) -> int:
+    return py_rfind_window(s, needle, 0, len(s))
 
 
-def py_bi_rfind_window(s: str, needle: str, start: int, end: int) -> int:
+def py_rfind_window(s: str, needle: str, start: int, end: int) -> int:
     n = len(s)
     m = len(needle)
     lo = _normalize_index(start, n)
@@ -150,7 +150,7 @@ def py_bi_rfind_window(s: str, needle: str, start: int, end: int) -> int:
     return -1
 
 
-def py_bi_replace(s: str, oldv: str, newv: str) -> str:
+def py_replace(s: str, oldv: str, newv: str) -> str:
     if oldv == "":
         return s
     out = ""
@@ -158,7 +158,7 @@ def py_bi_replace(s: str, oldv: str, newv: str) -> str:
     m = len(oldv)
     i = 0
     while i < n:
-        if i + m <= n and py_bi_find_window(s, oldv, i, i + m) == i:
+        if i + m <= n and py_find_window(s, oldv, i, i + m) == i:
             out += newv
             i += m
         else:

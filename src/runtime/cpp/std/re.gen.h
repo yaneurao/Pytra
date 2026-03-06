@@ -2,8 +2,8 @@
 // source: src/pytra/std/re.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_RE_H
-#define PYTRA_STD_RE_H
+#ifndef PYTRA_STD_RE_GEN_H
+#define PYTRA_STD_RE_GEN_H
 
 #include "runtime/cpp/core/built_in/py_types.ext.h"
 
@@ -35,4 +35,4 @@ str sub(const str& pattern, const str& repl, const str& text, int64 flags);
 
 }  // namespace pytra::std::re
 
-#endif  // PYTRA_STD_RE_H
+#endif  // PYTRA_STD_RE_GEN_H

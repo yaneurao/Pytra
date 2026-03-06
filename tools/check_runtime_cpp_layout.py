@@ -3,6 +3,7 @@
 
 Rules:
 - `src/runtime/cpp/built_in/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/built_in/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
 - `src/runtime/cpp/utils/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
 - `src/runtime/cpp/core/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
 - `src/runtime/cpp/std/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
@@ -19,8 +20,25 @@ BUILTIN_DIR = ROOT / "src/runtime/cpp/built_in"
 CORE_DIR = ROOT / "src/runtime/cpp/core"
 STD_DIR = ROOT / "src/runtime/cpp/std"
 UTILS_DIR = ROOT / "src/runtime/cpp/utils"
+PY_RUNTIME_EXT = ROOT / "src/runtime/cpp/core/built_in/py_runtime.ext.h"
 MARKER = "AUTO-GENERATED FILE. DO NOT EDIT."
 TARGET_SUFFIXES = {".h", ".cpp"}
+BANNED_PY_RUNTIME_PATTERNS = {
+    "static inline str sub(": "re.sub duplicate must not live in py_runtime.ext.h",
+    "struct ArgumentParser": "argparse duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_any(": "predicate duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_all(": "predicate duplicate must not live in py_runtime.ext.h",
+    "static inline str py_lstrip(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline str py_rstrip(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline str py_strip(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_startswith(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_endswith(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline int64 py_find(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline int64 py_rfind(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline str py_replace(": "string_ops duplicate must not live in py_runtime.ext.h",
+    "static inline list<int64> py_range(": "sequence duplicate must not live in py_runtime.ext.h",
+    "static inline str py_repeat(": "sequence duplicate must not live in py_runtime.ext.h",
+}
 
 
 def _scan_targets(base: Path) -> list[Path]:
@@ -52,15 +70,19 @@ def main() -> int:
     missing_marker: list[str] = []
     unexpected_marker: list[str] = []
     invalid_name: list[str] = []
+    banned_runtime_duplicates: list[str] = []
 
     for p in builtin_files:
         rel = str(p.relative_to(ROOT))
-        if ".gen." not in p.name:
-            invalid_name.append(rel)
-            continue
         txt = p.read_text(encoding="utf-8", errors="ignore")
-        if MARKER not in txt:
-            missing_marker.append(rel)
+        if ".gen." in p.name:
+            if MARKER not in txt:
+                missing_marker.append(rel)
+        elif ".ext." in p.name:
+            if MARKER in txt:
+                unexpected_marker.append(rel)
+        else:
+            invalid_name.append(rel)
     for p in utils_files:
         rel = str(p.relative_to(ROOT))
         if ".gen." not in p.name:
@@ -90,7 +112,13 @@ def main() -> int:
         else:
             invalid_name.append(rel)
 
-    if missing_marker or unexpected_marker or invalid_name:
+    if PY_RUNTIME_EXT.exists():
+        py_runtime_txt = PY_RUNTIME_EXT.read_text(encoding="utf-8", errors="ignore")
+        for pattern, reason in BANNED_PY_RUNTIME_PATTERNS.items():
+            if pattern in py_runtime_txt:
+                banned_runtime_duplicates.append(f"{pattern} :: {reason}")
+
+    if missing_marker or unexpected_marker or invalid_name or banned_runtime_duplicates:
         print("[FAIL] runtime cpp layout guard failed")
         print(
             "  scanned: "
@@ -110,6 +138,10 @@ def main() -> int:
         if invalid_name:
             print("  files violating .gen/.ext naming:")
             for item in invalid_name:
+                print(f"    - {item}")
+        if banned_runtime_duplicates:
+            print("  py_runtime.ext.h still contains duplicated high-level runtime bodies:")
+            for item in banned_runtime_duplicates:
                 print(f"    - {item}")
         return 1
 

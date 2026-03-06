@@ -31,7 +31,10 @@
         "glob": "pytra::std::glob::glob"
       },
       "pytra.std.argparse": {
-        "ArgumentParser": "::ArgumentParser"
+        "ArgumentParser": "pytra::std::argparse::ArgumentParser"
+      },
+      "pytra.std.re": {
+        "sub": "pytra::std::re::sub"
       },
       "pytra.std.sys": {
         "argv": "py_runtime_argv()"

@@ -99,10 +99,10 @@ class CppRuntimeExprEmitter:
             return ""
         if op == "any":
             value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_any({value_expr})"
+            return f"py_any(make_object({value_expr}))"
         if op == "all":
             value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_all({value_expr})"
+            return f"py_all(make_object({value_expr}))"
         if op == "ord":
             value_expr = self.render_expr(expr_d.get("value"))
             return f"py_ord({value_expr})"

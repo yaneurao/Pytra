@@ -3,7 +3,7 @@
 from typing import Any
 
 
-def py_bi_any(values: Any) -> bool:
+def py_any(values: Any) -> bool:
     i = 0
     n = len(values)
     while i < n:
@@ -13,7 +13,7 @@ def py_bi_any(values: Any) -> bool:
     return False
 
 
-def py_bi_all(values: Any) -> bool:
+def py_all(values: Any) -> bool:
     i = 0
     n = len(values)
     while i < n:

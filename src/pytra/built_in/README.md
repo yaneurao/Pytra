@@ -6,7 +6,7 @@
 
 - 正本は `src/pytra/built_in/*.py`。
 - target 固有コード（C++ の `#include`、JS/TS のランタイム依存 API 直呼びなど）はここに書かない。
-- GC/ABI など低レベルのブート処理は従来どおり target 側（例: `src/runtime/cpp/pytra-core/built_in/`）に残す。
+- GC/ABI など低レベルのブート処理は target 側（例: `src/runtime/cpp/core/`）に残す。
 
 ## 命名ルール
 
@@ -16,9 +16,9 @@
 
 ## 生成対象ルール
 
-- 将来の `--emit-runtime-cpp` 対応では、`src/pytra/built_in/<name>.py` を
-  `src/runtime/cpp/pytra/built_in/<name>.{h,cpp}` へ生成する。
-- 他言語も同一方針で `src/runtime/<lang>/pytra/built_in/` へ展開する。
+- `src/pytra/built_in/<name>.py` は
+  `src/runtime/cpp/built_in/<name>.gen.{h,cpp}` へ生成する。
+- 他言語も同一方針で `src/runtime/<lang>/built_in/` へ展開する。
 - 生成層を厚くし、手書き層は最小ブート処理だけに限定する。
 
 ## テスト運用
@@ -29,5 +29,5 @@
 
 - `type_id.py`: `py_tid_register_class_type` / `py_tid_is_subtype` / `py_tid_issubclass` / `py_tid_runtime_type_id` / `py_tid_isinstance` の pure Python 実装。
 - `sequence.py`: `py_range` / `py_repeat(str, int)` の pure Python 実装。
-- `string_ops.py`: `strip/find/replace` 系の文字列 helper の pure Python 実装。
-- `predicates.py`: `py_bi_any` / `py_bi_all` の pure Python 実装。
+- `string_ops.py`: `py_strip` / `py_find` / `py_replace` 系の文字列 helper の pure Python 実装。
+- `predicates.py`: `py_any` / `py_all` の pure Python 実装。

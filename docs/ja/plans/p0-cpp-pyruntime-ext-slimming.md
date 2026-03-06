@@ -80,19 +80,23 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S1-01] `py_runtime.ext.h` の関数棚卸しを行い、`ABI/core` と `pure Python 正本へ移管可能` を分類して固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S1-02] `sub` / `ArgumentParser` / `py_any` / `py_all` / string_ops / `py_range` / `py_repeat` の正本・生成物・adapter 対応表を決定ログへ固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-01] `sub(...)` の ext 側重複実装を除去し、`re.gen.*` 参照へ一本化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-02] `ArgumentParser` を ext から除去し、`argparse.gen.*` を正本 runtime として使うよう C++ 側導線を揃える。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-03] `py_any` / `py_all` を ext から除去し、`predicates.gen.*` 参照へ一本化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-04] `py_strip` / `py_startswith` / `py_endswith` / `py_find` / `py_replace` を ext から除去し、`string_ops.gen.*` 参照へ一本化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-05] `py_range` / `py_repeat` を ext から除去し、`sequence.gen.*` 参照へ一本化する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S1-01] `py_runtime.ext.h` の関数棚卸しを行い、`ABI/core` と `pure Python 正本へ移管可能` を分類して固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S1-02] `sub` / `ArgumentParser` / `py_any` / `py_all` / string_ops / `py_range` / `py_repeat` の正本・生成物・adapter 対応表を決定ログへ固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-01] `sub(...)` の ext 側重複実装を除去し、`re.gen.*` 参照へ一本化する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-02] `ArgumentParser` を ext から除去し、`argparse.gen.*` を正本 runtime として使うよう C++ 側導線を揃える。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-03] `py_any` / `py_all` を ext から除去し、`predicates.gen.*` 参照へ一本化する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-04] `py_strip` / `py_startswith` / `py_endswith` / `py_find` / `py_replace` を ext から除去し、`string_ops.gen.*` 参照へ一本化する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-05] `py_range` / `py_repeat` を ext から除去し、`sequence.gen.*` 参照へ一本化する。
 - [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S3-01] `py_enumerate` / `py_reversed` / `py_contains` について、pure Python 正本 + typed adapter 分離の仕様を決め、必要な `src/pytra/built_in/*.py` を追加する。
 - [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S3-02] 上記 3 系統のうち、移しやすいものから 1 系統以上を ext 縮退まで実装し、残件を同計画内で継続可能な形にする。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S4-01] `py_runtime.ext.h` へ正本重複実装が再混入しないよう、静的ガードを追加する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S4-02] layout / SoT guard / runtime parity / runtime emit smoke を更新し、縮退後の非退行を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S4-01] `py_runtime.ext.h` へ正本重複実装が再混入しないよう、静的ガードを追加する。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S4-02] layout / SoT guard / runtime parity / runtime emit smoke を更新し、縮退後の非退行を固定する。
 
 決定ログ:
 - 2026-03-06: ユーザー指示に基づき、`py_runtime.ext.h` をさらに縮退し、pure Python 正本がある処理を `*.gen.*` 側へ移す P0 計画として再整理した。
 - 2026-03-06: 第一波は「すでに正本がある重複実装の除去」（`sub`, `ArgumentParser`, `py_any`, `py_all`, string_ops, `py_range`, `py_repeat`）に限定し、第二波として `py_enumerate` / `py_reversed` / `py_contains` の adapter 分離を扱う方針を確定した。
 - 2026-03-06: `PyObj` 派生クラス、`make_object`, `py_to<T>`, `obj_to_*`, `py_iter_or_raise`, `py_slice`, `py_at`, `py_dict_get` は ABI/typed helper のため本計画の非対象に固定した。
+- 2026-03-06: 第一波を実装し、`py_runtime.ext.h` から `sub`, `ArgumentParser`, `py_any`, `py_all`, string helper 群, `py_range`, `py_repeat(str, int)` の本体を撤去した。`predicates.py` / `string_ops.py` は public runtime 名に合わせて再生成し、`py_repeat(list<T>, int64)` だけを `src/runtime/cpp/built_in/sequence.ext.h` へ薄い typed adapter として残した。
+- 2026-03-06: C++ backend 側は `any/all` を `make_object(...)` 経由で `predicates.gen.*` へ接続し、`find/rfind` の window 付き呼び出しは `py_find_window` / `py_rfind_window` へ寄せた。`pytra.std.argparse.ArgumentParser` と `pytra.std.re.sub` の runtime call mapping も namespaced generated runtime へ更新した。
+- 2026-03-06: `tools/check_runtime_cpp_layout.py` に `py_runtime.ext.h` への高レベル重複実装再混入ガードを追加した。`check_runtime_cpp_layout.py`, `check_runtime_std_sot_guard.py`, `verify_image_runtime_parity.py`, built_in+`re` の syntax-only compile, `predicates/sequence/string_ops/re/argparse` の `--emit-runtime-cpp` smoke は通過した。
+- 2026-03-06: `src/runtime/cpp/std/argparse.gen.cpp` には本タスク以前から存在する C++ emission 問題（`default` 識別子、`setattr`/`SystemExit`、`optional<list<str>>` など）が残っており、これは `py_runtime.ext.h` 縮退とは別件として扱う。今回の S2-02 は「導線の差し替えと ext 側重複実装の除去」に限定して完了扱いとする。

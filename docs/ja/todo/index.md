@@ -36,4 +36,4 @@
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-EXT-01] `py_runtime.ext.h` から pure Python 正本へ移せる高レベル built-in / std 実装を除去し、`*.gen.*` へ一本化する。
 `P0-CPP-PYRUNTIME-EXT-01` 文脈: `docs/ja/plans/p0-cpp-pyruntime-ext-slimming.md`
-`P0-CPP-PYRUNTIME-EXT-01` 進捗メモ: 2026-03-06 起票。第一波は `sub` / `ArgumentParser` / `py_any` / `py_all` / string_ops / `py_range` / `py_repeat` を ext から撤去し、第二波で `py_enumerate` / `py_reversed` / `py_contains` の adapter 分離へ進む。
+`P0-CPP-PYRUNTIME-EXT-01` 進捗メモ: 2026-03-06 第一波（`sub` / `ArgumentParser` / `py_any` / `py_all` / string_ops / `py_range` / `py_repeat` の ext 本体撤去、guard 追加、runtime smoke）を実施。残件は `py_enumerate` / `py_reversed` / `py_contains` の adapter 分離。

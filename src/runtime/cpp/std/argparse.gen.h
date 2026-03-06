@@ -2,8 +2,8 @@
 // source: src/pytra/std/argparse.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_ARGPARSE_H
-#define PYTRA_STD_ARGPARSE_H
+#ifndef PYTRA_STD_ARGPARSE_GEN_H
+#define PYTRA_STD_ARGPARSE_GEN_H
 
 #include "runtime/cpp/core/built_in/py_types.ext.h"
 
@@ -39,4 +39,4 @@ namespace pytra::std::argparse {
 
 }  // namespace pytra::std::argparse
 
-#endif  // PYTRA_STD_ARGPARSE_H
+#endif  // PYTRA_STD_ARGPARSE_GEN_H

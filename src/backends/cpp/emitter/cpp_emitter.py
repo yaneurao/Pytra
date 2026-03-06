@@ -3081,12 +3081,17 @@ class CppEmitter(
             needle_expr = self.render_expr(expr_d.get("needle"))
             mode = self.any_dict_get_str(expr_d, "mode", "find")
             fn_name = "py_rfind" if mode == "rfind" else "py_find"
+            window_name = "py_rfind_window" if mode == "rfind" else "py_find_window"
             args: list[str] = [owner_expr, needle_expr]
             if self.any_dict_has(expr_d, "start"):
                 args.append(self.render_expr(expr_d.get("start")))
             if self.any_dict_has(expr_d, "end"):
                 args.append(self.render_expr(expr_d.get("end")))
-            return f"{fn_name}({join_str_list(', ', args)})"
+            if len(args) == 2:
+                return f"{fn_name}({join_str_list(', ', args)})"
+            if len(args) == 3:
+                return f"{window_name}({args[0]}, {args[1]}, {args[2]}, py_len({owner_expr}))"
+            return f"{window_name}({join_str_list(', ', args)})"
         if kind == "StrCharClassOp":
             value_node = expr_d.get("value")
             value_expr = self.render_expr(value_node)

@@ -8,7 +8,7 @@
 
 /* Pure-Python source-of-truth for predicate helpers. */
 
-bool py_bi_any(const object& values) {
+bool py_any(const object& values) {
     int64 i = 0;
     int64 n = py_len(values);
     while (i < n) {
@@ -19,7 +19,7 @@ bool py_bi_any(const object& values) {
     return false;
 }
 
-bool py_bi_all(const object& values) {
+bool py_all(const object& values) {
     int64 i = 0;
     int64 n = py_len(values);
     while (i < n) {

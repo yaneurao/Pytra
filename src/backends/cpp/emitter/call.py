@@ -596,19 +596,21 @@ class CppCallEmitter:
             if len(call_args) == 0:
                 return f"py_{attr}({owner_expr})"
             if len(call_args) == 1:
-                return f"py_{attr}({owner_expr}, {call_args[0]})"
+                return f"py_{attr}_chars({owner_expr}, {call_args[0]})"
             return None
         if attr in {"startswith", "endswith"}:
             if len(call_args) == 1:
                 return f"py_{attr}({owner_expr}, {call_args[0]})"
             return None
         if attr in {"find", "rfind"}:
+            fn_name = f"py_{attr}"
+            window_name = f"py_{attr}_window"
             if len(call_args) == 1:
-                return f"py_{attr}({owner_expr}, {call_args[0]})"
+                return f"{fn_name}({owner_expr}, {call_args[0]})"
             if len(call_args) == 2:
-                return f"py_{attr}({owner_expr}, {call_args[0]}, {call_args[1]})"
+                return f"{window_name}({owner_expr}, {call_args[0]}, {call_args[1]}, py_len({owner_expr}))"
             if len(call_args) == 3:
-                return f"py_{attr}({owner_expr}, {call_args[0]}, {call_args[1]}, {call_args[2]})"
+                return f"{window_name}({owner_expr}, {call_args[0]}, {call_args[1]}, {call_args[2]})"
             return None
         if attr == "replace":
             if len(call_args) == 2:
