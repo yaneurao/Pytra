@@ -278,6 +278,56 @@
         }
       }
     },
+    "pytra.core.dict": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.exceptions": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.gc": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.io": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.list": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.py_runtime": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.py_scalar_types": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.py_types": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.set": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
+    "pytra.core.str": {
+      "runtime_group": "core",
+      "source_py": "",
+      "symbols": {}
+    },
     "pytra.std": {
       "runtime_group": "std",
       "source_py": "src/pytra/std/__init__.py",
@@ -804,6 +854,100 @@
           ],
           "public_headers": [
             "src/runtime/cpp/built_in/type_id.gen.h"
+          ]
+        },
+        "pytra.core.dict": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/dict.ext.h"
+          ]
+        },
+        "pytra.core.exceptions": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/exceptions.ext.h"
+          ]
+        },
+        "pytra.core.gc": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/core/gc.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/core/gc.ext.h"
+          ]
+        },
+        "pytra.core.io": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/core/io.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/core/io.ext.h"
+          ]
+        },
+        "pytra.core.list": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/list.ext.h"
+          ]
+        },
+        "pytra.core.py_runtime": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/py_runtime.ext.h"
+          ]
+        },
+        "pytra.core.py_scalar_types": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/py_scalar_types.ext.h"
+          ]
+        },
+        "pytra.core.py_types": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/py_types.ext.h"
+          ]
+        },
+        "pytra.core.set": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/set.ext.h"
+          ]
+        },
+        "pytra.core.str": {
+          "companions": [
+            "ext"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/core/str.ext.h"
           ]
         },
         "pytra.std.argparse": {

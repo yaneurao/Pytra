@@ -33,6 +33,92 @@ def load_runtime_symbol_index() -> dict[str, Any]:
     return _load_index()
 
 
+def lookup_runtime_module_doc(module_id: str) -> dict[str, Any]:
+    doc = _load_index()
+    modules = doc.get("modules")
+    if not isinstance(modules, dict):
+        return {}
+    mod = modules.get(module_id)
+    if not isinstance(mod, dict):
+        return {}
+    return mod
+
+
+def lookup_runtime_module_group(module_id: str) -> str:
+    mod = lookup_runtime_module_doc(module_id)
+    group = mod.get("runtime_group")
+    if isinstance(group, str):
+        return group
+    return ""
+
+
+def lookup_runtime_module_symbols(module_id: str) -> dict[str, Any]:
+    mod = lookup_runtime_module_doc(module_id)
+    symbols = mod.get("symbols")
+    if not isinstance(symbols, dict):
+        return {}
+    return symbols
+
+
+def runtime_module_exists(module_id: str) -> bool:
+    return len(lookup_runtime_module_doc(module_id)) > 0
+
+
+def canonical_runtime_module_id(module_id: str) -> str:
+    if runtime_module_exists(module_id):
+        return module_id
+    if "." not in module_id:
+        mapped = "pytra.std." + module_id
+        if runtime_module_exists(mapped):
+            return mapped
+    return module_id
+
+
+def resolve_import_binding_runtime_module(module_id: str, export_name: str, binding_kind: str) -> str:
+    mod = canonical_runtime_module_id(module_id.strip())
+    if mod == "":
+        return ""
+    if binding_kind == "module":
+        return mod if runtime_module_exists(mod) else ""
+    if binding_kind != "symbol":
+        return ""
+    child_module = mod + "." + export_name.strip() if export_name.strip() != "" else ""
+    if child_module != "" and runtime_module_exists(child_module):
+        return child_module
+    symbols = lookup_runtime_module_symbols(mod)
+    if export_name in symbols:
+        return mod
+    return ""
+
+
+def lookup_cpp_namespace_for_runtime_module(module_id: str) -> str:
+    mod = canonical_runtime_module_id(module_id.strip())
+    group = lookup_runtime_module_group(mod)
+    if group == "std":
+        tail = mod[len("pytra.std.") :] if mod.startswith("pytra.std.") else ""
+        if tail != "":
+            return "pytra::std::" + tail.replace(".", "::")
+        return "pytra::std"
+    if group == "utils":
+        tail = mod[len("pytra.utils.") :] if mod.startswith("pytra.utils.") else ""
+        if tail != "":
+            return "pytra::utils::" + tail.replace(".", "::")
+        return "pytra::utils"
+    if group in {"built_in", "core"}:
+        return ""
+    if mod.startswith("pytra."):
+        tail = mod[len("pytra.") :]
+        if tail != "":
+            return "pytra::" + tail.replace(".", "::")
+        return "pytra"
+    if mod.startswith("toolchain.compiler."):
+        tail = mod[len("toolchain.compiler.") :]
+        if tail != "":
+            return "pytra::compiler::" + tail.replace(".", "::")
+        return "pytra::compiler"
+    return ""
+
+
 def lookup_target_module_artifacts(target: str, module_id: str) -> dict[str, Any]:
     doc = _load_index()
     targets = doc.get("targets")

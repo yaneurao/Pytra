@@ -54,6 +54,8 @@ def _module_id_for_source(prefix: str, root: Path, path: Path) -> str:
 
 
 def _module_tail(module_id: str, group: str) -> str:
+    if group == "core" and module_id.startswith("pytra.core."):
+        return module_id[len("pytra.core.") :].replace(".", "/")
     if group == "built_in" and module_id.startswith("pytra.built_in."):
         return module_id[len("pytra.built_in.") :].replace(".", "/")
     if group == "std" and module_id.startswith("pytra.std."):
@@ -151,6 +153,29 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
     }
 
 
+def _iter_target_core_module_ids(lang: str) -> list[str]:
+    base_dir = ROOT / "src" / "runtime" / lang / "core"
+    if not base_dir.exists():
+        return []
+    tails: set[str] = set()
+    suffixes = (".gen.h", ".gen.cpp", ".ext.h", ".ext.cpp")
+    for path in sorted(base_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(base_dir).as_posix()
+        tail = ""
+        for suffix in suffixes:
+            if rel.endswith(suffix):
+                tail = rel[: -len(suffix)]
+                break
+        if tail != "":
+            tails.add(tail)
+    out: list[str] = []
+    for tail in sorted(tails):
+        out.append("pytra.core." + tail.replace("/", "."))
+    return out
+
+
 def build_runtime_symbol_index() -> dict[str, Any]:
     modules: dict[str, Any] = {}
     targets: dict[str, Any] = {}
@@ -174,6 +199,22 @@ def build_runtime_symbol_index() -> dict[str, Any]:
                 lang_doc = targets.setdefault(lang, {"modules": {}})
                 lang_modules = lang_doc.setdefault("modules", {})
                 lang_modules[module_id] = artifact
+
+    for lang in langs:
+        for module_id in _iter_target_core_module_ids(lang):
+            if module_id not in modules:
+                modules[module_id] = {
+                    "source_py": "",
+                    "runtime_group": "core",
+                    "symbols": {},
+                }
+            tail = _module_tail(module_id, "core")
+            artifact = _target_module_artifacts(lang, "core", tail)
+            if artifact is None:
+                continue
+            lang_doc = targets.setdefault(lang, {"modules": {}})
+            lang_modules = lang_doc.setdefault("modules", {})
+            lang_modules[module_id] = artifact
 
     return {
         "schema_version": SCHEMA_VERSION,

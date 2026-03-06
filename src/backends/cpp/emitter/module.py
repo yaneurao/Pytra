@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Any
 from backends.cpp.emitter.runtime_paths import (
     module_name_to_cpp_include as _module_name_to_cpp_include_impl,
-    module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
-    runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl,
 )
+from toolchain.frontends.runtime_symbol_index import lookup_cpp_namespace_for_runtime_module
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_group
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
 from toolchain.compiler.transpile_cli import (
     append_unique_non_empty,
     dict_any_get_dict,
@@ -22,25 +23,8 @@ from toolchain.compiler.transpile_cli import (
 
 RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
 RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
-RUNTIME_COMPILER_SOURCE_ROOT = Path("src/toolchain/compiler")
-RUNTIME_BUILT_IN_SOURCE_ROOT = Path("src/pytra/built_in")
 TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
-
-
-def _module_tail_to_cpp_header_path(module_tail: str) -> str:
-    return _module_tail_to_cpp_header_path_impl(module_tail)
-
-
-def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
-    return _runtime_cpp_header_exists_for_module_impl(module_name_norm)
-
-
-def _strip_runtime_header_suffix(path_or_tail: str) -> str:
-    """`foo.gen` / `foo.ext` suffix を namespace 解決前に剥がす。"""
-    if path_or_tail.endswith(".gen") or path_or_tail.endswith(".ext"):
-        return path_or_tail[: len(path_or_tail) - 4]
-    return path_or_tail
 
 
 class CppModuleEmitter:
@@ -48,102 +32,37 @@ class CppModuleEmitter:
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
-        module_name_norm = module_name
-        if module_name_norm.startswith("pytra.std."):
-            tail = module_name_norm[10:]
-            if python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return _module_name_to_cpp_include_impl(module_name_norm)
-        if module_name_norm.startswith("pytra.utils."):
-            tail = module_name_norm[12:]
-            if python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return _module_name_to_cpp_include_impl(module_name_norm)
-        if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
-            tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
-            if python_module_exists_under(RUNTIME_COMPILER_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return _module_name_to_cpp_include_impl(module_name_norm)
-        if module_name_norm.startswith("pytra.built_in."):
-            tail = module_name_norm[15:]
-            if python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, tail) and _runtime_cpp_header_exists_for_module(module_name_norm):
-                return _module_name_to_cpp_include_impl(module_name_norm)
-        if module_name_norm.find(".") < 0:
-            # Accept bare stdlib-style imports such as `import math` / `import time`.
-            bare_tail = module_name_norm
-            mapped_module = "pytra.std." + bare_tail
-            if (
-                python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, bare_tail)
-                and _runtime_cpp_header_exists_for_module(mapped_module)
-            ):
-                return _module_name_to_cpp_include_impl(mapped_module)
-        return ""
+        return _module_name_to_cpp_include_impl(module_name)
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
         """Python import モジュール名を C++ namespace へ解決する。"""
         module_name_norm = module_name
-        if module_name_norm.startswith("pytra.std."):
-            tail = module_name_norm[10:]
-            if tail != "":
-                return "pytra::std::" + tail.replace(".", "::")
-            return ""
-        if module_name_norm.startswith("pytra.utils."):
-            tail = module_name_norm[12:]
-            if tail != "":
-                return "pytra::utils::" + tail.replace(".", "::")
-            return ""
-        if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
-            tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
-            if tail != "":
-                return "pytra::compiler::" + tail.replace(".", "::")
-            return ""
-        if module_name_norm.startswith("pytra.built_in."):
-            return ""
-        if module_name_norm.startswith("pytra."):
-            tail = module_name_norm[6:]
-            if tail != "":
-                return "pytra::" + tail.replace(".", "::")
-            return "pytra"
-        if module_name_norm.find(".") < 0:
-            bare_tail = module_name_norm
-            mapped_module = "pytra.std." + bare_tail
-            if (
-                python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, bare_tail)
-                and _runtime_cpp_header_exists_for_module(mapped_module)
-            ):
-                return "pytra::std::" + bare_tail.replace(".", "::")
-        inc = self._module_name_to_cpp_include(module_name_norm)
-        if inc.startswith("runtime/cpp/std/") and inc.endswith(".h"):
-            tail = _strip_runtime_header_suffix(inc[16 : len(inc) - 2]).replace("/", "::")
-            if tail != "":
-                return "pytra::std::" + tail
-        if inc.startswith("runtime/cpp/utils/") and inc.endswith(".h"):
-            tail = _strip_runtime_header_suffix(inc[18 : len(inc) - 2]).replace("/", "::")
-            if tail != "":
-                return "pytra::utils::" + tail
-        if inc.startswith("runtime/cpp/compiler/") and inc.endswith(".h"):
-            tail = _strip_runtime_header_suffix(inc[21 : len(inc) - 2]).replace("/", "::")
-            if tail != "":
-                return "pytra::compiler::" + tail
+        ns = lookup_cpp_namespace_for_runtime_module(module_name_norm)
+        if ns != "" or module_name_norm.startswith("pytra.core.") or module_name_norm.startswith("pytra.built_in."):
+            return ns
         return ""
 
-    def _runtime_symbol_module_prefix(self, mod_name: str) -> str:
-        """runtime symbol include 解決で使う module prefix（`pytra.std.` 等）を返す。"""
-        if mod_name == "pytra.std":
-            return "pytra.std."
-        if mod_name == "pytra.utils":
-            return "pytra.utils."
-        if mod_name == "pytra.built_in":
-            return "pytra.built_in."
-        return ""
+    def _import_binding_cpp_include(self, binding: dict[str, Any]) -> str:
+        """import binding 1件から include 対象 module を index 経由で解決する。"""
+        module_id = dict_any_get_str(binding, "module_id")
+        export_name = dict_any_get_str(binding, "export_name")
+        binding_kind = dict_any_get_str(binding, "binding_kind")
+        resolved_module = resolve_import_binding_runtime_module(module_id, export_name, binding_kind)
+        if resolved_module != "":
+            return self._module_name_to_cpp_include(resolved_module)
+        return self._module_name_to_cpp_include(module_id)
 
-    def _runtime_symbol_include(
-        self,
-        mod_name: str,
-        symbol: str,
-    ) -> str:
-        """`pytra.std/utils` symbol の include path を返す（不要時は空）。"""
-        runtime_prefix = self._runtime_symbol_module_prefix(mod_name)
-        if runtime_prefix == "" or symbol == "":
-            return ""
-        return self._module_name_to_cpp_include(runtime_prefix + symbol)
+    def _collect_runtime_modules_from_node(self, node: Any, out: set[str]) -> None:
+        if isinstance(node, dict):
+            module_id = dict_any_get_str(node, "runtime_module_id")
+            if module_id != "":
+                out.add(module_id)
+            for value in node.values():
+                self._collect_runtime_modules_from_node(value, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._collect_runtime_modules_from_node(item, out)
 
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
@@ -154,27 +73,30 @@ class CppModuleEmitter:
             for item in bindings:
                 mod_name = dict_any_get_str(item, "module_id")
                 append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
-                if dict_any_get_str(item, "binding_kind") == "symbol":
-                    append_unique_non_empty(
-                        includes,
-                        seen,
-                        self._runtime_symbol_include(mod_name, dict_any_get_str(item, "export_name")),
-                    )
-            return sort_str_list_copy(includes)
+                append_unique_non_empty(includes, seen, self._import_binding_cpp_include(item))
+        else:
+            for stmt in body:
+                kind = self._node_kind_from_dict(stmt)
+                if kind == "Import":
+                    for ent in self._dict_stmt_list(stmt.get("names")):
+                        append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(dict_any_get_str(ent, "name")))
+                elif kind == "ImportFrom":
+                    mod_name = dict_any_get_str(stmt, "module")
+                    append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
+                    for ent in self._dict_stmt_list(stmt.get("names")):
+                        binding: dict[str, Any] = {
+                            "module_id": mod_name,
+                            "export_name": dict_any_get_str(ent, "name"),
+                            "binding_kind": "symbol",
+                        }
+                        append_unique_non_empty(includes, seen, self._import_binding_cpp_include(binding))
+        runtime_modules: set[str] = set()
         for stmt in body:
-            kind = self._node_kind_from_dict(stmt)
-            if kind == "Import":
-                for ent in self._dict_stmt_list(stmt.get("names")):
-                    append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(dict_any_get_str(ent, "name")))
-            elif kind == "ImportFrom":
-                mod_name = dict_any_get_str(stmt, "module")
-                append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
-                for ent in self._dict_stmt_list(stmt.get("names")):
-                    append_unique_non_empty(
-                        includes,
-                        seen,
-                        self._runtime_symbol_include(mod_name, dict_any_get_str(ent, "name")),
-                    )
+            self._collect_runtime_modules_from_node(stmt, runtime_modules)
+        for module_id in sorted(runtime_modules):
+            if lookup_runtime_module_group(module_id) == "core":
+                continue
+            append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(module_id))
         return sort_str_list_copy(includes)
 
     def _seed_import_maps_from_meta(self) -> None:
@@ -218,6 +140,10 @@ class CppModuleEmitter:
     def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数型列を返す（不明時は空 list）。"""
         module_name_norm = module_name
+        if module_name_norm.find(".") < 0:
+            bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
+            if bare_src.exists():
+                module_name_norm = "pytra.std." + module_name_norm
         cached = self._module_fn_arg_type_cache.get(module_name_norm)
         if isinstance(cached, dict):
             sig = cached.get(fn_name)
@@ -239,6 +165,10 @@ class CppModuleEmitter:
     def _module_function_arg_names(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数名列を返す（不明時は空 list）。"""
         module_name_norm = module_name
+        if module_name_norm.find(".") < 0:
+            bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
+            if bare_src.exists():
+                module_name_norm = "pytra.std." + module_name_norm
         cached = self._module_fn_signature_cache.get(module_name_norm)
         if not isinstance(cached, dict):
             sig_map: dict[str, dict[str, list[str]]] = {}

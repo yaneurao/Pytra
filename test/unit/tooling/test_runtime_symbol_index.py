@@ -15,6 +15,9 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from tools import gen_runtime_symbol_index as gen_mod
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import lookup_cpp_namespace_for_runtime_module
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_compile_sources
 
@@ -89,6 +92,11 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn("src/runtime/cpp/utils/png.gen.h", png_mod.get("public_headers", []))
         self.assertIn("src/runtime/cpp/utils/png.gen.cpp", png_mod.get("compile_sources", []))
 
+        core_dict = cpp_modules.get("pytra.core.dict")
+        self.assertIsInstance(core_dict, dict)
+        self.assertEqual(core_dict.get("companions"), ["ext"])
+        self.assertIn("src/runtime/cpp/core/dict.ext.h", core_dict.get("public_headers", []))
+
     def test_check_mode_detects_stale_file(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             out = Path(td) / "runtime_symbol_index.json"
@@ -147,6 +155,36 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             "src/runtime/cpp/utils/png.gen.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
         )
+
+    def test_import_binding_runtime_module_resolution_uses_index(self) -> None:
+        self.assertEqual(
+            resolve_import_binding_runtime_module("pytra.utils", "png", "symbol"),
+            "pytra.utils.png",
+        )
+        self.assertEqual(
+            resolve_import_binding_runtime_module("pytra.std.time", "perf_counter", "symbol"),
+            "pytra.std.time",
+        )
+        self.assertEqual(
+            resolve_import_binding_runtime_module("math", "", "module"),
+            "pytra.std.math",
+        )
+
+    def test_cpp_namespace_resolution_uses_runtime_group(self) -> None:
+        self.assertEqual(lookup_cpp_namespace_for_runtime_module("math"), "pytra::std::math")
+        self.assertEqual(
+            lookup_cpp_namespace_for_runtime_module("pytra.utils.png"),
+            "pytra::utils::png",
+        )
+        self.assertEqual(
+            lookup_cpp_namespace_for_runtime_module("pytra.built_in.iter_ops"),
+            "",
+        )
+        self.assertEqual(
+            lookup_cpp_namespace_for_runtime_module("pytra.core.dict"),
+            "",
+        )
+        self.assertEqual(canonical_runtime_module_id("math"), "pytra.std.math")
 
 
 if __name__ == "__main__":

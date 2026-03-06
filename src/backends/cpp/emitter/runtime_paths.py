@@ -3,18 +3,15 @@ from __future__ import annotations
 from pytra.std.pathlib import Path
 
 from toolchain.compiler.transpile_cli import join_str_list
-from toolchain.compiler.transpile_cli import python_module_exists_under
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
+from toolchain.frontends.runtime_symbol_index import runtime_module_exists
 
 
 RUNTIME_CPP_CORE_ROOT: Path = Path("src/runtime/cpp/core")
 RUNTIME_CPP_ROOT: Path = Path("src/runtime/cpp")
 # Legacy name kept as alias while callers are being updated.
 RUNTIME_CPP_COMPAT_ROOT: Path = RUNTIME_CPP_CORE_ROOT
-RUNTIME_STD_SOURCE_ROOT: Path = Path("src/pytra/std")
-RUNTIME_UTILS_SOURCE_ROOT: Path = Path("src/pytra/utils")
-RUNTIME_COMPILER_SOURCE_ROOT: Path = Path("src/toolchain/compiler")
-RUNTIME_BUILT_IN_SOURCE_ROOT: Path = Path("src/pytra/built_in")
 TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
@@ -34,33 +31,8 @@ def join_runtime_path(base_dir: Path, rel_path: str) -> Path:
 
 def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
-
-    indexed = lookup_target_module_primary_header("cpp", module_name_norm)
-    if indexed != "":
-        return True
-
-    def _exists_under_runtime_roots(rel_hdr: str) -> bool:
-        root_hdr = join_runtime_path(RUNTIME_CPP_ROOT, rel_hdr)
-        core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)
-        return root_hdr.exists() or core_hdr.exists()
-
-    if module_name_norm.startswith("pytra.std."):
-        tail = module_name_norm[10:]
-        rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("std/" + rel)
-    if module_name_norm.startswith("pytra.utils."):
-        tail = module_name_norm[12:]
-        rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("utils/" + rel)
-    if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
-        tail = module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]
-        rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("compiler/" + rel)
-    if module_name_norm.startswith("pytra.built_in."):
-        tail = module_name_norm[15:]
-        rel = module_tail_to_cpp_header_path(tail) if tail != "" else ""
-        return rel != "" and _exists_under_runtime_roots("built_in/" + rel)
-    return False
+    module_id = canonical_runtime_module_id(module_name_norm)
+    return lookup_target_module_primary_header("cpp", module_id) != ""
 
 
 def runtime_module_tail_from_source_path(input_path: Path) -> str:
@@ -142,44 +114,23 @@ def runtime_namespace_for_tail(module_tail: str) -> str:
 
 def module_name_to_cpp_include(module_name_norm: str) -> str:
     """`pytra.std|utils|compiler|built_in` 名を C++ include 形式へ変換する。"""
-    indexed = lookup_target_module_primary_header("cpp", module_name_norm)
+    module_id = canonical_runtime_module_id(module_name_norm)
+    indexed = lookup_target_module_primary_header("cpp", module_id)
     if indexed != "":
         if indexed.startswith("src/"):
             return indexed[4:]
         return indexed
-
-    def _pick(rel_hdr: str) -> str:
-        root_hdr = join_runtime_path(RUNTIME_CPP_ROOT, rel_hdr)
-        core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)
-        if root_hdr.exists():
-            return "runtime/cpp/" + rel_hdr
-        if core_hdr.exists():
-            return "runtime/cpp/core/" + rel_hdr
+    if module_id.startswith(TOOLCHAIN_COMPILER_PREFIX):
+        rel_hdr = "compiler/" + module_tail_to_cpp_header_path(module_id[TOOLCHAIN_COMPILER_PREFIX_LEN:])
         return "runtime/cpp/" + rel_hdr
-
-    if module_name_norm.startswith("pytra.std."):
-        return _pick("std/" + module_tail_to_cpp_header_path(module_name_norm[10:]))
-    if module_name_norm.startswith("pytra.utils."):
-        return _pick("utils/" + module_tail_to_cpp_header_path(module_name_norm[12:]))
-    if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX):
-        return _pick("compiler/" + module_tail_to_cpp_header_path(module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]))
-    if module_name_norm.startswith("pytra.built_in."):
-        return _pick("built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:]))
-    return "runtime/cpp/" + module_name_norm.replace(".", "/") + ".gen.h"
+    return ""
 
 
 def runtime_module_has_header(module_name_norm: str) -> bool:
     """`pytra.std|utils|compiler|built_in` の runtime ヘッダを持つか判定する。"""
-    if not module_name_norm.startswith("pytra."):
-        return False
-    if module_name_norm.startswith("pytra.std.") and python_module_exists_under(RUNTIME_STD_SOURCE_ROOT, module_name_norm[10:].replace(".", "/")):
-        return runtime_cpp_header_exists_for_module(module_name_norm)
-    if module_name_norm.startswith("pytra.utils.") and python_module_exists_under(RUNTIME_UTILS_SOURCE_ROOT, module_name_norm[12:].replace(".", "/")):
-        return runtime_cpp_header_exists_for_module(module_name_norm)
-    if module_name_norm.startswith(TOOLCHAIN_COMPILER_PREFIX) and python_module_exists_under(
-        RUNTIME_COMPILER_SOURCE_ROOT, module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:].replace(".", "/")
-    ):
-        return runtime_cpp_header_exists_for_module(module_name_norm)
-    if module_name_norm.startswith("pytra.built_in.") and python_module_exists_under(RUNTIME_BUILT_IN_SOURCE_ROOT, module_name_norm[15:].replace(".", "/")):
-        return runtime_cpp_header_exists_for_module(module_name_norm)
+    module_id = canonical_runtime_module_id(module_name_norm)
+    if module_id.startswith("pytra.") and runtime_module_exists(module_id):
+        return runtime_cpp_header_exists_for_module(module_id)
+    if module_id.startswith(TOOLCHAIN_COMPILER_PREFIX):
+        return runtime_cpp_header_exists_for_module(module_id)
     return False
