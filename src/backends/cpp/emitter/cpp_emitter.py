@@ -255,6 +255,7 @@ class CppEmitter(
         self.current_function_symbol: str = ""
         self.current_function_non_escape_summary: dict[str, Any] = {}
         self.current_function_stack_list_locals: set[str] = set()
+        self.current_function_pyobj_runtime_list_alias_names: set[str] = set()
         self.current_function_typed_list_str_params: set[str] = set()
         self.current_function_typed_list_str_locals: set[str] = set()
         self.current_function_reassigned_names: set[str] = set()
@@ -264,6 +265,7 @@ class CppEmitter(
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_stack_list_locals_map: dict[str, list[str]] = {}
+        self.function_pyobj_runtime_list_alias_map: dict[str, list[str]] = {}
         self.non_escape_callsite_records: list[dict[str, Any]] = []
 
     def current_scope_names(self) -> set[str]:
@@ -458,6 +460,12 @@ class CppEmitter(
             return True
         return name in self.current_function_typed_list_str_locals
 
+    def _is_pyobj_runtime_list_alias_name(self, name: str) -> bool:
+        """`cpp_list_model=pyobj` で alias 共有維持のため object 経路へ戻す list 名か判定する。"""
+        if name == "":
+            return False
+        return name in self.current_function_pyobj_runtime_list_alias_names
+
     def _uses_pyobj_runtime_list_expr(self, expr_node: Any) -> bool:
         """list 式が pyobj runtime list 経路（`py_*` 操作）を使うべきか判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -468,8 +476,11 @@ class CppEmitter(
         if self._expr_is_stack_list_local(node):
             return False
         if self._node_kind_from_dict(node) == "Name":
-            if self._is_typed_list_str_name(self.any_dict_get_str(node, "id", "")):
+            expr_name = self.any_dict_get_str(node, "id", "")
+            if self._is_typed_list_str_name(expr_name):
                 return False
+            if self._is_pyobj_runtime_list_alias_name(expr_name):
+                return True
         expr_t = self.normalize_type_name(self.get_expr_type(node))
         if expr_t in {"", "unknown"}:
             expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
@@ -679,6 +690,64 @@ class CppEmitter(
         for nm in candidates:
             if nm not in escaped:
                 out.add(nm)
+        return out
+
+    def _collect_pyobj_runtime_list_alias_names(self, fn_stmt: dict[str, Any]) -> set[str]:
+        """`pyobj` でも value copy にすると alias 共有を壊す list 名を収集する。"""
+        out: set[str] = set()
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return out
+        body = self._dict_stmt_list(fn_stmt.get("body"))
+        assigned_types = self._collect_assigned_name_types(body)
+        list_like_names: set[str] = set()
+        for raw_name, raw_type in assigned_types.items():
+            if not isinstance(raw_name, str):
+                continue
+            name = raw_name
+            if name == "":
+                continue
+            type_norm = self.normalize_type_name(self.any_to_str(raw_type))
+            if type_norm.startswith("list[") and type_norm.endswith("]"):
+                list_like_names.add(name)
+
+        if len(list_like_names) == 0:
+            return out
+
+        changed = True
+        while changed:
+            changed = False
+
+            def _mark(name: str) -> None:
+                nonlocal changed
+                if name == "" or name in out:
+                    return
+                out.add(name)
+                changed = True
+
+            def _scan(cur: Any) -> None:
+                node = self.any_to_dict_or_empty(cur)
+                if len(node) == 0:
+                    return
+                kind = self._node_kind_from_dict(node)
+                if kind in {"Assign", "AnnAssign"}:
+                    targets: set[str] = set()
+                    self._collect_name_targets(node.get("target"), targets)
+                    value_node = self.any_to_dict_or_empty(node.get("value"))
+                    if self._node_kind_from_dict(value_node) == "Name":
+                        src_name = self.any_dict_get_str(value_node, "id", "")
+                        if src_name in list_like_names or src_name in out:
+                            if not (len(targets) == 1 and src_name in targets):
+                                _mark(src_name)
+                                for target_name in targets:
+                                    _mark(target_name)
+                for value in node.values():
+                    if isinstance(value, dict) or isinstance(value, list):
+                        _scan(value)
+
+            i = 0
+            while i < len(body):
+                _scan(body[i])
+                i += 1
         return out
 
     def transpile(self) -> str:
