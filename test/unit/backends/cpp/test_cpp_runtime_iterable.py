@@ -77,6 +77,28 @@ int main() {
     py_clear(mut_list_obj);
     assert(py_len(mut_list_obj) == 0);
 
+    rc<list<int64>> typed = rc_list_from_value(list<int64>{3, 1, 2});
+    assert(py_len(typed) == 3);
+    assert(py_to_bool(typed));
+    list<int64> typed_head = py_slice(typed, 0, 2);
+    assert(typed_head.size() == 2);
+    assert(typed_head[0] == 3);
+    assert(typed_head[1] == 1);
+    py_set_at(typed, 1, int64(9));
+    assert(py_at(typed, 1) == 9);
+    py_append(typed, int64(4));
+    py_extend(typed, list<int64>{5, 6});
+    assert(py_len(typed) == 6);
+    assert(py_pop(typed) == 6);
+    assert(py_pop(typed, 0) == 3);
+    py_reverse(typed);
+    assert(py_at(typed, 0) == 5);
+    py_sort(typed);
+    assert(py_at(typed, 0) == 2);
+    py_clear(typed);
+    assert(py_len(typed) == 0);
+    assert(!py_to_bool(typed));
+
     int64 sum = 0;
     for (object v : py_dyn_range(list_obj)) {
         sum += obj_to_int64(v);

@@ -1084,19 +1084,110 @@ inline _PyUrllibCompat urllib{};
 
 // list / str の添字・スライス互換ヘルパ。
 template <class T>
-static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up) {
-    const int64 n = static_cast<int64>(v.size());
+static inline T py_list_item_cast(const object& item);
+
+template <class T>
+static inline T py_list_item_cast(const ::std::any& item);
+
+template <class T>
+static inline T py_list_item_cast(const char* item);
+
+template <class T, class U>
+static inline T py_list_item_cast(const U& item);
+
+template <class T>
+static inline list<T> py_list_slice_copy(const list<T>& values, int64 lo, int64 up) {
+    const int64 n = static_cast<int64>(values.size());
     if (lo < 0) lo += n;
     if (up < 0) up += n;
     lo = ::std::max<int64>(0, ::std::min<int64>(lo, n));
     up = ::std::max<int64>(0, ::std::min<int64>(up, n));
     if (up < lo) up = lo;
-    return list<T>(v.begin() + lo, v.begin() + up);
+    return list<T>(values.begin() + lo, values.begin() + up);
+}
+
+template <class T>
+static inline int64 py_list_normalize_index_or_raise(const list<T>& values, int64 idx, const char* label) {
+    int64 pos = idx;
+    const int64 n = static_cast<int64>(values.size());
+    if (pos < 0) pos += n;
+    if (pos < 0 || pos >= n) {
+        throw ::std::out_of_range(label);
+    }
+    return pos;
+}
+
+template <class T>
+static inline T& py_list_at_ref(list<T>& values, int64 idx) {
+    const int64 pos = py_list_normalize_index_or_raise(values, idx, "list index out of range");
+    return values[static_cast<::std::size_t>(pos)];
+}
+
+template <class T>
+static inline const T& py_list_at_ref(const list<T>& values, int64 idx) {
+    const int64 pos = py_list_normalize_index_or_raise(values, idx, "list index out of range");
+    return values[static_cast<::std::size_t>(pos)];
+}
+
+template <class T, class U>
+static inline void py_list_append_mut(list<T>& values, const U& item) {
+    values.append(py_list_item_cast<T>(item));
+}
+
+template <class T, class I, class U>
+static inline void py_list_set_at_mut(list<T>& values, I idx, const U& item) {
+    int64 pos = py_to<int64>(idx);
+    pos = py_list_normalize_index_or_raise(values, pos, "list index out of range");
+    values[static_cast<::std::size_t>(pos)] = py_list_item_cast<T>(item);
+}
+
+template <class T, class U>
+static inline void py_list_extend_mut(list<T>& values, const U& items) {
+    values.extend(items);
+}
+
+template <class T>
+static inline T py_list_pop_mut(list<T>& values) {
+    return values.pop();
+}
+
+template <class T>
+static inline T py_list_pop_mut(list<T>& values, int64 idx) {
+    return values.pop(idx);
+}
+
+template <class T>
+static inline void py_list_clear_mut(list<T>& values) {
+    values.clear();
+}
+
+template <class T>
+static inline void py_list_reverse_mut(list<T>& values) {
+    ::std::reverse(values.begin(), values.end());
+}
+
+template <class T>
+static inline void py_list_sort_mut(list<T>& values) {
+    ::std::sort(values.begin(), values.end());
+}
+
+static inline void py_list_sort_mut(list<object>& values) {
+    ::std::sort(
+        values.begin(),
+        values.end(),
+        [](const object& lhs, const object& rhs) {
+            return py_to_string(lhs) < py_to_string(rhs);
+        });
+}
+
+template <class T>
+static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up) {
+    return py_list_slice_copy(v, lo, up);
 }
 
 template <class T>
 static inline list<T> py_slice(const rc<list<T>>& v, int64 lo, int64 up) {
-    return py_slice(rc_list_ref(v), lo, up);
+    return py_list_slice_copy(rc_list_ref(v), lo, up);
 }
 
 static inline str py_slice(const str& v, int64 lo, int64 up) {
@@ -1115,30 +1206,22 @@ static inline str py_slice(const str& v, int64 lo, const ::std::any& up) {
 
 template <class T>
 static inline T& py_at(list<T>& v, int64 idx) {
-    if (idx < 0) idx += static_cast<int64>(v.size());
-    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
-        throw ::std::out_of_range("list index out of range");
-    }
-    return v[static_cast<::std::size_t>(idx)];
+    return py_list_at_ref(v, idx);
 }
 
 template <class T>
 static inline const T& py_at(const list<T>& v, int64 idx) {
-    if (idx < 0) idx += static_cast<int64>(v.size());
-    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
-        throw ::std::out_of_range("list index out of range");
-    }
-    return v[static_cast<::std::size_t>(idx)];
+    return py_list_at_ref(v, idx);
 }
 
 template <class T>
 static inline T& py_at(rc<list<T>>& v, int64 idx) {
-    return py_at(rc_list_ref(v), idx);
+    return py_list_at_ref(rc_list_ref(v), idx);
 }
 
 template <class T>
 static inline const T& py_at(const rc<list<T>>& v, int64 idx) {
-    return py_at(rc_list_ref(v), idx);
+    return py_list_at_ref(rc_list_ref(v), idx);
 }
 
 template <class T>
@@ -1175,12 +1258,12 @@ static inline T py_list_item_cast(const U& item) {
 
 template <class T, class U>
 static inline void py_append(list<T>& v, const U& item) {
-    v.append(py_list_item_cast<T>(item));
+    py_list_append_mut(v, item);
 }
 
 template <class T, class U>
 static inline void py_append(rc<list<T>>& v, const U& item) {
-    rc_list_ref(v).append(py_list_item_cast<T>(item));
+    py_list_append_mut(rc_list_ref(v), item);
 }
 
 template <class T>
@@ -1339,7 +1422,7 @@ static inline const V& py_at(const dict<K, V>& d, const Q& key) {
 
 static inline object py_at(const object& v, int64 idx) {
     if (const auto* lst = obj_to_list_ptr(v)) {
-        return py_at(*lst, idx);
+        return py_list_at_ref(*lst, idx);
     }
     if (const auto* s = py_obj_cast<PyStrObj>(v)) {
         return make_object(s->value[idx]);
@@ -1349,7 +1432,7 @@ static inline object py_at(const object& v, int64 idx) {
 
 static inline object py_slice(const object& v, int64 lo, int64 up) {
     if (const auto* lst = obj_to_list_ptr(v)) {
-        return make_object(py_slice(*lst, lo, up));
+        return make_object(py_list_slice_copy(*lst, lo, up));
     }
     if (const auto* s = py_obj_cast<PyStrObj>(v)) {
         return make_object(py_slice(s->value, lo, up));
@@ -1368,7 +1451,7 @@ static inline object py_slice(const object& v, int64 lo, const ::std::any& up) {
 static inline void py_append(const object& v, const object& item) {
     auto p = obj_to_list_obj(v);
     if (p) {
-        p->value.append(item);
+        py_list_append_mut(p->value, item);
         return;
     }
     throw ::std::runtime_error("append on non-list object");
@@ -1379,33 +1462,17 @@ static inline void py_set_at(const object& v, int64 idx, const object& item) {
     if (!p) {
         throw ::std::runtime_error("setitem on non-list object");
     }
-    int64 pos = idx;
-    const int64 n = static_cast<int64>(p->value.size());
-    if (pos < 0) {
-        pos += n;
-    }
-    if (pos < 0 || pos >= n) {
-        throw ::std::out_of_range("list index out of range");
-    }
-    p->value[static_cast<::std::size_t>(pos)] = item;
+    py_list_set_at_mut(p->value, idx, item);
 }
 
 template <class T, class I, class U>
 static inline void py_set_at(list<T>& v, I idx, const U& item) {
-    int64 pos = py_to<int64>(idx);
-    const int64 n = static_cast<int64>(v.size());
-    if (pos < 0) {
-        pos += n;
-    }
-    if (pos < 0 || pos >= n) {
-        throw ::std::out_of_range("list index out of range");
-    }
-    v[static_cast<::std::size_t>(pos)] = py_list_item_cast<T>(item);
+    py_list_set_at_mut(v, idx, item);
 }
 
 template <class T, class I, class U>
 static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
-    py_set_at(rc_list_ref(v), idx, item);
+    py_list_set_at_mut(rc_list_ref(v), idx, item);
 }
 
 template <class K, class V, class Q, class U>
@@ -1423,24 +1490,22 @@ static inline void py_extend(const object& v, const object& items) {
     if (src == nullptr) {
         throw ::std::runtime_error("extend source must be list object");
     }
-    for (const object& item : *src) {
-        p->value.append(item);
-    }
+    py_list_extend_mut(p->value, *src);
 }
 
 template <class T>
 static inline void py_extend(rc<list<T>>& v, const list<T>& items) {
-    rc_list_ref(v).extend(items);
+    py_list_extend_mut(rc_list_ref(v), items);
 }
 
 template <class T>
 static inline void py_extend(rc<list<T>>& v, const rc<list<T>>& items) {
-    rc_list_ref(v).extend(rc_list_ref(items));
+    py_list_extend_mut(rc_list_ref(v), rc_list_ref(items));
 }
 
 template <class T, class U, ::std::enable_if_t<!::std::is_same_v<U, list<T>> && !::std::is_same_v<U, rc<list<T>>>, int> = 0>
 static inline void py_extend(rc<list<T>>& v, const U& items) {
-    rc_list_ref(v).extend(items);
+    py_list_extend_mut(rc_list_ref(v), items);
 }
 
 static inline object py_pop(const object& v) {
@@ -1448,7 +1513,7 @@ static inline object py_pop(const object& v) {
     if (!p) {
         throw ::std::runtime_error("pop on non-list object");
     }
-    return p->value.pop();
+    return py_list_pop_mut(p->value);
 }
 
 static inline object py_pop(const object& v, int64 idx) {
@@ -1456,17 +1521,17 @@ static inline object py_pop(const object& v, int64 idx) {
     if (!p) {
         throw ::std::runtime_error("pop on non-list object");
     }
-    return p->value.pop(idx);
+    return py_list_pop_mut(p->value, idx);
 }
 
 template <class T>
 static inline T py_pop(rc<list<T>>& v) {
-    return rc_list_ref(v).pop();
+    return py_list_pop_mut(rc_list_ref(v));
 }
 
 template <class T>
 static inline T py_pop(rc<list<T>>& v, int64 idx) {
-    return rc_list_ref(v).pop(idx);
+    return py_list_pop_mut(rc_list_ref(v), idx);
 }
 
 static inline void py_clear(const object& v) {
@@ -1474,12 +1539,12 @@ static inline void py_clear(const object& v) {
     if (!p) {
         throw ::std::runtime_error("clear on non-list object");
     }
-    p->value.clear();
+    py_list_clear_mut(p->value);
 }
 
 template <class T>
 static inline void py_clear(rc<list<T>>& v) {
-    rc_list_ref(v).clear();
+    py_list_clear_mut(rc_list_ref(v));
 }
 
 static inline void py_reverse(const object& v) {
@@ -1487,13 +1552,12 @@ static inline void py_reverse(const object& v) {
     if (!p) {
         throw ::std::runtime_error("reverse on non-list object");
     }
-    ::std::reverse(p->value.begin(), p->value.end());
+    py_list_reverse_mut(p->value);
 }
 
 template <class T>
 static inline void py_reverse(rc<list<T>>& v) {
-    auto& items = rc_list_ref(v);
-    ::std::reverse(items.begin(), items.end());
+    py_list_reverse_mut(rc_list_ref(v));
 }
 
 static inline void py_sort(const object& v) {
@@ -1501,18 +1565,12 @@ static inline void py_sort(const object& v) {
     if (!p) {
         throw ::std::runtime_error("sort on non-list object");
     }
-    ::std::sort(
-        p->value.begin(),
-        p->value.end(),
-        [](const object& lhs, const object& rhs) {
-            return py_to_string(lhs) < py_to_string(rhs);
-        });
+    py_list_sort_mut(p->value);
 }
 
 template <class T>
 static inline void py_sort(rc<list<T>>& v) {
-    auto& items = rc_list_ref(v);
-    ::std::sort(items.begin(), items.end());
+    py_list_sort_mut(rc_list_ref(v));
 }
 
 static inline int64 py_index(const object& v, const object& item) {
