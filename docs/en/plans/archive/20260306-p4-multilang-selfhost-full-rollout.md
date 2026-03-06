@@ -1,9 +1,10 @@
-# P4: Full Multi-Language Selfhost Completion (Very Low Priority)
+# P4: Full Multi-Language Selfhost Completion (Deferred Until ABI Stabilization)
 
-Last updated: 2026-03-02
+Last updated: 2026-03-06
 
 Related TODO:
-- `ID: P4-MULTILANG-SH-01` in `docs/ja/todo/index.md`
+- Removed from the open TODO list on 2026-03-06.
+- Re-add `ID: P4-MULTILANG-SH-01` only after ABI and runtime-boundary work has stabilized.
 
 Background:
 - In current multi-language selfhost status, unfinished `stage1/stage2/stage3` remains outside C++.
@@ -37,6 +38,7 @@ Verification commands:
 Decision log:
 - 2026-02-27: Per user request, added full multi-language selfhost completion as very-low-priority (`P4`) TODO.
 - 2026-03-02: Per user request, added `ruby/lua/scala` to selfhost target languages and expanded P4 monitoring scope to `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala`.
+- 2026-03-06: Per user instruction, this plan was withdrawn from the open TODO list because selfhost work is not meaningful until the ABI/runtime boundary is properly stabilized. This is not treated as completed; it is deferred for later re-entry.
 - 2026-02-27: Fixed per-language stage blockers and runner-contract definitions (`S1-01`, `S1-02`).
 - 2026-02-27 to 2026-03-01: Completed Rust stage1 unblock and C# stage2/stage3 unblocks through incremental emitter/runtime/selfhost source fixes.
 - 2026-03-01: `P4-MULTILANG-SH-01-S2-02` and child tasks through `S2-02-S3` reached done status; remaining work is now JS/TS/GSK chain and CI integration.

@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-04
+Last updated: 2026-03-06
 
 ## Context Operation Rules
 
@@ -94,23 +94,3 @@ Context: [docs/en/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parit
 10. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] Lint emitter prohibitions (runtime/library hardcoded names) and fail-fast in PR/CI.
 11. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] Re-run sample parity for all target languages including artifact size + CRC32 and lock diffs.
 12. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] Reflect operation procedures (local/CI) in `docs/ja` and `docs/en`.
-
-### P4: Full selfhost completion for all languages (Very very low priority)
-
-Context: [docs/ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)
-
-1. [ ] [ID: P4-MULTILANG-SH-01] Gradually establish selfhost for `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala` and make multistage monitoring pass across all languages.
-2. [ ] [ID: P4-MULTILANG-SH-01-S2-03] Resolve JS selfhost stage2 dependency-transpile failure and pass multistage.
-3. [ ] [ID: P4-MULTILANG-SH-01-S3-01] Resolve TypeScript preview-only status and move to a selfhost-executable generation mode.
-4. [ ] [ID: P4-MULTILANG-SH-01-S3-02] Connect with native backend tasks for Go/Java/Swift/Kotlin and enable the selfhost execution chain.
-5. [ ] [ID: P4-MULTILANG-SH-01-S3-03] Add Ruby/Lua/Scala3 to selfhost multistage monitoring targets and resolve undefined runner states.
-6. [ ] [ID: P4-MULTILANG-SH-01-S4-01] Integrate all-language multistage regressions into CI paths so recurrence of failure categories is continuously detected.
-7. [ ] [ID: P4-MULTILANG-SH-01-S4-02] Document the completion-judgment template (stage pass conditions and exclusion conditions per language) and lock operation rules.
-- Completed child tasks (`S1-01` to `S2-02-S3`) and past progress memos have been moved to `docs/ja/todo/archive/20260301.md`.
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] Resolved JS emitter selfhost parser constraint violations (`Any`-typed `node.get()/node.items()`) and missing in-function `FunctionDef` support, moving the first failure from `stage1_dependency_transpile_fail` to `self_retranspile_fail (ERR_MODULE_NOT_FOUND: ./pytra/std.js)`.
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] Added shim generation/import normalization/export injection/syntax rewrites for JS selfhost preparation and resolved `ERR_MODULE_NOT_FOUND`. The first failure shifted to `SyntaxError: Unexpected token ':'` (from `raw[qpos:]`).
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] For JS selfhost, applied stepwise source-side degradation for slice/set checks, ESM shims, redesigned import normalization, compatibility shims for `argparse`/`Path`, `.py -> EAST3(JSON)` input path, and selfhost compatibility for `JsEmitter` profile loader. First failure advanced past `ReferenceError/SyntaxError` group to `TypeError: CodeEmitter._dict_copy_str_object is not a function`.
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] Made dict access object-safe in `CodeEmitter.load_type_map` and `js_emitter` initialization, and added `set/list/dict` polyfills plus `CodeEmitter` static alias supplementation in selfhost rewrite. First failure moved from `dict is not defined` to `TypeError: module.get is not a function`.
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] Rewrote `.get -> __pytra_dict_get` in selfhost rewrite, and added `parent/name/stem` property compatibility plus idempotent defaults for `mkdir(parents/exist_ok)` in `Path` shim. `js` reached `stage1 pass / stage2 pass`, and first failure moved to `stage3 sample output missing`.
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] Added object-safe conversions for `CodeEmitter/JsEmitter` (remove `startswith/strip/find` dependencies, fix `next_tmp` f-string, remove `ord/chr` dependency in ASCII helper) and String polyfills in selfhost rewrite (`strip/lstrip/rstrip/startswith/endswith/find/lower/upper/map`). `js` maintained `stage1/native pass` and `multistage stage2 pass`; first failure advanced to `stage3 sample_transpile_fail (SyntaxError: Invalid or unexpected token)`.
-- Progress memo: [ID: P4-MULTILANG-SH-01-S2-03] Replaced `emit` indentation generation (string multiplication) with loops, added non-string guard for `quote_string_literal` `quote`, and changed `_emit_function` `in_class` check from `None`-dependent to empty-string check. `js` maintained `stage1/native pass` and `multistage stage2 pass`; first failure updated to `stage3 sample_transpile_fail (SyntaxError: Unexpected token '{')` (remaining issue: unresolved placeholder/function-header collapse in `py2js_stage2.js`).

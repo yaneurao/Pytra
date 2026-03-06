@@ -21,9 +21,13 @@
 - [2026-02-23 / TG-P2-MICROGPT-COMPAT](../plans/archive/20260223-tg-p2-microgpt-compat.md)
 - [2026-02-23 / TG-P3-SPEC-DRAFTS](../plans/archive/20260223-tg-p3-spec-drafts.md)
 
+## 保留 / 退避 plan アーカイブ
+
+- [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md)（ABI 確立後に再投入）
+
 ## 日付別リンク
 
-- [2026-03-06](20260306.md)（7 セクション）
+- [2026-03-06](20260306.md)（8 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
 - [2026-03-04](20260304.md)（9 セクション）
 - [2026-03-03](20260303.md)（10 セクション）
