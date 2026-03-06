@@ -117,9 +117,9 @@
 - [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01] `object` / `list<T>` / `rc<list<T>>` の責務境界を plan/spec で固定し、`@extern` ABI 非対象を明記する。
 - [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
 
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
 
 - [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
 - [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
@@ -137,3 +137,7 @@
 - 2026-03-06: 初期対象は「Name-to-Name 代入で alias 化が確定した list ローカル」のみに限定し、一括 `rc<>` 化は行わない。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01`] `docs/ja/spec/spec-abi.md` と `docs/ja/spec/spec-runtime.md` を更新し、`rc<list<T>>` は backend 内部 typed handle であって ABI 型ではないこと、`@extern` 境界では `list<T>` へ正規化すること、helper 配置先は `src/runtime/<lang>/core/` であることを明文化した。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02`] fixture `test/fixtures/collections/list_alias_shared_mutation.py` を `cpp_list_model=pyobj` で再生成し、現状の fallback が `object a = make_object(list<int64>{1, 2});` / `object b = make_object(a);` / `py_append(b, make_object(3));` になることを固定した。これは alias 共有は満たすが typed 要素型を失う、という本計画の出発点である。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01`] `RcObject` を `PyObj` 専用から一般化し、`list<T>` を `pytra::gc::RcObject` 継承へ変更した。`py_types.ext.h` に `rc_list_new / rc_list_from_value / rc_list_ref / rc_list_copy_value` と `py_is_rc_list_handle` trait を追加し、typed handle を runtime の first-class な内部表現として扱える状態にした。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02`] `py_runtime.ext.h` に `py_len / py_append / py_extend / py_pop / py_slice / py_at / py_set_at / py_clear / py_reverse / py_sort` の `rc<list<T>>` overload を追加した。これにより alias 用 typed handle でも list mutation / indexing / slicing を object boxing なしで呼べる。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03`] `make_object(const rc<list<T>>&)` と `obj_to_rc_list<T>` / `obj_to_rc_list_or_raise`、`py_to<rc<list<T>>>` / `py_object_try_cast<rc<list<T>>>` を追加した。`rc<list<T>> -> object` は boxed copy、`object -> rc<list<T>>` は typed unbox copy とし、ABI ではなく backend 内部 adapter に留めた。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01`] 検証として `test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。加えて ad-hoc の `rc<list<int64>>` smoke を `g++ -std=c++20` でコンパイル実行し、`len/append/extend/pop/set_at/object roundtrip` が成立することを確認した。

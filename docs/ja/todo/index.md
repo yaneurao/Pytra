@@ -40,11 +40,11 @@
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
 3. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-4. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
+4. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-5. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
+5. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-6. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
+6. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
 7. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
