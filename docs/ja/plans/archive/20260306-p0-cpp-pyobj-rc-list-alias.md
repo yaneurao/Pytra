@@ -125,11 +125,11 @@
 - [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
 - [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03] method call / subscript / len / slice / truthy 判定の描画を `rc<list<T>>` aware に更新する。
 
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-01] 関数引数・返り値・callsite coercion で `rc<list<T>>` と `list<T>` の adapter 挿入条件を整理し、ABI 境界で `list<T>` を維持する。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-02] `Any/object` へ流れる箇所だけ `object` boxing を残し、alias 用に入れた `object` fallback を縮小・撤去する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-01] 関数引数・返り値・callsite coercion で `rc<list<T>>` と `list<T>` の adapter 挿入条件を整理し、ABI 境界で `list<T>` を維持する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-02] `Any/object` へ流れる箇所だけ `object` boxing を残し、alias 用に入れた `object` fallback を縮小・撤去する。
 
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-01] alias fixture / runtime unit / C++ backend unit を追加更新して回帰を固定する。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-02] sample representative case（少なくとも `sample/18`）で compile/run を確認し、決定ログへ結果を残す。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-01] alias fixture / runtime unit / C++ backend unit を追加更新して回帰を固定する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-02] sample representative case（少なくとも `sample/18`）で compile/run を確認し、決定ログへ結果を残す。
 
 決定ログ:
 - 2026-03-06: ユーザー指示により、`cpp_list_model=pyobj` の alias 維持を `object` ではなく `rc<list<T>>` へ置換する P0 計画を起票した。
@@ -144,3 +144,7 @@
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01`] emitter の alias 名判定を `object` runtime list から分離し、alias 名だけ `rc<list<T>>` handle 経路へ切り替えた。`_uses_pyobj_runtime_list_expr()` は alias 名で false、`_uses_pyobj_rc_list_expr()` を追加して method/index path の dispatch を分離した。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02`] `AnnAssign/Assign` の alias ターゲット宣言を `rc<list<T>>` に変更し、`b = a` は handle copy、list literal / empty list / list comprehension は `rc_list_from_value(...)` へ寄せた。`list_alias_shared_mutation.py` の生成結果は `rc<list<int64>> a = rc_list_from_value(list<int64>{1, 2}); rc<list<int64>> b = a;` となり、`make_object(...)` fallback が消えた。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03`] method call / subscript / len / slice / truthy の `rc<list<T>>` aware 描画を追加した。`ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` は alias handle なら `py_*` overload を呼び、subscript は `py_at(handle, ...)`、truthy/len compare fastpath は `.empty()` へ縮退せず `py_len(handle)` を使うようにした。ad-hoc case `a/b alias + append/pop/subscript/slice/truthy/reverse/sort` を C++ 変換・コンパイル・実行し `True` を確認した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-01`] callsite / return 境界に adapter を追加した。`consume(xs: list[int])` へ alias handle `b` を渡すケースは `consume(rc_list_ref(b))` へ lower され、`return b` で `return_type=list[int]` の場合は `return rc_list_copy_value(b);` を返す。module function coercion も同様に `rc_list_ref(...)` を使う。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-02`] alias 用に入れていた `object` fallback は emitter から撤去した。alias 名は `object` ではなく `rc<list<T>>` handle として保持し、`Any/object` へ流れる箇所だけ `make_object(handle)` を許可する構成に整理した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-01`] `test_py2cpp_list_pyobj_model.py` に function boundary parity case を追加し、`consume(b)` / `return b` / `bool(b)` / `c[0]` を Python と C++ `cpp_list_model=pyobj` で比較固定した。回帰テストは 3 件で通過した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-02`] representative case として既存 `sample/18` parity test を再実行し通過した。加えて ad-hoc boundary case 2 件（引数境界・返り値境界）を `g++ -std=c++20` でコンパイル実行し、`consume(rc_list_ref(b))` と `return rc_list_copy_value(b)` が成立することを確認した。
