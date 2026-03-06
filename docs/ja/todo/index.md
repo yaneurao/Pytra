@@ -32,31 +32,4 @@
 
 ## 未完了タスク
 
-### P0: `cpp_list_model=pyobj` alias 維持の `rc<list<T>>` 化
-
-1. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01] `cpp_list_model=pyobj` の alias 維持を `object` ではなく `rc<list<T>>` に置き換え、typed 要素型を保持したまま Python 互換の共有セマンティクスを成立させる。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-2. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01] `object` / `list<T>` / `rc<list<T>>` の責務境界を plan/spec で固定し、`@extern` ABI 非対象を明記する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-3. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-4. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-5. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-6. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-7. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-8. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-9. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03] method call / subscript / len / slice / truthy 判定の描画を `rc<list<T>>` aware に更新する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-10. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-01] 関数引数・返り値・callsite coercion で `rc<list<T>>` と `list<T>` の adapter 挿入条件を整理し、ABI 境界で `list<T>` を維持する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-11. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-02] `Any/object` へ流れる箇所だけ `object` boxing を残し、alias 用に入れた `object` fallback を縮小・撤去する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-12. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-01] alias fixture / runtime unit / C++ backend unit を追加更新して回帰を固定する。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-13. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S5-02] sample representative case（少なくとも `sample/18`）で compile/run を確認し、決定ログへ結果を残す。
-文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
+現在、未完了タスクはありません。
