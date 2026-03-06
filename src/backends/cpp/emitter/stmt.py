@@ -97,7 +97,7 @@ class CppStatementEmitter:
             and ann_t_norm.startswith("list[")
             and ann_t_norm.endswith("]")
         )
-        force_typed_list_ann = list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(ann_t_norm)
+        force_typed_list_ann = list_model == "pyobj" and self._is_pyobj_value_model_list_type(ann_t_norm)
         force_typed_list_str = force_typed_list_ann and ann_t_norm == "list[str]"
         if alias_runtime_list_ann:
             t = self._cpp_pyobj_alias_list_handle_type_text(ann_t_norm)
@@ -186,6 +186,16 @@ class CppStatementEmitter:
                 ann_t_str,
                 f"annassign:{target}",
             )
+        if (
+            (not alias_runtime_list_ann)
+            and force_typed_list_ann
+            and rendered_val != ""
+            and (
+                self._uses_pyobj_rc_list_expr(stmt.get("value"))
+                or self._call_expr_returns_known_pyobj_list_handle(stmt.get("value"))
+            )
+        ):
+            rendered_val = f"rc_list_copy_value({rendered_val})"
         if alias_runtime_list_ann and rendered_val != "":
             rendered_val = self._render_pyobj_alias_list_value(rendered_val, stmt.get("value"), ann_t_norm)
         elif self.is_any_like_type(ann_t_str) and val_is_dict:
@@ -617,6 +627,16 @@ class CppStatementEmitter:
                     picked,
                     f"assign:{texpr}",
                 )
+            if (
+                (not runtime_alias_target)
+                and self._is_pyobj_value_model_list_type(picked)
+                and rval != ""
+                and (
+                    self._uses_pyobj_rc_list_expr(value)
+                    or self._call_expr_returns_known_pyobj_list_handle(value)
+                )
+            ):
+                rval = f"rc_list_copy_value({rval})"
             if runtime_alias_target and rval != "":
                 rval = self._render_pyobj_alias_list_value(rval, value, picked)
             elif self.is_any_like_type(picked):
@@ -666,6 +686,16 @@ class CppStatementEmitter:
                 t_target,
                 f"assign:{texpr}",
             )
+        if (
+            (not runtime_alias_target)
+            and self._is_pyobj_value_model_list_type(t_target)
+            and rval != ""
+            and (
+                self._uses_pyobj_rc_list_expr(value)
+                or self._call_expr_returns_known_pyobj_list_handle(value)
+            )
+        ):
+            rval = f"rc_list_copy_value({rval})"
         if runtime_alias_target and rval != "":
             rval = self._render_pyobj_alias_list_value(rval, value, t_target)
         elif self.is_any_like_type(t_target):
@@ -837,6 +867,8 @@ class CppStatementEmitter:
             return
         t = self.render_expr(stmt.get("target"))
         it = self.render_expr(stmt.get("iter"))
+        if self._uses_pyobj_rc_list_expr(iter_expr):
+            it = f"rc_list_ref({it})"
         t0 = self.any_to_str(stmt.get("target_type"))
         t1 = self.get_expr_type(stmt.get("target"))
         t_ty = self._cpp_type_text(t0 if t0 != "" else t1)
@@ -1344,6 +1376,13 @@ class CppStatementEmitter:
         src_expr = self.render_expr(src_node)
         if src_expr == "":
             return ""
+        if self._uses_pyobj_rc_list_expr(src_node):
+            if len(args) >= 2:
+                start_expr = self.render_expr(args[1])
+                if start_expr == "":
+                    return ""
+                return f"py_enumerate({src_expr}, py_to<int64>({start_expr}))"
+            return f"py_enumerate({src_expr})"
         if self._is_typed_list_str_name(src_name):
             if len(args) >= 2:
                 start_expr = self.render_expr(args[1])
@@ -1520,6 +1559,8 @@ class CppStatementEmitter:
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 typed_iter_expr = iter_txt
+                if self._uses_pyobj_rc_list_expr(iter_expr):
+                    typed_iter_expr = f"rc_list_ref({iter_txt})"
                 if force_runtime_iter and typed_iter:
                     refclass_override = self._render_forcore_typed_refclass_list_iter_expr(iter_expr, iter_item_t, target_id)
                     if refclass_override != "":
@@ -1579,6 +1620,8 @@ class CppStatementEmitter:
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 typed_iter_expr = iter_txt
+                if self._uses_pyobj_rc_list_expr(iter_expr):
+                    typed_iter_expr = f"rc_list_ref({iter_txt})"
                 if force_runtime_iter and typed_iter:
                     enumerate_override = self._render_forcore_typed_enumerate_iter_expr(iter_expr, iter_item_t)
                     if enumerate_override != "":
@@ -1702,11 +1745,9 @@ class CppStatementEmitter:
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
         is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
         yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
-        ret = self.cpp_type(stmt.get("return_type"))
+        ret = self.cpp_signature_type(stmt.get("return_type"))
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        if (not is_generator) and list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(ret_t_norm):
-            ret = self._cpp_list_value_model_type_text(ret_t_norm)
         if is_generator:
             elem_type_for_cpp = yield_value_type
             if elem_type_for_cpp in {"", "unknown"}:
@@ -1724,6 +1765,7 @@ class CppStatementEmitter:
         fn_scope: set[str] = set()
         arg_names: list[str] = []
         typed_list_str_params: set[str] = set()
+        ref_first_param_names: set[str] = set()
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "":
@@ -1734,13 +1776,11 @@ class CppStatementEmitter:
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
-            ct = self._cpp_type_text(t)
+            ct = self.cpp_signature_type(t)
             t_norm = self.normalize_type_name(t)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
-            if (not skip_self) and list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(t_norm):
-                ct = self._cpp_list_value_model_type_text(t_norm)
-                if t_norm == "list[str]":
-                    typed_list_str_params.add(n)
+            if (not skip_self) and list_model == "pyobj" and self._is_pyobj_ref_first_list_type(t_norm):
+                ref_first_param_names.add(n)
             usage = self.any_to_str(arg_usage.get(n))
             usage = usage if usage != "" else "readonly"
             if usage != "mutable" and n in mutated_params:
@@ -1804,7 +1844,7 @@ class CppStatementEmitter:
         self.current_function_symbol = function_symbol
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         self.current_function_stack_list_locals = set(stack_list_locals)
-        self.current_function_pyobj_runtime_list_alias_names = set(runtime_list_alias_names)
+        self.current_function_pyobj_runtime_list_alias_names = set(runtime_list_alias_names) | set(ref_first_param_names)
         self.current_function_typed_list_str_params = set(typed_list_str_params)
         self.current_function_typed_list_str_locals = set()
         self.current_function_reassigned_names = set(reassigned_names)

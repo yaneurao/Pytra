@@ -36,8 +36,8 @@ class CppTypeBridgeEmitter:
             return self._is_concrete_type_for_typed_list(set_inner[0])
         return True
 
-    def _is_pyobj_forced_typed_list_type(self, east_type: str) -> bool:
-        """`pyobj` でも value-model list を優先する型か判定する（段階拡張）。"""
+    def _is_pyobj_value_model_list_type(self, east_type: str) -> bool:
+        """`pyobj` でも typed value-model で扱える list 型か判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
             return False
         t_norm = self.normalize_type_name(east_type)
@@ -50,6 +50,21 @@ class CppTypeBridgeEmitter:
         if not self._is_concrete_type_for_typed_list(elem_t):
             return False
         return True
+
+    def _is_pyobj_ref_first_list_type(self, east_type: str) -> bool:
+        """`pyobj` で backend 内部の ref-first handle を使う typed list 型か判定する。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        t_norm = self.normalize_type_name(east_type)
+        if not (t_norm.startswith("list[") and t_norm.endswith("]")):
+            return False
+        list_inner = self.type_generic_args(t_norm, "list")
+        if len(list_inner) != 1:
+            return False
+        elem_t = self.normalize_type_name(list_inner[0])
+        if not self._is_concrete_type_for_typed_list(elem_t):
+            return False
+        return self._cpp_list_value_model_type_text(t_norm) != "bytearray"
 
     def _is_pyobj_runtime_list_type(self, east_type: str) -> bool:
         """`cpp_list_model=pyobj` で object runtime 経路を使う list 型か判定する。"""
@@ -202,11 +217,13 @@ class CppTypeBridgeEmitter:
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
         t_norm = self.normalize_type_name(target_t)
+        if self._is_pyobj_ref_first_list_type(t_norm):
+            return self._render_pyobj_alias_list_value(arg_txt, arg_node, t_norm)
         # `cpp_list_model=pyobj` でも list[RefClass] は typed container として扱う。
         # それ以外の list[...] は callsite coercion の target を object へ寄せる。
         if (
             self._is_pyobj_runtime_list_type(t_norm)
-            and (not self._is_pyobj_forced_typed_list_type(t_norm))
+            and (not self._is_pyobj_value_model_list_type(t_norm))
             and t_norm != "list[str]"
         ):
             t_norm = "object"
@@ -221,7 +238,7 @@ class CppTypeBridgeEmitter:
                 return "object(static_cast<PyObj*>(this), true)"
             if (
                 self._is_pyobj_runtime_list_type(at)
-                and (not self._is_pyobj_forced_typed_list_type(at))
+                and (not self._is_pyobj_value_model_list_type(at))
                 and len(arg_node_dict) > 0
             ):
                 if (not self._expr_is_stack_list_local(arg_node_dict)) and (not self._uses_pyobj_rc_list_expr(arg_node_dict)):
@@ -296,7 +313,17 @@ class CppTypeBridgeEmitter:
         east_type_txt = self.normalize_type_name(east_type_txt)
         return self._cpp_type_text(east_type_txt)
 
-    def _cpp_type_text(self, east_type: str) -> str:
+    def cpp_signature_type(self, east_type: Any) -> str:
+        """関数境界/宣言向けに ref-first list を反映した型文字列を返す。"""
+        east_type_txt = self.any_to_str(east_type)
+        if east_type_txt == "" and east_type is not None:
+            ttxt = str(east_type)
+            if ttxt != "" and ttxt not in {"{}", "[]"}:
+                east_type_txt = ttxt
+        east_type_txt = self.normalize_type_name(east_type_txt)
+        return self._cpp_type_text(east_type_txt, pyobj_ref_lists=True)
+
+    def _cpp_type_text(self, east_type: str, *, pyobj_ref_lists: bool = False) -> str:
         """正規化済み型名（str）を C++ 型名へマッピングする。"""
         t_norm, mapped = self.normalize_type_and_lookup_map(east_type, self.type_map)
         east_type = t_norm
@@ -330,9 +357,9 @@ class CppTypeBridgeEmitter:
                     if has_any_like:
                         return "object"
                     if has_none and len(non_none) == 1:
-                        return f"::std::optional<{self._cpp_type_text(non_none[0])}>"
+                        return f"::std::optional<{self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)}>"
                     if (not has_none) and len(non_none) == 1:
-                        return self._cpp_type_text(non_none[0])
+                        return self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)
                     return "object"
         if east_type == "None":
             return "void"
@@ -340,7 +367,9 @@ class CppTypeBridgeEmitter:
             return "pytra::runtime::cpp::base::PyFile"
         list_inner = self.type_generic_args(east_type, "list")
         if len(list_inner) == 1:
-            if self._is_pyobj_runtime_list_type(east_type) and (not self._is_pyobj_forced_typed_list_type(east_type)):
+            if pyobj_ref_lists and self._is_pyobj_ref_first_list_type(east_type):
+                return self._cpp_pyobj_alias_list_handle_type_text(east_type)
+            if self._is_pyobj_runtime_list_type(east_type) and (not self._is_pyobj_value_model_list_type(east_type)):
                 return "object"
             list_elem = list_inner[0]
             if list_elem == "None":
@@ -351,7 +380,7 @@ class CppTypeBridgeEmitter:
                 return "list<object>"
             if list_elem == "unknown":
                 return "list<object>"
-            return f"list<{self._cpp_type_text(list_elem)}>"
+            return f"list<{self._cpp_type_text(list_elem, pyobj_ref_lists=pyobj_ref_lists)}>"
         set_inner = self.type_generic_args(east_type, "set")
         if len(set_inner) == 1:
             set_elem = set_inner[0]
@@ -359,28 +388,34 @@ class CppTypeBridgeEmitter:
                 return "set<object>"
             if set_elem == "unknown":
                 return "set<str>"
-            return f"set<{self._cpp_type_text(set_elem)}>"
+            return f"set<{self._cpp_type_text(set_elem, pyobj_ref_lists=pyobj_ref_lists)}>"
         dict_inner = self.type_generic_args(east_type, "dict")
         if len(dict_inner) == 2:
             dict_key = dict_inner[0]
             dict_val = dict_inner[1]
             if dict_val == "None":
                 key_t = dict_key if dict_key not in {"", "unknown"} else "str"
-                return f"dict<{self._cpp_type_text(key_t)}, object>"
+                return f"dict<{self._cpp_type_text(key_t, pyobj_ref_lists=pyobj_ref_lists)}, object>"
             if self.is_any_like_type(dict_val):
-                return f"dict<{self._cpp_type_text(dict_key if dict_key != 'unknown' else 'str')}, object>"
+                return (
+                    f"dict<{self._cpp_type_text(dict_key if dict_key != 'unknown' else 'str', pyobj_ref_lists=pyobj_ref_lists)}, "
+                    "object>"
+                )
             if dict_key == "unknown" and dict_val == "unknown":
                 return "dict<str, object>"
             if dict_key == "unknown":
-                return f"dict<str, {self._cpp_type_text(dict_val)}>"
+                return f"dict<str, {self._cpp_type_text(dict_val, pyobj_ref_lists=pyobj_ref_lists)}>"
             if dict_val == "unknown":
-                return f"dict<{self._cpp_type_text(dict_key)}, object>"
-            return f"dict<{self._cpp_type_text(dict_key)}, {self._cpp_type_text(dict_val)}>"
+                return f"dict<{self._cpp_type_text(dict_key, pyobj_ref_lists=pyobj_ref_lists)}, object>"
+            return (
+                f"dict<{self._cpp_type_text(dict_key, pyobj_ref_lists=pyobj_ref_lists)}, "
+                f"{self._cpp_type_text(dict_val, pyobj_ref_lists=pyobj_ref_lists)}>"
+            )
         tuple_inner = self.type_generic_args(east_type, "tuple")
         if len(tuple_inner) > 0:
             inner_cpp: list[str] = []
             for x in tuple_inner:
-                inner_cpp.append(self._cpp_type_text(x))
+                inner_cpp.append(self._cpp_type_text(x, pyobj_ref_lists=pyobj_ref_lists))
             sep = ", "
             return "::std::tuple<" + sep.join(inner_cpp) + ">"
         if east_type == "unknown":

@@ -194,6 +194,8 @@ class CppAnalysisEmitter:
                 nm = self.any_to_str(base.get("id"))
                 if nm in params:
                     out.add(nm)
+            else:
+                self._mark_mutated_param_from_target(base, params, out)
             return
         if tkind == "Attribute":
             owner = self.any_to_dict_or_empty(tgt.get("value"))

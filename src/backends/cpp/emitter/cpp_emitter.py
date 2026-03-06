@@ -497,10 +497,33 @@ class CppEmitter(
         return name in self.current_function_typed_list_str_locals
 
     def _is_pyobj_runtime_list_alias_name(self, name: str) -> bool:
-        """`cpp_list_model=pyobj` で alias 共有維持のため handle 化する list 名か判定する。"""
+        """`cpp_list_model=pyobj` で handle-backed list として扱う識別子か判定する。"""
         if name == "":
             return False
         return name in self.current_function_pyobj_runtime_list_alias_names
+
+    def _call_expr_returns_known_pyobj_list_handle(self, expr_node: Any) -> bool:
+        """既知関数/メソッド call が ref-first list handle を返すか判定する。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        node = self.any_to_dict_or_empty(expr_node)
+        if self._node_kind_from_dict(node) != "Call":
+            return False
+        if self.any_dict_get_str(node, "lowered_kind", "") == "BuiltinCall":
+            return False
+        fn_node = self.any_to_dict_or_empty(node.get("func"))
+        fn_kind = self._node_kind_from_dict(fn_node)
+        if fn_kind == "Name":
+            fn_name = self.any_to_str(fn_node.get("id"))
+            if fn_name == "":
+                return False
+            fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+            ret_t = self.normalize_type_name(self.function_return_types.get(fn_name, ""))
+            return self._is_pyobj_ref_first_list_type(ret_t)
+        if fn_kind == "Attribute":
+            ret_t = self.normalize_type_name(self._infer_call_expr_type(node))
+            return self._is_pyobj_ref_first_list_type(ret_t)
+        return False
 
     def _uses_pyobj_rc_list_expr(self, expr_node: Any) -> bool:
         """list 式が `rc<list<T>>` alias handle 経路を使うべきか判定する。"""
@@ -534,14 +557,14 @@ class CppEmitter(
         expr_t = self.normalize_type_name(self.get_expr_type(node))
         if expr_t in {"", "unknown"}:
             expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
-        if self._is_pyobj_forced_typed_list_type(expr_t):
+        if self._is_pyobj_value_model_list_type(expr_t):
             return False
         if expr_t in {"", "unknown"} or self.is_any_like_type(expr_t):
             return True
         if self._contains_text(expr_t, "|"):
             for part in self.split_union(expr_t):
                 part_norm = self.normalize_type_name(part)
-                if self._is_pyobj_forced_typed_list_type(part_norm):
+                if self._is_pyobj_value_model_list_type(part_norm):
                     continue
                 if part_norm in {"", "unknown"} or self.is_any_like_type(part_norm):
                     return True
@@ -572,7 +595,7 @@ class CppEmitter(
         return f"rc<{self._cpp_list_value_model_type_text(east_type)}>"
 
     def _render_pyobj_alias_list_value(self, rendered_expr: str, value_node: Any, east_type: str) -> str:
-        """alias 用 list 値を `rc<list<T>>` handle 初期化へ寄せる。"""
+        """list 値を `rc<list<T>>` handle 初期化へ寄せる。"""
         rendered_trim = self._trim_ws(rendered_expr)
         if rendered_trim == "":
             return rendered_expr
@@ -588,6 +611,8 @@ class CppEmitter(
             src_name = self.any_dict_get_str(value, "id", "")
             if self._is_pyobj_runtime_list_alias_name(src_name):
                 return rendered_expr
+        if kind == "Call" and self._call_expr_returns_known_pyobj_list_handle(value):
+            return rendered_expr
         if kind == "List":
             elems = self._dict_stmt_list(value.get("elements"))
             inner_parts = self.type_generic_args(list_t, "list")
@@ -1725,13 +1750,14 @@ class CppEmitter(
         """ローカル関数定義をラムダ変数へ lowering して出力する。"""
         name = self.any_dict_get_str(stmt, "name", "fn")
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
-        ret = self.cpp_type(stmt.get("return_type"))
+        ret = self.cpp_signature_type(stmt.get("return_type"))
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
         arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         params: list[str] = []
         arg_names: list[str] = []
+        ref_first_param_names: set[str] = set()
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
@@ -1750,7 +1776,9 @@ class CppEmitter(
         fn_sig_params: list[str] = []
         for n in arg_names:
             t = self.any_to_str(arg_types.get(n))
-            ct = self._cpp_type_text(t)
+            ct = self.cpp_signature_type(t)
+            if self._is_pyobj_ref_first_list_type(t):
+                ref_first_param_names.add(n)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             usage = self.any_to_str(arg_usage.get(n))
             usage = usage if usage != "" else "readonly"
@@ -1787,9 +1815,11 @@ class CppEmitter(
         prev_ret = self.current_function_return_type
         prev_decl_types = self.declared_var_types
         prev_reassigned_names = self.current_function_reassigned_names
+        prev_runtime_list_alias_names = self.current_function_pyobj_runtime_list_alias_names
         assign_counts = self._collect_assigned_name_counts(body_stmts)
         self.current_function_reassigned_names = {name for name, count in assign_counts.items() if int(count) > 1}
         self.declared_var_types = {}
+        self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names) | set(ref_first_param_names)
         for an in arg_names:
             at = self.any_to_str(arg_types.get(an))
             if at != "":
@@ -1802,6 +1832,7 @@ class CppEmitter(
         self.current_function_return_type = prev_ret
         self.declared_var_types = prev_decl_types
         self.current_function_reassigned_names = set(prev_reassigned_names)
+        self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names)
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("};")
@@ -1870,8 +1901,8 @@ class CppEmitter(
             rv = self._rewrite_empty_collection_literal_for_typed_target(rv, value_node, ret_t)
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
-        if self._uses_pyobj_rc_list_expr(value_node) and ret_t.startswith("list[") and ret_t.endswith("]"):
-            rv = f"rc_list_copy_value({rv})"
+        if self._is_pyobj_ref_first_list_type(ret_t):
+            rv = self._render_pyobj_alias_list_value(rv, stmt.get("value"), ret_t)
         if self.is_any_like_type(ret_t):
             rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):
@@ -1953,7 +1984,11 @@ class CppEmitter(
             return self.render_expr(expr)
         if self._node_kind_from_dict(node) != "Subscript":
             return self.render_expr(expr)
-        val = self.render_expr(node.get("value"))
+        value_node = node.get("value")
+        if self._node_kind_from_dict(self.any_to_dict_or_empty(value_node)) == "Subscript":
+            val = self.render_lvalue(value_node)
+        else:
+            val = self.render_expr(value_node)
         val_ty0 = self.get_expr_type(node.get("value"))
         val_ty = val_ty0 if isinstance(val_ty0, str) else ""
         idx = self.render_expr(node.get("slice"))
@@ -1962,6 +1997,8 @@ class CppEmitter(
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(node.get("value"), idx, node.get("slice"))
             return f"{val}[{idx}]"
+        if self._uses_pyobj_rc_list_expr(node.get("value")):
+            return f"py_at({val}, py_to<int64>({idx}))"
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
                 idx = f"py_to<int64>({idx})"
@@ -2107,7 +2144,7 @@ class CppEmitter(
         if raw == "list" and self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
             runtime_list_ctor = resolved_t in {"", "unknown", "Any", "object"} or (
                 self._is_pyobj_runtime_list_type(resolved_t)
-                and (not self._is_pyobj_forced_typed_list_type(resolved_t))
+                and (not self._is_pyobj_value_model_list_type(resolved_t))
             )
             if runtime_list_ctor:
                 if len(args) == 0:
@@ -2122,7 +2159,7 @@ class CppEmitter(
                     return f"make_object(list<object>({args[0]}))"
                 return f"make_object(list<object>({args[0]}))"
         t = self.cpp_type(expr.get("resolved_type"))
-        if raw == "list" and self._is_pyobj_forced_typed_list_type(resolved_t):
+        if raw == "list" and self._is_pyobj_value_model_list_type(resolved_t):
             t = self._cpp_list_value_model_type_text(resolved_t)
         if len(args) == 0:
             return f"{t}{{}}"
@@ -2597,8 +2634,6 @@ class CppEmitter(
             list_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
         if not (list_t.startswith("list[") and list_t.endswith("]")):
             return False
-        if self._uses_pyobj_rc_list_expr(list_expr_node):
-            return False
         if self._uses_pyobj_runtime_list_expr(list_expr_node):
             return False
         return True
@@ -2635,6 +2670,8 @@ class CppEmitter(
         if list_node is None or not self._typed_list_empty_fastpath_target(list_node):
             return ""
         list_expr = self.render_expr(list_node)
+        if self._uses_pyobj_rc_list_expr(list_node):
+            list_expr = f"rc_list_ref({list_expr})"
         empty_expr = self._render_container_empty_expr(list_expr)
         if empty_expr == "":
             return ""
@@ -2649,6 +2686,8 @@ class CppEmitter(
         body = self._strip_outer_parens(self.render_expr(expr_node))
         if body == "":
             return ""
+        if self._uses_pyobj_rc_list_expr(expr_node):
+            body = f"rc_list_ref({body})"
         empty_expr = self._render_container_empty_expr(body)
         if empty_expr == "":
             return ""
@@ -2734,13 +2773,10 @@ class CppEmitter(
             return f"py_at({val}, py_to<int64>({idx}))"
         if self._uses_pyobj_rc_list_expr(expr.get("value")):
             at_expr = f"py_at({val}, py_to<int64>({idx}))"
-            expr_t = self.normalize_type_name(self.get_expr_type(expr))
-            if expr_t != "" and not self.is_any_like_type(expr_t) and self._can_runtime_cast_target(expr_t):
-                return self._render_unbox_target_cast(at_expr, expr_t, "subscript:rc_list")
             return at_expr
         if (
             self._is_pyobj_runtime_list_type(val_ty)
-            and (not self._is_pyobj_forced_typed_list_type(val_ty))
+            and (not self._is_pyobj_value_model_list_type(val_ty))
             and not self._expr_is_stack_list_local(expr.get("value"))
         ):
             at_expr = f"py_at({val}, py_to<int64>({idx}))"
