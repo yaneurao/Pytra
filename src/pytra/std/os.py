@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.std import extern
+from pytra.std import os_path as path
 
 import os as __os
 

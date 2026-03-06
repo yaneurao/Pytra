@@ -28,6 +28,7 @@ def resolve_include(current_path: Path, include_txt: str, include_dir: Path) -> 
         current_path.parent,
         include_dir,
         SRC_ROOT,
+        RUNTIME_ROOT,
     ]
     for base in search_roots:
         cand = base / include_txt

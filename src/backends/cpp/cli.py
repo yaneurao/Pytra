@@ -108,7 +108,7 @@ def _prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
     return _prepend_generated_cpp_banner_impl(cpp_text, source_path)
 
 
-def _build_cpp_public_header_forwarder(include_txt: str, source_path: Path) -> str:
+def _build_cpp_public_header_forwarder(include_txts: list[str], source_path: Path) -> str:
     lines = [
         "// AUTO-GENERATED FILE. DO NOT EDIT.",
         "// source: " + str(source_path),
@@ -116,10 +116,19 @@ def _build_cpp_public_header_forwarder(include_txt: str, source_path: Path) -> s
         "",
         "#pragma once",
         "",
-        '#include "' + include_txt + '"',
-        "",
     ]
+    for include_txt in include_txts:
+        lines.append('#include "' + include_txt + '"')
+    lines.append("")
     return join_str_list("\n", lines)
+
+
+def _runtime_public_forwarder_includes(rel_tail: str) -> list[str]:
+    includes: list[str] = ['runtime/cpp/' + rel_tail + '.gen.h']
+    ext_hdr = RUNTIME_CPP_ROOT / (rel_tail + ".ext.h")
+    if ext_hdr.exists():
+        includes.append('runtime/cpp/' + rel_tail + '.ext.h')
+    return includes
 
 
 def _is_runtime_emit_input_path(input_path: Path) -> bool:
@@ -962,7 +971,7 @@ def main(argv: list[str]) -> int:
                 if str(public_hdr_out) != "":
                     write_text_file(
                         public_hdr_out,
-                        _build_cpp_public_header_forwarder("runtime/cpp/" + rel_tail + ".gen.h", input_path),
+                        _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(rel_tail), input_path),
                     )
                 print("generated: " + str(hdr_out))
                 if str(public_hdr_out) != "":
@@ -1031,7 +1040,7 @@ def main(argv: list[str]) -> int:
             if str(public_hdr_out) != "":
                 write_text_file(
                     public_hdr_out,
-                    _build_cpp_public_header_forwarder("runtime/cpp/" + rel_tail + ".gen.h", input_path),
+                    _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(rel_tail), input_path),
                 )
             print("generated: " + str(hdr_out))
             print("generated: " + str(cpp_out))

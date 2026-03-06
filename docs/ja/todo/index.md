@@ -41,7 +41,7 @@
 3. [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-01] `json` generated runtime の破綻を、SoT と C++ runtime 生成契約の修正で解消する（`.gen.*` 手修正禁止）。
 4. [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-02] `argparse` generated runtime の破綻を、SoT・reserved name 回避・class/member emission 契約の修正で解消する。
 5. [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-01] `pytra.utils.{png,gif}` と `pytra.std.{time,pathlib}` の import 解決・include dedupe/sort・one-to-one module include 契約を修正する。
-6. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-02] `os.path` / `glob` 系 runtime helper 呼び出しを、owner/module metadata に基づく解決へ戻し、C++ emitter の特例依存を減らす。
+6. [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-02] `os.path` / `glob` 系 runtime helper 呼び出しを、owner/module metadata に基づく解決へ戻し、C++ emitter の特例依存を減らす。
 7. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S4-01] `dict.items()` / `dict.get()` / `any()` / dict/set comprehension の container-view・iterator 意味論を、built_in SoT と runtime adapter の整合で修正する。
 8. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S4-02] `mod_mode`、stmt dispatch fallback、CLI `dump-options` / error category の C++ emitter 契約を整理し、option 反映と診断整合を修正する。
 9. [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S5-01] C++ unit 全体、fixture parity、sample parity を再実行し、回帰が残らないことを確認して docs/ja/todo を更新する。
@@ -50,3 +50,4 @@
 - 進捗メモ: 2026-03-06 [ID: `P0-CPP-REGRESSION-RECOVERY-01-S2-01`] `json` について class split の brace 誤判定、`\\b/\\f` 未escape、runtime header の既定引数欠落、runtime `.cpp` 定義側の既定引数剥離不足を修正し、`src/pytra/std/json.py` から `json.gen.*` を再生成した。`test_json_extended_runtime` は compile/run まで通過。
 - 進捗メモ: 2026-03-06 [ID: `P0-CPP-REGRESSION-RECOVERY-01-S2-02`] `argparse` について imported runtime class method の keyword 引数を default 補完込みで C++ positional call へ整列するよう emitter を拡張し、`src/pytra/std/argparse.py` も optional/value-class dict 依存を減らす形へ整理した。`argparse.gen.*` を再生成し、`test_argparse_extended_runtime` は compile/run まで通過。
 - 進捗メモ: 2026-03-06 [ID: `P0-CPP-REGRESSION-RECOVERY-01-S3-01`] runtime import の public include を `pytra/.../*.h` へ戻し、`emit-runtime-cpp` が `src/runtime/cpp/pytra/.../*.h` forwarder を生成するよう修正した。`runtime_symbol_index.json` も shim header を public header として再生成し、`png/gif/time/pathlib` の one-to-one include と dedupe/sort テストは通過した。
+- 進捗メモ: 2026-03-06 [ID: `P0-CPP-REGRESSION-RECOVERY-01-S3-02`] `src/pytra/std/os.py` に `os_path as path` を戻し、C++ profile の `os.path` 解決を `py_os_path_*` helper と `pytra::std::os_path` owner へ整理した。`os_path.ext.h` を追加し、runtime public shim と `tools/cpp_runtime_deps.py` が `pytra/std/*.h` 経由でも `.ext.cpp` を収集できるよう修正した結果、`test_os_path_calls_use_runtime_helpers` と `test_os_glob_extended_runtime` は通過した。

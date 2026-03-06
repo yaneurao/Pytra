@@ -66,12 +66,44 @@ class CppModuleEmitter:
             module_id = dict_any_get_str(node, "runtime_module_id")
             if module_id != "":
                 out.add(module_id)
+            attr_module_id = self._module_attr_runtime_module_from_node(node)
+            if attr_module_id != "":
+                out.add(attr_module_id)
             for value in node.values():
                 self._collect_runtime_modules_from_node(value, out)
             return
         if isinstance(node, list):
             for item in node:
                 self._collect_runtime_modules_from_node(item, out)
+
+    def _module_attr_runtime_module_from_node(self, node: dict[str, Any]) -> str:
+        """module attr access が別 runtime module を指す場合、その module_id を返す。"""
+        if self._node_kind_from_dict(node) != "Attribute":
+            return ""
+        owner_node = self.any_to_dict_or_empty(node.get("value"))
+        owner_name = self._raw_dotted_owner_name(owner_node)
+        if owner_name == "":
+            return ""
+        owner_module = self._resolve_imported_module_name(owner_name)
+        if owner_module == "":
+            return ""
+        attr = self.attr_name(node)
+        if attr == "":
+            return ""
+        mapped = self._lookup_module_attr_runtime_call(owner_module, attr)
+        if mapped != "":
+            mapped_module = self._cpp_expr_to_module_name(mapped)
+            if mapped_module != "":
+                return mapped_module
+            if self._contains_text(mapped, "::"):
+                mapped_prefix = mapped.rsplit("::", 1)[0]
+                mapped_module = self._cpp_expr_to_module_name(mapped_prefix)
+                if mapped_module != "":
+                    return mapped_module
+        ns = self._module_name_to_cpp_namespace(owner_module)
+        if ns != "":
+            return self._cpp_expr_to_module_name(ns + "::" + attr)
+        return ""
 
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
