@@ -23,7 +23,7 @@ namespace pytra::utils::gif {
         return list<int64>{v & 0xFF, v >> 8 & 0xFF};
     }
     
-    bytes _lzw_encode(const bytes& data, int64 min_code_size = 8) {
+    bytes _lzw_encode(const bytes& data, int64 min_code_size) {
         if (py_len(data) == 0)
             return bytes(make_object(list<object>{}));
         int64 clear_code = 1 << min_code_size;
@@ -84,7 +84,7 @@ namespace pytra::utils::gif {
         return bytes(p);
     }
     
-    void save_gif(const str& path, int64 width, int64 height, const list<bytes>& frames, const bytes& palette, int64 delay_cs = 4, int64 loop = 0) {
+    void save_gif(const str& path, int64 width, int64 height, const list<bytes>& frames, const bytes& palette, int64 delay_cs, int64 loop) {
         if (py_len(palette) != 256 * 3)
             throw ValueError("palette must be 256*3 bytes");
         list<list<int64>> frame_lists = {};
