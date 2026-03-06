@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 import subprocess
 import sys
@@ -44,23 +45,6 @@ from src.backends.cpp.cli import (
     resolve_module_name,
     transpile_to_cpp,
 )
-
-CPP_RUNTIME_SRCS = [
-    "src/runtime/cpp/core/gc.ext.cpp",
-    "src/runtime/cpp/core/io.ext.cpp",
-    "src/runtime/cpp/std/pathlib.gen.cpp",
-    "src/runtime/cpp/std/time.ext.cpp",
-    "src/runtime/cpp/std/math.ext.cpp",
-    "src/runtime/cpp/std/random.gen.cpp",
-    "src/runtime/cpp/std/glob.ext.cpp",
-    "src/runtime/cpp/std/json.gen.cpp",
-    "src/runtime/cpp/std/re.gen.cpp",
-    "src/runtime/cpp/std/sys.ext.cpp",
-    "src/runtime/cpp/std/timeit.gen.cpp",
-    "src/runtime/cpp/utils/png.gen.cpp",
-    "src/runtime/cpp/utils/gif.gen.cpp",
-    "src/runtime/cpp/utils/assertions.gen.cpp",
-]
 
 def find_fixture_case(stem: str) -> Path:
     matches = sorted((ROOT / "test" / "fixtures").rglob(f"{stem}.py"))
@@ -2854,22 +2838,33 @@ if __name__ == "__main__":
             src_py = find_fixture_case(stem)
             out_cpp = work / f"{stem}.cpp"
             out_exe = work / f"{stem}.out"
+            manifest = work / "manifest.json"
             (work / "out").mkdir(parents=True, exist_ok=True)
             try:
                 print(f"  [fixture:{stem}] transpile", flush=True)
                 transpile(src_py, out_cpp)
+                manifest.write_text(
+                    json.dumps(
+                        {
+                            "include_dir": str(work),
+                            "modules": [
+                                {
+                                    "source": str(out_cpp),
+                                }
+                            ],
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
                 print(f"  [fixture:{stem}] compile", flush=True)
                 comp = self._run_subprocess_with_timeout(
                     [
-                        "g++",
-                        "-std=c++20",
-                        "-O2",
-                        "-I",
-                        "src",
-                        "-I",
-                        "src/runtime/cpp",
-                        str(out_cpp),
-                        *CPP_RUNTIME_SRCS,
+                        "python3",
+                        "tools/build_multi_cpp.py",
+                        str(manifest),
                         "-o",
                         str(out_exe),
                     ],
