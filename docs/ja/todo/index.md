@@ -46,11 +46,11 @@
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
 6. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-7. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
+7. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-8. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
+8. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-9. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03] method call / subscript / len / slice / truthy 判定の描画を `rc<list<T>>` aware に更新する。
+9. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03] method call / subscript / len / slice / truthy 判定の描画を `rc<list<T>>` aware に更新する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
 10. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-01] 関数引数・返り値・callsite coercion で `rc<list<T>>` と `list<T>` の adapter 挿入条件を整理し、ABI 境界で `list<T>` を維持する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`

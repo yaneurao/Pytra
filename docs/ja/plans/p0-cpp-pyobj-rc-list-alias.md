@@ -121,9 +121,9 @@
 - [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
 - [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03] `rc<list<T>> <-> object`、`rc<list<T>> <-> list<T>` の最小 adapter を runtime に追加する。
 
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03] method call / subscript / len / slice / truthy 判定の描画を `rc<list<T>>` aware に更新する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01] emitter の alias 共有名判定を `object` fallback ではなく `rc<list<T>>` 宣言へ切り替える。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02] `Assign/AnnAssign` の `b = a` / 空 list 初期化 / literal 初期化で `make_object(...)` を出さず handle copy / handle new を使う。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03] method call / subscript / len / slice / truthy 判定の描画を `rc<list<T>>` aware に更新する。
 
 - [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-01] 関数引数・返り値・callsite coercion で `rc<list<T>>` と `list<T>` の adapter 挿入条件を整理し、ABI 境界で `list<T>` を維持する。
 - [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S4-02] `Any/object` へ流れる箇所だけ `object` boxing を残し、alias 用に入れた `object` fallback を縮小・撤去する。
@@ -141,3 +141,6 @@
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02`] `py_runtime.ext.h` に `py_len / py_append / py_extend / py_pop / py_slice / py_at / py_set_at / py_clear / py_reverse / py_sort` の `rc<list<T>>` overload を追加した。これにより alias 用 typed handle でも list mutation / indexing / slicing を object boxing なしで呼べる。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03`] `make_object(const rc<list<T>>&)` と `obj_to_rc_list<T>` / `obj_to_rc_list_or_raise`、`py_to<rc<list<T>>>` / `py_object_try_cast<rc<list<T>>>` を追加した。`rc<list<T>> -> object` は boxed copy、`object -> rc<list<T>>` は typed unbox copy とし、ABI ではなく backend 内部 adapter に留めた。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01`] 検証として `test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。加えて ad-hoc の `rc<list<int64>>` smoke を `g++ -std=c++20` でコンパイル実行し、`len/append/extend/pop/set_at/object roundtrip` が成立することを確認した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01`] emitter の alias 名判定を `object` runtime list から分離し、alias 名だけ `rc<list<T>>` handle 経路へ切り替えた。`_uses_pyobj_runtime_list_expr()` は alias 名で false、`_uses_pyobj_rc_list_expr()` を追加して method/index path の dispatch を分離した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02`] `AnnAssign/Assign` の alias ターゲット宣言を `rc<list<T>>` に変更し、`b = a` は handle copy、list literal / empty list / list comprehension は `rc_list_from_value(...)` へ寄せた。`list_alias_shared_mutation.py` の生成結果は `rc<list<int64>> a = rc_list_from_value(list<int64>{1, 2}); rc<list<int64>> b = a;` となり、`make_object(...)` fallback が消えた。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03`] method call / subscript / len / slice / truthy の `rc<list<T>>` aware 描画を追加した。`ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` は alias handle なら `py_*` overload を呼び、subscript は `py_at(handle, ...)`、truthy/len compare fastpath は `.empty()` へ縮退せず `py_len(handle)` を使うようにした。ad-hoc case `a/b alias + append/pop/subscript/slice/truthy/reverse/sort` を C++ 変換・コンパイル・実行し `True` を確認した。
