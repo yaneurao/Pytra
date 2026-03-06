@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+REGISTRY_SOURCE = ROOT / "src" / "toolchain" / "frontends" / "signature_registry.py"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
@@ -153,6 +154,15 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
         self.assertEqual(lookup_stdlib_function_semantic_tag("perf_counter"), "stdlib.fn.perf_counter")
         self.assertEqual(lookup_stdlib_symbol_semantic_tag("Path"), "stdlib.symbol.Path")
         self.assertEqual(lookup_stdlib_method_semantic_tag("exists"), "stdlib.method.exists")
+
+    def test_signature_registry_does_not_guess_runtime_artifact_paths(self) -> None:
+        src = REGISTRY_SOURCE.read_text(encoding="utf-8")
+        self.assertNotIn("runtime/cpp", src)
+        self.assertNotIn(".gen.h", src)
+        self.assertNotIn(".gen.cpp", src)
+        self.assertNotIn(".ext.h", src)
+        self.assertNotIn(".ext.cpp", src)
+        self.assertNotIn("src/runtime", src)
 
 
 if __name__ == "__main__":
