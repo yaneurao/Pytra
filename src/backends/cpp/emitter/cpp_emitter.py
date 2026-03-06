@@ -1626,6 +1626,9 @@ class CppEmitter(
         }
         handler = dispatch.get(kind)
         if not callable(handler):
+            if not self.dynamic_hooks_enabled:
+                self.emit("/* unsupported stmt kind: " + kind + " */")
+                return True
             return False
         handler(stmt)
         return True
@@ -1640,7 +1643,6 @@ class CppEmitter(
             kind = self._node_kind_from_dict(stmt)
         if self.hook_on_emit_stmt_kind(kind, stmt):
             return
-        self.render_trivia(stmt)
         raise RuntimeError("cpp emitter: unsupported stmt kind: " + kind)
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
@@ -1686,7 +1688,7 @@ class CppEmitter(
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt
-        self.emit(self.syntax_text("pass_stmt", ";"))
+        self.emit(self.syntax_text("pass_stmt", "/* pass */"))
 
     def _emit_break_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt

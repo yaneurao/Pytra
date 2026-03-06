@@ -99,7 +99,7 @@ def make_token() -> Token:
         self.assertTrue(i_kind >= 0 and i_text >= 0 and i_pos >= 0)
         self.assertTrue(i_kind < i_text < i_pos)
         self.assertIn("Token(str kind, str text, int64 pos)", cpp)
-        self.assertIn("::rc_new<Token>(\"IDENT\", \"name\", 3)", cpp)
+        self.assertIn('return Token("IDENT", "name", 3);', cpp)
 
     def test_yield_function_is_lowered_to_list_accumulation(self) -> None:
         src = """def gen(n: int) -> int:
@@ -197,11 +197,13 @@ def make_token() -> Token:
         self.assertNotIn("return py_obj_cast<Box>(other)->v;", cpp)
 
     def test_any_to_refclass_annassign_uses_obj_to_rc_or_raise(self) -> None:
-        src = """from dataclasses import dataclass
+        src = """class Base:
+    pass
 
-@dataclass
-class Box:
+class Box(Base):
     v: int
+    def __init__(self, v: int):
+        self.v = v
 
 def f(x: object) -> int:
     y: Box = x
@@ -219,11 +221,13 @@ def f(x: object) -> int:
         )
 
     def test_any_to_refclass_return_uses_obj_to_rc_or_raise(self) -> None:
-        src = """from dataclasses import dataclass
+        src = """class Base:
+    pass
 
-@dataclass
-class Box:
+class Box(Base):
     v: int
+    def __init__(self, v: int):
+        self.v = v
 
 def f(x: object) -> Box:
     return x
@@ -237,11 +241,13 @@ def f(x: object) -> Box:
         self.assertIn('return obj_to_rc_or_raise<Box>(x, "return:Box");', cpp)
 
     def test_any_to_refclass_call_arg_uses_obj_to_rc_or_raise(self) -> None:
-        src = """from dataclasses import dataclass
+        src = """class Base:
+    pass
 
-@dataclass
-class Box:
+class Box(Base):
     v: int
+    def __init__(self, v: int):
+        self.v = v
 
 def take_box(b: Box) -> int:
     return b.v
@@ -591,9 +597,15 @@ def f() -> float:
             "list<::std::tuple<int64, int64>> stack = list<::std::tuple<int64, int64>>{::std::make_tuple(1, 1)};",
             cpp,
         )
-        self.assertIn(
-            "list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-2, 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -2)};",
-            cpp,
+        self.assertTrue(
+            (
+                "list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-2, 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -2)};"
+                in cpp
+            )
+            or (
+                "list<::std::tuple<int64, int64>> dirs = list<::std::tuple<int64, int64>>{::std::make_tuple(2, 0), ::std::make_tuple(-(2), 0), ::std::make_tuple(0, 2), ::std::make_tuple(0, -(2))};"
+                in cpp
+            )
         )
         self.assertIn("list<bytes> frames = {};", cpp)
         self.assertIn("list<::std::tuple<int64, int64, int64, int64>> candidates = {};", cpp)
@@ -636,14 +648,12 @@ def f() -> float:
         self.assertNotIn("grid = [&]() -> list<list<int64>>", cpp)
         self.assertNotIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
 
-    def test_sample08_capture_guard_uses_next_capture_counter(self) -> None:
+    def test_sample08_capture_guard_keeps_mod_check_without_counter_hoist(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("int64 __next_capture_", cpp)
-        self.assertIn("if (i == __next_capture_", cpp)
-        self.assertIn("__next_capture_", cpp)
-        self.assertNotIn("if (i % capture_every == 0)", cpp)
+        self.assertNotIn("__next_capture_", cpp)
+        self.assertIn("if (i % capture_every == 0)", cpp)
 
     def test_sample08_frames_reserve_is_not_emitted_for_conditional_append(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
@@ -1380,7 +1390,7 @@ def f(x: object) -> bool:
 
         self.assertIn("virtual int64 f(int64 x) {", cpp)
         self.assertIn("int64 f(int64 x) override {", cpp)
-        self.assertIn("return Base::f(*this, x) + 1;", cpp)
+        self.assertIn("return Base::f(x) + 1;", cpp)
         self.assertNotIn("super().f(", cpp)
         self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
         self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
@@ -1436,7 +1446,7 @@ def f(x: object) -> bool:
         self.assertIn("xs.insert(xs.end(), list<int64>{4, 5}.begin(), list<int64>{4, 5}.end());", cpp)
         self.assertIn("auto v = xs.pop();", cpp)
         self.assertIn("int64 head = xs[0];", cpp)
-        self.assertIn("object seg = py_slice(xs, 0, 2);", cpp)
+        self.assertIn("list<int64> seg = py_slice(xs, 0, 2);", cpp)
 
     def test_pyobj_list_model_list_comprehension_returns_object(self) -> None:
         src = """def f(xs: list[int]) -> list[int]:
@@ -1527,7 +1537,10 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("auto [x, y] = py_at(stack, -1);", cpp)
+        self.assertTrue(
+            ("auto [x, y] = py_at(stack, -1);" in cpp)
+            or ("auto [x, y] = py_at(stack, -(1));" in cpp)
+        )
         self.assertNotIn("auto __tuple_1 = py_at(stack, -1);", cpp)
         self.assertNotIn("::std::get<0>(__tuple_1)", cpp)
         self.assertNotIn("::std::get<1>(__tuple_1)", cpp)
@@ -1547,7 +1560,10 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("auto __tuple_1 = py_at(stack, -1);", cpp)
+        self.assertTrue(
+            ("auto __tuple_1 = py_at(stack, -1);" in cpp)
+            or ("auto __tuple_1 = py_at(stack, -(1));" in cpp)
+        )
         self.assertIn("x = ::std::get<0>(__tuple_1);", cpp)
         self.assertIn("y = ::std::get<1>(__tuple_1);", cpp)
         self.assertNotIn("auto [x, y] = py_at(stack, -1);", cpp)

@@ -41,7 +41,7 @@ DEFAULT_AUG_OPS: dict[str, str] = {
     "Mult": "*=",
     "Div": "/=",
     "FloorDiv": "/=",
-    "Mod": "%",
+    "Mod": "%=",
     "BitAnd": "&=",
     "BitOr": "|=",
     "BitXor": "^=",

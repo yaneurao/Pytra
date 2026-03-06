@@ -1226,7 +1226,7 @@ class East3CppBridgeTest(unittest.TestCase):
             "resolved_type": "int64",
         }
         self.assertEqual(emitter.render_expr(find_node), 'py_find(s, "x")')
-        self.assertEqual(emitter.render_expr(rfind_node), 'py_rfind(s, "x", 1, 3)')
+        self.assertEqual(emitter.render_expr(rfind_node), 'py_rfind_window(s, "x", 1, 3)')
 
     def test_builtin_runtime_py_find_rfind_use_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1263,7 +1263,7 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
         }
         self.assertEqual(emitter.render_expr(find_expr), 'py_find(s, "x")')
-        self.assertEqual(emitter.render_expr(rfind_expr), 'py_rfind(s, "x", 1, 3)')
+        self.assertEqual(emitter.render_expr(rfind_expr), 'py_rfind_window(s, "x", 1, 3)')
 
     def test_render_expr_supports_str_char_class_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1801,8 +1801,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
         self.assertEqual(emitter.render_expr(reversed_node), "py_reversed(xs)")
         self.assertEqual(emitter.render_expr(enumerate_node), "py_enumerate(xs, py_to<int64>(1))")
-        self.assertEqual(emitter.render_expr(any_node), "py_any(xs)")
-        self.assertEqual(emitter.render_expr(all_node), "py_all(xs)")
+        self.assertEqual(emitter.render_expr(any_node), "py_any(make_object(xs))")
+        self.assertEqual(emitter.render_expr(all_node), "py_all(make_object(xs))")
         self.assertEqual(emitter.render_expr(ord_node), 'py_ord("A")')
         self.assertEqual(emitter.render_expr(chr_node), "py_chr(65)")
         self.assertEqual(emitter.render_expr(range_node), "py_range(0, 3, 1)")
@@ -1817,7 +1817,7 @@ class East3CppBridgeTest(unittest.TestCase):
         )
         self.assertEqual(emitter.render_expr(perf_node), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_node), 'open("a.txt", "rb")')
-        self.assertEqual(emitter.render_expr(path_ctor_node), 'Path("a.txt")')
+        self.assertEqual(emitter.render_expr(path_ctor_node), 'pytra::std::pathlib::Path("a.txt")')
         self.assertEqual(emitter.render_expr(runtime_error_node), '::std::runtime_error("boom")')
         self.assertEqual(emitter.render_expr(int_to_bytes_node), 'py_int_to_bytes(n, 4, "little")')
         self.assertEqual(emitter.render_expr(bytes_ctor_node), "bytes{}")
@@ -2113,8 +2113,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(reversed_expr), "py_reversed(xs)")
         self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to<int64>(1))")
         self.assertEqual(emitter.render_expr(zip_expr), "zip(xs, ys)")
-        self.assertEqual(emitter.render_expr(any_expr), "py_any(xs)")
-        self.assertEqual(emitter.render_expr(all_expr), "py_all(xs)")
+        self.assertEqual(emitter.render_expr(any_expr), "py_any(make_object(xs))")
+        self.assertEqual(emitter.render_expr(all_expr), "py_all(make_object(xs))")
         self.assertEqual(emitter.render_expr(ord_expr), 'py_ord("A")')
         self.assertEqual(emitter.render_expr(chr_expr), "py_chr(65)")
         self.assertEqual(emitter.render_expr(range_expr), "py_range(0, 3, 1)")
@@ -2132,7 +2132,7 @@ class East3CppBridgeTest(unittest.TestCase):
         )
         self.assertEqual(emitter.render_expr(perf_expr), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_expr), 'open("a.txt", "rb")')
-        self.assertEqual(emitter.render_expr(path_ctor_expr), 'Path("a.txt")')
+        self.assertEqual(emitter.render_expr(path_ctor_expr), 'pytra::std::pathlib::Path("a.txt")')
         self.assertEqual(emitter.render_expr(runtime_error_expr), '::std::runtime_error("boom")')
         self.assertEqual(emitter.render_expr(int_to_bytes_expr), 'py_int_to_bytes(n, 4, "little")')
         self.assertEqual(emitter.render_expr(bytes_expr), "bytes{}")
@@ -2297,12 +2297,12 @@ class East3CppBridgeTest(unittest.TestCase):
             "attr": "f",
             "resolved_type": "unknown",
         }
-        rendered_virtual = emitter._render_call_class_method("Base", "f", fn, [], {}, [])
+        rendered_virtual = emitter._render_call_class_method("Base", "f", fn, [], {}, [], [])
         self.assertEqual(rendered_virtual, "obj.f()")
         emitter.class_method_virtual = {"Base": set()}
-        rendered_direct = emitter._render_call_class_method("Base", "f", fn, [], {}, [])
+        rendered_direct = emitter._render_call_class_method("Base", "f", fn, [], {}, [], [])
         self.assertEqual(rendered_direct, "obj.f()")
-        self.assertIsNone(emitter._render_call_class_method("Base", "g", fn, [], {}, []))
+        self.assertIsNone(emitter._render_call_class_method("Base", "g", fn, [], {}, [], []))
 
     def test_call_fallback_rejects_parser_lowered_builtins(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

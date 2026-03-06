@@ -860,11 +860,8 @@ def main(argv: list[str]) -> int:
     if not input_path.exists():
         print(f"error: input file not found: {input_path}", file=sys.stderr)
         return 1
-    # 互換維持: 出力先が `.cpp` の場合は明示モード指定がなくても single-file 扱いにする。
-    if (not output_mode_explicit) and output_txt.endswith(".cpp"):
-        single_file = True
-        if dump_options:
-            options_text: str = dump_codegen_options_text(
+    if dump_options:
+        options_text: str = dump_codegen_options_text(
             preset,
             negative_index_mode,
             bounds_check_mode,
@@ -875,13 +872,16 @@ def main(argv: list[str]) -> int:
             str_slice_mode,
             opt_level,
         )
-            if output_txt != "":
-                out_path = Path(output_txt)
-                mkdirs_for_cli(path_parent_text(out_path))
-                write_text_file(out_path, options_text)
-            else:
-                print(options_text, end="")
-            return 0
+        if output_txt != "":
+            out_path = Path(output_txt)
+            mkdirs_for_cli(path_parent_text(out_path))
+            write_text_file(out_path, options_text)
+        else:
+            print(options_text, end="")
+        return 0
+    # 互換維持: 出力先が `.cpp` の場合は明示モード指定がなくても single-file 扱いにする。
+    if (not output_mode_explicit) and output_txt.endswith(".cpp"):
+        single_file = True
 
     cpp = ""
     try:

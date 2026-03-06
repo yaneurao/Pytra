@@ -282,6 +282,9 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
         if ("cannot parse" in msg) or ("unexpected token" in msg) or ("invalid syntax" in msg):
             category = "user_syntax_error"
             summary = "Python syntax error."
+        if _looks_like_self_hosted_parser_syntax_error(msg):
+            category = "user_syntax_error"
+            summary = "Python syntax error."
         if "forbidden by language constraints" in msg:
             category = "unsupported_by_design"
             summary = "This syntax is unsupported by language design."
@@ -296,6 +299,11 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
         "Failed to build EAST.",
         ["EAST root must be a dict."],
     )
+
+
+def _looks_like_self_hosted_parser_syntax_error(msg: str) -> bool:
+    """self-hosted parser の token 不整合は user syntax error として扱う。"""
+    return msg.startswith("unsupported_syntax: expected token ")
 
 
 def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, object]:

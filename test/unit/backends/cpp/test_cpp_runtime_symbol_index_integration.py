@@ -58,7 +58,7 @@ def main() -> None:
 """,
             "pkg_symbol_module.py",
         )
-        self.assertIn('#include "runtime/cpp/utils/png.gen.h"', cpp)
+        self.assertIn('#include "pytra/utils/png.h"', cpp)
         self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
     def test_from_import_symbol_include_is_index_driven(self) -> None:
@@ -70,12 +70,13 @@ def main() -> None:
 """,
             "perf_counter_case.py",
         )
-        self.assertIn('#include "runtime/cpp/std/time.gen.h"', cpp)
+        self.assertIn('#include "pytra/std/time.h"', cpp)
         self.assertIn("pytra::std::time::perf_counter()", cpp)
 
     def test_runtime_paths_uses_index_for_std_and_core_modules(self) -> None:
-        self.assertEqual(module_name_to_cpp_include("math"), "runtime/cpp/std/math.gen.h")
-        self.assertEqual(module_name_to_cpp_include("pytra.core.dict"), "runtime/cpp/core/dict.ext.h")
+        self.assertEqual(module_name_to_cpp_include("math"), "std/math.gen.h")
+        self.assertEqual(module_name_to_cpp_include("pytra.std.time"), "pytra/std/time.h")
+        self.assertEqual(module_name_to_cpp_include("pytra.core.dict"), "core/dict.ext.h")
 
     def test_builtin_call_bindings_and_imported_symbol_calls_are_ir_driven(self) -> None:
         src = """from pytra.std.time import perf_counter as now

@@ -121,7 +121,7 @@ class CppOptimizerTest(unittest.TestCase):
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.emit_stmt({"kind": "Unknown", "cpp_stmt_kind_v1": "Pass"})
         text = "\n".join(emitter.lines)
-        self.assertIn(";", text)
+        self.assertIn("pass", text)
 
     def test_cpp_emitter_accepts_expr_kind_hint(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

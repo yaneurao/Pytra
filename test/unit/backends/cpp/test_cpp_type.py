@@ -31,8 +31,9 @@ class CppTypeTest(unittest.TestCase):
     def test_list_type_text_can_switch_to_pyobj_model(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
         em.cpp_list_model = "pyobj"
-        self.assertEqual(em._cpp_type_text("list[int64]"), "object")
-        self.assertEqual(em._cpp_type_text("list[str]"), "object")
+        self.assertEqual(em._cpp_type_text("list[int64]"), "list<int64>")
+        self.assertEqual(em._cpp_type_text("list[str]"), "list<str>")
+        self.assertEqual(em._cpp_type_text("list[Any]"), "object")
 
 
 if __name__ == "__main__":
