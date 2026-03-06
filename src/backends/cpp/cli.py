@@ -133,7 +133,7 @@ SCOPE_NESTING_KINDS: set[str] = {
 }
 
 
-CPP_HEADER = """#include "runtime/cpp/core/built_in/py_runtime.h"
+CPP_HEADER = """#include "runtime/cpp/core/built_in/py_runtime.ext.h"
 
 """
 
@@ -907,8 +907,8 @@ def main(argv: list[str]) -> int:
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
             out_root = RUNTIME_CPP_ROOT
-            cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
-            hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
+            cpp_out = _join_runtime_path(out_root, rel_tail + ".gen.cpp")
+            hdr_out = _join_runtime_path(out_root, rel_tail + ".gen.h")
             mkdirs_for_cli(path_parent_text(hdr_out))
             cpp_emit_module = _build_cpp_emit_module_without_extern_decls(east_module)
             if not _has_cpp_emit_definitions(cpp_emit_module):
@@ -949,11 +949,11 @@ def main(argv: list[str]) -> int:
             )
             cpp_txt_runtime_for_header = split_cpp_inline_class_defs(cpp_txt_runtime, ns, True)
             cpp_txt_runtime = split_cpp_inline_class_defs(cpp_txt_runtime, ns, False)
-            own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
+            own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.gen.h"'
             if own_runtime_header not in cpp_txt_runtime:
-                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
+                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.ext.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/core/built_in/py_runtime.ext.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime = replace_first(
                     cpp_txt_runtime,
@@ -961,9 +961,9 @@ def main(argv: list[str]) -> int:
                     new_runtime_include,
                 )
             if own_runtime_header not in cpp_txt_runtime_for_header:
-                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
+                old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.ext.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/core/built_in/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/core/built_in/py_runtime.ext.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime_for_header = replace_first(
                     cpp_txt_runtime_for_header,

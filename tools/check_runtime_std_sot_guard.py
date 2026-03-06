@@ -91,6 +91,7 @@ CPP_GENERATED_STD_MODULES = [
     "json",
     "math",
     "os",
+    "os_path",
     "pathlib",
     "random",
     "re",
@@ -103,35 +104,38 @@ CPP_HEADER_ONLY_STD_MODULES = {
     "math",
     "glob",
     "os",
+    "os_path",
     "sys",
     "time",
 }
 
 CPP_STD_HEADER_LOCATIONS: dict[str, str] = {
-    "argparse": "src/runtime/cpp/std/argparse.h",
-    "glob": "src/runtime/cpp/std/glob.h",
-    "json": "src/runtime/cpp/std/json.h",
-    "math": "src/runtime/cpp/std/math.h",
-    "os": "src/runtime/cpp/std/os.h",
-    "pathlib": "src/runtime/cpp/std/pathlib.h",
-    "random": "src/runtime/cpp/std/random.h",
-    "re": "src/runtime/cpp/std/re.h",
-    "sys": "src/runtime/cpp/std/sys.h",
-    "time": "src/runtime/cpp/std/time.h",
-    "timeit": "src/runtime/cpp/std/timeit.h",
+    "argparse": "src/runtime/cpp/std/argparse.gen.h",
+    "glob": "src/runtime/cpp/std/glob.gen.h",
+    "json": "src/runtime/cpp/std/json.gen.h",
+    "math": "src/runtime/cpp/std/math.gen.h",
+    "os": "src/runtime/cpp/std/os.gen.h",
+    "os_path": "src/runtime/cpp/std/os_path.gen.h",
+    "pathlib": "src/runtime/cpp/std/pathlib.gen.h",
+    "random": "src/runtime/cpp/std/random.gen.h",
+    "re": "src/runtime/cpp/std/re.gen.h",
+    "sys": "src/runtime/cpp/std/sys.gen.h",
+    "time": "src/runtime/cpp/std/time.gen.h",
+    "timeit": "src/runtime/cpp/std/timeit.gen.h",
 }
 
 CPP_STD_SOURCE_LOCATIONS: dict[str, str] = {
-    "argparse": "src/runtime/cpp/std/argparse.cpp",
-    "glob": "src/runtime/cpp/std/glob.cpp",
-    "json": "src/runtime/cpp/std/json.cpp",
-    "os": "src/runtime/cpp/std/os.cpp",
-    "pathlib": "src/runtime/cpp/std/pathlib.cpp",
-    "random": "src/runtime/cpp/std/random.cpp",
-    "re": "src/runtime/cpp/std/re.cpp",
-    "sys": "src/runtime/cpp/std/sys.cpp",
-    "time": "src/runtime/cpp/std/time.cpp",
-    "timeit": "src/runtime/cpp/std/timeit.cpp",
+    "argparse": "src/runtime/cpp/std/argparse.gen.cpp",
+    "glob": "src/runtime/cpp/std/glob.gen.cpp",
+    "json": "src/runtime/cpp/std/json.gen.cpp",
+    "os": "src/runtime/cpp/std/os.gen.cpp",
+    "os_path": "src/runtime/cpp/std/os_path.gen.cpp",
+    "pathlib": "src/runtime/cpp/std/pathlib.gen.cpp",
+    "random": "src/runtime/cpp/std/random.gen.cpp",
+    "re": "src/runtime/cpp/std/re.gen.cpp",
+    "sys": "src/runtime/cpp/std/sys.gen.cpp",
+    "time": "src/runtime/cpp/std/time.gen.cpp",
+    "timeit": "src/runtime/cpp/std/timeit.gen.cpp",
 }
 
 CPP_GENERATED_UTILS_MODULES = [
@@ -141,15 +145,15 @@ CPP_GENERATED_UTILS_MODULES = [
 ]
 
 CPP_UTILS_HEADER_LOCATIONS: dict[str, str] = {
-    "assertions": "src/runtime/cpp/utils/assertions.h",
-    "gif": "src/runtime/cpp/utils/gif.h",
-    "png": "src/runtime/cpp/utils/png.h",
+    "assertions": "src/runtime/cpp/utils/assertions.gen.h",
+    "gif": "src/runtime/cpp/utils/gif.gen.h",
+    "png": "src/runtime/cpp/utils/png.gen.h",
 }
 
 CPP_UTILS_SOURCE_LOCATIONS: dict[str, str] = {
-    "assertions": "src/runtime/cpp/utils/assertions.cpp",
-    "gif": "src/runtime/cpp/utils/gif.cpp",
-    "png": "src/runtime/cpp/utils/png.cpp",
+    "assertions": "src/runtime/cpp/utils/assertions.gen.cpp",
+    "gif": "src/runtime/cpp/utils/gif.gen.cpp",
+    "png": "src/runtime/cpp/utils/png.gen.cpp",
 }
 
 # module basename -> canonical Python source path.
@@ -159,6 +163,7 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "json": "src/pytra/std/json.py",
     "math": "src/pytra/std/math.py",
     "os": "src/pytra/std/os.py",
+    "os_path": "src/pytra/std/os_path.py",
     "pathlib": "src/pytra/std/pathlib.py",
     "random": "src/pytra/std/random.py",
     "re": "src/pytra/std/re.py",
@@ -172,10 +177,12 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
 
 # required handwritten core files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
-    "glob-manual.cpp": "src/runtime/cpp/std/glob-manual.cpp",
-    "math-manual.cpp": "src/runtime/cpp/std/math-manual.cpp",
-    "os-manual.cpp": "src/runtime/cpp/std/os-manual.cpp",
-    "time-manual.cpp": "src/runtime/cpp/std/time-manual.cpp",
+    "glob.ext.cpp": "src/runtime/cpp/std/glob.ext.cpp",
+    "math.ext.cpp": "src/runtime/cpp/std/math.ext.cpp",
+    "os.ext.cpp": "src/runtime/cpp/std/os.ext.cpp",
+    "os_path.ext.cpp": "src/runtime/cpp/std/os_path.ext.cpp",
+    "sys.ext.cpp": "src/runtime/cpp/std/sys.ext.cpp",
+    "time.ext.cpp": "src/runtime/cpp/std/time.ext.cpp",
 }
 
 CPP_ROOT_GENERATED_RUNTIME_FILES: set[str] = set()
@@ -281,7 +288,7 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
                     f"[{module_name}] {gen_rel} missing canonical source marker ({marker})"
                 )
 
-    # 2) Required handwritten impl split must remain under std as manual TU.
+    # 2) Required handwritten impl split must remain under std as `.ext.cpp`.
     for _name, core_rel in CPP_REQUIRED_CORE_IMPL_FILES.items():
         core_path = ROOT / core_rel
         if not core_path.exists():

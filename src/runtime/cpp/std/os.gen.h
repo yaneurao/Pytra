@@ -1,0 +1,18 @@
+// AUTO-GENERATED FILE. DO NOT EDIT.
+// source: src/pytra/std/os.py
+// generated-by: src/backends/cpp/cli.py
+
+#ifndef PYTRA_STD_OS_H
+#define PYTRA_STD_OS_H
+
+#include "runtime/cpp/core/built_in/py_types.ext.h"
+
+namespace pytra::std::os {
+
+str getcwd();
+void mkdir(const str& p);
+void makedirs(const str& p, bool exist_ok);
+
+}  // namespace pytra::std::os
+
+#endif  // PYTRA_STD_OS_H

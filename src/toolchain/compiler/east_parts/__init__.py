@@ -1,6 +1,4 @@
 """Split EAST modules."""
-
-from .core import *  # noqa: F401,F403
 from .east2_to_human_repr import (  # noqa: F401
     render_east2_to_human_repr,
     render_east_to_human_repr,

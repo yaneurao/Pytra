@@ -19,14 +19,8 @@ TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 
 def module_tail_to_cpp_header_path(module_tail: str) -> str:
-    """`a.b.c_impl` を `a/b/c-impl.h` へ変換する。"""
-    path_tail = module_tail.replace(".", "/")
-    parts: list[str] = path_tail.split("/")
-    if len(parts) > 0:
-        leaf = parts[-1]
-        leaf = leaf[: len(leaf) - 5] + "-impl" if leaf.endswith("_impl") else leaf
-        parts[-1] = leaf
-    return join_str_list("/", parts) + ".h"
+    """`a.b.c` を `a/b/c.gen.h` へ変換する。"""
+    return module_tail.replace(".", "/") + ".gen.h"
 
 
 def join_runtime_path(base_dir: Path, rel_path: str) -> Path:
@@ -110,12 +104,7 @@ def is_runtime_emit_input_path(input_path: Path) -> bool:
 
 def runtime_output_rel_tail(module_tail: str) -> str:
     """module tail を runtime/cpp 相対パス tail へ写像する。"""
-    parts: list[str] = module_tail.split("/")
-    if len(parts) > 0:
-        leaf = parts[-1]
-        if leaf.endswith("_impl"):
-            parts[-1] = leaf[: len(leaf) - 5] + "-impl"
-    rel = join_str_list("/", parts)
+    rel = join_str_list("/", module_tail.split("/"))
     if rel == "std" or rel.startswith("std/"):
         return rel
     if rel == "compiler" or rel.startswith("compiler/"):
@@ -157,8 +146,6 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
             return "runtime/cpp/core/" + rel_hdr
         return "runtime/cpp/" + rel_hdr
 
-    if module_name_norm == "pytra.std.pathlib":
-        return _pick("std/pathlib.h")
     if module_name_norm.startswith("pytra.std."):
         return _pick("std/" + module_tail_to_cpp_header_path(module_name_norm[10:]))
     if module_name_norm.startswith("pytra.utils."):
@@ -167,7 +154,7 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
         return _pick("compiler/" + module_tail_to_cpp_header_path(module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]))
     if module_name_norm.startswith("pytra.built_in."):
         return _pick("built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:]))
-    return "runtime/cpp/" + module_name_norm.replace(".", "/") + ".h"
+    return "runtime/cpp/" + module_name_norm.replace(".", "/") + ".gen.h"
 
 
 def runtime_module_has_header(module_name_norm: str) -> bool:

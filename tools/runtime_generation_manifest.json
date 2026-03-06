@@ -9,7 +9,7 @@
       "targets": [
         {
           "target": "cpp",
-          "output": "src/runtime/cpp/utils/png.cpp",
+          "output": "src/runtime/cpp/utils/png.gen.cpp",
           "postprocess": "cpp_program_to_namespace",
           "helper_name": "pytra::utils::png"
         },
@@ -56,7 +56,7 @@
       "targets": [
         {
           "target": "cpp",
-          "output": "src/runtime/cpp/utils/gif.cpp",
+          "output": "src/runtime/cpp/utils/gif.gen.cpp",
           "postprocess": "cpp_program_to_namespace",
           "helper_name": "pytra::utils::gif"
         },

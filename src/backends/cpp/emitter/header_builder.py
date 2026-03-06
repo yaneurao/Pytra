@@ -557,7 +557,7 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
                 inc_path = line[q0 + 1 : q1].replace("\\", "/")
                 if inc_path.split("/")[-1] == own_name:
                     continue
-        if line == '#include "runtime/cpp/core/built_in/py_runtime.h"':
+        if line == '#include "runtime/cpp/core/built_in/py_runtime.ext.h"':
             continue
         if line in seen:
             continue
@@ -584,6 +584,13 @@ def _filter_cpp_include_lines_for_header(
     return out
 
 
+def _strip_runtime_file_kind_suffix(name: str) -> str:
+    """`foo.gen` / `foo.ext` から runtime 種別 suffix を剥がす。"""
+    if name.endswith(".gen") or name.endswith(".ext"):
+        return name[: len(name) - 4]
+    return name
+
+
 def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: str) -> bool:
     """宣言テキストが当該 include 由来シンボルを参照しているか判定する。"""
     q0 = include_line.find("\"")
@@ -598,10 +605,11 @@ def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: 
     file_name = parts[-1]
     dot = file_name.rfind(".")
     stem = file_name[:dot] if dot >= 0 else file_name
+    stem = _strip_runtime_file_kind_suffix(stem)
     if stem == "":
         return True
 
-    # runtime/cpp/<bucket>/<module>.h -> namespace prefix を導出
+    # runtime/cpp/<bucket>/<module>.gen.h|ext.h -> namespace prefix を導出
     ns_prefix = ""
     is_runtime_cpp_include = len(parts) >= 4 and parts[0] == "runtime" and parts[1] == "cpp"
     if is_runtime_cpp_include:
@@ -609,6 +617,7 @@ def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: 
         module_tail = "/".join(parts[3:])
         dot2 = module_tail.rfind(".")
         module_tail = module_tail[:dot2] if dot2 >= 0 else module_tail
+        module_tail = _strip_runtime_file_kind_suffix(module_tail)
         module_ns = module_tail.replace("/", "::")
         if bucket == "std":
             ns_prefix = "pytra::std::" + module_ns
@@ -616,22 +625,6 @@ def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: 
             ns_prefix = "pytra::utils::" + module_ns
         elif bucket == "compiler":
             ns_prefix = "pytra::compiler::" + module_ns
-        elif bucket == "built_in":
-            ns_prefix = "pytra::built_in::" + module_ns
-        elif bucket == "gen" and len(parts) >= 5:
-            sub = parts[3]
-            rest_tail = "/".join(parts[4:])
-            dot3 = rest_tail.rfind(".")
-            rest_tail = rest_tail[:dot3] if dot3 >= 0 else rest_tail
-            rest_ns = rest_tail.replace("/", "::")
-            if sub == "std":
-                ns_prefix = "pytra::std::" + rest_ns
-            elif sub == "utils":
-                ns_prefix = "pytra::utils::" + rest_ns
-            elif sub == "compiler":
-                ns_prefix = "pytra::compiler::" + rest_ns
-            elif sub == "built_in":
-                ns_prefix = "pytra::built_in::" + rest_ns
 
     if ns_prefix != "":
         if ns_prefix + "::" in decl_text:
@@ -755,7 +748,7 @@ def _extract_cpp_class_blocks(cpp_text: str, top_namespace: str) -> list[str]:
 def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) -> str:
     """生成ヘッダが必要とする最小 runtime 型ヘッダ名を返す。"""
     if has_class_blocks:
-        return "py_types.h"
+        return "py_types.ext.h"
     scalar_markers = (
         "int8",
         "uint8",
@@ -795,9 +788,9 @@ def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) 
                 needs_scalar = True
                 break
     if needs_rich:
-        return "py_types.h"
+        return "py_types.ext.h"
     if needs_scalar:
-        return "py_scalar_types.h"
+        return "py_scalar_types.ext.h"
     return ""
 
 

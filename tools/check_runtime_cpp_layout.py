@@ -2,12 +2,11 @@
 """Verify C++ runtime layer separation rules.
 
 Rules:
-- `src/runtime/cpp/built_in/**/*.h|cpp` must contain the auto-generated marker.
-- `src/runtime/cpp/utils/**/*.h|cpp` must contain the auto-generated marker.
-- `src/runtime/cpp/core/**/*.h|cpp` must NOT contain the auto-generated marker.
-- `src/runtime/cpp/std/**/*.h` must contain the auto-generated marker.
-- `src/runtime/cpp/std/*-manual.cpp` must NOT contain the auto-generated marker.
-- `src/runtime/cpp/std/*.cpp` except `*-manual.cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/built_in/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/utils/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/core/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
+- `src/runtime/cpp/std/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/std/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
 """
 
 from __future__ import annotations
@@ -52,37 +51,46 @@ def main() -> int:
 
     missing_marker: list[str] = []
     unexpected_marker: list[str] = []
-    std_h_missing_marker: list[str] = []
-    std_manual_cpp_unexpected_marker: list[str] = []
-    std_generated_cpp_missing_marker: list[str] = []
+    invalid_name: list[str] = []
 
     for p in builtin_files:
+        rel = str(p.relative_to(ROOT))
+        if ".gen." not in p.name:
+            invalid_name.append(rel)
+            continue
         txt = p.read_text(encoding="utf-8", errors="ignore")
         if MARKER not in txt:
-            missing_marker.append(str(p.relative_to(ROOT)))
+            missing_marker.append(rel)
     for p in utils_files:
+        rel = str(p.relative_to(ROOT))
+        if ".gen." not in p.name:
+            invalid_name.append(rel)
+            continue
         txt = p.read_text(encoding="utf-8", errors="ignore")
         if MARKER not in txt:
-            missing_marker.append(str(p.relative_to(ROOT)))
+            missing_marker.append(rel)
 
     for p in core_files:
+        rel = str(p.relative_to(ROOT))
+        if ".ext." not in p.name:
+            invalid_name.append(rel)
+            continue
         txt = p.read_text(encoding="utf-8", errors="ignore")
         if MARKER in txt:
-            unexpected_marker.append(str(p.relative_to(ROOT)))
+            unexpected_marker.append(rel)
     for p in std_files:
-        txt = p.read_text(encoding="utf-8", errors="ignore")
         rel = str(p.relative_to(ROOT))
-        if p.suffix == ".h":
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        if ".gen." in p.name:
             if MARKER not in txt:
-                std_h_missing_marker.append(rel)
-        elif p.name.endswith("-manual.cpp"):
+                missing_marker.append(rel)
+        elif ".ext." in p.name:
             if MARKER in txt:
-                std_manual_cpp_unexpected_marker.append(rel)
-        elif p.suffix == ".cpp":
-            if MARKER not in txt:
-                std_generated_cpp_missing_marker.append(rel)
+                unexpected_marker.append(rel)
+        else:
+            invalid_name.append(rel)
 
-    if missing_marker or unexpected_marker or std_h_missing_marker or std_manual_cpp_unexpected_marker or std_generated_cpp_missing_marker:
+    if missing_marker or unexpected_marker or invalid_name:
         print("[FAIL] runtime cpp layout guard failed")
         print(
             "  scanned: "
@@ -96,27 +104,19 @@ def main() -> int:
             for item in missing_marker:
                 print(f"    - {item}")
         if unexpected_marker:
-            print("  core files containing marker:")
+            print("  handwritten files containing marker:")
             for item in unexpected_marker:
                 print(f"    - {item}")
-        if std_h_missing_marker:
-            print("  std headers missing marker:")
-            for item in std_h_missing_marker:
-                print(f"    - {item}")
-        if std_manual_cpp_unexpected_marker:
-            print("  std manual sources containing marker:")
-            for item in std_manual_cpp_unexpected_marker:
-                print(f"    - {item}")
-        if std_generated_cpp_missing_marker:
-            print("  std generated sources missing marker:")
-            for item in std_generated_cpp_missing_marker:
+        if invalid_name:
+            print("  files violating .gen/.ext naming:")
+            for item in invalid_name:
                 print(f"    - {item}")
         return 1
 
     print("[OK] runtime cpp layout guard passed")
     print(f"  built_in+utils files with marker: {len(builtin_files) + len(utils_files)}")
     print(f"  core files without marker: {len(core_files)}")
-    print(f"  std headers/generated sources with marker and manual sources without marker: {len(std_files)}")
+    print(f"  std generated files with marker and handwritten files without marker: {len(std_files)}")
     return 0
 
 

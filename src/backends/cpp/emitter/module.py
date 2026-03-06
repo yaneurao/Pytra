@@ -36,6 +36,13 @@ def _runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     return _runtime_cpp_header_exists_for_module_impl(module_name_norm)
 
 
+def _strip_runtime_header_suffix(path_or_tail: str) -> str:
+    """`foo.gen` / `foo.ext` suffix を namespace 解決前に剥がす。"""
+    if path_or_tail.endswith(".gen") or path_or_tail.endswith(".ext"):
+        return path_or_tail[: len(path_or_tail) - 4]
+    return path_or_tail
+
+
 class CppModuleEmitter:
     """Import/include/namespace/module-init helpers extracted from CppEmitter."""
 
@@ -104,15 +111,15 @@ class CppModuleEmitter:
                 return "pytra::std::" + bare_tail.replace(".", "::")
         inc = self._module_name_to_cpp_include(module_name_norm)
         if inc.startswith("runtime/cpp/std/") and inc.endswith(".h"):
-            tail: str = inc[16 : len(inc) - 2].replace("/", "::")
+            tail = _strip_runtime_header_suffix(inc[16 : len(inc) - 2]).replace("/", "::")
             if tail != "":
-                return "pytra::" + tail
+                return "pytra::std::" + tail
         if inc.startswith("runtime/cpp/utils/") and inc.endswith(".h"):
-            tail: str = inc[18 : len(inc) - 2].replace("/", "::")
+            tail = _strip_runtime_header_suffix(inc[18 : len(inc) - 2]).replace("/", "::")
             if tail != "":
                 return "pytra::utils::" + tail
         if inc.startswith("runtime/cpp/compiler/") and inc.endswith(".h"):
-            tail = inc[21 : len(inc) - 2].replace("/", "::")
+            tail = _strip_runtime_header_suffix(inc[21 : len(inc) - 2]).replace("/", "::")
             if tail != "":
                 return "pytra::compiler::" + tail
         return ""
