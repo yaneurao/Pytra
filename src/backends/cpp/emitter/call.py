@@ -39,6 +39,7 @@ class CppCallEmitter:
 
     def _resolve_or_render_imported_symbol_name_call(
         self,
+        expr: dict[str, Any],
         raw_name: str,
         args: list[str],
         kw: dict[str, str],
@@ -57,6 +58,26 @@ class CppCallEmitter:
         has_import_target = raw != "" and imported_module != ""
         if not has_import_target:
             return None, raw
+        runtime_module_id = self.any_dict_get_str(expr, "runtime_module_id", "")
+        runtime_symbol = self.any_dict_get_str(expr, "runtime_symbol", "")
+        if runtime_module_id != "" and runtime_symbol == raw:
+            target_ns = self._module_name_to_cpp_namespace(runtime_module_id)
+            if target_ns != "":
+                call_args = self.merge_call_args(args, kw)
+                call_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+                module_arg_names = self._module_function_arg_names(runtime_module_id, raw)
+                if len(module_arg_names) > 0 and len(kw) > 0:
+                    call_args = self._merge_args_with_kw_by_name(args, kw, module_arg_names)
+                    call_arg_nodes = self._merge_arg_nodes_with_kw_by_name(arg_nodes, kw, kw_nodes, module_arg_names)
+                namespaced = self._render_namespaced_module_call(
+                    runtime_module_id,
+                    target_ns,
+                    raw,
+                    call_args,
+                    call_arg_nodes,
+                )
+                if namespaced is not None:
+                    return namespaced, raw
         mapped_runtime_txt = self._resolve_runtime_call_for_imported_symbol(imported_module, raw) or ""
         route_runtime_call = (
             mapped_runtime_txt != ""
@@ -295,7 +316,7 @@ class CppCallEmitter:
         if fn_kind == "Name":
             raw = self.any_dict_get_str(fn, "id", "")
             name_call_kind = self._type_id_name_call_kind(raw)
-            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(raw, args, kw, arg_nodes, kw_nodes)
+            imported_rendered, raw = self._resolve_or_render_imported_symbol_name_call(expr, raw, args, kw, arg_nodes, kw_nodes)
             if imported_rendered is not None:
                 return imported_rendered
             if raw.startswith("py_assert_"):

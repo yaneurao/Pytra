@@ -6,6 +6,20 @@ from typing import Any
 class CppBuiltinRuntimeEmitter:
     """Builtin runtime_call dispatch helpers extracted from CppEmitter."""
 
+    def _builtin_runtime_binding_matches(
+        self,
+        expr: dict[str, Any],
+        expected_module_id: str,
+        expected_symbol: str,
+        legacy_runtime_call: str,
+    ) -> bool:
+        """IR が持つ runtime binding を優先し、移行中のみ runtime_call へ fallback する。"""
+        module_id = self.any_dict_get_str(expr, "runtime_module_id", "")
+        runtime_symbol = self.any_dict_get_str(expr, "runtime_symbol", "")
+        if module_id != "" or runtime_symbol != "":
+            return module_id == expected_module_id and runtime_symbol == expected_symbol
+        return self.any_dict_get_str(expr, "runtime_call", "") == legacy_runtime_call
+
     def _render_builtin_call(
         self,
         expr: dict[str, Any],
@@ -228,11 +242,16 @@ class CppBuiltinRuntimeEmitter:
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の dict 系 runtime_call を処理する。"""
-        if runtime_call not in {"dict.get", "dict.pop", "dict.items", "dict.keys", "dict.values"}:
+        is_dict_get = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.get", "dict.get")
+        is_dict_pop = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.pop", "dict.pop")
+        is_dict_items = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.items", "dict.items")
+        is_dict_keys = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.keys", "dict.keys")
+        is_dict_values = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.values", "dict.values")
+        if not (is_dict_get or is_dict_pop or is_dict_items or is_dict_keys or is_dict_values):
             return None
         owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
         owner_t = self.get_expr_type(owner_node)
-        if runtime_call == "dict.get":
+        if is_dict_get:
             owner_value_t = ""
             owner_optional_object_dict = False
             if owner_t.startswith("dict[") and owner_t.endswith("]"):
@@ -295,7 +314,7 @@ class CppBuiltinRuntimeEmitter:
                 }
                 return self.render_expr(maybe_node)
             return None
-        if runtime_call == "dict.pop":
+        if is_dict_pop:
             if len(arg_nodes) == 1:
                 pop_node: dict[str, Any] = {
                     "kind": "DictPop",
@@ -326,7 +345,7 @@ class CppBuiltinRuntimeEmitter:
                 "casts": [],
             }
             return self.render_expr(pop_default_node)
-        if runtime_call == "dict.items":
+        if is_dict_items:
             items_node: dict[str, Any] = {
                 "kind": "DictItems",
                 "owner": owner_node,
@@ -335,7 +354,7 @@ class CppBuiltinRuntimeEmitter:
                 "casts": [],
             }
             return self.render_expr(items_node)
-        if runtime_call == "dict.keys":
+        if is_dict_keys:
             keys_node: dict[str, Any] = {
                 "kind": "DictKeys",
                 "owner": owner_node,
@@ -344,7 +363,7 @@ class CppBuiltinRuntimeEmitter:
                 "casts": [],
             }
             return self.render_expr(keys_node)
-        if runtime_call == "dict.values":
+        if is_dict_values:
             values_node: dict[str, Any] = {
                 "kind": "DictValues",
                 "owner": owner_node,
@@ -362,22 +381,33 @@ class CppBuiltinRuntimeEmitter:
         arg_nodes: list[Any],
     ) -> str | None:
         """BuiltinCall の文字列系 runtime_call を処理する。"""
-        if runtime_call not in {
-            "py_isdigit",
-            "py_isalpha",
-            "py_strip",
-            "py_rstrip",
-            "py_lstrip",
-            "py_startswith",
-            "py_endswith",
-            "py_find",
-            "py_rfind",
-            "py_replace",
-            "py_join",
-        }:
+        is_py_isdigit = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.isdigit", "py_isdigit")
+        is_py_isalpha = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.isalpha", "py_isalpha")
+        is_py_strip = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.strip", "py_strip")
+        is_py_rstrip = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.rstrip", "py_rstrip")
+        is_py_lstrip = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.lstrip", "py_lstrip")
+        is_py_startswith = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.startswith", "py_startswith")
+        is_py_endswith = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.endswith", "py_endswith")
+        is_py_find = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.find", "py_find")
+        is_py_rfind = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.rfind", "py_rfind")
+        is_py_replace = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.replace", "py_replace")
+        is_py_join = self._builtin_runtime_binding_matches(expr, "pytra.built_in.string_ops", "str.join", "py_join")
+        if not (
+            is_py_isdigit
+            or is_py_isalpha
+            or is_py_strip
+            or is_py_rstrip
+            or is_py_lstrip
+            or is_py_startswith
+            or is_py_endswith
+            or is_py_find
+            or is_py_rfind
+            or is_py_replace
+            or is_py_join
+        ):
             return None
         owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
-        if runtime_call == "py_isdigit":
+        if is_py_isdigit:
             charclass_node: dict[str, Any] = {
                 "kind": "StrCharClassOp",
                 "mode": "isdigit",
@@ -390,7 +420,7 @@ class CppBuiltinRuntimeEmitter:
             else:
                 charclass_node["value"] = owner_node
             return self.render_expr(charclass_node)
-        if runtime_call == "py_isalpha":
+        if is_py_isalpha:
             charclass_node: dict[str, Any] = {
                 "kind": "StrCharClassOp",
                 "mode": "isalpha",
@@ -403,7 +433,7 @@ class CppBuiltinRuntimeEmitter:
             else:
                 charclass_node["value"] = owner_node
             return self.render_expr(charclass_node)
-        if runtime_call == "py_strip":
+        if is_py_strip:
             strip_node: dict[str, Any] = {
                 "kind": "StrStripOp",
                 "mode": "strip",
@@ -415,7 +445,7 @@ class CppBuiltinRuntimeEmitter:
             if len(arg_nodes) >= 1:
                 strip_node["chars"] = arg_nodes[0]
             return self.render_expr(strip_node)
-        if runtime_call == "py_rstrip":
+        if is_py_rstrip:
             rstrip_node: dict[str, Any] = {
                 "kind": "StrStripOp",
                 "mode": "rstrip",
@@ -427,7 +457,7 @@ class CppBuiltinRuntimeEmitter:
             if len(arg_nodes) >= 1:
                 rstrip_node["chars"] = arg_nodes[0]
             return self.render_expr(rstrip_node)
-        if runtime_call == "py_lstrip":
+        if is_py_lstrip:
             lstrip_node: dict[str, Any] = {
                 "kind": "StrStripOp",
                 "mode": "lstrip",
@@ -439,7 +469,7 @@ class CppBuiltinRuntimeEmitter:
             if len(arg_nodes) >= 1:
                 lstrip_node["chars"] = arg_nodes[0]
             return self.render_expr(lstrip_node)
-        if runtime_call == "py_startswith":
+        if is_py_startswith:
             if len(arg_nodes) >= 1:
                 starts_node: dict[str, Any] = {
                     "kind": "StrStartsEndsWith",
@@ -455,7 +485,7 @@ class CppBuiltinRuntimeEmitter:
                 if len(arg_nodes) >= 3:
                     starts_node["end"] = arg_nodes[2]
                 return self.render_expr(starts_node)
-        if runtime_call == "py_endswith":
+        if is_py_endswith:
             if len(arg_nodes) >= 1:
                 ends_node: dict[str, Any] = {
                     "kind": "StrStartsEndsWith",
@@ -471,11 +501,11 @@ class CppBuiltinRuntimeEmitter:
                 if len(arg_nodes) >= 3:
                     ends_node["end"] = arg_nodes[2]
                 return self.render_expr(ends_node)
-        if runtime_call in {"py_find", "py_rfind"}:
+        if is_py_find or is_py_rfind:
             if len(arg_nodes) >= 1:
                 find_node: dict[str, Any] = {
                     "kind": "StrFindOp",
-                    "mode": "rfind" if runtime_call == "py_rfind" else "find",
+                    "mode": "rfind" if is_py_rfind else "find",
                     "owner": owner_node,
                     "needle": arg_nodes[0],
                     "resolved_type": "int64",
@@ -487,7 +517,7 @@ class CppBuiltinRuntimeEmitter:
                 if len(arg_nodes) >= 3:
                     find_node["end"] = arg_nodes[2]
                 return self.render_expr(find_node)
-        if runtime_call == "py_replace" and len(arg_nodes) >= 2:
+        if is_py_replace and len(arg_nodes) >= 2:
             replace_node: dict[str, Any] = {
                 "kind": "StrReplace",
                 "owner": owner_node,
@@ -498,7 +528,7 @@ class CppBuiltinRuntimeEmitter:
                 "casts": [],
             }
             return self.render_expr(replace_node)
-        if runtime_call == "py_join" and len(arg_nodes) >= 1:
+        if is_py_join and len(arg_nodes) >= 1:
             join_node: dict[str, Any] = {
                 "kind": "StrJoin",
                 "owner": owner_node,
@@ -688,7 +718,7 @@ class CppBuiltinRuntimeEmitter:
             }
             reversed_node["value"] = arg_nodes[0]
             return self.render_expr(reversed_node)
-        if runtime_call == "py_enumerate" and len(arg_nodes) >= 1:
+        if self._builtin_runtime_binding_matches(expr, "pytra.built_in.iter_ops", "enumerate", "py_enumerate") and len(arg_nodes) >= 1:
             enumerate_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "enumerate",
@@ -701,7 +731,7 @@ class CppBuiltinRuntimeEmitter:
                 enumerate_args.append(arg_nodes[1])
             enumerate_node["args"] = enumerate_args
             return self.render_expr(enumerate_node)
-        if runtime_call == "py_any" and len(arg_nodes) >= 1:
+        if self._builtin_runtime_binding_matches(expr, "pytra.built_in.predicates", "any", "py_any") and len(arg_nodes) >= 1:
             any_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "any",
@@ -711,7 +741,7 @@ class CppBuiltinRuntimeEmitter:
             }
             any_node["value"] = arg_nodes[0]
             return self.render_expr(any_node)
-        if runtime_call == "py_all" and len(arg_nodes) >= 1:
+        if self._builtin_runtime_binding_matches(expr, "pytra.built_in.predicates", "all", "py_all") and len(arg_nodes) >= 1:
             all_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "all",
@@ -790,7 +820,7 @@ class CppBuiltinRuntimeEmitter:
             if len(arg_nodes) > 0:
                 minmax_node["args"] = arg_nodes
             return self.render_expr(minmax_node)
-        if runtime_call == "perf_counter":
+        if self._builtin_runtime_binding_matches(expr, "pytra.std.time", "perf_counter", "perf_counter"):
             perf_node = {
                 "kind": "RuntimeSpecialOp",
                 "op": "perf_counter",
@@ -821,7 +851,7 @@ class CppBuiltinRuntimeEmitter:
             if len(arg_nodes) >= 1:
                 runtime_error_node["message"] = arg_nodes[0]
             return self.render_expr(runtime_error_node)
-        if runtime_call == "Path":
+        if self._builtin_runtime_binding_matches(expr, "pytra.std.pathlib", "Path", "Path"):
             path_ctor_node: dict[str, Any] = {
                 "kind": "RuntimeSpecialOp",
                 "op": "path_ctor",
@@ -888,4 +918,3 @@ class CppBuiltinRuntimeEmitter:
                 return kw_nodes[i]
             i += 1
         return None
-
