@@ -127,6 +127,22 @@ int main() {
     assert(py_at(typed_from_any, 2) == 9);
     assert(py_is_list(typed_iter));
 
+    list<int64> plain = list<int64>{4, 5, 6};
+    list<int64> plain_slice = py_slice(plain, 0, 2);
+    assert(plain_slice.size() == 2);
+    assert(plain_slice[0] == 4);
+    assert(py_at(plain, -1) == 6);
+    assert(py_contains(plain, int64(5)));
+    auto plain_enum = py_enumerate(plain, 10);
+    assert(plain_enum.size() == 3);
+    assert(::std::get<0>(plain_enum[0]) == 10);
+    assert(::std::get<1>(plain_enum[2]) == 6);
+    list<int64> plain_rev = py_reversed(plain);
+    assert(plain_rev[0] == 6);
+    list<int64> plain_repeat = py_repeat(plain, 2);
+    assert(plain_repeat.size() == 6);
+    assert(plain_repeat[3] == 4);
+
     int64 sum = 0;
     for (object v : py_dyn_range(list_obj)) {
         sum += obj_to_int64(v);
@@ -206,6 +222,22 @@ int main() {
             )
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertIn("runtime iterable ok", run.stdout)
+
+    def test_runtime_list_overload_inventory(self) -> None:
+        runtime_header = (ROOT / "src/runtime/cpp/core/py_runtime.ext.h").read_text(encoding="utf-8")
+        iter_ops_header = (ROOT / "src/runtime/cpp/built_in/iter_ops.ext.h").read_text(encoding="utf-8")
+        sequence_header = (ROOT / "src/runtime/cpp/built_in/sequence.ext.h").read_text(encoding="utf-8")
+        contains_header = (ROOT / "src/runtime/cpp/built_in/contains.ext.h").read_text(encoding="utf-8")
+
+        self.assertNotIn("static inline T& py_at(list<T>& v, int64 idx)", runtime_header)
+        self.assertNotIn("static inline void py_set_at(list<T>& v, I idx, const U& item)", runtime_header)
+        self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
+        self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
+        self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
+        self.assertIn("static inline bool py_contains(const list<T>& values, const Q& key)", contains_header)
+        self.assertIn("static inline list<T> py_reversed(const list<T>& values)", iter_ops_header)
+        self.assertIn("static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values)", iter_ops_header)
+        self.assertIn("static inline list<T> py_repeat(const list<T>& v, int64 n)", sequence_header)
 
 
 if __name__ == "__main__":
