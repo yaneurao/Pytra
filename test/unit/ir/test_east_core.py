@@ -253,6 +253,20 @@ def main() -> None:
         ]
         self.assertEqual(len(math_sin_calls), 1)
         self.assertEqual(math_sin_calls[0].get("resolved_type"), "float64")
+        self.assertEqual(math_sin_calls[0].get("runtime_module_id"), "math")
+        self.assertEqual(math_sin_calls[0].get("runtime_symbol"), "sin")
+        json_loads_calls = [
+            n for n in calls if isinstance(n.get("resolved_runtime_call"), str) and n.get("resolved_runtime_call") == "json.loads"
+        ]
+        self.assertEqual(len(json_loads_calls), 1)
+        self.assertEqual(json_loads_calls[0].get("runtime_module_id"), "pytra.std.json")
+        self.assertEqual(json_loads_calls[0].get("runtime_symbol"), "loads")
+        png_calls = [
+            n for n in calls if isinstance(n.get("resolved_runtime_call"), str) and n.get("resolved_runtime_call") == "write_rgb_png"
+        ]
+        self.assertEqual(len(png_calls), 1)
+        self.assertEqual(png_calls[0].get("runtime_module_id"), "pytra.utils.png")
+        self.assertEqual(png_calls[0].get("runtime_symbol"), "write_rgb_png")
         attrs = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Attribute"]
         resolved_runtime_attrs = {
             str(n.get("resolved_runtime_call"))
@@ -261,6 +275,12 @@ def main() -> None:
             and str(n.get("resolved_runtime_call")) != ""
         }
         self.assertIn("math.pi", resolved_runtime_attrs)
+        math_pi_attrs = [
+            n for n in attrs if isinstance(n.get("resolved_runtime_call"), str) and n.get("resolved_runtime_call") == "math.pi"
+        ]
+        self.assertEqual(len(math_pi_attrs), 1)
+        self.assertEqual(math_pi_attrs[0].get("runtime_module_id"), "math")
+        self.assertEqual(math_pi_attrs[0].get("runtime_symbol"), "pi")
 
     def test_core_does_not_reintroduce_perf_counter_direct_branch(self) -> None:
         src = CORE_SOURCE_PATH.read_text(encoding="utf-8")
