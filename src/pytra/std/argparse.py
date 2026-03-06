@@ -9,22 +9,32 @@ from typing import Any
 class Namespace:
     """Simple argparse.Namespace compatible container."""
 
-    def __init__(self, values: dict[str, Any] | None = None) -> None:
+    values: dict[str, Any]
+
+    def __init__(self, values: Any = None) -> None:
         if values is None:
+            self.values = {}
             return
-        for k, v in values.items():
-            setattr(self, k, v)
+        self.values = values
 
 
 class _ArgSpec:
+    names: list[str]
+    action: str
+    choices: list[str]
+    default: Any
+    help_text: str
+    is_optional: bool
+    dest: str
+
     def __init__(
         self,
         names: list[str],
         *,
-        action: str | None,
-        choices: list[str] | None,
-        default: Any,
-        help_text: str | None,
+        action: str = "",
+        choices: list[str] = [],
+        default: Any = None,
+        help_text: str = "",
     ) -> None:
         self.names = names
         self.action = action
@@ -42,8 +52,11 @@ class _ArgSpec:
 class ArgumentParser:
     """Subset of argparse.ArgumentParser used by this repository."""
 
-    def __init__(self, description: str | None = None) -> None:
-        self.description = description or ""
+    description: str
+    _specs: list[_ArgSpec]
+
+    def __init__(self, description: str = "") -> None:
+        self.description = description
         self._specs: list[_ArgSpec] = []
 
     def add_argument(
@@ -52,9 +65,9 @@ class ArgumentParser:
         name1: str = "",
         name2: str = "",
         name3: str = "",
-        help: str | None = None,
-        action: str | None = None,
-        choices: list[str] | None = None,
+        help: str = "",
+        action: str = "",
+        choices: list[str] = [],
         default: Any = None,
     ) -> None:
         names: list[str] = []
@@ -76,15 +89,26 @@ class ArgumentParser:
             sys.write_stderr(f"error: {msg}\n")
         raise SystemExit(2)
 
-    def parse_args(self, argv: list[str] | None = None) -> dict[str, Any]:
-        args = list(sys.argv[1:] if argv is None else argv)
+    def parse_args(self, argv: Any = None) -> dict[str, Any]:
+        args: list[str]
+        if argv is None:
+            args = sys.argv[1:]
+        else:
+            args = argv
 
-        specs_pos = [s for s in self._specs if not s.is_optional]
-        specs_opt = [s for s in self._specs if s.is_optional]
-        by_name: dict[str, _ArgSpec] = {}
+        specs_pos: list[_ArgSpec] = []
+        specs_opt: list[_ArgSpec] = []
+        for s in self._specs:
+            if s.is_optional:
+                specs_opt.append(s)
+            else:
+                specs_pos.append(s)
+        by_name: dict[str, int64] = {}
+        spec_i = 0
         for s in specs_opt:
             for n in s.names:
-                by_name[n] = s
+                by_name[n] = spec_i
+            spec_i += 1
 
         values: dict[str, Any] = {}
         for s in self._specs:
@@ -98,19 +122,19 @@ class ArgumentParser:
         pos_i = 0
         i = 0
         while i < len(args):
-            tok = args[i]
+            tok: str = args[i]
             if tok.startswith("-"):
-                spec = by_name.get(tok)
-                if spec is None:
+                if tok not in by_name:
                     self._fail(f"unknown option: {tok}")
+                spec = specs_opt[by_name[tok]]
                 if spec.action == "store_true":
                     values[spec.dest] = True
                     i += 1
                     continue
                 if i + 1 >= len(args):
                     self._fail(f"missing value for option: {tok}")
-                val = args[i + 1]
-                if spec.choices is not None and val not in spec.choices:
+                val: str = args[i + 1]
+                if len(spec.choices) > 0 and val not in spec.choices:
                     self._fail(f"invalid choice for {tok}: {val}")
                 values[spec.dest] = val
                 i += 2

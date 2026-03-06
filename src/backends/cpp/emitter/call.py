@@ -58,6 +58,29 @@ class CppCallEmitter:
         has_import_target = raw != "" and imported_module != ""
         if not has_import_target:
             return None, raw
+        imported_class_cpp_type = self._imported_runtime_class_cpp_type(imported_module, raw)
+        if imported_class_cpp_type != "":
+            ctor_args = args
+            ctor_arg_nodes = arg_nodes
+            ctor_arg_names = self._module_class_method_arg_names(imported_module, raw, "__init__")
+            ctor_arg_types = self._module_class_method_arg_types(imported_module, raw, "__init__")
+            ctor_arg_defaults = self._module_class_method_arg_defaults(imported_module, raw, "__init__")
+            if len(kw) > 0 and len(ctor_arg_names) > 0:
+                ctor_args, ctor_arg_nodes = self._merge_args_with_kw_defaults(
+                    args,
+                    kw,
+                    arg_nodes,
+                    kw_nodes,
+                    ctor_arg_names,
+                    ctor_arg_defaults,
+                    ctor_arg_types,
+                )
+            if len(ctor_arg_types) > 0:
+                ctor_args = self._coerce_args_by_signature(ctor_args, ctor_arg_nodes, ctor_arg_types)
+            ctor_cpp_name = self._strip_rc_wrapper(imported_class_cpp_type)
+            if imported_class_cpp_type.startswith("rc<"):
+                return f"::rc_new<{ctor_cpp_name}>({join_str_list(', ', ctor_args)})", raw
+            return f"{ctor_cpp_name}({join_str_list(', ', ctor_args)})", raw
         runtime_module_id = self.any_dict_get_str(expr, "runtime_module_id", "")
         runtime_symbol = self.any_dict_get_str(expr, "runtime_symbol", "")
         if runtime_module_id != "" and runtime_symbol == raw:
@@ -432,13 +455,32 @@ class CppCallEmitter:
         args: list[str],
         kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
     ) -> str | None:
         """`Class.method(...)` 分岐を処理する。"""
         dispatch_mode = self._class_method_dispatch_mode(owner_t, attr)
         if dispatch_mode == "fallback":
             return None
-        call_args = self.merge_call_args(args, kw)
-        call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, arg_nodes)
+        call_args = args
+        call_arg_nodes = arg_nodes
+        if len(kw) > 0:
+            arg_names = self._class_method_name_sig(owner_t, attr)
+            if len(arg_names) > 0:
+                call_args, call_arg_nodes = self._merge_args_with_kw_defaults(
+                    args,
+                    kw,
+                    arg_nodes,
+                    kw_nodes,
+                    arg_names,
+                    self._class_method_default_sig(owner_t, attr),
+                    self._class_method_sig(owner_t, attr),
+                )
+            else:
+                call_args = self.merge_call_args(args, kw)
+                call_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+        else:
+            call_args = self.merge_call_args(args, kw)
+        call_args = self._coerce_args_for_class_method(owner_t, attr, call_args, call_arg_nodes)
         fn_expr = self._render_attribute_expr(fn)
         dispatch_table = {
             "virtual": self._render_virtual_class_method_call,
@@ -588,7 +630,7 @@ class CppCallEmitter:
             if owner_label == "":
                 owner_label = "unknown"
             raise ValueError("builtin method call must be lowered_kind=BuiltinCall: " + owner_label + "." + attr)
-        return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, merged_arg_nodes)
+        return self._render_call_attribute_non_module(owner_t, owner_expr, attr, fn, args, kw, arg_nodes, kw_nodes)
 
     def _render_selfhost_builtin_method_call(
         self,
@@ -667,6 +709,7 @@ class CppCallEmitter:
         args: list[str],
         kw: dict[str, str],
         arg_nodes: list[Any],
+        kw_nodes: list[Any],
     ) -> str | None:
         """`Call(Attribute)` の object/class 系分岐（非 module）を処理する。"""
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
@@ -675,19 +718,14 @@ class CppCallEmitter:
         hook_class_rendered = self.hook_on_render_class_method(owner_t, attr, fn, args, kw, arg_nodes)
         if isinstance(hook_class_rendered, str) and hook_class_rendered != "":
             return hook_class_rendered
-        class_rendered = self._render_call_class_method(owner_t, attr, fn, args, kw, arg_nodes)
+        class_rendered = self._render_call_class_method(owner_t, attr, fn, args, kw, arg_nodes, kw_nodes)
         if class_rendered is not None and class_rendered != "":
             return class_rendered
         return None
 
     def _collect_class_method_candidates(self, owner_t: str) -> list[str]:
         """class method シグネチャ探索で使う候補クラス名を返す。"""
-        t_norm = self.normalize_type_name(owner_t)
-        candidates: list[str] = []
-        if self._contains_text(t_norm, "|"):
-            candidates = self.split_union(t_norm)
-        elif t_norm != "":
-            candidates = [t_norm]
+        candidates = self._expand_runtime_class_candidates(owner_t)
         if self.current_class_name is not None and owner_t in {"", "unknown"}:
             candidates.append(self.current_class_name)
         return candidates
@@ -754,9 +792,29 @@ class CppCallEmitter:
             mm2: dict[str, list[str]] = {}
             if self.current_class_name in self.class_method_arg_names:
                 mm2 = self.class_method_arg_names[self.current_class_name]
-            if method in mm2:
-                return mm2[method]
+                if method in mm2:
+                    return mm2[method]
         return []
+
+    def _class_method_default_sig(self, owner_t: str, method: str) -> dict[str, Any]:
+        """クラスメソッドの既定引数ノードを返す。未知なら空 dict。"""
+        candidates = self._collect_class_method_candidates(owner_t)
+        for c in candidates:
+            if c in self.class_method_arg_defaults:
+                mm = self.class_method_arg_defaults[c]
+                if method in mm:
+                    defaults = mm[method]
+                    if isinstance(defaults, dict):
+                        return defaults
+        if owner_t in {"", "unknown"} and self.current_class_name is not None:
+            mm2: dict[str, Any] = {}
+            if self.current_class_name in self.class_method_arg_defaults:
+                mm2 = self.class_method_arg_defaults[self.current_class_name]
+            if method in mm2:
+                defaults = mm2.get(method)
+                if isinstance(defaults, dict):
+                    return defaults
+        return {}
 
     def _merge_args_with_kw_by_name(self, args: list[str], kw: dict[str, str], arg_names: list[str]) -> list[str]:
         """位置引数+キーワード引数を、引数名順に 1 本化する。"""
@@ -810,6 +868,80 @@ class CppCallEmitter:
             if kw_name not in used_kw:
                 out.append(kw_node_map.get(kw_name, {}))
         return out
+
+    def _merge_args_with_kw_defaults(
+        self,
+        args: list[str],
+        kw: dict[str, str],
+        arg_nodes: list[Any],
+        kw_nodes: list[Any],
+        arg_names: list[str],
+        arg_defaults: dict[str, Any],
+        arg_types: list[str],
+    ) -> tuple[list[str], list[Any]]:
+        """C++ positional call 用に keyword と途中 default を埋める。"""
+        if len(kw) == 0 or len(arg_names) == 0:
+            return args, arg_nodes
+        kw_name_list: list[str] = []
+        for key, _ in kw.items():
+            kw_name_list.append(key)
+        kw_node_map: dict[str, Any] = {}
+        i = 0
+        while i < len(kw_name_list):
+            kw_name = kw_name_list[i]
+            kw_node_map[kw_name] = kw_nodes[i] if i < len(kw_nodes) else {}
+            i += 1
+        highest_index = len(args) - 1
+        found_named_slot = False
+        for kw_name in kw_name_list:
+            if kw_name not in arg_names:
+                continue
+            idx = arg_names.index(kw_name)
+            if idx > highest_index:
+                highest_index = idx
+            found_named_slot = True
+        if not found_named_slot:
+            return self.merge_call_args(args, kw), self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+        out_args: list[str] = []
+        out_nodes: list[Any] = []
+        used_kw: set[str] = set()
+        idx = 0
+        while idx <= highest_index:
+            if idx < len(args):
+                out_args.append(args[idx])
+                out_nodes.append(arg_nodes[idx] if idx < len(arg_nodes) else {})
+                idx += 1
+                continue
+            if idx >= len(arg_names):
+                break
+            arg_name = arg_names[idx]
+            if arg_name in kw:
+                out_args.append(kw[arg_name])
+                out_nodes.append(kw_node_map.get(arg_name, {}))
+                used_kw.add(arg_name)
+                idx += 1
+                continue
+            if arg_name in arg_defaults:
+                default_node = arg_defaults.get(arg_name)
+                target_t = arg_types[idx] if idx < len(arg_types) else "Any"
+                default_txt = ""
+                if isinstance(default_node, dict):
+                    default_txt = self._render_param_default_expr(default_node, target_t)
+                if default_txt != "":
+                    out_args.append(default_txt)
+                    out_nodes.append(default_node)
+                    idx += 1
+                    continue
+            return self.merge_call_args(args, kw), self.merge_call_arg_nodes(arg_nodes, kw_nodes)
+        while idx < len(args):
+            out_args.append(args[idx])
+            out_nodes.append(arg_nodes[idx] if idx < len(arg_nodes) else {})
+            idx += 1
+        for kw_name in kw_name_list:
+            if kw_name not in used_kw:
+                out_args.append(kw[kw_name])
+                out_nodes.append(kw_node_map.get(kw_name, {}))
+        return out_args, out_nodes
 
     def _coerce_args_for_class_method(
         self,

@@ -1736,6 +1736,7 @@ class CppStatementEmitter:
             skip_self = in_class and idx == 0 and n == "self"
             ct = self._cpp_type_text(t)
             t_norm = self.normalize_type_name(t)
+            emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             if (not skip_self) and list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(t_norm):
                 ct = self._cpp_list_value_model_type_text(t_norm)
                 if t_norm == "list[str]":
@@ -1749,9 +1750,9 @@ class CppStatementEmitter:
                 pass
             else:
                 param_txt = (
-                    (f"{ct} {n}" if ct == "object" else f"{ct}& {n}")
+                    (f"{ct} {emitted_n}" if ct == "object" else f"{ct}& {emitted_n}")
                     if by_ref and usage == "mutable"
-                    else (f"const {ct}& {n}" if by_ref else f"{ct} {n}")
+                    else (f"const {ct}& {emitted_n}" if by_ref else f"{ct} {emitted_n}")
                 )
                 if n in arg_defaults:
                     default_txt = self._render_param_default_expr(arg_defaults.get(n), t)

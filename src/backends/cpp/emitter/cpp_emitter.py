@@ -225,6 +225,7 @@ class CppEmitter(
         self.class_method_virtual: dict[str, set[str]] = {}
         self.class_method_arg_types: dict[str, dict[str, list[str]]] = {}
         self.class_method_arg_names: dict[str, dict[str, list[str]]] = {}
+        self.class_method_arg_defaults: dict[str, dict[str, dict[str, Any]]] = {}
         self.class_method_return_types: dict[str, dict[str, str]] = {}
         self.class_base: dict[str, str] = {}
         self.class_names: set[str] = set()
@@ -263,6 +264,7 @@ class CppEmitter(
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self._module_fn_signature_cache: dict[str, dict[str, dict[str, list[str]]]] = {}
+        self._module_class_signature_cache: dict[str, dict[str, dict[str, Any]]] = {}
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_stack_list_locals_map: dict[str, list[str]] = {}
@@ -282,6 +284,39 @@ class CppEmitter(
         if len(self.scope_stack) == 0:
             self.scope_stack.append(set())
         self.scope_stack[-1].add(name)
+
+    def _expand_runtime_class_candidates(self, owner_t: str) -> list[str]:
+        """owner 型名から class/ref 判定に使う候補型列を返す。"""
+        t_norm = self.normalize_type_name(owner_t)
+        base_candidates: list[str] = []
+        if self._contains_text(t_norm, "|"):
+            base_candidates = self.split_union(t_norm)
+        elif t_norm != "":
+            base_candidates = [t_norm]
+        out: list[str] = []
+        for base in base_candidates:
+            if base == "":
+                continue
+            stripped = self._strip_rc_wrapper(base)
+            if base not in out:
+                out.append(base)
+            if stripped != "" and stripped not in out:
+                out.append(stripped)
+            mapped = self.normalize_type_name(self.any_to_str(self.type_map.get(base)))
+            if mapped != "":
+                if mapped not in out:
+                    out.append(mapped)
+                mapped_stripped = self._strip_rc_wrapper(mapped)
+                if mapped_stripped != "" and mapped_stripped not in out:
+                    out.append(mapped_stripped)
+        return out
+
+    def _type_is_ref_class(self, owner_t: str) -> bool:
+        """owner_t が ref class として扱うべき型か返す。"""
+        for candidate in self._expand_runtime_class_candidates(owner_t):
+            if candidate in self.ref_classes:
+                return True
+        return False
 
     def is_declared(self, name: str) -> bool:
         """現在の可視スコープで識別子が宣言済みかを返す。"""
@@ -837,6 +872,7 @@ class CppEmitter(
                     mset: set[str] = set()
                     marg: dict[str, list[str]] = {}
                     marg_names: dict[str, list[str]] = {}
+                    mdefaults: dict[str, dict[str, Any]] = {}
                     mret: dict[str, str] = {}
                     class_body: list[dict[str, Any]] = []
                     raw_class_body = self.any_dict_get_list(stmt, "body")
@@ -850,9 +886,11 @@ class CppEmitter(
                             mset.add(fn_name)
                             mret[fn_name] = self.normalize_type_name(self.any_to_str(s.get("return_type")))
                             arg_types = self.any_to_dict_or_empty(s.get("arg_types"))
+                            arg_defaults = self.any_to_dict_or_empty(s.get("arg_defaults"))
                             arg_order = self.any_dict_get_list(s, "arg_order")
                             ordered: list[str] = []
                             ordered_names: list[str] = []
+                            ordered_defaults: dict[str, Any] = {}
                             for raw_n in arg_order:
                                 if isinstance(raw_n, str):
                                     n = str(raw_n)
@@ -860,11 +898,15 @@ class CppEmitter(
                                         ordered_names.append(n)
                                         if n in arg_types:
                                             ordered.append(self.any_to_str(arg_types.get(n)))
+                                        if n in arg_defaults:
+                                            ordered_defaults[n] = arg_defaults.get(n)
                             marg[fn_name] = ordered
                             marg_names[fn_name] = ordered_names
+                            mdefaults[fn_name] = ordered_defaults
                     self.class_method_names[cls_name] = mset
                     self.class_method_arg_types[cls_name] = marg
                     self.class_method_arg_names[cls_name] = marg_names
+                    self.class_method_arg_defaults[cls_name] = mdefaults
                     self.class_method_return_types[cls_name] = mret
                     field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
                     for raw_attr, raw_ft in field_types.items():
@@ -965,6 +1007,7 @@ class CppEmitter(
                     if m in self.class_method_names.get(base, set()):
                         self.class_method_virtual[base].add(m)
                     base = self.class_base.get(base, "")
+        self._register_imported_runtime_class_metadata()
 
         self.emit_module_leading_trivia()
         header_text: str = CPP_HEADER
@@ -1234,17 +1277,22 @@ class CppEmitter(
         if attr == "":
             return ""
         owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
-        owner_t = self._strip_rc_wrapper(owner_t)
+        owner_candidates = self._expand_runtime_class_candidates(owner_t)
+        owner_t = owner_candidates[0] if len(owner_candidates) > 0 else self._strip_rc_wrapper(owner_t)
         if owner_t == "" and self._node_kind_from_dict(owner_node) == "Name":
             owner_name = self.any_to_str(owner_node.get("id"))
             if owner_name == "self" and self.current_class_name is not None:
                 owner_t = self.current_class_name
         if owner_t == "":
             return ""
-        owner_methods = self.class_method_return_types.get(owner_t, {})
-        if not isinstance(owner_methods, dict):
-            return ""
-        return self.normalize_type_name(self.any_to_str(owner_methods.get(attr)))
+        for candidate in owner_candidates if len(owner_candidates) > 0 else [owner_t]:
+            owner_methods = self.class_method_return_types.get(candidate, {})
+            if not isinstance(owner_methods, dict):
+                continue
+            ret = self.normalize_type_name(self.any_to_str(owner_methods.get(attr)))
+            if ret != "":
+                return ret
+        return ""
 
     def _byte_from_str_expr(self, node: Any) -> str:
         """str 系式を uint8 初期化向けの char 式へ変換する。"""
@@ -1397,6 +1445,24 @@ class CppEmitter(
                     return ""
                 parts.append(txt)
             return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
+        if kind == "List":
+            elems = self.any_dict_get_list(nd, "elements")
+            if len(elems) == 0:
+                t = self.normalize_type_name(east_target_t)
+                if t.startswith("list[") and t.endswith("]"):
+                    return self._cpp_type_text(t) + "{}"
+        if kind == "Dict":
+            entries = self.any_dict_get_list(nd, "entries")
+            if len(entries) == 0:
+                t = self.normalize_type_name(east_target_t)
+                if t.startswith("dict[") and t.endswith("]"):
+                    return self._cpp_type_text(t) + "{}"
+        if kind == "Set":
+            elems = self.any_dict_get_list(nd, "elements")
+            if len(elems) == 0:
+                t = self.normalize_type_name(east_target_t)
+                if t.startswith("set[") and t.endswith("]"):
+                    return self._cpp_type_text(t) + "{}"
         _ = east_target_t
         return ""
 
@@ -1683,6 +1749,7 @@ class CppEmitter(
         for n in arg_names:
             t = self.any_to_str(arg_types.get(n))
             ct = self._cpp_type_text(t)
+            emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             usage = self.any_to_str(arg_usage.get(n))
             usage = usage if usage != "" else "readonly"
             if usage != "mutable" and n in mutated_params:
@@ -1691,13 +1758,13 @@ class CppEmitter(
             param_txt = ""
             if by_ref and usage == "mutable":
                 use_object_param = ct == "object"
-                param_txt = f"{ct} {n}" if use_object_param else f"{ct}& {n}"
+                param_txt = f"{ct} {emitted_n}" if use_object_param else f"{ct}& {emitted_n}"
                 fn_sig_params.append(ct if use_object_param else f"{ct}&")
             elif by_ref:
-                param_txt = f"const {ct}& {n}"
+                param_txt = f"const {ct}& {emitted_n}"
                 fn_sig_params.append(f"const {ct}&")
             else:
-                param_txt = f"{ct} {n}"
+                param_txt = f"{ct} {emitted_n}"
                 fn_sig_params.append(ct)
             if n in arg_defaults:
                 default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
@@ -2745,23 +2812,20 @@ class CppEmitter(
         base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
         base_kind = self._node_kind_from_dict(base_node)
         attr = self.attr_name(expr_d)
-        direct_self_or_class = self.render_attribute_self_or_class_access(
-            base,
-            attr,
-            self.current_class_name,
-            self.current_class_static_fields,
-            self.class_base,
-            self.class_method_names,
-        )
-        if direct_self_or_class != "":
-            return direct_self_or_class
+        emitted_attr = self.rename_if_reserved(attr, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+        if base == "self" or base == "*this":
+            if self.current_class_name is not None and attr in self.current_class_static_fields:
+                return f"{self.current_class_name}::{emitted_attr}"
+            return f"this->{emitted_attr}"
+        if base in self.class_base or base in self.class_method_names:
+            return f"{base}::{emitted_attr}"
         base_module_name = self.any_dict_get_str(base_ctx, "module", "")
         if base_module_name != "":
             mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
             ns = self._module_name_to_cpp_namespace(base_module_name)
             direct_module = self.render_attribute_module_access(
                 base_module_name,
-                attr,
+                emitted_attr,
                 mapped,
                 ns,
             )
@@ -2778,7 +2842,7 @@ class CppEmitter(
                 raise self._make_missing_symbol_import_error(base_name, attr)
         bt = self.get_expr_type(expr_d.get("value"))
         if bt in {"Path", "pytra::std::pathlib::Path"} and attr in {"name", "stem", "parent"}:
-            return f"{base}.{attr}()"
+            return f"{base}.{emitted_attr}()"
         if (
             self.current_class_name is not None
             and attr in self.current_class_fields
@@ -2796,17 +2860,17 @@ class CppEmitter(
                 base_obj = base
                 if not self.is_boxed_object_expr(base_obj):
                     base_obj = f"make_object({base_obj})"
-                return f"obj_to_rc_or_raise<{owner_cls}>({base_obj}, \"{ctx}\")->{attr}"
+                return f"obj_to_rc_or_raise<{owner_cls}>({base_obj}, \"{ctx}\")->{emitted_attr}"
             owner_m_cls = self.class_method_owner_unique.get(attr, "")
             if owner_m_cls != "" and owner_m_cls in self.ref_classes:
                 ctx = f"{owner_m_cls}.{attr}"
                 base_obj = base
                 if not self.is_boxed_object_expr(base_obj):
                     base_obj = f"make_object({base_obj})"
-                return f"obj_to_rc_or_raise<{owner_m_cls}>({base_obj}, \"{ctx}\")->{attr}"
-        if bt in self.ref_classes:
-            return f"{base}->{attr}"
-        return f"{base}.{attr}"
+                return f"obj_to_rc_or_raise<{owner_m_cls}>({base_obj}, \"{ctx}\")->{emitted_attr}"
+        if self._type_is_ref_class(bt):
+            return f"{base}->{emitted_attr}"
+        return f"{base}.{emitted_attr}"
 
     def _render_joinedstr_expr(self, expr_d: dict[str, Any]) -> str:
         """JoinedStr（f-string）ノードを C++ の文字列連結式へ変換する。"""

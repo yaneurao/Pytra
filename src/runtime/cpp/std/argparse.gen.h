@@ -10,30 +10,31 @@
 namespace pytra::std::argparse {
 
     struct Namespace {
-        Namespace(const ::std::optional<dict<str, object>>& values = ::std::nullopt);
+        dict<str, object> values;
+        
+        Namespace(const object& values = object{});
     };
 
-    struct _ArgSpec : public PyObj {
-        ::std::optional<str> action;
-        ::std::optional<list<str>> choices;
-        object default;
-        ::std::optional<str> help_text;
-        bool is_optional;
+    struct _ArgSpec {
         list<str> names;
-        PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
+        str action;
+        list<str> choices;
+        object py_default;
+        str help_text;
+        bool is_optional;
+        str dest;
         
-        _ArgSpec(const list<str>& names, const ::std::optional<str>& action, const ::std::optional<list<str>>& choices, const object& default, const ::std::optional<str>& help_text);
+        _ArgSpec(const list<str>& names, const str& action = "", const list<str>& choices = list<str>{}, const object& py_default = object{}, const str& help_text = "");
     };
 
-    struct ArgumentParser : public PyObj {
-        list<rc<_ArgSpec>> _specs;
-        bool description;
-        PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
+    struct ArgumentParser {
+        str description;
+        list<_ArgSpec> _specs;
         
-        ArgumentParser(const ::std::optional<str>& description = ::std::nullopt);
-        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const ::std::optional<str>& help = ::std::nullopt, const ::std::optional<str>& action = ::std::nullopt, const ::std::optional<list<str>>& choices = ::std::nullopt, const object& default = object{});
+        ArgumentParser(const str& description = "");
+        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const str& help = "", const str& action = "", const list<str>& choices = list<str>{}, const object& py_default = object{});
         void _fail(const str& msg);
-        dict<str, object> parse_args(const ::std::optional<list<str>>& argv = ::std::nullopt);
+        dict<str, object> parse_args(const object& argv = object{});
     };
 
 

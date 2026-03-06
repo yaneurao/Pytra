@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/std/argparse.gen.h"
 
+#include "runtime/cpp/built_in/string_ops.gen.h"
 #include "runtime/cpp/std/sys.gen.h"
 
 namespace pytra::std::argparse {
@@ -12,39 +13,37 @@ namespace pytra::std::argparse {
     /* Minimal pure-Python argparse subset for selfhost usage. */
     
 
-    Namespace::Namespace(const ::std::optional<dict<str, object>>& values) {
-            if (py_is_none(values))
+    Namespace::Namespace(const object& values) {
+            if (py_is_none(values)) {
+                this->values = dict<str, object>{};
                 return;
-            for (object __itobj_1 : py_dyn_range(values)) {
-                auto k = py_at(__itobj_1, 0);
-                auto v = py_at(__itobj_1, 1);
-                setattr(*this, k, v);
             }
+            this->values = values;
     }
     
 
-    _ArgSpec::_ArgSpec(const list<str>& names, const ::std::optional<str>& action, const ::std::optional<list<str>>& choices, const object& default, const ::std::optional<str>& help_text) {
+    _ArgSpec::_ArgSpec(const list<str>& names, const str& action, const list<str>& choices, const object& py_default, const str& help_text) {
             this->names = names;
             this->action = action;
             this->choices = choices;
-            this->default = make_object(py_default);
+            this->py_default = make_object(py_default);
             this->help_text = help_text;
             this->is_optional = (py_len(names) > 0) && (py_startswith(names[0], "-"));
             if (this->is_optional) {
                 auto base = py_replace(py_at(names, -(1)).lstrip("-"), "-", "_");
-                this->dest = base;
+                this->dest = py_to_string(base);
             } else {
                 this->dest = names[0];
             }
     }
     
 
-    ArgumentParser::ArgumentParser(const ::std::optional<str>& description) {
-            this->description = (description ? description : "");
+    ArgumentParser::ArgumentParser(const str& description) {
+            this->description = description;
             this->_specs = {};
     }
 
-    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const ::std::optional<str>& help, const ::std::optional<str>& action, const ::std::optional<list<str>>& choices, const object& default) {
+    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const list<str>& choices, const object& py_default) {
             list<str> names = {};
             if (name0 != "")
                 names.append(name0);
@@ -56,7 +55,7 @@ namespace pytra::std::argparse {
                 names.append(name3);
             if (names.empty())
                 throw ValueError("add_argument requires at least one name");
-            rc<_ArgSpec> spec = ::rc_new<_ArgSpec>(names, action, choices, py_default, help);
+            _ArgSpec spec = _ArgSpec(names, action, choices, py_default, help);
             this->_specs.append(spec);
     }
 
@@ -66,59 +65,70 @@ namespace pytra::std::argparse {
             throw SystemExit(2);
     }
 
-    dict<str, object> ArgumentParser::parse_args(const ::std::optional<list<str>>& argv) {
-            object args = make_object(list<object>((py_is_none(argv) ? py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())) : argv)));
-            
-            list<rc<_ArgSpec>> specs_pos = [&]() -> list<rc<_ArgSpec>> {     list<rc<_ArgSpec>> __out;     for (auto s : this->_specs) {         if (!(s->is_optional)) __out.append(s);     }     return __out; }();
-            list<rc<_ArgSpec>> specs_opt = [&]() -> list<rc<_ArgSpec>> {     list<rc<_ArgSpec>> __out;     for (auto s : this->_specs) {         if (s->is_optional) __out.append(s);     }     return __out; }();
-            dict<str, rc<_ArgSpec>> by_name = {};
-            for (const rc<_ArgSpec>& s : specs_opt) {
-                for (object n : py_dyn_range(s->names)) {
-                    by_name[n] = s;
+    dict<str, object> ArgumentParser::parse_args(const object& argv) {
+            list<str> args;
+            if (py_is_none(argv))
+                args = py_to_str_list_from_object(py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())));
+            else
+                args = py_to_str_list_from_object(argv);
+            list<_ArgSpec> specs_pos = {};
+            list<_ArgSpec> specs_opt = {};
+            for (_ArgSpec s : this->_specs) {
+                if (s.is_optional)
+                    specs_opt.append(s);
+                else
+                    specs_pos.append(s);
+            }
+            dict<str, int64> by_name = {};
+            int64 spec_i = 0;
+            for (_ArgSpec s : specs_opt) {
+                for (object n : py_dyn_range(s.names)) {
+                    by_name[n] = spec_i;
                 }
+                spec_i++;
             }
             dict<str, object> values = dict<str, object>{};
-            for (const rc<_ArgSpec>& s : this->_specs) {
-                if (s->action == "store_true") {
-                    values[s->dest] = make_object((!py_is_none(s->default) ? py_to<bool>(s->default) : false));
-                } else if (!py_is_none(s->default)) {
-                    values[s->dest] = make_object(s->default);
+            for (_ArgSpec s : this->_specs) {
+                if (s.action == "store_true") {
+                    values[s.dest] = make_object((!py_is_none(s.py_default) ? py_to<bool>(s.py_default) : false));
+                } else if (!py_is_none(s.py_default)) {
+                    values[s.dest] = make_object(s.py_default);
                 } else {
-                    values[s->dest] = object{};
+                    values[s.dest] = object{};
                 }
             }
             int64 pos_i = 0;
             int64 i = 0;
             while (i < py_len(args)) {
-                auto tok = py_at(args, py_to<int64>(i));
-                if (tok.startswith("-")) {
-                    auto spec = py_dict_get_maybe(by_name, tok);
-                    if (py_is_none(spec))
-                        this->_fail("unknown option: " + py_to_string(tok));
-                    if (obj_to_rc_or_raise<_ArgSpec>(make_object(spec), "_ArgSpec.action")->action == "store_true") {
+                str tok = args[i];
+                if (py_startswith(tok, "-")) {
+                    if (!py_contains(by_name, tok))
+                        this->_fail("unknown option: " + tok);
+                    auto __idx_1 = py_dict_get(by_name, tok);
+                    _ArgSpec spec = specs_opt[__idx_1];
+                    if (spec.action == "store_true") {
                         values[spec.dest] = make_object(true);
                         i++;
                         continue;
                     }
                     if (i + 1 >= py_len(args))
-                        this->_fail("missing value for option: " + py_to_string(tok));
-                    auto __idx_4 = i + 1;
-                    auto val = py_at(args, py_to<int64>(__idx_4));
-                    if ((!py_is_none(obj_to_rc_or_raise<_ArgSpec>(make_object(spec), "_ArgSpec.choices")->choices)) && (!py_contains(obj_to_rc_or_raise<_ArgSpec>(make_object(spec), "_ArgSpec.choices")->choices, val)))
-                        this->_fail("invalid choice for " + py_to_string(tok) + ": " + py_to_string(val));
+                        this->_fail("missing value for option: " + tok);
+                    str val = args[i + 1];
+                    if ((py_len(spec.choices) > 0) && (!py_contains(spec.choices, val)))
+                        this->_fail("invalid choice for " + tok + ": " + val);
                     values[spec.dest] = make_object(val);
                     i += 2;
                     continue;
                 }
                 if (pos_i >= py_len(specs_pos))
-                    this->_fail("unexpected extra argument: " + py_to_string(tok));
-                rc<_ArgSpec> spec = specs_pos[pos_i];
-                values[spec->dest] = make_object(tok);
+                    this->_fail("unexpected extra argument: " + tok);
+                _ArgSpec spec = specs_pos[pos_i];
+                values[spec.dest] = make_object(tok);
                 pos_i++;
                 i++;
             }
             if (pos_i < py_len(specs_pos))
-                this->_fail("missing required argument: " + py_to_string(specs_pos[pos_i]->dest));
+                this->_fail("missing required argument: " + specs_pos[pos_i].dest);
             return values;
     }
     
