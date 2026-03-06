@@ -211,7 +211,7 @@ def build_cpp_header_from_east(
     lines.append("")
     runtime_types_include = _header_runtime_types_include(used_types, len(class_blocks) > 0)
     if runtime_types_include != "":
-        lines.append('#include "runtime/cpp/core/built_in/' + runtime_types_include + '"')
+        lines.append('#include "runtime/cpp/core/' + runtime_types_include + '"')
         lines.append("")
     for include in includes:
         lines.append(include)
@@ -249,24 +249,25 @@ def _namespace_body_span(lines: list[str], top_namespace: str) -> tuple[int, int
     if len(lines) == 0:
         return -1, -1
     ns = top_namespace.strip()
-    if ns == "":
-        return 0, len(lines)
-    ns_open = "namespace " + ns + " {"
-    ns_idx = -1
-    for i, raw in enumerate(lines):
-        if raw.strip() == ns_open:
-            ns_idx = i
-            break
-    if ns_idx < 0:
-        return 0, len(lines)
-    start = ns_idx + 1
     end = len(lines)
-    depth = lines[ns_idx].count("{") - lines[ns_idx].count("}")
-    for i in range(ns_idx + 1, len(lines)):
-        depth += lines[i].count("{") - lines[i].count("}")
-        if depth <= 0:
-            end = i
-            break
+    if ns == "":
+        start = 0
+    else:
+        ns_open = "namespace " + ns + " {"
+        ns_idx = -1
+        for i, raw in enumerate(lines):
+            if raw.strip() == ns_open:
+                ns_idx = i
+                break
+        if ns_idx < 0:
+            return 0, len(lines)
+        start = ns_idx + 1
+        depth = lines[ns_idx].count("{") - lines[ns_idx].count("}")
+        for i in range(ns_idx + 1, len(lines)):
+            depth += lines[i].count("{") - lines[i].count("}")
+            if depth <= 0:
+                end = i
+                break
     for i in range(start, end):
         if "static void __pytra_module_init()" in lines[i]:
             end = i
@@ -557,7 +558,7 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
                 inc_path = line[q0 + 1 : q1].replace("\\", "/")
                 if inc_path.split("/")[-1] == own_name:
                     continue
-        if line == '#include "runtime/cpp/core/built_in/py_runtime.ext.h"':
+        if line == '#include "runtime/cpp/core/py_runtime.ext.h"':
             continue
         if line in seen:
             continue

@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/built_in/type_id.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/built_in/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.ext.h"
 
 #include "runtime/cpp/built_in/type_id.gen.h"
 
@@ -329,5 +329,8 @@ static void __pytra_module_init() {
 }
 
 namespace {
+    struct __pytra_module_initializer {
+        __pytra_module_initializer() { __pytra_module_init(); }
+    };
     static const __pytra_module_initializer __pytra_module_initializer_instance{};
 }  // namespace

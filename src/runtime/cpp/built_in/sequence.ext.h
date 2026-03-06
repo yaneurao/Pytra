@@ -1,7 +1,7 @@
 #ifndef PYTRA_BUILT_IN_SEQUENCE_EXT_H
 #define PYTRA_BUILT_IN_SEQUENCE_EXT_H
 
-#include "runtime/cpp/core/built_in/py_types.ext.h"
+#include "runtime/cpp/core/py_types.ext.h"
 
 template <class T>
 static inline list<T> py_repeat(const list<T>& v, int64 n) {

@@ -5,7 +5,7 @@
 #ifndef PYTRA_STD_MATH_GEN_H
 #define PYTRA_STD_MATH_GEN_H
 
-#include "runtime/cpp/core/built_in/py_scalar_types.ext.h"
+#include "runtime/cpp/core/py_scalar_types.ext.h"
 
 namespace pytra::std::math {
 

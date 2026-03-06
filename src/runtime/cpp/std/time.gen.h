@@ -5,7 +5,7 @@
 #ifndef PYTRA_STD_TIME_H
 #define PYTRA_STD_TIME_H
 
-#include "runtime/cpp/core/built_in/py_scalar_types.ext.h"
+#include "runtime/cpp/core/py_scalar_types.ext.h"
 
 namespace pytra::std::time {
 

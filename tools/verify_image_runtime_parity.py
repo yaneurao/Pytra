@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _write_cpp_harness(path: Path) -> None:
     src = r'''
-#include "runtime/cpp/core/built_in/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.ext.h"
 #include "runtime/cpp/utils/png.gen.h"
 #include "runtime/cpp/utils/gif.gen.h"
 
@@ -71,8 +71,8 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         str(harness),
         "src/runtime/cpp/utils/png.gen.cpp",
         "src/runtime/cpp/utils/gif.gen.cpp",
-        "src/runtime/cpp/core/built_in/gc.ext.cpp",
-        "src/runtime/cpp/core/built_in/io.ext.cpp",
+        "src/runtime/cpp/core/gc.ext.cpp",
+        "src/runtime/cpp/core/io.ext.cpp",
         "-o",
         str(exe),
     ]

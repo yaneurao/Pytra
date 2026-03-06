@@ -2,10 +2,10 @@
 // source: src/pytra/built_in/type_id.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_BUILT_IN_TYPE_ID_H
-#define PYTRA_BUILT_IN_TYPE_ID_H
+#ifndef PYTRA_BUILT_IN_TYPE_ID_GEN_H
+#define PYTRA_BUILT_IN_TYPE_ID_GEN_H
 
-#include "runtime/cpp/core/built_in/py_types.ext.h"
+#include "runtime/cpp/core/py_types.ext.h"
 
 extern list<int64> _TYPE_IDS;
 extern dict<int64, int64> _TYPE_BASE;
@@ -49,4 +49,4 @@ bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
 bool py_tid_isinstance(const object& value, int64 expected_type_id);
 void _py_reset_type_registry_for_test();
 
-#endif  // PYTRA_BUILT_IN_TYPE_ID_H
+#endif  // PYTRA_BUILT_IN_TYPE_ID_GEN_H

@@ -5,7 +5,7 @@
 #ifndef PYTRA_UTILS_GIF_H
 #define PYTRA_UTILS_GIF_H
 
-#include "runtime/cpp/core/built_in/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.ext.h"
 
 namespace pytra::utils::gif {
 

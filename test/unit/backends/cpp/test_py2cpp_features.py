@@ -46,20 +46,20 @@ from src.backends.cpp.cli import (
 )
 
 CPP_RUNTIME_SRCS = [
-    "src/runtime/cpp/core/built_in/gc.cpp",
-    "src/runtime/cpp/core/built_in/io.cpp",
-    "src/runtime/cpp/std/pathlib.cpp",
-    "src/runtime/cpp/std/time-manual.cpp",
-    "src/runtime/cpp/std/math-manual.cpp",
-    "src/runtime/cpp/std/random.cpp",
-    "src/runtime/cpp/std/glob-manual.cpp",
-    "src/runtime/cpp/std/json.cpp",
-    "src/runtime/cpp/std/re.cpp",
-    "src/runtime/cpp/std/sys-manual.cpp",
-    "src/runtime/cpp/std/timeit.cpp",
-    "src/runtime/cpp/utils/png.cpp",
-    "src/runtime/cpp/utils/gif.cpp",
-    "src/runtime/cpp/utils/assertions.cpp",
+    "src/runtime/cpp/core/gc.ext.cpp",
+    "src/runtime/cpp/core/io.ext.cpp",
+    "src/runtime/cpp/std/pathlib.gen.cpp",
+    "src/runtime/cpp/std/time.ext.cpp",
+    "src/runtime/cpp/std/math.ext.cpp",
+    "src/runtime/cpp/std/random.gen.cpp",
+    "src/runtime/cpp/std/glob.ext.cpp",
+    "src/runtime/cpp/std/json.gen.cpp",
+    "src/runtime/cpp/std/re.gen.cpp",
+    "src/runtime/cpp/std/sys.ext.cpp",
+    "src/runtime/cpp/std/timeit.gen.cpp",
+    "src/runtime/cpp/utils/png.gen.cpp",
+    "src/runtime/cpp/utils/gif.gen.cpp",
+    "src/runtime/cpp/utils/assertions.gen.cpp",
 ]
 
 def find_fixture_case(stem: str) -> Path:
@@ -162,8 +162,8 @@ def inc(x: int) -> int:
     def test_emit_runtime_cpp_skips_cpp_for_extern_only_module(self) -> None:
         rel_src = Path("src/pytra/std/__tmp_extern_header_only_test.py")
         src_py = ROOT / rel_src
-        hdr_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.h"
-        cpp_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.cpp"
+        hdr_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.gen.h"
+        cpp_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.gen.cpp"
         src = """
 from pytra.std import extern
 
@@ -191,7 +191,7 @@ def sin(x: float) -> float:
                 label="emit-runtime-cpp extern-only",
             )
             self.assertEqual(cp.returncode, 0, msg=cp.stderr)
-            self.assertIn("skipped: header-only extern module", cp.stdout)
+            self.assertIn("skipped: header-only runtime module", cp.stdout)
             self.assertTrue(hdr_out.exists())
             self.assertFalse(cpp_out.exists())
         finally:

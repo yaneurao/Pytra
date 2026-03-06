@@ -1,4 +1,4 @@
-#include "runtime/cpp/core/built_in/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.ext.h"
 
 #include "runtime/cpp/std/sys.gen.h"
 

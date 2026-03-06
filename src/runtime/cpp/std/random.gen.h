@@ -5,7 +5,7 @@
 #ifndef PYTRA_STD_RANDOM_H
 #define PYTRA_STD_RANDOM_H
 
-#include "runtime/cpp/core/built_in/py_types.ext.h"
+#include "runtime/cpp/core/py_types.ext.h"
 
 #include "runtime/cpp/std/math.gen.h"
 

@@ -6,7 +6,7 @@
 - `docs/ja/todo/index.md` の `ID: P0-CPP-PYRUNTIME-EXT-01`
 
 背景:
-- `src/runtime/cpp/core/built_in/py_runtime.ext.h` には、C++ ABI / object 表現と、pure Python 正本へ移管できる高レベル built-in 意味論が混在している。
+- `src/runtime/cpp/core/py_runtime.ext.h` には、C++ ABI / object 表現と、pure Python 正本へ移管できる高レベル built-in 意味論が混在している。
 - すでに `src/pytra/built_in/{predicates,sequence,string_ops}.py` と `src/pytra/std/{re,argparse}.py` に正本があるにもかかわらず、`py_runtime.ext.h` 側にも同等実装が残っている。
 - この重複は runtime 境界を曖昧にし、以後の多言語展開・selfhost・再生成で手戻りを生む。
 
@@ -16,7 +16,7 @@
 - ただし、typed fastpath や template ベース adapter が必要なものは、薄い `*.ext.*` を残して良い。
 
 対象:
-- `src/runtime/cpp/core/built_in/py_runtime.ext.h`
+- `src/runtime/cpp/core/py_runtime.ext.h`
 - `src/pytra/built_in/{predicates,sequence,string_ops}.py`
 - `src/pytra/std/{re,argparse}.py`
 - `src/runtime/cpp/{built_in,std}/*.gen.*`

@@ -165,7 +165,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
   src/runtime/cpp/utils/png.gen.cpp src/runtime/cpp/utils/gif.gen.cpp \
   src/runtime/cpp/std/math.ext.cpp src/runtime/cpp/std/time.ext.cpp src/runtime/cpp/std/pathlib.gen.cpp \
   src/runtime/cpp/built_in/type_id.gen.cpp \
-  src/runtime/cpp/core/built_in/gc.ext.cpp src/runtime/cpp/core/built_in/io.ext.cpp \
+  src/runtime/cpp/core/gc.ext.cpp src/runtime/cpp/core/io.ext.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
@@ -415,7 +415,7 @@ python src/py2x.py --target cpp test/transpile/east/01_mandelbrot.json -o test/t
 g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
   src/runtime/cpp/utils/png.gen.cpp src/runtime/cpp/utils/gif.gen.cpp \
   src/runtime/cpp/built_in/type_id.gen.cpp \
-  src/runtime/cpp/core/built_in/gc.ext.cpp src/runtime/cpp/core/built_in/io.ext.cpp \
+  src/runtime/cpp/core/gc.ext.cpp src/runtime/cpp/core/io.ext.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```
