@@ -211,6 +211,9 @@ class CppTypeBridgeEmitter:
         ):
             t_norm = "object"
         arg_node_dict = self.any_to_dict_or_empty(arg_node)
+        if self._uses_pyobj_rc_list_expr(arg_node):
+            if t_norm.startswith("list[") and t_norm.endswith("]"):
+                return f"rc_list_ref({arg_txt})"
         if self.is_any_like_type(t_norm):
             if self.is_boxed_object_expr(arg_txt):
                 return arg_txt

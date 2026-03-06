@@ -284,17 +284,17 @@ class CppModuleEmitter:
                         arg_t = arg_t_obj
                 arg_t = self.infer_rendered_arg_type(a, arg_t, self.declared_var_types)
                 arg_is_unknown = arg_t == "" or arg_t == "unknown"
-                if self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
+                arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
+                arg_node_d = arg_node if isinstance(arg_node, dict) else {}
+                if self._uses_pyobj_rc_list_expr(arg_node) and tt.startswith("list[") and tt.endswith("]"):
+                    a = f"rc_list_ref({a})"
+                elif self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
                     if not self.is_boxed_object_expr(a):
-                        arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
-                        arg_node_d = arg_node if isinstance(arg_node, dict) else {}
                         if len(arg_node_d) > 0:
                             a = self.render_expr(self._build_box_expr_node(arg_node))
                         else:
                             a = f"make_object({a})"
                 elif self._can_runtime_cast_target(tt) and (arg_is_unknown or self.is_any_like_type(arg_t)):
-                    arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
-                    arg_node_d = arg_node if isinstance(arg_node, dict) else {}
                     t_norm = self.normalize_type_name(tt)
                     if len(arg_node_d) > 0:
                         a = self.render_expr(self._build_unbox_expr_node(arg_node, t_norm, f"module_arg:{t_norm}"))
