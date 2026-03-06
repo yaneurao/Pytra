@@ -132,6 +132,26 @@ ABI 型は「境界の正規形」として扱う。
 - `rc<>` を ABI に使うのは、user class など identity を保持すべき参照型に限定する。
 - `rc<list<T>>` はあくまで backend 内部の alias 維持・最適化用表現であり、ABI 正規形には含めない。
 
+### 5.1.1 backend 内部表現の既定方針
+
+ABI の正規形と、backend 内部で最初に採用する表現は分けて考える。
+
+必須ルール:
+
+- `str` のような immutable 型は、backend 内部でも値型を既定としてよい。
+- `list`, `dict`, `set`, `bytearray` などの mutable 型、および mutable な user class は、backend 内部では **参照共有を保持する表現** を既定とする。
+- C++ backend では、その参照共有表現として `rc<>` や同等の handle を使ってよい。
+- ただし、その `rc<>` はあくまで内部表現であり、ABI へ露出してはならない。
+
+値型への縮退は、最適化結果としてのみ許可する。
+
+- `a = b` の alias 共有が観測されうる mutable 値を、証明なしに値型へ落としてはならない。
+- 値型への縮退は、少なくとも mutation / alias / escape の各解析で安全が証明できた場合に限る。
+- 関数をまたぐ縮退は、call graph を構築し、再帰・相互再帰を含む SCC 単位で summary を固定してから行う。
+- `Any/object` 境界、`@extern` 境界、未知関数呼び出し、型不明経路が混ざる場合は fail-closed とし、参照共有表現のまま保持する。
+
+要するに、ABI は `list<T>` のような値型正規形で固定しつつ、backend 内部では mutable 型を ref-first に扱い、安全が証明できた経路だけ後から値型へ縮退する。
+
 ### 5.2 値型 ABI の正規形
 
 本仕様での推奨正規形:
