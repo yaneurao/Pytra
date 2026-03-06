@@ -906,13 +906,14 @@ def main(argv: list[str]) -> int:
             ns = top_namespace_opt
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
-            # std モジュールは `runtime/cpp/std/` を正本生成先とする。
-            # utils/compiler/built_in は従来どおり `runtime/cpp/gen/` を使う。
+            # std / built_in モジュールは `runtime/cpp/` を正本生成先とする。
+            # utils/compiler は従来どおり `runtime/cpp/gen/` を使う。
             is_std_runtime_output = module_tail == "std" or module_tail.startswith("std/")
+            is_built_in_runtime_output = module_tail == "built_in" or module_tail.startswith("built_in/")
             is_root_utils_runtime_output = (
                 rel_tail == "utils/assertions" or rel_tail == "utils/png" or rel_tail == "utils/gif"
             )
-            is_root_runtime_output = is_std_runtime_output or is_root_utils_runtime_output
+            is_root_runtime_output = is_std_runtime_output or is_built_in_runtime_output or is_root_utils_runtime_output
             out_root = Path("src/runtime/cpp") if is_root_runtime_output else RUNTIME_CPP_GEN_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")

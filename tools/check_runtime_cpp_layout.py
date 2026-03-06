@@ -3,6 +3,7 @@
 
 Rules:
 - `src/runtime/cpp/gen/**/*.h|cpp` must contain the auto-generated marker.
+- `src/runtime/cpp/built_in/**/*.h|cpp` must contain the auto-generated marker.
 - `src/runtime/cpp/core/**/*.h|cpp` must NOT contain the auto-generated marker.
 - `src/runtime/cpp/std/**/*.h` must contain the auto-generated marker.
 - `src/runtime/cpp/std/**/*.cpp` must NOT contain the auto-generated marker.
@@ -15,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GEN_DIR = ROOT / "src/runtime/cpp/gen"
+BUILTIN_DIR = ROOT / "src/runtime/cpp/built_in"
 CORE_DIR = ROOT / "src/runtime/cpp/core"
 STD_DIR = ROOT / "src/runtime/cpp/std"
 MARKER = "AUTO-GENERATED FILE. DO NOT EDIT."
@@ -33,6 +35,7 @@ def _scan_targets(base: Path) -> list[Path]:
 
 def main() -> int:
     gen_files = _scan_targets(GEN_DIR)
+    builtin_files = _scan_targets(BUILTIN_DIR)
     core_files = _scan_targets(CORE_DIR)
     std_files = _scan_targets(STD_DIR)
 
@@ -42,6 +45,9 @@ def main() -> int:
     if not core_files:
         print(f"[FAIL] no C++ source/header files under: {CORE_DIR.relative_to(ROOT)}")
         return 1
+    if not builtin_files:
+        print(f"[FAIL] no C++ source/header files under: {BUILTIN_DIR.relative_to(ROOT)}")
+        return 1
 
     missing_marker: list[str] = []
     unexpected_marker: list[str] = []
@@ -49,6 +55,10 @@ def main() -> int:
     std_cpp_unexpected_marker: list[str] = []
 
     for p in gen_files:
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        if MARKER not in txt:
+            missing_marker.append(str(p.relative_to(ROOT)))
+    for p in builtin_files:
         txt = p.read_text(encoding="utf-8", errors="ignore")
         if MARKER not in txt:
             missing_marker.append(str(p.relative_to(ROOT)))
@@ -69,7 +79,13 @@ def main() -> int:
 
     if missing_marker or unexpected_marker or std_h_missing_marker or std_cpp_unexpected_marker:
         print("[FAIL] runtime cpp layout guard failed")
-        print(f"  scanned: gen={len(gen_files)} files, core={len(core_files)} files, std={len(std_files)} files")
+        print(
+            "  scanned: "
+            + f"gen={len(gen_files)} files, "
+            + f"built_in={len(builtin_files)} files, "
+            + f"core={len(core_files)} files, "
+            + f"std={len(std_files)} files"
+        )
         if missing_marker:
             print("  gen files missing marker:")
             for item in missing_marker:
@@ -89,7 +105,7 @@ def main() -> int:
         return 1
 
     print("[OK] runtime cpp layout guard passed")
-    print(f"  gen files with marker: {len(gen_files)}")
+    print(f"  gen+built_in files with marker: {len(gen_files) + len(builtin_files)}")
     print(f"  core files without marker: {len(core_files)}")
     print(f"  std headers with marker / sources without marker: {len(std_files)}")
     return 0

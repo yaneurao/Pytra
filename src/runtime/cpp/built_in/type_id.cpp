@@ -3,9 +3,8 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/built_in/type_id.h"
+#include "runtime/cpp/built_in/type_id.h"
 
-#include "runtime/cpp/gen/std/typing.h"
 
 list<int64> _TYPE_IDS;
 dict<int64, int64> _TYPE_BASE;
@@ -14,6 +13,8 @@ dict<int64, int64> _TYPE_ORDER;
 dict<int64, int64> _TYPE_MIN;
 dict<int64, int64> _TYPE_MAX;
 dict<str, int64> _TYPE_STATE;
+
+/* Pure-Python source-of-truth for single-inheritance type_id range semantics. */
 
 int64 _tid_none() {
     return 0;
@@ -318,7 +319,6 @@ static void __pytra_module_init() {
     static bool __initialized = false;
     if (__initialized) return;
     __initialized = true;
-    /* Pure-Python source-of-truth for single-inheritance type_id range semantics. */
     _TYPE_IDS = {};
     _TYPE_BASE = {};
     _TYPE_CHILDREN = {};
@@ -329,8 +329,5 @@ static void __pytra_module_init() {
 }
 
 namespace {
-    struct __pytra_module_initializer {
-        __pytra_module_initializer() { __pytra_module_init(); }
-    };
     static const __pytra_module_initializer __pytra_module_initializer_instance{};
 }  // namespace

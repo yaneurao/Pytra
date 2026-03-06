@@ -6,7 +6,8 @@
 
 - `AUTO-GENERATED FILE. DO NOT EDIT.` ヘッダを持つファイルは置かない。
 - GC/ABI/低レベル補助など、生成しにくい最小コアのみを配置する。
-- `src/runtime/cpp/gen/` から include される前提で、依存方向は `gen -> core` を維持する。
+- `src/runtime/cpp/gen/` と `src/runtime/cpp/built_in/` から include される前提で、
+  依存方向は `gen/built_in -> core` を維持する。
 
 ## 目的
 
