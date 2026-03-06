@@ -346,9 +346,40 @@ class CppBuiltinRuntimeEmitter:
             }
             return self.render_expr(pop_default_node)
         if is_dict_items:
+            owner_t0 = self.get_expr_type(owner_node)
+            owner_t = self.normalize_type_name(owner_t0 if isinstance(owner_t0, str) else "")
+            objectish_owner = self.is_any_like_type(owner_t) or owner_t == "object"
+            owner_optional_object_dict = False
+            if not objectish_owner and owner_t in {"", "unknown"}:
+                owner_call = self.any_to_dict_or_empty(owner_node)
+                if self._builtin_runtime_binding_matches(owner_call, "pytra.core.dict", "dict.get", "dict.get"):
+                    get_owner_node = owner_call.get("runtime_owner")
+                    get_owner_t0 = self.get_expr_type(get_owner_node)
+                    get_owner_t = self.normalize_type_name(get_owner_t0 if isinstance(get_owner_t0, str) else "")
+                    if get_owner_t.startswith("dict[") and get_owner_t.endswith("]"):
+                        inner = self.split_generic(get_owner_t[5:-1])
+                        if len(inner) == 2 and self.is_any_like_type(self.normalize_type_name(inner[1])):
+                            objectish_owner = True
+            if self._contains_text(owner_t, "|"):
+                parts = self.split_union(owner_t)
+                has_none = False
+                has_dict_object_part = False
+                i = 0
+                while i < len(parts):
+                    p = self.normalize_type_name(parts[i])
+                    if p == "None":
+                        has_none = True
+                    elif p.startswith("dict[") and p.endswith("]"):
+                        inner = self.split_generic(p[5:-1])
+                        if len(inner) == 2 and self.is_any_like_type(self.normalize_type_name(inner[1])):
+                            has_dict_object_part = True
+                    i += 1
+                owner_optional_object_dict = has_none and has_dict_object_part
             items_node: dict[str, Any] = {
                 "kind": "DictItems",
                 "owner": owner_node,
+                "objectish_owner": objectish_owner,
+                "owner_optional_object_dict": owner_optional_object_dict,
                 "resolved_type": self.any_to_str(expr.get("resolved_type")),
                 "borrow_kind": "value",
                 "casts": [],

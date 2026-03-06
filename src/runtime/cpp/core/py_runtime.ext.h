@@ -2141,12 +2141,20 @@ static inline bool dict_get_bool(const object& obj, const char* key, bool defval
     return py_to_bool(py_dict_get_default(obj, key, make_object(defval)));
 }
 
+static inline bool dict_get_bool(const dict<str, object>& d, const char* key, bool defval) {
+    return py_to_bool(py_dict_get_default(d, key, make_object(defval)));
+}
+
 static inline bool dict_get_bool(const ::std::optional<dict<str, object>>& d, const char* key, bool defval) {
     return py_to_bool(py_dict_get_default(d, key, make_object(defval)));
 }
 
 static inline str dict_get_str(const object& obj, const char* key, const str& defval) {
     return py_to_string(py_dict_get_default(obj, key, make_object(defval)));
+}
+
+static inline str dict_get_str(const dict<str, object>& d, const char* key, const str& defval) {
+    return py_to_string(py_dict_get_default(d, key, make_object(defval)));
 }
 
 static inline str dict_get_str(const ::std::optional<dict<str, object>>& d, const char* key, const str& defval) {
@@ -2159,12 +2167,20 @@ static inline int64 dict_get_int(const object& obj, const char* key, int64 defva
     return py_to_int64(py_dict_get_default(obj, key, make_object(defval)));
 }
 
+static inline int64 dict_get_int(const dict<str, object>& d, const char* key, int64 defval) {
+    return py_to_int64(py_dict_get_default(d, key, make_object(defval)));
+}
+
 static inline int64 dict_get_int(const ::std::optional<dict<str, object>>& d, const char* key, int64 defval) {
     return py_to_int64(py_dict_get_default(d, key, make_object(defval)));
 }
 
 static inline float64 dict_get_float(const object& obj, const char* key, float64 defval) {
     return py_to_float64(py_dict_get_default(obj, key, make_object(defval)));
+}
+
+static inline float64 dict_get_float(const dict<str, object>& d, const char* key, float64 defval) {
+    return py_to_float64(py_dict_get_default(d, key, make_object(defval)));
 }
 
 static inline float64 dict_get_float(const ::std::optional<dict<str, object>>& d, const char* key, float64 defval) {
@@ -2174,6 +2190,13 @@ static inline float64 dict_get_float(const ::std::optional<dict<str, object>>& d
 static inline list<object> dict_get_list(
     const object& obj, const char* key, const list<object>& defval = list<object>{}) {
     object got = py_dict_get_default(obj, key, make_object(defval));
+    if (const auto* p = obj_to_list_ptr(got)) return *p;
+    return defval;
+}
+
+static inline list<object> dict_get_list(
+    const dict<str, object>& d, const char* key, const list<object>& defval = list<object>{}) {
+    object got = py_dict_get_default(d, key, make_object(defval));
     if (const auto* p = obj_to_list_ptr(got)) return *p;
     return defval;
 }
@@ -2898,11 +2921,49 @@ static inline ::list<::std::any>::const_iterator end(const ::std::any& v) {
 
 // dict.keys / dict.values の Python 互換。
 template <class K, class V>
+static inline list<object> py_dict_items(const dict<K, V>& d) {
+    list<object> out;
+    out.reserve(d.size());
+    for (const auto& kv : d) {
+        out.push_back(make_object(::std::tuple<K, V>{kv.first, kv.second}));
+    }
+    return out;
+}
+
+static inline list<object> py_dict_items(const object& obj) {
+    if (const auto* d = obj_to_dict_ptr(obj)) {
+        return py_dict_items(*d);
+    }
+    throw ::std::runtime_error("py_dict_items on non-dict object");
+}
+
+static inline list<object> py_dict_items(const ::std::optional<dict<str, object>>& d) {
+    if (!d.has_value()) {
+        return list<object>{};
+    }
+    return py_dict_items(d.value());
+}
+
+template <class K, class V>
 static inline list<K> py_dict_keys(const dict<K, V>& d) {
     list<K> out;
     out.reserve(d.size());
     for (const auto& kv : d) out.push_back(kv.first);
     return out;
+}
+
+static inline list<str> py_dict_keys(const object& obj) {
+    if (const auto* d = obj_to_dict_ptr(obj)) {
+        return py_dict_keys(*d);
+    }
+    throw ::std::runtime_error("py_dict_keys on non-dict object");
+}
+
+static inline list<str> py_dict_keys(const ::std::optional<dict<str, object>>& d) {
+    if (!d.has_value()) {
+        return list<str>{};
+    }
+    return py_dict_keys(d.value());
 }
 
 template <class K, class V>
@@ -2911,6 +2972,20 @@ static inline list<V> py_dict_values(const dict<K, V>& d) {
     out.reserve(d.size());
     for (const auto& kv : d) out.push_back(kv.second);
     return out;
+}
+
+static inline list<object> py_dict_values(const object& obj) {
+    if (const auto* d = obj_to_dict_ptr(obj)) {
+        return py_dict_values(*d);
+    }
+    throw ::std::runtime_error("py_dict_values on non-dict object");
+}
+
+static inline list<object> py_dict_values(const ::std::optional<dict<str, object>>& d) {
+    if (!d.has_value()) {
+        return list<object>{};
+    }
+    return py_dict_values(d.value());
 }
 
 static inline str py_at(const str& v, int64 idx) {

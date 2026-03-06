@@ -2005,6 +2005,15 @@ class CppEmitter(
             if key_verified:
                 return key_expr
             return f"py_to_string({key_expr})"
+        int_key_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_key_types = {"float32", "float64"}
+        if key_t in int_key_types or key_t in float_key_types or key_t == "bool":
+            key_node_d = self.any_to_dict_or_empty(key_node)
+            key_kind = self._node_kind_from_dict(key_node_d)
+            if key_kind == "Constant":
+                if self.should_skip_same_type_cast(key_expr, key_t):
+                    return key_expr
+                return f"{self._cpp_type_text(key_t)}({key_expr})"
         return key_expr
 
     # class emit helpers moved to backends.cpp.emitter.class_def.CppClassEmitter.
@@ -3215,6 +3224,12 @@ class CppEmitter(
         if kind == "DictItems":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
+            objectish_owner = self.any_to_bool(expr_d.get("objectish_owner"))
+            owner_optional_object_dict = self.any_to_bool(expr_d.get("owner_optional_object_dict"))
+            if owner_expr.startswith("dict_get_node(") or owner_expr.startswith("py_dict_get_default("):
+                return f"py_dict_items({owner_expr})"
+            if objectish_owner or owner_optional_object_dict:
+                return f"py_dict_items({owner_expr})"
             return owner_expr
         if kind == "DictKeys":
             owner_node = expr_d.get("owner")
