@@ -32,8 +32,4 @@
 
 ## 未完了タスク
 
-### P0: C++ `py_runtime.ext.h` 縮退（pure Python 正本への移管）（最優先）
-
-1. [x] [ID: P0-CPP-PYRUNTIME-EXT-01] `py_runtime.ext.h` から pure Python 正本へ移せる高レベル built-in / std 実装を除去し、`*.gen.*` へ一本化する。
-`P0-CPP-PYRUNTIME-EXT-01` 文脈: `docs/ja/plans/p0-cpp-pyruntime-ext-slimming.md`
-`P0-CPP-PYRUNTIME-EXT-01` 進捗メモ: 2026-03-06 `py_contains` も `contains.gen.* + contains.ext.h` へ移管し、`py_runtime.ext.h` から高レベル built-in / std 重複本体を撤去完了。
+現在、未完了タスクはありません。
