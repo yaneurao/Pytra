@@ -11,7 +11,7 @@ Current guarded module set:
 - json (`pyJsonLoads` / `pyJsonDumps`)
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
-- C++ std/utils runtime shape (`gen` generated modules + required core impl split)
+- C++ std/utils runtime shape (root generated modules + required manual impl split)
 """
 
 from __future__ import annotations
@@ -226,32 +226,31 @@ def _is_generated_runtime(rel_path: str) -> bool:
     # Keep this strict and path-based.
     if "/pytra-gen/" in ("/" + rel_path):
         return True
-    # C++ runtime has migrated to core/gen layout.
-    if rel_path.startswith("src/runtime/cpp/gen/"):
-        return True
-    # C++ root std/utils generated files (migrated out of gen/).
+    # C++ root std/utils generated files.
     return rel_path in CPP_ROOT_GENERATED_RUNTIME_FILES
 
 
 def _check_cpp_runtime_shape(violations: list[str]) -> None:
-    # 1) Generated std/utils modules must exist under gen with canonical source marker.
+    # 1) Generated std/utils modules must exist under runtime/cpp/* with canonical source marker.
     for module_name in CPP_GENERATED_STD_MODULES:
         source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
         for ext in ("h", "cpp"):
-            gen_rel = f"src/runtime/cpp/gen/std/{module_name}.{ext}"
+            if ext == "cpp" and module_name in CPP_HEADER_ONLY_STD_MODULES:
+                custom_src_rel = CPP_STD_SOURCE_LOCATIONS.get(module_name)
+                if isinstance(custom_src_rel, str) and custom_src_rel != "":
+                    gen_path = ROOT / custom_src_rel
+                    if gen_path.exists():
+                        violations.append(
+                            f"[{module_name}] header-only module must not generate runtime source: {custom_src_rel}"
+                        )
+                continue
             custom_hdr_rel = CPP_STD_HEADER_LOCATIONS.get(module_name)
             custom_src_rel = CPP_STD_SOURCE_LOCATIONS.get(module_name)
-            if ext == "h" and isinstance(custom_hdr_rel, str) and custom_hdr_rel != "":
-                gen_rel = custom_hdr_rel
-            if ext == "cpp" and isinstance(custom_src_rel, str) and custom_src_rel != "":
-                gen_rel = custom_src_rel
-            gen_path = ROOT / gen_rel
-            if ext == "cpp" and module_name in CPP_HEADER_ONLY_STD_MODULES:
-                if gen_path.exists():
-                    violations.append(
-                        f"[{module_name}] header-only module must not generate runtime source: {gen_rel}"
-                    )
+            gen_rel = custom_hdr_rel if ext == "h" else custom_src_rel
+            if not isinstance(gen_rel, str) or gen_rel == "":
+                violations.append(f"[{module_name}] missing configured runtime location for .{ext}")
                 continue
+            gen_path = ROOT / gen_rel
             if not gen_path.exists():
                 violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
                 continue
@@ -265,13 +264,12 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
     for module_name in CPP_GENERATED_UTILS_MODULES:
         source_rel = CPP_CANONICAL_SOURCE_BY_MODULE[module_name]
         for ext in ("h", "cpp"):
-            gen_rel = f"src/runtime/cpp/gen/utils/{module_name}.{ext}"
             custom_hdr_rel = CPP_UTILS_HEADER_LOCATIONS.get(module_name)
             custom_src_rel = CPP_UTILS_SOURCE_LOCATIONS.get(module_name)
-            if ext == "h" and isinstance(custom_hdr_rel, str) and custom_hdr_rel != "":
-                gen_rel = custom_hdr_rel
-            if ext == "cpp" and isinstance(custom_src_rel, str) and custom_src_rel != "":
-                gen_rel = custom_src_rel
+            gen_rel = custom_hdr_rel if ext == "h" else custom_src_rel
+            if not isinstance(gen_rel, str) or gen_rel == "":
+                violations.append(f"[{module_name}] missing configured runtime location for .{ext}")
+                continue
             gen_path = ROOT / gen_rel
             if not gen_path.exists():
                 violations.append(f"[{module_name}] missing generated runtime file: {gen_rel}")
@@ -283,11 +281,11 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
                     f"[{module_name}] {gen_rel} missing canonical source marker ({marker})"
                 )
 
-    # 2) Required handwritten impl split must remain under core.
+    # 2) Required handwritten impl split must remain under std as manual TU.
     for _name, core_rel in CPP_REQUIRED_CORE_IMPL_FILES.items():
         core_path = ROOT / core_rel
         if not core_path.exists():
-            violations.append(f"[cpp-core-impl] missing core implementation file: {core_rel}")
+            violations.append(f"[cpp-manual-impl] missing manual implementation file: {core_rel}")
 
 
 def main() -> int:

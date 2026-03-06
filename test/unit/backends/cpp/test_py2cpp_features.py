@@ -165,8 +165,8 @@ def inc(x: int) -> int:
     def test_emit_runtime_cpp_skips_cpp_for_extern_only_module(self) -> None:
         rel_src = Path("src/pytra/std/__tmp_extern_header_only_test.py")
         src_py = ROOT / rel_src
-        hdr_out = ROOT / "src/runtime/cpp/gen/std/__tmp_extern_header_only_test.h"
-        cpp_out = ROOT / "src/runtime/cpp/gen/std/__tmp_extern_header_only_test.cpp"
+        hdr_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.h"
+        cpp_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.cpp"
         src = """
 from pytra.std import extern
 

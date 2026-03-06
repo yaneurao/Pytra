@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pytra.std.typing import Any
+from typing import Any
 from backends.cpp.emitter.runtime_paths import (
     module_name_to_cpp_include as _module_name_to_cpp_include_impl,
     module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl,
@@ -103,16 +103,16 @@ class CppModuleEmitter:
             ):
                 return "pytra::std::" + bare_tail.replace(".", "::")
         inc = self._module_name_to_cpp_include(module_name_norm)
-        if inc.startswith("runtime/cpp/gen/std/") and inc.endswith(".h"):
-            tail: str = inc[20 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("runtime/cpp/std/") and inc.endswith(".h"):
+            tail: str = inc[16 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::" + tail
-        if inc.startswith("runtime/cpp/gen/utils/") and inc.endswith(".h"):
-            tail: str = inc[22 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("runtime/cpp/utils/") and inc.endswith(".h"):
+            tail: str = inc[18 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::utils::" + tail
-        if inc.startswith("runtime/cpp/gen/compiler/") and inc.endswith(".h"):
-            tail = inc[25 : len(inc) - 2].replace("/", "::")
+        if inc.startswith("runtime/cpp/compiler/") and inc.endswith(".h"):
+            tail = inc[21 : len(inc) - 2].replace("/", "::")
             if tail != "":
                 return "pytra::compiler::" + tail
         return ""
@@ -301,6 +301,18 @@ class CppModuleEmitter:
         kind = self._node_kind_from_dict(stmt)
         return kind in {"ClassDef", "FunctionDef", "Import", "ImportFrom"}
 
+    def _is_module_noop_stmt(self, stmt: dict[str, Any]) -> bool:
+        """トップレベル runtime を汚さない no-op 文かを返す。"""
+        kind = self._node_kind_from_dict(stmt)
+        if kind == "Pass":
+            return True
+        if kind != "Expr":
+            return False
+        value = self.any_to_dict_or_empty(stmt.get("value"))
+        if self._node_kind_from_dict(value) != "Constant":
+            return False
+        return isinstance(value.get("value"), str)
+
     def _split_module_top_level_stmts(
         self,
         body: list[dict[str, Any]],
@@ -309,7 +321,7 @@ class CppModuleEmitter:
         defs: list[Any] = []
         runtime: list[Any] = []
         for stmt in body:
-            if self._is_module_definition_stmt(stmt):
+            if self._is_module_definition_stmt(stmt) or self._is_module_noop_stmt(stmt):
                 defs.append(stmt)
             else:
                 runtime.append(stmt)

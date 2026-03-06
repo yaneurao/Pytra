@@ -7,7 +7,6 @@ from toolchain.compiler.transpile_cli import python_module_exists_under
 
 
 RUNTIME_CPP_CORE_ROOT: Path = Path("src/runtime/cpp/core")
-RUNTIME_CPP_GEN_ROOT: Path = Path("src/runtime/cpp/gen")
 RUNTIME_CPP_ROOT: Path = Path("src/runtime/cpp")
 # Legacy name kept as alias while callers are being updated.
 RUNTIME_CPP_COMPAT_ROOT: Path = RUNTIME_CPP_CORE_ROOT
@@ -44,8 +43,7 @@ def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     def _exists_under_runtime_roots(rel_hdr: str) -> bool:
         root_hdr = join_runtime_path(RUNTIME_CPP_ROOT, rel_hdr)
         core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)
-        gen_hdr = join_runtime_path(RUNTIME_CPP_GEN_ROOT, rel_hdr)
-        return root_hdr.exists() or core_hdr.exists() or gen_hdr.exists()
+        return root_hdr.exists() or core_hdr.exists()
 
     if module_name_norm.startswith("pytra.std."):
         tail = module_name_norm[10:]
@@ -153,14 +151,11 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
     def _pick(rel_hdr: str) -> str:
         root_hdr = join_runtime_path(RUNTIME_CPP_ROOT, rel_hdr)
         core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)
-        gen_hdr = join_runtime_path(RUNTIME_CPP_GEN_ROOT, rel_hdr)
         if root_hdr.exists():
             return "runtime/cpp/" + rel_hdr
         if core_hdr.exists():
             return "runtime/cpp/core/" + rel_hdr
-        if gen_hdr.exists():
-            return "runtime/cpp/gen/" + rel_hdr
-        return "runtime/cpp/gen/" + rel_hdr
+        return "runtime/cpp/" + rel_hdr
 
     if module_name_norm == "pytra.std.pathlib":
         return _pick("std/pathlib.h")
@@ -172,7 +167,7 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
         return _pick("compiler/" + module_tail_to_cpp_header_path(module_name_norm[TOOLCHAIN_COMPILER_PREFIX_LEN:]))
     if module_name_norm.startswith("pytra.built_in."):
         return _pick("built_in/" + module_tail_to_cpp_header_path(module_name_norm[15:]))
-    return "runtime/cpp/gen/" + module_name_norm.replace(".", "/") + ".h"
+    return "runtime/cpp/" + module_name_norm.replace(".", "/") + ".h"
 
 
 def runtime_module_has_header(module_name_norm: str) -> bool:

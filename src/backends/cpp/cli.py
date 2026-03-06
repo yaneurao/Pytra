@@ -59,7 +59,7 @@ build_module_type_schema = East1BuildHelpers.build_module_type_schema
 from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
 
-from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_GEN_ROOT
+from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_ROOT
 from backends.cpp.emitter.runtime_paths import is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
 from backends.cpp.emitter.runtime_paths import join_runtime_path as _join_runtime_path_impl
 from backends.cpp.emitter.runtime_paths import module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
@@ -906,15 +906,7 @@ def main(argv: list[str]) -> int:
             ns = top_namespace_opt
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
-            # std / built_in モジュールは `runtime/cpp/` を正本生成先とする。
-            # utils/compiler は従来どおり `runtime/cpp/gen/` を使う。
-            is_std_runtime_output = module_tail == "std" or module_tail.startswith("std/")
-            is_built_in_runtime_output = module_tail == "built_in" or module_tail.startswith("built_in/")
-            is_root_utils_runtime_output = (
-                rel_tail == "utils/assertions" or rel_tail == "utils/png" or rel_tail == "utils/gif"
-            )
-            is_root_runtime_output = is_std_runtime_output or is_built_in_runtime_output or is_root_utils_runtime_output
-            out_root = Path("src/runtime/cpp") if is_root_runtime_output else RUNTIME_CPP_GEN_ROOT
+            out_root = RUNTIME_CPP_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
             mkdirs_for_cli(path_parent_text(hdr_out))
@@ -957,13 +949,7 @@ def main(argv: list[str]) -> int:
             )
             cpp_txt_runtime_for_header = split_cpp_inline_class_defs(cpp_txt_runtime, ns, True)
             cpp_txt_runtime = split_cpp_inline_class_defs(cpp_txt_runtime, ns, False)
-            own_runtime_header_prefix = "runtime/cpp/" if is_root_runtime_output else "runtime/cpp/gen/"
-            own_runtime_header = '#include "' + own_runtime_header_prefix + rel_tail + '.h"'
-            legacy_runtime_header = '#include "runtime/cpp/gen/' + rel_tail + '.h"'
-            if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime:
-                cpp_txt_runtime = cpp_txt_runtime.replace(legacy_runtime_header, own_runtime_header)
-            if legacy_runtime_header != own_runtime_header and legacy_runtime_header in cpp_txt_runtime_for_header:
-                cpp_txt_runtime_for_header = cpp_txt_runtime_for_header.replace(legacy_runtime_header, own_runtime_header)
+            own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
                 old_runtime_include = '#include "runtime/cpp/core/built_in/py_runtime.h"\n'
                 new_runtime_include = (

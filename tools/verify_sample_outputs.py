@@ -80,8 +80,8 @@ def runtime_cpp_sources() -> list[str]:
     seen: set[str] = set()
     for root in (
         Path("src/runtime/cpp/core"),
-        Path("src/runtime/cpp/gen"),
         Path("src/runtime/cpp/std"),
+        Path("src/runtime/cpp/utils"),
         Path("src/runtime/cpp/built_in"),
     ):
         for p in sorted(root.rglob("*.cpp")):

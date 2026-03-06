@@ -10,13 +10,13 @@ from pathlib import Path
 
 
 def _runtime_cpp_sources() -> list[str]:
-    """runtime/cpp/{core,gen,std} の C++ 実装ファイル一覧を返す。"""
+    """runtime/cpp/{core,std,utils,built_in} の C++ 実装ファイル一覧を返す。"""
     out: list[str] = []
     seen: set[str] = set()
     for root in (
         Path("src/runtime/cpp/core"),
-        Path("src/runtime/cpp/gen"),
         Path("src/runtime/cpp/std"),
+        Path("src/runtime/cpp/utils"),
         Path("src/runtime/cpp/built_in"),
     ):
         for p in sorted(root.rglob("*.cpp")):
