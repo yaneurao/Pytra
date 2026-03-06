@@ -13,6 +13,9 @@ if str(ROOT / "src") not in sys.path:
 
 from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
 from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
+from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_binding
+from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_runtime_binding
+from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_binding
 from src.toolchain.compiler.stdlib.signature_registry import lookup_noncpp_imported_symbol_runtime_call
 from src.toolchain.compiler.stdlib.signature_registry import lookup_noncpp_module_attr_runtime_call
 from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
@@ -44,6 +47,10 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
     def test_lookup_function_runtime_call(self) -> None:
         self.assertEqual(lookup_stdlib_function_runtime_call("perf_counter"), "perf_counter")
         self.assertEqual(lookup_stdlib_function_runtime_call("unknown_symbol"), "")
+        self.assertEqual(
+            lookup_stdlib_function_runtime_binding("perf_counter"),
+            ("pytra.std.time", "perf_counter"),
+        )
 
     def test_lookup_noncpp_imported_symbol_runtime_call(self) -> None:
         import_symbols = {
@@ -71,6 +78,19 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
         self.assertEqual(
             lookup_noncpp_imported_symbol_runtime_call("missing", import_symbols),
             "",
+        )
+
+    def test_lookup_imported_symbol_runtime_binding(self) -> None:
+        import_symbols = {
+            "Path": {"module": "pytra.std.pathlib", "name": "Path"},
+        }
+        self.assertEqual(
+            lookup_stdlib_imported_symbol_runtime_binding("Path", import_symbols),
+            ("pytra.std.pathlib", "Path"),
+        )
+        self.assertEqual(
+            lookup_stdlib_imported_symbol_runtime_binding("missing", import_symbols),
+            ("", ""),
         )
 
     def test_lookup_noncpp_module_attr_runtime_call(self) -> None:
@@ -111,6 +131,20 @@ class StdlibSignatureRegistryTest(unittest.TestCase):
         self.assertEqual(lookup_stdlib_attribute_type("Path", "parent"), "Path")
         self.assertEqual(lookup_stdlib_attribute_type("Path", "name"), "str")
         self.assertEqual(lookup_stdlib_attribute_type("str", "name"), "")
+
+    def test_lookup_method_runtime_binding(self) -> None:
+        self.assertEqual(
+            lookup_stdlib_method_runtime_binding("str", "strip"),
+            ("pytra.built_in.string_ops", "str.strip"),
+        )
+        self.assertEqual(
+            lookup_stdlib_method_runtime_binding("Path", "exists"),
+            ("pytra.std.pathlib", "Path.exists"),
+        )
+        self.assertEqual(
+            lookup_stdlib_method_runtime_binding("dict[str,int64]", "get"),
+            ("pytra.core.dict", "dict.get"),
+        )
 
     def test_lookup_frontend_semantic_tags(self) -> None:
         self.assertEqual(lookup_builtin_semantic_tag("len"), "core.len")

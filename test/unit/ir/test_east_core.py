@@ -184,6 +184,15 @@ if __name__ == "__main__":
         self.assertIn("iter.next", semantic_tags)
         self.assertIn("logic.any", semantic_tags)
         self.assertIn("logic.all", semantic_tags)
+        runtime_bindings = {
+            str(n.get("runtime_call")): (str(n.get("runtime_module_id", "")), str(n.get("runtime_symbol", "")))
+            for n in calls
+            if n.get("lowered_kind") == "BuiltinCall" and isinstance(n.get("runtime_call"), str)
+        }
+        self.assertEqual(runtime_bindings.get("py_enumerate"), ("pytra.built_in.iter_ops", "enumerate"))
+        self.assertEqual(runtime_bindings.get("py_any"), ("pytra.built_in.predicates", "any"))
+        self.assertEqual(runtime_bindings.get("dict.get"), ("pytra.core.dict", "dict.get"))
+        self.assertEqual(runtime_bindings.get("std::filesystem::exists"), ("pytra.std.pathlib", "Path.exists"))
 
     def test_perf_counter_resolved_type_comes_from_stdlib_signature(self) -> None:
         src = """
@@ -204,6 +213,8 @@ def main() -> float:
         ]
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].get("resolved_type"), "float64")
+        self.assertEqual(calls[0].get("runtime_module_id"), "pytra.std.time")
+        self.assertEqual(calls[0].get("runtime_symbol"), "perf_counter")
 
     def test_noncpp_runtime_call_annotations_for_import_symbol_and_module_attr(self) -> None:
         src = """
@@ -292,6 +303,8 @@ def main() -> None:
         self.assertEqual(len(path_ctor_calls), 2)
         for call in path_ctor_calls:
             self.assertEqual(call.get("resolved_type"), "Path")
+            self.assertEqual(call.get("runtime_module_id"), "pytra.std.pathlib")
+            self.assertEqual(call.get("runtime_symbol"), "Path")
 
         path_div_binops = [
             n

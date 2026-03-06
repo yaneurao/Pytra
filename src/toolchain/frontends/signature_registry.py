@@ -16,9 +16,18 @@ _FUNCTION_RUNTIME_CALLS: dict[str, str] = {
     "perf_counter": "perf_counter",
 }
 
+_FUNCTION_RUNTIME_BINDINGS: dict[str, tuple[str, str]] = {
+    "perf_counter": ("pytra.std.time", "perf_counter"),
+}
+
 _IMPORTED_SYMBOL_RETURNS: dict[tuple[str, str], str] = {
     ("pathlib", "Path"): "Path",
     ("pytra.std.pathlib", "Path"): "Path",
+}
+
+_IMPORTED_SYMBOL_RUNTIME_BINDINGS: dict[tuple[str, str], tuple[str, str]] = {
+    ("pathlib", "Path"): ("pytra.std.pathlib", "Path"),
+    ("pytra.std.pathlib", "Path"): ("pytra.std.pathlib", "Path"),
 }
 
 _IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
@@ -153,6 +162,66 @@ _OWNER_METHOD_RUNTIME_CALLS: dict[str, dict[str, str]] = {
         "values": "dict.values",
         "isdigit": "py_isdigit",
         "isalpha": "py_isalpha",
+    },
+}
+
+_OWNER_METHOD_RUNTIME_BINDINGS: dict[str, dict[str, tuple[str, str]]] = {
+    "str": {
+        "strip": ("pytra.built_in.string_ops", "str.strip"),
+        "lstrip": ("pytra.built_in.string_ops", "str.lstrip"),
+        "rstrip": ("pytra.built_in.string_ops", "str.rstrip"),
+        "startswith": ("pytra.built_in.string_ops", "str.startswith"),
+        "endswith": ("pytra.built_in.string_ops", "str.endswith"),
+        "find": ("pytra.built_in.string_ops", "str.find"),
+        "rfind": ("pytra.built_in.string_ops", "str.rfind"),
+        "replace": ("pytra.built_in.string_ops", "str.replace"),
+        "join": ("pytra.built_in.string_ops", "str.join"),
+        "isdigit": ("pytra.built_in.string_ops", "str.isdigit"),
+        "isalpha": ("pytra.built_in.string_ops", "str.isalpha"),
+    },
+    "Path": {
+        "mkdir": ("pytra.std.pathlib", "Path.mkdir"),
+        "exists": ("pytra.std.pathlib", "Path.exists"),
+        "write_text": ("pytra.std.pathlib", "Path.write_text"),
+        "read_text": ("pytra.std.pathlib", "Path.read_text"),
+        "parent": ("pytra.std.pathlib", "Path.parent"),
+        "name": ("pytra.std.pathlib", "Path.name"),
+        "stem": ("pytra.std.pathlib", "Path.stem"),
+    },
+    "int": {
+        "to_bytes": ("pytra.core.py_runtime", "int.to_bytes"),
+    },
+    "list": {
+        "append": ("pytra.core.list", "list.append"),
+        "extend": ("pytra.core.list", "list.extend"),
+        "pop": ("pytra.core.list", "list.pop"),
+        "clear": ("pytra.core.list", "list.clear"),
+        "reverse": ("pytra.core.list", "list.reverse"),
+        "sort": ("pytra.core.list", "list.sort"),
+    },
+    "set": {
+        "add": ("pytra.core.set", "set.add"),
+        "discard": ("pytra.core.set", "set.discard"),
+        "remove": ("pytra.core.set", "set.remove"),
+        "clear": ("pytra.core.set", "set.clear"),
+    },
+    "dict": {
+        "get": ("pytra.core.dict", "dict.get"),
+        "pop": ("pytra.core.dict", "dict.pop"),
+        "items": ("pytra.core.dict", "dict.items"),
+        "keys": ("pytra.core.dict", "dict.keys"),
+        "values": ("pytra.core.dict", "dict.values"),
+    },
+    "unknown": {
+        "append": ("pytra.core.list", "list.append"),
+        "extend": ("pytra.core.list", "list.extend"),
+        "pop": ("pytra.core.list", "list.pop"),
+        "get": ("pytra.core.dict", "dict.get"),
+        "items": ("pytra.core.dict", "dict.items"),
+        "keys": ("pytra.core.dict", "dict.keys"),
+        "values": ("pytra.core.dict", "dict.values"),
+        "isdigit": ("pytra.built_in.string_ops", "str.isdigit"),
+        "isalpha": ("pytra.built_in.string_ops", "str.isalpha"),
     },
 }
 
@@ -346,18 +415,8 @@ def lookup_stdlib_method_return_type(owner_type: str, method_name: str) -> str:
 
 
 def lookup_stdlib_method_runtime_call(owner_type: str, method_name: str) -> str:
-    owner = owner_type.strip()
+    owner = _normalize_runtime_owner_type(owner_type)
     method = method_name.strip()
-    if owner.startswith("list["):
-        owner = "list"
-    elif owner.startswith("set["):
-        owner = "set"
-    elif owner.startswith("dict["):
-        owner = "dict"
-    elif owner in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-        owner = "int"
-    if owner == "":
-        owner = "unknown"
     owner_map = _OWNER_METHOD_RUNTIME_CALLS.get(owner, {})
     if not isinstance(owner_map, dict):
         return ""
@@ -369,6 +428,28 @@ def lookup_stdlib_function_runtime_call(function_name: str) -> str:
     if fn == "":
         return ""
     return _FUNCTION_RUNTIME_CALLS.get(fn, "")
+
+
+def _normalize_runtime_owner_type(owner_type: str) -> str:
+    owner = owner_type.strip()
+    if owner.startswith("list["):
+        owner = "list"
+    elif owner.startswith("set["):
+        owner = "set"
+    elif owner.startswith("dict["):
+        owner = "dict"
+    elif owner in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+        owner = "int"
+    if owner == "":
+        owner = "unknown"
+    return owner
+
+
+def lookup_stdlib_function_runtime_binding(function_name: str) -> tuple[str, str]:
+    fn = function_name.strip()
+    if fn == "":
+        return ("", "")
+    return _FUNCTION_RUNTIME_BINDINGS.get(fn, ("", ""))
 
 
 def lookup_stdlib_attribute_type(owner_type: str, attr_name: str) -> str:
@@ -417,6 +498,25 @@ def lookup_stdlib_imported_symbol_runtime_call(
     return _IMPORTED_SYMBOL_RUNTIME_CALLS.get((module, symbol), "")
 
 
+def lookup_stdlib_imported_symbol_runtime_binding(
+    local_name: str,
+    import_symbols: dict[str, dict[str, str]] | None,
+) -> tuple[str, str]:
+    module, symbol = _resolve_imported_symbol(local_name, import_symbols)
+    if module == "" or symbol == "":
+        return ("", "")
+    return _IMPORTED_SYMBOL_RUNTIME_BINDINGS.get((module, symbol), ("", ""))
+
+
+def lookup_stdlib_method_runtime_binding(owner_type: str, method_name: str) -> tuple[str, str]:
+    owner = _normalize_runtime_owner_type(owner_type)
+    method = method_name.strip()
+    owner_map = _OWNER_METHOD_RUNTIME_BINDINGS.get(owner, {})
+    if not isinstance(owner_map, dict):
+        return ("", "")
+    return owner_map.get(method, ("", ""))
+
+
 def lookup_noncpp_imported_symbol_runtime_call(
     local_name: str,
     import_symbols: dict[str, dict[str, str]] | None,
@@ -454,10 +554,13 @@ __all__ = [
     "lookup_stdlib_attribute_type",
     "lookup_stdlib_function_return_type",
     "lookup_stdlib_function_runtime_call",
+    "lookup_stdlib_function_runtime_binding",
     "lookup_stdlib_imported_symbol_return_type",
     "lookup_stdlib_imported_symbol_runtime_call",
+    "lookup_stdlib_imported_symbol_runtime_binding",
     "lookup_noncpp_imported_symbol_runtime_call",
     "lookup_noncpp_module_attr_runtime_call",
+    "lookup_stdlib_method_runtime_binding",
     "lookup_stdlib_method_runtime_call",
     "lookup_stdlib_method_return_type",
 ]
