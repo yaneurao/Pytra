@@ -51,7 +51,7 @@
 ## 分解
 
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01] C++ unit 回帰を、SoT/IR/Emitter/Runtime 契約の順で根本修復し、unit + fixture/sample parity を再緑化する。
-- [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S1-01] failing test を「generated runtime」「import/include 解決」「container 意味論」「emitter/CLI 契約」に再分類し、修正責務の所属レイヤを固定する。
+- [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S1-01] failing test を「generated runtime」「import/include 解決」「container 意味論」「emitter/CLI 契約」に再分類し、修正責務の所属レイヤを固定する。
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-01] `json` generated runtime の破綻を、SoT と C++ runtime 生成契約の修正で解消する（`.gen.*` 手修正禁止）。
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-02] `argparse` generated runtime の破綻を、SoT・reserved name 回避・class/member emission 契約の修正で解消する。
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-01] `pytra.utils.{png,gif}` と `pytra.std.{time,pathlib}` の import 解決・include dedupe/sort・one-to-one module include 契約を修正する。
@@ -64,3 +64,44 @@
 - 2026-03-06: `tools/runtime_parity_check.py --targets cpp --case-root fixture` と `--case-root sample --all-samples` は通過した一方、`python3 -m unittest discover -s test/unit/backends/cpp -p test_*.py` は未通過であることを確認した。以後の修正対象は unit suite の実障害に絞る。
 - 2026-03-06: `build_multi_cpp.py` と fixture compile helper を「実際に include された runtime source だけを compile」する方式へ修正済みのため、`json.gen.*` / `argparse.gen.*` compile break は build 導線の偽陽性ではなく生成契約の破綻として扱う。
 - 2026-03-06: 本計画では、`.gen.*` の直接修正を禁止し、SoT・IR/lower・emitter・runtime 生成契約のどこで壊れたかを固定してから修正する。
+- 2026-03-06: [ID: `P0-CPP-REGRESSION-RECOVERY-01-S1-01`] `python3 -m unittest discover -s test/unit/backends/cpp -p test_*.py` の進行中 fail と、代表 failing test の個別再実行を突き合わせて分類した。責務固定は以下の通り。
+  - generated runtime / SoT+生成契約:
+    - `test_json_extended_runtime`
+      - `json.gen.h/.cpp` が文字列エスケープ崩れ・namespace 重複・member 定義位置崩れで compile fail。
+      - 修正責務: `src/pytra/std/json.py` と C++ class/function emission 契約。
+    - `test_argparse_extended_runtime`
+      - `default` 予約語衝突、member 未宣言、`setattr`/`SystemExit` 未解決、`optional<list<str>>` の誤描画で compile fail。
+      - 修正責務: `src/pytra/std/argparse.py`、reserved name 回避、class/member emission 契約。
+  - import/include 解決:
+    - `test_import_includes_are_deduped_and_sorted`
+    - `test_from_pytra_runtime_import_png_emits_one_to_one_include`
+    - `test_from_pytra_runtime_import_gif_emits_one_to_one_include`
+    - `test_from_pytra_std_time_import_perf_counter_resolves`
+    - `test_from_pytra_std_pathlib_import_path_resolves`
+      - 現状は `pytra/...` include ではなく `runtime/cpp/...*.gen.h` を直接出しており、one-to-one import/include 契約から外れている。
+      - 修正責務: import 解決結果から public include を組み立てる C++ include emitter。
+  - owner/module metadata 解決:
+    - `test_os_path_calls_use_runtime_helpers`
+    - `test_os_glob_extended_runtime`
+      - `os.path` は `py_os_path_*` helper ではなく `pytra::std::os_path::*` を直接描画しており、しかも `os_glob_extended` では namespace 未解決で compile fail。
+      - 修正責務: `runtime_module_id/runtime_symbol` と owner metadata を使う `os.path` / `glob` ルーティング。
+  - container / iterator 意味論:
+    - `test_dict_get_items_runtime`
+      - 実行時に `string index out of range`。`dict.items()`/tuple 経路の runtime adapter 破綻が疑われる。
+    - `test_any_dict_items_runtime`
+      - `dict_get_str(...)` overload が `dict<str, object>` と `optional<dict<str, object>>` の間で曖昧。
+    - `test_comprehension_dict_set_runtime`
+      - `dict<int64, int64>` に対する `py_dict_get(even_map, 2)` が literal 型不一致で overload 解決に失敗。
+      - 修正責務: `dict.items/get` と comprehension 周辺の runtime adapter / typed helper 契約。
+  - emitter / CLI 契約:
+    - `test_mod_mode_native_and_python`
+      - `%=` が `a %= b;` ではなく単独式 `a % b;` に崩れている。
+    - `test_cli_reports_user_syntax_error_category`
+      - self-hosted parser の `unsupported_syntax` がそのまま `[not_implemented]` へ出ており、`[user_syntax_error]` 分類へ正規化されていない。
+    - `test_cli_dump_options_allows_planned_bigint_preset`
+      - `--dump-options` が options dump を出さず multi-file 生成へ進んでいる。
+    - `test_emit_stmt_dispatch_table_handles_continue_and_unknown`
+      - unknown stmt でコメント fallback ではなく `RuntimeError` を投げている。
+    - `test_emit_stmt_fallback_works_when_dynamic_hooks_disabled`
+      - `Pass` が `/* pass */` ではなく単独 `;` に縮退している。
+      - 修正責務: stmt emitter fallback、compound assign emit、CLI option dispatch、error category 正規化。
