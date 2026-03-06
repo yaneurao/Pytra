@@ -5,9 +5,11 @@
 #ifndef PYTRA_STD_TIMEIT_H
 #define PYTRA_STD_TIMEIT_H
 
-namespace pytra::std::timeit {
+#include "runtime/cpp/core/built_in/py_scalar_types.h"
 
-extern list<str> __all__;
+#include "runtime/cpp/std/time.h"
+
+namespace pytra::std::timeit {
 
 float64 default_timer();
 

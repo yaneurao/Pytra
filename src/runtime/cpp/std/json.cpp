@@ -3,15 +3,16 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/std/json.h"
+#include "runtime/cpp/std/json.h"
 
-#include "runtime/cpp/gen/std/typing.h"
 
 namespace pytra::std::json {
 
     str _EMPTY;
     str _COMMA_NL;
     str _HEX_DIGITS;
+    
+    /* Pure Python JSON utilities for selfhost-friendly transpilation. */
     
     bool _is_ws(const str& ch) {
         return (ch == " ") || (ch == "\t") || (ch == "\r") || (ch == "\n");
@@ -65,30 +66,29 @@ namespace pytra::std::json {
         return p0 + p1 + p2 + p3;
     }
     
-    struct _JsonParser {
-        str text;
-        int64 n;
-        int64 i;
-        
-        _JsonParser(const str& text) {
+
+    _JsonParser::_JsonParser(const str& text) {
             this->text = text;
             this->n = py_len(text);
             this->i = 0;
-        }
-        object parse() {
+    }
+
+    object _JsonParser::parse() {
             this->_skip_ws();
             object out = make_object(this->_parse_value());
             this->_skip_ws();
             if (this->i != this->n)
                 throw ValueError("invalid json: trailing characters");
             return out;
-        }
-        void _skip_ws() {
+    }
+
+    void _JsonParser::_skip_ws() {
             while ((this->i < this->n) && (_is_ws(this->text[this->i]))) {
                 this->i++;
             }
-        }
-        object _parse_value() {
+    }
+
+    object _JsonParser::_parse_value() {
             if (this->i >= this->n)
                 throw ValueError("invalid json: unexpected end");
             str ch = this->text[this->i];
@@ -140,8 +140,7 @@ namespace pytra::std::json {
                     return out;
                 if (ch != ",")
                     throw ValueError("invalid json object separator");
-            }
-        }
+    }
         object _parse_array() {
             list<object> out = list<object>{};
             this->i++;
@@ -188,7 +187,8 @@ namespace pytra::std::json {
                     } else if (esc == "b") {
                         out_chars.append(str(""));
                     } else if (esc == "f") {
-                        out_chars.append(str(""));
+                        out_chars.append(str("
+"));
                     } else if (esc == "n") {
                         out_chars.append(str("\n"));
                     } else if (esc == "r") {
@@ -276,7 +276,8 @@ namespace pytra::std::json {
                 out.append(str("\\\\"));
             } else if (ch == "") {
                 out.append(str("\\b"));
-            } else if (ch == "") {
+            } else if (ch == "
+") {
                 out.append(str("\\f"));
             } else if (ch == "\n") {
                 out.append(str("\\n"));
@@ -379,7 +380,6 @@ namespace pytra::std::json {
         static bool __initialized = false;
         if (__initialized) return;
         __initialized = true;
-        /* Pure Python JSON utilities for selfhost-friendly transpilation. */
         _EMPTY = "";
         _COMMA_NL = ",\n";
         _HEX_DIGITS = "0123456789abcdef";

@@ -5,11 +5,20 @@
 #ifndef PYTRA_STD_RE_H
 #define PYTRA_STD_RE_H
 
+#include "runtime/cpp/core/built_in/py_types.h"
+
 #include <optional>
 
 namespace pytra::std::re {
 
-struct Match;
+    struct Match : public PyObj {
+        list<str> _groups;
+        str _text;
+        PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
+        
+        Match(const str& text, const list<str>& groups);
+        str group(int64 idx = 0);
+    };
 
 extern int64 S;
 

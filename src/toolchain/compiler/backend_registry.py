@@ -8,18 +8,18 @@ from __future__ import annotations
 
 import importlib
 
-from pytra.std.typing import Any
+from typing import Any
 from pytra.std.pathlib import Path
 
 
-BackendSpec = dict[str, Any]
+BackendSpec = dict
 
 
 def _src_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _identity_ir(doc: dict[str, Any]) -> dict[str, Any]:
+def _identity_ir(doc: Any) -> dict:
     return doc if isinstance(doc, dict) else {}
 
 
@@ -64,10 +64,24 @@ def _runtime_none(_output_path: Path) -> None:
     return
 
 
+def _module_symbol(mod: Any, symbol_name: str) -> Any:
+    if isinstance(mod, dict):
+        if symbol_name in mod:
+            return mod[symbol_name]
+        return None
+    try:
+        mod_dict = vars(mod)
+    except Exception:
+        return None
+    if isinstance(mod_dict, dict) and symbol_name in mod_dict:
+        return mod_dict[symbol_name]
+    return None
+
+
 def _runtime_js_shims(output_path: Path) -> None:
     mod = importlib.import_module("toolchain.compiler.js_runtime_shims")
-    writer = getattr(mod, "write_js_runtime_shims", None)
-    if not callable(writer):
+    writer = _module_symbol(mod, "write_js_runtime_shims")
+    if writer is None:
         raise RuntimeError("write_js_runtime_shims not found")
     writer(output_path.parent)
 
@@ -127,7 +141,7 @@ def _runtime_nim(output_path: Path) -> None:
 
 def _load_callable(module_name: str, symbol_name: str) -> Any:
     mod = importlib.import_module(module_name)
-    fn = getattr(mod, symbol_name, None)
+    fn = _module_symbol(mod, symbol_name)
     if fn is None:
         raise RuntimeError("missing symbol: " + module_name + "." + symbol_name)
     return fn
@@ -136,7 +150,7 @@ def _load_callable(module_name: str, symbol_name: str) -> Any:
 def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
     emit_impl = _load_callable(module_name, symbol_name)
 
-    def _emit(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    def _emit(ir: dict, _output_path: Path, _emitter_options: Any = None) -> str:
         out = emit_impl(ir)
         return out if isinstance(out, str) else ""
 
@@ -146,7 +160,7 @@ def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
 def _load_cpp_spec() -> BackendSpec:
     transpile_to_cpp = _load_callable("backends.cpp.cli", "transpile_to_cpp")
 
-    def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
+    def _emit_cpp(ir: dict, _output_path: Path, emitter_options: Any = None) -> str:
         opts = emitter_options if isinstance(emitter_options, dict) else {}
         negative_index_mode = str(opts.get("negative_index_mode", "const_only"))
         bounds_check_mode = str(opts.get("bounds_check_mode", "off"))
@@ -251,7 +265,7 @@ def _load_java_spec() -> BackendSpec:
     optimizer = _load_callable("backends.java.optimizer", "optimize_java_ir")
     emit_impl = _load_callable("backends.java.emitter", "transpile_to_java_native")
 
-    def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    def _emit_java(ir: dict, output_path: Path, _emitter_options: Any = None) -> str:
         class_name = output_path.stem if output_path.stem != "" else "Main"
         out = emit_impl(ir, class_name=class_name)
         return out if isinstance(out, str) else ""
@@ -343,7 +357,7 @@ def _load_nim_spec() -> BackendSpec:
     }
 
 
-_TARGET_ORDER: list[str] = [
+_TARGET_ORDER: list = [
     "cpp",
     "rs",
     "cs",
@@ -360,7 +374,7 @@ _TARGET_ORDER: list[str] = [
     "nim",
 ]
 
-_TARGET_LOADERS: dict[str, Any] = {
+_TARGET_LOADERS: dict = {
     "cpp": _load_cpp_spec,
     "rs": _load_rs_spec,
     "cs": _load_cs_spec,
@@ -377,7 +391,7 @@ _TARGET_LOADERS: dict[str, Any] = {
     "nim": _load_nim_spec,
 }
 
-_SPEC_CACHE: dict[str, BackendSpec] = {}
+_SPEC_CACHE: dict = {}
 
 
 def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
@@ -419,7 +433,7 @@ def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
     return spec
 
 
-def list_backend_targets() -> list[str]:
+def list_backend_targets() -> list:
     return list(_TARGET_ORDER)
 
 
@@ -444,14 +458,14 @@ def default_output_path(input_path: Path, target: str) -> Path:
     return _default_output_path_for(input_path, ext)
 
 
-def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict[str, str]) -> dict[str, Any]:
+def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict) -> dict:
     defaults = spec.get("default_options")
     if not isinstance(defaults, dict):
         defaults = {}
     merged = defaults.get(layer)
     if not isinstance(merged, dict):
         merged = {}
-    out: dict[str, Any] = dict(merged)
+    out: dict = dict(merged)
 
     schemas = spec.get("option_schema")
     if not isinstance(schemas, dict):
@@ -493,45 +507,54 @@ def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict[str, 
     return out
 
 
-def lower_ir(spec: BackendSpec, east_doc: dict[str, Any], lower_options: dict[str, Any] | None = None) -> dict[str, Any]:
+def lower_ir(spec: BackendSpec, east_doc: dict, lower_options: Any = None) -> dict:
     fn = spec.get("lower", _identity_ir)
-    if not callable(fn):
-        return _identity_ir(east_doc)
     try:
         ir = fn(east_doc, lower_options if isinstance(lower_options, dict) else {})
     except TypeError:
-        ir = fn(east_doc)
+        try:
+            ir = fn(east_doc)
+        except Exception:
+            ir = _identity_ir(east_doc)
+    except Exception:
+        ir = _identity_ir(east_doc)
     return ir if isinstance(ir, dict) else {}
 
 
-def optimize_ir(spec: BackendSpec, ir: dict[str, Any], optimizer_options: dict[str, Any] | None = None) -> dict[str, Any]:
+def optimize_ir(spec: BackendSpec, ir: dict, optimizer_options: Any = None) -> dict:
     fn = spec.get("optimizer", _identity_ir)
-    if not callable(fn):
-        return _identity_ir(ir)
     try:
         out = fn(ir, optimizer_options if isinstance(optimizer_options, dict) else {})
     except TypeError:
-        out = fn(ir)
+        try:
+            out = fn(ir)
+        except Exception:
+            out = _identity_ir(ir)
+    except Exception:
+        out = _identity_ir(ir)
     return out if isinstance(out, dict) else {}
 
 
 def emit_source(
     spec: BackendSpec,
-    ir: dict[str, Any],
+    ir: dict,
     output_path: Path,
-    emitter_options: dict[str, Any] | None = None,
+    emitter_options: Any = None,
 ) -> str:
     fn = spec.get("emit", _identity_ir)
-    if not callable(fn):
-        return ""
     try:
         source = fn(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
     except TypeError:
-        source = fn(ir, output_path)
+        try:
+            source = fn(ir, output_path)
+        except Exception:
+            source = ""
+    except Exception:
+        source = ""
     return source if isinstance(source, str) else ""
 
 
 def apply_runtime_hook(spec: BackendSpec, output_path: Path) -> None:
     fn = spec.get("runtime_hook", _runtime_none)
-    if callable(fn):
+    if fn is not None:
         fn(output_path)

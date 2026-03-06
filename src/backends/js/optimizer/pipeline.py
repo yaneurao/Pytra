@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 def optimize_js_ir(
-    js_ir: dict[str, Any],
+    js_ir: dict,
     *,
-    options: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+    options: Any = None,
+) -> dict:
     """Optimize JsIR.
 
     Current phase keeps pass-through behavior to isolate 3-layer wiring changes.
@@ -20,4 +20,3 @@ def optimize_js_ir(
     if js_ir.get("kind") != "Module":
         raise RuntimeError("js optimizer: root kind must be Module")
     return js_ir
-

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
 
 def lower_east3_to_js_ir(
-    east_doc: dict[str, Any],
+    east_doc: dict,
     *,
-    options: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+    options: Any = None,
+) -> dict:
     """Lower EAST3 module into JsIR.
 
     Current phase keeps a 1:1 pass-through to stabilize 3-layer wiring.
@@ -20,4 +20,3 @@ def lower_east3_to_js_ir(
     if east_doc.get("kind") != "Module":
         raise RuntimeError("js lower: root kind must be Module")
     return east_doc
-

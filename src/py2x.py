@@ -3,18 +3,16 @@
 
 from __future__ import annotations
 
-from pytra.std.typing import Any
+from typing import Any
 
-from toolchain.compiler.backend_registry import (
-    apply_runtime_hook,
-    default_output_path,
-    emit_source,
-    get_backend_spec,
-    list_backend_targets,
-    lower_ir,
-    optimize_ir,
-    resolve_layer_options,
-)
+from toolchain.compiler.backend_registry import apply_runtime_hook
+from toolchain.compiler.backend_registry import default_output_path
+from toolchain.compiler.backend_registry import emit_source
+from toolchain.compiler.backend_registry import get_backend_spec
+from toolchain.compiler.backend_registry import list_backend_targets
+from toolchain.compiler.backend_registry import lower_ir
+from toolchain.compiler.backend_registry import optimize_ir
+from toolchain.compiler.backend_registry import resolve_layer_options
 from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -267,6 +265,9 @@ def main() -> int:
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
+    lower_options = {}
+    optimizer_options = {}
+    emitter_options = {}
     try:
         lower_options = resolve_layer_options(spec, "lower", lower_raw)
         optimizer_options = resolve_layer_options(spec, "optimizer", optimizer_raw)

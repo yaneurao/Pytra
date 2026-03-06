@@ -5,7 +5,9 @@
 #ifndef PYTRA_STD_RANDOM_H
 #define PYTRA_STD_RANDOM_H
 
-#include "runtime/cpp/core/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_types.h"
+
+#include "runtime/cpp/std/math.h"
 
 namespace pytra::std::random {
 

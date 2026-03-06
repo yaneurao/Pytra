@@ -3,30 +3,28 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/std/re.h"
+#include "runtime/cpp/std/re.h"
 
 
 namespace pytra::std::re {
 
     int64 S;
     
-    struct Match : public PyObj {
-        list<str> _groups;
-        str _text;
-        PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
-        
-        Match(const str& text, const list<str>& groups) {
+    /* Minimal pure-Python regex subset used by Pytra selfhost path. */
+    
+
+    Match::Match(const str& text, const list<str>& groups) {
             this->_text = text;
             this->_groups = groups;
-        }
-        str group(int64 idx = 0) {
+    }
+
+    str Match::group(int64 idx) {
             if (idx == 0)
                 return this->_text;
             if ((idx < 0) || (idx > py_len(this->_groups)))
                 throw IndexError("group index out of range");
             return this->_groups[idx - 1];
-        }
-    };
+    }
     
     str group(const ::std::optional<rc<Match>>& m, int64 idx = 0) {
         /* `Match | None` から group を安全取得する（None は空文字）。 */
@@ -511,7 +509,6 @@ namespace pytra::std::re {
         static bool __initialized = false;
         if (__initialized) return;
         __initialized = true;
-        /* Minimal pure-Python regex subset used by Pytra selfhost path. */
         S = 1;
     }
     

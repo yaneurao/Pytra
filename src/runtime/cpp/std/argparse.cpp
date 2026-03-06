@@ -5,15 +5,14 @@
 
 #include "runtime/cpp/std/argparse.h"
 
-#include "runtime/cpp/gen/std/typing.h"
 #include "runtime/cpp/std/sys.h"
 
 namespace pytra::std::argparse {
 
     /* Minimal pure-Python argparse subset for selfhost usage. */
     
-    struct Namespace {
-        Namespace(const ::std::optional<dict<str, object>>& values = ::std::nullopt) {
+
+    Namespace::Namespace(const ::std::optional<dict<str, object>>& values) {
             if (py_is_none(values))
                 return;
             for (object __itobj_1 : py_dyn_range(values)) {
@@ -21,19 +20,10 @@ namespace pytra::std::argparse {
                 auto v = py_at(__itobj_1, 1);
                 setattr(*this, k, v);
             }
-        }
-    };
+    }
     
-    struct _ArgSpec : public PyObj {
-        ::std::optional<str> action;
-        ::std::optional<list<str>> choices;
-        object default;
-        ::std::optional<str> help_text;
-        bool is_optional;
-        list<str> names;
-        PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
-        
-        _ArgSpec(const list<str>& names, const ::std::optional<str>& action, const ::std::optional<list<str>>& choices, const object& default, const ::std::optional<str>& help_text) {
+
+    _ArgSpec::_ArgSpec(const list<str>& names, const ::std::optional<str>& action, const ::std::optional<list<str>>& choices, const object& default, const ::std::optional<str>& help_text) {
             this->names = names;
             this->action = action;
             this->choices = choices;
@@ -46,19 +36,15 @@ namespace pytra::std::argparse {
             } else {
                 this->dest = names[0];
             }
-        }
-    };
+    }
     
-    struct ArgumentParser : public PyObj {
-        list<rc<_ArgSpec>> _specs;
-        bool description;
-        PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
-        
-        ArgumentParser(const ::std::optional<str>& description = ::std::nullopt) {
+
+    ArgumentParser::ArgumentParser(const ::std::optional<str>& description) {
             this->description = (description ? description : "");
             this->_specs = {};
-        }
-        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const ::std::optional<str>& help = ::std::nullopt, const ::std::optional<str>& action = ::std::nullopt, const ::std::optional<list<str>>& choices = ::std::nullopt, const object& default = object{}) {
+    }
+
+    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const ::std::optional<str>& help, const ::std::optional<str>& action, const ::std::optional<list<str>>& choices, const object& default) {
             list<str> names = {};
             if (name0 != "")
                 names.append(name0);
@@ -72,13 +58,15 @@ namespace pytra::std::argparse {
                 throw ValueError("add_argument requires at least one name");
             rc<_ArgSpec> spec = ::rc_new<_ArgSpec>(names, action, choices, py_default, help);
             this->_specs.append(spec);
-        }
-        void _fail(const str& msg) {
+    }
+
+    void ArgumentParser::_fail(const str& msg) {
             if (msg != "")
                 pytra::std::sys::write_stderr("error: " + msg + "\n");
             throw SystemExit(2);
-        }
-        dict<str, object> parse_args(const ::std::optional<list<str>>& argv = ::std::nullopt) {
+    }
+
+    dict<str, object> ArgumentParser::parse_args(const ::std::optional<list<str>>& argv) {
             object args = make_object(list<object>((py_is_none(argv) ? py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())) : argv)));
             
             list<rc<_ArgSpec>> specs_pos = [&]() -> list<rc<_ArgSpec>> {     list<rc<_ArgSpec>> __out;     for (auto s : this->_specs) {         if (!(s->is_optional)) __out.append(s);     }     return __out; }();
@@ -132,7 +120,6 @@ namespace pytra::std::argparse {
             if (pos_i < py_len(specs_pos))
                 this->_fail("missing required argument: " + py_to_string(specs_pos[pos_i]->dest));
             return values;
-        }
-    };
+    }
     
 }  // namespace pytra::std::argparse

@@ -412,6 +412,26 @@ def _inject_js_named_exports(stage_src_root: Path) -> None:
 
 def _write_js_selfhost_shims(stage_src_root: Path) -> None:
     files: dict[str, str] = {
+        "importlib.js": (
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from './pytra/py_runtime.js';\n"
+            "import { write_js_runtime_shims } from './toolchain/compiler/js_runtime_shims.js';\n"
+            "import { lower_east3_to_js_ir } from './backends/js/lower/east3_to_js_ir.js';\n"
+            "import { optimize_js_ir } from './backends/js/optimizer/pipeline.js';\n"
+            "import { transpile_to_js } from './backends/js/emitter/js_emitter.js';\n"
+            "function _module_dict(raw) {\n"
+            "  const out = { [PYTRA_TYPE_ID]: PY_TYPE_MAP };\n"
+            "  for (const [k, v] of Object.entries(raw)) { out[k] = v; }\n"
+            "  return out;\n"
+            "}\n"
+            "function import_module(name) {\n"
+            "  if (name === 'toolchain.compiler.js_runtime_shims') { return _module_dict({ write_js_runtime_shims }); }\n"
+            "  if (name === 'backends.js.lower') { return _module_dict({ lower_east3_to_js_ir }); }\n"
+            "  if (name === 'backends.js.optimizer') { return _module_dict({ optimize_js_ir }); }\n"
+            "  if (name === 'backends.js.emitter.js_emitter') { return _module_dict({ transpile_to_js }); }\n"
+            "  throw new Error('import_module unsupported: ' + String(name));\n"
+            "}\n"
+            "export { import_module };\n"
+        ),
         "pytra/py_runtime.js": (
             "import { createRequire } from 'node:module';\n"
             "const require = createRequire(import.meta.url);\n"
@@ -520,7 +540,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         ),
         "pytra/std/sys.js": (
             "const sys = {\n"
-            "  argv: Array.from(process.argv),\n"
+            "  argv: Array.from(process.argv.slice(1)),\n"
             "  path: [],\n"
             "  stderr: process.stderr,\n"
             "  stdout: process.stdout,\n"
@@ -559,11 +579,30 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "class _ArgumentParser {\n"
             "  constructor(description = '') { this.description = String(description || ''); this._specs = []; }\n"
             "  add_argument() {\n"
-            "    const names = Array.from(arguments).filter((x) => typeof x === 'string');\n"
-            "    if (names.length === 0) { throw new Error('add_argument requires at least one name'); }\n"
+            "    const args = Array.from(arguments);\n"
+            "    if (args.length === 0 || typeof args[0] !== 'string') { throw new Error('add_argument requires at least one name'); }\n"
+            "    const names = [String(args[0])];\n"
+            "    let argIndex = 1;\n"
             "    const is_optional = names[0].startsWith('-');\n"
+            "    if (is_optional) {\n"
+            "      while (argIndex < args.length) {\n"
+            "        const v = args[argIndex];\n"
+            "        if (typeof v === 'string' && v.startsWith('-')) {\n"
+            "          names.push(v);\n"
+            "          argIndex += 1;\n"
+            "          continue;\n"
+            "        }\n"
+            "        break;\n"
+            "      }\n"
+            "    }\n"
             "    const base = is_optional ? names[names.length - 1].replace(/^-+/, '').replace(/-/g, '_') : names[0];\n"
-            "    this._specs.push({ names, is_optional, dest: base, action: null, choices: null, default: null });\n"
+            "    let choices = null;\n"
+            "    while (argIndex < args.length) {\n"
+            "      const v = args[argIndex];\n"
+            "      if (Array.isArray(v)) { choices = v; }\n"
+            "      argIndex += 1;\n"
+            "    }\n"
+            "    this._specs.push({ names, is_optional, dest: base, action: null, choices, default: null });\n"
             "  }\n"
             "  error(msg) { if (msg) { sys.write_stderr('error: ' + msg + '\\n'); } throw new Error('argparse_error'); }\n"
             "  parse_args(argv = null) {\n"
@@ -583,7 +622,11 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "        const spec = byName[tok];\n"
             "        if (!spec) { this.error('unknown option: ' + tok); }\n"
             "        if (i + 1 >= tokens.length) { this.error('missing value for option: ' + tok); }\n"
-            "        values[spec.dest] = tokens[i + 1];\n"
+            "        const parsed = tokens[i + 1];\n"
+            "        if (Array.isArray(spec.choices) && spec.choices.length > 0 && !spec.choices.includes(parsed)) {\n"
+            "          this.error('invalid choice for option: ' + tok + ' => ' + parsed);\n"
+            "        }\n"
+            "        values[spec.dest] = parsed;\n"
             "        i += 2;\n"
             "        continue;\n"
             "      }\n"
@@ -668,7 +711,17 @@ def _prepare_js_tree(stage_root: Path, entry_py: Path) -> tuple[bool, str, Path]
     _copy_js_runtime(stage_src_root)
 
     repo_src_root = ROOT / "src"
-    queue: list[Path] = [entry_py]
+    seed_modules = [
+        entry_py,
+        repo_src_root / "toolchain" / "compiler" / "js_runtime_shims.py",
+        repo_src_root / "backends" / "js" / "lower" / "east3_to_js_ir.py",
+        repo_src_root / "backends" / "js" / "optimizer" / "pipeline.py",
+        repo_src_root / "backends" / "js" / "emitter" / "js_emitter.py",
+    ]
+    queue: list[Path] = []
+    for seed in seed_modules:
+        if seed.exists():
+            queue.append(seed)
     emitted: set[str] = set()
     entry_js = stage_src_root / entry_py.relative_to(repo_src_root).with_suffix(".js")
 
