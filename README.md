@@ -34,17 +34,14 @@
 
 ## Latest News
 
+> **2026-03-06 | v0.8.0 Released**  
+> Version 0.8.0 was released. The ABI boundary is being redefined, and a large-scale refactor is in progress. At the moment, backends other than the C++ transpiler are broken, so please use v0.7.0.
+
 > **2026-03-04 | v0.7.0 Released**  
 > Version 0.7.0 was released, adding PHP as a supported target language. Nim official support is in progress, followed by Julia and Dart.
 
 > **2026-03-02 | v0.6.0 Released**  
 > Version 0.6.0 was released, adding Scala as a supported target language.
-
-> **2026-03-01 | v0.5.0 Released**  
-> Version 0.5.0 was released, adding Lua as a supported target language.
-
-> **2026-02-28 | v0.4.0 Released**  
-> Version 0.4.0 was released, adding Ruby as a supported target language.
 
 - Past News: [docs/en/news/index.md](docs/en/news/index.md)
 

@@ -1,5 +1,9 @@
 # v0 Release Series (Past News)
 
+## 2026-03-06 | v0.8.0 Released
+
+> Version 0.8.0 was released. The ABI boundary is being redefined, and a large-scale refactor is in progress. At the moment, backends other than the C++ transpiler are broken, so please use v0.7.0.
+
 ## 2026-03-04 | v0.7.0 Released
 
 > Version 0.7.0 was released, adding PHP as a supported target language. Nim official support is in progress, followed by Julia and Dart.
