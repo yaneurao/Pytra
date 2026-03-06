@@ -134,10 +134,6 @@ class Py2CppFeatureTest(unittest.TestCase):
         self.assertEqual(_runtime_module_tail_from_source_path(Path("src/pytra/std/math.py")), "std/math")
         self.assertEqual(_runtime_module_tail_from_source_path(Path("src/pytra/utils/png.py")), "png")
         self.assertEqual(
-            _runtime_module_tail_from_source_path(Path("src/toolchain/compiler/east_parts/core.py")),
-            "compiler/east_parts/core",
-        )
-        self.assertEqual(
             _runtime_module_tail_from_source_path(Path("src/pytra/built_in/type_id.py")),
             "built_in/type_id",
         )
@@ -145,12 +141,10 @@ class Py2CppFeatureTest(unittest.TestCase):
 
         self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "std/math-impl")
         self.assertEqual(_runtime_output_rel_tail("json"), "utils/json")
-        self.assertEqual(_runtime_output_rel_tail("compiler/east_parts/core_impl"), "compiler/east_parts/core-impl")
         self.assertEqual(_runtime_output_rel_tail("built_in/type_id"), "built_in/type_id")
 
         self.assertEqual(_runtime_namespace_for_tail("std/math"), "pytra::std::math")
         self.assertEqual(_runtime_namespace_for_tail("json"), "pytra::utils::json")
-        self.assertEqual(_runtime_namespace_for_tail("compiler/east_parts/core"), "pytra::compiler::east_parts::core")
         self.assertEqual(_runtime_namespace_for_tail("built_in/type_id"), "")
 
     def test_runtime_module_extern_only_detector_accepts_std_math(self) -> None:

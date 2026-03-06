@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from pytra.std.pathlib import Path
 
-from toolchain.compiler.east_parts.core import convert_path
+from toolchain.ir.core import convert_path
 from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3
 from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
 from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
