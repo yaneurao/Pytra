@@ -220,8 +220,21 @@ static inline bytes py_bytes_lit(const char (&s)[N]) {
 }
 
 static inline bytes py_int_to_bytes(int64 value, int64 length, const str& byteorder) {
-    auto raw = pytra::runtime::cpp::base::int_to_bytes(value, length, static_cast<::std::string>(byteorder));
-    return bytes(raw.begin(), raw.end());
+    if (length < 0) {
+        throw ::std::runtime_error("to_bytes: length must be >= 0");
+    }
+    bytes out(static_cast<::std::size_t>(length), 0);
+    for (int64 i = 0; i < length; ++i) {
+        uint8 b = static_cast<uint8>((static_cast<uint64>(value) >> (8 * i)) & 0xFFu);
+        if (byteorder == "little") {
+            out[static_cast<::std::size_t>(i)] = b;
+        } else if (byteorder == "big") {
+            out[static_cast<::std::size_t>(length - 1 - i)] = b;
+        } else {
+            throw ::std::runtime_error("to_bytes: byteorder must be 'little' or 'big'");
+        }
+    }
+    return out;
 }
 
 

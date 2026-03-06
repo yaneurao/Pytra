@@ -13,24 +13,21 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 
 CPP_RUNTIME_SRCS = [
-    "src/runtime/cpp/pytra/built_in/gc.cpp",
-    "src/runtime/cpp/pytra/built_in/type_id.cpp",
-    "src/runtime/cpp/pytra/std/pathlib.cpp",
-    "src/runtime/cpp/pytra/std/time.cpp",
-    "src/runtime/cpp/pytra/std/time-impl.cpp",
-    "src/runtime/cpp/pytra/std/math.cpp",
-    "src/runtime/cpp/pytra/std/math-impl.cpp",
-    "src/runtime/cpp/pytra/std/random.cpp",
-    "src/runtime/cpp/pytra/std/glob.cpp",
-    "src/runtime/cpp/pytra/std/json.cpp",
-    "src/runtime/cpp/pytra/std/re.cpp",
-    "src/runtime/cpp/pytra/std/sys.cpp",
-    "src/runtime/cpp/pytra/std/timeit.cpp",
-    "src/runtime/cpp/pytra/built_in/io.cpp",
-    "src/runtime/cpp/pytra/built_in/bytes_util.cpp",
-    "src/runtime/cpp/pytra/utils/png.cpp",
-    "src/runtime/cpp/pytra/utils/gif.cpp",
-    "src/runtime/cpp/pytra/utils/assertions.cpp",
+    "src/runtime/cpp/core/built_in/gc.cpp",
+    "src/runtime/cpp/core/built_in/io.cpp",
+    "src/runtime/cpp/built_in/type_id.cpp",
+    "src/runtime/cpp/std/pathlib.cpp",
+    "src/runtime/cpp/std/time-manual.cpp",
+    "src/runtime/cpp/std/math-manual.cpp",
+    "src/runtime/cpp/std/random.cpp",
+    "src/runtime/cpp/std/glob-manual.cpp",
+    "src/runtime/cpp/std/json.cpp",
+    "src/runtime/cpp/std/re.cpp",
+    "src/runtime/cpp/std/sys-manual.cpp",
+    "src/runtime/cpp/std/timeit.cpp",
+    "src/runtime/cpp/utils/png.cpp",
+    "src/runtime/cpp/utils/gif.cpp",
+    "src/runtime/cpp/utils/assertions.cpp",
 ]
 
 
@@ -52,7 +49,7 @@ class CppRuntimeTypeIdTest(unittest.TestCase):
 
     def test_runtime_type_id_subtype_and_isinstance_contract(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/built_in/py_runtime.h"
 
 #include <cassert>
 #include <iostream>
@@ -135,7 +132,7 @@ int main() {
 
     def test_rc_handle_upcast_from_derived_compiles(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/pytra-core/built_in/gc.h"
+#include "runtime/cpp/core/built_in/gc.h"
 
 #include <cassert>
 #include <iostream>
@@ -190,7 +187,7 @@ int main() {
                     "-I",
                     "src/runtime/cpp",
                     str(src),
-                    "src/runtime/cpp/pytra/built_in/gc.cpp",
+                    "src/runtime/cpp/core/built_in/gc.cpp",
                     "-o",
                     str(exe),
                 ],
