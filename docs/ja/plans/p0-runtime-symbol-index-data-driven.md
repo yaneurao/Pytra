@@ -134,6 +134,138 @@
 - [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-02] docs/ja/spec に「IR は module+symbol を持つ」「target file path は index + backend が導出する」と明記する。
 - [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-03] representative regression（C++ include 解決、runtime build graph、import resolution、unit parity）を通し、既存の ad-hoc fallback が不要になったことを確認する。
 
+## S1-01 棚卸し結果（2026-03-06 固定）
+
+### 1. 直書き箇所の分類表
+
+| レイヤ | ファイル | 現在持っている情報 | 問題 | あるべき移管先 |
+| - | - | - | - | - |
+| IR 構築 | `src/toolchain/ir/core.py` | `enumerate -> py_enumerate`, `any -> py_any`, `all -> py_all`, `reversed -> py_reversed`, `bytes/bytearray/list/set/dict ctor` などの裸 `runtime_call` | symbol 名だけで module 所属がない | `runtime_module_id` + `runtime_symbol` を IR に保持 |
+| frontend | `src/toolchain/frontends/signature_registry.py` | `perf_counter`, `Path`, `json.loads`, `write_rgb_png`, `save_gif`, `math.sqrt` などの runtime call 対応、owner method 対応、型推定 | module/file/path 推定責務まで持っている。target 非依存情報と target 依存情報が混在 | module/symbol の正規化だけ最小限残し、file/artifact 対応は index へ移管 |
+| backend(C++) | `src/backends/cpp/emitter/module.py` | `pytra.std.*` / `pytra.utils.*` / `pytra.built_in.*` から include path / namespace を推定 | module tail と file path を backend 実装が再推定している | index を読んで include/header を導出 |
+| backend(C++) | `src/backends/cpp/emitter/runtime_paths.py` | `module_tail -> *.gen.h`、`module_name -> runtime/cpp/...` 変換 | C++ path 規則の中心実装としては妥当だが、symbol 所属決定まで抱えると責務過多 | 「module -> target artifact」の導出専用に縮退 |
+| backend(C++) | `src/backends/cpp/profiles/runtime_calls.json` | `os.path.join`, `glob.glob`, `ArgumentParser`, `re.sub`, `sys.stdout.write` などの C++ 呼び先 | symbol 所属と最終描画名が混在。index 不在だと ad-hoc fallback の温床になる | 当面は C++ 描画名テーブルとして維持しつつ、所属 module は IR + index へ分離 |
+| tooling | `tools/build_multi_cpp.py` | manifest 内 source を起点に runtime source を再帰収集 | include から `.gen/.ext` companion を再構成するが、module/symbol 単位では見ていない | index を参照して module 単位で必要 artifact を導出 |
+| tooling | `tools/gen_makefile_from_manifest.py` | manifest から runtime source を再収集 | build graph が include 依存の推測に寄る | index + manifest module 情報で compile source を決定 |
+
+### 2. 何をどこへ残すか
+
+| 情報 | IR に残す | index に移す | backend/tooling が導出 |
+| - | - | - | - |
+| `runtime_module_id` | はい | いいえ | いいえ |
+| `runtime_symbol` | はい | いいえ | いいえ |
+| `runtime_dispatch`（function / method / ctor など） | 必要最小限のみ | 補助的に保持可 | 描画時に参照 |
+| target 別 header path (`runtime/cpp/std/time.gen.h`) | いいえ | はい | index から読む |
+| target 別 compile source (`*.gen.cpp`, `*.ext.cpp`) | いいえ | はい | index から読む |
+| `gen/ext` companion 規則 | いいえ | はい | index から読む |
+| C++ namespace / fully-qualified symbol | いいえ | いいえ | backend が module + symbol + profile から導出 |
+| include 並び順 / dedupe | いいえ | いいえ | backend/tooling |
+
+### 3. この段階で固定する判断
+
+- `runtime_call` 裸文字列だけでは不十分であり、S3 以降では `runtime_module_id` と `runtime_symbol` を正本にする。
+- target 固有 file path は IR へ埋めない。
+- `signature_registry.py` は「SoT から読み取れる symbol / 型 / owner-method 契約」を補助するだけに縮退し、artifact path や companion 推定を持たせない。
+- C++ backend は `module.py` / `runtime_paths.py` / `runtime_calls.json` に責務が分散しているが、所属決定は index 化後に backend 外へ出す。
+
+## S1-02 schema 固定（2026-03-06 版）
+
+### 1. schema の責務
+
+`runtime symbol index` は次の責務だけを持つ。
+
+- module 単位で「どの symbol がその module から提供されるか」を示す
+- target 単位で「その module を使うとき、どの artifact が必要か」を示す
+- `gen/ext` companion の有無を示す
+
+逆に、次は持たせない。
+
+- EAST3 ノード全体
+- C++ namespace 文字列
+- backend 固有の描画構文
+- owner method 解決ロジックそのもの
+
+### 2. 最小 schema
+
+```json
+{
+  "schema_version": 1,
+  "generated_by": "tools/gen_runtime_symbol_index.py",
+  "generated_at": "2026-03-06T00:00:00Z",
+  "modules": {
+    "pytra.built_in.iter_ops": {
+      "source_py": "src/pytra/built_in/iter_ops.py",
+      "runtime_group": "built_in",
+      "symbols": {
+        "py_enumerate_object": {
+          "kind": "function",
+          "dispatch": "function"
+        },
+        "py_reversed_object": {
+          "kind": "function",
+          "dispatch": "function"
+        }
+      }
+    }
+  },
+  "targets": {
+    "cpp": {
+      "modules": {
+        "pytra.built_in.iter_ops": {
+          "public_headers": [
+            "src/runtime/cpp/built_in/iter_ops.gen.h",
+            "src/runtime/cpp/built_in/iter_ops.ext.h"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/iter_ops.gen.cpp"
+          ],
+          "companions": [
+            "gen",
+            "ext"
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### 3. field ごとの意味
+
+| field | 所属 | 意味 |
+| - | - | - |
+| `schema_version` | ルート | 互換性判定用。破壊的変更時のみ更新 |
+| `generated_by` | ルート | generator 名の固定 |
+| `generated_at` | ルート | 生成日時。check モードでは無視してよい |
+| `modules` | ルート | target 非依存の module/symbol 定義 |
+| `source_py` | module | SoT となる Python module |
+| `runtime_group` | module | `core / built_in / std / utils` の責務分類 |
+| `symbols` | module | その module から公開される runtime symbol 群 |
+| `kind` | symbol | `function` / `class` / `const` など |
+| `dispatch` | symbol | `function` / `method` / `ctor` 等。IR の描画補助 |
+| `targets` | ルート | target 別 artifact 情報 |
+| `public_headers` | target module | include 対象となる header 群 |
+| `compile_sources` | target module | build に載せる source 群 |
+| `companions` | target module | `gen` / `ext` の存在宣言 |
+
+### 4. companion 規則
+
+- `companions=["gen"]`
+  - `.gen.*` のみ存在する module
+- `companions=["gen","ext"]`
+  - `.gen.*` に加えて `.ext.h` または `.ext.cpp` が存在する module
+- `companions=["ext"]`
+  - 将来 `core/` で SoT 非依存の低レベル module を index 化する場合のみ許可
+
+現段階では、`src/pytra/{built_in,std,utils}` 由来 module は原則 `gen` を必須とする。
+
+### 5. 実装者向け禁止事項
+
+- `py_enumerate -> iter_ops` を generator 内 dict へ直書きしない。
+- `runtime/cpp/std/time.gen.h` のような path を IR へ埋めない。
+- `signature_registry.py` を新しい index の source-of-truth にしない。
+- `public_headers` と `compile_sources` を backend 側で再発明しない。
+
 ## 実施手順（担当者向け）
 
 ### Step 1: 現状棚卸し
@@ -236,3 +368,5 @@
 決定ログ:
 - 2026-03-06: user 指示により、`runtime symbol -> module/file` 対応を Python ソースへ直書きする設計をやめ、SoT 生成 JSON + IR 正規化へ寄せる方針を確定。
 - 2026-03-06: 本計画では「IR に埋めるのは target 非依存情報のみ」「target 別 file path は index + backend が導出」とする。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-01`] 直書き箇所の棚卸しを行い、`core.py` は裸 `runtime_call`、`signature_registry.py` は runtime symbol 対応、C++ backend (`module.py`, `runtime_paths.py`, `runtime_calls.json`) は module/file/namespace 推定、tooling (`build_multi_cpp.py`, `gen_makefile_from_manifest.py`) は include 起点の runtime source 再収集を担っていると固定した。役割分担は「IR=module+symbol」「index=artifact+companion」「backend/tooling=描画と build graph 導出」とする。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-02`] index schema は `modules` と `targets` を分離し、target 非依存の symbol 所属と target 別 artifact 情報を分ける形で固定した。`public_headers` / `compile_sources` / `companions` を最小集合とし、path を IR へ埋めないことを明文化した。

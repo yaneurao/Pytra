@@ -37,8 +37,8 @@
 文脈: [docs/ja/plans/p0-runtime-symbol-index-data-driven.md](../plans/p0-runtime-symbol-index-data-driven.md)
 
 1. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01] runtime symbol 所属と companion 規則を SoT 生成 JSON へ移し、IR/Backend/Tooling をその index ベースへ切り替える。
-2. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S1-01] 現状の runtime symbol 直書き箇所を棚卸しし、「IR に残す情報」「index に移す情報」「backend が導出する情報」を表にして固定する。
-3. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S1-02] `runtime symbol index` の schema を定義し、`module / symbol / target artifact / companion` の各責務を文書化する。
+2. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S1-01] 現状の runtime symbol 直書き箇所を棚卸しし、「IR に残す情報」「index に移す情報」「backend が導出する情報」を表にして固定する。
+3. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S1-02] `runtime symbol index` の schema を定義し、`module / symbol / target artifact / companion` の各責務を文書化する。
 4. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S2-01] `src/pytra/{built_in,std,utils}` と `src/runtime/<lang>/{core,built_in,std,utils}` を走査して index JSON を生成する generator を追加する。
 5. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S2-02] generator の unit test を追加し、`py_enumerate` / `py_any` / `py_strip` / `perf_counter` / `write_rgb_png` / `Path` の representative cases を index 上で固定する。
 6. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S2-03] index generator を CI/ローカルチェックへ組み込み、runtime レイアウト変更時に stale index を fail-fast できるようにする。
@@ -51,6 +51,8 @@
 13. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-01] 非C++ backend への適用方針を整理し、`resolved_runtime_call` と module/file 解決の責務境界を index 前提で揃える。
 14. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-02] docs/ja/spec に「IR は module+symbol を持つ」「target file path は index + backend が導出する」と明記する。
 15. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-03] representative regression（C++ include 解決、runtime build graph、import resolution、unit parity）を通し、既存の ad-hoc fallback が不要になったことを確認する。
+
+- 進捗メモ: 2026-03-06 [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-01` / `-S1-02`] 直書き箇所の棚卸し表と runtime symbol index schema を文脈ファイルと `work/logs/20260306_runtime_symbol_inventory.md` に固定した。
 
 ### P0: C++ unit 回帰の根本修復（SoT/IR/Emitter/Runtime 契約の整流）
 
