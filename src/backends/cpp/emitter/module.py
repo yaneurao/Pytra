@@ -16,6 +16,7 @@ from toolchain.compiler.transpile_cli import (
     dict_any_get_str,
     extract_function_arg_types_from_python_source,
     extract_function_signatures_from_python_source,
+    load_east_document,
     python_module_exists_under,
     sort_str_list_copy,
 )
@@ -29,6 +30,14 @@ TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 class CppModuleEmitter:
     """Import/include/namespace/module-init helpers extracted from CppEmitter."""
+
+    def _normalize_runtime_module_name(self, module_name: str) -> str:
+        module_name_norm = module_name
+        if module_name_norm.find(".") < 0:
+            bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
+            if bare_src.exists():
+                return "pytra.std." + module_name_norm
+        return module_name_norm
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
@@ -110,7 +119,7 @@ class CppModuleEmitter:
 
     def _module_source_path_for_name(self, module_name: str) -> Path:
         """`pytra.*` モジュール名から runtime source `.py` パスを返す（未解決時は空 Path）。"""
-        module_name_norm = module_name
+        module_name_norm = self._normalize_runtime_module_name(module_name)
         if module_name_norm.startswith("pytra.std."):
             tail: str = str(module_name_norm[10:].replace(".", "/"))
             std_root_txt: str = str(RUNTIME_STD_SOURCE_ROOT)
@@ -137,13 +146,165 @@ class CppModuleEmitter:
             return Path("")
         return Path("")
 
+    def _module_class_signature_docs(self, module_name: str) -> dict[str, dict[str, Any]]:
+        """runtime module の class/method シグネチャを SoT から抽出する。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        cached = self._module_class_signature_cache.get(module_name_norm)
+        if isinstance(cached, dict):
+            return cached
+        out: dict[str, dict[str, Any]] = {}
+        src_path = self._module_source_path_for_name(module_name_norm)
+        if str(src_path) == "":
+            self._module_class_signature_cache[module_name_norm] = out
+            return out
+        try:
+            east = load_east_document(src_path)
+        except Exception:
+            self._module_class_signature_cache[module_name_norm] = out
+            return out
+        body = east.get("body")
+        stmts = body if isinstance(body, list) else []
+        ns = self._module_name_to_cpp_namespace(module_name_norm)
+        for stmt in stmts:
+            if not isinstance(stmt, dict) or stmt.get("kind") != "ClassDef":
+                continue
+            class_name = dict_any_get_str(stmt, "name")
+            if class_name == "":
+                continue
+            cpp_name = f"{ns}::{class_name}" if ns != "" else class_name
+            methods = stmt.get("body")
+            method_stmts = methods if isinstance(methods, list) else []
+            method_arg_names: dict[str, list[str]] = {}
+            method_arg_types: dict[str, list[str]] = {}
+            method_arg_defaults: dict[str, dict[str, Any]] = {}
+            method_returns: dict[str, str] = {}
+            method_names: set[str] = set()
+            for method_stmt in method_stmts:
+                if not isinstance(method_stmt, dict) or method_stmt.get("kind") != "FunctionDef":
+                    continue
+                method_name = dict_any_get_str(method_stmt, "name")
+                if method_name == "":
+                    continue
+                method_names.add(method_name)
+                method_returns[method_name] = self.normalize_type_name(self.any_to_str(method_stmt.get("return_type")))
+                arg_types = method_stmt.get("arg_types")
+                arg_types_map = arg_types if isinstance(arg_types, dict) else {}
+                arg_defaults = method_stmt.get("arg_defaults")
+                arg_defaults_map = arg_defaults if isinstance(arg_defaults, dict) else {}
+                arg_order = method_stmt.get("arg_order")
+                arg_order_list = arg_order if isinstance(arg_order, list) else []
+                ordered_names: list[str] = []
+                ordered_types: list[str] = []
+                ordered_defaults: dict[str, Any] = {}
+                for raw_arg in arg_order_list:
+                    if not isinstance(raw_arg, str) or raw_arg == "self":
+                        continue
+                    ordered_names.append(raw_arg)
+                    ordered_types.append(self.normalize_type_name(self.any_to_str(arg_types_map.get(raw_arg))))
+                    if raw_arg in arg_defaults_map:
+                        ordered_defaults[raw_arg] = arg_defaults_map.get(raw_arg)
+                method_arg_names[method_name] = ordered_names
+                method_arg_types[method_name] = ordered_types
+                method_arg_defaults[method_name] = ordered_defaults
+            out[class_name] = {
+                "storage_hint": dict_any_get_str(stmt, "class_storage_hint", "ref"),
+                "cpp_name": cpp_name,
+                "method_arg_names": method_arg_names,
+                "method_arg_types": method_arg_types,
+                "method_arg_defaults": method_arg_defaults,
+                "method_returns": method_returns,
+                "method_names": sorted(method_names),
+            }
+        self._module_class_signature_cache[module_name_norm] = out
+        return out
+
+    def _module_class_doc(self, module_name: str, class_name: str) -> dict[str, Any]:
+        docs = self._module_class_signature_docs(module_name)
+        doc = docs.get(class_name)
+        if isinstance(doc, dict):
+            return doc
+        return {}
+
+    def _imported_runtime_class_cpp_type(self, module_name: str, class_name: str) -> str:
+        doc = self._module_class_doc(module_name, class_name)
+        cpp_name = self.any_to_str(doc.get("cpp_name"))
+        if cpp_name == "":
+            return ""
+        hint = self.any_to_str(doc.get("storage_hint"))
+        if hint == "value":
+            return cpp_name
+        return f"rc<{cpp_name}>"
+
+    def _module_class_method_arg_names(self, module_name: str, class_name: str, method_name: str) -> list[str]:
+        doc = self._module_class_doc(module_name, class_name)
+        items = doc.get("method_arg_names")
+        method_map = items if isinstance(items, dict) else {}
+        names = method_map.get(method_name)
+        if not isinstance(names, list):
+            return []
+        out: list[str] = []
+        for item in names:
+            if isinstance(item, str) and item != "":
+                out.append(item)
+        return out
+
+    def _module_class_method_arg_types(self, module_name: str, class_name: str, method_name: str) -> list[str]:
+        doc = self._module_class_doc(module_name, class_name)
+        items = doc.get("method_arg_types")
+        method_map = items if isinstance(items, dict) else {}
+        types = method_map.get(method_name)
+        if not isinstance(types, list):
+            return []
+        out: list[str] = []
+        for item in types:
+            if isinstance(item, str) and item != "":
+                out.append(item)
+        return out
+
+    def _module_class_method_arg_defaults(self, module_name: str, class_name: str, method_name: str) -> dict[str, Any]:
+        doc = self._module_class_doc(module_name, class_name)
+        items = doc.get("method_arg_defaults")
+        method_map = items if isinstance(items, dict) else {}
+        defaults = method_map.get(method_name)
+        if isinstance(defaults, dict):
+            return defaults
+        return {}
+
+    def _register_imported_runtime_class_metadata(self) -> None:
+        """from-import された runtime class の型/メソッド情報を emitter へ注入する。"""
+        for local_name, sym in self.import_symbols.items():
+            if not isinstance(local_name, str) or local_name == "":
+                continue
+            module_name = dict_any_get_str(sym, "module")
+            class_name = dict_any_get_str(sym, "name")
+            cpp_type = self._imported_runtime_class_cpp_type(module_name, class_name)
+            if cpp_type == "":
+                continue
+            self.type_map[local_name] = cpp_type
+            doc = self._module_class_doc(module_name, class_name)
+            cpp_name = self.any_to_str(doc.get("cpp_name"))
+            if cpp_name == "":
+                continue
+            method_names_raw = doc.get("method_names")
+            method_names = method_names_raw if isinstance(method_names_raw, list) else []
+            name_set: set[str] = set()
+            for item in method_names:
+                if isinstance(item, str) and item != "":
+                    name_set.add(item)
+            self.class_names.add(cpp_name)
+            if self.any_to_str(doc.get("storage_hint")) == "value":
+                self.value_classes.add(cpp_name)
+            else:
+                self.ref_classes.add(cpp_name)
+            self.class_method_names[cpp_name] = name_set
+            self.class_method_arg_names[cpp_name] = dict(doc.get("method_arg_names", {}))
+            self.class_method_arg_types[cpp_name] = dict(doc.get("method_arg_types", {}))
+            self.class_method_arg_defaults[cpp_name] = dict(doc.get("method_arg_defaults", {}))
+            self.class_method_return_types[cpp_name] = dict(doc.get("method_returns", {}))
+
     def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数型列を返す（不明時は空 list）。"""
-        module_name_norm = module_name
-        if module_name_norm.find(".") < 0:
-            bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
-            if bare_src.exists():
-                module_name_norm = "pytra.std." + module_name_norm
+        module_name_norm = self._normalize_runtime_module_name(module_name)
         cached = self._module_fn_arg_type_cache.get(module_name_norm)
         if isinstance(cached, dict):
             sig = cached.get(fn_name)
@@ -164,11 +325,7 @@ class CppModuleEmitter:
 
     def _module_function_arg_names(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数名列を返す（不明時は空 list）。"""
-        module_name_norm = module_name
-        if module_name_norm.find(".") < 0:
-            bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
-            if bare_src.exists():
-                module_name_norm = "pytra.std." + module_name_norm
+        module_name_norm = self._normalize_runtime_module_name(module_name)
         cached = self._module_fn_signature_cache.get(module_name_norm)
         if not isinstance(cached, dict):
             sig_map: dict[str, dict[str, list[str]]] = {}

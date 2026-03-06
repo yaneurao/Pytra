@@ -12,6 +12,16 @@ from toolchain.compiler.transpile_cli import (
     stmt_target_name,
 )
 from pytra.std.pathlib import Path
+from backends.cpp.emitter.profile_loader import load_cpp_identifier_rules
+
+
+_HEADER_RESERVED_WORDS, _HEADER_RENAME_PREFIX = load_cpp_identifier_rules({})
+
+
+def _header_safe_identifier(name: str) -> str:
+    if name in _HEADER_RESERVED_WORDS:
+        return _HEADER_RENAME_PREFIX + name
+    return name
 
 
 def split_cpp_inline_class_defs(
@@ -128,8 +138,9 @@ def build_cpp_header_from_east(
                     at = dict_any_get_str(arg_types, an, "Any")
                     at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
                     used_types.add(at_cpp)
+                    emitted_an = _header_safe_identifier(an)
                     param_txt = (
-                        at_cpp + " " + an if at_cpp in by_value_types else "const " + at_cpp + "& " + an
+                        at_cpp + " " + emitted_an if at_cpp in by_value_types else "const " + at_cpp + "& " + emitted_an
                     )
                     if an in arg_defaults:
                         default_node = arg_defaults.get(an)
@@ -1139,5 +1150,26 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
         if len(parts) == 0:
             return ""
         return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
+    if kind == "List":
+        elems = dict_any_get_dict_list(node, "elements")
+        if len(elems) == 0:
+            txt = east_target_t.strip()
+            if txt.startswith("list[") and txt.endswith("]"):
+                return _header_cpp_type_from_east(txt, set(), set()) + "{}"
+        return ""
+    if kind == "Dict":
+        entries = dict_any_get_dict_list(node, "entries")
+        if len(entries) == 0:
+            txt = east_target_t.strip()
+            if txt.startswith("dict[") and txt.endswith("]"):
+                return _header_cpp_type_from_east(txt, set(), set()) + "{}"
+        return ""
+    if kind == "Set":
+        elems = dict_any_get_dict_list(node, "elements")
+        if len(elems) == 0:
+            txt = east_target_t.strip()
+            if txt.startswith("set[") and txt.endswith("]"):
+                return _header_cpp_type_from_east(txt, set(), set()) + "{}"
+        return ""
     _ = east_target_t
     return ""

@@ -212,12 +212,14 @@ class CppClassEmitter:
             fty = static_field_types.get(fname, "")
             if not isinstance(fty, str) or fty == "":
                 continue
+            emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             if fname in static_field_defaults:
-                self.emit(f"inline static {self._cpp_type_text(fty)} {fname} = {static_field_defaults[fname]};")
+                self.emit(f"inline static {self._cpp_type_text(fty)} {emitted_fname} = {static_field_defaults[fname]};")
             else:
-                self.emit(f"inline static {self._cpp_type_text(fty)} {fname};")
+                self.emit(f"inline static {self._cpp_type_text(fty)} {emitted_fname};")
         for fname, fty in instance_fields_ordered:
-            self.emit(f"{self._cpp_type_text(fty)} {fname};")
+            emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+            self.emit(f"{self._cpp_type_text(fty)} {emitted_fname};")
         if gc_managed:
             base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
             self.emit(f"PYTRA_DECLARE_CLASS_TYPE({base_type_id_expr});")
@@ -227,7 +229,8 @@ class CppClassEmitter:
         if (len(instance_fields_ordered) > 0 or gc_managed) and not has_init:
             params: list[str] = []
             for fname, fty in instance_fields_ordered:
-                p = f"{self._cpp_type_text(fty)} {fname}"
+                emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+                p = f"{self._cpp_type_text(fty)} {emitted_fname}"
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
                     default_expr = instance_field_defaults[fname]
                     if not self._expr_is_none_marker(default_expr):
@@ -235,7 +238,8 @@ class CppClassEmitter:
                 params.append(p)
             init_items: list[str] = []
             for fname, _ in instance_fields_ordered:
-                init_items.append(f"{fname}({fname})")
+                emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+                init_items.append(f"{emitted_fname}({emitted_fname})")
             init_txt = join_str_list(", ", init_items)
             if init_txt != "":
                 self.emit(f"{name}({join_str_list(', ', params)}) : {init_txt} {{")
@@ -246,8 +250,10 @@ class CppClassEmitter:
         for s in class_body:
             if self._node_kind_from_dict(s) == "AnnAssign":
                 t = self.cpp_type(s.get("annotation"))
+                target_node = self.any_to_dict_or_empty(s.get("target"))
+                target_name = self.any_dict_get_str(target_node, "id", "")
                 target = self.render_expr(s.get("target"))
-                if self.is_plain_name_expr(s.get("target")) and target in self.current_class_fields:
+                if self.is_plain_name_expr(s.get("target")) and target_name in self.current_class_fields:
                     pass
                 elif not self._expr_node_has_payload(s.get("value")):
                     self.emit(f"{t} {target};")
