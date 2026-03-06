@@ -2592,12 +2592,14 @@ class _ShExprParser:
                     attr_semantic_tag = lookup_stdlib_method_semantic_tag(attr_name)
                 owner_expr = node
                 noncpp_module_attr_runtime_call = ""
+                noncpp_module_attr_runtime_owner = ""
                 if isinstance(owner_expr, dict) and owner_expr.get("kind") == "Name":
                     owner_name = str(owner_expr.get("id", "")).strip()
                     if owner_name != "":
                         if owner_name in _SH_IMPORT_MODULES:
+                            noncpp_module_attr_runtime_owner = _SH_IMPORT_MODULES[owner_name]
                             noncpp_module_attr_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                _SH_IMPORT_MODULES[owner_name],
+                                noncpp_module_attr_runtime_owner,
                                 attr_name,
                             )
                         if noncpp_module_attr_runtime_call == "" and owner_name in _SH_IMPORT_SYMBOLS:
@@ -2605,8 +2607,9 @@ class _ShExprParser:
                             mod_name = str(binding.get("module", "")).strip()
                             sym_name = str(binding.get("name", "")).strip()
                             if mod_name != "" and sym_name != "":
+                                noncpp_module_attr_runtime_owner = mod_name + "." + sym_name
                                 noncpp_module_attr_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                    mod_name + "." + sym_name,
+                                    noncpp_module_attr_runtime_owner,
                                     attr_name,
                                 )
                 node = {
@@ -2622,12 +2625,15 @@ class _ShExprParser:
                 if attr_runtime_call != "":
                     node["lowered_kind"] = "BuiltinAttr"
                     node["runtime_call"] = attr_runtime_call
+                    mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr_name)
+                    _set_runtime_binding_fields(node, mod_id, runtime_symbol)
                     node["runtime_owner"] = owner_expr
                 if attr_semantic_tag != "":
                     node["semantic_tag"] = attr_semantic_tag
                 if noncpp_module_attr_runtime_call != "":
                     node["resolved_runtime_call"] = noncpp_module_attr_runtime_call
                     node["resolved_runtime_source"] = "module_attr"
+                    _set_runtime_binding_fields(node, noncpp_module_attr_runtime_owner, attr_name)
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
@@ -2836,6 +2842,11 @@ class _ShExprParser:
                     # non-C++ backend 向けに解決済み runtime 名だけ注釈する。
                     payload["resolved_runtime_call"] = noncpp_symbol_runtime_call
                     payload["resolved_runtime_source"] = "import_symbol"
+                    binding = _SH_IMPORT_SYMBOLS.get(fn_name)
+                    if isinstance(binding, dict):
+                        mod_id = str(binding.get("module", "")).strip()
+                        runtime_symbol = str(binding.get("name", "")).strip()
+                        _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
@@ -2966,6 +2977,7 @@ class _ShExprParser:
                     if noncpp_module_runtime_call != "":
                         payload["resolved_runtime_call"] = noncpp_module_runtime_call
                         payload["resolved_runtime_source"] = "module_attr"
+                        _set_runtime_binding_fields(payload, noncpp_module_runtime_owner, attr)
                         std_module_attr_ret = lookup_stdlib_function_return_type(attr)
                         if std_module_attr_ret != "":
                             payload["resolved_type"] = std_module_attr_ret
