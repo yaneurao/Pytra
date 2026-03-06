@@ -74,7 +74,7 @@ def main() -> None:
         self.assertIn("pytra::std::time::perf_counter()", cpp)
 
     def test_runtime_paths_uses_index_for_std_and_core_modules(self) -> None:
-        self.assertEqual(module_name_to_cpp_include("math"), "std/math.gen.h")
+        self.assertEqual(module_name_to_cpp_include("math"), "pytra/std/math.h")
         self.assertEqual(module_name_to_cpp_include("pytra.std.time"), "pytra/std/time.h")
         self.assertEqual(module_name_to_cpp_include("pytra.core.dict"), "core/dict.ext.h")
 

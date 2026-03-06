@@ -3125,6 +3125,8 @@ static inline auto py_make_scope_exit(F&& fn) {
 }
 
 // 実行時引数・標準出力入出力の最小ランタイム状態。
+inline list<str> py_runtime_argv_storage_v{};
+
 static inline list<str>& py_runtime_argv_storage();
 static inline void py_runtime_set_argv(const list<str>& values);
 
@@ -3138,8 +3140,7 @@ static inline void pytra_configure_from_argv(int argc, char** argv) {
 }
 
 static inline list<str>& py_runtime_argv_storage() {
-    static list<str> v{};
-    return v;
+    return py_runtime_argv_storage_v;
 }
 
 static inline list<str> py_runtime_argv() {

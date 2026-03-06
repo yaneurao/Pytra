@@ -5,7 +5,7 @@
 
 #include "runtime/cpp/std/random.gen.h"
 
-#include "runtime/cpp/std/math.gen.h"
+#include "pytra/std/math.h"
 
 namespace pytra::std::random {
 
@@ -51,7 +51,7 @@ so it can be transpiled to target runtimes.
         return lo + int64(random() * py_to<float64>(span));
     }
     
-    list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k = 1) {
+    list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k) {
         /* Return k sampled elements with replacement.
 
     Supported call forms:
@@ -101,7 +101,7 @@ so it can be transpiled to target runtimes.
         return out;
     }
     
-    float64 gauss(float64 mu = 0.0, float64 sigma = 1.0) {
+    float64 gauss(float64 mu, float64 sigma) {
         /* Return a pseudo-random Gaussian sample. */
         if (py_at(_gauss_has_spare, py_to<int64>(0)) != 0) {
             py_set_at(_gauss_has_spare, 0, make_object(0));

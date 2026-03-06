@@ -66,6 +66,7 @@ def _sh_default_type_aliases() -> dict[str, str]:
         "Dict": "dict",
         "Tuple": "tuple",
         "Set": "set",
+        "Optional": "Optional",
         "Any": "Any",
         "None": "None",
         "str": "str",
@@ -119,11 +120,14 @@ def _sh_is_type_expr_text(txt: str) -> bool:
 def _sh_typing_alias_to_type_name(sym: str) -> str:
     """`from typing` で import される代表的シンボルを EAST 型名へ正規化する。"""
     key = sym.strip()
+    if key.startswith("typing."):
+        key = key[len("typing.") :].strip()
     mapping = {
         "List": "list",
         "Dict": "dict",
         "Tuple": "tuple",
         "Set": "set",
+        "Optional": "Optional",
         "Any": "Any",
         "None": "None",
         "bool": "bool",
@@ -217,6 +221,8 @@ def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> 
     txt: str = ann.strip()
     if len(txt) >= 2 and ((txt[0] == "'" and txt[-1] == "'") or (txt[0] == '"' and txt[-1] == '"')):
         txt = txt[1:-1].strip()
+    if txt.startswith("typing."):
+        txt = txt[len("typing.") :].strip()
     if txt in mapping:
         return mapping[txt]
     if txt in aliases:
@@ -225,6 +231,8 @@ def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> 
     if lb <= 0 or not txt.endswith("]"):
         return txt
     head: str = txt[:lb].strip()
+    if head.startswith("typing."):
+        head = head[len("typing.") :].strip()
     if head in aliases:
         head = aliases[head]
     if not _sh_is_identifier(head):
@@ -248,6 +256,8 @@ def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> 
     if tail != "":
         parts.append(tail)
     norm = [_sh_ann_to_type(p) for p in parts]
+    if head == "Optional" and len(norm) == 1:
+        return norm[0] + " | None"
     return f"{head}[{', '.join(norm)}]"
 
 

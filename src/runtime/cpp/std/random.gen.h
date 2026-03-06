@@ -2,12 +2,10 @@
 // source: src/pytra/std/random.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_RANDOM_H
-#define PYTRA_STD_RANDOM_H
+#ifndef PYTRA_STD_RANDOM_GEN_H
+#define PYTRA_STD_RANDOM_GEN_H
 
 #include "runtime/cpp/core/py_types.ext.h"
-
-#include "runtime/cpp/std/math.gen.h"
 
 namespace pytra::std::random {
 
@@ -19,10 +17,10 @@ void seed(int64 value);
 int64 _next_u31();
 float64 random();
 int64 randint(int64 a, int64 b);
-list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k);
-float64 gauss(float64 mu, float64 sigma);
-void shuffle(const list<int64>& xs);
+list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k = 1);
+float64 gauss(float64 mu = 0.0, float64 sigma = 1.0);
+void shuffle(list<int64>& xs);
 
 }  // namespace pytra::std::random
 
-#endif  // PYTRA_STD_RANDOM_H
+#endif  // PYTRA_STD_RANDOM_GEN_H

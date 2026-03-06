@@ -120,7 +120,7 @@ class Py2CppFeatureTest(unittest.TestCase):
         )
         self.assertEqual(_runtime_module_tail_from_source_path(Path("sample/py/01_mandelbrot.py")), "")
 
-        self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "std/math-impl")
+        self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "std/math_impl")
         self.assertEqual(_runtime_output_rel_tail("json"), "utils/json")
         self.assertEqual(_runtime_output_rel_tail("built_in/type_id"), "built_in/type_id")
 
@@ -3490,8 +3490,8 @@ def main() -> None:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("for (auto __it", cpp)
-        self.assertIn("::std::get<0>(__it", cpp)
+        self.assertIn("for (::std::tuple<object, object> __itobj_", cpp)
+        self.assertIn("auto child = py_at(__itobj_", cpp)
         self.assertNotIn("object receiver method call", cpp)
 
     def test_microgpt_compat_min_syntax_check(self) -> None:

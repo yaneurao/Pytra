@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/std/re.gen.h"
 
+#include "built_in/string_ops.gen.h"
 
 namespace pytra::std::re {
 
@@ -26,7 +27,7 @@ namespace pytra::std::re {
             return this->_groups[idx - 1];
     }
     
-    str group(const ::std::optional<rc<Match>>& m, int64 idx = 0) {
+    str group(const ::std::optional<rc<Match>>& m, int64 idx) {
         /* `Match | None` から group を安全取得する（None は空文字）。 */
         if (py_is_none(m))
             return "";
@@ -34,7 +35,7 @@ namespace pytra::std::re {
         return mm->group(idx);
     }
     
-    str strip_group(const ::std::optional<rc<Match>>& m, int64 idx = 0) {
+    str strip_group(const ::std::optional<rc<Match>>& m, int64 idx) {
         /* group を取得して前後空白を除去する。 */
         return py_strip(group(m, idx));
     }
@@ -113,7 +114,7 @@ namespace pytra::std::re {
         return i;
     }
     
-    ::std::optional<rc<Match>> match(const str& pattern, const str& text, int64 flags = 0) {
+    ::std::optional<rc<Match>> match(const str& pattern, const str& text, int64 flags) {
         // ^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\[(.*)\\]$") {
             if (!(py_endswith(text, "]")))
@@ -460,7 +461,7 @@ namespace pytra::std::re {
         throw ValueError("unsupported regex pattern in pytra.std.re: " + pattern);
     }
     
-    str sub(const str& pattern, const str& repl, const str& text, int64 flags = 0) {
+    str sub(const str& pattern, const str& repl, const str& text, int64 flags) {
         if (pattern == "\\s+") {
             list<str> out = {};
             bool in_ws = false;

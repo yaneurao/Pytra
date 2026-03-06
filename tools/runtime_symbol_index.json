@@ -993,7 +993,7 @@
             "src/runtime/cpp/std/math.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/math.gen.h"
+            "src/runtime/cpp/pytra/std/math.h"
           ]
         },
         "pytra.std.os": {
@@ -1039,7 +1039,7 @@
             "src/runtime/cpp/std/random.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/random.gen.h"
+            "src/runtime/cpp/pytra/std/random.h"
           ]
         },
         "pytra.std.re": {
@@ -1050,7 +1050,7 @@
             "src/runtime/cpp/std/re.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/re.gen.h"
+            "src/runtime/cpp/pytra/std/re.h"
           ]
         },
         "pytra.std.sys": {

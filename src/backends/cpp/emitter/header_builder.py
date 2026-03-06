@@ -24,6 +24,129 @@ def _header_safe_identifier(name: str) -> str:
     return name
 
 
+def _header_dict_stmt_list(raw: Any) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    if not isinstance(raw, list):
+        return out
+    for item in raw:
+        if isinstance(item, dict):
+            out.append(item)
+    return out
+
+
+def _header_node_kind_from_dict(node_dict: dict[str, Any]) -> str:
+    kind = node_dict.get("kind")
+    if isinstance(kind, str):
+        return kind.strip()
+    return ""
+
+
+def _header_mark_mutated_param_from_target(tgt: Any, params: set[str], out: set[str]) -> None:
+    if not isinstance(tgt, dict):
+        return
+    tkind = _header_node_kind_from_dict(tgt)
+    if tkind == "Name":
+        nm = tgt.get("id")
+        if isinstance(nm, str) and nm in params:
+            out.add(nm)
+        return
+    if tkind == "Attribute":
+        owner = tgt.get("value")
+        if isinstance(owner, dict) and _header_node_kind_from_dict(owner) == "Name":
+            nm = owner.get("id")
+            if isinstance(nm, str) and nm in params:
+                out.add(nm)
+        return
+    if tkind == "Subscript":
+        owner = tgt.get("value")
+        if isinstance(owner, dict) and _header_node_kind_from_dict(owner) == "Name":
+            nm = owner.get("id")
+            if isinstance(nm, str) and nm in params:
+                out.add(nm)
+        return
+    if tkind == "Tuple":
+        elems = tgt.get("elements")
+        if isinstance(elems, list):
+            for elem in elems:
+                _header_mark_mutated_param_from_target(elem, params, out)
+
+
+def _header_collect_mutated_params_from_stmt(stmt: dict[str, Any], params: set[str], out: set[str]) -> None:
+    kind = _header_node_kind_from_dict(stmt)
+    if kind in {"Assign", "AnnAssign", "AugAssign"}:
+        _header_mark_mutated_param_from_target(stmt.get("target"), params, out)
+    elif kind == "Swap":
+        lhs = stmt.get("lhs")
+        rhs = stmt.get("rhs")
+        if isinstance(lhs, dict) and _header_node_kind_from_dict(lhs) == "Name":
+            ln = lhs.get("id")
+            if isinstance(ln, str) and ln in params:
+                out.add(ln)
+        if isinstance(rhs, dict) and _header_node_kind_from_dict(rhs) == "Name":
+            rn = rhs.get("id")
+            if isinstance(rn, str) and rn in params:
+                out.add(rn)
+    elif kind == "Expr":
+        call = stmt.get("value")
+        if isinstance(call, dict) and _header_node_kind_from_dict(call) == "Call":
+            fn = call.get("func")
+            if isinstance(fn, dict) and _header_node_kind_from_dict(fn) == "Attribute":
+                owner = fn.get("value")
+                if isinstance(owner, dict) and _header_node_kind_from_dict(owner) == "Name":
+                    nm = owner.get("id")
+                    attr = fn.get("attr")
+                    if isinstance(nm, str) and isinstance(attr, str):
+                        if nm in params and attr in {
+                            "append",
+                            "extend",
+                            "insert",
+                            "pop",
+                            "clear",
+                            "remove",
+                            "discard",
+                            "add",
+                            "update",
+                            "setdefault",
+                            "sort",
+                            "reverse",
+                            "mkdir",
+                            "write",
+                            "write_text",
+                            "close",
+                        }:
+                            out.add(nm)
+    if kind == "If":
+        for s in _header_dict_stmt_list(stmt.get("body")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+        for s in _header_dict_stmt_list(stmt.get("orelse")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+        return
+    if kind in {"While", "For"}:
+        for s in _header_dict_stmt_list(stmt.get("body")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+        for s in _header_dict_stmt_list(stmt.get("orelse")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+        return
+    if kind == "Try":
+        for s in _header_dict_stmt_list(stmt.get("body")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+        for h in _header_dict_stmt_list(stmt.get("handlers")):
+            for s in _header_dict_stmt_list(h.get("body")):
+                _header_collect_mutated_params_from_stmt(s, params, out)
+        for s in _header_dict_stmt_list(stmt.get("orelse")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+        for s in _header_dict_stmt_list(stmt.get("finalbody")):
+            _header_collect_mutated_params_from_stmt(s, params, out)
+
+
+def _header_collect_mutated_params(body_stmts: list[dict[str, Any]], arg_names: list[str]) -> set[str]:
+    params = set(arg_names)
+    out: set[str] = set()
+    for st in body_stmts:
+        _header_collect_mutated_params_from_stmt(st, params, out)
+    return out
+
+
 def split_cpp_inline_class_defs(
     cpp_text: str,
     top_namespace: str = "",
@@ -129,8 +252,15 @@ def build_cpp_header_from_east(
                 ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
                 arg_types = dict_any_get_dict(st, "arg_types")
+                arg_usage = dict_any_get_dict(st, "arg_usage")
                 arg_defaults = dict_any_get_dict(st, "arg_defaults")
                 arg_order = dict_any_get_list(st, "arg_order")
+                body_stmts = _header_dict_stmt_list(st.get("body"))
+                arg_names: list[str] = []
+                for raw_name in arg_order:
+                    if isinstance(raw_name, str) and raw_name != "" and raw_name in arg_types:
+                        arg_names.append(raw_name)
+                mutated_params = _header_collect_mutated_params(body_stmts, arg_names)
                 parts: list[str] = []
                 for an in arg_order:
                     if not isinstance(an, str):
@@ -139,9 +269,15 @@ def build_cpp_header_from_east(
                     at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
                     used_types.add(at_cpp)
                     emitted_an = _header_safe_identifier(an)
-                    param_txt = (
-                        at_cpp + " " + emitted_an if at_cpp in by_value_types else "const " + at_cpp + "& " + emitted_an
-                    )
+                    usage = dict_any_get_str(arg_usage, an, "readonly")
+                    if usage != "mutable" and an in mutated_params:
+                        usage = "mutable"
+                    if at_cpp in by_value_types:
+                        param_txt = at_cpp + " " + emitted_an
+                    elif usage == "mutable":
+                        param_txt = at_cpp + " " + emitted_an if at_cpp == "object" else at_cpp + "& " + emitted_an
+                    else:
+                        param_txt = "const " + at_cpp + "& " + emitted_an
                     if an in arg_defaults:
                         default_node = arg_defaults.get(an)
                         if isinstance(default_node, dict):
