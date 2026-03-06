@@ -466,11 +466,16 @@ static inline object make_object(const ::std::tuple<Ts...>& values) {
 }
 
 template <class T>
-static inline object make_object(const list<T>& values) {
+static inline object py_make_list_object_from_values(const list<T>& values) {
     list<object> out;
     out.reserve(values.size());
-    for (const auto& v : values) out.append(make_object(v));
+    for (const auto& value : values) out.append(make_object(value));
     return object_new<PyListObj>(::std::move(out));
+}
+
+template <class T>
+static inline object make_object(const list<T>& values) {
+    return py_make_list_object_from_values(values);
 }
 
 static inline object make_object(const list<object>& values) {
@@ -486,7 +491,7 @@ static inline object make_object(const rc<list<T>>& values) {
     if (!values) {
         return object();
     }
-    return make_object(rc_list_ref(values));
+    return py_make_list_object_from_values(rc_list_ref(values));
 }
 
 template <class V>
@@ -1280,11 +1285,12 @@ struct py_is_list_type<rc<list<T>>> : ::std::true_type {
 };
 
 template <class T>
-static inline list<T> py_to_typed_list_from_object(
-    const object& value,
-    const char* ctx = "py_to_typed_list_from_object") {
+static inline list<T> py_copy_typed_list_from_object(const object& value, const char* ctx) {
     const list<object>* src = obj_to_list_ptr(value);
     if (src == nullptr) {
+        if (ctx == nullptr) {
+            throw ::std::runtime_error("py_copy_typed_list_from_object: object is not list");
+        }
         throw ::std::runtime_error(::std::string(ctx) + ": object is not list");
     }
     list<T> out{};
@@ -1296,17 +1302,19 @@ static inline list<T> py_to_typed_list_from_object(
 }
 
 template <class T>
+static inline list<T> py_to_typed_list_from_object(
+    const object& value,
+    const char* ctx = "py_to_typed_list_from_object") {
+    return py_copy_typed_list_from_object<T>(value, ctx);
+}
+
+template <class T>
 static inline rc<list<T>> obj_to_rc_list(const object& value, const char* ctx) {
     const list<object>* src = obj_to_list_ptr(value);
     if (src == nullptr) {
         return rc<list<T>>{};
     }
-    list<T> out{};
-    out.reserve(src->size());
-    for (const object& item : *src) {
-        out.append(py_to<T>(item));
-    }
-    return rc_list_from_value(::std::move(out));
+    return rc_list_from_value(py_copy_typed_list_from_object<T>(value, ctx));
 }
 
 template <class T>
@@ -2352,6 +2360,7 @@ template <class T> static inline bool py_is_bool(const T&) { return false; }
 
 template <class K, class V> static inline bool py_is_dict(const dict<K, V>&) { return true; }
 template <class U> static inline bool py_is_list(const list<U>&) { return true; }
+template <class U> static inline bool py_is_list(const rc<list<U>>&) { return true; }
 template <class U> static inline bool py_is_set(const set<U>&) { return true; }
 static inline bool py_is_str(const str&) { return true; }
 template <class T> static inline bool py_is_int(const T&) { return ::std::is_integral_v<T> && !::std::is_same_v<T, bool>; }

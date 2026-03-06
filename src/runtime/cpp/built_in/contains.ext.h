@@ -3,6 +3,11 @@
 
 #include "runtime/cpp/built_in/contains.gen.h"
 
+template <class T, class Q>
+static inline bool py_list_contains_ref(const list<T>& values, const Q& key) {
+    return ::std::find(values.begin(), values.end(), key) != values.end();
+}
+
 template <class K, class V, class Q>
 static inline bool py_contains(const dict<K, V>& d, const Q& key) {
     return d.find(py_dict_key_cast<K>(key)) != d.end();
@@ -15,12 +20,12 @@ static inline bool py_contains(const dict<str, V>& d, const Q& key) {
 
 template <class T, class Q>
 static inline bool py_contains(const list<T>& values, const Q& key) {
-    return ::std::find(values.begin(), values.end(), key) != values.end();
+    return py_list_contains_ref(values, key);
 }
 
 template <class T, class Q>
 static inline bool py_contains(const rc<list<T>>& values, const Q& key) {
-    return py_contains(rc_list_ref(values), key);
+    return py_list_contains_ref(rc_list_ref(values), key);
 }
 
 template <class T, class Q>

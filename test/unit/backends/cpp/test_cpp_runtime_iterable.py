@@ -99,6 +99,34 @@ int main() {
     assert(py_len(typed) == 0);
     assert(!py_to_bool(typed));
 
+    rc<list<int64>> typed_iter = rc_list_from_value(list<int64>{7, 8, 9});
+    assert(py_contains(typed_iter, int64(8)));
+    assert(!py_contains(typed_iter, int64(5)));
+    list<int64> typed_rev = py_reversed(typed_iter);
+    assert(typed_rev.size() == 3);
+    assert(typed_rev[0] == 9);
+    assert(typed_rev[2] == 7);
+    auto typed_enum = py_enumerate(typed_iter, 5);
+    assert(typed_enum.size() == 3);
+    assert(::std::get<0>(typed_enum[0]) == 5);
+    assert(::std::get<1>(typed_enum[0]) == 7);
+    assert(::std::get<0>(typed_enum[2]) == 7);
+    assert(::std::get<1>(typed_enum[2]) == 9);
+    list<int64> typed_repeat = py_repeat(typed_iter, 2);
+    assert(typed_repeat.size() == 6);
+    assert(typed_repeat[0] == 7);
+    assert(typed_repeat[3] == 7);
+    assert(typed_repeat[5] == 9);
+    object typed_obj = make_object(typed_iter);
+    auto typed_from_obj = py_to<rc<list<int64>>>(typed_obj);
+    assert(py_len(typed_from_obj) == 3);
+    assert(py_at(typed_from_obj, 1) == 8);
+    ::std::any typed_any = typed_obj;
+    auto typed_from_any = py_to<rc<list<int64>>>(typed_any);
+    assert(py_len(typed_from_any) == 3);
+    assert(py_at(typed_from_any, 2) == 9);
+    assert(py_is_list(typed_iter));
+
     int64 sum = 0;
     for (object v : py_dyn_range(list_obj)) {
         sum += obj_to_int64(v);

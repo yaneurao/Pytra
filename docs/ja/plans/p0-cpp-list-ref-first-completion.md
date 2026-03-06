@@ -210,7 +210,7 @@
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S1-03] representative codegen test を追加し、「typed list だから value へ寄せる」退行を fail-fast 化する。
 
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S2-01] runtime helper の list 主経路を `rc<list<T>>` 基準へ整理し、mutable operation の正本 overload を固定する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S2-02] `iter_ops` / `contains` / `sequence` / `py_to_*` / `make_object` の list 経路を `rc<list<T>>` 正本へ揃える。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S2-02] `iter_ops` / `contains` / `sequence` / `py_to_*` / `make_object` の list 経路を `rc<list<T>>` 正本へ揃える。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S2-03] `list<T>` runtime overload のうち ABI adapter 以外のものを縮退・撤去し、残す理由を決定ログへ固定する。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S3-01] emitter の list 型描画を ref-first に切り替え、`_is_pyobj_forced_typed_list_type` 依存を撤去する。
@@ -235,3 +235,5 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S1-03` として、typed list でも alias 経路は `rc<list<T>>` を維持し、typed call 境界でのみ `rc_list_ref(...)` へ落とす representative codegen test を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` として、`py_runtime.ext.h` の list helper を共通 helper 経由へ整理し、`py_slice / py_at / py_append / py_set_at / py_extend / py_pop / py_clear / py_reverse / py_sort` の typed canonical path を `rc<list<T>>` overload から呼ぶ構成へ揃えた。`object` / `list<T>` 側は同じ list helper 本体を通る adapter として扱う。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の slice/set_at/append/extend/pop/reverse/sort/clear smoke を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` として、`contains.ext.h` / `iter_ops.ext.h` / `sequence.ext.h` に list 共通 helper と `rc<list<T>>` overload を追加し、`py_contains` / `py_reversed` / `py_enumerate` / `py_repeat` を typed handle から直接呼べるようにした。加えて `py_runtime.ext.h` で `make_object(const rc<list<T>>& )` と `obj_to_rc_list<T>` / `py_to_typed_list_from_object<T>` を共有 helper 経由へ整理し、`py_is_list(const rc<list<T>>& )` を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を再実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の contains/reversed/enumerate/repeat/object roundtrip/`py_to<rc<list<int64>>>` smoke を追加した。
