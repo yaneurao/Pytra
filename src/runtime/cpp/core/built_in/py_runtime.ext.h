@@ -28,6 +28,7 @@
 #include "exceptions.ext.h"
 #include "io.ext.h"
 #include "runtime/cpp/built_in/predicates.gen.h"
+#include "runtime/cpp/built_in/iter_ops.ext.h"
 #include "runtime/cpp/built_in/sequence.gen.h"
 #include "runtime/cpp/built_in/sequence.ext.h"
 #include "runtime/cpp/built_in/string_ops.gen.h"
@@ -2801,11 +2802,6 @@ static inline list<T> py_reversed(const list<T>& values) {
     return out;
 }
 
-static inline list<::std::any> py_reversed(const ::std::any& values) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_reversed(*p);
-    return {};
-}
-
 template <class T>
 static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values) {
     list<::std::tuple<int64, T>> out;
@@ -2844,44 +2840,6 @@ static inline list<::std::tuple<int64, str>> py_enumerate(const str& values, int
     return out;
 }
 
-static inline list<object> py_enumerate(const object& values) {
-    list<object> out;
-    if (const auto* p = obj_to_list_ptr(values)) {
-        out.reserve(p->size());
-        for (::std::size_t i = 0; i < p->size(); i++) {
-            out.append(make_object(list<object>{make_object(static_cast<int64>(i)), (*p)[i]}));
-        }
-        return out;
-    }
-    if (const auto* s = py_obj_cast<PyStrObj>(values)) {
-        out.reserve(s->value.size());
-        for (::std::size_t i = 0; i < s->value.size(); i++) {
-            out.append(make_object(list<object>{make_object(static_cast<int64>(i)), make_object(s->value[i])}));
-        }
-        return out;
-    }
-    return out;
-}
-
-static inline list<object> py_enumerate(const object& values, int64 start) {
-    list<object> out;
-    if (const auto* p = obj_to_list_ptr(values)) {
-        out.reserve(p->size());
-        for (::std::size_t i = 0; i < p->size(); i++) {
-            out.append(make_object(list<object>{make_object(start + static_cast<int64>(i)), (*p)[i]}));
-        }
-        return out;
-    }
-    if (const auto* s = py_obj_cast<PyStrObj>(values)) {
-        out.reserve(s->value.size());
-        for (::std::size_t i = 0; i < s->value.size(); i++) {
-            out.append(make_object(list<object>{make_object(start + static_cast<int64>(i)), make_object(s->value[i])}));
-        }
-        return out;
-    }
-    return out;
-}
-
 template <class T>
 static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& values, int64 start) {
     list<::std::tuple<int64, T>> out;
@@ -2897,6 +2855,11 @@ static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& va
 template <class T>
 static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& values) {
     return py_enumerate_list_as<T>(values, 0);
+}
+
+static inline list<::std::any> py_reversed(const ::std::any& values) {
+    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_reversed(*p);
+    return {};
 }
 
 static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values) {
