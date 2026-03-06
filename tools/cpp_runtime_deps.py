@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from toolchain.frontends.runtime_symbol_index import load_runtime_symbol_index
+
+
 RUNTIME_ROOT = ROOT / "src" / "runtime" / "cpp"
 SRC_ROOT = ROOT / "src"
 _INCLUDE_RE = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
+_HEADER_SOURCE_INDEX: dict[str, list[Path]] | None = None
 
 
 def resolve_include(current_path: Path, include_txt: str, include_dir: Path) -> Path | None:
@@ -38,6 +48,9 @@ def direct_include_targets(path: Path, include_dir: Path) -> list[Path]:
 
 
 def runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
+    indexed = _runtime_cpp_sources_from_header(header)
+    if len(indexed) > 0:
+        return indexed
     out: list[Path] = []
     name = header.name
     if name.endswith(".gen.h"):
@@ -45,6 +58,54 @@ def runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
         out.append(header.with_name(name[:-len(".gen.h")] + ".ext.cpp"))
     elif name.endswith(".ext.h"):
         out.append(header.with_name(name[:-len(".ext.h")] + ".ext.cpp"))
+    return out
+
+
+def _runtime_cpp_sources_from_header(header: Path) -> list[Path]:
+    index = _load_header_source_index()
+    key = str(header.resolve())
+    hits = index.get(key)
+    if isinstance(hits, list):
+        return list(hits)
+    return []
+
+
+def _load_header_source_index() -> dict[str, list[Path]]:
+    global _HEADER_SOURCE_INDEX
+    if isinstance(_HEADER_SOURCE_INDEX, dict):
+        return _HEADER_SOURCE_INDEX
+    out: dict[str, list[Path]] = {}
+    doc = load_runtime_symbol_index()
+    targets = doc.get("targets")
+    if isinstance(targets, dict):
+        cpp_doc = targets.get("cpp")
+        if isinstance(cpp_doc, dict):
+            modules = cpp_doc.get("modules")
+            if isinstance(modules, dict):
+                for ent in modules.values():
+                    if not isinstance(ent, dict):
+                        continue
+                    headers_obj = ent.get("public_headers")
+                    sources_obj = ent.get("compile_sources")
+                    if not isinstance(headers_obj, list) or not isinstance(sources_obj, list):
+                        continue
+                    compile_sources: list[Path] = []
+                    for source_txt in sources_obj:
+                        if not isinstance(source_txt, str) or source_txt == "":
+                            continue
+                        src_path = ROOT / source_txt
+                        if src_path.exists():
+                            compile_sources.append(src_path.resolve())
+                    if len(compile_sources) == 0:
+                        continue
+                    for header_txt in headers_obj:
+                        if not isinstance(header_txt, str) or header_txt == "":
+                            continue
+                        hdr_path = ROOT / header_txt
+                        if not hdr_path.exists():
+                            continue
+                        out[str(hdr_path.resolve())] = list(compile_sources)
+    _HEADER_SOURCE_INDEX = out
     return out
 
 

@@ -4,6 +4,7 @@ from pytra.std.pathlib import Path
 
 from toolchain.compiler.transpile_cli import join_str_list
 from toolchain.compiler.transpile_cli import python_module_exists_under
+from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
 
 
 RUNTIME_CPP_CORE_ROOT: Path = Path("src/runtime/cpp/core")
@@ -33,6 +34,10 @@ def join_runtime_path(base_dir: Path, rel_path: str) -> Path:
 
 def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
+
+    indexed = lookup_target_module_primary_header("cpp", module_name_norm)
+    if indexed != "":
+        return True
 
     def _exists_under_runtime_roots(rel_hdr: str) -> bool:
         root_hdr = join_runtime_path(RUNTIME_CPP_ROOT, rel_hdr)
@@ -137,6 +142,12 @@ def runtime_namespace_for_tail(module_tail: str) -> str:
 
 def module_name_to_cpp_include(module_name_norm: str) -> str:
     """`pytra.std|utils|compiler|built_in` 名を C++ include 形式へ変換する。"""
+    indexed = lookup_target_module_primary_header("cpp", module_name_norm)
+    if indexed != "":
+        if indexed.startswith("src/"):
+            return indexed[4:]
+        return indexed
+
     def _pick(rel_hdr: str) -> str:
         root_hdr = join_runtime_path(RUNTIME_CPP_ROOT, rel_hdr)
         core_hdr = join_runtime_path(RUNTIME_CPP_CORE_ROOT, rel_hdr)

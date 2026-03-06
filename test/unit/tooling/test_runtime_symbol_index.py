@@ -11,8 +11,12 @@ from pathlib import Path
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
 from tools import gen_runtime_symbol_index as gen_mod
+from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
+from toolchain.frontends.runtime_symbol_index import lookup_target_module_compile_sources
 
 
 class RuntimeSymbolIndexTest(unittest.TestCase):
@@ -123,6 +127,26 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             doc = json.loads(out.read_text(encoding="utf-8"))
             self.assertEqual(doc.get("generated_by"), "tools/gen_runtime_symbol_index.py")
             self.assertEqual(doc.get("schema_version"), 1)
+
+    def test_runtime_symbol_index_loader_returns_primary_cpp_header(self) -> None:
+        self.assertEqual(
+            lookup_target_module_primary_header("cpp", "pytra.std.time"),
+            "src/runtime/cpp/std/time.gen.h",
+        )
+        self.assertEqual(
+            lookup_target_module_primary_header("cpp", "pytra.built_in.iter_ops"),
+            "src/runtime/cpp/built_in/iter_ops.gen.h",
+        )
+
+    def test_runtime_symbol_index_loader_returns_cpp_compile_sources(self) -> None:
+        self.assertIn(
+            "src/runtime/cpp/std/time.ext.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.std.time"),
+        )
+        self.assertIn(
+            "src/runtime/cpp/utils/png.gen.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
+        )
 
 
 if __name__ == "__main__":
