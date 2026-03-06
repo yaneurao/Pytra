@@ -363,6 +363,14 @@
 - `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
 - `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
+### 非C++ backend への適用方針（S5-01 固定）
+
+- 非C++ backend も、runtime 呼び出しの所属決定には `runtime_module_id + runtime_symbol` を使う。
+- target 固有の import path / package path / fully-qualified name は backend 側で描画してよい。
+- ただし「どの module がその symbol を持つか」の対応を backend ごとに別 table として再実装してはならない。
+- `resolved_runtime_call` は移行互換の補助情報として保持してよいが、module/file 解決の source-of-truth にしてはならない。
+- target ごとの file path / companion は index 消費層で導出し、emitter 本体へ `if target == ... and symbol == ...` の所有表を増やしてはならない。
+
 決定ログ:
 - 2026-03-06: user 指示により、`runtime symbol -> module/file` 対応を Python ソースへ直書きする設計をやめ、SoT 生成 JSON + IR 正規化へ寄せる方針を確定。
 - 2026-03-06: 本計画では「IR に埋めるのは target 非依存情報のみ」「target 別 file path は index + backend が導出」とする。
@@ -377,3 +385,5 @@
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S4-01`] index generator を `pytra.core.*` artifact まで拡張し、`runtime_symbol_index.py` に `canonical_runtime_module_id` / `resolve_import_binding_runtime_module` / `lookup_cpp_namespace_for_runtime_module` を追加した。C++ backend は `module.py` の import include 収集と namespace 解決を index ベースへ切り替え、`from pytra.utils import png`・`from pytra.std.time import perf_counter`・`import math` の C++ 出力が index 経由で `runtime/cpp/...` include と namespace を解決することを unit/integration test で固定した。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S4-02`] `tools/cpp_runtime_deps.py` に index 逆引きを追加し、`build_multi_cpp.py` / `gen_makefile_from_manifest.py` の runtime companion 導出を `runtime_symbol_index.json` ベースへ寄せた。forwarder header から `math.ext.cpp` を引く既存テスト (`test_cpp_runtime_build_graph.py`) は通過した。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S4-03`] C++ emitter の `BuiltinCall` dispatch と imported symbol call 描画で、`runtime_call` 文字列のみに依存せず `runtime_module_id/runtime_symbol` を優先するようにした。対象は `py_enumerate` / `py_any` / `py_all` / `py_strip` 系 / `dict.get` 系 / `perf_counter` / `Path` で、IR に binding が載っていることと C++ 出力が namespaced call へ落ちることを `test_cpp_runtime_symbol_index_integration.py` で固定した。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S5-01` / `-S5-02`] 非C++ backend へも `runtime_module_id + runtime_symbol + runtime_symbol_index` を唯一の所属決定経路として適用する方針を本計画と `docs/ja/spec/{spec-runtime.md,spec-east.md}` へ明記した。target 固有 import/file path は backend が導出してよいが、module 所属対応を backend ごとの手書き table として再導入してはならない。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S5-03`] representative regression として `tools/gen_runtime_symbol_index.py --check`、`test_runtime_symbol_index.py`、`test_cpp_runtime_build_graph.py`、`test_cpp_runtime_symbol_index_integration.py`、`tools/runtime_parity_check.py --targets cpp --case-root fixture` を実行し、C++ include 解決・runtime build graph・import resolution・fixture parity が index 前提で通ることを確認した。`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` はすべて `pass`。

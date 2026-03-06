@@ -90,6 +90,8 @@
 - `export_name`（`import M` では空文字）
 - `local_name`
 - `binding_kind`（`module` / `symbol`）
+- `runtime_module_id`（任意。import 先 symbol の runtime 所属 module）
+- `runtime_symbol`（任意。import 先 symbol の runtime symbol）
 - `source_file`
 - `source_line`
 
@@ -98,6 +100,8 @@
 - `module_id`
 - `symbol`
 - `local_name`
+- `runtime_module_id`（任意）
+- `runtime_symbol`（任意）
 
 ## 4. 構文正規化
 
@@ -224,17 +228,20 @@
   - `write_rgb_png`, `save_gif`, `grayscale_palette`
   - `py_isdigit`, `py_isalpha`
 
-`runtime_call` / `resolved_runtime_call` の責務境界（必須）:
+`runtime_module_id` / `runtime_symbol` / `runtime_call` の責務境界（必須）:
 
-- `runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`, `semantic_tag` は EAST3 の正本情報として扱う。
+- `runtime_module_id`, `runtime_symbol`, `runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`, `semantic_tag` は EAST3 の正本情報として扱う。
 - backend/emitter はこの解決済み情報を描画するだけに限定し、関数名・モジュール名の再解決をしない。
 - EAST3 で表現されていない情報が必要になった場合は、まず EAST3 スキーマを拡張し、スキーマ側へ情報を載せる。
+- `runtime_module_id` / `runtime_symbol` は target 非依存であり、`runtime/cpp/std/time.gen.h` のような target 固有 path を保持しない。
+- target ごとの include path / compile source / companion は `tools/runtime_symbol_index.json` と backend が導出する。
 
 禁止事項:
 
 - emitter や frontends/sig registry に `if runtime_call == "perf_counter"` のような個別シンボル直書き分岐を置くこと。
 - emitter や frontends/sig registry に `py_assert_*` / `json.loads` / `write_rgb_png` 等の runtime dispatch 用テーブルを埋めること。
 - 「EAST3では不足している」という理由で、呼び出し解決ルールを backend 側へ持ち込むこと。
+- target 固有 file path を EAST3 に埋めること。
 
 EAST3 -> backend の解決済み呼び出し契約（固定）:
 
@@ -242,15 +249,18 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
   - `Call`
   - `Attribute`（`Path.parent/name/stem` 等の属性アクセスを含む）
 - backend が参照してよい解決済み属性:
+  - `runtime_module_id`
+  - `runtime_symbol`
   - `semantic_tag`
   - `runtime_call`
   - `resolved_runtime_call`
   - `resolved_runtime_source`
   - `resolved_type`
 - 解決優先順位:
-  1. `runtime_call`（空でない場合）
-  2. `resolved_runtime_call`（`runtime_call` が空の場合）
-  3. 上記が両方空で `semantic_tag` が `stdlib.*` のときは fail-closed（暗黙フォールバック禁止）
+  1. `runtime_module_id + runtime_symbol`
+  2. `runtime_call`（移行互換）
+  3. `resolved_runtime_call`（`runtime_call` が空の場合）
+  4. 上記がすべて空で `semantic_tag` が `stdlib.*` のときは fail-closed（暗黙フォールバック禁止）
 - `resolved_runtime_source` 契約:
   - `import_symbol`: `from ... import ...` 経由で解決
   - `module_attr`: `module.symbol` 経由で解決

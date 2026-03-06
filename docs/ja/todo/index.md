@@ -32,28 +32,6 @@
 
 ## 未完了タスク
 
-### P0: runtime symbol 対応表のデータ駆動化（SoT 生成 JSON + IR 正規化）
-
-文脈: [docs/ja/plans/p0-runtime-symbol-index-data-driven.md](../plans/p0-runtime-symbol-index-data-driven.md)
-
-1. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01] runtime symbol 所属と companion 規則を SoT 生成 JSON へ移し、IR/Backend/Tooling をその index ベースへ切り替える。
-2. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S1-01] 現状の runtime symbol 直書き箇所を棚卸しし、「IR に残す情報」「index に移す情報」「backend が導出する情報」を表にして固定する。
-3. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S1-02] `runtime symbol index` の schema を定義し、`module / symbol / target artifact / companion` の各責務を文書化する。
-4. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S2-01] `src/pytra/{built_in,std,utils}` と `src/runtime/<lang>/{core,built_in,std,utils}` を走査して index JSON を生成する generator を追加する。
-5. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S2-02] generator の unit test を追加し、`py_enumerate` / `py_any` / `py_strip` / `perf_counter` / `write_rgb_png` / `Path` の representative cases を index 上で固定する。
-6. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S2-03] index generator を CI/ローカルチェックへ組み込み、runtime レイアウト変更時に stale index を fail-fast できるようにする。
-7. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S3-01] EAST3 の runtime call ノードへ `runtime_module_id` と `runtime_symbol` を追加し、裸の `runtime_call` 文字列だけに依存しない形へ広げる。
-8. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S3-02] import 解決済み symbol（`from X import Y` / `import X` + `X.Y`）についても `runtime_module_id` / `runtime_symbol` を埋める経路を追加する。
-9. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S3-03] `signature_registry.py` の runtime symbol 直書きを段階撤去し、最低でも「file path を推定する責務」が残らない状態へ縮退させる。
-10. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S4-01] C++ backend を先行対象として、include 収集・namespace 解決・runtime source 収集を index JSON ベースへ切り替える。
-11. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S4-02] `build_multi_cpp.py` / `gen_makefile_from_manifest.py` が index を参照して `*.gen.*` と `*.ext.*` companion を一貫導出するよう整理する。
-12. [x] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S4-03] C++ emitter から `py_enumerate` / `py_any` / `py_strip` / `dict.get` / `perf_counter` / `Path` の所属推定ロジックを撤去し、IR + index 依存へ寄せる。
-13. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-01] 非C++ backend への適用方針を整理し、`resolved_runtime_call` と module/file 解決の責務境界を index 前提で揃える。
-14. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-02] docs/ja/spec に「IR は module+symbol を持つ」「target file path は index + backend が導出する」と明記する。
-15. [ ] [ID: P0-RUNTIME-SYMBOL-INDEX-01-S5-03] representative regression（C++ include 解決、runtime build graph、import resolution、unit parity）を通し、既存の ad-hoc fallback が不要になったことを確認する。
-
-- 進捗メモ: 2026-03-06 [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-01` / `-S1-02` / `-S2-01` / `-S2-02` / `-S2-03` / `-S3-01` / `-S3-02` / `-S3-03` / `-S4-01` / `-S4-02` / `-S4-03`] 直書き棚卸し・schema 固定・generator 追加・stale index guard・EAST3 `BuiltinCall` / import 解決済み symbol への `runtime_module_id/runtime_symbol` 付与・`signature_registry` の path 推定責務不在の guard・C++ include/namespace/import binding 解決の index 化・build tool の companion 導出 index 化・`BuiltinCall`/imported symbol の dispatch で IR binding 優先化まで実装した。
-
 ### P0: C++ unit 回帰の根本修復（SoT/IR/Emitter/Runtime 契約の整流）
 
 文脈: [docs/ja/plans/p0-cpp-unit-regression-recovery.md](../plans/p0-cpp-unit-regression-recovery.md)

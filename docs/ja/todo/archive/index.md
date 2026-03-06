@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-06 / P0-RUNTIME-SYMBOL-INDEX-01](../plans/archive/20260306-p0-runtime-symbol-index-data-driven.md)
 - [2026-03-06 / P0-CPP-PYOBJ-RCLIST-ALIAS-01](../plans/archive/20260306-p0-cpp-pyobj-rc-list-alias.md)
 - [2026-03-06 / P0-CPP-PYRUNTIME-EXT-01](../plans/archive/20260306-p0-cpp-pyruntime-ext-slimming.md)
 - [2026-03-06 / P0-CPP-EXTERN-HDRONLY-01](../plans/archive/20260306-p0-cpp-extern-header-only-gen.md)
@@ -29,7 +30,7 @@
 
 ## 日付別リンク
 
-- [2026-03-06](20260306.md)（10 セクション）
+- [2026-03-06](20260306.md)（11 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
 - [2026-03-04](20260304.md)（9 セクション）
 - [2026-03-03](20260303.md)（10 セクション）
