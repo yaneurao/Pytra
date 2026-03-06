@@ -190,9 +190,10 @@ python3 tools/check_ir2lang_smoke.py
 ```bash
 python src/py2x.py --target cpp test/fixtures/collections/iterable.py -o test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
-  src/runtime/cpp/pytra/utils/png.cpp src/runtime/cpp/pytra/utils/gif.cpp src/runtime/cpp/pytra/std/math.cpp src/runtime/cpp/pytra/std/math-impl.cpp \
-  src/runtime/cpp/pytra/std/time.cpp src/runtime/cpp/pytra/std/pathlib.cpp \
-  src/runtime/cpp/pytra/built_in/gc.cpp \
+  src/runtime/cpp/utils/png.gen.cpp src/runtime/cpp/utils/gif.gen.cpp \
+  src/runtime/cpp/std/math.ext.cpp src/runtime/cpp/std/time.ext.cpp src/runtime/cpp/std/pathlib.gen.cpp \
+  src/runtime/cpp/built_in/type_id.gen.cpp \
+  src/runtime/cpp/core/built_in/gc.ext.cpp src/runtime/cpp/core/built_in/io.ext.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
@@ -201,14 +202,15 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - Python 側で import できるのは `src/pytra/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`, `from pytra.utils.assertions import py_assert_eq`）。
 - `pytra` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
-- `src/runtime/cpp/pytra/{std,utils,compiler}/*.cpp` は手書き固定ではなく、`src/pytra/{std,utils,compiler}/*.py` をトランスパイラで変換して生成・更新する前提です。
+- `src/runtime/cpp/` は責務ごとに `core/`, `built_in/`, `std/`, `utils/` に分かれます。
+- 自動生成ファイルは `*.gen.h` / `*.gen.cpp`、手書きネイティブ補完は `*.ext.h` / `*.ext.cpp` です。
 - `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
-- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/pytra/<tree>/...` の既定パスへ直接生成します（`<tree>` は `std` / `utils` / `compiler`）。
-- 例: `src/pytra/std/math.py` -> `src/runtime/cpp/pytra/std/math.cpp` と `src/runtime/cpp/pytra/std/math.h`。
-- 例: `src/pytra/compiler/east_parts/core.py` -> `src/runtime/cpp/pytra/compiler/east_parts/core.cpp` と `src/runtime/cpp/pytra/compiler/east_parts/core.h`。
+- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` を使うと、`src/runtime/cpp/<tree>/...` の既定パスへ直接生成します（`<tree>` は `built_in` / `std` / `utils`）。
+- 例: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/built_in/type_id.gen.cpp` と `src/runtime/cpp/built_in/type_id.gen.h`。
+- 例: `src/pytra/std/math.py` は header-only なので `src/runtime/cpp/std/math.gen.h` を生成し、ネイティブ実体は `src/runtime/cpp/std/math.ext.cpp` に置きます。
 - `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。
 - `src/pytra/std/json.py` / `src/pytra/utils/assertions.py` も `.h/.cpp` を生成します。
-- 不足するネイティブ処理は `*-impl.cpp`（例: `src/runtime/cpp/pytra/std/math-impl.cpp`）で補完します。
+- 不足するネイティブ処理は対応する `.ext.*` に補完します（例: `src/runtime/cpp/std/math.ext.cpp`）。
 - `png.write_rgb_png(...)` は常に PNG を出力します（PPM 出力は廃止）。
 - import 依存を可視化したい場合は `python src/py2x.py --target cpp INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。
 - `pytra` 名前空間は予約済みです。入力ファイルと同じディレクトリに `pytra.py` / `pytra/__init__.py` を置くことはできません。
@@ -250,7 +252,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 
 ### 画像ランタイム一致チェック（Python正本 vs C++）
 
-次のコマンドで、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` の出力と `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`（bridge）経由の C++ 出力が一致するかを確認できます。
+次のコマンドで、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` の出力と `src/runtime/cpp/utils/png.gen.cpp` / `src/runtime/cpp/utils/gif.gen.cpp`（bridge）経由の C++ 出力が一致するかを確認できます。
 
 ```bash
 python3 tools/verify_image_runtime_parity.py
@@ -454,7 +456,9 @@ python src/py2x.py --target cpp test/transpile/east/01_mandelbrot.json -o test/t
 
 # 3) コンパイルして実行
 g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
-  src/runtime/cpp/pytra/utils/png.cpp src/runtime/cpp/pytra/utils/gif.cpp \
+  src/runtime/cpp/utils/png.gen.cpp src/runtime/cpp/utils/gif.gen.cpp \
+  src/runtime/cpp/built_in/type_id.gen.cpp \
+  src/runtime/cpp/core/built_in/gc.ext.cpp src/runtime/cpp/core/built_in/io.ext.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```
