@@ -191,7 +191,6 @@
 {
   "schema_version": 1,
   "generated_by": "tools/gen_runtime_symbol_index.py",
-  "generated_at": "2026-03-06T00:00:00Z",
   "modules": {
     "pytra.built_in.iter_ops": {
       "source_py": "src/pytra/built_in/iter_ops.py",
@@ -236,7 +235,6 @@
 | - | - | - |
 | `schema_version` | ルート | 互換性判定用。破壊的変更時のみ更新 |
 | `generated_by` | ルート | generator 名の固定 |
-| `generated_at` | ルート | 生成日時。check モードでは無視してよい |
 | `modules` | ルート | target 非依存の module/symbol 定義 |
 | `source_py` | module | SoT となる Python module |
 | `runtime_group` | module | `core / built_in / std / utils` の責務分類 |
@@ -370,3 +368,6 @@
 - 2026-03-06: 本計画では「IR に埋めるのは target 非依存情報のみ」「target 別 file path は index + backend が導出」とする。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-01`] 直書き箇所の棚卸しを行い、`core.py` は裸 `runtime_call`、`signature_registry.py` は runtime symbol 対応、C++ backend (`module.py`, `runtime_paths.py`, `runtime_calls.json`) は module/file/namespace 推定、tooling (`build_multi_cpp.py`, `gen_makefile_from_manifest.py`) は include 起点の runtime source 再収集を担っていると固定した。役割分担は「IR=module+symbol」「index=artifact+companion」「backend/tooling=描画と build graph 導出」とする。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-02`] index schema は `modules` と `targets` を分離し、target 非依存の symbol 所属と target 別 artifact 情報を分ける形で固定した。`public_headers` / `compile_sources` / `companions` を最小集合とし、path を IR へ埋めないことを明文化した。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-01`] `tools/gen_runtime_symbol_index.py` を追加し、`src/pytra/{built_in,std,utils}` と modern runtime layout (`src/runtime/<lang>/{core,built_in,std,utils}`) を走査して `tools/runtime_symbol_index.json` を生成できるようにした。第1段階では modern layout を持つ target のみ artifact を index 化し、legacy runtime layout は index 対象外とする。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-02`] representative case を `test/unit/tooling/test_runtime_symbol_index.py` で固定し、`py_enumerate_object`, `py_any`, `py_strip`, `perf_counter`, `write_rgb_png`, `Path` の module/symbol/artifact/companion を検証するようにした。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-03`] generator に `--check` を追加し、`tools/run_local_ci.py` へ組み込んだ。stale index は fail-fast とする。

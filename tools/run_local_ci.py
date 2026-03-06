@@ -29,6 +29,7 @@ def main() -> int:
         ["python3", "tools/check_cpp_hooks_semantic_budget.py", "--max-semantic", "0"],
         ["python3", "tools/check_runtime_cpp_layout.py"],
         ["python3", "tools/check_rs_runtime_layout.py"],
+        ["python3", "tools/gen_runtime_symbol_index.py", "--check"],
         ["python3", "tools/audit_image_runtime_sot.py", "--fail-on-core-mix", "--fail-on-gen-markers"],
         ["python3", "tools/check_runtime_std_sot_guard.py"],
         ["python3", "tools/check_runtime_special_generators_absent.py"],

@@ -1,0 +1,983 @@
+{
+  "generated_by": "tools/gen_runtime_symbol_index.py",
+  "modules": {
+    "pytra.built_in": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/__init__.py",
+      "symbols": {}
+    },
+    "pytra.built_in.contains": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/contains.py",
+      "symbols": {
+        "py_contains_dict_object": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_contains_list_object": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_contains_set_object": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_contains_str_object": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.built_in.iter_ops": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/iter_ops.py",
+      "symbols": {
+        "py_enumerate_object": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_reversed_object": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.built_in.predicates": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/predicates.py",
+      "symbols": {
+        "py_all": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_any": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.built_in.sequence": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/sequence.py",
+      "symbols": {
+        "py_range": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_repeat": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.built_in.string_ops": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/string_ops.py",
+      "symbols": {
+        "_contains_char": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_space": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_normalize_index": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_endswith": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_find": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_find_window": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_lstrip": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_lstrip_chars": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_replace": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_rfind": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_rfind_window": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_rstrip": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_rstrip_chars": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_startswith": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_strip": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_strip_chars": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.built_in.type_id": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/type_id.py",
+      "symbols": {
+        "_assign_type_ranges_dfs": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_collect_root_type_ids": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_contains_int": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_copy_int_list": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_ensure_builtins": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_ensure_type_ranges": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_type_ranges_dirty": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_make_int_list_0": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_make_int_list_1": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_mark_type_ranges_clean": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_mark_type_ranges_dirty": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_normalize_base_type_id": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_py_reset_type_registry_for_test": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_recompute_type_ranges": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_register_type_node": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_sorted_child_type_ids": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_sorted_ints": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_bool": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_dict": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_float": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_int": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_list": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_none": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_object": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_set": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_str": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_tid_user_base": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_try_runtime_tagged_type_id": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_tid_is_subtype": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_tid_isinstance": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_tid_issubclass": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_tid_register_class_type": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_tid_runtime_type_id": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/__init__.py",
+      "symbols": {
+        "extern": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.argparse": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/argparse.py",
+      "symbols": {
+        "ArgumentParser": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "Namespace": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "_ArgSpec": {
+          "dispatch": "ctor",
+          "kind": "class"
+        }
+      }
+    },
+    "pytra.std.enum": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/enum.py",
+      "symbols": {
+        "Enum": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "EnumMeta": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "IntEnum": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "IntFlag": {
+          "dispatch": "ctor",
+          "kind": "class"
+        }
+      }
+    },
+    "pytra.std.glob": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/glob.py",
+      "symbols": {
+        "glob": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.json": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/json.py",
+      "symbols": {
+        "_JsonParser": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "_dump_json_dict": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_dump_json_list": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_dump_json_value": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_escape_str": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_hex4": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_hex_value": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_int_from_hex4": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_digit": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_ws": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "dumps": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "loads": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.math": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/math.py",
+      "symbols": {
+        "ceil": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "cos": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "exp": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "fabs": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "floor": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "log": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "log10": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "pow": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "sin": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "sqrt": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "tan": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.os": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/os.py",
+      "symbols": {
+        "getcwd": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "makedirs": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "mkdir": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.os_path": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/os_path.py",
+      "symbols": {
+        "abspath": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "basename": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "dirname": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "exists": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "join": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "splitext": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.pathlib": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/pathlib.py",
+      "symbols": {
+        "Path": {
+          "dispatch": "ctor",
+          "kind": "class"
+        }
+      }
+    },
+    "pytra.std.random": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/random.py",
+      "symbols": {
+        "_next_u31": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "choices": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "gauss": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "randint": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "random": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "seed": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "shuffle": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.re": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/re.py",
+      "symbols": {
+        "Match": {
+          "dispatch": "ctor",
+          "kind": "class"
+        },
+        "S": {
+          "dispatch": "value",
+          "kind": "const"
+        },
+        "_is_alnum_or_underscore": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_dotted_ident": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_ident": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_is_space_ch": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_skip_spaces": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_strip_suffix_colon": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "group": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "match": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "strip_group": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "sub": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.sys": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/sys.py",
+      "symbols": {
+        "exit": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "set_argv": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "set_path": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "write_stderr": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "write_stdout": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.time": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/time.py",
+      "symbols": {
+        "perf_counter": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.std.timeit": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/timeit.py",
+      "symbols": {
+        "default_timer": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.utils": {
+      "runtime_group": "utils",
+      "source_py": "src/pytra/utils/__init__.py",
+      "symbols": {}
+    },
+    "pytra.utils.assertions": {
+      "runtime_group": "utils",
+      "source_py": "src/pytra/utils/assertions.py",
+      "symbols": {
+        "_eq_any": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_assert_all": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_assert_eq": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_assert_stdout": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "py_assert_true": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.utils.gif": {
+      "runtime_group": "utils",
+      "source_py": "src/pytra/utils/gif.py",
+      "symbols": {
+        "_gif_append_list": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_gif_u16le": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_lzw_encode": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "grayscale_palette": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "save_gif": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    },
+    "pytra.utils.png": {
+      "runtime_group": "utils",
+      "source_py": "src/pytra/utils/png.py",
+      "symbols": {
+        "_adler32": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_chunk": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_crc32": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_png_append_list": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_png_u16le": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_png_u32be": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "_zlib_deflate_store": {
+          "dispatch": "function",
+          "kind": "function"
+        },
+        "write_rgb_png": {
+          "dispatch": "function",
+          "kind": "function"
+        }
+      }
+    }
+  },
+  "schema_version": 1,
+  "targets": {
+    "cpp": {
+      "modules": {
+        "pytra.built_in.contains": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/contains.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/built_in/contains.gen.h",
+            "src/runtime/cpp/built_in/contains.ext.h"
+          ]
+        },
+        "pytra.built_in.iter_ops": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/iter_ops.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/built_in/iter_ops.gen.h",
+            "src/runtime/cpp/built_in/iter_ops.ext.h"
+          ]
+        },
+        "pytra.built_in.predicates": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/predicates.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/built_in/predicates.gen.h"
+          ]
+        },
+        "pytra.built_in.sequence": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/sequence.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/built_in/sequence.gen.h",
+            "src/runtime/cpp/built_in/sequence.ext.h"
+          ]
+        },
+        "pytra.built_in.string_ops": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/string_ops.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/built_in/string_ops.gen.h"
+          ]
+        },
+        "pytra.built_in.type_id": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/built_in/type_id.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/built_in/type_id.gen.h"
+          ]
+        },
+        "pytra.std.argparse": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/argparse.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/argparse.gen.h"
+          ]
+        },
+        "pytra.std.glob": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/glob.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/glob.gen.h"
+          ]
+        },
+        "pytra.std.json": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/json.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/json.gen.h"
+          ]
+        },
+        "pytra.std.math": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/math.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/math.gen.h"
+          ]
+        },
+        "pytra.std.os": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/os.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/os.gen.h"
+          ]
+        },
+        "pytra.std.os_path": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/os_path.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/os_path.gen.h"
+          ]
+        },
+        "pytra.std.pathlib": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/pathlib.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/pathlib.gen.h"
+          ]
+        },
+        "pytra.std.random": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/random.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/random.gen.h"
+          ]
+        },
+        "pytra.std.re": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/re.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/re.gen.h"
+          ]
+        },
+        "pytra.std.sys": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/sys.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/sys.gen.h"
+          ]
+        },
+        "pytra.std.time": {
+          "companions": [
+            "gen",
+            "ext"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/time.ext.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/time.gen.h"
+          ]
+        },
+        "pytra.std.timeit": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/std/timeit.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/std/timeit.gen.h"
+          ]
+        },
+        "pytra.utils.assertions": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/utils/assertions.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/utils/assertions.gen.h"
+          ]
+        },
+        "pytra.utils.gif": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/utils/gif.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/utils/gif.gen.h"
+          ]
+        },
+        "pytra.utils.png": {
+          "companions": [
+            "gen"
+          ],
+          "compile_sources": [
+            "src/runtime/cpp/utils/png.gen.cpp"
+          ],
+          "public_headers": [
+            "src/runtime/cpp/utils/png.gen.h"
+          ]
+        }
+      }
+    }
+  }
+}
