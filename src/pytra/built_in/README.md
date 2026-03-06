@@ -29,3 +29,4 @@
 
 - `type_id.py`: `py_tid_register_class_type` / `py_tid_is_subtype` / `py_tid_issubclass` / `py_tid_runtime_type_id` / `py_tid_isinstance` の pure Python 実装。
 - `sequence.py`: `py_range` / `py_repeat(str, int)` の pure Python 実装。
+- `string_ops.py`: `strip/find/replace` 系の文字列 helper の pure Python 実装。
