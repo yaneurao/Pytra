@@ -1801,6 +1801,8 @@ class CppEmitter(
             rv = self._rewrite_empty_collection_literal_for_typed_target(rv, value_node, ret_t)
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
+        if self._uses_pyobj_rc_list_expr(value_node) and ret_t.startswith("list[") and ret_t.endswith("]"):
+            rv = f"rc_list_copy_value({rv})"
         if self.is_any_like_type(ret_t):
             rv = self.render_expr_as_any(stmt.get("value"))
         if self._can_runtime_cast_target(ret_t) and self.is_any_like_type(expr_t):

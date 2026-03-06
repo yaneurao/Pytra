@@ -86,6 +86,15 @@ class Py2CppListPyobjModelTest(unittest.TestCase):
         self.assertEqual(run.returncode, 0, msg=run.stderr)
         return run.stdout.replace("\r\n", "\n")
 
+    def _assert_pyobj_parity_from_source_text(self, source: str, filename: str) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = work / filename
+            src_py.write_text(source, encoding="utf-8")
+            py_out = self._run_python(src_py, cwd=work)
+            cpp_out = self._compile_and_run_cpp_pyobj(src_py, cwd=work)
+        self.assertEqual(py_out.strip(), cpp_out.strip())
+
     def test_sample18_pyobj_model_matches_python_stdout_except_elapsed(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -103,6 +112,33 @@ class Py2CppListPyobjModelTest(unittest.TestCase):
             py_out = self._run_python(src_py, cwd=work)
             cpp_out = self._compile_and_run_cpp_pyobj(src_py, cwd=work)
         self.assertEqual(py_out.strip(), cpp_out.strip())
+
+    def test_alias_handle_crosses_function_boundaries(self) -> None:
+        src = """\
+def consume(xs: list[int]) -> int:
+    return len(xs)
+
+
+def make_alias() -> list[int]:
+    a: list[int] = [1, 2]
+    b = a
+    return b
+
+
+def main() -> None:
+    a: list[int] = [1, 2, 3]
+    b = a
+    print(consume(b))
+    print(bool(b))
+    c = make_alias()
+    print(len(c))
+    print(c[0])
+
+
+if __name__ == "__main__":
+    main()
+"""
+        self._assert_pyobj_parity_from_source_text(src, "alias_boundary.py")
 
 
 if __name__ == "__main__":
