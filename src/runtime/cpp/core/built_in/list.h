@@ -3,10 +3,10 @@
 
 #include <algorithm>
 
-#include "container_common.h"
-
 template <class T>
 object make_object(const T& v);
+template <class D>
+::std::optional<D> py_object_try_cast(const object& v);
 
 template <class T>
 class list {

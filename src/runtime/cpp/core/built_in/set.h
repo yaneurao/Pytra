@@ -3,8 +3,6 @@
 
 #include <type_traits>
 
-#include "container_common.h"
-
 template <class T>
 object make_object(const T& v);
 

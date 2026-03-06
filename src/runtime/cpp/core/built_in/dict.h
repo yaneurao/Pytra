@@ -1,8 +1,6 @@
 #ifndef PYTRA_BUILT_IN_DICT_H
 #define PYTRA_BUILT_IN_DICT_H
 
-#include "container_common.h"
-
 template <class T>
 object make_object(const T& v);
 

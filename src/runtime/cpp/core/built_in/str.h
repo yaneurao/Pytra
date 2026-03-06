@@ -1,8 +1,6 @@
 #ifndef PYTRA_BUILT_IN_STR_H
 #define PYTRA_BUILT_IN_STR_H
 
-#include "container_common.h"
-
 template <class T>
 class list;
 template <class T>
