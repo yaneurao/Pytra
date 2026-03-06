@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/built_in/string_ops.h"
+#include "runtime/cpp/built_in/string_ops.h"
 
 
 /* Pure-Python source-of-truth for string helper built-ins. */

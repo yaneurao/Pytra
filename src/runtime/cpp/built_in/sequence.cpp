@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/built_in/py_runtime.h"
 
-#include "runtime/cpp/gen/built_in/sequence.h"
+#include "runtime/cpp/built_in/sequence.h"
 
 
 /* Pure-Python source-of-truth for sequence helpers used by runtime built-ins. */

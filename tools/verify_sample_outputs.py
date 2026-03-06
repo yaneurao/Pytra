@@ -78,7 +78,12 @@ def runtime_cpp_sources() -> list[str]:
     """Return runtime/cpp implementation sources without hardcoded module names."""
     out: list[str] = []
     seen: set[str] = set()
-    for root in (Path("src/runtime/cpp/core"), Path("src/runtime/cpp/gen"), Path("src/runtime/cpp/std")):
+    for root in (
+        Path("src/runtime/cpp/core"),
+        Path("src/runtime/cpp/gen"),
+        Path("src/runtime/cpp/std"),
+        Path("src/runtime/cpp/built_in"),
+    ):
         for p in sorted(root.rglob("*.cpp")):
             rel = p.as_posix()
             if rel in seen:
