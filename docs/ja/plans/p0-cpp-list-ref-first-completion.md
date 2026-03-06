@@ -1,6 +1,6 @@
 # P0: C++ mutable list の ref-first 完全化（`rc<list<T>>` 正本化）
 
-最終更新: 2026-03-06
+最終更新: 2026-03-07
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P0-CPP-LIST-REFFIRST-01`
@@ -114,6 +114,38 @@
   - runtime helper overload
 - 「value を出してよい場所」と「禁止場所」を文書と unit test で固定する。
 
+#### Phase 1 棚卸し結果（2026-03-07）
+
+##### 1. 禁止（backend/runtime 内部に残る value-first 分岐）
+
+- `src/backends/cpp/emitter/type_bridge.py::_is_pyobj_forced_typed_list_type`
+  - `cpp_list_model=pyobj` でも concrete typed list を value model 扱いする大元であり、`typed list だから value にしてよい` 判断そのものに該当する。
+- `src/backends/cpp/emitter/cpp_emitter.py::_collect_stack_list_locals`
+  - 空 `list[...]` ローカルを emitter 側の局所 non-escape 判定だけで `list<T>` へ縮退しており、optimizer 責務へ閉じ込める最終方針に反する。
+- `src/backends/cpp/emitter/cpp_emitter.py::_expr_is_stack_list_local`
+  - `src/backends/cpp/emitter/stmt.py::emit_annassign`、`src/backends/cpp/emitter/cpp_emitter.py::_render_collection_constructor_call`、`src/backends/cpp/emitter/operator.py::render_binop` などから参照され、list literal / empty init / repeat の value fastpath を維持している。
+- `src/backends/cpp/emitter/stmt.py::emit_function`
+  - 関数シグネチャの typed list を `const list<T>&` / `list<T>` で描画しており、backend 内部表現の ref-first 正本化がまだ完了していない。
+- `src/backends/cpp/emitter/type_bridge.py::_coerce_call_arg`
+  - 上記の value-first 関数シグネチャへ合わせて `rc_list_ref(...)` / boxing / unboxing を広く挿入しており、本来 `@extern` / `Any` / `object` 境界へ限定すべき adapter が内部 callsite まで漏れている。
+
+##### 2. ABI adapter 限定で残してよい経路
+
+- `src/runtime/cpp/core/py_runtime.ext.h::make_object(const rc<list<T>>& values)`
+  - `rc<list<T>>` から `object` への boxing 境界。内部表現の正本ではなく、`Any/object` 境界 adapter としてのみ残してよい。
+- `src/runtime/cpp/core/py_runtime.ext.h::obj_to_rc_list` / `obj_to_rc_list_or_raise`
+  - `object` から `rc<list<T>>` へ戻す unboxing 境界。
+- `src/runtime/cpp/core/py_runtime.ext.h::py_to_rc_list_from_object`
+  - `list[RefClass]` など object list から typed handle list を復元する境界 helper。
+- `src/runtime/cpp/core/py_runtime.ext.h::py_to_typed_list_from_object`
+  - rollback/value adapter としては残しうるが、backend 内部の既定経路にしてはならない。
+
+##### 3. optimizer 限定
+
+- `src/backends/cpp/optimizer/*` には、現時点で list value-lowering 専用 pass は存在しない。
+- `src/backends/cpp/optimizer/passes/for_iter_mode_hint_pass.py` は反復 hint 専用であり、list value 化を担当していない。さらに `pyobj` mode では hint 付与を抑止している。
+- したがって、現状の value 縮退は optimizer 限定ではなく emitter 内に残っている暫定分岐であり、`_collect_stack_list_locals` / `_is_pyobj_forced_typed_list_type` は将来の optimizer pass へ移すまで「禁止側」として扱う。
+
 ### Phase 2: runtime helper の主経路を `rc<list<T>>` に寄せる
 
 - `py_len / py_truthy / py_at / py_set_at / py_slice / py_append / py_extend / py_pop / py_clear / py_reverse / py_sort`
@@ -173,9 +205,9 @@
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01] C++ mutable list を全面 ref-first (`rc<list<T>>`) 正本へ切り替え、value list を optimizer 結果だけへ閉じ込める。
 
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S1-01] 現行 emitter/runtime に残る value-first 分岐を棚卸しし、「禁止」「ABI adapter 限定」「optimizer 限定」に分類する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S1-02] `spec-cpp-list-reference-semantics.md` を今回の最終方針（dual model ではなく ref-first 正本）に更新する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S1-03] representative codegen test を追加し、「typed list だから value へ寄せる」退行を fail-fast 化する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S1-01] 現行 emitter/runtime に残る value-first 分岐を棚卸しし、「禁止」「ABI adapter 限定」「optimizer 限定」に分類する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S1-02] `spec-cpp-list-reference-semantics.md` を今回の最終方針（dual model ではなく ref-first 正本）に更新する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S1-03] representative codegen test を追加し、「typed list だから value へ寄せる」退行を fail-fast 化する。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S2-01] runtime helper の list 主経路を `rc<list<T>>` 基準へ整理し、mutable operation の正本 overload を固定する。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S2-02] `iter_ops` / `contains` / `sequence` / `py_to_*` / `make_object` の list 経路を `rc<list<T>>` 正本へ揃える。
@@ -198,3 +230,6 @@
 決定ログ:
 - 2026-03-06: ユーザー指示により、C++ list は「条件付き `rc<list<T>>`」ではなく「mutable は全面 ref-first、value は optimizer 結果のみ」へ進める方針を確定した。
 - 2026-03-06: 既存の `P1-LIST-PYOBJ-MIG-01` は dual model と pyobj 既定化の計画としては完了済みだが、なお value-first escape hatch が残っているため、本 P0 はその仕上げとして扱う。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S1-01` として現行分岐を棚卸しし、`_is_pyobj_forced_typed_list_type`、`_collect_stack_list_locals`、内部 callsite 向け `rc_list_ref(...)` adapter を「禁止」へ分類した。
+- 2026-03-07: optimizer 側には list value-lowering pass が未実装であることを確認し、現状の value 縮退は emitter 内の暫定実装として扱う方針を固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S1-03` として、typed list でも alias 経路は `rc<list<T>>` を維持し、typed call 境界でのみ `rc_list_ref(...)` へ落とす representative codegen test を追加した。

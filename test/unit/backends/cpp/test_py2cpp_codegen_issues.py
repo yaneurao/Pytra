@@ -1568,6 +1568,51 @@ def f() -> int:
         self.assertIn("y = ::std::get<1>(__tuple_1);", cpp)
         self.assertNotIn("auto [x, y] = py_at(stack, -1);", cpp)
 
+    def test_pyobj_list_model_keeps_rc_handle_when_typed_list_aliases(self) -> None:
+        src = """def f() -> int:
+    xs: list[int] = []
+    ys = xs
+    ys.append(1)
+    return xs[0]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_typed_list_alias.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
+        self.assertIn("rc<list<int64>> ys = xs;", cpp)
+        self.assertIn("py_append(ys, 1);", cpp)
+        self.assertIn("return py_to<int64>(py_at(xs, py_to<int64>(0)));", cpp)
+        self.assertNotIn("list<int64> ys = xs;", cpp)
+
+    def test_pyobj_list_model_keeps_rc_handle_until_typed_call_boundary(self) -> None:
+        src = """def sink(xs: list[str]) -> str:
+    return xs[0]
+
+def f() -> str:
+    xs: list[str] = []
+    ys = xs
+    ys.append("a")
+    return sink(ys)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_typed_list_alias_call.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("rc<list<str>> xs = rc_list_from_value(list<str>{});", cpp)
+        self.assertIn("rc<list<str>> ys = xs;", cpp)
+        self.assertIn('py_append(ys, "a");', cpp)
+        self.assertIn("return sink(rc_list_ref(ys));", cpp)
+        self.assertNotIn("list<str> ys = xs;", cpp)
+
     def test_pyobj_list_model_can_stack_lower_non_escape_local_list(self) -> None:
         src = """def f() -> int:
     xs: list[int] = []
