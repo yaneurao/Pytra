@@ -73,7 +73,6 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         "src/runtime/cpp/utils/gif.cpp",
         "src/runtime/cpp/core/built_in/gc.cpp",
         "src/runtime/cpp/core/built_in/io.cpp",
-        "src/runtime/cpp/core/built_in/bytes_util.cpp",
         "-o",
         str(exe),
     ]

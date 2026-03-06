@@ -16,7 +16,6 @@
 
 #include "py_scalar_types.h"
 #include "gc.h"
-#include "bytes_util.h"
 #include "io.h"
 
 using PyObj = pytra::gc::PyObj;

@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "py_types.h"
-#include "bytes_util.h"
 #include "exceptions.h"
 #include "io.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
