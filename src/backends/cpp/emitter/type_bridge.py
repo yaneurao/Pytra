@@ -221,7 +221,7 @@ class CppTypeBridgeEmitter:
                 and (not self._is_pyobj_forced_typed_list_type(at))
                 and len(arg_node_dict) > 0
             ):
-                if not self._expr_is_stack_list_local(arg_node_dict):
+                if (not self._expr_is_stack_list_local(arg_node_dict)) and (not self._uses_pyobj_rc_list_expr(arg_node_dict)):
                     return arg_txt
             if self.is_any_like_type(at):
                 return arg_txt

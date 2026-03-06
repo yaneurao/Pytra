@@ -855,6 +855,11 @@ static inline bool py_to_bool(const object& v) {
     return py_to<bool>(v);
 }
 
+template <class T>
+static inline bool py_to_bool(const rc<list<T>>& v) {
+    return v && !v->empty();
+}
+
 static inline bool py_to_bool(bool v) {
     return py_to<bool>(v);
 }

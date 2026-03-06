@@ -100,7 +100,7 @@ class CppStatementEmitter:
         force_typed_list_ann = list_model == "pyobj" and self._is_pyobj_forced_typed_list_type(ann_t_norm)
         force_typed_list_str = force_typed_list_ann and ann_t_norm == "list[str]"
         if alias_runtime_list_ann:
-            t = "object"
+            t = self._cpp_pyobj_alias_list_handle_type_text(ann_t_norm)
         elif force_typed_list_ann:
             t = self._cpp_list_value_model_type_text(ann_t_norm)
         if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
@@ -187,8 +187,8 @@ class CppStatementEmitter:
                 f"annassign:{target}",
             )
         if alias_runtime_list_ann and rendered_val != "":
-            rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
-        if self.is_any_like_type(ann_t_str) and val_is_dict:
+            rendered_val = self._render_pyobj_alias_list_value(rendered_val, stmt.get("value"), ann_t_norm)
+        elif self.is_any_like_type(ann_t_str) and val_is_dict:
             rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
         if (not alias_runtime_list_ann) and val_is_dict and rendered_val != "":
             rendered_val = self._apply_empty_init_shorthand_if_marked(stmt, ann_t_str, val, rendered_val)
@@ -212,7 +212,7 @@ class CppStatementEmitter:
             self.declare_in_current_scope(target)
             picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
             if alias_runtime_list_ann:
-                picked_decl_t = "object"
+                picked_decl_t = ann_t_norm
             picked_decl_t = (
                 picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(target_node))
             )
@@ -580,17 +580,22 @@ class CppStatementEmitter:
             if d2 == "unknown":
                 d2 = ""
             picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
-            if runtime_alias_target:
-                picked = "object"
+            logical_picked = picked
             if picked == "None":
                 picked = "Any"
             if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
                 numeric_picked = self._infer_numeric_expr_type(value)
                 if numeric_picked != "":
                     picked = numeric_picked
-            dtype = self._cpp_type_text(picked)
+                    logical_picked = picked
+            if runtime_alias_target:
+                logical_picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
+                picked = logical_picked
+                dtype = self._cpp_pyobj_alias_list_handle_type_text(picked)
+            else:
+                dtype = self._cpp_type_text(picked)
             self.declare_in_current_scope(texpr)
-            self.declared_var_types[texpr] = picked
+            self.declared_var_types[texpr] = logical_picked if runtime_alias_target else picked
             rval = self._render_assign_value_with_subscript_index_hoist(value)
             rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
             rval_trim = self._trim_ws(rval)
@@ -612,7 +617,9 @@ class CppStatementEmitter:
                     picked,
                     f"assign:{texpr}",
                 )
-            if self.is_any_like_type(picked):
+            if runtime_alias_target and rval != "":
+                rval = self._render_pyobj_alias_list_value(rval, value, picked)
+            elif self.is_any_like_type(picked):
                 rval = self._box_any_target_value(rval, stmt.get("value"))
             rval = self._apply_empty_init_shorthand_if_marked(stmt, picked, value, rval)
             use_const_ref_decl = False
@@ -637,8 +644,8 @@ class CppStatementEmitter:
         t_target = self.get_expr_type(target_obj)
         if t_target == "None":
             t_target = "Any"
-        if runtime_alias_target:
-            t_target = "object"
+        if runtime_alias_target and self.is_plain_name_expr(target_obj):
+            t_target = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(texpr, t_target)))
         if self.is_plain_name_expr(target_obj) and t_target in {"", "unknown"}:
             if texpr in self.declared_var_types:
                 t_target = self.declared_var_types[texpr]
@@ -659,7 +666,9 @@ class CppStatementEmitter:
                 t_target,
                 f"assign:{texpr}",
             )
-        if self.is_any_like_type(t_target):
+        if runtime_alias_target and rval != "":
+            rval = self._render_pyobj_alias_list_value(rval, value, t_target)
+        elif self.is_any_like_type(t_target):
             rval = self._box_any_target_value(rval, stmt.get("value"))
         rval = self._apply_empty_init_shorthand_if_marked(stmt, t_target, value, rval)
         self.emit(f"{texpr} = {rval};")
