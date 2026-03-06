@@ -18,8 +18,39 @@ namespace pytra::gc {
 
 template <class T>
 class RcHandle;
+class RcObject;
 class PyObj;
 using object = RcHandle<PyObj>;
+
+class RcObject {
+public:
+    RcObject() : ref_count_(1) {}
+    RcObject(const RcObject&) noexcept : ref_count_(1) {}
+    RcObject(RcObject&&) noexcept : ref_count_(1) {}
+    RcObject& operator=(const RcObject&) noexcept {
+        ref_count_.store(1, ::std::memory_order_release);
+        return *this;
+    }
+    RcObject& operator=(RcObject&&) noexcept {
+        ref_count_.store(1, ::std::memory_order_release);
+        return *this;
+    }
+    virtual ~RcObject() = default;
+
+    uint32_t ref_count() const noexcept {
+        return ref_count_.load(::std::memory_order_acquire);
+    }
+
+    virtual void rc_release_refs();
+
+private:
+    template <class U>
+    friend class RcHandle;
+    friend void incref(RcObject* obj) noexcept;
+    friend void decref(RcObject* obj) noexcept;
+
+    ::std::atomic<uint32_t> ref_count_;
+};
 
 /**
  * @brief RC（参照カウント）管理対象の基底クラスです。
@@ -27,17 +58,13 @@ using object = RcHandle<PyObj>;
  * すべての参照型オブジェクトはこの型を継承し、ref_count を通じて
  * 生存期間を管理します。
  */
-class PyObj {
+class PyObj : public RcObject {
 public:
-    explicit PyObj(uint32_t type_id = 0) : ref_count_(1), type_id_(type_id) {}
+    explicit PyObj(uint32_t type_id = 0) : RcObject(), type_id_(type_id) {}
     PyObj(const PyObj&) = delete;
     PyObj& operator=(const PyObj&) = delete;
 
     virtual ~PyObj() = default;
-
-    uint32_t ref_count() const noexcept {
-        return ref_count_.load(::std::memory_order_acquire);
-    }
 
     virtual uint32_t py_type_id() const noexcept {
         return type_id_;
@@ -52,8 +79,6 @@ public:
      *
      * 参照型メンバーを持つ派生クラスは、この関数で decref を実行します。
      */
-    virtual void rc_release_refs();
-
     /**
      * @brief truthiness 判定フック。
      *
@@ -111,15 +136,11 @@ protected:
     }
 
 private:
-    friend void incref(PyObj* obj) noexcept;
-    friend void decref(PyObj* obj) noexcept;
-
-    ::std::atomic<uint32_t> ref_count_;
     uint32_t type_id_;
 };
 
-void incref(PyObj* obj) noexcept;
-void decref(PyObj* obj) noexcept;
+void incref(RcObject* obj) noexcept;
+void decref(RcObject* obj) noexcept;
 
 /**
  * @brief RC管理オブジェクトを生成します。
@@ -131,7 +152,7 @@ void decref(PyObj* obj) noexcept;
  */
 template <class T, class... Args>
 T* rc_new(Args&&... args) {
-    static_assert(::std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
+    static_assert(::std::is_base_of_v<RcObject, T>, "T must derive from RcObject");
     return new T(::std::forward<Args>(args)...);
 }
 
@@ -140,7 +161,7 @@ class RcHandle {
 public:
     template <class U>
     using EnableUpcast = ::std::enable_if_t<
-        ::std::is_base_of_v<PyObj, U> &&
+        ::std::is_base_of_v<RcObject, U> &&
         ::std::is_convertible_v<U*, T*> &&
         !::std::is_same_v<U, T>,
         int>;
@@ -148,9 +169,9 @@ public:
     RcHandle() = default;
 
     explicit RcHandle(T* ptr, bool add_ref = true) : ptr_(ptr) {
-        static_assert(::std::is_base_of_v<PyObj, T>, "T must derive from PyObj");
+        static_assert(::std::is_base_of_v<RcObject, T>, "T must derive from RcObject");
         if (ptr_ != nullptr && add_ref) {
-            incref(reinterpret_cast<PyObj*>(ptr_));
+            incref(reinterpret_cast<RcObject*>(ptr_));
         }
     }
 
@@ -166,7 +187,7 @@ public:
 
     RcHandle(const RcHandle& other) : ptr_(other.ptr_) {
         if (ptr_ != nullptr) {
-            incref(reinterpret_cast<PyObj*>(ptr_));
+            incref(reinterpret_cast<RcObject*>(ptr_));
         }
     }
 
@@ -177,7 +198,7 @@ public:
     template <class U, EnableUpcast<U> = 0>
     RcHandle(const RcHandle<U>& other) : ptr_(static_cast<T*>(other.get())) {
         if (ptr_ != nullptr) {
-            incref(reinterpret_cast<PyObj*>(ptr_));
+            incref(reinterpret_cast<RcObject*>(ptr_));
         }
     }
 
@@ -197,7 +218,7 @@ public:
             return *this;
         }
         if (ptr_ != nullptr) {
-            decref(reinterpret_cast<PyObj*>(ptr_));
+            decref(reinterpret_cast<RcObject*>(ptr_));
         }
         ptr_ = other.ptr_;
         other.ptr_ = nullptr;
@@ -213,7 +234,7 @@ public:
     template <class U, EnableUpcast<U> = 0>
     RcHandle& operator=(RcHandle<U>&& other) noexcept {
         if (ptr_ != nullptr) {
-            decref(reinterpret_cast<PyObj*>(ptr_));
+            decref(reinterpret_cast<RcObject*>(ptr_));
         }
         ptr_ = static_cast<T*>(other.release());
         return *this;
@@ -221,7 +242,7 @@ public:
 
     ~RcHandle() {
         if (ptr_ != nullptr) {
-            decref(reinterpret_cast<PyObj*>(ptr_));
+            decref(reinterpret_cast<RcObject*>(ptr_));
             ptr_ = nullptr;
         }
     }
@@ -234,10 +255,10 @@ public:
      */
     void reset(T* ptr = nullptr, bool add_ref = true) {
         if (ptr != nullptr && add_ref) {
-            incref(reinterpret_cast<PyObj*>(ptr));
+            incref(reinterpret_cast<RcObject*>(ptr));
         }
         if (ptr_ != nullptr) {
-            decref(reinterpret_cast<PyObj*>(ptr_));
+            decref(reinterpret_cast<RcObject*>(ptr_));
         }
         ptr_ = ptr;
     }

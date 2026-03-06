@@ -19,6 +19,11 @@ static inline bool py_contains(const list<T>& values, const Q& key) {
 }
 
 template <class T, class Q>
+static inline bool py_contains(const rc<list<T>>& values, const Q& key) {
+    return py_contains(rc_list_ref(values), key);
+}
+
+template <class T, class Q>
 static inline bool py_contains(const set<T>& values, const Q& key) {
     return values.find(static_cast<T>(key)) != values.end();
 }

@@ -33,6 +33,12 @@
 #include "runtime/cpp/built_in/string_ops.gen.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
 
+template <class T>
+static inline rc<list<T>> obj_to_rc_list(const object& v, const char* ctx = "obj_to_rc_list");
+
+template <class T>
+static inline rc<list<T>> obj_to_rc_list_or_raise(const object& v, const char* ctx = "obj_to_rc_list_or_raise");
+
 // type_id は target 非依存で stable な型判定キーとして扱う。
 // 予約領域（0-999）は runtime 組み込み型に割り当てる。
 static constexpr uint32 PYTRA_TID_NONE = 0;
@@ -475,6 +481,14 @@ static inline object make_object(list<object>&& values) {
     return object_new<PyListObj>(::std::move(values));
 }
 
+template <class T>
+static inline object make_object(const rc<list<T>>& values) {
+    if (!values) {
+        return object();
+    }
+    return make_object(rc_list_ref(values));
+}
+
 template <class V>
 static inline object make_object(const dict<str, V>& values) {
     dict<str, object> out;
@@ -655,6 +669,12 @@ static inline int64 py_len(const object& v) {
     return 0;
 }
 
+template <class T>
+static inline int64 py_len(const rc<list<T>>& v) {
+    if (!v) return 0;
+    return static_cast<int64>(v->size());
+}
+
 // Python 組み込み相当の基本ユーティリティ（len / 文字列化）。
 template <class T>
 static inline int64 py_len(const T& v) {
@@ -750,6 +770,11 @@ template <class D>
 static inline ::std::optional<D> py_object_try_cast(const object& v) {
     if constexpr (::std::is_same_v<D, object>) {
         return v;
+    } else if constexpr (py_is_rc_list_handle<D>::value) {
+        using item_type = typename py_is_rc_list_handle<D>::item_type;
+        auto out = obj_to_rc_list<item_type>(v);
+        if (out) return out;
+        return ::std::nullopt;
     } else if constexpr (::std::is_same_v<D, str>) {
         return obj_to_str(v);
     } else if constexpr (::std::is_same_v<D, bool>) {
@@ -971,6 +996,9 @@ template <class T>
 static inline T py_to(const object& v) {
     if constexpr (::std::is_same_v<T, object>) {
         return v;
+    } else if constexpr (py_is_rc_list_handle<T>::value) {
+        using item_type = typename py_is_rc_list_handle<T>::item_type;
+        return obj_to_rc_list<item_type>(v);
     } else if constexpr (::std::is_same_v<T, str>) {
         return obj_to_str(v);
     } else if constexpr (::std::is_same_v<T, bool>) {
@@ -988,6 +1016,12 @@ template <class T>
 static inline T py_to(const ::std::any& v) {
     if constexpr (::std::is_same_v<T, ::std::any>) {
         return v;
+    } else if constexpr (py_is_rc_list_handle<T>::value) {
+        using item_type = typename py_is_rc_list_handle<T>::item_type;
+        if (const auto* p = ::std::any_cast<T>(&v)) return *p;
+        if (const auto* p = ::std::any_cast<list<item_type>>(&v)) return rc_list_from_value(*p);
+        if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_rc_list<item_type>(*p);
+        return T{};
     } else if constexpr (::std::is_same_v<T, object>) {
         if (const auto* p = ::std::any_cast<object>(&v)) return *p;
         return make_object(v);
@@ -1055,6 +1089,11 @@ static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up) {
     return list<T>(v.begin() + lo, v.begin() + up);
 }
 
+template <class T>
+static inline list<T> py_slice(const rc<list<T>>& v, int64 lo, int64 up) {
+    return py_slice(rc_list_ref(v), lo, up);
+}
+
 static inline str py_slice(const str& v, int64 lo, int64 up) {
     const int64 n = static_cast<int64>(v.size());
     if (lo < 0) lo += n;
@@ -1085,6 +1124,16 @@ static inline const T& py_at(const list<T>& v, int64 idx) {
         throw ::std::out_of_range("list index out of range");
     }
     return v[static_cast<::std::size_t>(idx)];
+}
+
+template <class T>
+static inline T& py_at(rc<list<T>>& v, int64 idx) {
+    return py_at(rc_list_ref(v), idx);
+}
+
+template <class T>
+static inline const T& py_at(const rc<list<T>>& v, int64 idx) {
+    return py_at(rc_list_ref(v), idx);
 }
 
 template <class T>
@@ -1124,11 +1173,21 @@ static inline void py_append(list<T>& v, const U& item) {
     v.append(py_list_item_cast<T>(item));
 }
 
+template <class T, class U>
+static inline void py_append(rc<list<T>>& v, const U& item) {
+    rc_list_ref(v).append(py_list_item_cast<T>(item));
+}
+
 template <class T>
 struct py_is_list_type : ::std::false_type {};
 
 template <class T>
 struct py_is_list_type<list<T>> : ::std::true_type {
+    using item_type = T;
+};
+
+template <class T>
+struct py_is_list_type<rc<list<T>>> : ::std::true_type {
     using item_type = T;
 };
 
@@ -1146,6 +1205,30 @@ static inline list<T> py_to_typed_list_from_object(
         out.append(py_to<T>(item));
     }
     return out;
+}
+
+template <class T>
+static inline rc<list<T>> obj_to_rc_list(const object& value, const char* ctx) {
+    const list<object>* src = obj_to_list_ptr(value);
+    if (src == nullptr) {
+        return rc<list<T>>{};
+    }
+    list<T> out{};
+    out.reserve(src->size());
+    for (const object& item : *src) {
+        out.append(py_to<T>(item));
+    }
+    return rc_list_from_value(::std::move(out));
+}
+
+template <class T>
+static inline rc<list<T>> obj_to_rc_list_or_raise(const object& value, const char* ctx) {
+    auto out = obj_to_rc_list<T>(value, ctx);
+    if (out) {
+        return out;
+    }
+    const char* label = ctx != nullptr ? ctx : "obj_to_rc_list_or_raise";
+    throw ::std::runtime_error(::std::string(label) + ": object is not list");
 }
 
 template <class K>
@@ -1315,6 +1398,11 @@ static inline void py_set_at(list<T>& v, I idx, const U& item) {
     v[static_cast<::std::size_t>(pos)] = py_list_item_cast<T>(item);
 }
 
+template <class T, class I, class U>
+static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
+    py_set_at(rc_list_ref(v), idx, item);
+}
+
 template <class K, class V, class Q, class U>
 static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
     const K k = py_dict_key_cast<K>(key);
@@ -1335,6 +1423,21 @@ static inline void py_extend(const object& v, const object& items) {
     }
 }
 
+template <class T>
+static inline void py_extend(rc<list<T>>& v, const list<T>& items) {
+    rc_list_ref(v).extend(items);
+}
+
+template <class T>
+static inline void py_extend(rc<list<T>>& v, const rc<list<T>>& items) {
+    rc_list_ref(v).extend(rc_list_ref(items));
+}
+
+template <class T, class U, ::std::enable_if_t<!::std::is_same_v<U, list<T>> && !::std::is_same_v<U, rc<list<T>>>, int> = 0>
+static inline void py_extend(rc<list<T>>& v, const U& items) {
+    rc_list_ref(v).extend(items);
+}
+
 static inline object py_pop(const object& v) {
     auto p = obj_to_list_obj(v);
     if (!p) {
@@ -1351,6 +1454,16 @@ static inline object py_pop(const object& v, int64 idx) {
     return p->value.pop(idx);
 }
 
+template <class T>
+static inline T py_pop(rc<list<T>>& v) {
+    return rc_list_ref(v).pop();
+}
+
+template <class T>
+static inline T py_pop(rc<list<T>>& v, int64 idx) {
+    return rc_list_ref(v).pop(idx);
+}
+
 static inline void py_clear(const object& v) {
     auto p = obj_to_list_obj(v);
     if (!p) {
@@ -1359,12 +1472,23 @@ static inline void py_clear(const object& v) {
     p->value.clear();
 }
 
+template <class T>
+static inline void py_clear(rc<list<T>>& v) {
+    rc_list_ref(v).clear();
+}
+
 static inline void py_reverse(const object& v) {
     auto p = obj_to_list_obj(v);
     if (!p) {
         throw ::std::runtime_error("reverse on non-list object");
     }
     ::std::reverse(p->value.begin(), p->value.end());
+}
+
+template <class T>
+static inline void py_reverse(rc<list<T>>& v) {
+    auto& items = rc_list_ref(v);
+    ::std::reverse(items.begin(), items.end());
 }
 
 static inline void py_sort(const object& v) {
@@ -1378,6 +1502,12 @@ static inline void py_sort(const object& v) {
         [](const object& lhs, const object& rhs) {
             return py_to_string(lhs) < py_to_string(rhs);
         });
+}
+
+template <class T>
+static inline void py_sort(rc<list<T>>& v) {
+    auto& items = rc_list_ref(v);
+    ::std::sort(items.begin(), items.end());
 }
 
 static inline int64 py_index(const object& v, const object& item) {

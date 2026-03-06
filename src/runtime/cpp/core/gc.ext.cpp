@@ -6,11 +6,11 @@
 
 namespace pytra::gc {
 
-void PyObj::rc_release_refs() {
+void RcObject::rc_release_refs() {
     // デフォルト実装: 子参照を持たないオブジェクト。
 }
 
-void incref(PyObj* obj) noexcept {
+void incref(RcObject* obj) noexcept {
     // obj:
     //   参照カウントを増やす対象オブジェクト。nullptr は無視する。
     if (obj == nullptr) {
@@ -19,7 +19,7 @@ void incref(PyObj* obj) noexcept {
     obj->ref_count_.fetch_add(1, ::std::memory_order_relaxed);
 }
 
-void decref(PyObj* obj) noexcept {
+void decref(RcObject* obj) noexcept {
     // obj:
     //   参照カウントを減らす対象オブジェクト。0到達時に破棄する。
     if (obj == nullptr) {

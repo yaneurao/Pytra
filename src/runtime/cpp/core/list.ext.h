@@ -9,16 +9,16 @@ template <class D>
 ::std::optional<D> py_object_try_cast(const object& v);
 
 template <class T>
-class list {
+class list : public pytra::gc::RcObject {
 public:
     using value_type = T;
     using iterator = typename ::std::vector<T>::iterator;
     using const_iterator = typename ::std::vector<T>::const_iterator;
 
     list() = default;
-    list(::std::initializer_list<T> init) : data_(init) {}
-    explicit list(::std::size_t count) : data_(count) {}
-    list(::std::size_t count, const T& value) : data_(count, value) {}
+    list(::std::initializer_list<T> init) : pytra::gc::RcObject(), data_(init) {}
+    explicit list(::std::size_t count) : pytra::gc::RcObject(), data_(count) {}
+    list(::std::size_t count, const T& value) : pytra::gc::RcObject(), data_(count, value) {}
     template <class U = T, ::std::enable_if_t<::std::is_same_v<U, uint8>, int> = 0>
     list(const char* s) {
         if (s == nullptr) return;
