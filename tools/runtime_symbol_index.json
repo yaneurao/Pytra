@@ -1028,7 +1028,7 @@
             "src/runtime/cpp/std/pathlib.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/pathlib.gen.h"
+            "src/runtime/cpp/pytra/std/pathlib.h"
           ]
         },
         "pytra.std.random": {
@@ -1074,7 +1074,7 @@
             "src/runtime/cpp/std/time.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/time.gen.h"
+            "src/runtime/cpp/pytra/std/time.h"
           ]
         },
         "pytra.std.timeit": {
@@ -1107,7 +1107,7 @@
             "src/runtime/cpp/utils/gif.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/utils/gif.gen.h"
+            "src/runtime/cpp/pytra/utils/gif.h"
           ]
         },
         "pytra.utils.png": {
@@ -1118,7 +1118,7 @@
             "src/runtime/cpp/utils/png.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/utils/png.gen.h"
+            "src/runtime/cpp/pytra/utils/png.h"
           ]
         }
       }

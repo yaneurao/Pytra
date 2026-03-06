@@ -2,10 +2,12 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_PATHLIB_H
-#define PYTRA_STD_PATHLIB_H
+#ifndef PYTRA_STD_PATHLIB_GEN_H
+#define PYTRA_STD_PATHLIB_GEN_H
 
 #include "runtime/cpp/core/py_types.ext.h"
+
+#include "std/glob.gen.h"
 
 namespace pytra::std::pathlib {
 
@@ -34,4 +36,4 @@ namespace pytra::std::pathlib {
 
 }  // namespace pytra::std::pathlib
 
-#endif  // PYTRA_STD_PATHLIB_H
+#endif  // PYTRA_STD_PATHLIB_GEN_H

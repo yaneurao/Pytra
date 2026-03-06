@@ -130,11 +130,15 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
     gen_cpp = stem.with_name(stem.name + ".gen.cpp")
     ext_h = stem.with_name(stem.name + ".ext.h")
     ext_cpp = stem.with_name(stem.name + ".ext.cpp")
+    public_shim = ROOT / "src" / "runtime" / lang / "pytra" / group / (tail + ".h")
 
-    if gen_h.exists():
-        public_headers.append(_path_to_rel_txt(gen_h))
-    if ext_h.exists():
-        public_headers.append(_path_to_rel_txt(ext_h))
+    if lang == "cpp" and public_shim.exists():
+        public_headers.append(_path_to_rel_txt(public_shim))
+    else:
+        if gen_h.exists():
+            public_headers.append(_path_to_rel_txt(gen_h))
+        if ext_h.exists():
+            public_headers.append(_path_to_rel_txt(ext_h))
     if gen_cpp.exists():
         compile_sources.append(_path_to_rel_txt(gen_cpp))
     if ext_cpp.exists():

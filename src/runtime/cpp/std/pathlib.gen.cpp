@@ -5,9 +5,9 @@
 
 #include "runtime/cpp/std/pathlib.gen.h"
 
-#include "runtime/cpp/std/glob.gen.h"
-#include "runtime/cpp/std/os.gen.h"
-#include "runtime/cpp/std/os_path.gen.h"
+#include "std/glob.gen.h"
+#include "std/os.gen.h"
+#include "std/os_path.gen.h"
 
 namespace pytra::std::pathlib {
 

@@ -21,6 +21,26 @@ def module_tail_to_cpp_header_path(module_tail: str) -> str:
     return module_tail.replace(".", "/") + ".gen.h"
 
 
+def module_tail_to_cpp_public_header_path(module_tail: str) -> str:
+    """runtime module tail を public include 用 `pytra/.../*.h` へ変換する。"""
+    rel = join_str_list("/", module_tail.split("/"))
+    if rel == "":
+        return ""
+    if rel.startswith("std/"):
+        return "pytra/std/" + rel[4:] + ".h"
+    if rel.startswith("built_in/"):
+        return "pytra/built_in/" + rel[9:] + ".h"
+    if rel.startswith("compiler/"):
+        return "pytra/compiler/" + rel[9:] + ".h"
+    if rel == "std":
+        return "pytra/std.h"
+    if rel == "built_in":
+        return "pytra/built_in.h"
+    if rel == "compiler":
+        return "pytra/compiler.h"
+    return "pytra/utils/" + rel + ".h"
+
+
 def join_runtime_path(base_dir: Path, rel_path: str) -> Path:
     """selfhost-safe な Path 連結（`/` 演算子依存を避ける）。"""
     base_txt = str(base_dir)
@@ -117,6 +137,8 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
     module_id = canonical_runtime_module_id(module_name_norm)
     indexed = lookup_target_module_primary_header("cpp", module_id)
     if indexed != "":
+        if indexed.startswith("src/runtime/cpp/"):
+            return indexed[len("src/runtime/cpp/") :]
         if indexed.startswith("src/"):
             return indexed[4:]
         return indexed
