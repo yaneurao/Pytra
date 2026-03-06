@@ -32,19 +32,6 @@
 
 ## 未完了タスク
 
-### P0: C++ `@extern` モジュールの header-only gen 移行（最優先）
-
-文脈: [docs/ja/plans/p0-cpp-extern-header-only-gen.md](../plans/p0-cpp-extern-header-only-gen.md)
-
-1. [x] [ID: P0-CPP-EXTERN-HDRONLY-01] `pytra.std.math` を先行ケースとして、`@extern` モジュールは `gen` で `.h` のみ生成し、実体を `core` 正本へ固定する移行を完了する。
-2. [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S1-01] `@extern` 関数/変数の EAST 属性契約を整理し、C++ backend が参照する最小フラグを固定する。
-3. [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S1-02] C++ runtime 生成で extern-only module 判定を実装し、`gen/*.cpp` 生成を抑止する。
-4. [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S2-01] `math` 実体を `runtime/cpp/core/std/math.cpp` 正本へ移し、`gen/std/math.cpp` 依存を撤去する。
-5. [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S2-02] build manifest / backend registry を `math` core 実体参照へ更新する。
-6. [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S3-01] `math.h` 生成と `.cpp` 非生成を固定する unit 回帰を追加する。
-7. [x] [ID: P0-CPP-EXTERN-HDRONLY-01-S3-02] C++ fixture/sample parity で非退行を確認し、決定ログへ記録する。
-
-
 ### P4: 全言語 selfhost 完全化（低低優先）
 
 文脈: [docs/ja/plans/p4-multilang-selfhost-full-rollout.md](../plans/p4-multilang-selfhost-full-rollout.md)

@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-06 / P0-CPP-EXTERN-HDRONLY-01](../plans/archive/20260306-p0-cpp-extern-header-only-gen.md)
 - [2026-02-23 / TG-DOCS-SYNC](../plans/archive/20260223-tg-docs-sync.md)
 - [2026-02-23 / TG-P0-BOXING](../plans/archive/20260223-tg-p0-boxing.md)
 - [2026-02-23 / TG-P2-MICROGPT-COMPAT](../plans/archive/20260223-tg-p2-microgpt-compat.md)
@@ -22,7 +23,7 @@
 
 ## 日付別リンク
 
-- [2026-03-06](20260306.md)（6 セクション）
+- [2026-03-06](20260306.md)（7 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
 - [2026-03-04](20260304.md)（9 セクション）
 - [2026-03-03](20260303.md)（10 セクション）
