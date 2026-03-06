@@ -36,9 +36,9 @@
 
 1. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01] `cpp_list_model=pyobj` の alias 維持を `object` ではなく `rc<list<T>>` に置き換え、typed 要素型を保持したまま Python 互換の共有セマンティクスを成立させる。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-2. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01] `object` / `list<T>` / `rc<list<T>>` の責務境界を plan/spec で固定し、`@extern` ABI 非対象を明記する。
+2. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01] `object` / `list<T>` / `rc<list<T>>` の責務境界を plan/spec で固定し、`@extern` ABI 非対象を明記する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
-3. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
+3. [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`
 4. [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
 文脈: `docs/ja/plans/p0-cpp-pyobj-rc-list-alias.md`

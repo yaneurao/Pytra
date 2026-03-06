@@ -114,8 +114,8 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01] `object` / `list<T>` / `rc<list<T>>` の責務境界を plan/spec で固定し、`@extern` ABI 非対象を明記する。
-- [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01] `object` / `list<T>` / `rc<list<T>>` の責務境界を plan/spec で固定し、`@extern` ABI 非対象を明記する。
+- [x] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02] 現状の alias fallback で `object` boxing が入る生成ケースを fixture ベースで固定する。
 
 - [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01] C++ runtime に `rc<list<T>>` typed handle helper（生成/参照/値変換）を追加する。
 - [ ] [ID: P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02] `py_len/py_append/py_extend/py_pop/py_slice/py_at` の `rc<list<T>>` overload を追加する。
@@ -135,3 +135,5 @@
 - 2026-03-06: ユーザー指示により、`cpp_list_model=pyobj` の alias 維持を `object` ではなく `rc<list<T>>` へ置換する P0 計画を起票した。
 - 2026-03-06: 本計画で導入する `rc<list<T>>` は backend 内部表現であり、`docs/ja/spec/spec-abi.md` の値型 ABI には露出させない方針を固定した。
 - 2026-03-06: 初期対象は「Name-to-Name 代入で alias 化が確定した list ローカル」のみに限定し、一括 `rc<>` 化は行わない。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-01`] `docs/ja/spec/spec-abi.md` と `docs/ja/spec/spec-runtime.md` を更新し、`rc<list<T>>` は backend 内部 typed handle であって ABI 型ではないこと、`@extern` 境界では `list<T>` へ正規化すること、helper 配置先は `src/runtime/<lang>/core/` であることを明文化した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S1-02`] fixture `test/fixtures/collections/list_alias_shared_mutation.py` を `cpp_list_model=pyobj` で再生成し、現状の fallback が `object a = make_object(list<int64>{1, 2});` / `object b = make_object(a);` / `py_append(b, make_object(3));` になることを固定した。これは alias 共有は満たすが typed 要素型を失う、という本計画の出発点である。

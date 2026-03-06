@@ -18,6 +18,8 @@ Pytra は Python から C++ 等へ変換するトランスパイラであり、C
 - `rc<T>` は C++ backend の内部所有権表現であり、ABI そのものではない。
 - `str`, `bytes`, `bytearray`, `list[T]`, `dict[K,V]`, `set[T]`, `tuple[...]` のような **値型 / コンテナ型 ABI には `rc<>` を露出させない**。
 - `rc<>` を ABI に使ってよいのは、user class など **参照意味論が本質の型** に限る。
+- backend 内部最適化の都合で `rc<list<T>>` などの typed handle を使ってよいが、これは **内部型** であり ABI 型ではない。
+- 特に `cpp_list_model=pyobj` の alias 維持で `rc<list<T>>` を使う場合でも、`@extern` 境界では `list<T>` に正規化して渡す。
 
 本仕様において `@extern` は **デコレータ引数なし** のみをサポートする。
 
@@ -25,6 +27,7 @@ Pytra は Python から C++ 等へ変換するトランスパイラであり、C
 
 - **内部型 (Internal Type)**  
   最適化・変換過程で用いられる C++ 側の実際の表現型。縮退により複数パターンがありうる。
+  例: `list<bytearray>`, `rc<list<bytearray>>`, `object`
 
 - **ABI 型 (ABI Type)**  
   `@extern` 関数呼び出しの境界で用いる固定の C++ 型。外部実装（ランタイム / ターゲット言語側）で定義される関数シグネチャと一致する。
@@ -127,6 +130,7 @@ ABI 型は「境界の正規形」として扱う。
 - ABI は **backend 内部所有権表現を露出しない**。
 - 値型 / コンテナ型 ABI では `rc<>` を使わない。
 - `rc<>` を ABI に使うのは、user class など identity を保持すべき参照型に限定する。
+- `rc<list<T>>` はあくまで backend 内部の alias 維持・最適化用表現であり、ABI 正規形には含めない。
 
 ### 5.2 値型 ABI の正規形
 
@@ -164,6 +168,7 @@ None（戻り値） -> void
 - `list[str]` の ABI は `list<str>` であり、`list<rc<str>>` ではない。
 - `list[bytearray]` の ABI は `list<bytearray>` であり、`rc<list<rc<bytearray>>>` ではない。
 - `dict[str, int]` の ABI は `dict<str, int64>` である。
+- `list[int]` の内部表現が `rc<list<int64>>` に縮退していても、ABI は `list<int64>` のままである。
 
 ### 5.3 参照型 ABI の正規形
 
