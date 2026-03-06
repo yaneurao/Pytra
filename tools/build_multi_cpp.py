@@ -4,27 +4,99 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_ROOT = ROOT / "src" / "runtime" / "cpp"
+SRC_ROOT = ROOT / "src"
+_INCLUDE_RE = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
 
-def _runtime_cpp_sources() -> list[str]:
-    """runtime/cpp/{core,std,utils,built_in} の C++ 実装ファイル一覧を返す。"""
+
+def _resolve_include(current_path: Path, include_txt: str, include_dir: Path) -> Path | None:
+    if include_txt.startswith("runtime/cpp/"):
+        cand = SRC_ROOT / include_txt
+        return cand if cand.exists() else None
+    search_roots = [
+        current_path.parent,
+        include_dir,
+        SRC_ROOT,
+    ]
+    for base in search_roots:
+        cand = base / include_txt
+        if cand.exists():
+            return cand
+    return None
+
+
+def _runtime_include_targets(path: Path, include_dir: Path) -> list[Path]:
+    out: list[Path] = []
+    if not path.exists():
+        return out
+    for inc in _INCLUDE_RE.findall(path.read_text(encoding="utf-8")):
+        resolved = _resolve_include(path, inc, include_dir)
+        if resolved is not None and str(resolved).startswith(str(RUNTIME_ROOT)):
+            out.append(resolved)
+    return out
+
+
+def _discover_runtime_headers(module_sources: list[str], include_dir: Path) -> list[Path]:
+    seen: set[Path] = set()
+    queue: list[Path] = []
+    seed = RUNTIME_ROOT / "core" / "py_runtime.ext.h"
+    if seed.exists():
+        queue.append(seed)
+    for source_txt in module_sources:
+        source_path = Path(source_txt)
+        if not source_path.is_absolute():
+            source_path = ROOT / source_path
+        if not source_path.exists():
+            continue
+        queue.extend(_runtime_include_targets(source_path, include_dir))
+    ordered: list[Path] = []
+    while queue:
+        header = queue.pop(0)
+        if header in seen or not header.exists():
+            continue
+        seen.add(header)
+        ordered.append(header)
+        queue.extend(_runtime_include_targets(header, include_dir))
+    return ordered
+
+
+def _runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
+    out: list[Path] = []
+    name = header.name
+    if name.endswith(".gen.h"):
+        out.append(header.with_name(name[:-len(".gen.h")] + ".gen.cpp"))
+        out.append(header.with_name(name[:-len(".gen.h")] + ".ext.cpp"))
+    elif name.endswith(".ext.h"):
+        out.append(header.with_name(name[:-len(".ext.h")] + ".ext.cpp"))
+    return out
+
+
+def _runtime_cpp_sources(module_sources: list[str], include_dir: Path) -> list[str]:
+    """実際に include された runtime header から必要な C++ 実装だけを返す。"""
     out: list[str] = []
+    seen_headers: set[Path] = set()
     seen: set[str] = set()
-    for root in (
-        Path("src/runtime/cpp/core"),
-        Path("src/runtime/cpp/std"),
-        Path("src/runtime/cpp/utils"),
-        Path("src/runtime/cpp/built_in"),
-    ):
-        for p in sorted(root.rglob("*.cpp")):
-            rel = p.as_posix()
+    queue: list[Path] = _discover_runtime_headers(module_sources, include_dir)
+    while queue:
+        header = queue.pop(0)
+        if header in seen_headers:
+            continue
+        seen_headers.add(header)
+        for cpp_path in _runtime_cpp_candidates_from_header(header):
+            if not cpp_path.exists():
+                continue
+            rel = cpp_path.relative_to(ROOT).as_posix()
             if rel in seen:
                 continue
             seen.add(rel)
             out.append(rel)
+            queue.extend(_runtime_include_targets(cpp_path, include_dir))
     return out
 
 
@@ -72,6 +144,9 @@ def main(argv: list[str]) -> int:
 
     include_dir_obj = manifest.get("include_dir")
     include_dir = include_dir_obj if isinstance(include_dir_obj, str) else str(manifest_path.parent / "include")
+    include_dir_path = Path(include_dir)
+    if not include_dir_path.is_absolute():
+        include_dir_path = (manifest_path.parent / include_dir_path).resolve()
 
     cmd = [
         "g++",
@@ -82,9 +157,9 @@ def main(argv: list[str]) -> int:
         "-I",
         "src/runtime/cpp",
         "-I",
-        include_dir,
+        str(include_dir_path),
         *module_sources,
-        *_runtime_cpp_sources(),
+        *_runtime_cpp_sources(module_sources, include_dir_path),
         "-o",
         args.output,
     ]
