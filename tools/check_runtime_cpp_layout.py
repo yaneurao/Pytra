@@ -38,6 +38,11 @@ BANNED_PY_RUNTIME_PATTERNS = {
     "static inline str py_replace(": "string_ops duplicate must not live in py_runtime.ext.h",
     "static inline list<int64> py_range(": "sequence duplicate must not live in py_runtime.ext.h",
     "static inline str py_repeat(": "sequence duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_contains(const dict<": "contains duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_contains(const list<": "contains duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_contains(const set<": "contains duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_contains(const str&": "contains duplicate must not live in py_runtime.ext.h",
+    "static inline bool py_contains(const object&": "contains duplicate must not live in py_runtime.ext.h",
 }
 
 
