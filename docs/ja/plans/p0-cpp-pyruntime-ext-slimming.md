@@ -88,7 +88,7 @@
 - [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-04] `py_strip` / `py_startswith` / `py_endswith` / `py_find` / `py_replace` を ext から除去し、`string_ops.gen.*` 参照へ一本化する。
 - [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S2-05] `py_range` / `py_repeat` を ext から除去し、`sequence.gen.*` 参照へ一本化する。
 - [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S3-01] `py_enumerate` / `py_reversed` / `py_contains` について、pure Python 正本 + typed adapter 分離の仕様を決め、必要な `src/pytra/built_in/*.py` を追加する。
-- [ ] [ID: P0-CPP-PYRUNTIME-EXT-01-S3-02] 上記 3 系統のうち、移しやすいものから 1 系統以上を ext 縮退まで実装し、残件を同計画内で継続可能な形にする。
+- [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S3-02] 上記 3 系統のうち、移しやすいものから 1 系統以上を ext 縮退まで実装し、残件を同計画内で継続可能な形にする。
 - [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S4-01] `py_runtime.ext.h` へ正本重複実装が再混入しないよう、静的ガードを追加する。
 - [x] [ID: P0-CPP-PYRUNTIME-EXT-01-S4-02] layout / SoT guard / runtime parity / runtime emit smoke を更新し、縮退後の非退行を固定する。
 
@@ -101,3 +101,4 @@
 - 2026-03-06: `tools/check_runtime_cpp_layout.py` に `py_runtime.ext.h` への高レベル重複実装再混入ガードを追加した。`check_runtime_cpp_layout.py`, `check_runtime_std_sot_guard.py`, `verify_image_runtime_parity.py`, built_in+`re` の syntax-only compile, `predicates/sequence/string_ops/re/argparse` の `--emit-runtime-cpp` smoke は通過した。
 - 2026-03-06: `src/runtime/cpp/std/argparse.gen.cpp` には本タスク以前から存在する C++ emission 問題（`default` 識別子、`setattr`/`SystemExit`、`optional<list<str>>` など）が残っており、これは `py_runtime.ext.h` 縮退とは別件として扱う。今回の S2-02 は「導線の差し替えと ext 側重複実装の除去」に限定して完了扱いとする。
 - 2026-03-06: 第二波の先行分として `src/pytra/built_in/iter_ops.py` を追加し、`py_reversed` / `py_enumerate` の object 経路本体を generated runtime (`iter_ops.gen.*`) へ移した。`py_runtime.ext.h` には typed `list<T>` / `str` / `any` adapter と `py_enumerate_list_as<T>` だけを残し、object overload は `src/runtime/cpp/built_in/iter_ops.ext.h` の薄い wrapper に置き換えた。
+- 2026-03-06: `py_reversed` / `py_enumerate` の typed `list<T>` / `str` / `any` adapter と `py_enumerate_list_as<T>` も `src/runtime/cpp/built_in/iter_ops.ext.h` へ移し、`py_runtime.ext.h` から iterator helper 本体を除去した。第二波の残件は `py_contains` の pure Python 正本化と adapter 分離に絞られた。

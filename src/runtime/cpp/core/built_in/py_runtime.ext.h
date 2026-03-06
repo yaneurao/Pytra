@@ -28,7 +28,6 @@
 #include "exceptions.ext.h"
 #include "io.ext.h"
 #include "runtime/cpp/built_in/predicates.gen.h"
-#include "runtime/cpp/built_in/iter_ops.ext.h"
 #include "runtime/cpp/built_in/sequence.gen.h"
 #include "runtime/cpp/built_in/sequence.ext.h"
 #include "runtime/cpp/built_in/string_ops.gen.h"
@@ -2794,85 +2793,7 @@ static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) 
     return py_slice(v, lo, py_to_int64(up));
 }
 
-// reversed / enumerate / tuple in 判定の互換実装。
-template <class T>
-static inline list<T> py_reversed(const list<T>& values) {
-    list<T> out(values.begin(), values.end());
-    ::std::reverse(out.begin(), out.end());
-    return out;
-}
-
-template <class T>
-static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values) {
-    list<::std::tuple<int64, T>> out;
-    out.reserve(values.size());
-    for (::std::size_t i = 0; i < values.size(); i++) {
-        out.append(::std::make_tuple(static_cast<int64>(i), values[i]));
-    }
-    return out;
-}
-
-template <class T>
-static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values, int64 start) {
-    list<::std::tuple<int64, T>> out;
-    out.reserve(values.size());
-    for (::std::size_t i = 0; i < values.size(); i++) {
-        out.append(::std::make_tuple(start + static_cast<int64>(i), values[i]));
-    }
-    return out;
-}
-
-static inline list<::std::tuple<int64, str>> py_enumerate(const str& values) {
-    list<::std::tuple<int64, str>> out;
-    out.reserve(values.size());
-    for (::std::size_t i = 0; i < values.size(); i++) {
-        out.append(::std::make_tuple(static_cast<int64>(i), values[i]));
-    }
-    return out;
-}
-
-static inline list<::std::tuple<int64, str>> py_enumerate(const str& values, int64 start) {
-    list<::std::tuple<int64, str>> out;
-    out.reserve(values.size());
-    for (::std::size_t i = 0; i < values.size(); i++) {
-        out.append(::std::make_tuple(start + static_cast<int64>(i), values[i]));
-    }
-    return out;
-}
-
-template <class T>
-static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& values, int64 start) {
-    list<::std::tuple<int64, T>> out;
-    if (const auto* p = obj_to_list_ptr(values)) {
-        out.reserve(p->size());
-        for (::std::size_t i = 0; i < p->size(); ++i) {
-            out.append(::std::make_tuple(start + static_cast<int64>(i), py_to<T>((*p)[i])));
-        }
-    }
-    return out;
-}
-
-template <class T>
-static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& values) {
-    return py_enumerate_list_as<T>(values, 0);
-}
-
-static inline list<::std::any> py_reversed(const ::std::any& values) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_reversed(*p);
-    return {};
-}
-
-static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p);
-    if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p);
-    return {};
-}
-
-static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values, int64 start) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p, start);
-    if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p, start);
-    return {};
-}
+#include "runtime/cpp/built_in/iter_ops.ext.h"
 
 template <class A, class B>
 static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {
