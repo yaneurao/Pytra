@@ -52,7 +52,7 @@
 
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01] C++ unit 回帰を、SoT/IR/Emitter/Runtime 契約の順で根本修復し、unit + fixture/sample parity を再緑化する。
 - [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S1-01] failing test を「generated runtime」「import/include 解決」「container 意味論」「emitter/CLI 契約」に再分類し、修正責務の所属レイヤを固定する。
-- [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-01] `json` generated runtime の破綻を、SoT と C++ runtime 生成契約の修正で解消する（`.gen.*` 手修正禁止）。
+- [x] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-01] `json` generated runtime の破綻を、SoT と C++ runtime 生成契約の修正で解消する（`.gen.*` 手修正禁止）。
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S2-02] `argparse` generated runtime の破綻を、SoT・reserved name 回避・class/member emission 契約の修正で解消する。
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-01] `pytra.utils.{png,gif}` と `pytra.std.{time,pathlib}` の import 解決・include dedupe/sort・one-to-one module include 契約を修正する。
 - [ ] [ID: P0-CPP-REGRESSION-RECOVERY-01-S3-02] `os.path` / `glob` 系 runtime helper 呼び出しを、owner/module metadata に基づく解決へ戻し、C++ emitter の特例依存を減らす。
@@ -105,3 +105,4 @@
     - `test_emit_stmt_fallback_works_when_dynamic_hooks_disabled`
       - `Pass` が `/* pass */` ではなく単独 `;` に縮退している。
       - 修正責務: stmt emitter fallback、compound assign emit、CLI option dispatch、error category 正規化。
+- 2026-03-06: [ID: `P0-CPP-REGRESSION-RECOVERY-01-S2-01`] `json` は 4 点の生成契約破綻だった。1) class split が brace を生 `count("{")-count("}")` で数えており、`"{"` / `"}"` を含む文字列リテラルで `_JsonParser` method block を誤分割していたため、`_brace_delta_ignoring_literals()` を導入して split/class extract/namespace scan の brace 判定を修正。2) C 系 string literal escape が `\\b` / `\\f` を扱っておらず制御文字が生出力されていたため、common/C++ header/runtime emit すべてへ escape を追加。3) runtime public header 側に既定引数が載っておらず `json.dumps(...)` 呼び出しが compile fail していたため、`build_cpp_header_from_east()` で function decl に default argument を載せるよう修正。4) その結果 `.cpp` 定義と既定引数が重複しないよう、runtime emit 専用に top-level 関数定義から既定引数を剥がす post-process を追加した。`src/pytra/std/json.py` は未修正、`src/runtime/cpp/std/json.gen.*` は再生成のみ。確認は `python3 -m py_compile ...code_emitter.py ...cli.py ...header_builder.py`、`python3 src/py2x.py --target cpp src/pytra/std/json.py --emit-runtime-cpp`、`test_json_extended_runtime` 単体で compile/run pass。

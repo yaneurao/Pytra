@@ -42,13 +42,13 @@ def split_cpp_inline_class_defs(
             i += 1
             continue
         cls_start = i
-        depth = raw.count("{") - raw.count("}")
+        depth = _brace_delta_ignoring_literals(raw)
         cls_lines: list[str] = [raw]
         i += 1
         while i < end and depth > 0:
             cur = lines[i]
             cls_lines.append(cur)
-            depth += cur.count("{") - cur.count("}")
+            depth += _brace_delta_ignoring_literals(cur)
             i += 1
         decl_lines, def_lines = _split_single_class_block(cls_lines)
         if keep_class_decls:
@@ -119,6 +119,7 @@ def build_cpp_header_from_east(
                 ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
                 used_types.add(ret_cpp)
                 arg_types = dict_any_get_dict(st, "arg_types")
+                arg_defaults = dict_any_get_dict(st, "arg_defaults")
                 arg_order = dict_any_get_list(st, "arg_order")
                 parts: list[str] = []
                 for an in arg_order:
@@ -130,10 +131,12 @@ def build_cpp_header_from_east(
                     param_txt = (
                         at_cpp + " " + an if at_cpp in by_value_types else "const " + at_cpp + "& " + an
                     )
-                    # NOTE:
-                    # 既定引数は `.cpp` 側の定義にのみ付与する。
-                    # ヘッダと定義の二重指定によるコンパイルエラーを避けるため、
-                    # 宣言側では既定値を埋め込まない。
+                    if an in arg_defaults:
+                        default_node = arg_defaults.get(an)
+                        if isinstance(default_node, dict):
+                            default_txt = _header_render_default_expr(default_node, at)
+                            if default_txt != "":
+                                param_txt += " = " + default_txt
                     parts.append(param_txt)
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
@@ -262,9 +265,9 @@ def _namespace_body_span(lines: list[str], top_namespace: str) -> tuple[int, int
         if ns_idx < 0:
             return 0, len(lines)
         start = ns_idx + 1
-        depth = lines[ns_idx].count("{") - lines[ns_idx].count("}")
+        depth = _brace_delta_ignoring_literals(lines[ns_idx])
         for i in range(ns_idx + 1, len(lines)):
-            depth += lines[i].count("{") - lines[i].count("}")
+            depth += _brace_delta_ignoring_literals(lines[i])
             if depth <= 0:
                 end = i
                 break
@@ -347,6 +350,32 @@ def _is_class_method_start_line(stripped: str) -> bool:
     return True
 
 
+def _is_top_level_function_start_line(stripped: str) -> bool:
+    if "{" not in stripped:
+        return False
+    if not stripped.endswith("{"):
+        return False
+    if "(" not in stripped or ")" not in stripped:
+        return False
+    bad_prefixes = (
+        "if ",
+        "for ",
+        "while ",
+        "switch ",
+        "else",
+        "do ",
+        "try",
+        "catch",
+        "namespace ",
+        "struct ",
+        "class ",
+    )
+    for bad in bad_prefixes:
+        if stripped.startswith(bad):
+            return False
+    return True
+
+
 def _collect_brace_block(lines: list[str], start_idx: int) -> tuple[list[str], int]:
     out: list[str] = []
     depth = 0
@@ -354,7 +383,7 @@ def _collect_brace_block(lines: list[str], start_idx: int) -> tuple[list[str], i
     while i < len(lines):
         line = lines[i]
         out.append(line)
-        depth += line.count("{") - line.count("}")
+        depth += _brace_delta_ignoring_literals(line)
         i += 1
         if depth <= 0:
             break
@@ -428,6 +457,39 @@ def _build_out_of_class_method_def(method_lines: list[str], cls_name: str) -> li
     return out
 
 
+def strip_cpp_default_args_from_top_level_defs(cpp_text: str, top_namespace: str = "") -> str:
+    """top-level 関数定義の既定引数を `.cpp` 用に除去する。"""
+    if cpp_text.strip() == "":
+        return cpp_text
+    lines = cpp_text.splitlines()
+    if len(lines) == 0:
+        return cpp_text
+    start, end = _namespace_body_span(lines, top_namespace)
+    if start < 0 or end <= start:
+        return cpp_text
+    out_lines: list[str] = []
+    i = 0
+    while i < len(lines):
+        if i < start or i >= end:
+            out_lines.append(lines[i])
+            i += 1
+            continue
+        raw = lines[i]
+        stripped = raw.lstrip()
+        if not _is_top_level_function_start_line(stripped):
+            out_lines.append(raw)
+            i += 1
+            continue
+        fn_lines, next_i = _collect_brace_block(lines, i)
+        if len(fn_lines) == 0:
+            i = next_i
+            continue
+        out_lines.append(_strip_default_args_from_function_def_line(fn_lines[0]))
+        out_lines.extend(fn_lines[1:])
+        i = next_i
+    return join_str_list("\n", out_lines) + ("\n" if cpp_text.endswith("\n") else "")
+
+
 def _strip_default_args_from_method_tail(tail: str) -> str:
     """`(T a = x, U b = y) ...` から `.cpp` 定義向けに既定引数を除去する。"""
     lp = tail.find("(")
@@ -463,6 +525,21 @@ def _strip_default_args_from_method_tail(tail: str) -> str:
             p = p[:eq_pos].rstrip()
         clean_parts.append(p)
     return "(" + join_str_list(", ", clean_parts) + ")" + suffix
+
+
+def _strip_default_args_from_function_def_line(line: str) -> str:
+    stripped = line.lstrip()
+    indent = line[: len(line) - len(stripped)]
+    brace_pos = stripped.rfind("{")
+    if brace_pos < 0:
+        return line
+    sig = stripped[:brace_pos].rstrip()
+    paren_pos = sig.find("(")
+    if paren_pos < 0:
+        return line
+    head = sig[:paren_pos]
+    tail = sig[paren_pos:]
+    return indent + head + _strip_default_args_from_method_tail(tail) + " {"
 
 
 def _split_top_level_params(params_txt: str) -> list[str]:
@@ -710,9 +787,9 @@ def _extract_cpp_class_blocks(cpp_text: str, top_namespace: str) -> list[str]:
         if ns_idx < 0:
             return []
         start = ns_idx + 1
-        depth = lines[ns_idx].count("{") - lines[ns_idx].count("}")
+        depth = _brace_delta_ignoring_literals(lines[ns_idx])
         for i in range(ns_idx + 1, len(lines)):
-            depth += lines[i].count("{") - lines[i].count("}")
+            depth += _brace_delta_ignoring_literals(lines[i])
             if depth <= 0:
                 end = i
                 break
@@ -731,19 +808,63 @@ def _extract_cpp_class_blocks(cpp_text: str, top_namespace: str) -> list[str]:
         if "{" not in raw:
             i += 1
             continue
-        depth = raw.count("{") - raw.count("}")
+        depth = _brace_delta_ignoring_literals(raw)
         block_lines: list[str] = [raw]
         i += 1
         while i < end:
             line = lines[i]
             block_lines.append(line)
-            depth += line.count("{") - line.count("}")
+            depth += _brace_delta_ignoring_literals(line)
             if depth <= 0 and line.strip().endswith("};"):
                 i += 1
                 break
             i += 1
         blocks.append(join_str_list("\n", block_lines))
     return blocks
+
+
+def _brace_delta_ignoring_literals(line: str) -> int:
+    """文字列リテラルやコメント中の `{` `}` を無視して brace 差分を返す。"""
+    depth = 0
+    in_single = False
+    in_double = False
+    escaped = False
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        nxt = line[i + 1] if i + 1 < len(line) else ""
+        if escaped:
+            escaped = False
+            i += 1
+            continue
+        if in_single:
+            if ch == "\\":
+                escaped = True
+            elif ch == "'":
+                in_single = False
+            i += 1
+            continue
+        if in_double:
+            if ch == "\\":
+                escaped = True
+            elif ch == "\"":
+                in_double = False
+            i += 1
+            continue
+        if ch == "/" and nxt == "/":
+            break
+        if ch == "/" and nxt == "*":
+            break
+        if ch == "'":
+            in_single = True
+        elif ch == "\"":
+            in_double = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+        i += 1
+    return depth
 
 
 def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) -> str:
@@ -965,6 +1086,10 @@ def _cpp_string_lit(s: str) -> str:
             out_chars.append("\\\\")
         elif ch == "\"":
             out_chars.append("\\\"")
+        elif ch == "\b":
+            out_chars.append("\\b")
+        elif ch == "\f":
+            out_chars.append("\\f")
         elif ch == "\n":
             out_chars.append("\\n")
         elif ch == "\r":

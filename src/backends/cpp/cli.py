@@ -51,6 +51,7 @@ from backends.cpp.emitter.profile_loader import load_cpp_aug_ops as _load_cpp_au
 from backends.cpp.emitter.profile_loader import load_cpp_aug_bin as _load_cpp_aug_bin
 from backends.cpp.emitter.header_builder import build_cpp_header_from_east as _build_cpp_header_from_east
 from backends.cpp.emitter.header_builder import split_cpp_inline_class_defs as _split_cpp_inline_class_defs
+from backends.cpp.emitter.header_builder import strip_cpp_default_args_from_top_level_defs as _strip_cpp_default_args_from_top_level_defs
 from backends.cpp.emitter.multifile_writer import write_multi_file_cpp as _write_multi_file_cpp_impl
 from backends.cpp.optimizer import parse_cpp_opt_pass_overrides
 
@@ -209,6 +210,10 @@ def cpp_string_lit(s: str) -> str:
             out_chars.append("\\\\")
         elif ch == "\"":
             out_chars.append("\\\"")
+        elif ch == "\b":
+            out_chars.append("\\b")
+        elif ch == "\f":
+            out_chars.append("\\f")
         elif ch == "\n":
             out_chars.append("\\n")
         elif ch == "\r":
@@ -376,6 +381,14 @@ def split_cpp_inline_class_defs(
 ) -> str:
     """`struct/class` 内 inline method 定義を宣言 + out-of-class 定義へ分離する。"""
     return _split_cpp_inline_class_defs(cpp_text, top_namespace, keep_class_decls)
+
+
+def strip_cpp_default_args_from_top_level_defs(
+    cpp_text: str,
+    top_namespace: str = "",
+) -> str:
+    """top-level 関数定義の既定引数を `.cpp` 用に除去する。"""
+    return _strip_cpp_default_args_from_top_level_defs(cpp_text, top_namespace)
 
 
 def _strip_decorator_head(decorator_name: str) -> str:
@@ -949,6 +962,7 @@ def main(argv: list[str]) -> int:
             )
             cpp_txt_runtime_for_header = split_cpp_inline_class_defs(cpp_txt_runtime, ns, True)
             cpp_txt_runtime = split_cpp_inline_class_defs(cpp_txt_runtime, ns, False)
+            cpp_txt_runtime = strip_cpp_default_args_from_top_level_defs(cpp_txt_runtime, ns)
             own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.gen.h"'
             if own_runtime_header not in cpp_txt_runtime:
                 old_runtime_include = '#include "runtime/cpp/core/py_runtime.ext.h"\n'

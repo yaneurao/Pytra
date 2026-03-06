@@ -153,6 +153,10 @@ class CodeEmitter:
                 out_parts.append("\\\\")
             elif ch == "\"":
                 out_parts.append("\\\"")
+            elif ch == "\b":
+                out_parts.append("\\b")
+            elif ch == "\f":
+                out_parts.append("\\f")
             elif ch == "\n":
                 out_parts.append("\\n")
             elif ch == "\r":

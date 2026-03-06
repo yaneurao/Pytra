@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/std/json.gen.h"
 
+#include "runtime/cpp/built_in/string_ops.gen.h"
 
 namespace pytra::std::json {
 
@@ -111,8 +112,9 @@ namespace pytra::std::json {
                 return make_object(::std::nullopt);
             }
             return this->_parse_number();
-        }
-        dict<str, object> _parse_object() {
+    }
+
+    dict<str, object> _JsonParser::_parse_object() {
             dict<str, object> out = dict<str, object>{};
             this->i++;
             this->_skip_ws();
@@ -140,8 +142,10 @@ namespace pytra::std::json {
                     return out;
                 if (ch != ",")
                     throw ValueError("invalid json object separator");
+            }
     }
-        object _parse_array() {
+
+    object _JsonParser::_parse_array() {
             list<object> out = list<object>{};
             this->i++;
             this->_skip_ws();
@@ -162,8 +166,9 @@ namespace pytra::std::json {
                 if (ch != ",")
                     throw ValueError("invalid json array separator");
             }
-        }
-        str _parse_string() {
+    }
+
+    str _JsonParser::_parse_string() {
             if (this->text[this->i] != "\"")
                 throw ValueError("invalid json string");
             this->i++;
@@ -185,10 +190,9 @@ namespace pytra::std::json {
                     } else if (esc == "/") {
                         out_chars.append(str("/"));
                     } else if (esc == "b") {
-                        out_chars.append(str(""));
+                        out_chars.append(str("\b"));
                     } else if (esc == "f") {
-                        out_chars.append(str("
-"));
+                        out_chars.append(str("\f"));
                     } else if (esc == "n") {
                         out_chars.append(str("\n"));
                     } else if (esc == "r") {
@@ -209,8 +213,9 @@ namespace pytra::std::json {
                 }
             }
             throw ValueError("unterminated json string");
-        }
-        object _parse_number() {
+    }
+
+    object _JsonParser::_parse_number() {
             int64 start = this->i;
             if (this->text[this->i] == "-")
                 this->i++;
@@ -259,8 +264,7 @@ namespace pytra::std::json {
             }
             int64 num_i = py_to_int64(token);
             return make_object(num_i);
-        }
-    };
+    }
     
     object loads(const str& text) {
         return _JsonParser(text).parse();
@@ -274,10 +278,9 @@ namespace pytra::std::json {
                 out.append(str("\\\""));
             } else if (ch == "\\") {
                 out.append(str("\\\\"));
-            } else if (ch == "") {
+            } else if (ch == "\b") {
                 out.append(str("\\b"));
-            } else if (ch == "
-") {
+            } else if (ch == "\f") {
                 out.append(str("\\f"));
             } else if (ch == "\n") {
                 out.append(str("\\n"));
@@ -365,7 +368,7 @@ namespace pytra::std::json {
         throw TypeError("json.dumps unsupported type");
     }
     
-    str dumps(const object& obj, bool ensure_ascii = true, const ::std::optional<int64>& indent = ::std::nullopt, const ::std::optional<::std::tuple<str, str>>& separators = ::std::nullopt) {
+    str dumps(const object& obj, bool ensure_ascii, const ::std::optional<int64>& indent, const ::std::optional<::std::tuple<str, str>>& separators) {
         str item_sep = ",";
         str key_sep = (py_is_none(indent) ? ":" : ": ");
         if (!py_is_none(separators)) {
