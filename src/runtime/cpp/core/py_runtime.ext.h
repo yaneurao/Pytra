@@ -1210,11 +1210,6 @@ static inline str py_slice(const str& v, int64 lo, const ::std::any& up) {
 }
 
 template <class T>
-static inline T& py_at(list<T>& v, int64 idx) {
-    return py_list_at_ref(v, idx);
-}
-
-template <class T>
 static inline const T& py_at(const list<T>& v, int64 idx) {
     return py_list_at_ref(v, idx);
 }
@@ -1471,11 +1466,6 @@ static inline void py_set_at(const object& v, int64 idx, const object& item) {
         throw ::std::runtime_error("setitem on non-list object");
     }
     py_list_set_at_mut(p->value, idx, item);
-}
-
-template <class T, class I, class U>
-static inline void py_set_at(list<T>& v, I idx, const U& item) {
-    py_list_set_at_mut(v, idx, item);
 }
 
 template <class T, class I, class U>

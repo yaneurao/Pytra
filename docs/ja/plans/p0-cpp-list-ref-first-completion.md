@@ -211,7 +211,7 @@
 
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S2-01] runtime helper の list 主経路を `rc<list<T>>` 基準へ整理し、mutable operation の正本 overload を固定する。
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S2-02] `iter_ops` / `contains` / `sequence` / `py_to_*` / `make_object` の list 経路を `rc<list<T>>` 正本へ揃える。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S2-03] `list<T>` runtime overload のうち ABI adapter 以外のものを縮退・撤去し、残す理由を決定ログへ固定する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S2-03] `list<T>` runtime overload のうち ABI adapter 以外のものを縮退・撤去し、残す理由を決定ログへ固定する。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S3-01] emitter の list 型描画を ref-first に切り替え、`_is_pyobj_forced_typed_list_type` 依存を撤去する。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S3-02] list literal / empty init / assign / annassign / tuple unpack / comprehension を `rc<list<T>>` 正本へ切り替える。
@@ -237,3 +237,5 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の slice/set_at/append/extend/pop/reverse/sort/clear smoke を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` として、`contains.ext.h` / `iter_ops.ext.h` / `sequence.ext.h` に list 共通 helper と `rc<list<T>>` overload を追加し、`py_contains` / `py_reversed` / `py_enumerate` / `py_repeat` を typed handle から直接呼べるようにした。加えて `py_runtime.ext.h` で `make_object(const rc<list<T>>& )` と `obj_to_rc_list<T>` / `py_to_typed_list_from_object<T>` を共有 helper 経由へ整理し、`py_is_list(const rc<list<T>>& )` を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を再実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の contains/reversed/enumerate/repeat/object roundtrip/`py_to<rc<list<int64>>>` smoke を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` として、`py_runtime.ext.h` から value-list mutable public overload `py_at(list<T>&)` / `py_set_at(list<T>&)` を撤去した。plain `list<T>` で残すのは、Phase 3 まで selfhost/generated C++ value-path が読んでいる read-only overload（例: `selfhost/py2cpp.cpp` の `py_slice(py_runtime_argv(), ...)`, `test/transpile/cpp/13_maze_generation_steps.cpp` の `py_at(stack, -(1))`, `test/transpile/cpp/18_mini_language_interpreter.cpp` の `py_enumerate(lines)` / `py_contains(env, ...)`）、および runtime 生成コードの local builder が使う `py_append(list<T>&)`、さらに `make_object(list<T>)` / `py_to_typed_list_from_object<T>` / `obj_to_rc_list<T>` などの boxing / rollback adapter に限定する方針を固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py`, `tools/check_todo_priority.py` を実行し通過した。`test_cpp_runtime_iterable.py` には plain `list<T>` read-only smoke と runtime overload inventory guard を追加した。
