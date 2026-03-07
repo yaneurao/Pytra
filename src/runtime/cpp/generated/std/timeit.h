@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_STD_TIMEIT_H
 #define PYTRA_GENERATED_STD_TIMEIT_H
 
-#include "runtime/cpp/core/py_scalar_types.ext.h"
+#include "runtime/cpp/core/py_scalar_types.h"
 
 namespace pytra::std::timeit {
 

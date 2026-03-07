@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _write_cpp_harness(path: Path) -> None:
     src = r'''
-#include "runtime/cpp/core/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.h"
 #include "runtime/cpp/generated/utils/png.h"
 #include "runtime/cpp/generated/utils/gif.h"
 

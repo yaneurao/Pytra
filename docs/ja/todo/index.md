@@ -41,8 +41,8 @@
 3. [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
 4. [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
 5. [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-02] synthetic test を追加し、`core/*.h` + `native/core/*.{h,cpp}` の plain naming で compile/source 解決できることを固定する。
-6. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-01] `src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder surface を plain name へ切り替える。
-7. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-02] backend / generated runtime / native companion / tests の include を `runtime/cpp/core/*.h` へ更新し、`runtime/cpp/core/*.ext.h` 依存を除去する。
+6. [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-01] `src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder surface を plain name へ切り替える。
+7. [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-02] backend / generated runtime / native companion / tests の include を `runtime/cpp/core/*.h` へ更新し、`runtime/cpp/core/*.ext.h` 依存を除去する。
 8. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S4-01] `src/runtime/cpp/native/core/*.ext.h` / `*.ext.cpp` を plain name へ rename し、public forwarder と compile source の参照先を同期する。
 9. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S4-02] runtime symbol index / parity tool / representative tests を plain `native/core/*.{h,cpp}` 前提へ更新し、旧 `.ext` path を返さないことを固定する。
 10. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S5-01] `generated/core` の plain naming rule を README/spec/guard に固定し、future artifact が `.ext` を再導入しないようにする。

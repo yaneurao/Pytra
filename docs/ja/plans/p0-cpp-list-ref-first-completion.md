@@ -27,9 +27,9 @@
   - `src/backends/cpp/lower/*`
   - `src/backends/cpp/optimizer/*`
 - C++ runtime
-  - `src/runtime/cpp/core/list.ext.h`
-  - `src/runtime/cpp/core/py_types.ext.h`
-  - `src/runtime/cpp/core/py_runtime.ext.h`
+  - `src/runtime/cpp/core/list.h`
+  - `src/runtime/cpp/core/py_types.h`
+  - `src/runtime/cpp/core/py_runtime.h`
   - `src/runtime/cpp/built_in/*`
   - `src/runtime/cpp/std/*`
 - C++ tests / parity
@@ -131,13 +131,13 @@
 
 ##### 2. ABI adapter 限定で残してよい経路
 
-- `src/runtime/cpp/core/py_runtime.ext.h::make_object(const rc<list<T>>& values)`
+- `src/runtime/cpp/core/py_runtime.h::make_object(const rc<list<T>>& values)`
   - `rc<list<T>>` から `object` への boxing 境界。内部表現の正本ではなく、`Any/object` 境界 adapter としてのみ残してよい。
-- `src/runtime/cpp/core/py_runtime.ext.h::obj_to_rc_list` / `obj_to_rc_list_or_raise`
+- `src/runtime/cpp/core/py_runtime.h::obj_to_rc_list` / `obj_to_rc_list_or_raise`
   - `object` から `rc<list<T>>` へ戻す unboxing 境界。
-- `src/runtime/cpp/core/py_runtime.ext.h::py_to_rc_list_from_object`
+- `src/runtime/cpp/core/py_runtime.h::py_to_rc_list_from_object`
   - `list[RefClass]` など object list から typed handle list を復元する境界 helper。
-- `src/runtime/cpp/core/py_runtime.ext.h::py_to_typed_list_from_object`
+- `src/runtime/cpp/core/py_runtime.h::py_to_typed_list_from_object`
   - rollback/value adapter としては残しうるが、backend 内部の既定経路にしてはならない。
 
 ##### 3. optimizer 限定
@@ -233,11 +233,11 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S1-01` として現行分岐を棚卸しし、`_is_pyobj_forced_typed_list_type`、`_collect_stack_list_locals`、内部 callsite 向け `rc_list_ref(...)` adapter を「禁止」へ分類した。
 - 2026-03-07: optimizer 側には list value-lowering pass が未実装であることを確認し、現状の value 縮退は emitter 内の暫定実装として扱う方針を固定した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S1-03` として、typed list でも alias 経路は `rc<list<T>>` を維持し、typed call 境界でのみ `rc_list_ref(...)` へ落とす representative codegen test を追加した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` として、`py_runtime.ext.h` の list helper を共通 helper 経由へ整理し、`py_slice / py_at / py_append / py_set_at / py_extend / py_pop / py_clear / py_reverse / py_sort` の typed canonical path を `rc<list<T>>` overload から呼ぶ構成へ揃えた。`object` / `list<T>` 側は同じ list helper 本体を通る adapter として扱う。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` として、`py_runtime.h` の list helper を共通 helper 経由へ整理し、`py_slice / py_at / py_append / py_set_at / py_extend / py_pop / py_clear / py_reverse / py_sort` の typed canonical path を `rc<list<T>>` overload から呼ぶ構成へ揃えた。`object` / `list<T>` 側は同じ list helper 本体を通る adapter として扱う。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の slice/set_at/append/extend/pop/reverse/sort/clear smoke を追加した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` として、`contains.ext.h` / `iter_ops.ext.h` / `sequence.ext.h` に list 共通 helper と `rc<list<T>>` overload を追加し、`py_contains` / `py_reversed` / `py_enumerate` / `py_repeat` を typed handle から直接呼べるようにした。加えて `py_runtime.ext.h` で `make_object(const rc<list<T>>& )` と `obj_to_rc_list<T>` / `py_to_typed_list_from_object<T>` を共有 helper 経由へ整理し、`py_is_list(const rc<list<T>>& )` を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` として、`contains.ext.h` / `iter_ops.ext.h` / `sequence.ext.h` に list 共通 helper と `rc<list<T>>` overload を追加し、`py_contains` / `py_reversed` / `py_enumerate` / `py_repeat` を typed handle から直接呼べるようにした。加えて `py_runtime.h` で `make_object(const rc<list<T>>& )` と `obj_to_rc_list<T>` / `py_to_typed_list_from_object<T>` を共有 helper 経由へ整理し、`py_is_list(const rc<list<T>>& )` を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を再実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の contains/reversed/enumerate/repeat/object roundtrip/`py_to<rc<list<int64>>>` smoke を追加した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` として、`py_runtime.ext.h` から value-list mutable public overload `py_at(list<T>&)` / `py_set_at(list<T>&)` を撤去した。plain `list<T>` で残すのは、Phase 3 まで selfhost/generated C++ value-path が読んでいる read-only overload（例: `selfhost/py2cpp.cpp` の `py_slice(py_runtime_argv(), ...)`, `test/transpile/cpp/13_maze_generation_steps.cpp` の `py_at(stack, -(1))`, `test/transpile/cpp/18_mini_language_interpreter.cpp` の `py_enumerate(lines)` / `py_contains(env, ...)`）、および runtime 生成コードの local builder が使う `py_append(list<T>&)`、さらに `make_object(list<T>)` / `py_to_typed_list_from_object<T>` / `obj_to_rc_list<T>` などの boxing / rollback adapter に限定する方針を固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` として、`py_runtime.h` から value-list mutable public overload `py_at(list<T>&)` / `py_set_at(list<T>&)` を撤去した。plain `list<T>` で残すのは、Phase 3 まで selfhost/generated C++ value-path が読んでいる read-only overload（例: `selfhost/py2cpp.cpp` の `py_slice(py_runtime_argv(), ...)`, `test/transpile/cpp/13_maze_generation_steps.cpp` の `py_at(stack, -(1))`, `test/transpile/cpp/18_mini_language_interpreter.cpp` の `py_enumerate(lines)` / `py_contains(env, ...)`）、および runtime 生成コードの local builder が使う `py_append(list<T>&)`、さらに `make_object(list<T>)` / `py_to_typed_list_from_object<T>` / `obj_to_rc_list<T>` などの boxing / rollback adapter に限定する方針を固定した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py`, `tools/check_todo_priority.py` を実行し通過した。`test_cpp_runtime_iterable.py` には plain `list<T>` read-only smoke と runtime overload inventory guard を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` として、関数/ラムダ/メソッドの list 型描画を `cpp_signature_type(...)` 基準へ切り替え、`cpp_list_model=pyobj` の typed mutable list を `const rc<list<T>>&` / `rc<list<T>>&` / `rc<list<T>>` で出力するようにした。typed handle call/return は `rc_list_ref(...)` を経由せずそのまま共有し、stack-local value list から ref-first 境界へ出る箇所だけ `rc_list_from_value(...)` を残す構成へ整理した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` として、旧 `_is_pyobj_forced_typed_list_type` を retire し、関数境界の ref-first 判定を `_is_pyobj_ref_first_list_type`、stack-local / bytearray / collection builder など value-model 判定を `_is_pyobj_value_model_list_type` へ分離した。これにより、型描画の正本は ref-first へ固定しつつ、Phase 3 後続で残る local value-lowering の責務境界を helper 名の上でも分離した。

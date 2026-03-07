@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_STD_ARGPARSE_H
 #define PYTRA_GENERATED_STD_ARGPARSE_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 namespace pytra::std::argparse {
 

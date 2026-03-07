@@ -5,7 +5,7 @@
 #ifndef PYTRA_BUILT_IN_TYPE_ID_GEN_H
 #define PYTRA_BUILT_IN_TYPE_ID_GEN_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 extern list<int64> _TYPE_IDS;
 extern dict<int64, int64> _TYPE_BASE;

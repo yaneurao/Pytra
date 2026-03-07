@@ -36,7 +36,7 @@ class CppRuntimeBoxingTest(unittest.TestCase):
 
     def test_runtime_boxing_helpers_behave_as_expected(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include <cassert>
 #include <iostream>

@@ -23,8 +23,8 @@ def _write(path: Path, text: str) -> None:
 
 def _make_valid_tree(root: Path, *, core_plain_names: bool) -> None:
     marker = "AUTO-GENERATED FILE. DO NOT EDIT."
-    core_header_name = "dict.h" if core_plain_names else "dict.ext.h"
-    py_runtime_name = "py_runtime.h" if core_plain_names else "py_runtime.ext.h"
+    core_header_name = "dict.h" if core_plain_names else "dict.h"
+    py_runtime_name = "py_runtime.h" if core_plain_names else "py_runtime.h"
     core_cpp_name = "dict.cpp" if core_plain_names else "dict.ext.cpp"
     gc_cpp_name = "gc.cpp" if core_plain_names else "gc.ext.cpp"
     _write(root / "src" / "runtime" / "cpp" / "generated" / "std" / "time.h", f"// {marker}\n")

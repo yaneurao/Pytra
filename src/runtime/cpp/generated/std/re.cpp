@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/re.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/re.h"
 

@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_STD_RE_H
 #define PYTRA_GENERATED_STD_RE_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 #include <optional>
 

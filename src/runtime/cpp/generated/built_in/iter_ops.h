@@ -5,7 +5,7 @@
 #ifndef PYTRA_BUILT_IN_ITER_OPS_GEN_H
 #define PYTRA_BUILT_IN_ITER_OPS_GEN_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 object py_reversed_object(const object& values);
 object py_enumerate_object(const object& values, int64 start);
