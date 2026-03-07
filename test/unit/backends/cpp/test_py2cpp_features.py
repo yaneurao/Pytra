@@ -1595,8 +1595,13 @@ if __name__ == "__main__":
         with tempfile.TemporaryDirectory() as tmpdir:
             src_py = Path(tmpdir) / "os_path_calls.py"
             src_py.write_text(src, encoding="utf-8")
-            east = load_east(src_py)
-            cpp = transpile_to_cpp(east)
+            prev_cwd = Path.cwd()
+            os.chdir(tmpdir)
+            try:
+                east = load_east(src_py)
+                cpp = transpile_to_cpp(east)
+            finally:
+                os.chdir(prev_cwd)
         self.assertIn("pytra::std::os_path::join(", cpp)
         self.assertIn("pytra::std::os_path::splitext(", cpp)
         self.assertNotIn("pytra::std::os::path::join(", cpp)
