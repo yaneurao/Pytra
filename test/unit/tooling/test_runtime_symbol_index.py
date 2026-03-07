@@ -195,6 +195,19 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             [],
         )
 
+    def test_real_repo_cpp_core_layout_exposes_surface_and_ownership_lanes(self) -> None:
+        self.assertTrue((ROOT / "src/runtime/cpp/core/dict.ext.h").exists())
+        self.assertTrue((ROOT / "src/runtime/cpp/native/core/dict.ext.h").exists())
+        self.assertTrue((ROOT / "src/runtime/cpp/generated/core/README.md").exists())
+        self.assertEqual(
+            lookup_target_module_primary_header("cpp", "pytra.core.dict"),
+            "src/runtime/cpp/core/dict.ext.h",
+        )
+        self.assertIn(
+            "src/runtime/cpp/native/core/gc.ext.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.core.gc"),
+        )
+
     def test_cpp_core_artifacts_support_future_generated_native_split(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
