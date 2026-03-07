@@ -22,8 +22,9 @@ from toolchain.compiler.transpile_cli import (
 )
 
 
-RUNTIME_STD_SOURCE_ROOT = Path("src/pytra/std")
-RUNTIME_UTILS_SOURCE_ROOT = Path("src/pytra/utils")
+REPO_ROOT = Path(__file__).resolve().parents[4]
+RUNTIME_STD_SOURCE_ROOT = REPO_ROOT / "src/pytra/std"
+RUNTIME_UTILS_SOURCE_ROOT = REPO_ROOT / "src/pytra/utils"
 TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
