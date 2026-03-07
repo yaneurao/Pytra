@@ -1,5 +1,5 @@
-#ifndef PYTRA_BUILT_IN_CONTAINS_EXT_H
-#define PYTRA_BUILT_IN_CONTAINS_EXT_H
+#ifndef PYTRA_NATIVE_BUILT_IN_CONTAINS_H
+#define PYTRA_NATIVE_BUILT_IN_CONTAINS_H
 
 #include "runtime/cpp/generated/built_in/contains.h"
 
@@ -71,4 +71,4 @@ static inline bool py_contains(const object& values, const Q& key) {
     return false;
 }
 
-#endif  // PYTRA_BUILT_IN_CONTAINS_EXT_H
+#endif  // PYTRA_NATIVE_BUILT_IN_CONTAINS_H

@@ -63,7 +63,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         )
         return manifest
 
-    def test_build_multi_cpp_follows_forwarder_header_to_ext_cpp(self) -> None:
+    def test_build_multi_cpp_follows_forwarder_header_to_native_cpp(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             workdir = Path(tmpdir)
             manifest = self._make_forwarder_project(workdir)
@@ -79,7 +79,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             run = subprocess.run([str(exe)], capture_output=True, text=True, cwd=str(workdir))
             self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_makefile_includes_ext_cpp_for_forwarder_header(self) -> None:
+    def test_makefile_includes_native_cpp_for_forwarder_header(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             workdir = Path(tmpdir)
             manifest = self._make_forwarder_project(workdir)
@@ -92,7 +92,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             text = output_makefile.read_text(encoding="utf-8")
-            self.assertIn(str(ROOT / "src/runtime/cpp/std/math.ext.cpp"), text)
+            self.assertIn(str(ROOT / "src/runtime/cpp/native/std/math.cpp"), text)
 
     def test_runtime_cpp_candidates_support_generated_native_layout(self) -> None:
         header = ROOT / "src/runtime/cpp/generated/std/math.h"

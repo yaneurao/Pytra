@@ -964,7 +964,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/glob.ext.cpp"
+            "src/runtime/cpp/native/std/glob.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/glob.h"
@@ -987,7 +987,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/math.ext.cpp"
+            "src/runtime/cpp/native/std/math.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/math.h"
@@ -999,7 +999,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/os.ext.cpp"
+            "src/runtime/cpp/native/std/os.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/os.h"
@@ -1011,7 +1011,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/os_path.ext.cpp"
+            "src/runtime/cpp/native/std/os_path.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/os_path.h"
@@ -1056,7 +1056,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/sys.ext.cpp"
+            "src/runtime/cpp/native/std/sys.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/sys.h"
@@ -1068,7 +1068,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/time.ext.cpp"
+            "src/runtime/cpp/native/std/time.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/time.h"

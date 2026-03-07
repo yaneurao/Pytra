@@ -1,5 +1,5 @@
-#ifndef PYTRA_BUILT_IN_ITER_OPS_EXT_H
-#define PYTRA_BUILT_IN_ITER_OPS_EXT_H
+#ifndef PYTRA_NATIVE_BUILT_IN_ITER_OPS_H
+#define PYTRA_NATIVE_BUILT_IN_ITER_OPS_H
 
 #include "runtime/cpp/generated/built_in/iter_ops.h"
 
@@ -114,4 +114,4 @@ static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::an
     return {};
 }
 
-#endif  // PYTRA_BUILT_IN_ITER_OPS_EXT_H
+#endif  // PYTRA_NATIVE_BUILT_IN_ITER_OPS_H
