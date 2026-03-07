@@ -35,48 +35,69 @@
 - `EAST1`: parser 直後の loss-minimal IR。
 - `EAST2`: normalize 専任 IR。
 - `EAST3`: backend 入力の意味論 IR。
-- `link unit`: 1 モジュール分の `EAST3`。
-- `link manifest`: link 入力集合・設定・割当結果を保持するメタ情報。
+- `link unit`: link 前の 1 モジュール分 `EAST3` 文書。
+- `LinkedProgram`: 複数 `link unit` と program-wide option を束ねた検証済み in-memory モデル。
+- `link-input.v1`: `LinkedProgram` を構築するための入力 manifest。
+- `link-output.v1`: global summary と linked module 出力先を記録する出力 manifest。
+- `linked module`: linker / linked-program optimizer 後の `EAST3` 文書。`kind=Module` と `east_stage=3` は維持しつつ、`meta.linked_program_v1` を持つ。
 
 ## 4. 基本パイプライン
 
 ### 4.1 既定（高速）
 
 - 既定は従来どおりメモリ内で処理する。
-- `parser -> EAST1 -> EAST2 -> EAST3 -> linker(in-memory) -> backend`
+- `parser -> EAST1 -> EAST2 -> EAST3(raw module) -> LinkedProgramLoader -> LinkedProgramOptimizer -> linked module(EAST3) -> backend`
 
 ### 4.2 デバッグ/再現モード
 
-- 必要時のみ中間ファイルを保存する。
-- 例: `test1.east1`, `test1.east2`, `test1.east3`（実体は JSON）
+- 必要時のみ raw `EAST3` 群と `link-input.v1` / `link-output.v1` を保存する。
+- 推奨導線は次のとおり。
+  1. `py2x.py` で raw `EAST3` 群と `link-input.json` を出力する。
+  2. `eastlink.py` で `link-input.json` を読み、`link-output.json` と linked module 群を出力する。
+  3. `ir2lang.py` で `link-output.json` を読んで backend emit する。
 
-推奨拡張子:
+推奨拡張子 / ファイル名:
 - `*.east1.json`
 - `*.east2.json`
 - `*.east3.json`
+- `link-input.json`
+- `link-output.json`
 
 ## 5. linker の責務
 
-linker は `EAST3` 群を受け取り、次を確定する。
+linker / linked-program optimizer は raw `EAST3` 群を受け取り、次を確定する。
 
-1. モジュール ID 正規化
-- パス/モジュール名の揺れを正規化し、重複定義を検出する。
+1. module 集合の検証
+- `kind=Module`
+- `east_stage=3`
+- `schema_version`
+- `meta.dispatch_mode`
+を検証し、program-wide 一貫性違反を fail-fast する。
 
-2. グローバル型表の構築
-- FQCN（module + class）をキーに型定義を一意化する。
-- 継承グラフ（単一継承想定）を構築し、循環を検出する。
+2. モジュール ID 正規化と決定的順序
+- `module_id` の揺れを正規化し、重複定義を検出する。
+- 同一入力集合では常に同じ順序で `LinkedProgram` を構築する。
 
-3. `type_id` の確定
-- built-in は固定 ID を維持する（`spec-type_id`/runtime 契約）。
-- user class は linker が決定的規則で割り当てる。
-- backend は linker 確定値を使うだけにする。
+3. global summary 構築
+- program-wide call graph
+- SCC
+- `type_id_table`
+- non-escape summary
+- container ownership hints
+を 1 箇所で確定する。
 
-4. dispatch 契約固定
-- `meta.dispatch_mode` を link 単位で整合チェックする。
-- 混在（hybrid）を禁止し、違反時は fail-fast。
+4. linked module への materialize
+- backend が module 単位で読めるよう、global summary の必要 slice を各 module `meta.linked_program_v1` へ materialize する。
+- function/call 単位の summary（例: `FunctionDef.meta.escape_summary`, `Call.meta.non_escape_callsite`）もこの段で最終化してよい。
 
-5. 連結済み IR 出力
-- backend が直接利用可能な linked `EAST3`（または等価 manifest）を出力する。
+5. program manifest 出力
+- `link-output.v1` を正本として出力し、global table の canonical source とする。
+- backend / `ProgramWriter` は `link-output.v1` と linked module を入力に動作する。
+
+backend 側の禁止事項:
+- `type_id` を再計算しない。
+- module 集合を勝手に再読込して whole-program summary を再構築しない。
+- raw `EAST3` に不足する global 情報を emitter / hook で補完しない。
 
 ## 6. `type_id` 割り当て規則
 
@@ -100,54 +121,162 @@ linker は `EAST3` 群を受け取り、次を確定する。
 
 ## 7. 入出力契約
 
-各 `EAST*` 文書は少なくとも次を持つ。
+### 7.1 raw `EAST3` document の前提
 
-- `east_stage`: `east1 | east2 | east3`
-- `schema_version`
-- `meta.dispatch_mode`: `native | type_id`
-- `meta.transpiler_version`
+linker が受理する raw `EAST3` 文書は少なくとも次を持つ。
+
+- `kind = "Module"`
+- `east_stage = 3`（整数）
+- `schema_version`（整数）
+- `meta.dispatch_mode = "native" | "type_id"`
+- `meta.transpiler_version`（推奨）
 - `meta.input_hash`（任意だが推奨）
 
-linker 出力は次のいずれか:
+### 7.2 `link-input.v1`
 
-1. `linked.east3.json`
-- `EAST3` 本体 + `type_table` + `module_table`
+`link-input.v1` は `LinkedProgram` 構築前の入力 manifest である。
 
-2. `link-manifest.json`
-- 入力 `EAST3` 一覧
-- 確定 `type_id` マップ（`FQCN -> int`）
-- 検証結果メタ（warnings/errors）
+必須トップレベルキー:
 
-## 8. CLI 仕様（追加方針）
+- `schema`
+  - 固定値: `pytra.link_input.v1`
+- `target`
+  - 例: `cpp`, `rs`, `js`
+- `dispatch_mode`
+  - `native | type_id`
+- `entry_modules`
+  - entry module の `module_id` 配列
+- `modules`
+  - module entry 配列
 
-最低限次を定義する。
+任意トップレベルキー:
 
-- `--dump-east1 PATH`
-- `--dump-east2 PATH`
-- `--dump-east3 PATH`
-- `--from-east1 PATH`
-- `--from-east2 PATH`
-- `--from-east3 PATH`
-- `--link-manifest PATH`
-- `--link-only`
+- `options`
+  - target / optimizer 固有 option を保持する object。未知キーは validator が fail-closed せず透過保持してよい。
 
-挙動規則:
+`modules[*]` の必須キー:
 
-1. `--from-east3` 指定時は parser/normalize/lower をスキップして link 段から開始。
-2. `--link-only` は backend 生成を行わず、manifest/linked IR のみ出力。
-3. `--object-dispatch-mode` は linker 前段で確定済みであることを要求。
+- `module_id`
+- `path`
+- `source_path`
+- `is_entry`
+
+`link-input.v1` の path 契約:
+
+- `path` と `source_path` は manifest 配置ディレクトリからの POSIX 相対パスを正本とする。
+- loader 実装が互換のため絶対パスを受理してもよいが、生成器が出力する canonical form は相対パスとする。
+
+`link-input.v1` の検証規則:
+
+1. `module_id` は一意でなければならない。
+2. `entry_modules` は `modules[*].module_id` の部分集合でなければならない。
+3. 各 `path` は `kind=Module` / `east_stage=3` の raw `EAST3` 文書を指さなければならない。
+4. raw `EAST3.meta.dispatch_mode` は manifest `dispatch_mode` と一致しなければならない。
+5. `modules` の走査順は validator 内部で `module_id` 辞書順へ正規化し、決定性を保証する。
+
+### 7.3 `link-output.v1`
+
+`link-output.v1` は linker / linked-program optimizer の canonical 出力 manifest である。
+
+必須トップレベルキー:
+
+- `schema`
+  - 固定値: `pytra.link_output.v1`
+- `target`
+- `dispatch_mode`
+- `entry_modules`
+- `modules`
+- `global`
+- `diagnostics`
+
+`modules[*]` の必須キー:
+
+- `module_id`
+- `input`
+- `output`
+- `source_path`
+- `is_entry`
+
+`global` の必須キー:
+
+- `type_id_table`
+  - `FQCN -> int`
+- `call_graph`
+  - `caller -> callee[]`
+- `sccs`
+  - `string[][]`
+- `non_escape_summary`
+  - program-wide summary object
+- `container_ownership_hints_v1`
+  - program-wide ownership hint object
+
+`diagnostics` の必須キー:
+
+- `warnings`
+  - string 配列
+- `errors`
+  - string 配列
+
+`link-output.v1` の規則:
+
+1. `modules[*].output` は linked module（後述）の出力先を指す。
+2. `global` の各 table は空でもキー自体は必須とする。
+3. backend / `ProgramWriter` が参照する global table の canonical source は常に `link-output.v1` とする。
+
+### 7.4 linked module schema
+
+linked module は raw `EAST3` と同じく `kind=Module` / `east_stage=3` を維持する。  
+追加される canonical meta は `meta.linked_program_v1` である。
+
+`meta.linked_program_v1` の必須キー:
+
+- `program_id`
+  - linked program の決定的 ID。生成規則は実装依存だが、同一入力集合では同一値でなければならない。
+- `module_id`
+  - 現在 module の `module_id`
+- `entry_modules`
+  - program entry module の `module_id` 配列
+- `type_id_resolved_v1`
+  - 現在 module が必要とする `FQCN -> int` slice
+- `non_escape_summary`
+  - 現在 module が必要とする escape summary slice
+- `container_ownership_hints_v1`
+  - 現在 module が必要とする ownership hint slice
+
+linked module の補足規則:
+
+1. `meta.dispatch_mode` は raw `EAST3` と同じく必須であり、`meta.linked_program_v1` と矛盾してはならない。
+2. function / call 単位の materialized summary は、既存 `meta` 契約を使って保持してよい。
+3. `meta.linked_program_v1` は linked module では必須、raw `EAST3` では存在してはならない。
+
+## 8. CLI / 導線仕様（方針）
+
+正規導線は次を前提とする。
+
+- `py2x.py`
+  - raw `EAST3` 群と `link-input.json` を出力できる。
+- `eastlink.py`
+  - `link-input.json` を読み、`link-output.json` と linked module 群を出力する。
+- `ir2lang.py`
+  - raw 単一 `Module` または `link-output.json` を受理し、backend へ渡す。
+
+最小挙動規則:
+
+1. `--link-only` は backend 生成を行わず、`link-output.json` と linked module 群のみ出力する。
+2. `--object-dispatch-mode` は raw `EAST3` 構築前に確定し、linker は整合性検査だけを行う。
+3. debug / restart 経路でも `link-input.v1` / `link-output.v1` を canonical source とする。
 
 ## 9. 実装モード指針
 
 ### 9.1 日常運用
 
-- 既定は in-memory linker。
-- 中間ファイルを毎回書かない（速度優先）。
+- 既定は in-memory `LinkedProgramLoader + LinkedProgramOptimizer`。
+- raw `EAST3` / linked module / manifest を毎回書かない（速度優先）。
 
 ### 9.2 デバッグ/CI
 
-- 失敗再現時のみ `--dump-east*` を使う。
-- 回帰テストでは `--from-east3` + `--link-only` を使い、link 規約だけを独立検証できるようにする。
+- 失敗再現時のみ raw `EAST3` dump と `link-input.v1` / `link-output.v1` を保存する。
+- 回帰テストでは `link-input.v1 -> eastlink.py -> link-output.v1` を独立に検証できるようにする。
 
 ## 10. エラー契約
 
@@ -157,15 +286,20 @@ linker 失敗は `input_invalid(kind=..., stage=link, ...)` で統一する。
 - `type_cycle`
 - `unknown_base_type`
 - `duplicate_type_symbol`
+- `duplicate_module_id`
+- `missing_entry_module`
 - `dispatch_mode_mismatch`
 - `invalid_link_input`
+- `invalid_link_output`
+- `invalid_linked_module_meta`
 
 ## 11. 受け入れ基準
 
 1. 同一入力で `type_id` 割り当てが決定的である。
-2. `EAST3` をファイル経由で再開しても、直列変換と同一結果になる。
-3. `dispatch_mode` 混在入力を linker が検出して停止する。
-4. backend は `type_id` を再計算せず、linker 確定値のみ参照する。
+2. 同一入力集合・同一 option で `link-input.v1` / `link-output.v1` / linked module の内容が決定的である。
+3. raw `EAST3` をファイル経由で再開しても、in-memory 直列変換と同一結果になる。
+4. `dispatch_mode` 混在入力を linker が検出して停止する。
+5. backend は `type_id` や non-escape summary を再計算せず、linker 確定値のみ参照する。
 
 ## 12. 関連
 

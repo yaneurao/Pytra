@@ -161,6 +161,7 @@ global optimizer の最小入力は「複数翻訳単位を束ねた manifest」
 - `east_stage != 3` は fail-fast。
 - `target` と `dispatch_mode` の program-wide 一貫性を検証する。
 - module の読み込み順は `module_id` 辞書順に固定し、決定性を保つ。
+- manifest 内の path 文字列は manifest 配置ディレクトリ基準の POSIX 相対パスを canonical form とする。
 
 ## 4. 出力仕様（linked program result）
 
@@ -217,14 +218,15 @@ global optimizer の最小入力は「複数翻訳単位を束ねた manifest」
 ### 4.3 module ごとの linked IR
 
 各 output module は引き続き `kind=Module` の `EAST3` を保つ。  
-ただし `meta` に global optimizer の結果を注釈として埋め込む。
+ただし `meta.linked_program_v1` に global optimizer の結果を注釈として埋め込む。
 
-最低限の候補:
-- `meta.linked_program_id`
-- `meta.dispatch_mode`
-- `meta.non_escape_summary`
-- `meta.container_ownership_hints_v1`
-- `meta.type_id_table_ref` または `meta.type_id_resolved_v1`
+最低限の必須キー:
+- `meta.linked_program_v1.program_id`
+- `meta.linked_program_v1.module_id`
+- `meta.linked_program_v1.entry_modules`
+- `meta.linked_program_v1.type_id_resolved_v1`
+- `meta.linked_program_v1.non_escape_summary`
+- `meta.linked_program_v1.container_ownership_hints_v1`
 - `FunctionDef.meta.escape_summary`
 - `Call.meta.non_escape_callsite`
 
@@ -437,9 +439,9 @@ py2x.py
 - [ ] `ModuleEmitter` / `ProgramWriter` 契約を backend 共通 API として定義する。
 
 詳細タスク:
-- [ ] `S1-01` `link-input.v1` の必須キー、エラー契約、決定性要件を書く。
-- [ ] `S1-02` `link-output.v1` の必須キー、global table、diagnostics を書く。
-- [ ] `S1-03` linked module `meta` に materialize する注釈一覧を固定する。
+- [x] `S1-01` `link-input.v1` の必須キー、エラー契約、決定性要件を書く。
+- [x] `S1-02` `link-output.v1` の必須キー、global table、diagnostics を書く。
+- [x] `S1-03` linked module `meta` に materialize する注釈一覧を固定する。
 - [ ] `S1-04` `ModuleArtifact` / `ProgramArtifact` / `ProgramWriter` API を文書で固定する。
 
 ### Phase 2: loader / validator / in-memory program builder を実装する
@@ -652,7 +654,7 @@ src/
 ## 13. 分解
 
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01] linked program を導入し、global optimizer の入力単位を複数翻訳単位へ拡張しつつ、backend を `ModuleEmitter + ProgramWriter` 構成へ再編する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S1-01] `link-input.v1` / `link-output.v1` と linked module `meta` の schema、ならびに `spec-linker` / `spec-east` の責務境界を固定する。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S1-01] `link-input.v1` / `link-output.v1` と linked module `meta` の schema、ならびに `spec-linker` / `spec-east` の責務境界を固定する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S1-02] `ModuleArtifact` / `ProgramArtifact` / `ProgramWriter` の backend 共通契約を定義し、`spec-dev` / `spec-make` へ反映する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `LinkedProgram` loader / validator / manifest I/O を追加し、複数 `EAST3` を deterministic に読めるようにする。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S2-02] `py2x.py` の in-memory 導線を module map から `LinkedProgram` 構築へ切り替え、single-module 前提を外す。
@@ -675,3 +677,4 @@ src/
 - 2026-03-07: 各言語 emitter を肥大化させないため、`ModuleEmitter` と `ProgramWriter` を分離する方針を採用した。
 - 2026-03-07: CLI は無制限に増やさず、global optimizer 専用に `eastlink.py` を追加し、backend-only 側は `ir2lang.py` 拡張で受ける方針を採用した。
 - 2026-03-07: linked program の出力は「1 本の巨大 IR」ではなく「program manifest + module ごとの linked IR」とする方針を採用した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S1-01] `spec-linker.md` で `pytra.link_input.v1` / `pytra.link_output.v1` と `meta.linked_program_v1` を canonical schema として固定し、`spec-east.md` では `Link` を `east_stage` を増やさない責務境界として定義した。
