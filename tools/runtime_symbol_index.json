@@ -1093,10 +1093,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/utils/assertions.gen.cpp"
+            "src/runtime/cpp/generated/utils/assertions.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/utils/assertions.gen.h"
+            "src/runtime/cpp/pytra/utils/assertions.h"
           ]
         },
         "pytra.utils.gif": {
@@ -1104,7 +1104,7 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/utils/gif.gen.cpp"
+            "src/runtime/cpp/generated/utils/gif.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/utils/gif.h"
@@ -1115,7 +1115,7 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/utils/png.gen.cpp"
+            "src/runtime/cpp/generated/utils/png.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/utils/png.h"

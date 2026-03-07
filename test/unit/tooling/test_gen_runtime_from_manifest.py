@@ -16,7 +16,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
     def test_load_manifest_items_contains_png_cpp_and_java_std(self) -> None:
         items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")
         pairs = {(item.item_id, item.target, item.output_rel) for item in items}
-        self.assertIn(("utils/png", "cpp", "src/runtime/cpp/pytra-gen/utils/png.cpp"), pairs)
+        self.assertIn(("utils/png", "cpp", "src/runtime/cpp/generated/utils/png.cpp"), pairs)
         self.assertIn(("std/time", "java", "src/runtime/java/pytra-gen/std/time.java"), pairs)
 
     def test_resolve_targets_all_contains_cpp_and_swift(self) -> None:

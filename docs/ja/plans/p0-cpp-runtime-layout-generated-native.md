@@ -230,6 +230,9 @@ src/runtime/cpp/
 - `src/runtime/cpp/pytra/std/*.h` は `runtime/cpp/generated/std/*.h` を forward する shim に同期した。
 - `src/runtime/cpp/std/*.ext.cpp` は `runtime/cpp/generated/std/*.h` を include するよう更新し、legacy `std/` 直下には native companion と `README.md` だけを残した。
 - `tools/check_runtime_std_sot_guard.py` も std generated artifact の配置を `generated/std` 前提へ更新し、`pytra/` public shim を generated 扱いに寄せた。
+- `src/runtime/cpp/utils/*.gen.h|*.gen.cpp` を `src/runtime/cpp/generated/utils/*.h|*.cpp` へ移し、checked-in utils generated artifact の正本配置を実ファイルとして切り替えた。
+- `src/runtime/cpp/pytra/utils/*.h` は `runtime/cpp/generated/utils/*.h` を forward する shim に同期し、`assertions` 用 shim も追加した。
+- `tools/runtime_generation_manifest.json` / `tools/verify_image_runtime_parity.py` / `tools/check_runtime_std_sot_guard.py` / `runtime_symbol_index` 系 test を `generated/utils` 前提へ更新した。
 
 ## 受け入れ基準
 
@@ -261,7 +264,7 @@ src/runtime/cpp/
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
 
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-01] `std/` の generated runtime を `generated/std/` へ移し、`pytra/std/*.h` shim を同期する。
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。
 
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-01] 既存 module companion を `native/` へ移し、`native/*.h` を最小化する。
@@ -281,3 +284,5 @@ src/runtime/cpp/
 - 2026-03-07: `cpp_runtime_deps.py` は index 優先・path heuristic 補完の二段構えとし、repo shim から legacy `*.ext.cpp` へ到達できる移行期間互換を維持する。
 - 2026-03-07: `check_runtime_cpp_layout.py` は legacy `.gen/.ext` と `generated/native/pytra` の両 layout を同一 guard で検証する移行期監査へ更新した。
 - 2026-03-07: `std` generated artifact は checked-in 実ファイルとして `generated/std` へ移し、`std/` 直下は native companion (`*.ext.cpp`) と補足文書だけを残す構成へ切り替えた。
+- 2026-03-07: `utils` generated artifact も checked-in 実ファイルとして `generated/utils` へ移し、`pytra/utils/*.h` shim と runtime parity / manifest / index test を同時更新して旧 `utils/*.gen.*` 参照を解消した。
+- 2026-03-07: `utils` の再生成物は list ref-first TODO の未完了分で semantic drift を含んだため、本フェーズでは旧 checked-in artifact の挙動を `generated/utils` へ持ち上げ、レイアウト移行と semantic change を分離した。

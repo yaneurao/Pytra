@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/utils/png.gen.h"
+#include "runtime/cpp/generated/utils/png.h"
 
 
 namespace pytra::utils::png {

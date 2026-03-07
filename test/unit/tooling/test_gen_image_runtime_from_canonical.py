@@ -19,11 +19,11 @@ class GenImageRuntimeFromCanonicalTest(unittest.TestCase):
         self.assertIn("cpp", targets)
         self.assertIn("swift", targets)
 
-    def test_build_generation_plan_uses_pytra_gen_convention(self) -> None:
+    def test_build_generation_plan_uses_generated_cpp_convention(self) -> None:
         all_items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")
         plan = gen_mod.build_generation_plan(all_items, ["cpp", "php"], ["utils/png"])
         paths = [item.output_rel for item in plan]
-        self.assertIn("src/runtime/cpp/pytra-gen/utils/png.cpp", paths)
+        self.assertIn("src/runtime/cpp/generated/utils/png.cpp", paths)
         self.assertIn("src/runtime/php/pytra-gen/runtime/png.php", paths)
 
     def test_inject_generated_header_for_php_keeps_php_open_tag(self) -> None:

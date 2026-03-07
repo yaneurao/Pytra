@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "runtime/cpp/utils/png.gen.h"
+#include "runtime/cpp/generated/utils/png.h"

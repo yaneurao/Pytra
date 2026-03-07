@@ -2,14 +2,14 @@
 // source: src/pytra/utils/gif.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_UTILS_GIF_GEN_H
-#define PYTRA_UTILS_GIF_GEN_H
+#ifndef PYTRA_GENERATED_UTILS_GIF_H
+#define PYTRA_GENERATED_UTILS_GIF_H
 
 #include "runtime/cpp/core/py_types.ext.h"
 
 namespace pytra::utils::gif {
 
-void _gif_append_list(const list<int64>& dst, const list<int64>& src);
+void _gif_append_list(list<int64>& dst, const list<int64>& src);
 list<int64> _gif_u16le(int64 v);
 bytes _lzw_encode(const bytes& data, int64 min_code_size = 8);
 bytes grayscale_palette();
@@ -17,4 +17,4 @@ void save_gif(const str& path, int64 width, int64 height, const list<bytes>& fra
 
 }  // namespace pytra::utils::gif
 
-#endif  // PYTRA_UTILS_GIF_GEN_H
+#endif  // PYTRA_GENERATED_UTILS_GIF_H

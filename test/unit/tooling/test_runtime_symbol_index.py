@@ -92,7 +92,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(png_mod.get("companions"), ["generated"])
         self.assertIn("src/runtime/cpp/pytra/utils/png.h", png_mod.get("public_headers", []))
         self.assertNotIn("src/runtime/cpp/utils/png.gen.h", png_mod.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/utils/png.gen.cpp", png_mod.get("compile_sources", []))
+        self.assertIn("src/runtime/cpp/generated/utils/png.cpp", png_mod.get("compile_sources", []))
 
         core_dict = cpp_modules.get("pytra.core.dict")
         self.assertIsInstance(core_dict, dict)
@@ -158,7 +158,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_target_module_compile_sources("cpp", "pytra.std.time"),
         )
         self.assertIn(
-            "src/runtime/cpp/utils/png.gen.cpp",
+            "src/runtime/cpp/generated/utils/png.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
         )
 

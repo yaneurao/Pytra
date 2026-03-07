@@ -2,14 +2,14 @@
 // source: src/pytra/utils/png.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_UTILS_PNG_GEN_H
-#define PYTRA_UTILS_PNG_GEN_H
+#ifndef PYTRA_GENERATED_UTILS_PNG_H
+#define PYTRA_GENERATED_UTILS_PNG_H
 
 #include "runtime/cpp/core/py_types.ext.h"
 
 namespace pytra::utils::png {
 
-void _png_append_list(const list<int64>& dst, const list<int64>& src);
+void _png_append_list(list<int64>& dst, const list<int64>& src);
 int64 _crc32(const list<int64>& data);
 int64 _adler32(const list<int64>& data);
 list<int64> _png_u16le(int64 v);
@@ -20,4 +20,4 @@ void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixe
 
 }  // namespace pytra::utils::png
 
-#endif  // PYTRA_UTILS_PNG_GEN_H
+#endif  // PYTRA_GENERATED_UTILS_PNG_H

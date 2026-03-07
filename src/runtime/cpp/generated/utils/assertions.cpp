@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/utils/assertions.gen.h"
+#include "runtime/cpp/generated/utils/assertions.h"
 
 
 namespace pytra::utils::assertions {
@@ -17,7 +17,7 @@ namespace pytra::utils::assertions {
         }
     }
     
-    bool py_assert_true(bool cond, const str& label = "") {
+    bool py_assert_true(bool cond, const str& label) {
         if (cond)
             return true;
         if (label != "")
@@ -27,7 +27,7 @@ namespace pytra::utils::assertions {
         return false;
     }
     
-    bool py_assert_eq(const object& actual, const object& expected, const str& label = "") {
+    bool py_assert_eq(const object& actual, const object& expected, const str& label) {
         bool ok = _eq_any(actual, expected);
         if (ok)
             return true;
@@ -38,7 +38,7 @@ namespace pytra::utils::assertions {
         return false;
     }
     
-    bool py_assert_all(const list<bool>& results, const str& label = "") {
+    bool py_assert_all(const list<bool>& results, const str& label) {
         for (object __itobj_1 : py_dyn_range(results)) {
             bool v = py_to<bool>(__itobj_1);
             if (!(v)) {

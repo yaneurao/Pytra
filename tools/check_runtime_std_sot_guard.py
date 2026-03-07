@@ -145,15 +145,15 @@ CPP_GENERATED_UTILS_MODULES = [
 ]
 
 CPP_UTILS_HEADER_LOCATIONS: dict[str, str] = {
-    "assertions": "src/runtime/cpp/utils/assertions.gen.h",
-    "gif": "src/runtime/cpp/utils/gif.gen.h",
-    "png": "src/runtime/cpp/utils/png.gen.h",
+    "assertions": "src/runtime/cpp/generated/utils/assertions.h",
+    "gif": "src/runtime/cpp/generated/utils/gif.h",
+    "png": "src/runtime/cpp/generated/utils/png.h",
 }
 
 CPP_UTILS_SOURCE_LOCATIONS: dict[str, str] = {
-    "assertions": "src/runtime/cpp/utils/assertions.gen.cpp",
-    "gif": "src/runtime/cpp/utils/gif.gen.cpp",
-    "png": "src/runtime/cpp/utils/png.gen.cpp",
+    "assertions": "src/runtime/cpp/generated/utils/assertions.cpp",
+    "gif": "src/runtime/cpp/generated/utils/gif.cpp",
+    "png": "src/runtime/cpp/generated/utils/png.cpp",
 }
 
 # module basename -> canonical Python source path.
