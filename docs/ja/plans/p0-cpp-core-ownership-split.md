@@ -236,12 +236,18 @@ src/runtime/cpp/
 | `src/runtime/cpp/core/exceptions.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/exceptions.ext.h` | low-level exception helper。 |
 | `src/runtime/cpp/core/py_runtime.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/py_runtime.ext.h` | generated/native runtime から最広範に参照される集約 header。 |
 
+Phase 1 契約固定:
+
+- `docs/ja/spec/spec-runtime.md` に、承認済み次段 layout として `core` compatibility surface + `generated/core` + `native/core` を追記した。
+- `docs/ja/spec/spec-abi.md` に、low-level core は `pytra/core` を増やさず `core/...` include root を維持したまま ownership を分離する方針を追記した。
+- `src/runtime/cpp/core/README.md` も「handwritten 実装専用」から「stable include surface。ownership split 後は forwarder へ縮退予定」という説明へ更新した。
+
 ## 分解
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01] C++ low-level runtime (`core`) に `generated/core` + `native/core` を導入し、stable include 面を保ったまま generated/handwritten の物理混在を解消する。
 
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-01] `src/runtime/cpp/core/` の既存ファイルを `compat surface` / `native 正本` / `generated 候補` / `非対象` に分類し、移行マップを作る。
-- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
+- [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-02] `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` を core split 前提へ更新し、`core/` 実装再侵入・marker 混在を fail-fast 化する。
@@ -262,3 +268,4 @@ src/runtime/cpp/
 - 2026-03-07: この計画の第一目的は「generated/core を今すぐ大量に作ること」ではなく、「将来 generated core が必要になっても ownership が混ざらない土台を先に作ること」とする。
 - 2026-03-07: `src/runtime/cpp/core/` の既存 13 files を棚卸しし、`README.md` を除く 12 files はすべて handwritten core と判断した。`generated/core` へそのまま移せる既存 artifact は 0 件で、lane 実証は `S4-01` に切り出す。
 - 2026-03-07: `core/` には `.cpp` 実体を残さず、`gc/io` の compile source は `native/core` へ移す。header は `core/*.ext.h` の互換 include 名を維持するため、最終的に forwarder として残す方針を固定した。
+- 2026-03-07: `S1-02` として `spec-runtime` / `spec-abi` / `core/README` を更新し、`core/` は stable include surface、`generated/core` は SoT 由来正本、`native/core` は handwritten 正本とする契約を固定した。`pytra/core` は public root を二重化して ownership を曖昧にするため導入しない。
