@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p0-cpp-core-ext-suffix-retire.md](../plans/p0-cpp-core-ext-suffix-retire.md)
 
 1. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01] C++ core runtime から `.ext` suffix を退役し、`core` surface / `native/core` 正本 / `generated/core` lane を plain file name 契約へ揃える。
-2. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
+2. [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
 3. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
 4. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
 5. [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-02] synthetic test を追加し、`core/*.h` + `native/core/*.{h,cpp}` の plain naming で compile/source 解決できることを固定する。

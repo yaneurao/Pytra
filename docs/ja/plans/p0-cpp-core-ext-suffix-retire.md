@@ -162,11 +162,50 @@ src/runtime/cpp/
 - `generated/core/README.md` と spec に「future generated core is plain-name only」を明記する。
 - fallback / compatibility code を削除し、archive/docs/guard を更新して `.ext` naming が core runtime へ再侵入しない状態で完了扱いにする。
 
+## Phase 1 実施結果
+
+2026-03-07 時点の `core` / `native/core` inventory は次のとおり。
+
+- `core/` public forwarder rename 対象: 10 files
+  - `dict.ext.h -> dict.h`
+  - `exceptions.ext.h -> exceptions.h`
+  - `gc.ext.h -> gc.h`
+  - `io.ext.h -> io.h`
+  - `list.ext.h -> list.h`
+  - `py_runtime.ext.h -> py_runtime.h`
+  - `py_scalar_types.ext.h -> py_scalar_types.h`
+  - `py_types.ext.h -> py_types.h`
+  - `set.ext.h -> set.h`
+  - `str.ext.h -> str.h`
+- `native/core/` handwritten header rename 対象: 10 files
+  - `dict.ext.h -> dict.h`
+  - `exceptions.ext.h -> exceptions.h`
+  - `gc.ext.h -> gc.h`
+  - `io.ext.h -> io.h`
+  - `list.ext.h -> list.h`
+  - `py_runtime.ext.h -> py_runtime.h`
+  - `py_scalar_types.ext.h -> py_scalar_types.h`
+  - `py_types.ext.h -> py_types.h`
+  - `set.ext.h -> set.h`
+  - `str.ext.h -> str.h`
+- `native/core/` handwritten source rename 対象: 2 files
+  - `gc.ext.cpp -> gc.cpp`
+  - `io.ext.cpp -> io.cpp`
+- `generated/core/` 既存ファイル: 1 file
+  - `README.md` のみ。real artifact はまだ 0 件で、plain naming rule だけが先行して存在する。
+
+確認事項:
+
+- `core/` 側で `.ext` を持っている tracked file は forwarder header 10 件のみで、`.cpp` 実体は残っていない。
+- `native/core/` 側で `.ext` を持っている tracked file は handwritten 正本 header 10 件と source 2 件だけであり、rename 後の basename collision は起きない。
+- `generated/core/` は既に plain naming side (`README.md`) で存在しているため、今後の real artifact も plain name に限定して問題ない。
+- 現時点の rename 対象は low-level core lane に閉じており、`generated/std|built_in|utils` や `native/std|built_in` を同時に巻き込む必要はない。
+
 ## 分解
 
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01] C++ core runtime から `.ext` suffix を退役し、`core` surface / `native/core` 正本 / `generated/core` lane を plain file name 契約へ揃える。
 
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
 
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
@@ -184,3 +223,4 @@ src/runtime/cpp/
 決定ログ:
 - 2026-03-07: ユーザー指示により、`core` surface は shim なので `.ext` を外し、`native/core` も directory で ownership が表現できる以上 `.ext` は不要と判断した。
 - 2026-03-07: `pytra/core` への include-root 移行は rename と独立した大きな変更なので、この計画には含めない。まず `core/...` を維持したまま file name を plain に揃える。
+- 2026-03-07: `S1-01` として rename inventory を固定した。対象は `core/` forwarder header 10 件、`native/core/` handwritten header 10 件、`native/core/` source 2 件で、`generated/core/` は `README.md` のみだった。basename collision はなく、Phase 3 と Phase 4 で `core` surface と `native/core` 正本を段階分離できることを確認した。
