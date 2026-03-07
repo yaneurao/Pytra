@@ -53,10 +53,35 @@ Windows では次の読み替えを行ってください。
 - `--target` は `cpp` / `rs` に対応しています。
 - `--build` は `--target cpp` のみ対応です（Rust は変換のみ）。
 - 生成コード最適化レベルは `--codegen-opt {0,1,2,3}` で指定できます。
+- `--target cpp --codegen-opt 3` は C++ 向け max Pytra codegen route です。raw `EAST3` -> linked-program optimizer -> backend restart を内部で通します。
+- `--opt -O3` は build 時の C++ compiler flag であり、`--codegen-opt 3` とは別です。
 - `--build` 時の生成物（`src/*.cpp`, `include/*.h`, `.obj/*.o`, 実行ファイル）は `--output-dir` 配下に出力されます（既定: `out/`）。
 - `--exe` は実行ファイル名/出力先です。相対指定（例: `add.out`）は `--output-dir` 配下に生成されます。
 - Rust 変換は `--output` 未指定時、`--output-dir/<入力stem>.rs` へ出力されます（例: `out/rs_case/add.rs`）。
 - 一時出力は `out/` に集約する運用を推奨し、共有一時確認が必要な場合のみ `/tmp` を使用します。
+
+## C++ max-opt route
+
+- `./pytra ... --target cpp --codegen-opt 3` は、C++ compat route ではなく linked-program optimizer を通す max route です。
+- `--build` を併用すると、linked-program 最適化後の multi-file output から `Makefile` 生成と build を続けて実行します。
+- `--codegen-opt 0/1/2` は従来 route を維持します。
+- route 変更の非退行確認は、representative CLI test だけでなく sample parity でも見る前提です。
+
+```bash
+./pytra sample/py/18_mini_language_interpreter.py \
+  --target cpp \
+  --codegen-opt 3 \
+  --build \
+  --output-dir out/sample18_maxopt \
+  --opt -O3 \
+  --exe sample18.out
+```
+
+確認コマンド:
+
+```bash
+python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples
+```
 
 ## 最初に確認する制約
 

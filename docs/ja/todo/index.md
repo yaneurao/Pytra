@@ -37,8 +37,8 @@
 文脈: [docs/ja/plans/p0-pytra-cli-cpp-maxopt-linked-build.md](../plans/p0-pytra-cli-cpp-maxopt-linked-build.md)
 
 1. [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01] `pytra-cli --target cpp --build --codegen-opt 3` を linked-program optimizer 込みの max C++ route にし、sample parity で非退行を固定する。
-2. [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S1-01] `pytra-cli` の `--codegen-opt` と `py2x/eastlink/ir2lang/py2cpp` の最適化段対応表を棚卸しし、`codegen-opt=3` の目標 semantics を固定する。
-3. [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S1-02] `pytra-cli` max-opt C++ route の CLI 契約と sample parity gate を spec/plan に固定する。
+2. [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S1-01] `pytra-cli` の `--codegen-opt` と `py2x/eastlink/ir2lang/py2cpp` の最適化段対応表を棚卸しし、`codegen-opt=3` の目標 semantics を固定する。
+3. [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S1-02] `pytra-cli` max-opt C++ route の CLI 契約と sample parity gate を spec/plan に固定する。
 4. [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-01] `pytra-cli --target cpp --build --codegen-opt 3` が linked-program optimizer を経由する build route を実装する。
 5. [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-02] `pytra-cli --target cpp --codegen-opt 3` の transpile-only route も linked-program optimizer を使うよう揃える。
 6. [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-01] representative CLI regression を追加し、`codegen-opt=3` の route 選択と manifest/build/run を固定する。

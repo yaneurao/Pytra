@@ -42,6 +42,29 @@
 3. build と transpile-only の両方で同じ linked-program optimized module 群を source of truth にする。
 4. 変更後は sample parity と representative CLI regression で非退行を確認する。
 
+## 現状棚卸し（2026-03-08）
+
+| layer / entry | 現在の入力 | 現在の最適化段 | 備考 |
+| --- | --- | --- | --- |
+| `pytra-cli --codegen-opt N` | `--codegen-opt {0,1,2,3}` | `py2x.py` へ aggregate `-ON` をそのまま passthrough | `--opt -O3` とは別物。`--opt` は C++ compiler flag |
+| `py2x.py --target cpp` | `.py` | 通常は `backends.cpp.cli` compat route | linked-program route は `--dump-east3-dir` / `--link-only` / `--from-link-output` 指定時だけ |
+| `backends.cpp.cli` compat route | raw `.py` | `east3_opt_level` + `cpp_opt_level` を内部解決 | aggregate `-O3` は通るが、linked-program global optimizer は通らない |
+| `eastlink.py` | `link-input.json` | linked-program optimizer | `type_id` / `non_escape_summary` / `container_ownership_hints_v1` を確定する canonical global phase |
+| `ir2lang.py` | raw `EAST3` or `link-output.json` | backend-only emit | linked module 群から restart できる |
+
+現状のズレ:
+- `pytra-cli --target cpp --build --codegen-opt 3` は、ユーザー期待としては「最大 Pytra 最適化」に見えるが、実際には `py2x.py` の C++ compat route に `-O3` を渡しているだけで、linked-program global optimization は通っていない。
+- linked-program optimizer を使う正規導線は `py2x.py --dump-east3-dir` / `eastlink.py` / `ir2lang.py` だが、これは debug / restart 導線としてしか exposed されていない。
+
+本 P0 で固定する semantics:
+- `pytra-cli --target cpp --codegen-opt 0/1/2`
+  - 従来どおりの compat route を使う。
+- `pytra-cli --target cpp --codegen-opt 3`
+  - 「max Pytra codegen route」として扱い、linked-program optimizer を必ず経由する。
+- `pytra-cli --target cpp --build --opt -O3`
+  - これは引き続き C++ compiler optimization だけを意味する。
+- C++ max-opt route の non-regression は representative CLI test に加えて `sample` parity を acceptance gate とする。
+
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_pytra_cli.py'`
@@ -112,3 +135,5 @@
 - 2026-03-08: ユーザー指示により、`pytra-cli` の C++ max 最適化で linked-program global optimization を自動で使う後続 P0 を起票する。
 - 2026-03-08: 本計画には sample parity check を明示的に含める。理由は、route 変更だけ通して runtime parity を見ないと、`max-opt build はできるが sample が壊れる` 状態を見逃すためである。
 - 2026-03-08: `sample/cpp` single-file 生成の最終的な正規化は本 P0 の主題ではない。まずは `pytra-cli` の build/transpile 導線に linked-program optimizer を載せることを優先する。
+- 2026-03-08: 現行 `pytra-cli --target cpp --codegen-opt 3` は linked-program route ではなく compat route を通っている。したがって本 P0 では `codegen-opt=3` の意味を「max Pytra codegen route」へ明示的に変更する。
+- 2026-03-08: `--codegen-opt 0/1/2` の既存意味論は維持し、route semantics を変えるのは C++ の `codegen-opt=3` のみに限定する。

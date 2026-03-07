@@ -75,6 +75,8 @@
 
 - この仕様での `--opt` は「C++ コンパイルフラグ」を指す。
 - 生成コード側の最適化レベル（`py2cpp` の `-O0..-O3`）は別引数 `--codegen-opt {0,1,2,3}` として分離してよい（未指定時は既定値を使用）。
+- `--target cpp --codegen-opt 3` は `pytra-cli` 上では「max Pytra codegen route」を意味し、単なる aggregate `-O3` passthrough ではない。linked-program optimizer を経由した backend emit を選ぶ。
+- `--target cpp --codegen-opt 0/1/2` は従来 route を維持し、`--opt -O3` などの compiler flag とは独立に扱う。
 
 ### 5.4 制約
 
@@ -86,11 +88,12 @@
 
 `./pytra ... --target cpp --build` の処理順は次のとおり。
 
-1. `py2cpp.py --multi-file --output-dir <DIR>` を実行し、backend 側で `ProgramArtifact` を構築する。
-2. `CppProgramWriter` が output tree と `manifest.json` を生成する。
-3. `tools/gen_makefile_from_manifest.py` で `Makefile` を生成する。
-4. `make -f <Makefile>` を実行してバイナリを生成する。
-5. `--run` 指定時のみ `make -f <Makefile> run` を実行する。
+1. `--codegen-opt 3` の場合は、raw `EAST3` 群を materialize し、linked-program optimizer を通した linked module 群から C++ multi-file output を生成する。
+2. `--codegen-opt 0/1/2` の場合は、従来の compat route で `ProgramArtifact` を構築する。
+3. `CppProgramWriter` が output tree と `manifest.json` を生成する。
+4. `tools/gen_makefile_from_manifest.py` で `Makefile` を生成する。
+5. `make -f <Makefile>` を実行してバイナリを生成する。
+6. `--run` 指定時のみ `make -f <Makefile> run` を実行する。
 
 補足:
 
@@ -165,6 +168,8 @@ linked-program 期の位置づけ:
 - `./pytra sample/py/01_mandelbrot.py --target cpp --output-dir out/mandelbrot` で multi-file 出力が生成される。
 - `./pytra sample/py/01_mandelbrot.py --target cpp --build --output-dir out/mandelbrot` で、変換・Makefile 生成・ビルドが連続実行される。
 - `./pytra sample/py/01_mandelbrot.py --target cpp --build --compiler g++ --std c++20 --opt -O3 --exe mandelbrot.out` で指定値が `Makefile` と build に反映される。
+- `./pytra sample/py/01_mandelbrot.py --target cpp --codegen-opt 3 --build --output-dir out/mandelbrot` で linked-program optimizer を経由した C++ max-opt route が選ばれる。
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` が green を維持する。
 - `./pytra sample/py/01_mandelbrot.py --target rs --build` は仕様どおりエラー終了する。
 - `make -f out/mandelbrot/Makefile` の 2 回目実行で差分なしビルド（再リンク/再コンパイル最小化）になる。
 
