@@ -280,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
         if isinstance(link_target, str) and link_target != "" and link_target != target:
             _fatal("target mismatch for link-output: " + link_target + " != " + target)
         entry_modules_any = link_output_doc.get("entry_modules", [])
-        entry_modules = entry_modules_any if isinstance(entry_modules_any, list) else []
+        entry_modules = list(entry_modules_any) if isinstance(entry_modules_any, (list, tuple)) else []
         if target == "cpp":
             output_root_text = output_dir_text if output_dir_text != "" else output_text
             output_root = Path(output_root_text) if output_root_text != "" else (input_path.parent / "cpp")

@@ -24,6 +24,17 @@ class LinkInputModuleEntry:
 
 
 @dataclass(frozen=True)
+class LinkOutputModuleEntry:
+    """Raw `link-output.v1` module entry."""
+
+    module_id: str
+    input: str
+    output: str
+    source_path: str
+    is_entry: bool
+
+
+@dataclass(frozen=True)
 class LinkedProgramModule:
     """Validated module loaded from `link-input.v1`."""
 

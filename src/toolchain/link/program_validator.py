@@ -8,6 +8,7 @@ from toolchain.link.program_model import DISPATCH_MODES
 from toolchain.link.program_model import LINK_INPUT_SCHEMA
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkInputModuleEntry
+from toolchain.link.program_model import LinkOutputModuleEntry
 from toolchain.link.program_model import normalize_writer_options
 
 
@@ -143,10 +144,35 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
     dispatch_mode = _require_str(doc, "dispatch_mode", "link-output")
     if dispatch_mode not in DISPATCH_MODES:
         raise RuntimeError("link-output.dispatch_mode must be one of: native, type_id")
-    _require_str_list(doc, "entry_modules", "link-output")
+    entry_modules = _require_str_list(doc, "entry_modules", "link-output")
     modules_any = doc.get("modules")
     if not isinstance(modules_any, list):
         raise RuntimeError("link-output.modules must be a list")
+    module_entries: list[LinkOutputModuleEntry] = []
+    seen_module_ids: set[str] = set()
+    for idx, item_any in enumerate(modules_any):
+        label = "link-output.modules[" + str(idx) + "]"
+        item = _require_dict(item_any, label)
+        module_id = _require_str(item, "module_id", label)
+        if module_id in seen_module_ids:
+            raise RuntimeError("duplicate link-output module_id: " + module_id)
+        seen_module_ids.add(module_id)
+        module_entries.append(
+            LinkOutputModuleEntry(
+                module_id=module_id,
+                input=_require_str(item, "input", label),
+                output=_require_str(item, "output", label),
+                source_path=_require_str(item, "source_path", label),
+                is_entry=_require_bool(item, "is_entry", label),
+            )
+        )
+    module_id_set = {item.module_id for item in module_entries}
+    for module_id in entry_modules:
+        if module_id not in module_id_set:
+            raise RuntimeError("missing link-output entry module: " + module_id)
+    for item in module_entries:
+        if item.is_entry and item.module_id not in entry_modules:
+            raise RuntimeError("link-output module marked is_entry but not present in entry_modules: " + item.module_id)
     global_any = doc.get("global")
     global_doc = _require_dict(global_any, "link-output.global")
     for key in (
@@ -163,4 +189,12 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
     for key in ("warnings", "errors"):
         if not isinstance(diagnostics.get(key), list):
             raise RuntimeError("link-output.diagnostics." + key + " must be a list")
-    return doc
+    return {
+        "schema": schema,
+        "target": doc["target"],
+        "dispatch_mode": dispatch_mode,
+        "entry_modules": entry_modules,
+        "modules": sorted(module_entries, key=lambda item: item.module_id),
+        "global": global_doc,
+        "diagnostics": diagnostics,
+    }

@@ -42,6 +42,64 @@ def _fn(name: str, body: list[dict[str, object]], args: list[str] | None = None)
 
 
 class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
+    def test_optimizer_is_deterministic_for_reordered_module_map(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            dep_py = root / "dep.py"
+            main_doc = {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {
+                    "dispatch_mode": "native",
+                    "module_id": "pkg.main",
+                    "import_bindings": [
+                        {
+                            "module_id": "pkg.dep",
+                            "export_name": "sink",
+                            "local_name": "sink",
+                            "binding_kind": "symbol",
+                        }
+                    ],
+                },
+                "body": [_fn("main", [_expr(_call_name("sink", [_name("x")]))], ["x"])],
+            }
+            dep_doc = {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"dispatch_mode": "native", "module_id": "pkg.dep"},
+                "body": [_fn("sink", [_ret(_constant(1))], ["p"])],
+            }
+            program_a = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(main_py): dict(main_doc),
+                    str(dep_py): dict(dep_doc),
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+            program_b = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(dep_py): dict(dep_doc),
+                    str(main_py): dict(main_doc),
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+
+            result_a = optimize_linked_program(program_a)
+            result_b = optimize_linked_program(program_b)
+
+            self.assertEqual(result_a.link_output_doc, result_b.link_output_doc)
+            self.assertEqual(
+                [item.module_id for item in result_a.linked_program.modules],
+                [item.module_id for item in result_b.linked_program.modules],
+            )
+
     def test_optimizer_materializes_non_escape_summary_and_linked_meta(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
