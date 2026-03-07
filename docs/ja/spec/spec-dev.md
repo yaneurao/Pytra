@@ -222,7 +222,7 @@ linked module(EAST3)
 - `CppEmitter` 実装は `src/backends/cpp/emitter/cpp_emitter.py` へ分離され、`py2x.py --target cpp` は CLI / オーケストレーション層として扱います。
 - 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
-- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/pytra/built_in/py_runtime.h` 側を利用します。
+- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/core/py_runtime.h` 側を利用します。
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
   - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
@@ -334,37 +334,33 @@ linked module(EAST3)
 - 未解決ユーザーモジュール import と循環 import は `input_invalid` で早期エラーにします。
 - `from M import S` のみがある状態で `M.T` を参照した場合、`M` は束縛されないため `input_invalid`（`kind=missing_symbol`）として扱います。
 
-主な補助モジュール実装:
+主な C++ runtime 実装レイヤ:
 
-- `src/runtime/cpp/pytra/std/math.h`, `src/runtime/cpp/pytra/std/math.cpp`
-- `src/runtime/cpp/pytra/std/random.h`, `src/runtime/cpp/pytra/std/random.cpp`
-- `src/runtime/cpp/pytra/std/timeit.h`, `src/runtime/cpp/pytra/std/timeit.cpp`
-- `src/runtime/cpp/pytra/std/pathlib.h`, `src/runtime/cpp/pytra/std/pathlib.cpp`
-- `src/runtime/cpp/pytra/std/time.h`, `src/runtime/cpp/pytra/std/time.cpp`
-- `src/runtime/cpp/pytra/std/json.h`, `src/runtime/cpp/pytra/std/json.cpp`
-- `src/runtime/cpp/pytra/built_in/gc.h`, `src/runtime/cpp/pytra/built_in/gc.cpp`
-- `src/runtime/cpp/pytra/std/sys.h`, `src/runtime/cpp/pytra/std/sys.cpp`
-- `src/runtime/cpp/pytra/utils/png.h`, `src/runtime/cpp/pytra/utils/png.cpp`
-- `src/runtime/cpp/pytra/utils/gif.h`, `src/runtime/cpp/pytra/utils/gif.cpp`
-- `src/runtime/cpp/pytra/utils/assertions.h`, `src/runtime/cpp/pytra/utils/assertions.cpp`
-- `src/runtime/cpp/pytra/utils/browser.h`, `src/runtime/cpp/pytra/utils/browser.cpp`
-- `src/runtime/cpp/pytra/utils/browser/widgets/dialog.h`, `src/runtime/cpp/pytra/utils/browser/widgets/dialog.cpp`
-- `src/runtime/cpp/pytra/built_in/py_runtime.h`
+- `src/runtime/cpp/core/py_runtime.h`
+- `src/runtime/cpp/native/core/py_runtime.h`
+- `src/runtime/cpp/generated/{built_in,std,utils}/*.h|*.cpp`
+- `src/runtime/cpp/native/{built_in,std,utils}/*.h|*.cpp`
+- `src/runtime/cpp/pytra/{built_in,std,utils}/*.h`
 
-`src/runtime/cpp/pytra/built_in/` の位置づけ:
+`src/runtime/cpp/core/py_runtime.h` / `src/runtime/cpp/native/core/py_runtime.h` の位置づけ:
 
-- Python 組み込み型/基盤機能の C++ 実装を置く共通層です。
-- 例: GC、I/O、bytes 補助、コンテナ/文字列ラッパ。
-- 言語固有モジュール (`src/runtime/cpp/pytra/std/*`, `src/runtime/cpp/pytra/utils/*`) から再利用されます。
-- `py_runtime.h` は `str/path/list/dict/set` を直接 include します（`containers.h` は廃止）。
-- `built_in` 配下ヘッダの include guard は相対パス由来の `PYTRA_BUILT_IN_*` 命名で統一します。
+- `core/py_runtime.h` は stable include surface です。
+- `native/core/py_runtime.h` はその handwritten 正本であり、`PyObj` / `object` / `rc<>` / type_id / low-level container primitive / dynamic iteration / process I/O / C++ glue を置く場所です。
+- pure Python SoT へ戻せる built_in semantics を permanent に抱え込む場所ではありません。
+- 文字列・collection の高水準 helper は `generated/built_in` または `src/pytra/built_in/*.py` へ戻す前提で扱います。
+- `py_runtime.h` は current でも `str/path/list/dict/set` などを直接 include しますが、これは low-level 集約のためであって built_in module の代替実装を増やしてよい、という意味ではありません。
 
-`src/runtime/cpp/pytra/built_in/py_runtime.h` のコンテナ方針:
+`src/runtime/cpp/core/py_runtime.h` のコンテナ方針:
 
 - `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
 - `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
 - `set<T>`: `std::unordered_set<T>` ラッパー（`add`, `discard`, `remove` を提供）
 - `str`, `list`, `dict`, `set`, `bytes`, `bytearray` は「標準コンテナ継承」ではなく、Python 互換 API を持つ wrapper として扱う。
+
+追加ルール:
+
+- `str::split` / `splitlines` / `count` / `join` のような pure helper は `py_runtime` に残り続けてはならない。移行期 debt として only-by-exception で許容し、SoT 側へ戻す計画を同時に持つ。
+- `dict_get_*` / `py_dict_get_default` / object/`std::any` bridge のような low-level dynamic helper は、`generated/built_in` へ雑に移してはならない。lane 設計前は `native/core` 保留でよい。
 
 制約:
 

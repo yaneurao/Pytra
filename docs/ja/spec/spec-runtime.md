@@ -197,11 +197,20 @@ C++ では追加で次を守る。
 - `native/core/*.h` は object / container 表現や low-level helper の正本を置いてよいが、high-level module runtime を再流入させてはならない。
 - `generated/core/*.h|*.cpp` は real candidate がある場合だけ導入し、SoT marker を必須にする。
 
+`py_runtime` については追加で次を守る。
+
+- `src/runtime/cpp/core/py_runtime.h` は stable include surface / aggregator であり、high-level built_in semantics の正本ではない。
+- `src/runtime/cpp/native/core/py_runtime.h` に残してよいのは、`PyObj` / `object` / `rc<>` / type_id / low-level container primitive / dynamic iteration / process I/O / C++ 標準ライブラリ・OS glue だけとする。
+- `str::split` / `splitlines` / `count` / `join`、`zip` / `sorted` / `sum` / `py_min` / `py_max` のような pure Python で表現可能な helper は `native/core/py_runtime.h` に permanent に残してはならず、`generated/built_in` または SoT 側へ戻す候補として扱う。
+- `dict_get_*` / `py_dict_get_default` / `py_ord` / `py_chr` / `py_div` / `py_floordiv` / `py_mod` など、`object` / `std::any` / template specialization と密結合した helper は `generated/core` lane 設計前に性急に移してはならない。これらは保留分類を許容する。
+- `generated/core` は「low-level helper の新しい捨て先」ではない。`native/core` 直 include や target 固有 ownership を必要とする helper を押し込んではならない。
+
 誤りの例:
 
 - `std/math` の補完実装を `core/` に置く
 - `utils/png` の本体を `core/` に手書きする
 - `built_in` 由来ロジックを `py_runtime` へ埋め込む
+- `py_runtime` の肥大化を避けるために low-level helper まで無差別に `generated/built_in` へ逃がす
 
 ### 0.63 特殊生成スクリプト禁止
 
