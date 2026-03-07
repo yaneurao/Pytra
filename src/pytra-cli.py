@@ -360,7 +360,25 @@ def _build_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str
     return 0
 
 
-def _transpile_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str]) -> int:
+def _transpile_cpp(
+    input_path: Path,
+    args: argparse.Namespace,
+    passthrough: list[str],
+    *,
+    use_linked_max_route: bool = False,
+) -> int:
+    if use_linked_max_route:
+        if args.output != "":
+            print(
+                "error: --output is not supported with --target cpp --codegen-opt 3. Use --output-dir.",
+                file=sys.stderr,
+            )
+            return 1
+        output_dir = (Path(args.output_dir) if args.output_dir else Path(DEFAULT_OUTPUT_DIR)).resolve()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        rc, _manifest_path = _run_py2cpp_linked_max(input_path, output_dir, passthrough)
+        return rc
+
     cmd = [PYTHON, str(PY2X), str(input_path), "--target", "cpp"]
     if args.output != "":
         cmd.extend(["--output", args.output])
@@ -450,7 +468,12 @@ def main(argv: list[str]) -> int:
 
     passthrough_args.extend(passthrough)
     if profile.build_driver == "cpp_make":
-        return _transpile_cpp(input_path, args, passthrough_args)
+        return _transpile_cpp(
+            input_path,
+            args,
+            passthrough_args,
+            use_linked_max_route=use_cpp_linked_max_route,
+        )
     output_path = _resolve_output_path(input_path, profile, args)
     if output_path.exists() and output_path.is_dir():
         print(f"error: output path is a directory: {output_path}", file=sys.stderr)
