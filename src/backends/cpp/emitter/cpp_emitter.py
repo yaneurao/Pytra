@@ -819,11 +819,16 @@ class CppEmitter(
                 out.add(nm)
         return out
 
-    def _collect_pyobj_runtime_list_alias_names(self, fn_stmt: dict[str, Any]) -> set[str]:
-        """`pyobj` でも value copy にすると alias 共有を壊す list 名を収集する。"""
+    def _collect_pyobj_runtime_list_alias_names(
+        self,
+        fn_stmt: dict[str, Any],
+        stack_list_locals: set[str] | None = None,
+    ) -> set[str]:
+        """`pyobj` で handle-backed に保つ typed list 名を収集する。"""
         out: set[str] = set()
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
             return out
+        stack_lowered = set(stack_list_locals or set())
         body = self._dict_stmt_list(fn_stmt.get("body"))
         assigned_types = self._collect_assigned_name_types(body)
         list_like_names: set[str] = set()
@@ -834,11 +839,15 @@ class CppEmitter(
             if name == "":
                 continue
             type_norm = self.normalize_type_name(self.any_to_str(raw_type))
-            if type_norm.startswith("list[") and type_norm.endswith("]"):
+            if self._is_pyobj_ref_first_list_type(type_norm):
                 list_like_names.add(name)
 
         if len(list_like_names) == 0:
             return out
+
+        for name in list_like_names:
+            if name not in stack_lowered:
+                out.add(name)
 
         changed = True
         while changed:

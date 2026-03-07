@@ -214,7 +214,7 @@
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S2-03] `list<T>` runtime overload のうち ABI adapter 以外のものを縮退・撤去し、残す理由を決定ログへ固定する。
 
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S3-01] emitter の list 型描画を ref-first に切り替え、`_is_pyobj_forced_typed_list_type` 依存を撤去する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S3-02] list literal / empty init / assign / annassign / tuple unpack / comprehension を `rc<list<T>>` 正本へ切り替える。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S3-02] list literal / empty init / assign / annassign / tuple unpack / comprehension を `rc<list<T>>` 正本へ切り替える。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S3-03] callsite / return / method dispatch / subscript / for/enumerate/reversed の描画を `rc<list<T>>` 正本へ切り替える。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S4-01] `@extern` / `Any` / `object` 境界でだけ `list<T>` value adapter を挿入する規則を実装し、他経路から分離する。
@@ -242,3 +242,5 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` として、関数/ラムダ/メソッドの list 型描画を `cpp_signature_type(...)` 基準へ切り替え、`cpp_list_model=pyobj` の typed mutable list を `const rc<list<T>>&` / `rc<list<T>>&` / `rc<list<T>>` で出力するようにした。typed handle call/return は `rc_list_ref(...)` を経由せずそのまま共有し、stack-local value list から ref-first 境界へ出る箇所だけ `rc_list_from_value(...)` を残す構成へ整理した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` として、旧 `_is_pyobj_forced_typed_list_type` を retire し、関数境界の ref-first 判定を `_is_pyobj_ref_first_list_type`、stack-local / bytearray / collection builder など value-model 判定を `_is_pyobj_value_model_list_type` へ分離した。これにより、型描画の正本は ref-first へ固定しつつ、Phase 3 後続で残る local value-lowering の責務境界を helper 名の上でも分離した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` の検証として `test_py2cpp_codegen_issues.py`, `test_py2cpp_list_pyobj_model.py`, `test_east3_cpp_bridge.py`, `test_cpp_type.py`, `tools/check_todo_priority.py` を実行し通過した。representative codegen assert は sample12/sample13/sample18、tuple unpack、nested subscript assign、len-empty fastpath、list comprehension を ref-first 契約へ更新した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-02` として、`_collect_pyobj_runtime_list_alias_names` を「alias 名」から「stack-local でない typed list local 名」の収集へ広げ、`annassign/assign` の typed list local を empty init・list literal・list comprehension を含めて handle-backed `rc<list<T>>` 宣言へ倒した。これにより、sample08/sample13/sample18 や escaping local builder は `rc_list_from_value(...)` / `py_append(...)` / `py_extend(...)` 正本へ切り替わり、stack-local optimization は empty annotated non-escape local に限定された。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-02` として、EAST3 reserve hint が handle-backed list local に対しても成立するよう `reserve` 出力を `rc_list_ref(owner).reserve(...)` へ調整した。`test_py2cpp_codegen_issues.py` には local list comprehension handle test を追加し、`test_py2cpp_codegen_issues.py`, `test_py2cpp_list_pyobj_model.py`, `test_east3_cpp_bridge.py`, `test_cpp_type.py` を再実行して通過した。

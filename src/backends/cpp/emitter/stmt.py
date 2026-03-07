@@ -1225,7 +1225,10 @@ class CppStatementEmitter:
             trip_count_expr = self._render_reserve_count_expr(hint.get("count_expr"))
             if trip_count_expr == "":
                 continue
-            self.emit(f"{owner}.reserve({trip_count_expr});")
+            reserve_owner = owner
+            if self._is_pyobj_runtime_list_alias_name(owner):
+                reserve_owner = f"rc_list_ref({owner})"
+            self.emit(f"{reserve_owner}.reserve({trip_count_expr});")
 
     def _forcore_capture_mod_guard_rewrite(
         self,
@@ -1738,7 +1741,7 @@ class CppStatementEmitter:
         prev_fn_non_escape_for_collect = self.current_function_non_escape_summary
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         stack_list_locals = self._collect_stack_list_locals(stmt)
-        runtime_list_alias_names = self._collect_pyobj_runtime_list_alias_names(stmt)
+        runtime_list_alias_names = self._collect_pyobj_runtime_list_alias_names(stmt, stack_list_locals)
         self.current_function_non_escape_summary = prev_fn_non_escape_for_collect
         self.function_stack_list_locals_map[function_symbol] = sorted(list(stack_list_locals))
         self.function_pyobj_runtime_list_alias_map[function_symbol] = sorted(list(runtime_list_alias_names))
