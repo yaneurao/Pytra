@@ -50,6 +50,48 @@ class CheckRuntimeCoreGenMarkersTest(unittest.TestCase):
                 findings = marker_mod._collect_findings()
         self.assertTrue(any(item.reason == "core_contains_generated_source_marker" for item in findings))
 
+    def test_collect_detects_missing_generated_markers_in_cpp_generated_core(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write(root / "src" / "runtime" / "cpp" / "generated" / "core" / "dict.ext.cpp", "// body\n")
+            with patch.object(marker_mod, "ROOT", root), patch.object(
+                marker_mod, "RUNTIME_ROOT", root / "src" / "runtime"
+            ):
+                findings = marker_mod._collect_findings()
+        reasons = {item.reason for item in findings}
+        self.assertIn("cpp_generated_core_missing_source_marker", reasons)
+        self.assertIn("cpp_generated_core_missing_generated_by_marker", reasons)
+
+    def test_collect_detects_generated_markers_in_cpp_native_core(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write(
+                root / "src" / "runtime" / "cpp" / "native" / "core" / "dict.ext.h",
+                "// source: src/pytra/std/time.py\n// generated-by: test\n",
+            )
+            with patch.object(marker_mod, "ROOT", root), patch.object(
+                marker_mod, "RUNTIME_ROOT", root / "src" / "runtime"
+            ):
+                findings = marker_mod._collect_findings()
+        reasons = {item.reason for item in findings}
+        self.assertIn("cpp_native_core_contains_generated_source_marker", reasons)
+        self.assertIn("cpp_native_core_contains_generated_by_marker", reasons)
+
+    def test_collect_detects_generated_markers_in_cpp_core_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write(
+                root / "src" / "runtime" / "cpp" / "core" / "dict.ext.h",
+                "// source: src/pytra/core/dict.py\n// generated-by: test\n",
+            )
+            with patch.object(marker_mod, "ROOT", root), patch.object(
+                marker_mod, "RUNTIME_ROOT", root / "src" / "runtime"
+            ):
+                findings = marker_mod._collect_findings()
+        reasons = {item.reason for item in findings}
+        self.assertIn("cpp_core_surface_contains_generated_source_marker", reasons)
+        self.assertIn("cpp_core_surface_contains_generated_by_marker", reasons)
+
     def test_main_passes_when_findings_are_allowlisted(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

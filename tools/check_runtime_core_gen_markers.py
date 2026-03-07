@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Guard runtime marker/layout policy for `pytra-core` and `pytra-gen`.
+"""Guard runtime marker/layout policy for generated/core ownership boundaries.
 
 Policy:
 - `src/runtime/<lang>/pytra-gen/**` files must include both:
   - `source: ...`
   - `generated-by: ...`
-- `src/runtime/<lang>/pytra-core/**` files must not include generated-source markers.
+- `src/runtime/<lang>/pytra-core/**` files must not include generated markers.
+- `src/runtime/cpp/generated/core/**` files must include both:
+  - `source: ...`
+  - `generated-by: ...`
+- `src/runtime/cpp/native/core/**` and `src/runtime/cpp/core/**` must not include generated markers.
 """
 
 from __future__ import annotations
@@ -43,7 +47,7 @@ TARGET_SUFFIXES = {
 
 SOURCE_RE = re.compile(r"source:\s*src/pytra/", re.IGNORECASE)
 GENERATED_BY_RE = re.compile(r"generated-by:\s*", re.IGNORECASE)
-CORE_FORBIDDEN_RE = re.compile(r"source:\s*src/pytra/(std|utils|built_in)/", re.IGNORECASE)
+PYTRA_CORE_FORBIDDEN_RE = re.compile(r"source:\s*src/pytra/(std|utils|built_in)/", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -73,9 +77,78 @@ def _iter_runtime_files(subdir: str) -> list[Path]:
     return out
 
 
+def _iter_tree_files(base: Path) -> list[Path]:
+    out: list[Path] = []
+    if not base.exists():
+        return out
+    for p in sorted(base.rglob("*")):
+        if not p.is_file():
+            continue
+        if p.suffix.lower() not in TARGET_SUFFIXES:
+            continue
+        out.append(p)
+    return out
+
+
 def _is_excluded_gen_file(path: Path) -> bool:
     # allow docs/readme under pytra-gen.
     return path.suffix.lower() in {".md", ".txt", ".json"}
+
+
+def _append_missing_generated_markers(
+    findings: list[Finding],
+    path: Path,
+    *,
+    source_reason: str,
+    generated_by_reason: str,
+) -> None:
+    rel = str(path.relative_to(ROOT)).replace("\\", "/")
+    txt = path.read_text(encoding="utf-8", errors="ignore")
+    if SOURCE_RE.search(txt) is None:
+        findings.append(
+            Finding(
+                rel_path=rel,
+                reason=source_reason,
+                detail="missing `source:` marker",
+            )
+        )
+    if GENERATED_BY_RE.search(txt) is None:
+        findings.append(
+            Finding(
+                rel_path=rel,
+                reason=generated_by_reason,
+                detail="missing `generated-by:` marker",
+            )
+        )
+
+
+def _append_forbidden_generated_markers(
+    findings: list[Finding],
+    path: Path,
+    *,
+    source_reason: str,
+    generated_by_reason: str,
+    detail_prefix: str,
+    source_re: re.Pattern[str],
+) -> None:
+    rel = str(path.relative_to(ROOT)).replace("\\", "/")
+    txt = path.read_text(encoding="utf-8", errors="ignore")
+    if source_re.search(txt) is not None:
+        findings.append(
+            Finding(
+                rel_path=rel,
+                reason=source_reason,
+                detail=f"contains generated source marker in {detail_prefix}",
+            )
+        )
+    if GENERATED_BY_RE.search(txt) is not None:
+        findings.append(
+            Finding(
+                rel_path=rel,
+                reason=generated_by_reason,
+                detail=f"contains `generated-by:` marker in {detail_prefix}",
+            )
+        )
 
 
 def _collect_findings() -> list[Finding]:
@@ -84,36 +157,50 @@ def _collect_findings() -> list[Finding]:
     for p in _iter_runtime_files("pytra-gen"):
         if _is_excluded_gen_file(p):
             continue
-        rel = str(p.relative_to(ROOT)).replace("\\", "/")
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if SOURCE_RE.search(txt) is None:
-            findings.append(
-                Finding(
-                    rel_path=rel,
-                    reason="gen_missing_source_marker",
-                    detail="missing `source:` marker",
-                )
-            )
-        if GENERATED_BY_RE.search(txt) is None:
-            findings.append(
-                Finding(
-                    rel_path=rel,
-                    reason="gen_missing_generated_by_marker",
-                    detail="missing `generated-by:` marker",
-                )
-            )
+        _append_missing_generated_markers(
+            findings,
+            p,
+            source_reason="gen_missing_source_marker",
+            generated_by_reason="gen_missing_generated_by_marker",
+        )
 
     for p in _iter_runtime_files("pytra-core"):
-        rel = str(p.relative_to(ROOT)).replace("\\", "/")
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if CORE_FORBIDDEN_RE.search(txt) is not None:
-            findings.append(
-                Finding(
-                    rel_path=rel,
-                    reason="core_contains_generated_source_marker",
-                    detail="contains generated source marker in pytra-core",
-                )
-            )
+        _append_forbidden_generated_markers(
+            findings,
+            p,
+            source_reason="core_contains_generated_source_marker",
+            generated_by_reason="core_contains_generated_by_marker",
+            detail_prefix="pytra-core",
+            source_re=PYTRA_CORE_FORBIDDEN_RE,
+        )
+
+    for p in _iter_tree_files(RUNTIME_ROOT / "cpp" / "generated" / "core"):
+        _append_missing_generated_markers(
+            findings,
+            p,
+            source_reason="cpp_generated_core_missing_source_marker",
+            generated_by_reason="cpp_generated_core_missing_generated_by_marker",
+        )
+
+    for p in _iter_tree_files(RUNTIME_ROOT / "cpp" / "native" / "core"):
+        _append_forbidden_generated_markers(
+            findings,
+            p,
+            source_reason="cpp_native_core_contains_generated_source_marker",
+            generated_by_reason="cpp_native_core_contains_generated_by_marker",
+            detail_prefix="cpp/native/core",
+            source_re=SOURCE_RE,
+        )
+
+    for p in _iter_tree_files(RUNTIME_ROOT / "cpp" / "core"):
+        _append_forbidden_generated_markers(
+            findings,
+            p,
+            source_reason="cpp_core_surface_contains_generated_source_marker",
+            generated_by_reason="cpp_core_surface_contains_generated_by_marker",
+            detail_prefix="cpp/core",
+            source_re=SOURCE_RE,
+        )
 
     uniq: dict[str, Finding] = {}
     for item in findings:
@@ -144,7 +231,7 @@ def _write_allowlist(path: Path, keys: list[str]) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="check pytra-core/pytra-gen marker and layout boundaries"
+        description="check runtime generated/core marker and layout boundaries"
     )
     ap.add_argument(
         "--write-allowlist",
