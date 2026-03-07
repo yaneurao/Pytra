@@ -232,6 +232,15 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "semantic_tag": "stdlib.symbol.pi",
             },
         )
+        self.assertEqual(
+            lookup_runtime_symbol_doc("pytra.utils.gif", "save_gif"),
+            {
+                "call_adapter_kind": "image.save_gif.keyword_defaults",
+                "dispatch": "function",
+                "kind": "function",
+                "semantic_tag": "stdlib.fn.save_gif",
+            },
+        )
         self.assertEqual(lookup_runtime_symbol_doc("math", "missing"), {})
 
     def test_resolve_import_binding_doc_returns_canonical_runtime_metadata(self) -> None:
@@ -300,6 +309,17 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "source_binding_kind": "symbol",
                 "runtime_module_id": "pytra.std.json",
                 "runtime_group": "std",
+                "resolved_binding_kind": "module",
+            },
+        )
+        self.assertEqual(
+            resolve_import_binding_doc("pytra.utils", "gif", "symbol"),
+            {
+                "source_module_id": "pytra.utils",
+                "source_export_name": "gif",
+                "source_binding_kind": "symbol",
+                "runtime_module_id": "pytra.utils.gif",
+                "runtime_group": "utils",
                 "resolved_binding_kind": "module",
             },
         )

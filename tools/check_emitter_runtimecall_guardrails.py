@@ -34,6 +34,7 @@ KEY_TOKENS = (
     "module_name",
     "owner_mod",
     "imported_mod",
+    "binding_module",
     "export_name",
     "runtime_call",
     "resolved_runtime_call",
@@ -62,21 +63,10 @@ TABLE_NAME_HINTS = (
 )
 STRICT_BACKENDS = {"java"}
 BANNED_SYMBOLS = (
-    "Path",
-    "dumps",
-    "grayscale_palette",
-    "loads",
-    "perf_counter",
     "py_assert_all",
     "py_assert_eq",
     "py_assert_stdout",
     "py_assert_true",
-    "pytra.std.pathlib",
-    "pytra.std.test",
-    "pytra.std.time",
-    "pytra.utils.assertions",
-    "pytra.utils.gif",
-    "pytra.utils.png",
     "save_gif",
     "write_rgb_png",
 )
@@ -84,6 +74,38 @@ BANNED_SYMBOLS = (
 BRANCH_RE = re.compile(r"^\s*(if|elif)\b")
 CASE_RE = re.compile(r"^\s*case\b")
 ASSIGN_RE = re.compile(r"^\s*([A-Za-z_]\w*)\s*(?::[^=]+)?=\s*(.+)$")
+PATTERN_RULES: tuple[tuple[str, str, re.Pattern[str]], ...] = (
+    (
+        "math",
+        "source_module_branch",
+        re.compile(
+            r"\b(owner|module_id|module_name|owner_mod|owner_module|imported_mod|mod|binding_module)\b"
+            r"[^\n#]*(==|!=)\s*[\"'](math|json|time|pathlib)[\"']"
+        ),
+    ),
+    (
+        "pytra.utils.*",
+        "source_module_prefix",
+        re.compile(
+            r"\bbinding_module\b[^\n#]*startswith\(\s*[\"']pytra\.utils\.[\"']\s*\)"
+        ),
+    ),
+    (
+        "pyMath*",
+        "helper_name_branch",
+        re.compile(r"\bruntime_symbol\b[^\n#]*startswith\(\s*[\"']pyMath[\"']\s*\)"),
+    ),
+    (
+        "pyMath*",
+        "helper_name_branch",
+        re.compile(r"\bruntime_symbol\b[^\n#]*(==|!=)\s*[\"']pyMath[A-Za-z0-9_]+[\"']"),
+    ),
+    (
+        ".pi/.e",
+        "runtime_suffix_branch",
+        re.compile(r"\bresolved_runtime\b[^\n#]*endswith\(\s*[\"']\.(pi|e)[\"']\s*\)"),
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -191,6 +213,18 @@ def _collect_findings() -> list[Finding]:
         rel_path = str(path.relative_to(ROOT))
         lines = path.read_text(encoding="utf-8").splitlines()
         for line_no, raw in enumerate(lines, start=1):
+            for symbol, kind, pattern in PATTERN_RULES:
+                if pattern.search(raw) is None:
+                    continue
+                findings.append(
+                    Finding(
+                        rel_path=rel_path,
+                        line_no=line_no,
+                        symbol=symbol,
+                        kind=kind,
+                        snippet=raw.strip(),
+                    )
+                )
             symbol_hits = [symbol for symbol in BANNED_SYMBOLS if _has_symbol_literal(raw, symbol)]
             if len(symbol_hits) == 0:
                 continue
