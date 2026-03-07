@@ -90,16 +90,13 @@ class CppStatementEmitter:
         ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
         ann_t_norm = self.normalize_type_name(ann_t_str)
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        alias_runtime_list_ann = (
-            list_model == "pyobj"
-            and target_name_raw != ""
-            and self._is_pyobj_runtime_list_alias_name(target_name_raw)
-            and ann_t_norm.startswith("list[")
-            and ann_t_norm.endswith("]")
+        ref_first_list_ann = list_model == "pyobj" and self._is_pyobj_ref_first_list_target_expr(
+            stmt.get("target"),
+            ann_t_norm,
         )
         force_typed_list_ann = list_model == "pyobj" and self._is_pyobj_value_model_list_type(ann_t_norm)
         force_typed_list_str = force_typed_list_ann and ann_t_norm == "list[str]"
-        if alias_runtime_list_ann:
+        if ref_first_list_ann:
             t = self._cpp_pyobj_alias_list_handle_type_text(ann_t_norm)
         elif force_typed_list_ann:
             t = self._cpp_list_value_model_type_text(ann_t_norm)
@@ -127,7 +124,7 @@ class CppStatementEmitter:
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
             if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
-                if alias_runtime_list_ann:
+                if ref_first_list_ann:
                     rendered_val = f"{self._cpp_list_value_model_type_text(ann_t_norm)}{{}}"
                 elif force_typed_list_ann:
                     rendered_val = f"{t}{{}}"
@@ -179,7 +176,7 @@ class CppStatementEmitter:
             ann_norm = self.normalize_type_name(ann_t_str)
             if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
                 rendered_val = f"({rendered_val}).value()"
-        if (not alias_runtime_list_ann) and self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
+        if (not ref_first_list_ann) and self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
             rendered_val = self._coerce_any_expr_to_target_via_unbox(
                 rendered_val,
                 stmt.get("value"),
@@ -187,7 +184,7 @@ class CppStatementEmitter:
                 f"annassign:{target}",
             )
         if (
-            (not alias_runtime_list_ann)
+            (not ref_first_list_ann)
             and force_typed_list_ann
             and rendered_val != ""
             and (
@@ -196,11 +193,11 @@ class CppStatementEmitter:
             )
         ):
             rendered_val = f"rc_list_copy_value({rendered_val})"
-        if alias_runtime_list_ann and rendered_val != "":
+        if ref_first_list_ann and rendered_val != "":
             rendered_val = self._render_pyobj_alias_list_value(rendered_val, stmt.get("value"), ann_t_norm)
         elif self.is_any_like_type(ann_t_str) and val_is_dict:
             rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
-        if (not alias_runtime_list_ann) and val_is_dict and rendered_val != "":
+        if (not ref_first_list_ann) and val_is_dict and rendered_val != "":
             rendered_val = self._apply_empty_init_shorthand_if_marked(stmt, ann_t_str, val, rendered_val)
         is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
         declare_stmt = self.stmt_declare_flag(stmt, True)
@@ -221,13 +218,13 @@ class CppStatementEmitter:
         if declare_name_binding:
             self.declare_in_current_scope(target)
             picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
-            if alias_runtime_list_ann:
+            if ref_first_list_ann:
                 picked_decl_t = ann_t_norm
             picked_decl_t = (
                 picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(target_node))
             )
             self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
-            if (not alias_runtime_list_ann) and force_typed_list_str and target_name_raw != "" and len(self.scope_stack) >= 2:
+            if (not ref_first_list_ann) and force_typed_list_str and target_name_raw != "" and len(self.scope_stack) >= 2:
                 self.current_function_typed_list_str_locals.add(target_name_raw)
         use_const_ref_decl = False
         if declare_stmt and not already_declared and is_plain_name_target and target_name_raw != "":
@@ -578,7 +575,7 @@ class CppStatementEmitter:
             return
         target_obj: Any = target
         texpr = self.render_lvalue(target_obj)
-        runtime_alias_target = self.is_plain_name_expr(target_obj) and self._is_pyobj_runtime_list_alias_name(texpr)
+        runtime_alias_target = False
         if self.is_plain_name_expr(target_obj) and not self.is_declared_for_name_binding(texpr):
             d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
             d1 = self.normalize_type_name(self.get_expr_type(target_obj))
@@ -598,6 +595,7 @@ class CppStatementEmitter:
                 if numeric_picked != "":
                     picked = numeric_picked
                     logical_picked = picked
+            runtime_alias_target = self._is_pyobj_ref_first_list_target_expr(target_obj, logical_picked)
             if runtime_alias_target:
                 logical_picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
                 picked = logical_picked
@@ -664,6 +662,7 @@ class CppStatementEmitter:
         t_target = self.get_expr_type(target_obj)
         if t_target == "None":
             t_target = "Any"
+        runtime_alias_target = self._is_pyobj_ref_first_list_target_expr(target_obj, t_target)
         if runtime_alias_target and self.is_plain_name_expr(target_obj):
             t_target = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(texpr, t_target)))
         if self.is_plain_name_expr(target_obj) and t_target in {"", "unknown"}:

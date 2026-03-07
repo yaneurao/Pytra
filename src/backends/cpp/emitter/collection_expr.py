@@ -189,7 +189,7 @@ class CppCollectionExprEmitter:
         g_target = self.any_to_dict_or_empty(g_target_raw)
         tgt = self.render_expr(g_target_raw)
         it = self.render_expr(g.get("iter"))
-        if self._uses_pyobj_rc_list_expr(g.get("iter")):
+        if self._uses_pyobj_ref_first_list_lvalue_expr(g.get("iter")):
             it = f"rc_list_ref({it})"
         elt = self.render_expr(expr_d.get("elt"))
         out_t = self.cpp_type(expr_d.get("resolved_type"))
@@ -395,7 +395,7 @@ class CppCollectionExprEmitter:
         g_target = self.any_to_dict_or_empty(g_target_raw)
         tgt = self.render_expr(g_target_raw)
         it = self.render_expr(g.get("iter"))
-        if self._uses_pyobj_rc_list_expr(g.get("iter")):
+        if self._uses_pyobj_ref_first_list_lvalue_expr(g.get("iter")):
             it = f"rc_list_ref({it})"
         elt = self.render_expr(expr_d.get("elt"))
         out_t = self.cpp_type(expr_d.get("resolved_type"))
@@ -457,7 +457,7 @@ class CppCollectionExprEmitter:
         g_target = self.any_to_dict_or_empty(g_target_raw)
         tgt = self.render_expr(g_target_raw)
         it = self.render_expr(g.get("iter"))
-        if self._uses_pyobj_rc_list_expr(g.get("iter")):
+        if self._uses_pyobj_ref_first_list_lvalue_expr(g.get("iter")):
             it = f"rc_list_ref({it})"
         key = self.render_expr(expr_d.get("key"))
         val = self.render_expr(expr_d.get("value"))

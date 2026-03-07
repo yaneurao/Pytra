@@ -539,6 +539,30 @@ class CppEmitter(
             return False
         return self._is_pyobj_runtime_list_alias_name(expr_name)
 
+    def _is_pyobj_ref_first_list_target_expr(self, expr_node: Any, east_type: str = "") -> bool:
+        """Name/Attribute 左辺が ref-first list handle 正本か判定する。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        node = self.any_to_dict_or_empty(expr_node)
+        if len(node) == 0:
+            return False
+        kind = self._node_kind_from_dict(node)
+        if kind == "Name":
+            expr_name = self.any_dict_get_str(node, "id", "")
+            if expr_name == "":
+                return False
+            if self._expr_is_stack_list_local(node):
+                return False
+            return self._is_pyobj_runtime_list_alias_name(expr_name)
+        if kind != "Attribute":
+            return False
+        expr_t = self.normalize_type_name(east_type)
+        if expr_t in {"", "unknown"}:
+            expr_t = self.normalize_type_name(self.get_expr_type(node))
+        if expr_t in {"", "unknown"}:
+            expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        return self._is_pyobj_ref_first_list_type(expr_t)
+
     def _uses_pyobj_ref_first_list_lvalue_expr(self, expr_node: Any) -> bool:
         """`rc_list_ref(...)` を安全に使える ref-first list 式か判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -546,19 +570,27 @@ class CppEmitter(
         node = self.any_to_dict_or_empty(expr_node)
         if len(node) == 0 or self._expr_is_stack_list_local(node):
             return False
-        if self._node_kind_from_dict(node) != "Name":
-            return False
-        expr_name = self.any_dict_get_str(node, "id", "")
-        if expr_name == "":
-            return False
-        if self._uses_pyobj_rc_list_expr(node):
+        kind = self._node_kind_from_dict(node)
+        if kind == "Name":
+            expr_name = self.any_dict_get_str(node, "id", "")
+            if expr_name == "":
+                return False
+            if self._uses_pyobj_rc_list_expr(node):
+                return True
+            if not self._is_typed_list_str_name(expr_name):
+                return False
+            expr_t = self.normalize_type_name(self.get_expr_type(node))
+            if expr_t in {"", "unknown"}:
+                expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+            return self._is_pyobj_ref_first_list_type(expr_t)
+        if kind == "Attribute":
+            expr_t = self.normalize_type_name(self.get_expr_type(node))
+            if expr_t in {"", "unknown"}:
+                expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+            return self._is_pyobj_ref_first_list_type(expr_t)
+        if self._is_pyobj_ref_first_list_target_expr(node):
             return True
-        if not self._is_typed_list_str_name(expr_name):
-            return False
-        expr_t = self.normalize_type_name(self.get_expr_type(node))
-        if expr_t in {"", "unknown"}:
-            expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
-        return self._is_pyobj_ref_first_list_type(expr_t)
+        return False
 
     def _uses_pyobj_ref_first_list_ops(self, expr_node: Any) -> bool:
         """`py_*` の ref-first list helper を使うべき式か判定する。"""
@@ -643,6 +675,8 @@ class CppEmitter(
             return rendered_expr
 
         value = self.any_to_dict_or_empty(value_node)
+        if self._uses_pyobj_ref_first_list_lvalue_expr(value):
+            return rendered_expr
         kind = self._node_kind_from_dict(value)
         if kind == "Name":
             src_name = self.any_dict_get_str(value, "id", "")

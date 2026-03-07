@@ -219,7 +219,7 @@ class CppClassEmitter:
                 self.emit(f"inline static {self._cpp_type_text(fty)} {emitted_fname};")
         for fname, fty in instance_fields_ordered:
             emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
-            self.emit(f"{self._cpp_type_text(fty)} {emitted_fname};")
+            self.emit(f"{self.cpp_signature_type(fty)} {emitted_fname};")
         if gc_managed:
             base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
             self.emit(f"PYTRA_DECLARE_CLASS_TYPE({base_type_id_expr});")
@@ -230,7 +230,7 @@ class CppClassEmitter:
             params: list[str] = []
             for fname, fty in instance_fields_ordered:
                 emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
-                p = f"{self._cpp_type_text(fty)} {emitted_fname}"
+                p = f"{self.cpp_signature_type(fty)} {emitted_fname}"
                 if fname in instance_field_defaults and instance_field_defaults[fname] != "":
                     default_expr = instance_field_defaults[fname]
                     if not self._expr_is_none_marker(default_expr):
