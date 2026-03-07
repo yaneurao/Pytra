@@ -42,6 +42,31 @@
 3. 既に green な `cpp/js/ts` は baseline target として継続監視し、他 target の修復で壊していないことを確認する。
 4. 最後に docs / scripts / health check を「toolchain が入っていれば全 target parity が通る」前提へ更新する。
 
+2026-03-08 current machine toolchain matrix:
+
+| target | runner_needs | current status | missing tools |
+| --- | --- | --- | --- |
+| `cpp` | `python`, `make`, `g++` | available | - |
+| `rs` | `python`, `rustc` | toolchain_missing | `rustc` |
+| `cs` | `python`, `mcs`, `mono` | toolchain_missing | `mcs`, `mono` |
+| `js` | `python`, `node` | available | - |
+| `ruby` | `python`, `ruby` | toolchain_missing | `ruby` |
+| `lua` | `python`, `lua` | toolchain_missing | `lua` |
+| `php` | `python`, `php` | toolchain_missing | `php` |
+| `ts` | `python`, `node`, `npx` | available | - |
+| `go` | `python`, `go` | toolchain_missing | `go` |
+| `java` | `python`, `javac`, `java` | toolchain_missing | `javac`, `java` |
+| `swift` | `python`, `swiftc` | toolchain_missing | `swiftc` |
+| `kotlin` | `python`, `kotlinc`, `java` | toolchain_missing | `kotlinc`, `java` |
+| `scala` | `python`, `scala` | toolchain_missing | `scala` |
+| `nim` | `python`, `nim` | toolchain_missing | `nim` |
+
+Phase 1 snapshot:
+- baseline available target は `cpp/js/ts` の 3 target。
+- compiled target 群は `rs/cs/go/java/kotlin/swift/scala` が全件 `toolchain_missing`。
+- scripting / mixed target 群は `ruby/lua/php/nim` が全件 `toolchain_missing`。
+- `runner_needs` は `src/toolchain/compiler/pytra_cli_profiles.py`、tool presence は `shutil.which(...)` 実測を正本とする。
+
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
@@ -52,7 +77,7 @@
 
 ## 分解
 
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01] parity target 全体の `runner_needs` と current `toolchain_missing` を棚卸しし、target ごとの不足 toolchain を matrix 化する。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01] parity target 全体の `runner_needs` と current `toolchain_missing` を棚卸しし、target ごとの不足 toolchain を matrix 化する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02] 「全target parity green」の done 条件、許容しない failure category、確認コマンドを spec/plan に固定する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
@@ -111,3 +136,4 @@
 - 2026-03-08: ユーザー指示により、sample parity を「一部 target だけ green、他は `toolchain_missing`」の状態で止めず、全 parity target で実行完了できるようにする後続計画を起票する。
 - 2026-03-08: 本計画は runtime layout 再編より先に行う。理由は、layout 問題と toolchain 不足を混ぜると設計判断がぶれるためである。
 - 2026-03-08: 既存 baseline では `cpp/js/ts` が green、その他は `toolchain_missing` である。したがって本計画の主対象は「backend bug 修正」よりまず「実行環境不足の解消」とする。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01]: `pytra_cli_profiles.list_parity_targets()` と `TargetProfile.runner_needs`、および current machine の `shutil.which(...)` 実測を突き合わせ、Phase 1 baseline を `cpp/js/ts` available、その他 11 target は `toolchain_missing` として matrix 化した。
