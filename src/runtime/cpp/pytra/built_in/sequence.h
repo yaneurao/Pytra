@@ -5,4 +5,4 @@
 #pragma once
 
 #include "runtime/cpp/generated/built_in/sequence.h"
-#include "runtime/cpp/built_in/sequence.ext.h"
+#include "runtime/cpp/native/built_in/sequence.h"

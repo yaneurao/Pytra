@@ -18,7 +18,7 @@ CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/gc.ext.cpp",
     "src/runtime/cpp/core/io.ext.cpp",
     "src/runtime/cpp/generated/built_in/type_id.cpp",
-    "src/runtime/cpp/std/time.ext.cpp",
+    "src/runtime/cpp/native/std/time.cpp",
 ]
 
 

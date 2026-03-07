@@ -28,7 +28,7 @@
 #include "exceptions.ext.h"
 #include "io.ext.h"
 #include "runtime/cpp/generated/built_in/predicates.h"
-#include "runtime/cpp/built_in/sequence.ext.h"
+#include "runtime/cpp/native/built_in/sequence.h"
 #include "runtime/cpp/generated/built_in/sequence.h"
 #include "runtime/cpp/generated/built_in/string_ops.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
@@ -1354,7 +1354,7 @@ static inline K py_dict_key_cast(const Q& key) {
     }
 }
 
-#include "runtime/cpp/built_in/contains.ext.h"
+#include "runtime/cpp/native/built_in/contains.h"
 
 template <class V>
 static inline V py_dict_value_cast(const object& value) {
@@ -3062,7 +3062,7 @@ static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) 
     return py_slice(v, lo, py_to_int64(up));
 }
 
-#include "runtime/cpp/built_in/iter_ops.ext.h"
+#include "runtime/cpp/native/built_in/iter_ops.h"
 
 template <class A, class B>
 static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {

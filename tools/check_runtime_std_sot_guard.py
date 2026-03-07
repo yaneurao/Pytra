@@ -175,14 +175,14 @@ CPP_CANONICAL_SOURCE_BY_MODULE: dict[str, str] = {
     "png": "src/pytra/utils/png.py",
 }
 
-# required handwritten core files.
+# required handwritten native companion files.
 CPP_REQUIRED_CORE_IMPL_FILES: dict[str, str] = {
-    "glob.ext.cpp": "src/runtime/cpp/std/glob.ext.cpp",
-    "math.ext.cpp": "src/runtime/cpp/std/math.ext.cpp",
-    "os.ext.cpp": "src/runtime/cpp/std/os.ext.cpp",
-    "os_path.ext.cpp": "src/runtime/cpp/std/os_path.ext.cpp",
-    "sys.ext.cpp": "src/runtime/cpp/std/sys.ext.cpp",
-    "time.ext.cpp": "src/runtime/cpp/std/time.ext.cpp",
+    "glob.cpp": "src/runtime/cpp/native/std/glob.cpp",
+    "math.cpp": "src/runtime/cpp/native/std/math.cpp",
+    "os.cpp": "src/runtime/cpp/native/std/os.cpp",
+    "os_path.cpp": "src/runtime/cpp/native/std/os_path.cpp",
+    "sys.cpp": "src/runtime/cpp/native/std/sys.cpp",
+    "time.cpp": "src/runtime/cpp/native/std/time.cpp",
 }
 
 CPP_ROOT_GENERATED_RUNTIME_FILES: set[str] = set()
@@ -290,7 +290,7 @@ def _check_cpp_runtime_shape(violations: list[str]) -> None:
                     f"[{module_name}] {gen_rel} missing canonical source marker ({marker})"
                 )
 
-    # 2) Required handwritten impl split must remain under std as `.ext.cpp`.
+    # 2) Required handwritten impl split must remain under native/std as plain `.cpp`.
     for _name, core_rel in CPP_REQUIRED_CORE_IMPL_FILES.items():
         core_path = ROOT / core_rel
         if not core_path.exists():
