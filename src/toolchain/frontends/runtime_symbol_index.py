@@ -169,6 +169,12 @@ def lookup_target_module_primary_header(target: str, module_id: str) -> str:
         for header in headers:
             if header.startswith("src/runtime/cpp/generated/"):
                 return header
+        for header in headers:
+            if header.endswith(".gen.h"):
+                return header
+        for header in headers:
+            if header.startswith("src/runtime/cpp/native/"):
+                return header
     for suffix in (".gen.h", ".ext.h", ".h"):
         for header in headers:
             if header.endswith(suffix):

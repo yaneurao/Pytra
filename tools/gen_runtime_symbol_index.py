@@ -110,7 +110,15 @@ def _modern_runtime_langs() -> list[str]:
     for ent in sorted(root.iterdir()):
         if not ent.is_dir():
             continue
-        if (ent / "core").exists() or (ent / "built_in").exists() or (ent / "std").exists() or (ent / "utils").exists():
+        if (
+            (ent / "core").exists()
+            or (ent / "built_in").exists()
+            or (ent / "std").exists()
+            or (ent / "utils").exists()
+            or (ent / "generated").exists()
+            or (ent / "native").exists()
+            or (ent / "pytra").exists()
+        ):
             out.append(ent.name)
     return out
 
@@ -118,6 +126,8 @@ def _modern_runtime_langs() -> list[str]:
 def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any] | None:
     if tail == "":
         return None
+    if lang == "cpp" and group != "core":
+        return _target_cpp_module_artifacts(group, tail)
     base_dir = ROOT / "src" / "runtime" / lang / group
     if not base_dir.exists():
         return None
@@ -177,6 +187,73 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
         companions.append("gen")
     if native_h.exists() or native_cpp.exists() or ext_h.exists() or ext_cpp.exists():
         companions.append("ext")
+    if len(public_headers) == 0 and len(compile_sources) == 0:
+        return None
+    return {
+        "public_headers": public_headers,
+        "compile_sources": compile_sources,
+        "companions": companions,
+    }
+
+
+def _pick_existing(paths: list[Path]) -> Path | None:
+    for path in paths:
+        if path.exists():
+            return path
+    return None
+
+
+def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None:
+    runtime_root = ROOT / "src" / "runtime" / "cpp"
+    public_headers: list[str] = []
+    compile_sources: list[str] = []
+    companions: list[str] = []
+
+    public_shim = runtime_root / "pytra" / group / (tail + ".h")
+    legacy_stem = runtime_root / group / tail
+    generated_h = _pick_existing(
+        [
+            runtime_root / "generated" / group / (tail + ".h"),
+            legacy_stem.with_name(legacy_stem.name + ".gen.h"),
+        ]
+    )
+    generated_cpp = _pick_existing(
+        [
+            runtime_root / "generated" / group / (tail + ".cpp"),
+            legacy_stem.with_name(legacy_stem.name + ".gen.cpp"),
+        ]
+    )
+    native_h = _pick_existing(
+        [
+            runtime_root / "native" / group / (tail + ".h"),
+            legacy_stem.with_name(legacy_stem.name + ".ext.h"),
+        ]
+    )
+    native_cpp = _pick_existing(
+        [
+            runtime_root / "native" / group / (tail + ".cpp"),
+            legacy_stem.with_name(legacy_stem.name + ".ext.cpp"),
+        ]
+    )
+
+    if public_shim.exists():
+        public_headers.append(_path_to_rel_txt(public_shim))
+    else:
+        if generated_h is not None:
+            public_headers.append(_path_to_rel_txt(generated_h))
+        if native_h is not None:
+            public_headers.append(_path_to_rel_txt(native_h))
+
+    if generated_cpp is not None:
+        compile_sources.append(_path_to_rel_txt(generated_cpp))
+    if native_cpp is not None:
+        compile_sources.append(_path_to_rel_txt(native_cpp))
+
+    if generated_h is not None or generated_cpp is not None:
+        companions.append("generated")
+    if native_h is not None or native_cpp is not None:
+        companions.append("native")
+
     if len(public_headers) == 0 and len(compile_sources) == 0:
         return None
     return {

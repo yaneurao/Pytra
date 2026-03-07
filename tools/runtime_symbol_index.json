@@ -786,8 +786,8 @@
       "modules": {
         "pytra.built_in.contains": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/built_in/contains.gen.cpp"
@@ -799,8 +799,8 @@
         },
         "pytra.built_in.iter_ops": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/built_in/iter_ops.gen.cpp"
@@ -812,7 +812,7 @@
         },
         "pytra.built_in.predicates": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/built_in/predicates.gen.cpp"
@@ -823,8 +823,8 @@
         },
         "pytra.built_in.sequence": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/built_in/sequence.gen.cpp"
@@ -836,7 +836,7 @@
         },
         "pytra.built_in.string_ops": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/built_in/string_ops.gen.cpp"
@@ -847,7 +847,7 @@
         },
         "pytra.built_in.type_id": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/built_in/type_id.gen.cpp"
@@ -952,7 +952,7 @@
         },
         "pytra.std.argparse": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/argparse.gen.cpp"
@@ -963,20 +963,19 @@
         },
         "pytra.std.glob": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/glob.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/glob.h",
-            "src/runtime/cpp/std/glob.gen.h"
+            "src/runtime/cpp/pytra/std/glob.h"
           ]
         },
         "pytra.std.json": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/json.gen.cpp"
@@ -987,83 +986,77 @@
         },
         "pytra.std.math": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/math.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/math.h",
-            "src/runtime/cpp/std/math.gen.h"
+            "src/runtime/cpp/pytra/std/math.h"
           ]
         },
         "pytra.std.os": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/os.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/os.h",
-            "src/runtime/cpp/std/os.gen.h"
+            "src/runtime/cpp/pytra/std/os.h"
           ]
         },
         "pytra.std.os_path": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/os_path.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/os_path.h",
-            "src/runtime/cpp/std/os_path.gen.h"
+            "src/runtime/cpp/pytra/std/os_path.h"
           ]
         },
         "pytra.std.pathlib": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/pathlib.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/pathlib.h",
-            "src/runtime/cpp/std/pathlib.gen.h"
+            "src/runtime/cpp/pytra/std/pathlib.h"
           ]
         },
         "pytra.std.random": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/random.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/random.h",
-            "src/runtime/cpp/std/random.gen.h"
+            "src/runtime/cpp/pytra/std/random.h"
           ]
         },
         "pytra.std.re": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/re.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/re.h",
-            "src/runtime/cpp/std/re.gen.h"
+            "src/runtime/cpp/pytra/std/re.h"
           ]
         },
         "pytra.std.sys": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/sys.ext.cpp"
@@ -1074,20 +1067,19 @@
         },
         "pytra.std.time": {
           "companions": [
-            "gen",
-            "ext"
+            "generated",
+            "native"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/time.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/time.h",
-            "src/runtime/cpp/std/time.gen.h"
+            "src/runtime/cpp/pytra/std/time.h"
           ]
         },
         "pytra.std.timeit": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/std/timeit.gen.cpp"
@@ -1098,7 +1090,7 @@
         },
         "pytra.utils.assertions": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/utils/assertions.gen.cpp"
@@ -1109,26 +1101,24 @@
         },
         "pytra.utils.gif": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/utils/gif.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/utils/gif.h",
-            "src/runtime/cpp/utils/gif.gen.h"
+            "src/runtime/cpp/pytra/utils/gif.h"
           ]
         },
         "pytra.utils.png": {
           "companions": [
-            "gen"
+            "generated"
           ],
           "compile_sources": [
             "src/runtime/cpp/utils/png.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/utils/png.h",
-            "src/runtime/cpp/utils/png.gen.h"
+            "src/runtime/cpp/pytra/utils/png.h"
           ]
         }
       }

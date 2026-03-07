@@ -64,7 +64,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIsInstance(pathlib_symbols, dict)
         self.assertEqual(pathlib_symbols.get("Path", {}).get("kind"), "class")
 
-    def test_cpp_target_artifacts_contain_gen_and_ext_companions(self) -> None:
+    def test_cpp_target_artifacts_follow_generated_native_and_public_shim_contract(self) -> None:
         doc = gen_mod.build_runtime_symbol_index()
         targets = doc.get("targets")
         self.assertIsInstance(targets, dict)
@@ -75,23 +75,23 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
 
         iter_ops = cpp_modules.get("pytra.built_in.iter_ops")
         self.assertIsInstance(iter_ops, dict)
-        self.assertEqual(iter_ops.get("companions"), ["gen", "ext"])
+        self.assertEqual(iter_ops.get("companions"), ["generated", "native"])
         self.assertIn("src/runtime/cpp/built_in/iter_ops.gen.h", iter_ops.get("public_headers", []))
         self.assertIn("src/runtime/cpp/built_in/iter_ops.ext.h", iter_ops.get("public_headers", []))
         self.assertIn("src/runtime/cpp/built_in/iter_ops.gen.cpp", iter_ops.get("compile_sources", []))
 
         time_mod = cpp_modules.get("pytra.std.time")
         self.assertIsInstance(time_mod, dict)
-        self.assertEqual(time_mod.get("companions"), ["gen", "ext"])
+        self.assertEqual(time_mod.get("companions"), ["generated", "native"])
         self.assertIn("src/runtime/cpp/pytra/std/time.h", time_mod.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/std/time.gen.h", time_mod.get("public_headers", []))
+        self.assertNotIn("src/runtime/cpp/std/time.gen.h", time_mod.get("public_headers", []))
         self.assertIn("src/runtime/cpp/std/time.ext.cpp", time_mod.get("compile_sources", []))
 
         png_mod = cpp_modules.get("pytra.utils.png")
         self.assertIsInstance(png_mod, dict)
-        self.assertEqual(png_mod.get("companions"), ["gen"])
+        self.assertEqual(png_mod.get("companions"), ["generated"])
         self.assertIn("src/runtime/cpp/pytra/utils/png.h", png_mod.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/utils/png.gen.h", png_mod.get("public_headers", []))
+        self.assertNotIn("src/runtime/cpp/utils/png.gen.h", png_mod.get("public_headers", []))
         self.assertIn("src/runtime/cpp/utils/png.gen.cpp", png_mod.get("compile_sources", []))
 
         core_dict = cpp_modules.get("pytra.core.dict")

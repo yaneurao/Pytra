@@ -11,8 +11,12 @@ from pathlib import Path
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 BUILD_SCRIPT = ROOT / "tools" / "build_multi_cpp.py"
 MAKEFILE_SCRIPT = ROOT / "tools" / "gen_makefile_from_manifest.py"
+
+from tools.cpp_runtime_deps import runtime_cpp_candidates_from_header
 
 
 class CppRuntimeBuildGraphTest(unittest.TestCase):
@@ -89,3 +93,9 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             text = output_makefile.read_text(encoding="utf-8")
             self.assertIn(str(ROOT / "src/runtime/cpp/std/math.ext.cpp"), text)
+
+    def test_runtime_cpp_candidates_support_generated_native_layout(self) -> None:
+        header = ROOT / "src/runtime/cpp/generated/std/math.h"
+        paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
+        self.assertIn((ROOT / "src/runtime/cpp/generated/std/math.cpp").as_posix(), paths)
+        self.assertIn((ROOT / "src/runtime/cpp/native/std/math.cpp").as_posix(), paths)
