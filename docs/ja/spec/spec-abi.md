@@ -372,13 +372,13 @@ ownership 規則:
 - SoT から生成される宣言 / thin wrapper は `generated/`
 - OS / SDK / C++ 標準ライブラリへ接着する最小 native 実装は `native/`
 - 生成コードが include する public header は `pytra/`
-- `core/` は低レベル runtime の stable include surface であり、承認済み次段では `runtime/cpp/core/*.h` の plain naming を使う
+- `core/` は低レベル runtime の stable include surface であり、`runtime/cpp/core/*.h` の plain naming を使う
 
 補足:
 
 - C++ module runtime の ownership は suffix ではなく directory で判別する。
 - `src/runtime/cpp/{built_in,std,utils}` の suffix ベース module runtime は legacy-closed であり、再導入しない。
-- `core` についても承認済み次段では `runtime/cpp/generated/core/` と `runtime/cpp/native/core/` に ownership を分離し、`runtime/cpp/core/*.h` は互換 include 面、`runtime/cpp/native/core/*.{h,cpp}` は handwritten 正本とする。
+- `core` についても `runtime/cpp/generated/core/` と `runtime/cpp/native/core/` に ownership を分離し、`runtime/cpp/core/*.h` は互換 include 面、`runtime/cpp/native/core/*.{h,cpp}` は handwritten 正本とする。
 - `pytra/core` は導入しない。`pytra/` は module runtime の generated public shim に限定する。
 - ABI の考え方自体は変わらない。
 - 詳細は `docs/ja/spec/spec-runtime.md`、`docs/ja/plans/archive/20260307-p0-cpp-runtime-layout-generated-native.md`、`docs/ja/plans/p0-cpp-core-ownership-split.md` に従う。

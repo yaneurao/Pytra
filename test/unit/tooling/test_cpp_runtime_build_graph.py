@@ -132,7 +132,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
 
         self.assertIn((runtime_root / "generated/core/dict.cpp").as_posix(), paths)
         self.assertIn((runtime_root / "native/core/dict.cpp").as_posix(), paths)
-        self.assertIn((runtime_root / "core/dict.cpp").as_posix(), paths)
+        self.assertNotIn((runtime_root / "core/dict.cpp").as_posix(), paths)
 
     def test_runtime_cpp_candidates_support_future_core_split_from_generated_header(self) -> None:
         with tempfile.TemporaryDirectory() as td:

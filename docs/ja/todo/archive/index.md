@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-07 / P0-CPP-CORE-EXT-SUFFIX-RETIRE-01](../plans/archive/20260307-p0-cpp-core-ext-suffix-retire.md)
 - [2026-03-07 / P0-CPP-CORE-OWNERSHIP-SPLIT-01](../plans/archive/20260307-p0-cpp-core-ownership-split.md)
 - [2026-03-07 / P0-CPP-RUNTIME-LAYOUT-REALIGN-01](../plans/archive/20260307-p0-cpp-runtime-layout-generated-native.md)
 - [2026-03-07 / P0-CPP-OSPATH-WRAPPER-RETIRE-01](../plans/archive/20260307-p0-cpp-os-path-wrapper-retirement.md)
@@ -34,7 +35,7 @@
 
 ## 日付別リンク
 
-- [2026-03-07](20260307.md)（3 セクション）
+- [2026-03-07](20260307.md)（4 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
 - [2026-03-04](20260304.md)（9 セクション）

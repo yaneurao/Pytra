@@ -167,30 +167,30 @@ src/runtime/cpp/
 2026-03-07 時点の `core` / `native/core` inventory は次のとおり。
 
 - `core/` public forwarder rename 対象: 10 files
-  - `dict.h -> dict.h`
-  - `exceptions.h -> exceptions.h`
-  - `gc.h -> gc.h`
-  - `io.h -> io.h`
-  - `list.h -> list.h`
-  - `py_runtime.h -> py_runtime.h`
-  - `py_scalar_types.h -> py_scalar_types.h`
-  - `py_types.h -> py_types.h`
-  - `set.h -> set.h`
-  - `str.h -> str.h`
+  - `dict.ext.h -> dict.h`
+  - `exceptions.ext.h -> exceptions.h`
+  - `gc.ext.h -> gc.h`
+  - `io.ext.h -> io.h`
+  - `list.ext.h -> list.h`
+  - `py_runtime.ext.h -> py_runtime.h`
+  - `py_scalar_types.ext.h -> py_scalar_types.h`
+  - `py_types.ext.h -> py_types.h`
+  - `set.ext.h -> set.h`
+  - `str.ext.h -> str.h`
 - `native/core/` handwritten header rename 対象: 10 files
-  - `dict.h -> dict.h`
-  - `exceptions.h -> exceptions.h`
-  - `gc.h -> gc.h`
-  - `io.h -> io.h`
-  - `list.h -> list.h`
-  - `py_runtime.h -> py_runtime.h`
-  - `py_scalar_types.h -> py_scalar_types.h`
-  - `py_types.h -> py_types.h`
-  - `set.h -> set.h`
-  - `str.h -> str.h`
+  - `dict.ext.h -> dict.h`
+  - `exceptions.ext.h -> exceptions.h`
+  - `gc.ext.h -> gc.h`
+  - `io.ext.h -> io.h`
+  - `list.ext.h -> list.h`
+  - `py_runtime.ext.h -> py_runtime.h`
+  - `py_scalar_types.ext.h -> py_scalar_types.h`
+  - `py_types.ext.h -> py_types.h`
+  - `set.ext.h -> set.h`
+  - `str.ext.h -> str.h`
 - `native/core/` handwritten source rename 対象: 2 files
-  - `gc.cpp -> gc.cpp`
-  - `io.cpp -> io.cpp`
+  - `gc.ext.cpp -> gc.cpp`
+  - `io.ext.cpp -> io.cpp`
 - `generated/core/` 既存ファイル: 1 file
   - `README.md` のみ。real artifact はまだ 0 件で、plain naming rule だけが先行して存在する。
 
@@ -207,9 +207,16 @@ Phase 1 契約固定:
 - `docs/ja/spec/spec-abi.md` にも、low-level core の stable include surface は `runtime/cpp/core/*.h`、handwritten 正本は `runtime/cpp/native/core/*.{h,cpp}` とする approved next step を追記した。
 - `pytra/core` は引き続き導入せず、include root は `core/...` のまま維持することを plan/spec で再確認した。
 
+## Phase 5 実施結果
+
+- `generated/core/README.md` と `spec-runtime.md` / `spec-abi.md` / `spec-tools.md` を更新し、C++ core の naming 契約を「承認済み次段」ではなく現行正本として固定した。`generated/core` の real artifact は plain `*.h` / `*.cpp` だけを許可し、`core` / `native/core` lane に `.ext` suffix を再導入しない。
+- `gen_runtime_symbol_index.py` と `cpp_runtime_deps.py` から core lane の legacy `.ext` / `.gen` fallback を削除し、`check_runtime_cpp_layout.py` も `plain` naming 以外を fail する guard に締めた。`test_check_runtime_cpp_layout.py` は legacy `.ext` core tree を reject するケースへ更新し、`test_cpp_runtime_build_graph.py` も `core/*.cpp` fallback を返さないことを固定した。
+- `gen_runtime_symbol_index.py --check`、`check_runtime_cpp_layout.py`、`check_runtime_core_gen_markers.py`、`test_check_runtime_core_gen_markers.py`、`test_check_runtime_cpp_layout.py`、`test_cpp_runtime_build_graph.py`、`test_runtime_symbol_index.py` を通し、active tree では本 plan 自身を除いて `core/.*.ext` / `native/core/.*.ext` 参照が残っていないことを確認した。
+- active TODO から本 P0 セクションを外し、plan は `docs/ja/plans/archive/20260307-p0-cpp-core-ext-suffix-retire.md` へ移して closeout する。次の最上位未完了は `P0-CPP-LIST-REFFIRST-01-S3-02` に戻る。
+
 ## 分解
 
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01] C++ core runtime から `.ext` suffix を退役し、`core` surface / `native/core` 正本 / `generated/core` lane を plain file name 契約へ揃える。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01] C++ core runtime から `.ext` suffix を退役し、`core` surface / `native/core` 正本 / `generated/core` lane を plain file name 契約へ揃える。
 
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
@@ -223,8 +230,8 @@ Phase 1 契約固定:
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S4-01] `src/runtime/cpp/native/core/*.ext.h` / `*.ext.cpp` を plain name へ rename し、public forwarder と compile source の参照先を同期する。
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S4-02] runtime symbol index / parity tool / representative tests を plain `native/core/*.{h,cpp}` 前提へ更新し、旧 `.ext` path を返さないことを固定する。
 
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S5-01] `generated/core` の plain naming rule を README/spec/guard に固定し、future artifact が `.ext` を再導入しないようにする。
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S5-02] fallback / docs / archive / guard を更新し、core runtime の `.ext` naming を完了扱いで閉じる。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S5-01] `generated/core` の plain naming rule を README/spec/guard に固定し、future artifact が `.ext` を再導入しないようにする。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S5-02] fallback / docs / archive / guard を更新し、core runtime の `.ext` naming を完了扱いで閉じる。
 
 決定ログ:
 - 2026-03-07: ユーザー指示により、`core` surface は shim なので `.ext` を外し、`native/core` も directory で ownership が表現できる以上 `.ext` は不要と判断した。
@@ -235,3 +242,5 @@ Phase 1 契約固定:
 - 2026-03-07: `S2-02` として tooling unit test の synthetic tree を plain `core/*.h` / `generated|native/core/*.cpp` へ更新した。`test_runtime_symbol_index.py` では future plain header から module discovery と artifact selection を固定し、`test_cpp_runtime_build_graph.py` では `core/dict.h` と `generated/core/dict.h` の両方から plain compile source が解決できることを確認した。`test_check_runtime_cpp_layout.py` では plain core surface を正例にしつつ、legacy `.ext` naming も移行中は通ることを別 test で残した。
 - 2026-03-07: `S3-01` と `S3-02` を一体で実施した。`src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder は引き続き `native/core/*.ext.h` を指す形で surface だけ plain name に切り替えた。backend (`cli.py`, `multifile_writer.py`, `header_builder.py`)、checked-in generated/native runtime、`runtime_symbol_index.json`、representative backend/tooling/runtime tests も `runtime/cpp/core/*.h` を使うよう更新し、active tree から `runtime/cpp/core/*.ext.h` 参照を除去した。
 - 2026-03-07: `S4-01` と `S4-02` を一体で実施した。`src/runtime/cpp/native/core/*.ext.h` / `*.ext.cpp` を plain `*.h` / `*.cpp` へ rename し、`core/*.h` forwarder も `native/core/*.h` を指すよう同期した。native core の自己 include (`py_runtime.h`, `py_types.h`, `gc.cpp`, `io.cpp`) も plain name へ切り替え、`runtime_symbol_index.json`、`verify_image_runtime_parity.py`、`docs/ja/how-to-use.md`、representative backend/tooling/runtime tests の compile source 期待値を `native/core/gc.cpp` / `native/core/io.cpp` 基準に更新した。active tree では `native/core/*.ext.*` 参照は archive を除いて 0 件になった。
+- 2026-03-07: `S5-01` として `generated/core/README.md`、`spec-runtime.md`、`spec-abi.md`、`spec-tools.md`、`check_runtime_cpp_layout.py` を plain naming 正本へ締めた。`generated/core` の future artifact は plain `*.h` / `*.cpp` のみ、`core` / `native/core` も `.ext` を再導入禁止とし、synthetic layout test は legacy `.ext` tree を fail-fast に更新した。
+- 2026-03-07: `S5-02` として `gen_runtime_symbol_index.py` / `cpp_runtime_deps.py` から core lane の legacy fallback を削除し、`test_cpp_runtime_build_graph.py` では `core/*.cpp` 候補を返さないことを固定した。`gen_runtime_symbol_index.py --check`、`check_runtime_cpp_layout.py`、`check_runtime_core_gen_markers.py`、`test_check_runtime_core_gen_markers.py`、`test_check_runtime_cpp_layout.py`、`test_cpp_runtime_build_graph.py`、`test_runtime_symbol_index.py` を通したうえで plan を archive へ移し、次の最上位未完了を `P0-CPP-LIST-REFFIRST-01-S3-02` に戻す。

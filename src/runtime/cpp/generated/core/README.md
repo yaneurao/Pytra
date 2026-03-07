@@ -5,8 +5,9 @@
 ## ルール
 
 - `generated/core/` に置くコードは `source:` と `generated-by:` marker を必須にする。
-- include 面は増やさず、public/stable include は引き続き `src/runtime/cpp/core/*.ext.h` を使う。
+- include 面は増やさず、public/stable include は引き続き `src/runtime/cpp/core/*.h` を使う。
 - compile/source 解決は `core/...` public header から `generated/core/...` と `native/core/...` を導出する。
+- `generated/core/` の real artifact は plain naming (`*.h`, `*.cpp`) のみを許可し、`.ext` / `.gen` suffix を再導入しない。
 - real artifact がまだ無い段階でも、このディレクトリ自体は正式レイアウトとして維持する。
 
 ## 置いてよいもの

@@ -129,16 +129,9 @@ def _core_tail_base(tail: Path) -> str:
 def _runtime_cpp_candidates_from_generated_core_tail(tail: Path) -> list[Path]:
     out: list[Path] = []
     base_tail = _core_tail_base(tail)
-    for rel_tail in (
-        base_tail + ".cpp",
-        base_tail + ".ext.cpp",
-        base_tail + ".gen.cpp",
-    ):
+    for rel_tail in (base_tail + ".cpp",):
         _append_unique_path(out, RUNTIME_ROOT / "generated" / "core" / rel_tail)
-    for rel_tail in (
-        base_tail + ".cpp",
-        base_tail + ".ext.cpp",
-    ):
+    for rel_tail in (base_tail + ".cpp",):
         _append_unique_path(out, RUNTIME_ROOT / "native" / "core" / rel_tail)
     return out
 
@@ -146,28 +139,17 @@ def _runtime_cpp_candidates_from_generated_core_tail(tail: Path) -> list[Path]:
 def _runtime_cpp_candidates_from_native_core_tail(tail: Path) -> list[Path]:
     out: list[Path] = []
     base_tail = _core_tail_base(tail)
-    for rel_tail in (
-        base_tail + ".cpp",
-        base_tail + ".ext.cpp",
-    ):
+    for rel_tail in (base_tail + ".cpp",):
         _append_unique_path(out, RUNTIME_ROOT / "native" / "core" / rel_tail)
     return out
 
 
 def _runtime_cpp_candidates_from_core_tail(tail: Path) -> list[Path]:
     out: list[Path] = []
-    base_tail = _core_tail_base(tail)
-
     for path in _runtime_cpp_candidates_from_generated_core_tail(tail):
         _append_unique_path(out, path)
     for path in _runtime_cpp_candidates_from_native_core_tail(tail):
         _append_unique_path(out, path)
-    for rel_tail in (
-        base_tail + ".cpp",
-        base_tail + ".ext.cpp",
-        base_tail + ".gen.cpp",
-    ):
-        _append_unique_path(out, RUNTIME_ROOT / "core" / rel_tail)
     return out
 
 

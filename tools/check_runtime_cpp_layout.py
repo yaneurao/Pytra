@@ -83,8 +83,6 @@ def _matches_name_policy(path: Path, policy: str) -> bool:
         return _is_plain_cpp_name(path)
     if policy == "ext_only":
         return ".ext." in path.name
-    if policy == "plain_or_ext":
-        return _is_plain_cpp_name(path) or ".ext." in path.name
     raise ValueError(f"unknown name policy: {policy}")
 
 
@@ -143,7 +141,7 @@ def _check_core_surface_files(
     for p in files:
         rel = str(p.relative_to(ROOT))
         txt = p.read_text(encoding="utf-8", errors="ignore")
-        if not _matches_name_policy(p, "plain_or_ext"):
+        if not _matches_name_policy(p, "plain"):
             invalid_name.append(rel)
         if MARKER in txt:
             unexpected_marker.append(rel)
@@ -237,9 +235,7 @@ def main() -> int:
     _check_generated_files(
         generated_module_files, missing_marker, invalid_name, name_policy="plain"
     )
-    _check_generated_files(
-        generated_core_files, missing_marker, invalid_name, name_policy="plain_or_ext"
-    )
+    _check_generated_files(generated_core_files, missing_marker, invalid_name, name_policy="plain")
     _check_core_surface_files(
         core_files,
         unexpected_marker,
@@ -256,7 +252,7 @@ def main() -> int:
         native_core_files,
         unexpected_marker,
         invalid_name,
-        name_policy="plain_or_ext",
+        name_policy="plain",
     )
     _check_public_shim_files(pytra_files, missing_marker, invalid_name)
     _check_direct_native_core_includes(

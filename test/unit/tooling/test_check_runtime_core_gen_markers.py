@@ -53,7 +53,7 @@ class CheckRuntimeCoreGenMarkersTest(unittest.TestCase):
     def test_collect_detects_missing_generated_markers_in_cpp_generated_core(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _write(root / "src" / "runtime" / "cpp" / "generated" / "core" / "dict.ext.cpp", "// body\n")
+            _write(root / "src" / "runtime" / "cpp" / "generated" / "core" / "dict.cpp", "// body\n")
             with patch.object(marker_mod, "ROOT", root), patch.object(
                 marker_mod, "RUNTIME_ROOT", root / "src" / "runtime"
             ):

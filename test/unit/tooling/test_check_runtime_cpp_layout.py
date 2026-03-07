@@ -21,12 +21,12 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def _make_valid_tree(root: Path, *, core_plain_names: bool) -> None:
+def _make_valid_tree(root: Path, *, legacy_ext_names: bool = False) -> None:
     marker = "AUTO-GENERATED FILE. DO NOT EDIT."
-    core_header_name = "dict.h" if core_plain_names else "dict.h"
-    py_runtime_name = "py_runtime.h" if core_plain_names else "py_runtime.h"
-    core_cpp_name = "dict.cpp" if core_plain_names else "dict.ext.cpp"
-    gc_cpp_name = "gc.cpp" if core_plain_names else "gc.cpp"
+    core_header_name = "dict.ext.h" if legacy_ext_names else "dict.h"
+    py_runtime_name = "py_runtime.ext.h" if legacy_ext_names else "py_runtime.h"
+    core_cpp_name = "dict.ext.cpp" if legacy_ext_names else "dict.cpp"
+    gc_cpp_name = "gc.ext.cpp" if legacy_ext_names else "gc.cpp"
     _write(root / "src" / "runtime" / "cpp" / "generated" / "std" / "time.h", f"// {marker}\n")
     _write(root / "src" / "runtime" / "cpp" / "native" / "std" / "time.cpp", "// native\n")
     _write(root / "src" / "runtime" / "cpp" / "pytra" / "std" / "time.h", f"// {marker}\n")
@@ -57,23 +57,25 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
     def test_main_passes_for_core_surface_with_future_generated_native_core_lanes(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _make_valid_tree(root, core_plain_names=True)
+            _make_valid_tree(root)
             rc, out = self._run_main(root)
         self.assertEqual(rc, 0, out)
         self.assertIn("[OK] runtime cpp layout guard passed", out)
 
-    def test_main_also_accepts_legacy_ext_core_surface_during_migration(self) -> None:
+    def test_main_fails_when_legacy_ext_core_surface_reappears(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _make_valid_tree(root, core_plain_names=False)
+            _make_valid_tree(root, legacy_ext_names=True)
             rc, out = self._run_main(root)
-        self.assertEqual(rc, 0, out)
-        self.assertIn("[OK] runtime cpp layout guard passed", out)
+        self.assertEqual(rc, 1)
+        self.assertIn("files violating runtime naming policy", out)
+        self.assertIn("src/runtime/cpp/core/dict.ext.h", out)
+        self.assertIn("src/runtime/cpp/native/core/dict.ext.h", out)
 
     def test_main_fails_on_unexpected_core_cpp_reintrusion(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _make_valid_tree(root, core_plain_names=True)
+            _make_valid_tree(root)
             _write(root / "src" / "runtime" / "cpp" / "core" / "dict.cpp", "// should move to native/core\n")
             rc, out = self._run_main(root)
         self.assertEqual(rc, 1)
@@ -83,7 +85,7 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
     def test_main_fails_when_pytra_core_bucket_is_reintroduced(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _make_valid_tree(root, core_plain_names=True)
+            _make_valid_tree(root)
             _write(
                 root / "src" / "runtime" / "cpp" / "pytra" / "core" / "dict.h",
                 "// AUTO-GENERATED FILE. DO NOT EDIT.\n",
@@ -96,7 +98,7 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
     def test_main_fails_when_generated_runtime_directly_includes_native_core(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _make_valid_tree(root, core_plain_names=True)
+            _make_valid_tree(root)
             _write(
                 root / "src" / "runtime" / "cpp" / "generated" / "std" / "time.cpp",
                 '// AUTO-GENERATED FILE. DO NOT EDIT.\n#include "runtime/cpp/native/core/py_runtime.h"\n',
@@ -112,7 +114,7 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
     def test_main_fails_when_generated_core_lane_directory_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _make_valid_tree(root, core_plain_names=True)
+            _make_valid_tree(root)
             shutil.rmtree(root / "src" / "runtime" / "cpp" / "generated" / "core")
             rc, out = self._run_main(root)
         self.assertEqual(rc, 1)
