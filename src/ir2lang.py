@@ -17,6 +17,9 @@ from toolchain.compiler.backend_registry import (
     optimize_ir,
     resolve_layer_options,
 )
+from toolchain.link import LINK_OUTPUT_SCHEMA
+from toolchain.link import load_linked_output_bundle
+from backends.cpp.emitter.multifile_writer import write_multi_file_cpp
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std.pathlib import Path
@@ -49,7 +52,7 @@ def _fatal(msg: str) -> None:
 def _print_help() -> None:
     print(
         "usage: ir2lang.py INPUT.json --target {cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim} "
-        "[-o OUTPUT] [--no-runtime-hook] "
+        "[-o OUTPUT] [--output-dir DIR] [--no-runtime-hook] "
         "[--lower-option key=value] [--optimizer-option key=value] [--emitter-option key=value]"
     )
 
@@ -156,8 +159,79 @@ def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
     return "module"
 
 
-def main() -> int:
-    argv = sys.argv[1:] if isinstance(sys.argv, list) else []
+def _is_link_output_doc(root: dict[str, Any]) -> bool:
+    return root.get("schema") == LINK_OUTPUT_SCHEMA
+
+
+def _entry_linked_module(
+    linked_modules: tuple[Any, ...],
+    entry_modules: list[str] | tuple[str, ...],
+) -> dict[str, Any]:
+    entry_set = {item for item in entry_modules if isinstance(item, str)}
+    for module in linked_modules:
+        module_id = getattr(module, "module_id", "")
+        is_entry = bool(getattr(module, "is_entry", False))
+        east_doc = getattr(module, "east_doc", {})
+        if is_entry and isinstance(module_id, str) and module_id in entry_set and isinstance(east_doc, dict):
+            return east_doc
+    raise RuntimeError("linked entry module not found")
+
+
+def _entry_source_path(
+    linked_modules: tuple[Any, ...],
+    entry_modules: list[str] | tuple[str, ...],
+) -> Path:
+    entry_set = {item for item in entry_modules if isinstance(item, str)}
+    for module in linked_modules:
+        module_id = getattr(module, "module_id", "")
+        source_path = getattr(module, "source_path", "")
+        is_entry = bool(getattr(module, "is_entry", False))
+        if is_entry and isinstance(module_id, str) and module_id in entry_set and isinstance(source_path, str):
+            return Path(source_path)
+    return Path("main.py")
+
+
+def _emit_cpp_linked_program(
+    linked_modules: tuple[Any, ...],
+    entry_modules: list[str] | tuple[str, ...],
+    output_root: Path,
+    emitter_options: dict[str, object],
+) -> dict[str, object]:
+    module_east_map: dict[str, dict[str, Any]] = {}
+    entry_path = Path("")
+    entry_set = {item for item in entry_modules if isinstance(item, str)}
+    for module in linked_modules:
+        module_id = getattr(module, "module_id", "")
+        source_path = getattr(module, "source_path", "")
+        east_doc = getattr(module, "east_doc", {})
+        is_entry = bool(getattr(module, "is_entry", False))
+        if not isinstance(module_id, str) or module_id == "" or not isinstance(east_doc, dict):
+            continue
+        module_path = Path(source_path) if isinstance(source_path, str) and source_path != "" else Path(module_id + ".py")
+        module_east_map[str(module_path)] = east_doc
+        if is_entry and module_id in entry_set:
+            entry_path = module_path
+    if entry_path == Path(""):
+        raise RuntimeError("linked C++ entry module not found")
+    return write_multi_file_cpp(
+        entry_path,
+        module_east_map,
+        output_root,
+        negative_index_mode=str(emitter_options.get("negative_index_mode", "const_only")),
+        bounds_check_mode=str(emitter_options.get("bounds_check_mode", "off")),
+        floor_div_mode=str(emitter_options.get("floor_div_mode", "native")),
+        mod_mode=str(emitter_options.get("mod_mode", "native")),
+        int_width="64",
+        str_index_mode="native",
+        str_slice_mode="byte",
+        opt_level="2",
+        top_namespace="",
+        emit_main=True,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = list(argv) if isinstance(argv, list) else (sys.argv[1:] if isinstance(sys.argv, list) else [])
     for arg in argv:
         if arg == "-h" or arg == "--help":
             _print_help()
@@ -166,6 +240,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Pytra IR-to-language frontend")
     parser.add_argument("input", help="Input EAST3 .json")
     parser.add_argument("-o", "--output", help="Output file path")
+    parser.add_argument("--output-dir", help="Output directory for linked-program input")
     parser.add_argument("--target", choices=list_backend_targets(), help="Target backend language")
     parser.add_argument("--no-runtime-hook", action="store_true", help="Skip runtime helper emission/copy")
 
@@ -180,10 +255,12 @@ def main() -> int:
 
     input_path = Path(_arg_get_str(args, "input"))
     output_text = _arg_get_str(args, "output")
-    output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
+    output_dir_text = _arg_get_str(args, "output_dir")
 
     root = _load_json_root(input_path)
-    east_doc = _validate_east3_module(_unwrap_east_module(root))
+    is_link_output = _is_link_output_doc(root)
+    if is_link_output is False:
+        east_doc = _validate_east3_module(_unwrap_east_module(root))
 
     spec = get_backend_spec(target)
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
@@ -195,6 +272,34 @@ def main() -> int:
         emitter_options = resolve_layer_options(spec, "emitter", emitter_raw)
     except Exception as ex:
         _fatal(str(ex))
+
+    skip_runtime_hook = _arg_get_bool(args, "no_runtime_hook")
+    if is_link_output:
+        link_output_doc, linked_modules = load_linked_output_bundle(input_path)
+        link_target = link_output_doc.get("target")
+        if isinstance(link_target, str) and link_target != "" and link_target != target:
+            _fatal("target mismatch for link-output: " + link_target + " != " + target)
+        entry_modules_any = link_output_doc.get("entry_modules", [])
+        entry_modules = entry_modules_any if isinstance(entry_modules_any, list) else []
+        if target == "cpp":
+            output_root_text = output_dir_text if output_dir_text != "" else output_text
+            output_root = Path(output_root_text) if output_root_text != "" else (input_path.parent / "cpp")
+            _ = _emit_cpp_linked_program(linked_modules, entry_modules, output_root, emitter_options)
+            return 0
+
+        entry_east_doc = _entry_linked_module(linked_modules, entry_modules)
+        default_restart_output = default_output_path(_entry_source_path(linked_modules, entry_modules), target)
+        if output_dir_text != "" and output_text != "":
+            _fatal("use either --output-dir or --output with link-output input")
+        if output_dir_text != "":
+            output_path = Path(output_dir_text) / default_restart_output.name
+        elif output_text != "":
+            output_path = Path(output_text)
+        else:
+            output_path = default_restart_output
+        east_doc = entry_east_doc
+    else:
+        output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
 
     ir = lower_ir(spec, east_doc, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
@@ -223,7 +328,6 @@ def main() -> int:
         out_src = module_artifact.get("text", "")
         output_path.write_text(out_src if isinstance(out_src, str) else "", encoding="utf-8")
 
-    skip_runtime_hook = _arg_get_bool(args, "no_runtime_hook")
     if not skip_runtime_hook:
         apply_runtime_hook(spec, output_path)
     return 0

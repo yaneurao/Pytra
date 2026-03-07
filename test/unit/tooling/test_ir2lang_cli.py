@@ -19,8 +19,33 @@ import src.ir2lang as ir2lang_mod
 class Ir2langCliTest(unittest.TestCase):
     def _write_east_json(self, root: Path, payload: dict[str, object], name: str = "input.json") -> Path:
         path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return path
+
+    def _write_linked_east_json(self, root: Path, module_id: str, *, name: str) -> Path:
+        return self._write_east_json(
+            root,
+            {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {
+                    "dispatch_mode": "native",
+                    "module_id": module_id,
+                    "linked_program_v1": {
+                        "program_id": "app.main",
+                        "module_id": module_id,
+                        "entry_modules": ["app.main"],
+                        "type_id_resolved_v1": {},
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                },
+                "body": [],
+            },
+            name=name,
+        )
 
     def test_missing_target_fails_fast(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -250,6 +275,182 @@ class Ir2langCliTest(unittest.TestCase):
             self.assertEqual(runtime_calls, [])
             self.assertEqual([str(item) for item in writer_calls], [str(out_rs)])
             self.assertEqual(out_rs.read_text(encoding="utf-8"), "// no runtime\n")
+
+    def test_link_output_input_uses_entry_module_for_single_file_backend(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            helper_src = root / "helper.py"
+            main_src = root / "main.py"
+            helper_src.write_text("x = 1\n", encoding="utf-8")
+            main_src.write_text("print(1)\n", encoding="utf-8")
+            linked_helper = self._write_linked_east_json(root, "app.helper", name="linked/app/helper.east3.json")
+            linked_main = self._write_linked_east_json(root, "app.main", name="linked/app/main.east3.json")
+            link_output = self._write_east_json(
+                root,
+                {
+                    "schema": "pytra.link_output.v1",
+                    "target": "rs",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "app.helper",
+                            "input": "raw/app/helper.east3.json",
+                            "output": str(linked_helper.relative_to(root)).replace("\\", "/"),
+                            "source_path": str(helper_src),
+                            "is_entry": False,
+                        },
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": str(linked_main.relative_to(root)).replace("\\", "/"),
+                            "source_path": str(main_src),
+                            "is_entry": True,
+                        },
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {"warnings": [], "errors": []},
+                },
+                name="link-output.json",
+            )
+            out_rs = root / "out.rs"
+
+            fake_spec = {
+                "target_lang": "rs",
+                "extension": ".rs",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+            lower_calls: list[dict[str, object]] = []
+            runtime_calls: list[Path] = []
+
+            def _lower(spec: dict[str, object], east: dict[str, object], opts: dict[str, object]) -> dict[str, object]:
+                lower_calls.append({"spec": spec, "east": east, "opts": opts})
+                return {"kind": "LoweredModule"}
+
+            with patch.object(
+                ir2lang_mod.sys,
+                "argv",
+                ["ir2lang.py", str(link_output), "--target", "rs", "-o", str(out_rs)],
+            ):
+                with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(ir2lang_mod, "lower_ir", side_effect=_lower):
+                            with patch.object(ir2lang_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                                with patch.object(
+                                    ir2lang_mod,
+                                    "emit_module",
+                                    return_value={
+                                        "module_id": "app.main",
+                                        "label": "out",
+                                        "extension": ".rs",
+                                        "text": "// linked program\n",
+                                        "is_entry": True,
+                                        "dependencies": [],
+                                        "metadata": {},
+                                    },
+                                ):
+                                    with patch.object(
+                                        ir2lang_mod,
+                                        "get_program_writer",
+                                        return_value=lambda program_artifact, output_root, _options: (
+                                            output_root.write_text(
+                                                program_artifact["modules"][0]["text"],
+                                                encoding="utf-8",
+                                            ),
+                                            {"primary_output": str(output_root)},
+                                        )[1],
+                                    ):
+                                        with patch.object(
+                                            ir2lang_mod,
+                                            "apply_runtime_hook",
+                                            side_effect=lambda _spec, output_path: runtime_calls.append(output_path),
+                                        ):
+                                            rc = ir2lang_mod.main()
+
+            self.assertEqual(rc, 0)
+            self.assertEqual(len(lower_calls), 1)
+            self.assertEqual(lower_calls[0]["east"]["meta"]["linked_program_v1"]["module_id"], "app.main")
+            self.assertEqual([str(item) for item in runtime_calls], [str(out_rs)])
+            self.assertEqual(out_rs.read_text(encoding="utf-8"), "// linked program\n")
+
+    def test_link_output_input_for_cpp_uses_multi_file_writer(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            helper_src = root / "helper.py"
+            main_src = root / "main.py"
+            helper_src.write_text("x = 1\n", encoding="utf-8")
+            main_src.write_text("print(1)\n", encoding="utf-8")
+            linked_helper = self._write_linked_east_json(root, "app.helper", name="linked/app/helper.east3.json")
+            linked_main = self._write_linked_east_json(root, "app.main", name="linked/app/main.east3.json")
+            link_output = self._write_east_json(
+                root,
+                {
+                    "schema": "pytra.link_output.v1",
+                    "target": "cpp",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "app.helper",
+                            "input": "raw/app/helper.east3.json",
+                            "output": str(linked_helper.relative_to(root)).replace("\\", "/"),
+                            "source_path": str(helper_src),
+                            "is_entry": False,
+                        },
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": str(linked_main.relative_to(root)).replace("\\", "/"),
+                            "source_path": str(main_src),
+                            "is_entry": True,
+                        },
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {"warnings": [], "errors": []},
+                },
+                name="link-output.json",
+            )
+            out_dir = root / "cpp-out"
+            fake_spec = {
+                "target_lang": "cpp",
+                "extension": ".cpp",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+
+            with patch.object(
+                ir2lang_mod.sys,
+                "argv",
+                ["ir2lang.py", str(link_output), "--target", "cpp", "--output-dir", str(out_dir)],
+            ):
+                with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(ir2lang_mod, "lower_ir", side_effect=AssertionError("unexpected lower_ir")):
+                            with patch.object(ir2lang_mod, "optimize_ir", side_effect=AssertionError("unexpected optimize_ir")):
+                                with patch.object(ir2lang_mod, "apply_runtime_hook", side_effect=AssertionError("unexpected runtime hook")):
+                                    with patch.object(ir2lang_mod, "write_multi_file_cpp", return_value={"manifest": str(out_dir / "manifest.json")}) as writer:
+                                        rc = ir2lang_mod.main()
+
+            self.assertEqual(rc, 0)
+            self.assertEqual(writer.call_count, 1)
+            call_args = writer.call_args
+            self.assertEqual(str(call_args.args[0]), str(main_src))
+            self.assertEqual(str(call_args.args[2]), str(out_dir))
+            module_map = call_args.args[1]
+            self.assertEqual(set(module_map.keys()), {str(helper_src), str(main_src)})
 
 
 if __name__ == "__main__":

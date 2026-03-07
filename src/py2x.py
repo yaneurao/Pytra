@@ -48,7 +48,7 @@ def _print_help() -> None:
         "[--object-dispatch-mode {native,type_id}] [--east3-opt-level {0,1,2}] "
         "[--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] "
         "[--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--dump-east3-dir DIR] [--link-only] "
-        "[--output-dir DIR] "
+        "[--from-link-output] [--output-dir DIR] "
         "[--lower-option key=value] [--optimizer-option key=value] [--emitter-option key=value]\n"
         "note: for --target cpp, py2cpp compatibility flags (e.g. --multi-file, --header-output, "
         "--emit-runtime-cpp, --dump-deps, --dump-options, -O*) are also accepted."
@@ -148,7 +148,7 @@ def _write_generated_paths(paths: list[Path]) -> None:
 def _use_linked_program_route(target_hint: str, argv: list[str]) -> bool:
     if target_hint != "cpp":
         return True
-    for flag in ("--dump-east3-dir", "--link-only"):
+    for flag in ("--dump-east3-dir", "--link-only", "--from-link-output"):
         if _has_flag(argv, flag):
             return True
     return False
@@ -158,6 +158,12 @@ def _invoke_py2cpp_main(argv: list[str]) -> int:
     from backends.cpp.cli import main as py2cpp_main
 
     return py2cpp_main(argv)
+
+
+def _invoke_ir2lang_main(argv: list[str]) -> int:
+    import ir2lang as ir2lang_mod
+
+    return ir2lang_mod.main(argv)
 
 
 def _apply_cpp_layer_options(
@@ -350,6 +356,7 @@ def main() -> int:
     parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
     parser.add_argument("--dump-east3-dir", help="Write raw EAST3 modules + link-input.json to DIR and exit")
     parser.add_argument("--link-only", action="store_true", help="Write link-output.json + linked modules to --output-dir and exit")
+    parser.add_argument("--from-link-output", action="store_true", help="Treat INPUT.json as link-output.json and restart backend emit")
     parser.add_argument("--output-dir", help="Output directory for linked-program artifacts")
     args = parser.parse_args(cleaned_argv)
     if not isinstance(args, dict):
@@ -362,9 +369,12 @@ def main() -> int:
     input_path = Path(_arg_get_str(args, "input"))
     dump_east3_dir = _arg_get_str(args, "dump_east3_dir")
     link_only = bool(args.get("link_only", False))
+    from_link_output = bool(args.get("from_link_output", False))
     output_dir_txt = _arg_get_str(args, "output_dir")
     if dump_east3_dir != "" and link_only:
         _fatal("--dump-east3-dir and --link-only cannot be combined")
+    if from_link_output and (dump_east3_dir != "" or link_only):
+        _fatal("--from-link-output cannot be combined with --dump-east3-dir or --link-only")
     output_text = _arg_get_str(args, "output")
 
     parser_backend = _arg_get_str(args, "parser_backend")
@@ -388,6 +398,19 @@ def main() -> int:
     dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
     dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
     dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
+    if from_link_output:
+        forwarded = [str(input_path), "--target", target]
+        if output_text != "":
+            forwarded.extend(["-o", output_text])
+        if output_dir_txt != "":
+            forwarded.extend(["--output-dir", output_dir_txt])
+        for item in layer_option_items["lower"]:
+            forwarded.extend(["--lower-option", item])
+        for item in layer_option_items["optimizer"]:
+            forwarded.extend(["--optimizer-option", item])
+        for item in layer_option_items["emitter"]:
+            forwarded.extend(["--emitter-option", item])
+        return _invoke_ir2lang_main(forwarded)
     target_lang = target
     program = _build_linked_program_for_input(
         input_path,

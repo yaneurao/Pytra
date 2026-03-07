@@ -351,6 +351,37 @@ class Py2xCliTest(unittest.TestCase):
             self.assertTrue((out_dir / "linked" / "app" / "main.east3.json").exists())
             self.assertTrue((out_dir / "linked" / "app" / "helper.east3.json").exists())
 
+    def test_from_link_output_delegates_to_ir2lang_restart_route(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            link_output = root / "link-output.json"
+            out_dir = root / "out"
+            link_output.write_text("{}", encoding="utf-8")
+            argv = [
+                "py2x.py",
+                str(link_output),
+                "--target",
+                "cpp",
+                "--from-link-output",
+                "--output-dir",
+                str(out_dir),
+                "--optimizer-option",
+                "pass=1",
+            ]
+            with patch.object(py2x_mod.sys, "argv", argv):
+                with patch.object(py2x_mod, "_invoke_ir2lang_main", return_value=0) as invoke:
+                    rc = py2x_mod.main()
+
+        self.assertEqual(rc, 0)
+        forwarded = invoke.call_args[0][0]
+        self.assertEqual(forwarded[0], str(link_output))
+        self.assertIn("--target", forwarded)
+        self.assertIn("cpp", forwarded)
+        self.assertIn("--output-dir", forwarded)
+        self.assertIn(str(out_dir), forwarded)
+        self.assertIn("--optimizer-option", forwarded)
+        self.assertIn("pass=1", forwarded)
+
 
 if __name__ == "__main__":
     unittest.main()
