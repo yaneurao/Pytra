@@ -41,7 +41,7 @@
 3. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
 4. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
 5. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-02] `runtime_symbol_index` / `cpp_runtime_deps.py` / build graph 導線を `generated/native/pytra` 前提へ更新する。
-6. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
+6. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
 7. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-01] `std/` の generated runtime を `generated/std/` へ移し、`pytra/std/*.h` shim を同期する。
 8. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
 9. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。

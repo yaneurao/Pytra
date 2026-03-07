@@ -222,6 +222,7 @@ src/runtime/cpp/
 - header pruning helper も `runtime/cpp/{generated,native,pytra}/...` include を module namespace へ解決できるよう更新した。
 - `runtime_symbol_index` は C++ module runtime の `public_headers` に `pytra` public shim と generated/native/legacy header を併記し、`lookup_target_module_primary_header("cpp", ...)` は `pytra/...` を優先するよう更新した。
 - `cpp_runtime_deps.py` / build graph は `runtime_symbol_index` の header-to-source index を優先し、fallback でも `pytra/generated/native` と legacy `.gen/.ext` の両方から `.cpp` 候補を導出できるよう更新した。
+- `check_runtime_cpp_layout.py` は legacy module runtime、`generated/`、`native/`、`pytra/`、`core/` を別 bucket として検証し、移行期間中の新旧 ownership を同一 guard で監査できるよう更新した。
 
 ## 受け入れ基準
 
@@ -250,7 +251,7 @@ src/runtime/cpp/
 
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-02] `runtime_symbol_index` / `cpp_runtime_deps.py` / build graph 導線を `generated/native/pytra` 前提へ更新する。
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
 
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-01] `std/` の generated runtime を `generated/std/` へ移し、`pytra/std/*.h` shim を同期する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
@@ -271,3 +272,4 @@ src/runtime/cpp/
 - 2026-03-07: generated public shim は `runtime/cpp/generated/.../*.h` を forward し、`native/*.h` は存在時のみ forward する。`native/` 自動生成は行わない。
 - 2026-03-07: `runtime_symbol_index` の C++ primary header は `pytra/...` shim を優先し、同時に generated/native/legacy header を `public_headers` に載せて build graph の header-to-source 解決に使う。
 - 2026-03-07: `cpp_runtime_deps.py` は index 優先・path heuristic 補完の二段構えとし、repo shim から legacy `*.ext.cpp` へ到達できる移行期間互換を維持する。
+- 2026-03-07: `check_runtime_cpp_layout.py` は legacy `.gen/.ext` と `generated/native/pytra` の両 layout を同一 guard で検証する移行期監査へ更新した。
