@@ -59,6 +59,8 @@ class Py2xCliTest(unittest.TestCase):
             lower_calls: list[dict[str, object]] = []
             optimize_calls: list[dict[str, object]] = []
             emit_calls: list[dict[str, object]] = []
+            program_calls: list[dict[str, object]] = []
+            writer_calls: list[dict[str, object]] = []
             runtime_calls: list[Path] = []
 
             main_east = {
@@ -109,14 +111,75 @@ class Py2xCliTest(unittest.TestCase):
                 optimize_calls.append({"spec": spec, "ir": ir, "opts": opts})
                 return {"kind": "OptimizedModule"}
 
-            def _emit(
+            def _emit_module(
                 spec: dict[str, object],
                 ir: dict[str, object],
                 output_path: Path,
                 opts: dict[str, object],
-            ) -> str:
-                emit_calls.append({"spec": spec, "ir": ir, "output_path": output_path, "opts": opts})
-                return "// emitted by test\n"
+                *,
+                module_id: str = "",
+                is_entry: bool = False,
+            ) -> dict[str, object]:
+                emit_calls.append(
+                    {
+                        "spec": spec,
+                        "ir": ir,
+                        "output_path": output_path,
+                        "opts": opts,
+                        "module_id": module_id,
+                        "is_entry": is_entry,
+                    }
+                )
+                return {
+                    "module_id": module_id,
+                    "label": "case",
+                    "extension": ".rs",
+                    "text": "// emitted by test\n",
+                    "is_entry": is_entry,
+                    "dependencies": [],
+                    "metadata": {},
+                }
+
+            def _build_program(
+                spec: dict[str, object],
+                modules: list[dict[str, object]],
+                *,
+                program_id: str = "",
+                entry_modules: list[str] | None = None,
+                layout_mode: str = "single_file",
+                link_output_schema: str = "",
+                writer_options: dict[str, object] | None = None,
+            ) -> dict[str, object]:
+                program_calls.append(
+                    {
+                        "spec": spec,
+                        "modules": modules,
+                        "program_id": program_id,
+                        "entry_modules": list(entry_modules or []),
+                        "layout_mode": layout_mode,
+                        "link_output_schema": link_output_schema,
+                        "writer_options": dict(writer_options or {}),
+                    }
+                )
+                return {
+                    "modules": modules,
+                    "program_id": program_id,
+                    "entry_modules": list(entry_modules or []),
+                }
+
+            def _writer(program_artifact: dict[str, object], output_root: Path, options: dict[str, object]) -> dict[str, object]:
+                writer_calls.append(
+                    {
+                        "program_artifact": program_artifact,
+                        "output_root": output_root,
+                        "options": options,
+                    }
+                )
+                output_root.parent.mkdir(parents=True, exist_ok=True)
+                modules = program_artifact.get("modules", [])
+                text = modules[0].get("text", "") if isinstance(modules, list) and len(modules) > 0 else ""
+                output_root.write_text(text if isinstance(text, str) else "", encoding="utf-8")
+                return {"primary_output": str(output_root)}
 
             def _runtime(spec: dict[str, object], output_path: Path) -> None:
                 _ = spec
@@ -142,9 +205,11 @@ class Py2xCliTest(unittest.TestCase):
                         with patch.object(py2x_mod, "build_module_east_map", side_effect=_build_module_map):
                             with patch.object(py2x_mod, "lower_ir", side_effect=_lower):
                                 with patch.object(py2x_mod, "optimize_ir", side_effect=_optimize):
-                                    with patch.object(py2x_mod, "emit_source", side_effect=_emit):
-                                        with patch.object(py2x_mod, "apply_runtime_hook", side_effect=_runtime):
-                                            rc = py2x_mod.main()
+                                    with patch.object(py2x_mod, "emit_module", side_effect=_emit_module):
+                                        with patch.object(py2x_mod, "build_program_artifact", side_effect=_build_program):
+                                            with patch.object(py2x_mod, "get_program_writer", return_value=_writer):
+                                                with patch.object(py2x_mod, "apply_runtime_hook", side_effect=_runtime):
+                                                    rc = py2x_mod.main()
             out_exists = out_rs.exists()
             out_text = out_rs.read_text(encoding="utf-8") if out_exists else ""
 
@@ -164,11 +229,18 @@ class Py2xCliTest(unittest.TestCase):
         self.assertEqual(len(lower_calls), 1)
         self.assertEqual(len(optimize_calls), 1)
         self.assertEqual(len(emit_calls), 1)
+        self.assertEqual(len(program_calls), 1)
+        self.assertEqual(len(writer_calls), 1)
         self.assertEqual(len(runtime_calls), 1)
         self.assertEqual(lower_calls[0]["east"]["meta"]["module_id"], "app.case")
         self.assertEqual(lower_calls[0]["opts"], {"layer": "lower", "raw": {"lopt": "1"}})
         self.assertEqual(optimize_calls[0]["opts"], {"layer": "optimizer", "raw": {"oopt": "true"}})
         self.assertEqual(emit_calls[0]["opts"], {"layer": "emitter", "raw": {"eopt": "alpha"}})
+        self.assertEqual(emit_calls[0]["module_id"], "app.case")
+        self.assertTrue(emit_calls[0]["is_entry"])
+        self.assertEqual(program_calls[0]["program_id"], "app.case")
+        self.assertEqual(program_calls[0]["entry_modules"], ["app.case"])
+        self.assertEqual(str(writer_calls[0]["output_root"]), str(out_rs))
         self.assertEqual(str(runtime_calls[0]), str(out_rs))
         self.assertTrue(out_exists)
         self.assertIn("emitted by test", out_text)
@@ -236,15 +308,37 @@ class Py2xCliTest(unittest.TestCase):
                 "body": [],
             }
 
+            def _writer(program_artifact: dict[str, object], output_root: Path, options: dict[str, object]) -> dict[str, object]:
+                _ = options
+                output_root.parent.mkdir(parents=True, exist_ok=True)
+                modules = program_artifact.get("modules", [])
+                text = modules[0].get("text", "") if isinstance(modules, list) and len(modules) > 0 else ""
+                output_root.write_text(text if isinstance(text, str) else "", encoding="utf-8")
+                return {"primary_output": str(output_root)}
+
             with patch.object(py2x_mod.sys, "argv", argv):
                 with patch.object(py2x_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(py2x_mod, "build_module_east_map", side_effect=AssertionError("unexpected module-map build")):
                         with patch.object(py2x_mod, "load_east3_document", return_value=east_doc):
                             with patch.object(py2x_mod, "lower_ir", return_value={"kind": "LoweredModule"}) as lower:
                                 with patch.object(py2x_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
-                                    with patch.object(py2x_mod, "emit_source", return_value="// json route\n"):
-                                        with patch.object(py2x_mod, "apply_runtime_hook"):
-                                            rc = py2x_mod.main()
+                                    with patch.object(
+                                        py2x_mod,
+                                        "emit_module",
+                                        return_value={
+                                            "module_id": "app.case",
+                                            "label": "case",
+                                            "extension": ".rs",
+                                            "text": "// json route\n",
+                                            "is_entry": True,
+                                            "dependencies": [],
+                                            "metadata": {},
+                                        },
+                                    ):
+                                        with patch.object(py2x_mod, "build_program_artifact", return_value={"modules": [{"text": "// json route\n"}]}):
+                                            with patch.object(py2x_mod, "get_program_writer", return_value=_writer):
+                                                with patch.object(py2x_mod, "apply_runtime_hook"):
+                                                    rc = py2x_mod.main()
 
         self.assertEqual(rc, 0)
         self.assertEqual(lower.call_args[0][1]["meta"]["module_id"], "app.case")

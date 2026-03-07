@@ -6,14 +6,17 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.compiler.backend_registry import apply_runtime_hook
+from toolchain.compiler.backend_registry import build_program_artifact
 from toolchain.compiler.backend_registry import default_output_path
-from toolchain.compiler.backend_registry import emit_source
+from toolchain.compiler.backend_registry import emit_module
+from toolchain.compiler.backend_registry import get_program_writer
 from toolchain.compiler.backend_registry import get_backend_spec
 from toolchain.compiler.backend_registry import list_backend_targets
 from toolchain.compiler.backend_registry import lower_ir
 from toolchain.compiler.backend_registry import optimize_ir
 from toolchain.compiler.backend_registry import resolve_layer_options
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document
+from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import LinkedProgram
@@ -334,6 +337,17 @@ def _entry_module_east_doc(program: LinkedProgram) -> dict[str, object]:
     raise RuntimeError("linked program entry module not found")
 
 
+def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
+    meta_any = east.get("meta", {})
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    module_id_any = meta.get("module_id")
+    if isinstance(module_id_any, str) and module_id_any.strip() != "":
+        return module_id_any.strip()
+    if output_path.stem != "":
+        return output_path.stem
+    return "module"
+
+
 def main() -> int:
     argv = sys.argv[1:] if isinstance(sys.argv, list) else []
     for arg in argv:
@@ -450,12 +464,33 @@ def main() -> int:
 
     optimized_program = optimize_linked_program(program).linked_program
     east = _entry_module_east_doc(optimized_program)
+    validate_runtime_abi_target_support(east, target=target)
     ir = lower_ir(spec, east, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
-    out_src = emit_source(spec, ir, output_path, emitter_options)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(out_src, encoding="utf-8")
+    module_id = _module_id_from_east(east, output_path)
+    module_artifact = emit_module(
+        spec,
+        ir,
+        output_path,
+        emitter_options,
+        module_id=module_id,
+        is_entry=True,
+    )
+    program_artifact = build_program_artifact(
+        spec,
+        [module_artifact],
+        program_id=module_id,
+        entry_modules=[module_id],
+        layout_mode="single_file",
+        link_output_schema="",
+    )
+    writer = get_program_writer(spec)
+    if callable(writer):
+        _ = writer(program_artifact, output_path, {})
+    else:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        out_src = module_artifact.get("text", "")
+        output_path.write_text(out_src if isinstance(out_src, str) else "", encoding="utf-8")
     apply_runtime_hook(spec, output_path)
     return 0
 
