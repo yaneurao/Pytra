@@ -104,7 +104,7 @@ health matrix の failure category:
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` / `py2x.py` / `ir2lang.py` の non-C++ 互換層を点検し、`SingleFileProgramWriter` 前提の backend 共通契約不足を埋める。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] non-C++ backend health checker を追加または既存 checker を統合し、family 単位の broken/green を 1 コマンドで見られるようにする。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1（`rs/cs/js/ts`）の static contract / smoke / transpile failure を解消し、compat route を安定化する。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 の parity baseline を更新し、runtime 差分と infra failure を分離する。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 の parity baseline を更新し、runtime 差分と infra failure を分離する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2（`go/java/kotlin/swift/scala`）の static contract / smoke / transpile failure を解消する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 の parity baseline を更新し、`toolchain missing` / 実行 failure / artifact 差分を固定化する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3（`ruby/lua/php/nim`）の static contract / smoke / transpile failure を解消する。
@@ -175,7 +175,7 @@ health matrix の failure category:
 
 | target | target_smoke | transpile | parity | primary_failure | notes |
 | --- | --- | --- | --- | --- | --- |
-| `rs` | fail | pass | blocked | `target_smoke_fail` | `test_py2rs_smoke.py` が 31 tests 中 1 fail。 |
+| `rs` | pass | pass | `toolchain_missing` | `toolchain_missing` | `test_py2rs_smoke.py` は 31/31 へ回復。sample parity 18 case は全件 `toolchain_missing`。 |
 | `cs` | pass | pass | `toolchain_missing` | `toolchain_missing` | sample parity 18 case 全件 skip。 |
 | `js` | pass | pass | ok | `ok` | sample parity `18/18`。 |
 | `ts` | pass | pass | ok | `ok` | sample parity `18/18`。 |
@@ -199,3 +199,4 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` の `SingleFileProgramWriter` default 自体は既に整っていたが、`py2x.py` の linked-program 非C++経路だけがまだ `emit_source + 直書き + runtime_hook` に戻っていた。これを `emit_module -> build_program_artifact -> get_program_writer` へ揃え、`ir2lang.py` と同じ compat contract に統一した。`test_py2x_cli.py` / `test_py2x_entrypoints_contract.py` で回帰を固定している。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] `tools/check_noncpp_backend_health.py` を追加し、`static_contract -> common_smoke -> target_smoke -> transpile -> parity` を family 単位で集約できるようにした。`--family` / `--targets` / `--skip-parity` / `--summary-json` を持ち、family status は `broken_targets == 0` なら `green`、`toolchain_missing` は family を壊さず別カウンタで表示する方針を採用した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1 の実 failure は `rs` smoke の `bytes(frame)` return clone に収束していたため、Rust emitter の return-context rendering を修正した。`test_py2rs_smoke.py` は 31/31 へ回復し、`sample/py/08_langtons_ant.py` の focused transpile も通過した。`js` / `ts` は初期 snapshot の green を維持、`cs` は引き続き `toolchain_missing` baseline として扱う。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 parity を再測定し、`js` / `ts` は sample parity `18/18 ok` を維持、`rs` / `cs` は sample parity 18 case 全件 `toolchain_missing` を確認した。これにより Wave 1 では backend bug と infra baseline を分離でき、残る `toolchain_missing` は修復対象ではなく実行環境依存として扱う。
