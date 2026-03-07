@@ -32,6 +32,7 @@ DEFAULT_STD = "c++20"
 DEFAULT_COMPILER = "g++"
 DEFAULT_OPT = "-O2"
 _OPT_SHORT_RE = re.compile(r"^-O[0-3]$")
+_CPP_LINKED_MAX_DIRNAME = ".pytra_linked"
 
 
 def _normalize_args(argv: list[str]) -> list[str]:
@@ -206,6 +207,85 @@ def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> tuple[in
     return int(proc.returncode), manifest_path
 
 
+def _has_passthrough_flag(argv: list[str], flag: str) -> bool:
+    for token in argv:
+        if token == flag or token.startswith(flag + "="):
+            return True
+    return False
+
+
+def _has_layer_option_key(argv: list[str], flag: str, key: str) -> bool:
+    idx = 0
+    while idx < len(argv):
+        token = argv[idx]
+        if token == flag and idx + 1 < len(argv):
+            item = argv[idx + 1]
+            if item == key or item.startswith(key + "="):
+                return True
+            idx += 2
+            continue
+        if token.startswith(flag + "="):
+            raw = token[len(flag) + 1 :]
+            if raw == key or raw.startswith(key + "="):
+                return True
+        idx += 1
+    return False
+
+
+def _cpp_max_linked_stage_args(argv: list[str]) -> tuple[list[str], list[str]]:
+    stage1 = list(argv)
+    if not _has_passthrough_flag(stage1, "--east3-opt-level"):
+        stage1.extend(["--east3-opt-level", "2"])
+
+    stage2 = list(argv)
+    if not _has_layer_option_key(stage2, "--optimizer-option", "cpp_opt_level"):
+        stage2.extend(["--optimizer-option", "cpp_opt_level=2"])
+    return stage1, stage2
+
+
+def _run_py2cpp_linked_max(input_path: Path, output_dir: Path, argv: list[str]) -> tuple[int, Path | None]:
+    linked_dir = output_dir / _CPP_LINKED_MAX_DIRNAME
+    linked_dir.mkdir(parents=True, exist_ok=True)
+    link_stage_argv, emit_stage_argv = _cpp_max_linked_stage_args(argv)
+
+    link_cmd = [
+        PYTHON,
+        str(PY2X),
+        str(input_path),
+        "--target",
+        "cpp",
+        "--link-only",
+        "--output-dir",
+        str(linked_dir),
+    ]
+    link_cmd.extend(link_stage_argv)
+    link_proc = _run_proc(link_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    if link_proc.returncode != 0:
+        return int(link_proc.returncode), None
+
+    link_output_path = linked_dir / "link-output.json"
+    if not link_output_path.exists():
+        print(f"error: link-output not found after linked optimize under: {linked_dir}", file=sys.stderr)
+        return 1, None
+
+    emit_cmd = [
+        PYTHON,
+        str(PY2X),
+        str(link_output_path),
+        "--target",
+        "cpp",
+        "--from-link-output",
+        "--output-dir",
+        str(output_dir),
+    ]
+    emit_cmd.extend(emit_stage_argv)
+    emit_proc = _run_proc(emit_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    manifest_path = None
+    if emit_proc.returncode == 0:
+        manifest_path = _require_manifest_exists(_resolve_cpp_manifest_path(emit_proc.stdout or "", output_dir))
+    return int(emit_proc.returncode), manifest_path
+
+
 def _run_makefile_generator(manifest_path: Path, makefile_path: Path, args: argparse.Namespace) -> int:
     cmd = [
         PYTHON,
@@ -238,7 +318,7 @@ def _run_make(
     return _run(cmd, cwd=makefile_path.parent, timeout=timeout, stdout_to_stderr=stdout_to_stderr)
 
 
-def _build_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str]) -> int:
+def _build_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str], *, use_linked_max_route: bool = False) -> int:
     output_dir = (Path(args.output_dir) if args.output_dir else Path(DEFAULT_OUTPUT_DIR))
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -252,7 +332,10 @@ def _build_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str
     if args.exe == "":
         raise ValueError("invalid --exe")
 
-    rc, manifest_path = _run_py2cpp(input_path, output_dir, passthrough)
+    if use_linked_max_route:
+        rc, manifest_path = _run_py2cpp_linked_max(input_path, output_dir, passthrough)
+    else:
+        rc, manifest_path = _run_py2cpp(input_path, output_dir, passthrough)
     if rc != 0:
         return rc
 
@@ -337,7 +420,8 @@ def main(argv: list[str]) -> int:
 
     passthrough_args: list[str] = []
     codegen_opt = args.codegen_opt
-    if codegen_opt is not None:
+    use_cpp_linked_max_route = profile.target == "cpp" and codegen_opt == 3
+    if codegen_opt is not None and not use_cpp_linked_max_route:
         passthrough_args.extend([f"-O{codegen_opt}"])
     if args.build:
         passthrough_args.extend(passthrough)
@@ -355,7 +439,12 @@ def main(argv: list[str]) -> int:
                 # obviously broken values.
                 print("error: invalid build options", file=sys.stderr)
                 return 1
-            return _build_cpp(input_path, args, passthrough_args)
+            return _build_cpp(
+                input_path,
+                args,
+                passthrough_args,
+                use_linked_max_route=use_cpp_linked_max_route,
+            )
         print("error: unsupported build driver: " + profile.build_driver, file=sys.stderr)
         return 1
 

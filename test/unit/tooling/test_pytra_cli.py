@@ -38,6 +38,50 @@ class PytraCliTest(unittest.TestCase):
             cmd_list = list(cmd)
             calls.append((cmd_list, cwd))
             if str(pytra_cli_mod.PY2X) in " ".join(cmd_list):
+                if "--link-only" in cmd_list:
+                    output_dir = ROOT
+                    if "--output-dir" in cmd_list:
+                        idx = cmd_list.index("--output-dir")
+                        if idx + 1 < len(cmd_list):
+                            output_dir = Path(cwd) / Path(cmd_list[idx + 1]) if cwd is not None else Path(cmd_list[idx + 1])
+                    link_output_path = Path(output_dir).resolve() / "link-output.json"
+                    link_output_path.parent.mkdir(parents=True, exist_ok=True)
+                    link_output_path.write_text(
+                        """
+{
+  "schema": "pytra.link_output.v1",
+  "entry_modules": ["main"],
+  "modules": [{"module_id": "main", "path": "linked/main.east3.json"}]
+}
+""".strip()
+                        + "\n",
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(cmd_list, 0, stdout="generated: " + str(link_output_path), stderr="")
+                if "--from-link-output" in cmd_list:
+                    output_dir = ROOT
+                    if "--output-dir" in cmd_list:
+                        idx = cmd_list.index("--output-dir")
+                        if idx + 1 < len(cmd_list):
+                            output_dir = Path(cwd) / Path(cmd_list[idx + 1]) if cwd is not None else Path(cmd_list[idx + 1])
+                    manifest_path = Path(output_dir).resolve() / "manifest.json"
+                    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+                    manifest_path.write_text(
+                        """
+{
+  "modules": [{"source": "src/main.cpp"}],
+  "include_dir": "include"
+}
+""".strip()
+                        + "\n",
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(
+                        cmd_list,
+                        0,
+                        stdout="multi-file output generated at: ...\nmanifest: " + str(manifest_path),
+                        stderr="",
+                    )
                 if "--multi-file" not in cmd_list:
                     return subprocess.CompletedProcess(cmd_list, 0, stdout="", stderr="")
                 output_dir = ROOT
@@ -174,6 +218,40 @@ class PytraCliTest(unittest.TestCase):
 
             self.assertEqual(rc, 0)
             self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
+
+    def test_build_cpp_codegen_opt_3_uses_linked_program_route(self) -> None:
+        calls: list[tuple[list[str], str | None]] = []
+        runner = self._fake_run(calls)
+
+        with tempfile.TemporaryDirectory() as work:
+            input_py = Path(work) / "hello.py"
+            input_py.write_text("print(1)\\n", encoding="utf-8")
+            with patch.object(pytra_cli_mod.subprocess, "run", side_effect=runner):
+                rc = pytra_cli_mod.main(
+                    [
+                        str(input_py),
+                        "--target",
+                        "cpp",
+                        "--build",
+                        "--codegen-opt",
+                        "3",
+                        "--output-dir",
+                        str(Path(work) / "out"),
+                    ]
+                )
+
+        self.assertEqual(rc, 0)
+        py2x_calls = [call[0] for call in calls if call[0] and str(pytra_cli_mod.PY2X) in " ".join(call[0])]
+        self.assertEqual(len(py2x_calls), 2)
+        self.assertIn("--link-only", py2x_calls[0])
+        self.assertIn("--from-link-output", py2x_calls[1])
+        self.assertNotIn("-O3", py2x_calls[0])
+        self.assertIn("--east3-opt-level", py2x_calls[0])
+        self.assertIn("2", py2x_calls[0])
+        self.assertIn("--optimizer-option", py2x_calls[1])
+        opt_idx = py2x_calls[1].index("--optimizer-option")
+        self.assertEqual(py2x_calls[1][opt_idx + 1], "cpp_opt_level=2")
+        self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
 
     def test_build_noncpp_target_is_supported(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
