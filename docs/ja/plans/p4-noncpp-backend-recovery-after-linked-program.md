@@ -108,7 +108,7 @@ health matrix の failure category:
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 の parity baseline を更新し、`toolchain missing` / 実行 failure / artifact 差分を固定化する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3（`ruby/lua/php/nim`）の static contract / smoke / transpile failure を解消する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 の parity baseline を更新し、runtime 差分と backend bug を切り分ける。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `run_local_ci.py` または同等の回帰導線へ non-C++ backend health check を統合する。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `run_local_ci.py` または同等の回帰導線へ non-C++ backend health check を統合する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02] `docs/ja/spec` / `docs/en/spec` / `docs/ja/how-to-use.md` を更新し、linked-program 後の non-C++ backend 修復運用を固定して計画を閉じる。
 
 ## フェーズ詳細
@@ -203,3 +203,4 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 parity を target ごとに再測定した結果、`go` / `java` / `kotlin` / `swift` / `scala` は sample parity 18 case 全件 `toolchain_missing` だった。つまり Wave 2 に残っているのは backend bug ではなく実行環境依存の infra baseline であり、Wave 1 と同じく修復対象外として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3 の実 failure は 2 系統だった。`ruby` / `php` / `nim` は `runtime_symbol_index` を `src.*` import していたため backend spec load 時点で `ModuleNotFoundError` になっており、`kotlin` / `swift` と同じ修正で回復した。`lua` は emitter の出力が `_G.math.max` と truthiness-preserving ifexp closure に進化していた一方 smoke expectation が古いままだったため、test 側を現行 contract に同期して 33/33 へ戻した。これにより Wave 3 は smoke/transpile green となり、残る parity 計測だけを `S5-02` に分離した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 parity を target ごとに再測定した結果、`ruby` / `lua` / `php` / `nim` は sample parity 18 case 全件 `toolchain_missing` だった。Wave 3 でも backend bug と実行環境依存の infra baseline を分離できたので、残タスクは parity 測定ではなく運用導線への統合だけになった。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `tools/run_local_ci.py` に `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` を追加した。確認として `wave1` / `wave2` / `wave3` を個別に実行し、いずれも `status=green` を確認した。これで local CI は parity 非依存の non-C++ smoke/transpile gate を常時監視できる。
