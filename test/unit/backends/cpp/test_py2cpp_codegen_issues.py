@@ -617,7 +617,7 @@ def f() -> float:
         self.assertNotIn("py_at(py_at(candidates, ", cpp)
         self.assertNotIn("int64(py_to<int64>(", cpp)
         self.assertNotIn("float64(py_to<float64>(", cpp)
-        self.assertIn("int64 v = (py_at(grid, py_to<int64>(y))[x] == 0 ? 255 : 40);", cpp)
+        self.assertIn("int64 v = (py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) == 0 ? 255 : 40);", cpp)
         self.assertNotIn("object(py_at(grid, ", cpp)
         self.assertIn("py_append(frames, capture(grid, cell_w, cell_h, scale));", cpp)
         self.assertNotIn("object grid = ", cpp)
@@ -1522,7 +1522,7 @@ def f() -> int:
             cpp = em.transpile()
 
         self.assertIn("void paint(rc<list<list<int64>>>& grid, int64 x, int64 y) {", cpp)
-        self.assertIn("py_at(grid, py_to<int64>(y))[x] = 1;", cpp)
+        self.assertIn("py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;", cpp)
         self.assertNotIn("py_set_at(", cpp)
 
     def test_pyobj_list_model_list_repeat_unboxes_to_value_list_before_py_repeat(self) -> None:
@@ -1677,6 +1677,136 @@ def f() -> int:
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("py_append(xs, 1);", cpp)
         self.assertIn("return sink(xs);", cpp)
+
+    def test_pyobj_list_model_call_subscript_uses_py_at(self) -> None:
+        src = """def make() -> list[int]:
+    xs: list[int] = []
+    xs.append(1)
+    return xs
+
+def f() -> int:
+    return make()[0]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_call_subscript.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("return py_at(make(), py_to<int64>(0));", cpp)
+        self.assertNotIn("return make()[0];", cpp)
+
+    def test_pyobj_list_model_typed_for_loop_uses_ref_first_iterable(self) -> None:
+        src = """def f(xs: list[int]) -> int:
+    s: int = 0
+    for x in xs:
+        s += x
+    return s
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_for_param_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("for (int64 x : rc_list_ref(xs)) {", cpp)
+        self.assertNotIn("for (object __itobj_", cpp)
+        self.assertNotIn("py_dyn_range(xs)", cpp)
+
+    def test_pyobj_list_model_call_returned_list_iteration_hoists_handle_tmp(self) -> None:
+        src = """def make() -> list[int]:
+    xs: list[int] = []
+    xs.append(1)
+    return xs
+
+def f() -> int:
+    s: int = 0
+    for x in make():
+        s += x
+    return s
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_for_call_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("auto __iter_list_", cpp)
+        self.assertIn("for (int64 x : rc_list_ref(__iter_list_", cpp)
+        self.assertNotIn("py_dyn_range(make())", cpp)
+
+    def test_pyobj_list_model_call_enumerate_uses_typed_unpack(self) -> None:
+        src = """def make() -> list[int]:
+    xs: list[int] = []
+    xs.append(1)
+    return xs
+
+def f() -> int:
+    s: int = 0
+    for i, x in enumerate(make()):
+        s += x
+    return s
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_enumerate_call_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("for (const auto& [i, x] : py_enumerate(make())) {", cpp)
+        self.assertNotIn("for (object __itobj_", cpp)
+        self.assertNotIn("py_dyn_range(py_enumerate(make()))", cpp)
+
+    def test_pyobj_list_model_call_reversed_uses_typed_loop(self) -> None:
+        src = """def make() -> list[int]:
+    xs: list[int] = []
+    xs.append(1)
+    return xs
+
+def f() -> int:
+    total: int = 0
+    for x in reversed(make()):
+        total += x
+    return total
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_reversed_call_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("for (int64 x : py_reversed(make())) {", cpp)
+        self.assertNotIn("for (object x : py_dyn_range(py_reversed(make()))) {", cpp)
+
+    def test_pyobj_list_model_call_method_dispatch_uses_py_helpers(self) -> None:
+        src = """def make() -> list[int]:
+    xs: list[int] = []
+    return xs
+
+def f() -> list[int]:
+    make().append(1)
+    return make()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_call_method_dispatch.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("py_append(make(), 1);", cpp)
+        self.assertNotIn("make().append(int64(1));", cpp)
 
     def test_pyobj_list_model_does_not_stack_lower_when_dynamic_callable_consumes_list(self) -> None:
         src = """def f(cb: object) -> int:
