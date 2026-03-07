@@ -67,6 +67,20 @@
 8. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S4-01] representative backend/test/tooling 回帰と guard を追加し、知識漏れの再侵入を防ぐ。
 9. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S4-02] docs 同期と full smoke を実施し、本計画を閉じる。
 
+### P1: C++ `py_runtime` を低レベル glue へ縮退させる
+
+文脈: [docs/ja/plans/p1-cpp-py-runtime-core-slimming.md](../plans/p1-cpp-py-runtime-core-slimming.md)
+
+1. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01] `native/core/py_runtime.h` から pure Python で表現可能な built_in semantics を分離し、`core` を low-level ABI / object / container / process glue 中心へ縮退させる。
+2. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
+3. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` / `spec-dev` に `py_runtime` の責務境界と「残してよいもの / 戻すべきもの」を明文化する。
+4. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] `src/pytra/built_in/*.py` 側へ戻す候補を決め、SoT 上の配置案を固定する。
+5. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/core` または `generated/built_in` の emission lane に必要な generator / layout 契約を整備する。
+6. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] 文字列・collection 系の pure-Python built_in semantics を `native/core/py_runtime.h` から段階的に撤去し、正規の generated lane へ移す。
+7. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-02] `native/core/py_runtime.h` を low-level ABI / object / container / process glue 中心へ整理し、include 集約を最小化する。
+8. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-01] runtime symbol index / build graph / representative C++ runtime tests を新しい ownership に追従させる。
+9. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
+
 ### P4: linked-program 後の非C++ backend 修復
 
 文脈: [docs/ja/plans/p4-noncpp-backend-recovery-after-linked-program.md](../plans/p4-noncpp-backend-recovery-after-linked-program.md)
