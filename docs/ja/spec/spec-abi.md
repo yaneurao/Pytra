@@ -5,6 +5,7 @@
 - `@extern` は現行実装の正規機能である。
 - `@abi` は承認済みの次段拡張仕様であり、本書では target design を定義する。
 - `@abi` 実装前は、generated runtime helper は通常の内部表現規約に従う。
+- `@abi` のうち syntax / semantics / mode / `@extern` との責務分離は本書を正本とし、parser/EAST metadata 形式は `P1-RUNTIME-ABI-DECORATOR-01-S1-02` で別途固定する。
 
 ## 1. 目的
 
@@ -159,6 +160,23 @@ def abi(*, args=None, ret="default"):
     return deco
 ```
 
+#### 3.4.2.1 初期受理条件
+
+初期導入で parser / validator が受理してよいのは、次をすべて満たすものに限る。
+
+- top-level function への適用
+- keyword-only form の `@abi(args=..., ret=...)`
+- `args` の key が実在する引数名と一致する
+- mode が `default`, `value`, `value_readonly` のいずれかである
+
+以下はすべて compile error とする。
+
+- 未知 mode の指定
+- 宣言されていない引数名への ABI override
+- `@abi("value")` のような位置引数形式
+- method / class / lambda / nested function への適用
+- runtime helper 以外の一般 user code への先行利用
+
 #### 3.4.3 `@abi` の意味
 
 `@abi` は、関数の **全体一括** ではなく、**引数ごと / 戻り値ごと** に作用する。
@@ -233,6 +251,8 @@ def some_native_helper(image: list[bytearray]) -> bytes:
   - 実装本体は generated せず external symbol へ lower する
 - `@abi` がある
   - 呼び出し境界の ABI 形を override する
+- 両方が無い
+  - 通常の内部表現規約と backend 既定 lowering に従う
 
 #### 3.4.6 `str.join` での必要性
 
