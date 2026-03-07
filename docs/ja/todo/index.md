@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p1-runtime-abi-decorator-for-generated-helpers.md](../plans/p1-runtime-abi-decorator-for-generated-helpers.md)
 
 1. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01] generated/runtime helper の境界 ABI を固定できる `@abi` decorator を導入し、`@extern` と独立の boundary policy として扱えるようにする。
-2. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S1-01] `spec-abi` に `@abi` の syntax / semantics / mode / `@extern` との責務分離を明記する。
+2. [x] [ID: P1-RUNTIME-ABI-DECORATOR-01-S1-01] `spec-abi` に `@abi` の syntax / semantics / mode / `@extern` との責務分離を明記する。
 3. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S1-02] `@abi` metadata の EAST / linked metadata 形式を決め、parser/selfhost parser の受け入れ基準を固定する。
 4. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S2-01] `src/pytra/std/__init__.py` に `abi` を追加し、parser / selfhost parser / AST build が decorator を保持できるようにする。
 5. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S2-02] `value_readonly` への mutation を検出する validator / lower guard を追加する。
