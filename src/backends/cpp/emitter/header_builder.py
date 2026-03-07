@@ -810,7 +810,7 @@ def _filter_cpp_include_lines_for_header(
 
 
 def _strip_runtime_file_kind_suffix(name: str) -> str:
-    """`foo.gen` / `foo.ext` から runtime 種別 suffix を剥がす。"""
+    """legacy runtime 種別 suffix を剥がす。"""
     if name.endswith(".gen") or name.endswith(".ext"):
         return name[: len(name) - 4]
     return name
@@ -834,12 +834,18 @@ def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: 
     if stem == "":
         return True
 
-    # runtime/cpp/<bucket>/<module>.gen.h|ext.h -> namespace prefix を導出
+    # runtime/cpp/<bucket>/<module>.gen.h|ext.h または
+    # runtime/cpp/{generated,native,pytra}/<bucket>/<module>.h -> namespace prefix を導出
     ns_prefix = ""
     is_runtime_cpp_include = len(parts) >= 4 and parts[0] == "runtime" and parts[1] == "cpp"
     if is_runtime_cpp_include:
         bucket = parts[2]
         module_tail = "/".join(parts[3:])
+        if bucket in {"generated", "native", "pytra"}:
+            if len(parts) < 5:
+                return True
+            bucket = parts[3]
+            module_tail = "/".join(parts[4:])
         dot2 = module_tail.rfind(".")
         module_tail = module_tail[:dot2] if dot2 >= 0 else module_tail
         module_tail = _strip_runtime_file_kind_suffix(module_tail)

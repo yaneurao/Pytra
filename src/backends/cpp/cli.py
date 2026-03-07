@@ -123,11 +123,23 @@ def _build_cpp_public_header_forwarder(include_txts: list[str], source_path: Pat
     return join_str_list("\n", lines)
 
 
-def _runtime_public_forwarder_includes(rel_tail: str) -> list[str]:
-    includes: list[str] = ['runtime/cpp/' + rel_tail + '.gen.h']
-    ext_hdr = RUNTIME_CPP_ROOT / (rel_tail + ".ext.h")
-    if ext_hdr.exists():
-        includes.append('runtime/cpp/' + rel_tail + '.ext.h')
+def _runtime_public_forwarder_includes(module_tail: str) -> list[str]:
+    generated_rel_tail = _runtime_output_rel_tail(module_tail)
+    includes: list[str] = ['runtime/cpp/' + generated_rel_tail + '.h']
+    native_rel_tail = ""
+    if generated_rel_tail.startswith("generated/"):
+        native_rel_tail = "native/" + generated_rel_tail[len("generated/") :]
+    if native_rel_tail != "":
+        native_hdr = RUNTIME_CPP_ROOT / (native_rel_tail + ".h")
+        if native_hdr.exists():
+            includes.append('runtime/cpp/' + native_rel_tail + '.h')
+            return includes
+    legacy_rel_tail = generated_rel_tail
+    if legacy_rel_tail.startswith("generated/"):
+        legacy_rel_tail = legacy_rel_tail[len("generated/") :]
+    legacy_ext_hdr = RUNTIME_CPP_ROOT / (legacy_rel_tail + ".ext.h")
+    if legacy_ext_hdr.exists():
+        includes.append('runtime/cpp/' + legacy_rel_tail + '.ext.h')
     return includes
 
 
@@ -949,8 +961,8 @@ def main(argv: list[str]) -> int:
             ns = ns if ns != "" else _runtime_namespace_for_tail(module_tail)
             rel_tail = _runtime_output_rel_tail(module_tail)
             out_root = RUNTIME_CPP_ROOT
-            cpp_out = _join_runtime_path(out_root, rel_tail + ".gen.cpp")
-            hdr_out = _join_runtime_path(out_root, rel_tail + ".gen.h")
+            cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
+            hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
             public_hdr_rel = _module_tail_to_cpp_public_header_path(module_tail)
             public_hdr_out = _join_runtime_path(out_root, public_hdr_rel) if public_hdr_rel != "" else Path("")
             mkdirs_for_cli(path_parent_text(hdr_out))
@@ -971,7 +983,7 @@ def main(argv: list[str]) -> int:
                 if str(public_hdr_out) != "":
                     write_text_file(
                         public_hdr_out,
-                        _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(rel_tail), input_path),
+                        _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(module_tail), input_path),
                     )
                 print("generated: " + str(hdr_out))
                 if str(public_hdr_out) != "":
@@ -1003,7 +1015,7 @@ def main(argv: list[str]) -> int:
             cpp_txt_runtime_for_header = split_cpp_inline_class_defs(cpp_txt_runtime, ns, True)
             cpp_txt_runtime = split_cpp_inline_class_defs(cpp_txt_runtime, ns, False)
             cpp_txt_runtime = strip_cpp_default_args_from_top_level_defs(cpp_txt_runtime, ns)
-            own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.gen.h"'
+            own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
                 old_runtime_include = '#include "runtime/cpp/core/py_runtime.ext.h"\n'
                 new_runtime_include = (
@@ -1040,7 +1052,7 @@ def main(argv: list[str]) -> int:
             if str(public_hdr_out) != "":
                 write_text_file(
                     public_hdr_out,
-                    _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(rel_tail), input_path),
+                    _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(module_tail), input_path),
                 )
             print("generated: " + str(hdr_out))
             print("generated: " + str(cpp_out))

@@ -17,8 +17,8 @@ TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 
 def module_tail_to_cpp_header_path(module_tail: str) -> str:
-    """`a.b.c` を `a/b/c.gen.h` へ変換する。"""
-    return module_tail.replace(".", "/") + ".gen.h"
+    """`a.b.c` を C++ runtime generated header 相対パスへ変換する。"""
+    return runtime_output_rel_tail(module_tail.replace(".", "/")) + ".h"
 
 
 def module_tail_to_cpp_public_header_path(module_tail: str) -> str:
@@ -100,15 +100,15 @@ def is_runtime_emit_input_path(input_path: Path) -> bool:
 
 
 def runtime_output_rel_tail(module_tail: str) -> str:
-    """module tail を runtime/cpp 相対パス tail へ写像する。"""
+    """module tail を runtime/cpp/generated 相対パス tail へ写像する。"""
     rel = join_str_list("/", module_tail.split("/"))
     if rel == "std" or rel.startswith("std/"):
-        return rel
+        return "generated/" + rel
     if rel == "compiler" or rel.startswith("compiler/"):
-        return rel
+        return "generated/" + rel
     if rel == "built_in" or rel.startswith("built_in/"):
-        return rel
-    return "utils/" + rel
+        return "generated/" + rel
+    return "generated/utils/" + rel
 
 
 def runtime_namespace_for_tail(module_tail: str) -> str:
@@ -143,7 +143,7 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
             return indexed[4:]
         return indexed
     if module_id.startswith(TOOLCHAIN_COMPILER_PREFIX):
-        rel_hdr = "compiler/" + module_tail_to_cpp_header_path(module_id[TOOLCHAIN_COMPILER_PREFIX_LEN:])
+        rel_hdr = module_tail_to_cpp_header_path(module_id[TOOLCHAIN_COMPILER_PREFIX_LEN:])
         return "runtime/cpp/" + rel_hdr
     return ""
 

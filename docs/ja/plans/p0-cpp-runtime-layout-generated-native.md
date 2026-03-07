@@ -214,6 +214,13 @@ src/runtime/cpp/
 - `pytra/<domain>/*.h` -> generated public shim として維持
 - `core/*` -> 本計画では移動しない
 
+## Phase 2 実施結果
+
+- `runtime_output_rel_tail(...)` は module runtime の generated 正本を `generated/<domain>/<module>` へ解決するよう更新した。
+- `--emit-runtime-cpp` は `src/runtime/cpp/generated/.../*.h|*.cpp` を出力し、`src/runtime/cpp/pytra/.../*.h` forwarder を同時生成するよう更新した。
+- generated public shim は `runtime/cpp/generated/.../*.h` を必須 include とし、`runtime/cpp/native/.../*.h` は存在時のみ追加 include する方針へ切り替えた。
+- header pruning helper も `runtime/cpp/{generated,native,pytra}/...` include を module namespace へ解決できるよう更新した。
+
 ## 受け入れ基準
 
 - `src/runtime/cpp/pytra/` は generated public shim 専用になる。
@@ -239,7 +246,7 @@ src/runtime/cpp/
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
 
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-02] `runtime_symbol_index` / `cpp_runtime_deps.py` / build graph 導線を `generated/native/pytra` 前提へ更新する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
 
@@ -258,3 +265,5 @@ src/runtime/cpp/
 - 2026-03-07: 本計画では `core/` を low-level runtime として維持し、まず `built_in/std/utils + pytra` の ownership 整理にスコープを限定する。
 - 2026-03-07: Phase 1 棚卸しでは `generated 36 / native 9 / public shim 10 / core 非対象 13 / other 1` を確認し、`pytra/` shim は現行では `std/` と `utils/` にのみ存在する。
 - 2026-03-07: 現行の `*.ext.h` 残存は `built_in` helper 3 件のみであり、移行先では例外的な `native/*.h` に縮退させる方針を固定する。
+- 2026-03-07: `runtime_output_rel_tail` と `--emit-runtime-cpp` は `generated/<domain>/<module>` を正本出力先とし、public shim は `pytra/...` に残す方針で実装を切り替えた。
+- 2026-03-07: generated public shim は `runtime/cpp/generated/.../*.h` を forward し、`native/*.h` は存在時のみ forward する。`native/` 自動生成は行わない。

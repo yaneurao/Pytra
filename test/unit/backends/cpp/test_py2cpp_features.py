@@ -120,9 +120,9 @@ class Py2CppFeatureTest(unittest.TestCase):
         )
         self.assertEqual(_runtime_module_tail_from_source_path(Path("sample/py/01_mandelbrot.py")), "")
 
-        self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "std/math_impl")
-        self.assertEqual(_runtime_output_rel_tail("json"), "utils/json")
-        self.assertEqual(_runtime_output_rel_tail("built_in/type_id"), "built_in/type_id")
+        self.assertEqual(_runtime_output_rel_tail("std/math_impl"), "generated/std/math_impl")
+        self.assertEqual(_runtime_output_rel_tail("json"), "generated/utils/json")
+        self.assertEqual(_runtime_output_rel_tail("built_in/type_id"), "generated/built_in/type_id")
 
         self.assertEqual(_runtime_namespace_for_tail("std/math"), "pytra::std::math")
         self.assertEqual(_runtime_namespace_for_tail("json"), "pytra::utils::json")
@@ -146,8 +146,9 @@ def inc(x: int) -> int:
     def test_emit_runtime_cpp_skips_cpp_for_extern_only_module(self) -> None:
         rel_src = Path("src/pytra/std/__tmp_extern_header_only_test.py")
         src_py = ROOT / rel_src
-        hdr_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.gen.h"
-        cpp_out = ROOT / "src/runtime/cpp/std/__tmp_extern_header_only_test.gen.cpp"
+        hdr_out = ROOT / "src/runtime/cpp/generated/std/__tmp_extern_header_only_test.h"
+        cpp_out = ROOT / "src/runtime/cpp/generated/std/__tmp_extern_header_only_test.cpp"
+        public_hdr_out = ROOT / "src/runtime/cpp/pytra/std/__tmp_extern_header_only_test.h"
         src = """
 from pytra.std import extern
 
@@ -163,6 +164,8 @@ def sin(x: float) -> float:
                 hdr_out.unlink()
             if cpp_out.exists():
                 cpp_out.unlink()
+            if public_hdr_out.exists():
+                public_hdr_out.unlink()
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
@@ -178,6 +181,12 @@ def sin(x: float) -> float:
             self.assertIn("skipped: header-only runtime module", cp.stdout)
             self.assertTrue(hdr_out.exists())
             self.assertFalse(cpp_out.exists())
+            self.assertTrue(public_hdr_out.exists())
+            public_hdr = public_hdr_out.read_text(encoding="utf-8")
+            self.assertIn(
+                '#include "runtime/cpp/generated/std/__tmp_extern_header_only_test.h"',
+                public_hdr,
+            )
         finally:
             if src_py.exists():
                 src_py.unlink()
@@ -185,6 +194,8 @@ def sin(x: float) -> float:
                 hdr_out.unlink()
             if cpp_out.exists():
                 cpp_out.unlink()
+            if public_hdr_out.exists():
+                public_hdr_out.unlink()
 
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
