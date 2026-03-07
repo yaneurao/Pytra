@@ -100,7 +100,7 @@ Post-bootstrap snapshot:
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02] 「全target parity green」の done 条件、許容しない failure category、確認コマンドを spec/plan に固定する。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01] baseline target（`cpp/js/ts`）の sample parity を再確認し、他 target 修復中も `18/18` を維持する。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01] baseline target（`cpp/js/ts`）の sample parity を再確認し、他 target 修復中も `18/18` を維持する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の sample parity を green へ持ち上げる。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03] scripting / mixed target 群（`ruby/lua/php/nim`）の sample parity を green へ持ち上げる。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01] 全 target parity 一括実行の scripts / docs / how-to-use を整備し、再実行手順を固定する。
@@ -159,3 +159,4 @@ Post-bootstrap snapshot:
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02]: full parity green は `runtime_parity_check.py` の category が `ok` のみである状態と定義し、canonical command を `--targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` に固定した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01]: compiled target 向けに `rustc`, `mono-mcs/mono`, `go`, `openjdk-17-jdk`, `kotlin`, `scala`, `nim` を apt で導入し、`swiftc` は official `swift-6.2.2-RELEASE-debian12` tarball を `/opt` へ展開して `/usr/local/bin/swiftc` へ symlink した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02]: scripting / mixed target 向けに `ruby`, `lua5.4`, `php-cli` を apt で導入し、導入後の `runner_needs` 実測で parity target 14 件すべてが `OK` になったことを確認した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01]: `python3 tools/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` を current machine で実行し、`SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts east3_opt_level=2` を確認した。
