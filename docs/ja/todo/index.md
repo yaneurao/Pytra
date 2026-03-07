@@ -46,7 +46,7 @@
 8. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
 9. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。
 10. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-01] 既存 module companion を `native/` へ移し、`native/*.h` を最小化する。
-11. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
+11. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
 12. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-01] codegen/unit/parity を新レイアウトへ追従させ、旧 `.gen/.ext` 固定前提を更新する。
 13. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-02] archive/docs/guard を更新し、module runtime の suffix ベース ownership を legacy 扱いで閉じる。
 

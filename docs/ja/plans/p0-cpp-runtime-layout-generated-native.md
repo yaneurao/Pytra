@@ -238,6 +238,7 @@ src/runtime/cpp/
 - `py_runtime.ext.h` / runtime symbol index / type_id・iterable 系 test を `generated/built_in` + `pytra/built_in` 前提へ更新した。
 - `src/runtime/cpp/std/*.ext.cpp` を `src/runtime/cpp/native/std/*.cpp` へ、`src/runtime/cpp/built_in/*.ext.h` を `src/runtime/cpp/native/built_in/*.h` へ移し、legacy module companion を `native/` 配下へ揃えた。
 - `py_runtime.ext.h` と `pytra/built_in/*.h` は `native/built_in/*.h` を参照するよう更新し、runtime symbol index / build graph / pyobj smoke も `native/std/*.cpp` compile source を期待するよう同期した。
+- `math` / `os_path` / `time` について、runtime symbol index test で「primary header は `pytra/std/*.h`」「compile source は `native/std/*.cpp`」「native 実装は `generated/std/*.h` を include」「`native/std/*.h` は持たない」を直接検証する representative contract を追加した。
 
 ## 受け入れ基準
 
@@ -273,7 +274,7 @@ src/runtime/cpp/
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。
 
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-01] 既存 module companion を `native/` へ移し、`native/*.h` を最小化する。
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
 
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-01] codegen/unit/parity を新レイアウトへ追従させ、旧 `.gen/.ext` 固定前提を更新する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-02] archive/docs/guard を更新し、module runtime の suffix ベース ownership を legacy 扱いで閉じる。
@@ -293,3 +294,4 @@ src/runtime/cpp/
 - 2026-03-07: `utils` の再生成物は list ref-first TODO の未完了分で semantic drift を含んだため、本フェーズでは旧 checked-in artifact の挙動を `generated/utils` へ持ち上げ、レイアウト移行と semantic change を分離した。
 - 2026-03-07: `built_in` generated artifact も rename ベースで `generated/built_in` へ移し、`pytra/built_in/*.h` shim を追加した。generated std artifact は stable include 面として `pytra/built_in/*.h` を参照するよう合わせた。
 - 2026-03-07: legacy module companion 9 件 (`std/*.ext.cpp` 6 + `built_in/*.ext.h` 3) を `native/` へ移し、layout guard 上も `legacy module files: 0` を確認した。checked-in `test/transpile/cpp/*/Makefile` の stale path は generated fixture 更新タスク `S5-01` でまとめて同期する。
+- 2026-03-07: representative module 契約は `math / os_path / time` を canonical example とし、runtime symbol index test で `generated -> native -> pytra shim` の三層を直接検証する形で固定した。

@@ -166,6 +166,33 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
         )
 
+    def test_representative_std_modules_follow_generated_native_shim_contract(self) -> None:
+        cases = [
+            ("math", "float64 sqrt(float64 x);"),
+            ("os_path", "str join(const str& a, const str& b);"),
+            ("time", "float64 perf_counter();"),
+        ]
+        for module_tail, marker in cases:
+            module_id = "pytra.std." + module_tail
+            self.assertEqual(
+                lookup_target_module_primary_header("cpp", module_id),
+                f"src/runtime/cpp/pytra/std/{module_tail}.h",
+            )
+            self.assertIn(
+                f"src/runtime/cpp/native/std/{module_tail}.cpp",
+                lookup_target_module_compile_sources("cpp", module_id),
+            )
+
+            shim = (ROOT / "src/runtime/cpp/pytra/std" / f"{module_tail}.h").read_text(encoding="utf-8")
+            generated_header = (ROOT / "src/runtime/cpp/generated/std" / f"{module_tail}.h").read_text(encoding="utf-8")
+            native_cpp = (ROOT / "src/runtime/cpp/native/std" / f"{module_tail}.cpp").read_text(encoding="utf-8")
+
+            self.assertIn(f'#include "runtime/cpp/generated/std/{module_tail}.h"', shim)
+            self.assertNotIn(f'runtime/cpp/native/std/{module_tail}.h', shim)
+            self.assertIn(marker, generated_header)
+            self.assertIn(f'#include "runtime/cpp/generated/std/{module_tail}.h"', native_cpp)
+            self.assertFalse((ROOT / "src/runtime/cpp/native/std" / f"{module_tail}.h").exists())
+
     def test_import_binding_runtime_module_resolution_uses_index(self) -> None:
         self.assertEqual(
             resolve_import_binding_runtime_module("pytra.utils", "png", "symbol"),
