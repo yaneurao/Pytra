@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 from backends.common.emitter.code_emitter import CodeEmitter
 from toolchain.compiler.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list
 from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
+
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 DEFAULT_BIN_OPS: dict[str, str] = {
@@ -68,8 +71,8 @@ def load_cpp_profile() -> dict[str, Any]:
     """C++ 用 LanguageProfile を読み込む（失敗時は最小既定）。"""
     profile_loader = CodeEmitter({}, {}, {})
     loaded = profile_loader.load_profile_with_includes(
-        "src/backends/cpp/profiles/profile.json",
-        anchor_file="src/backends/cpp/cli.py",
+        str(REPO_ROOT / "src/backends/cpp/profiles/profile.json"),
+        anchor_file=str(REPO_ROOT / "src/backends/cpp/cli.py"),
     )
     if not isinstance(loaded, dict):
         return {"syntax": {}}

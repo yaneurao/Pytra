@@ -196,7 +196,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("for (::std::tuple<int64, str> __itobj", text)
+        self.assertIn("for (const ::std::tuple<int64, str>& __itobj", text)
         self.assertNotIn("for (object __itobj", text)
         self.assertNotIn("py_dyn_range(pairs)", text)
         self.assertIn("int64 line_index = py_to<int64>(py_at(", text)
@@ -239,7 +239,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("for (::std::tuple<int64, str> __itobj", text)
+        self.assertIn("for (const ::std::tuple<int64, str>& __itobj", text)
         self.assertIn("py_enumerate_list_as<str>(lines)", text)
         self.assertNotIn("py_to_str_list_from_object(lines)", text)
         self.assertNotIn("for (object __itobj", text)
