@@ -523,11 +523,11 @@ py2x.py
 ### Phase 7: `ir2lang.py` と debug/restart 導線をつなぐ
 
 - [ ] `ir2lang.py` に `link-output.json` 受理を追加する。
-- [ ] `eastlink.py` を追加する。
+- [x] `eastlink.py` を追加する。
 - [ ] `--dump-east3-dir`, `--link-only`, `--from-link-output` 系の導線を整理する。
 
 詳細タスク:
-- [ ] `S7-01` `eastlink.py` の CLI 仕様を実装する。
+- [x] `S7-01` `eastlink.py` の CLI 仕様を実装する。
 - [ ] `S7-02` `ir2lang.py` の linked-program 入力を実装する。
 - [ ] `S7-03` `py2x.py` から `--dump-east3-dir` / `--link-only` を追加する。
 - [ ] `S7-04` backend-only 回帰と debug 手順を docs に追記する。
@@ -665,7 +665,7 @@ src/
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] backend 共通 `SingleFileProgramWriter` を追加し、`ir2lang.py` を new registry 契約へ追従させる。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S6-01] C++ を先行移行し、`multifile_writer.py` を `CppProgramWriter` へ再編して `CppEmitter` を module emit 専任にする。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S6-02] `pytra-cli.py` / C++ build manifest / Makefile 生成導線を `ProgramWriter` 返却 manifest 正本へ更新する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S7-01] `eastlink.py` を追加し、`link-input.json -> link-output.json + linked modules` の debug/restart 導線を実装する。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S7-01] `eastlink.py` を追加し、`link-input.json -> link-output.json + linked modules` の debug/restart 導線を実装する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S7-02] `ir2lang.py` と `py2x.py` に linked-program 入出力（`--link-only`, dump/restart）を追加し、backend-only 導線を完成させる。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S8-01] `test/unit/link/*` と representative backend/tooling 回帰を追加し、schema / determinism / program writer 契約を固定する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S8-02] C++ unit / fixture / sample parity、docs 同期、旧 import-closure 依存経路の撤去まで完了し、本計画を閉じる。
@@ -688,3 +688,4 @@ src/
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] `src/backends/common/program_writer.py` に default `SingleFileProgramWriter` を追加し、`ir2lang.py` の single-module backend-only 経路を `emit_module -> ProgramArtifact -> ProgramWriter` へ切り替えた。`test/unit/tooling/test_ir2lang_cli.py` と `test/unit/common/test_py2x_smoke_common.py` で writer 導線の非退行を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S6-01] `src/backends/cpp/program_writer.py` を追加し、prelude/include/src/manifest の layout 書き出しを `write_cpp_rendered_program(...)` / `write_cpp_program(...)` へ移した。`backends/cpp/emitter/multifile_writer.py` は module text を組み立てて新 writer へ渡す façade に縮退し、host/selfhost の C++ backend spec も explicit `program_writer` を持つよう更新した。`test/unit/backends/cpp/test_cpp_program_writer.py`、`test_py2cpp_features.py` の multi-file regression、`test_py2x_entrypoints_contract.py` を通して非退行を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S6-02] `backends/cpp/cli.py` は multi-file 完了メッセージで `ProgramWriter` の `manifest` / `primary_output` を正本に使うよう更新し、`src/pytra-cli.py` は py2x stdout の `manifest:` 行を解析して reported manifest path をそのまま `gen_makefile_from_manifest.py` へ渡すようにした。reported path がない場合のみ `output_dir/manifest.json` fallback を許し、`test/unit/tooling/test_pytra_cli.py` と `test_py2cpp_features.py` の multi-file build/run 回帰で非退行を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S7-01] `src/eastlink.py` を追加し、`link-input.json` を `load_linked_program(...)` で読み、`optimize_linked_program(...)` の結果を `link-output.json` と `linked/<module>.east3.json` 群として materialize する最小 CLI を実装した。parser/backend/runtime copy は持たず、`test/unit/link/test_eastlink_cli.py` と `test/unit/link/*` の discover 回帰で schema/loader/global optimizer との接続を固定した。
