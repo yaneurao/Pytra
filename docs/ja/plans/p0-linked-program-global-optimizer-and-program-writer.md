@@ -512,12 +512,12 @@ py2x.py
 
 - [x] C++ の `multifile_writer.py` を `CppProgramWriter` として再編する。
 - [ ] `CppEmitter` は 1 module artifact を返すだけにする。
-- [ ] `pytra-cli.py` は `CppProgramWriter` の manifest を受けて build を行う。
+- [x] `pytra-cli.py` は `CppProgramWriter` の manifest を受けて build を行う。
 
 詳細タスク:
 - [x] `S6-01` `multifile_writer.py` の path/layout/manifest ロジックを `backends/cpp/program_writer.py` へ移す。
 - [ ] `S6-02` `CppEmitter` から multi-file 固有分岐を外す。
-- [ ] `S6-03` `pytra-cli.py` を `ProgramWriter` 返却 manifest 前提へ更新する。
+- [x] `S6-03` `pytra-cli.py` を `ProgramWriter` 返却 manifest 前提へ更新する。
 - [ ] `S6-04` C++ sample/fixture parity を再固定する。
 
 ### Phase 7: `ir2lang.py` と debug/restart 導線をつなぐ
@@ -664,7 +664,7 @@ src/
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` を `emit_module + program_writer` 契約へ拡張し、旧 `emit -> str` API を互換 wrapper 化する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] backend 共通 `SingleFileProgramWriter` を追加し、`ir2lang.py` を new registry 契約へ追従させる。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S6-01] C++ を先行移行し、`multifile_writer.py` を `CppProgramWriter` へ再編して `CppEmitter` を module emit 専任にする。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S6-02] `pytra-cli.py` / C++ build manifest / Makefile 生成導線を `ProgramWriter` 返却 manifest 正本へ更新する。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S6-02] `pytra-cli.py` / C++ build manifest / Makefile 生成導線を `ProgramWriter` 返却 manifest 正本へ更新する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S7-01] `eastlink.py` を追加し、`link-input.json -> link-output.json + linked modules` の debug/restart 導線を実装する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S7-02] `ir2lang.py` と `py2x.py` に linked-program 入出力（`--link-only`, dump/restart）を追加し、backend-only 導線を完成させる。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S8-01] `test/unit/link/*` と representative backend/tooling 回帰を追加し、schema / determinism / program writer 契約を固定する。
@@ -687,3 +687,4 @@ src/
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` / `backend_registry_static.py` に `emit_module(...)` / `build_program_artifact(...)` / `get_program_writer(...)` を追加し、backend spec 正規化時に `emit_module` と `program_writer` を必ず持つよう更新した。既存 `emit_source()` は `ModuleArtifact.text` を返す互換 wrapper へ縮退した。`test/unit/common/test_py2x_entrypoints_contract.py` で host/selfhost spec 契約と wrapper 動作を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] `src/backends/common/program_writer.py` に default `SingleFileProgramWriter` を追加し、`ir2lang.py` の single-module backend-only 経路を `emit_module -> ProgramArtifact -> ProgramWriter` へ切り替えた。`test/unit/tooling/test_ir2lang_cli.py` と `test/unit/common/test_py2x_smoke_common.py` で writer 導線の非退行を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S6-01] `src/backends/cpp/program_writer.py` を追加し、prelude/include/src/manifest の layout 書き出しを `write_cpp_rendered_program(...)` / `write_cpp_program(...)` へ移した。`backends/cpp/emitter/multifile_writer.py` は module text を組み立てて新 writer へ渡す façade に縮退し、host/selfhost の C++ backend spec も explicit `program_writer` を持つよう更新した。`test/unit/backends/cpp/test_cpp_program_writer.py`、`test_py2cpp_features.py` の multi-file regression、`test_py2x_entrypoints_contract.py` を通して非退行を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S6-02] `backends/cpp/cli.py` は multi-file 完了メッセージで `ProgramWriter` の `manifest` / `primary_output` を正本に使うよう更新し、`src/pytra-cli.py` は py2x stdout の `manifest:` 行を解析して reported manifest path をそのまま `gen_makefile_from_manifest.py` へ渡すようにした。reported path がない場合のみ `output_dir/manifest.json` fallback を許し、`test/unit/tooling/test_pytra_cli.py` と `test_py2cpp_features.py` の multi-file build/run 回帰で非退行を固定した。

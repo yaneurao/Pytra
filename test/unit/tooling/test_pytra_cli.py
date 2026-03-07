@@ -106,6 +106,75 @@ class PytraCliTest(unittest.TestCase):
             self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
             self.assertIn("make", rendered[2])
 
+    def test_build_cpp_prefers_reported_manifest_path(self) -> None:
+        calls: list[tuple[list[str], str | None]] = []
+
+        with tempfile.TemporaryDirectory() as work:
+            workdir = Path(work)
+            input_py = workdir / "hello.py"
+            input_py.write_text("print(1)\\n", encoding="utf-8")
+            reported_manifest = workdir / "reported" / "linked-manifest.json"
+
+            def _runner(
+                cmd: list[str] | tuple[str, ...],
+                *,
+                cwd: str | None = None,
+                capture_output: bool = True,
+                text: bool = True,
+                timeout: float | None = None,
+            ) -> subprocess.CompletedProcess[str]:
+                _ = capture_output
+                _ = text
+                _ = timeout
+                cmd_list = list(cmd)
+                calls.append((cmd_list, cwd))
+                if str(pytra_cli_mod.PY2X) in " ".join(cmd_list):
+                    reported_manifest.parent.mkdir(parents=True, exist_ok=True)
+                    reported_manifest.write_text(
+                        """
+{
+  "modules": [{"source": "src/main.cpp"}],
+  "include_dir": "include"
+}
+""".strip()
+                        + "\n",
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(
+                        cmd_list,
+                        0,
+                        stdout="multi-file output generated at: ...\nmanifest: " + str(reported_manifest) + "\n",
+                        stderr="",
+                    )
+                if str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(cmd_list):
+                    self.assertEqual(Path(cmd_list[2]), reported_manifest)
+                    makefile_path = workdir / "out" / "Makefile"
+                    if "-o" in cmd_list:
+                        idx = cmd_list.index("-o")
+                        if idx + 1 < len(cmd_list):
+                            makefile_path = Path(cmd_list[idx + 1])
+                    makefile_path.parent.mkdir(parents=True, exist_ok=True)
+                    makefile_path.write_text("all:\n\t@true\n", encoding="utf-8")
+                    return subprocess.CompletedProcess(cmd_list, 0, stdout="generated: " + str(makefile_path), stderr="")
+                if cmd_list and Path(cmd_list[0]).name == "make":
+                    return subprocess.CompletedProcess(cmd_list, 0, stdout="make ok", stderr="")
+                return subprocess.CompletedProcess(cmd_list, 0, stdout="", stderr="")
+
+            with patch.object(pytra_cli_mod.subprocess, "run", side_effect=_runner):
+                rc = pytra_cli_mod.main(
+                    [
+                        str(input_py),
+                        "--target",
+                        "cpp",
+                        "--build",
+                        "--output-dir",
+                        str(workdir / "out"),
+                    ]
+                )
+
+            self.assertEqual(rc, 0)
+            self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
+
     def test_build_noncpp_target_is_supported(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
         runner = self._fake_run(calls)

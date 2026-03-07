@@ -774,6 +774,16 @@ def _write_multi_file_cpp(
     )
 
 
+def _program_writer_manifest_path(program_result: dict[str, Any]) -> str:
+    manifest_txt = dict_any_get_str(program_result, "manifest")
+    if manifest_txt != "":
+        return manifest_txt
+    primary_output = dict_any_get_str(program_result, "primary_output")
+    if primary_output != "":
+        return primary_output
+    return ""
+
+
 def dump_deps_graph_text(entry_path: Path) -> str:
     """入力 `.py` から辿れるユーザーモジュール依存グラフを整形して返す。"""
     return dump_deps_graph_text_common(
@@ -1223,8 +1233,7 @@ def main(argv: list[str]) -> int:
                 cpp_list_model_opt,
             )
             msg = "multi-file output generated at: " + str(out_dir)
-            manifest_obj: Any = mf.get("manifest")
-            manifest_txt = manifest_obj if isinstance(manifest_obj, str) else ""
+            manifest_txt = _program_writer_manifest_path(mf)
             msg += "\nmanifest: " + manifest_txt + "\n" if manifest_txt != "" else "\n"
             print(msg, end="")
             return 0

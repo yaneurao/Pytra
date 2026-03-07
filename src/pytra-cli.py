@@ -61,6 +61,16 @@ def _run(
     *,
     stdout_to_stderr: bool = False,
 ) -> int:
+    return _run_proc(cmd, cwd=cwd, timeout=timeout, stdout_to_stderr=stdout_to_stderr).returncode
+
+
+def _run_proc(
+    cmd: list[str],
+    cwd: Path | None = None,
+    timeout: float | None = None,
+    *,
+    stdout_to_stderr: bool = False,
+) -> subprocess.CompletedProcess[str]:
     proc = subprocess.run(
         cmd,
         cwd=str(cwd) if cwd is not None else None,
@@ -76,11 +86,46 @@ def _run(
     if proc.returncode != 0:
         if proc.stderr:
             print(proc.stderr, end="", file=sys.stderr)
-        return proc.returncode
+        return proc
     if proc.stderr:
         # Keep warnings for compatibility.
         print(proc.stderr, end="", file=sys.stderr)
-    return 0
+    return proc
+
+
+def _reported_manifest_path(stdout: str, *, cwd: Path) -> Path | None:
+    lines = stdout.splitlines()
+    idx = len(lines) - 1
+    while idx >= 0:
+        line = lines[idx].strip()
+        if line.startswith("manifest:"):
+            raw_path = line[len("manifest:") :].strip()
+            if raw_path == "":
+                return None
+            path = Path(raw_path)
+            if path.is_absolute():
+                return path
+            return (cwd / path).resolve()
+        idx -= 1
+    return None
+
+
+def _resolve_cpp_manifest_path(stdout: str, output_dir: Path) -> Path | None:
+    reported = _reported_manifest_path(stdout, cwd=Path.cwd())
+    if reported is not None:
+        return reported
+    fallback = (output_dir / "manifest.json").resolve()
+    if fallback.exists():
+        return fallback
+    return None
+
+
+def _require_manifest_exists(path: Path | None) -> Path | None:
+    if path is None:
+        return None
+    if path.exists():
+        return path
+    return None
 
 
 def _require_make_available() -> str:
@@ -142,15 +187,7 @@ def _build_noncpp(input_path: Path, profile: TargetProfile, args: argparse.Names
     return 0
 
 
-def _manifest_path(output_dir: Path, args: argparse.Namespace) -> Path:
-    if args.output != "":
-        # py2cpp treats explicit output as single-file; for build path we keep
-        # output_dir semantics only.
-        return output_dir / "manifest.json"
-    return output_dir / "manifest.json"
-
-
-def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> int:
+def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> tuple[int, Path | None]:
     cmd = [
         PYTHON,
         str(PY2X),
@@ -162,7 +199,11 @@ def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> int:
         str(output_dir),
     ]
     cmd.extend(argv)
-    return _run(cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    proc = _run_proc(cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    manifest_path = None
+    if proc.returncode == 0:
+        manifest_path = _require_manifest_exists(_resolve_cpp_manifest_path(proc.stdout or "", output_dir))
+    return int(proc.returncode), manifest_path
 
 
 def _run_makefile_generator(manifest_path: Path, makefile_path: Path, args: argparse.Namespace) -> int:
@@ -211,13 +252,12 @@ def _build_cpp(input_path: Path, args: argparse.Namespace, passthrough: list[str
     if args.exe == "":
         raise ValueError("invalid --exe")
 
-    rc = _run_py2cpp(input_path, output_dir, passthrough)
+    rc, manifest_path = _run_py2cpp(input_path, output_dir, passthrough)
     if rc != 0:
         return rc
 
-    manifest_path = _manifest_path(output_dir, args)
-    if not manifest_path.exists():
-        print(f"error: manifest not found after transpile: {manifest_path}", file=sys.stderr)
+    if manifest_path is None:
+        print(f"error: manifest not found after transpile under: {output_dir}", file=sys.stderr)
         return 1
 
     makefile_path = output_dir / "Makefile"
