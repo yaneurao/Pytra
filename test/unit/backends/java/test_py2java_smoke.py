@@ -349,6 +349,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
             'owner == "math"',
             "owner == 'math'",
             "_java_math_runtime_call(",
+            'binding_module.startswith("pytra.utils.")',
+            "binding_module.startswith('pytra.utils.')",
             'attr in {"parent", "name", "stem"}',
             "attr in {'parent', 'name', 'stem'}",
             "_render_call_via_runtime_call(expr,",

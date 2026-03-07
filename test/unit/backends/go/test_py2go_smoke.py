@@ -101,6 +101,10 @@ class Py2GoSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "go" / "emitter" / "go_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        self.assertNotIn('runtime_symbol.startswith("pyMath")', src)
+        self.assertNotIn("runtime_symbol.startswith('pyMath')", src)
+        self.assertNotIn('runtime_symbol == "pyMathPi"', src)
+        self.assertNotIn('runtime_symbol == "pyMathE"', src)
         banned_runtime_literals = [
             "write_rgb_png",
             "save_gif",
