@@ -174,7 +174,9 @@ def main() -> int:
     builtin_dir = _runtime_cpp_path("built_in")
     core_dir = _runtime_cpp_path("core")
     generated_dir = _runtime_cpp_path("generated")
+    generated_core_dir = generated_dir / "core"
     native_dir = _runtime_cpp_path("native")
+    native_core_dir = native_dir / "core"
     pytra_dir = _runtime_cpp_path("pytra")
     std_dir = _runtime_cpp_path("std")
     utils_dir = _runtime_cpp_path("utils")
@@ -224,8 +226,13 @@ def main() -> int:
     unexpected_core_impl_files: list[str] = []
     banned_runtime_duplicates: list[str] = []
     direct_native_core_include_violations: list[str] = []
+    missing_core_lane_dirs: list[str] = []
     unexpected_legacy_module_files = [str(p.relative_to(ROOT)) for p in legacy_module_files]
     runtime_tree_files = _scan_targets(_runtime_cpp_path())
+
+    for path in (generated_core_dir, native_core_dir):
+        if not path.is_dir():
+            missing_core_lane_dirs.append(str(path.relative_to(ROOT)))
 
     _check_generated_files(
         generated_module_files, missing_marker, invalid_name, name_policy="plain"
@@ -272,6 +279,7 @@ def main() -> int:
         or unexpected_core_impl_files
         or banned_runtime_duplicates
         or direct_native_core_include_violations
+        or missing_core_lane_dirs
         or unexpected_legacy_module_files
     ):
         print("[FAIL] runtime cpp layout guard failed")
@@ -317,6 +325,10 @@ def main() -> int:
         if direct_native_core_include_violations:
             print("  non-forwarder runtime files directly include native/core headers:")
             for item in direct_native_core_include_violations:
+                print(f"    - {item}")
+        if missing_core_lane_dirs:
+            print("  required core ownership directories are missing:")
+            for item in missing_core_lane_dirs:
                 print(f"    - {item}")
         return 1
 

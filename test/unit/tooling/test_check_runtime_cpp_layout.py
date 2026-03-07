@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import shutil
 import sys
 import tempfile
 import unittest
@@ -95,6 +96,16 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
             "src/runtime/cpp/generated/std/time.cpp -> runtime/cpp/native/core/py_runtime.ext.h",
             out,
         )
+
+    def test_main_fails_when_generated_core_lane_directory_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _make_valid_tree(root)
+            shutil.rmtree(root / "src" / "runtime" / "cpp" / "generated" / "core")
+            rc, out = self._run_main(root)
+        self.assertEqual(rc, 1)
+        self.assertIn("required core ownership directories are missing", out)
+        self.assertIn("src/runtime/cpp/generated/core", out)
 
 
 if __name__ == "__main__":
