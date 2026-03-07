@@ -159,8 +159,38 @@ health matrix の failure category:
 - 回帰時の見方が統一された運用
 - 低優先度の backlog ではなく、継続監視される状態
 
+## 7. Health Matrix Snapshot（2026-03-08）
+
+測定条件:
+- `static_contract`: `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
+- `common_smoke`: `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s test/unit/common -p 'test_py2x_smoke*.py'`
+- `target_smoke`: `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s test/unit/backends/<dir> -p 'test_py2<lang>_smoke.py'`
+- `transpile`: `python3 tools/check_py2x_transpile.py --target <lang>`
+- `parity`: smoke/transpile を通過した target だけ `python3 tools/runtime_parity_check.py --targets <lang> --case-root sample --ignore-unstable-stdout`
+
+共通結果:
+- `static_contract`: pass
+- `common_smoke`: pass
+
+| target | target_smoke | transpile | parity | primary_failure | notes |
+| --- | --- | --- | --- | --- | --- |
+| `rs` | fail | pass | blocked | `target_smoke_fail` | `test_py2rs_smoke.py` が 31 tests 中 1 fail。 |
+| `cs` | pass | pass | `toolchain_missing` | `toolchain_missing` | sample parity 18 case 全件 skip。 |
+| `js` | pass | pass | ok | `ok` | sample parity `18/18`。 |
+| `ts` | pass | pass | ok | `ok` | sample parity `18/18`。 |
+| `go` | fail | pass | blocked | `target_smoke_fail` | `test_go_native_emitter_uses_runtime_path_wrapper` fail。 |
+| `java` | fail | pass | blocked | `target_smoke_fail` | `pathlib.Path` runtime path class smoke が fail。 |
+| `kotlin` | pass | fail | blocked | `transpile_fail` | sample 群で多数 Traceback。 |
+| `swift` | pass | fail | blocked | `transpile_fail` | sample 群で多数 Traceback。 |
+| `scala` | fail | pass | blocked | `target_smoke_fail` | `pathlib_extended` smoke が fail。 |
+| `ruby` | pass | fail | blocked | `transpile_fail` | sample 群で多数 Traceback。 |
+| `lua` | fail | pass | blocked | `target_smoke_fail` | ifexp/joinedstr lowering smoke が fail。 |
+| `php` | pass | fail | blocked | `transpile_fail` | fixture/sample mixed で 9 fail。 |
+| `nim` | pass | fail | blocked | `transpile_fail` | fixture/sample mixed で 6 fail。 |
+
 ## 決定ログ
 
 - 2026-03-07: ユーザー指示により、「linked-program 導入後に壊れたままの非C++ backend を直していく計画」を低優先度の後続タスクとして起票する方針を採用。
 - 2026-03-07: 本計画は `P0-LINKED-PROGRAM-OPT-01` の blocker にはせず、`SingleFileProgramWriter` を含む共通互換層の着地後に着手する P4 として定義した。
 - 2026-03-07: 修復順序は `health matrix -> 互換 stop-ship 契約 -> family wave -> CI/運用固定` の4段階とし、`rs/cs/js/ts`、`go/java/kotlin/swift/scala`、`ruby/lua/php/nim` の3 wave で進める方針を確定した。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-01] static contract と common smoke は pass、初期 health matrix では `js` / `ts` が green、`cs` は `toolchain_missing`、`rs/go/java/scala/lua` は `target_smoke_fail`、`kotlin/swift/ruby/php/nim` は `transpile_fail` を primary failure として確定した。`parity` は smoke/transpile green の target だけ追加測定し、`js` / `ts` は `18/18`、`cs` は 18 case 全件 `toolchain_missing` だった。
