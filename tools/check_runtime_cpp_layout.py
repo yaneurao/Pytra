@@ -40,6 +40,23 @@ BANNED_PY_RUNTIME_PATTERNS = {
     "static inline bool py_contains(const str&": "contains duplicate must not live in the py_runtime core header",
     "static inline bool py_contains(const object&": "contains duplicate must not live in the py_runtime core header",
 }
+BANNED_PY_RUNTIME_INCLUDE_PATTERNS = {
+    '#include "runtime/cpp/generated/built_in/predicates.h"': (
+        "predicate helper companions must not be re-aggregated via py_runtime"
+    ),
+    '#include "runtime/cpp/generated/built_in/sequence.h"': (
+        "sequence helper companions must not be re-aggregated via py_runtime"
+    ),
+    '#include "runtime/cpp/native/built_in/sequence.h"': (
+        "sequence native helpers must not be re-aggregated via py_runtime"
+    ),
+    '#include "runtime/cpp/generated/built_in/iter_ops.h"': (
+        "iter helper companions must not be re-aggregated via py_runtime"
+    ),
+    '#include "runtime/cpp/native/built_in/iter_ops.h"': (
+        "iter native helpers must not be re-aggregated via py_runtime"
+    ),
+}
 DIRECT_NATIVE_CORE_INCLUDE_RE = re.compile(r'^\s*#include\s+"(runtime/cpp/native/core/[^"]+)"', re.MULTILINE)
 
 
@@ -264,6 +281,9 @@ def main() -> int:
     if py_runtime_header.exists():
         py_runtime_txt = py_runtime_header.read_text(encoding="utf-8", errors="ignore")
         for pattern, reason in BANNED_PY_RUNTIME_PATTERNS.items():
+            if pattern in py_runtime_txt:
+                banned_runtime_duplicates.append(f"{pattern} :: {reason}")
+        for pattern, reason in BANNED_PY_RUNTIME_INCLUDE_PATTERNS.items():
             if pattern in py_runtime_txt:
                 banned_runtime_duplicates.append(f"{pattern} :: {reason}")
 

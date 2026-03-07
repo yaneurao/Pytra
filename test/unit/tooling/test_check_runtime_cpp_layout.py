@@ -111,6 +111,19 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
             out,
         )
 
+    def test_main_fails_when_py_runtime_reaggregates_removed_built_in_headers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _make_valid_tree(root)
+            _write(
+                root / "src" / "runtime" / "cpp" / "native" / "core" / "py_runtime.h",
+                '#pragma once\n#include "runtime/cpp/generated/built_in/sequence.h"\n',
+            )
+            rc, out = self._run_main(root)
+        self.assertEqual(rc, 1)
+        self.assertIn("py_runtime core header still contains duplicated high-level runtime bodies", out)
+        self.assertIn('#include "runtime/cpp/generated/built_in/sequence.h"', out)
+
     def test_main_fails_when_generated_core_lane_directory_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

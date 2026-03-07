@@ -206,6 +206,7 @@ C++ では追加で次を守る。
 - `str::split` / `splitlines` / `count` / `join`、`zip` / `sorted` / `sum` / `py_min` / `py_max` のような pure Python で表現可能な helper は `native/core/py_runtime.h` に permanent に残してはならず、`generated/built_in` または SoT 側へ戻す候補として扱う。
 - `dict_get_*` / `py_dict_get_default` / `py_ord` / `py_chr` / `py_div` / `py_floordiv` / `py_mod` など、`object` / `std::any` / template specialization と密結合した helper は `generated/core` lane 設計前に性急に移してはならない。これらは保留分類を許容する。
 - `generated/core` は「low-level helper の新しい捨て先」ではない。`native/core` 直 include や target 固有 ownership を必要とする helper を押し込んではならない。
+- `check_runtime_cpp_layout.py` は、`native/core/py_runtime.h` が `predicates` / `sequence` / `iter_ops` の removed transitive include を再導入していないことも検証しなければならない。`string_ops` は `str` method delegate のため当面許容するが、他の built_in companion を集約器へ戻してはならない。
 
 ### 0.621 `generated/built_in` と `generated/core` の emission lane contract
 

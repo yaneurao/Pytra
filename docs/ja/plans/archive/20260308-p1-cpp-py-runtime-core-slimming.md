@@ -184,7 +184,7 @@
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] 文字列・collection 系の pure-Python built_in semantics を `native/core/py_runtime.h` から段階的に撤去し、正規の generated lane へ移す。
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-02] `native/core/py_runtime.h` を low-level ABI / object / container / process glue 中心へ整理し、include 集約を最小化する。
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-01] runtime symbol index / build graph / representative C++ runtime tests を新しい ownership に追従させる。
-- [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
+- [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
 
 ## 5.1 棚卸し結果
 
@@ -288,3 +288,4 @@
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] `str::split` / `splitlines` / `count` / `join` を `src/pytra/built_in/string_ops.py` 正本へ寄せ、C++ checked-in artifact を `generated/built_in/string_ops.{h,cpp}` へ再生成した。`native/core/py_runtime.h` は generated helper への delegate に縮退し、runtime smoke / symbol index 回帰で value ABI と link source を固定した。object/generic collection helper（`sum` / `zip` / `sorted` / `min` / `max`）は、この tranche では保留のままとする。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-02] C++ emitter が `py_repeat` / `py_range` / `py_any` / `py_all` / `reversed` / `enumerate` を使う module に direct built_in header (`pytra/built_in/sequence.h` / `iter_ops.h` / `predicates.h`) を積むようにし、`native/core/py_runtime.h` から `sequence` / `iter_ops` / `predicates` の transitive include を外した。checked-in `generated/std/json.cpp` も direct include へ再生成し、`py_runtime.h` は low-level glue + `str` method delegate を中心とする集約へ寄せた。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-01] runtime symbol index / build graph / representative C++ integration test を ownership 変更へ追従させた。`test_runtime_symbol_index.py` で `string_ops` / `sequence` の public header・compile source を固定し、`test_cpp_runtime_build_graph.py` で `generated/std/json.cpp` が direct built_in include から `sequence.cpp` / `string_ops.cpp` を引くことと、`core/py_runtime.h` seed だけでは `predicates` / `sequence` / `iter_ops` compile source が再侵入しないことを回帰化した。`test_cpp_runtime_symbol_index_integration.py` では transpiled C++ が `predicates` / `sequence` / `iter_ops` を direct include しつつ、`string_ops` は引き続き `py_runtime.h` 経由の delegate であることを固定した。
+- 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-02] `tools/check_runtime_cpp_layout.py` に `py_runtime.h` の removed transitive include (`predicates` / `sequence` / `iter_ops`) 再侵入 guard を追加し、`test_check_runtime_cpp_layout.py` と spec を同期した。加えて `test_cpp_runtime_iterable.py` / `test_pytra_built_in_string_ops.py` / layout guard / marker guard / C++ fixture parity (`3/3`) / sample parity (`18/18`) を再実行し、本計画を archive へ閉じた。
