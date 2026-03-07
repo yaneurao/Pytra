@@ -38,11 +38,11 @@
 
 1. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01] `@abi` の public mode 名を `default/value/value_mut` に整理し、引数側 `value` を read-only value ABI の canonical surface にする。
 2. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-01] 現行 `default/value/value_readonly` 契約を棚卸しし、`value=value_readonly`, `value_mut=旧 mutable value ABI` の移行方針を固定する。
-3. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-02] spec/plan に canonical naming と移行ルールを書き、`value_readonly` の扱いを決める。
-4. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-01] parser / decorator metadata / validator が `value` / `value_mut` を受理し、新 canonical metadata を出すよう更新する。
-5. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-02] diagnostics / error message / target support check を新 naming に合わせる。
-6. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-01] 既存 helper（`py_join`, `py_split`, `py_range` など）の注釈と generated/runtime 側期待を新 naming に移行する。
-7. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-02] representative regression を更新し、C++ helper/codegen で非退行を確認する。
+3. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-02] spec/plan に canonical naming と移行ルールを書き、`value_readonly` の扱いを決める。
+4. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-01] parser / decorator metadata / validator が `value` / `value_mut` を受理し、新 canonical metadata を出すよう更新する。
+5. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-02] diagnostics / error message / target support check を新 naming に合わせる。
+6. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-01] 既存 helper（`py_join`, `py_split`, `py_range` など）の注釈と generated/runtime 側期待を新 naming に移行する。
+7. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-02] representative regression を更新し、C++ helper/codegen で非退行を確認する。
 8. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-01] docs と how-to-use を新 naming に同期し、移行注意点を記録する。
 9. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
 

@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 
-_RUNTIME_ABI_MODES = {"default", "value", "value_readonly"}
+_RUNTIME_ABI_ARG_MODES = {"default", "value", "value_mut"}
+_RUNTIME_ABI_RET_MODES = {"default", "value"}
+_RUNTIME_ABI_MODE_ALIASES = {"value_readonly": "value"}
 _RUNTIME_ABI_SUPPORTED_TARGETS = {"cpp"}
 _MUTATING_ATTRS = {
     "append",
@@ -45,6 +47,22 @@ def _safe_name(value: Any) -> str:
         if text != "":
             return text
     return ""
+
+
+def _normalize_runtime_abi_mode(
+    mode_any: Any,
+    *,
+    allowed_modes: set[str],
+    symbol: str,
+    field_name: str,
+) -> str:
+    if not isinstance(mode_any, str):
+        raise RuntimeError("runtime_abi_violation: unsupported " + field_name + ": " + symbol)
+    raw_mode = _safe_name(mode_any)
+    normalized = _RUNTIME_ABI_MODE_ALIASES.get(raw_mode, raw_mode)
+    if normalized not in allowed_modes:
+        raise RuntimeError("runtime_abi_violation: unsupported " + field_name + ": " + symbol)
+    return normalized
 
 
 def _mark_mutated_param_from_target(target_obj: Any, params: set[str], out: set[str]) -> None:
@@ -160,22 +178,32 @@ def _validate_runtime_abi_shape(fn_node: dict[str, Any], *, symbol: str, top_lev
     args_any = runtime_abi.get("args", {})
     if not isinstance(args_any, dict):
         raise RuntimeError("runtime_abi_violation: runtime_abi_v1.args must be an object: " + symbol)
-    ret_mode = runtime_abi.get("ret", "default")
-    if not isinstance(ret_mode, str) or ret_mode not in _RUNTIME_ABI_MODES:
-        raise RuntimeError("runtime_abi_violation: unsupported runtime_abi_v1.ret mode: " + symbol)
+    ret_mode = _normalize_runtime_abi_mode(
+        runtime_abi.get("ret", "default"),
+        allowed_modes=_RUNTIME_ABI_RET_MODES,
+        symbol=symbol,
+        field_name="runtime_abi_v1.ret mode",
+    )
     out_args: dict[str, str] = {}
     for key_any, mode_any in args_any.items():
         key = _safe_name(key_any)
         if key == "":
             raise RuntimeError("runtime_abi_violation: runtime_abi_v1.args keys must be non-empty strings: " + symbol)
-        if not isinstance(mode_any, str) or mode_any not in _RUNTIME_ABI_MODES:
-            raise RuntimeError("runtime_abi_violation: unsupported runtime_abi_v1 arg mode: " + symbol + ": " + key)
-        out_args[key] = mode_any
-    return {
+        out_args[key] = _normalize_runtime_abi_mode(
+            mode_any,
+            allowed_modes=_RUNTIME_ABI_ARG_MODES,
+            symbol=symbol + ": " + key,
+            field_name="runtime_abi_v1 arg mode",
+        )
+    canonical = {
         "schema_version": 1,
         "args": out_args,
         "ret": ret_mode,
     }
+    meta_obj = fn_node.get("meta")
+    if isinstance(meta_obj, dict):
+        meta_obj["runtime_abi_v1"] = canonical
+    return canonical
 
 
 def _validate_runtime_abi_function(
@@ -200,7 +228,7 @@ def _validate_runtime_abi_function(
     for arg_name, mode in runtime_abi["args"].items():
         if arg_name not in valid_args:
             raise RuntimeError("runtime_abi_violation: runtime_abi_v1 references unknown parameter: " + symbol + ": " + arg_name)
-        if mode == "value_readonly":
+        if mode == "value":
             readonly_args.add(arg_name)
     if len(readonly_args) == 0:
         return
@@ -209,7 +237,7 @@ def _validate_runtime_abi_function(
     violated = sorted(name for name in readonly_args if name in mutated)
     if len(violated) > 0:
         raise RuntimeError(
-            "runtime_abi_violation: value_readonly parameter mutated: "
+            "runtime_abi_violation: value parameter mutated: "
             + symbol
             + ": "
             + ", ".join(violated)

@@ -51,6 +51,35 @@ def f(x: float) -> float:
         src = """
 from pytra.std import abi
 
+@abi(args={"parts": "value"}, ret="value")
+def py_join(sep: str, parts: list[str]) -> str:
+    return sep
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "py_join"
+        ]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(
+            fn.get("decorators"),
+            ['abi(args={"parts": "value"}, ret="value")'],
+        )
+        self.assertEqual(
+            fn.get("meta", {}).get("runtime_abi_v1"),
+            {
+                "schema_version": 1,
+                "args": {"parts": "value"},
+                "ret": "value",
+            },
+        )
+
+    def test_legacy_value_readonly_alias_is_normalized_to_value(self) -> None:
+        src = """
+from pytra.std import abi
+
 @abi(args={"parts": "value_readonly"}, ret="value")
 def py_join(sep: str, parts: list[str]) -> str:
     return sep
@@ -71,7 +100,7 @@ def py_join(sep: str, parts: list[str]) -> str:
             fn.get("meta", {}).get("runtime_abi_v1"),
             {
                 "schema_version": 1,
-                "args": {"parts": "value_readonly"},
+                "args": {"parts": "value"},
                 "ret": "value",
             },
         )
@@ -81,7 +110,7 @@ def py_join(sep: str, parts: list[str]) -> str:
 from pytra.std import extern, abi
 
 @extern
-@abi(args={"xs": "value_readonly"}, ret="value")
+@abi(args={"xs": "value"}, ret="value")
 def clone(xs: list[int]) -> list[int]:
     return xs
 """
@@ -95,14 +124,38 @@ def clone(xs: list[int]) -> list[int]:
         fn = funcs[0]
         self.assertEqual(
             fn.get("decorators"),
-            ["extern", 'abi(args={"xs": "value_readonly"}, ret="value")'],
+            ["extern", 'abi(args={"xs": "value"}, ret="value")'],
         )
         self.assertEqual(
             fn.get("meta", {}).get("runtime_abi_v1"),
             {
                 "schema_version": 1,
-                "args": {"xs": "value_readonly"},
+                "args": {"xs": "value"},
                 "ret": "value",
+            },
+        )
+
+    def test_top_level_abi_decorator_accepts_value_mut_arg(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi(args={"xs": "value_mut"})
+def sort_inplace(xs: list[int]) -> None:
+    return None
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "sort_inplace"
+        ]
+        self.assertEqual(len(funcs), 1)
+        self.assertEqual(
+            funcs[0].get("meta", {}).get("runtime_abi_v1"),
+            {
+                "schema_version": 1,
+                "args": {"xs": "value_mut"},
+                "ret": "default",
             },
         )
 
@@ -111,7 +164,7 @@ def clone(xs: list[int]) -> list[int]:
 from pytra.std import abi
 
 class Box:
-    @abi(args={"xs": "value_readonly"})
+    @abi(args={"xs": "value"})
     def f(self, xs: list[int]) -> list[int]:
         return xs
 """
@@ -131,18 +184,30 @@ def f(xs: list[int]) -> list[int]:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         self.assertIn("abi decorator accepts keyword arguments only", str(cm.exception))
 
-    def test_value_readonly_abi_rejects_mutating_append(self) -> None:
+    def test_value_mut_is_rejected_for_return_mode(self) -> None:
         src = """
 from pytra.std import abi
 
-@abi(args={"parts": "value_readonly"})
+@abi(ret="value_mut")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("unsupported abi mode for abi ret", str(cm.exception))
+
+    def test_value_abi_rejects_mutating_append(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi(args={"parts": "value"})
 def py_join(parts: list[str]) -> str:
     parts.append("x")
     return ""
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
-        self.assertIn("value_readonly parameter mutated", str(cm.exception))
+        self.assertIn("value parameter mutated", str(cm.exception))
         self.assertIn("parts", str(cm.exception))
 
     def test_quoted_type_annotation_is_normalized(self) -> None:

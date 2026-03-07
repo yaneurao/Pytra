@@ -60,7 +60,9 @@ _SH_TYPE_ALIASES: dict[str, str] = {
     "Set": "set",
 }
 _SH_EMPTY_SPAN: dict[str, Any] = {}
-_SH_RUNTIME_ABI_MODES = {"default", "value", "value_readonly"}
+_SH_RUNTIME_ABI_ARG_MODES = {"default", "value", "value_mut"}
+_SH_RUNTIME_ABI_RET_MODES = {"default", "value"}
+_SH_RUNTIME_ABI_MODE_ALIASES = {"value_readonly": "value"}
 
 
 def _sh_default_type_aliases() -> dict[str, str]:
@@ -587,15 +589,24 @@ def _sh_parse_runtime_abi_string_literal(text: str, *, line_no: int, line_text: 
     )
 
 
-def _sh_parse_runtime_abi_mode(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
+def _sh_parse_runtime_abi_mode(
+    text: str,
+    *,
+    line_no: int,
+    line_text: str,
+    field_name: str,
+    allowed_modes: set[str],
+    hint_text: str,
+) -> str:
     mode = _sh_parse_runtime_abi_string_literal(text, line_no=line_no, line_text=line_text, field_name=field_name)
-    if mode in _SH_RUNTIME_ABI_MODES:
-        return mode
+    normalized = _SH_RUNTIME_ABI_MODE_ALIASES.get(mode, mode)
+    if normalized in allowed_modes:
+        return normalized
     raise _make_east_build_error(
         kind="unsupported_syntax",
         message=f"unsupported abi mode for {field_name}: {mode}",
         source_span=_sh_span(line_no, 0, len(line_text)),
-        hint='Use one of "default", "value", or "value_readonly".',
+        hint=hint_text,
     )
 
 
@@ -608,7 +619,7 @@ def _sh_parse_runtime_abi_args_map(text: str, *, line_no: int, line_text: str) -
             kind="unsupported_syntax",
             message=f"abi args must be a dict literal: {raw}",
             source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Use args={"param": "value_readonly"} form.',
+            hint='Use args={"param": "value"} form.',
         )
     inner = raw[1:-1].strip()
     if inner == "":
@@ -652,6 +663,8 @@ def _sh_parse_runtime_abi_args_map(text: str, *, line_no: int, line_text: str) -
             line_no=line_no,
             line_text=line_text,
             field_name=f"abi args[{key}]",
+            allowed_modes=_SH_RUNTIME_ABI_ARG_MODES,
+            hint_text='Use one of "default", "value", or "value_mut".',
         )
     return out
 
@@ -677,7 +690,7 @@ def _sh_parse_runtime_abi_decorator(
             kind="unsupported_syntax",
             message="abi decorator requires keyword-only call form",
             source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Use `@abi(args={"name": "value_readonly"}, ret="value")`.',
+            hint='Use `@abi(args={"name": "value"}, ret="value")`.',
         )
     out_args: dict[str, str] = {}
     out_ret = "default"
@@ -713,6 +726,8 @@ def _sh_parse_runtime_abi_decorator(
                 line_no=line_no,
                 line_text=line_text,
                 field_name="abi ret",
+                allowed_modes=_SH_RUNTIME_ABI_RET_MODES,
+                hint_text='Use one of "default" or "value".',
             )
             continue
         raise _make_east_build_error(

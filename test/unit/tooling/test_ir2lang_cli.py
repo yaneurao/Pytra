@@ -80,7 +80,7 @@ class Ir2langCliTest(unittest.TestCase):
                         _ = ir2lang_mod.main()
         self.assertEqual(cm.exception.code, 2)
 
-    def test_rejects_value_readonly_mutation_before_backend_dispatch(self) -> None:
+    def test_rejects_value_mutation_before_backend_dispatch(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             src_json = self._write_east_json(
@@ -133,7 +133,7 @@ class Ir2langCliTest(unittest.TestCase):
                 ):
                     with self.assertRaises(RuntimeError) as cm:
                         _ = ir2lang_mod.main()
-        self.assertIn("value_readonly parameter mutated", str(cm.exception))
+        self.assertIn("value parameter mutated", str(cm.exception))
 
     def test_rejects_runtime_abi_for_unsupported_target_before_backend_dispatch(self) -> None:
         with tempfile.TemporaryDirectory() as td:
