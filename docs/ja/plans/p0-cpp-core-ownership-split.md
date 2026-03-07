@@ -269,6 +269,7 @@ Phase 1 契約固定:
 - `src/runtime/cpp/generated/core/README.md` を追加し、`generated/core/` を「まだ real artifact が 0 件でも維持する正式レイアウト」として repo 上に定着させた。
 - `tools/check_runtime_cpp_layout.py` は `generated/core` と `native/core` の directory 自体が存在しない場合も fail するよう更新し、ownership split lane の消失を防ぐ guard にした。
 - compile/source 解決の representative proof は既存 synthetic unit を正式レイアウト前提に据えたまま維持し、`test_runtime_symbol_index.py` の `core/dict.ext.h -> generated/core/dict.ext.cpp + native/core/dict.ext.cpp` と `test_cpp_runtime_build_graph.py` の `runtime_cpp_candidates_from_header(core/dict.ext.h)` が green であることを再確認した。
+- `generated/core` に置いてよい条件も固定した。許可するのは「pure Python SoT から機械変換でき、`core/...` include 面を崩さず、`native/core` 直 include や C++ 固有 ownership/ABI glue を必要としない low-level helper」のみとし、`gc/io`・object/container 表現・RC/GC・例外/I/O 集約・高レベル module runtime の逆流入は当面 `native/core` 側に留める。
 
 ## 分解
 
@@ -285,7 +286,7 @@ Phase 1 契約固定:
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
 
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-01] `generated/core/` の正式レイアウトを追加し、real candidate か synthetic fixture で compile/source 解決を 1 件実証する。
-- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-02] generated/core に置く条件と、まだ置けない core helper を判定する基準を決定ログへ固定する。
+- [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-02] generated/core に置く条件と、まだ置けない core helper を判定する基準を決定ログへ固定する。
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S5-01] spec / README / representative tests を更新し、`core handwritten-only` 前提を廃止する。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S5-02] TODO / archive / guard を更新し、core ownership split を完了扱いで閉じる。
@@ -303,3 +304,4 @@ Phase 1 契約固定:
 - 2026-03-07: `S3-02` として `dict/exceptions/gc/io/list/py_runtime/py_scalar_types/py_types/set/str` の handwritten core header 正本を `native/core/` へ移し、`core/*.ext.h` はすべて forwarder に縮退させた。compile / parity / inventory guard は `core/...` 互換 include のまま green を維持し、`runtime_symbol_index` 上の core ownership も `ext` から `native` へ寄せた。
 - 2026-03-07: `S3-03` として `native/core` の直接 include を `core/*.ext.h` forwarder だけに制限する guard を追加した。synthetic layout test で generated runtime からの直接 include を fail-fast にし、backend integration test では transpile 出力が引き続き `runtime/cpp/core/py_runtime.ext.h` を使い `runtime/cpp/native/core/...` を出さないことを固定した。
 - 2026-03-07: `S4-01` として `src/runtime/cpp/generated/core/README.md` を追加し、`generated/core` を空レーンでも消してはいけない正式レイアウトへ昇格させた。`check_runtime_cpp_layout.py` は `generated/core` / `native/core` の directory 存在自体を要求するよう更新し、compile/source 解決の実証は `test_runtime_symbol_index.py` と `test_cpp_runtime_build_graph.py` の synthetic `dict.ext` ケースを green のまま維持する形で固定した。
+- 2026-03-07: `S4-02` として `generated/core` の受け入れ基準を固定した。SoT から機械変換でき、`core/...` include 面を壊さず、`native/core` 直 include や C++ 固有 ownership/ABI glue を必要としない low-level helper だけを `generated/core` 候補とし、`gc/io`・object/container 表現・RC/GC・例外/I/O 集約・高レベル module runtime 逆流入は当面 `native/core` に留める。
