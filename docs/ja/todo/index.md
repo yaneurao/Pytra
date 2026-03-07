@@ -38,7 +38,7 @@
 
 1. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01] C++ low-level runtime (`core`) に `generated/core` + `native/core` を導入し、stable include 面を保ったまま generated/handwritten の物理混在を解消する。
 2. [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-01] `src/runtime/cpp/core/` の既存ファイルを `compat surface` / `native 正本` / `generated 候補` / `非対象` に分類し、移行マップを作る。
-3. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
+3. [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
 4. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
 5. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-02] `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` を core split 前提へ更新し、`core/` 実装再侵入・marker 混在を fail-fast 化する。
 6. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
