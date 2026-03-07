@@ -262,6 +262,7 @@ Phase 1 契約固定:
 - `tools/runtime_symbol_index.json` を再生成し、`pytra.core.gc` / `pytra.core.io` の compile source が `native/core/*.ext.cpp` を指す状態へ同期した。
 - handwritten core header の正本も `src/runtime/cpp/native/core/` へ移し、`src/runtime/cpp/core/*.ext.h` は `runtime/cpp/native/core/*.ext.h` を読む薄い forwarder に差し替えた。`py_runtime.ext.h` inventory guard は `native/core` 正本を検査し、`core/py_runtime.ext.h` が forwarder であることも固定した。
 - `tools/check_runtime_cpp_layout.py` の `py_runtime` duplicate scan は `native/core/py_runtime.ext.h` を優先して見るよう更新し、`test_runtime_symbol_index.py` では `pytra.core.dict` が public header は `core/dict.ext.h` のまま、ownership は `native` になることを固定した。
+- `tools/check_runtime_cpp_layout.py` に「`runtime/cpp/native/core/...` を直接 include してよいのは `core/*.ext.h` forwarder だけ」という guard を追加し、synthetic test で generated runtime からの直接 include を fail-fast 化した。backend integration でも transpile 出力が `runtime/cpp/core/py_runtime.ext.h` を維持し、`native/core` を踏まないことを固定した。
 
 ## 分解
 
@@ -275,7 +276,7 @@ Phase 1 契約固定:
 
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-02] handwritten core header (`py_runtime/py_types/list/dict/set/str` など) を `native/core/` 正本へ移し、`core/` には互換 forwarder / façade だけを残す。
-- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
+- [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-01] `generated/core/` の正式レイアウトを追加し、real candidate か synthetic fixture で compile/source 解決を 1 件実証する。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-02] generated/core に置く条件と、まだ置けない core helper を判定する基準を決定ログへ固定する。
@@ -294,3 +295,4 @@ Phase 1 契約固定:
 - 2026-03-07: `S2-02` として `check_runtime_cpp_layout.py` / `check_runtime_core_gen_markers.py` を core split 前提へ更新した。移行期の `core/` には legacy baseline の `gc/io` 以外の `.cpp` を許さず、`pytra/core` も unsupported bucket として fail-fast にしたうえで、C++ `generated/core` / `native/core` / `core` surface の marker 契約を separate guard で固定した。
 - 2026-03-07: `S3-01` として `gc.ext.cpp` / `io.ext.cpp` を `native/core/` へ移し、`core/` から handwritten compile source を除去した。`core/*.ext.h` include 面は維持しつつ、runtime symbol index・build graph・runtime smoke・image parity は `native/core/*.ext.cpp` を使うよう同期した。
 - 2026-03-07: `S3-02` として `dict/exceptions/gc/io/list/py_runtime/py_scalar_types/py_types/set/str` の handwritten core header 正本を `native/core/` へ移し、`core/*.ext.h` はすべて forwarder に縮退させた。compile / parity / inventory guard は `core/...` 互換 include のまま green を維持し、`runtime_symbol_index` 上の core ownership も `ext` から `native` へ寄せた。
+- 2026-03-07: `S3-03` として `native/core` の直接 include を `core/*.ext.h` forwarder だけに制限する guard を追加した。synthetic layout test で generated runtime からの直接 include を fail-fast にし、backend integration test では transpile 出力が引き続き `runtime/cpp/core/py_runtime.ext.h` を使い `runtime/cpp/native/core/...` を出さないことを固定した。
