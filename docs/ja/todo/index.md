@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-07
+最終更新: 2026-03-08
 
 ## 文脈運用ルール
 
@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p0-backend-runtime-knowledge-leak-retirement.md](../plans/p0-backend-runtime-knowledge-leak-retirement.md)
 
 1. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01] backend / emitter から source-side runtime module 名と ad-hoc helper ABI の知識を撤去し、resolved runtime symbol / semantic tag / adapter kind の data-driven 契約へ統一する。
-2. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S1-01] `src/backends/**` の `math/gif/png/save_gif/write_rgb_png/pyMath*` leakage を target 別・類型別に棚卸しし、代表ケースを固定する。
+2. [x] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S1-01] `src/backends/**` の `math/gif/png/save_gif/write_rgb_png/pyMath*` leakage を target 別・類型別に棚卸しし、代表ケースを固定する。
 3. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S1-02] `spec-runtime` / `spec-dev` に backend 禁止事項と resolved metadata 正規導線を明文化する。
 4. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S2-01] runtime symbol index / import binding API を拡張し、module import / function import / constant import / semantic tag を backend 外で解決できるようにする。
 5. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S2-02] helper ABI 差異を adapter kind へ正規化し、`save_gif` などの引数規約を emitter 直書きから外す。
