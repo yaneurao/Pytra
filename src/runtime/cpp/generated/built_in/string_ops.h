@@ -2,14 +2,15 @@
 // source: src/pytra/built_in/string_ops.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_BUILT_IN_STRING_OPS_GEN_H
-#define PYTRA_BUILT_IN_STRING_OPS_GEN_H
+#ifndef PYTRA_GENERATED_BUILT_IN_STRING_OPS_H
+#define PYTRA_GENERATED_BUILT_IN_STRING_OPS_H
 
 #include "runtime/cpp/core/py_types.h"
 
 bool _is_space(const str& ch);
 bool _contains_char(const str& chars, const str& ch);
 int64 _normalize_index(int64 idx, int64 n);
+str py_join(const str& sep, const list<str>& parts);
 str py_lstrip(const str& s);
 str py_lstrip_chars(const str& s, const str& chars);
 str py_rstrip(const str& s);
@@ -24,4 +25,4 @@ int64 py_rfind(const str& s, const str& needle);
 int64 py_rfind_window(const str& s, const str& needle, int64 start, int64 end);
 str py_replace(const str& s, const str& oldv, const str& newv);
 
-#endif  // PYTRA_BUILT_IN_STRING_OPS_GEN_H
+#endif  // PYTRA_GENERATED_BUILT_IN_STRING_OPS_H

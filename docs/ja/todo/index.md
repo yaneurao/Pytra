@@ -42,7 +42,7 @@
 4. [x] [ID: P1-RUNTIME-ABI-DECORATOR-01-S2-01] `src/pytra/std/__init__.py` に `abi` を追加し、parser / selfhost parser / AST build が decorator を保持できるようにする。
 5. [x] [ID: P1-RUNTIME-ABI-DECORATOR-01-S2-02] `value_readonly` への mutation を検出する validator / lower guard を追加する。
 6. [x] [ID: P1-RUNTIME-ABI-DECORATOR-01-S3-01] C++ backend に `@abi(args, ret)` の最小 lowering を実装し、helper signature を value ABI 正規形へ固定する。
-7. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S3-02] `py_join` など代表 helper を `@abi` 前提に移し、`rc<list<str>>` 非露出を回帰で固定する。
+7. [x] [ID: P1-RUNTIME-ABI-DECORATOR-01-S3-02] `py_join` など代表 helper を `@abi` 前提に移し、`rc<list<str>>` 非露出を回帰で固定する。
 8. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S4-01] `@extern` 併用 case / unsupported backend / invalid mutation case の unit test を追加する。
 9. [ ] [ID: P1-RUNTIME-ABI-DECORATOR-01-S4-02] docs 同期と `P1-CPP-PY-RUNTIME-SLIM-01` 依存解消メモを記録して本計画を閉じる。
 

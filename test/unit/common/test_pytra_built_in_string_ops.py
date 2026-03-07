@@ -29,6 +29,11 @@ class BuiltInStringOpsTest(unittest.TestCase):
         self.assertEqual(so.py_replace("banana", "na", "X"), "baXX")
         self.assertEqual(so.py_replace("abc", "", "X"), "abc")
 
+    def test_join(self) -> None:
+        self.assertEqual(so.py_join(",", []), "")
+        self.assertEqual(so.py_join(",", ["a"]), "a")
+        self.assertEqual(so.py_join(",", ["a", "b", "c"]), "a,b,c")
+
 
 if __name__ == "__main__":
     unittest.main()

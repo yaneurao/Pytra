@@ -1,5 +1,7 @@
 """Pure-Python source-of-truth for string helper built-ins."""
 
+from pytra.std import abi
+
 
 def _is_space(ch: str) -> bool:
     return ch == " " or ch == "\t" or ch == "\n" or ch == "\r"
@@ -23,6 +25,21 @@ def _normalize_index(idx: int, n: int) -> int:
         out = 0
     if out > n:
         out = n
+    return out
+
+
+@abi(args={"parts": "value_readonly"}, ret="value")
+def py_join(sep: str, parts: list[str]) -> str:
+    n = len(parts)
+    if n == 0:
+        return ""
+    out = ""
+    i = 0
+    while i < n:
+        if i > 0:
+            out += sep
+        out += parts[i]
+        i += 1
     return out
 
 
