@@ -830,7 +830,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     adapter_kind_any = expr.get("runtime_call_adapter_kind")
     adapter_kind = adapter_kind_any if isinstance(adapter_kind_any, str) else ""
-    if semantic_tag == "stdlib.symbol.Path":
+    callee_name = _call_name(expr)
+    resolved_type_any = expr.get("resolved_type")
+    resolved_type = resolved_type_any if isinstance(resolved_type_any, str) else ""
+    if semantic_tag == "stdlib.symbol.Path" or (
+        callee_name == "Path" and resolved_type == "Path" and "Path" not in _CLASS_NAMES
+    ):
         if len(args) == 0:
             return "NewPath(\"\")"
         return "NewPath(" + _render_expr(args[0]) + ")"
@@ -859,7 +864,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 + ")"
             )
 
-    callee_name = _call_name(expr)
     if callee_name.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
         i = 0

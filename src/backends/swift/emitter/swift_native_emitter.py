@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
 _SWIFT_KEYWORDS = {

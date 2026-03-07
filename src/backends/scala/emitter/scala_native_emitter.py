@@ -1079,6 +1079,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     adapter_kind_any = expr.get("runtime_call_adapter_kind")
     adapter_kind = adapter_kind_any if isinstance(adapter_kind_any, str) else ""
+    resolved_type_any = expr.get("resolved_type")
+    resolved_type = resolved_type_any if isinstance(resolved_type_any, str) else ""
+    if semantic_tag == "stdlib.symbol.Path" or (
+        callee == "Path" and resolved_type == "Path" and "Path" not in _CLASS_NAMES
+    ):
+        if len(args) == 0:
+            return "__pytra_path_new(\"\")"
+        return "__pytra_path_new(" + _render_expr(args[0]) + ")"
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if semantic_tag.startswith("stdlib.") and runtime_call == "":
         raise RuntimeError("scala native emitter: unresolved stdlib runtime call: " + semantic_tag)

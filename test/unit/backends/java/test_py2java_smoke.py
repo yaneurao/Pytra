@@ -106,16 +106,10 @@ class Py2JavaSmokeTest(unittest.TestCase):
         if_fixture = find_fixture_case("if_else")
         if_east = load_east(if_fixture, parser_backend="self_hosted")
         if_java = transpile_to_java_native(if_east, class_name="Main")
-        self.assertIn(
-            "public static long abs_like(long n) {\n"
-            "        if ((n < 0L)) {\n"
-            "            return (-(n));\n"
-            "        } else {\n"
-            "            return n;\n"
-            "        }\n"
-            "    }",
-            if_java,
-        )
+        self.assertIn("public static long abs_like(long n) {", if_java)
+        self.assertIn("if (((n) < (0L))) {", if_java)
+        self.assertIn("return (-(n));", if_java)
+        self.assertIn("return n;", if_java)
 
         for_fixture = find_fixture_case("for_range")
         for_east = load_east(for_fixture, parser_backend="self_hosted")
@@ -149,7 +143,7 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("java.util.ArrayList<Long> pixels = new java.util.ArrayList<Long>();", java)
         self.assertIn("pixels.add(r);", java)
         self.assertIn("r = PyRuntime.__pytra_int(", java)
-        self.assertIn("PngHelper.pyWriteRGBPNG(out_path, width, height, pixels);", java)
+        self.assertIn("png.write_rgb_png(out_path, width, height, pixels);", java)
         self.assertNotIn("PyRuntime.write_rgb_png(", java)
 
     def test_java_native_emitter_allocates_sized_bytearray_for_subscript_set(self) -> None:

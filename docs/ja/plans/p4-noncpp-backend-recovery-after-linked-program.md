@@ -100,12 +100,11 @@ health matrix の failure category:
 
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-01] linked-program 後の non-C++ backend health matrix を作成し、各 target を failure category ごとに分類する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-02] done 条件（static/smoke/transpile/parity/toolchain missing の扱い）と修復順序を spec/plan に固定する。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` / `py2x.py` / `ir2lang.py` の non-C++ 互換層を点検し、`SingleFileProgramWriter` 前提の backend 共通契約不足を埋める。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` / `py2x.py` / `ir2lang.py` の non-C++ 互換層を点検し、`SingleFileProgramWriter` 前提の backend 共通契約不足を埋める。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] non-C++ backend health checker を追加または既存 checker を統合し、family 単位の broken/green を 1 コマンドで見られるようにする。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1（`rs/cs/js/ts`）の static contract / smoke / transpile failure を解消し、compat route を安定化する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 の parity baseline を更新し、runtime 差分と infra failure を分離する。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2（`go/java/kotlin/swift/scala`）の static contract / smoke / transpile failure を解消する。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2（`go/java/kotlin/swift/scala`）の static contract / smoke / transpile failure を解消する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 の parity baseline を更新し、`toolchain missing` / 実行 failure / artifact 差分を固定化する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3（`ruby/lua/php/nim`）の static contract / smoke / transpile failure を解消する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 の parity baseline を更新し、runtime 差分と backend bug を切り分ける。
@@ -179,11 +178,11 @@ health matrix の failure category:
 | `cs` | pass | pass | `toolchain_missing` | `toolchain_missing` | sample parity 18 case 全件 skip。 |
 | `js` | pass | pass | ok | `ok` | sample parity `18/18`。 |
 | `ts` | pass | pass | ok | `ok` | sample parity `18/18`。 |
-| `go` | fail | pass | blocked | `target_smoke_fail` | `test_go_native_emitter_uses_runtime_path_wrapper` fail。 |
-| `java` | fail | pass | blocked | `target_smoke_fail` | `pathlib.Path` runtime path class smoke が fail。 |
-| `kotlin` | pass | fail | blocked | `transpile_fail` | sample 群で多数 Traceback。 |
-| `swift` | pass | fail | blocked | `transpile_fail` | sample 群で多数 Traceback。 |
-| `scala` | fail | pass | blocked | `target_smoke_fail` | `pathlib_extended` smoke が fail。 |
+| `go` | pass | pass | pending | `pending_parity` | bare `Path(...)` ctor を runtime path wrapper へ寄せる fallback を追加し、`test_py2go_smoke.py` は 18/18。 |
+| `java` | pass | pass | pending | `pending_parity` | bare `Path(...)` ctor の runtime class fallback と `super` 保持を追加し、`test_py2java_smoke.py` は 25/25。 |
+| `kotlin` | pass | pass | pending | `pending_parity` | `runtime_symbol_index` import を `toolchain.*` へ修正し、`check_py2x_transpile.py --target kotlin` を通過。 |
+| `swift` | pass | pass | pending | `pending_parity` | `runtime_symbol_index` import を `toolchain.*` へ修正し、`check_py2x_transpile.py --target swift` を通過。 |
+| `scala` | pass | pass | pending | `pending_parity` | bare `Path(...)` ctor を `__pytra_path_new(...)` へ寄せる fallback を追加し、`test_py2scala_smoke.py` は 18/18。 |
 | `ruby` | pass | fail | blocked | `transpile_fail` | sample 群で多数 Traceback。 |
 | `lua` | fail | pass | blocked | `target_smoke_fail` | ifexp/joinedstr lowering smoke が fail。 |
 | `php` | pass | fail | blocked | `transpile_fail` | fixture/sample mixed で 9 fail。 |
@@ -200,3 +199,4 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] `tools/check_noncpp_backend_health.py` を追加し、`static_contract -> common_smoke -> target_smoke -> transpile -> parity` を family 単位で集約できるようにした。`--family` / `--targets` / `--skip-parity` / `--summary-json` を持ち、family status は `broken_targets == 0` なら `green`、`toolchain_missing` は family を壊さず別カウンタで表示する方針を採用した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1 の実 failure は `rs` smoke の `bytes(frame)` return clone に収束していたため、Rust emitter の return-context rendering を修正した。`test_py2rs_smoke.py` は 31/31 へ回復し、`sample/py/08_langtons_ant.py` の focused transpile も通過した。`js` / `ts` は初期 snapshot の green を維持、`cs` は引き続き `toolchain_missing` baseline として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 parity を再測定し、`js` / `ts` は sample parity `18/18 ok` を維持、`rs` / `cs` は sample parity 18 case 全件 `toolchain_missing` を確認した。これにより Wave 1 では backend bug と infra baseline を分離でき、残る `toolchain_missing` は修復対象ではなく実行環境依存として扱う。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2 の primary failure は `Path(...)` ctor の source-origin call が canonical runtime metadata を持たないまま backend へ流れる点と、`kotlin` / `swift` emitter が `runtime_symbol_index` を `src.*` import していた点に収束した。`go` / `java` / `scala` には bare `Path(...)` ctor fallback を追加し、`java` は `_safe_ident` で `super` を壊さないよう補正、`kotlin` / `swift` は import path を `toolchain.*` へ修正した。これにより Wave 2 は smoke/transpile green へ回復し、残る parity 計測だけを `S4-02` に分離した。

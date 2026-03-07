@@ -670,7 +670,11 @@ def _call_name(expr: dict[str, Any]) -> str:
         return ""
     if func_any.get("kind") != "Name":
         return ""
-    return _safe_ident(func_any.get("id"), "")
+    raw_any = func_any.get("id")
+    raw = raw_any if isinstance(raw_any, str) else ""
+    if raw == "super":
+        return "super"
+    return _safe_ident(raw, "")
 
 
 def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
@@ -941,6 +945,19 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     binding_module, binding_symbol = _resolved_call_binding(expr)
+    callee_name = _call_name(expr)
+    resolved_type_any = expr.get("resolved_type")
+    resolved_type = resolved_type_any if isinstance(resolved_type_any, str) else ""
+    if semantic_tag == "stdlib.symbol.Path" or (
+        callee_name == "Path"
+        and (
+            (binding_module in {"pathlib", "pytra.std.pathlib"} and binding_symbol == "Path")
+            or resolved_type == "Path"
+        )
+    ):
+        if len(args) == 0:
+            return "new pathlib.Path(\"\")"
+        return "new pathlib.Path(" + _render_expr(args[0]) + ")"
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
         rendered_runtime = _render_call_via_runtime_call(
@@ -955,7 +972,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if rendered_runtime != "":
             return rendered_runtime
 
-    callee_name = _call_name(expr)
     if callee_name == "main" and len(args) == 0:
         return "__pytra_main()"
     if callee_name == "bytearray":
