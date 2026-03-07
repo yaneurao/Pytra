@@ -23,9 +23,9 @@ namespace pytra::std::argparse {
     
 
     _ArgSpec::_ArgSpec(const rc<list<str>>& names, const str& action, const rc<list<str>>& choices, const object& py_default, const str& help_text) {
-            this->names = rc_list_copy_value(names);
+            this->names = names;
             this->action = action;
-            this->choices = rc_list_copy_value(choices);
+            this->choices = choices;
             this->py_default = make_object(py_default);
             this->help_text = help_text;
             this->is_optional = (py_len(names) > 0) && (py_startswith(py_at(names, py_to<int64>(0)), "-"));
@@ -40,23 +40,23 @@ namespace pytra::std::argparse {
 
     ArgumentParser::ArgumentParser(const str& description) {
             this->description = description;
-            this->_specs = {};
+            this->_specs = rc_list_from_value(list<_ArgSpec>{});
     }
 
     void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const rc<list<str>>& choices, const object& py_default) {
-            list<str> names = {};
+            rc<list<str>> names = rc_list_from_value(list<str>{});
             if (name0 != "")
-                names.append(name0);
+                py_append(names, name0);
             if (name1 != "")
-                names.append(name1);
+                py_append(names, name1);
             if (name2 != "")
-                names.append(name2);
+                py_append(names, name2);
             if (name3 != "")
-                names.append(name3);
-            if (names.empty())
+                py_append(names, name3);
+            if ((rc_list_ref(names)).empty())
                 throw ValueError("add_argument requires at least one name");
             _ArgSpec spec = _ArgSpec(names, action, choices, py_default, help);
-            this->_specs.append(spec);
+            py_append(this->_specs, spec);
     }
 
     void ArgumentParser::_fail(const str& msg) {
@@ -71,24 +71,24 @@ namespace pytra::std::argparse {
                 args = py_to_str_list_from_object(py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())));
             else
                 args = py_to_str_list_from_object(argv);
-            list<_ArgSpec> specs_pos = {};
-            list<_ArgSpec> specs_opt = {};
-            for (_ArgSpec s : this->_specs) {
+            rc<list<_ArgSpec>> specs_pos = rc_list_from_value(list<_ArgSpec>{});
+            rc<list<_ArgSpec>> specs_opt = rc_list_from_value(list<_ArgSpec>{});
+            for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.is_optional)
-                    specs_opt.append(s);
+                    py_append(specs_opt, s);
                 else
-                    specs_pos.append(s);
+                    py_append(specs_pos, s);
             }
             dict<str, int64> by_name = {};
             int64 spec_i = 0;
-            for (_ArgSpec s : specs_opt) {
-                for (object n : py_dyn_range(s.names)) {
+            for (_ArgSpec s : rc_list_ref(specs_opt)) {
+                for (str n : rc_list_ref(s.names)) {
                     by_name[n] = spec_i;
                 }
                 spec_i++;
             }
             dict<str, object> values = dict<str, object>{};
-            for (_ArgSpec s : this->_specs) {
+            for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.action == "store_true") {
                     values[s.dest] = make_object((!py_is_none(s.py_default) ? py_to<bool>(s.py_default) : false));
                 } else if (!py_is_none(s.py_default)) {
@@ -105,7 +105,7 @@ namespace pytra::std::argparse {
                     if (!py_contains(by_name, tok))
                         this->_fail("unknown option: " + tok);
                     auto __idx_1 = py_dict_get(by_name, tok);
-                    _ArgSpec spec = specs_opt[__idx_1];
+                    _ArgSpec spec = py_at(specs_opt, py_to<int64>(__idx_1));
                     if (spec.action == "store_true") {
                         values[spec.dest] = make_object(true);
                         i++;
@@ -122,13 +122,13 @@ namespace pytra::std::argparse {
                 }
                 if (pos_i >= py_len(specs_pos))
                     this->_fail("unexpected extra argument: " + tok);
-                _ArgSpec spec = specs_pos[pos_i];
+                _ArgSpec spec = py_at(specs_pos, py_to<int64>(pos_i));
                 values[spec.dest] = make_object(tok);
                 pos_i++;
                 i++;
             }
             if (pos_i < py_len(specs_pos))
-                this->_fail("missing required argument: " + specs_pos[pos_i].dest);
+                this->_fail("missing required argument: " + py_at(specs_pos, py_to<int64>(pos_i)).dest);
             return values;
     }
     

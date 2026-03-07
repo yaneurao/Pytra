@@ -1438,6 +1438,10 @@ class CppEmitter(
             return rendered_expr
         t = self.normalize_type_name(east_target_t)
         out = self._rewrite_nullopt_default_for_typed_target(rendered_expr, t)
+        if self._is_pyobj_ref_first_list_type(t):
+            value_default = self._cpp_list_value_model_type_text(t) + "{}"
+            if out == value_default:
+                return f"rc_list_from_value({out})"
         if not self.is_any_like_type(t):
             return out
         if out in {"object{}", "object()"}:

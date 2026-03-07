@@ -345,7 +345,7 @@ class CppCallEmitter:
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, args, arg_nodes)
                 return f"pytra::utils::assertions::{raw}({join_str_list(', ', call_args)})"
-            if isinstance(raw, str) and raw in self.ref_classes:
+            if isinstance(raw, str) and raw in self.class_names:
                 ctor_args = args
                 if len(kw) > 0:
                     ctor_arg_names = self._class_method_name_sig(raw, "__init__")
@@ -353,7 +353,9 @@ class CppCallEmitter:
                 else:
                     # class ctor でも __init__ シグネチャに合わせて boxing/unboxing を適用する。
                     ctor_args = self._coerce_args_for_class_method(raw, "__init__", ctor_args, arg_nodes)
-                return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
+                if raw in self.ref_classes:
+                    return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
+                return f"{raw}({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):
                 raise ValueError("builtin call must be lowered_kind=BuiltinCall: " + raw)
             if name_call_kind in {"legacy_isinstance", "legacy_issubclass"}:

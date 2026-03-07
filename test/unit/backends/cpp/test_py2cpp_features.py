@@ -55,7 +55,7 @@ def find_fixture_case(stem: str) -> Path:
 
 def transpile(input_py: Path, output_cpp: Path) -> None:
     east = load_east(input_py)
-    cpp = transpile_to_cpp(east)
+    cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
     output_cpp.write_text(cpp, encoding="utf-8")
 
 
@@ -3423,6 +3423,21 @@ if __name__ == "__main__":
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
+
+    def test_runtime_module_class_signature_lookup_is_repo_root_independent(self) -> None:
+        fixture = find_fixture_case("argparse_extended")
+        prev_cwd = Path.cwd()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            try:
+                east = load_east(fixture)
+                cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+            finally:
+                os.chdir(prev_cwd)
+        self.assertIn(
+            'p.add_argument("-m", "--mode", "", "", "", "", rc_list_from_value(list<str>{"a", "b"}), make_object("a"));',
+            cpp,
+        )
 
     def test_sys_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("sys_extended")
