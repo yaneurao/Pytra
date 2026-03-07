@@ -92,6 +92,11 @@ TARGETS: list[Target] = [
         "test/unit/backends/scala/test_py2scala_smoke.py",
         ["python3", "tools/check_py2x_transpile.py", "--target", "scala"],
     ),
+    Target(
+        "nim",
+        "test/unit/backends/nim/test_py2nim_smoke.py",
+        ["python3", "tools/check_py2x_transpile.py", "--target", "nim"],
+    ),
 ]
 
 PY2X_REQUIRED_PATTERNS = [
@@ -103,7 +108,9 @@ PY2X_REQUIRED_PATTERNS = [
     "resolve_layer_options(",
     "lower_ir(",
     "optimize_ir(",
-    "emit_source(",
+    "emit_module(",
+    "build_program_artifact(",
+    "get_program_writer(",
 ]
 
 COMMON_SMOKE_PATH = "test/unit/common/test_py2x_smoke_common.py"

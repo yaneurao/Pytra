@@ -102,7 +102,7 @@ health matrix の failure category:
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-02] done 条件（static/smoke/transpile/parity/toolchain missing の扱い）と修復順序を spec/plan に固定する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` / `py2x.py` / `ir2lang.py` の non-C++ 互換層を点検し、`SingleFileProgramWriter` 前提の backend 共通契約不足を埋める。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` / `py2x.py` / `ir2lang.py` の non-C++ 互換層を点検し、`SingleFileProgramWriter` 前提の backend 共通契約不足を埋める。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] non-C++ backend health checker を追加または既存 checker を統合し、family 単位の broken/green を 1 コマンドで見られるようにする。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] non-C++ backend health checker を追加または既存 checker を統合し、family 単位の broken/green を 1 コマンドで見られるようにする。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1（`rs/cs/js/ts`）の static contract / smoke / transpile failure を解消し、compat route を安定化する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 の parity baseline を更新し、runtime 差分と infra failure を分離する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2（`go/java/kotlin/swift/scala`）の static contract / smoke / transpile failure を解消する。
@@ -197,3 +197,4 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-01] static contract と common smoke は pass、初期 health matrix では `js` / `ts` が green、`cs` は `toolchain_missing`、`rs/go/java/scala/lua` は `target_smoke_fail`、`kotlin/swift/ruby/php/nim` は `transpile_fail` を primary failure として確定した。`parity` は smoke/transpile green の target だけ追加測定し、`js` / `ts` は `18/18`、`cs` は 18 case 全件 `toolchain_missing` だった。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-02] done 条件を `static_contract -> common_smoke -> target_smoke -> transpile -> parity` の gate 順へ固定し、primary failure は最初に落ちた gate で決める方針を `spec-dev` / `spec-tools` に反映した。smoke 実行の canonical `PYTHONPATH` は `src:.:test/unit` とし、`toolchain_missing` は `parity_fail` と別の infra baseline として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` の `SingleFileProgramWriter` default 自体は既に整っていたが、`py2x.py` の linked-program 非C++経路だけがまだ `emit_source + 直書き + runtime_hook` に戻っていた。これを `emit_module -> build_program_artifact -> get_program_writer` へ揃え、`ir2lang.py` と同じ compat contract に統一した。`test_py2x_cli.py` / `test_py2x_entrypoints_contract.py` で回帰を固定している。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] `tools/check_noncpp_backend_health.py` を追加し、`static_contract -> common_smoke -> target_smoke -> transpile -> parity` を family 単位で集約できるようにした。`--family` / `--targets` / `--skip-parity` / `--summary-json` を持ち、family status は `broken_targets == 0` なら `green`、`toolchain_missing` は family を壊さず別カウンタで表示する方針を採用した。
