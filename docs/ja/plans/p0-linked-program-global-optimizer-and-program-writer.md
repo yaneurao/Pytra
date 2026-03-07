@@ -658,7 +658,7 @@ src/
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S1-02] `ModuleArtifact` / `ProgramArtifact` / `ProgramWriter` の backend 共通契約を定義し、`spec-dev` / `spec-make` へ反映する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `LinkedProgram` loader / validator / manifest I/O を追加し、複数 `EAST3` を deterministic に読めるようにする。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S2-02] `py2x.py` の in-memory 導線を module map から `LinkedProgram` 構築へ切り替え、single-module 前提を外す。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] program-wide call graph / SCC fixed point を linker 段へ実装し、import-closure 内部読込に依存しない global 解析基盤を作る。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] program-wide call graph / SCC fixed point を linker 段へ実装し、import-closure 内部読込に依存しない global 解析基盤を作る。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S3-02] global non-escape / container ownership / `type_id` 決定を linker 段へ実装し、linked module と `link-output.json` へ materialize する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S4-01] `EAST3 local optimizer` と `LinkedProgramOptimizer` の pass 責務を再分割し、whole-program 依存 pass を local optimizer から撤去する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` を `emit_module + program_writer` 契約へ拡張し、旧 `emit -> str` API を互換 wrapper 化する。
@@ -681,3 +681,4 @@ src/
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S1-02] `spec-dev.md` で `ModuleEmitter -> ModuleArtifact -> ProgramWriter` の backend 共通境界を固定し、`spec-make.md` では `manifest.json` を `CppProgramWriter` が出力する `ProgramArtifact` の concrete build manifest として位置づけた。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `program_model.py` / `program_validator.py` / `link_manifest_io.py` / `program_loader.py` を追加し、`pytra.link_input.v1` から raw `EAST3` 群を決定的順序で読む `LinkedProgram` loader を実装した。`test/unit/link/test_program_loader.py` で entry/dispatch/raw-meta 契約を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S2-02] `LinkedProgram` を manifest-backed / in-memory の両方で扱えるよう `manifest_path=None` / `artifact_path=None` を許す model に拡張し、`py2x.py` は `.py` 入力時に `build_module_east_map(...) -> build_linked_program_from_module_map(...)` を通るよう更新した。`dump-east3-*` は entry module のみへ出す挙動に絞り、`test/unit/tooling/test_py2x_cli.py` と `test/unit/link/test_program_loader.py` で entry selection / JSON fallback / in-memory serialization guard を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] `src/toolchain/link/program_call_graph.py` を追加し、`LinkedProgram.modules` だけを入力に使う program-wide call graph / SCC builder を実装した。既存 `non_escape_call_graph` utility は再利用するが、欠けた callee を追加読込せず unresolved count に落とす方針を固定し、`test/unit/link/test_program_call_graph.py` で cross-module edge / mutual recursion SCC / missing module non-load を回帰化した。
