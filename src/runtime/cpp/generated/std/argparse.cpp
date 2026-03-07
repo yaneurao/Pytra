@@ -5,8 +5,8 @@
 
 #include "runtime/cpp/generated/std/argparse.h"
 
-#include "built_in/string_ops.gen.h"
-#include "std/sys.gen.h"
+#include "pytra/built_in/string_ops.h"
+#include "pytra/std/sys.h"
 
 namespace pytra::std::argparse {
 

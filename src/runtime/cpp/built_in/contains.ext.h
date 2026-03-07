@@ -1,7 +1,7 @@
 #ifndef PYTRA_BUILT_IN_CONTAINS_EXT_H
 #define PYTRA_BUILT_IN_CONTAINS_EXT_H
 
-#include "runtime/cpp/built_in/contains.gen.h"
+#include "runtime/cpp/generated/built_in/contains.h"
 
 template <class T, class Q>
 static inline bool py_list_contains_ref(const list<T>& values, const Q& key) {

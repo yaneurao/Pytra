@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/built_in/type_id.gen.h"
+#include "runtime/cpp/generated/built_in/type_id.h"
 
 
 list<int64> _TYPE_IDS;

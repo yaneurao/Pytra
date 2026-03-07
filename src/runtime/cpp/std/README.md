@@ -14,5 +14,6 @@
 - `src/runtime/cpp/core/`: 手書きの低レベル runtime
 - `src/runtime/cpp/generated/std/`: `pytra.std.*` の generated runtime
 - `src/runtime/cpp/std/`: `pytra.std.*` の native companion（現行は `*.ext.cpp`）
-- `src/runtime/cpp/utils/`: `pytra.utils.*` の生成物
-- `src/runtime/cpp/built_in/`: `pytra.built_in.*` の生成物
+- `src/runtime/cpp/generated/utils/`: `pytra.utils.*` の generated runtime
+- `src/runtime/cpp/generated/built_in/`: `pytra.built_in.*` の generated runtime
+- `src/runtime/cpp/built_in/`: `pytra.built_in.*` の native helper header（現行は `*.ext.h`）

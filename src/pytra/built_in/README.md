@@ -17,7 +17,7 @@
 ## 生成対象ルール
 
 - `src/pytra/built_in/<name>.py` は
-  `src/runtime/cpp/built_in/<name>.gen.{h,cpp}` へ生成する。
+  `src/runtime/cpp/generated/built_in/<name>.{h,cpp}` へ生成し、公開 include は `src/runtime/cpp/pytra/built_in/<name>.h` から参照する。
 - 他言語も同一方針で `src/runtime/<lang>/built_in/` へ展開する。
 - 生成層を厚くし、手書き層は最小ブート処理だけに限定する。
 

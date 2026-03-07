@@ -5,7 +5,7 @@
 
 #include "runtime/cpp/generated/std/re.h"
 
-#include "built_in/string_ops.gen.h"
+#include "pytra/built_in/string_ops.h"
 
 namespace pytra::std::re {
 

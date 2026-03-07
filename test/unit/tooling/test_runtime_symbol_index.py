@@ -76,9 +76,9 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         iter_ops = cpp_modules.get("pytra.built_in.iter_ops")
         self.assertIsInstance(iter_ops, dict)
         self.assertEqual(iter_ops.get("companions"), ["generated", "native"])
-        self.assertIn("src/runtime/cpp/built_in/iter_ops.gen.h", iter_ops.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/built_in/iter_ops.ext.h", iter_ops.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/built_in/iter_ops.gen.cpp", iter_ops.get("compile_sources", []))
+        self.assertIn("src/runtime/cpp/pytra/built_in/iter_ops.h", iter_ops.get("public_headers", []))
+        self.assertNotIn("src/runtime/cpp/built_in/iter_ops.gen.h", iter_ops.get("public_headers", []))
+        self.assertIn("src/runtime/cpp/generated/built_in/iter_ops.cpp", iter_ops.get("compile_sources", []))
 
         time_mod = cpp_modules.get("pytra.std.time")
         self.assertIsInstance(time_mod, dict)
@@ -145,7 +145,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         )
         self.assertEqual(
             lookup_target_module_primary_header("cpp", "pytra.built_in.iter_ops"),
-            "src/runtime/cpp/built_in/iter_ops.gen.h",
+            "src/runtime/cpp/pytra/built_in/iter_ops.h",
         )
         self.assertEqual(
             lookup_target_module_primary_header("cpp", "pytra.utils.png"),
@@ -156,6 +156,10 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn(
             "src/runtime/cpp/std/time.ext.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.std.time"),
+        )
+        self.assertIn(
+            "src/runtime/cpp/generated/built_in/iter_ops.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.built_in.iter_ops"),
         )
         self.assertIn(
             "src/runtime/cpp/generated/utils/png.cpp",

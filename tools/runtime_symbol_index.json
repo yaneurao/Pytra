@@ -790,11 +790,10 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/built_in/contains.gen.cpp"
+            "src/runtime/cpp/generated/built_in/contains.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/built_in/contains.gen.h",
-            "src/runtime/cpp/built_in/contains.ext.h"
+            "src/runtime/cpp/pytra/built_in/contains.h"
           ]
         },
         "pytra.built_in.iter_ops": {
@@ -803,11 +802,10 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/built_in/iter_ops.gen.cpp"
+            "src/runtime/cpp/generated/built_in/iter_ops.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/built_in/iter_ops.gen.h",
-            "src/runtime/cpp/built_in/iter_ops.ext.h"
+            "src/runtime/cpp/pytra/built_in/iter_ops.h"
           ]
         },
         "pytra.built_in.predicates": {
@@ -815,10 +813,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/built_in/predicates.gen.cpp"
+            "src/runtime/cpp/generated/built_in/predicates.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/built_in/predicates.gen.h"
+            "src/runtime/cpp/pytra/built_in/predicates.h"
           ]
         },
         "pytra.built_in.sequence": {
@@ -827,11 +825,10 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/built_in/sequence.gen.cpp"
+            "src/runtime/cpp/generated/built_in/sequence.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/built_in/sequence.gen.h",
-            "src/runtime/cpp/built_in/sequence.ext.h"
+            "src/runtime/cpp/pytra/built_in/sequence.h"
           ]
         },
         "pytra.built_in.string_ops": {
@@ -839,10 +836,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/built_in/string_ops.gen.cpp"
+            "src/runtime/cpp/generated/built_in/string_ops.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/built_in/string_ops.gen.h"
+            "src/runtime/cpp/pytra/built_in/string_ops.h"
           ]
         },
         "pytra.built_in.type_id": {
@@ -850,10 +847,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/built_in/type_id.gen.cpp"
+            "src/runtime/cpp/generated/built_in/type_id.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/built_in/type_id.gen.h"
+            "src/runtime/cpp/pytra/built_in/type_id.h"
           ]
         },
         "pytra.core.dict": {

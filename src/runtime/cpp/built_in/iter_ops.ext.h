@@ -1,7 +1,7 @@
 #ifndef PYTRA_BUILT_IN_ITER_OPS_EXT_H
 #define PYTRA_BUILT_IN_ITER_OPS_EXT_H
 
-#include "runtime/cpp/built_in/iter_ops.gen.h"
+#include "runtime/cpp/generated/built_in/iter_ops.h"
 
 template <class T>
 static inline list<T> py_reversed_list_copy(const list<T>& values) {

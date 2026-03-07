@@ -233,6 +233,9 @@ src/runtime/cpp/
 - `src/runtime/cpp/utils/*.gen.h|*.gen.cpp` を `src/runtime/cpp/generated/utils/*.h|*.cpp` へ移し、checked-in utils generated artifact の正本配置を実ファイルとして切り替えた。
 - `src/runtime/cpp/pytra/utils/*.h` は `runtime/cpp/generated/utils/*.h` を forward する shim に同期し、`assertions` 用 shim も追加した。
 - `tools/runtime_generation_manifest.json` / `tools/verify_image_runtime_parity.py` / `tools/check_runtime_std_sot_guard.py` / `runtime_symbol_index` 系 test を `generated/utils` 前提へ更新した。
+- `src/runtime/cpp/built_in/*.gen.h|*.gen.cpp` を `src/runtime/cpp/generated/built_in/*.h|*.cpp` へ移し、legacy `built_in/` 直下は native helper header (`*.ext.h`) だけを残す構成へ切り替えた。
+- `src/runtime/cpp/pytra/built_in/*.h` shim を追加し、generated std artifact の built-in import も `pytra/built_in/*.h` / `pytra/std/sys.h` へ寄せた。
+- `py_runtime.ext.h` / runtime symbol index / type_id・iterable 系 test を `generated/built_in` + `pytra/built_in` 前提へ更新した。
 
 ## 受け入れ基準
 
@@ -265,7 +268,7 @@ src/runtime/cpp/
 
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-01] `std/` の generated runtime を `generated/std/` へ移し、`pytra/std/*.h` shim を同期する。
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。
 
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-01] 既存 module companion を `native/` へ移し、`native/*.h` を最小化する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
@@ -286,3 +289,4 @@ src/runtime/cpp/
 - 2026-03-07: `std` generated artifact は checked-in 実ファイルとして `generated/std` へ移し、`std/` 直下は native companion (`*.ext.cpp`) と補足文書だけを残す構成へ切り替えた。
 - 2026-03-07: `utils` generated artifact も checked-in 実ファイルとして `generated/utils` へ移し、`pytra/utils/*.h` shim と runtime parity / manifest / index test を同時更新して旧 `utils/*.gen.*` 参照を解消した。
 - 2026-03-07: `utils` の再生成物は list ref-first TODO の未完了分で semantic drift を含んだため、本フェーズでは旧 checked-in artifact の挙動を `generated/utils` へ持ち上げ、レイアウト移行と semantic change を分離した。
+- 2026-03-07: `built_in` generated artifact も rename ベースで `generated/built_in` へ移し、`pytra/built_in/*.h` shim を追加した。generated std artifact は stable include 面として `pytra/built_in/*.h` を参照するよう合わせた。

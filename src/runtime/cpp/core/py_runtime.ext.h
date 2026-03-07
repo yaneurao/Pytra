@@ -27,10 +27,10 @@
 #include "py_types.ext.h"
 #include "exceptions.ext.h"
 #include "io.ext.h"
-#include "runtime/cpp/built_in/predicates.gen.h"
+#include "runtime/cpp/generated/built_in/predicates.h"
 #include "runtime/cpp/built_in/sequence.ext.h"
-#include "runtime/cpp/built_in/sequence.gen.h"
-#include "runtime/cpp/built_in/string_ops.gen.h"
+#include "runtime/cpp/generated/built_in/sequence.h"
+#include "runtime/cpp/generated/built_in/string_ops.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
 
 template <class T>
@@ -2408,7 +2408,7 @@ static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(
 static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
 
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
-#include "runtime/cpp/built_in/type_id.gen.h"
+#include "runtime/cpp/generated/built_in/type_id.h"
 
 static inline dict<uint32, uint32>& py_runtime_user_type_base_registry() {
     static dict<uint32, uint32> user_type_base{};

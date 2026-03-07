@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/built_in/contains.gen.h"
+#include "runtime/cpp/generated/built_in/contains.h"
 
 
 /* Pure-Python source-of-truth for containment helpers. */
