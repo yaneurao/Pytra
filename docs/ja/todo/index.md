@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p1-cpp-py-runtime-core-slimming.md](../plans/p1-cpp-py-runtime-core-slimming.md)
 
 1. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01] `native/core/py_runtime.h` から pure Python で表現可能な built_in semantics を分離し、`core` を low-level ABI / object / container / process glue 中心へ縮退させる。
-2. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
+2. [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
 3. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` / `spec-dev` に `py_runtime` の責務境界と「残してよいもの / 戻すべきもの」を明文化する。
 4. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] `src/pytra/built_in/*.py` 側へ戻す候補を決め、SoT 上の配置案を固定する。
 5. [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/core` または `generated/built_in` の emission lane に必要な generator / layout 契約を整備する。

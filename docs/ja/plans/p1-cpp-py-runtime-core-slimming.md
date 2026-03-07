@@ -1,6 +1,6 @@
 # P1: C++ `py_runtime` を低レベル glue へ縮退させる
 
-最終更新: 2026-03-07
+最終更新: 2026-03-08
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-CPP-PY-RUNTIME-SLIM-01`
@@ -177,7 +177,7 @@
 
 ## 5. 具体タスク分解
 
-- [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
+- [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` / `spec-dev` に `py_runtime` の責務境界と「残してよいもの / 戻すべきもの」を明文化する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] `src/pytra/built_in/*.py` 側へ戻す候補を決め、SoT 上の配置案を固定する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/core` または `generated/built_in` の emission lane に必要な generator / layout 契約を整備する。
@@ -185,6 +185,37 @@
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-02] `native/core/py_runtime.h` を low-level ABI / object / container / process glue 中心へ整理し、include 集約を最小化する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-01] runtime symbol index / build graph / representative C++ runtime tests を新しい ownership に追従させる。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
+
+## 5.1 棚卸し結果
+
+対象ファイル: [src/runtime/cpp/native/core/py_runtime.h](../../../src/runtime/cpp/native/core/py_runtime.h)
+
+`native/core` に残す確定群:
+- `PyIntObj` / `PyFloatObj` / `PyBoolObj` / `PyStrObj` / `PyListObj` / `PyDictObj` / `PySetObj` と iterator object 群（`PyListIterObj` / `PyDictKeyIterObj` / `PyStrIterObj`）。
+- `object_new` / `make_object` / `obj_to_*` / `py_to*` / `py_len` / `py_to_string` などの boxing / unboxing / dynamic conversion family。
+- `py_list_*` / `py_dict_*` / `py_at` / `py_slice` / `py_append` / `py_set_at` / `py_extend` / `py_pop` / `py_clear` / `py_reverse` / `py_sort` の low-level container primitive family。
+- `py_runtime_user_type_base_registry` / `py_register_class_type` / `py_is_subtype` / `py_runtime_type_id` / `py_isinstance` の type_id / subtype registry family。
+- `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range_*` / operator overload 群 / `py_runtime_argv*` / `py_runtime_write_stdout` / `py_runtime_write_stderr` などの process / dynamic dispatch / C++ glue family。
+
+`generated/built_in` へ戻す確定候補:
+- `str::split` / `splitlines` / `count` / `join`。この4件は pure Python SoT へ戻せる文字列 built_in semantics で、`join` は `@abi` lane で先行実証済み。
+- `zip` / `sorted` / `sum` / `py_min` / `py_max`。いずれも高水準 built_in algorithm で、`native/core` に置く必然が薄い。
+
+`generated/core` の即時確定候補:
+- 現時点では 0 件。`py_runtime.h` 内の generic helper は大半が `object` / `std::any` / template / operator overload と密結合しており、low-level ownership を切らずに pure helper だけ抜くには lane 設計が先に必要。
+
+`native/built_in` の即時確定候補:
+- 現時点では 0 件。`py_runtime.h` 内の high-level helper で C++ 標準ライブラリ glue が本質なものはまだ薄くなく、まずは `generated/built_in` へ戻せる群を優先する。
+
+保留:
+- `py_ord` / `py_chr` / `py_to_int64_base` などの scalar conversion family。
+- `dict_get_*` / `dict_get_node` / `py_dict_get_default` などの dynamic object access convenience family。
+- `py_div` / `py_floordiv` / `py_mod` と object/`std::any` operator overload family。
+- `py_dict_items` / `py_dict_keys` / `py_dict_values` と `py_at(const str&)` を含む mixed helper family。
+
+保留理由:
+- いずれも pure Python semantics に見える一方で、`object` / `std::any` / `optional` / template specialization と結びついており、`generated/core` lane の設計なしに切り離すと ownership と include 依存を壊しやすい。
+- `generated/built_in` へ戻すべきか `native/core` に残すべきかは、`S1-02` の責務境界固定と `S2-02` の emission lane 設計後に再判定する。
 
 ## 6. リスク
 
@@ -199,3 +230,4 @@
 - 2026-03-07: 優先順位としては、P0-LINKED-PROGRAM-OPT-01 と P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01 の後段で扱うのが安全と判断し、P1 へ積む方針を採用した。
 - 2026-03-07: `str.join` など `list[...]` helper を pure Python SoT へ戻すには、generated helper 側に fixed ABI override が必要と判断した。そのため P1-RUNTIME-ABI-DECORATOR-01 を本計画の先行依存に追加した。
 - 2026-03-08: runtime-abi decorator plan が完了し、`src/pytra/built_in/string_ops.py` の `py_join` は `@abi(args={"parts": "value_readonly"}, ret="value")` 付き pure Python SoT として generated C++ helper へ移行済みになった。`py_runtime` 縮退では同じ fixed-ABI helper lane を再利用できるため、`str.join` は blocker ではなく代表移行済みケースとして扱う。
+- 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `src/runtime/cpp/native/core/py_runtime.h`（3267行）を family 単位で棚卸しし、low-level core / generated built_in 候補 / 保留へ分類した。`str::split` / `splitlines` / `count` / `join` と `zip` / `sorted` / `sum` / `py_min` / `py_max` は `generated/built_in` 候補として確定し、`generated/core` / `native/built_in` は現段階では即時確定 0 件とした。
