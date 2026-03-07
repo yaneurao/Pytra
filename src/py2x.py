@@ -13,7 +13,9 @@ from toolchain.compiler.backend_registry import list_backend_targets
 from toolchain.compiler.backend_registry import lower_ir
 from toolchain.compiler.backend_registry import optimize_ir
 from toolchain.compiler.backend_registry import resolve_layer_options
-from toolchain.compiler.transpile_cli import add_common_transpile_args, load_east3_document
+from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document
+from toolchain.link import build_linked_program_from_module_map
+from toolchain.link import LinkedProgram
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys
@@ -207,6 +209,78 @@ def _parse_layer_option_items(items: list[str], label: str) -> dict[str, str]:
     return out
 
 
+def _build_linked_program_for_input(
+    input_path: Path,
+    *,
+    parser_backend: str,
+    object_dispatch_mode: str,
+    east3_opt_level: str,
+    east3_opt_pass: str,
+    dump_east3_before_opt: str,
+    dump_east3_after_opt: str,
+    dump_east3_opt_trace: str,
+    target_lang: str,
+) -> LinkedProgram:
+    def _load_for_program(
+        module_path: Path,
+        parser_backend_arg: str,
+        east_stage_arg: str,
+        object_dispatch_mode_arg: str,
+    ) -> dict[str, object]:
+        _ = east_stage_arg
+        enable_dump = module_path.resolve() == input_path.resolve()
+        return load_east3_document(
+            module_path,
+            parser_backend=parser_backend_arg,
+            object_dispatch_mode=object_dispatch_mode_arg,
+            east3_opt_level=east3_opt_level,
+            east3_opt_pass=east3_opt_pass,
+            dump_east3_before_opt=dump_east3_before_opt if enable_dump else "",
+            dump_east3_after_opt=dump_east3_after_opt if enable_dump else "",
+            dump_east3_opt_trace=dump_east3_opt_trace if enable_dump else "",
+            target_lang=target_lang,
+        )
+
+    input_txt = str(input_path)
+    module_map: dict[str, dict[str, object]] = {}
+    if input_txt.endswith(".py"):
+        module_map = build_module_east_map(
+            input_path,
+            _load_for_program,
+            parser_backend=parser_backend,
+            east_stage="3",
+            object_dispatch_mode=object_dispatch_mode,
+        )
+    else:
+        module_map = {
+            str(input_path.resolve()): _load_for_program(
+                input_path,
+                parser_backend,
+                "3",
+                object_dispatch_mode,
+            )
+        }
+
+    return build_linked_program_from_module_map(
+        input_path,
+        module_map,
+        target=target_lang,
+        dispatch_mode=object_dispatch_mode,
+        options={
+            "east3_opt_level": east3_opt_level,
+            "east3_opt_pass": east3_opt_pass,
+        },
+    )
+
+
+def _entry_module_east_doc(program: LinkedProgram) -> dict[str, object]:
+    entry_module_ids = set(program.entry_modules)
+    for module in program.modules:
+        if module.is_entry and module.module_id in entry_module_ids:
+            return module.east_doc
+    raise RuntimeError("linked program entry module not found")
+
+
 def main() -> int:
     argv = sys.argv[1:] if isinstance(sys.argv, list) else []
     for arg in argv:
@@ -276,7 +350,7 @@ def main() -> int:
         _fatal(str(ex))
 
     target_lang = str(spec.get("target_lang", target))
-    east_doc = load_east3_document(
+    program = _build_linked_program_for_input(
         input_path,
         parser_backend=parser_backend,
         object_dispatch_mode=object_dispatch_mode,
@@ -287,7 +361,7 @@ def main() -> int:
         dump_east3_opt_trace=dump_east3_opt_trace,
         target_lang=target_lang,
     )
-    east = east_doc if isinstance(east_doc, dict) else {}
+    east = _entry_module_east_doc(program)
     ir = lower_ir(spec, east, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
     out_src = emit_source(spec, ir, output_path, emitter_options)

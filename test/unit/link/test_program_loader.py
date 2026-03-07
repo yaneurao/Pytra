@@ -6,6 +6,7 @@ from pytra.std.pathlib import Path
 
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import LINK_OUTPUT_SCHEMA
+from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import load_link_input_doc
 from toolchain.link import load_link_output_doc
 from toolchain.link import load_linked_program
@@ -60,6 +61,7 @@ class LinkedProgramLoaderTests(unittest.TestCase):
             self.assertEqual(program.entry_modules, ("app.z",))
             self.assertEqual([item.module_id for item in program.modules], ["app.a", "app.z"])
             self.assertEqual(str(program.modules[0].path), str(program.modules[0].path.resolve()))
+            self.assertEqual(str(program.modules[0].artifact_path), str(program.modules[0].artifact_path.resolve()))
 
     def test_load_linked_program_rejects_dispatch_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -161,6 +163,85 @@ class LinkedProgramLoaderTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(RuntimeError, "linked_program_v1"):
                 load_linked_program(manifest_path)
+
+    def test_build_linked_program_from_module_map_marks_entry_and_orders_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            program = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(helper_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "app.helper"},
+                        "body": [],
+                    },
+                    str(main_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "app.main"},
+                        "body": [],
+                    },
+                },
+                target="rs",
+                dispatch_mode="native",
+                options={"east3_opt_level": "1"},
+            )
+
+            self.assertIsNone(program.manifest_path)
+            self.assertEqual(program.schema, LINK_INPUT_SCHEMA)
+            self.assertEqual(program.entry_modules, ("app.main",))
+            self.assertEqual([item.module_id for item in program.modules], ["app.helper", "app.main"])
+            self.assertFalse(program.modules[0].is_entry)
+            self.assertTrue(program.modules[1].is_entry)
+            self.assertIsNone(program.modules[0].artifact_path)
+            self.assertEqual(program.options["east3_opt_level"], "1")
+
+    def test_build_linked_program_from_module_map_requires_entry_module(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            with self.assertRaisesRegex(RuntimeError, "entry module not found"):
+                build_linked_program_from_module_map(
+                    main_py,
+                    {
+                        str(helper_py): {
+                            "kind": "Module",
+                            "east_stage": 3,
+                            "schema_version": 1,
+                            "meta": {"dispatch_mode": "native", "module_id": "app.helper"},
+                            "body": [],
+                        }
+                    },
+                    target="rs",
+                    dispatch_mode="native",
+                )
+
+    def test_in_memory_program_rejects_link_input_serialization_without_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            program = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(main_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "app.main"},
+                        "body": [],
+                    }
+                },
+                target="rs",
+                dispatch_mode="native",
+            )
+            with self.assertRaisesRegex(RuntimeError, "manifest_path"):
+                program.to_link_input_dict()
 
 
 if __name__ == "__main__":

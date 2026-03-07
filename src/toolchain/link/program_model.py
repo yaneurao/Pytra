@@ -28,10 +28,16 @@ class LinkedProgramModule:
     """Validated module loaded from `link-input.v1`."""
 
     module_id: str
-    path: Path
     source_path: str
     is_entry: bool
     east_doc: dict[str, object]
+    artifact_path: Path | None = None
+
+    @property
+    def path(self) -> Path:
+        if self.artifact_path is not None:
+            return self.artifact_path
+        return Path(self.source_path).resolve()
 
 
 @dataclass(frozen=True)
@@ -39,7 +45,7 @@ class LinkedProgram:
     """Deterministic program unit for linker/global optimizer input."""
 
     schema: str
-    manifest_path: Path
+    manifest_path: Path | None
     target: str
     dispatch_mode: str
     entry_modules: tuple[str, ...]
@@ -48,12 +54,19 @@ class LinkedProgram:
 
     @property
     def manifest_dir(self) -> Path:
+        if self.manifest_path is None:
+            raise RuntimeError("manifest_dir is unavailable for in-memory LinkedProgram")
         return self.manifest_path.parent
 
     def to_link_input_dict(self) -> dict[str, object]:
+        if self.manifest_path is None:
+            raise RuntimeError("in-memory LinkedProgram cannot be serialized without manifest_path")
         modules: list[dict[str, object]] = []
         for item in self.modules:
-            rel_path = item.path.relative_to(self.manifest_dir).as_posix()
+            artifact_path = item.artifact_path
+            if artifact_path is None:
+                raise RuntimeError("LinkedProgramModule.artifact_path is required for serialization")
+            rel_path = artifact_path.relative_to(self.manifest_dir).as_posix()
             modules.append(
                 {
                     "module_id": item.module_id,
