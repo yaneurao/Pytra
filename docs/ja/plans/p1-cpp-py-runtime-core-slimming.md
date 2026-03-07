@@ -180,8 +180,8 @@
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` / `spec-dev` に `py_runtime` の責務境界と「残してよいもの / 戻すべきもの」を明文化する。
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] `src/pytra/built_in/*.py` 側へ戻す候補を決め、SoT 上の配置案を固定する。
-- [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/core` または `generated/built_in` の emission lane に必要な generator / layout 契約を整備する。
-- [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] 文字列・collection 系の pure-Python built_in semantics を `native/core/py_runtime.h` から段階的に撤去し、正規の generated lane へ移す。
+- [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/core` または `generated/built_in` の emission lane に必要な generator / layout 契約を整備する。
+- [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] 文字列・collection 系の pure-Python built_in semantics を `native/core/py_runtime.h` から段階的に撤去し、正規の generated lane へ移す。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-02] `native/core/py_runtime.h` を low-level ABI / object / container / process glue 中心へ整理し、include 集約を最小化する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-01] runtime symbol index / build graph / representative C++ runtime tests を新しい ownership に追従させる。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
@@ -285,3 +285,4 @@
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` には `core/py_runtime.h` / `native/core/py_runtime.h` の責務境界、`generated/built_in` へ戻すべき pure helper、`generated/core` へ性急に逃がしてはいけない保留群を明記した。`spec-dev` には current C++ runtime path を `core` / `native` / `generated` / `pytra` の4層で書き直し、`py_runtime` が stable include surface であって built_in semantics の恒久置き場ではないことを追加した。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] SoT 上の戻し先を固定し、string family は `string_ops.py`、iterator helper は `iter_ops.py`、sequence/aggregate helper は `sequence.py` へ寄せる方針とした。typed generic helper は linked-program runtime integration / helper generics 計画を待ち、初回移行では object-specialized helper から着手する。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/built_in` と `generated/core` の emission lane 契約を fix した。`generated/built_in` は `src/pytra/built_in/*.py` SoT + `--emit-runtime-cpp` 正規導線 + plain naming + marker 必須、`generated/core` は low-level pure helper 専用 lane とし、`native/core` 直 include や built_in semantics の逃がし込みを禁止する。
+- 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] `str::split` / `splitlines` / `count` / `join` を `src/pytra/built_in/string_ops.py` 正本へ寄せ、C++ checked-in artifact を `generated/built_in/string_ops.{h,cpp}` へ再生成した。`native/core/py_runtime.h` は generated helper への delegate に縮退し、runtime smoke / symbol index 回帰で value ABI と link source を固定した。object/generic collection helper（`sum` / `zip` / `sorted` / `min` / `max`）は、この tranche では保留のままとする。

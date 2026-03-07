@@ -34,6 +34,19 @@ class BuiltInStringOpsTest(unittest.TestCase):
         self.assertEqual(so.py_join(",", ["a"]), "a")
         self.assertEqual(so.py_join(",", ["a", "b", "c"]), "a,b,c")
 
+    def test_split(self) -> None:
+        self.assertEqual(so.py_split("a,b,c", ",", -1), ["a", "b", "c"])
+        self.assertEqual(so.py_split("a,b,c", ",", 1), ["a", "b,c"])
+        self.assertEqual(so.py_split("abc", "", -1), ["abc"])
+
+    def test_splitlines(self) -> None:
+        self.assertEqual(so.py_splitlines("a\nb\r\nc"), ["a", "b", "c"])
+        self.assertEqual(so.py_splitlines("x\n"), ["x", ""])
+
+    def test_count(self) -> None:
+        self.assertEqual(so.py_count("banana", "na"), 2)
+        self.assertEqual(so.py_count("abc", ""), 4)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -53,31 +53,7 @@ static constexpr uint32 PYTRA_TID_OBJECT = 8;
 static constexpr uint32 PYTRA_TID_USER_BASE = 1000;
 
 inline list<str> str::split(const str& sep, int64 maxsplit) const {
-    list<str> out = list<str>{};
-    const ::std::string& s = data_;
-    const ::std::string& token = sep.std();
-    if (token.empty()) {
-        out.append(*this);
-        return out;
-    }
-    ::std::size_t pos = 0;
-    int64 splits = 0;
-    const bool unlimited = maxsplit < 0;
-    while (true) {
-        if (!unlimited && splits >= maxsplit) {
-            out.append(str(s.substr(pos)));
-            break;
-        }
-        ::std::size_t at = s.find(token, pos);
-        if (at == ::std::string::npos) {
-            out.append(str(s.substr(pos)));
-            break;
-        }
-        out.append(str(s.substr(pos, at - pos)));
-        pos = at + token.size();
-        splits += 1;
-    }
-    return out;
+    return py_split(*this, sep, maxsplit);
 }
 
 inline list<str> str::split(const str& sep) const {
@@ -85,53 +61,15 @@ inline list<str> str::split(const str& sep) const {
 }
 
 inline list<str> str::splitlines() const {
-    list<str> out = list<str>{};
-    ::std::size_t i = 0;
-    const ::std::size_t n = data_.size();
-    while (i < n) {
-        ::std::size_t j = i;
-        while (j < n && data_[j] != '\n' && data_[j] != '\r') j += 1;
-        out.append(str(data_.substr(i, j - i)));
-        if (j < n && data_[j] == '\r' && j + 1 < n && data_[j + 1] == '\n') {
-            j += 2;
-        } else if (j < n) {
-            j += 1;
-        }
-        i = j;
-    }
-    if (n > 0) {
-        char last = data_[n - 1];
-        if (last == '\n' || last == '\r') out.append(str(""));
-    }
-    return out;
+    return py_splitlines(*this);
 }
 
 inline int64 str::count(const str& needle) const {
-    if (needle.empty()) {
-        return static_cast<int64>(data_.size() + 1);
-    }
-    int64 out = 0;
-    ::std::size_t pos = 0;
-    const ::std::string nn = needle.std();
-    while (true) {
-        ::std::size_t at = data_.find(nn, pos);
-        if (at == ::std::string::npos) break;
-        out += 1;
-        pos = at + nn.size();
-    }
-    return out;
+    return py_count(*this, needle);
 }
 
 inline str str::join(const list<str>& parts) const {
-    if (parts.empty()) return str("");
-    ::std::string out;
-    ::std::size_t i = 0;
-    while (i < parts.size()) {
-        if (i > 0) out += data_;
-        out += parts[i].std();
-        i += 1;
-    }
-    return str(out);
+    return py_join(*this, parts);
 }
 
 // Python の動的 object を C++ 側で保持するための最小ラッパクラス群。

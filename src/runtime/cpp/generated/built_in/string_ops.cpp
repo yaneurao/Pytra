@@ -49,6 +49,75 @@ str py_join(const str& sep, const list<str>& parts) {
     return out;
 }
 
+list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
+    rc<list<str>> out = rc_list_from_value(list<str>{});
+    if (sep == "") {
+        py_append(out, s);
+        return rc_list_copy_value(out);
+    }
+    int64 pos = 0;
+    int64 splits = 0;
+    int64 n = py_len(s);
+    int64 m = py_len(sep);
+    bool unlimited = maxsplit < 0;
+    while (true) {
+        if ((!(unlimited)) && (splits >= maxsplit))
+            break;
+        int64 at = py_find_window(s, sep, pos, n);
+        if (at < 0)
+            break;
+        py_append(out, py_slice(s, pos, at));
+        pos = at + m;
+        splits++;
+    }
+    py_append(out, py_slice(s, pos, n));
+    return rc_list_copy_value(out);
+}
+
+list<str> py_splitlines(const str& s) {
+    rc<list<str>> out = rc_list_from_value(list<str>{});
+    int64 n = py_len(s);
+    int64 start = 0;
+    int64 i = 0;
+    while (i < n) {
+        str ch = s[i];
+        if ((ch == "\n") || (ch == "\r")) {
+            py_append(out, py_slice(s, start, i));
+            if ((ch == "\r") && (i + 1 < n) && (s[i + 1] == "\n"))
+                i++;
+            i++;
+            start = i;
+            continue;
+        }
+        i++;
+    }
+    if (start < n) {
+        py_append(out, py_slice(s, start, n));
+    } else if (n > 0) {
+        auto __idx_1 = n - 1;
+        str last = s[__idx_1];
+        if ((last == "\n") || (last == "\r"))
+            py_append(out, "");
+    }
+    return rc_list_copy_value(out);
+}
+
+int64 py_count(const str& s, const str& needle) {
+    if (needle == "")
+        return py_len(s) + 1;
+    int64 out = 0;
+    int64 pos = 0;
+    int64 n = py_len(s);
+    int64 m = py_len(needle);
+    while (true) {
+        int64 at = py_find_window(s, needle, pos, n);
+        if (at < 0)
+            return out;
+        out++;
+        pos = at + m;
+    }
+}
+
 str py_lstrip(const str& s) {
     int64 i = 0;
     int64 n = py_len(s);

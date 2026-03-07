@@ -9,24 +9,24 @@
 /* Pure-Python source-of-truth for sequence helpers used by runtime built-ins. */
 
 list<int64> py_range(int64 start, int64 stop, int64 step) {
-    list<int64> out = {};
+    rc<list<int64>> out = rc_list_from_value(list<int64>{});
     if (step == 0)
-        return out;
+        return rc_list_copy_value(out);
     int64 i;
     if (step > 0) {
         i = start;
         while (i < stop) {
-            out.append(i);
+            py_append(out, i);
             i += step;
         }
     } else {
         i = start;
         while (i > stop) {
-            out.append(i);
+            py_append(out, i);
             i += step;
         }
     }
-    return out;
+    return rc_list_copy_value(out);
 }
 
 str py_repeat(const str& v, int64 n) {

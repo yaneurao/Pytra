@@ -99,6 +99,11 @@
           "kind": "function",
           "semantic_tag": "stdlib.fn._normalize_index"
         },
+        "py_count": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_count"
+        },
         "py_endswith": {
           "dispatch": "function",
           "kind": "function",
@@ -153,6 +158,16 @@
           "dispatch": "function",
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_rstrip_chars"
+        },
+        "py_split": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_split"
+        },
+        "py_splitlines": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_splitlines"
         },
         "py_startswith": {
           "dispatch": "function",

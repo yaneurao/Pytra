@@ -15,6 +15,7 @@ PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", 
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/native/core/gc.cpp",
     "src/runtime/cpp/native/core/io.cpp",
+    "src/runtime/cpp/generated/built_in/string_ops.cpp",
 ]
 
 
@@ -152,11 +153,11 @@ int main() {
     assert(plain_repeat.size() == 6);
     assert(plain_repeat[3] == 4);
 
-    int64 sum = 0;
+    int64 list_sum = 0;
     for (object v : py_dyn_range(list_obj)) {
-        sum += obj_to_int64(v);
+        list_sum += obj_to_int64(v);
     }
-    assert(sum == 6);
+    assert(list_sum == 6);
 
     dict<str, object> d{};
     d["a"] = make_object(1);
@@ -175,6 +176,17 @@ int main() {
         joined += obj_to_str(ch);
     }
     assert(joined == "ab");
+
+    list<str> split_all = str("a,b,c").split(",", -1);
+    assert(split_all.size() == 3);
+    assert(split_all[1] == "b");
+    list<str> split_once = str("a,b,c").split(",", 1);
+    assert(split_once.size() == 2);
+    assert(split_once[1] == "b,c");
+    list<str> split_lines = str("x\ny\r\n").splitlines();
+    assert(split_lines.size() == 3);
+    assert(split_lines[2] == "");
+    assert(str("banana").count("na") == 2);
 
     object set_obj = make_object(set<int64>{1, 2, 3});
     int64 set_sum = 0;
@@ -252,7 +264,13 @@ int main() {
         self.assertIn("static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values)", iter_ops_header)
         self.assertIn("static inline list<T> py_repeat(const list<T>& v, int64 n)", sequence_header)
         self.assertIn("str py_join(const str& sep, const list<str>& parts);", string_ops_header)
+        self.assertIn("list<str> py_split(const str& s, const str& sep, int64 maxsplit);", string_ops_header)
+        self.assertIn("list<str> py_splitlines(const str& s);", string_ops_header)
+        self.assertIn("int64 py_count(const str& s, const str& needle);", string_ops_header)
         self.assertIn("str py_join(const str& sep, const list<str>& parts) {", string_ops_cpp)
+        self.assertIn("list<str> py_split(const str& s, const str& sep, int64 maxsplit) {", string_ops_cpp)
+        self.assertIn("list<str> py_splitlines(const str& s) {", string_ops_cpp)
+        self.assertIn("int64 py_count(const str& s, const str& needle) {", string_ops_cpp)
         self.assertNotIn("rc<list<str>>", string_ops_header)
 
 

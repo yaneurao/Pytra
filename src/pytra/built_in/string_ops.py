@@ -43,6 +43,70 @@ def py_join(sep: str, parts: list[str]) -> str:
     return out
 
 
+@abi(ret="value")
+def py_split(s: str, sep: str, maxsplit: int) -> list[str]:
+    out: list[str] = []
+    if sep == "":
+        out.append(s)
+        return out
+    pos = 0
+    splits = 0
+    n = len(s)
+    m = len(sep)
+    unlimited = maxsplit < 0
+    while True:
+        if not unlimited and splits >= maxsplit:
+            break
+        at = py_find_window(s, sep, pos, n)
+        if at < 0:
+            break
+        out.append(s[pos:at])
+        pos = at + m
+        splits += 1
+    out.append(s[pos:n])
+    return out
+
+
+@abi(ret="value")
+def py_splitlines(s: str) -> list[str]:
+    out: list[str] = []
+    n = len(s)
+    start = 0
+    i = 0
+    while i < n:
+        ch = s[i]
+        if ch == "\n" or ch == "\r":
+            out.append(s[start:i])
+            if ch == "\r" and i + 1 < n and s[i + 1] == "\n":
+                i += 1
+            i += 1
+            start = i
+            continue
+        i += 1
+    if start < n:
+        out.append(s[start:n])
+    elif n > 0:
+        last = s[n - 1]
+        if last == "\n" or last == "\r":
+            out.append("")
+    return out
+
+
+def py_count(s: str, needle: str) -> int:
+    if needle == "":
+        return len(s) + 1
+    out = 0
+    pos = 0
+    n = len(s)
+    m = len(needle)
+    while True:
+        at = py_find_window(s, needle, pos, n)
+        if at < 0:
+            return out
+        out += 1
+        pos = at + m
+
+
 def py_lstrip(s: str) -> str:
     i = 0
     n = len(s)

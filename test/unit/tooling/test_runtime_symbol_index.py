@@ -48,6 +48,14 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         string_symbols = string_ops.get("symbols")
         self.assertIsInstance(string_symbols, dict)
         self.assertEqual(string_symbols.get("py_join", {}).get("kind"), "function")
+        self.assertEqual(string_symbols.get("py_split", {}).get("kind"), "function")
+        self.assertEqual(string_symbols.get("py_splitlines", {}).get("kind"), "function")
+        self.assertEqual(string_symbols.get("py_count", {}).get("kind"), "function")
+
+        sequence_mod = modules.get("pytra.built_in.sequence")
+        self.assertIsInstance(sequence_mod, dict)
+        sequence_symbols = sequence_mod.get("symbols")
+        self.assertIsInstance(sequence_symbols, dict)
         self.assertEqual(string_symbols.get("py_strip", {}).get("kind"), "function")
 
         time_mod = modules.get("pytra.std.time")
