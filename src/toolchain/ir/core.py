@@ -27,6 +27,7 @@ from toolchain.frontends.frontend_semantics import lookup_builtin_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
+from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
@@ -7243,7 +7244,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     out["main_guard_body"] = main_stmts
     out["renamed_symbols"] = renamed_symbols
     out["meta"] = meta
-    return out
+    return validate_runtime_abi_module(out)
 
 
 def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "self_hosted") -> dict[str, Any]:

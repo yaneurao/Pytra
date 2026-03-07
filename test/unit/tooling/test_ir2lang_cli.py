@@ -80,6 +80,61 @@ class Ir2langCliTest(unittest.TestCase):
                         _ = ir2lang_mod.main()
         self.assertEqual(cm.exception.code, 2)
 
+    def test_rejects_value_readonly_mutation_before_backend_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_json = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {"module_id": "pkg.main"},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "py_join",
+                            "arg_order": ["parts"],
+                            "body": [
+                                {
+                                    "kind": "Expr",
+                                    "value": {
+                                        "kind": "Call",
+                                        "func": {
+                                            "kind": "Attribute",
+                                            "value": {"kind": "Name", "id": "parts"},
+                                            "attr": "append",
+                                        },
+                                        "args": [{"kind": "Constant", "value": "x"}],
+                                        "keywords": [],
+                                    },
+                                }
+                            ],
+                            "meta": {
+                                "runtime_abi_v1": {
+                                    "schema_version": 1,
+                                    "args": {"parts": "value_readonly"},
+                                    "ret": "default",
+                                }
+                            },
+                        }
+                    ],
+                },
+            )
+            with patch.object(
+                ir2lang_mod,
+                "get_backend_spec",
+                side_effect=AssertionError("backend dispatch must not be called for invalid runtime_abi input"),
+            ):
+                with patch.object(
+                    ir2lang_mod.sys,
+                    "argv",
+                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                ):
+                    with self.assertRaises(RuntimeError) as cm:
+                        _ = ir2lang_mod.main()
+        self.assertIn("value_readonly parameter mutated", str(cm.exception))
+
     def test_dispatches_target_and_layer_options(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

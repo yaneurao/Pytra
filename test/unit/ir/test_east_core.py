@@ -101,6 +101,20 @@ def f(xs: list[int]) -> list[int]:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         self.assertIn("abi decorator accepts keyword arguments only", str(cm.exception))
 
+    def test_value_readonly_abi_rejects_mutating_append(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi(args={"parts": "value_readonly"})
+def py_join(parts: list[str]) -> str:
+    parts.append("x")
+    return ""
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("value_readonly parameter mutated", str(cm.exception))
+        self.assertIn("parts", str(cm.exception))
+
     def test_quoted_type_annotation_is_normalized(self) -> None:
         src = """
 def f(p: "Path", xs: "list[int]") -> "Path":

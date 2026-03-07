@@ -17,6 +17,7 @@ from toolchain.compiler.backend_registry import (
     optimize_ir,
     resolve_layer_options,
 )
+from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.link import LINK_OUTPUT_SCHEMA
 from toolchain.link import load_linked_output_bundle
 from backends.cpp.emitter.multifile_writer import write_multi_file_cpp
@@ -145,7 +146,7 @@ def _validate_east3_module(east: dict[str, Any]) -> dict[str, Any]:
 
     if "meta" in east and not isinstance(east.get("meta"), dict):
         _fatal("invalid EAST root: meta must be an object")
-    return east
+    return validate_runtime_abi_module(east)
 
 
 def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
