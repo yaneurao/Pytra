@@ -38,6 +38,8 @@ class CppRuntimeIterableTest(unittest.TestCase):
     def test_runtime_iterable_protocol_helpers(self) -> None:
         cpp_src = r'''
 #include "runtime/cpp/core/py_runtime.h"
+#include "pytra/built_in/iter_ops.h"
+#include "pytra/built_in/sequence.h"
 
 #include <cassert>
 #include <iostream>
@@ -254,6 +256,10 @@ int main() {
         string_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.cpp").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
+        self.assertNotIn('#include "runtime/cpp/generated/built_in/predicates.h"', runtime_header)
+        self.assertNotIn('#include "runtime/cpp/native/built_in/sequence.h"', runtime_header)
+        self.assertNotIn('#include "runtime/cpp/generated/built_in/sequence.h"', runtime_header)
+        self.assertNotIn('#include "runtime/cpp/native/built_in/iter_ops.h"', runtime_header)
         self.assertNotIn("static inline T& py_at(list<T>& v, int64 idx)", runtime_header)
         self.assertNotIn("static inline void py_set_at(list<T>& v, I idx, const U& item)", runtime_header)
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)

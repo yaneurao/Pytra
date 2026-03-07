@@ -1716,6 +1716,32 @@ if __name__ == "__main__":
         self.assertIn('#include "pytra/utils/png.h"', cpp)
         self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
+    def test_runtime_special_ops_emit_direct_built_in_headers(self) -> None:
+        src = """def main() -> None:
+    xs: list[int] = [1, 2, 3]
+    ok1: bool = any(xs)
+    ok2: bool = all(xs)
+    ys = range(0, 3)
+    text = "-" * 3
+    rev = reversed(xs)
+    enum = enumerate(xs)
+    print(ok1, ok2, len(ys), text, len(rev), len(enum))
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "runtime_special_ops_headers.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/built_in/predicates.h"', cpp)
+        self.assertIn('#include "pytra/built_in/sequence.h"', cpp)
+        self.assertIn('#include "pytra/built_in/iter_ops.h"', cpp)
+        self.assertIn("py_any(make_object(xs))", cpp)
+        self.assertIn("py_range(0, 3, 1)", cpp)
+        self.assertIn("py_repeat(\"-\", 3)", cpp)
+
     def test_from_pytra_runtime_import_gif_emits_one_to_one_include(self) -> None:
         src = """from pytra.utils import gif
 

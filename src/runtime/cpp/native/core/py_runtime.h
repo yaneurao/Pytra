@@ -27,9 +27,7 @@
 #include "py_types.h"
 #include "exceptions.h"
 #include "io.h"
-#include "runtime/cpp/generated/built_in/predicates.h"
-#include "runtime/cpp/native/built_in/sequence.h"
-#include "runtime/cpp/generated/built_in/sequence.h"
+// `str` method delegates still live here, so string helper declarations remain a direct dependency.
 #include "runtime/cpp/generated/built_in/string_ops.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
 
@@ -3005,8 +3003,6 @@ static inline str py_slice(const ::std::any& v, int64 lo, int64 up) {
 static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) {
     return py_slice(v, lo, py_to_int64(up));
 }
-
-#include "runtime/cpp/native/built_in/iter_ops.h"
 
 template <class A, class B>
 static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {

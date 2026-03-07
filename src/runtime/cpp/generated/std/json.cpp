@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/generated/std/json.h"
 
+#include "pytra/built_in/sequence.h"
 #include "pytra/built_in/string_ops.h"
 
 namespace pytra::std::json {
@@ -146,7 +147,7 @@ namespace pytra::std::json {
     }
 
     object _JsonParser::_parse_array() {
-            list<object> out = list<object>{};
+            object out = make_object(list<object>{});
             this->i++;
             this->_skip_ws();
             if ((this->i < this->n) && (this->text[this->i] == "]")) {
@@ -155,7 +156,7 @@ namespace pytra::std::json {
             }
             while (true) {
                 this->_skip_ws();
-                out.append(this->_parse_value());
+                py_append(out, this->_parse_value());
                 this->_skip_ws();
                 if (this->i >= this->n)
                     throw ValueError("invalid json array: unexpected end");
@@ -172,7 +173,7 @@ namespace pytra::std::json {
             if (this->text[this->i] != "\"")
                 throw ValueError("invalid json string");
             this->i++;
-            list<str> out_chars = {};
+            rc<list<str>> out_chars = rc_list_from_value(list<str>{});
             while (this->i < this->n) {
                 str ch = this->text[this->i];
                 this->i++;
@@ -184,32 +185,32 @@ namespace pytra::std::json {
                     str esc = this->text[this->i];
                     this->i++;
                     if (esc == "\"") {
-                        out_chars.append(str("\""));
+                        py_append(out_chars, "\"");
                     } else if (esc == "\\") {
-                        out_chars.append(str("\\"));
+                        py_append(out_chars, "\\");
                     } else if (esc == "/") {
-                        out_chars.append(str("/"));
+                        py_append(out_chars, "/");
                     } else if (esc == "b") {
-                        out_chars.append(str("\b"));
+                        py_append(out_chars, "\b");
                     } else if (esc == "f") {
-                        out_chars.append(str("\f"));
+                        py_append(out_chars, "\f");
                     } else if (esc == "n") {
-                        out_chars.append(str("\n"));
+                        py_append(out_chars, "\n");
                     } else if (esc == "r") {
-                        out_chars.append(str("\r"));
+                        py_append(out_chars, "\r");
                     } else if (esc == "t") {
-                        out_chars.append(str("\t"));
+                        py_append(out_chars, "\t");
                     } else if (esc == "u") {
                         if (this->i + 4 > this->n)
                             throw ValueError("invalid json unicode escape");
                         str hx = py_slice(this->text, this->i, this->i + 4);
                         this->i += 4;
-                        out_chars.append(str(py_chr(_int_from_hex4(hx))));
+                        py_append(out_chars, py_chr(_int_from_hex4(hx)));
                     } else {
                         throw ValueError("invalid json escape");
                     }
                 } else {
-                    out_chars.append(ch);
+                    py_append(out_chars, ch);
                 }
             }
             throw ValueError("unterminated json string");
@@ -271,30 +272,30 @@ namespace pytra::std::json {
     }
     
     str _escape_str(const str& s, bool ensure_ascii) {
-        list<str> out = list<str>{"\""};
+        rc<list<str>> out = rc_list_from_value(list<str>{"\""});
         for (str ch : s) {
             int64 code = py_to<int64>(py_ord(ch));
             if (ch == "\"") {
-                out.append(str("\\\""));
+                py_append(out, "\\\"");
             } else if (ch == "\\") {
-                out.append(str("\\\\"));
+                py_append(out, "\\\\");
             } else if (ch == "\b") {
-                out.append(str("\\b"));
+                py_append(out, "\\b");
             } else if (ch == "\f") {
-                out.append(str("\\f"));
+                py_append(out, "\\f");
             } else if (ch == "\n") {
-                out.append(str("\\n"));
+                py_append(out, "\\n");
             } else if (ch == "\r") {
-                out.append(str("\\r"));
+                py_append(out, "\\r");
             } else if (ch == "\t") {
-                out.append(str("\\t"));
+                py_append(out, "\\t");
             } else if ((ensure_ascii) && (code > 0x7F)) {
-                out.append(str("\\u" + _hex4(code)));
+                py_append(out, "\\u" + _hex4(code));
             } else {
-                out.append(ch);
+                py_append(out, ch);
             }
         }
-        out.append(str("\""));
+        py_append(out, "\"");
         return _EMPTY.join(out);
     }
     
@@ -302,19 +303,19 @@ namespace pytra::std::json {
         if (py_len(values) == 0)
             return "[]";
         if (py_is_none(indent)) {
-            list<str> dumped = {};
+            rc<list<str>> dumped = rc_list_from_value(list<str>{});
             for (object x : py_dyn_range(values)) {
                 str dumped_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
-                dumped.append(dumped_txt);
+                py_append(dumped, dumped_txt);
             }
             return "[" + str(item_sep).join(dumped) + "]";
         }
         int64 indent_i = py_to_int64(indent);
-        list<str> inner = {};
+        rc<list<str>> inner = rc_list_from_value(list<str>{});
         for (object x : py_dyn_range(values)) {
             str prefix = py_repeat(" ", indent_i * (level + 1));
             str value_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
-            inner.append(str(prefix + value_txt));
+            py_append(inner, prefix + value_txt);
         }
         return "[\n" + _COMMA_NL.join(inner) + "\n" + py_repeat(" ", indent_i * level) + "]";
     }
@@ -323,25 +324,25 @@ namespace pytra::std::json {
         if (py_len(values) == 0)
             return "{}";
         if (py_is_none(indent)) {
-            list<str> parts = {};
+            rc<list<str>> parts = rc_list_from_value(list<str>{});
             for (::std::tuple<str, object> __itobj_1 : values) {
                 str k = py_to_string(py_at(__itobj_1, 0));
                 auto x = py_at(__itobj_1, 1);
                 str k_txt = _escape_str(k, ensure_ascii);
                 str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
-                parts.append(str(k_txt + key_sep + v_txt));
+                py_append(parts, k_txt + key_sep + v_txt);
             }
             return "{" + str(item_sep).join(parts) + "}";
         }
         int64 indent_i = py_to_int64(indent);
-        list<str> inner = {};
+        rc<list<str>> inner = rc_list_from_value(list<str>{});
         for (::std::tuple<str, object> __itobj_2 : values) {
             str k = py_to_string(py_at(__itobj_2, 0));
             auto x = py_at(__itobj_2, 1);
             str prefix = py_repeat(" ", indent_i * (level + 1));
             str k_txt = _escape_str(k, ensure_ascii);
             str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
-            inner.append(str(prefix + k_txt + key_sep + v_txt));
+            py_append(inner, prefix + k_txt + key_sep + v_txt);
         }
         return "{\n" + _COMMA_NL.join(inner) + "\n" + py_repeat(" ", indent_i * level) + "}";
     }

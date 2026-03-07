@@ -27,6 +27,14 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 RUNTIME_STD_SOURCE_ROOT = REPO_ROOT / "src/pytra/std"
 RUNTIME_UTILS_SOURCE_ROOT = REPO_ROOT / "src/pytra/utils"
 RUNTIME_BUILT_IN_SOURCE_ROOT = REPO_ROOT / "src/pytra/built_in"
+_CPP_HELPER_INCLUDE_BY_SPECIAL_OP = {
+    "all": "pytra/built_in/predicates.h",
+    "any": "pytra/built_in/predicates.h",
+    "enumerate": "pytra/built_in/iter_ops.h",
+    "range": "pytra/built_in/sequence.h",
+    "reversed": "pytra/built_in/iter_ops.h",
+}
+_CPP_REPEAT_INT_TYPES = {"int", "uint", "int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}
 RUNTIME_CPP_GENERATED_ROOT = REPO_ROOT / "src/runtime/cpp/generated"
 TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
@@ -79,6 +87,30 @@ class CppModuleEmitter:
         if isinstance(node, list):
             for item in node:
                 self._collect_runtime_modules_from_node(item, out)
+
+    def _collect_cpp_helper_includes_from_node(self, node: Any, out: set[str]) -> None:
+        if isinstance(node, dict):
+            kind = self._node_kind_from_dict(node)
+            if kind in {"RuntimeSpecialOp", "PathRuntimeOp"}:
+                op = dict_any_get_str(node, "op")
+                helper_include = _CPP_HELPER_INCLUDE_BY_SPECIAL_OP.get(op, "")
+                if helper_include != "":
+                    out.add(helper_include)
+            elif kind == "BinOp" and dict_any_get_str(node, "op") == "Mult":
+                left_t = self.normalize_type_name(self.get_expr_type(node.get("left")))
+                right_t = self.normalize_type_name(self.get_expr_type(node.get("right")))
+                left_is_repeatable = left_t == "str" or self.is_list_type(left_t)
+                right_is_repeatable = right_t == "str" or self.is_list_type(right_t)
+                if (left_is_repeatable and right_t in _CPP_REPEAT_INT_TYPES) or (
+                    right_is_repeatable and left_t in _CPP_REPEAT_INT_TYPES
+                ):
+                    out.add("pytra/built_in/sequence.h")
+            for value in node.values():
+                self._collect_cpp_helper_includes_from_node(value, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._collect_cpp_helper_includes_from_node(item, out)
 
     def _module_attr_runtime_module_from_node(self, node: dict[str, Any]) -> str:
         """module attr access が別 runtime module を指す場合、その module_id を返す。"""
@@ -142,6 +174,11 @@ class CppModuleEmitter:
             if lookup_runtime_module_group(module_id) == "core":
                 continue
             append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(module_id))
+        helper_includes: set[str] = set()
+        for stmt in body:
+            self._collect_cpp_helper_includes_from_node(stmt, helper_includes)
+        for inc in sorted(helper_includes):
+            append_unique_non_empty(includes, seen, inc)
         return sort_str_list_copy(includes)
 
     def _seed_import_maps_from_meta(self) -> None:
