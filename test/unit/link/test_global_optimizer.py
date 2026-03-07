@@ -81,6 +81,45 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
         self.assertIn("value_readonly parameter mutated", str(cm.exception))
         self.assertIn("pkg.main::py_join", str(cm.exception))
 
+    def test_optimizer_rejects_runtime_abi_for_unsupported_target(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            program = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(main_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+                        "body": [
+                            {
+                                "kind": "FunctionDef",
+                                "name": "py_join",
+                                "arg_order": ["parts"],
+                                "body": [_ret(_constant(""))],
+                                "meta": {
+                                    "runtime_abi_v1": {
+                                        "schema_version": 1,
+                                        "args": {"parts": "value_readonly"},
+                                        "ret": "value",
+                                    }
+                                },
+                            }
+                        ],
+                    }
+                },
+                target="rs",
+                dispatch_mode="native",
+            )
+
+            with self.assertRaises(RuntimeError) as cm:
+                optimize_linked_program(program)
+
+        self.assertIn("@abi is not supported for target rs", str(cm.exception))
+        self.assertIn("pkg.main::py_join", str(cm.exception))
+
     def test_optimizer_is_deterministic_for_reordered_module_map(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

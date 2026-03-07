@@ -14,6 +14,7 @@ from toolchain.ir.east3_optimizer import PassContext
 from toolchain.ir.east3_optimizer import parse_east3_opt_pass_overrides
 from toolchain.ir.east3_optimizer import resolve_east3_opt_level
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
+from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link.program_call_graph import build_linked_program_call_graph
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkedProgram
@@ -337,6 +338,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
     for module in program.modules:
         doc = module.east_doc if isinstance(module.east_doc, dict) else {}
         validate_runtime_abi_module(doc)
+        validate_runtime_abi_target_support(doc, target=program.target)
     call_graph = build_linked_program_call_graph(program)
     pass_config = _resolve_global_pass_config(program)
     linked_modules: tuple[LinkedProgramModule, ...] = tuple(program.modules)

@@ -135,6 +135,48 @@ class Ir2langCliTest(unittest.TestCase):
                         _ = ir2lang_mod.main()
         self.assertIn("value_readonly parameter mutated", str(cm.exception))
 
+    def test_rejects_runtime_abi_for_unsupported_target_before_backend_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_json = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {"module_id": "pkg.main"},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "py_join",
+                            "arg_order": ["parts"],
+                            "body": [{"kind": "Return", "value": {"kind": "Constant", "value": ""}}],
+                            "meta": {
+                                "runtime_abi_v1": {
+                                    "schema_version": 1,
+                                    "args": {"parts": "value_readonly"},
+                                    "ret": "value",
+                                }
+                            },
+                        }
+                    ],
+                },
+            )
+            with patch.object(
+                ir2lang_mod,
+                "lower_ir",
+                side_effect=AssertionError("backend dispatch must not be called for unsupported runtime_abi target"),
+            ):
+                with patch.object(
+                    ir2lang_mod.sys,
+                    "argv",
+                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                ):
+                    with self.assertRaises(RuntimeError) as cm:
+                        _ = ir2lang_mod.main()
+        self.assertIn("@abi is not supported for target rs", str(cm.exception))
+        self.assertIn("pkg.main::py_join", str(cm.exception))
+
     def test_dispatches_target_and_layer_options(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

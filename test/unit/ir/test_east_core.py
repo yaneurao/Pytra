@@ -76,6 +76,36 @@ def py_join(sep: str, parts: list[str]) -> str:
             },
         )
 
+    def test_top_level_extern_and_abi_decorators_can_coexist(self) -> None:
+        src = """
+from pytra.std import extern, abi
+
+@extern
+@abi(args={"xs": "value_readonly"}, ret="value")
+def clone(xs: list[int]) -> list[int]:
+    return xs
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "clone"
+        ]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(
+            fn.get("decorators"),
+            ["extern", 'abi(args={"xs": "value_readonly"}, ret="value")'],
+        )
+        self.assertEqual(
+            fn.get("meta", {}).get("runtime_abi_v1"),
+            {
+                "schema_version": 1,
+                "args": {"xs": "value_readonly"},
+                "ret": "value",
+            },
+        )
+
     def test_method_level_abi_decorator_is_rejected(self) -> None:
         src = """
 from pytra.std import abi

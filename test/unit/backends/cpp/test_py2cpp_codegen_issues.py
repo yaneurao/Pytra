@@ -1993,6 +1993,31 @@ def use(xs: list[int]) -> list[int]:
         self.assertIn("list<int64> clone(const list<int64>& xs);", header)
         self.assertIn("rc<list<int64>> use(const rc<list<int64>>& xs);", header)
 
+    def test_pyobj_list_model_extern_and_abi_helper_still_uses_value_signature(self) -> None:
+        src = """from pytra.std import extern, abi
+
+@extern
+@abi(args={"xs": "value_readonly"}, ret="value")
+def clone(xs: list[int]) -> list[int]:
+    return xs
+
+def use(xs: list[int]) -> list[int]:
+    return clone(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "extern_abi_value_readonly_helper.py"
+            out_h = Path(tmpdir) / "extern_abi_value_readonly_helper.h"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+            header = build_cpp_header_from_east(east, src_py, out_h, cpp_list_model="pyobj")
+
+        self.assertIn("list<int64> clone(const list<int64>& xs)", cpp)
+        self.assertIn("rc<list<int64>> use(const rc<list<int64>>& xs)", cpp)
+        self.assertIn("return rc_list_from_value(clone(rc_list_ref(xs)));", cpp)
+        self.assertIn("list<int64> clone(const list<int64>& xs);", header)
+        self.assertIn("rc<list<int64>> use(const rc<list<int64>>& xs);", header)
+
 
 if __name__ == "__main__":
     unittest.main()

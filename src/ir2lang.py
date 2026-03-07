@@ -18,6 +18,7 @@ from toolchain.compiler.backend_registry import (
     resolve_layer_options,
 )
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
+from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link import LINK_OUTPUT_SCHEMA
 from toolchain.link import load_linked_output_bundle
 from backends.cpp.emitter.multifile_writer import write_multi_file_cpp
@@ -280,6 +281,10 @@ def main(argv: list[str] | None = None) -> int:
         link_target = link_output_doc.get("target")
         if isinstance(link_target, str) and link_target != "" and link_target != target:
             _fatal("target mismatch for link-output: " + link_target + " != " + target)
+        for linked_module in linked_modules:
+            linked_doc = getattr(linked_module, "east_doc", {})
+            if isinstance(linked_doc, dict):
+                validate_runtime_abi_target_support(linked_doc, target=target)
         entry_modules_any = link_output_doc.get("entry_modules", [])
         entry_modules = list(entry_modules_any) if isinstance(entry_modules_any, (list, tuple)) else []
         if target == "cpp":
@@ -302,6 +307,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
 
+    validate_runtime_abi_target_support(east_doc, target=target)
     ir = lower_ir(spec, east_doc, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
     module_id = _module_id_from_east(east_doc, output_path)

@@ -6,6 +6,7 @@ from typing import Any
 
 
 _RUNTIME_ABI_MODES = {"default", "value", "value_readonly"}
+_RUNTIME_ABI_SUPPORTED_TARGETS = {"cpp"}
 _MUTATING_ATTRS = {
     "append",
     "extend",
@@ -251,6 +252,52 @@ def _walk_function_nodes(
                     _walk_function_nodes(handler_body, module_id=module_id, scope=scope, top_level=False)
 
 
+def _collect_runtime_abi_symbols(
+    items: list[Any],
+    *,
+    module_id: str,
+    scope: tuple[str, ...],
+    out: list[str],
+) -> None:
+    for raw_item in items:
+        item = _as_dict(raw_item)
+        kind = _kind(item)
+        if kind == "FunctionDef":
+            symbol = _function_symbol(module_id, scope, item)
+            meta = _as_dict(item.get("meta"))
+            if isinstance(meta.get("runtime_abi_v1"), dict):
+                out.append(symbol)
+            next_scope = scope + (_safe_name(item.get("name")),)
+            _collect_runtime_abi_symbols(_as_list(item.get("body")), module_id=module_id, scope=next_scope, out=out)
+            continue
+        if kind == "ClassDef":
+            class_name = _safe_name(item.get("name"))
+            next_scope = scope + ((class_name,) if class_name != "" else ())
+            _collect_runtime_abi_symbols(_as_list(item.get("body")), module_id=module_id, scope=next_scope, out=out)
+            continue
+        for key in ("body", "orelse", "finalbody"):
+            child_list = _as_list(item.get(key))
+            if len(child_list) > 0:
+                _collect_runtime_abi_symbols(child_list, module_id=module_id, scope=scope, out=out)
+        if kind == "Try":
+            for handler in _as_list(item.get("handlers")):
+                handler_body = _as_list(_as_dict(handler).get("body"))
+                if len(handler_body) > 0:
+                    _collect_runtime_abi_symbols(handler_body, module_id=module_id, scope=scope, out=out)
+
+
+def runtime_abi_symbols(module_doc: dict[str, Any]) -> tuple[str, ...]:
+    module_meta = _as_dict(module_doc.get("meta"))
+    module_id = _safe_name(module_meta.get("module_id"))
+    if module_id == "":
+        module_id = _safe_name(module_doc.get("source_path"))
+    if module_id == "":
+        module_id = "<module>"
+    out: list[str] = []
+    _collect_runtime_abi_symbols(_as_list(module_doc.get("body")), module_id=module_id, scope=(), out=out)
+    return tuple(sorted(dict.fromkeys(out)))
+
+
 def validate_runtime_abi_module(module_doc: dict[str, Any]) -> dict[str, Any]:
     module_meta = _as_dict(module_doc.get("meta"))
     module_id = _safe_name(module_meta.get("module_id"))
@@ -262,7 +309,24 @@ def validate_runtime_abi_module(module_doc: dict[str, Any]) -> dict[str, Any]:
     return module_doc
 
 
+def validate_runtime_abi_target_support(module_doc: dict[str, Any], *, target: str) -> dict[str, Any]:
+    target_name = _safe_name(target)
+    if target_name in _RUNTIME_ABI_SUPPORTED_TARGETS:
+        return module_doc
+    symbols = runtime_abi_symbols(module_doc)
+    if len(symbols) == 0:
+        return module_doc
+    raise RuntimeError(
+        "runtime_abi_violation: @abi is not supported for target "
+        + target_name
+        + ": "
+        + ", ".join(symbols)
+    )
+
+
 __all__ = [
     "collect_mutated_params",
+    "runtime_abi_symbols",
     "validate_runtime_abi_module",
+    "validate_runtime_abi_target_support",
 ]
