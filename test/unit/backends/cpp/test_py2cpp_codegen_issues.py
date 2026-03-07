@@ -1598,6 +1598,25 @@ def f(xs: list[int], ws: list[float]) -> int:
         self.assertIn("rc<list<str>> ks = rc_list_from_value(py_dict_keys(d));", cpp)
         self.assertIn("rc<list<int64>> vs = rc_list_from_value(py_dict_values(d));", cpp)
         self.assertNotIn("rc<list<int64>> vs = list<int64>(py_dict_values(d));", cpp)
+
+    def test_pyobj_list_model_nested_list_append_copies_inner_value(self) -> None:
+        src = """def f() -> list[list[int]]:
+    out: list[list[int]] = []
+    row: list[int] = []
+    row.append(1)
+    out.append(row)
+    return out
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_nested_list_append.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("py_append(out, rc_list_copy_value(row));", cpp)
+        self.assertNotIn("py_append(out, row);", cpp)
         self.assertNotIn("render(rc_list_from_value(values), w, h)", cpp)
 
     def test_pyobj_list_model_tuple_subscript_uses_structured_binding_on_declare_unpack(self) -> None:

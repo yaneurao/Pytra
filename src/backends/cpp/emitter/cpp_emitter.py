@@ -534,6 +534,19 @@ class CppEmitter(
             return rendered_expr
         return unwrapped_expr
 
+    def _render_pyobj_ref_first_list_container_item(self, owner_node: Any, value_expr: str, value_node: Any) -> str:
+        """ref-first outer list へ格納する要素に必要な adapter を適用する。"""
+        owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
+        if owner_t in {"", "unknown"}:
+            owner_t = self.normalize_type_name(self.any_dict_get_str(self.any_to_dict_or_empty(owner_node), "resolved_type", ""))
+        inner_parts = self.type_generic_args(owner_t, "list")
+        if len(inner_parts) != 1:
+            return value_expr
+        item_t = self.normalize_type_name(inner_parts[0])
+        if self._is_pyobj_value_model_list_type(item_t):
+            return self._render_pyobj_value_list_copy_adapter(value_expr, value_node, item_t)
+        return value_expr
+
     def _is_known_pyobj_value_list_source_expr(self, expr_node: Any) -> bool:
         """ref-first target へ `rc_list_from_value(...)` で昇格すべき value-list source か判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -3268,6 +3281,7 @@ class CppEmitter(
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
             if self._uses_pyobj_ref_first_list_ops(owner_node):
+                value_expr = self._render_pyobj_ref_first_list_container_item(owner_node, value_expr, value_node)
                 return f"py_append({owner_expr}, {value_expr})"
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
