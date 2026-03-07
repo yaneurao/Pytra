@@ -35,6 +35,7 @@
 - `rs/cs/go/java/kotlin/swift/scala/ruby/lua/php/nim` も、sample parity 18 ケースを `run_failed=0`, `output_mismatch=0`, `artifact_*_mismatch=0` で完了する。
 - `tools/runtime_parity_check.py --case-root sample --targets <all-targets> --all-samples` 相当の実行手順が docs に固定される。
 - target ごとの必要 toolchain と bootstrap 手順が明文化され、`toolchain_missing` が新しい常態にならない。
+- full green 判定では `ok` 以外の parity category を 1 件も許容しない。具体的には `case_missing`, `python_failed`, `python_artifact_missing`, `toolchain_missing`, `transpile_failed`, `run_failed`, `output_mismatch`, `artifact_presence_mismatch`, `artifact_missing`, `artifact_size_mismatch`, `artifact_crc32_mismatch` をすべて 0 件にする。
 
 基本方針:
 1. まず target profile が要求する toolchain を棚卸しし、どの実行ファイル不足で `toolchain_missing` になっているかを確定する。
@@ -69,16 +70,17 @@ Phase 1 snapshot:
 
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
-- `python3 tools/runtime_parity_check.py --targets js,ts --case-root sample --ignore-unstable-stdout --all-samples`
-- `python3 tools/runtime_parity_check.py --targets rs,cs,go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout --all-samples`
-- `python3 tools/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout --all-samples`
+- `python3 tools/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --east3-opt-level 2 --cpp-codegen-opt 3`
+- `python3 tools/runtime_parity_check.py --targets js,ts --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
+- `python3 tools/runtime_parity_check.py --targets rs,cs,go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
+- `python3 tools/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
 - `python3 tools/check_noncpp_backend_health.py --family all`
 
 ## 分解
 
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01] parity target 全体の `runner_needs` と current `toolchain_missing` を棚卸しし、target ごとの不足 toolchain を matrix 化する。
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02] 「全target parity green」の done 条件、許容しない failure category、確認コマンドを spec/plan に固定する。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02] 「全target parity green」の done 条件、許容しない failure category、確認コマンドを spec/plan に固定する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01] baseline target（`cpp/js/ts`）の sample parity を再確認し、他 target 修復中も `18/18` を維持する。
@@ -137,3 +139,4 @@ Phase 1 snapshot:
 - 2026-03-08: 本計画は runtime layout 再編より先に行う。理由は、layout 問題と toolchain 不足を混ぜると設計判断がぶれるためである。
 - 2026-03-08: 既存 baseline では `cpp/js/ts` が green、その他は `toolchain_missing` である。したがって本計画の主対象は「backend bug 修正」よりまず「実行環境不足の解消」とする。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01]: `pytra_cli_profiles.list_parity_targets()` と `TargetProfile.runner_needs`、および current machine の `shutil.which(...)` 実測を突き合わせ、Phase 1 baseline を `cpp/js/ts` available、その他 11 target は `toolchain_missing` として matrix 化した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02]: full parity green は `runtime_parity_check.py` の category が `ok` のみである状態と定義し、canonical command を `--targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` に固定した。
