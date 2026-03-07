@@ -107,7 +107,7 @@ health matrix の failure category:
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2（`go/java/kotlin/swift/scala`）の static contract / smoke / transpile failure を解消する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 の parity baseline を更新し、`toolchain missing` / 実行 failure / artifact 差分を固定化する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3（`ruby/lua/php/nim`）の static contract / smoke / transpile failure を解消する。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 の parity baseline を更新し、runtime 差分と backend bug を切り分ける。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 の parity baseline を更新し、runtime 差分と backend bug を切り分ける。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `run_local_ci.py` または同等の回帰導線へ non-C++ backend health check を統合する。
 - [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02] `docs/ja/spec` / `docs/en/spec` / `docs/ja/how-to-use.md` を更新し、linked-program 後の non-C++ backend 修復運用を固定して計画を閉じる。
 
@@ -183,10 +183,10 @@ health matrix の failure category:
 | `kotlin` | pass | pass | `toolchain_missing` | `toolchain_missing` | `check_py2x_transpile.py --target kotlin` の full run 通過後も、sample parity 18 case は全件 `toolchain_missing`。 |
 | `swift` | pass | pass | `toolchain_missing` | `toolchain_missing` | `check_py2x_transpile.py --target swift` の full run 通過後も、sample parity 18 case は全件 `toolchain_missing`。 |
 | `scala` | pass | pass | `toolchain_missing` | `toolchain_missing` | `test_py2scala_smoke.py` 18/18 後に sample parity 18 case を再測定し、全件 `toolchain_missing`。 |
-| `ruby` | pass | pass | pending | `pending_parity` | `runtime_symbol_index` import を `toolchain.*` へ修正し、`check_py2x_transpile.py --target ruby` は 10/10。 |
-| `lua` | pass | pass | pending | `pending_parity` | `_G.math.max` / truthiness-preserving ifexp closure に smoke expectation を合わせ、`test_py2lua_smoke.py` は 33/33。 |
-| `php` | pass | pass | pending | `pending_parity` | `runtime_symbol_index` import を `toolchain.*` へ修正し、`check_py2x_transpile.py --target php` は 10/10。 |
-| `nim` | pass | pass | pending | `pending_parity` | `runtime_symbol_index` import を `toolchain.*` へ修正し、`check_py2x_transpile.py --target nim` は 7/7。 |
+| `ruby` | pass | pass | `toolchain_missing` | `toolchain_missing` | transpile 修復後に sample parity 18 case を再測定し、全件 `toolchain_missing`。 |
+| `lua` | pass | pass | `toolchain_missing` | `toolchain_missing` | smoke 修復後に sample parity 18 case を再測定し、全件 `toolchain_missing`。 |
+| `php` | pass | pass | `toolchain_missing` | `toolchain_missing` | transpile 修復後に sample parity 18 case を再測定し、全件 `toolchain_missing`。 |
+| `nim` | pass | pass | `toolchain_missing` | `toolchain_missing` | transpile 修復後に sample parity 18 case を再測定し、全件 `toolchain_missing`。 |
 
 ## 決定ログ
 
@@ -202,3 +202,4 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2 の primary failure は `Path(...)` ctor の source-origin call が canonical runtime metadata を持たないまま backend へ流れる点と、`kotlin` / `swift` emitter が `runtime_symbol_index` を `src.*` import していた点に収束した。`go` / `java` / `scala` には bare `Path(...)` ctor fallback を追加し、`java` は `_safe_ident` で `super` を壊さないよう補正、`kotlin` / `swift` は import path を `toolchain.*` へ修正した。これにより Wave 2 は smoke/transpile green へ回復し、残る parity 計測だけを `S4-02` に分離した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 parity を target ごとに再測定した結果、`go` / `java` / `kotlin` / `swift` / `scala` は sample parity 18 case 全件 `toolchain_missing` だった。つまり Wave 2 に残っているのは backend bug ではなく実行環境依存の infra baseline であり、Wave 1 と同じく修復対象外として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3 の実 failure は 2 系統だった。`ruby` / `php` / `nim` は `runtime_symbol_index` を `src.*` import していたため backend spec load 時点で `ModuleNotFoundError` になっており、`kotlin` / `swift` と同じ修正で回復した。`lua` は emitter の出力が `_G.math.max` と truthiness-preserving ifexp closure に進化していた一方 smoke expectation が古いままだったため、test 側を現行 contract に同期して 33/33 へ戻した。これにより Wave 3 は smoke/transpile green となり、残る parity 計測だけを `S5-02` に分離した。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 parity を target ごとに再測定した結果、`ruby` / `lua` / `php` / `nim` は sample parity 18 case 全件 `toolchain_missing` だった。Wave 3 でも backend bug と実行環境依存の infra baseline を分離できたので、残タスクは parity 測定ではなく運用導線への統合だけになった。
