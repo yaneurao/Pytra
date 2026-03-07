@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/time.h"
 #include "pytra/utils/png.h"
@@ -74,7 +74,7 @@ void run_mandelbrot() {
     
     float64 start = pytra::std::time::perf_counter();
     
-    bytearray pixels = render_mandelbrot(width, height, max_iter, -2.2, 1.0, -1.2, 1.2);
+    bytearray pixels = render_mandelbrot(width, height, max_iter, -(2.2), 1.0, -(1.2), 1.2);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
     
     float64 elapsed = pytra::std::time::perf_counter() - start;
