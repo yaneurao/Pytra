@@ -71,8 +71,8 @@ def _build_and_run_cpp(work: Path, out_png: Path, out_gif: Path) -> None:
         str(harness),
         "src/runtime/cpp/generated/utils/png.cpp",
         "src/runtime/cpp/generated/utils/gif.cpp",
-        "src/runtime/cpp/core/gc.ext.cpp",
-        "src/runtime/cpp/core/io.ext.cpp",
+        "src/runtime/cpp/native/core/gc.ext.cpp",
+        "src/runtime/cpp/native/core/io.ext.cpp",
         "-o",
         str(exe),
     ]

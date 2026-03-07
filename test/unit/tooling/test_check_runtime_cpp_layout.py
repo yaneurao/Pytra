@@ -27,7 +27,7 @@ def _make_valid_tree(root: Path) -> None:
     _write(root / "src" / "runtime" / "cpp" / "pytra" / "std" / "time.h", f"// {marker}\n")
     _write(root / "src" / "runtime" / "cpp" / "core" / "dict.ext.h", "#pragma once\n")
     _write(root / "src" / "runtime" / "cpp" / "core" / "py_runtime.ext.h", "#pragma once\n")
-    _write(root / "src" / "runtime" / "cpp" / "core" / "gc.ext.cpp", "// legacy baseline\n")
+    _write(root / "src" / "runtime" / "cpp" / "native" / "core" / "gc.ext.cpp", "// native\n")
     _write(
         root / "src" / "runtime" / "cpp" / "generated" / "core" / "dict.ext.cpp",
         f"// {marker}\n",

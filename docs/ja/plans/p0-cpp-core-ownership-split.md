@@ -254,6 +254,13 @@ Phase 1 契約固定:
 - `tools/check_runtime_core_gen_markers.py` は全言語の `pytra-gen` / `pytra-core` 監査を維持したまま、C++ `generated/core` の `source/generated-by` marker 必須、`native/core` と `core` surface の marker 禁止を追加した。
 - synthetic unit として `test_check_runtime_cpp_layout.py` を新設し、移行期の `core` baseline + future `generated/native/core` lane が通ること、`core/*.cpp` 再侵入と `pytra/core` 再導入が fail することを固定した。`test_check_runtime_core_gen_markers.py` にも C++ core split reason の回帰を追加した。
 
+## Phase 3 実施結果
+
+- handwritten core compile source の第一弾として `src/runtime/cpp/core/gc.ext.cpp` と `src/runtime/cpp/core/io.ext.cpp` を `src/runtime/cpp/native/core/` へ移した。header include 面は `core/gc.ext.h` / `core/io.ext.h` のまま維持し、`.cpp` 実体だけを `core/` から追い出した。
+- compile source を直書きしていた representative smoke (`test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/verify_image_runtime_parity.py`) は `native/core/*.ext.cpp` 参照へ同期した。
+- `tools/check_runtime_cpp_layout.py` は `core/` に `.cpp` が 1 本でも残っていたら fail する形へ締め、`test_runtime_symbol_index.py` / `test_cpp_runtime_build_graph.py` には実 repo の `core/gc.ext.h -> native/core/gc.ext.cpp` 契約を固定した。
+- `tools/runtime_symbol_index.json` を再生成し、`pytra.core.gc` / `pytra.core.io` の compile source が `native/core/*.ext.cpp` を指す状態へ同期した。
+
 ## 分解
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01] C++ low-level runtime (`core`) に `generated/core` + `native/core` を導入し、stable include 面を保ったまま generated/handwritten の物理混在を解消する。
@@ -264,7 +271,7 @@ Phase 1 契約固定:
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-02] `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` を core split 前提へ更新し、`core/` 実装再侵入・marker 混在を fail-fast 化する。
 
-- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
+- [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-02] handwritten core header (`py_runtime/py_types/list/dict/set/str` など) を `native/core/` 正本へ移し、`core/` には互換 forwarder / façade だけを残す。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
 
@@ -283,3 +290,4 @@ Phase 1 契約固定:
 - 2026-03-07: `S1-02` として `spec-runtime` / `spec-abi` / `core/README` を更新し、`core/` は stable include surface、`generated/core` は SoT 由来正本、`native/core` は handwritten 正本とする契約を固定した。`pytra/core` は public root を二重化して ownership を曖昧にするため導入しない。
 - 2026-03-07: `S2-01` として `runtime_symbol_index` / `cpp_runtime_deps` を future core split 対応に拡張した。`core/*.ext.h` は public header のまま維持し、compile source は `generated/core` / `native/core` / 現行 `core/*.ext.cpp` fallback の順で解決する。
 - 2026-03-07: `S2-02` として `check_runtime_cpp_layout.py` / `check_runtime_core_gen_markers.py` を core split 前提へ更新した。移行期の `core/` には legacy baseline の `gc/io` 以外の `.cpp` を許さず、`pytra/core` も unsupported bucket として fail-fast にしたうえで、C++ `generated/core` / `native/core` / `core` surface の marker 契約を separate guard で固定した。
+- 2026-03-07: `S3-01` として `gc.ext.cpp` / `io.ext.cpp` を `native/core/` へ移し、`core/` から handwritten compile source を除去した。`core/*.ext.h` include 面は維持しつつ、runtime symbol index・build graph・runtime smoke・image parity は `native/core/*.ext.cpp` を使うよう同期した。

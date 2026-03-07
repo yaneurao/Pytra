@@ -6,7 +6,7 @@ Rules:
 - Module runtime under `src/runtime/cpp/generated/{built_in,std,utils}` must contain the auto-generated marker.
 - Module runtime under `src/runtime/cpp/native/{built_in,std,utils}` must NOT contain the auto-generated marker.
 - Public shim under `src/runtime/cpp/pytra/{built_in,std,utils}` must contain the auto-generated marker and stay header-only.
-- `src/runtime/cpp/core/**` is the stable include surface. Only legacy baseline `.cpp` files may remain during migration.
+- `src/runtime/cpp/core/**` is the stable include surface and must not contain implementation `.cpp`.
 - Future `src/runtime/cpp/generated/core/**` and `src/runtime/cpp/native/core/**` must obey generated/handwritten marker rules without reintroducing ownership mixing under `core/`.
 """
 
@@ -18,7 +18,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MARKER = "AUTO-GENERATED FILE. DO NOT EDIT."
 TARGET_SUFFIXES = {".h", ".cpp"}
-CORE_LEGACY_CPP_BASELINE = {"gc.ext.cpp", "io.ext.cpp"}
 BANNED_PY_RUNTIME_PATTERNS = {
     "static inline str sub(": "re.sub duplicate must not live in py_runtime.ext.h",
     "struct ArgumentParser": "argparse duplicate must not live in py_runtime.ext.h",
@@ -146,7 +145,7 @@ def _check_core_surface_files(
             invalid_name.append(rel)
         if MARKER in txt:
             unexpected_marker.append(rel)
-        if p.suffix == ".cpp" and p.name not in CORE_LEGACY_CPP_BASELINE:
+        if p.suffix == ".cpp":
             unexpected_core_impl_files.append(rel)
 
 
