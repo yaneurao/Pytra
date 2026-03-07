@@ -47,6 +47,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIsInstance(string_ops, dict)
         string_symbols = string_ops.get("symbols")
         self.assertIsInstance(string_symbols, dict)
+        self.assertEqual(string_symbols.get("py_join", {}).get("kind"), "function")
         self.assertEqual(string_symbols.get("py_strip", {}).get("kind"), "function")
 
         time_mod = modules.get("pytra.std.time")

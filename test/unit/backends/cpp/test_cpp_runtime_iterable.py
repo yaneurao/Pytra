@@ -238,6 +238,8 @@ int main() {
         iter_ops_header = (ROOT / "src/runtime/cpp/native/built_in/iter_ops.h").read_text(encoding="utf-8")
         sequence_header = (ROOT / "src/runtime/cpp/native/built_in/sequence.h").read_text(encoding="utf-8")
         contains_header = (ROOT / "src/runtime/cpp/native/built_in/contains.h").read_text(encoding="utf-8")
+        string_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.h").read_text(encoding="utf-8")
+        string_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.cpp").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
         self.assertNotIn("static inline T& py_at(list<T>& v, int64 idx)", runtime_header)
@@ -249,6 +251,9 @@ int main() {
         self.assertIn("static inline list<T> py_reversed(const list<T>& values)", iter_ops_header)
         self.assertIn("static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values)", iter_ops_header)
         self.assertIn("static inline list<T> py_repeat(const list<T>& v, int64 n)", sequence_header)
+        self.assertIn("str py_join(const str& sep, const list<str>& parts);", string_ops_header)
+        self.assertIn("str py_join(const str& sep, const list<str>& parts) {", string_ops_cpp)
+        self.assertNotIn("rc<list<str>>", string_ops_header)
 
 
 if __name__ == "__main__":

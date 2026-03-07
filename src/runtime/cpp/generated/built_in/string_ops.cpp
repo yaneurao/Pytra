@@ -34,6 +34,21 @@ int64 _normalize_index(int64 idx, int64 n) {
     return out;
 }
 
+str py_join(const str& sep, const list<str>& parts) {
+    int64 n = py_len(parts);
+    if (n == 0)
+        return "";
+    str out = "";
+    int64 i = 0;
+    while (i < n) {
+        if (i > 0)
+            out += sep;
+        out += parts[i];
+        i++;
+    }
+    return out;
+}
+
 str py_lstrip(const str& s) {
     int64 i = 0;
     int64 n = py_len(s);

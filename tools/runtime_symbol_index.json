@@ -114,6 +114,11 @@
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_find_window"
         },
+        "py_join": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_join"
+        },
         "py_lstrip": {
           "dispatch": "function",
           "kind": "function",
@@ -426,6 +431,11 @@
       "runtime_group": "std",
       "source_py": "src/pytra/std/__init__.py",
       "symbols": {
+        "abi": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.abi"
+        },
         "extern": {
           "dispatch": "function",
           "kind": "function",
