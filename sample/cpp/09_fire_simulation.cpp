@@ -1,5 +1,6 @@
 #include "runtime/cpp/core/py_runtime.h"
 
+#include "pytra/built_in/sequence.h"
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 
@@ -39,7 +40,7 @@ void run_09_fire_simulation() {
     
     float64 start = pytra::std::time::perf_counter();
     rc<list<list<int64>>> heat = rc_list_from_value(list<list<int64>>(h, list<int64>(w, 0)));
-    list<bytes> frames = {};
+    rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
     
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
@@ -64,9 +65,9 @@ void run_09_fire_simulation() {
             for (int64 xx = 0; xx < w; ++xx)
                 frame[row_base + xx] = py_at(py_at(heat, py_to<int64>(yy)), py_to<int64>(xx));
         }
-        frames.append(frame);
+        py_append(frames, frame);
     }
-    pytra::utils::gif::save_gif(out_path, w, h, frames, fire_palette(), 4, 0);
+    pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), fire_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", steps);

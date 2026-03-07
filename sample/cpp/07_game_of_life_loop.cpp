@@ -1,5 +1,6 @@
 #include "runtime/cpp/core/py_runtime.h"
 
+#include "pytra/built_in/sequence.h"
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 
@@ -110,13 +111,13 @@ void run_07_game_of_life_loop() {
             }
         }
     }
-    list<bytes> frames = {};
-    frames.reserve((steps <= 0) ? 0 : steps);
+    rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
+    rc_list_ref(frames).reserve((steps <= 0) ? 0 : steps);
     for (int64 _ = 0; _ < steps; ++_) {
-        frames.append(render(grid, w, h, cell));
+        py_append(frames, render(grid, w, h, cell));
         grid = next_state(grid, w, h);
     }
-    pytra::utils::gif::save_gif(out_path, w * cell, h * cell, frames, pytra::utils::gif::grayscale_palette(), 4, 0);
+    pytra::utils::gif::save_gif(out_path, w * cell, h * cell, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", steps);
