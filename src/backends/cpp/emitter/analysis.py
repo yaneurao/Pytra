@@ -126,6 +126,20 @@ class CppAnalysisEmitter:
                                 out[nm] = ty
                                 if ty not in {"", "unknown"}:
                                     local_decl_types[nm] = self.normalize_type_name(ty)
+                elif kind in {"While", "For", "ForRange", "ForCore"}:
+                    child_groups = [self._dict_stmt_list(st.get("body")), self._dict_stmt_list(st.get("orelse"))]
+                    for grp in child_groups:
+                        child_map = self._collect_assigned_name_types(grp)
+                        for nm, ty in child_map.items():
+                            if nm in out:
+                                merged = self._merge_decl_types_for_branch_join(out[nm], ty)
+                                out[nm] = merged
+                                if merged not in {"", "unknown"}:
+                                    local_decl_types[nm] = self.normalize_type_name(merged)
+                            else:
+                                out[nm] = ty
+                                if ty not in {"", "unknown"}:
+                                    local_decl_types[nm] = self.normalize_type_name(ty)
         finally:
             self.declared_var_types = saved_decl_types
         return out

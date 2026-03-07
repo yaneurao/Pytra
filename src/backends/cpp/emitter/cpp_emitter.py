@@ -792,139 +792,18 @@ class CppEmitter(
                 i += 1
 
     def _collect_stack_list_locals(self, fn_stmt: dict[str, Any]) -> set[str]:
-        """関数内で stack/value 縮退可能な list ローカル候補を返す（fail-closed）。"""
+        """optimizer が付けた value-local hint を読み取る。"""
         out: set[str] = set()
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
             return out
-        body = self._dict_stmt_list(fn_stmt.get("body"))
-        candidates: set[str] = set()
-        i = 0
-        while i < len(body):
-            st = body[i]
-            if self._node_kind_from_dict(st) == "AnnAssign":
-                target = self.any_to_dict_or_empty(st.get("target"))
-                if self._node_kind_from_dict(target) == "Name":
-                    ann_t = self.normalize_type_name(self.any_dict_get_str(st, "annotation", ""))
-                    value = self.any_to_dict_or_empty(st.get("value"))
-                    is_empty_list_literal = (
-                        self._node_kind_from_dict(value) == "List"
-                        and len(self._dict_stmt_list(value.get("elements"))) == 0
-                    )
-                    if ann_t.startswith("list[") and ann_t.endswith("]") and is_empty_list_literal:
-                        nm = self.any_dict_get_str(target, "id", "")
-                        if nm != "":
-                            candidates.add(nm)
-            i += 1
-        if len(candidates) == 0:
+        meta = self.any_to_dict_or_empty(fn_stmt.get("meta"))
+        payload = self.any_to_dict_or_empty(meta.get("cpp_value_list_locals_v1"))
+        locals_any = payload.get("locals")
+        if not isinstance(locals_any, list):
             return out
-
-        escaped: set[str] = set()
-
-        def _scan_escape(cur: Any) -> None:
-            node = self.any_to_dict_or_empty(cur)
-            if len(node) == 0:
-                return
-            kind = self._node_kind_from_dict(node)
-            if kind == "Return":
-                value_node = self.any_to_dict_or_empty(node.get("value"))
-                value_kind = self._node_kind_from_dict(value_node)
-                if value_kind == "Name":
-                    value_name = self.any_dict_get_str(value_node, "id", "")
-                    if value_name in candidates:
-                        escaped.add(value_name)
-                elif value_kind in {"Tuple", "List", "Set", "Dict"}:
-                    reads: set[str] = set()
-                    self._collect_name_reads(value_node, reads)
-                    for nm in reads:
-                        if nm in candidates:
-                            escaped.add(nm)
-            if kind == "Call":
-                meta = self.any_to_dict_or_empty(node.get("meta"))
-                callsite = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
-                args_any = self.any_to_list(node.get("args"))
-                callsite_handled = False
-                if len(callsite) > 0:
-                    handled_by_callsite = False
-                    callee_arg_escape_any = callsite.get("callee_arg_escape")
-                    if isinstance(callee_arg_escape_any, list):
-                        handled_by_callsite = True
-                        i = 0
-                        while i < len(args_any):
-                            must_escape = True
-                            if i < len(callee_arg_escape_any):
-                                must_escape = bool(callee_arg_escape_any[i])
-                            if must_escape:
-                                reads_cs: set[str] = set()
-                                self._collect_name_reads(args_any[i], reads_cs)
-                                for nm in reads_cs:
-                                    if nm in candidates:
-                                        escaped.add(nm)
-                            i += 1
-                    elif isinstance(callsite.get("resolved"), bool):
-                        # `non_escape_callsite` があるのに arg 情報が欠ける場合は fail-closed。
-                        handled_by_callsite = True
-                        i = 0
-                        while i < len(args_any):
-                            reads_cs: set[str] = set()
-                            self._collect_name_reads(args_any[i], reads_cs)
-                            for nm in reads_cs:
-                                if nm in candidates:
-                                    escaped.add(nm)
-                            i += 1
-                    if handled_by_callsite:
-                        callsite_handled = True
-
-                if not callsite_handled:
-                    safe_call = False
-                    runtime_call = self.any_dict_get_str(node, "runtime_call", "")
-                    builtin_name = self.any_dict_get_str(node, "builtin_name", "")
-                    if runtime_call in {"py_len", "py_to_string", "py_to_bool", "py_to_int64", "py_to_float64"}:
-                        safe_call = True
-                    if builtin_name == "len":
-                        safe_call = True
-                    fn_node = self.any_to_dict_or_empty(node.get("func"))
-                    fn_kind = self._node_kind_from_dict(fn_node)
-                    if fn_kind == "Name":
-                        fn_name = self.any_dict_get_str(fn_node, "id", "")
-                        if fn_name == "len":
-                            safe_call = True
-                    if fn_kind == "Attribute":
-                        attr = self.any_dict_get_str(fn_node, "attr", "")
-                        owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
-                        owner_name = self.any_dict_get_str(owner_node, "id", "")
-                        if (
-                            owner_name in candidates
-                            and attr in {"append", "extend", "pop", "clear", "reverse", "sort"}
-                        ):
-                            safe_call = True
-                    if not safe_call:
-                        arg_reads: set[str] = set()
-                        self._collect_name_reads(args_any, arg_reads)
-                        self._collect_name_reads(node.get("keywords"), arg_reads)
-                        for nm in arg_reads:
-                            if nm in candidates:
-                                escaped.add(nm)
-            if kind == "Assign" or kind == "AnnAssign":
-                targets2: set[str] = set()
-                self._collect_name_targets(node.get("target"), targets2)
-                value_node = self.any_to_dict_or_empty(node.get("value"))
-                if self._node_kind_from_dict(value_node) == "Name":
-                    value_name = self.any_dict_get_str(value_node, "id", "")
-                    if value_name in candidates:
-                        # `x = x` 以外の Name 直代入（別名化）は escape。
-                        if not (len(targets2) == 1 and value_name in targets2):
-                            escaped.add(value_name)
-            for value in node.values():
-                if isinstance(value, dict) or isinstance(value, list):
-                    _scan_escape(value)
-
-        i = 0
-        while i < len(body):
-            _scan_escape(body[i])
-            i += 1
-        for nm in candidates:
-            if nm not in escaped:
-                out.add(nm)
+        for item in locals_any:
+            if isinstance(item, str) and item != "":
+                out.add(item)
         return out
 
     def _collect_pyobj_runtime_list_alias_names(
