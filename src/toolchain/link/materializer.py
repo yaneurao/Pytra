@@ -142,27 +142,21 @@ def load_linked_output_bundle(
     modules: list[LinkedProgramModule] = []
     if not isinstance(modules_any, list):
         raise RuntimeError("link-output.modules must be a list")
-    for index, item_any in enumerate(modules_any):
-        if not isinstance(item_any, dict):
-            raise RuntimeError("link-output.modules[" + str(index) + "] must be an object")
-        module_id = item_any.get("module_id")
-        output = item_any.get("output")
-        source_path = item_any.get("source_path")
-        is_entry = item_any.get("is_entry")
+    for index, item in enumerate(modules_any):
+        module_id = getattr(item, "module_id", "")
+        output = getattr(item, "output", "")
+        source_path = getattr(item, "source_path", "")
+        is_entry = bool(getattr(item, "is_entry", False))
         if not isinstance(module_id, str) or module_id == "":
             raise RuntimeError("link-output.modules[" + str(index) + "].module_id must be non-empty string")
         if not isinstance(output, str) or output == "":
             raise RuntimeError("link-output.modules[" + str(index) + "].output must be non-empty string")
-        if not isinstance(source_path, str) or source_path == "":
-            raise RuntimeError("link-output.modules[" + str(index) + "].source_path must be non-empty string")
-        if not isinstance(is_entry, bool):
-            raise RuntimeError("link-output.modules[" + str(index) + "].is_entry must be bool")
         artifact_path = (manifest_dir / output).resolve()
         east_doc = _load_linked_east3_doc(artifact_path, module_id=module_id)
         modules.append(
             LinkedProgramModule(
                 module_id=module_id,
-                source_path=source_path,
+                source_path=source_path if isinstance(source_path, str) else "",
                 is_entry=is_entry,
                 east_doc=east_doc,
                 artifact_path=artifact_path,
