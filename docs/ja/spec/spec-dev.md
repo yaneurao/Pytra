@@ -361,6 +361,10 @@ linked module(EAST3)
 
 - `str::split` / `splitlines` / `count` / `join` のような pure helper は `py_runtime` に残り続けてはならない。移行期 debt として only-by-exception で許容し、SoT 側へ戻す計画を同時に持つ。
 - `dict_get_*` / `py_dict_get_default` / object/`std::any` bridge のような low-level dynamic helper は、`generated/built_in` へ雑に移してはならない。lane 設計前は `native/core` 保留でよい。
+- `generated/built_in` に出す helper は `src/pytra/built_in/*.py` を唯一 SoT とし、`--emit-runtime-cpp` の正規導線でのみ checked-in artifact を更新する。
+- `generated/built_in/*.h` は stable core header だけを参照し、`generated/built_in/*.cpp` は `runtime/cpp/core/py_runtime.h` と sibling generated header を include する。`runtime/cpp/native/core/...` 直 include は禁止する。
+- mutable container を helper 境界で value 受けしたい generated helper は、`@abi` などの明示契約を持たなければならない。C++ backend 内部の ref-first 表現を helper ABI として固定してはならない。
+- `generated/core` は low-level pure helper 専用の予約 lane であり、`built_in` semantics の逃がし先にしてはならない。`generated/core` へ置く helper でも public include 面は `runtime/cpp/core/*.h` のまま維持する。
 
 制約:
 

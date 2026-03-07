@@ -20,6 +20,7 @@
   - 目的: `docs/ja/todo/index.md` / `docs/ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
 - `tools/check_runtime_cpp_layout.py`
   - 目的: `src/runtime/cpp/{built_in,std,utils}` の legacy-closed 維持、`generated/native/pytra` の ownership 境界、`core` compatibility surface と `generated/core` / `native/core` の split 前提を同一 guard で検証する。あわせて `generated/core` / `native/core` lane の存在を要求し、`runtime/cpp/native/core/...` の直接 include を `core/*.h` forwarder 以外で禁止する。
+  - 補足: `generated/built_in` / `generated/core` は plain naming と generated marker を必須とし、`native` / `core` への ownership 混在を fail させる。
 - `tools/check_py2cpp_transpile.py`
   - 目的: `test/fixtures/` を `py2x.py --target cpp` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）
@@ -69,6 +70,7 @@
   - 目的: `src/pytra/std/*.py` / `src/pytra/utils/*.py` を正本とする運用を検査し、`pytra-gen` 以外への手書き実装（現行ガード対象: `json/assertions/re/typing`）を fail させる。あわせて C++ `std/utils` 全体の責務境界（`pytra-gen` 生成物必須 + `pytra` forwarder + `pytra-core` 実装分離）を検証する。
 - `tools/check_runtime_core_gen_markers.py`
   - 目的: 全言語 `src/runtime/<lang>/pytra-gen/**` の `source/generated-by` marker を強制し、`src/runtime/<lang>/pytra-core/**` への generated marker 混在を検知する。加えて C++ では `src/runtime/cpp/generated/core/**` の marker 必須、`src/runtime/cpp/native/core/**` と `src/runtime/cpp/core/**` の marker 禁止も監査する（`tools/runtime_core_gen_markers_allowlist.txt` 基準）。
+  - 補足: C++ `generated/built_in` / `generated/std` / `generated/utils` も同じ marker 契約で監査し、`generated/core` を low-level pure helper lane として扱う前提を壊す増分を止める。
 - `tools/check_runtime_pytra_gen_naming.py`
   - 目的: `src/runtime/*/pytra-gen/` の `std|utils` 配置と素通し命名（`<module>.py -> <module>.<ext>`）を検査し、`image_runtime.*` / `runtime/*.php` などの命名・配置違反増分を fail させる（`tools/runtime_pytra_gen_naming_allowlist.txt` 基準）。
 - `tools/check_emitter_runtimecall_guardrails.py`

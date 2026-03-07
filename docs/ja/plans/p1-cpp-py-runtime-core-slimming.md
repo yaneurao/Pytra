@@ -250,6 +250,24 @@
 - `object` / `std::any` bridge を伴う helper は low-level lane の設計なしに SoT へ戻すと ownership と ABI 境界が曖昧になる。
 - したがって `S3-01` の初回移行は、`string_ops.py` と object-specialized built_in helper を中心に進める。
 
+## 5.3 emission lane 契約
+
+`S2-02` では、`py_runtime` から helper を剥がすときの C++ runtime emission lane を次で固定する。
+
+- `generated/built_in`
+  - SoT は `src/pytra/built_in/*.py` のみ。
+  - 生成は `src/py2x.py --emit-runtime-cpp` の正規導線だけを使い、module 専用 generator は追加しない。
+  - real artifact は plain naming (`*.h`, `*.cpp`) + `source:` / `generated-by:` marker を必須とする。
+  - `.h` は stable core header だけを参照し、`.cpp` は `runtime/cpp/core/py_runtime.h` と sibling generated header を include する。
+  - mutable container を helper 境界で value 受けしたい場合は `@abi` などの明示契約を使う。C++ backend 内部の ref-first 表現を helper ABI に固定してはならない。
+- `generated/core`
+  - pure Python で書ける low-level helper 専用の予約 lane とする。
+  - `built_in` semantics の単なる逃がし先として使わず、public include 面は `runtime/cpp/core/*.h` を維持する。
+  - `object` / `rc<>` / GC / process I/O / C++ layout glue を跨ぐ helper は lane 設計なしに移さない。
+- guard / tooling
+  - layout は `check_runtime_cpp_layout.py`、marker は `check_runtime_core_gen_markers.py` が正本とする。
+  - runtime symbol index / build graph は public header から compile source を引き、emitter が `generated/...` を直に選ばない。
+
 ## 6. リスク
 
 - `template` / `inline` 依存が強い helper は、単純に `.cpp` へ逃がせない。
@@ -266,3 +284,4 @@
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `src/runtime/cpp/native/core/py_runtime.h`（3267行）を family 単位で棚卸しし、low-level core / generated built_in 候補 / 保留へ分類した。`str::split` / `splitlines` / `count` / `join` と `zip` / `sorted` / `sum` / `py_min` / `py_max` は `generated/built_in` 候補として確定し、`generated/core` / `native/built_in` は現段階では即時確定 0 件とした。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` には `core/py_runtime.h` / `native/core/py_runtime.h` の責務境界、`generated/built_in` へ戻すべき pure helper、`generated/core` へ性急に逃がしてはいけない保留群を明記した。`spec-dev` には current C++ runtime path を `core` / `native` / `generated` / `pytra` の4層で書き直し、`py_runtime` が stable include surface であって built_in semantics の恒久置き場ではないことを追加した。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] SoT 上の戻し先を固定し、string family は `string_ops.py`、iterator helper は `iter_ops.py`、sequence/aggregate helper は `sequence.py` へ寄せる方針とした。typed generic helper は linked-program runtime integration / helper generics 計画を待ち、初回移行では object-specialized helper から着手する。
+- 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/built_in` と `generated/core` の emission lane 契約を fix した。`generated/built_in` は `src/pytra/built_in/*.py` SoT + `--emit-runtime-cpp` 正規導線 + plain naming + marker 必須、`generated/core` は low-level pure helper 専用 lane とし、`native/core` 直 include や built_in semantics の逃がし込みを禁止する。
