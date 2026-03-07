@@ -11,6 +11,8 @@ from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_esca
 from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
 from toolchain.ir.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
 from toolchain.ir.east3_optimizer import PassContext
+from toolchain.ir.east3_optimizer import parse_east3_opt_pass_overrides
+from toolchain.ir.east3_optimizer import resolve_east3_opt_level
 from toolchain.link.program_call_graph import build_linked_program_call_graph
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkedProgram
@@ -39,6 +41,13 @@ class LinkedProgramOptimizationResult:
     link_output_doc: dict[str, object]
 
 
+@dataclass(frozen=True)
+class _GlobalPassConfig:
+    opt_level: int
+    enabled: set[str]
+    disabled: set[str]
+
+
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
         text = value.strip()
@@ -54,6 +63,30 @@ def _ensure_meta(node: dict[str, Any]) -> dict[str, Any]:
     meta: dict[str, Any] = {}
     node["meta"] = meta
     return meta
+
+
+def _resolve_global_pass_config(program: LinkedProgram) -> _GlobalPassConfig:
+    options = program.options if isinstance(program.options, dict) else {}
+    raw_opt_level = options.get("east3_opt_level", 1)
+    raw_pass_spec = options.get("east3_opt_pass", "")
+    try:
+        opt_level = resolve_east3_opt_level(raw_opt_level)
+    except Exception as exc:
+        raise RuntimeError("invalid linked program east3_opt_level: " + str(raw_opt_level)) from exc
+    pass_spec = raw_pass_spec if isinstance(raw_pass_spec, str) else ""
+    try:
+        enabled, disabled = parse_east3_opt_pass_overrides(pass_spec)
+    except Exception as exc:
+        raise RuntimeError("invalid linked program east3_opt_pass: " + pass_spec) from exc
+    return _GlobalPassConfig(opt_level=opt_level, enabled=enabled, disabled=disabled)
+
+
+def _is_global_pass_enabled(config: _GlobalPassConfig, pass_name: str, *, min_opt_level: int = 1) -> bool:
+    if pass_name in config.disabled:
+        return False
+    if pass_name in config.enabled:
+        return True
+    return config.opt_level >= min_opt_level
 
 
 def _clone_module_doc(module: LinkedProgramModule) -> dict[str, Any]:
@@ -289,8 +322,14 @@ def _input_label(module: LinkedProgramModule) -> str:
 
 def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimizationResult:
     call_graph = build_linked_program_call_graph(program)
-    linked_modules, non_escape_summary = _run_program_non_escape(program)
-    linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
+    pass_config = _resolve_global_pass_config(program)
+    linked_modules: tuple[LinkedProgramModule, ...] = tuple(program.modules)
+    non_escape_summary: dict[str, object] = {}
+    if _is_global_pass_enabled(pass_config, "NonEscapeInterproceduralPass"):
+        linked_modules, non_escape_summary = _run_program_non_escape(program)
+    container_hints: dict[str, object] = {}
+    if _is_global_pass_enabled(pass_config, "CppListValueLocalHintPass"):
+        linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
     type_id_table = _build_type_id_table(program)
     program_id = _program_id(program)
 

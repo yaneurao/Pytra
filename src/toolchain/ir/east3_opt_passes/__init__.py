@@ -13,7 +13,6 @@ from toolchain.ir.east3_opt_passes.loop_invariant_cast_hoist_pass import LoopInv
 from toolchain.ir.east3_opt_passes.loop_invariant_hoist_lite_pass import LoopInvariantHoistLitePass
 from toolchain.ir.east3_opt_passes.numeric_cast_chain_reduction_pass import NumericCastChainReductionPass
 from toolchain.ir.east3_opt_passes.noop_cast_cleanup_pass import NoOpCastCleanupPass
-from toolchain.ir.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
 from toolchain.ir.east3_opt_passes.range_for_canonicalization_pass import RangeForCanonicalizationPass
 from toolchain.ir.east3_opt_passes.safe_reserve_hint_pass import SafeReserveHintPass
 from toolchain.ir.east3_opt_passes.strength_reduction_float_loop_pass import StrengthReductionFloatLoopPass
@@ -21,10 +20,11 @@ from toolchain.ir.east3_opt_passes.typed_enumerate_normalization_pass import Typ
 from toolchain.ir.east3_opt_passes.typed_repeat_materialization_pass import TypedRepeatMaterializationPass
 from toolchain.ir.east3_opt_passes.tuple_target_direct_expansion_pass import TupleTargetDirectExpansionPass
 from toolchain.ir.east3_opt_passes.unused_loop_var_elision_pass import UnusedLoopVarElisionPass
+from toolchain.ir.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
 
 
-def build_default_passes() -> list[object]:
-    """`O1` 既定 pass 列。"""
+def build_local_only_passes() -> list[object]:
+    """`EAST3 local optimizer` の既定 pass 列。"""
     return [
         NoOpCastCleanupPass(),
         LiteralCastFoldPass(),
@@ -38,11 +38,22 @@ def build_default_passes() -> list[object]:
         TypedRepeatMaterializationPass(),
         DictStrKeyNormalizationPass(),
         TupleTargetDirectExpansionPass(),
-        NonEscapeInterproceduralPass(),
-        CppListValueLocalHintPass(),
         LifetimeAnalysisPass(),
         LoopInvariantCastHoistPass(),
         UnusedLoopVarElisionPass(),
         LoopInvariantHoistLitePass(),
         StrengthReductionFloatLoopPass(),
     ]
+
+
+def build_global_post_link_passes() -> list[object]:
+    """`LinkedProgramOptimizer` が担う module rewrite pass 列。"""
+    return [
+        NonEscapeInterproceduralPass(),
+        CppListValueLocalHintPass(),
+    ]
+
+
+def build_default_passes() -> list[object]:
+    """後方互換込みの既定 local pass 列。"""
+    return build_local_only_passes()

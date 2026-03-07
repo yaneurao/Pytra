@@ -486,15 +486,15 @@ py2x.py
 
 ### Phase 4: local optimizer を再定義する
 
-- [ ] `EAST3 local optimizer` から whole-program 依存 pass を外す。
-- [ ] `CppListValueLocalHintPass` の位置を見直す。
-- [ ] local optimizer は「単一 module で閉じるものだけ」と明確にする。
+- [x] `EAST3 local optimizer` から whole-program 依存 pass を外す。
+- [x] `CppListValueLocalHintPass` の位置を見直す。
+- [x] local optimizer は「単一 module で閉じるものだけ」と明確にする。
 
 詳細タスク:
-- [ ] `S4-01` default pass list を local-only / global-only に分ける。
-- [ ] `S4-02` `NonEscapeInterproceduralPass` を local pass 列から外す。
-- [ ] `S4-03` `CppListValueLocalHintPass` を post-link module rewrite へ移すか、global summary 前提の local post-pass へ縮退する。
-- [ ] `S4-04` `LifetimeAnalysisPass` の位置づけを「local analysis only」として固定する。
+- [x] `S4-01` default pass list を local-only / global-only に分ける。
+- [x] `S4-02` `NonEscapeInterproceduralPass` を local pass 列から外す。
+- [x] `S4-03` `CppListValueLocalHintPass` を post-link module rewrite へ移すか、global summary 前提の local post-pass へ縮退する。
+- [x] `S4-04` `LifetimeAnalysisPass` の位置づけを「local analysis only」として固定する。
 
 ### Phase 5: backend registry を `ModuleEmitter + ProgramWriter` 構成へ移行する
 
@@ -660,7 +660,7 @@ src/
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S2-02] `py2x.py` の in-memory 導線を module map から `LinkedProgram` 構築へ切り替え、single-module 前提を外す。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] program-wide call graph / SCC fixed point を linker 段へ実装し、import-closure 内部読込に依存しない global 解析基盤を作る。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S3-02] global non-escape / container ownership / `type_id` 決定を linker 段へ実装し、linked module と `link-output.json` へ materialize する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S4-01] `EAST3 local optimizer` と `LinkedProgramOptimizer` の pass 責務を再分割し、whole-program 依存 pass を local optimizer から撤去する。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S4-01] `EAST3 local optimizer` と `LinkedProgramOptimizer` の pass 責務を再分割し、whole-program 依存 pass を local optimizer から撤去する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` を `emit_module + program_writer` 契約へ拡張し、旧 `emit -> str` API を互換 wrapper 化する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] backend 共通 `SingleFileProgramWriter` を追加し、`ir2lang.py` を new registry 契約へ追従させる。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S6-01] C++ を先行移行し、`multifile_writer.py` を `CppProgramWriter` へ再編して `CppEmitter` を module emit 専任にする。
@@ -683,3 +683,4 @@ src/
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S2-02] `LinkedProgram` を manifest-backed / in-memory の両方で扱えるよう `manifest_path=None` / `artifact_path=None` を許す model に拡張し、`py2x.py` は `.py` 入力時に `build_module_east_map(...) -> build_linked_program_from_module_map(...)` を通るよう更新した。`dump-east3-*` は entry module のみへ出す挙動に絞り、`test/unit/tooling/test_py2x_cli.py` と `test/unit/link/test_program_loader.py` で entry selection / JSON fallback / in-memory serialization guard を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] `src/toolchain/link/program_call_graph.py` を追加し、`LinkedProgram.modules` だけを入力に使う program-wide call graph / SCC builder を実装した。既存 `non_escape_call_graph` utility は再利用するが、欠けた callee を追加読込せず unresolved count に落とす方針を固定し、`test/unit/link/test_program_call_graph.py` で cross-module edge / mutual recursion SCC / missing module non-load を回帰化した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S3-02] `src/toolchain/link/global_optimizer.py` を追加し、`optimize_linked_program(...)` で global non-escape summary、C++ list ownership hint、deterministic `type_id_table`、`meta.linked_program_v1`、`link-output.v1` を in-memory materialize する導線を実装した。non-escape は program 内 module 群だけを closure に入れた `NonEscapeInterproceduralPass` 再利用で賄い、fallback source load は `source_path=""` で封じた。`test/unit/link/test_global_optimizer.py` で cross-module summary、type_id 決定、C++ value-list hint を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S4-01] `src/toolchain/ir/east3_opt_passes/__init__.py` に `build_local_only_passes()` / `build_global_post_link_passes()` を追加し、local default pass から `NonEscapeInterproceduralPass` / `CppListValueLocalHintPass` を外した。`optimize_linked_program(...)` は `east3_opt_level` / `east3_opt_pass` を尊重して global pass を有効化し、`py2x.py` と `backends/cpp/cli.py` の `.py -> EAST3` 導線は linked optimizer 後の entry/module map を backend へ渡すよう更新した。`test/unit/ir/test_east3_optimizer.py`、`test/unit/link/test_global_optimizer.py`、`test/unit/backends/cpp/test_east3_cpp_bridge.py` で split 契約と `opt_level=0` の非退行を固定した。

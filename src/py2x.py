@@ -16,6 +16,7 @@ from toolchain.compiler.backend_registry import resolve_layer_options
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document
 from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import LinkedProgram
+from toolchain.link import optimize_linked_program
 from pytra.std import argparse
 from pytra.std.pathlib import Path
 from pytra.std import sys
@@ -361,7 +362,8 @@ def main() -> int:
         dump_east3_opt_trace=dump_east3_opt_trace,
         target_lang=target_lang,
     )
-    east = _entry_module_east_doc(program)
+    optimized_program = optimize_linked_program(program).linked_program
+    east = _entry_module_east_doc(optimized_program)
     ir = lower_ir(spec, east, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
     out_src = emit_source(spec, ir, output_path, emitter_options)

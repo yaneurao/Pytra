@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 from toolchain.frontends.east1_build import East1BuildHelpers
+from toolchain.link import build_linked_program_from_module_map as _build_linked_program_from_module_map
+from toolchain.link import optimize_linked_program
 from toolchain.compiler.transpile_cli import (
     check_analyze_stage_guards,
     check_guard_limit,
@@ -282,6 +284,65 @@ from backends.cpp.emitter import install_py2cpp_runtime_symbols
 install_py2cpp_runtime_symbols(globals())
 
 
+def _normalize_link_dispatch_mode(mode: str) -> str:
+    return mode if mode == "native" or mode == "type_id" else "native"
+
+
+def _linked_program_entry_east_doc(program: Any) -> dict[str, Any]:
+    entry_ids_any = getattr(program, "entry_modules", ())
+    entry_ids = set(entry_ids_any) if isinstance(entry_ids_any, tuple) else set()
+    modules_any = getattr(program, "modules", ())
+    modules = modules_any if isinstance(modules_any, tuple) else ()
+    for module in modules:
+        if bool(getattr(module, "is_entry", False)) and getattr(module, "module_id", "") in entry_ids:
+            east_doc = getattr(module, "east_doc", {})
+            return east_doc if isinstance(east_doc, dict) else {}
+    raise RuntimeError("linked program entry module not found")
+
+
+def _rewrite_module_east_map_from_linked_program(
+    program: Any,
+    original_module_east_map: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    resolved_docs: dict[str, dict[str, Any]] = {}
+    modules_any = getattr(program, "modules", ())
+    modules = modules_any if isinstance(modules_any, tuple) else ()
+    for module in modules:
+        source_path = getattr(module, "source_path", "")
+        east_doc = getattr(module, "east_doc", {})
+        if isinstance(source_path, str) and source_path != "" and isinstance(east_doc, dict):
+            resolved_docs[str(Path(source_path).resolve())] = east_doc
+    out: dict[str, dict[str, Any]] = {}
+    for path_txt, east_doc in original_module_east_map.items():
+        resolved = str(Path(path_txt).resolve())
+        out[path_txt] = resolved_docs.get(resolved, east_doc)
+    return out
+
+
+def _optimize_cpp_module_east_map(
+    entry_path: Path,
+    module_east_map: dict[str, dict[str, Any]],
+    *,
+    object_dispatch_mode: str,
+    east3_opt_level: str,
+    east3_opt_pass: str,
+) -> dict[str, dict[str, Any]]:
+    if len(module_east_map) == 0:
+        return {}
+    program = _build_linked_program_from_module_map(
+        entry_path,
+        module_east_map,
+        target="cpp",
+        dispatch_mode=_normalize_link_dispatch_mode(object_dispatch_mode),
+        options={
+            "east3_opt_level": east3_opt_level,
+            "east3_opt_pass": east3_opt_pass,
+        },
+    )
+    optimized_program = optimize_linked_program(program).linked_program
+    return _rewrite_module_east_map_from_linked_program(optimized_program, module_east_map)
+
+
 def load_east(
     input_path: Path,
     parser_backend: str = "self_hosted",
@@ -308,7 +369,15 @@ def load_east(
         target_lang="cpp",
     )
     east_doc: dict[str, Any] = east3_doc if isinstance(east3_doc, dict) else {}
-    return east_doc if isinstance(east_doc, dict) else {}
+    module_map = _optimize_cpp_module_east_map(
+        input_path,
+        {str(input_path.resolve()): east_doc},
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+    )
+    linked_doc = module_map.get(str(input_path.resolve()), east_doc)
+    return linked_doc if isinstance(linked_doc, dict) else {}
 
 
 def _transpile_to_cpp_with_map(
@@ -626,17 +695,19 @@ def build_module_east_map(
 
     def _build_module_doc(path_obj: Path, parser_backend: str = "self_hosted", object_dispatch_mode: str = "") -> dict[str, Any]:
         is_entry = str(path_obj) == str(entry_path)
-        return load_east(
+        east3_doc = load_east3_document(
             path_obj,
             parser_backend=parser_backend,
-            east_stage=east_stage,
             object_dispatch_mode=object_dispatch_mode,
             east3_opt_level=east3_opt_level,
             east3_opt_pass=east3_opt_pass,
             dump_east3_before_opt=dump_east3_before_opt if is_entry else "",
             dump_east3_after_opt=dump_east3_after_opt if is_entry else "",
             dump_east3_opt_trace=dump_east3_opt_trace if is_entry else "",
+            target_lang="cpp",
         )
+        east_doc: dict[str, Any] = east3_doc if isinstance(east3_doc, dict) else {}
+        return east_doc if isinstance(east_doc, dict) else {}
 
     mp = East1BuildHelpers.build_module_east_map(
         entry_path,
@@ -646,7 +717,14 @@ def build_module_east_map(
         runtime_utils_source_root=RUNTIME_UTILS_SOURCE_ROOT,
         build_module_document_fn=_build_module_doc,
     )
-    return {key: value for key, value in mp.items() if isinstance(value, dict)}
+    module_map = {key: value for key, value in mp.items() if isinstance(value, dict)}
+    return _optimize_cpp_module_east_map(
+        entry_path,
+        module_map,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+    )
 
 
 def _write_multi_file_cpp(

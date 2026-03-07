@@ -2431,6 +2431,18 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(body[0].get("kind"), "ForCore")
         self.assertEqual(body[0].get("iter_plan", {}).get("dispatch_mode"), "type_id")
 
+    def test_load_east_stage3_materializes_linked_program_meta_for_py_input(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "case.py"
+            p.write_text("x: int = 1\nprint(x)\n", encoding="utf-8")
+            out = load_east(p, east_stage="3", object_dispatch_mode="native")
+        meta = out.get("meta", {})
+        linked = meta.get("linked_program_v1")
+        self.assertIsInstance(linked, dict)
+        self.assertEqual(linked.get("module_id"), "case")
+        self.assertEqual(linked.get("entry_modules"), ["case"])
+        self.assertIsInstance(linked.get("non_escape_summary"), dict)
+
     def test_load_east_rejects_stage2_for_py2cpp(self) -> None:
         payload = {"kind": "Module", "meta": {}, "body": []}
         with tempfile.TemporaryDirectory() as tmpdir:
