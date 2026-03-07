@@ -83,6 +83,7 @@
 注:
 - `meta.dispatch_mode` の意味論適用点は `EAST2 -> EAST3` の 1 回のみで、backend/hook で再判断しない。
 - 詳細契約は本書と `docs/ja/spec/spec-linker.md` を正本とする。
+- linked-program 後の `EAST3` は、引き続き `kind=Module` / `east_stage=3` を維持したまま、`meta.linked_program_v1` を追加で持ち得る。これは新しい EAST stage ではなく、`EAST3 -> linker -> linked EAST3` の materialization として扱う。
 
 `ImportBinding` は次を持つ。
 
@@ -383,20 +384,27 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
 - `EAST3`（Core）:
   - backend 非依存の意味論確定 IR。
   - boxing/unboxing、`Obj*` 命令、`type_id` 判定、反復計画を明示命令化する。
+  - ただし program-wide 決定（call graph / SCC / global non-escape / container ownership / final `type_id` table）は linker 段へ委譲する。
 
 ### 16.1.1 段階境界表（入力/出力/禁止事項/担当ファイル）
 
-| 段 | 入力 | 出力 | 禁止事項 | 担当ファイル |
+| 段/境界 | 入力 | 出力 | 禁止事項 | 担当ファイル |
 | --- | --- | --- | --- | --- |
 | `EAST1` | `Source`（`.py` / parser backend 指定） | `east_stage=1` の `Module` 文書 | `EAST2/EAST3` 変換、dispatch 意味適用、target 依存ノード生成 | `src/toolchain/ir/core.py`, `src/toolchain/ir/east1.py` |
 | `EAST2` | `EAST1` 文書 | `east_stage=2` の正規化 `Module` 文書 | dispatch 意味適用、boxing/type_id 命令化、backend 構文判断 | `src/toolchain/ir/east2.py` |
 | `EAST3` | `EAST2` 文書 + `meta.dispatch_mode` | `east_stage=3` の core 命令化 `Module` 文書 | target 言語構文への写像、hook による意味論再判断 | `src/toolchain/ir/east2_to_east3_lowering.py`, `src/toolchain/ir/east3.py` |
+| `Link` | raw `EAST3` 群 + `link-input.v1` | linked module 群（`east_stage=3` 維持） + `link-output.v1` | target 言語レンダリング、runtime 配置、build manifest 生成 | `src/toolchain/link/*`（追加予定） |
+
+注:
+- `Link` は新しい `east_stage` ではない。入出力とも module 本体は `east_stage=3` を維持する。
+- `Link` が追加する canonical data は `link-output.v1` と linked module の `meta.linked_program_v1` である。
 
 ### 16.2 不変条件
 
 1. `east_stage` とノード形状を一致させる。  
 2. `dispatch_mode` の意味適用は `EAST2 -> EAST3` の 1 回だけで行う。  
 3. backend / hook は `EAST3` の意味論を再判断しない。  
+4. whole-program summary は raw `EAST3` 単体では確定せず、linker が `link-output.v1` と linked module へ materialize する。  
 
 <a id="east-pipeline"></a>
 ## 17. パイプライン仕様（統合）
@@ -404,11 +412,33 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
 1. `Source -> EAST1`  
 2. `EAST1 -> EAST2`（Normalize pass）  
 3. `EAST2 -> EAST3`（Core Lowering pass）  
-4. `EAST3 -> TargetEmitter`（言語写像）  
+4. `EAST3(raw module) -> LinkedProgramLoader / LinkedProgramOptimizer`  
+5. `linked module(EAST3) -> TargetEmitter`（言語写像）  
 
 補足:
 - `--object-dispatch-mode {type_id,native}` はコンパイル開始時に確定し、`EAST2 -> EAST3` で `iter_plan` / `Obj*` 系命令へ反映する。
 - backend/hook 側でモード再判定して命令を差し替えてはならない。
+- linker は `dispatch_mode` の整合検査と whole-program summary の確定だけを担当し、backend の代わりに target 言語構文を生成してはならない。
+
+### 17.1 linked module `meta` 契約
+
+linked-program 後の module は `kind=Module` / `east_stage=3` を維持しつつ、`meta.linked_program_v1` を持つ。
+
+`meta.linked_program_v1` の必須キー:
+
+- `program_id`
+- `module_id`
+- `entry_modules`
+- `type_id_resolved_v1`
+- `non_escape_summary`
+- `container_ownership_hints_v1`
+
+責務境界:
+
+- raw `EAST3` では `meta.linked_program_v1` を持たない。
+- linked module では `meta.linked_program_v1` を必須とする。
+- backend は `meta.linked_program_v1` と `link-output.v1` を読むことは許可されるが、同等情報を再計算してはならない。
+- function / call 単位の linked summary（例: `FunctionDef.meta.escape_summary`, `Call.meta.non_escape_callsite`）は linker が最終化してよい。
 
 <a id="east-file-mapping"></a>
 ## 18. 現行/移行後の責務対応表（2026-02-24）
