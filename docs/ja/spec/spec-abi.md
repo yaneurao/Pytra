@@ -284,6 +284,48 @@ def py_join(sep: str, parts: list[str]) -> str:
   - 例: `value_readonly` 指定の引数に対して append / pop / assignment を行う
 - `@abi` は fail-closed とし、backend / lowerer が mode を理解できない場合は compile error にする。
 
+#### 3.4.8 EAST / linked metadata 形式
+
+`@abi` は decorator surface と同時に、function node metadata として保持しなければならない。
+
+raw `EAST` / raw `EAST3` では、少なくとも次を持つ。
+
+- `FunctionDef.decorators`
+  - raw decorator 文字列として `abi(args={"parts": "value_readonly"}, ret="value")` を保持してよい
+- `FunctionDef.meta.runtime_abi_v1`
+  - backend / linker が読む canonical metadata
+
+canonical metadata 形式:
+
+```json
+{
+  "schema_version": 1,
+  "args": {
+    "parts": "value_readonly"
+  },
+  "ret": "value"
+}
+```
+
+規則:
+
+- `schema_version` は必須で `1`
+- `args` は parameter name -> mode の map
+- `ret` は return mode
+- mode は `default`, `value`, `value_readonly` 以外を許可しない
+- `args` の key 順は source parameter 順へ正規化してよい
+- `ret` 未指定時は `default`
+- `args` 未指定時は空 map
+
+linked-program 後も `FunctionDef.meta.runtime_abi_v1` は保持し、linker はこれを書き換えてはならない。  
+linker が追加してよいのは module-level `meta.linked_program_v1` や call/function summary だけであり、helper ABI 契約そのものは parser/EAST build の正本を尊重する。
+
+parser / selfhost parser の受け入れ基準:
+
+- 同一 source に対し、両 backend は同一の `runtime_abi_v1` を生成する
+- unsupported form は `EAST1/EAST2` build 中に fail-closed で拒否する
+- `decorators` に raw `abi(...)` が残っていても、backend が正本として読んでよいのは `meta.runtime_abi_v1` だけである
+
 ## 4. 外部名（シンボル名）の決定規約
 
 `@extern` 関数 `M.f` に対し、外部名は以下で決定する。
