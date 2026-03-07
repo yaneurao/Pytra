@@ -220,9 +220,9 @@ src/runtime/cpp/
 - `--emit-runtime-cpp` は `src/runtime/cpp/generated/.../*.h|*.cpp` を出力し、`src/runtime/cpp/pytra/.../*.h` forwarder を同時生成するよう更新した。
 - generated public shim は `runtime/cpp/generated/.../*.h` を必須 include とし、`runtime/cpp/native/.../*.h` は存在時のみ追加 include する方針へ切り替えた。
 - header pruning helper も `runtime/cpp/{generated,native,pytra}/...` include を module namespace へ解決できるよう更新した。
-- `runtime_symbol_index` は C++ module runtime の `public_headers` に `pytra` public shim と generated/native/legacy header を併記し、`lookup_target_module_primary_header("cpp", ...)` は `pytra/...` を優先するよう更新した。
-- `cpp_runtime_deps.py` / build graph は `runtime_symbol_index` の header-to-source index を優先し、fallback でも `pytra/generated/native` と legacy `.gen/.ext` の両方から `.cpp` 候補を導出できるよう更新した。
-- `check_runtime_cpp_layout.py` は legacy module runtime、`generated/`、`native/`、`pytra/`、`core/` を別 bucket として検証し、移行期間中の新旧 ownership を同一 guard で監査できるよう更新した。
+- `runtime_symbol_index` は C++ module runtime の `public_headers` に `pytra` public shim と generated/native header を載せ、`lookup_target_module_primary_header("cpp", ...)` は `pytra/...` を優先するよう更新した。
+- `cpp_runtime_deps.py` / build graph は `runtime_symbol_index` の header-to-source index を優先し、path heuristic でも `pytra/generated/native` から `.cpp` 候補を導出できるよう更新した。
+- `check_runtime_cpp_layout.py` は `src/runtime/cpp/{built_in,std,utils}` を legacy-closed bucket とし、`generated/`、`native/`、`pytra/`、`core/` の ownership 境界を同一 guard で監査できるよう更新した。
 
 ## Phase 3 実施結果
 
@@ -239,6 +239,14 @@ src/runtime/cpp/
 - `src/runtime/cpp/std/*.ext.cpp` を `src/runtime/cpp/native/std/*.cpp` へ、`src/runtime/cpp/built_in/*.ext.h` を `src/runtime/cpp/native/built_in/*.h` へ移し、legacy module companion を `native/` 配下へ揃えた。
 - `py_runtime.ext.h` と `pytra/built_in/*.h` は `native/built_in/*.h` を参照するよう更新し、runtime symbol index / build graph / pyobj smoke も `native/std/*.cpp` compile source を期待するよう同期した。
 - `math` / `os_path` / `time` について、runtime symbol index test で「primary header は `pytra/std/*.h`」「compile source は `native/std/*.cpp`」「native 実装は `generated/std/*.h` を include」「`native/std/*.h` は持たない」を直接検証する representative contract を追加した。
+- tracked repo 上の codegen/unit 前提に残っていた旧 `.gen/.ext` 固定 path は解消し、`runtime_symbol_index` / build graph / iterable/pyobj smoke / image parity を新 layout 前提で通した。
+- `test/transpile/cpp/*/Makefile` は untracked generated artifact として現行 `gen_makefile_from_manifest.py` で再生成し、fixture (`math_extended`, `pathlib_extended`, `import_pytra_runtime_png`) と sample (`01_mandelbrot`, `18_mini_language_interpreter`) の C++ parity を確認した。
+
+## Phase 6 実施結果
+
+- `check_runtime_cpp_layout.py` は module runtime legacy dir (`src/runtime/cpp/{built_in,std,utils}`) に `.h/.cpp` が再侵入した時点で fail する guard へ切り替え、`legacy-closed module files: 0` を正規状態として固定した。
+- `runtime_symbol_index` / `cpp_runtime_deps.py` / public shim 生成は、C++ module runtime について legacy `*.gen/*.ext` path を探索しない形へ締め、`generated/native/pytra` のみを ownership 正本として扱う。
+- `docs/ja/spec/spec-runtime.md` / `docs/ja/spec/spec-abi.md` を現行 layout 前提へ更新し、suffix ベース ownership は `core/` と未移行 target だけに閉じた。
 
 ## 受け入れ基準
 
@@ -260,7 +268,7 @@ src/runtime/cpp/
 
 ## 分解
 
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01] C++ runtime の module runtime 層を `generated/` + `native/` + `pytra/` shim へ再編し、suffix ベース ownership から directory ベース ownership へ移行する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01] C++ runtime の module runtime 層を `generated/` + `native/` + `pytra/` shim へ再編し、suffix ベース ownership から directory ベース ownership へ移行する。
 
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
@@ -276,8 +284,8 @@ src/runtime/cpp/
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-01] 既存 module companion を `native/` へ移し、`native/*.h` を最小化する。
 - [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
 
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-01] codegen/unit/parity を新レイアウトへ追従させ、旧 `.gen/.ext` 固定前提を更新する。
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-02] archive/docs/guard を更新し、module runtime の suffix ベース ownership を legacy 扱いで閉じる。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-01] codegen/unit/parity を新レイアウトへ追従させ、旧 `.gen/.ext` 固定前提を更新する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-02] archive/docs/guard を更新し、module runtime の suffix ベース ownership を legacy 扱いで閉じる。
 
 決定ログ:
 - 2026-03-07: ユーザー方針により、C++ runtime の module runtime 層は `generated/` + `native/` + `pytra/` shim を目標レイアウトとし、`handwritten` ではなく「C++ 固有 companion」を示す `native` を採用する。
@@ -286,12 +294,14 @@ src/runtime/cpp/
 - 2026-03-07: 現行の `*.ext.h` 残存は `built_in` helper 3 件のみであり、移行先では例外的な `native/*.h` に縮退させる方針を固定する。
 - 2026-03-07: `runtime_output_rel_tail` と `--emit-runtime-cpp` は `generated/<domain>/<module>` を正本出力先とし、public shim は `pytra/...` に残す方針で実装を切り替えた。
 - 2026-03-07: generated public shim は `runtime/cpp/generated/.../*.h` を forward し、`native/*.h` は存在時のみ forward する。`native/` 自動生成は行わない。
-- 2026-03-07: `runtime_symbol_index` の C++ primary header は `pytra/...` shim を優先し、同時に generated/native/legacy header を `public_headers` に載せて build graph の header-to-source 解決に使う。
-- 2026-03-07: `cpp_runtime_deps.py` は index 優先・path heuristic 補完の二段構えとし、repo shim から legacy `*.ext.cpp` へ到達できる移行期間互換を維持する。
-- 2026-03-07: `check_runtime_cpp_layout.py` は legacy `.gen/.ext` と `generated/native/pytra` の両 layout を同一 guard で検証する移行期監査へ更新した。
+- 2026-03-07: `runtime_symbol_index` の C++ primary header は `pytra/...` shim を優先し、`public_headers` / `compile_sources` は `generated/native` の ownership をそのまま反映する。
+- 2026-03-07: `cpp_runtime_deps.py` は index 優先・path heuristic 補完の二段構えとし、C++ module runtime では `pytra/generated/native` だけを探索対象にする。
+- 2026-03-07: `check_runtime_cpp_layout.py` は `src/runtime/cpp/{built_in,std,utils}` を legacy-closed module dir として扱い、`.h/.cpp` の再侵入を fail-fast する guard へ更新した。
 - 2026-03-07: `std` generated artifact は checked-in 実ファイルとして `generated/std` へ移し、`std/` 直下は native companion (`*.ext.cpp`) と補足文書だけを残す構成へ切り替えた。
 - 2026-03-07: `utils` generated artifact も checked-in 実ファイルとして `generated/utils` へ移し、`pytra/utils/*.h` shim と runtime parity / manifest / index test を同時更新して旧 `utils/*.gen.*` 参照を解消した。
 - 2026-03-07: `utils` の再生成物は list ref-first TODO の未完了分で semantic drift を含んだため、本フェーズでは旧 checked-in artifact の挙動を `generated/utils` へ持ち上げ、レイアウト移行と semantic change を分離した。
 - 2026-03-07: `built_in` generated artifact も rename ベースで `generated/built_in` へ移し、`pytra/built_in/*.h` shim を追加した。generated std artifact は stable include 面として `pytra/built_in/*.h` を参照するよう合わせた。
 - 2026-03-07: legacy module companion 9 件 (`std/*.ext.cpp` 6 + `built_in/*.ext.h` 3) を `native/` へ移し、layout guard 上も `legacy module files: 0` を確認した。checked-in `test/transpile/cpp/*/Makefile` の stale path は generated fixture 更新タスク `S5-01` でまとめて同期する。
 - 2026-03-07: representative module 契約は `math / os_path / time` を canonical example とし、runtime symbol index test で `generated -> native -> pytra shim` の三層を直接検証する形で固定した。
+- 2026-03-07: `test/transpile/cpp/*/Makefile` は repo tracked file ではなく generated artifact なので、`S5-01` では `tools/gen_makefile_from_manifest.py` で再生成して parity 検証に使い、tracked repo 側には unit/test/guard の新 layout 前提だけを記録した。
+- 2026-03-07: `S5-02` で module runtime の suffix ベース ownership は legacy-closed とし、legacy dir には補足文書以外の `.h/.cpp` を置かない方針を guard / spec / archive へ反映した。

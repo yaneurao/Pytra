@@ -196,13 +196,6 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
     }
 
 
-def _pick_existing(paths: list[Path]) -> Path | None:
-    for path in paths:
-        if path.exists():
-            return path
-    return None
-
-
 def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None:
     runtime_root = ROOT / "src" / "runtime" / "cpp"
     public_headers: list[str] = []
@@ -210,31 +203,14 @@ def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None
     companions: list[str] = []
 
     public_shim = runtime_root / "pytra" / group / (tail + ".h")
-    legacy_stem = runtime_root / group / tail
-    generated_h = _pick_existing(
-        [
-            runtime_root / "generated" / group / (tail + ".h"),
-            legacy_stem.with_name(legacy_stem.name + ".gen.h"),
-        ]
-    )
-    generated_cpp = _pick_existing(
-        [
-            runtime_root / "generated" / group / (tail + ".cpp"),
-            legacy_stem.with_name(legacy_stem.name + ".gen.cpp"),
-        ]
-    )
-    native_h = _pick_existing(
-        [
-            runtime_root / "native" / group / (tail + ".h"),
-            legacy_stem.with_name(legacy_stem.name + ".ext.h"),
-        ]
-    )
-    native_cpp = _pick_existing(
-        [
-            runtime_root / "native" / group / (tail + ".cpp"),
-            legacy_stem.with_name(legacy_stem.name + ".ext.cpp"),
-        ]
-    )
+    generated_h_path = runtime_root / "generated" / group / (tail + ".h")
+    generated_cpp_path = runtime_root / "generated" / group / (tail + ".cpp")
+    native_h_path = runtime_root / "native" / group / (tail + ".h")
+    native_cpp_path = runtime_root / "native" / group / (tail + ".cpp")
+    generated_h = generated_h_path if generated_h_path.exists() else None
+    generated_cpp = generated_cpp_path if generated_cpp_path.exists() else None
+    native_h = native_h_path if native_h_path.exists() else None
+    native_cpp = native_cpp_path if native_cpp_path.exists() else None
 
     if public_shim.exists():
         public_headers.append(_path_to_rel_txt(public_shim))

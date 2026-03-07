@@ -86,6 +86,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn("src/runtime/cpp/pytra/std/time.h", time_mod.get("public_headers", []))
         self.assertNotIn("src/runtime/cpp/std/time.gen.h", time_mod.get("public_headers", []))
         self.assertIn("src/runtime/cpp/native/std/time.cpp", time_mod.get("compile_sources", []))
+        self.assertNotIn("src/runtime/cpp/std/time.ext.cpp", time_mod.get("compile_sources", []))
 
         png_mod = cpp_modules.get("pytra.utils.png")
         self.assertIsInstance(png_mod, dict)

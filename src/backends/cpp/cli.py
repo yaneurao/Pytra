@@ -133,13 +133,6 @@ def _runtime_public_forwarder_includes(module_tail: str) -> list[str]:
         native_hdr = RUNTIME_CPP_ROOT / (native_rel_tail + ".h")
         if native_hdr.exists():
             includes.append('runtime/cpp/' + native_rel_tail + '.h')
-            return includes
-    legacy_rel_tail = generated_rel_tail
-    if legacy_rel_tail.startswith("generated/"):
-        legacy_rel_tail = legacy_rel_tail[len("generated/") :]
-    legacy_ext_hdr = RUNTIME_CPP_ROOT / (legacy_rel_tail + ".ext.h")
-    if legacy_ext_hdr.exists():
-        includes.append('runtime/cpp/' + legacy_rel_tail + '.ext.h')
     return includes
 
 

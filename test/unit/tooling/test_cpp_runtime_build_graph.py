@@ -99,3 +99,12 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
         self.assertIn((ROOT / "src/runtime/cpp/generated/std/math.cpp").as_posix(), paths)
         self.assertIn((ROOT / "src/runtime/cpp/native/std/math.cpp").as_posix(), paths)
+        self.assertNotIn((ROOT / "src/runtime/cpp/std/math.gen.cpp").as_posix(), paths)
+        self.assertNotIn((ROOT / "src/runtime/cpp/std/math.ext.cpp").as_posix(), paths)
+
+    def test_runtime_cpp_candidates_from_public_shim_do_not_reintroduce_legacy_module_paths(self) -> None:
+        header = ROOT / "src/runtime/cpp/pytra/std/time.h"
+        paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
+        self.assertIn((ROOT / "src/runtime/cpp/native/std/time.cpp").as_posix(), paths)
+        self.assertNotIn((ROOT / "src/runtime/cpp/std/time.gen.cpp").as_posix(), paths)
+        self.assertNotIn((ROOT / "src/runtime/cpp/std/time.ext.cpp").as_posix(), paths)

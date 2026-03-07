@@ -360,48 +360,30 @@ extern "C" void pytra_utils_png_write_png(const list<bytearray>& image) {
 
 runtime の正規配置は `docs/ja/spec/spec-runtime.md` に従う。
 
-本仕様で前提とする要点だけ抜粋すると、C++ runtime は次の 4 区分で構成する。
+本仕様で前提とする要点だけ抜粋すると、現行 C++ runtime は次の 4 区分で構成する。
 
 - `runtime/cpp/core/`
-- `runtime/cpp/built_in/`
-- `runtime/cpp/std/`
-- `runtime/cpp/utils/`
+- `runtime/cpp/generated/{built_in,std,utils}/`
+- `runtime/cpp/native/{built_in,std,utils}/`
+- `runtime/cpp/pytra/{built_in,std,utils}/`
 
-命名規則:
+ownership 規則:
 
-- 自動生成: `*.gen.h`, `*.gen.cpp`
-- 手書き補完: `*.ext.h`, `*.ext.cpp`
-
-`@extern` を含む runtime モジュールでは、
-
-- SoT から生成される宣言 / thin wrapper は `*.gen.*`
-- OS / SDK / C++ 標準ライブラリへ接着する最小 native 実装は `*.ext.*`
-
-とする。
+- SoT から生成される宣言 / thin wrapper は `generated/`
+- OS / SDK / C++ 標準ライブラリへ接着する最小 native 実装は `native/`
+- 生成コードが include する public header は `pytra/`
+- `core/` は低レベル runtime の手書き実装であり、引き続き `.ext.*` naming を使う
 
 補足:
 
-- 上記は現行実装の配置である。
-- 承認済みの次段 C++ layout では、module runtime 層を `runtime/cpp/generated/` と `runtime/cpp/native/` に分け、`runtime/cpp/pytra/` を generated public shim として残す。
-- つまり ownership は最終的に suffix ではなく directory で判別するが、ABI の考え方自体は変わらない。
-- 詳細は `docs/ja/spec/spec-runtime.md` と `docs/ja/plans/p0-cpp-runtime-layout-generated-native.md` に従う。
+- C++ module runtime の ownership は suffix ではなく directory で判別する。
+- `src/runtime/cpp/{built_in,std,utils}` の suffix ベース module runtime は legacy-closed であり、再導入しない。
+- ABI の考え方自体は変わらない。
+- 詳細は `docs/ja/spec/spec-runtime.md` と `docs/ja/plans/archive/20260307-p0-cpp-runtime-layout-generated-native.md` に従う。
 
 ## 12. `pytra.std.math` の例
 
 `src/pytra/std/math.py` は `@extern` を含むため、C++ runtime では次のように構成する。
-
-- 生成物:
-  - `runtime/cpp/std/math.gen.h`
-- 手書き実体:
-  - `runtime/cpp/std/math.ext.cpp`
-
-重要:
-
-- `math` は header-only 生成なので、`runtime/cpp/std/math.gen.cpp` は生成しない
-- `math.ext.cpp` が `math.gen.h` に対する native 実体を提供する
-- manifest / build 入力は `spec-runtime.md` の配置規約に従う
-
-承認済みの移行先では、同じ意味を次のように表す。
 
 - 生成宣言:
   - `runtime/cpp/generated/std/math.h`
@@ -409,6 +391,13 @@ runtime の正規配置は `docs/ja/spec/spec-runtime.md` に従う。
   - `runtime/cpp/native/std/math.cpp`
 - public shim:
   - `runtime/cpp/pytra/std/math.h`
+
+重要:
+
+- `math` は header-only 生成なので、`runtime/cpp/generated/std/math.cpp` は生成しない
+- `math.cpp` が `math.h` に対する native 実体を提供する
+- 生成コードは `runtime/cpp/pytra/std/math.h` を include し、build graph が `generated/native` を解決する
+- manifest / build 入力は `spec-runtime.md` の配置規約に従う
 
 つまり、`@extern` を含むモジュールであっても、
 

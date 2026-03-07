@@ -2,9 +2,9 @@
 """Verify C++ runtime layer separation rules.
 
 Rules:
-- Legacy module runtime under `src/runtime/cpp/{built_in,std,utils}` may still use `.gen/.ext`.
-- New module runtime under `src/runtime/cpp/generated/**` must contain the auto-generated marker.
-- New module runtime under `src/runtime/cpp/native/**` must NOT contain the auto-generated marker.
+- Module runtime under `src/runtime/cpp/{built_in,std,utils}` is legacy-closed and must not contain `.h/.cpp`.
+- Module runtime under `src/runtime/cpp/generated/**` must contain the auto-generated marker.
+- Module runtime under `src/runtime/cpp/native/**` must NOT contain the auto-generated marker.
 - Public shim under `src/runtime/cpp/pytra/**` must contain the auto-generated marker and stay header-only.
 - `src/runtime/cpp/core/**` remains handwritten for now and must keep `.ext.*` naming.
 """
@@ -60,25 +60,6 @@ def _scan_targets(base: Path) -> list[Path]:
 
 def _is_plain_cpp_name(path: Path) -> bool:
     return ".gen." not in path.name and ".ext." not in path.name
-
-
-def _check_legacy_module_files(
-    files: list[Path],
-    missing_marker: list[str],
-    unexpected_marker: list[str],
-    invalid_name: list[str],
-) -> None:
-    for p in files:
-        rel = str(p.relative_to(ROOT))
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if ".gen." in p.name:
-            if MARKER not in txt:
-                missing_marker.append(rel)
-        elif ".ext." in p.name:
-            if MARKER in txt:
-                unexpected_marker.append(rel)
-        else:
-            invalid_name.append(rel)
 
 
 def _check_generated_files(
@@ -142,16 +123,16 @@ def main() -> int:
     if not core_files:
         print(f"[FAIL] no C++ source/header files under: {CORE_DIR.relative_to(ROOT)}")
         return 1
-    if not legacy_module_files and not generated_files and not native_files and not pytra_files:
-        print("[FAIL] no module runtime files found under legacy or generated/native/pytra layout")
+    if not generated_files and not native_files and not pytra_files:
+        print("[FAIL] no module runtime files found under generated/native/pytra layout")
         return 1
 
     missing_marker: list[str] = []
     unexpected_marker: list[str] = []
     invalid_name: list[str] = []
     banned_runtime_duplicates: list[str] = []
+    unexpected_legacy_module_files = [str(p.relative_to(ROOT)) for p in legacy_module_files]
 
-    _check_legacy_module_files(legacy_module_files, missing_marker, unexpected_marker, invalid_name)
     _check_generated_files(generated_files, missing_marker, invalid_name)
     _check_handwritten_files(core_files, unexpected_marker, invalid_name, require_ext_name=True)
     _check_handwritten_files(native_files, unexpected_marker, invalid_name, require_ext_name=False)
@@ -163,7 +144,13 @@ def main() -> int:
             if pattern in py_runtime_txt:
                 banned_runtime_duplicates.append(f"{pattern} :: {reason}")
 
-    if missing_marker or unexpected_marker or invalid_name or banned_runtime_duplicates:
+    if (
+        missing_marker
+        or unexpected_marker
+        or invalid_name
+        or banned_runtime_duplicates
+        or unexpected_legacy_module_files
+    ):
         print("[FAIL] runtime cpp layout guard failed")
         print(
             "  scanned: "
@@ -174,6 +161,10 @@ def main() -> int:
             + f"core={len(core_files)} files, "
             + f"std={len(std_files)} files"
         )
+        if unexpected_legacy_module_files:
+            print("  legacy-closed module dirs still contain source/header files:")
+            for item in unexpected_legacy_module_files:
+                print(f"    - {item}")
         if missing_marker:
             print("  generated files missing marker:")
             for item in missing_marker:
@@ -193,12 +184,12 @@ def main() -> int:
         return 1
 
     print("[OK] runtime cpp layout guard passed")
-    print(f"  legacy module files: {len(legacy_module_files)}")
+    print(f"  legacy-closed module files: {len(legacy_module_files)}")
     print(f"  generated dir files with marker: {len(generated_files)}")
     print(f"  public shim files with marker: {len(pytra_files)}")
     print(f"  native dir files without marker: {len(native_files)}")
     print(f"  core files without marker: {len(core_files)}")
-    print(f"  legacy std files checked: {len(std_files)}")
+    print(f"  legacy-closed std files: {len(std_files)}")
     return 0
 
 
