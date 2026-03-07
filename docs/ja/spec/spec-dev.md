@@ -534,6 +534,19 @@ linked module(EAST3)
 - kind 専用 hook 名は EAST kind の snake_case 変換で決めます（例: `IfExp -> on_render_expr_if_exp`）。
 - `py2ts.py` は現状 JavaScript emitter 経由のプレビュー実装のため、TypeScript でも同じ `render_expr` hook 順序・命名規約を適用します。
 
+### 6.1 backend runtime metadata 契約
+
+- backend / emitter / hook が runtime 呼び出し判定に使ってよい入力は、`runtime_module_id`, `runtime_symbol`, `semantic_tag`, `runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`、および lowerer/linker が付与した adapter kind / import binding metadata に限ります。
+- backend / emitter / hook が source-side knowledge を見て分岐してはなりません。
+  - 例: `module_id == "math"`, `owner == "math"`, `module_name == "pytra.utils"`, `resolved_runtime.endswith(".pi")`
+  - 例: `pyMathPi`, `pyMathE`, `save_gif`, `write_rgb_png`, `grayscale_palette` の helper 名で意味論を決める
+  - 例: `save_gif` の positional arity / default / keyword (`delay_cs`, `loop`) を emitter が直解釈する
+- target 固有 backend がしてよいのは、解決済み metadata を target syntax へ描画することだけです。
+  - 例: `runtime_symbol=sin` を `scala.math.sin` へ描画する
+  - 例: resolved import を `using` / `use` / `import` / `#include` へ並べる
+- target helper 名が最終出力に現れること自体は許可されます。ただし、それは index/lowerer が決めた target symbol を描画した結果であり、source-side module 名や helper ABI の再解釈であってはなりません。
+- emitter source に上記の禁止知識が再侵入していないことは、source-scan guard と representative backend smoke で継続監査します。
+
 ## 7. 実装上の共通ルール
 
 - `src/backends/common/` には言語非依存で再利用される処理のみを配置します。
@@ -541,6 +554,7 @@ linked module(EAST3)
 - ランタイム実体は `src/runtime/<lang>/pytra/` に配置し、`src/*_module/` 直下へ新規実体を追加しません。
 - `py2x.py --target cpp` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。
+- runtime module / helper ABI / source-side stdlib 名の解決は `profiles` / `runtime symbol index` / lowerer 側で完結させ、emitter 本体に `math` / `png` / `gif` / `save_gif` / `write_rgb_png` などの分岐を増やしません。
 - CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/toolchain/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
 - selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
 - selfhost 対象コード（`src/` 配下のトランスパイラ本体・backend・IR 実装）では、Python 標準 `ast` モジュール（`import ast` / `from ast ...`）への依存を禁止します。

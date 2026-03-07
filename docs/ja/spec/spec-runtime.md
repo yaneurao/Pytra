@@ -284,6 +284,32 @@ runtime symbol の所属 module と target artifact は、`tools/runtime_symbol_
 - `py_enumerate -> iter_ops` のような module 所属対応を backend/emitter ソースへ再直書きしてはならない。
 - backend/emitter が決めてよいのは target 固有の描画名・namespace・構文だけである。
 
+backend が解釈してよい runtime metadata:
+
+- `runtime_module_id`
+- `runtime_symbol`
+- `semantic_tag`
+- `runtime_call`
+- `resolved_runtime_call`
+- `resolved_runtime_source`
+- linker/lowerer が付与する adapter kind / ABI kind / import binding metadata
+
+backend が解釈してはならない source-side knowledge:
+
+- source import 名そのもの
+  - 例: `math`, `pytra.utils`, `pytra.std.math`
+- source module attr の語形
+  - 例: `.pi`, `.e`, `.sqrt`
+- helper 固有名
+  - 例: `pyMathPi`, `pyMathE`, `save_gif`, `write_rgb_png`, `grayscale_palette`
+- helper の引数 ABI を推測するための ad-hoc 規則
+  - 例: `save_gif` の arity / default / keyword (`delay_cs`, `loop`) を emitter が直解釈すること
+
+補足:
+
+- `resolved_runtime_call` や `semantic_tag` を target symbol へ写すこと自体は許可される。
+- ただし、その変換は source-side module 名や helper 名の文字列一致ではなく、index / lowerer が決めた metadata に従って行わなければならない。
+
 責務の分担:
 
 - IR:
@@ -306,6 +332,7 @@ runtime symbol の所属 module と target artifact は、`tools/runtime_symbol_
 - 非C++ backend は target 固有の public import / package path を持ってよいが、その解決は index 消費層で行う。
 - `resolved_runtime_call` や module/file path の対応を backend ごとに別々の手書き table として再実装してはならない。
 - target ごとに異なるのは「どう import するか」「どう fully-qualified name を描画するか」であって、「どの module がその symbol を持つか」ではない。
+- `pyMath*` / `scala.math.*` / `png_helper` のような target helper 名は、最終描画結果に現れてよいが、source module 名や helper ABI の分岐条件として emitter 正本に残してはならない。
 
 ### 0.7 C++ runtime の運用
 
