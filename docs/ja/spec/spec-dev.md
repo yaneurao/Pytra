@@ -143,6 +143,19 @@ linked module(EAST3)
 - 旧 `emit -> str` API は「`ModuleArtifact(text only)` を返す旧 emitter + `SingleFileProgramWriter`」への compatibility wrapper として扱う。
 - 新規 backend / 新規経路は `emit_module + program_writer` 契約を正本とし、旧 unary emit を増やさない。
 
+#### non-C++ backend recovery baseline（linked-program 後）
+
+- non-C++ backend の linked-program 後 baseline は、`SingleFileProgramWriter` 前提の compat route を維持したうえで、次の gate 順に評価する。
+  1. `static_contract`
+  2. `common_smoke`
+  3. `target_smoke`
+  4. `transpile`
+  5. `parity`
+- health matrix の primary failure category は「最初に fail した gate」で決める。後段 gate の失敗で上書きしてはならない。
+- `parity` は `static/common/target_smoke/transpile` をすべて通過した target だけ測定する。前段 gate で fail している target を parity failure 扱いしてはならない。
+- `toolchain_missing` は `parity_fail` と別カテゴリで扱う。sample parity で compiler/runtime 未導入が原因の skip になった場合は infra baseline として記録し、backend bug へ混ぜない。
+- 2026-03-08 時点の first snapshot では `js/ts` が green、`cs` が `toolchain_missing`、`rs/go/java/scala/lua` が `target_smoke_fail`、`kotlin/swift/ruby/php/nim` が `transpile_fail` を primary failure とする。
+
 ### 1.3 `src/pytra/` 公開API（実装基準）
 
 `src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  
