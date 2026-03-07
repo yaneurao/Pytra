@@ -214,33 +214,11 @@ def _has_passthrough_flag(argv: list[str], flag: str) -> bool:
     return False
 
 
-def _has_layer_option_key(argv: list[str], flag: str, key: str) -> bool:
-    idx = 0
-    while idx < len(argv):
-        token = argv[idx]
-        if token == flag and idx + 1 < len(argv):
-            item = argv[idx + 1]
-            if item == key or item.startswith(key + "="):
-                return True
-            idx += 2
-            continue
-        if token.startswith(flag + "="):
-            raw = token[len(flag) + 1 :]
-            if raw == key or raw.startswith(key + "="):
-                return True
-        idx += 1
-    return False
-
-
 def _cpp_max_linked_stage_args(argv: list[str]) -> tuple[list[str], list[str]]:
     stage1 = list(argv)
     if not _has_passthrough_flag(stage1, "--east3-opt-level"):
         stage1.extend(["--east3-opt-level", "2"])
-
-    stage2 = list(argv)
-    if not _has_layer_option_key(stage2, "--optimizer-option", "cpp_opt_level"):
-        stage2.extend(["--optimizer-option", "cpp_opt_level=2"])
-    return stage1, stage2
+    return stage1, list(argv)
 
 
 def _run_py2cpp_linked_max(input_path: Path, output_dir: Path, argv: list[str]) -> tuple[int, Path | None]:

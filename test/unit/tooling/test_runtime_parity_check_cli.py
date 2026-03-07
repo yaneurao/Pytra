@@ -92,6 +92,15 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertIn("--build --run", ruby_target.run_cmd)
         self.assertEqual(ruby_target.needs, ("python", "ruby"))
 
+    def test_build_targets_cpp_can_forward_codegen_opt(self) -> None:
+        case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
+        targets = self.rpc.build_targets("01_mandelbrot", case_path, "2", "3")
+        cpp_target = next(t for t in targets if t.name == "cpp")
+        self.assertIn("--codegen-opt 3", cpp_target.transpile_cmd)
+        self.assertIn("--codegen-opt 3", cpp_target.run_cmd)
+        ruby_target = next(t for t in targets if t.name == "ruby")
+        self.assertNotIn("--codegen-opt", ruby_target.transpile_cmd)
+
     def test_build_targets_includes_scala_entry(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
         targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")

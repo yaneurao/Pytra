@@ -248,9 +248,6 @@ class PytraCliTest(unittest.TestCase):
         self.assertNotIn("-O3", py2x_calls[0])
         self.assertIn("--east3-opt-level", py2x_calls[0])
         self.assertIn("2", py2x_calls[0])
-        self.assertIn("--optimizer-option", py2x_calls[1])
-        opt_idx = py2x_calls[1].index("--optimizer-option")
-        self.assertEqual(py2x_calls[1][opt_idx + 1], "cpp_opt_level=2")
         self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
 
     def test_build_cpp_codegen_opt_3_run_uses_make_run_fallback(self) -> None:

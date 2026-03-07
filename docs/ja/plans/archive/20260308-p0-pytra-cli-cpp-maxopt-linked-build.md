@@ -70,7 +70,7 @@
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_pytra_cli.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_*.py'`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2`
 - 必要なら `python3 tools/verify_sample_outputs.py --samples ... --compile-flags=\"-O2\"`
 
 ## 分解
@@ -80,9 +80,9 @@
 - [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-01] `pytra-cli --target cpp --build --codegen-opt 3` が linked-program optimizer を経由する build route を実装する。
 - [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-02] `pytra-cli --target cpp --codegen-opt 3` の transpile-only route も linked-program optimizer を使うよう揃える。
 - [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-01] representative CLI regression を追加し、`codegen-opt=3` の route 選択と manifest/build/run を固定する。
-- [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-02] sample parity を回し、max-opt route でも C++ sample が green であることを確認する。
-- [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S4-01] `pytra-cli` / how-to-use / 必要な docs に max-opt C++ route と sample parity 手順を反映する。
-- [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
+- [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-02] sample parity を回し、max-opt route でも C++ sample が green であることを確認する。
+- [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S4-01] `pytra-cli` / how-to-use / 必要な docs に max-opt C++ route と sample parity 手順を反映する。
+- [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
 
 ## フェーズ詳細
 
@@ -138,6 +138,8 @@
 - 2026-03-08: 現行 `pytra-cli --target cpp --codegen-opt 3` は linked-program route ではなく compat route を通っている。したがって本 P0 では `codegen-opt=3` の意味を「max Pytra codegen route」へ明示的に変更する。
 - 2026-03-08: `--codegen-opt 0/1/2` の既存意味論は維持し、route semantics を変えるのは C++ の `codegen-opt=3` のみに限定する。
 - 2026-03-08: `S2-01` では `pytra-cli` から `py2x.py --link-only` と `py2x.py --from-link-output` を連続実行する。中間 bundle は `output_dir/.pytra_linked/` に置き、build の manifest 正本は最終 output root の `manifest.json` を使う。
-- 2026-03-08: `codegen-opt=3` の build route では aggregate `-O3` を `py2x` に渡さず、stage 1 へ `--east3-opt-level 2`、stage 2 へ `--optimizer-option cpp_opt_level=2` を既定で補う。明示 override がある場合はユーザー指定を優先する。
+- 2026-03-08: `codegen-opt=3` の build route では aggregate `-O3` を `py2x` に渡さず、stage 1 へ `--east3-opt-level 2` を既定で補う。stage 2 は linked `ir2lang` の C++ multi-file emit default を使い、未公開の `cpp_opt_level` layer option は注入しない。
 - 2026-03-08: `S2-02` では transpile-only も同じ linked-program route に統一する。linked C++ route は multi-file emit 前提なので、`--target cpp --codegen-opt 3` では `--output` を禁止し、`--output-dir` を canonical output surface とする。
 - 2026-03-08: `S3-01` の representative regression は `test_pytra_cli.py` に追加し、`codegen-opt=3` で `--link-only -> --from-link-output` の 2 段 route、manifest 解決、`--run` 時の `make run` fallback を固定した。
+- 2026-03-08: `S3-02` として `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` を実行し、`SUMMARY cases=18 pass=18 fail=0` を確認した。
+- 2026-03-08: `S4-01` では `how-to-use` と `spec-make` を実装実態へ同期し、`--target cpp --codegen-opt 3` が multi-file / `--output-dir` 前提であること、intermediate linked bundle が `output_dir/.pytra_linked/` に置かれること、sample parity gate の正規コマンドを記録した。
