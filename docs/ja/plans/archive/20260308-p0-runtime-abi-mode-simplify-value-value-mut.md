@@ -63,8 +63,8 @@
 - [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-02] diagnostics / error message / target support check を新 naming に合わせる。
 - [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-01] 既存 helper（`py_join`, `py_split`, `py_range` など）の注釈と generated/runtime 側期待を新 naming に移行する。
 - [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-02] representative regression を更新し、C++ helper/codegen で非退行を確認する。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-01] docs と how-to-use を新 naming に同期し、移行注意点を記録する。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-01] docs と how-to-use を新 naming に同期し、移行注意点を記録する。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
 
 ## フェーズ詳細
 
@@ -150,3 +150,5 @@
 - 2026-03-08: `S2-02` で parser hint・mutation violation diagnostics・representative tests を新 naming に合わせ、public-facing error wording を `value parameter mutated` へ更新した。
 - 2026-03-08: `S3-01` で checked-in runtime helper source の `py_join` を `@abi(args={"parts": "value"}, ret="value")` へ移し、canonical surface へ揃えた。
 - 2026-03-08: `S3-02` で `test_pytra_built_in_string_ops.py`, `test_py2cpp_codegen_issues.py -k abi`, `test_global_optimizer.py` を通し、helper semantics と representative C++ ABI route の非退行を確認した。
+- 2026-03-08: `S4-01` で `docs/ja/how-to-use.md` に canonical `@abi` naming (`args: default/value/value_mut`, `ret: default/value`) と legacy `value_readonly -> value` 正規化の運用メモを追加した。
+- 2026-03-08: `S4-02` で本計画を archive へ移し、active TODO は次順位の `P0-PYTRACLI-CPP-MAXOPT-LINKED-01` へ戻す。

@@ -71,6 +71,20 @@ Windows では次の読み替えを行ってください。
 - 補助スクリプト（`tools/`）の用途一覧は [ツール一覧](spec/spec-tools.md) を参照してください。
 - 制約の根拠と正規仕様は [利用仕様](./spec/spec-user.md) を参照してください。
 
+## runtime helper での `@abi`
+
+- `@abi` は runtime helper の境界 ABI を固定するための注釈です。一般 user code へ広げる前提ではありません。
+- canonical mode は `args` 側が `default` / `value` / `value_mut`、`ret` 側が `default` / `value` です。
+- 引数側 `value` は read-only value ABI を意味します。旧 `value_readonly` は移行期 alias で、metadata では `value` に正規化されます。
+
+```python
+from pytra.std import abi
+
+@abi(args={"parts": "value"}, ret="value")
+def py_join(sep: str, parts: list[str]) -> str:
+    ...
+```
+
 ## 実行時間計測プロトコル（sample）
 
 - `sample/py` 由来の実行時間計測は、fresh transpile 後に実行します。

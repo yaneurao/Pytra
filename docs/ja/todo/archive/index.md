@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-08 / P0-RUNTIME-ABI-MODE-SIMPLIFY-01](../plans/archive/20260308-p0-runtime-abi-mode-simplify-value-value-mut.md)
 - [2026-03-08 / P4-NONCPP-BACKEND-RECOVERY-01](../plans/archive/20260308-p4-noncpp-backend-recovery-after-linked-program.md)
 - [2026-03-08 / P1-CPP-PY-RUNTIME-SLIM-01](../plans/archive/20260308-p1-cpp-py-runtime-core-slimming.md)
 - [2026-03-08 / P1-RUNTIME-ABI-DECORATOR-01](../plans/archive/20260308-p1-runtime-abi-decorator-for-generated-helpers.md)
