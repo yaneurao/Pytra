@@ -7,8 +7,10 @@ from typing import Any
 
 from toolchain.compiler.backend_registry import (
     apply_runtime_hook,
+    build_program_artifact,
     default_output_path,
-    emit_source,
+    emit_module,
+    get_program_writer,
     get_backend_spec,
     list_backend_targets,
     lower_ir,
@@ -143,6 +145,17 @@ def _validate_east3_module(east: dict[str, Any]) -> dict[str, Any]:
     return east
 
 
+def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
+    meta_any = east.get("meta", {})
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    module_id_any = meta.get("module_id")
+    if isinstance(module_id_any, str) and module_id_any.strip() != "":
+        return module_id_any.strip()
+    if output_path.stem != "":
+        return output_path.stem
+    return "module"
+
+
 def main() -> int:
     argv = sys.argv[1:] if isinstance(sys.argv, list) else []
     for arg in argv:
@@ -185,10 +198,30 @@ def main() -> int:
 
     ir = lower_ir(spec, east_doc, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
-    out_src = emit_source(spec, ir, output_path, emitter_options)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(out_src, encoding="utf-8")
+    module_id = _module_id_from_east(east_doc, output_path)
+    module_artifact = emit_module(
+        spec,
+        ir,
+        output_path,
+        emitter_options,
+        module_id=module_id,
+        is_entry=True,
+    )
+    program_artifact = build_program_artifact(
+        spec,
+        [module_artifact],
+        program_id=module_id,
+        entry_modules=[module_id],
+        layout_mode="single_file",
+        link_output_schema="",
+    )
+    writer = get_program_writer(spec)
+    if callable(writer):
+        _ = writer(program_artifact, output_path, {})
+    else:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        out_src = module_artifact.get("text", "")
+        output_path.write_text(out_src if isinstance(out_src, str) else "", encoding="utf-8")
 
     skip_runtime_hook = _arg_get_bool(args, "no_runtime_hook")
     if not skip_runtime_hook:

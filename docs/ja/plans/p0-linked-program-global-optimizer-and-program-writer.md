@@ -498,15 +498,15 @@ py2x.py
 
 ### Phase 5: backend registry を `ModuleEmitter + ProgramWriter` 構成へ移行する
 
-- [ ] `backend_registry.py` の `emit` 契約を分割する。
-- [ ] 各 backend spec に `emit_module` と `program_writer` を導入する。
-- [ ] 旧 `emit -> str` 契約は互換層へ縮退する。
+- [x] `backend_registry.py` の `emit` 契約を分割する。
+- [x] 各 backend spec に `emit_module` と `program_writer` を導入する。
+- [x] 旧 `emit -> str` 契約は互換層へ縮退する。
 
 詳細タスク:
-- [ ] `S5-01` backend spec schema を更新する。
-- [ ] `S5-02` default `SingleFileProgramWriter` を追加する。
-- [ ] `S5-03` `ir2lang.py` を new registry 契約へ対応させる。
-- [ ] `S5-04` 旧 unary emit API を wrapper 経由へ縮退する。
+- [x] `S5-01` backend spec schema を更新する。
+- [x] `S5-02` default `SingleFileProgramWriter` を追加する。
+- [x] `S5-03` `ir2lang.py` を new registry 契約へ対応させる。
+- [x] `S5-04` 旧 unary emit API を wrapper 経由へ縮退する。
 
 ### Phase 6: C++ を先行移行する
 
@@ -661,8 +661,8 @@ src/
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] program-wide call graph / SCC fixed point を linker 段へ実装し、import-closure 内部読込に依存しない global 解析基盤を作る。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S3-02] global non-escape / container ownership / `type_id` 決定を linker 段へ実装し、linked module と `link-output.json` へ materialize する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S4-01] `EAST3 local optimizer` と `LinkedProgramOptimizer` の pass 責務を再分割し、whole-program 依存 pass を local optimizer から撤去する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` を `emit_module + program_writer` 契約へ拡張し、旧 `emit -> str` API を互換 wrapper 化する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] backend 共通 `SingleFileProgramWriter` を追加し、`ir2lang.py` を new registry 契約へ追従させる。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` を `emit_module + program_writer` 契約へ拡張し、旧 `emit -> str` API を互換 wrapper 化する。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] backend 共通 `SingleFileProgramWriter` を追加し、`ir2lang.py` を new registry 契約へ追従させる。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S6-01] C++ を先行移行し、`multifile_writer.py` を `CppProgramWriter` へ再編して `CppEmitter` を module emit 専任にする。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S6-02] `pytra-cli.py` / C++ build manifest / Makefile 生成導線を `ProgramWriter` 返却 manifest 正本へ更新する。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S7-01] `eastlink.py` を追加し、`link-input.json -> link-output.json + linked modules` の debug/restart 導線を実装する。
@@ -684,3 +684,5 @@ src/
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] `src/toolchain/link/program_call_graph.py` を追加し、`LinkedProgram.modules` だけを入力に使う program-wide call graph / SCC builder を実装した。既存 `non_escape_call_graph` utility は再利用するが、欠けた callee を追加読込せず unresolved count に落とす方針を固定し、`test/unit/link/test_program_call_graph.py` で cross-module edge / mutual recursion SCC / missing module non-load を回帰化した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S3-02] `src/toolchain/link/global_optimizer.py` を追加し、`optimize_linked_program(...)` で global non-escape summary、C++ list ownership hint、deterministic `type_id_table`、`meta.linked_program_v1`、`link-output.v1` を in-memory materialize する導線を実装した。non-escape は program 内 module 群だけを closure に入れた `NonEscapeInterproceduralPass` 再利用で賄い、fallback source load は `source_path=""` で封じた。`test/unit/link/test_global_optimizer.py` で cross-module summary、type_id 決定、C++ value-list hint を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S4-01] `src/toolchain/ir/east3_opt_passes/__init__.py` に `build_local_only_passes()` / `build_global_post_link_passes()` を追加し、local default pass から `NonEscapeInterproceduralPass` / `CppListValueLocalHintPass` を外した。`optimize_linked_program(...)` は `east3_opt_level` / `east3_opt_pass` を尊重して global pass を有効化し、`py2x.py` と `backends/cpp/cli.py` の `.py -> EAST3` 導線は linked optimizer 後の entry/module map を backend へ渡すよう更新した。`test/unit/ir/test_east3_optimizer.py`、`test/unit/link/test_global_optimizer.py`、`test/unit/backends/cpp/test_east3_cpp_bridge.py` で split 契約と `opt_level=0` の非退行を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S5-01] `backend_registry.py` / `backend_registry_static.py` に `emit_module(...)` / `build_program_artifact(...)` / `get_program_writer(...)` を追加し、backend spec 正規化時に `emit_module` と `program_writer` を必ず持つよう更新した。既存 `emit_source()` は `ModuleArtifact.text` を返す互換 wrapper へ縮退した。`test/unit/common/test_py2x_entrypoints_contract.py` で host/selfhost spec 契約と wrapper 動作を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S5-02] `src/backends/common/program_writer.py` に default `SingleFileProgramWriter` を追加し、`ir2lang.py` の single-module backend-only 経路を `emit_module -> ProgramArtifact -> ProgramWriter` へ切り替えた。`test/unit/tooling/test_ir2lang_cli.py` と `test/unit/common/test_py2x_smoke_common.py` で writer 導線の非退行を固定した。

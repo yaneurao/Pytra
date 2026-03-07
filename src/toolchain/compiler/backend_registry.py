@@ -139,6 +139,85 @@ def _runtime_nim(output_path: Path) -> None:
     _copy_runtime_file("runtime/nim/pytra-gen/utils/image_runtime.nim", output_path, "image_runtime.nim")
 
 
+def _default_module_label(module_id: str, output_path: Path) -> str:
+    if output_path.stem != "":
+        return output_path.stem
+    if module_id != "":
+        tail = module_id.rsplit(".", 1)[-1]
+        if tail != "":
+            return tail
+    return "module"
+
+
+def _normalize_module_artifact(
+    artifact_any: Any,
+    *,
+    module_id: str,
+    output_path: Path,
+    extension: str,
+    is_entry: bool,
+) -> dict[str, Any]:
+    artifact = artifact_any if isinstance(artifact_any, dict) else {}
+    text = artifact_any if isinstance(artifact_any, str) else artifact.get("text", "")
+    module_id_out = artifact.get("module_id", module_id)
+    if not isinstance(module_id_out, str) or module_id_out == "":
+        module_id_out = module_id if module_id != "" else _default_module_label("", output_path)
+    label = artifact.get("label", "")
+    if not isinstance(label, str) or label == "":
+        label = _default_module_label(module_id_out, output_path)
+    extension_out = artifact.get("extension", extension)
+    if not isinstance(extension_out, str) or extension_out == "":
+        extension_out = extension if extension != "" else output_path.suffix
+    dependencies_out: list[str] = []
+    dependencies_any = artifact.get("dependencies", [])
+    if isinstance(dependencies_any, list):
+        for item in dependencies_any:
+            if isinstance(item, str) and item != "":
+                dependencies_out.append(item)
+    metadata_any = artifact.get("metadata", {})
+    metadata_out = metadata_any if isinstance(metadata_any, dict) else {}
+    is_entry_out = artifact.get("is_entry", is_entry)
+    return {
+        "module_id": module_id_out,
+        "label": label,
+        "extension": extension_out,
+        "text": text if isinstance(text, str) else "",
+        "is_entry": bool(is_entry_out),
+        "dependencies": dependencies_out,
+        "metadata": dict(metadata_out),
+    }
+
+
+def _legacy_emit_module_adapter(emit_impl: Any, *, extension: str) -> Any:
+    def _emit_module(
+        ir: dict[str, Any],
+        output_path: Path,
+        emitter_options: Any = None,
+        *,
+        module_id: str = "",
+        is_entry: bool = False,
+    ) -> dict[str, Any]:
+        source_any: Any = ""
+        try:
+            source_any = emit_impl(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
+        except TypeError:
+            try:
+                source_any = emit_impl(ir, output_path)
+            except Exception:
+                source_any = ""
+        except Exception:
+            source_any = ""
+        return _normalize_module_artifact(
+            source_any,
+            module_id=module_id,
+            output_path=output_path,
+            extension=extension,
+            is_entry=is_entry,
+        )
+
+    return _emit_module
+
+
 def _load_callable(module_name: str, symbol_name: str) -> Any:
     mod = importlib.import_module(module_name)
     fn = _module_symbol(mod, symbol_name)
@@ -395,6 +474,7 @@ _SPEC_CACHE: dict = {}
 
 
 def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
+    extension = str(spec.get("extension", ""))
     defaults = spec.get("default_options")
     if not isinstance(defaults, dict):
         defaults = {}
@@ -430,6 +510,15 @@ def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
         "optimizer": dict(schema_optimizer),
         "emitter": dict(schema_emitter),
     }
+    emit_module_any = spec.get("emit_module")
+    if not callable(emit_module_any):
+        emit_any = spec.get("emit", _identity_ir)
+        emit_module_any = _legacy_emit_module_adapter(emit_any, extension=extension)
+    spec["emit_module"] = emit_module_any
+    program_writer_any = spec.get("program_writer")
+    if not callable(program_writer_any) and not isinstance(program_writer_any, dict):
+        program_writer_any = _load_callable("backends.common.program_writer", "write_single_file_program")
+    spec["program_writer"] = program_writer_any
     return spec
 
 
@@ -535,22 +624,96 @@ def optimize_ir(spec: BackendSpec, ir: dict, optimizer_options: Any = None) -> d
     return out if isinstance(out, dict) else {}
 
 
+def emit_module(
+    spec: BackendSpec,
+    ir: dict,
+    output_path: Path,
+    emitter_options: Any = None,
+    *,
+    module_id: str = "",
+    is_entry: bool = False,
+) -> dict[str, Any]:
+    fn = spec.get("emit_module")
+    extension = str(spec.get("extension", ""))
+    if not callable(fn):
+        return _normalize_module_artifact(
+            "",
+            module_id=module_id,
+            output_path=output_path,
+            extension=extension,
+            is_entry=is_entry,
+        )
+    artifact_any: Any = {}
+    try:
+        artifact_any = fn(
+            ir,
+            output_path,
+            emitter_options if isinstance(emitter_options, dict) else {},
+            module_id=module_id,
+            is_entry=is_entry,
+        )
+    except TypeError:
+        try:
+            artifact_any = fn(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
+        except TypeError:
+            try:
+                artifact_any = fn(ir, output_path)
+            except Exception:
+                artifact_any = {}
+        except Exception:
+            artifact_any = {}
+    except Exception:
+        artifact_any = {}
+    return _normalize_module_artifact(
+        artifact_any,
+        module_id=module_id,
+        output_path=output_path,
+        extension=extension,
+        is_entry=is_entry,
+    )
+
+
+def build_program_artifact(
+    spec: BackendSpec,
+    modules: list[dict[str, Any]],
+    *,
+    program_id: str = "",
+    entry_modules: list[str] | None = None,
+    layout_mode: str = "single_file",
+    link_output_schema: str = "",
+    writer_options: dict[str, object] | None = None,
+) -> dict[str, Any]:
+    target = str(spec.get("target_lang", ""))
+    module_list = [dict(item) for item in modules if isinstance(item, dict)]
+    effective_program_id = program_id
+    if effective_program_id == "" and len(module_list) > 0:
+        first_module_id = module_list[0].get("module_id", "")
+        if isinstance(first_module_id, str):
+            effective_program_id = first_module_id
+    entry_out = [item for item in list(entry_modules or []) if isinstance(item, str) and item != ""]
+    return {
+        "target": target,
+        "program_id": effective_program_id,
+        "entry_modules": entry_out,
+        "modules": module_list,
+        "layout_mode": layout_mode,
+        "link_output_schema": link_output_schema,
+        "writer_options": dict(writer_options) if isinstance(writer_options, dict) else {},
+    }
+
+
+def get_program_writer(spec: BackendSpec) -> Any:
+    return spec.get("program_writer")
+
+
 def emit_source(
     spec: BackendSpec,
     ir: dict,
     output_path: Path,
     emitter_options: Any = None,
 ) -> str:
-    fn = spec.get("emit", _identity_ir)
-    try:
-        source = fn(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
-    except TypeError:
-        try:
-            source = fn(ir, output_path)
-        except Exception:
-            source = ""
-    except Exception:
-        source = ""
+    artifact = emit_module(spec, ir, output_path, emitter_options)
+    source = artifact.get("text", "")
     return source if isinstance(source, str) else ""
 
 

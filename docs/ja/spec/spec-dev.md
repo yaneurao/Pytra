@@ -133,6 +133,10 @@ linked module(EAST3)
 
 - non-C++ backend の既定は `SingleFileProgramWriter` とする。
 - C++ は `CppProgramWriter` を用い、`manifest.json` / `Makefile` / runtime tree を扱う。
+- 実装同期（2026-03-07）:
+  - `backend_registry.py` / `backend_registry_static.py` は backend spec を正規化するとき、`emit_module` と `program_writer` を必ず生やす。
+  - `program_writer` 未指定 backend の既定は `backends/common/program_writer.py` の `write_single_file_program(...)` とする。
+  - `ir2lang.py` の single-module 経路は `emit_module -> ProgramArtifact -> ProgramWriter` を通し、旧 `emit_source()` は compatibility wrapper として `ModuleArtifact.text` を返すだけに縮退した。
 
 互換契約:
 

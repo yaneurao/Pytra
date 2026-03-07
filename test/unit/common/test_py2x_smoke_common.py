@@ -87,6 +87,8 @@ class Py2XCommonSmokeTest(unittest.TestCase):
                 self.assertTrue(callable(spec.get("lower")))
                 self.assertTrue(callable(spec.get("optimizer")))
                 self.assertTrue(callable(spec.get("emit")))
+                self.assertTrue(callable(spec.get("emit_module")))
+                self.assertTrue(callable(spec.get("program_writer")))
                 self.assertTrue(callable(spec.get("runtime_hook")))
 
     def test_cli_smoke_generates_output_for_all_targets(self) -> None:

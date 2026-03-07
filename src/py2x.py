@@ -224,16 +224,16 @@ def _build_linked_program_for_input(
 ) -> LinkedProgram:
     def _load_for_program(
         module_path: Path,
-        parser_backend_arg: str,
-        east_stage_arg: str,
-        object_dispatch_mode_arg: str,
+        parser_backend: str = "self_hosted",
+        east_stage: str = "3",
+        object_dispatch_mode: str = "",
     ) -> dict[str, object]:
-        _ = east_stage_arg
+        _ = east_stage
         enable_dump = module_path.resolve() == input_path.resolve()
         return load_east3_document(
             module_path,
-            parser_backend=parser_backend_arg,
-            object_dispatch_mode=object_dispatch_mode_arg,
+            parser_backend=parser_backend,
+            object_dispatch_mode=object_dispatch_mode,
             east3_opt_level=east3_opt_level,
             east3_opt_pass=east3_opt_pass,
             dump_east3_before_opt=dump_east3_before_opt if enable_dump else "",
@@ -256,9 +256,9 @@ def _build_linked_program_for_input(
         module_map = {
             str(input_path.resolve()): _load_for_program(
                 input_path,
-                parser_backend,
-                "3",
-                object_dispatch_mode,
+                parser_backend=parser_backend,
+                east_stage="3",
+                object_dispatch_mode=object_dispatch_mode,
             )
         }
 

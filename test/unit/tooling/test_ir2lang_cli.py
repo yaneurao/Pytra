@@ -75,6 +75,7 @@ class Ir2langCliTest(unittest.TestCase):
             lower_calls: list[dict[str, object]] = []
             optimize_calls: list[dict[str, object]] = []
             emit_calls: list[dict[str, object]] = []
+            writer_calls: list[dict[str, object]] = []
             runtime_calls: list[Path] = []
 
             def _resolve(spec: dict[str, object], layer: str, raw: dict[str, str]) -> dict[str, object]:
@@ -90,14 +91,48 @@ class Ir2langCliTest(unittest.TestCase):
                 optimize_calls.append({"spec": spec, "ir": ir, "opts": opts})
                 return {"kind": "OptimizedModule"}
 
-            def _emit(
+            def _emit_module(
                 spec: dict[str, object],
                 ir: dict[str, object],
                 output_path: Path,
                 opts: dict[str, object],
-            ) -> str:
-                emit_calls.append({"spec": spec, "ir": ir, "output_path": output_path, "opts": opts})
-                return "// emitted by ir2lang test\n"
+                *,
+                module_id: str = "",
+                is_entry: bool = False,
+            ) -> dict[str, object]:
+                emit_calls.append(
+                    {
+                        "spec": spec,
+                        "ir": ir,
+                        "output_path": output_path,
+                        "opts": opts,
+                        "module_id": module_id,
+                        "is_entry": is_entry,
+                    }
+                )
+                return {
+                    "module_id": module_id,
+                    "label": "out",
+                    "extension": ".rs",
+                    "text": "// emitted by ir2lang test\n",
+                    "is_entry": is_entry,
+                    "dependencies": [],
+                    "metadata": {},
+                }
+
+            def _writer(program_artifact: dict[str, object], output_root: Path, options: dict[str, object]) -> dict[str, object]:
+                writer_calls.append(
+                    {
+                        "program_artifact": program_artifact,
+                        "output_root": output_root,
+                        "options": options,
+                    }
+                )
+                output_root.parent.mkdir(parents=True, exist_ok=True)
+                modules = program_artifact.get("modules", [])
+                text = modules[0].get("text", "") if isinstance(modules, list) and len(modules) > 0 else ""
+                output_root.write_text(text if isinstance(text, str) else "", encoding="utf-8")
+                return {"primary_output": str(output_root)}
 
             def _runtime(spec: dict[str, object], output_path: Path) -> None:
                 _ = spec
@@ -119,12 +154,13 @@ class Ir2langCliTest(unittest.TestCase):
             ]
             with patch.object(ir2lang_mod.sys, "argv", argv):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
-                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=_resolve):
-                        with patch.object(ir2lang_mod, "lower_ir", side_effect=_lower):
-                            with patch.object(ir2lang_mod, "optimize_ir", side_effect=_optimize):
-                                with patch.object(ir2lang_mod, "emit_source", side_effect=_emit):
-                                    with patch.object(ir2lang_mod, "apply_runtime_hook", side_effect=_runtime):
-                                        rc = ir2lang_mod.main()
+                        with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=_resolve):
+                            with patch.object(ir2lang_mod, "lower_ir", side_effect=_lower):
+                                with patch.object(ir2lang_mod, "optimize_ir", side_effect=_optimize):
+                                    with patch.object(ir2lang_mod, "emit_module", side_effect=_emit_module):
+                                        with patch.object(ir2lang_mod, "get_program_writer", return_value=_writer):
+                                            with patch.object(ir2lang_mod, "apply_runtime_hook", side_effect=_runtime):
+                                                rc = ir2lang_mod.main()
 
             self.assertEqual(rc, 0)
             self.assertEqual(
@@ -138,6 +174,7 @@ class Ir2langCliTest(unittest.TestCase):
             self.assertEqual(len(lower_calls), 1)
             self.assertEqual(len(optimize_calls), 1)
             self.assertEqual(len(emit_calls), 1)
+            self.assertEqual(len(writer_calls), 1)
             self.assertEqual(len(runtime_calls), 1)
             self.assertEqual(str(runtime_calls[0]), str(out_rs))
             self.assertEqual(out_rs.read_text(encoding="utf-8"), "// emitted by ir2lang test\n")
@@ -159,6 +196,7 @@ class Ir2langCliTest(unittest.TestCase):
             }
 
             runtime_calls: list[Path] = []
+            writer_calls: list[Path] = []
             with patch.object(
                 ir2lang_mod.sys,
                 "argv",
@@ -176,16 +214,41 @@ class Ir2langCliTest(unittest.TestCase):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
                         with patch.object(ir2lang_mod, "lower_ir", return_value={"kind": "LoweredModule"}):
                             with patch.object(ir2lang_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
-                                with patch.object(ir2lang_mod, "emit_source", return_value="// no runtime\n"):
+                                with patch.object(
+                                    ir2lang_mod,
+                                    "emit_module",
+                                    return_value={
+                                        "module_id": "out",
+                                        "label": "out",
+                                        "extension": ".rs",
+                                        "text": "// no runtime\n",
+                                        "is_entry": True,
+                                        "dependencies": [],
+                                        "metadata": {},
+                                    },
+                                ):
                                     with patch.object(
                                         ir2lang_mod,
-                                        "apply_runtime_hook",
-                                        side_effect=lambda _spec, output_path: runtime_calls.append(output_path),
+                                        "get_program_writer",
+                                        return_value=lambda program_artifact, output_root, _options: (
+                                            writer_calls.append(output_root),
+                                            output_root.write_text(
+                                                program_artifact["modules"][0]["text"],
+                                                encoding="utf-8",
+                                            ),
+                                            {"primary_output": str(output_root)},
+                                        )[2],
                                     ):
-                                        rc = ir2lang_mod.main()
+                                        with patch.object(
+                                            ir2lang_mod,
+                                            "apply_runtime_hook",
+                                            side_effect=lambda _spec, output_path: runtime_calls.append(output_path),
+                                        ):
+                                            rc = ir2lang_mod.main()
 
             self.assertEqual(rc, 0)
             self.assertEqual(runtime_calls, [])
+            self.assertEqual([str(item) for item in writer_calls], [str(out_rs)])
             self.assertEqual(out_rs.read_text(encoding="utf-8"), "// no runtime\n")
 
 

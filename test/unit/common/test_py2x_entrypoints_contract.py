@@ -12,6 +12,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.toolchain.compiler.backend_registry as host_registry
+import src.toolchain.compiler.backend_registry_static as static_registry
 
 
 class Py2xEntrypointsContractTest(unittest.TestCase):
@@ -58,6 +59,41 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         with patch.object(host_registry.importlib, "import_module", side_effect=AssertionError("unexpected import")):
             cached = host_registry.get_backend_spec("rs")
         self.assertEqual(cached.get("target_lang"), "rs")
+
+    def test_backend_specs_expose_emit_module_and_program_writer(self) -> None:
+        host_registry._SPEC_CACHE.clear()
+        host_spec = host_registry.get_backend_spec("rs")
+        static_spec = static_registry.get_backend_spec("rs")
+        self.assertTrue(callable(host_spec.get("emit_module")))
+        self.assertIn("program_writer", host_spec)
+        self.assertTrue(callable(static_spec.get("emit_module")))
+        self.assertIn("program_writer", static_spec)
+
+    def test_emit_source_uses_emit_module_text_wrapper(self) -> None:
+        spec = host_registry._normalize_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "emit": lambda ir, output_path, _opts=None: "// "
+                + str(ir.get("kind", ""))
+                + " -> "
+                + output_path.name,
+            }
+        )
+        artifact = host_registry.emit_module(
+            spec,
+            {"kind": "Demo"},
+            Path("out/demo.txt"),
+            {},
+            module_id="pkg.demo",
+            is_entry=True,
+        )
+        text = host_registry.emit_source(spec, {"kind": "Demo"}, Path("out/demo.txt"), {})
+        self.assertEqual(artifact["module_id"], "pkg.demo")
+        self.assertEqual(artifact["label"], "demo")
+        self.assertEqual(artifact["extension"], ".txt")
+        self.assertEqual(artifact["text"], text)
+        self.assertTrue(bool(artifact["is_entry"]))
 
 
 if __name__ == "__main__":
