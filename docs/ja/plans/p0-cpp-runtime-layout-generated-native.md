@@ -158,6 +158,62 @@ src/runtime/cpp/
 - `.gen/.ext` naming を module runtime から段階撤去する。
 - archive / docs / guard を更新し、suffix ベース運用を legacy 扱いで閉じる。
 
+## Phase 1 実施結果
+
+2026-03-07 時点の棚卸しでは、`src/runtime/cpp/` の module runtime 層は次の内訳だった。
+
+- `generated`: 36 files
+- `native`: 9 files
+- `public shim`: 10 files
+- `core` 非対象: 13 files
+- `other`: 1 file (`std/README.md`)
+
+分類結果:
+
+- `built_in/`
+  - generated:
+    - `contains`, `iter_ops`, `predicates`, `sequence`, `string_ops`, `type_id` の `*.gen.h/.gen.cpp`
+  - native:
+    - `contains.ext.h`
+    - `iter_ops.ext.h`
+    - `sequence.ext.h`
+  - public shim:
+    - 現時点ではなし
+- `std/`
+  - generated:
+    - `argparse`, `glob`, `json`, `math`, `os`, `os_path`, `pathlib`, `random`, `re`, `sys`, `time`, `timeit`
+  - native:
+    - `glob.ext.cpp`
+    - `math.ext.cpp`
+    - `os.ext.cpp`
+    - `os_path.ext.cpp`
+    - `sys.ext.cpp`
+    - `time.ext.cpp`
+  - public shim:
+    - `pytra/std/{glob,math,os,os_path,pathlib,random,re,time}.h`
+  - other:
+    - `std/README.md`
+- `utils/`
+  - generated:
+    - `assertions`, `gif`, `png` の `*.gen.h/.gen.cpp`
+  - native:
+    - 現時点ではなし
+  - public shim:
+    - `pytra/utils/{gif,png}.h`
+- `core/`
+  - `README.md`, `dict.ext.h`, `exceptions.ext.h`, `gc.ext.cpp`, `gc.ext.h`, `io.ext.cpp`, `io.ext.h`, `list.ext.h`, `py_runtime.ext.h`, `py_scalar_types.ext.h`, `py_types.ext.h`, `set.ext.h`, `str.ext.h`
+  - 本計画の移行対象外とする
+
+移行マップ:
+
+- `built_in/*.gen.h/.gen.cpp` -> `generated/built_in/*.h/.cpp`
+- `std/*.gen.h/.gen.cpp` -> `generated/std/*.h/.cpp`
+- `utils/*.gen.h/.gen.cpp` -> `generated/utils/*.h/.cpp`
+- `*.ext.cpp` -> `native/<domain>/*.cpp`
+- `*.ext.h` -> 原則廃止し、template / inline helper など例外時のみ `native/<domain>/*.h` として存続可
+- `pytra/<domain>/*.h` -> generated public shim として維持
+- `core/*` -> 本計画では移動しない
+
 ## 受け入れ基準
 
 - `src/runtime/cpp/pytra/` は generated public shim 専用になる。
@@ -180,8 +236,8 @@ src/runtime/cpp/
 
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01] C++ runtime の module runtime 層を `generated/` + `native/` + `pytra/` shim へ再編し、suffix ベース ownership から directory ベース ownership へ移行する。
 
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
-- [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
+- [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
 
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
 - [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-02] `runtime_symbol_index` / `cpp_runtime_deps.py` / build graph 導線を `generated/native/pytra` 前提へ更新する。
@@ -200,3 +256,5 @@ src/runtime/cpp/
 決定ログ:
 - 2026-03-07: ユーザー方針により、C++ runtime の module runtime 層は `generated/` + `native/` + `pytra/` shim を目標レイアウトとし、`handwritten` ではなく「C++ 固有 companion」を示す `native` を採用する。
 - 2026-03-07: 本計画では `core/` を low-level runtime として維持し、まず `built_in/std/utils + pytra` の ownership 整理にスコープを限定する。
+- 2026-03-07: Phase 1 棚卸しでは `generated 36 / native 9 / public shim 10 / core 非対象 13 / other 1` を確認し、`pytra/` shim は現行では `std/` と `utils/` にのみ存在する。
+- 2026-03-07: 現行の `*.ext.h` 残存は `built_in` helper 3 件のみであり、移行先では例外的な `native/*.h` に縮退させる方針を固定する。

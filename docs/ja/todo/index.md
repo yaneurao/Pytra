@@ -37,8 +37,8 @@
 文脈: [docs/ja/plans/p0-cpp-runtime-layout-generated-native.md](../plans/p0-cpp-runtime-layout-generated-native.md)
 
 1. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01] C++ runtime の module runtime 層を `generated/` + `native/` + `pytra/` shim へ再編し、suffix ベース ownership から directory ベース ownership へ移行する。
-2. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
-3. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
+2. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
+3. [x] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
 4. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
 5. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-02] `runtime_symbol_index` / `cpp_runtime_deps.py` / build graph 導線を `generated/native/pytra` 前提へ更新する。
 6. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
