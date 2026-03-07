@@ -263,45 +263,55 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
 
     public_header_candidates = _pick_existing(
         [
-            runtime_root / "core" / (tail + ".ext.h"),
             runtime_root / "core" / (tail + ".h"),
+            runtime_root / "core" / (tail + ".ext.h"),
             runtime_root / "core" / (tail + ".gen.h"),
         ]
     )
-    generated_candidates = _pick_existing(
+    generated_header_candidates = _pick_existing(
         [
-            runtime_root / "generated" / "core" / (tail + ".ext.h"),
             runtime_root / "generated" / "core" / (tail + ".h"),
+            runtime_root / "generated" / "core" / (tail + ".ext.h"),
             runtime_root / "generated" / "core" / (tail + ".gen.h"),
-            runtime_root / "generated" / "core" / (tail + ".ext.cpp"),
+        ]
+    )
+    generated_source_candidates = _pick_existing(
+        [
             runtime_root / "generated" / "core" / (tail + ".cpp"),
+            runtime_root / "generated" / "core" / (tail + ".ext.cpp"),
             runtime_root / "generated" / "core" / (tail + ".gen.cpp"),
         ]
     )
-    native_candidates = _pick_existing(
+    native_header_candidates = _pick_existing(
         [
-            runtime_root / "native" / "core" / (tail + ".ext.h"),
             runtime_root / "native" / "core" / (tail + ".h"),
-            runtime_root / "native" / "core" / (tail + ".ext.cpp"),
-            runtime_root / "native" / "core" / (tail + ".cpp"),
+            runtime_root / "native" / "core" / (tail + ".ext.h"),
         ]
     )
-    legacy_candidates = _pick_existing(
+    native_source_candidates = _pick_existing(
         [
-            runtime_root / "core" / (tail + ".ext.cpp"),
+            runtime_root / "native" / "core" / (tail + ".cpp"),
+            runtime_root / "native" / "core" / (tail + ".ext.cpp"),
+        ]
+    )
+    legacy_source_candidates = _pick_existing(
+        [
             runtime_root / "core" / (tail + ".cpp"),
+            runtime_root / "core" / (tail + ".ext.cpp"),
             runtime_root / "core" / (tail + ".gen.cpp"),
         ]
     )
 
     if public_header_candidates:
         public_headers.append(_path_to_rel_txt(public_header_candidates[0]))
-    elif generated_candidates:
-        first_generated_header = next((p for p in generated_candidates if p.suffix == ".h"), None)
+    elif generated_header_candidates:
+        first_generated_header = next(
+            (p for p in generated_header_candidates if p.suffix == ".h"), None
+        )
         if first_generated_header is not None:
             public_headers.append(_path_to_rel_txt(first_generated_header))
-    elif native_candidates:
-        first_native_header = next((p for p in native_candidates if p.suffix == ".h"), None)
+    elif native_header_candidates:
+        first_native_header = next((p for p in native_header_candidates if p.suffix == ".h"), None)
         if first_native_header is not None:
             public_headers.append(_path_to_rel_txt(first_native_header))
 
@@ -316,15 +326,15 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
             seen_sources.add(rel)
             compile_sources.append(rel)
 
-    append_sources(generated_candidates)
-    append_sources(native_candidates)
-    append_sources(legacy_candidates)
+    append_sources(generated_source_candidates)
+    append_sources(native_source_candidates)
+    append_sources(legacy_source_candidates)
 
-    if any(path.suffix in {".h", ".cpp"} for path in generated_candidates):
+    if generated_header_candidates or generated_source_candidates:
         companions.append("generated")
-    if any(path.suffix in {".h", ".cpp"} for path in native_candidates):
+    if native_header_candidates or native_source_candidates:
         companions.append("native")
-    elif any(path.suffix == ".cpp" for path in legacy_candidates) or (
+    elif legacy_source_candidates or (
         len(public_header_candidates) > 0 and public_header_candidates[0].name.endswith(".ext.h")
     ):
         companions.append("ext")
@@ -343,7 +353,7 @@ def _iter_target_core_module_ids(lang: str) -> list[str]:
     if not base_dir.exists():
         return []
     tails: set[str] = set()
-    suffixes = (".gen.h", ".gen.cpp", ".ext.h", ".ext.cpp")
+    suffixes = (".gen.h", ".gen.cpp", ".ext.h", ".ext.cpp", ".h", ".cpp")
     for path in sorted(base_dir.rglob("*")):
         if not path.is_file():
             continue

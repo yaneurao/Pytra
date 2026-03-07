@@ -214,7 +214,7 @@ Phase 1 契約固定:
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
 
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-02] synthetic test を追加し、`core/*.h` + `native/core/*.{h,cpp}` の plain naming で compile/source 解決できることを固定する。
 
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-01] `src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder surface を plain name へ切り替える。
@@ -231,3 +231,4 @@ Phase 1 契約固定:
 - 2026-03-07: `pytra/core` への include-root 移行は rename と独立した大きな変更なので、この計画には含めない。まず `core/...` を維持したまま file name を plain に揃える。
 - 2026-03-07: `S1-01` として rename inventory を固定した。対象は `core/` forwarder header 10 件、`native/core/` handwritten header 10 件、`native/core/` source 2 件で、`generated/core/` は `README.md` のみだった。basename collision はなく、Phase 3 と Phase 4 で `core` surface と `native/core` 正本を段階分離できることを確認した。
 - 2026-03-07: `S1-02` として `spec-runtime` / `spec-abi` へ approved naming contract を追記した。`core` は shim なので plain `*.h`、`native/core` は ownership 正本なので plain `*.h` / `*.cpp`、`generated/core` は future artifact も plain naming only とし、`.ext` は移行中 legacy 名としてだけ許容する。
+- 2026-03-07: `S2-01` として `gen_runtime_symbol_index.py` / `cpp_runtime_deps.py` / `check_runtime_cpp_layout.py` を plain-name tolerant に更新した。core public header は `core/*.h` を優先しつつ `*.ext.h` fallback を維持し、`generated/core` / `native/core` compile source 解決も `*.cpp` と `*.ext.cpp` の両方を辿れるようにした。layout guard も core surface を `plain_or_ext` で監査し、`py_runtime` duplicate 検査は `py_runtime.h` と `py_runtime.ext.h` の両方を対象にする。

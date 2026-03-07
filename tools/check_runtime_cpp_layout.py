@@ -20,25 +20,25 @@ ROOT = Path(__file__).resolve().parents[1]
 MARKER = "AUTO-GENERATED FILE. DO NOT EDIT."
 TARGET_SUFFIXES = {".h", ".cpp"}
 BANNED_PY_RUNTIME_PATTERNS = {
-    "static inline str sub(": "re.sub duplicate must not live in py_runtime.ext.h",
-    "struct ArgumentParser": "argparse duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_any(": "predicate duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_all(": "predicate duplicate must not live in py_runtime.ext.h",
-    "static inline str py_lstrip(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline str py_rstrip(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline str py_strip(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_startswith(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_endswith(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline int64 py_find(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline int64 py_rfind(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline str py_replace(": "string_ops duplicate must not live in py_runtime.ext.h",
-    "static inline list<int64> py_range(": "sequence duplicate must not live in py_runtime.ext.h",
-    "static inline str py_repeat(": "sequence duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_contains(const dict<": "contains duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_contains(const list<": "contains duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_contains(const set<": "contains duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_contains(const str&": "contains duplicate must not live in py_runtime.ext.h",
-    "static inline bool py_contains(const object&": "contains duplicate must not live in py_runtime.ext.h",
+    "static inline str sub(": "re.sub duplicate must not live in the py_runtime core header",
+    "struct ArgumentParser": "argparse duplicate must not live in the py_runtime core header",
+    "static inline bool py_any(": "predicate duplicate must not live in the py_runtime core header",
+    "static inline bool py_all(": "predicate duplicate must not live in the py_runtime core header",
+    "static inline str py_lstrip(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline str py_rstrip(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline str py_strip(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline bool py_startswith(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline bool py_endswith(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline int64 py_find(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline int64 py_rfind(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline str py_replace(": "string_ops duplicate must not live in the py_runtime core header",
+    "static inline list<int64> py_range(": "sequence duplicate must not live in the py_runtime core header",
+    "static inline str py_repeat(": "sequence duplicate must not live in the py_runtime core header",
+    "static inline bool py_contains(const dict<": "contains duplicate must not live in the py_runtime core header",
+    "static inline bool py_contains(const list<": "contains duplicate must not live in the py_runtime core header",
+    "static inline bool py_contains(const set<": "contains duplicate must not live in the py_runtime core header",
+    "static inline bool py_contains(const str&": "contains duplicate must not live in the py_runtime core header",
+    "static inline bool py_contains(const object&": "contains duplicate must not live in the py_runtime core header",
 }
 DIRECT_NATIVE_CORE_INCLUDE_RE = re.compile(r'^\s*#include\s+"(runtime/cpp/native/core/[^"]+)"', re.MULTILINE)
 
@@ -143,7 +143,7 @@ def _check_core_surface_files(
     for p in files:
         rel = str(p.relative_to(ROOT))
         txt = p.read_text(encoding="utf-8", errors="ignore")
-        if not _matches_name_policy(p, "ext_only"):
+        if not _matches_name_policy(p, "plain_or_ext"):
             invalid_name.append(rel)
         if MARKER in txt:
             unexpected_marker.append(rel)
@@ -180,9 +180,13 @@ def main() -> int:
     pytra_dir = _runtime_cpp_path("pytra")
     std_dir = _runtime_cpp_path("std")
     utils_dir = _runtime_cpp_path("utils")
-    py_runtime_ext = _runtime_cpp_path("native", "core", "py_runtime.ext.h")
-    if not py_runtime_ext.exists():
-        py_runtime_ext = _runtime_cpp_path("core", "py_runtime.ext.h")
+    py_runtime_header = _runtime_cpp_path("native", "core", "py_runtime.h")
+    if not py_runtime_header.exists():
+        py_runtime_header = _runtime_cpp_path("native", "core", "py_runtime.ext.h")
+    if not py_runtime_header.exists():
+        py_runtime_header = _runtime_cpp_path("core", "py_runtime.h")
+    if not py_runtime_header.exists():
+        py_runtime_header = _runtime_cpp_path("core", "py_runtime.ext.h")
 
     builtin_files = _scan_targets(builtin_dir)
     core_files = _scan_targets(core_dir)
@@ -265,8 +269,8 @@ def main() -> int:
         core_dir=core_dir,
     )
 
-    if py_runtime_ext.exists():
-        py_runtime_txt = py_runtime_ext.read_text(encoding="utf-8", errors="ignore")
+    if py_runtime_header.exists():
+        py_runtime_txt = py_runtime_header.read_text(encoding="utf-8", errors="ignore")
         for pattern, reason in BANNED_PY_RUNTIME_PATTERNS.items():
             if pattern in py_runtime_txt:
                 banned_runtime_duplicates.append(f"{pattern} :: {reason}")
@@ -315,11 +319,11 @@ def main() -> int:
             for item in unexpected_core_impl_files:
                 print(f"    - {item}")
         if invalid_name:
-            print("  files violating .gen/.ext naming:")
+            print("  files violating runtime naming policy:")
             for item in invalid_name:
                 print(f"    - {item}")
         if banned_runtime_duplicates:
-            print("  py_runtime.ext.h still contains duplicated high-level runtime bodies:")
+            print("  py_runtime core header still contains duplicated high-level runtime bodies:")
             for item in banned_runtime_duplicates:
                 print(f"    - {item}")
         if direct_native_core_include_violations:

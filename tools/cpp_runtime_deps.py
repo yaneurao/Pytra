@@ -103,39 +103,68 @@ def _runtime_cpp_candidates_from_group_tail(group: str, tail: Path) -> list[Path
 
 
 def _runtime_cpp_candidates_from_generated_tail(group: str, tail: Path) -> list[Path]:
+    if group == "core":
+        return _runtime_cpp_candidates_from_generated_core_tail(tail)
     return _runtime_cpp_candidates_from_group_tail(group, tail)
 
 
 def _runtime_cpp_candidates_from_native_tail(group: str, tail: Path) -> list[Path]:
+    if group == "core":
+        return _runtime_cpp_candidates_from_native_core_tail(tail)
     out: list[Path] = []
     _append_unique_path(out, RUNTIME_ROOT / "native" / group / (tail.as_posix() + ".cpp"))
     return out
 
 
-def _runtime_cpp_candidates_from_core_tail(tail: Path) -> list[Path]:
-    out: list[Path] = []
+def _core_tail_base(tail: Path) -> str:
     tail_txt = tail.as_posix()
     base_tail = tail_txt
     if base_tail.endswith(".ext"):
         base_tail = base_tail[: -len(".ext")]
     elif base_tail.endswith(".gen"):
         base_tail = base_tail[: -len(".gen")]
+    return base_tail
 
+
+def _runtime_cpp_candidates_from_generated_core_tail(tail: Path) -> list[Path]:
+    out: list[Path] = []
+    base_tail = _core_tail_base(tail)
     for rel_tail in (
-        tail_txt + ".cpp",
         base_tail + ".cpp",
+        base_tail + ".ext.cpp",
         base_tail + ".gen.cpp",
     ):
         _append_unique_path(out, RUNTIME_ROOT / "generated" / "core" / rel_tail)
     for rel_tail in (
-        tail_txt + ".cpp",
         base_tail + ".cpp",
+        base_tail + ".ext.cpp",
     ):
         _append_unique_path(out, RUNTIME_ROOT / "native" / "core" / rel_tail)
+    return out
+
+
+def _runtime_cpp_candidates_from_native_core_tail(tail: Path) -> list[Path]:
+    out: list[Path] = []
+    base_tail = _core_tail_base(tail)
     for rel_tail in (
-        tail_txt + ".cpp",
-        base_tail + ".ext.cpp",
         base_tail + ".cpp",
+        base_tail + ".ext.cpp",
+    ):
+        _append_unique_path(out, RUNTIME_ROOT / "native" / "core" / rel_tail)
+    return out
+
+
+def _runtime_cpp_candidates_from_core_tail(tail: Path) -> list[Path]:
+    out: list[Path] = []
+    base_tail = _core_tail_base(tail)
+
+    for path in _runtime_cpp_candidates_from_generated_core_tail(tail):
+        _append_unique_path(out, path)
+    for path in _runtime_cpp_candidates_from_native_core_tail(tail):
+        _append_unique_path(out, path)
+    for rel_tail in (
+        base_tail + ".cpp",
+        base_tail + ".ext.cpp",
         base_tail + ".gen.cpp",
     ):
         _append_unique_path(out, RUNTIME_ROOT / "core" / rel_tail)
@@ -207,7 +236,9 @@ def collect_runtime_cpp_sources(module_sources: list[str], include_dir: Path) ->
     seen_nodes: set[Path] = set()
     seen_sources: set[str] = set()
     queue: list[Path] = _resolve_module_sources(module_sources)
-    seed = RUNTIME_ROOT / "core" / "py_runtime.ext.h"
+    seed = RUNTIME_ROOT / "core" / "py_runtime.h"
+    if not seed.exists():
+        seed = RUNTIME_ROOT / "core" / "py_runtime.ext.h"
     if seed.exists():
         queue.append(seed)
     while queue:
