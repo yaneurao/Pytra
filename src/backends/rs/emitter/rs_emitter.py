@@ -2372,7 +2372,7 @@ class RustEmitter(CodeEmitter):
             if stmt.get("value") is None:
                 self.emit(self.syntax_text("return_void", "return;"))
             else:
-                val = self.render_expr(stmt.get("value"))
+                val = self._render_return_expr(stmt.get("value"))
                 self.emit(self.syntax_line("return_value", "return {value};", {"value": val}))
             return
         if kind == "AnnAssign":
@@ -3803,6 +3803,19 @@ class RustEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(expr.get("meta"))
         non_escape = self.any_to_dict_or_empty(meta.get("non_escape_callsite"))
         return bool(non_escape.get("in_return_expr"))
+
+    def _render_return_expr(self, expr: Any) -> str:
+        expr_d = self.any_to_dict_or_empty(expr)
+        if self.any_dict_get_str(expr_d, "kind", "") == "Call":
+            fn_node = self.any_to_dict_or_empty(expr_d.get("func"))
+            fn_name = self.any_dict_get_str(fn_node, "id", "")
+            args = self.any_to_list(expr_d.get("args"))
+            if fn_name in {"bytes", "bytearray"} and len(args) == 1:
+                arg_node = args[0]
+                arg_t = self.normalize_type_name(self.get_expr_type(arg_node))
+                if arg_t in {"bytes", "bytearray"}:
+                    return self.render_expr(arg_node)
+        return self.render_expr(expr)
 
     def _resolved_runtime_call(self, expr: dict[str, Any]) -> str:
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
