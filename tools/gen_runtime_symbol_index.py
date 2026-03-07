@@ -28,6 +28,9 @@ SOURCE_ROOTS: tuple[tuple[str, str, Path], ...] = (
 TOP_LEVEL_CLASS_RE = re.compile(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)\b")
 TOP_LEVEL_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=")
 TOP_LEVEL_ANN_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*.+?=\s*")
+SYMBOL_CALL_ADAPTER_KINDS: dict[tuple[str, str], str] = {
+    ("pytra.utils.gif", "save_gif"): "image.save_gif.keyword_defaults",
+}
 
 
 def _path_to_rel_txt(path: Path) -> str:
@@ -109,7 +112,10 @@ def _scan_top_level_symbols(path: Path) -> dict[str, dict[str, str]]:
     return out
 
 
-def _annotate_runtime_symbol_semantic_tags(symbols: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
+def _annotate_runtime_symbol_semantic_tags(
+    module_id: str,
+    symbols: dict[str, dict[str, str]],
+) -> dict[str, dict[str, str]]:
     for name, symbol_doc in symbols.items():
         kind = str(symbol_doc.get("kind", "")).strip()
         dispatch = str(symbol_doc.get("dispatch", "")).strip()
@@ -120,6 +126,9 @@ def _annotate_runtime_symbol_semantic_tags(symbols: dict[str, dict[str, str]]) -
             semantic_tag = "stdlib.symbol." + name
         if semantic_tag != "":
             symbol_doc["semantic_tag"] = semantic_tag
+        adapter_kind = SYMBOL_CALL_ADAPTER_KINDS.get((module_id, name), "")
+        if adapter_kind != "":
+            symbol_doc["call_adapter_kind"] = adapter_kind
     return symbols
 
 
@@ -385,7 +394,7 @@ def build_runtime_symbol_index() -> dict[str, Any]:
             modules[module_id] = {
                 "source_py": _path_to_rel_txt(path),
                 "runtime_group": group,
-                "symbols": _annotate_runtime_symbol_semantic_tags(_scan_top_level_symbols(path)),
+                "symbols": _annotate_runtime_symbol_semantic_tags(module_id, _scan_top_level_symbols(path)),
             }
             for lang in langs:
                 artifact = _target_module_artifacts(lang, group, tail)

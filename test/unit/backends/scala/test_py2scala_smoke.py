@@ -105,6 +105,20 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertNotIn("__pytra_noop(out_path, width, height, frames, julia_palette())", scala)
         self.assertNotIn("def __pytra_save_gif(", scala)
 
+    def test_scala_native_emitter_save_gif_keyword_order_uses_adapter_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "gif_case.py"
+            src.write_text(
+                "from pytra.utils.gif import save_gif, grayscale_palette\n\n"
+                "def main(frames: list[bytes]) -> None:\n"
+                "    save_gif('x.gif', 1, 1, frames, grayscale_palette(), loop=0, delay_cs=4)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            scala = transpile_to_scala_native(east)
+        self.assertIn("__pytra_save_gif(\"x.gif\", 1L, 1L, frames, __pytra_grayscale_palette(), 4L, 0L)", scala)
+        self.assertNotIn("__pytra_save_gif(\"x.gif\", 1L, 1L, frames, __pytra_grayscale_palette(), 0L, 4L)", scala)
+
     def test_sample_01_quality_fastpaths_reduce_redundant_wrappers(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")

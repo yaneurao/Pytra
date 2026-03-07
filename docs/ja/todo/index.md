@@ -40,7 +40,7 @@
 2. [x] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S1-01] `src/backends/**` の `math/gif/png/save_gif/write_rgb_png/pyMath*` leakage を target 別・類型別に棚卸しし、代表ケースを固定する。
 3. [x] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S1-02] `spec-runtime` / `spec-dev` に backend 禁止事項と resolved metadata 正規導線を明文化する。
 4. [x] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S2-01] runtime symbol index / import binding API を拡張し、module import / function import / constant import / semantic tag を backend 外で解決できるようにする。
-5. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S2-02] helper ABI 差異を adapter kind へ正規化し、`save_gif` などの引数規約を emitter 直書きから外す。
+5. [x] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S2-02] helper ABI 差異を adapter kind へ正規化し、`save_gif` などの引数規約を emitter 直書きから外す。
 6. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S3-01] C++ / JS / CS / RS など代表 backend を resolved runtime symbol / adapter 描画へ移行する。
 7. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S3-02] Go / Swift / Kotlin / Java / Scala / Ruby / Lua / PHP / Nim を同じ契約へ追従させる。
 8. [ ] [ID: P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01-S4-01] representative backend/test/tooling 回帰と guard を追加し、知識漏れの再侵入を防ぐ。

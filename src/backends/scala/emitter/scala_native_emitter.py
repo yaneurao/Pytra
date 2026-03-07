@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from toolchain.frontends.runtime_call_adapters import normalize_rendered_runtime_args
 
 
 _SCALA_KEYWORDS = {
@@ -875,6 +876,8 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     field = _safe_ident(expr.get("attr"), "field")
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    adapter_kind_any = expr.get("runtime_call_adapter_kind")
+    adapter_kind = adapter_kind_any if isinstance(adapter_kind_any, str) else ""
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if semantic_tag.startswith("stdlib.") and runtime_call == "":
         raise RuntimeError("scala native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
@@ -933,40 +936,33 @@ def _call_arg_nodes(expr: dict[str, Any]) -> tuple[list[Any], Any]:
     return out, kw_nodes_any
 
 
-def _render_runtime_args(semantic_tag: str, args: list[Any], keywords_any: Any) -> list[str]:
-    if semantic_tag == "stdlib.symbol.save_gif":
-        rendered: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered.append(_render_expr(args[i]))
-            i += 1
-        if len(rendered) < 5:
-            return rendered
-        if len(rendered) >= 7:
-            return rendered
-        delay_expr = rendered[5] if len(rendered) >= 6 else "4L"
-        loop_expr = rendered[6] if len(rendered) >= 7 else "0L"
-        keywords = keywords_any if isinstance(keywords_any, list) else []
+def _render_runtime_args(adapter_kind: str, args: list[Any], keywords_any: Any) -> list[str]:
+    args_to_render = args
+    keywords = keywords_any if isinstance(keywords_any, list) else []
+    if adapter_kind != "" and len(keywords) > 0 and len(args) >= len(keywords):
+        args_to_render = args[: len(args) - len(keywords)]
+    rendered: list[str] = []
+    i = 0
+    while i < len(args_to_render):
+        rendered.append(_render_expr(args_to_render[i]))
+        i += 1
+    if adapter_kind != "":
+        rendered_keywords: list[tuple[str, str]] = []
         k = 0
         while k < len(keywords):
             kw = keywords[k]
-            if not isinstance(kw, dict):
-                k += 1
-                continue
-            kw_name_any = kw.get("arg")
-            kw_name = kw_name_any if isinstance(kw_name_any, str) else ""
-            kw_val = _render_expr(kw.get("value"))
-            if kw_name == "delay_cs":
-                delay_expr = kw_val
-            elif kw_name == "loop":
-                loop_expr = kw_val
+            if isinstance(kw, dict):
+                kw_name_any = kw.get("arg")
+                if isinstance(kw_name_any, str):
+                    rendered_keywords.append((kw_name_any, _render_expr(kw.get("value"))))
             k += 1
-        return rendered[:5] + [delay_expr, loop_expr]
-    rendered: list[str] = []
-    i = 0
-    while i < len(args):
-        rendered.append(_render_expr(args[i]))
-        i += 1
+        return normalize_rendered_runtime_args(
+            adapter_kind,
+            rendered,
+            rendered_keywords,
+            default_values={"delay_cs": "4L", "loop": "0L"},
+            error_prefix="scala native emitter",
+        )
     return rendered
 
 
@@ -976,6 +972,7 @@ def _render_call_via_runtime_call(
     semantic_tag: str,
     args: list[Any],
     keywords_any: Any,
+    adapter_kind: str,
     call_expr: dict[str, Any] | None = None,
 ) -> str:
     if runtime_call.startswith("py_assert_"):
@@ -1003,13 +1000,13 @@ def _render_call_via_runtime_call(
         runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
         if runtime_symbol == "":
             return ""
-        rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+        rendered_runtime_args = _render_runtime_args(adapter_kind, args, keywords_any)
         rendered_runtime_args = _inject_method_owner(rendered_runtime_args)
         return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
     runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
     if runtime_symbol == "":
         return ""
-    rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+    rendered_runtime_args = _render_runtime_args(adapter_kind, args, keywords_any)
     rendered_runtime_args = _inject_method_owner(rendered_runtime_args)
     if runtime_call.find(".") >= 0:
         if runtime_symbol in {"scala.math.Pi", "scala.math.E"} and len(rendered_runtime_args) == 0:
@@ -1055,6 +1052,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    adapter_kind_any = expr.get("runtime_call_adapter_kind")
+    adapter_kind = adapter_kind_any if isinstance(adapter_kind_any, str) else ""
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if semantic_tag.startswith("stdlib.") and runtime_call == "":
         raise RuntimeError("scala native emitter: unresolved stdlib runtime call: " + semantic_tag)
@@ -1065,6 +1064,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             semantic_tag,
             args,
             keywords_any,
+            adapter_kind,
             call_expr=expr,
         )
         if rendered_runtime != "":

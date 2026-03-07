@@ -967,6 +967,7 @@
           "semantic_tag": "stdlib.fn.grayscale_palette"
         },
         "save_gif": {
+          "call_adapter_kind": "image.save_gif.keyword_defaults",
           "dispatch": "function",
           "kind": "function",
           "semantic_tag": "stdlib.fn.save_gif"
