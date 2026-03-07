@@ -534,6 +534,27 @@ class CppEmitter(
             return rendered_expr
         return unwrapped_expr
 
+    def _is_known_pyobj_value_list_source_expr(self, expr_node: Any) -> bool:
+        """ref-first target へ `rc_list_from_value(...)` で昇格すべき value-list source か判定する。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        node = self._unwrap_pyobj_list_source_expr(expr_node)
+        if len(node) == 0:
+            return False
+        if self._uses_pyobj_ref_first_list_lvalue_expr(node) or self._call_expr_returns_known_pyobj_list_handle(node):
+            return False
+        source_t = self.normalize_type_name(self.get_expr_type(node))
+        if source_t in {"", "unknown"}:
+            source_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        if self._is_pyobj_value_model_list_type(source_t):
+            return True
+        if self._node_kind_from_dict(node) != "Call":
+            return False
+        if self.any_dict_get_str(node, "lowered_kind", "") != "BuiltinCall":
+            return False
+        runtime_call = self.any_dict_get_str(node, "runtime_call", "")
+        return runtime_call in {"dict.keys", "dict.values", "dict.items"}
+
     def _call_expr_returns_known_pyobj_list_handle(self, expr_node: Any) -> bool:
         """既知関数/メソッド call が ref-first list handle を返すか判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -3137,11 +3158,13 @@ class CppEmitter(
             target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
         if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
             return value_expr
-        if self._is_pyobj_ref_first_list_type(target_t) and (
-            self._uses_pyobj_ref_first_list_lvalue_expr(value_node)
-            or self._call_expr_returns_known_pyobj_list_handle(value_node)
-        ):
-            return value_expr
+        if self._is_pyobj_ref_first_list_type(target_t):
+            if self._uses_pyobj_ref_first_list_lvalue_expr(value_node) or self._call_expr_returns_known_pyobj_list_handle(
+                value_node
+            ):
+                return value_expr
+            if self._is_known_pyobj_value_list_source_expr(value_node):
+                return f"rc_list_from_value({self._render_unwrapped_pyobj_list_source_expr(value_expr, value_node)})"
         source_t = self.normalize_type_name(self.get_expr_type(value_node))
         if source_t not in {"", "unknown"} and (not self.is_any_like_type(source_t)):
             if self._strip_rc_wrapper(source_t) == self._strip_rc_wrapper(target_t):

@@ -1580,6 +1580,24 @@ def f(xs: list[int], ws: list[float]) -> int:
 
         self.assertIn("rc<list<int64>> picked = pytra::std::random::choices(xs, ws);", cpp)
         self.assertNotIn("rc_list_from_value(list<int64>(pytra::std::random::choices(xs, ws)))", cpp)
+
+    def test_pyobj_list_model_dynamic_dict_values_unboxes_to_rc_list(self) -> None:
+        src = """def f(d: dict[str, int]) -> int:
+    ks: list[str] = d.keys()
+    vs: list[int] = d.values()
+    return len(ks) + vs[0]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_dict_values_rc_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("rc<list<str>> ks = rc_list_from_value(py_dict_keys(d));", cpp)
+        self.assertIn("rc<list<int64>> vs = rc_list_from_value(py_dict_values(d));", cpp)
+        self.assertNotIn("rc<list<int64>> vs = list<int64>(py_dict_values(d));", cpp)
         self.assertNotIn("render(rc_list_from_value(values), w, h)", cpp)
 
     def test_pyobj_list_model_tuple_subscript_uses_structured_binding_on_declare_unpack(self) -> None:

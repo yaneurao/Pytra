@@ -169,8 +169,6 @@ class CppTypeBridgeEmitter:
             return f"py_to<bool>({expr_txt})"
         if t_norm == "str":
             return f"py_to_string({expr_txt})"
-        if t_norm == "list[str]":
-            return f"py_to_str_list_from_object({expr_txt})"
         if t_norm.startswith("tuple[") and t_norm.endswith("]"):
             elems = self.split_generic(t_norm[6:-1])
             if len(elems) == 0:
@@ -186,6 +184,10 @@ class CppTypeBridgeEmitter:
                 i += 1
             return f"::std::make_tuple({join_str_list(', ', items)})"
         if t_norm.startswith("list[") and t_norm.endswith("]"):
+            if self._is_pyobj_ref_first_list_type(t_norm):
+                return f"py_to<{self._cpp_type_text(t_norm, pyobj_ref_lists=True)}>({expr_txt})"
+            if t_norm == "list[str]":
+                return f"py_to_str_list_from_object({expr_txt})"
             list_inner = self.type_generic_args(t_norm, "list")
             if len(list_inner) == 1:
                 elem_t = self.normalize_type_name(list_inner[0])
