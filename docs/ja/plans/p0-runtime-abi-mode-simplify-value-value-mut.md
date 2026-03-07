@@ -110,8 +110,36 @@
 - docs
 - archive 済み plan
 
+## 棚卸し結果（S1-01）
+
+- surface / parser の受理 mode は現状 `default`, `value`, `value_readonly` の 3 つだけである。
+  - self-host parser: [src/toolchain/ir/core.py](../../../src/toolchain/ir/core.py) の `_SH_RUNTIME_ABI_MODES`
+  - validator: [src/toolchain/frontends/runtime_abi.py](../../../src/toolchain/frontends/runtime_abi.py) の `_RUNTIME_ABI_MODES`
+- read-only 検査は現状 `value_readonly` にだけ結び付いており、`collect_mutated_params(...)` を使った局所 mutation 検出で fail-closed している。
+- checked-in runtime helper の `@abi` use-site は現状 4 箇所だけである。
+  - 引数付き override は [string_ops.py](../../../src/pytra/built_in/string_ops.py) の `py_join(parts)` だけで、`value_readonly` を使っている。
+  - 戻り値 `ret="value"` は `py_join`, `py_split`, `py_splitlines`, [sequence.py](../../../src/pytra/built_in/sequence.py) の `py_range` で使っている。
+- checked-in source / test / spec を見る限り、「writable な value ABI 引数」を要求する実例はまだ無い。
+  - `value_mutating` は [spec-abi.md](../spec/spec-abi.md) に future extension として 1 回出てくるだけで、実装・fixture・runtime helper の use-site は存在しない。
+- したがって今回の rename は「既存の実例を新 mode へ移す」というより、
+  - 引数側 `value` を旧 `value_readonly` の意味へ寄せる
+  - rare case の writable value ABI を `value_mut` として先に予約する
+ という contract simplification と見るのが正しい。
+
+## S1-01 時点の移行方針
+
+1. canonical public naming は `default`, `value`, `value_mut` とする。
+2. 引数側 `value` は旧 `value_readonly` の意味を引き継ぎ、局所 mutation 検査の対象にする。
+3. `ret="value"` は現行のまま維持し、戻り値側の意味変更は行わない。
+4. `value_mut` は「旧 spec 上の writable value ABI / `value_mutating` 概念」の短縮名として導入する。
+   - ただし checked-in use-site はまだ無いので、初回実装では予約された writable mode として扱う。
+5. `value_readonly` は移行期 alias として一時受理してよいが、canonical metadata と docs では `value` に正規化する方針を採る。
+   - alias の存廃と diagnostics wording は `S1-02` / `S2-02` で正式化する。
+
 ## 決定ログ
 
 - 2026-03-08: ユーザー指示により、`value_readonly` を簡約し、`@abi` mode 名を `value` / `value_mut` へ整理する P0 を起票する。
 - 2026-03-08: 本計画では `value` を引数側 read-only value ABI として扱う。rare case の mutable value ABI は `value_mut` へ退避する。
 - 2026-03-08: 本計画の主眼は naming と contract の整理であり、`@abi` 自体の必要性や runtime SoT linked-program 統合の是非は別計画で扱う。
+- 2026-03-08: `S1-01` 棚卸しの結果、checked-in helper の引数 override は `py_join(parts)` の 1 例だけであり、writable value ABI の現用例は存在しないことを確認した。
+- 2026-03-08: `S1-01` の移行方針として、引数側 `value` を旧 `value_readonly` へ寄せ、`value_mut` は future writable case の予約 mode として導入し、`value_readonly` は移行期 alias として扱う方針を固定した。

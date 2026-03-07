@@ -37,7 +37,7 @@
 文脈: [docs/ja/plans/p0-runtime-abi-mode-simplify-value-value-mut.md](../plans/p0-runtime-abi-mode-simplify-value-value-mut.md)
 
 1. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01] `@abi` の public mode 名を `default/value/value_mut` に整理し、引数側 `value` を read-only value ABI の canonical surface にする。
-2. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-01] 現行 `default/value/value_readonly` 契約を棚卸しし、`value=value_readonly`, `value_mut=旧 mutable value ABI` の移行方針を固定する。
+2. [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-01] 現行 `default/value/value_readonly` 契約を棚卸しし、`value=value_readonly`, `value_mut=旧 mutable value ABI` の移行方針を固定する。
 3. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-02] spec/plan に canonical naming と移行ルールを書き、`value_readonly` の扱いを決める。
 4. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-01] parser / decorator metadata / validator が `value` / `value_mut` を受理し、新 canonical metadata を出すよう更新する。
 5. [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-02] diagnostics / error message / target support check を新 naming に合わせる。
