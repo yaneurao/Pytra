@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
@@ -36,7 +36,7 @@ void run_05_mandelbrot_zoom() {
     int64 height = 240;
     int64 frame_count = 48;
     int64 max_iter = 110;
-    float64 center_x = -0.743643887037151;
+    float64 center_x = -(0.743643887037151);
     float64 center_y = 0.13182590420533;
     float64 base_scale = 3.2 / py_to<float64>(width);
     float64 zoom_per_frame = 0.93;

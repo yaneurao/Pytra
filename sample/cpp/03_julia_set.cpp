@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/time.h"
 #include "pytra/utils/png.h"
@@ -13,10 +13,10 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
     float64 __hoisted_cast_3 = float64(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -1.2 + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
+        float64 zy0 = -(1.2) + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
         
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.8 + 3.6 * (py_to<float64>(x) / __hoisted_cast_2);
+            float64 zx = -(1.8) + 3.6 * (py_to<float64>(x) / __hoisted_cast_2);
             float64 zy = zy0;
             
             int64 i = 0;
@@ -57,7 +57,7 @@ void run_julia() {
     str out_path = "sample/out/03_julia_set.png";
     
     float64 start = pytra::std::time::perf_counter();
-    bytearray pixels = render_julia(width, height, max_iter, -0.8, 0.156);
+    bytearray pixels = render_julia(width, height, max_iter, -(0.8), 0.156);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     

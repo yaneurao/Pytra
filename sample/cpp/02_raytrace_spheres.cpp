@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/math.h"
 #include "pytra/std/time.h"
@@ -27,16 +27,16 @@ float64 hit_sphere(float64 ox, float64 oy, float64 oz, float64 dx, float64 dy, f
     
     float64 d = b * b - 4.0 * a * c;
     if (d < 0.0)
-        return -1.0;
+        return -(1.0);
     float64 sd = pytra::std::math::sqrt(d);
-    float64 t0 = (-b - sd) / (2.0 * a);
-    float64 t1 = (-b + sd) / (2.0 * a);
+    float64 t0 = (-(b) - sd) / (2.0 * a);
+    float64 t1 = (-(b) + sd) / (2.0 * a);
     
     if (t0 > 0.001)
         return t0;
     if (t1 > 0.001)
         return t1;
-    return -1.0;
+    return -(1.0);
 }
 
 bytearray render(int64 width, int64 height, int64 aa) {
@@ -45,12 +45,12 @@ bytearray render(int64 width, int64 height, int64 aa) {
     // Camera origin
     float64 ox = 0.0;
     float64 oy = 0.0;
-    float64 oz = -3.0;
+    float64 oz = -(3.0);
     
     // Light direction (normalized)
-    float64 lx = -0.4;
+    float64 lx = -(0.4);
     float64 ly = 0.8;
-    float64 lz = -0.45;
+    float64 lz = -(0.45);
     float64 __hoisted_cast_1 = float64(aa);
     float64 __hoisted_cast_2 = float64(height - 1);
     float64 __hoisted_cast_3 = float64(width - 1);
@@ -78,9 +78,9 @@ bytearray render(int64 width, int64 height, int64 aa) {
                     dz *= inv_len;
                     
                     float64 t_min = 1.0e30;
-                    int64 hit_id = -1;
+                    int64 hit_id = -(1);
                     
-                    float64 t = hit_sphere(ox, oy, oz, dx, dy, dz, -0.8, -0.2, 2.2, 0.8);
+                    float64 t = hit_sphere(ox, oy, oz, dx, dy, dz, -(0.8), -(0.2), 2.2, 0.8);
                     if ((t > 0.0) && (t < t_min)) {
                         t_min = t;
                         hit_id = 0;
@@ -90,7 +90,7 @@ bytearray render(int64 width, int64 height, int64 aa) {
                         t_min = t;
                         hit_id = 1;
                     }
-                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -1001.0, 3.0, 1000.0);
+                    t = hit_sphere(ox, oy, oz, dx, dy, dz, 0.0, -(1001.0), 3.0, 1000.0);
                     if ((t > 0.0) && (t < t_min)) {
                         t_min = t;
                         hit_id = 2;
@@ -121,7 +121,7 @@ bytearray render(int64 width, int64 height, int64 aa) {
                             ny = 1.0;
                             nz = 0.0;
                         }
-                        float64 diff = nx * -lx + ny * -ly + nz * -lz;
+                        float64 diff = nx * -(lx) + ny * -(ly) + nz * -(lz);
                         diff = clamp01(diff);
                         
                         float64 base_r = 0.0;

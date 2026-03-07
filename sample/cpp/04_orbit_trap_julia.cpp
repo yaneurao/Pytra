@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/time.h"
 #include "pytra/utils/png.h"
@@ -12,9 +12,9 @@ bytearray render_orbit_trap_julia(int64 width, int64 height, int64 max_iter, flo
     float64 __hoisted_cast_3 = float64(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -1.3 + 2.6 * (py_to<float64>(y) / __hoisted_cast_1);
+        float64 zy0 = -(1.3) + 2.6 * (py_to<float64>(y) / __hoisted_cast_1);
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.9 + 3.8 * (py_to<float64>(x) / __hoisted_cast_2);
+            float64 zx = -(1.9) + 3.8 * (py_to<float64>(x) / __hoisted_cast_2);
             float64 zy = zy0;
             
             float64 trap = 1.0e9;
@@ -22,13 +22,13 @@ bytearray render_orbit_trap_julia(int64 width, int64 height, int64 max_iter, flo
             while (i < max_iter) {
                 float64 ax = zx;
                 if (ax < 0.0)
-                    ax = -ax;
+                    ax = -(ax);
                 float64 ay = zy;
                 if (ay < 0.0)
-                    ay = -ay;
+                    ay = -(ay);
                 float64 dxy = zx - zy;
                 if (dxy < 0.0)
-                    dxy = -dxy;
+                    dxy = -(dxy);
                 if (ax < trap)
                     trap = ax;
                 if (ay < trap)
@@ -83,7 +83,7 @@ void run_04_orbit_trap_julia() {
     str out_path = "sample/out/04_orbit_trap_julia.png";
     
     float64 start = pytra::std::time::perf_counter();
-    bytearray pixels = render_orbit_trap_julia(width, height, max_iter, -0.7269, 0.1889);
+    bytearray pixels = render_orbit_trap_julia(width, height, max_iter, -(0.7269), 0.1889);
     pytra::utils::png::write_rgb_png(out_path, width, height, pixels);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     

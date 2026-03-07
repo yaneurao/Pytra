@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/math.h"
 #include "pytra/std/time.h"
@@ -30,9 +30,9 @@ bytes render_frame(int64 width, int64 height, float64 cr, float64 ci, int64 max_
     float64 __hoisted_cast_2 = float64(width - 1);
     for (int64 y = 0; y < height; ++y) {
         int64 row_base = y * width;
-        float64 zy0 = -1.2 + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
+        float64 zy0 = -(1.2) + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -1.8 + 3.6 * (py_to<float64>(x) / __hoisted_cast_2);
+            float64 zx = -(1.8) + 3.6 * (py_to<float64>(x) / __hoisted_cast_2);
             float64 zy = zy0;
             int64 i = 0;
             while (i < max_iter) {
@@ -66,7 +66,7 @@ void run_06_julia_parameter_sweep() {
     float64 start = pytra::std::time::perf_counter();
     list<bytes> frames = {};
     // Orbit an ellipse around a known visually good region to reduce flat blown highlights.
-    float64 center_cr = -0.745;
+    float64 center_cr = -(0.745);
     float64 center_ci = 0.186;
     float64 radius_cr = 0.12;
     float64 radius_ci = 0.10;

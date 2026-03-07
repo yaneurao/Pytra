@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/math.h"
 #include "pytra/std/time.h"
@@ -26,7 +26,7 @@ int64 scene(float64 x, float64 y, float64 light_x, float64 light_y) {
     float64 y2 = y - 0.15;
     float64 r1 = pytra::std::math::sqrt(x1 * x1 + y1 * y1);
     float64 r2 = pytra::std::math::sqrt(x2 * x2 + y2 * y2);
-    float64 blob = pytra::std::math::exp(-7.0 * r1 * r1) + pytra::std::math::exp(-8.0 * r2 * r2);
+    float64 blob = pytra::std::math::exp(-(7.0) * r1 * r1) + pytra::std::math::exp(-(8.0) * r2 * r2);
     
     float64 lx = x - light_x;
     float64 ly = y - light_y;

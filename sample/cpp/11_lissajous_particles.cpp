@@ -1,4 +1,4 @@
-#include "runtime/cpp/pytra/built_in/py_runtime.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include "pytra/std/math.h"
 #include "pytra/std/time.h"
@@ -39,8 +39,8 @@ void run_11_lissajous_particles() {
             int64 y = int64(py_to<float64>(h) * 0.5 + py_to<float64>(h) * 0.38 * pytra::std::math::sin(0.17 * __hoisted_cast_1 + phase * 3.0));
             int64 color = 30 + p * 9 % 220;
             
-            for (int64 dy = -2; dy < 3; ++dy) {
-                for (int64 dx = -2; dx < 3; ++dx) {
+            for (int64 dy = -(2); dy < 3; ++dy) {
+                for (int64 dx = -(2); dx < 3; ++dx) {
                     int64 xx = x + dx;
                     int64 yy = y + dy;
                     if ((xx >= 0) && (xx < w) && (yy >= 0) && (yy < h)) {
