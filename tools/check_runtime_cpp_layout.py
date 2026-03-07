@@ -157,7 +157,9 @@ def main() -> int:
     pytra_dir = _runtime_cpp_path("pytra")
     std_dir = _runtime_cpp_path("std")
     utils_dir = _runtime_cpp_path("utils")
-    py_runtime_ext = _runtime_cpp_path("core", "py_runtime.ext.h")
+    py_runtime_ext = _runtime_cpp_path("native", "core", "py_runtime.ext.h")
+    if not py_runtime_ext.exists():
+        py_runtime_ext = _runtime_cpp_path("core", "py_runtime.ext.h")
 
     builtin_files = _scan_targets(builtin_dir)
     core_files = _scan_targets(core_dir)

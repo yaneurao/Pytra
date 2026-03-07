@@ -4,7 +4,7 @@
 
 ## ルール
 
-- 現在は stable include surface の header だけを置き、compile source は `src/runtime/cpp/native/core/` に置く。
+- 現在は stable include surface の forwarder header だけを置き、handwritten core の正本 header / compile source は `src/runtime/cpp/native/core/` に置く。
 - 将来 pure Python SoT から変換する core artifact は `src/runtime/cpp/generated/core/` に置き、`core/` に直接混在させない。
 - `pytra/core/` は導入しない。low-level core の include root は `core/...` を維持する。
 - `src/runtime/cpp/generated/{std,utils,built_in}/` と

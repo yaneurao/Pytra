@@ -855,7 +855,7 @@
         },
         "pytra.core.dict": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -864,7 +864,7 @@
         },
         "pytra.core.exceptions": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -895,7 +895,7 @@
         },
         "pytra.core.list": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -904,7 +904,7 @@
         },
         "pytra.core.py_runtime": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -913,7 +913,7 @@
         },
         "pytra.core.py_scalar_types": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -922,7 +922,7 @@
         },
         "pytra.core.py_types": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -931,7 +931,7 @@
         },
         "pytra.core.set": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [
@@ -940,7 +940,7 @@
         },
         "pytra.core.str": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [],
           "public_headers": [

@@ -224,11 +224,13 @@ int main() {
             self.assertIn("runtime iterable ok", run.stdout)
 
     def test_runtime_list_overload_inventory(self) -> None:
-        runtime_header = (ROOT / "src/runtime/cpp/core/py_runtime.ext.h").read_text(encoding="utf-8")
+        forwarder_header = (ROOT / "src/runtime/cpp/core/py_runtime.ext.h").read_text(encoding="utf-8")
+        runtime_header = (ROOT / "src/runtime/cpp/native/core/py_runtime.ext.h").read_text(encoding="utf-8")
         iter_ops_header = (ROOT / "src/runtime/cpp/native/built_in/iter_ops.h").read_text(encoding="utf-8")
         sequence_header = (ROOT / "src/runtime/cpp/native/built_in/sequence.h").read_text(encoding="utf-8")
         contains_header = (ROOT / "src/runtime/cpp/native/built_in/contains.h").read_text(encoding="utf-8")
 
+        self.assertIn('#include "runtime/cpp/native/core/py_runtime.ext.h"', forwarder_header)
         self.assertNotIn("static inline T& py_at(list<T>& v, int64 idx)", runtime_header)
         self.assertNotIn("static inline void py_set_at(list<T>& v, I idx, const U& item)", runtime_header)
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)

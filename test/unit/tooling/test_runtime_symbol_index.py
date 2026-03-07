@@ -98,8 +98,9 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
 
         core_dict = cpp_modules.get("pytra.core.dict")
         self.assertIsInstance(core_dict, dict)
-        self.assertEqual(core_dict.get("companions"), ["ext"])
+        self.assertEqual(core_dict.get("companions"), ["native"])
         self.assertIn("src/runtime/cpp/core/dict.ext.h", core_dict.get("public_headers", []))
+        self.assertNotIn("src/runtime/cpp/native/core/dict.ext.h", core_dict.get("public_headers", []))
 
         core_gc = cpp_modules.get("pytra.core.gc")
         self.assertIsInstance(core_gc, dict)
@@ -167,6 +168,10 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_target_module_primary_header("cpp", "pytra.utils.png"),
             "src/runtime/cpp/pytra/utils/png.h",
         )
+        self.assertEqual(
+            lookup_target_module_primary_header("cpp", "pytra.core.dict"),
+            "src/runtime/cpp/core/dict.ext.h",
+        )
 
     def test_runtime_symbol_index_loader_returns_cpp_compile_sources(self) -> None:
         self.assertIn(
@@ -180,6 +185,14 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn(
             "src/runtime/cpp/generated/utils/png.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
+        )
+        self.assertIn(
+            "src/runtime/cpp/native/core/gc.ext.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.core.gc"),
+        )
+        self.assertEqual(
+            lookup_target_module_compile_sources("cpp", "pytra.core.dict"),
+            [],
         )
 
     def test_cpp_core_artifacts_support_future_generated_native_split(self) -> None:
