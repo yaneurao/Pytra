@@ -180,6 +180,35 @@ python3 tools/check_ir2lang_smoke.py
 - `--lower-option key=value` / `--optimizer-option key=value` / `--emitter-option key=value` を `ir2lang.py` でも利用できます。
 - `--no-runtime-hook` を外すと、target ごとの runtime 補助ファイル配置も含めて確認できます。
 
+## linked-program の dump / link-only / restart
+
+- linked-program の正規 debug 導線は `py2x.py -> eastlink.py -> ir2lang.py` です。
+- `py2x.py --dump-east3-dir DIR` は raw `EAST3` 群と `link-input.json` を `DIR` に書き出して終了します。
+- `py2x.py --link-only --output-dir DIR` は backend 生成を行わず、`link-output.json` と linked module 群だけを `DIR` に書き出します。
+- `ir2lang.py` は raw `EAST3(JSON)` に加えて `link-output.json` も受理できます。`py2x.py --from-link-output` はその再開経路の wrapper です。
+
+```bash
+# 1) .py から raw EAST3 群と link-input.json を出力
+python3 src/py2x.py sample/py/18_mini_language_interpreter.py --target cpp \
+  --dump-east3-dir out/linked_debug/raw
+
+# 2) linker だけを実行して link-output.json と linked modules を作る
+python3 src/eastlink.py out/linked_debug/raw/link-input.json \
+  --output-dir out/linked_debug/linked
+
+# 3) linked output から backend-only 再開
+python3 src/ir2lang.py out/linked_debug/linked/link-output.json --target cpp \
+  --output-dir out/linked_debug/cpp
+
+# 4) py2x wrapper で linked output から再開してもよい
+python3 src/py2x.py out/linked_debug/linked/link-output.json --target cpp \
+  --from-link-output --output-dir out/linked_debug/cpp_wrap
+```
+
+補足:
+- linked-program の global pass は、manifest が列挙した module 群だけを入力に使います。`source_path` を辿った追加読込で import closure を広げることはしません。
+- `NonEscapeInterproceduralPass` は linked-program 経路では linker が埋めた `meta.non_escape_import_closure` だけを見ます。closure が不足している場合は fail-closed で unresolved 扱いになります。
+
 ## トランスパイラの使い方
 
 以下は言語別の手順です。必要な言語だけ展開して参照してください。

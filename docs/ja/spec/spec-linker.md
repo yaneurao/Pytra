@@ -265,6 +265,8 @@ linked module の補足規則:
 1. `--link-only` は backend 生成を行わず、`link-output.json` と linked module 群のみ出力する。
 2. `--object-dispatch-mode` は raw `EAST3` 構築前に確定し、linker は整合性検査だけを行う。
 3. debug / restart 経路でも `link-input.v1` / `link-output.v1` を canonical source とする。
+4. global pass は `link-input.v1` / `link-output.v1` が列挙した module 群だけを入力として扱う。`source_path` を辿った追加読込や import 文の再解析で closure を拡張してはならない。
+5. `NonEscapeInterproceduralPass` が linked-program 経路で参照してよい closure は linker/materializer が埋めた `meta.non_escape_import_closure` のみであり、存在しない場合は fail-closed で unresolved 扱いにする。
 
 ## 9. 実装モード指針
 

@@ -653,7 +653,7 @@ src/
 
 ## 13. 分解
 
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01] linked program を導入し、global optimizer の入力単位を複数翻訳単位へ拡張しつつ、backend を `ModuleEmitter + ProgramWriter` 構成へ再編する。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01] linked program を導入し、global optimizer の入力単位を複数翻訳単位へ拡張しつつ、backend を `ModuleEmitter + ProgramWriter` 構成へ再編する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S1-01] `link-input.v1` / `link-output.v1` と linked module `meta` の schema、ならびに `spec-linker` / `spec-east` の責務境界を固定する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S1-02] `ModuleArtifact` / `ProgramArtifact` / `ProgramWriter` の backend 共通契約を定義し、`spec-dev` / `spec-make` へ反映する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `LinkedProgram` loader / validator / manifest I/O を追加し、複数 `EAST3` を deterministic に読めるようにする。
@@ -668,7 +668,7 @@ src/
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S7-01] `eastlink.py` を追加し、`link-input.json -> link-output.json + linked modules` の debug/restart 導線を実装する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S7-02] `ir2lang.py` と `py2x.py` に linked-program 入出力（`--link-only`, dump/restart）を追加し、backend-only 導線を完成させる。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S8-01] `test/unit/link/*` と representative backend/tooling 回帰を追加し、schema / determinism / program writer 契約を固定する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S8-02] C++ unit / fixture / sample parity、docs 同期、旧 import-closure 依存経路の撤去まで完了し、本計画を閉じる。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S8-02] C++ unit / fixture / sample parity、docs 同期、旧 import-closure 依存経路の撤去まで完了し、本計画を閉じる。
 
 ## 14. 決定ログ
 
@@ -692,3 +692,5 @@ src/
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S7-02] `src/toolchain/link/materializer.py` を追加し、in-memory `LinkedProgram` から `link-input.json + raw/<module>.east3.json`、および linked optimizer 結果から `link-output.json + linked/<module>.east3.json` を共通 materialize できるようにした。`py2x.py` は C++ target でも `--dump-east3-dir` / `--link-only` / `--from-link-output` 指定時は legacy `py2cpp` compat を迂回し、dump/link-only は backend dispatch を呼ばず、restart は `ir2lang.py` へ委譲する方針を採用した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S7-02] `ir2lang.py` は `link-output.json` を受理できるようにし、non-C++ は entry linked module の single-file 再開、C++ は linked module 群を `write_multi_file_cpp(...)` へ流す backend-only restart 導線を実装した。`test/unit/tooling/test_py2x_cli.py` と `test/unit/tooling/test_ir2lang_cli.py` で dump/link-only/restart/cpp multi-file restart を固定した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S8-01] `link-output` validator を module-entry 正規化ありへ強化し、`LinkOutputModuleEntry` / `load_linked_output_bundle(...)` / `ir2lang.py` が tuple `entry_modules` を前提に動くよう揃えた。`test/unit/link/test_program_loader.py` で `link-output` schema 正規化、missing entry fail、raw bundle materialize 順序、linked bundle load の artifact path を固定し、`test/unit/link/test_global_optimizer.py` で reordered module map に対する `optimize_linked_program(...)` の determinism を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S8-02] `NonEscapeInterproceduralPass` から `source_path` ベースの import-closure fallback を撤去し、linked-program 経路では linker/materializer が渡す `meta.non_escape_import_closure` だけを参照する fail-closed 契約へ揃えた。`global_optimizer.py` の `type_id` 決定は `Enum` / `IntEnum` / `IntFlag` と代表的な built-in exception base を root として扱うよう補強し、`test/unit/ir/test_east3_non_escape_interprocedural_pass.py`、`test/unit/link/test_global_optimizer.py`、C++ enum fixture 回帰で非退行を固定した。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S8-02] docs は `spec-linker.md` と `how-to-use.md` に linked-program debug/restart 手順、および global pass が manifest 列挙 module 以外を追加読込しない契約を追記した。検証は `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/backends/cpp -p 'test_*.py'` で `Ran 509 tests in 1016.609s`, `OK`、`python3 tools/runtime_parity_check.py --targets cpp --case-root fixture` で `cases=3 pass=3 fail=0`、`python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` で `cases=18 pass=18 fail=0` を確認した。
