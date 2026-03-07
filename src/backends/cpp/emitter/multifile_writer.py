@@ -5,7 +5,6 @@ from pytra.std.pathlib import Path
 from typing import Any
 from toolchain.compiler.east_parts.east1_build import East1BuildHelpers
 from toolchain.compiler.transpile_cli import (
-    check_guard_limit,
     dict_any_get_dict,
     dict_any_get_list,
     dict_any_get_str,
@@ -13,15 +12,14 @@ from toolchain.compiler.transpile_cli import (
     join_str_list,
     module_id_from_east_for_graph,
     module_rel_label,
-    mkdirs_for_cli,
     path_parent_text,
     sanitize_module_label,
     sort_str_list_copy,
-    count_text_lines,
     replace_first,
     write_text_file,
 )
 
+from backends.cpp.program_writer import write_cpp_rendered_program
 from backends.cpp.emitter.cpp_emitter import CppEmitter
 from backends.cpp.optimizer import optimize_cpp_ir
 from backends.cpp.optimizer import render_cpp_opt_trace
@@ -49,24 +47,8 @@ def write_multi_file_cpp(
     max_generated_lines: int = 0,
     cpp_list_model: str = "",
 ) -> dict[str, Any]:
-    """モジュールごとに `.h/.cpp` を `out/include`, `out/src` へ出力する。"""
+    """Legacy facade that renders module texts then delegates layout/manifest writing."""
     _ = top_namespace
-
-    include_dir = output_dir / "include"
-    src_dir = output_dir / "src"
-    mkdirs_for_cli(str(include_dir))
-    mkdirs_for_cli(str(src_dir))
-    prelude_hdr = include_dir / "pytra_multi_prelude.h"
-    prelude_txt = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
-    prelude_txt += "#ifndef PYTRA_MULTI_PRELUDE_H\n"
-    prelude_txt += "#define PYTRA_MULTI_PRELUDE_H\n\n"
-    prelude_txt += "#include \"runtime/cpp/core/py_runtime.h\"\n\n"
-    prelude_txt += "#endif  // PYTRA_MULTI_PRELUDE_H\n"
-    generated_lines_total = 0
-    generated_lines_total += count_text_lines(prelude_txt)
-    if max_generated_lines > 0:
-        check_guard_limit("emit", "max_generated_lines", generated_lines_total, {"max_generated_lines": max_generated_lines})
-    write_text_file(prelude_hdr, prelude_txt)
 
     root = Path(path_parent_text(entry_path))
     entry_key = str(entry_path)
@@ -89,13 +71,13 @@ def write_multi_file_cpp(
                 module_key_by_name[mod_name] = mod_key
 
     type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
-    manifest_modules: list[dict[str, Any]] = []
+    rendered_modules: list[dict[str, Any]] = []
 
     def _write_debug_text(path_txt: str, text: str) -> None:
         if path_txt == "":
             return
         out_path = Path(path_txt)
-        mkdirs_for_cli(path_parent_text(out_path))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
         write_text_file(out_path, text)
 
     for mod_key in files:
@@ -104,8 +86,6 @@ def write_multi_file_cpp(
             continue
         mod_path = Path(mod_key)
         label = module_label_map[mod_key] if mod_key in module_label_map else ""
-        hdr_path = include_dir / (label + ".h")
-        cpp_path = src_dir / (label + ".cpp")
         guard = "PYTRA_MULTI_" + sanitize_module_label(label).upper() + "_H"
         hdr_text = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
         hdr_text += "#ifndef " + guard + "\n"
@@ -114,16 +94,6 @@ def write_multi_file_cpp(
         hdr_text += "void module_" + label + "();\n"
         hdr_text += "}  // namespace pytra_multi\n\n"
         hdr_text += "#endif  // " + guard + "\n"
-        generated_lines_total += count_text_lines(hdr_text)
-        if max_generated_lines > 0:
-            check_guard_limit(
-                "emit",
-                "max_generated_lines",
-                generated_lines_total,
-                {"max_generated_lines": max_generated_lines},
-                str(mod_path),
-            )
-        write_text_file(hdr_path, hdr_text)
 
         is_entry = mod_key == entry_key
         optimized_east: dict[str, Any] = east
@@ -231,51 +201,20 @@ def write_multi_file_cpp(
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
             cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
-        generated_lines_total += count_text_lines(cpp_txt)
-        if max_generated_lines > 0:
-            check_guard_limit(
-                "emit",
-                "max_generated_lines",
-                generated_lines_total,
-                {"max_generated_lines": max_generated_lines},
-                str(mod_path),
-            )
-        write_text_file(cpp_path, cpp_txt)
-
-        manifest_modules.append(
+        rendered_modules.append(
             {
                 "module": mod_key,
                 "label": label,
-                "header": str(hdr_path),
-                "source": str(cpp_path),
+                "header_text": hdr_text,
+                "source_text": cpp_txt,
                 "is_entry": is_entry,
             }
         )
-
-    manifest_for_dump: dict[str, Any] = {
-        "entry": entry_key,
-        "include_dir": str(include_dir),
-        "src_dir": str(src_dir),
-        "modules": manifest_modules,
-    }
-    manifest_path = output_dir / "manifest.json"
-    manifest_obj: Any = manifest_for_dump
-    manifest_txt = json.dumps(manifest_obj, ensure_ascii=False, indent=2)
-    generated_lines_total += count_text_lines(manifest_txt)
-    if max_generated_lines > 0:
-        check_guard_limit(
-            "emit",
-            "max_generated_lines",
-            generated_lines_total,
-            {"max_generated_lines": max_generated_lines},
-            str(entry_path),
-        )
-    write_text_file(manifest_path, manifest_txt)
-    return {
-        "entry": entry_key,
-        "include_dir": str(include_dir),
-        "src_dir": str(src_dir),
-        "modules": manifest_modules,
-        "manifest": str(manifest_path),
-        "generated_lines_total": generated_lines_total,
-    }
+    return write_cpp_rendered_program(
+        output_dir,
+        rendered_modules,
+        entry=entry_key,
+        entry_modules=[entry_key],
+        program_id=entry_key,
+        max_generated_lines=max_generated_lines,
+    )

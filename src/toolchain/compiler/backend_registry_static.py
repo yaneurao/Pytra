@@ -9,6 +9,7 @@ from backends.cs.lower import lower_east3_to_cs_ir
 from backends.cs.optimizer import optimize_cs_ir
 from backends.cs.emitter.cs_emitter import transpile_to_csharp
 from backends.common.program_writer import write_single_file_program
+from backends.cpp.program_writer import write_cpp_program
 from backends.go.lower import lower_east3_to_go_ir
 from backends.go.optimizer import optimize_go_ir
 from backends.go.emitter import transpile_to_go_native
@@ -305,6 +306,7 @@ _BACKEND_SPECS: dict[str, BackendSpec] = {
         "lower": _identity_ir,
         "optimizer": _identity_ir,
         "emit": _emit_cpp,
+        "program_writer": write_cpp_program,
         "runtime_hook": _runtime_none,
         "default_options": {
             "lower": {},

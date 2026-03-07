@@ -238,6 +238,7 @@ def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
 
 def _load_cpp_spec() -> BackendSpec:
     transpile_to_cpp = _load_callable("backends.cpp.cli", "transpile_to_cpp")
+    write_cpp_program = _load_callable("backends.cpp.program_writer", "write_cpp_program")
 
     def _emit_cpp(ir: dict, _output_path: Path, emitter_options: Any = None) -> str:
         opts = emitter_options if isinstance(emitter_options, dict) else {}
@@ -260,6 +261,7 @@ def _load_cpp_spec() -> BackendSpec:
         "lower": _identity_ir,
         "optimizer": _identity_ir,
         "emit": _emit_cpp,
+        "program_writer": write_cpp_program,
         "runtime_hook": _runtime_none,
         "default_options": {
             "lower": {},
