@@ -101,7 +101,7 @@ Post-bootstrap snapshot:
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01] baseline target（`cpp/js/ts`）の sample parity を再確認し、他 target 修復中も `18/18` を維持する。
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の sample parity を green へ持ち上げる。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の sample parity を green へ持ち上げる。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03] scripting / mixed target 群（`ruby/lua/php/nim`）の sample parity を green へ持ち上げる。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01] 全 target parity 一括実行の scripts / docs / how-to-use を整備し、再実行手順を固定する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02] full parity 実行結果を記録し、計画を archive へ移して閉じる。
@@ -160,3 +160,6 @@ Post-bootstrap snapshot:
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01]: compiled target 向けに `rustc`, `mono-mcs/mono`, `go`, `openjdk-17-jdk`, `kotlin`, `scala`, `nim` を apt で導入し、`swiftc` は official `swift-6.2.2-RELEASE-debian12` tarball を `/opt` へ展開して `/usr/local/bin/swiftc` へ symlink した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02]: scripting / mixed target 向けに `ruby`, `lua5.4`, `php-cli` を apt で導入し、導入後の `runner_needs` 実測で parity target 14 件すべてが `OK` になったことを確認した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01]: `python3 tools/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` を current machine で実行し、`SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts east3_opt_level=2` を確認した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: Rust は `pytra::std::{math,time}` を runtime surface に再 export しつつ、non-aliased `import math` / `import time` で `use crate::pytra::std::{math,time};` を重複 emit しないよう emitter 側で compat path を抑止した。これで `02_raytrace_spheres` の duplicate import が解消した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: Scala target は Debian package の `scala` 2.11 ではなく Scala CLI を `/usr/local/bin/scala` に入れる前提へ切り替えた。`scala run ...` を使う current runner 契約と一致するためである。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: `python3 tools/runtime_parity_check.py --targets rs --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`、`--targets cs`、`--targets go`、`--targets java`、`--targets kotlin`、`--targets swift`、`--targets scala` を個別実行し、compiled target 7 件すべてで `SUMMARY cases=18 pass=18 fail=0` を確認した。一括 `--targets rs,cs,go,java,kotlin,swift,scala` 実行は parent process が終了待ちで詰まったため、結果確定は per-target 実行を正本とした。
