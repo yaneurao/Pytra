@@ -43,7 +43,7 @@
 5. [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-02] `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` を core split 前提へ更新し、`core/` 実装再侵入・marker 混在を fail-fast 化する。
 6. [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
 7. [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-02] handwritten core header (`py_runtime/py_types/list/dict/set/str` など) を `native/core/` 正本へ移し、`core/` には互換 forwarder / façade だけを残す。
-8. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
+8. [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
 9. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-01] `generated/core/` の正式レイアウトを追加し、real candidate か synthetic fixture で compile/source 解決を 1 件実証する。
 10. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-02] generated/core に置く条件と、まだ置けない core helper を判定する基準を決定ログへ固定する。
 11. [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S5-01] spec / README / representative tests を更新し、`core handwritten-only` 前提を廃止する。

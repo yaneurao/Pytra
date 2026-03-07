@@ -19,7 +19,7 @@
 - `tools/check_todo_priority.py`
   - 目的: `docs/ja/todo/index.md` / `docs/ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
 - `tools/check_runtime_cpp_layout.py`
-  - 目的: `src/runtime/cpp/{built_in,std,utils}` の legacy-closed 維持、`generated/native/pytra` の ownership 境界、`core` compatibility surface と `generated/core` / `native/core` の split 前提を同一 guard で検証する。
+  - 目的: `src/runtime/cpp/{built_in,std,utils}` の legacy-closed 維持、`generated/native/pytra` の ownership 境界、`core` compatibility surface と `generated/core` / `native/core` の split 前提を同一 guard で検証する。あわせて `runtime/cpp/native/core/...` の直接 include を `core/*.ext.h` forwarder 以外で禁止する。
 - `tools/check_py2cpp_transpile.py`
   - 目的: `test/fixtures/` を `py2x.py --target cpp` で一括変換し、失敗ケースを検出する。
   - 主要オプション: `--check-yanesdk-smoke`（Yanesdk の縮小ケースを同時確認）

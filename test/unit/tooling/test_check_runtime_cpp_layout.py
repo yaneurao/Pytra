@@ -80,6 +80,22 @@ class CheckRuntimeCppLayoutTest(unittest.TestCase):
         self.assertIn("ownership roots contain unsupported top-level buckets", out)
         self.assertIn("src/runtime/cpp/pytra/core/dict.h", out)
 
+    def test_main_fails_when_generated_runtime_directly_includes_native_core(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _make_valid_tree(root)
+            _write(
+                root / "src" / "runtime" / "cpp" / "generated" / "std" / "time.cpp",
+                '// AUTO-GENERATED FILE. DO NOT EDIT.\n#include "runtime/cpp/native/core/py_runtime.ext.h"\n',
+            )
+            rc, out = self._run_main(root)
+        self.assertEqual(rc, 1)
+        self.assertIn("non-forwarder runtime files directly include native/core headers", out)
+        self.assertIn(
+            "src/runtime/cpp/generated/std/time.cpp -> runtime/cpp/native/core/py_runtime.ext.h",
+            out,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -78,6 +78,17 @@ def main() -> None:
         self.assertEqual(module_name_to_cpp_include("pytra.std.time"), "pytra/std/time.h")
         self.assertEqual(module_name_to_cpp_include("pytra.core.dict"), "core/dict.ext.h")
 
+    def test_transpiled_cpp_keeps_core_runtime_include_surface(self) -> None:
+        cpp = self._transpile(
+            """def main(xs: list[int], d: dict[str, int]) -> None:
+    print(xs[0])
+    print(d.get("a", 0))
+""",
+            "core_include_surface_case.py",
+        )
+        self.assertIn('#include "runtime/cpp/core/py_runtime.ext.h"', cpp)
+        self.assertNotIn('runtime/cpp/native/core/', cpp)
+
     def test_builtin_call_bindings_and_imported_symbol_calls_are_ir_driven(self) -> None:
         src = """from pytra.std.time import perf_counter as now
 from pytra.std.pathlib import Path as P

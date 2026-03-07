@@ -12,6 +12,7 @@ Rules:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 
@@ -39,6 +40,7 @@ BANNED_PY_RUNTIME_PATTERNS = {
     "static inline bool py_contains(const str&": "contains duplicate must not live in py_runtime.ext.h",
     "static inline bool py_contains(const object&": "contains duplicate must not live in py_runtime.ext.h",
 }
+DIRECT_NATIVE_CORE_INCLUDE_RE = re.compile(r'^\s*#include\s+"(runtime/cpp/native/core/[^"]+)"', re.MULTILINE)
 
 
 def _runtime_cpp_path(*parts: str) -> Path:
@@ -149,6 +151,25 @@ def _check_core_surface_files(
             unexpected_core_impl_files.append(rel)
 
 
+def _check_direct_native_core_includes(
+    files: list[Path],
+    direct_native_core_include_violations: list[str],
+    *,
+    core_dir: Path,
+) -> None:
+    for p in files:
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        rel = str(p.relative_to(ROOT))
+        includes = DIRECT_NATIVE_CORE_INCLUDE_RE.findall(txt)
+        if len(includes) == 0:
+            continue
+        is_core_forwarder = p.parent == core_dir and p.suffix == ".h"
+        if is_core_forwarder:
+            continue
+        for include_txt in includes:
+            direct_native_core_include_violations.append(f"{rel} -> {include_txt}")
+
+
 def main() -> int:
     builtin_dir = _runtime_cpp_path("built_in")
     core_dir = _runtime_cpp_path("core")
@@ -202,7 +223,9 @@ def main() -> int:
     ]
     unexpected_core_impl_files: list[str] = []
     banned_runtime_duplicates: list[str] = []
+    direct_native_core_include_violations: list[str] = []
     unexpected_legacy_module_files = [str(p.relative_to(ROOT)) for p in legacy_module_files]
+    runtime_tree_files = _scan_targets(_runtime_cpp_path())
 
     _check_generated_files(
         generated_module_files, missing_marker, invalid_name, name_policy="plain"
@@ -229,6 +252,11 @@ def main() -> int:
         name_policy="plain_or_ext",
     )
     _check_public_shim_files(pytra_files, missing_marker, invalid_name)
+    _check_direct_native_core_includes(
+        runtime_tree_files,
+        direct_native_core_include_violations,
+        core_dir=core_dir,
+    )
 
     if py_runtime_ext.exists():
         py_runtime_txt = py_runtime_ext.read_text(encoding="utf-8", errors="ignore")
@@ -243,6 +271,7 @@ def main() -> int:
         or unexpected_bucket_files
         or unexpected_core_impl_files
         or banned_runtime_duplicates
+        or direct_native_core_include_violations
         or unexpected_legacy_module_files
     ):
         print("[FAIL] runtime cpp layout guard failed")
@@ -284,6 +313,10 @@ def main() -> int:
         if banned_runtime_duplicates:
             print("  py_runtime.ext.h still contains duplicated high-level runtime bodies:")
             for item in banned_runtime_duplicates:
+                print(f"    - {item}")
+        if direct_native_core_include_violations:
+            print("  non-forwarder runtime files directly include native/core headers:")
+            for item in direct_native_core_include_violations:
                 print(f"    - {item}")
         return 1
 
