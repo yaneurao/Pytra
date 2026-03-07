@@ -14,6 +14,7 @@
 - 実処理本体は `src/pytra-cli.py`（`python src/pytra-cli.py`）とする。
 - `py2cpp.py` はトランスパイル backend として維持し、build オーケストレーション責務は持たせない。
 - C++ の build は `manifest.json` 正本 + `Makefile` 生成 + `make` 実行で行う。
+- `manifest.json` は `ModuleEmitter` が直接書くのではなく、`ProgramArtifact` を受けた `CppProgramWriter` が出力する build manifest として扱う。
 - `PYTHONPATH` 手動設定は不要にする（`./pytra` が内部で設定）。
 
 ## 2. 目的
@@ -85,10 +86,16 @@
 
 `./pytra ... --target cpp --build` の処理順は次のとおり。
 
-1. `py2cpp.py --multi-file --output-dir <DIR>` を実行し `manifest.json` を生成する。
-2. `tools/gen_makefile_from_manifest.py` で `Makefile` を生成する。
-3. `make -f <Makefile>` を実行してバイナリを生成する。
-4. `--run` 指定時のみ `make -f <Makefile> run` を実行する。
+1. `py2cpp.py --multi-file --output-dir <DIR>` を実行し、backend 側で `ProgramArtifact` を構築する。
+2. `CppProgramWriter` が output tree と `manifest.json` を生成する。
+3. `tools/gen_makefile_from_manifest.py` で `Makefile` を生成する。
+4. `make -f <Makefile>` を実行してバイナリを生成する。
+5. `--run` 指定時のみ `make -f <Makefile> run` を実行する。
+
+補足:
+
+- 現行 CLI 実装では `ProgramArtifact` は内部概念だが、`manifest.json` はその concrete build artifact として扱う。
+- non-C++ backend の `SingleFileProgramWriter` は build manifest を必須としない。この文書は C++ `CppProgramWriter` が出力する manifest 契約を扱う。
 
 ## 7. `manifest.json` 入力仕様
 
@@ -97,6 +104,12 @@
 - `modules` は配列である。
 - 各要素はオブジェクトであり、`source` は空でない文字列である。
 - `include_dir` は文字列である（未指定時は `manifest` 同階層の `include` を既定値として扱ってよい）。
+
+linked-program 期の位置づけ:
+
+- `manifest.json` は `ProgramArtifact` の C++ build 向け serialization である。
+- 生成責務は `CppProgramWriter` にあり、`CppEmitter` / `ModuleEmitter` は `manifest.json` を直接生成しない。
+- `manifest.json` は build layout / runtime layout の正本であり、language semantics の正本ではない。
 
 例:
 

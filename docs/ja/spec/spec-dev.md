@@ -33,7 +33,113 @@
 - `lower/optimizer` から `emitter` を import しない。`emitter` から `lower/optimizer` を import しない。
 - 再発防止の正本チェックは `python3 tools/check_noncpp_east3_contract.py` とする。
 
-### 1.2 `src/pytra/` 公開API（実装基準）
+### 1.2 backend 共通 artifact / writer 契約（linked-program 期）
+
+linked-program 導入後の backend 共通境界は次とする。
+
+```text
+linked module(EAST3)
+  -> Lower
+  -> Optimizer
+  -> ModuleEmitter
+  -> ModuleArtifact
+  -> ProgramWriter
+  -> output tree / manifest / runtime
+```
+
+#### `ModuleEmitter`
+
+- 入力:
+  - 1 module 分の linked `EAST3`
+  - target 固有 option
+- 出力:
+  - `ModuleArtifact`
+- 責務:
+  - module 単位の最終レンダリング
+  - module 内依存情報の列挙
+  - emitter 固有 metadata の付与
+- 禁止:
+  - 出力ディレクトリ決定
+  - runtime 配置
+  - build manifest 生成
+  - `type_id` / non-escape / ownership の再計算
+
+#### `ModuleArtifact` 最小契約
+
+`ModuleArtifact` は backend 共通の「1 module 分の描画結果」を表す。最低限次を持つ。
+
+- `module_id`
+  - canonical module id
+- `label`
+  - 出力名に使う安定ラベル
+- `extension`
+  - 例: `.cpp`, `.rs`, `.js`
+- `text`
+  - 生成ソース文字列
+- `is_entry`
+  - entry module かどうか
+- `dependencies`
+  - `module_id` 配列。module 間の依存関係のみを保持し、最終 path は持たない
+- `metadata`
+  - target 固有の補助情報 object
+
+追加規則:
+
+- `ModuleArtifact` は final output path を持たない。
+- `ModuleArtifact` は target ごとの build/layout 情報を埋め込まない。
+- 将来 payload 種別が増えても、互換上の最小契約は `text` を返せることとする。
+
+#### `ProgramArtifact` 最小契約
+
+`ProgramArtifact` は 1 program 分の writer 入力であり、最低限次を持つ。
+
+- `target`
+- `program_id`
+- `entry_modules`
+- `modules`
+  - `ModuleArtifact[]`
+- `layout_mode`
+  - `single_file | multi_file`
+- `link_output_schema`
+  - 例: `pytra.link_output.v1`
+- `writer_options`
+  - writer 固有 option object
+
+追加規則:
+
+- `ProgramArtifact` は linked-program 段で確定した module 集合をそのまま保持する。
+- `ProgramArtifact` は global semantics の canonical source を持ち込まない。global semantics の正本は `link-output.v1` と linked module 側にある。
+- `ProgramArtifact` は packaging / build の入力であり、language semantics の再判断点ではない。
+
+#### `ProgramWriter`
+
+- 入力:
+  - `ProgramArtifact`
+  - `output_root`
+- 出力:
+  - 出力 tree
+  - 必要なら build manifest
+- 責務:
+  - ファイル path 決定
+  - multi-file / single-file layout
+  - runtime 配置
+  - build metadata / manifest 生成
+- 禁止:
+  - module text の再生成
+  - module 境界の再分割
+  - `type_id` / non-escape / ownership の再解釈
+
+既定実装:
+
+- non-C++ backend の既定は `SingleFileProgramWriter` とする。
+- C++ は `CppProgramWriter` を用い、`manifest.json` / `Makefile` / runtime tree を扱う。
+
+互換契約:
+
+- 旧 `emit -> str` API は「`ModuleArtifact(text only)` を返す旧 emitter + `SingleFileProgramWriter`」への compatibility wrapper として扱う。
+- 新規 backend / 新規経路は `emit_module + program_writer` 契約を正本とし、旧 unary emit を増やさない。
+
+### 1.3 `src/pytra/` 公開API（実装基準）
 
 `src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  
 `_` で始まる名前は内部実装扱いとし、以下を公開APIとして扱います。
