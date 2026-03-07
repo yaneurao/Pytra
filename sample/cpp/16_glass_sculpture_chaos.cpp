@@ -293,11 +293,11 @@ void run_16_glass_sculpture_chaos() {
     str out_path = "sample/out/16_glass_sculpture_chaos.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = {};
-    frames.reserve((frames_n <= 0) ? 0 : frames_n);
+    rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
+    rc_list_ref(frames).reserve((frames_n <= 0) ? 0 : frames_n);
     for (int64 i = 0; i < frames_n; ++i)
-        frames.append(render_frame(width, height, i, frames_n));
-    pytra::utils::gif::save_gif(out_path, width, height, frames, palette_332(), 6, 0);
+        py_append(frames, render_frame(width, height, i, frames_n));
+    pytra::utils::gif::save_gif(out_path, width, height, rc_list_ref(frames), palette_332(), 6, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frames_n);

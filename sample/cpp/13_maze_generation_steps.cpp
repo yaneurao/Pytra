@@ -1,5 +1,6 @@
 #include "runtime/cpp/core/py_runtime.h"
 
+#include "pytra/built_in/sequence.h"
 #include "pytra/std/time.h"
 #include "pytra/utils/gif.h"
 

@@ -43,14 +43,14 @@ void run_05_mandelbrot_zoom() {
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
     float64 start = pytra::std::time::perf_counter();
-    list<bytes> frames = {};
+    rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
     float64 scale = base_scale;
-    frames.reserve((frame_count <= 0) ? 0 : frame_count);
+    rc_list_ref(frames).reserve((frame_count <= 0) ? 0 : frame_count);
     for (int64 _ = 0; _ < frame_count; ++_) {
-        frames.append(render_frame(width, height, center_x, center_y, scale, max_iter));
+        py_append(frames, render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;
     }
-    pytra::utils::gif::save_gif(out_path, width, height, frames, pytra::utils::gif::grayscale_palette(), 5, 0);
+    pytra::utils::gif::save_gif(out_path, width, height, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 5, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
     py_print("frames:", frame_count);
