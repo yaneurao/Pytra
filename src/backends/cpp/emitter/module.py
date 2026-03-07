@@ -18,6 +18,7 @@ from toolchain.compiler.transpile_cli import (
     extract_function_signatures_from_python_source,
     load_east_document,
     python_module_exists_under,
+    split_top_level_csv,
     sort_str_list_copy,
 )
 
@@ -25,6 +26,8 @@ from toolchain.compiler.transpile_cli import (
 REPO_ROOT = Path(__file__).resolve().parents[4]
 RUNTIME_STD_SOURCE_ROOT = REPO_ROOT / "src/pytra/std"
 RUNTIME_UTILS_SOURCE_ROOT = REPO_ROOT / "src/pytra/utils"
+RUNTIME_BUILT_IN_SOURCE_ROOT = REPO_ROOT / "src/pytra/built_in"
+RUNTIME_CPP_GENERATED_ROOT = REPO_ROOT / "src/runtime/cpp/generated"
 TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
@@ -177,7 +180,45 @@ class CppModuleEmitter:
             if init_p.exists():
                 return init_p
             return Path("")
+        if module_name_norm.startswith("pytra.built_in."):
+            tail = str(module_name_norm[15:].replace(".", "/"))
+            built_in_root_txt = str(RUNTIME_BUILT_IN_SOURCE_ROOT)
+            p_txt = built_in_root_txt + "/" + tail + ".py"
+            p = Path(p_txt)
+            if p.exists():
+                return p
+            init_txt = built_in_root_txt + "/" + tail + "/__init__.py"
+            init_p = Path(init_txt)
+            if init_p.exists():
+                return init_p
+            return Path("")
         return Path("")
+
+    def _module_generated_header_path(self, module_name: str) -> Path:
+        """runtime module の generated header パスを返す（未解決時は空 Path）。"""
+        src_path = self._module_source_path_for_name(module_name)
+        if str(src_path) in {"", "."}:
+            return Path("")
+        prefix = ""
+        rel_path = Path("")
+        try:
+            rel_path = src_path.relative_to(RUNTIME_STD_SOURCE_ROOT)
+            prefix = "std"
+        except ValueError:
+            try:
+                rel_path = src_path.relative_to(RUNTIME_UTILS_SOURCE_ROOT)
+                prefix = "utils"
+            except ValueError:
+                try:
+                    rel_path = src_path.relative_to(RUNTIME_BUILT_IN_SOURCE_ROOT)
+                    prefix = "built_in"
+                except ValueError:
+                    return Path("")
+        if rel_path.name == "__init__.py":
+            rel_no_suffix = rel_path.parent
+        else:
+            rel_no_suffix = rel_path.with_suffix("")
+        return RUNTIME_CPP_GENERATED_ROOT / prefix / rel_no_suffix.with_suffix(".h")
 
     def _module_class_signature_docs(self, module_name: str) -> dict[str, dict[str, Any]]:
         """runtime module の class/method シグネチャを SoT から抽出する。"""
@@ -356,6 +397,88 @@ class CppModuleEmitter:
             return sig
         return []
 
+    def _module_function_return_type(self, module_name: str, fn_name: str) -> str:
+        """モジュール関数の返り値型を返す（不明時は空文字）。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        cached = self._module_fn_return_type_cache.get(module_name_norm)
+        if not isinstance(cached, dict):
+            ret_map: dict[str, str] = {}
+            src_path = self._module_source_path_for_name(module_name_norm)
+            if str(src_path) not in {"", "."}:
+                try:
+                    east = load_east_document(src_path)
+                    for stmt in self.any_to_list(east.get("body")):
+                        stmt_d = stmt if isinstance(stmt, dict) else {}
+                        if self._node_kind_from_dict(stmt_d) != "FunctionDef":
+                            continue
+                        name = dict_any_get_str(stmt_d, "name")
+                        if name == "":
+                            continue
+                        ret_map[name] = self.normalize_type_name(self.any_to_str(stmt_d.get("return_type")))
+                except Exception:
+                    ret_map = {}
+            self._module_fn_return_type_cache[module_name_norm] = ret_map
+            cached = ret_map
+        return self.normalize_type_name(self.any_to_str(cached.get(fn_name, "")))
+
+    def _module_function_cpp_signature_docs(self, module_name: str) -> dict[str, dict[str, Any]]:
+        """generated header から module function の C++ 実シグネチャを抽出する。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        cached = self._module_fn_cpp_signature_cache.get(module_name_norm)
+        if isinstance(cached, dict):
+            return cached
+        docs: dict[str, dict[str, Any]] = {}
+        hdr_path = self._module_generated_header_path(module_name_norm)
+        if str(hdr_path) in {"", "."} or not hdr_path.exists():
+            self._module_fn_cpp_signature_cache[module_name_norm] = docs
+            return docs
+        try:
+            for raw_line in hdr_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line.endswith(";") or "(" not in line or ")" not in line:
+                    continue
+                line = line[:-1]
+                before, after = line.split("(", 1)
+                params_txt = after.rsplit(")", 1)[0]
+                before_txt = before.strip()
+                fn_name = before_txt.split(" ")[-1].strip()
+                if fn_name == "":
+                    continue
+                ret_cpp = before_txt[: before_txt.rfind(fn_name)].strip()
+                arg_cpp_types: list[str] = []
+                for param in split_top_level_csv(params_txt):
+                    param_txt = param.strip()
+                    if param_txt == "":
+                        continue
+                    arg_cpp_types.append(param_txt.split("=", 1)[0].strip())
+                docs[fn_name] = {
+                    "arg_cpp_types": arg_cpp_types,
+                    "return_cpp_type": ret_cpp,
+                }
+        except Exception:
+            docs = {}
+        self._module_fn_cpp_signature_cache[module_name_norm] = docs
+        return docs
+
+    def _module_function_cpp_arg_types(self, module_name: str, fn_name: str) -> list[str]:
+        doc = self._module_function_cpp_signature_docs(module_name).get(fn_name)
+        if not isinstance(doc, dict):
+            return []
+        raw = doc.get("arg_cpp_types")
+        if not isinstance(raw, list):
+            return []
+        out: list[str] = []
+        for item in raw:
+            if isinstance(item, str):
+                out.append(item)
+        return out
+
+    def _module_function_cpp_return_type(self, module_name: str, fn_name: str) -> str:
+        doc = self._module_function_cpp_signature_docs(module_name).get(fn_name)
+        if not isinstance(doc, dict):
+            return ""
+        return self.any_to_str(doc.get("return_cpp_type"))
+
     def _module_function_arg_names(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数名列を返す（不明時は空 list）。"""
         module_name_norm = self._normalize_runtime_module_name(module_name)
@@ -388,40 +511,30 @@ class CppModuleEmitter:
         args: list[str],
         arg_nodes: list[Any],
     ) -> list[str]:
-        """モジュール関数シグネチャに基づいて引数を必要最小限で boxing する。"""
+        """モジュール関数シグネチャに基づいて引数を必要最小限で coercion する。"""
         target_types = self._module_function_arg_types(module_name, fn_name)
         if len(target_types) == 0:
             return args
+        cpp_arg_types = self._module_function_cpp_arg_types(module_name, fn_name)
         out: list[str] = []
         for i, arg in enumerate(args):
-            a = arg
-            if i < len(target_types):
-                tt = target_types[i]
-                arg_t = "unknown"
-                if i < len(arg_nodes):
-                    arg_t_obj = self.get_expr_type(arg_nodes[i])
-                    if isinstance(arg_t_obj, str):
-                        arg_t = arg_t_obj
-                arg_t = self.infer_rendered_arg_type(a, arg_t, self.declared_var_types)
-                arg_is_unknown = arg_t == "" or arg_t == "unknown"
-                arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
-                arg_node_d = arg_node if isinstance(arg_node, dict) else {}
-                list_arg_adapter = self._render_pyobj_value_list_arg_adapter(a, arg_node, tt)
-                if list_arg_adapter != a:
-                    a = list_arg_adapter
-                elif self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
-                    if not self.is_boxed_object_expr(a):
-                        if len(arg_node_d) > 0:
-                            a = self.render_expr(self._build_box_expr_node(arg_node))
-                        else:
-                            a = f"make_object({a})"
-                elif self._can_runtime_cast_target(tt) and (arg_is_unknown or self.is_any_like_type(arg_t)):
-                    t_norm = self.normalize_type_name(tt)
-                    if len(arg_node_d) > 0:
-                        a = self.render_expr(self._build_unbox_expr_node(arg_node, t_norm, f"module_arg:{t_norm}"))
-                    else:
-                        a = self._coerce_any_expr_to_target(a, tt, f"module_arg:{t_norm}")
-            out.append(a)
+            if i >= len(target_types):
+                out.append(arg)
+                continue
+            arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
+            list_target_is_value = True
+            if i < len(cpp_arg_types):
+                cpp_arg_t = cpp_arg_types[i]
+                if "rc<list<" in cpp_arg_t:
+                    list_target_is_value = False
+            out.append(
+                self._coerce_call_arg(
+                    arg,
+                    arg_node,
+                    target_types[i],
+                    list_target_is_value=list_target_is_value,
+                )
+            )
         return out
 
     def _is_module_definition_stmt(self, stmt: dict[str, Any]) -> bool:

@@ -201,6 +201,7 @@ def build_cpp_header_from_east(
     output_path: Path,
     top_namespace: str = "",
     cpp_text: str = "",
+    cpp_list_model: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
     body = dict_any_get_dict_list(east_module, "body")
@@ -214,6 +215,7 @@ def build_cpp_header_from_east(
     seen_classes: set[str] = set()
     class_names: set[str] = set()
     ref_classes: set[str] = set()
+    pyobj_ref_lists = cpp_list_model == "pyobj"
 
     for st in body:
         if dict_any_get_str(st, "kind") == "ClassDef":
@@ -249,7 +251,12 @@ def build_cpp_header_from_east(
             name = dict_any_get_str(st, "name")
             if name != "":
                 ret_t = dict_any_get_str(st, "return_type", "None")
-                ret_cpp = _header_cpp_type_from_east(ret_t, ref_classes, class_names)
+                ret_cpp = _header_cpp_signature_type_from_east(
+                    ret_t,
+                    ref_classes,
+                    class_names,
+                    pyobj_ref_lists=pyobj_ref_lists,
+                )
                 used_types.add(ret_cpp)
                 arg_types = dict_any_get_dict(st, "arg_types")
                 arg_usage = dict_any_get_dict(st, "arg_usage")
@@ -266,7 +273,12 @@ def build_cpp_header_from_east(
                     if not isinstance(an, str):
                         continue
                     at = dict_any_get_str(arg_types, an, "Any")
-                    at_cpp = _header_cpp_type_from_east(at, ref_classes, class_names)
+                    at_cpp = _header_cpp_signature_type_from_east(
+                        at,
+                        ref_classes,
+                        class_names,
+                        pyobj_ref_lists=pyobj_ref_lists,
+                    )
                     used_types.add(at_cpp)
                     emitted_an = _header_safe_identifier(an)
                     usage = dict_any_get_str(arg_usage, an, "readonly")
@@ -281,7 +293,11 @@ def build_cpp_header_from_east(
                     if an in arg_defaults:
                         default_node = arg_defaults.get(an)
                         if isinstance(default_node, dict):
-                            default_txt = _header_render_default_expr(default_node, at)
+                            default_txt = _header_render_default_expr(
+                                default_node,
+                                at,
+                                pyobj_ref_lists=pyobj_ref_lists,
+                            )
                             if default_txt != "":
                                 param_txt += " = " + default_txt
                     parts.append(param_txt)
@@ -1156,6 +1172,48 @@ def _header_cpp_type_from_east(
     return t
 
 
+def _header_is_concrete_type_for_typed_list(east_t: str) -> bool:
+    txt = east_t.strip()
+    if txt in {"", "unknown", "Any", "object", "None"}:
+        return False
+    parts_union = split_top_level_union(txt)
+    if len(parts_union) > 1:
+        for part in parts_union:
+            if not _header_is_concrete_type_for_typed_list(part):
+                return False
+        return True
+    if txt.startswith("list[") and txt.endswith("]"):
+        return _header_is_concrete_type_for_typed_list(txt[5:-1].strip())
+    if txt.startswith("tuple[") and txt.endswith("]"):
+        for part in split_type_args(txt[6:-1].strip()):
+            if not _header_is_concrete_type_for_typed_list(part):
+                return False
+        return True
+    if txt.startswith("dict[") and txt.endswith("]"):
+        inner = split_type_args(txt[5:-1].strip())
+        if len(inner) != 2:
+            return False
+        return _header_is_concrete_type_for_typed_list(inner[0]) and _header_is_concrete_type_for_typed_list(inner[1])
+    if txt.startswith("set[") and txt.endswith("]"):
+        return _header_is_concrete_type_for_typed_list(txt[4:-1].strip())
+    return True
+
+
+def _header_cpp_signature_type_from_east(
+    east_t: str,
+    ref_classes: set[str],
+    class_names: set[str],
+    *,
+    pyobj_ref_lists: bool = False,
+) -> str:
+    txt = east_t.strip()
+    if pyobj_ref_lists and txt.startswith("list[") and txt.endswith("]") and _header_is_concrete_type_for_typed_list(txt[5:-1].strip()):
+        value_cpp = _header_cpp_type_from_east(txt, ref_classes, class_names)
+        if value_cpp != "bytearray":
+            return "rc<" + value_cpp + ">"
+    return _header_cpp_type_from_east(txt, ref_classes, class_names)
+
+
 def _header_guard_from_path(path: str) -> str:
     """ヘッダパスから include guard を生成する。"""
     src = path.replace("\\", "/")
@@ -1254,7 +1312,12 @@ def _cpp_string_lit(s: str) -> str:
     return "\"" + "".join(out_chars) + "\""
 
 
-def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str:
+def _header_render_default_expr(
+    node: dict[str, Any],
+    east_target_t: str,
+    *,
+    pyobj_ref_lists: bool = False,
+) -> str:
     """EAST の既定値ノードを C++ ヘッダ宣言用の式文字列へ変換する。"""
     kind = dict_any_get_str(node, "kind")
     if kind == "Constant":
@@ -1297,7 +1360,10 @@ def _header_render_default_expr(node: dict[str, Any], east_target_t: str) -> str
         if len(elems) == 0:
             txt = east_target_t.strip()
             if txt.startswith("list[") and txt.endswith("]"):
-                return _header_cpp_type_from_east(txt, set(), set()) + "{}"
+                default_txt = _header_cpp_type_from_east(txt, set(), set()) + "{}"
+                if pyobj_ref_lists and _header_cpp_signature_type_from_east(txt, set(), set(), pyobj_ref_lists=True).startswith("rc<"):
+                    return "rc_list_from_value(" + default_txt + ")"
+                return default_txt
         return ""
     if kind == "Dict":
         entries = dict_any_get_dict_list(node, "entries")

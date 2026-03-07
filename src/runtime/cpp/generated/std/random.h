@@ -17,9 +17,9 @@ void seed(int64 value);
 int64 _next_u31();
 float64 random();
 int64 randint(int64 a, int64 b);
-list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k = 1);
+rc<list<int64>> choices(const rc<list<int64>>& population, const rc<list<float64>>& weights, int64 k = 1);
 float64 gauss(float64 mu = 0.0, float64 sigma = 1.0);
-void shuffle(list<int64>& xs);
+void shuffle(rc<list<int64>>& xs);
 
 }  // namespace pytra::std::random
 

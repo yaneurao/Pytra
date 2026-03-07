@@ -265,6 +265,8 @@ class CppEmitter(
         self.declared_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self._module_fn_signature_cache: dict[str, dict[str, dict[str, list[str]]]] = {}
+        self._module_fn_return_type_cache: dict[str, dict[str, str]] = {}
+        self._module_fn_cpp_signature_cache: dict[str, dict[str, dict[str, Any]]] = {}
         self._module_class_signature_cache: dict[str, dict[str, dict[str, Any]]] = {}
         self.non_escape_summary_map: dict[str, dict[str, Any]] = {}
         self.function_non_escape_summary_map: dict[str, dict[str, Any]] = {}
@@ -503,11 +505,40 @@ class CppEmitter(
             return False
         return name in self.current_function_pyobj_runtime_list_alias_names
 
+    def _unwrap_pyobj_list_source_expr(self, expr_node: Any) -> dict[str, Any]:
+        """list source 判定時に無視してよい wrapper を剥がす。"""
+        node = self.any_to_dict_or_empty(expr_node)
+        while len(node) > 0:
+            kind = self._node_kind_from_dict(node)
+            if kind not in {"Unbox", "CastOrRaise"}:
+                break
+            target_t = self.normalize_type_name(self.any_to_str(node.get("target")))
+            if target_t in {"", "unknown"}:
+                target_t = self.normalize_type_name(self.any_to_str(node.get("resolved_type")))
+            if not (target_t.startswith("list[") and target_t.endswith("]")):
+                break
+            inner = self.any_to_dict_or_empty(node.get("value"))
+            if len(inner) == 0:
+                break
+            node = inner
+        return node
+
+    def _render_unwrapped_pyobj_list_source_expr(self, rendered_expr: str, expr_node: Any) -> str:
+        """透過 wrapper を剥がした list source の描画を返す。"""
+        node = self.any_to_dict_or_empty(expr_node)
+        unwrapped = self._unwrap_pyobj_list_source_expr(expr_node)
+        if len(unwrapped) == 0 or unwrapped == node:
+            return rendered_expr
+        unwrapped_expr = self.render_expr(unwrapped)
+        if unwrapped_expr == "":
+            return rendered_expr
+        return unwrapped_expr
+
     def _call_expr_returns_known_pyobj_list_handle(self, expr_node: Any) -> bool:
         """既知関数/メソッド call が ref-first list handle を返すか判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
             return False
-        node = self.any_to_dict_or_empty(expr_node)
+        node = self._unwrap_pyobj_list_source_expr(expr_node)
         if self._node_kind_from_dict(node) != "Call":
             return False
         if self.any_dict_get_str(node, "lowered_kind", "") == "BuiltinCall":
@@ -522,6 +553,18 @@ class CppEmitter(
             ret_t = self.normalize_type_name(self.function_return_types.get(fn_name, ""))
             return self._is_pyobj_ref_first_list_type(ret_t)
         if fn_kind == "Attribute":
+            owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
+            owner_rendered = self.render_expr(owner_node)
+            owner_ctx = self.resolve_attribute_owner_context(owner_node, owner_rendered)
+            owner_mod = self.any_dict_get_str(owner_ctx, "module", "")
+            attr = self.any_to_str(fn_node.get("attr"))
+            if owner_mod != "" and attr != "":
+                ret_cpp = self.any_to_str(self._module_function_cpp_return_type(owner_mod, attr))
+                if "rc<list<" in ret_cpp:
+                    ret_t = self.normalize_type_name(self._module_function_return_type(owner_mod, attr))
+                    return self._is_pyobj_ref_first_list_type(ret_t)
+                if "list<" in ret_cpp:
+                    return False
             ret_t = self.normalize_type_name(self._infer_call_expr_type(node))
             return self._is_pyobj_ref_first_list_type(ret_t)
         return False
@@ -669,22 +712,23 @@ class CppEmitter(
         rendered_trim = self._trim_ws(rendered_expr)
         if rendered_trim == "":
             return rendered_expr
+        source_expr = self._render_unwrapped_pyobj_list_source_expr(rendered_expr, value_node)
         list_t = self.normalize_type_name(east_type)
         handle_cpp_t = self._cpp_pyobj_alias_list_handle_type_text(list_t)
         value_cpp_t = self._cpp_list_value_model_type_text(list_t)
         if rendered_trim.startswith(f"py_to<{handle_cpp_t}>(") or rendered_trim.startswith("rc_list_from_value("):
             return rendered_expr
 
-        value = self.any_to_dict_or_empty(value_node)
+        value = self._unwrap_pyobj_list_source_expr(value_node)
         if self._uses_pyobj_ref_first_list_lvalue_expr(value):
-            return rendered_expr
+            return source_expr
         kind = self._node_kind_from_dict(value)
         if kind == "Name":
             src_name = self.any_dict_get_str(value, "id", "")
             if self._is_pyobj_runtime_list_alias_name(src_name):
-                return rendered_expr
+                return source_expr
         if kind == "Call" and self._call_expr_returns_known_pyobj_list_handle(value):
-            return rendered_expr
+            return source_expr
         if kind == "List":
             elems = self._dict_stmt_list(value.get("elements"))
             inner_parts = self.type_generic_args(list_t, "list")
@@ -716,7 +760,7 @@ class CppEmitter(
                 return f"py_to<{handle_cpp_t}>({rewritten})"
             return f"rc_list_from_value({rewritten})"
 
-        value_t = self.normalize_type_name(self.get_expr_type(value_node))
+        value_t = self.normalize_type_name(self.get_expr_type(value))
         if self.is_any_like_type(value_t) or self._uses_pyobj_runtime_list_expr(value_node):
             return f"py_to<{handle_cpp_t}>({rendered_expr})"
         if value_t.startswith("list[") and value_t.endswith("]"):
@@ -734,13 +778,15 @@ class CppEmitter(
         rendered_trim = self._trim_ws(rendered_expr)
         if rendered_trim == "":
             return rendered_expr
+        source_expr = self._render_unwrapped_pyobj_list_source_expr(rendered_expr, value_node)
+        source_node = self._unwrap_pyobj_list_source_expr(value_node)
         list_t = self.normalize_type_name(east_type)
         if not self._is_pyobj_value_model_list_type(list_t):
             return rendered_expr
         if rendered_trim.startswith("rc_list_copy_value("):
             return rendered_expr
-        if self._uses_pyobj_ref_first_list_value_source(value_node):
-            return f"rc_list_copy_value({rendered_expr})"
+        if self._uses_pyobj_ref_first_list_value_source(source_node):
+            return f"rc_list_copy_value({source_expr})"
         return rendered_expr
 
     def _render_pyobj_value_list_arg_adapter(self, rendered_expr: str, value_node: Any, east_type: str) -> str:
@@ -748,15 +794,17 @@ class CppEmitter(
         rendered_trim = self._trim_ws(rendered_expr)
         if rendered_trim == "":
             return rendered_expr
+        source_expr = self._render_unwrapped_pyobj_list_source_expr(rendered_expr, value_node)
+        source_node = self._unwrap_pyobj_list_source_expr(value_node)
         list_t = self.normalize_type_name(east_type)
         if not self._is_pyobj_value_model_list_type(list_t):
             return rendered_expr
         if rendered_trim.startswith("rc_list_ref(") or rendered_trim.startswith("rc_list_copy_value("):
             return rendered_expr
-        if self._uses_pyobj_ref_first_list_lvalue_expr(value_node):
-            return f"rc_list_ref({rendered_expr})"
-        if self._call_expr_returns_known_pyobj_list_handle(value_node):
-            return f"rc_list_copy_value({rendered_expr})"
+        if self._uses_pyobj_ref_first_list_lvalue_expr(source_node):
+            return f"rc_list_ref({source_expr})"
+        if self._call_expr_returns_known_pyobj_list_handle(source_node):
+            return f"rc_list_copy_value({source_expr})"
         return rendered_expr
 
     def _collect_name_reads(self, node: Any, out: set[str]) -> None:
@@ -3088,6 +3136,11 @@ class CppEmitter(
         if target_t == "" or target_t == "unknown":
             target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
         if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
+            return value_expr
+        if self._is_pyobj_ref_first_list_type(target_t) and (
+            self._uses_pyobj_ref_first_list_lvalue_expr(value_node)
+            or self._call_expr_returns_known_pyobj_list_handle(value_node)
+        ):
             return value_expr
         source_t = self.normalize_type_name(self.get_expr_type(value_node))
         if source_t not in {"", "unknown"} and (not self.is_any_like_type(source_t)):

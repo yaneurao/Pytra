@@ -403,9 +403,17 @@ def build_cpp_header_from_east(
     output_path: Path,
     top_namespace: str = "",
     cpp_text: str = "",
+    cpp_list_model: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
-    return _build_cpp_header_from_east(east_module, source_path, output_path, top_namespace, cpp_text)
+    return _build_cpp_header_from_east(
+        east_module,
+        source_path,
+        output_path,
+        top_namespace,
+        cpp_text,
+        cpp_list_model,
+    )
 
 
 def split_cpp_inline_class_defs(
@@ -963,7 +971,14 @@ def main(argv: list[str]) -> int:
                 mkdirs_for_cli(path_parent_text(public_hdr_out))
             cpp_emit_module = _build_cpp_emit_module_without_extern_decls(east_module)
             if not _has_cpp_emit_definitions(cpp_emit_module):
-                hdr_txt_runtime = build_cpp_header_from_east(east_module, input_path, hdr_out, ns, "")
+                hdr_txt_runtime = build_cpp_header_from_east(
+                    east_module,
+                    input_path,
+                    hdr_out,
+                    ns,
+                    "",
+                    cpp_list_model_opt,
+                )
                 generated_lines_runtime = count_text_lines(hdr_txt_runtime)
                 check_guard_limit(
                     "emit",
@@ -1037,6 +1052,7 @@ def main(argv: list[str]) -> int:
                 hdr_out,
                 ns,
                 cpp_txt_runtime_for_header,
+                cpp_list_model_opt,
             )
             generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
@@ -1079,7 +1095,14 @@ def main(argv: list[str]) -> int:
             if header_output_txt != "":
                 hdr_path = Path(header_output_txt)
                 mkdirs_for_cli(path_parent_text(hdr_path))
-                hdr_txt = build_cpp_header_from_east(east_module, input_path, hdr_path, top_namespace_opt, cpp)
+                hdr_txt = build_cpp_header_from_east(
+                    east_module,
+                    input_path,
+                    hdr_path,
+                    top_namespace_opt,
+                    cpp,
+                    cpp_list_model_opt,
+                )
                 generated_lines_single = count_text_lines(cpp) + count_text_lines(hdr_txt)
                 check_guard_limit("emit", "max_generated_lines", generated_lines_single, guard_limits, str(input_path))
                 write_text_file(hdr_path, hdr_txt)

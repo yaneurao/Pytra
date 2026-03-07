@@ -65,11 +65,10 @@ so it can be transpiled to target runtimes.
         if (draws < 0)
             draws = 0;
         list<float64> weight_vals = {};
-        for (object __itobj_1 : py_dyn_range(weights)) {
-            float64 w = py_to<float64>(__itobj_1);
+        for (float64 w : rc_list_ref(weights)) {
             weight_vals.append(w);
         }
-        list<int64> out = {};
+        rc<list<int64>> out = rc_list_from_value(list<int64>{});
         if (py_len(weight_vals) == n) {
             float64 total = 0.0;
             for (float64 w : weight_vals) {
@@ -90,15 +89,15 @@ so it can be transpiled to target runtimes.
                             break;
                         }
                     }
-                    out.append(int64(py_at(population, py_to<int64>(picked_i))));
+                    py_append(out, py_at(population, py_to<int64>(picked_i)));
                 }
-                return rc_list_from_value(out);
+                return out;
             }
         }
-        out.reserve((draws <= 0) ? 0 : draws);
+        rc_list_ref(out).reserve((draws <= 0) ? 0 : draws);
         for (int64 _ = 0; _ < draws; ++_)
-            out.append(int64(py_at(population, py_to<int64>(randint(0, n - 1)))));
-        return rc_list_from_value(out);
+            py_append(out, py_at(population, py_to<int64>(randint(0, n - 1))));
+        return out;
     }
     
     float64 gauss(float64 mu, float64 sigma) {
