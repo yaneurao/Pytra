@@ -100,21 +100,21 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIsInstance(core_dict, dict)
         self.assertEqual(core_dict.get("companions"), ["native"])
         self.assertIn("src/runtime/cpp/core/dict.h", core_dict.get("public_headers", []))
-        self.assertNotIn("src/runtime/cpp/native/core/dict.ext.h", core_dict.get("public_headers", []))
+        self.assertNotIn("src/runtime/cpp/native/core/dict.h", core_dict.get("public_headers", []))
 
         core_gc = cpp_modules.get("pytra.core.gc")
         self.assertIsInstance(core_gc, dict)
         self.assertEqual(core_gc.get("companions"), ["native"])
         self.assertIn("src/runtime/cpp/core/gc.h", core_gc.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/native/core/gc.ext.cpp", core_gc.get("compile_sources", []))
-        self.assertNotIn("src/runtime/cpp/core/gc.ext.cpp", core_gc.get("compile_sources", []))
+        self.assertIn("src/runtime/cpp/native/core/gc.cpp", core_gc.get("compile_sources", []))
+        self.assertNotIn("src/runtime/cpp/core/gc.cpp", core_gc.get("compile_sources", []))
 
         core_io = cpp_modules.get("pytra.core.io")
         self.assertIsInstance(core_io, dict)
         self.assertEqual(core_io.get("companions"), ["native"])
         self.assertIn("src/runtime/cpp/core/io.h", core_io.get("public_headers", []))
-        self.assertIn("src/runtime/cpp/native/core/io.ext.cpp", core_io.get("compile_sources", []))
-        self.assertNotIn("src/runtime/cpp/core/io.ext.cpp", core_io.get("compile_sources", []))
+        self.assertIn("src/runtime/cpp/native/core/io.cpp", core_io.get("compile_sources", []))
+        self.assertNotIn("src/runtime/cpp/core/io.cpp", core_io.get("compile_sources", []))
 
     def test_check_mode_detects_stale_file(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -187,7 +187,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
         )
         self.assertIn(
-            "src/runtime/cpp/native/core/gc.ext.cpp",
+            "src/runtime/cpp/native/core/gc.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.core.gc"),
         )
         self.assertEqual(
@@ -197,14 +197,14 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
 
     def test_real_repo_cpp_core_layout_exposes_surface_and_ownership_lanes(self) -> None:
         self.assertTrue((ROOT / "src/runtime/cpp/core/dict.h").exists())
-        self.assertTrue((ROOT / "src/runtime/cpp/native/core/dict.ext.h").exists())
+        self.assertTrue((ROOT / "src/runtime/cpp/native/core/dict.h").exists())
         self.assertTrue((ROOT / "src/runtime/cpp/generated/core/README.md").exists())
         self.assertEqual(
             lookup_target_module_primary_header("cpp", "pytra.core.dict"),
             "src/runtime/cpp/core/dict.h",
         )
         self.assertIn(
-            "src/runtime/cpp/native/core/gc.ext.cpp",
+            "src/runtime/cpp/native/core/gc.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.core.gc"),
         )
 

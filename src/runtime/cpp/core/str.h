@@ -1,3 +1,3 @@
 #pragma once
 
-#include "runtime/cpp/native/core/str.ext.h"
+#include "runtime/cpp/native/core/str.h"

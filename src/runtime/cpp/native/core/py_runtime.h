@@ -24,9 +24,9 @@
 #include <utility>
 #include <vector>
 
-#include "py_types.ext.h"
-#include "exceptions.ext.h"
-#include "io.ext.h"
+#include "py_types.h"
+#include "exceptions.h"
+#include "io.h"
 #include "runtime/cpp/generated/built_in/predicates.h"
 #include "runtime/cpp/native/built_in/sequence.h"
 #include "runtime/cpp/generated/built_in/sequence.h"

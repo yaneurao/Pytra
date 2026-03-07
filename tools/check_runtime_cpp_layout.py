@@ -182,11 +182,7 @@ def main() -> int:
     utils_dir = _runtime_cpp_path("utils")
     py_runtime_header = _runtime_cpp_path("native", "core", "py_runtime.h")
     if not py_runtime_header.exists():
-        py_runtime_header = _runtime_cpp_path("native", "core", "py_runtime.ext.h")
-    if not py_runtime_header.exists():
         py_runtime_header = _runtime_cpp_path("core", "py_runtime.h")
-    if not py_runtime_header.exists():
-        py_runtime_header = _runtime_cpp_path("core", "py_runtime.ext.h")
 
     builtin_files = _scan_targets(builtin_dir)
     core_files = _scan_targets(core_dir)

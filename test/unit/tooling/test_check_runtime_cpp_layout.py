@@ -26,7 +26,7 @@ def _make_valid_tree(root: Path, *, core_plain_names: bool) -> None:
     core_header_name = "dict.h" if core_plain_names else "dict.h"
     py_runtime_name = "py_runtime.h" if core_plain_names else "py_runtime.h"
     core_cpp_name = "dict.cpp" if core_plain_names else "dict.ext.cpp"
-    gc_cpp_name = "gc.cpp" if core_plain_names else "gc.ext.cpp"
+    gc_cpp_name = "gc.cpp" if core_plain_names else "gc.cpp"
     _write(root / "src" / "runtime" / "cpp" / "generated" / "std" / "time.h", f"// {marker}\n")
     _write(root / "src" / "runtime" / "cpp" / "native" / "std" / "time.cpp", "// native\n")
     _write(root / "src" / "runtime" / "cpp" / "pytra" / "std" / "time.h", f"// {marker}\n")

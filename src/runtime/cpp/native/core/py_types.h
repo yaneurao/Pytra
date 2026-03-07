@@ -14,9 +14,9 @@
 #include <utility>
 #include <vector>
 
-#include "py_scalar_types.ext.h"
-#include "gc.ext.h"
-#include "io.ext.h"
+#include "py_scalar_types.h"
+#include "gc.h"
+#include "io.h"
 
 using PyObj = pytra::gc::PyObj;
 
@@ -42,10 +42,10 @@ const list<object>* obj_to_set_ptr(const object& v);
 template <class T> static inline object make_object(const T& v);
 template <class T, class... Args> static inline object object_new(Args&&... args);
 
-#include "str.ext.h"
-#include "list.ext.h"
-#include "dict.ext.h"
-#include "set.ext.h"
+#include "str.h"
+#include "list.h"
+#include "dict.h"
+#include "set.h"
 
 template <class T>
 struct py_is_rc_list_handle : ::std::false_type {};

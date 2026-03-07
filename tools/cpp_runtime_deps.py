@@ -237,8 +237,6 @@ def collect_runtime_cpp_sources(module_sources: list[str], include_dir: Path) ->
     seen_sources: set[str] = set()
     queue: list[Path] = _resolve_module_sources(module_sources)
     seed = RUNTIME_ROOT / "core" / "py_runtime.h"
-    if not seed.exists():
-        seed = RUNTIME_ROOT / "core" / "py_runtime.ext.h"
     if seed.exists():
         queue.append(seed)
     while queue:

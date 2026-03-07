@@ -66,7 +66,7 @@ class CheckRuntimeCoreGenMarkersTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _write(
-                root / "src" / "runtime" / "cpp" / "native" / "core" / "dict.ext.h",
+                root / "src" / "runtime" / "cpp" / "native" / "core" / "dict.h",
                 "// source: src/pytra/std/time.py\n// generated-by: test\n",
             )
             with patch.object(marker_mod, "ROOT", root), patch.object(

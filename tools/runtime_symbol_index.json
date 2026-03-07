@@ -876,7 +876,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/native/core/gc.ext.cpp"
+            "src/runtime/cpp/native/core/gc.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/core/gc.h"
@@ -887,7 +887,7 @@
             "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/native/core/io.ext.cpp"
+            "src/runtime/cpp/native/core/io.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/core/io.h"
