@@ -129,14 +129,43 @@ def py_join(sep: str, parts: list[str]) -> str:
 - `tools/runtime_parity_check.py` は stdout だけでなく、`output:` で示された artifact の `size` と `CRC32` まで比較します。
 - parity 実行時は case ごとに `sample/out`, `test/out`, `out`, `test/transpile/<target>/<case>` の stale artifact を自動削除します。
 - `elapsed_sec` などの不安定行は既定で比較対象外です（`--ignore-unstable-stdout` は互換フラグ）。
-- 全14targetを一括検証する場合:
+- 全14targetを一括検証する場合の canonical wrapper:
+
+```bash
+python3 tools/check_all_target_sample_parity.py \
+  --summary-dir work/logs/all_target_sample_parity
+```
+
+- lower-level に `runtime_parity_check.py` を直接使う場合の canonical group:
 
 ```bash
 python3 tools/runtime_parity_check.py \
+  --targets cpp \
   --case-root sample \
-  --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim \
   --all-samples \
-  --summary-json work/logs/runtime_parity_sample_all_targets.json
+  --east3-opt-level 2 \
+  --cpp-codegen-opt 3
+
+python3 tools/runtime_parity_check.py \
+  --targets js,ts \
+  --case-root sample \
+  --all-samples \
+  --ignore-unstable-stdout \
+  --east3-opt-level 2
+
+python3 tools/runtime_parity_check.py \
+  --targets rs,cs,go,java,kotlin,swift,scala \
+  --case-root sample \
+  --all-samples \
+  --ignore-unstable-stdout \
+  --east3-opt-level 2
+
+python3 tools/runtime_parity_check.py \
+  --targets ruby,lua,php,nim \
+  --case-root sample \
+  --all-samples \
+  --ignore-unstable-stdout \
+  --east3-opt-level 2
 ```
 
 - 実行時間短縮のためにケースを分割する場合（運用例）:
