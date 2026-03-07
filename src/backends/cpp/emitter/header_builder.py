@@ -1212,7 +1212,7 @@ def _header_cpp_signature_type_from_east(
     pyobj_ref_lists: bool = False,
 ) -> str:
     txt = east_t.strip()
-    use_ref_first_lists = pyobj_ref_lists and runtime_abi_mode not in {"value", "value_readonly"}
+    use_ref_first_lists = pyobj_ref_lists and runtime_abi_mode not in {"value", "value_mut", "value_readonly"}
     if use_ref_first_lists and txt.startswith("list[") and txt.endswith("]") and _header_is_concrete_type_for_typed_list(txt[5:-1].strip()):
         value_cpp = _header_cpp_type_from_east(txt, ref_classes, class_names)
         if value_cpp != "bytearray":

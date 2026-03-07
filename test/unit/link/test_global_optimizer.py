@@ -42,7 +42,7 @@ def _fn(name: str, body: list[dict[str, object]], args: list[str] | None = None)
 
 
 class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
-    def test_optimizer_rejects_value_readonly_mutation(self) -> None:
+    def test_optimizer_rejects_value_mutation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             main_py = root / "main.py"
@@ -78,7 +78,7 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             with self.assertRaises(RuntimeError) as cm:
                 optimize_linked_program(program)
 
-        self.assertIn("value_readonly parameter mutated", str(cm.exception))
+        self.assertIn("value parameter mutated", str(cm.exception))
         self.assertIn("pkg.main::py_join", str(cm.exception))
 
     def test_optimizer_rejects_runtime_abi_for_unsupported_target(self) -> None:

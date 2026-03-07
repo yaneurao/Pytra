@@ -28,7 +28,7 @@ def _normalize_index(idx: int, n: int) -> int:
     return out
 
 
-@abi(args={"parts": "value_readonly"}, ret="value")
+@abi(args={"parts": "value"}, ret="value")
 def py_join(sep: str, parts: list[str]) -> str:
     n = len(parts)
     if n == 0:

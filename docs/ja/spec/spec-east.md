@@ -138,6 +138,9 @@
 - `schema_version: 1`
 - `args: {param_name: mode}`
 - `ret: mode`
+- canonical mode は `default`, `value`, `value_mut`
+- `ret` に許可される canonical mode は `default` または `value`
+- source surface で legacy `value_readonly` を受理しても、metadata では `value` へ正規化する
 - raw `decorators` は Python surface の保存用であり、backend / linker の正本は `meta.runtime_abi_v1`
 - linked-program 後もこの function-level metadata は保持し、`meta.linked_program_v1` で置き換えない
 

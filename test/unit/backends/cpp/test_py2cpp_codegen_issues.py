@@ -1957,10 +1957,10 @@ def f() -> int:
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("py_append(xs, 1);", cpp)
 
-    def test_pyobj_list_model_abi_value_readonly_helper_uses_value_signature_and_adapters(self) -> None:
+    def test_pyobj_list_model_abi_value_helper_uses_value_signature_and_adapters(self) -> None:
         src = """from pytra.std import abi
 
-@abi(args={"xs": "value_readonly"}, ret="value")
+@abi(args={"xs": "value"}, ret="value")
 def clone(xs: list[int]) -> list[int]:
     return xs
 
@@ -1976,8 +1976,8 @@ def use(xs: list[int]) -> list[int]:
     return clone(zs)
 """
         with tempfile.TemporaryDirectory() as tmpdir:
-            src_py = Path(tmpdir) / "abi_value_readonly_helper.py"
-            out_h = Path(tmpdir) / "abi_value_readonly_helper.h"
+            src_py = Path(tmpdir) / "abi_value_helper.py"
+            out_h = Path(tmpdir) / "abi_value_helper.h"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
@@ -1997,7 +1997,7 @@ def use(xs: list[int]) -> list[int]:
         src = """from pytra.std import extern, abi
 
 @extern
-@abi(args={"xs": "value_readonly"}, ret="value")
+@abi(args={"xs": "value"}, ret="value")
 def clone(xs: list[int]) -> list[int]:
     return xs
 
@@ -2005,8 +2005,8 @@ def use(xs: list[int]) -> list[int]:
     return clone(xs)
 """
         with tempfile.TemporaryDirectory() as tmpdir:
-            src_py = Path(tmpdir) / "extern_abi_value_readonly_helper.py"
-            out_h = Path(tmpdir) / "extern_abi_value_readonly_helper.h"
+            src_py = Path(tmpdir) / "extern_abi_value_helper.py"
+            out_h = Path(tmpdir) / "extern_abi_value_helper.h"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")

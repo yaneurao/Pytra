@@ -57,12 +57,12 @@
 
 ## 分解
 
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-01] 現行 `default/value/value_readonly` 契約を棚卸しし、`value=value_readonly`, `value_mut=旧 mutable value ABI` の移行方針を固定する。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-02] spec/plan に canonical naming と移行ルールを書き、`value_readonly` の扱いを決める。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-01] parser / decorator metadata / validator が `value` / `value_mut` を受理し、新 canonical metadata を出すよう更新する。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-02] diagnostics / error message / target support check を新 naming に合わせる。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-01] 既存 helper（`py_join`, `py_split`, `py_range` など）の注釈と generated/runtime 側期待を新 naming に移行する。
-- [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-02] representative regression を更新し、C++ helper/codegen で非退行を確認する。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-01] 現行 `default/value/value_readonly` 契約を棚卸しし、`value=value_readonly`, `value_mut=旧 mutable value ABI` の移行方針を固定する。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S1-02] spec/plan に canonical naming と移行ルールを書き、`value_readonly` の扱いを決める。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-01] parser / decorator metadata / validator が `value` / `value_mut` を受理し、新 canonical metadata を出すよう更新する。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S2-02] diagnostics / error message / target support check を新 naming に合わせる。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-01] 既存 helper（`py_join`, `py_split`, `py_range` など）の注釈と generated/runtime 側期待を新 naming に移行する。
+- [x] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S3-02] representative regression を更新し、C++ helper/codegen で非退行を確認する。
 - [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-01] docs と how-to-use を新 naming に同期し、移行注意点を記録する。
 - [ ] [ID: P0-RUNTIME-ABI-MODE-SIMPLIFY-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
 
@@ -143,3 +143,10 @@
 - 2026-03-08: 本計画の主眼は naming と contract の整理であり、`@abi` 自体の必要性や runtime SoT linked-program 統合の是非は別計画で扱う。
 - 2026-03-08: `S1-01` 棚卸しの結果、checked-in helper の引数 override は `py_join(parts)` の 1 例だけであり、writable value ABI の現用例は存在しないことを確認した。
 - 2026-03-08: `S1-01` の移行方針として、引数側 `value` を旧 `value_readonly` へ寄せ、`value_mut` は future writable case の予約 mode として導入し、`value_readonly` は移行期 alias として扱う方針を固定した。
+- 2026-03-08: `S1-02` で `spec-abi` / `spec-east` を更新し、canonical mode を `default/value/value_mut` へ統一した。
+- 2026-03-08: `S1-02` で `value_readonly` は canonical metadata から外し、移行期 alias として source parser が受理しても `runtime_abi_v1` では `value` へ正規化する方針を正式化した。
+- 2026-03-08: `S2-01` で self-host parser と `validate_runtime_abi_module(...)` を更新し、`value_readonly` を source alias として受理しつつ canonical metadata では `value` へ正規化するようにした。
+- 2026-03-08: `S2-01` で `value_mut` を引数 mode として受理し、`ret="value_mut"` は parser/validator で reject する方針を実装へ反映した。
+- 2026-03-08: `S2-02` で parser hint・mutation violation diagnostics・representative tests を新 naming に合わせ、public-facing error wording を `value parameter mutated` へ更新した。
+- 2026-03-08: `S3-01` で checked-in runtime helper source の `py_join` を `@abi(args={"parts": "value"}, ret="value")` へ移し、canonical surface へ揃えた。
+- 2026-03-08: `S3-02` で `test_pytra_built_in_string_ops.py`, `test_py2cpp_codegen_issues.py -k abi`, `test_global_optimizer.py` を通し、helper semantics と representative C++ ABI route の非退行を確認した。

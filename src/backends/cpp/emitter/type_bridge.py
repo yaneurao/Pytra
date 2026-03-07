@@ -314,7 +314,7 @@ class CppTypeBridgeEmitter:
                         arg_txt,
                         node,
                         sig[i],
-                        list_target_is_value=list_targets_are_value or abi_mode in {"value", "value_readonly"},
+                        list_target_is_value=list_targets_are_value or abi_mode in {"value", "value_mut", "value_readonly"},
                     )
                 )
             else:
@@ -351,7 +351,7 @@ class CppTypeBridgeEmitter:
             if ttxt != "" and ttxt not in {"{}", "[]"}:
                 east_type_txt = ttxt
         east_type_txt = self.normalize_type_name(east_type_txt)
-        use_ref_first_lists = runtime_abi_mode not in {"value", "value_readonly"}
+        use_ref_first_lists = runtime_abi_mode not in {"value", "value_mut", "value_readonly"}
         return self._cpp_type_text(east_type_txt, pyobj_ref_lists=use_ref_first_lists)
 
     def _cpp_type_text(self, east_type: str, *, pyobj_ref_lists: bool = False) -> str:

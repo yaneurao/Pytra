@@ -1913,7 +1913,7 @@ class CppStatementEmitter:
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             if (
                 (not skip_self)
-                and arg_abi_mode not in {"value", "value_readonly"}
+                and arg_abi_mode not in {"value", "value_mut", "value_readonly"}
                 and list_model == "pyobj"
                 and self._is_pyobj_ref_first_list_type(t_norm)
             ):
