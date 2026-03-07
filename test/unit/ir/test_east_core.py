@@ -47,6 +47,60 @@ def f(x: float) -> float:
         self.assertEqual(len(funcs), 1)
         self.assertEqual(funcs[0].get("decorators"), ["extern"])
 
+    def test_top_level_abi_decorator_sets_runtime_abi_metadata(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi(args={"parts": "value_readonly"}, ret="value")
+def py_join(sep: str, parts: list[str]) -> str:
+    return sep
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "py_join"
+        ]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(
+            fn.get("decorators"),
+            ['abi(args={"parts": "value_readonly"}, ret="value")'],
+        )
+        self.assertEqual(
+            fn.get("meta", {}).get("runtime_abi_v1"),
+            {
+                "schema_version": 1,
+                "args": {"parts": "value_readonly"},
+                "ret": "value",
+            },
+        )
+
+    def test_method_level_abi_decorator_is_rejected(self) -> None:
+        src = """
+from pytra.std import abi
+
+class Box:
+    @abi(args={"xs": "value_readonly"})
+    def f(self, xs: list[int]) -> list[int]:
+        return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("@abi is not supported on methods", str(cm.exception))
+
+    def test_positional_abi_decorator_is_rejected(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi("value")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("abi decorator accepts keyword arguments only", str(cm.exception))
+
     def test_quoted_type_annotation_is_normalized(self) -> None:
         src = """
 def f(p: "Path", xs: "list[int]") -> "Path":

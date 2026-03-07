@@ -59,6 +59,7 @@ _SH_TYPE_ALIASES: dict[str, str] = {
     "Set": "set",
 }
 _SH_EMPTY_SPAN: dict[str, Any] = {}
+_SH_RUNTIME_ABI_MODES = {"default", "value", "value_readonly"}
 
 
 def _sh_default_type_aliases() -> dict[str, str]:
@@ -545,6 +546,226 @@ def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_t
             hint="Use True/False literal values.",
         )
     return out
+
+
+def _sh_is_abi_decorator(
+    decorator_text: str,
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> bool:
+    """decorator 文字列が `pytra.std.abi` を指すか判定する。"""
+    head, _args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+    if head == "":
+        return False
+    if head == "abi":
+        return True
+    if head.endswith(".abi"):
+        owner = head[:-len(".abi")]
+        if owner == "pytra.std":
+            return True
+        mod_name = import_module_bindings.get(owner, "")
+        return mod_name == "pytra.std"
+    ent = import_symbol_bindings.get(head)
+    if not isinstance(ent, dict):
+        return False
+    mod_name = str(ent.get("module", ""))
+    sym_name = str(ent.get("name", ""))
+    return mod_name == "pytra.std" and sym_name == "abi"
+
+
+def _sh_parse_runtime_abi_string_literal(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
+    raw = text.strip()
+    if len(raw) >= 2 and raw[0] in {"'", '"'} and raw[-1] == raw[0]:
+        return raw[1:-1]
+    raise _make_east_build_error(
+        kind="unsupported_syntax",
+        message=f"{field_name} must be a string literal: {raw}",
+        source_span=_sh_span(line_no, 0, len(line_text)),
+        hint="Use quoted string literals such as \"value\" or \"parts\".",
+    )
+
+
+def _sh_parse_runtime_abi_mode(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
+    mode = _sh_parse_runtime_abi_string_literal(text, line_no=line_no, line_text=line_text, field_name=field_name)
+    if mode in _SH_RUNTIME_ABI_MODES:
+        return mode
+    raise _make_east_build_error(
+        kind="unsupported_syntax",
+        message=f"unsupported abi mode for {field_name}: {mode}",
+        source_span=_sh_span(line_no, 0, len(line_text)),
+        hint='Use one of "default", "value", or "value_readonly".',
+    )
+
+
+def _sh_parse_runtime_abi_args_map(text: str, *, line_no: int, line_text: str) -> dict[str, str]:
+    raw = text.strip()
+    if raw in {"", "None"}:
+        return {}
+    if not (raw.startswith("{") and raw.endswith("}")):
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message=f"abi args must be a dict literal: {raw}",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint='Use args={"param": "value_readonly"} form.',
+        )
+    inner = raw[1:-1].strip()
+    if inner == "":
+        return {}
+    out: dict[str, str] = {}
+    for part_raw in _sh_split_top_commas(inner):
+        part = part_raw.strip()
+        if part == "":
+            continue
+        split = _sh_split_top_level_colon(part)
+        if split is None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"unsupported abi args entry: {part}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint='Use args={"param": "value"} entries only.',
+            )
+        key_txt, value_txt = split
+        key = _sh_parse_runtime_abi_string_literal(
+            key_txt,
+            line_no=line_no,
+            line_text=line_text,
+            field_name="abi args key",
+        )
+        if not _sh_is_identifier(key):
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"abi args key must be an identifier name: {key}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint='Use quoted parameter names such as "parts".',
+            )
+        if key in out:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"duplicate abi args entry: {key}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Specify each parameter at most once.",
+            )
+        out[key] = _sh_parse_runtime_abi_mode(
+            value_txt,
+            line_no=line_no,
+            line_text=line_text,
+            field_name=f"abi args[{key}]",
+        )
+    return out
+
+
+def _sh_parse_runtime_abi_decorator(
+    decorator_text: str,
+    *,
+    arg_order: list[str],
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+) -> dict[str, Any] | None:
+    if not _sh_is_abi_decorator(
+        decorator_text,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    ):
+        return None
+    _head, args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+    if args_txt == "":
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message="abi decorator requires keyword-only call form",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint='Use `@abi(args={"name": "value_readonly"}, ret="value")`.',
+        )
+    out_args: dict[str, str] = {}
+    out_ret = "default"
+    seen_keys: set[str] = set()
+    for part_raw in _sh_split_top_commas(args_txt):
+        part = part_raw.strip()
+        if part == "":
+            continue
+        split = _sh_split_top_level_assign(part)
+        if split is None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"abi decorator accepts keyword arguments only: {part}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint='Use `args=...` and `ret=...` keyword arguments only.',
+            )
+        key_txt, value_txt = split
+        key = key_txt.strip()
+        if key in seen_keys:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"duplicate abi decorator option: {key}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Specify each abi decorator option at most once.",
+            )
+        seen_keys.add(key)
+        if key == "args":
+            out_args = _sh_parse_runtime_abi_args_map(value_txt, line_no=line_no, line_text=line_text)
+            continue
+        if key == "ret":
+            out_ret = _sh_parse_runtime_abi_mode(
+                value_txt,
+                line_no=line_no,
+                line_text=line_text,
+                field_name="abi ret",
+            )
+            continue
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message=f"unsupported abi decorator option: {key}",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint='Supported keys are `args` and `ret` only.',
+        )
+    valid_args = set(arg_order)
+    for param_name in out_args.keys():
+        if param_name not in valid_args:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"abi decorator references unknown parameter: {param_name}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use only declared function parameter names in abi args.",
+            )
+    return {
+        "schema_version": 1,
+        "args": out_args,
+        "ret": out_ret,
+    }
+
+
+def _sh_collect_runtime_abi_metadata(
+    decorators: list[str],
+    *,
+    arg_order: list[str],
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+) -> dict[str, Any] | None:
+    runtime_abi_meta: dict[str, Any] | None = None
+    for decorator_text in decorators:
+        parsed = _sh_parse_runtime_abi_decorator(
+            decorator_text,
+            arg_order=arg_order,
+            import_module_bindings=import_module_bindings,
+            import_symbol_bindings=import_symbol_bindings,
+            line_no=line_no,
+            line_text=line_text,
+        )
+        if parsed is None:
+            continue
+        if runtime_abi_meta is not None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message="multiple abi decorators on one function are not supported",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use a single @abi(args=..., ret=...) decorator.",
+            )
+        runtime_abi_meta = parsed
+    return runtime_abi_meta
 
 
 def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
@@ -6024,6 +6245,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         )
             fn_decorators = list(pending_top_level_decorators)
             pending_top_level_decorators = []
+            runtime_abi_meta = _sh_collect_runtime_abi_metadata(
+                fn_decorators,
+                arg_order=arg_order,
+                import_module_bindings=import_module_bindings,
+                import_symbol_bindings=import_symbol_bindings,
+                line_no=i,
+                line_text=ln,
+            )
             item: dict[str, Any] = {
                 "kind": "FunctionDef",
                 "name": fn_name,
@@ -6045,6 +6274,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             }
             if len(fn_decorators) > 0:
                 item["decorators"] = fn_decorators
+            if runtime_abi_meta is not None:
+                item["meta"] = {"runtime_abi_v1": runtime_abi_meta}
             fn_returns[fn_name] = fn_ret_effective
             _SH_FN_RETURNS[fn_name] = fn_ret_effective
             if not first_item_attached:
@@ -6056,6 +6287,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             continue
 
         if len(pending_top_level_decorators) > 0:
+            for decorator_text in pending_top_level_decorators:
+                if _sh_is_abi_decorator(
+                    decorator_text,
+                    import_module_bindings=import_module_bindings,
+                    import_symbol_bindings=import_symbol_bindings,
+                ):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@abi is supported on top-level functions only",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Move @abi to a top-level runtime helper function definition.",
+                    )
             pending_top_level_decorators = []
         m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
         if m_import is not None:
@@ -6326,6 +6569,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
         cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
+            for decorator_text in pending_top_level_decorators:
+                if _sh_is_abi_decorator(
+                    decorator_text,
+                    import_module_bindings=import_module_bindings,
+                    import_symbol_bindings=import_symbol_bindings,
+                ):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@abi is not supported on class definitions",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use @abi on top-level runtime helper functions only.",
+                    )
             cls_name, base = cls_hdr
             base_name = base
             is_enum_base = base_name in {"Enum", "IntEnum", "IntFlag"}
@@ -6369,6 +6624,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 if bind == cls_indent + 4 and s2.startswith("@"):
                     dec_name = s2[1:].strip()
                     if dec_name != "":
+                        if _sh_is_abi_decorator(
+                            dec_name,
+                            import_module_bindings=import_module_bindings,
+                            import_symbol_bindings=import_symbol_bindings,
+                        ):
+                            raise _make_east_build_error(
+                                kind="unsupported_syntax",
+                                message="@abi is not supported on methods",
+                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                                hint="Use @abi on top-level runtime helper functions only.",
+                            )
                         pending_method_decorators.append(dec_name)
                     k += 1
                     continue
