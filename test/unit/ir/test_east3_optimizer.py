@@ -4,6 +4,7 @@ import copy
 import unittest
 
 from src.toolchain.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from src.toolchain.compiler.east_parts.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
 from src.toolchain.compiler.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
 from src.toolchain.compiler.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
 from src.toolchain.compiler.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
@@ -168,7 +169,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-LifetimeAnalysisPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-CppListValueLocalHintPass,-LifetimeAnalysisPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -186,6 +187,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
         self.assertFalse(by_name.get("TupleTargetDirectExpansionPass", True))
         self.assertFalse(by_name.get("NonEscapeInterproceduralPass", True))
+        self.assertFalse(by_name.get("CppListValueLocalHintPass", True))
         self.assertFalse(by_name.get("LifetimeAnalysisPass", True))
         self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
@@ -204,11 +206,84 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("DictStrKeyNormalizationPass", trace_text)
         self.assertIn("TupleTargetDirectExpansionPass", trace_text)
         self.assertIn("NonEscapeInterproceduralPass", trace_text)
+        self.assertIn("CppListValueLocalHintPass", trace_text)
         self.assertIn("LifetimeAnalysisPass", trace_text)
         self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
         self.assertIn("LoopInvariantHoistLitePass", trace_text)
         self.assertIn("StrengthReductionFloatLoopPass", trace_text)
+
+    def test_cpp_list_value_local_hint_pass_marks_safe_empty_typed_list_local(self) -> None:
+        doc = _module_doc()
+        doc["body"] = [
+            {
+                "kind": "FunctionDef",
+                "name": "collect",
+                "arg_order": ["n"],
+                "arg_types": {"n": "int64"},
+                "return_type": "list[int64]",
+                "body": [
+                    {
+                        "kind": "AnnAssign",
+                        "target": {"kind": "Name", "id": "xs"},
+                        "annotation": "list[int64]",
+                        "value": {"kind": "List", "elements": []},
+                    },
+                    {
+                        "kind": "Expr",
+                        "value": {
+                            "kind": "Call",
+                            "func": {
+                                "kind": "Attribute",
+                                "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                                "attr": "append",
+                            },
+                            "args": [_const_i(1)],
+                            "keywords": [],
+                        },
+                    },
+                    {"kind": "Return", "value": {"kind": "List", "elements": []}},
+                ],
+            }
+        ]
+
+        result = CppListValueLocalHintPass().run(doc, PassContext(opt_level=1, target_lang="cpp"))
+
+        self.assertTrue(result.changed)
+        meta = doc["body"][0].get("meta", {})
+        self.assertEqual(meta.get("cpp_value_list_locals_v1"), {"version": "1", "locals": ["xs"]})
+
+    def test_cpp_list_value_local_hint_pass_fail_closes_on_alias_escape(self) -> None:
+        doc = _module_doc()
+        doc["body"] = [
+            {
+                "kind": "FunctionDef",
+                "name": "leak",
+                "arg_order": [],
+                "arg_types": {},
+                "return_type": "None",
+                "body": [
+                    {
+                        "kind": "AnnAssign",
+                        "target": {"kind": "Name", "id": "xs"},
+                        "annotation": "list[int64]",
+                        "value": {"kind": "List", "elements": []},
+                    },
+                    {
+                        "kind": "Assign",
+                        "target": {"kind": "Name", "id": "ys"},
+                        "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                    },
+                    {"kind": "Pass"},
+                ],
+            }
+        ]
+
+        result = CppListValueLocalHintPass().run(doc, PassContext(opt_level=1, target_lang="cpp"))
+
+        self.assertFalse(result.changed)
+        meta = doc["body"][0].get("meta", {})
+        self.assertNotIn("cpp_value_list_locals_v1", meta)
 
     def test_noop_cast_cleanup_pass_removes_only_proven_noops(self) -> None:
         doc = _module_doc()

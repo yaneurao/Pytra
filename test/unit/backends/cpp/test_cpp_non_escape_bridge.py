@@ -103,6 +103,65 @@ class CppNonEscapeBridgeTest(unittest.TestCase):
         self.assertEqual(first.get("callee"), "g")
         self.assertEqual(first.get("resolved"), True)
 
+    def test_emitter_seeds_function_stack_list_locals_from_optimizer_hint(self) -> None:
+        doc = {
+            "kind": "Module",
+            "meta": {"non_escape_summary": {}},
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "meta": {"cpp_value_list_locals_v1": {"version": "1", "locals": ["xs"]}},
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "xs"},
+                            "annotation": "list[int64]",
+                            "value": {"kind": "List", "elements": []},
+                        }
+                    ],
+                }
+            ],
+        }
+
+        em = CppEmitter(doc, {}, emit_main=False)
+        em.cpp_list_model = "pyobj"
+        _ = em.transpile()
+
+        self.assertEqual(em.function_stack_list_locals_map.get("f"), ["xs"])
+
+    def test_emitter_ignores_stack_list_locals_without_optimizer_hint(self) -> None:
+        doc = {
+            "kind": "Module",
+            "meta": {"non_escape_summary": {}},
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "xs"},
+                            "annotation": "list[int64]",
+                            "value": {"kind": "List", "elements": []},
+                        }
+                    ],
+                }
+            ],
+        }
+
+        em = CppEmitter(doc, {}, emit_main=False)
+        em.cpp_list_model = "pyobj"
+        _ = em.transpile()
+
+        self.assertEqual(em.function_stack_list_locals_map.get("f"), [])
+
 
 if __name__ == "__main__":
     unittest.main()

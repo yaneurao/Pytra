@@ -142,9 +142,11 @@
 
 ##### 3. optimizer 限定
 
-- `src/backends/cpp/optimizer/*` には、現時点で list value-lowering 専用 pass は存在しない。
+- `src/toolchain/ir/east3_opt_passes/cpp_list_value_local_hint_pass.py`
+  - C++ target 限定で `FunctionDef.meta.cpp_value_list_locals_v1` を付与し、empty typed list local の value-lowering 候補を fail-closed で注記する正本 pass。
+- `src/backends/cpp/optimizer/*` には、引き続き list value-lowering 専用 pass は存在しない。
 - `src/backends/cpp/optimizer/passes/for_iter_mode_hint_pass.py` は反復 hint 専用であり、list value 化を担当していない。さらに `pyobj` mode では hint 付与を抑止している。
-- したがって、現状の value 縮退は optimizer 限定ではなく emitter 内に残っている暫定分岐であり、`_collect_stack_list_locals` / `_is_pyobj_forced_typed_list_type` は将来の optimizer pass へ移すまで「禁止側」として扱う。
+- したがって、value 縮退の責務境界は「common EAST3 optimizer が hint を付け、emitter は `cpp_value_list_locals_v1` を読むだけ」とする。emitter 自身が non-escape を再証明してはならない。
 
 ### Phase 2: runtime helper の主経路を `rc<list<T>>` に寄せる
 
@@ -220,7 +222,7 @@
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S4-01] `@extern` / `Any` / `object` 境界でだけ `list<T>` value adapter を挿入する規則を実装し、他経路から分離する。
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S4-02] ABI adapter 用 helper を整理し、`list<T>` を backend 内部正本として扱う経路をなくす。
 
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S5-01] optimizer 側で「証明できた list だけ value 化する」責務境界を実装し、correctness と optimization を分離する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S5-01] optimizer 側で「証明できた list だけ value 化する」責務境界を実装し、correctness と optimization を分離する。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S5-02] optimizer off / fail-closed 条件でも unit/parity が通ることを確認する。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S6-01] C++ unit 全体を再実行し、list ref-first 化後の非退行を確認する。
@@ -250,3 +252,6 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-01` では plain local value path は維持した。sample13 `candidates` のような block-local typed list は runtime alias 集合へは昇格させず `list<...>` のまま残し、`rc_list_copy_value(...)` は `@extern` / `Any` / `object` 境界と、Phase 5 で optimizer 責務へ閉じ込める暫定 value-local 経路だけに寄せる方針を固定した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-02` として、ABI adapter helper を `ref-first handle -> value list copy` の `_render_pyobj_value_list_copy_adapter(...)` と `ref-first handle -> list<T> arg` の `_render_pyobj_value_list_arg_adapter(...)` へ整理した。`stmt.py` の value-local copy、`module.py` の runtime module arg、`type_bridge.py` の known-function arg はこの 2 helper を通る構成へ揃え、旧 alias-specific 条件分岐の重複を削減した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-02` として、known-function path には `extern_function_names` を導入し、`@extern` function のときだけ `list<T>` target を value ABI として扱うようにした。これにより internal function は引き続き ref-first signature を正本としつつ、`@extern` / runtime module 境界では lvalue handle を `rc_list_ref(...)`、temporary handle を `rc_list_copy_value(...)` へ落とせるようになった。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` として、`toolchain/ir/east3_opt_passes/cpp_list_value_local_hint_pass.py` を追加し、C++ target に限って `FunctionDef.meta.cpp_value_list_locals_v1` を付与する common EAST3 optimizer pass を導入した。`cpp_emitter.py::_collect_stack_list_locals` はこの hint を読むだけの fail-closed helper へ縮退し、local non-escape の再証明ロジックを emitter から撤去した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` では `_collect_assigned_name_types(...)` の loop 再帰を追加し、optimizer hint を持たない block-local typed list は alias 集合に入り ref-first handle へ倒れるよう修正した。これにより sample13 `candidates` は `rc<list<tuple[...]>>` となり、`py_at(candidates, ...)` / `py_append(candidates, ...)` 正本を通る。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` の検証として `test_east3_optimizer.py`, `test_cpp_non_escape_bridge.py`, `test_py2cpp_codegen_issues.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_list_pyobj_model.py`, `test_cpp_type.py`, `tools/check_todo_priority.py` を実行し通過した。optimizer hint 単体、emitter bridge、sample12/sample13 の fail-closed/ref-first codegen expectation を更新して固定した。

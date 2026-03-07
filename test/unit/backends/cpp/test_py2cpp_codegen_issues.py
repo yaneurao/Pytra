@@ -617,13 +617,16 @@ def f() -> float:
             )
         )
         self.assertIn("rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});", cpp)
-        self.assertIn("list<::std::tuple<int64, int64, int64, int64>> candidates = {};", cpp)
+        self.assertIn(
+            "rc<list<::std::tuple<int64, int64, int64, int64>>> candidates = rc_list_from_value(list<::std::tuple<int64, int64, int64, int64>>{});",
+            cpp,
+        )
         self.assertNotIn("::std::tuple<int64, int64, int64, int64>(::std::make_tuple(", cpp)
         self.assertNotIn("::std::tuple<int64, int64>(::std::make_tuple(", cpp)
         self.assertIn("auto __idx_", cpp)
         self.assertIn("= (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);", cpp)
-        self.assertIn("::std::tuple<int64, int64, int64, int64> sel = candidates[__idx_", cpp)
-        self.assertNotIn("py_at(py_at(candidates, ", cpp)
+        self.assertIn("::std::tuple<int64, int64, int64, int64> sel = py_at(candidates, py_to<int64>(__idx_", cpp)
+        self.assertNotIn("candidates[__idx_", cpp)
         self.assertNotIn("int64(py_to<int64>(", cpp)
         self.assertNotIn("float64(py_to<float64>(", cpp)
         self.assertIn("int64 v = (py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) == 0 ? 255 : 40);", cpp)
@@ -1549,16 +1552,18 @@ def f() -> int:
         self.assertIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
         self.assertNotIn("py_repeat(make_object(list<int64>{0}), w)", cpp)
 
-    def test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation(self) -> None:
+    def test_pyobj_list_model_keeps_ref_first_list_when_call_target_param_cannot_prove_non_escape(self) -> None:
         sample_py = ROOT / "sample" / "py" / "12_sort_visualizer.py"
         east = load_east(sample_py)
         em = CppEmitter(east, {}, emit_main=False)
         em.cpp_list_model = "pyobj"
         cpp = em.transpile()
 
-        self.assertIn("list<int64> values = {};", cpp)
+        self.assertIn("rc<list<int64>> values = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("bytes render(const rc<list<int64>>& values, int64 w, int64 h) {", cpp)
-        self.assertIn("render(rc_list_from_value(values), w, h)", cpp)
+        self.assertIn("render(values, w, h)", cpp)
+        self.assertNotIn("list<int64> values = {};", cpp)
+        self.assertNotIn("render(rc_list_from_value(values), w, h)", cpp)
 
     def test_pyobj_list_model_tuple_subscript_uses_structured_binding_on_declare_unpack(self) -> None:
         src = """def f(stack: list[tuple[int, int]]) -> int:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from toolchain.ir.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
+from toolchain.ir.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
 from toolchain.ir.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
 from toolchain.ir.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
 from toolchain.ir.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
@@ -38,6 +39,7 @@ def build_default_passes() -> list[object]:
         DictStrKeyNormalizationPass(),
         TupleTargetDirectExpansionPass(),
         NonEscapeInterproceduralPass(),
+        CppListValueLocalHintPass(),
         LifetimeAnalysisPass(),
         LoopInvariantCastHoistPass(),
         UnusedLoopVarElisionPass(),
