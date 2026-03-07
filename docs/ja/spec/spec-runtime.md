@@ -121,6 +121,7 @@ C++ では追加で次を守る。
 - 生成コードの public include は `pytra/...` shim に固定する。
 - `generated/` / `native/` の実パス解決は runtime symbol index と build graph 導線が担い、emitter が ad-hoc に直書きしてはならない。
 - `--emit-runtime-cpp` は generated artifact を `src/runtime/cpp/generated/...` へ出力し、public forwarder を `src/runtime/cpp/pytra/...` へ同時生成する。`native/` は companion 実装の置き場であり、自動生成出力先ではない。
+- `runtime_symbol_index` / build graph は `pytra/...` shim を public primary header として優先しつつ、移行期間中は `generated/native` と legacy `*.gen/*.ext` artifact の両方を解決できなければならない。
 - 現行棚卸しでは `pytra/` shim は `std/` と `utils/` に存在し、`built_in/` は public include 面が必要になった時だけ生成する。
 
 ### 0.62 `core` と module companion の境界

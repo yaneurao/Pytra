@@ -38,7 +38,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             '\n'.join(
                 [
                     "#pragma once",
-                    '#include "runtime/cpp/std/math.gen.h"',
+                    '#include "runtime/cpp/pytra/std/math.h"',
                     "",
                 ]
             ),

@@ -53,12 +53,58 @@ def runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
     if len(indexed) > 0:
         return indexed
     out: list[Path] = []
+    rel: Path | None = None
+    try:
+        rel = header.resolve().relative_to(RUNTIME_ROOT.resolve())
+    except ValueError:
+        rel = None
+    if rel is not None:
+        parts = rel.parts
+        if len(parts) >= 3 and header.suffix == ".h":
+            layout = parts[0]
+            group = parts[1]
+            tail_path = Path(*parts[2:])
+            stem_path = tail_path.with_suffix("")
+            if layout == "pytra":
+                out.extend(_runtime_cpp_candidates_from_group_tail(group, stem_path))
+                return out
+            if layout == "generated":
+                out.extend(_runtime_cpp_candidates_from_generated_tail(group, stem_path))
+                return out
+            if layout == "native":
+                out.extend(_runtime_cpp_candidates_from_native_tail(group, stem_path))
+                return out
     name = header.name
     if name.endswith(".gen.h"):
         out.append(header.with_name(name[:-len(".gen.h")] + ".gen.cpp"))
         out.append(header.with_name(name[:-len(".gen.h")] + ".ext.cpp"))
     elif name.endswith(".ext.h"):
         out.append(header.with_name(name[:-len(".ext.h")] + ".ext.cpp"))
+    return out
+
+
+def _append_unique_path(out: list[Path], path: Path) -> None:
+    if path not in out:
+        out.append(path)
+
+
+def _runtime_cpp_candidates_from_group_tail(group: str, tail: Path) -> list[Path]:
+    out: list[Path] = []
+    _append_unique_path(out, RUNTIME_ROOT / "generated" / group / (tail.as_posix() + ".cpp"))
+    _append_unique_path(out, RUNTIME_ROOT / group / (tail.as_posix() + ".gen.cpp"))
+    _append_unique_path(out, RUNTIME_ROOT / "native" / group / (tail.as_posix() + ".cpp"))
+    _append_unique_path(out, RUNTIME_ROOT / group / (tail.as_posix() + ".ext.cpp"))
+    return out
+
+
+def _runtime_cpp_candidates_from_generated_tail(group: str, tail: Path) -> list[Path]:
+    return _runtime_cpp_candidates_from_group_tail(group, tail)
+
+
+def _runtime_cpp_candidates_from_native_tail(group: str, tail: Path) -> list[Path]:
+    out: list[Path] = []
+    _append_unique_path(out, RUNTIME_ROOT / "native" / group / (tail.as_posix() + ".cpp"))
+    _append_unique_path(out, RUNTIME_ROOT / group / (tail.as_posix() + ".ext.cpp"))
     return out
 
 

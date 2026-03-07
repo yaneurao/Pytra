@@ -970,7 +970,8 @@
             "src/runtime/cpp/std/glob.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/glob.h"
+            "src/runtime/cpp/pytra/std/glob.h",
+            "src/runtime/cpp/std/glob.gen.h"
           ]
         },
         "pytra.std.json": {
@@ -993,7 +994,8 @@
             "src/runtime/cpp/std/math.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/math.h"
+            "src/runtime/cpp/pytra/std/math.h",
+            "src/runtime/cpp/std/math.gen.h"
           ]
         },
         "pytra.std.os": {
@@ -1005,7 +1007,8 @@
             "src/runtime/cpp/std/os.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/os.h"
+            "src/runtime/cpp/pytra/std/os.h",
+            "src/runtime/cpp/std/os.gen.h"
           ]
         },
         "pytra.std.os_path": {
@@ -1017,7 +1020,8 @@
             "src/runtime/cpp/std/os_path.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/os_path.h"
+            "src/runtime/cpp/pytra/std/os_path.h",
+            "src/runtime/cpp/std/os_path.gen.h"
           ]
         },
         "pytra.std.pathlib": {
@@ -1028,7 +1032,8 @@
             "src/runtime/cpp/std/pathlib.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/pathlib.h"
+            "src/runtime/cpp/pytra/std/pathlib.h",
+            "src/runtime/cpp/std/pathlib.gen.h"
           ]
         },
         "pytra.std.random": {
@@ -1039,7 +1044,8 @@
             "src/runtime/cpp/std/random.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/random.h"
+            "src/runtime/cpp/pytra/std/random.h",
+            "src/runtime/cpp/std/random.gen.h"
           ]
         },
         "pytra.std.re": {
@@ -1050,7 +1056,8 @@
             "src/runtime/cpp/std/re.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/re.h"
+            "src/runtime/cpp/pytra/std/re.h",
+            "src/runtime/cpp/std/re.gen.h"
           ]
         },
         "pytra.std.sys": {
@@ -1074,7 +1081,8 @@
             "src/runtime/cpp/std/time.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/std/time.h"
+            "src/runtime/cpp/pytra/std/time.h",
+            "src/runtime/cpp/std/time.gen.h"
           ]
         },
         "pytra.std.timeit": {
@@ -1107,7 +1115,8 @@
             "src/runtime/cpp/utils/gif.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/utils/gif.h"
+            "src/runtime/cpp/pytra/utils/gif.h",
+            "src/runtime/cpp/utils/gif.gen.h"
           ]
         },
         "pytra.utils.png": {
@@ -1118,7 +1127,8 @@
             "src/runtime/cpp/utils/png.gen.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/pytra/utils/png.h"
+            "src/runtime/cpp/pytra/utils/png.h",
+            "src/runtime/cpp/utils/png.gen.h"
           ]
         }
       }

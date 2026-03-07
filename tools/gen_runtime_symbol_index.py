@@ -125,28 +125,57 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
     public_headers: list[str] = []
     compile_sources: list[str] = []
     companions: list[str] = []
+    seen_public: set[str] = set()
+    seen_sources: set[str] = set()
 
     gen_h = stem.with_name(stem.name + ".gen.h")
     gen_cpp = stem.with_name(stem.name + ".gen.cpp")
     ext_h = stem.with_name(stem.name + ".ext.h")
     ext_cpp = stem.with_name(stem.name + ".ext.cpp")
     public_shim = ROOT / "src" / "runtime" / lang / "pytra" / group / (tail + ".h")
+    generated_h = ROOT / "src" / "runtime" / lang / "generated" / group / (tail + ".h")
+    generated_cpp = ROOT / "src" / "runtime" / lang / "generated" / group / (tail + ".cpp")
+    native_h = ROOT / "src" / "runtime" / lang / "native" / group / (tail + ".h")
+    native_cpp = ROOT / "src" / "runtime" / lang / "native" / group / (tail + ".cpp")
+
+    def append_public(path: Path) -> None:
+        if not path.exists():
+            return
+        rel = _path_to_rel_txt(path)
+        if rel in seen_public:
+            return
+        seen_public.add(rel)
+        public_headers.append(rel)
+
+    def append_source(path: Path) -> None:
+        if not path.exists():
+            return
+        rel = _path_to_rel_txt(path)
+        if rel in seen_sources:
+            return
+        seen_sources.add(rel)
+        compile_sources.append(rel)
 
     if lang == "cpp" and public_shim.exists():
-        public_headers.append(_path_to_rel_txt(public_shim))
+        append_public(public_shim)
+        append_public(generated_h)
+        append_public(gen_h)
+        append_public(native_h)
+        append_public(ext_h)
     else:
-        if gen_h.exists():
-            public_headers.append(_path_to_rel_txt(gen_h))
-        if ext_h.exists():
-            public_headers.append(_path_to_rel_txt(ext_h))
-    if gen_cpp.exists():
-        compile_sources.append(_path_to_rel_txt(gen_cpp))
-    if ext_cpp.exists():
-        compile_sources.append(_path_to_rel_txt(ext_cpp))
+        append_public(generated_h)
+        append_public(gen_h)
+        append_public(native_h)
+        append_public(ext_h)
 
-    if gen_h.exists() or gen_cpp.exists():
+    append_source(generated_cpp)
+    append_source(gen_cpp)
+    append_source(native_cpp)
+    append_source(ext_cpp)
+
+    if generated_h.exists() or generated_cpp.exists() or gen_h.exists() or gen_cpp.exists():
         companions.append("gen")
-    if ext_h.exists() or ext_cpp.exists():
+    if native_h.exists() or native_cpp.exists() or ext_h.exists() or ext_cpp.exists():
         companions.append("ext")
     if len(public_headers) == 0 and len(compile_sources) == 0:
         return None

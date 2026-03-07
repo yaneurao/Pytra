@@ -162,6 +162,13 @@ def lookup_target_module_compile_sources(target: str, module_id: str) -> list[st
 
 def lookup_target_module_primary_header(target: str, module_id: str) -> str:
     headers = lookup_target_module_public_headers(target, module_id)
+    if target == "cpp":
+        for header in headers:
+            if header.startswith("src/runtime/cpp/pytra/"):
+                return header
+        for header in headers:
+            if header.startswith("src/runtime/cpp/generated/"):
+                return header
     for suffix in (".gen.h", ".ext.h", ".h"):
         for header in headers:
             if header.endswith(suffix):
