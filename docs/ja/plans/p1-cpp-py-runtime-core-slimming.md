@@ -179,7 +179,7 @@
 
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `native/core/py_runtime.h` の function/class/helper を棚卸しし、`native/core` / `generated/core` / `generated/built_in` / `native/built_in` / 保留へ分類する。
 - [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` / `spec-dev` に `py_runtime` の責務境界と「残してよいもの / 戻すべきもの」を明文化する。
-- [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] `src/pytra/built_in/*.py` 側へ戻す候補を決め、SoT 上の配置案を固定する。
+- [x] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] `src/pytra/built_in/*.py` 側へ戻す候補を決め、SoT 上の配置案を固定する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-02] `generated/core` または `generated/built_in` の emission lane に必要な generator / layout 契約を整備する。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-01] 文字列・collection 系の pure-Python built_in semantics を `native/core/py_runtime.h` から段階的に撤去し、正規の generated lane へ移す。
 - [ ] [ID: P1-CPP-PY-RUNTIME-SLIM-01-S3-02] `native/core/py_runtime.h` を low-level ABI / object / container / process glue 中心へ整理し、include 集約を最小化する。
@@ -217,6 +217,39 @@
 - いずれも pure Python semantics に見える一方で、`object` / `std::any` / `optional` / template specialization と結びついており、`generated/core` lane の設計なしに切り離すと ownership と include 依存を壊しやすい。
 - `generated/built_in` へ戻すべきか `native/core` に残すべきかは、`S1-02` の責務境界固定と `S2-02` の emission lane 設計後に再判定する。
 
+## 5.2 SoT 配置案
+
+`src/pytra/built_in/*.py` への戻し先は次で固定する。
+
+- [string_ops.py](../../../src/pytra/built_in/string_ops.py)
+  - `py_join`
+  - `py_split`
+  - `py_splitlines`
+  - `py_count`
+  - 既存の strip/find/replace family と同じ string semantics lane に寄せる。
+- [iter_ops.py](../../../src/pytra/built_in/iter_ops.py)
+  - `py_zip_object`
+  - `zip` は意味的には iterator helper なので、`reversed` / `enumerate` と同じ module に置く。
+- [sequence.py](../../../src/pytra/built_in/sequence.py)
+  - `py_sorted_list`
+  - `py_sorted_set`
+  - `py_sum_object`
+  - `py_min_scalar`
+  - `py_max_scalar`
+  - sequence algorithm と scalar aggregate を同じ lane に集約する。
+
+初期に戻さないもの:
+
+- typed generic `zip` / `sorted` / `sum` / `min` / `max`
+- object/`std::any` bridge を内包した `dict_get_*` family
+- `py_ord` / `py_chr` / `py_div` / `py_floordiv` / `py_mod`
+
+理由:
+
+- typed generic helper は、`runtime SoT linked-program integration` と `runtime helper generics` 計画を待ってから monomorphization 前提で戻した方が自然。
+- `object` / `std::any` bridge を伴う helper は low-level lane の設計なしに SoT へ戻すと ownership と ABI 境界が曖昧になる。
+- したがって `S3-01` の初回移行は、`string_ops.py` と object-specialized built_in helper を中心に進める。
+
 ## 6. リスク
 
 - `template` / `inline` 依存が強い helper は、単純に `.cpp` へ逃がせない。
@@ -232,3 +265,4 @@
 - 2026-03-08: runtime-abi decorator plan が完了し、`src/pytra/built_in/string_ops.py` の `py_join` は `@abi(args={"parts": "value_readonly"}, ret="value")` 付き pure Python SoT として generated C++ helper へ移行済みになった。`py_runtime` 縮退では同じ fixed-ABI helper lane を再利用できるため、`str.join` は blocker ではなく代表移行済みケースとして扱う。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-01] `src/runtime/cpp/native/core/py_runtime.h`（3267行）を family 単位で棚卸しし、low-level core / generated built_in 候補 / 保留へ分類した。`str::split` / `splitlines` / `count` / `join` と `zip` / `sorted` / `sum` / `py_min` / `py_max` は `generated/built_in` 候補として確定し、`generated/core` / `native/built_in` は現段階では即時確定 0 件とした。
 - 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S1-02] `spec-runtime` には `core/py_runtime.h` / `native/core/py_runtime.h` の責務境界、`generated/built_in` へ戻すべき pure helper、`generated/core` へ性急に逃がしてはいけない保留群を明記した。`spec-dev` には current C++ runtime path を `core` / `native` / `generated` / `pytra` の4層で書き直し、`py_runtime` が stable include surface であって built_in semantics の恒久置き場ではないことを追加した。
+- 2026-03-08: [ID: P1-CPP-PY-RUNTIME-SLIM-01-S2-01] SoT 上の戻し先を固定し、string family は `string_ops.py`、iterator helper は `iter_ops.py`、sequence/aggregate helper は `sequence.py` へ寄せる方針とした。typed generic helper は linked-program runtime integration / helper generics 計画を待ち、初回移行では object-specialized helper から着手する。
