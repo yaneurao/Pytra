@@ -1003,9 +1003,28 @@ static inline T py_to(const T& v) {
 }
 
 template <class T>
+struct py_is_list_type : ::std::false_type {};
+
+template <class T>
+struct py_is_list_type<list<T>> : ::std::true_type {
+    using item_type = T;
+};
+
+template <class T>
+struct py_is_list_type<rc<list<T>>> : ::std::true_type {
+    using item_type = T;
+};
+
+template <class T>
+static inline list<T> py_to_typed_list_from_object(const object& value, const char* ctx);
+
+template <class T>
 static inline T py_to(const object& v) {
     if constexpr (::std::is_same_v<T, object>) {
         return v;
+    } else if constexpr (py_is_list_type<T>::value && (!py_is_rc_list_handle<T>::value)) {
+        using item_type = typename py_is_list_type<T>::item_type;
+        return py_to_typed_list_from_object<item_type>(v, "py_to<object-list>");
     } else if constexpr (py_is_rc_list_handle<T>::value) {
         using item_type = typename py_is_rc_list_handle<T>::item_type;
         return obj_to_rc_list<item_type>(v);
@@ -1267,19 +1286,6 @@ static inline void py_append(rc<list<T>>& v, const U& item) {
 }
 
 template <class T>
-struct py_is_list_type : ::std::false_type {};
-
-template <class T>
-struct py_is_list_type<list<T>> : ::std::true_type {
-    using item_type = T;
-};
-
-template <class T>
-struct py_is_list_type<rc<list<T>>> : ::std::true_type {
-    using item_type = T;
-};
-
-template <class T>
 static inline list<T> py_copy_typed_list_from_object(const object& value, const char* ctx) {
     const list<object>* src = obj_to_list_ptr(value);
     if (src == nullptr) {
@@ -1299,7 +1305,7 @@ static inline list<T> py_copy_typed_list_from_object(const object& value, const 
 template <class T>
 static inline list<T> py_to_typed_list_from_object(
     const object& value,
-    const char* ctx = "py_to_typed_list_from_object") {
+    const char* ctx) {
     return py_copy_typed_list_from_object<T>(value, ctx);
 }
 

@@ -223,7 +223,7 @@
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S4-02] ABI adapter 用 helper を整理し、`list<T>` を backend 内部正本として扱う経路をなくす。
 
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S5-01] optimizer 側で「証明できた list だけ value 化する」責務境界を実装し、correctness と optimization を分離する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S5-02] optimizer off / fail-closed 条件でも unit/parity が通ることを確認する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S5-02] optimizer off / fail-closed 条件でも unit/parity が通ることを確認する。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S6-01] C++ unit 全体を再実行し、list ref-first 化後の非退行を確認する。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S6-02] fixture/sample parity を再実行し、artifact を含めて非退行を確認する。
@@ -255,3 +255,6 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` として、`toolchain/ir/east3_opt_passes/cpp_list_value_local_hint_pass.py` を追加し、C++ target に限って `FunctionDef.meta.cpp_value_list_locals_v1` を付与する common EAST3 optimizer pass を導入した。`cpp_emitter.py::_collect_stack_list_locals` はこの hint を読むだけの fail-closed helper へ縮退し、local non-escape の再証明ロジックを emitter から撤去した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` では `_collect_assigned_name_types(...)` の loop 再帰を追加し、optimizer hint を持たない block-local typed list は alias 集合に入り ref-first handle へ倒れるよう修正した。これにより sample13 `candidates` は `rc<list<tuple[...]>>` となり、`py_at(candidates, ...)` / `py_append(candidates, ...)` 正本を通る。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` の検証として `test_east3_optimizer.py`, `test_cpp_non_escape_bridge.py`, `test_py2cpp_codegen_issues.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_list_pyobj_model.py`, `test_cpp_type.py`, `tools/check_todo_priority.py` を実行し通過した。optimizer hint 単体、emitter bridge、sample12/sample13 の fail-closed/ref-first codegen expectation を更新して固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` として、optimizer off (`east3_opt_level=0`) でも safe local list が value 縮退しない regression を `test_py2cpp_codegen_issues.py` に追加し、`test_cpp_non_escape_bridge.py` には malformed `cpp_value_list_locals_v1` を emitter が無視する fail-closed test を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` では opt0 representative parity で露出した nested list 問題を修正した。`_render_pyobj_alias_list_value(...)` は object-returning list comprehension を `py_to<rc<list<T>>>(...)` 経由へ倒し、nested mutable subscript lvalue は `py_list_at_ref(py_at(...), ...)` を使うようにした。runtime 側も `py_to(const object&)` に plain `list<T>` 復元を追加し、nested typed list の object roundtrip を `test_cpp_runtime_iterable.py` で固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` の検証として `test_py2cpp_codegen_issues.py`, `test_cpp_non_escape_bridge.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py` を実行し通過した。representative parity は `tools/runtime_parity_check.py --targets cpp --case-root fixture --east3-opt-level 0 collections/list_alias_shared_mutation stdlib/os_glob_extended` と `tools/runtime_parity_check.py --targets cpp --case-root sample --east3-opt-level 0 08_langtons_ant 12_sort_visualizer 13_maze_generation_steps 18_mini_language_interpreter` を実行し、どちらも全件通過した。

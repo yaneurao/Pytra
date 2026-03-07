@@ -707,6 +707,13 @@ class CppEmitter(
             if rendered_trim.startswith("[&]() -> list<object> {"):
                 rewritten = rendered_expr.replace("[&]() -> list<object> {", f"[&]() -> {value_cpp_t} {{", 1)
                 rewritten = rewritten.replace("list<object> __out;", f"{value_cpp_t} __out;", 1)
+            value_t = self.normalize_type_name(self.get_expr_type(value_node))
+            if (
+                rewritten.startswith("[&]() -> object {")
+                or self.is_any_like_type(value_t)
+                or self._uses_pyobj_runtime_list_expr(value_node)
+            ):
+                return f"py_to<{handle_cpp_t}>({rewritten})"
             return f"rc_list_from_value({rewritten})"
 
         value_t = self.normalize_type_name(self.get_expr_type(value_node))
@@ -2006,6 +2013,11 @@ class CppEmitter(
             idx = self._coerce_dict_key_expr(node.get("value"), idx, node.get("slice"))
             return f"{val}[{idx}]"
         if self._uses_pyobj_ref_first_list_ops(node.get("value")):
+            if (
+                (not self._uses_pyobj_ref_first_list_lvalue_expr(node.get("value")))
+                and self._is_pyobj_value_model_list_type(self.normalize_type_name(val_ty))
+            ):
+                return f"py_list_at_ref({val}, py_to<int64>({idx}))"
             return f"py_at({val}, py_to<int64>({idx}))"
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):

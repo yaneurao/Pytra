@@ -127,6 +127,15 @@ int main() {
     assert(py_at(typed_from_any, 2) == 9);
     assert(py_is_list(typed_iter));
 
+    object nested_obj = make_object(list<list<int64>>{list<int64>{1, 2}, list<int64>{3, 4}});
+    list<list<int64>> nested_plain = py_to<list<list<int64>>>(nested_obj);
+    assert(nested_plain.size() == 2);
+    assert(nested_plain[0].size() == 2);
+    assert(nested_plain[0][1] == 2);
+    auto nested_rc = py_to<rc<list<list<int64>>>>(nested_obj);
+    assert(py_len(nested_rc) == 2);
+    assert(py_at(py_at(nested_rc, 1), 0) == 3);
+
     list<int64> plain = list<int64>{4, 5, 6};
     list<int64> plain_slice = py_slice(plain, 0, 2);
     assert(plain_slice.size() == 2);

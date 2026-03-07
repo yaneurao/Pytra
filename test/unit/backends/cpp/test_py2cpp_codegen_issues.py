@@ -1521,7 +1521,7 @@ def f() -> int:
         self.assertIn("int64 sink(const rc<list<int64>>& xs) {", cpp)
         self.assertIn("return sink(xs);", cpp)
 
-    def test_pyobj_list_model_nested_subscript_assign_lowers_to_py_set_at(self) -> None:
+    def test_pyobj_list_model_nested_subscript_assign_uses_mutable_inner_list_ref(self) -> None:
         src = """def paint(grid: list[list[int]], x: int, y: int) -> None:
     grid[y][x] = 1
 """
@@ -1534,7 +1534,7 @@ def f() -> int:
             cpp = em.transpile()
 
         self.assertIn("void paint(rc<list<list<int64>>>& grid, int64 x, int64 y) {", cpp)
-        self.assertIn("py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;", cpp)
+        self.assertIn("py_list_at_ref(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;", cpp)
         self.assertNotIn("py_set_at(", cpp)
 
     def test_pyobj_list_model_list_repeat_unboxes_to_value_list_before_py_repeat(self) -> None:
@@ -1670,6 +1670,49 @@ def f() -> str:
         self.assertIn("int64 head = xs[0];", cpp)
         self.assertNotIn("py_append(xs", cpp)
         self.assertNotIn("py_at(xs", cpp)
+
+    def test_pyobj_list_model_optimizer_off_keeps_safe_local_list_ref_first(self) -> None:
+        src = """def f() -> int:
+    xs: list[int] = []
+    xs.append(1)
+    xs.append(2)
+    head: int = xs[0]
+    return head + len(xs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_stack_local_list_opt0.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, east3_opt_level="0")
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
+        self.assertIn("py_append(xs, 1);", cpp)
+        self.assertIn("py_append(xs, 2);", cpp)
+        self.assertIn("int64 head = py_at(xs, py_to<int64>(0));", cpp)
+        self.assertNotIn("list<int64> xs = {};", cpp)
+        self.assertNotIn("xs.append(int64(1));", cpp)
+        self.assertNotIn("int64 head = xs[0];", cpp)
+
+    def test_pyobj_list_model_optimizer_off_keeps_nested_grid_ref_first_and_mutable(self) -> None:
+        src = """def paint(w: int, h: int, x: int, y: int) -> int:
+    grid: list[list[int]] = [[0] * w for _ in range(h)]
+    grid[y][x] = 1
+    return grid[y][x]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pyobj_nested_grid_opt0.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, east3_opt_level="0")
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("rc<list<list<int64>>> grid = py_to<rc<list<list<int64>>>>([&]() -> object {", cpp)
+        self.assertIn("py_list_at_ref(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;", cpp)
+        self.assertIn("return py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x));", cpp)
+        self.assertNotIn("rc_list_from_value([&]() -> object {", cpp)
 
     def test_pyobj_list_model_keeps_runtime_path_when_local_list_escapes(self) -> None:
         src = """def sink(xs: list[int]) -> int:
