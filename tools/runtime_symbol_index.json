@@ -12,19 +12,23 @@
       "symbols": {
         "py_contains_dict_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_contains_dict_object"
         },
         "py_contains_list_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_contains_list_object"
         },
         "py_contains_set_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_contains_set_object"
         },
         "py_contains_str_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_contains_str_object"
         }
       }
     },
@@ -34,11 +38,13 @@
       "symbols": {
         "py_enumerate_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_enumerate_object"
         },
         "py_reversed_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_reversed_object"
         }
       }
     },
@@ -48,11 +54,13 @@
       "symbols": {
         "py_all": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_all"
         },
         "py_any": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_any"
         }
       }
     },
@@ -62,11 +70,13 @@
       "symbols": {
         "py_range": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_range"
         },
         "py_repeat": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_repeat"
         }
       }
     },
@@ -76,67 +86,83 @@
       "symbols": {
         "_contains_char": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._contains_char"
         },
         "_is_space": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_space"
         },
         "_normalize_index": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._normalize_index"
         },
         "py_endswith": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_endswith"
         },
         "py_find": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_find"
         },
         "py_find_window": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_find_window"
         },
         "py_lstrip": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_lstrip"
         },
         "py_lstrip_chars": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_lstrip_chars"
         },
         "py_replace": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_replace"
         },
         "py_rfind": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_rfind"
         },
         "py_rfind_window": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_rfind_window"
         },
         "py_rstrip": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_rstrip"
         },
         "py_rstrip_chars": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_rstrip_chars"
         },
         "py_startswith": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_startswith"
         },
         "py_strip": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_strip"
         },
         "py_strip_chars": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_strip_chars"
         }
       }
     },
@@ -144,137 +170,205 @@
       "runtime_group": "built_in",
       "source_py": "src/pytra/built_in/type_id.py",
       "symbols": {
+        "_TYPE_BASE": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_BASE"
+        },
+        "_TYPE_CHILDREN": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_CHILDREN"
+        },
+        "_TYPE_IDS": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_IDS"
+        },
+        "_TYPE_MAX": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_MAX"
+        },
+        "_TYPE_MIN": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_MIN"
+        },
+        "_TYPE_ORDER": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_ORDER"
+        },
+        "_TYPE_STATE": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._TYPE_STATE"
+        },
         "_assign_type_ranges_dfs": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._assign_type_ranges_dfs"
         },
         "_collect_root_type_ids": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._collect_root_type_ids"
         },
         "_contains_int": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._contains_int"
         },
         "_copy_int_list": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._copy_int_list"
         },
         "_ensure_builtins": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._ensure_builtins"
         },
         "_ensure_type_ranges": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._ensure_type_ranges"
         },
         "_is_type_ranges_dirty": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_type_ranges_dirty"
         },
         "_make_int_list_0": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._make_int_list_0"
         },
         "_make_int_list_1": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._make_int_list_1"
         },
         "_mark_type_ranges_clean": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._mark_type_ranges_clean"
         },
         "_mark_type_ranges_dirty": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._mark_type_ranges_dirty"
         },
         "_normalize_base_type_id": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._normalize_base_type_id"
         },
         "_py_reset_type_registry_for_test": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._py_reset_type_registry_for_test"
         },
         "_recompute_type_ranges": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._recompute_type_ranges"
         },
         "_register_type_node": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._register_type_node"
         },
         "_sorted_child_type_ids": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._sorted_child_type_ids"
         },
         "_sorted_ints": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._sorted_ints"
         },
         "_tid_bool": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_bool"
         },
         "_tid_dict": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_dict"
         },
         "_tid_float": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_float"
         },
         "_tid_int": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_int"
         },
         "_tid_list": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_list"
         },
         "_tid_none": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_none"
         },
         "_tid_object": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_object"
         },
         "_tid_set": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_set"
         },
         "_tid_str": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_str"
         },
         "_tid_user_base": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._tid_user_base"
         },
         "_try_runtime_tagged_type_id": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._try_runtime_tagged_type_id"
         },
         "py_tid_is_subtype": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_tid_is_subtype"
         },
         "py_tid_isinstance": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_tid_isinstance"
         },
         "py_tid_issubclass": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_tid_issubclass"
         },
         "py_tid_register_class_type": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_tid_register_class_type"
         },
         "py_tid_runtime_type_id": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_tid_runtime_type_id"
         }
       }
     },
@@ -334,7 +428,8 @@
       "symbols": {
         "extern": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.extern"
         }
       }
     },
@@ -344,15 +439,18 @@
       "symbols": {
         "ArgumentParser": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.ArgumentParser"
         },
         "Namespace": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.Namespace"
         },
         "_ArgSpec": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol._ArgSpec"
         }
       }
     },
@@ -362,19 +460,23 @@
       "symbols": {
         "Enum": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.Enum"
         },
         "EnumMeta": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.EnumMeta"
         },
         "IntEnum": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.IntEnum"
         },
         "IntFlag": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.IntFlag"
         }
       }
     },
@@ -384,7 +486,8 @@
       "symbols": {
         "glob": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.glob"
         }
       }
     },
@@ -392,53 +495,80 @@
       "runtime_group": "std",
       "source_py": "src/pytra/std/json.py",
       "symbols": {
+        "_COMMA_NL": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._COMMA_NL"
+        },
+        "_EMPTY": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._EMPTY"
+        },
+        "_HEX_DIGITS": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._HEX_DIGITS"
+        },
         "_JsonParser": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol._JsonParser"
         },
         "_dump_json_dict": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._dump_json_dict"
         },
         "_dump_json_list": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._dump_json_list"
         },
         "_dump_json_value": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._dump_json_value"
         },
         "_escape_str": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._escape_str"
         },
         "_hex4": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._hex4"
         },
         "_hex_value": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._hex_value"
         },
         "_int_from_hex4": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._int_from_hex4"
         },
         "_is_digit": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_digit"
         },
         "_is_ws": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_ws"
         },
         "dumps": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.dumps"
         },
         "loads": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.loads"
         }
       }
     },
@@ -448,47 +578,68 @@
       "symbols": {
         "ceil": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.ceil"
         },
         "cos": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.cos"
+        },
+        "e": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.e"
         },
         "exp": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.exp"
         },
         "fabs": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.fabs"
         },
         "floor": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.floor"
         },
         "log": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.log"
         },
         "log10": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.log10"
+        },
+        "pi": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.pi"
         },
         "pow": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.pow"
         },
         "sin": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.sin"
         },
         "sqrt": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.sqrt"
         },
         "tan": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.tan"
         }
       }
     },
@@ -498,15 +649,18 @@
       "symbols": {
         "getcwd": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.getcwd"
         },
         "makedirs": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.makedirs"
         },
         "mkdir": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.mkdir"
         }
       }
     },
@@ -516,27 +670,33 @@
       "symbols": {
         "abspath": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.abspath"
         },
         "basename": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.basename"
         },
         "dirname": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.dirname"
         },
         "exists": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.exists"
         },
         "join": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.join"
         },
         "splitext": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.splitext"
         }
       }
     },
@@ -546,7 +706,8 @@
       "symbols": {
         "Path": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.Path"
         }
       }
     },
@@ -554,33 +715,55 @@
       "runtime_group": "std",
       "source_py": "src/pytra/std/random.py",
       "symbols": {
+        "_gauss_has_spare": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._gauss_has_spare"
+        },
+        "_gauss_spare": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._gauss_spare"
+        },
         "_next_u31": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._next_u31"
+        },
+        "_state_box": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol._state_box"
         },
         "choices": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.choices"
         },
         "gauss": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.gauss"
         },
         "randint": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.randint"
         },
         "random": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.random"
         },
         "seed": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.seed"
         },
         "shuffle": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.shuffle"
         }
       }
     },
@@ -590,51 +773,63 @@
       "symbols": {
         "Match": {
           "dispatch": "ctor",
-          "kind": "class"
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.Match"
         },
         "S": {
           "dispatch": "value",
-          "kind": "const"
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.S"
         },
         "_is_alnum_or_underscore": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_alnum_or_underscore"
         },
         "_is_dotted_ident": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_dotted_ident"
         },
         "_is_ident": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_ident"
         },
         "_is_space_ch": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._is_space_ch"
         },
         "_skip_spaces": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._skip_spaces"
         },
         "_strip_suffix_colon": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._strip_suffix_colon"
         },
         "group": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.group"
         },
         "match": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.match"
         },
         "strip_group": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.strip_group"
         },
         "sub": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.sub"
         }
       }
     },
@@ -642,25 +837,50 @@
       "runtime_group": "std",
       "source_py": "src/pytra/std/sys.py",
       "symbols": {
+        "argv": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.argv"
+        },
         "exit": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.exit"
+        },
+        "path": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.path"
         },
         "set_argv": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.set_argv"
         },
         "set_path": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.set_path"
+        },
+        "stderr": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.stderr"
+        },
+        "stdout": {
+          "dispatch": "value",
+          "kind": "const",
+          "semantic_tag": "stdlib.symbol.stdout"
         },
         "write_stderr": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.write_stderr"
         },
         "write_stdout": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.write_stdout"
         }
       }
     },
@@ -670,7 +890,8 @@
       "symbols": {
         "perf_counter": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.perf_counter"
         }
       }
     },
@@ -680,7 +901,8 @@
       "symbols": {
         "default_timer": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.default_timer"
         }
       }
     },
@@ -695,23 +917,28 @@
       "symbols": {
         "_eq_any": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._eq_any"
         },
         "py_assert_all": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_assert_all"
         },
         "py_assert_eq": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_assert_eq"
         },
         "py_assert_stdout": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_assert_stdout"
         },
         "py_assert_true": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_assert_true"
         }
       }
     },
@@ -721,23 +948,28 @@
       "symbols": {
         "_gif_append_list": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._gif_append_list"
         },
         "_gif_u16le": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._gif_u16le"
         },
         "_lzw_encode": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._lzw_encode"
         },
         "grayscale_palette": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.grayscale_palette"
         },
         "save_gif": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.save_gif"
         }
       }
     },
@@ -747,35 +979,43 @@
       "symbols": {
         "_adler32": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._adler32"
         },
         "_chunk": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._chunk"
         },
         "_crc32": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._crc32"
         },
         "_png_append_list": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._png_append_list"
         },
         "_png_u16le": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._png_u16le"
         },
         "_png_u32be": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._png_u32be"
         },
         "_zlib_deflate_store": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._zlib_deflate_store"
         },
         "write_rgb_png": {
           "dispatch": "function",
-          "kind": "function"
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.write_rgb_png"
         }
       }
     }

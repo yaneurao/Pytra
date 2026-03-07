@@ -60,6 +60,59 @@ def lookup_runtime_module_symbols(module_id: str) -> dict[str, Any]:
     return symbols
 
 
+def lookup_runtime_symbol_doc(module_id: str, symbol_name: str) -> dict[str, Any]:
+    mod = canonical_runtime_module_id(module_id.strip())
+    if mod == "":
+        return {}
+    symbols = lookup_runtime_module_symbols(mod)
+    symbol = symbols.get(symbol_name.strip())
+    if not isinstance(symbol, dict):
+        return {}
+    return symbol
+
+
+def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: str) -> dict[str, Any]:
+    source_module_id = module_id.strip()
+    source_export_name = export_name.strip()
+    source_binding_kind = binding_kind.strip()
+    runtime_module_id = resolve_import_binding_runtime_module(
+        source_module_id,
+        source_export_name,
+        source_binding_kind,
+    )
+    if runtime_module_id == "":
+        return {}
+    out: dict[str, Any] = {
+        "source_module_id": source_module_id,
+        "source_export_name": source_export_name,
+        "source_binding_kind": source_binding_kind,
+        "runtime_module_id": runtime_module_id,
+        "runtime_group": lookup_runtime_module_group(runtime_module_id),
+    }
+    if source_binding_kind == "module":
+        out["resolved_binding_kind"] = "module"
+        return out
+    child_module = canonical_runtime_module_id(source_module_id)
+    if child_module != "" and runtime_module_id != child_module:
+        out["resolved_binding_kind"] = "module"
+        return out
+    symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, source_export_name)
+    if len(symbol_doc) == 0:
+        return out
+    out["resolved_binding_kind"] = "symbol"
+    out["runtime_symbol"] = source_export_name
+    kind = symbol_doc.get("kind")
+    if isinstance(kind, str) and kind != "":
+        out["runtime_symbol_kind"] = kind
+    dispatch = symbol_doc.get("dispatch")
+    if isinstance(dispatch, str) and dispatch != "":
+        out["runtime_symbol_dispatch"] = dispatch
+    semantic_tag = symbol_doc.get("semantic_tag")
+    if isinstance(semantic_tag, str) and semantic_tag != "":
+        out["runtime_semantic_tag"] = semantic_tag
+    return out
+
+
 def runtime_module_exists(module_id: str) -> bool:
     return len(lookup_runtime_module_doc(module_id)) > 0
 

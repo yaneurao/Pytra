@@ -27,6 +27,7 @@ SOURCE_ROOTS: tuple[tuple[str, str, Path], ...] = (
 )
 TOP_LEVEL_CLASS_RE = re.compile(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)\b")
 TOP_LEVEL_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=")
+TOP_LEVEL_ANN_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*.+?=\s*")
 
 
 def _path_to_rel_txt(path: Path) -> str:
@@ -99,7 +100,27 @@ def _scan_top_level_symbols(path: Path) -> dict[str, dict[str, str]]:
             name = assign_m.group(1)
             if name not in out:
                 out[name] = {"kind": "const", "dispatch": "value"}
+            continue
+        ann_assign_m = TOP_LEVEL_ANN_ASSIGN_RE.match(stripped)
+        if ann_assign_m is not None:
+            name = ann_assign_m.group(1)
+            if name not in out:
+                out[name] = {"kind": "const", "dispatch": "value"}
     return out
+
+
+def _annotate_runtime_symbol_semantic_tags(symbols: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
+    for name, symbol_doc in symbols.items():
+        kind = str(symbol_doc.get("kind", "")).strip()
+        dispatch = str(symbol_doc.get("dispatch", "")).strip()
+        semantic_tag = ""
+        if kind == "function" or dispatch == "function":
+            semantic_tag = "stdlib.fn." + name
+        elif kind in {"class", "const"} or dispatch in {"ctor", "value"}:
+            semantic_tag = "stdlib.symbol." + name
+        if semantic_tag != "":
+            symbol_doc["semantic_tag"] = semantic_tag
+    return symbols
 
 
 def _modern_runtime_langs() -> list[str]:
@@ -364,7 +385,7 @@ def build_runtime_symbol_index() -> dict[str, Any]:
             modules[module_id] = {
                 "source_py": _path_to_rel_txt(path),
                 "runtime_group": group,
-                "symbols": _scan_top_level_symbols(path),
+                "symbols": _annotate_runtime_symbol_semantic_tags(_scan_top_level_symbols(path)),
             }
             for lang in langs:
                 artifact = _target_module_artifacts(lang, group, tail)

@@ -1846,6 +1846,46 @@ from pytra.std.json import loads as json_loads
             },
             refs,
         )
+
+    def test_import_resolution_bindings_carry_canonical_runtime_metadata(self) -> None:
+        src = """import math as m
+from math import pi, sqrt
+from pytra.std import json
+from pytra.utils.gif import save_gif
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "import_resolution.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+        meta_obj = east.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        resolution_obj = meta.get("import_resolution")
+        resolution = resolution_obj if isinstance(resolution_obj, dict) else {}
+        bindings_obj = resolution.get("bindings")
+        bindings = bindings_obj if isinstance(bindings_obj, list) else []
+
+        by_local: dict[str, dict[str, object]] = {}
+        for ent in bindings:
+            if isinstance(ent, dict) and isinstance(ent.get("local_name"), str):
+                by_local[str(ent.get("local_name"))] = ent
+
+        self.assertEqual(by_local["m"].get("runtime_module_id"), "pytra.std.math")
+        self.assertEqual(by_local["m"].get("resolved_binding_kind"), "module")
+        self.assertEqual(by_local["pi"].get("runtime_module_id"), "pytra.std.math")
+        self.assertEqual(by_local["pi"].get("runtime_symbol"), "pi")
+        self.assertEqual(by_local["pi"].get("runtime_symbol_kind"), "const")
+        self.assertEqual(by_local["pi"].get("runtime_symbol_dispatch"), "value")
+        self.assertEqual(by_local["pi"].get("runtime_semantic_tag"), "stdlib.symbol.pi")
+        self.assertEqual(by_local["sqrt"].get("runtime_symbol"), "sqrt")
+        self.assertEqual(by_local["sqrt"].get("runtime_symbol_kind"), "function")
+        self.assertEqual(by_local["sqrt"].get("runtime_symbol_dispatch"), "function")
+        self.assertEqual(by_local["sqrt"].get("runtime_semantic_tag"), "stdlib.fn.sqrt")
+        self.assertEqual(by_local["json"].get("runtime_module_id"), "pytra.std.json")
+        self.assertEqual(by_local["json"].get("resolved_binding_kind"), "module")
+        self.assertEqual(by_local["save_gif"].get("runtime_module_id"), "pytra.utils.gif")
+        self.assertEqual(by_local["save_gif"].get("runtime_symbol"), "save_gif")
+        self.assertEqual(by_local["save_gif"].get("runtime_symbol_kind"), "function")
+        self.assertEqual(by_local["save_gif"].get("runtime_semantic_tag"), "stdlib.fn.save_gif")
         import_resolution_obj = meta.get("import_resolution")
         import_resolution = import_resolution_obj if isinstance(import_resolution_obj, dict) else {}
         self.assertEqual(import_resolution.get("schema_version"), 1)
