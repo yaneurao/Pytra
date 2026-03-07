@@ -873,10 +873,10 @@
         },
         "pytra.core.gc": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/core/gc.ext.cpp"
+            "src/runtime/cpp/native/core/gc.ext.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/core/gc.ext.h"
@@ -884,10 +884,10 @@
         },
         "pytra.core.io": {
           "companions": [
-            "ext"
+            "native"
           ],
           "compile_sources": [
-            "src/runtime/cpp/core/io.ext.cpp"
+            "src/runtime/cpp/native/core/io.ext.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/core/io.ext.h"

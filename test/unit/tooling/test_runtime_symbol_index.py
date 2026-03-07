@@ -101,6 +101,20 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(core_dict.get("companions"), ["ext"])
         self.assertIn("src/runtime/cpp/core/dict.ext.h", core_dict.get("public_headers", []))
 
+        core_gc = cpp_modules.get("pytra.core.gc")
+        self.assertIsInstance(core_gc, dict)
+        self.assertEqual(core_gc.get("companions"), ["native"])
+        self.assertIn("src/runtime/cpp/core/gc.ext.h", core_gc.get("public_headers", []))
+        self.assertIn("src/runtime/cpp/native/core/gc.ext.cpp", core_gc.get("compile_sources", []))
+        self.assertNotIn("src/runtime/cpp/core/gc.ext.cpp", core_gc.get("compile_sources", []))
+
+        core_io = cpp_modules.get("pytra.core.io")
+        self.assertIsInstance(core_io, dict)
+        self.assertEqual(core_io.get("companions"), ["native"])
+        self.assertIn("src/runtime/cpp/core/io.ext.h", core_io.get("public_headers", []))
+        self.assertIn("src/runtime/cpp/native/core/io.ext.cpp", core_io.get("compile_sources", []))
+        self.assertNotIn("src/runtime/cpp/core/io.ext.cpp", core_io.get("compile_sources", []))
+
     def test_check_mode_detects_stale_file(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             out = Path(td) / "runtime_symbol_index.json"

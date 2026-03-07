@@ -162,10 +162,10 @@ Use only the target language section you need.
 ```bash
 python src/py2x.py --target cpp test/fixtures/collections/iterable.py -o test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
-  src/runtime/cpp/utils/png.gen.cpp src/runtime/cpp/utils/gif.gen.cpp \
-  src/runtime/cpp/std/math.ext.cpp src/runtime/cpp/std/time.ext.cpp src/runtime/cpp/std/pathlib.gen.cpp \
-  src/runtime/cpp/built_in/type_id.gen.cpp \
-  src/runtime/cpp/core/gc.ext.cpp src/runtime/cpp/core/io.ext.cpp \
+  src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
+  src/runtime/cpp/native/std/math.cpp src/runtime/cpp/native/std/time.cpp src/runtime/cpp/generated/std/pathlib.cpp \
+  src/runtime/cpp/generated/built_in/type_id.cpp \
+  src/runtime/cpp/native/core/gc.ext.cpp src/runtime/cpp/native/core/io.ext.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
@@ -175,15 +175,15 @@ Notes:
 - Imports in Python input are limited to `src/pytra/` modules and user modules (example: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`, `from pytra.utils.assertions import py_assert_eq`).
 - Prepare target-language runtime implementations for imported `pytra` modules under `src/runtime/cpp/`.
 - GC uses `base/gc`.
-- `src/runtime/cpp/` is split by responsibility into `core/`, `built_in/`, `std/`, and `utils/`.
-- Auto-generated runtime files use `*.gen.h` / `*.gen.cpp`. Handwritten native complements use `*.ext.h` / `*.ext.cpp`.
+- `src/runtime/cpp/` is split by responsibility into `core/`, `generated/`, `native/`, and `pytra/`.
+- Generated artifacts live under `src/runtime/cpp/generated/`, C++-specific companions live under `src/runtime/cpp/native/`, and public include shims live under `src/runtime/cpp/pytra/`. The low-level core include surface remains under `src/runtime/cpp/core/`.
 - `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py -o ... --header-output ...` generates `*.cpp` and `*.h` together.
-- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` writes directly to default runtime paths under `src/runtime/cpp/<tree>/...` (`<tree>` = `built_in` / `std` / `utils`).
-- Example: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/built_in/type_id.gen.cpp` and `src/runtime/cpp/built_in/type_id.gen.h`.
-- Example: `src/pytra/std/math.py` is header-only, so it emits `src/runtime/cpp/std/math.gen.h`, while the native implementation stays in `src/runtime/cpp/std/math.ext.cpp`.
+- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/<tree>/...` and public shims to `src/runtime/cpp/pytra/<tree>/...` (`<tree>` = `built_in` / `std` / `utils`).
+- Example: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/generated/built_in/type_id.cpp` and `src/runtime/cpp/generated/built_in/type_id.h`, with the matching public shim at `src/runtime/cpp/pytra/built_in/type_id.h`.
+- Example: `src/pytra/std/math.py` is header-only, so it emits `src/runtime/cpp/generated/std/math.h`, while the native implementation stays in `src/runtime/cpp/native/std/math.cpp`.
 - `src/pytra/utils/png.py` and `src/pytra/utils/gif.py` are generated with the bridge style, with type-conversion wrappers around runtime public APIs.
 - `src/pytra/std/json.py` and `src/pytra/utils/assertions.py` also generate `.h/.cpp`.
-- Missing native processing should be complemented in the matching `.ext.*` file (example: `src/runtime/cpp/std/math.ext.cpp`).
+- Missing native processing should be complemented in the matching `src/runtime/cpp/native/...` file (example: `src/runtime/cpp/native/std/math.cpp`).
 - `png.write_rgb_png(...)` always outputs PNG (PPM output is removed).
 - Use `python src/py2x.py --target cpp INPUT.py --dump-deps` to inspect import dependencies (`modules/symbols` and `graph`).
 - The `pytra` namespace is reserved. `pytra.py` or `pytra/__init__.py` cannot exist in the input file directory.
@@ -224,7 +224,7 @@ Examples:
 
 ### Image Runtime Parity Check (Python source of truth vs C++)
 
-Run the following to check whether outputs from `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` match outputs through `src/runtime/cpp/utils/png.gen.cpp` / `src/runtime/cpp/utils/gif.gen.cpp` (bridge).
+Run the following to check whether outputs from `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` match outputs through `src/runtime/cpp/generated/utils/png.cpp` / `src/runtime/cpp/generated/utils/gif.cpp` (bridge).
 
 ```bash
 python3 tools/verify_image_runtime_parity.py
@@ -413,9 +413,9 @@ python src/py2x.py --target cpp test/transpile/east/01_mandelbrot.json -o test/t
 
 # 3) Compile and run
 g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
-  src/runtime/cpp/utils/png.gen.cpp src/runtime/cpp/utils/gif.gen.cpp \
-  src/runtime/cpp/built_in/type_id.gen.cpp \
-  src/runtime/cpp/core/gc.ext.cpp src/runtime/cpp/core/io.ext.cpp \
+  src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
+  src/runtime/cpp/generated/built_in/type_id.cpp \
+  src/runtime/cpp/native/core/gc.ext.cpp src/runtime/cpp/native/core/io.ext.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```

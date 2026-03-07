@@ -15,8 +15,8 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "15"))
 
 CPP_RUNTIME_SRCS = [
-    "src/runtime/cpp/core/gc.ext.cpp",
-    "src/runtime/cpp/core/io.ext.cpp",
+    "src/runtime/cpp/native/core/gc.ext.cpp",
+    "src/runtime/cpp/native/core/io.ext.cpp",
     "src/runtime/cpp/generated/built_in/type_id.cpp",
     "src/runtime/cpp/native/std/time.cpp",
 ]
