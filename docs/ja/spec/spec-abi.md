@@ -379,6 +379,13 @@ runtime の正規配置は `docs/ja/spec/spec-runtime.md` に従う。
 
 とする。
 
+補足:
+
+- 上記は現行実装の配置である。
+- 承認済みの次段 C++ layout では、module runtime 層を `runtime/cpp/generated/` と `runtime/cpp/native/` に分け、`runtime/cpp/pytra/` を generated public shim として残す。
+- つまり ownership は最終的に suffix ではなく directory で判別するが、ABI の考え方自体は変わらない。
+- 詳細は `docs/ja/spec/spec-runtime.md` と `docs/ja/plans/p0-cpp-runtime-layout-generated-native.md` に従う。
+
 ## 12. `pytra.std.math` の例
 
 `src/pytra/std/math.py` は `@extern` を含むため、C++ runtime では次のように構成する。
@@ -394,10 +401,19 @@ runtime の正規配置は `docs/ja/spec/spec-runtime.md` に従う。
 - `math.ext.cpp` が `math.gen.h` に対する native 実体を提供する
 - manifest / build 入力は `spec-runtime.md` の配置規約に従う
 
+承認済みの移行先では、同じ意味を次のように表す。
+
+- 生成宣言:
+  - `runtime/cpp/generated/std/math.h`
+- native 実体:
+  - `runtime/cpp/native/std/math.cpp`
+- public shim:
+  - `runtime/cpp/pytra/std/math.h`
+
 つまり、`@extern` を含むモジュールであっても、
 
 - ABI 型は値型正規形で固定し
-- 生成物と native 実体は `gen/ext` で分離し
+- 生成物と native 実体は ownership が見える形で分離し
 - `rc<>` は ABI ではなく内部表現に閉じ込める
 
 というのが本仕様の要点である。
