@@ -205,7 +205,7 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01] C++ mutable list を全面 ref-first (`rc<list<T>>`) 正本へ切り替え、value list を optimizer 結果だけへ閉じ込める。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01] C++ mutable list を全面 ref-first (`rc<list<T>>`) 正本へ切り替え、value list を optimizer 結果だけへ閉じ込める。
 
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S1-01] 現行 emitter/runtime に残る value-first 分岐を棚卸しし、「禁止」「ABI adapter 限定」「optimizer 限定」に分類する。
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S1-02] `spec-cpp-list-reference-semantics.md` を今回の最終方針（dual model ではなく ref-first 正本）に更新する。
@@ -225,9 +225,9 @@
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S5-01] optimizer 側で「証明できた list だけ value 化する」責務境界を実装し、correctness と optimization を分離する。
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S5-02] optimizer off / fail-closed 条件でも unit/parity が通ることを確認する。
 
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S6-01] C++ unit 全体を再実行し、list ref-first 化後の非退行を確認する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S6-02] fixture/sample parity を再実行し、artifact を含めて非退行を確認する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S6-03] TODO/archive/docs を更新し、この ref-first 契約を完了扱いで固定する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S6-01] C++ unit 全体を再実行し、list ref-first 化後の非退行を確認する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S6-02] fixture/sample parity を再実行し、artifact を含めて非退行を確認する。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S6-03] TODO/archive/docs を更新し、この ref-first 契約を完了扱いで固定する。
 
 決定ログ:
 - 2026-03-06: ユーザー指示により、C++ list は「条件付き `rc<list<T>>`」ではなく「mutable は全面 ref-first、value は optimizer 結果のみ」へ進める方針を確定した。
@@ -258,3 +258,6 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` として、optimizer off (`east3_opt_level=0`) でも safe local list が value 縮退しない regression を `test_py2cpp_codegen_issues.py` に追加し、`test_cpp_non_escape_bridge.py` には malformed `cpp_value_list_locals_v1` を emitter が無視する fail-closed test を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` では opt0 representative parity で露出した nested list 問題を修正した。`_render_pyobj_alias_list_value(...)` は object-returning list comprehension を `py_to<rc<list<T>>>(...)` 経由へ倒し、nested mutable subscript lvalue は `py_list_at_ref(py_at(...), ...)` を使うようにした。runtime 側も `py_to(const object&)` に plain `list<T>` 復元を追加し、nested typed list の object roundtrip を `test_cpp_runtime_iterable.py` で固定した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` の検証として `test_py2cpp_codegen_issues.py`, `test_cpp_non_escape_bridge.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py` を実行し通過した。representative parity は `tools/runtime_parity_check.py --targets cpp --case-root fixture --east3-opt-level 0 collections/list_alias_shared_mutation stdlib/os_glob_extended` と `tools/runtime_parity_check.py --targets cpp --case-root sample --east3-opt-level 0 08_langtons_ant 12_sort_visualizer 13_maze_generation_steps 18_mini_language_interpreter` を実行し、どちらも全件通過した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-01` として、runtime module list signature の repo-root 依存と `random.choices` / `dict.keys` / `dict.values` の list unbox adapter を修正し、nested list append では `py_append(out, rc_list_copy_value(row))` を使うようにした。fresh rerun の `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/backends/cpp -p 'test_*.py'` は `Ran 505 tests in 1091.285s` で `OK` を確認した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-02` として、`python3 tools/runtime_parity_check.py --targets cpp --case-root fixture` は `cases=3 pass=3 fail=0`、`python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` は `cases=18 pass=18 fail=0` を確認した。sample parity 中に露出した `07_game_of_life_loop` の nested list append 退行も `ID: P0-CPP-LIST-REFFIRST-01-S6-02` 内で修正し、単体 parity を通した上で全 sample rerun を完了している。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-03` として、plan を `docs/ja/plans/archive/20260307-p0-cpp-list-ref-first-completion.md` へ移し、`docs/ja/todo/archive/20260307.md` / `docs/ja/todo/archive/index.md` / `docs/ja/todo/index.md` を更新して ref-first 契約を完了扱いで閉じた。
