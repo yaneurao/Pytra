@@ -253,6 +253,33 @@ class PytraCliTest(unittest.TestCase):
         self.assertEqual(py2x_calls[1][opt_idx + 1], "cpp_opt_level=2")
         self.assertTrue(any(str(pytra_cli_mod.GEN_MAKEFILE) in " ".join(call[0]) for call in calls))
 
+    def test_build_cpp_codegen_opt_3_run_uses_make_run_fallback(self) -> None:
+        calls: list[tuple[list[str], str | None]] = []
+        runner = self._fake_run(calls)
+
+        with tempfile.TemporaryDirectory() as work:
+            input_py = Path(work) / "hello.py"
+            input_py.write_text("print(1)\\n", encoding="utf-8")
+            with patch.object(pytra_cli_mod.subprocess, "run", side_effect=runner):
+                rc = pytra_cli_mod.main(
+                    [
+                        str(input_py),
+                        "--target",
+                        "cpp",
+                        "--build",
+                        "--run",
+                        "--codegen-opt",
+                        "3",
+                        "--output-dir",
+                        str(Path(work) / "out"),
+                    ]
+                )
+
+        self.assertEqual(rc, 0)
+        make_calls = [call[0] for call in calls if call[0] and Path(call[0][0]).name == "make"]
+        self.assertEqual(len(make_calls), 2)
+        self.assertEqual(make_calls[-1][-1], "run")
+
     def test_build_noncpp_target_is_supported(self) -> None:
         calls: list[tuple[list[str], str | None]] = []
         runner = self._fake_run(calls)
@@ -292,6 +319,50 @@ class PytraCliTest(unittest.TestCase):
         self.assertIn(str(pytra_cli_mod.PY2X), " ".join(calls[0][0]))
         self.assertIn("--target", calls[0][0])
         self.assertIn("cpp", calls[0][0])
+
+    def test_transpile_cpp_codegen_opt_3_uses_linked_program_route(self) -> None:
+        calls: list[tuple[list[str], str | None]] = []
+        runner = self._fake_run(calls)
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            out_dir = Path(work) / "out_cpp"
+            with patch.object(pytra_cli_mod.subprocess, "run", side_effect=runner):
+                rc = pytra_cli_mod.main(
+                    [
+                        str(src),
+                        "--target",
+                        "cpp",
+                        "--codegen-opt",
+                        "3",
+                        "--output-dir",
+                        str(out_dir),
+                    ]
+                )
+        self.assertEqual(rc, 0)
+        py2x_calls = [call[0] for call in calls if call[0] and str(pytra_cli_mod.PY2X) in " ".join(call[0])]
+        self.assertEqual(len(py2x_calls), 2)
+        self.assertIn("--link-only", py2x_calls[0])
+        self.assertIn("--from-link-output", py2x_calls[1])
+        self.assertNotIn("-O3", py2x_calls[0])
+
+    def test_transpile_cpp_codegen_opt_3_rejects_output_file(self) -> None:
+        with tempfile.TemporaryDirectory() as work:
+            src = Path(work) / "case.py"
+            src.write_text("print(1)\\n", encoding="utf-8")
+            with patch.object(pytra_cli_mod.subprocess, "run"):
+                rc = pytra_cli_mod.main(
+                    [
+                        str(src),
+                        "--target",
+                        "cpp",
+                        "--codegen-opt",
+                        "3",
+                        "--output",
+                        str(Path(work) / "main.cpp"),
+                    ]
+                )
+        self.assertEqual(rc, 1)
 
     def test_transpile_only_invokes_py2rs_with_explicit_output(self) -> None:
         calls: list[tuple[list[str], str | None]] = []

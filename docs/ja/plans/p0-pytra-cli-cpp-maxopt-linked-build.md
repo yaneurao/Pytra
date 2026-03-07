@@ -78,8 +78,8 @@
 - [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S1-01] `pytra-cli` の `--codegen-opt` と `py2x/eastlink/ir2lang/py2cpp` の最適化段対応表を棚卸しし、`codegen-opt=3` の目標 semantics を固定する。
 - [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S1-02] `pytra-cli` max-opt C++ route の CLI 契約と sample parity gate を spec/plan に固定する。
 - [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-01] `pytra-cli --target cpp --build --codegen-opt 3` が linked-program optimizer を経由する build route を実装する。
-- [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-02] `pytra-cli --target cpp --codegen-opt 3` の transpile-only route も linked-program optimizer を使うよう揃える。
-- [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-01] representative CLI regression を追加し、`codegen-opt=3` の route 選択と manifest/build/run を固定する。
+- [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S2-02] `pytra-cli --target cpp --codegen-opt 3` の transpile-only route も linked-program optimizer を使うよう揃える。
+- [x] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-01] representative CLI regression を追加し、`codegen-opt=3` の route 選択と manifest/build/run を固定する。
 - [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S3-02] sample parity を回し、max-opt route でも C++ sample が green であることを確認する。
 - [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S4-01] `pytra-cli` / how-to-use / 必要な docs に max-opt C++ route と sample parity 手順を反映する。
 - [ ] [ID: P0-PYTRACLI-CPP-MAXOPT-LINKED-01-S4-02] 完了結果を記録し、計画を archive へ移して閉じる。
@@ -139,3 +139,5 @@
 - 2026-03-08: `--codegen-opt 0/1/2` の既存意味論は維持し、route semantics を変えるのは C++ の `codegen-opt=3` のみに限定する。
 - 2026-03-08: `S2-01` では `pytra-cli` から `py2x.py --link-only` と `py2x.py --from-link-output` を連続実行する。中間 bundle は `output_dir/.pytra_linked/` に置き、build の manifest 正本は最終 output root の `manifest.json` を使う。
 - 2026-03-08: `codegen-opt=3` の build route では aggregate `-O3` を `py2x` に渡さず、stage 1 へ `--east3-opt-level 2`、stage 2 へ `--optimizer-option cpp_opt_level=2` を既定で補う。明示 override がある場合はユーザー指定を優先する。
+- 2026-03-08: `S2-02` では transpile-only も同じ linked-program route に統一する。linked C++ route は multi-file emit 前提なので、`--target cpp --codegen-opt 3` では `--output` を禁止し、`--output-dir` を canonical output surface とする。
+- 2026-03-08: `S3-01` の representative regression は `test_pytra_cli.py` に追加し、`codegen-opt=3` で `--link-only -> --from-link-output` の 2 段 route、manifest 解決、`--run` 時の `make run` fallback を固定した。
