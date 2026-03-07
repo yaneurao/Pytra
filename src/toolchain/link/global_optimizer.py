@@ -1,0 +1,368 @@
+"""Linked-program global optimizer/materializer."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import Any
+
+from toolchain.ir.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
+from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
+from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from toolchain.ir.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
+from toolchain.ir.east3_optimizer import PassContext
+from toolchain.link.program_call_graph import build_linked_program_call_graph
+from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
+from toolchain.link.program_model import LinkedProgram
+from toolchain.link.program_model import LinkedProgramModule
+
+
+_LINKED_META_KEY = "linked_program_v1"
+_CPP_VALUE_LIST_LOCAL_HINT_KEY = "cpp_value_list_locals_v1"
+_BUILTIN_TYPE_IDS: dict[str, int] = {
+    "None": 0,
+    "bool": 1,
+    "int": 2,
+    "float": 3,
+    "str": 4,
+    "list": 5,
+    "dict": 6,
+    "set": 7,
+    "object": 8,
+}
+_USER_TYPE_ID_BASE = 1000
+
+
+@dataclass(frozen=True)
+class LinkedProgramOptimizationResult:
+    linked_program: LinkedProgram
+    link_output_doc: dict[str, object]
+
+
+def _safe_name(value: Any) -> str:
+    if isinstance(value, str):
+        text = value.strip()
+        if text != "":
+            return text
+    return ""
+
+
+def _ensure_meta(node: dict[str, Any]) -> dict[str, Any]:
+    meta_any = node.get("meta")
+    if isinstance(meta_any, dict):
+        return meta_any
+    meta: dict[str, Any] = {}
+    node["meta"] = meta
+    return meta
+
+
+def _clone_module_doc(module: LinkedProgramModule) -> dict[str, Any]:
+    doc_any = deepcopy(module.east_doc)
+    doc = doc_any if isinstance(doc_any, dict) else {}
+    meta = _ensure_meta(doc)
+    meta["module_id"] = module.module_id
+    meta.pop(_LINKED_META_KEY, None)
+    meta.pop("non_escape_import_closure", None)
+    doc["meta"] = meta
+    doc["source_path"] = ""
+    return doc
+
+
+def _build_non_escape_closure_docs(program: LinkedProgram) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for module in program.modules:
+        out[module.module_id] = _clone_module_doc(module)
+    return out
+
+
+def _run_program_non_escape(program: LinkedProgram) -> tuple[tuple[LinkedProgramModule, ...], dict[str, object]]:
+    closure_docs = _build_non_escape_closure_docs(program)
+    pass_obj = NonEscapeInterproceduralPass()
+    context = PassContext(opt_level=1, target_lang=program.target)
+    linked_modules: list[LinkedProgramModule] = []
+    global_summary: dict[str, object] = {}
+
+    for module in program.modules:
+        root_doc_any = deepcopy(closure_docs[module.module_id])
+        root_doc = root_doc_any if isinstance(root_doc_any, dict) else {}
+        root_meta = _ensure_meta(root_doc)
+        closure_payload: dict[str, dict[str, Any]] = {}
+        for other_module_id, other_doc in closure_docs.items():
+            if other_module_id == module.module_id:
+                continue
+            closure_payload[other_module_id] = deepcopy(other_doc)
+        root_meta["non_escape_import_closure"] = closure_payload
+        root_doc["meta"] = root_meta
+        _ = pass_obj.run(root_doc, context)
+
+        linked_meta = _ensure_meta(root_doc)
+        linked_meta.pop("non_escape_import_closure", None)
+        module_summary_any = linked_meta.get("non_escape_summary")
+        module_summary = module_summary_any if isinstance(module_summary_any, dict) else {}
+        for symbol in sorted(module_summary.keys()):
+            global_summary[symbol] = module_summary[symbol]
+
+        linked_modules.append(
+            LinkedProgramModule(
+                module_id=module.module_id,
+                source_path=module.source_path,
+                is_entry=module.is_entry,
+                east_doc=root_doc,
+                artifact_path=module.artifact_path,
+            )
+        )
+
+    return tuple(linked_modules), global_summary
+
+
+def _extract_cpp_container_hints(module_doc: dict[str, Any]) -> dict[str, object]:
+    _module_id, symbols, _local_map = collect_non_escape_symbols(module_doc)
+    out: dict[str, object] = {}
+    for symbol, fn_node in sorted(symbols.items()):
+        meta_any = fn_node.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        hint_any = meta.get(_CPP_VALUE_LIST_LOCAL_HINT_KEY)
+        hint = hint_any if isinstance(hint_any, dict) else {}
+        locals_any = hint.get("locals")
+        locals_list = locals_any if isinstance(locals_any, list) else []
+        locals_out: list[str] = []
+        for item in locals_list:
+            name = _safe_name(item)
+            if name != "":
+                locals_out.append(name)
+        if len(locals_out) == 0:
+            continue
+        out[symbol] = {"version": "1", "locals": sorted(locals_out)}
+    return out
+
+
+def _materialize_container_hints(
+    linked_modules: tuple[LinkedProgramModule, ...],
+    *,
+    target: str,
+) -> tuple[tuple[LinkedProgramModule, ...], dict[str, object]]:
+    if target != "cpp":
+        return linked_modules, {}
+
+    hint_pass = CppListValueLocalHintPass()
+    context = PassContext(opt_level=1, target_lang=target)
+    updated_modules: list[LinkedProgramModule] = []
+    global_hints: dict[str, object] = {}
+    cpp_locals: dict[str, object] = {}
+
+    for module in linked_modules:
+        doc_any = deepcopy(module.east_doc)
+        doc = doc_any if isinstance(doc_any, dict) else {}
+        _ = hint_pass.run(doc, context)
+        module_hints = _extract_cpp_container_hints(doc)
+        for symbol, payload in sorted(module_hints.items()):
+            cpp_locals[symbol] = payload
+        updated_modules.append(
+            LinkedProgramModule(
+                module_id=module.module_id,
+                source_path=module.source_path,
+                is_entry=module.is_entry,
+                east_doc=doc,
+                artifact_path=module.artifact_path,
+            )
+        )
+
+    global_hints["cpp_value_list_locals_v1"] = cpp_locals
+    return tuple(updated_modules), global_hints
+
+
+def _iter_module_class_defs(module_doc: dict[str, Any]) -> list[dict[str, Any]]:
+    body_any = module_doc.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    out: list[dict[str, Any]] = []
+    for item in body:
+        if isinstance(item, dict) and item.get("kind") == "ClassDef":
+            out.append(item)
+    return out
+
+
+def _resolve_class_base_fqcn(
+    base_name: str,
+    *,
+    module_id: str,
+    local_classes: dict[str, str],
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
+) -> str:
+    name = _safe_name(base_name)
+    if name == "":
+        return "object"
+    if name in _BUILTIN_TYPE_IDS:
+        return name
+    if name in local_classes:
+        return local_classes[name]
+    imported_symbol = _safe_name(import_symbols.get(name))
+    if imported_symbol != "" and "::" in imported_symbol:
+        dep_module_id, export_name = imported_symbol.split("::", 1)
+        export_name = _safe_name(export_name)
+        if dep_module_id != "" and export_name != "":
+            return dep_module_id + "." + export_name
+    if "." in name:
+        owner_name, attr_name = name.split(".", 1)
+        imported_module = _safe_name(import_modules.get(owner_name))
+        if imported_module != "" and _safe_name(attr_name) != "":
+            return imported_module + "." + _safe_name(attr_name)
+    fqcn_candidate = module_id + "." + name
+    if fqcn_candidate in local_classes.values():
+        return fqcn_candidate
+    raise RuntimeError("unknown base type: " + module_id + "." + name)
+
+
+def _build_type_id_table(program: LinkedProgram) -> dict[str, int]:
+    class_bases: dict[str, str] = {}
+    children: dict[str, list[str]] = {}
+
+    for module in sorted(program.modules, key=lambda item: item.module_id):
+        module_doc = module.east_doc
+        import_modules, import_symbols = collect_non_escape_import_maps(module_doc)
+        local_classes: dict[str, str] = {}
+        class_defs = _iter_module_class_defs(module_doc)
+        for class_def in class_defs:
+            class_name = _safe_name(class_def.get("name"))
+            if class_name == "":
+                continue
+            fqcn = module.module_id + "." + class_name
+            local_classes[class_name] = fqcn
+        for class_def in class_defs:
+            class_name = _safe_name(class_def.get("name"))
+            if class_name == "":
+                continue
+            fqcn = module.module_id + "." + class_name
+            base_fqcn = _resolve_class_base_fqcn(
+                _safe_name(class_def.get("base")),
+                module_id=module.module_id,
+                local_classes=local_classes,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+            )
+            class_bases[fqcn] = base_fqcn
+            children.setdefault(fqcn, [])
+
+    for fqcn, base_fqcn in sorted(class_bases.items()):
+        if base_fqcn in class_bases:
+            children.setdefault(base_fqcn, [])
+            children[base_fqcn].append(fqcn)
+
+    for parent, items in list(children.items()):
+        children[parent] = sorted(items)
+
+    roots: list[str] = []
+    for fqcn, base_fqcn in sorted(class_bases.items()):
+        if base_fqcn not in class_bases:
+            roots.append(fqcn)
+
+    next_type_id = _USER_TYPE_ID_BASE
+    type_id_table: dict[str, int] = {}
+
+    def _assign(fqcn: str) -> None:
+        nonlocal next_type_id
+        type_id_table[fqcn] = next_type_id
+        next_type_id += 1
+        for child_fqcn in children.get(fqcn, []):
+            _assign(child_fqcn)
+
+    for fqcn in sorted(roots):
+        _assign(fqcn)
+
+    return type_id_table
+
+
+def _program_id(program: LinkedProgram) -> str:
+    module_ids = [module.module_id for module in sorted(program.modules, key=lambda item: item.module_id)]
+    return program.target + ":" + program.dispatch_mode + ":" + ",".join(module_ids)
+
+
+def _linked_output_path(module_id: str) -> str:
+    return "linked/" + module_id.replace(".", "/") + ".east3.json"
+
+
+def _input_label(module: LinkedProgramModule) -> str:
+    if module.artifact_path is not None:
+        return str(module.artifact_path)
+    return module.source_path
+
+
+def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimizationResult:
+    call_graph = build_linked_program_call_graph(program)
+    linked_modules, non_escape_summary = _run_program_non_escape(program)
+    linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
+    type_id_table = _build_type_id_table(program)
+    program_id = _program_id(program)
+
+    module_entries: list[dict[str, object]] = []
+    final_modules: list[LinkedProgramModule] = []
+    for module in sorted(linked_modules, key=lambda item: item.module_id):
+        doc_any = deepcopy(module.east_doc)
+        doc = doc_any if isinstance(doc_any, dict) else {}
+        meta = _ensure_meta(doc)
+        module_hints: dict[str, object] = {}
+        cpp_hints_any = container_hints.get("cpp_value_list_locals_v1")
+        cpp_hints = cpp_hints_any if isinstance(cpp_hints_any, dict) else {}
+        if len(cpp_hints) > 0:
+            local_slice: dict[str, object] = {}
+            prefix = module.module_id + "::"
+            for symbol, payload in sorted(cpp_hints.items()):
+                if symbol.startswith(prefix):
+                    local_slice[symbol] = payload
+            module_hints["cpp_value_list_locals_v1"] = local_slice
+        meta[_LINKED_META_KEY] = {
+            "program_id": program_id,
+            "module_id": module.module_id,
+            "entry_modules": list(program.entry_modules),
+            "type_id_resolved_v1": dict(type_id_table),
+            "non_escape_summary": dict(non_escape_summary),
+            "container_ownership_hints_v1": module_hints,
+        }
+        doc["meta"] = meta
+        final_modules.append(
+            LinkedProgramModule(
+                module_id=module.module_id,
+                source_path=module.source_path,
+                is_entry=module.is_entry,
+                east_doc=doc,
+                artifact_path=module.artifact_path,
+            )
+        )
+        module_entries.append(
+            {
+                "module_id": module.module_id,
+                "input": _input_label(module),
+                "output": _linked_output_path(module.module_id),
+                "source_path": module.source_path,
+                "is_entry": module.is_entry,
+            }
+        )
+
+    link_output_doc: dict[str, object] = {
+        "schema": LINK_OUTPUT_SCHEMA,
+        "target": program.target,
+        "dispatch_mode": program.dispatch_mode,
+        "entry_modules": list(program.entry_modules),
+        "modules": module_entries,
+        "global": {
+            "type_id_table": dict(type_id_table),
+            "call_graph": {caller: list(callees) for caller, callees in call_graph.graph.items()},
+            "sccs": [list(component) for component in call_graph.sccs],
+            "non_escape_summary": dict(non_escape_summary),
+            "container_ownership_hints_v1": dict(container_hints),
+        },
+        "diagnostics": {"warnings": [], "errors": []},
+    }
+
+    return LinkedProgramOptimizationResult(
+        linked_program=LinkedProgram(
+            schema=program.schema,
+            manifest_path=program.manifest_path,
+            target=program.target,
+            dispatch_mode=program.dispatch_mode,
+            entry_modules=program.entry_modules,
+            modules=tuple(final_modules),
+            options=dict(program.options),
+        ),
+        link_output_doc=link_output_doc,
+    )
