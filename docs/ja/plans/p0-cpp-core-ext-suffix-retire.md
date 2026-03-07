@@ -167,27 +167,27 @@ src/runtime/cpp/
 2026-03-07 時点の `core` / `native/core` inventory は次のとおり。
 
 - `core/` public forwarder rename 対象: 10 files
-  - `dict.ext.h -> dict.h`
-  - `exceptions.ext.h -> exceptions.h`
-  - `gc.ext.h -> gc.h`
-  - `io.ext.h -> io.h`
-  - `list.ext.h -> list.h`
-  - `py_runtime.ext.h -> py_runtime.h`
-  - `py_scalar_types.ext.h -> py_scalar_types.h`
-  - `py_types.ext.h -> py_types.h`
-  - `set.ext.h -> set.h`
-  - `str.ext.h -> str.h`
+  - `dict.h -> dict.h`
+  - `exceptions.h -> exceptions.h`
+  - `gc.h -> gc.h`
+  - `io.h -> io.h`
+  - `list.h -> list.h`
+  - `py_runtime.h -> py_runtime.h`
+  - `py_scalar_types.h -> py_scalar_types.h`
+  - `py_types.h -> py_types.h`
+  - `set.h -> set.h`
+  - `str.h -> str.h`
 - `native/core/` handwritten header rename 対象: 10 files
-  - `dict.ext.h -> dict.h`
-  - `exceptions.ext.h -> exceptions.h`
-  - `gc.ext.h -> gc.h`
-  - `io.ext.h -> io.h`
-  - `list.ext.h -> list.h`
-  - `py_runtime.ext.h -> py_runtime.h`
-  - `py_scalar_types.ext.h -> py_scalar_types.h`
-  - `py_types.ext.h -> py_types.h`
-  - `set.ext.h -> set.h`
-  - `str.ext.h -> str.h`
+  - `dict.h -> dict.h`
+  - `exceptions.h -> exceptions.h`
+  - `gc.h -> gc.h`
+  - `io.h -> io.h`
+  - `list.h -> list.h`
+  - `py_runtime.h -> py_runtime.h`
+  - `py_scalar_types.h -> py_scalar_types.h`
+  - `py_types.h -> py_types.h`
+  - `set.h -> set.h`
+  - `str.h -> str.h`
 - `native/core/` handwritten source rename 対象: 2 files
   - `gc.ext.cpp -> gc.cpp`
   - `io.ext.cpp -> io.cpp`
@@ -217,8 +217,8 @@ Phase 1 契約固定:
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-02] synthetic test を追加し、`core/*.h` + `native/core/*.{h,cpp}` の plain naming で compile/source 解決できることを固定する。
 
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-01] `src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder surface を plain name へ切り替える。
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-02] backend / generated runtime / native companion / tests の include を `runtime/cpp/core/*.h` へ更新し、`runtime/cpp/core/*.ext.h` 依存を除去する。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-01] `src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder surface を plain name へ切り替える。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S3-02] backend / generated runtime / native companion / tests の include を `runtime/cpp/core/*.h` へ更新し、`runtime/cpp/core/*.ext.h` 依存を除去する。
 
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S4-01] `src/runtime/cpp/native/core/*.ext.h` / `*.ext.cpp` を plain name へ rename し、public forwarder と compile source の参照先を同期する。
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S4-02] runtime symbol index / parity tool / representative tests を plain `native/core/*.{h,cpp}` 前提へ更新し、旧 `.ext` path を返さないことを固定する。
@@ -233,3 +233,4 @@ Phase 1 契約固定:
 - 2026-03-07: `S1-02` として `spec-runtime` / `spec-abi` へ approved naming contract を追記した。`core` は shim なので plain `*.h`、`native/core` は ownership 正本なので plain `*.h` / `*.cpp`、`generated/core` は future artifact も plain naming only とし、`.ext` は移行中 legacy 名としてだけ許容する。
 - 2026-03-07: `S2-01` として `gen_runtime_symbol_index.py` / `cpp_runtime_deps.py` / `check_runtime_cpp_layout.py` を plain-name tolerant に更新した。core public header は `core/*.h` を優先しつつ `*.ext.h` fallback を維持し、`generated/core` / `native/core` compile source 解決も `*.cpp` と `*.ext.cpp` の両方を辿れるようにした。layout guard も core surface を `plain_or_ext` で監査し、`py_runtime` duplicate 検査は `py_runtime.h` と `py_runtime.ext.h` の両方を対象にする。
 - 2026-03-07: `S2-02` として tooling unit test の synthetic tree を plain `core/*.h` / `generated|native/core/*.cpp` へ更新した。`test_runtime_symbol_index.py` では future plain header から module discovery と artifact selection を固定し、`test_cpp_runtime_build_graph.py` では `core/dict.h` と `generated/core/dict.h` の両方から plain compile source が解決できることを確認した。`test_check_runtime_cpp_layout.py` では plain core surface を正例にしつつ、legacy `.ext` naming も移行中は通ることを別 test で残した。
+- 2026-03-07: `S3-01` と `S3-02` を一体で実施した。`src/runtime/cpp/core/*.ext.h` を `*.h` へ rename し、forwarder は引き続き `native/core/*.ext.h` を指す形で surface だけ plain name に切り替えた。backend (`cli.py`, `multifile_writer.py`, `header_builder.py`)、checked-in generated/native runtime、`runtime_symbol_index.json`、representative backend/tooling/runtime tests も `runtime/cpp/core/*.h` を使うよう更新し、active tree から `runtime/cpp/core/*.ext.h` 参照を除去した。

@@ -5,7 +5,7 @@
 #ifndef PYTRA_BUILT_IN_SEQUENCE_GEN_H
 #define PYTRA_BUILT_IN_SEQUENCE_GEN_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 list<int64> py_range(int64 start, int64 stop, int64 step);
 str py_repeat(const str& v, int64 n);

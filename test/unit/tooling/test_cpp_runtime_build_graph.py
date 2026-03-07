@@ -156,7 +156,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertIn((runtime_root / "native/core/dict.cpp").as_posix(), paths)
 
     def test_runtime_cpp_candidates_for_real_core_header_follow_native_core_source(self) -> None:
-        header = ROOT / "src/runtime/cpp/core/gc.ext.h"
+        header = ROOT / "src/runtime/cpp/core/gc.h"
         paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
         self.assertIn((ROOT / "src/runtime/cpp/native/core/gc.ext.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/core/gc.ext.cpp").as_posix(), paths)

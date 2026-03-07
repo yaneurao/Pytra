@@ -37,7 +37,7 @@ class CppRuntimeTypeIdTest(unittest.TestCase):
 
     def test_runtime_type_id_subtype_and_isinstance_contract(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include <cassert>
 #include <iostream>
@@ -120,7 +120,7 @@ int main() {
 
     def test_rc_handle_upcast_from_derived_compiles(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/gc.ext.h"
+#include "runtime/cpp/core/gc.h"
 
 #include <cassert>
 #include <iostream>

@@ -36,7 +36,7 @@ class CppRuntimeIterableTest(unittest.TestCase):
 
     def test_runtime_iterable_protocol_helpers(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/py_runtime.ext.h"
+#include "runtime/cpp/core/py_runtime.h"
 
 #include <cassert>
 #include <iostream>
@@ -224,7 +224,7 @@ int main() {
             self.assertIn("runtime iterable ok", run.stdout)
 
     def test_runtime_list_overload_inventory(self) -> None:
-        forwarder_header = (ROOT / "src/runtime/cpp/core/py_runtime.ext.h").read_text(encoding="utf-8")
+        forwarder_header = (ROOT / "src/runtime/cpp/core/py_runtime.h").read_text(encoding="utf-8")
         runtime_header = (ROOT / "src/runtime/cpp/native/core/py_runtime.ext.h").read_text(encoding="utf-8")
         iter_ops_header = (ROOT / "src/runtime/cpp/native/built_in/iter_ops.h").read_text(encoding="utf-8")
         sequence_header = (ROOT / "src/runtime/cpp/native/built_in/sequence.h").read_text(encoding="utf-8")

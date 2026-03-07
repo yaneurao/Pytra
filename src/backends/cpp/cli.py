@@ -168,7 +168,7 @@ SCOPE_NESTING_KINDS: set[str] = {
 }
 
 
-CPP_HEADER = """#include "runtime/cpp/core/py_runtime.ext.h"
+CPP_HEADER = """#include "runtime/cpp/core/py_runtime.h"
 
 """
 
@@ -1010,9 +1010,9 @@ def main(argv: list[str]) -> int:
             cpp_txt_runtime = strip_cpp_default_args_from_top_level_defs(cpp_txt_runtime, ns)
             own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
-                old_runtime_include = '#include "runtime/cpp/core/py_runtime.ext.h"\n'
+                old_runtime_include = '#include "runtime/cpp/core/py_runtime.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/core/py_runtime.ext.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/core/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime = replace_first(
                     cpp_txt_runtime,
@@ -1020,9 +1020,9 @@ def main(argv: list[str]) -> int:
                     new_runtime_include,
                 )
             if own_runtime_header not in cpp_txt_runtime_for_header:
-                old_runtime_include = '#include "runtime/cpp/core/py_runtime.ext.h"\n'
+                old_runtime_include = '#include "runtime/cpp/core/py_runtime.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/core/py_runtime.ext.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/core/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime_for_header = replace_first(
                     cpp_txt_runtime_for_header,

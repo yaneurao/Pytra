@@ -859,7 +859,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/dict.ext.h"
+            "src/runtime/cpp/core/dict.h"
           ]
         },
         "pytra.core.exceptions": {
@@ -868,7 +868,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/exceptions.ext.h"
+            "src/runtime/cpp/core/exceptions.h"
           ]
         },
         "pytra.core.gc": {
@@ -879,7 +879,7 @@
             "src/runtime/cpp/native/core/gc.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/core/gc.ext.h"
+            "src/runtime/cpp/core/gc.h"
           ]
         },
         "pytra.core.io": {
@@ -890,7 +890,7 @@
             "src/runtime/cpp/native/core/io.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/core/io.ext.h"
+            "src/runtime/cpp/core/io.h"
           ]
         },
         "pytra.core.list": {
@@ -899,7 +899,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/list.ext.h"
+            "src/runtime/cpp/core/list.h"
           ]
         },
         "pytra.core.py_runtime": {
@@ -908,7 +908,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/py_runtime.ext.h"
+            "src/runtime/cpp/core/py_runtime.h"
           ]
         },
         "pytra.core.py_scalar_types": {
@@ -917,7 +917,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/py_scalar_types.ext.h"
+            "src/runtime/cpp/core/py_scalar_types.h"
           ]
         },
         "pytra.core.py_types": {
@@ -926,7 +926,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/py_types.ext.h"
+            "src/runtime/cpp/core/py_types.h"
           ]
         },
         "pytra.core.set": {
@@ -935,7 +935,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/set.ext.h"
+            "src/runtime/cpp/core/set.h"
           ]
         },
         "pytra.core.str": {
@@ -944,7 +944,7 @@
           ],
           "compile_sources": [],
           "public_headers": [
-            "src/runtime/cpp/core/str.ext.h"
+            "src/runtime/cpp/core/str.h"
           ]
         },
         "pytra.std.argparse": {

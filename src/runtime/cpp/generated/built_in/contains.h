@@ -5,7 +5,7 @@
 #ifndef PYTRA_BUILT_IN_CONTAINS_GEN_H
 #define PYTRA_BUILT_IN_CONTAINS_GEN_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 bool py_contains_dict_object(const object& values, const object& key);
 bool py_contains_list_object(const object& values, const object& key);

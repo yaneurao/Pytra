@@ -782,7 +782,7 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
                 inc_path = line[q0 + 1 : q1].replace("\\", "/")
                 if inc_path.split("/")[-1] == own_name:
                     continue
-        if line == '#include "runtime/cpp/core/py_runtime.ext.h"':
+        if line == '#include "runtime/cpp/core/py_runtime.h"':
             continue
         if line in seen:
             continue
@@ -1023,7 +1023,7 @@ def _brace_delta_ignoring_literals(line: str) -> int:
 def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) -> str:
     """生成ヘッダが必要とする最小 runtime 型ヘッダ名を返す。"""
     if has_class_blocks:
-        return "py_types.ext.h"
+        return "py_types.h"
     scalar_markers = (
         "int8",
         "uint8",
@@ -1063,9 +1063,9 @@ def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) 
                 needs_scalar = True
                 break
     if needs_rich:
-        return "py_types.ext.h"
+        return "py_types.h"
     if needs_scalar:
-        return "py_scalar_types.ext.h"
+        return "py_scalar_types.h"
     return ""
 
 

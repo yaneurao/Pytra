@@ -76,7 +76,7 @@ def main() -> None:
     def test_runtime_paths_uses_index_for_std_and_core_modules(self) -> None:
         self.assertEqual(module_name_to_cpp_include("math"), "pytra/std/math.h")
         self.assertEqual(module_name_to_cpp_include("pytra.std.time"), "pytra/std/time.h")
-        self.assertEqual(module_name_to_cpp_include("pytra.core.dict"), "core/dict.ext.h")
+        self.assertEqual(module_name_to_cpp_include("pytra.core.dict"), "core/dict.h")
 
     def test_transpiled_cpp_keeps_core_runtime_include_surface(self) -> None:
         cpp = self._transpile(
@@ -86,7 +86,7 @@ def main() -> None:
 """,
             "core_include_surface_case.py",
         )
-        self.assertIn('#include "runtime/cpp/core/py_runtime.ext.h"', cpp)
+        self.assertIn('#include "runtime/cpp/core/py_runtime.h"', cpp)
         self.assertNotIn('runtime/cpp/native/core/', cpp)
 
     def test_builtin_call_bindings_and_imported_symbol_calls_are_ir_driven(self) -> None:

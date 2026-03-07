@@ -1,7 +1,7 @@
 #ifndef PYTRA_NATIVE_BUILT_IN_SEQUENCE_H
 #define PYTRA_NATIVE_BUILT_IN_SEQUENCE_H
 
-#include "runtime/cpp/core/py_types.ext.h"
+#include "runtime/cpp/core/py_types.h"
 
 template <class T>
 static inline list<T> py_repeat_list_copy(const list<T>& v, int64 n) {
