@@ -201,12 +201,18 @@ src/runtime/cpp/
 - `generated/core/` は既に plain naming side (`README.md`) で存在しているため、今後の real artifact も plain name に限定して問題ない。
 - 現時点の rename 対象は low-level core lane に閉じており、`generated/std|built_in|utils` や `native/std|built_in` を同時に巻き込む必要はない。
 
+Phase 1 契約固定:
+
+- `docs/ja/spec/spec-runtime.md` に、C++ `core` は承認済み次段で plain naming (`core/*.h`, `native/core/*.{h,cpp}`) を正本とし、`.ext` は移行中 legacy 名としてのみ扱う契約を追記した。
+- `docs/ja/spec/spec-abi.md` にも、low-level core の stable include surface は `runtime/cpp/core/*.h`、handwritten 正本は `runtime/cpp/native/core/*.{h,cpp}` とする approved next step を追記した。
+- `pytra/core` は引き続き導入せず、include root は `core/...` のまま維持することを plan/spec で再確認した。
+
 ## 分解
 
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01] C++ core runtime から `.ext` suffix を退役し、`core` surface / `native/core` 正本 / `generated/core` lane を plain file name 契約へ揃える。
 
 - [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-01] `core/*.ext.h` と `native/core/*.ext.{h,cpp}` の rename inventory を作り、plain name 対応表を決定ログへ固定する。
-- [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
+- [x] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S1-02] `core` は shim、`native/core` は ownership 正本、`generated/core` は plain naming future lane とする命名契約を plan/spec に固定する。
 
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / layout guard を rename 耐性ありの導線へ拡張し、移行中でも source/header 解決が通るようにする。
 - [ ] [ID: P0-CPP-CORE-EXT-SUFFIX-RETIRE-01-S2-02] synthetic test を追加し、`core/*.h` + `native/core/*.{h,cpp}` の plain naming で compile/source 解決できることを固定する。
@@ -224,3 +230,4 @@ src/runtime/cpp/
 - 2026-03-07: ユーザー指示により、`core` surface は shim なので `.ext` を外し、`native/core` も directory で ownership が表現できる以上 `.ext` は不要と判断した。
 - 2026-03-07: `pytra/core` への include-root 移行は rename と独立した大きな変更なので、この計画には含めない。まず `core/...` を維持したまま file name を plain に揃える。
 - 2026-03-07: `S1-01` として rename inventory を固定した。対象は `core/` forwarder header 10 件、`native/core/` handwritten header 10 件、`native/core/` source 2 件で、`generated/core/` は `README.md` のみだった。basename collision はなく、Phase 3 と Phase 4 で `core` surface と `native/core` 正本を段階分離できることを確認した。
+- 2026-03-07: `S1-02` として `spec-runtime` / `spec-abi` へ approved naming contract を追記した。`core` は shim なので plain `*.h`、`native/core` は ownership 正本なので plain `*.h` / `*.cpp`、`generated/core` は future artifact も plain naming only とし、`.ext` は移行中 legacy 名としてだけ許容する。
