@@ -1586,8 +1586,8 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("py_os_path_join(", cpp)
-        self.assertIn("py_os_path_splitext(", cpp)
+        self.assertIn("pytra::std::os_path::join(", cpp)
+        self.assertIn("pytra::std::os_path::splitext(", cpp)
         self.assertNotIn("pytra::std::os::path::join(", cpp)
         self.assertNotIn("pytra::std::os::path::splitext(", cpp)
 

@@ -1,4 +1,4 @@
-#include "runtime/cpp/std/os_path.ext.h"
+#include "runtime/cpp/std/os_path.gen.h"
 #include <filesystem>
 
 namespace pytra::std::os_path {
@@ -43,27 +43,3 @@ bool exists(const str& p) {
 }
 
 }  // namespace pytra::std::os_path
-
-str py_os_path_join(const str& a, const str& b) {
-    return pytra::std::os_path::join(a, b);
-}
-
-str py_os_path_dirname(const str& p) {
-    return pytra::std::os_path::dirname(p);
-}
-
-str py_os_path_basename(const str& p) {
-    return pytra::std::os_path::basename(p);
-}
-
-::std::tuple<str, str> py_os_path_splitext(const str& p) {
-    return pytra::std::os_path::splitext(p);
-}
-
-str py_os_path_abspath(const str& p) {
-    return pytra::std::os_path::abspath(p);
-}
-
-bool py_os_path_exists(const str& p) {
-    return pytra::std::os_path::exists(p);
-}

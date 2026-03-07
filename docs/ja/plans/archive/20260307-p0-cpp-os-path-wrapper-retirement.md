@@ -102,6 +102,21 @@
 - `pytra::std::os_path::*` を正本 API とし、`os_path.ext.h` を暫定互換層として扱う判断を計画書へ固定する。
 - 2026-03-06 の復旧で必要だった修正と、今回退役させる互換 wrapper を分離して記録する。
 
+#### Phase 1 棚卸し結果（2026-03-07）
+
+- backend 実装依存:
+  - `src/backends/cpp/profiles/runtime_calls.json` の `pytra.std.os.path` / `os.path` / `pytra.std.os_path`
+- runtime 実装依存:
+  - `src/runtime/cpp/std/os_path.ext.h` の `py_os_path_*` 宣言
+  - `src/runtime/cpp/std/os_path.ext.cpp` の `py_os_path_*` wrapper 定義
+- test 依存:
+  - `test/unit/backends/cpp/test_py2cpp_features.py::test_os_path_calls_use_runtime_helpers`
+- 退役対象ではない維持経路:
+  - `src/pytra/std/os.py` の `os_path as path`
+  - `CppModuleEmitter._collect_runtime_modules_from_node()` による module attr からの実 runtime module 回収
+  - `tools/cpp_runtime_deps.py` の public header から compile source を index 経由で辿る経路
+- docs / archive には `py_os_path_*` の履歴記述が残るが、これは削除対象ではなく判断履歴として残す。
+
 ### Phase 2: backend の呼び先を namespace API へ戻す
 
 - `runtime_calls.json` の `pytra.std.os.path` / `os.path` / `pytra.std.os_path` を `pytra::std::os_path::*` へ更新する。
@@ -147,21 +162,26 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01] C++ `os.path` の legacy wrapper ABI を退役し、`pytra::std::os_path::*` を codegen/runtime の正本へ戻す。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01] C++ `os.path` の legacy wrapper ABI を退役し、`pytra::std::os_path::*` を codegen/runtime の正本へ戻す。
 
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-01] `py_os_path_*` 参照箇所を backend/runtime/test/docs で棚卸しし、残すべき import/module 追跡と退役対象 wrapper を分離する。
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-02] 2026-03-06 の暫定復旧のうち、今回保持する修正（module attr 回収・public shim compile-source 追跡）と消す修正（wrapper ABI）を決定ログへ固定する。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-01] `py_os_path_*` 参照箇所を backend/runtime/test/docs で棚卸しし、残すべき import/module 追跡と退役対象 wrapper を分離する。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-02] 2026-03-06 の暫定復旧のうち、今回保持する修正（module attr 回収・public shim compile-source 追跡）と消す修正（wrapper ABI）を決定ログへ固定する。
 
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S2-01] `runtime_calls.json` の `os.path` 系呼び先を `pytra::std::os_path::*` へ更新し、wrapper 名依存を backend から外す。
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S2-02] `test_py2cpp_features.py` の `os.path` codegen assert を namespace 正本へ更新し、`pytra::std::os::path::*` の誤 namespace を fail-fast 化する。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S2-01] `runtime_calls.json` の `os.path` 系呼び先を `pytra::std::os_path::*` へ更新し、wrapper 名依存を backend から外す。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S2-02] `test_py2cpp_features.py` の `os.path` codegen assert を namespace 正本へ更新し、`pytra::std::os::path::*` の誤 namespace を fail-fast 化する。
 
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-01] `src/runtime/cpp/std/os_path.ext.h` を削除し、public shim が `.ext.h` なしで成立することを確認する。
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-02] `src/runtime/cpp/std/os_path.ext.cpp` から `py_os_path_*` を削除し、namespace 実装だけを残す。
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-03] 必要な runtime 再生成と symbol index 更新を行い、`pytra/std/os_path.h` の include 面を単純化する。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-01] `src/runtime/cpp/std/os_path.ext.h` を削除し、public shim が `.ext.h` なしで成立することを確認する。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-02] `src/runtime/cpp/std/os_path.ext.cpp` から `py_os_path_*` を削除し、namespace 実装だけを残す。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-03] 必要な runtime 再生成と symbol index 更新を行い、`pytra/std/os_path.h` の include 面を単純化する。
 
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-01] `os_glob_extended_runtime` / runtime symbol index / pylib `glob` を再検証し、wrapper 退役後も compile-source/import 解決が壊れないことを確認する。
-- [ ] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-02] TODO と決定ログを更新し、「なぜ `os_path.ext.h` を消せたか」を文書化して完了扱いにする。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-01] `os_glob_extended_runtime` / runtime symbol index / pylib `glob` を再検証し、wrapper 退役後も compile-source/import 解決が壊れないことを確認する。
+- [x] [ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-02] TODO と決定ログを更新し、「なぜ `os_path.ext.h` を消せたか」を文書化して完了扱いにする。
 
 決定ログ:
 - 2026-03-07: ユーザー指示により、`os_path.ext.h` は current design を表す正規ファイルではなく、2026-03-06 の unit 回帰復旧で追加された暫定互換層として整理し直す方針を固定した。
 - 2026-03-07: 本計画では `pytra::std::os_path::*` を正本 API、`os_path.gen.h` を宣言の正本とし、`py_os_path_*` free function wrapper と `os_path.ext.h` は退役対象として扱う。
+- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-01 `py_os_path_*` の実装依存は `runtime_calls.json`、`os_path.ext.h`、`os_path.ext.cpp`、`test_py2cpp_features.py` に限られ、module attr 回収・public shim compile-source 追跡・`os.py` の `path` alias は wrapper 非依存で維持すべき経路と確認した。
+- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-02 2026-03-06 の暫定復旧で本当に必要だったのは `os.path -> pytra.std.os_path` の module owner 固定と public header から compile source を辿る導線だけであり、`py_os_path_*` free function ABI は止血用の暫定措置として退役可能と判断した。
+- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S2-01 `src/backends/cpp/profiles/runtime_calls.json` の `pytra.std.os.path` / `os.path` / `pytra.std.os_path` を `pytra::std::os_path::*` へ切り替えた。`CppCallEmitter` 側は `ns::func` 文字列をそのまま runtime function 名として扱えるため、backend 実装追加は不要だった。
+- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-01 `src/runtime/cpp/std/os_path.ext.h` を削除し、`src/runtime/cpp/std/os_path.ext.cpp` は `os_path.gen.h` を直接 include して namespace 実装だけを残した。`python3 src/py2x.py --target cpp src/pytra/std/os_path.py --emit-runtime-cpp` を再実行し、`src/runtime/cpp/pytra/std/os_path.h` が `os_path.gen.h` のみを forward する状態へ戻した。
+- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-01 `python3 tools/gen_runtime_symbol_index.py --check`、`PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k os_path`、`... -k os_glob_extended_runtime`、`PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`、`PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_pylib_os_glob.py'` を実行し通過した。`rg -n "py_os_path_" src test tools -g '!sample/cpp/**'` は非 docs の一致 0 件だった。
