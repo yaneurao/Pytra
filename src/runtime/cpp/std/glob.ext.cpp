@@ -1,4 +1,4 @@
-#include "runtime/cpp/std/glob.gen.h"
+#include "runtime/cpp/generated/std/glob.h"
 #include <filesystem>
 
 namespace pytra::std::glob {

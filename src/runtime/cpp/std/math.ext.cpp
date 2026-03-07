@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "runtime/cpp/std/math.gen.h"
+#include "runtime/cpp/generated/std/math.h"
 
 namespace pytra::std::math {
 

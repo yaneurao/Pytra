@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/re.gen.h"
+#include "runtime/cpp/generated/std/re.h"
 
 #include "built_in/string_ops.gen.h"
 
@@ -14,9 +14,9 @@ namespace pytra::std::re {
     /* Minimal pure-Python regex subset used by Pytra selfhost path. */
     
 
-    Match::Match(const str& text, const list<str>& groups) {
+    Match::Match(const str& text, const rc<list<str>>& groups) {
             this->_text = text;
-            this->_groups = groups;
+            this->_groups = rc_list_copy_value(groups);
     }
 
     str Match::group(int64 idx) {
@@ -125,7 +125,7 @@ namespace pytra::std::re {
             str head = py_slice(text, 0, i);
             if (!(_is_ident(head)))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{head, py_slice(text, i + 1, -(1))}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{head, py_slice(text, i + 1, -(1))}));
         }
         if (pattern == "^def\\s+([A-Za-z_][A-Za-z0-9_]*)\\((.*)\\)\\s*(?:->\\s*(.+)\\s*)?:\\s*$") {
             str t = _strip_suffix_colon(text);
@@ -155,13 +155,13 @@ namespace pytra::std::re {
             str args = py_slice(t, k + 1, r);
             str tail = py_strip(py_slice(t, r + 1, py_len(t)));
             if (tail == "")
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, args, ""}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, args, ""}));
             if (!(py_startswith(tail, "->")))
                 return ::std::nullopt;
             str ret = py_strip(py_slice(tail, 2, py_len(tail)));
             if (ret == "")
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, args, ret}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, args, ret}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*([^=]+?)(?:\\s*=\\s*(.+))?$") {
             auto c = py_find(text, ":");
@@ -176,17 +176,17 @@ namespace pytra::std::re {
                 str ann = py_strip(rhs);
                 if (ann == "")
                     return ::std::nullopt;
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, ann, ""}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ann, ""}));
             }
             str ann = py_strip(py_slice(rhs, 0, eq));
             str val = py_strip(py_slice(rhs, eq + 1, py_len(rhs)));
             if ((ann == "") || (val == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, ann, val}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ann, val}));
         }
         if (pattern == "^[A-Za-z_][A-Za-z0-9_]*$") {
             if (_is_ident(text))
-                return ::rc_new<Match>(text, py_to_str_list_from_object(make_object(list<object>{})));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{}));
             return ::std::nullopt;
         }
         if (pattern == "^class\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\(([A-Za-z_][A-Za-z0-9_]*)\\))?\\s*:\\s*$") {
@@ -208,19 +208,19 @@ namespace pytra::std::re {
                 return ::std::nullopt;
             str tail = py_strip(py_slice(t, j, py_len(t)));
             if (tail == "")
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, ""}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             if (!((py_startswith(tail, "(")) && (py_endswith(tail, ")"))))
                 return ::std::nullopt;
             str base = py_strip(py_slice(tail, 1, -(1)));
             if (!(_is_ident(base)))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, base}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, base}));
         }
         if (pattern == "^(any|all)\\((.+)\\)$") {
             if ((py_startswith(text, "any(")) && (py_endswith(text, ")")) && (py_len(text) > 5))
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{"any", py_slice(text, 4, -(1))}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{"any", py_slice(text, 4, -(1))}));
             if ((py_startswith(text, "all(")) && (py_endswith(text, ")")) && (py_len(text) > 5))
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{"all", py_slice(text, 4, -(1))}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{"all", py_slice(text, 4, -(1))}));
             return ::std::nullopt;
         }
         if (pattern == "^\\[\\s*([A-Za-z_][A-Za-z0-9_]*)\\s+for\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+in\\s+(.+)\\]$") {
@@ -241,7 +241,7 @@ namespace pytra::std::re {
             str it = py_strip(py_slice(rest, j + py_len(m2), py_len(rest)));
             if ((!(_is_ident(expr))) || (!(_is_ident(var))) || (it == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{expr, var, it}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{expr, var, it}));
         }
         if (pattern == "^for\\s+(.+)\\s+in\\s+(.+):$") {
             str t = _strip_suffix_colon(text);
@@ -255,7 +255,7 @@ namespace pytra::std::re {
             str right = py_strip(py_slice(rest, i + 4, py_len(rest)));
             if ((left == "") || (right == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{left, right}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{left, right}));
         }
         if (pattern == "^with\\s+(.+)\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*$") {
             str t = _strip_suffix_colon(text);
@@ -269,7 +269,7 @@ namespace pytra::std::re {
             str name = py_strip(py_slice(rest, i + 4, py_len(rest)));
             if ((expr == "") || (!(_is_ident(name))))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{expr, name}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{expr, name}));
         }
         if (pattern == "^except\\s+(.+?)\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*$") {
             str t = _strip_suffix_colon(text);
@@ -283,7 +283,7 @@ namespace pytra::std::re {
             str name = py_strip(py_slice(rest, i + 4, py_len(rest)));
             if ((exc == "") || (!(_is_ident(name))))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{exc, name}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{exc, name}));
         }
         if (pattern == "^except\\s+(.+?)\\s*:\\s*$") {
             str t = _strip_suffix_colon(text);
@@ -292,7 +292,7 @@ namespace pytra::std::re {
             str rest = py_strip(py_slice(t, 6, py_len(t)));
             if (rest == "")
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{rest}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{rest}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)?)\\s*:\\s*(.+)$") {
             auto c = py_find(text, ":");
@@ -302,7 +302,7 @@ namespace pytra::std::re {
             str ann = py_strip(py_slice(text, c + 1, py_len(text)));
             if ((ann == "") || (!(_is_dotted_ident(target))))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{target, ann}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{target, ann}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)?)\\s*:\\s*([^=]+?)\\s*=\\s*(.+)$") {
             auto c = py_find(text, ":");
@@ -317,7 +317,7 @@ namespace pytra::std::re {
             str expr = py_strip(py_slice(rhs, eq + 1, py_len(rhs)));
             if ((!(_is_dotted_ident(target))) || (ann == "") || (expr == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{target, ann, expr}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{target, ann, expr}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)?)\\s*(\\+=|-=|\\*=|/=|//=|%=|&=|\\|=|\\^=|<<=|>>=)\\s*(.+)$") {
             list<str> ops = list<str>{"<<=", ">>=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=", "^="};
@@ -337,7 +337,7 @@ namespace pytra::std::re {
             str right = py_strip(py_slice(text, op_pos + py_len(op_txt), py_len(text)));
             if ((right == "") || (!(_is_dotted_ident(left))))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{left, op_txt, right}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{left, op_txt, right}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\s*,\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$") {
             int64 eq = py_to<int64>(py_find(text, "="));
@@ -354,7 +354,7 @@ namespace pytra::std::re {
             str b = py_strip(py_slice(left, c + 1, py_len(left)));
             if ((!(_is_ident(a))) || (!(_is_ident(b))))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{a, b, right}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{a, b, right}));
         }
         if (pattern == "^if\\s+__name__\\s*==\\s*[\\\"']__main__[\\\"']\\s*:\\s*$") {
             str t = _strip_suffix_colon(text);
@@ -371,7 +371,7 @@ namespace pytra::std::re {
                 return ::std::nullopt;
             rest = py_strip(py_slice(rest, 2, py_len(rest)));
             if (py_contains(set<str>{"\"__main__\"", "'__main__'"}, rest))
-                return ::rc_new<Match>(text, py_to_str_list_from_object(make_object(list<object>{})));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{}));
             return ::std::nullopt;
         }
         if (pattern == "^import\\s+(.+)$") {
@@ -384,7 +384,7 @@ namespace pytra::std::re {
             str rest = py_strip(py_slice(text, 7, py_len(text)));
             if (rest == "")
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{rest}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{rest}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_\\.]*)(?:\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*))?$") {
             list<str> parts = text.split(" as ");
@@ -392,14 +392,14 @@ namespace pytra::std::re {
                 str name = py_strip(parts[0]);
                 if (!(_is_dotted_ident(name)))
                     return ::std::nullopt;
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, ""}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             }
             if (py_len(parts) == 2) {
                 str name = py_strip(parts[0]);
                 str alias = py_strip(parts[1]);
                 if ((!(_is_dotted_ident(name))) || (!(_is_ident(alias))))
                     return ::std::nullopt;
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, alias}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, alias}));
             }
             return ::std::nullopt;
         }
@@ -414,7 +414,7 @@ namespace pytra::std::re {
             str sym = py_strip(py_slice(rest, i + 8, py_len(rest)));
             if ((!(_is_dotted_ident(mod))) || (sym == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{mod, sym}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{mod, sym}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)(?:\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*))?$") {
             list<str> parts = text.split(" as ");
@@ -422,14 +422,14 @@ namespace pytra::std::re {
                 str name = py_strip(parts[0]);
                 if (!(_is_ident(name)))
                     return ::std::nullopt;
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, ""}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             }
             if (py_len(parts) == 2) {
                 str name = py_strip(parts[0]);
                 str alias = py_strip(parts[1]);
                 if ((!(_is_ident(name))) || (!(_is_ident(alias))))
                     return ::std::nullopt;
-                return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, alias}));
+                return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, alias}));
             }
             return ::std::nullopt;
         }
@@ -446,7 +446,7 @@ namespace pytra::std::re {
             str expr = py_strip(py_slice(rhs, eq + 1, py_len(rhs)));
             if ((!(_is_ident(name))) || (ann == "") || (expr == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, ann, expr}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ann, expr}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$") {
             int64 eq = py_to<int64>(py_find(text, "="));
@@ -456,7 +456,7 @@ namespace pytra::std::re {
             str expr = py_strip(py_slice(text, eq + 1, py_len(text)));
             if ((!(_is_ident(name))) || (expr == ""))
                 return ::std::nullopt;
-            return ::rc_new<Match>(text, py_to_str_list_from_object(list<str>{name, expr}));
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, expr}));
         }
         throw ValueError("unsupported regex pattern in pytra.std.re: " + pattern);
     }

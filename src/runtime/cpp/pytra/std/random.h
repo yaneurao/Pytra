@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "runtime/cpp/std/random.gen.h"
+#include "runtime/cpp/generated/std/random.h"

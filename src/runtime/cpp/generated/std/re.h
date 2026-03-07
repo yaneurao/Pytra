@@ -2,8 +2,8 @@
 // source: src/pytra/std/re.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_RE_GEN_H
-#define PYTRA_STD_RE_GEN_H
+#ifndef PYTRA_GENERATED_STD_RE_H
+#define PYTRA_GENERATED_STD_RE_H
 
 #include "runtime/cpp/core/py_types.ext.h"
 
@@ -16,7 +16,7 @@ namespace pytra::std::re {
         str _text;
         PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
         
-        Match(const str& text, const list<str>& groups);
+        Match(const str& text, const rc<list<str>>& groups);
         str group(int64 idx = 0);
     };
 
@@ -35,4 +35,4 @@ str sub(const str& pattern, const str& repl, const str& text, int64 flags = 0);
 
 }  // namespace pytra::std::re
 
-#endif  // PYTRA_STD_RE_GEN_H
+#endif  // PYTRA_GENERATED_STD_RE_H

@@ -3,10 +3,10 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/argparse.gen.h"
+#include "runtime/cpp/generated/std/argparse.h"
 
-#include "runtime/cpp/built_in/string_ops.gen.h"
-#include "runtime/cpp/std/sys.gen.h"
+#include "built_in/string_ops.gen.h"
+#include "std/sys.gen.h"
 
 namespace pytra::std::argparse {
 
@@ -22,18 +22,18 @@ namespace pytra::std::argparse {
     }
     
 
-    _ArgSpec::_ArgSpec(const list<str>& names, const str& action, const list<str>& choices, const object& py_default, const str& help_text) {
-            this->names = names;
+    _ArgSpec::_ArgSpec(const rc<list<str>>& names, const str& action, const rc<list<str>>& choices, const object& py_default, const str& help_text) {
+            this->names = rc_list_copy_value(names);
             this->action = action;
-            this->choices = choices;
+            this->choices = rc_list_copy_value(choices);
             this->py_default = make_object(py_default);
             this->help_text = help_text;
-            this->is_optional = (py_len(names) > 0) && (py_startswith(names[0], "-"));
+            this->is_optional = (py_len(names) > 0) && (py_startswith(py_at(names, py_to<int64>(0)), "-"));
             if (this->is_optional) {
-                auto base = py_replace(py_at(names, -(1)).lstrip("-"), "-", "_");
+                auto base = py_replace(py_at(names, py_to<int64>(-(1))).lstrip("-"), "-", "_");
                 this->dest = py_to_string(base);
             } else {
-                this->dest = names[0];
+                this->dest = py_at(names, py_to<int64>(0));
             }
     }
     
@@ -43,7 +43,7 @@ namespace pytra::std::argparse {
             this->_specs = {};
     }
 
-    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const list<str>& choices, const object& py_default) {
+    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const rc<list<str>>& choices, const object& py_default) {
             list<str> names = {};
             if (name0 != "")
                 names.append(name0);

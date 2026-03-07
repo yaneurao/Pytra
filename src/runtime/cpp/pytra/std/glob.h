@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "runtime/cpp/std/glob.gen.h"
+#include "runtime/cpp/generated/std/glob.h"

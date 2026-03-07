@@ -2,8 +2,8 @@
 // source: src/pytra/std/json.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_JSON_GEN_H
-#define PYTRA_STD_JSON_GEN_H
+#ifndef PYTRA_GENERATED_STD_JSON_H
+#define PYTRA_GENERATED_STD_JSON_H
 
 #include "runtime/cpp/core/py_types.ext.h"
 
@@ -45,4 +45,4 @@ str dumps(const object& obj, bool ensure_ascii = true, const ::std::optional<int
 
 }  // namespace pytra::std::json
 
-#endif  // PYTRA_STD_JSON_GEN_H
+#endif  // PYTRA_GENERATED_STD_JSON_H

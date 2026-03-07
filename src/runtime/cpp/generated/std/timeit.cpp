@@ -3,9 +3,9 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/timeit.gen.h"
+#include "runtime/cpp/generated/std/timeit.h"
 
-#include "runtime/cpp/std/time.gen.h"
+#include "pytra/std/time.h"
 
 namespace pytra::std::timeit {
 

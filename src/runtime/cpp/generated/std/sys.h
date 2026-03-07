@@ -2,8 +2,8 @@
 // source: src/pytra/std/sys.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_SYS_H
-#define PYTRA_STD_SYS_H
+#ifndef PYTRA_GENERATED_STD_SYS_H
+#define PYTRA_GENERATED_STD_SYS_H
 
 #include "runtime/cpp/core/py_types.ext.h"
 
@@ -14,7 +14,7 @@ extern list<str> path;
 extern object stderr;
 extern object stdout;
 
-void exit(int64 code);
+void exit(int64 code = 0);
 void set_argv(const list<str>& values);
 void set_path(const list<str>& values);
 void write_stderr(const str& text);
@@ -22,4 +22,4 @@ void write_stdout(const str& text);
 
 }  // namespace pytra::std::sys
 
-#endif  // PYTRA_STD_SYS_H
+#endif  // PYTRA_GENERATED_STD_SYS_H

@@ -3,7 +3,7 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/random.gen.h"
+#include "runtime/cpp/generated/std/random.h"
 
 #include "pytra/std/math.h"
 
@@ -51,7 +51,7 @@ so it can be transpiled to target runtimes.
         return lo + int64(random() * py_to<float64>(span));
     }
     
-    list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k) {
+    rc<list<int64>> choices(const rc<list<int64>>& population, const rc<list<float64>>& weights, int64 k) {
         /* Return k sampled elements with replacement.
 
     Supported call forms:
@@ -60,7 +60,7 @@ so it can be transpiled to target runtimes.
      */
         int64 n = py_len(population);
         if (n <= 0)
-            return make_object(list<object>{});
+            return rc_list_from_value(list<int64>{});
         int64 draws = k;
         if (draws < 0)
             draws = 0;
@@ -90,15 +90,15 @@ so it can be transpiled to target runtimes.
                             break;
                         }
                     }
-                    out.append(int64(population[picked_i]));
+                    out.append(int64(py_at(population, py_to<int64>(picked_i))));
                 }
-                return out;
+                return rc_list_from_value(out);
             }
         }
         out.reserve((draws <= 0) ? 0 : draws);
         for (int64 _ = 0; _ < draws; ++_)
-            out.append(int64(population[randint(0, n - 1)]));
-        return out;
+            out.append(int64(py_at(population, py_to<int64>(randint(0, n - 1)))));
+        return rc_list_from_value(out);
     }
     
     float64 gauss(float64 mu, float64 sigma) {
@@ -120,15 +120,15 @@ so it can be transpiled to target runtimes.
         return mu + sigma * z0;
     }
     
-    void shuffle(list<int64>& xs) {
+    void shuffle(rc<list<int64>>& xs) {
         /* Shuffle list in place. */
         int64 i = py_len(xs) - 1;
         while (i > 0) {
             int64 j = randint(0, i);
             if (j != i) {
-                int64 tmp = xs[i];
-                xs[i] = xs[j];
-                xs[j] = tmp;
+                int64 tmp = py_at(xs, py_to<int64>(i));
+                py_at(xs, py_to<int64>(i)) = py_at(xs, py_to<int64>(j));
+                py_at(xs, py_to<int64>(j)) = tmp;
             }
             i--;
         }

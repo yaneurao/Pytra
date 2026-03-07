@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "runtime/cpp/std/time.gen.h"
+#include "runtime/cpp/generated/std/time.h"

@@ -1,4 +1,4 @@
-#include "runtime/cpp/std/os_path.gen.h"
+#include "runtime/cpp/generated/std/os_path.h"
 #include <filesystem>
 
 namespace pytra::std::os_path {

@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "runtime/cpp/std/os_path.gen.h"
+#include "runtime/cpp/generated/std/os_path.h"

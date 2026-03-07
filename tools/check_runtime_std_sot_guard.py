@@ -11,7 +11,7 @@ Current guarded module set:
 - json (`pyJsonLoads` / `pyJsonDumps`)
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
-- C++ std/utils runtime shape (root generated modules + required manual impl split)
+- C++ std/utils runtime shape (`generated/` + `pytra/` ownership + required manual impl split)
 """
 
 from __future__ import annotations
@@ -110,32 +110,32 @@ CPP_HEADER_ONLY_STD_MODULES = {
 }
 
 CPP_STD_HEADER_LOCATIONS: dict[str, str] = {
-    "argparse": "src/runtime/cpp/std/argparse.gen.h",
-    "glob": "src/runtime/cpp/std/glob.gen.h",
-    "json": "src/runtime/cpp/std/json.gen.h",
-    "math": "src/runtime/cpp/std/math.gen.h",
-    "os": "src/runtime/cpp/std/os.gen.h",
-    "os_path": "src/runtime/cpp/std/os_path.gen.h",
-    "pathlib": "src/runtime/cpp/std/pathlib.gen.h",
-    "random": "src/runtime/cpp/std/random.gen.h",
-    "re": "src/runtime/cpp/std/re.gen.h",
-    "sys": "src/runtime/cpp/std/sys.gen.h",
-    "time": "src/runtime/cpp/std/time.gen.h",
-    "timeit": "src/runtime/cpp/std/timeit.gen.h",
+    "argparse": "src/runtime/cpp/generated/std/argparse.h",
+    "glob": "src/runtime/cpp/generated/std/glob.h",
+    "json": "src/runtime/cpp/generated/std/json.h",
+    "math": "src/runtime/cpp/generated/std/math.h",
+    "os": "src/runtime/cpp/generated/std/os.h",
+    "os_path": "src/runtime/cpp/generated/std/os_path.h",
+    "pathlib": "src/runtime/cpp/generated/std/pathlib.h",
+    "random": "src/runtime/cpp/generated/std/random.h",
+    "re": "src/runtime/cpp/generated/std/re.h",
+    "sys": "src/runtime/cpp/generated/std/sys.h",
+    "time": "src/runtime/cpp/generated/std/time.h",
+    "timeit": "src/runtime/cpp/generated/std/timeit.h",
 }
 
 CPP_STD_SOURCE_LOCATIONS: dict[str, str] = {
-    "argparse": "src/runtime/cpp/std/argparse.gen.cpp",
-    "glob": "src/runtime/cpp/std/glob.gen.cpp",
-    "json": "src/runtime/cpp/std/json.gen.cpp",
-    "os": "src/runtime/cpp/std/os.gen.cpp",
-    "os_path": "src/runtime/cpp/std/os_path.gen.cpp",
-    "pathlib": "src/runtime/cpp/std/pathlib.gen.cpp",
-    "random": "src/runtime/cpp/std/random.gen.cpp",
-    "re": "src/runtime/cpp/std/re.gen.cpp",
-    "sys": "src/runtime/cpp/std/sys.gen.cpp",
-    "time": "src/runtime/cpp/std/time.gen.cpp",
-    "timeit": "src/runtime/cpp/std/timeit.gen.cpp",
+    "argparse": "src/runtime/cpp/generated/std/argparse.cpp",
+    "glob": "src/runtime/cpp/generated/std/glob.cpp",
+    "json": "src/runtime/cpp/generated/std/json.cpp",
+    "os": "src/runtime/cpp/generated/std/os.cpp",
+    "os_path": "src/runtime/cpp/generated/std/os_path.cpp",
+    "pathlib": "src/runtime/cpp/generated/std/pathlib.cpp",
+    "random": "src/runtime/cpp/generated/std/random.cpp",
+    "re": "src/runtime/cpp/generated/std/re.cpp",
+    "sys": "src/runtime/cpp/generated/std/sys.cpp",
+    "time": "src/runtime/cpp/generated/std/time.cpp",
+    "timeit": "src/runtime/cpp/generated/std/timeit.cpp",
 }
 
 CPP_GENERATED_UTILS_MODULES = [
@@ -233,7 +233,9 @@ def _is_generated_runtime(rel_path: str) -> bool:
     # Keep this strict and path-based.
     if "/pytra-gen/" in ("/" + rel_path):
         return True
-    # C++ root std/utils generated files.
+    if rel_path.startswith("src/runtime/cpp/pytra/"):
+        return True
+    # C++ generated std/utils files.
     return rel_path in CPP_ROOT_GENERATED_RUNTIME_FILES
 
 

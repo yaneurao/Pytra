@@ -1,4 +1,4 @@
-#include "runtime/cpp/std/os.gen.h"
+#include "runtime/cpp/generated/std/os.h"
 #include <filesystem>
 #include <stdexcept>
 

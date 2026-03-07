@@ -2,12 +2,12 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_STD_PATHLIB_GEN_H
-#define PYTRA_STD_PATHLIB_GEN_H
+#ifndef PYTRA_GENERATED_STD_PATHLIB_H
+#define PYTRA_GENERATED_STD_PATHLIB_H
 
 #include "runtime/cpp/core/py_types.ext.h"
 
-#include "std/glob.gen.h"
+#include "pytra/std/glob.h"
 
 namespace pytra::std::pathlib {
 
@@ -20,7 +20,7 @@ namespace pytra::std::pathlib {
         str __fspath__();
         Path __truediv__(const str& rhs);
         Path parent();
-        list<Path> parents();
+        rc<list<Path>> parents();
         str name();
         str suffix();
         str stem();
@@ -29,11 +29,11 @@ namespace pytra::std::pathlib {
         void mkdir(bool parents = false, bool exist_ok = false);
         str read_text(const str& encoding = "utf-8");
         int64 write_text(const str& text, const str& encoding = "utf-8");
-        list<Path> glob(const str& pattern);
+        rc<list<Path>> glob(const str& pattern);
         Path cwd();
     };
 
 
 }  // namespace pytra::std::pathlib
 
-#endif  // PYTRA_STD_PATHLIB_GEN_H
+#endif  // PYTRA_GENERATED_STD_PATHLIB_H

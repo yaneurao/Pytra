@@ -3,9 +3,9 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/json.gen.h"
+#include "runtime/cpp/generated/std/json.h"
 
-#include "runtime/cpp/built_in/string_ops.gen.h"
+#include "built_in/string_ops.gen.h"
 
 namespace pytra::std::json {
 

@@ -3,11 +3,11 @@
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/pathlib.gen.h"
+#include "runtime/cpp/generated/std/pathlib.h"
 
-#include "std/glob.gen.h"
-#include "std/os.gen.h"
-#include "std/os_path.gen.h"
+#include "pytra/std/glob.h"
+#include "pytra/std/os.h"
+#include "pytra/std/os_path.h"
 
 namespace pytra::std::pathlib {
 
@@ -41,7 +41,7 @@ namespace pytra::std::pathlib {
             return Path(parent_txt);
     }
 
-    list<Path> Path::parents() {
+    rc<list<Path>> Path::parents() {
             list<Path> out = {};
             str current = py_to_string(pytra::std::os_path::dirname(this->_value));
             while (true) {
@@ -55,7 +55,7 @@ namespace pytra::std::pathlib {
                     break;
                 current = next_current;
             }
-            return out;
+            return rc_list_from_value(out);
     }
 
     str Path::name() {
@@ -114,14 +114,14 @@ namespace pytra::std::pathlib {
             }
     }
 
-    list<Path> Path::glob(const str& pattern) {
+    rc<list<Path>> Path::glob(const str& pattern) {
             list<str> paths = py_to_str_list_from_object(pytra::std::glob::glob(py_to_string(pytra::std::os_path::join(this->_value, pattern))));
             list<Path> out = {};
             for (object __itobj_5 : py_dyn_range(paths)) {
                 str p = py_to_string(__itobj_5);
                 out.append(Path(Path(p)));
             }
-            return out;
+            return rc_list_from_value(out);
     }
 
     Path Path::cwd() {

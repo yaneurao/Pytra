@@ -1,6 +1,6 @@
 #include "runtime/cpp/core/py_runtime.ext.h"
 
-#include "runtime/cpp/std/sys.gen.h"
+#include "runtime/cpp/generated/std/sys.h"
 
 namespace pytra::std::sys {
 

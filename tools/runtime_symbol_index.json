@@ -955,10 +955,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/argparse.gen.cpp"
+            "src/runtime/cpp/generated/std/argparse.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/argparse.gen.h"
+            "src/runtime/cpp/pytra/std/argparse.h"
           ]
         },
         "pytra.std.glob": {
@@ -978,10 +978,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/json.gen.cpp"
+            "src/runtime/cpp/generated/std/json.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/json.gen.h"
+            "src/runtime/cpp/pytra/std/json.h"
           ]
         },
         "pytra.std.math": {
@@ -1025,7 +1025,7 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/pathlib.gen.cpp"
+            "src/runtime/cpp/generated/std/pathlib.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/pathlib.h"
@@ -1036,7 +1036,7 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/random.gen.cpp"
+            "src/runtime/cpp/generated/std/random.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/random.h"
@@ -1047,7 +1047,7 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/re.gen.cpp"
+            "src/runtime/cpp/generated/std/re.cpp"
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/std/re.h"
@@ -1062,7 +1062,7 @@
             "src/runtime/cpp/std/sys.ext.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/sys.gen.h"
+            "src/runtime/cpp/pytra/std/sys.h"
           ]
         },
         "pytra.std.time": {
@@ -1082,10 +1082,10 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/std/timeit.gen.cpp"
+            "src/runtime/cpp/generated/std/timeit.cpp"
           ],
           "public_headers": [
-            "src/runtime/cpp/std/timeit.gen.h"
+            "src/runtime/cpp/pytra/std/timeit.h"
           ]
         },
         "pytra.utils.assertions": {

@@ -4,4 +4,4 @@
 
 #pragma once
 
-#include "runtime/cpp/std/pathlib.gen.h"
+#include "runtime/cpp/generated/std/pathlib.h"
