@@ -752,7 +752,7 @@ class CppStatementEmitter:
             self.emit(
                 self.syntax_line(
                     "for_open_block",
-                    "{header} {{",
+                    "{header} {",
                     {"header": header},
                 )
             )
