@@ -539,6 +539,43 @@ class CppEmitter(
             return False
         return self._is_pyobj_runtime_list_alias_name(expr_name)
 
+    def _uses_pyobj_ref_first_list_lvalue_expr(self, expr_node: Any) -> bool:
+        """`rc_list_ref(...)` を安全に使える ref-first list 式か判定する。"""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
+            return False
+        node = self.any_to_dict_or_empty(expr_node)
+        if len(node) == 0 or self._expr_is_stack_list_local(node):
+            return False
+        if self._node_kind_from_dict(node) != "Name":
+            return False
+        expr_name = self.any_dict_get_str(node, "id", "")
+        if expr_name == "":
+            return False
+        if self._uses_pyobj_rc_list_expr(node):
+            return True
+        if not self._is_typed_list_str_name(expr_name):
+            return False
+        expr_t = self.normalize_type_name(self.get_expr_type(node))
+        if expr_t in {"", "unknown"}:
+            expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        return self._is_pyobj_ref_first_list_type(expr_t)
+
+    def _uses_pyobj_ref_first_list_ops(self, expr_node: Any) -> bool:
+        """`py_*` の ref-first list helper を使うべき式か判定する。"""
+        if self._uses_pyobj_ref_first_list_lvalue_expr(expr_node) or self._call_expr_returns_known_pyobj_list_handle(
+            expr_node
+        ):
+            return True
+        node = self.any_to_dict_or_empty(expr_node)
+        if len(node) == 0 or self._expr_is_stack_list_local(node):
+            return False
+        if self._node_kind_from_dict(node) != "Subscript":
+            return False
+        expr_t = self.normalize_type_name(self.get_expr_type(node))
+        if expr_t in {"", "unknown"}:
+            expr_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        return self._is_pyobj_ref_first_list_type(expr_t)
+
     def _uses_pyobj_runtime_list_expr(self, expr_node: Any) -> bool:
         """list 式が pyobj runtime list 経路（`py_*` 操作）を使うべきか判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -2006,7 +2043,7 @@ class CppEmitter(
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(node.get("value"), idx, node.get("slice"))
             return f"{val}[{idx}]"
-        if self._uses_pyobj_rc_list_expr(node.get("value")):
+        if self._uses_pyobj_ref_first_list_ops(node.get("value")):
             return f"py_at({val}, py_to<int64>({idx}))"
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
@@ -2679,7 +2716,7 @@ class CppEmitter(
         if list_node is None or not self._typed_list_empty_fastpath_target(list_node):
             return ""
         list_expr = self.render_expr(list_node)
-        if self._uses_pyobj_rc_list_expr(list_node):
+        if self._uses_pyobj_ref_first_list_lvalue_expr(list_node):
             list_expr = f"rc_list_ref({list_expr})"
         empty_expr = self._render_container_empty_expr(list_expr)
         if empty_expr == "":
@@ -2695,7 +2732,7 @@ class CppEmitter(
         body = self._strip_outer_parens(self.render_expr(expr_node))
         if body == "":
             return ""
-        if self._uses_pyobj_rc_list_expr(expr_node):
+        if self._uses_pyobj_ref_first_list_lvalue_expr(expr_node):
             body = f"rc_list_ref({body})"
         empty_expr = self._render_container_empty_expr(body)
         if empty_expr == "":
@@ -2780,7 +2817,7 @@ class CppEmitter(
             if idx_is_str_key:
                 return f"py_dict_get({val}, {idx})"
             return f"py_at({val}, py_to<int64>({idx}))"
-        if self._uses_pyobj_rc_list_expr(expr.get("value")):
+        if self._uses_pyobj_ref_first_list_ops(expr.get("value")):
             at_expr = f"py_at({val}, py_to<int64>({idx}))"
             return at_expr
         if (
@@ -3176,7 +3213,7 @@ class CppEmitter(
             value_node = expr_d.get("value")
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
-            if self._uses_pyobj_rc_list_expr(owner_node):
+            if self._uses_pyobj_ref_first_list_ops(owner_node):
                 return f"py_append({owner_expr}, {value_expr})"
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
@@ -3195,7 +3232,7 @@ class CppEmitter(
             value_node = expr_d.get("value")
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
-            if self._uses_pyobj_rc_list_expr(owner_node):
+            if self._uses_pyobj_ref_first_list_ops(owner_node):
                 return f"py_extend({owner_expr}, {value_expr})"
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
@@ -3211,7 +3248,7 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             has_index = self.any_dict_has(expr_d, "index")
-            if self._uses_pyobj_rc_list_expr(owner_node):
+            if self._uses_pyobj_ref_first_list_ops(owner_node):
                 if not has_index:
                     return f"py_pop({owner_expr})"
                 index_node = expr_d.get("index")
@@ -3237,7 +3274,7 @@ class CppEmitter(
         if kind == "ListClear":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
-            if self._uses_pyobj_rc_list_expr(owner_node):
+            if self._uses_pyobj_ref_first_list_ops(owner_node):
                 return f"py_clear({owner_expr})"
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 return f"py_clear({owner_expr})"
@@ -3245,7 +3282,7 @@ class CppEmitter(
         if kind == "ListReverse":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
-            if self._uses_pyobj_rc_list_expr(owner_node):
+            if self._uses_pyobj_ref_first_list_ops(owner_node):
                 return f"py_reverse({owner_expr})"
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 return f"py_reverse({owner_expr})"
@@ -3253,7 +3290,7 @@ class CppEmitter(
         if kind == "ListSort":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
-            if self._uses_pyobj_rc_list_expr(owner_node):
+            if self._uses_pyobj_ref_first_list_ops(owner_node):
                 return f"py_sort({owner_expr})"
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 return f"py_sort({owner_expr})"

@@ -862,12 +862,22 @@ class CppStatementEmitter:
         if len(body_stmts) != 1:
             omit_braces = False
         iter_mode = self._resolve_for_iter_mode(stmt, iter_expr)
+        typed_target_t = self.normalize_type_name(self.any_to_str(stmt.get("target_type")))
+        if typed_target_t in {"", "unknown"}:
+            typed_target_t = self.normalize_type_name(self.get_expr_type(stmt.get("target")))
+        typed_iter_override = ""
+        if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+            typed_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, typed_target_t)
+            if typed_iter_override == "":
+                typed_iter_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, typed_target_t)
+            if typed_iter_override != "":
+                iter_mode = "static_fastpath"
         if iter_mode == "runtime_protocol":
             self._emit_for_each_runtime(stmt, target, iter_expr, body_stmts, omit_braces)
             return
         t = self.render_expr(stmt.get("target"))
-        it = self.render_expr(stmt.get("iter"))
-        if self._uses_pyobj_rc_list_expr(iter_expr):
+        it = typed_iter_override if typed_iter_override != "" else self.render_expr(stmt.get("iter"))
+        if typed_iter_override == "" and self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
             it = f"rc_list_ref({it})"
         t0 = self.any_to_str(stmt.get("target_type"))
         t1 = self.get_expr_type(stmt.get("target"))
@@ -1311,6 +1321,19 @@ class CppStatementEmitter:
                 return self.normalize_type_name(parts[0])
         if self._node_kind_from_dict(iter_expr) == "Call":
             runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+            lowered_kind = self.any_dict_get_str(iter_expr, "lowered_kind", "")
+            builtin_name = self.any_dict_get_str(iter_expr, "builtin_name", "")
+            args = self.any_to_list(iter_expr.get("args"))
+            if len(args) >= 1:
+                src_node = self.any_to_dict_or_empty(args[0])
+                src_item_t = self._list_item_type_from_expr(src_node)
+                if src_item_t != "":
+                    is_enumerate = runtime_call == "py_enumerate" or (lowered_kind == "BuiltinCall" and builtin_name == "enumerate")
+                    if is_enumerate:
+                        return f"tuple[int64, {src_item_t}]"
+                    is_reversed = runtime_call == "py_reversed" or (lowered_kind == "BuiltinCall" and builtin_name == "reversed")
+                    if is_reversed:
+                        return src_item_t
             if runtime_call == "dict.items":
                 fn_node = self.any_to_dict_or_empty(iter_expr.get("func"))
                 owner_obj = fn_node.get("value")
@@ -1349,10 +1372,76 @@ class CppStatementEmitter:
                     return True
         return False
 
+    def _list_item_type_from_type(self, type_text: str) -> str:
+        """`list[T]` または同型 union から要素型 `T` を返す。"""
+        t_norm = self.normalize_type_name(type_text)
+        if t_norm == "":
+            return ""
+        if self._contains_text(t_norm, "|"):
+            picked = ""
+            for part in self.split_union(t_norm):
+                part_norm = self.normalize_type_name(part)
+                if part_norm == "None":
+                    continue
+                inner = self.type_generic_args(part_norm, "list")
+                if len(inner) != 1:
+                    return ""
+                elem_norm = self.normalize_type_name(inner[0])
+                if elem_norm == "":
+                    return ""
+                if picked == "":
+                    picked = elem_norm
+                    continue
+                if picked != elem_norm:
+                    return ""
+            return picked
+        inner = self.type_generic_args(t_norm, "list")
+        if len(inner) != 1:
+            return ""
+        return self.normalize_type_name(inner[0])
+
+    def _list_item_type_from_expr(self, expr_node: Any) -> str:
+        """式型から `list[T]` の要素型 `T` を返す。"""
+        expr_t = self.normalize_type_name(self.get_expr_type(expr_node))
+        if expr_t in {"", "unknown"}:
+            expr_t = self.normalize_type_name(self.any_dict_get_str(self.any_to_dict_or_empty(expr_node), "resolved_type", ""))
+        return self._list_item_type_from_type(expr_t)
+
+    def _prepare_pyobj_typed_list_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
+        """typed list 反復を object loop へ落とさない iterable 式へ変換する。"""
+        item_norm = self.normalize_type_name(iter_item_t)
+        if item_norm in {"", "unknown"} or self.is_any_like_type(item_norm):
+            return ""
+        src_item_t = self._list_item_type_from_expr(iter_expr)
+        if src_item_t == "" or src_item_t != item_norm:
+            return ""
+        iter_txt = self.render_expr(iter_expr)
+        if iter_txt == "":
+            return ""
+        if self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+            return f"rc_list_ref({iter_txt})"
+        if self._call_expr_returns_known_pyobj_list_handle(iter_expr):
+            handle_tmp = self.next_tmp("__iter_list")
+            self.emit(f"auto {handle_tmp} = {iter_txt};")
+            iter_expr_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+            if iter_expr_t in {"", "unknown"}:
+                iter_expr_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+            if iter_expr_t not in {"", "unknown"}:
+                self.declared_var_types[handle_tmp] = iter_expr_t
+            return f"rc_list_ref({handle_tmp})"
+        return iter_txt
+
     def _render_forcore_typed_enumerate_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
-        """`enumerate(list[str])` を pyobj でも typed enumerate へ戻す。"""
+        """`enumerate(list[T])` を pyobj でも typed enumerate へ戻す。"""
         iter_item_norm = self.normalize_type_name(iter_item_t)
-        if iter_item_norm != "tuple[int64, str]":
+        if not (iter_item_norm.startswith("tuple[") and iter_item_norm.endswith("]")):
+            return ""
+        iter_item_parts = self.split_generic(iter_item_norm[6:-1])
+        if len(iter_item_parts) != 2:
+            return ""
+        index_t = self.normalize_type_name(iter_item_parts[0])
+        elem_t = self.normalize_type_name(iter_item_parts[1])
+        if index_t != "int64" or elem_t in {"", "unknown"} or self.is_any_like_type(elem_t):
             return ""
         if self._node_kind_from_dict(iter_expr) != "Call":
             return ""
@@ -1366,39 +1455,65 @@ class CppStatementEmitter:
         if len(args) < 1:
             return ""
         src_node = self.any_to_dict_or_empty(args[0])
-        if self._node_kind_from_dict(src_node) != "Name":
-            return ""
-        src_name = self.any_dict_get_str(src_node, "id", "")
-        if src_name == "" or self._is_stack_list_local_name(src_name):
+        if len(src_node) == 0:
             return ""
         src_t = self.normalize_type_name(self.get_expr_type(src_node))
         if src_t in {"", "unknown"}:
             src_t = self.normalize_type_name(self.any_dict_get_str(src_node, "resolved_type", ""))
-        if not self._forcore_type_has_list_str(src_t):
-            return ""
+        src_item_t = self._list_item_type_from_type(src_t)
         src_expr = self.render_expr(src_node)
         if src_expr == "":
             return ""
-        if self._uses_pyobj_rc_list_expr(src_node):
+        if src_item_t == elem_t and not self.is_any_like_type(src_t):
             if len(args) >= 2:
                 start_expr = self.render_expr(args[1])
                 if start_expr == "":
                     return ""
                 return f"py_enumerate({src_expr}, py_to<int64>({start_expr}))"
             return f"py_enumerate({src_expr})"
-        if self._is_typed_list_str_name(src_name):
-            if len(args) >= 2:
-                start_expr = self.render_expr(args[1])
-                if start_expr == "":
-                    return ""
-                return f"py_enumerate({src_expr}, py_to<int64>({start_expr}))"
-            return f"py_enumerate({src_expr})"
+        if not self._forcore_type_has_list_of(src_t, elem_t):
+            return ""
+        if not self._can_runtime_cast_target(elem_t):
+            return ""
+        elem_cpp_t = self._cpp_type_text(elem_t)
         if len(args) >= 2:
             start_expr = self.render_expr(args[1])
             if start_expr == "":
                 return ""
-            return f"py_enumerate_list_as<str>({src_expr}, py_to<int64>({start_expr}))"
-        return f"py_enumerate_list_as<str>({src_expr})"
+            return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr}, py_to<int64>({start_expr}))"
+        return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr})"
+
+    def _render_forcore_typed_reversed_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
+        """`reversed(list[T])` を typed list 反復へ戻す。"""
+        item_norm = self.normalize_type_name(iter_item_t)
+        if item_norm in {"", "unknown"} or self.is_any_like_type(item_norm):
+            return ""
+        if self._node_kind_from_dict(iter_expr) != "Call":
+            return ""
+        runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+        lowered_kind = self.any_dict_get_str(iter_expr, "lowered_kind", "")
+        builtin_name = self.any_dict_get_str(iter_expr, "builtin_name", "")
+        is_reversed = runtime_call == "py_reversed" or (lowered_kind == "BuiltinCall" and builtin_name == "reversed")
+        if not is_reversed:
+            return ""
+        args = self.any_to_list(iter_expr.get("args"))
+        if len(args) < 1:
+            return ""
+        src_node = self.any_to_dict_or_empty(args[0])
+        if len(src_node) == 0:
+            return ""
+        src_t = self.normalize_type_name(self.get_expr_type(src_node))
+        if src_t in {"", "unknown"}:
+            src_t = self.normalize_type_name(self.any_dict_get_str(src_node, "resolved_type", ""))
+        src_item_t = self._list_item_type_from_type(src_t)
+        if src_item_t == "" or src_item_t != item_norm:
+            return ""
+        if self.is_any_like_type(src_t):
+            return ""
+        src_expr = self.render_expr(src_node)
+        if src_expr == "":
+            return ""
+        return f"py_reversed({src_expr})"
 
     def _render_forcore_typed_refclass_list_iter_expr(
         self,
@@ -1562,8 +1677,23 @@ class CppStatementEmitter:
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 typed_iter_expr = iter_txt
-                if self._uses_pyobj_rc_list_expr(iter_expr):
-                    typed_iter_expr = f"rc_list_ref({iter_txt})"
+                if typed_iter:
+                    list_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, iter_item_t)
+                    if list_iter_override != "":
+                        typed_iter_expr = list_iter_override
+                        force_runtime_iter = False
+                    elif self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+                        typed_iter_expr = f"rc_list_ref({iter_txt})"
+                if force_runtime_iter and typed_iter:
+                    enumerate_override = self._render_forcore_typed_enumerate_iter_expr(iter_expr, iter_item_t)
+                    if enumerate_override != "":
+                        typed_iter_expr = enumerate_override
+                        force_runtime_iter = False
+                if force_runtime_iter and typed_iter:
+                    reversed_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, iter_item_t)
+                    if reversed_override != "":
+                        typed_iter_expr = reversed_override
+                        force_runtime_iter = False
                 if force_runtime_iter and typed_iter:
                     refclass_override = self._render_forcore_typed_refclass_list_iter_expr(iter_expr, iter_item_t, target_id)
                     if refclass_override != "":
@@ -1623,12 +1753,22 @@ class CppStatementEmitter:
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 typed_iter_expr = iter_txt
-                if self._uses_pyobj_rc_list_expr(iter_expr):
-                    typed_iter_expr = f"rc_list_ref({iter_txt})"
+                if typed_iter:
+                    list_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, iter_item_t)
+                    if list_iter_override != "":
+                        typed_iter_expr = list_iter_override
+                        force_runtime_iter = False
+                    elif self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+                        typed_iter_expr = f"rc_list_ref({iter_txt})"
                 if force_runtime_iter and typed_iter:
                     enumerate_override = self._render_forcore_typed_enumerate_iter_expr(iter_expr, iter_item_t)
                     if enumerate_override != "":
                         typed_iter_expr = enumerate_override
+                        force_runtime_iter = False
+                if force_runtime_iter and typed_iter:
+                    reversed_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, iter_item_t)
+                    if reversed_override != "":
+                        typed_iter_expr = reversed_override
                         force_runtime_iter = False
                 if force_runtime_iter:
                     typed_iter = False
