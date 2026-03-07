@@ -8,6 +8,7 @@
 背景:
 - 現在の C++ core include surface である `src/runtime/cpp/core/py_runtime.h` は shim に縮退済みだが、実体の `src/runtime/cpp/native/core/py_runtime.h` は依然として巨大で、low-level ABI / object 表現 / GC glue だけでなく、pure Python で表現可能な built_in 意味論も相当量含んでいる。
 - 代表例として、`str::split` / `splitlines` / `count` / `join` のような文字列処理、`object` / `list` / `dict` / `set` の高水準 helper、汎用 predicate / iteration 補助の一部は、C++ 固有 ABI 接着ではなく、SoT 由来の built_in runtime として分離可能である。
+- ただし `str.join` のように `list[str]` を value ABI 正規形で受けたい helper は、naive に generated 化すると C++ internal ref-first model に引かれて `rc<list<str>>` へ寄る危険がある。このため、generated helper 境界に固定 ABI を与える `@abi` 導入が先行で必要になる。
 - `spec-runtime` は、`built_in` 由来ロジックを `py_runtime` へ埋め込むことを誤り例として明示している。一方で `rc<>`、GC、`PyObj`、`type_id`、I/O / OS 接着などの low-level 責務は `core/` に残すべきと定義している。[spec-runtime.md](../spec/spec-runtime.md)
 - この状態のままだと、C++ でしか使えない手書き runtime が肥大化し、他言語 runtime と SoT の共有可能範囲が狭くなる。pure Python で書ける意味論を SoT / generated 側へ戻せば、他言語 runtime の実装量も縮小できる。
 - ただし、これは linked-program 導入や backend 側 knowledge leak 撤去より後段の整理である。先に compiler 側の責務境界を固め、その後に runtime ownership を整理する方が安全である。
@@ -46,6 +47,7 @@
 依存関係:
 - 先行して `P0-LINKED-PROGRAM-OPT-01` を完了させる。
 - 可能なら `P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01` の主要方針も先に固定する。
+- `P1-RUNTIME-ABI-DECORATOR-01` を先に進め、generated/helper 境界で `value_readonly` / `value` を指定できるようにする。
 - 本計画はそれら完了後に着手する P1 とする。
 
 確認コマンド（予定）:
@@ -194,4 +196,5 @@
 ## 決定ログ
 
 - 2026-03-07: `py_runtime.h` を単に小さくするのではなく、「pure Python で書ける意味論を SoT / generated 側へ戻し、`native/core` を low-level glue へ縮退させる」ことを本計画の目的とした。
-- 2026-03-07: 優先順位としては、`P0-LINKED-PROGRAM-OPT-01` と `P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01` の後段で扱うのが安全と判断し、P1 へ積む方針を採用した。
+- 2026-03-07: 優先順位としては、P0-LINKED-PROGRAM-OPT-01 と P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01 の後段で扱うのが安全と判断し、P1 へ積む方針を採用した。
+- 2026-03-07: `str.join` など `list[...]` helper を pure Python SoT へ戻すには、generated helper 側に fixed ABI override が必要と判断した。そのため P1-RUNTIME-ABI-DECORATOR-01 を本計画の先行依存に追加した。
