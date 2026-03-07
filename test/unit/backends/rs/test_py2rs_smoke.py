@@ -310,6 +310,31 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn('pytra::utils::gif::save_gif(&(("x.gif").to_string()), 1, 1, &(vec![]));', rust)
         self.assertIn('save_gif(&(("x.gif").to_string()), 1, 1, &(vec![]));', rust)
 
+    def test_runtime_scaffold_exposes_pytra_std_time_and_math(self) -> None:
+        runtime_src = (ROOT / "src" / "runtime" / "rs" / "pytra-core" / "built_in" / "py_runtime.rs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pub mod pytra {", runtime_src)
+        self.assertIn("pub mod std {", runtime_src)
+        self.assertIn("pub use super::super::time;", runtime_src)
+        self.assertIn("pub use super::super::math;", runtime_src)
+
+    def test_runtime_import_resolution_skips_redundant_root_math_use(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "runtime_imports_root_math.py"
+            src_py.write_text(
+                "import math\n"
+                "\n"
+                "def main() -> None:\n"
+                "    print(math.sqrt(4.0))\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("use crate::pytra::std::math;", rust)
+        self.assertIn("pytra::std::math::sqrt(4.0)", rust)
+
     def test_for_core_downcount_range_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")

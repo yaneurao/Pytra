@@ -1107,6 +1107,11 @@ pub mod math {
 }
 
 pub mod pytra {
+    pub mod std {
+        pub use super::super::math;
+        pub use super::super::time;
+    }
+
     pub mod runtime {
         pub mod png {
             pub fn write_rgb_png(path: impl AsRef<str>, width: i64, height: i64, pixels: &[u8]) {

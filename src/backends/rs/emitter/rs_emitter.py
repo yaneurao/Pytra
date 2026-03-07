@@ -1761,6 +1761,14 @@ class RustEmitter(CodeEmitter):
         leaf = self._last_dotted_name(module_name)
         return leaf == "gif" or leaf == "png"
 
+    def _should_skip_module_use_line(self, module_id: str, local_name: str) -> bool:
+        """互換 prelude と衝突する `use crate::pytra::std::{math,time};` を抑止する。"""
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if module_name not in {"pytra.std.math", "pytra.std.time"}:
+            return False
+        leaf = self._last_dotted_name(module_name)
+        return local_name == "" or local_name == leaf
+
     def _apply_image_runtime_ref_args(self, call_args: list[str]) -> list[str]:
         if len(call_args) > 0:
             call_args[0] = "&(" + call_args[0] + ")"
@@ -1806,6 +1814,9 @@ class RustEmitter(CodeEmitter):
                     continue
                 base_path = self._module_id_to_rust_use_path(module_id)
                 if (binding_kind == "module" or resolved_binding_kind == "module") and base_path != "":
+                    if self._should_skip_module_use_line(module_id, local_name):
+                        i += 1
+                        continue
                     line = "use " + base_path
                     leaf = self._last_dotted_name(module_id)
                     if local_name != "" and local_name != leaf:
@@ -1832,6 +1843,8 @@ class RustEmitter(CodeEmitter):
                     if base_path == "":
                         continue
                     asname = self.any_to_str(ent.get("asname"))
+                    if self._should_skip_module_use_line(module_id, asname):
+                        continue
                     line = "use " + base_path
                     leaf = self._last_dotted_name(module_id)
                     if asname != "" and asname != leaf:
