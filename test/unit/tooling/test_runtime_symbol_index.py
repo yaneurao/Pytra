@@ -110,6 +110,30 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertNotIn("src/runtime/cpp/built_in/iter_ops.gen.h", iter_ops.get("public_headers", []))
         self.assertIn("src/runtime/cpp/generated/built_in/iter_ops.cpp", iter_ops.get("compile_sources", []))
 
+        sequence_mod = cpp_modules.get("pytra.built_in.sequence")
+        self.assertIsInstance(sequence_mod, dict)
+        self.assertEqual(sequence_mod.get("companions"), ["generated", "native"])
+        self.assertIn(
+            "src/runtime/cpp/pytra/built_in/sequence.h",
+            sequence_mod.get("public_headers", []),
+        )
+        self.assertIn(
+            "src/runtime/cpp/generated/built_in/sequence.cpp",
+            sequence_mod.get("compile_sources", []),
+        )
+
+        string_ops = cpp_modules.get("pytra.built_in.string_ops")
+        self.assertIsInstance(string_ops, dict)
+        self.assertEqual(string_ops.get("companions"), ["generated"])
+        self.assertIn(
+            "src/runtime/cpp/pytra/built_in/string_ops.h",
+            string_ops.get("public_headers", []),
+        )
+        self.assertIn(
+            "src/runtime/cpp/generated/built_in/string_ops.cpp",
+            string_ops.get("compile_sources", []),
+        )
+
         time_mod = cpp_modules.get("pytra.std.time")
         self.assertIsInstance(time_mod, dict)
         self.assertEqual(time_mod.get("companions"), ["generated", "native"])
@@ -210,6 +234,14 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn(
             "src/runtime/cpp/generated/built_in/iter_ops.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.built_in.iter_ops"),
+        )
+        self.assertIn(
+            "src/runtime/cpp/generated/built_in/sequence.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.built_in.sequence"),
+        )
+        self.assertIn(
+            "src/runtime/cpp/generated/built_in/string_ops.cpp",
+            lookup_target_module_compile_sources("cpp", "pytra.built_in.string_ops"),
         )
         self.assertIn(
             "src/runtime/cpp/generated/utils/png.cpp",

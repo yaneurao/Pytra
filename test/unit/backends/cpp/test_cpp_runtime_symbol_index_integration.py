@@ -89,6 +89,24 @@ def main() -> None:
         self.assertIn('#include "runtime/cpp/core/py_runtime.h"', cpp)
         self.assertNotIn('runtime/cpp/native/core/', cpp)
 
+    def test_transpiled_cpp_emits_direct_built_in_headers_after_py_runtime_slimming(self) -> None:
+        cpp = self._transpile(
+            """def main(xs: list[int], s: str) -> None:
+    _ = any(xs)
+    _ = range(0, 3)
+    _ = reversed(xs)
+    _ = enumerate(xs)
+    _ = s.split(",")
+    print("-" * 3)
+""",
+            "built_in_include_surface_case.py",
+        )
+        self.assertIn('#include "runtime/cpp/core/py_runtime.h"', cpp)
+        self.assertIn('#include "pytra/built_in/predicates.h"', cpp)
+        self.assertIn('#include "pytra/built_in/sequence.h"', cpp)
+        self.assertIn('#include "pytra/built_in/iter_ops.h"', cpp)
+        self.assertNotIn('#include "pytra/built_in/string_ops.h"', cpp)
+
     def test_builtin_call_bindings_and_imported_symbol_calls_are_ir_driven(self) -> None:
         src = """from pytra.std.time import perf_counter as now
 from pytra.std.pathlib import Path as P

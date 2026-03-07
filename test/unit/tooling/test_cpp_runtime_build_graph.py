@@ -18,6 +18,7 @@ BUILD_SCRIPT = ROOT / "tools" / "build_multi_cpp.py"
 MAKEFILE_SCRIPT = ROOT / "tools" / "gen_makefile_from_manifest.py"
 
 from tools import cpp_runtime_deps as deps_mod
+from tools.cpp_runtime_deps import collect_runtime_cpp_sources
 from tools.cpp_runtime_deps import runtime_cpp_candidates_from_header
 
 
@@ -160,3 +161,36 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
         self.assertIn((ROOT / "src/runtime/cpp/native/core/gc.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/core/gc.cpp").as_posix(), paths)
+
+    def test_collect_runtime_sources_from_real_json_module_follows_direct_built_in_headers(self) -> None:
+        module_sources = [str(ROOT / "src/runtime/cpp/generated/std/json.cpp")]
+        runtime_sources = collect_runtime_cpp_sources(module_sources, ROOT / "src")
+        self.assertIn("src/runtime/cpp/generated/std/json.cpp", runtime_sources)
+        self.assertIn("src/runtime/cpp/generated/built_in/sequence.cpp", runtime_sources)
+        self.assertIn("src/runtime/cpp/generated/built_in/string_ops.cpp", runtime_sources)
+
+    def test_collect_runtime_sources_from_core_surface_no_longer_pulls_removed_built_in_companions(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            workdir = Path(td)
+            src = workdir / "main.cpp"
+            src.write_text(
+                '\n'.join(
+                    [
+                        '#include "runtime/cpp/core/py_runtime.h"',
+                        "",
+                        "int main() {",
+                        "    return 0;",
+                        "}",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            runtime_sources = collect_runtime_cpp_sources([str(src)], ROOT / "src")
+
+        self.assertIn("src/runtime/cpp/generated/built_in/string_ops.cpp", runtime_sources)
+        self.assertNotIn("src/runtime/cpp/generated/built_in/predicates.cpp", runtime_sources)
+        self.assertNotIn("src/runtime/cpp/generated/built_in/sequence.cpp", runtime_sources)
+        self.assertNotIn("src/runtime/cpp/generated/built_in/iter_ops.cpp", runtime_sources)
