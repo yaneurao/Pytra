@@ -186,11 +186,61 @@ src/runtime/cpp/
 - `test_runtime_symbol_index.py` / `test_cpp_runtime_build_graph.py` / `test_cpp_runtime_symbol_index_integration.py` で representative contract を固定する。
 - TODO / archive / 決定ログを更新し、`core` でも ownership 混在を許さない方針を完了扱いで閉じる。
 
+## Phase 1 実施結果
+
+2026-03-07 時点の `src/runtime/cpp/core/` 棚卸し結果は次のとおり。
+
+- `compat surface` 候補: 10 files
+  - `dict.ext.h`
+  - `exceptions.ext.h`
+  - `gc.ext.h`
+  - `io.ext.h`
+  - `list.ext.h`
+  - `py_runtime.ext.h`
+  - `py_scalar_types.ext.h`
+  - `py_types.ext.h`
+  - `set.ext.h`
+  - `str.ext.h`
+- `native/core` compile source 正本: 2 files
+  - `gc.ext.cpp`
+  - `io.ext.cpp`
+- `generated/core` 既存候補: 0 files
+  - 現行 `core/` 直下にあるコードは、いずれも object/container 表現・RC/GC・I/O・template helper・ABI glue に結びついており、既存 checked-in artifact のまま `generated/core` へ移せるものはない。
+  - `generated/core` lane の実証は `S4-01` で synthetic fixture か将来の real candidate を使って行う。
+- `非対象 / docs`: 1 file
+  - `README.md`
+
+分類判断:
+
+- `gc.ext.cpp` / `io.ext.cpp` は include surface を持たない native compile source とみなし、将来は `native/core/*.ext.cpp` へ移す。
+- `gc.ext.h` / `io.ext.h` は compile source の対応 header であり、将来は `native/core/*.ext.h` を正本にしつつ `core/*.ext.h` には forwarder を残す。
+- `dict.ext.h` / `list.ext.h` / `set.ext.h` / `str.ext.h` / `py_scalar_types.ext.h` / `py_types.ext.h` / `exceptions.ext.h` / `py_runtime.ext.h` は、現在は object 表現・container 実装・低レベル helper・例外/I/O集約を含む handwritten core 正本であり、将来は `native/core/*.ext.h` へ移す。
+- `py_runtime.ext.h` は generated runtime や native companion から広く参照される集約 header なので、`core/` 互換面を消さず、最終的には `core/py_runtime.ext.h -> native/core/py_runtime.ext.h` forwarder へ縮退させる。
+- 現時点では、`core/` 内のどの既存ファイルも「generated/core へそのまま rename してよい既存 artifact」には分類しない。
+
+移行マップ:
+
+| 現在のファイル | 現在の分類 | 将来の `core/` | 将来の正本 | 備考 |
+| --- | --- | --- | --- | --- |
+| `src/runtime/cpp/core/README.md` | 非対象 / docs | 残置 | なし | レイアウト説明のみ。 |
+| `src/runtime/cpp/core/gc.ext.cpp` | native compile source | 削除 | `src/runtime/cpp/native/core/gc.ext.cpp` | `.cpp` は互換 surface に残さない。 |
+| `src/runtime/cpp/core/io.ext.cpp` | native compile source | 削除 | `src/runtime/cpp/native/core/io.ext.cpp` | 同上。 |
+| `src/runtime/cpp/core/gc.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/gc.ext.h` | build graph は native source を引く。 |
+| `src/runtime/cpp/core/io.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/io.ext.h` | `PyFile` 実体の include 窓口。 |
+| `src/runtime/cpp/core/dict.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/dict.ext.h` | `pytra.core.dict` の public include は当面維持。 |
+| `src/runtime/cpp/core/list.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/list.ext.h` | list object 表現本体。 |
+| `src/runtime/cpp/core/set.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/set.ext.h` | set object 表現本体。 |
+| `src/runtime/cpp/core/str.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/str.ext.h` | `str` value type / helper 本体。 |
+| `src/runtime/cpp/core/py_scalar_types.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/py_scalar_types.ext.h` | scalar alias / primitive helper。 |
+| `src/runtime/cpp/core/py_types.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/py_types.ext.h` | object/list/dict/set/rc alias 集約。 |
+| `src/runtime/cpp/core/exceptions.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/exceptions.ext.h` | low-level exception helper。 |
+| `src/runtime/cpp/core/py_runtime.ext.h` | compat + native header | forwarder | `src/runtime/cpp/native/core/py_runtime.ext.h` | generated/native runtime から最広範に参照される集約 header。 |
+
 ## 分解
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01] C++ low-level runtime (`core`) に `generated/core` + `native/core` を導入し、stable include 面を保ったまま generated/handwritten の物理混在を解消する。
 
-- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-01] `src/runtime/cpp/core/` の既存ファイルを `compat surface` / `native 正本` / `generated 候補` / `非対象` に分類し、移行マップを作る。
+- [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-01] `src/runtime/cpp/core/` の既存ファイルを `compat surface` / `native 正本` / `generated 候補` / `非対象` に分類し、移行マップを作る。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
@@ -210,3 +260,5 @@ src/runtime/cpp/
 - 2026-03-07: ユーザー指示により、`core/` に pure Python 由来 artifact を直接混在させない方針を固定し、`generated/core` + `native/core` の別計画を P0 として起票する。
 - 2026-03-07: `pytra/core` は新しい public root としては導入せず、当面は `core/...` include 面を維持して互換コストを局所化する方針を採る。
 - 2026-03-07: この計画の第一目的は「generated/core を今すぐ大量に作ること」ではなく、「将来 generated core が必要になっても ownership が混ざらない土台を先に作ること」とする。
+- 2026-03-07: `src/runtime/cpp/core/` の既存 13 files を棚卸しし、`README.md` を除く 12 files はすべて handwritten core と判断した。`generated/core` へそのまま移せる既存 artifact は 0 件で、lane 実証は `S4-01` に切り出す。
+- 2026-03-07: `core/` には `.cpp` 実体を残さず、`gc/io` の compile source は `native/core` へ移す。header は `core/*.ext.h` の互換 include 名を維持するため、最終的に forwarder として残す方針を固定した。
