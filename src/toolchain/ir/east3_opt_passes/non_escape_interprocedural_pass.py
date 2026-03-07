@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from pytra.std.pathlib import Path
 
-from toolchain.ir.core import convert_path
-from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3
 from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
 from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
 from toolchain.ir.east3_opt_passes.non_escape_call_graph import module_id_for_doc
@@ -82,230 +79,6 @@ def _set_meta_value(node: dict[str, Any], key: str, value: Any) -> bool:
     return True
 
 
-def _resolve_relative_module_id(base_module_id: str, import_module: str, level: int) -> str:
-    base_parts_raw = [part for part in base_module_id.split(".") if part != ""]
-    if level < 0:
-        level = 0
-    if level > len(base_parts_raw):
-        parent_parts: list[str] = []
-    else:
-        parent_parts = base_parts_raw[: len(base_parts_raw) - level]
-    import_parts = [part for part in import_module.split(".") if part != ""]
-    merged_parts = parent_parts + import_parts
-    return ".".join(merged_parts)
-
-
-def _split_import_parts(text: str) -> list[str]:
-    parts: list[str] = []
-    cur = ""
-    depth = 0
-    i = 0
-    while i < len(text):
-        ch = text[i]
-        if ch == "(":
-            depth += 1
-            cur += ch
-            i += 1
-            continue
-        if ch == ")":
-            if depth > 0:
-                depth -= 1
-            cur += ch
-            i += 1
-            continue
-        if ch == "," and depth == 0:
-            token = cur.strip()
-            if token != "":
-                parts.append(token)
-            cur = ""
-            i += 1
-            continue
-        cur += ch
-        i += 1
-    token = cur.strip()
-    if token != "":
-        parts.append(token)
-    return parts
-
-
-def _parse_import_stmt(stmt: str, module_id: str, out: list[dict[str, str]]) -> None:
-    line = stmt.strip()
-    if line == "":
-        return
-    if line.startswith("import "):
-        body = line[len("import ") :].strip()
-        for raw_item in _split_import_parts(body):
-            item = raw_item.strip()
-            if item == "":
-                continue
-            module_name = ""
-            local_name = ""
-            if " as " in item:
-                mod, alias = item.rsplit(" as ", 1)
-                module_name = _safe_name(mod)
-                local_name = _safe_name(alias)
-            else:
-                module_name = _safe_name(item)
-                local_name = _safe_name(module_name.split(".")[0])
-            if module_name == "" or local_name == "":
-                continue
-            out.append(
-                {
-                    "module_id": module_name,
-                    "export_name": "",
-                    "local_name": local_name,
-                    "binding_kind": "module",
-                }
-            )
-        return
-    if not line.startswith("from "):
-        return
-    import_marker = " import "
-    idx = line.find(import_marker)
-    if idx < 0:
-        return
-    module_part = line[len("from ") : idx].strip()
-    names_part = line[idx + len(import_marker) :].strip()
-    level = 0
-    while level < len(module_part) and module_part[level] == ".":
-        level += 1
-    imported_module = _safe_name(module_part[level:])
-    if level > 0:
-        module_name = _resolve_relative_module_id(module_id, imported_module, level)
-    else:
-        module_name = imported_module
-    module_name = _safe_name(module_name)
-    if module_name == "":
-        return
-    if names_part.startswith("(") and names_part.endswith(")"):
-        names_part = names_part[1:-1].strip()
-    for raw_item in _split_import_parts(names_part):
-        item = raw_item.strip()
-        if item.endswith(","):
-            item = item[:-1].strip()
-        if item == "" or item == "*":
-            continue
-        export_name = ""
-        local_name = ""
-        if " as " in item:
-            exp, alias = item.rsplit(" as ", 1)
-            export_name = _safe_name(exp)
-            local_name = _safe_name(alias)
-        else:
-            export_name = _safe_name(item)
-            local_name = export_name
-        if export_name == "" or local_name == "":
-            continue
-        out.append(
-            {
-                "module_id": module_name,
-                "export_name": export_name,
-                "local_name": local_name,
-                "binding_kind": "symbol",
-            }
-        )
-
-
-def _parse_import_statements(source: str, module_id: str) -> list[dict[str, str]]:
-    bindings: list[dict[str, str]] = []
-    lines = source.splitlines()
-    i = 0
-    current = ""
-    paren_depth = 0
-    while i < len(lines):
-        raw_line = lines[i]
-        stripped = raw_line.strip()
-        if stripped == "" or stripped.startswith("#"):
-            i += 1
-            continue
-        if current == "":
-            if not (stripped.startswith("import ") or stripped.startswith("from ")):
-                i += 1
-                continue
-            current = stripped
-        else:
-            current += " " + stripped
-        paren_depth += stripped.count("(")
-        paren_depth -= stripped.count(")")
-        has_continuation = stripped.endswith("\\")
-        if paren_depth <= 0 and not has_continuation:
-            stmt = current.replace("\\", " ").strip()
-            _parse_import_stmt(stmt, module_id, bindings)
-            current = ""
-            paren_depth = 0
-        i += 1
-    if current != "":
-        stmt = current.replace("\\", " ").strip()
-        _parse_import_stmt(stmt, module_id, bindings)
-    return bindings
-
-
-def _parse_import_only_module_doc(module_id: str, module_path: Path) -> dict[str, Any] | None:
-    try:
-        source = module_path.read_text(encoding="utf-8")
-    except Exception:
-        return None
-    bindings = _parse_import_statements(source, module_id)
-
-    return {
-        "kind": "Module",
-        "east_stage": 3,
-        "source_path": str(module_path),
-        "meta": {
-            "module_id": module_id,
-            "import_bindings": bindings,
-        },
-        "body": [],
-    }
-
-
-def _candidate_module_paths(module_id: str, current_source_path: str) -> list[Path]:
-    rel = module_id.replace(".", "/")
-    out: list[Path] = []
-    seen: set[str] = set()
-    base_path = Path(current_source_path) if current_source_path != "" else Path(".")
-    search_roots: list[Path] = [base_path.parent]
-    for parent in base_path.parent.parents:
-        search_roots.append(parent)
-
-    def _append_if_exists(path_obj: Path) -> None:
-        key = str(path_obj)
-        if key in seen:
-            return
-        seen.add(key)
-        if path_obj.exists():
-            out.append(path_obj)
-
-    for root in search_roots:
-        _append_if_exists(root / (rel + ".py"))
-        _append_if_exists(root / rel / "__init__.py")
-        _append_if_exists(root / "src" / (rel + ".py"))
-        _append_if_exists(root / "src" / rel / "__init__.py")
-    return out
-
-
-def _load_non_escape_module_doc(module_id: str, current_source_path: str) -> dict[str, Any] | None:
-    candidates = _candidate_module_paths(module_id, current_source_path)
-    i = 0
-    while i < len(candidates):
-        cand = candidates[i]
-        try:
-            east2 = convert_path(cand)
-            east3_any = lower_east2_to_east3(east2)
-            if isinstance(east3_any, dict) and east3_any.get("kind") == "Module":
-                doc = east3_any
-                meta = _ensure_meta(doc)
-                meta["module_id"] = module_id
-                doc["meta"] = meta
-                return doc
-        except Exception:
-            fallback = _parse_import_only_module_doc(module_id, cand)
-            if fallback is not None:
-                return fallback
-        i += 1
-    return None
-
-
 def _resolve_callee_symbol_alias(
     symbol_ref: str,
     *,
@@ -339,7 +112,6 @@ def _collect_non_escape_module_closure(module_doc: dict[str, Any]) -> dict[str, 
         root_meta["module_id"] = root_module_id
         module_doc["meta"] = root_meta
     out[root_module_id] = module_doc
-    queue: list[str] = [root_module_id]
     meta_any = module_doc.get("meta")
     meta = meta_any if isinstance(meta_any, dict) else {}
     closure_any = meta.get("non_escape_import_closure")
@@ -358,36 +130,6 @@ def _collect_non_escape_module_closure(module_doc: dict[str, Any]) -> dict[str, 
             child_doc["meta"] = child_meta
         if module_id not in out:
             out[module_id] = child_doc
-            queue.append(module_id)
-
-    qidx = 0
-    while qidx < len(queue):
-        current_module_id = queue[qidx]
-        qidx += 1
-        current_doc = out.get(current_module_id)
-        if not isinstance(current_doc, dict):
-            continue
-        import_modules, import_symbols = collect_non_escape_import_maps(current_doc)
-        dep_modules: set[str] = set()
-        for _local_name, module_id in import_modules.items():
-            if module_id != "":
-                dep_modules.add(module_id)
-        for _local_name, symbol_ref in import_symbols.items():
-            if "::" in symbol_ref:
-                dep_module_id = symbol_ref.split("::", 1)[0]
-                if dep_module_id != "":
-                    dep_modules.add(dep_module_id)
-        current_source_path = _safe_name(current_doc.get("source_path"))
-        if current_source_path == "":
-            continue
-        for dep_module_id in sorted(dep_modules):
-            if dep_module_id in out:
-                continue
-            loaded = _load_non_escape_module_doc(dep_module_id, current_source_path)
-            if loaded is None:
-                continue
-            out[dep_module_id] = loaded
-            queue.append(dep_module_id)
     return out
 
 

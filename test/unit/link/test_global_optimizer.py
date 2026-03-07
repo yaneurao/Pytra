@@ -201,6 +201,51 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             linked_child_meta = result.linked_program.modules[1].east_doc["meta"]["linked_program_v1"]
             self.assertEqual(linked_child_meta["type_id_resolved_v1"]["pkg.child.Child"], 1001)
 
+    def test_optimizer_treats_enum_like_bases_as_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            enum_py = root / "enum_mod.py"
+            intenum_py = root / "intenum_mod.py"
+            intflag_py = root / "intflag_mod.py"
+            program = build_linked_program_from_module_map(
+                enum_py,
+                {
+                    str(enum_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.enum_mod"},
+                        "body": [{"kind": "ClassDef", "name": "Color", "base": "Enum", "body": []}],
+                    },
+                    str(intenum_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.intenum_mod"},
+                        "body": [{"kind": "ClassDef", "name": "Status", "base": "IntEnum", "body": []}],
+                    },
+                    str(intflag_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.intflag_mod"},
+                        "body": [{"kind": "ClassDef", "name": "Perm", "base": "IntFlag", "body": []}],
+                    },
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+
+            result = optimize_linked_program(program)
+            self.assertEqual(
+                result.link_output_doc["global"]["type_id_table"],
+                {
+                    "pkg.enum_mod.Color": 1000,
+                    "pkg.intenum_mod.Status": 1001,
+                    "pkg.intflag_mod.Perm": 1002,
+                },
+            )
+
     def test_optimizer_materializes_cpp_value_list_hints(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -32,6 +32,18 @@ _BUILTIN_TYPE_IDS: dict[str, int] = {
     "set": 7,
     "object": 8,
 }
+_ROOT_BASE_NAMES: set[str] = set(_BUILTIN_TYPE_IDS) | {
+    "Enum",
+    "IntEnum",
+    "IntFlag",
+    "BaseException",
+    "Exception",
+    "RuntimeError",
+    "ValueError",
+    "TypeError",
+    "IndexError",
+    "KeyError",
+}
 _USER_TYPE_ID_BASE = 1000
 
 
@@ -225,7 +237,7 @@ def _resolve_class_base_fqcn(
     name = _safe_name(base_name)
     if name == "":
         return "object"
-    if name in _BUILTIN_TYPE_IDS:
+    if name in _ROOT_BASE_NAMES:
         return name
     if name in local_classes:
         return local_classes[name]
