@@ -1875,7 +1875,8 @@ class CppStatementEmitter:
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
         is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
         yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
-        ret = self.cpp_signature_type(stmt.get("return_type"))
+        ret_abi_mode = self._function_runtime_abi_ret_mode(stmt)
+        ret = self.cpp_signature_type(stmt.get("return_type"), runtime_abi_mode=ret_abi_mode)
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         if is_generator:
@@ -1906,10 +1907,16 @@ class CppStatementEmitter:
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
-            ct = self.cpp_signature_type(t)
+            arg_abi_mode = self._function_runtime_abi_arg_mode(stmt, n)
+            ct = self.cpp_signature_type(t, runtime_abi_mode=arg_abi_mode)
             t_norm = self.normalize_type_name(t)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
-            if (not skip_self) and list_model == "pyobj" and self._is_pyobj_ref_first_list_type(t_norm):
+            if (
+                (not skip_self)
+                and arg_abi_mode not in {"value", "value_readonly"}
+                and list_model == "pyobj"
+                and self._is_pyobj_ref_first_list_type(t_norm)
+            ):
                 ref_first_param_names.add(n)
             usage = self.any_to_str(arg_usage.get(n))
             usage = usage if usage != "" else "readonly"
@@ -1958,6 +1965,7 @@ class CppStatementEmitter:
         self.indent += 1
         self.scope_stack.append(set(fn_scope))
         prev_ret = self.current_function_return_type
+        prev_ret_abi = self.current_function_return_abi_mode
         prev_is_gen = self.current_function_is_generator
         prev_yield_buf = self.current_function_yield_buffer
         prev_yield_ty = self.current_function_yield_type
@@ -1984,6 +1992,7 @@ class CppStatementEmitter:
                 if at != "":
                     self.declared_var_types[an] = self.normalize_type_name(at)
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        self.current_function_return_abi_mode = ret_abi_mode
         self.current_function_is_generator = is_generator
         self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
         self.current_function_yield_buffer = self.next_yield_values_name() if is_generator else ""
@@ -1999,6 +2008,7 @@ class CppStatementEmitter:
         if is_generator and self.current_function_yield_buffer != "":
             self.emit(f"return {self.current_function_yield_buffer};")
         self.current_function_return_type = prev_ret
+        self.current_function_return_abi_mode = prev_ret_abi
         self.current_function_is_generator = prev_is_gen
         self.current_function_yield_buffer = prev_yield_buf
         self.current_function_yield_type = prev_yield_ty

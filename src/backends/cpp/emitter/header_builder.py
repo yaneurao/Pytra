@@ -251,10 +251,12 @@ def build_cpp_header_from_east(
             name = dict_any_get_str(st, "name")
             if name != "":
                 ret_t = dict_any_get_str(st, "return_type", "None")
+                ret_abi_mode = _header_runtime_abi_ret_mode(st)
                 ret_cpp = _header_cpp_signature_type_from_east(
                     ret_t,
                     ref_classes,
                     class_names,
+                    runtime_abi_mode=ret_abi_mode,
                     pyobj_ref_lists=pyobj_ref_lists,
                 )
                 used_types.add(ret_cpp)
@@ -273,10 +275,12 @@ def build_cpp_header_from_east(
                     if not isinstance(an, str):
                         continue
                     at = dict_any_get_str(arg_types, an, "Any")
+                    arg_abi_mode = _header_runtime_abi_arg_mode(st, an)
                     at_cpp = _header_cpp_signature_type_from_east(
                         at,
                         ref_classes,
                         class_names,
+                        runtime_abi_mode=arg_abi_mode,
                         pyobj_ref_lists=pyobj_ref_lists,
                     )
                     used_types.add(at_cpp)
@@ -1204,14 +1208,38 @@ def _header_cpp_signature_type_from_east(
     ref_classes: set[str],
     class_names: set[str],
     *,
+    runtime_abi_mode: str = "default",
     pyobj_ref_lists: bool = False,
 ) -> str:
     txt = east_t.strip()
-    if pyobj_ref_lists and txt.startswith("list[") and txt.endswith("]") and _header_is_concrete_type_for_typed_list(txt[5:-1].strip()):
+    use_ref_first_lists = pyobj_ref_lists and runtime_abi_mode not in {"value", "value_readonly"}
+    if use_ref_first_lists and txt.startswith("list[") and txt.endswith("]") and _header_is_concrete_type_for_typed_list(txt[5:-1].strip()):
         value_cpp = _header_cpp_type_from_east(txt, ref_classes, class_names)
         if value_cpp != "bytearray":
             return "rc<" + value_cpp + ">"
     return _header_cpp_type_from_east(txt, ref_classes, class_names)
+
+
+def _header_runtime_abi_meta(fn_node: dict[str, Any]) -> dict[str, Any]:
+    meta = dict_any_get_dict(fn_node, "meta")
+    runtime_abi = dict_any_get_dict(meta, "runtime_abi_v1")
+    schema_version = runtime_abi.get("schema_version")
+    if not isinstance(schema_version, int) or int(schema_version) != 1:
+        return {}
+    return runtime_abi
+
+
+def _header_runtime_abi_arg_mode(fn_node: dict[str, Any], arg_name: str) -> str:
+    runtime_abi = _header_runtime_abi_meta(fn_node)
+    args = dict_any_get_dict(runtime_abi, "args")
+    mode = dict_any_get_str(args, arg_name, "default")
+    return mode if mode != "" else "default"
+
+
+def _header_runtime_abi_ret_mode(fn_node: dict[str, Any]) -> str:
+    runtime_abi = _header_runtime_abi_meta(fn_node)
+    mode = dict_any_get_str(runtime_abi, "ret", "default")
+    return mode if mode != "" else "default"
 
 
 def _header_guard_from_path(path: str) -> str:

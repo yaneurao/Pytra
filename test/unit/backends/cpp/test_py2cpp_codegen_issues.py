@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import CppEmitter, load_cpp_profile, load_east, transpile_to_cpp
+from src.backends.cpp.cli import CppEmitter, build_cpp_header_from_east, load_cpp_profile, load_east, transpile_to_cpp
 
 
 class Py2CppCodegenIssueTest(unittest.TestCase):
@@ -1956,6 +1956,42 @@ def f() -> int:
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("py_append(xs, 1);", cpp)
+
+    def test_pyobj_list_model_abi_value_readonly_helper_uses_value_signature_and_adapters(self) -> None:
+        src = """from pytra.std import abi
+
+@abi(args={"xs": "value_readonly"}, ret="value")
+def clone(xs: list[int]) -> list[int]:
+    return xs
+
+def make() -> list[int]:
+    xs: list[int] = []
+    xs.append(1)
+    xs.append(2)
+    return xs
+
+def use(xs: list[int]) -> list[int]:
+    ys: list[int] = clone(xs)
+    zs: list[int] = clone(make())
+    return clone(zs)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "abi_value_readonly_helper.py"
+            out_h = Path(tmpdir) / "abi_value_readonly_helper.h"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+            header = build_cpp_header_from_east(east, src_py, out_h, cpp_list_model="pyobj")
+
+        self.assertIn("list<int64> clone(const list<int64>& xs)", cpp)
+        self.assertIn("rc<list<int64>> make()", cpp)
+        self.assertIn("rc<list<int64>> use(const rc<list<int64>>& xs)", cpp)
+        self.assertIn("return xs;", cpp)
+        self.assertIn("rc<list<int64>> ys = rc_list_from_value(clone(rc_list_ref(xs)));", cpp)
+        self.assertIn("rc<list<int64>> zs = rc_list_from_value(clone(rc_list_copy_value(make())));", cpp)
+        self.assertIn("return rc_list_from_value(clone(rc_list_ref(zs)));", cpp)
+        self.assertIn("list<int64> clone(const list<int64>& xs);", header)
+        self.assertIn("rc<list<int64>> use(const rc<list<int64>>& xs);", header)
 
 
 if __name__ == "__main__":

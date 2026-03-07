@@ -296,6 +296,7 @@ class CppTypeBridgeEmitter:
         arg_nodes: list[Any],
         sig: list[str],
         *,
+        arg_abi_modes: list[str] | None = None,
         list_targets_are_value: bool = False,
     ) -> list[str]:
         """シグネチャ配列に基づいて引数列を順序保持でキャストする。"""
@@ -305,12 +306,15 @@ class CppTypeBridgeEmitter:
         for i, arg_txt in enumerate(args):
             if i < len(sig):
                 node: Any = arg_nodes[i] if i < len(arg_nodes) else {}
+                abi_mode = "default"
+                if isinstance(arg_abi_modes, list) and i < len(arg_abi_modes):
+                    abi_mode = self.any_to_str(arg_abi_modes[i]) or "default"
                 out.append(
                     self._coerce_call_arg(
                         arg_txt,
                         node,
                         sig[i],
-                        list_target_is_value=list_targets_are_value,
+                        list_target_is_value=list_targets_are_value or abi_mode in {"value", "value_readonly"},
                     )
                 )
             else:
@@ -325,6 +329,7 @@ class CppTypeBridgeEmitter:
             args,
             arg_nodes,
             self.function_arg_types[fn_name],
+            arg_abi_modes=self.function_arg_abi_modes.get(fn_name, []),
             list_targets_are_value=fn_name in self.extern_function_names,
         )
 
@@ -338,7 +343,7 @@ class CppTypeBridgeEmitter:
         east_type_txt = self.normalize_type_name(east_type_txt)
         return self._cpp_type_text(east_type_txt)
 
-    def cpp_signature_type(self, east_type: Any) -> str:
+    def cpp_signature_type(self, east_type: Any, *, runtime_abi_mode: str = "default") -> str:
         """関数境界/宣言向けに ref-first list を反映した型文字列を返す。"""
         east_type_txt = self.any_to_str(east_type)
         if east_type_txt == "" and east_type is not None:
@@ -346,7 +351,8 @@ class CppTypeBridgeEmitter:
             if ttxt != "" and ttxt not in {"{}", "[]"}:
                 east_type_txt = ttxt
         east_type_txt = self.normalize_type_name(east_type_txt)
-        return self._cpp_type_text(east_type_txt, pyobj_ref_lists=True)
+        use_ref_first_lists = runtime_abi_mode not in {"value", "value_readonly"}
+        return self._cpp_type_text(east_type_txt, pyobj_ref_lists=use_ref_first_lists)
 
     def _cpp_type_text(self, east_type: str, *, pyobj_ref_lists: bool = False) -> str:
         """正規化済み型名（str）を C++ 型名へマッピングする。"""

@@ -250,9 +250,12 @@ class CppEmitter(
         # 派生メンバが分離し、基底 helper から空テーブルを参照しうる。
         self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
+        self.function_arg_abi_modes: dict[str, list[str]] = {}
         self.function_return_types: dict[str, str] = {}
+        self.function_return_abi_modes: dict[str, str] = {}
         self.extern_function_names: set[str] = set()
         self.current_function_return_type: str = ""
+        self.current_function_return_abi_mode: str = "default"
         self.current_function_is_generator: bool = False
         self.current_function_yield_buffer: str = ""
         self.current_function_yield_type: str = "unknown"
@@ -548,6 +551,26 @@ class CppEmitter(
             return self._render_pyobj_value_list_copy_adapter(value_expr, value_node, item_t)
         return value_expr
 
+    def _function_runtime_abi_meta(self, fn_node: Any) -> dict[str, Any]:
+        fn = self.any_to_dict_or_empty(fn_node)
+        meta = self.any_to_dict_or_empty(fn.get("meta"))
+        runtime_abi = self.any_to_dict_or_empty(meta.get("runtime_abi_v1"))
+        schema_version = runtime_abi.get("schema_version", 0)
+        if not isinstance(schema_version, int) or int(schema_version) != 1:
+            return {}
+        return runtime_abi
+
+    def _function_runtime_abi_arg_mode(self, fn_node: Any, arg_name: str) -> str:
+        runtime_abi = self._function_runtime_abi_meta(fn_node)
+        args = self.any_to_dict_or_empty(runtime_abi.get("args"))
+        mode = self.any_to_str(args.get(arg_name))
+        return mode if mode != "" else "default"
+
+    def _function_runtime_abi_ret_mode(self, fn_node: Any) -> str:
+        runtime_abi = self._function_runtime_abi_meta(fn_node)
+        mode = self.any_to_str(runtime_abi.get("ret"))
+        return mode if mode != "" else "default"
+
     def _is_known_pyobj_value_list_source_expr(self, expr_node: Any) -> bool:
         """ref-first target へ `rc_list_from_value(...)` で昇格すべき value-list source か判定する。"""
         if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
@@ -585,6 +608,9 @@ class CppEmitter(
             if fn_name == "":
                 return False
             fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+            ret_abi_mode = self.any_to_str(self.function_return_abi_modes.get(fn_name, "default"))
+            if ret_abi_mode in {"value", "value_readonly"}:
+                return False
             ret_t = self.normalize_type_name(self.function_return_types.get(fn_name, ""))
             return self._is_pyobj_ref_first_list_type(ret_t)
         if fn_kind == "Attribute":
@@ -1042,13 +1068,17 @@ class CppEmitter(
                     arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
                     arg_order = self.any_dict_get_list(stmt, "arg_order")
                     ordered: list[str] = []
+                    abi_modes: list[str] = []
                     for raw_n in arg_order:
                         if isinstance(raw_n, str):
                             n = str(raw_n)
                             if n in arg_types:
                                 ordered.append(self.any_to_str(arg_types.get(n)))
+                                abi_modes.append(self._function_runtime_abi_arg_mode(stmt, n))
                     self.function_arg_types[fn_name] = ordered
+                    self.function_arg_abi_modes[fn_name] = abi_modes
                     self.function_return_types[fn_name] = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
+                    self.function_return_abi_modes[fn_name] = self._function_runtime_abi_ret_mode(stmt)
                     decorators = self.any_to_list(stmt.get("decorators"))
                     for decorator in decorators:
                         if not isinstance(decorator, str):
@@ -1950,6 +1980,7 @@ class CppEmitter(
         self.indent += 1
         self.scope_stack.append(set(fn_scope))
         prev_ret = self.current_function_return_type
+        prev_ret_abi = self.current_function_return_abi_mode
         prev_decl_types = self.declared_var_types
         prev_reassigned_names = self.current_function_reassigned_names
         prev_runtime_list_alias_names = self.current_function_pyobj_runtime_list_alias_names
@@ -1962,11 +1993,13 @@ class CppEmitter(
             if at != "":
                 self.declared_var_types[an] = self.normalize_type_name(at)
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        self.current_function_return_abi_mode = "default"
         docstring = self.any_to_str(stmt.get("docstring"))
         if docstring != "":
             self.emit_block_comment(docstring)
         self.emit_stmt_list(body_stmts)
         self.current_function_return_type = prev_ret
+        self.current_function_return_abi_mode = prev_ret_abi
         self.declared_var_types = prev_decl_types
         self.current_function_reassigned_names = set(prev_reassigned_names)
         self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names)
@@ -2038,7 +2071,10 @@ class CppEmitter(
             rv = self._rewrite_empty_collection_literal_for_typed_target(rv, value_node, ret_t)
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
-        if self._is_pyobj_ref_first_list_type(ret_t):
+        ret_abi_mode = self.any_to_str(getattr(self, "current_function_return_abi_mode", "default"))
+        if ret_abi_mode in {"value", "value_readonly"}:
+            rv = self._render_pyobj_value_list_copy_adapter(rv, stmt.get("value"), ret_t)
+        elif self._is_pyobj_ref_first_list_type(ret_t):
             rv = self._render_pyobj_alias_list_value(rv, stmt.get("value"), ret_t)
         if self.is_any_like_type(ret_t):
             rv = self.render_expr_as_any(stmt.get("value"))
