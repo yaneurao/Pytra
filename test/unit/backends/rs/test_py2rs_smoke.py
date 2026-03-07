@@ -281,6 +281,35 @@ class Py2RsSmokeTest(unittest.TestCase):
             transpile_to_rust(east)
         self.assertIn("unresolved stdlib runtime call", str(cm.exception))
 
+    def test_runtime_import_resolution_uses_canonical_runtime_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "runtime_imports.py"
+            src_py.write_text(
+                "import math as m\n"
+                "from math import pi\n"
+                "from pytra.utils import gif\n"
+                "from pytra.utils.gif import save_gif\n"
+                "\n"
+                "def main() -> None:\n"
+                "    x: float = m.sqrt(4.0)\n"
+                "    y: float = pi\n"
+                "    gif.save_gif('x.gif', 1, 1, [])\n"
+                "    save_gif('x.gif', 1, 1, [])\n"
+                "    print(x, y)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertIn("use crate::pytra::std::math as m;", rust)
+        self.assertIn("use crate::pytra::std::math::pi;", rust)
+        self.assertIn("use crate::pytra::utils::gif;", rust)
+        self.assertIn("use crate::pytra::utils::gif::save_gif;", rust)
+        self.assertNotIn("use crate::math;", rust)
+        self.assertIn("pytra::std::math::sqrt(4.0)", rust)
+        self.assertIn('pytra::utils::gif::save_gif(&(("x.gif").to_string()), 1, 1, &(vec![]));', rust)
+        self.assertIn('save_gif(&(("x.gif").to_string()), 1, 1, &(vec![]));', rust)
+
     def test_for_core_downcount_range_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")

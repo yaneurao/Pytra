@@ -6,6 +6,7 @@ from typing import Any
 
 from backends.cs.hooks.cs_hooks import build_cs_hooks
 from backends.common.emitter.code_emitter import CodeEmitter
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
 def load_cs_profile() -> dict[str, Any]:
@@ -435,33 +436,47 @@ class CSharpEmitter(CodeEmitter):
 
     def _module_id_to_cs_namespace(self, module_id: str) -> str:
         """Python 形式モジュール名を C# namespace 文字列へ変換する。"""
-        if module_id == "":
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if module_name == "":
             return ""
-        if module_id in {"math", "time", "dataclasses"}:
+        if module_name == "dataclasses":
             return ""
-        if module_id.startswith("pytra."):
+        if module_name.startswith("pytra."):
             return "Pytra.CsModule"
-        return module_id
+        return module_name
 
     def _module_alias_target(self, module_id: str, export_name: str, binding_kind: str) -> str:
         """既知モジュール import を C# alias 先へ解決する。"""
+        module_name = canonical_runtime_module_id(module_id.strip())
         if binding_kind == "module":
-            if module_id == "math":
+            if module_name == "pytra.std.math":
                 return "Pytra.CsModule.math"
-            if module_id == "time":
+            if module_name == "pytra.std.time":
                 return "Pytra.CsModule.time"
-            if module_id == "pytra.utils":
+            if module_name == "pytra.utils":
                 return "Pytra.CsModule"
+            if module_name == "pytra.utils.png":
+                return "Pytra.CsModule.png_helper"
+            if module_name == "pytra.utils.gif":
+                return "Pytra.CsModule.gif_helper"
             return ""
         if binding_kind == "symbol":
-            if module_id == "pytra.utils" and export_name == "png":
-                return "Pytra.CsModule.png_helper"
-            if module_id == "pytra.utils" and export_name == "gif":
-                return "Pytra.CsModule.gif_helper"
-            if (module_id == "pathlib" or module_id.endswith(".pathlib")) and export_name != "":
+            if module_name == "pytra.std.pathlib" and export_name != "":
                 if len(export_name) > 0 and export_name[0].isupper():
                     return "Pytra.CsModule.py_path"
             return ""
+        return ""
+
+    def _runtime_module_call_owner(self, module_id: str) -> str:
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if module_name == "pytra.std.math":
+            return "Pytra.CsModule.math"
+        if module_name == "pytra.std.time":
+            return "Pytra.CsModule.time"
+        if module_name == "pytra.utils.png":
+            return "Pytra.CsModule.png_helper"
+        if module_name == "pytra.utils.gif":
+            return "Pytra.CsModule.gif_helper"
         return ""
 
     def _walk_node_names(self, node: Any, out_names: set[str]) -> None:
@@ -521,34 +536,42 @@ class CSharpEmitter(CodeEmitter):
         self._add_unique_using_line(out, seen, "using str = System.String;")
         self._add_unique_using_line(out, seen, "using Pytra.CsModule;")
 
-        bindings = self.any_to_dict_list(meta.get("import_bindings"))
+        bindings = self.get_import_resolution_bindings(meta)
         if len(bindings) > 0:
             i = 0
             while i < len(bindings):
                 ent = bindings[i]
                 binding_kind = self.any_to_str(ent.get("binding_kind"))
+                resolved_binding_kind = self.any_to_str(ent.get("resolved_binding_kind"))
                 module_id = self.any_to_str(ent.get("module_id"))
+                runtime_module_id = self.any_to_str(ent.get("runtime_module_id"))
+                if runtime_module_id != "":
+                    module_id = runtime_module_id
                 local_name = self.any_to_str(ent.get("local_name"))
-                export_name = self.any_to_str(ent.get("export_name"))
+                export_name = self.any_to_str(ent.get("runtime_symbol"))
+                if export_name == "":
+                    export_name = self.any_to_str(ent.get("export_name"))
+                if resolved_binding_kind == "":
+                    resolved_binding_kind = binding_kind
                 if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing"}:
                     i += 1
                     continue
                 if module_id == "browser" or module_id.startswith("browser."):
                     i += 1
                     continue
-                alias_target = self._module_alias_target(module_id, export_name, binding_kind)
+                alias_target = self._module_alias_target(module_id, export_name, resolved_binding_kind)
                 if alias_target != "" and local_name != "" and local_name in used_names:
                     self._add_unique_using_line(out, seen, "using " + self._safe_name(local_name) + " = " + alias_target + ";")
                     i += 1
                     continue
-                if binding_kind == "symbol" and module_id in {"time", "dataclasses"}:
+                if resolved_binding_kind == "symbol" and module_id in {"pytra.std.time", "dataclasses"}:
                     i += 1
                     continue
                 ns = self._module_id_to_cs_namespace(module_id)
                 if ns == "":
                     i += 1
                     continue
-                if binding_kind == "module":
+                if binding_kind == "module" or resolved_binding_kind == "module":
                     if local_name != "":
                         if local_name not in used_names:
                             i += 1
@@ -560,7 +583,7 @@ class CSharpEmitter(CodeEmitter):
                             self._add_unique_using_line(out, seen, "using " + ns + ";")
                     else:
                         self._add_unique_using_line(out, seen, "using " + ns + ";")
-                elif binding_kind == "symbol" and export_name != "":
+                elif resolved_binding_kind == "symbol" and export_name != "":
                     if local_name != "" and local_name in used_names:
                         if local_name != export_name:
                             self._add_unique_using_line(out, seen, "using " + self._safe_name(local_name) + " = " + ns + "." + export_name + ";")
@@ -2359,25 +2382,36 @@ class CSharpEmitter(CodeEmitter):
                 return mapped
         return self.render_expr(expr_node)
 
-    def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+    def _render_name_call(
+        self,
+        expr: dict[str, Any],
+        fn_name_raw: str,
+        rendered_args: list[str],
+        arg_nodes: list[Any],
+    ) -> str:
         """組み込み関数呼び出しを C# 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
+        runtime_module_id = self.any_dict_get_str(expr, "runtime_module_id", "")
+        runtime_symbol = self.any_dict_get_str(expr, "runtime_symbol", "")
+        runtime_owner = self._runtime_module_call_owner(runtime_module_id)
         if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
             fn_name = "__pytra_main"
         imported_sym = self._resolve_imported_symbol(fn_name_raw)
-        imported_mod = self.any_dict_get_str(imported_sym, "module", "")
+        imported_mod = canonical_runtime_module_id(self.any_dict_get_str(imported_sym, "module", ""))
         imported_name = self.any_dict_get_str(imported_sym, "name", "")
         if fn_name_raw in self.class_names:
             return "new " + self._safe_name(fn_name_raw) + "(" + ", ".join(rendered_args) + ")"
-        if imported_mod == "pathlib" or imported_mod.endswith(".pathlib"):
+        if imported_mod == "pytra.std.pathlib" and imported_name == "Path":
             if len(rendered_args) == 0:
                 return "new " + fn_name + "(\"\")"
             return "new " + fn_name + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "isinstance":
             return self._render_isinstance_call(rendered_args, arg_nodes)
-        if imported_mod == "time" or imported_mod.endswith(".time"):
-            symbol = imported_name if imported_name != "" else fn_name_raw
-            return "Pytra.CsModule.time." + self._safe_name(symbol) + "(" + ", ".join(rendered_args) + ")"
+        if runtime_owner != "" and runtime_symbol != "":
+            return runtime_owner + "." + self._safe_name(runtime_symbol) + "(" + ", ".join(rendered_args) + ")"
+        imported_owner = self._runtime_module_call_owner(imported_mod)
+        if imported_owner != "" and imported_name != "":
+            return imported_owner + "." + self._safe_name(imported_name) + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "print":
             if len(rendered_args) == 0:
                 return "System.Console.WriteLine()"
@@ -2466,12 +2500,6 @@ class CSharpEmitter(CodeEmitter):
             if len(rendered_args) >= 1:
                 return "new System.Exception(" + rendered_args[0] + ")"
             return "new System.Exception(" + self.quote_string_literal(fn_name_raw) + ")"
-        if imported_mod.startswith("pytra.utils."):
-            leaf = self._last_dotted_name(imported_mod)
-            if leaf == "gif" or leaf == "png":
-                helper = leaf + "_helper"
-                symbol = imported_name if imported_name != "" else fn_name_raw
-                return "Pytra.CsModule." + helper + "." + self._safe_name(symbol) + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "enumerate":
             self.needs_enumerate_helper = True
             src_expr = rendered_args[0] if len(rendered_args) > 0 else "new System.Collections.Generic.List<object>()"
@@ -2488,15 +2516,19 @@ class CSharpEmitter(CodeEmitter):
         """属性呼び出しを C# 式へ変換する。"""
         owner_kind = self.any_dict_get_str(owner_node, "kind", "")
         owner_name = ""
+        owner_module = ""
         if owner_kind == "Name":
             owner_name = self.any_dict_get_str(owner_node, "id", "")
+            owner_module = canonical_runtime_module_id(self._resolve_imported_module_name(owner_name))
+            if owner_module == "":
+                owner_module = canonical_runtime_module_id(owner_name)
         if owner_kind == "Call":
             super_fn = self.any_to_dict_or_empty(owner_node.get("func"))
             if self.any_dict_get_str(super_fn, "kind", "") == "Name" and self.any_dict_get_str(super_fn, "id", "") == "super":
                 if attr_raw == "__init__":
                     return "base(" + ", ".join(rendered_args) + ")"
                 return "base." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
-        if owner_name == "time" and not self.is_declared(owner_name):
+        if owner_module == "pytra.std.time" and not self.is_declared(owner_name):
             return "Pytra.CsModule.time." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
         if owner_name == "json" and not self.is_declared(owner_name):
             return "Pytra.CsModule.json." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
@@ -2693,7 +2725,7 @@ class CSharpEmitter(CodeEmitter):
 
         if fn_kind == "Name":
             fn_name_raw = self.any_dict_get_str(fn_node, "id", "")
-            return self._render_name_call(fn_name_raw, rendered_args, arg_nodes)
+            return self._render_name_call(expr, fn_name_raw, rendered_args, arg_nodes)
 
         if fn_kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
@@ -2731,6 +2763,11 @@ class CSharpEmitter(CodeEmitter):
                 return "this"
             if name == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
                 return "__pytra_main"
+            imported_sym = self._resolve_imported_symbol(name)
+            imported_mod = canonical_runtime_module_id(self.any_dict_get_str(imported_sym, "module", ""))
+            imported_name = self.any_dict_get_str(imported_sym, "name", "")
+            if imported_mod == "pytra.std.math" and imported_name in {"pi", "e", "tau"}:
+                return "Pytra.CsModule.math." + imported_name
             return self._safe_name(name)
 
         if kind == "Constant":
@@ -2766,6 +2803,11 @@ class CSharpEmitter(CodeEmitter):
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_kind = self.any_dict_get_str(owner_node, "kind", "")
             owner_name = self.any_dict_get_str(owner_node, "id", "")
+            owner_module = ""
+            if owner_kind == "Name":
+                owner_module = canonical_runtime_module_id(self._resolve_imported_module_name(owner_name))
+                if owner_module == "":
+                    owner_module = canonical_runtime_module_id(owner_name)
             attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
             runtime_call = self.any_dict_get_str(expr_d, "runtime_call", "")
             runtime_source = "runtime_call"
@@ -2783,7 +2825,7 @@ class CSharpEmitter(CodeEmitter):
                 return self.render_expr(owner_node) + ".stem()"
             if owner_kind == "Name" and owner_name == "self" and self.in_method_scope:
                 return "this." + attr
-            if owner_kind == "Name" and owner_name == "time" and not self.is_declared(owner_name):
+            if owner_module == "pytra.std.time" and not self.is_declared(owner_name):
                 return "Pytra.CsModule.time." + attr
             if owner_kind == "Name" and owner_name == "sys" and attr == "argv" and not self.is_declared(owner_name):
                 return "args"

@@ -451,18 +451,29 @@ class CodeEmitterTest(unittest.TestCase):
                     {
                         "binding_kind": "module",
                         "local_name": "m",
-                        "module_id": "pytra.std.math",
+                        "module_id": "math",
+                        "runtime_module_id": "pytra.std.math",
                     },
                     {
                         "binding_kind": "symbol",
                         "local_name": "sqrt",
-                        "module_id": "pytra.std.math",
+                        "module_id": "math",
                         "export_name": "sqrt",
+                        "runtime_module_id": "pytra.std.math",
+                        "runtime_symbol": "sqrt",
+                    },
+                    {
+                        "binding_kind": "symbol",
+                        "local_name": "gif",
+                        "module_id": "pytra.utils",
+                        "export_name": "gif",
+                        "runtime_module_id": "pytra.utils.gif",
+                        "resolved_binding_kind": "module",
                     },
                 ],
                 "qualified_refs": [
                     {
-                        "module_id": "pytra.std.math",
+                        "module_id": "math",
                         "symbol": "sqrt",
                         "local_name": "sqrt",
                     }
@@ -470,10 +481,34 @@ class CodeEmitterTest(unittest.TestCase):
             }
         }
         em.load_import_bindings_from_meta(meta)
-        self.assertEqual(em.import_modules, {"m": "pytra.std.math"})
+        self.assertEqual(em.import_modules, {"m": "pytra.std.math", "gif": "pytra.utils.gif"})
         self.assertEqual(em.import_symbols, {"sqrt": {"module": "pytra.std.math", "name": "sqrt"}})
         self.assertEqual(em._resolve_imported_module_name("m"), "pytra.std.math")
         self.assertEqual(em._resolve_imported_module_name("sqrt"), "pytra.std.math.sqrt")
+        self.assertEqual(em._resolve_imported_module_name("gif"), "pytra.utils.gif")
+
+    def test_get_import_resolution_bindings_enriches_runtime_metadata(self) -> None:
+        em = CodeEmitter({})
+        meta = {
+            "import_bindings": [
+                {
+                    "binding_kind": "module",
+                    "local_name": "m",
+                    "module_id": "math",
+                },
+                {
+                    "binding_kind": "symbol",
+                    "local_name": "gif",
+                    "module_id": "pytra.utils",
+                    "export_name": "gif",
+                },
+            ]
+        }
+        binds = em.get_import_resolution_bindings(meta)
+        self.assertEqual(binds[0].get("runtime_module_id"), "pytra.std.math")
+        self.assertEqual(binds[0].get("resolved_binding_kind"), "module")
+        self.assertEqual(binds[1].get("runtime_module_id"), "pytra.utils.gif")
+        self.assertEqual(binds[1].get("resolved_binding_kind"), "module")
 
     def test_imported_module_name_fallback_via_meta(self) -> None:
         em = CodeEmitter(

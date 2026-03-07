@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 from pytra.std import json
 from pytra.std.pathlib import Path
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
 
 class EmitterHooks:
@@ -2126,31 +2127,44 @@ class CodeEmitter:
         self.import_symbols = {}
         self.import_symbol_modules = set()
 
+        binds = self.get_import_resolution_bindings(meta)
         resolution = self.any_to_dict_or_empty(meta.get("import_resolution"))
-        binds = self.any_to_dict_list(resolution.get("bindings"))
         refs = self.any_to_dict_list(resolution.get("qualified_refs"))
-        if len(binds) == 0:
-            binds = self.any_to_dict_list(meta.get("import_bindings"))
         if len(refs) == 0:
             refs = self.any_to_dict_list(meta.get("qualified_symbol_refs"))
 
         if len(binds) > 0:
-            for ref in refs:
-                self._add_symbol_binding(
-                    self.any_to_str(ref.get("local_name")),
-                    self.any_to_str(ref.get("module_id")),
-                    self.any_to_str(ref.get("symbol")),
-                )
-
             for ent in binds:
                 binding_kind = self.any_to_str(ent.get("binding_kind"))
+                resolved_binding_kind = self.any_to_str(ent.get("resolved_binding_kind"))
                 local_name = self.any_to_str(ent.get("local_name"))
                 module_id = self.any_to_str(ent.get("module_id"))
+                runtime_module_id = self.any_to_str(ent.get("runtime_module_id"))
+                runtime_symbol = self.any_to_str(ent.get("runtime_symbol"))
+                if runtime_module_id != "":
+                    module_id = runtime_module_id
+                if resolved_binding_kind == "":
+                    resolved_binding_kind = binding_kind
                 if binding_kind == "module":
                     if local_name != "" and module_id != "":
                         self.import_modules[local_name] = module_id
-                elif binding_kind == "symbol" and len(refs) == 0:
-                    self._add_symbol_binding(local_name, module_id, self.any_to_str(ent.get("export_name")))
+                elif binding_kind == "symbol":
+                    if resolved_binding_kind == "module":
+                        if local_name != "" and module_id != "":
+                            self.import_modules[local_name] = module_id
+                        continue
+                    export_name = runtime_symbol
+                    if export_name == "":
+                        export_name = self.any_to_str(ent.get("export_name"))
+                    self._add_symbol_binding(local_name, module_id, export_name)
+
+            if len(self.import_symbols) == 0 and len(self.import_modules) == 0:
+                for ref in refs:
+                    self._add_symbol_binding(
+                        self.any_to_str(ref.get("local_name")),
+                        self.any_to_str(ref.get("module_id")),
+                        self.any_to_str(ref.get("symbol")),
+                    )
 
             if len(self.import_symbols) == 0:
                 legacy_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
@@ -2192,6 +2206,30 @@ class CodeEmitter:
             module_id = self.any_to_str(module_id_obj)
             if module_id != "":
                 self.import_modules[local_name_obj] = module_id
+
+    def get_import_resolution_bindings(self, meta: dict[str, Any]) -> list[dict[str, Any]]:
+        """`import_resolution.bindings` を canonical runtime metadata 付きで返す。"""
+        resolution = self.any_to_dict_or_empty(meta.get("import_resolution"))
+        binds = self.any_to_dict_list(resolution.get("bindings"))
+        if len(binds) == 0:
+            binds = self.any_to_dict_list(meta.get("import_bindings"))
+        out: list[dict[str, Any]] = []
+        for ent in binds:
+            merged = dict(ent)
+            binding_kind = self.any_to_str(merged.get("binding_kind"))
+            module_id = self.any_to_str(merged.get("module_id"))
+            export_name = self.any_to_str(merged.get("export_name"))
+            resolved = resolve_import_binding_doc(module_id, export_name, binding_kind)
+            if len(resolved) > 0:
+                for key, value in resolved.items():
+                    if key not in merged:
+                        merged[key] = value
+                        continue
+                    current = merged.get(key)
+                    if current == "" or current is None:
+                        merged[key] = value
+            out.append(merged)
+        return out
 
     def _add_symbol_binding(self, local_name: str, module_id: str, export_name: str) -> None:
         """from-import のローカル束縛を import 解決テーブルへ追加する。"""

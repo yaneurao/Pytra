@@ -34,6 +34,7 @@ from backends.cpp.emitter.profile_loader import (
     load_cpp_profile,
     load_cpp_type_map,
 )
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from backends.cpp.lower import lower_cpp_from_east3
 from backends.cpp.optimizer import optimize_cpp_ir_module
 from backends.cpp.optimizer import render_cpp_opt_trace
@@ -1345,6 +1346,35 @@ class CppEmitter(
         """Call ノードから数値返り値型を推定する。"""
         if len(call_node) == 0:
             return ""
+        runtime_module_id = canonical_runtime_module_id(self.any_to_str(call_node.get("runtime_module_id")))
+        runtime_symbol = self.any_to_str(call_node.get("runtime_symbol"))
+        semantic_tag = self.any_to_str(call_node.get("semantic_tag"))
+        if runtime_module_id == "pytra.std.math" and runtime_symbol in {
+            "sin",
+            "cos",
+            "tan",
+            "sqrt",
+            "exp",
+            "log",
+            "log10",
+            "fabs",
+            "floor",
+            "ceil",
+        }:
+            return "float64"
+        if semantic_tag in {
+            "stdlib.fn.sin",
+            "stdlib.fn.cos",
+            "stdlib.fn.tan",
+            "stdlib.fn.sqrt",
+            "stdlib.fn.exp",
+            "stdlib.fn.log",
+            "stdlib.fn.log10",
+            "stdlib.fn.fabs",
+            "stdlib.fn.floor",
+            "stdlib.fn.ceil",
+        }:
+            return "float64"
         fn_node = self.any_to_dict_or_empty(call_node.get("func"))
         fn_kind = self._node_kind_from_dict(fn_node)
         fn_name = ""
@@ -1357,9 +1387,15 @@ class CppEmitter(
         elif fn_kind == "Attribute":
             owner = self.any_to_dict_or_empty(fn_node.get("value"))
             owner_kind = self._node_kind_from_dict(owner)
-            owner_name = self.any_to_str(owner.get("id")) if owner_kind == "Name" else ""
             attr = self.any_to_str(fn_node.get("attr"))
-            if owner_name == "math" and attr in {"sin", "cos", "tan", "sqrt", "exp", "log", "log10", "fabs", "floor", "ceil"}:
+            if attr in {"sin", "cos", "tan", "sqrt", "exp", "log", "log10", "fabs", "floor", "ceil"}:
+                owner_name = self.any_to_str(owner.get("id")) if owner_kind == "Name" else ""
+                owner_module = canonical_runtime_module_id(self._resolve_imported_module_name(owner_name))
+                if owner_module == "":
+                    owner_module = canonical_runtime_module_id(owner_name)
+                if owner_module == "pytra.std.math":
+                    return "float64"
+            if runtime_module_id == "pytra.std.math" and attr in {"sin", "cos", "tan", "sqrt", "exp", "log", "log10", "fabs", "floor", "ceil"}:
                 return "float64"
         if fn_name in {"int"}:
             return "int64"

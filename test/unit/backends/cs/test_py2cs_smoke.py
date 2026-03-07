@@ -292,6 +292,33 @@ class Child(Base):
             transpile_to_csharp(east)
         self.assertIn("unresolved stdlib runtime", str(cm.exception))
 
+    def test_runtime_import_resolution_uses_canonical_runtime_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "runtime_imports.py"
+            src_py.write_text(
+                "import math as m\n"
+                "from math import pi\n"
+                "from pytra.utils import gif\n"
+                "from pytra.utils.gif import save_gif\n"
+                "\n"
+                "def main() -> None:\n"
+                "    x: float = m.sqrt(4.0)\n"
+                "    y: float = pi\n"
+                "    gif.save_gif('x.gif', 1, 1, [])\n"
+                "    save_gif('x.gif', 1, 1, [])\n"
+                "    print(x, y)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+
+        self.assertIn("using m = Pytra.CsModule.math;", cs)
+        self.assertIn("using gif = Pytra.CsModule.gif_helper;", cs)
+        self.assertIn("double x = m.sqrt(4.0);", cs)
+        self.assertIn("Pytra.CsModule.math.pi", cs)
+        self.assertIn('gif.save_gif("x.gif", 1, 1, new System.Collections.Generic.List<object>());', cs)
+        self.assertIn('Pytra.CsModule.gif_helper.save_gif("x.gif", 1, 1, new System.Collections.Generic.List<object>());', cs)
+
     def test_for_core_downcount_range_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")

@@ -6,6 +6,7 @@ from typing import Any
 
 from backends.rs.hooks.rs_hooks import build_rs_hooks
 from backends.common.emitter.code_emitter import CodeEmitter
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
 def load_rs_profile() -> dict[str, Any]:
@@ -1739,9 +1740,10 @@ class RustEmitter(CodeEmitter):
 
     def _module_id_to_rust_use_path(self, module_id: str) -> str:
         """Python 形式モジュール名を Rust `use` パスへ変換する。"""
-        if module_id == "":
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if module_name == "":
             return ""
-        return "crate::" + module_id.replace(".", "::")
+        return "crate::" + module_name.replace(".", "::")
 
     def _is_assertions_module(self, module_id: str) -> bool:
         if module_id == "":
@@ -1753,9 +1755,10 @@ class RustEmitter(CodeEmitter):
         return False
 
     def _is_image_utils_module(self, module_id: str) -> bool:
-        if not module_id.startswith("pytra.utils."):
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if not module_name.startswith("pytra.utils."):
             return False
-        leaf = self._last_dotted_name(module_id)
+        leaf = self._last_dotted_name(module_name)
         return leaf == "gif" or leaf == "png"
 
     def _apply_image_runtime_ref_args(self, call_args: list[str]) -> list[str]:
@@ -1778,26 +1781,31 @@ class RustEmitter(CodeEmitter):
             seen.add(line)
             out.append(line)
 
-        bindings = self.any_to_dict_list(meta.get("import_bindings"))
+        bindings = self.get_import_resolution_bindings(meta)
         if len(bindings) > 0:
             i = 0
             while i < len(bindings):
                 ent = bindings[i]
                 binding_kind = self.any_to_str(ent.get("binding_kind"))
                 module_id = self.any_to_str(ent.get("module_id"))
+                runtime_module_id = self.any_to_str(ent.get("runtime_module_id"))
+                resolved_binding_kind = self.any_to_str(ent.get("resolved_binding_kind"))
                 local_name = self.any_to_str(ent.get("local_name"))
-                export_name = self.any_to_str(ent.get("export_name"))
+                export_name = self.any_to_str(ent.get("runtime_symbol"))
+                if export_name == "":
+                    export_name = self.any_to_str(ent.get("export_name"))
+                if runtime_module_id != "":
+                    module_id = runtime_module_id
+                if resolved_binding_kind == "":
+                    resolved_binding_kind = binding_kind
                 if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                     i += 1
                     continue
                 if self._is_assertions_module(module_id):
                     i += 1
                     continue
-                if binding_kind == "module" and module_id == "math":
-                    i += 1
-                    continue
                 base_path = self._module_id_to_rust_use_path(module_id)
-                if binding_kind == "module" and base_path != "":
+                if (binding_kind == "module" or resolved_binding_kind == "module") and base_path != "":
                     line = "use " + base_path
                     leaf = self._last_dotted_name(module_id)
                     if local_name != "" and local_name != leaf:
@@ -1819,8 +1827,6 @@ class RustEmitter(CodeEmitter):
                     if module_id == "" or module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                         continue
                     if self._is_assertions_module(module_id):
-                        continue
-                    if module_id == "math":
                         continue
                     base_path = self._module_id_to_rust_use_path(module_id)
                     if base_path == "":

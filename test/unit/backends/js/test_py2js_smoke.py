@@ -275,6 +275,35 @@ class Py2JsSmokeTest(unittest.TestCase):
             transpile_to_js(east)
         self.assertIn("unresolved stdlib runtime", str(cm.exception))
 
+    def test_runtime_import_resolution_uses_canonical_runtime_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "runtime_imports.py"
+            src_py.write_text(
+                "import math as m\n"
+                "from math import pi\n"
+                "from pytra.utils import gif\n"
+                "from pytra.utils.gif import save_gif\n"
+                "\n"
+                "def main() -> None:\n"
+                "    x: float = m.sqrt(4.0)\n"
+                "    y: float = pi\n"
+                "    gif.save_gif('x.gif', 1, 1, [])\n"
+                "    save_gif('x.gif', 1, 1, [])\n"
+                "    print(x, y)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+
+        self.assertIn('import * as m from "./pytra/std/math.js";', js)
+        self.assertIn('import { pi } from "./pytra/std/math.js";', js)
+        self.assertIn('import * as gif from "./pytra/utils/gif.js";', js)
+        self.assertIn('import { save_gif } from "./pytra/utils/gif.js";', js)
+        self.assertNotIn('from "./math.js"', js)
+        self.assertIn("m.sqrt(4.0)", js)
+        self.assertIn("gif.save_gif(", js)
+        self.assertIn("save_gif(", js)
+
     def test_ref_container_args_materialize_value_path_with_copy_expr(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "ref_container_args.py"

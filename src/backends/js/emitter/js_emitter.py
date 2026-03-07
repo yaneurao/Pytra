@@ -8,6 +8,8 @@ from typing import Any
 
 from backends.js.hooks.js_hooks import build_js_hooks
 from backends.common.emitter.code_emitter import CodeEmitter
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
 _JS_EMITTER_BASE = CodeEmitter
 
@@ -179,23 +181,17 @@ class JsEmitter(CodeEmitter):
         """Python 形式モジュール名を JS import パスへ変換する。"""
         if not isinstance(module_id, str):
             return ""
-        if module_id == "":
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if module_name == "":
             return ""
-        runtime_map = {
-            "math": "./pytra/std/math.js",
-            "time": "./pytra/std/time.js",
-            "pathlib": "./pytra/std/pathlib.js",
-            "pytra.std.math": "./pytra/std/math.js",
-            "pytra.utils": "./pytra/utils.js",
-        }
-        if module_id in runtime_map:
-            return runtime_map[module_id]
-        return "./" + module_id.replace(".", "/") + ".js"
+        return "./" + module_name.replace(".", "/") + ".js"
 
     def _module_symbol_to_js_path(self, module_id: str, symbol_name: str) -> str:
         """from-import の symbol 単位で JS import パスを解決する。"""
-        if module_id == "pytra.std" and symbol_name != "":
-            return "./pytra/std/" + symbol_name + ".js"
+        resolved = resolve_import_binding_doc(module_id, symbol_name, "symbol")
+        runtime_module_id = self.any_dict_get_str(resolved, "runtime_module_id", "")
+        if runtime_module_id != "":
+            return self._module_id_to_js_path(runtime_module_id)
         return self._module_id_to_js_path(module_id)
 
     def _walk_node_names(self, node: Any, out: set[str]) -> None:
@@ -394,15 +390,21 @@ class JsEmitter(CodeEmitter):
             seen.add(line)
             out.append(line)
 
-        bindings = self.any_to_dict_list(self.any_dict_get_list(meta, "import_bindings"))
+        bindings = self.get_import_resolution_bindings(meta)
         if len(bindings) > 0:
             i = 0
             while i < len(bindings):
                 ent = bindings[i]
                 binding_kind = self.any_dict_get_str(ent, "binding_kind", "")
+                resolved_binding_kind = self.any_dict_get_str(ent, "resolved_binding_kind", "")
                 module_id = self.any_dict_get_str(ent, "module_id", "")
+                runtime_module_id = self.any_dict_get_str(ent, "runtime_module_id", "")
                 local_name = self.any_dict_get_str(ent, "local_name", "")
                 export_name = self.any_dict_get_str(ent, "export_name", "")
+                if runtime_module_id != "":
+                    module_id = runtime_module_id
+                if resolved_binding_kind == "":
+                    resolved_binding_kind = binding_kind
                 if self._is_ignored_import_module(module_id):
                     i += 1
                     continue
@@ -417,7 +419,7 @@ class JsEmitter(CodeEmitter):
                 if module_path == "":
                     i += 1
                     continue
-                if binding_kind == "module" and local_name != "":
+                if (binding_kind == "module" or resolved_binding_kind == "module") and local_name != "":
                     if local_name not in used_names:
                         i += 1
                         continue
@@ -1314,6 +1316,17 @@ class JsEmitter(CodeEmitter):
         attr = self._safe_name(attr_raw)
         return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
 
+    def _resolved_runtime_matches_semantic_tag(self, runtime_call: str, semantic_tag: str) -> bool:
+        if not semantic_tag.startswith("stdlib."):
+            return True
+        tail = semantic_tag.rsplit(".", 1)[-1].strip()
+        call = runtime_call.strip()
+        if tail == "" or call == "":
+            return False
+        if call == tail:
+            return True
+        return call.endswith("." + tail)
+
     def _resolved_runtime_call(self, expr: dict[str, Any]) -> tuple[str, str]:
         runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
         if runtime_call != "":
@@ -1329,13 +1342,14 @@ class JsEmitter(CodeEmitter):
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("js emitter: unresolved stdlib runtime call: " + semantic_tag)
         if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
-            raise RuntimeError(
-                "js emitter: unresolved stdlib runtime mapping: "
-                + semantic_tag
-                + " ("
-                + runtime_call
-                + ")"
-            )
+            if not self._resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+                raise RuntimeError(
+                    "js emitter: unresolved stdlib runtime mapping: "
+                    + semantic_tag
+                    + " ("
+                    + runtime_call
+                    + ")"
+                )
 
         parts = self.prepare_call_context(expr)
         fn_node = self.any_to_dict_or_empty(parts.get("fn"))
@@ -1412,13 +1426,14 @@ class JsEmitter(CodeEmitter):
             if semantic_tag.startswith("stdlib.") and runtime_call == "":
                 raise RuntimeError("js emitter: unresolved stdlib runtime attribute: " + semantic_tag)
             if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
-                raise RuntimeError(
-                    "js emitter: unresolved stdlib runtime attribute mapping: "
-                    + semantic_tag
-                    + " ("
-                    + runtime_call
-                    + ")"
-                )
+                if not self._resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+                    raise RuntimeError(
+                        "js emitter: unresolved stdlib runtime attribute mapping: "
+                        + semantic_tag
+                        + " ("
+                        + runtime_call
+                        + ")"
+                    )
             return owner_expr + "." + attr
         if kind == "UnaryOp":
             op = self.any_dict_get_str(expr_d, "op", "")
