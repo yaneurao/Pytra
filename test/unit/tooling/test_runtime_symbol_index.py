@@ -208,6 +208,19 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_target_module_compile_sources("cpp", "pytra.core.gc"),
         )
 
+    def test_iter_target_core_module_ids_supports_future_plain_core_headers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            runtime_root = root / "src/runtime/cpp"
+            (runtime_root / "core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "core/dict.h").write_text("#pragma once\n", encoding="utf-8")
+            (runtime_root / "core/py_runtime.h").write_text("#pragma once\n", encoding="utf-8")
+
+            with patch.object(gen_mod, "ROOT", root):
+                module_ids = gen_mod._iter_target_core_module_ids("cpp")
+
+        self.assertEqual(module_ids, ["pytra.core.dict", "pytra.core.py_runtime"])
+
     def test_cpp_core_artifacts_support_future_generated_native_split(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -215,9 +228,9 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             (runtime_root / "core").mkdir(parents=True, exist_ok=True)
             (runtime_root / "generated/core").mkdir(parents=True, exist_ok=True)
             (runtime_root / "native/core").mkdir(parents=True, exist_ok=True)
-            (runtime_root / "core/dict.ext.h").write_text("#pragma once\n", encoding="utf-8")
-            (runtime_root / "generated/core/dict.ext.cpp").write_text("// gen\n", encoding="utf-8")
-            (runtime_root / "native/core/dict.ext.cpp").write_text("// native\n", encoding="utf-8")
+            (runtime_root / "core/dict.h").write_text("#pragma once\n", encoding="utf-8")
+            (runtime_root / "generated/core/dict.cpp").write_text("// gen\n", encoding="utf-8")
+            (runtime_root / "native/core/dict.cpp").write_text("// native\n", encoding="utf-8")
 
             with patch.object(gen_mod, "ROOT", root):
                 art = gen_mod._target_cpp_core_artifacts("dict")
@@ -225,10 +238,10 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(
             art,
             {
-                "public_headers": ["src/runtime/cpp/core/dict.ext.h"],
+                "public_headers": ["src/runtime/cpp/core/dict.h"],
                 "compile_sources": [
-                    "src/runtime/cpp/generated/core/dict.ext.cpp",
-                    "src/runtime/cpp/native/core/dict.ext.cpp",
+                    "src/runtime/cpp/generated/core/dict.cpp",
+                    "src/runtime/cpp/native/core/dict.cpp",
                 ],
                 "companions": ["generated", "native"],
             },

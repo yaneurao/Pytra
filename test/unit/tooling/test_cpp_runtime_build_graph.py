@@ -118,7 +118,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             (runtime_root / "core").mkdir(parents=True, exist_ok=True)
             (runtime_root / "generated/core").mkdir(parents=True, exist_ok=True)
             (runtime_root / "native/core").mkdir(parents=True, exist_ok=True)
-            header = runtime_root / "core/dict.ext.h"
+            header = runtime_root / "core/dict.h"
             header.write_text("#pragma once\n", encoding="utf-8")
 
             with patch.object(deps_mod, "ROOT", root), patch.object(
@@ -130,9 +130,30 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             ):
                 paths = [path.as_posix() for path in deps_mod.runtime_cpp_candidates_from_header(header)]
 
-        self.assertIn((runtime_root / "generated/core/dict.ext.cpp").as_posix(), paths)
-        self.assertIn((runtime_root / "native/core/dict.ext.cpp").as_posix(), paths)
-        self.assertIn((runtime_root / "core/dict.ext.cpp").as_posix(), paths)
+        self.assertIn((runtime_root / "generated/core/dict.cpp").as_posix(), paths)
+        self.assertIn((runtime_root / "native/core/dict.cpp").as_posix(), paths)
+        self.assertIn((runtime_root / "core/dict.cpp").as_posix(), paths)
+
+    def test_runtime_cpp_candidates_support_future_core_split_from_generated_header(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            runtime_root = root / "src/runtime/cpp"
+            (runtime_root / "generated/core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "native/core").mkdir(parents=True, exist_ok=True)
+            header = runtime_root / "generated/core/dict.h"
+            header.write_text("#pragma once\n", encoding="utf-8")
+
+            with patch.object(deps_mod, "ROOT", root), patch.object(
+                deps_mod, "RUNTIME_ROOT", runtime_root
+            ), patch.object(
+                deps_mod, "SRC_ROOT", root / "src"
+            ), patch.object(
+                deps_mod, "_HEADER_SOURCE_INDEX", None
+            ):
+                paths = [path.as_posix() for path in deps_mod.runtime_cpp_candidates_from_header(header)]
+
+        self.assertIn((runtime_root / "generated/core/dict.cpp").as_posix(), paths)
+        self.assertIn((runtime_root / "native/core/dict.cpp").as_posix(), paths)
 
     def test_runtime_cpp_candidates_for_real_core_header_follow_native_core_source(self) -> None:
         header = ROOT / "src/runtime/cpp/core/gc.ext.h"
