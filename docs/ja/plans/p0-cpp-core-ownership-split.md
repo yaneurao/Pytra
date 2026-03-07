@@ -1,0 +1,212 @@
+# P0: C++ core runtime ownership 分離（`generated/core` + `native/core` + `core` 互換面）
+
+最終更新: 2026-03-07
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01`
+- 参照仕様: `docs/ja/spec/spec-runtime.md`
+- 参照仕様: `docs/ja/spec/spec-abi.md`
+- 先行整理: `docs/ja/plans/archive/20260307-p0-cpp-runtime-layout-generated-native.md`
+
+背景:
+- `P0-CPP-RUNTIME-LAYOUT-REALIGN-01` で `std/built_in/utils` の module runtime は `generated/` + `native/` + `pytra/` shim へ再編できたが、`src/runtime/cpp/core/` は依然として「手書き core 一式」を 1 ディレクトリへ抱えたままである。
+- 現状の `core/` は、`py_runtime.ext.h` / `py_types.ext.h` / `list.ext.h` / `dict.ext.h` / `gc.ext.cpp` など、低レベル runtime 基盤としては妥当だが、将来 pure Python SoT から変換できる core helper を追加した瞬間に generated と handwritten が同じ `core/` 配下へ混在する。
+- その状態は、直前に `std/built_in/utils` で解消した「同一責務ディレクトリ内で ownership が見えない」問題を `core/` で再発させる。
+- したがって、core についても `generated/core` と `native/core` を導入し、generated/handwritten の物理分離を先に済ませておく必要がある。
+
+目的:
+- C++ low-level runtime (`core`) について、generated と handwritten の ownership をディレクトリで分離する。
+- 既存の stable include 面である `runtime/cpp/core/...` は当面維持し、backend / generated runtime / tests への影響を段階的に閉じ込める。
+- 将来 pure Python SoT から変換できる core helper が増えても、`core/` に generated/handwritten が混在しない構造を先に作る。
+
+対象:
+- `src/runtime/cpp/core/`
+- 新設する `src/runtime/cpp/generated/core/`
+- 新設する `src/runtime/cpp/native/core/`
+- C++ runtime include / build graph / symbol index 導線
+  - `src/backends/cpp/cli.py`
+  - `src/backends/cpp/emitter/header_builder.py`
+  - `tools/gen_runtime_symbol_index.py`
+  - `tools/cpp_runtime_deps.py`
+  - `tools/check_runtime_cpp_layout.py`
+  - `tools/check_runtime_core_gen_markers.py`
+- C++ runtime 関連 test / docs
+
+非対象:
+- `std/built_in/utils` module runtime の再設計
+- `pytra/core/` という新しい public root の導入
+- C++ core 全体の pure Python SoT 化
+- `sample/cpp/*.cpp` の手編集
+- list ref-first TODO の semantic change を同時に載せること
+
+受け入れ基準:
+- `src/runtime/cpp/generated/core/` が「SoT 由来 core artifact の唯一の置き場」として定義される。
+- `src/runtime/cpp/native/core/` が「C++ 固有 / handwritten core artifact の唯一の置き場」として定義される。
+- `src/runtime/cpp/core/` は stable include 面と互換 forwarder のみに縮退し、generated と handwritten の実装正本を混在させない。
+- C++ backend / generated runtime / tests は引き続き `runtime/cpp/core/...` を include できるが、build graph / symbol index は `generated/core` / `native/core` の compile source を解決できる。
+- guard が `generated/core` への marker 必須、`native/core` への marker 禁止、`core/` への実装再侵入禁止を監査できる。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_runtime_cpp_layout.py`
+- `python3 tools/check_runtime_core_gen_markers.py`
+- `python3 tools/gen_runtime_symbol_index.py --check`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_cpp_runtime_build_graph.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
+
+## 先に固定する設計判断
+
+### A. 目標レイアウト
+
+```text
+src/runtime/cpp/
+  core/              # stable include surface / compatibility forwarder
+  generated/
+    core/
+    built_in/
+    std/
+    utils/
+  native/
+    core/
+    built_in/
+    std/
+    utils/
+  pytra/
+    built_in/
+    std/
+    utils/
+```
+
+### B. 各ディレクトリの意味
+
+- `core/`
+  - 低レベル runtime の stable include surface。
+  - 既存 include (`runtime/cpp/core/*.ext.h`) との互換窓口。
+  - 実装正本を置く場所ではない。
+- `generated/core/`
+  - pure Python SoT から変換された low-level core artifact。
+  - 生成痕跡 (`AUTO-GENERATED FILE. DO NOT EDIT.` / `source:` / `generated-by:`) を必須にする。
+- `native/core/`
+  - C++ 固有の low-level runtime 実装。
+  - GC / I/O / object layout / ABI glue / template helper など、SoT だけでは表現しにくい部分を置く。
+
+### C. この計画でやらないこと
+
+- `pytra/core/` を新設して public root を二重化しない。
+- `core/` の include 名を一気に `pytra/core/...` へ変えない。
+- `core/` の pure Python SoT を想像で大量新設しない。
+- `std/built_in/utils` の既存 layout を巻き戻さない。
+
+## 実装で迷いやすい点
+
+### 1. `core/` は「handwritten 実装フォルダ」ではなく「互換 include 面」に縮退させる
+
+この計画の本質は、`core/` を消すことではなく、`core/` に ownership が混在しないよう役割を変えることにある。
+
+残してよい:
+- forwarder header
+- 互換 include 名
+- レイアウト説明文書
+
+置いてはいけない:
+- generated 実装正本
+- handwritten 実装正本
+- `.cpp` 本体
+
+### 2. `generated/core` は「今すぐ大量に埋める場所」ではない
+
+- まずは empty lane でもよい。
+- 重要なのは「将来 SoT から変換する core helper をどこへ置くか」を先に決めること。
+- 初回フェーズでは、最低でも 1 つの representative path か fixture-level smoke で導線を実証する。
+
+### 3. `native/core` は「何でも手書きしてよい巨大フォルダ」ではない
+
+置いてよい:
+- `gc`, `io` の `.cpp`
+- object / container 表現ヘッダ
+- `py_runtime` の low-level 集約
+- template / inline helper
+
+置いてはいけない:
+- SoT と等価な高レベル runtime 本体
+- `std` / `built_in` / `utils` module runtime の再流入
+- temporary compatibility wrapper だけの duplicate 本体
+
+### 4. include 面は当面 `core/...` を保つ
+
+- `module_name_to_cpp_include("pytra.core.dict") -> "core/dict.ext.h"` のような既存契約は、最初の P0 では崩さない。
+- build graph / symbol index が `core/...` から `generated/core` / `native/core` を引けるようにする。
+- include root の改名は別計画に切り出す。
+
+## フェーズ
+
+### Phase 1: 現状棚卸しと責務固定
+
+- `src/runtime/cpp/core/` の既存ファイルを棚卸しし、
+  - stable include surface 候補
+  - native/core 正本
+  - 将来 generated/core 候補
+  - docs / 非対象
+  に分類する。
+- `core/` を「互換 include 面」、`generated/core` を「生成正本」、`native/core` を「手書き正本」として plan/spec に固定する。
+- `pytra/core` を導入しない理由も決定ログへ残す。
+
+### Phase 2: path / index / guard 契約の設計
+
+- `runtime_symbol_index` が core module に対して
+  - public header: `src/runtime/cpp/core/...`
+  - compile source: `src/runtime/cpp/generated/core/...` / `src/runtime/cpp/native/core/...`
+  を持てるようにする。
+- `cpp_runtime_deps.py` が `core/...` forwarder から `generated/core` / `native/core` の source を導出できるようにする。
+- `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` の責務を整理し、
+  - `core/` 実装再侵入禁止
+  - `generated/core` marker 必須
+  - `native/core` marker 禁止
+  を明文化する。
+
+### Phase 3: handwritten core の物理移動
+
+- 現行 `core/` の handwritten 正本を `native/core/` へ移す。
+- `gc.ext.cpp` / `io.ext.cpp` のような compile source は `native/core/` へ移す。
+- `dict.ext.h` / `list.ext.h` / `py_types.ext.h` / `py_runtime.ext.h` などの include 正本も `native/core/` へ移し、`core/` には forwarder を残すか、必要最小限の互換 façade へ縮退させる。
+- このフェーズでは include 名互換を優先し、basename suffix の cleanup は後段に回してよい。
+
+### Phase 4: generated/core lane の実証
+
+- `generated/core/` を repo 上の正式レイアウトとして追加する。
+- 代表ケースを 1 つ決める。
+  - 実ファイル migration が安全なら 1 件移す。
+  - まだ安全な real candidate がなければ fixture / synthetic test で `generated/core` の導線だけを証明する。
+- 「generated/core が空でも設計は成立するが、導線未検証で終わらない」ことを重視する。
+
+### Phase 5: docs / tests / closeout
+
+- spec と README を `core handwritten-only` から `core compatibility surface + generated/native ownership split` へ更新する。
+- `test_runtime_symbol_index.py` / `test_cpp_runtime_build_graph.py` / `test_cpp_runtime_symbol_index_integration.py` で representative contract を固定する。
+- TODO / archive / 決定ログを更新し、`core` でも ownership 混在を許さない方針を完了扱いで閉じる。
+
+## 分解
+
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01] C++ low-level runtime (`core`) に `generated/core` + `native/core` を導入し、stable include 面を保ったまま generated/handwritten の物理混在を解消する。
+
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-01] `src/runtime/cpp/core/` の既存ファイルを `compat surface` / `native 正本` / `generated 候補` / `非対象` に分類し、移行マップを作る。
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
+
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-02] `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` を core split 前提へ更新し、`core/` 実装再侵入・marker 混在を fail-fast 化する。
+
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-02] handwritten core header (`py_runtime/py_types/list/dict/set/str` など) を `native/core/` 正本へ移し、`core/` には互換 forwarder / façade だけを残す。
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-03] backend / generated runtime / tests の include 面を `core/...` 互換のまま維持しつつ、直接 `native/core` を踏まない規則を固定する。
+
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-01] `generated/core/` の正式レイアウトを追加し、real candidate か synthetic fixture で compile/source 解決を 1 件実証する。
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S4-02] generated/core に置く条件と、まだ置けない core helper を判定する基準を決定ログへ固定する。
+
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S5-01] spec / README / representative tests を更新し、`core handwritten-only` 前提を廃止する。
+- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S5-02] TODO / archive / guard を更新し、core ownership split を完了扱いで閉じる。
+
+決定ログ:
+- 2026-03-07: ユーザー指示により、`core/` に pure Python 由来 artifact を直接混在させない方針を固定し、`generated/core` + `native/core` の別計画を P0 として起票する。
+- 2026-03-07: `pytra/core` は新しい public root としては導入せず、当面は `core/...` include 面を維持して互換コストを局所化する方針を採る。
+- 2026-03-07: この計画の第一目的は「generated/core を今すぐ大量に作ること」ではなく、「将来 generated core が必要になっても ownership が混ざらない土台を先に作ること」とする。
