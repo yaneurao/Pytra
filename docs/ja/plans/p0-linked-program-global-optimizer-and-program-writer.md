@@ -458,9 +458,9 @@ py2x.py
 - `src/toolchain/link/link_manifest_io.py`
 
 詳細タスク:
-- [ ] `S2-01` `LinkedProgram` データモデルを追加する。
-- [ ] `S2-02` `link-input.json` loader を追加する。
-- [ ] `S2-03` module 順序・entry・dispatch 一貫性 validator を追加する。
+- [x] `S2-01` `LinkedProgram` データモデルを追加する。
+- [x] `S2-02` `link-input.json` loader を追加する。
+- [x] `S2-03` module 順序・entry・dispatch 一貫性 validator を追加する。
 - [ ] `S2-04` `py2x.py` の in-memory build 導線から `LinkedProgram` を組み立てる。
 
 ### Phase 3: global optimizer を linker 段へ実装する
@@ -656,7 +656,7 @@ src/
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01] linked program を導入し、global optimizer の入力単位を複数翻訳単位へ拡張しつつ、backend を `ModuleEmitter + ProgramWriter` 構成へ再編する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S1-01] `link-input.v1` / `link-output.v1` と linked module `meta` の schema、ならびに `spec-linker` / `spec-east` の責務境界を固定する。
 - [x] [ID: P0-LINKED-PROGRAM-OPT-01-S1-02] `ModuleArtifact` / `ProgramArtifact` / `ProgramWriter` の backend 共通契約を定義し、`spec-dev` / `spec-make` へ反映する。
-- [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `LinkedProgram` loader / validator / manifest I/O を追加し、複数 `EAST3` を deterministic に読めるようにする。
+- [x] [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `LinkedProgram` loader / validator / manifest I/O を追加し、複数 `EAST3` を deterministic に読めるようにする。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S2-02] `py2x.py` の in-memory 導線を module map から `LinkedProgram` 構築へ切り替え、single-module 前提を外す。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S3-01] program-wide call graph / SCC fixed point を linker 段へ実装し、import-closure 内部読込に依存しない global 解析基盤を作る。
 - [ ] [ID: P0-LINKED-PROGRAM-OPT-01-S3-02] global non-escape / container ownership / `type_id` 決定を linker 段へ実装し、linked module と `link-output.json` へ materialize する。
@@ -679,3 +679,4 @@ src/
 - 2026-03-07: linked program の出力は「1 本の巨大 IR」ではなく「program manifest + module ごとの linked IR」とする方針を採用した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S1-01] `spec-linker.md` で `pytra.link_input.v1` / `pytra.link_output.v1` と `meta.linked_program_v1` を canonical schema として固定し、`spec-east.md` では `Link` を `east_stage` を増やさない責務境界として定義した。
 - 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S1-02] `spec-dev.md` で `ModuleEmitter -> ModuleArtifact -> ProgramWriter` の backend 共通境界を固定し、`spec-make.md` では `manifest.json` を `CppProgramWriter` が出力する `ProgramArtifact` の concrete build manifest として位置づけた。
+- 2026-03-07: [ID: P0-LINKED-PROGRAM-OPT-01-S2-01] `src/toolchain/link/` に `program_model.py` / `program_validator.py` / `link_manifest_io.py` / `program_loader.py` を追加し、`pytra.link_input.v1` から raw `EAST3` 群を決定的順序で読む `LinkedProgram` loader を実装した。`test/unit/link/test_program_loader.py` で entry/dispatch/raw-meta 契約を固定した。
