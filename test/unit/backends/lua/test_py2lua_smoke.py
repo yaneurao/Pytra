@@ -365,7 +365,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("ipairs((function(__v) local __out = {}; for __i = 1, #__v do table.insert(__out, { __i - 1, __v[__i] }) end; return __out end)(xs))", lua)
         self.assertIn("local i = __it_", lua)
         self.assertIn("local v = __it_", lua)
-        self.assertIn("best = math.max(best, (i + v))", lua)
+        self.assertIn("best = _G.math.max(best, (i + v))", lua)
 
     def test_objbool_on_typed_list_checks_emptiness(self) -> None:
         src = (
@@ -393,7 +393,10 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("y = ((flag) and (x) or (0))", lua)
+        self.assertIn(
+            "local y = (function() if __pytra_truthy(flag) then return (x) else return (0) end end)()",
+            lua,
+        )
         self.assertIn("z = math.sqrt(9)", lua)
         self.assertIn('return ("v=" .. tostring(y) .. ":" .. tostring(z))', lua)
 
