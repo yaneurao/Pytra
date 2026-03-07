@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-07
+最終更新: 2026-03-08
 
 ## 運用方針
 
@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-08 / P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01](../plans/archive/20260308-p0-backend-runtime-knowledge-leak-retirement.md)
 - [2026-03-07 / P0-LINKED-PROGRAM-OPT-01](../plans/archive/20260307-p0-linked-program-global-optimizer-and-program-writer.md)
 - [2026-03-07 / P0-CPP-LIST-REFFIRST-01](../plans/archive/20260307-p0-cpp-list-ref-first-completion.md)
 - [2026-03-07 / P0-CPP-CORE-EXT-SUFFIX-RETIRE-01](../plans/archive/20260307-p0-cpp-core-ext-suffix-retire.md)
@@ -37,6 +38,7 @@
 
 ## 日付別リンク
 
+- [2026-03-08](20260308.md)（1 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
