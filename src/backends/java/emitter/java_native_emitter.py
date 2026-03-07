@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
 _JAVA_RESERVED_WORDS = {
@@ -827,7 +828,34 @@ def _resolved_call_binding(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
+def _runtime_module_id(expr: dict[str, Any], fallback_module: str) -> str:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        runtime_module = fallback_module.strip()
+    if runtime_module == "":
+        runtime_call, _ = _resolved_runtime_call(expr)
+        dot = runtime_call.find(".")
+        if dot >= 0:
+            runtime_module = runtime_call[:dot].strip()
+    return canonical_runtime_module_id(runtime_module)
+
+
+def _runtime_symbol_name(expr: dict[str, Any], fallback_symbol: str) -> str:
+    runtime_symbol_any = expr.get("runtime_symbol")
+    if isinstance(runtime_symbol_any, str) and runtime_symbol_any.strip() != "":
+        return runtime_symbol_any.strip()
+    if fallback_symbol.strip() != "":
+        return fallback_symbol.strip()
+    runtime_call, _ = _resolved_runtime_call(expr)
+    dot = runtime_call.rfind(".")
+    if dot >= 0:
+        return runtime_call[dot + 1 :].strip()
+    return runtime_call.strip()
+
+
 def _render_resolved_runtime_call(
+    expr: dict[str, Any],
     runtime_call: str,
     runtime_source: str,
     args: list[Any],
@@ -843,17 +871,19 @@ def _render_resolved_runtime_call(
         rendered_args.append(_render_expr(args[i]))
         i += 1
     joined = ", ".join(rendered_args)
+    runtime_module = _runtime_module_id(expr, binding_module)
+    runtime_symbol = _runtime_symbol_name(expr, binding_symbol)
     if runtime_source == "module_attr":
-        if binding_module.startswith("pytra.utils."):
-            class_name = _utils_module_class_name(binding_module)
+        if runtime_module.startswith("pytra.utils."):
+            class_name = _utils_module_class_name(runtime_module)
             if class_name != "":
-                method_name = _safe_ident(runtime_name, "runtime_call")
+                method_name = _safe_ident(runtime_symbol if runtime_symbol != "" else runtime_name, "runtime_call")
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_source == "import_symbol":
-        if binding_module.startswith("pytra.utils.") and binding_symbol != "":
-            class_name = _utils_module_class_name(binding_module)
+        if runtime_module.startswith("pytra.utils.") and runtime_symbol != "":
+            class_name = _utils_module_class_name(runtime_module)
             if class_name != "":
-                method_name = _safe_ident(binding_symbol, "runtime_call")
+                method_name = _safe_ident(runtime_symbol, "runtime_call")
                 return class_name + "." + method_name + "(" + joined + ")"
     if runtime_name.find(".") >= 0:
         return runtime_name + "(" + joined + ")"
@@ -861,6 +891,7 @@ def _render_resolved_runtime_call(
 
 
 def _render_call_via_runtime_call(
+    expr: dict[str, Any],
     runtime_call: str,
     runtime_source: str,
     semantic_tag: str,
@@ -893,6 +924,7 @@ def _render_call_via_runtime_call(
         return "_impl." + fn_name + "(" + ", ".join(rendered_args) + ")"
     if runtime_source != "runtime_call":
         rendered_resolved = _render_resolved_runtime_call(
+            expr,
             runtime_call,
             runtime_source,
             args,
@@ -912,6 +944,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     runtime_call, runtime_source = _resolved_runtime_call(expr)
     if runtime_call != "":
         rendered_runtime = _render_call_via_runtime_call(
+            expr,
             runtime_call,
             runtime_source,
             semantic_tag,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 from toolchain.frontends.runtime_call_adapters import normalize_rendered_runtime_args
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
 _SCALA_KEYWORDS = {
@@ -827,12 +828,36 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
-def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
+def _runtime_module_id(expr: dict[str, Any], runtime_call: str) -> str:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        canonical = runtime_call.replace("::", ".")
+        dot = canonical.find(".")
+        if dot >= 0:
+            runtime_module = canonical[:dot].strip()
+    return canonical_runtime_module_id(runtime_module)
+
+
+def _runtime_symbol_name(expr: dict[str, Any], runtime_call: str) -> str:
+    runtime_symbol_any = expr.get("runtime_symbol")
+    if isinstance(runtime_symbol_any, str) and runtime_symbol_any.strip() != "":
+        return runtime_symbol_any.strip()
+    canonical = runtime_call.replace("::", ".")
+    dot = canonical.find(".")
+    if dot >= 0:
+        return canonical[dot + 1 :].strip()
+    return ""
+
+
+def _resolved_runtime_symbol(expr: dict[str, Any], runtime_call: str, runtime_source: str) -> str:
     name = runtime_call.strip()
     if name == "":
         return ""
     canonical = name.replace("::", ".")
     dot = canonical.find(".")
+    runtime_module = _runtime_module_id(expr, runtime_call)
+    runtime_symbol = _runtime_symbol_name(expr, runtime_call)
     if dot >= 0:
         module_name = canonical[:dot].strip()
         symbol_name = canonical[dot + 1 :].strip()
@@ -844,14 +869,14 @@ def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
             if canonical.endswith("filesystem.create_directories"):
                 return "__pytra_path_mkdir"
             return ""
-        if module_name == "math":
-            if symbol_name == "pi":
+        if runtime_module == "pytra.std.math" and runtime_symbol != "":
+            if runtime_symbol == "pi":
                 return "scala.math.Pi"
-            if symbol_name == "e":
+            if runtime_symbol == "e":
                 return "scala.math.E"
-            if symbol_name == "fabs":
+            if runtime_symbol == "fabs":
                 return "scala.math.abs"
-            return "scala.math." + symbol_name
+            return "scala.math." + runtime_symbol
         return "py" + _snake_to_pascal(module_name) + _snake_to_pascal(symbol_name)
     normalized = _camel_to_snake(name)
     if runtime_source == "runtime_call":
@@ -882,7 +907,7 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if semantic_tag.startswith("stdlib.") and runtime_call == "":
         raise RuntimeError("scala native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
     if runtime_call != "":
-        runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+        runtime_symbol = _resolved_runtime_symbol(expr, runtime_call, runtime_source)
         if runtime_symbol != "":
             if runtime_call in {"path_parent", "path_name", "path_stem"}:
                 return runtime_symbol + "(" + _render_expr(value_any) + ")"
@@ -997,13 +1022,13 @@ def _render_call_via_runtime_call(
     if runtime_source == "runtime_call":
         if not semantic_tag.startswith("stdlib."):
             return ""
-        runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+        runtime_symbol = _resolved_runtime_symbol(call_expr if isinstance(call_expr, dict) else {}, runtime_call, runtime_source)
         if runtime_symbol == "":
             return ""
         rendered_runtime_args = _render_runtime_args(adapter_kind, args, keywords_any)
         rendered_runtime_args = _inject_method_owner(rendered_runtime_args)
         return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
-    runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+    runtime_symbol = _resolved_runtime_symbol(call_expr if isinstance(call_expr, dict) else {}, runtime_call, runtime_source)
     if runtime_symbol == "":
         return ""
     rendered_runtime_args = _render_runtime_args(adapter_kind, args, keywords_any)
@@ -1456,7 +1481,7 @@ def _infer_scala_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
     if kind == "Call":
         runtime_call, runtime_source = _resolved_runtime_call(expr)
         if runtime_call != "":
-            runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+            runtime_symbol = _resolved_runtime_symbol(expr, runtime_call, runtime_source)
             if runtime_symbol in {"scala.math.Pi", "scala.math.E"}:
                 return "Double"
             if runtime_symbol.startswith("scala.math."):
@@ -1565,7 +1590,7 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
     if kind == "Call":
         runtime_call, runtime_source = _resolved_runtime_call(value_expr)
         if runtime_call != "":
-            runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
+            runtime_symbol = _resolved_runtime_symbol(value_expr, runtime_call, runtime_source)
             if target_type == "Double" and (
                 runtime_symbol.startswith("scala.math.")
                 or runtime_symbol in {"scala.math.Pi", "scala.math.E", "__pytra_perf_counter", "__pytra_float"}

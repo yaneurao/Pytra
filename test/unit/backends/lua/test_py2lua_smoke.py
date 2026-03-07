@@ -532,6 +532,14 @@ class Py2LuaSmokeTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 _ = transpile_to_lua_native(east)
 
+    def test_lua_emitter_source_has_no_source_runtime_module_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "lua" / "emitter" / "lua_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('mod == "math"', src)
+        self.assertNotIn('mod == "time"', src)
+        self.assertNotIn('mod == "pathlib"', src)
+        self.assertNotIn('mod == "json"', src)
+        self.assertNotIn('mod == "pytra.utils"', src)
+
 
 if __name__ == "__main__":
     unittest.main()

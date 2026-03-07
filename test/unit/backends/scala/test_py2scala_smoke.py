@@ -224,6 +224,11 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("scala.math.abs", scala)
         self.assertNotIn("fabs(", scala)
 
+    def test_scala_emitter_source_has_no_source_math_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "scala" / "emitter" / "scala_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('module_name == "math"', src)
+        self.assertNotIn("module_name == 'math'", src)
+
     def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
         east = {
             "kind": "Module",

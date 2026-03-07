@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id, resolve_import_binding_doc
+
 
 _LUA_KEYWORDS = {
     "and",
@@ -101,6 +103,42 @@ def _cmp_symbol(op: str) -> str:
     if op == "GtE":
         return ">="
     return "=="
+
+
+def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
+    mod = canonical_runtime_module_id(runtime_module_id.strip())
+    if mod == "pytra.std.math":
+        return "local " + alias_txt + " = __pytra_math_module()"
+    if mod == "pytra.std.json":
+        return "local " + alias_txt + " = { loads = pyJsonLoads, dumps = pyJsonDumps }"
+    if mod == "pytra.std.pathlib":
+        return "local " + alias_txt + " = { Path = Path }"
+    if mod == "pytra.std.time":
+        return "local " + alias_txt + " = { perf_counter = __pytra_perf_counter }"
+    if mod in {"pytra.utils.png", "pytra.utils.gif"}:
+        leaf = _safe_ident(mod.rsplit(".", 1)[-1], "utils")
+        return "local " + alias_txt + " = __pytra_" + leaf + "_module()"
+    return ""
+
+
+def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_symbol: str) -> str:
+    mod = canonical_runtime_module_id(runtime_module_id.strip())
+    sym = runtime_symbol.strip()
+    if mod == "pytra.std.math":
+        return "local " + alias_txt + " = __pytra_math_module()." + _safe_ident(sym, sym)
+    if mod == "pytra.std.json":
+        if sym == "loads":
+            return "local " + alias_txt + " = pyJsonLoads"
+        if sym == "dumps":
+            return "local " + alias_txt + " = pyJsonDumps"
+        return ""
+    if mod == "pytra.std.pathlib" and sym == "Path":
+        return "local " + alias_txt + " = Path"
+    if mod == "pytra.std.time" and sym == "perf_counter":
+        return "local " + alias_txt + " = __pytra_perf_counter"
+    if mod.startswith("pytra.utils.") and sym != "":
+        return "local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym)
+    return ""
 
 
 class LuaNativeEmitter:
@@ -466,7 +504,9 @@ class LuaNativeEmitter:
                         continue
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else module_name.split(".")[-1]
-                    self.imported_modules.add(_safe_ident(alias, "mod"))
+                    resolved = resolve_import_binding_doc(module_name, "", "module")
+                    if len(resolved) > 0:
+                        self.imported_modules.add(_safe_ident(alias, "mod"))
                 continue
             if kind == "ImportFrom":
                 module_name = stmt.get("module")
@@ -482,7 +522,8 @@ class LuaNativeEmitter:
                         continue
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else symbol
-                    if module_name == "pytra.utils" and symbol in {"png", "gif"}:
+                    resolved = resolve_import_binding_doc(module_name, symbol, "symbol")
+                    if resolved.get("resolved_binding_kind") == "module":
                         self.imported_modules.add(_safe_ident(alias, "mod"))
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
@@ -503,26 +544,14 @@ class LuaNativeEmitter:
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else mod.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
-                    if mod == "math":
-                        import_lines.append(
-                            "local "
-                            + alias_txt
-                            + " = { sqrt = pyMathSqrt, sin = pyMathSin, cos = pyMathCos, tan = pyMathTan, exp = pyMathExp, log = pyMathLog, pow = pyMathPow, floor = pyMathFloor, ceil = pyMathCeil, abs = pyMathFabs, fabs = pyMathFabs, pi = pyMathPi(), e = pyMathE() }"
-                        )
-                        continue
-                    if mod == "json":
-                        import_lines.append("local " + alias_txt + " = { loads = pyJsonLoads, dumps = pyJsonDumps }")
-                        continue
-                    if mod == "pathlib":
-                        import_lines.append("local " + alias_txt + " = { Path = Path }")
-                        continue
-                    if mod == "time":
-                        import_lines.append("local " + alias_txt + " = { perf_counter = __pytra_perf_counter }")
-                        continue
-                    if mod.startswith("pytra.utils."):
-                        leaf = _safe_ident(mod.split(".")[-1], "utils")
-                        import_lines.append("local " + alias_txt + " = __pytra_" + leaf + "_module()")
-                        continue
+                    resolved = resolve_import_binding_doc(mod, "", "module")
+                    if len(resolved) > 0:
+                        runtime_module_id = resolved.get("runtime_module_id")
+                        if isinstance(runtime_module_id, str):
+                            line = _runtime_module_alias_line(alias_txt, runtime_module_id)
+                            if line != "":
+                                import_lines.append(line)
+                                continue
                     if mod.startswith("pytra."):
                         raise RuntimeError("lang=lua unresolved import module: " + mod)
                     import_lines.append("-- import " + mod + " as " + alias_txt + " (not yet mapped)")
@@ -560,69 +589,24 @@ class LuaNativeEmitter:
                             + " = function(checks, _label) if checks == nil then return false end; for i = 1, #checks do if not checks[i] then return false end end; return true end"
                         )
                         continue
-                    if mod == "time" and sym == "perf_counter":
-                        import_lines.append("local " + alias_txt + " = __pytra_perf_counter")
-                        continue
-                    if mod == "math":
-                        if sym == "sqrt":
-                            import_lines.append("local " + alias_txt + " = pyMathSqrt")
-                            continue
-                        if sym == "sin":
-                            import_lines.append("local " + alias_txt + " = pyMathSin")
-                            continue
-                        if sym == "cos":
-                            import_lines.append("local " + alias_txt + " = pyMathCos")
-                            continue
-                        if sym == "tan":
-                            import_lines.append("local " + alias_txt + " = pyMathTan")
-                            continue
-                        if sym == "exp":
-                            import_lines.append("local " + alias_txt + " = pyMathExp")
-                            continue
-                        if sym == "log":
-                            import_lines.append("local " + alias_txt + " = pyMathLog")
-                            continue
-                        if sym == "pow":
-                            import_lines.append("local " + alias_txt + " = pyMathPow")
-                            continue
-                        if sym == "floor":
-                            import_lines.append("local " + alias_txt + " = pyMathFloor")
-                            continue
-                        if sym == "ceil":
-                            import_lines.append("local " + alias_txt + " = pyMathCeil")
-                            continue
-                        if sym in {"abs", "fabs"}:
-                            import_lines.append("local " + alias_txt + " = pyMathFabs")
-                            continue
-                        if sym == "pi":
-                            import_lines.append("local " + alias_txt + " = pyMathPi()")
-                            continue
-                        if sym == "e":
-                            import_lines.append("local " + alias_txt + " = pyMathE()")
-                            continue
-                        import_lines.append("local " + alias_txt + " = __pytra_math_module()." + _safe_ident(sym, sym))
-                        continue
-                    if mod == "json":
-                        if sym == "loads":
-                            import_lines.append("local " + alias_txt + " = pyJsonLoads")
-                            continue
-                        if sym == "dumps":
-                            import_lines.append("local " + alias_txt + " = pyJsonDumps")
-                            continue
-                        continue
-                    if mod == "pathlib" and sym == "Path":
-                        import_lines.append("local " + alias_txt + " = Path")
-                        continue
-                    if mod == "pytra.utils" and sym in {"png", "gif"}:
-                        import_lines.append("local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym) + "_module()")
-                        continue
-                    if mod.startswith("pytra.utils."):
-                        import_lines.append("local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym))
-                        continue
+                    resolved = resolve_import_binding_doc(mod, sym, "symbol")
+                    if len(resolved) > 0:
+                        runtime_module_id = resolved.get("runtime_module_id")
+                        resolved_kind = resolved.get("resolved_binding_kind")
+                        runtime_symbol = resolved.get("runtime_symbol")
+                        if isinstance(runtime_module_id, str):
+                            if resolved_kind == "module":
+                                line = _runtime_module_alias_line(alias_txt, runtime_module_id)
+                                if line != "":
+                                    import_lines.append(line)
+                                    continue
+                            if isinstance(runtime_symbol, str):
+                                line = _runtime_symbol_alias_line(alias_txt, runtime_module_id, runtime_symbol)
+                                if line != "":
+                                    import_lines.append(line)
+                                    continue
                     if mod.startswith("pytra."):
                         raise RuntimeError("lang=lua unresolved import symbol: " + mod + "." + sym)
-                    if mod == "time":
-                        raise RuntimeError("lang=lua unresolved import symbol: time." + sym)
                     import_lines.append(
                         "-- from " + mod + " import " + sym + " as " + alias_txt + " (not yet mapped)"
                     )
