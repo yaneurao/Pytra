@@ -2,12 +2,11 @@
 """Verify C++ runtime layer separation rules.
 
 Rules:
-- `src/runtime/cpp/built_in/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
-- `src/runtime/cpp/built_in/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
-- `src/runtime/cpp/utils/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
-- `src/runtime/cpp/core/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
-- `src/runtime/cpp/std/**/*.gen.h|gen.cpp` must contain the auto-generated marker.
-- `src/runtime/cpp/std/**/*.ext.h|ext.cpp` must NOT contain the auto-generated marker.
+- Legacy module runtime under `src/runtime/cpp/{built_in,std,utils}` may still use `.gen/.ext`.
+- New module runtime under `src/runtime/cpp/generated/**` must contain the auto-generated marker.
+- New module runtime under `src/runtime/cpp/native/**` must NOT contain the auto-generated marker.
+- Public shim under `src/runtime/cpp/pytra/**` must contain the auto-generated marker and stay header-only.
+- `src/runtime/cpp/core/**` remains handwritten for now and must keep `.ext.*` naming.
 """
 
 from __future__ import annotations
@@ -18,6 +17,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BUILTIN_DIR = ROOT / "src/runtime/cpp/built_in"
 CORE_DIR = ROOT / "src/runtime/cpp/core"
+GENERATED_DIR = ROOT / "src/runtime/cpp/generated"
+NATIVE_DIR = ROOT / "src/runtime/cpp/native"
+PYTRA_DIR = ROOT / "src/runtime/cpp/pytra"
 STD_DIR = ROOT / "src/runtime/cpp/std"
 UTILS_DIR = ROOT / "src/runtime/cpp/utils"
 PY_RUNTIME_EXT = ROOT / "src/runtime/cpp/core/py_runtime.ext.h"
@@ -56,20 +58,92 @@ def _scan_targets(base: Path) -> list[Path]:
     return out
 
 
+def _is_plain_cpp_name(path: Path) -> bool:
+    return ".gen." not in path.name and ".ext." not in path.name
+
+
+def _check_legacy_module_files(
+    files: list[Path],
+    missing_marker: list[str],
+    unexpected_marker: list[str],
+    invalid_name: list[str],
+) -> None:
+    for p in files:
+        rel = str(p.relative_to(ROOT))
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        if ".gen." in p.name:
+            if MARKER not in txt:
+                missing_marker.append(rel)
+        elif ".ext." in p.name:
+            if MARKER in txt:
+                unexpected_marker.append(rel)
+        else:
+            invalid_name.append(rel)
+
+
+def _check_generated_files(
+    files: list[Path],
+    missing_marker: list[str],
+    invalid_name: list[str],
+) -> None:
+    for p in files:
+        rel = str(p.relative_to(ROOT))
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        if not _is_plain_cpp_name(p):
+            invalid_name.append(rel)
+        if MARKER not in txt:
+            missing_marker.append(rel)
+
+
+def _check_handwritten_files(
+    files: list[Path],
+    unexpected_marker: list[str],
+    invalid_name: list[str],
+    *,
+    require_ext_name: bool,
+) -> None:
+    for p in files:
+        rel = str(p.relative_to(ROOT))
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        if require_ext_name:
+            if ".ext." not in p.name:
+                invalid_name.append(rel)
+        else:
+            if not _is_plain_cpp_name(p):
+                invalid_name.append(rel)
+        if MARKER in txt:
+            unexpected_marker.append(rel)
+
+
+def _check_public_shim_files(
+    files: list[Path],
+    missing_marker: list[str],
+    invalid_name: list[str],
+) -> None:
+    for p in files:
+        rel = str(p.relative_to(ROOT))
+        txt = p.read_text(encoding="utf-8", errors="ignore")
+        if p.suffix != ".h" or not _is_plain_cpp_name(p):
+            invalid_name.append(rel)
+        if MARKER not in txt:
+            missing_marker.append(rel)
+
+
 def main() -> int:
     builtin_files = _scan_targets(BUILTIN_DIR)
     core_files = _scan_targets(CORE_DIR)
+    generated_files = _scan_targets(GENERATED_DIR)
+    native_files = _scan_targets(NATIVE_DIR)
+    pytra_files = _scan_targets(PYTRA_DIR)
     std_files = _scan_targets(STD_DIR)
     utils_files = _scan_targets(UTILS_DIR)
+    legacy_module_files = builtin_files + std_files + utils_files
 
     if not core_files:
         print(f"[FAIL] no C++ source/header files under: {CORE_DIR.relative_to(ROOT)}")
         return 1
-    if not builtin_files:
-        print(f"[FAIL] no C++ source/header files under: {BUILTIN_DIR.relative_to(ROOT)}")
-        return 1
-    if not utils_files:
-        print(f"[FAIL] no C++ source/header files under: {UTILS_DIR.relative_to(ROOT)}")
+    if not legacy_module_files and not generated_files and not native_files and not pytra_files:
+        print("[FAIL] no module runtime files found under legacy or generated/native/pytra layout")
         return 1
 
     missing_marker: list[str] = []
@@ -77,45 +151,11 @@ def main() -> int:
     invalid_name: list[str] = []
     banned_runtime_duplicates: list[str] = []
 
-    for p in builtin_files:
-        rel = str(p.relative_to(ROOT))
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if ".gen." in p.name:
-            if MARKER not in txt:
-                missing_marker.append(rel)
-        elif ".ext." in p.name:
-            if MARKER in txt:
-                unexpected_marker.append(rel)
-        else:
-            invalid_name.append(rel)
-    for p in utils_files:
-        rel = str(p.relative_to(ROOT))
-        if ".gen." not in p.name:
-            invalid_name.append(rel)
-            continue
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if MARKER not in txt:
-            missing_marker.append(rel)
-
-    for p in core_files:
-        rel = str(p.relative_to(ROOT))
-        if ".ext." not in p.name:
-            invalid_name.append(rel)
-            continue
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if MARKER in txt:
-            unexpected_marker.append(rel)
-    for p in std_files:
-        rel = str(p.relative_to(ROOT))
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if ".gen." in p.name:
-            if MARKER not in txt:
-                missing_marker.append(rel)
-        elif ".ext." in p.name:
-            if MARKER in txt:
-                unexpected_marker.append(rel)
-        else:
-            invalid_name.append(rel)
+    _check_legacy_module_files(legacy_module_files, missing_marker, unexpected_marker, invalid_name)
+    _check_generated_files(generated_files, missing_marker, invalid_name)
+    _check_handwritten_files(core_files, unexpected_marker, invalid_name, require_ext_name=True)
+    _check_handwritten_files(native_files, unexpected_marker, invalid_name, require_ext_name=False)
+    _check_public_shim_files(pytra_files, missing_marker, invalid_name)
 
     if PY_RUNTIME_EXT.exists():
         py_runtime_txt = PY_RUNTIME_EXT.read_text(encoding="utf-8", errors="ignore")
@@ -127,8 +167,10 @@ def main() -> int:
         print("[FAIL] runtime cpp layout guard failed")
         print(
             "  scanned: "
-            + f"built_in={len(builtin_files)} files, "
-            + f"utils={len(utils_files)} files, "
+            + f"legacy_module={len(legacy_module_files)} files, "
+            + f"generated={len(generated_files)} files, "
+            + f"native={len(native_files)} files, "
+            + f"pytra={len(pytra_files)} files, "
             + f"core={len(core_files)} files, "
             + f"std={len(std_files)} files"
         )
@@ -151,9 +193,12 @@ def main() -> int:
         return 1
 
     print("[OK] runtime cpp layout guard passed")
-    print(f"  built_in+utils files with marker: {len(builtin_files) + len(utils_files)}")
+    print(f"  legacy module files: {len(legacy_module_files)}")
+    print(f"  generated dir files with marker: {len(generated_files)}")
+    print(f"  public shim files with marker: {len(pytra_files)}")
+    print(f"  native dir files without marker: {len(native_files)}")
     print(f"  core files without marker: {len(core_files)}")
-    print(f"  std generated files with marker and handwritten files without marker: {len(std_files)}")
+    print(f"  legacy std files checked: {len(std_files)}")
     return 0
 
 
