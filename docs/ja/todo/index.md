@@ -32,6 +32,24 @@
 
 ## 未完了タスク
 
+### P0: C++ runtime レイアウト再編（`generated/` + `native/` + `pytra/` shim）
+
+文脈: [docs/ja/plans/p0-cpp-runtime-layout-generated-native.md](../plans/p0-cpp-runtime-layout-generated-native.md)
+
+1. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01] C++ runtime の module runtime 層を `generated/` + `native/` + `pytra/` shim へ再編し、suffix ベース ownership から directory ベース ownership へ移行する。
+2. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-01] `generated/` / `native/` / `pytra/` / `core/` の責務境界を spec と plan に明記し、`native` 命名採用理由を固定する。
+3. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S1-02] 現行 `built_in/std/utils/pytra` 配下のファイルを「generated」「native」「public shim」「core 非対象」に分類し、移行マップを作る。
+4. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-01] runtime emit / runtime_paths / public shim 生成を `generated/` + `pytra/` 前提へ更新する。
+5. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-02] `runtime_symbol_index` / `cpp_runtime_deps.py` / build graph 導線を `generated/native/pytra` 前提へ更新する。
+6. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S2-03] `check_runtime_cpp_layout.py` を directory ベース ownership 検証へ更新する。
+7. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-01] `std/` の generated runtime を `generated/std/` へ移し、`pytra/std/*.h` shim を同期する。
+8. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-02] `utils/` の generated runtime を `generated/utils/` へ移し、`pytra/utils/*.h` shim を同期する。
+9. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S3-03] `built_in/` の generated runtime を `generated/built_in/` へ移し、必要な public include 面を同期する。
+10. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-01] 既存 module companion を `native/` へ移し、`native/*.h` を最小化する。
+11. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S4-02] `os_path` / `math` / `time` など representative module で「宣言は generated、実装は native、公開は pytra shim」を固定する。
+12. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-01] codegen/unit/parity を新レイアウトへ追従させ、旧 `.gen/.ext` 固定前提を更新する。
+13. [ ] [ID: P0-CPP-RUNTIME-LAYOUT-REALIGN-01-S5-02] archive/docs/guard を更新し、module runtime の suffix ベース ownership を legacy 扱いで閉じる。
+
 ### P0: C++ mutable list の ref-first 完全化（`rc<list<T>>` 正本化）
 
 文脈: [docs/ja/plans/p0-cpp-list-ref-first-completion.md](../plans/p0-cpp-list-ref-first-completion.md)
