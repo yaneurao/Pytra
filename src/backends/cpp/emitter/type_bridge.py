@@ -212,12 +212,19 @@ class CppTypeBridgeEmitter:
             return self.render_expr(self._build_unbox_expr_node(source_node, t_norm, ctx))
         return self._coerce_any_expr_to_target(expr_txt, t_norm, ctx)
 
-    def _coerce_call_arg(self, arg_txt: str, arg_node: Any, target_t: str) -> str:
+    def _coerce_call_arg(
+        self,
+        arg_txt: str,
+        arg_node: Any,
+        target_t: str,
+        *,
+        list_target_is_value: bool = False,
+    ) -> str:
         """関数シグネチャに合わせて引数を必要最小限キャストする。"""
         at0 = self.get_expr_type(arg_node)
         at = at0 if isinstance(at0, str) else ""
         t_norm = self.normalize_type_name(target_t)
-        if self._is_pyobj_ref_first_list_type(t_norm):
+        if self._is_pyobj_ref_first_list_type(t_norm) and (not list_target_is_value):
             return self._render_pyobj_alias_list_value(arg_txt, arg_node, t_norm)
         # `cpp_list_model=pyobj` でも list[RefClass] は typed container として扱う。
         # それ以外の list[...] は callsite coercion の target を object へ寄せる。
@@ -228,9 +235,9 @@ class CppTypeBridgeEmitter:
         ):
             t_norm = "object"
         arg_node_dict = self.any_to_dict_or_empty(arg_node)
-        if self._uses_pyobj_ref_first_list_lvalue_expr(arg_node):
-            if t_norm.startswith("list[") and t_norm.endswith("]"):
-                return f"rc_list_ref({arg_txt})"
+        list_arg_adapter = self._render_pyobj_value_list_arg_adapter(arg_txt, arg_node, t_norm)
+        if list_target_is_value and list_arg_adapter != arg_txt:
+            return list_arg_adapter
         if self.is_any_like_type(t_norm):
             if self.is_boxed_object_expr(arg_txt):
                 return arg_txt
@@ -286,6 +293,8 @@ class CppTypeBridgeEmitter:
         args: list[str],
         arg_nodes: list[Any],
         sig: list[str],
+        *,
+        list_targets_are_value: bool = False,
     ) -> list[str]:
         """シグネチャ配列に基づいて引数列を順序保持でキャストする。"""
         if len(sig) == 0:
@@ -294,7 +303,14 @@ class CppTypeBridgeEmitter:
         for i, arg_txt in enumerate(args):
             if i < len(sig):
                 node: Any = arg_nodes[i] if i < len(arg_nodes) else {}
-                out.append(self._coerce_call_arg(arg_txt, node, sig[i]))
+                out.append(
+                    self._coerce_call_arg(
+                        arg_txt,
+                        node,
+                        sig[i],
+                        list_target_is_value=list_targets_are_value,
+                    )
+                )
             else:
                 out.append(arg_txt)
         return out
@@ -303,7 +319,12 @@ class CppTypeBridgeEmitter:
         """既知関数呼び出しに対して引数型を合わせる。"""
         if fn_name not in self.function_arg_types:
             return args
-        return self._coerce_args_by_signature(args, arg_nodes, self.function_arg_types[fn_name])
+        return self._coerce_args_by_signature(
+            args,
+            arg_nodes,
+            self.function_arg_types[fn_name],
+            list_targets_are_value=fn_name in self.extern_function_names,
+        )
 
     def cpp_type(self, east_type: Any) -> str:
         """EAST 型名を C++ 型名へマッピングする。"""

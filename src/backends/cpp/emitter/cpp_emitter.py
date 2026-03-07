@@ -250,6 +250,7 @@ class CppEmitter(
         self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
         self.function_return_types: dict[str, str] = {}
+        self.extern_function_names: set[str] = set()
         self.current_function_return_type: str = ""
         self.current_function_is_generator: bool = False
         self.current_function_yield_buffer: str = ""
@@ -715,6 +716,42 @@ class CppEmitter(
             return f"rc_list_from_value({rendered_expr})"
         return rendered_expr
 
+    def _uses_pyobj_ref_first_list_value_source(self, expr_node: Any) -> bool:
+        """ref-first handle 由来の list source か判定する。"""
+        return self._uses_pyobj_ref_first_list_lvalue_expr(expr_node) or self._call_expr_returns_known_pyobj_list_handle(
+            expr_node
+        )
+
+    def _render_pyobj_value_list_copy_adapter(self, rendered_expr: str, value_node: Any, east_type: str) -> str:
+        """ref-first handle から value list を要求する箇所向け copy adapter。"""
+        rendered_trim = self._trim_ws(rendered_expr)
+        if rendered_trim == "":
+            return rendered_expr
+        list_t = self.normalize_type_name(east_type)
+        if not self._is_pyobj_value_model_list_type(list_t):
+            return rendered_expr
+        if rendered_trim.startswith("rc_list_copy_value("):
+            return rendered_expr
+        if self._uses_pyobj_ref_first_list_value_source(value_node):
+            return f"rc_list_copy_value({rendered_expr})"
+        return rendered_expr
+
+    def _render_pyobj_value_list_arg_adapter(self, rendered_expr: str, value_node: Any, east_type: str) -> str:
+        """ref-first handle を `list<T>` 引数へ渡すための ABI adapter。"""
+        rendered_trim = self._trim_ws(rendered_expr)
+        if rendered_trim == "":
+            return rendered_expr
+        list_t = self.normalize_type_name(east_type)
+        if not self._is_pyobj_value_model_list_type(list_t):
+            return rendered_expr
+        if rendered_trim.startswith("rc_list_ref(") or rendered_trim.startswith("rc_list_copy_value("):
+            return rendered_expr
+        if self._uses_pyobj_ref_first_list_lvalue_expr(value_node):
+            return f"rc_list_ref({rendered_expr})"
+        if self._call_expr_returns_known_pyobj_list_handle(value_node):
+            return f"rc_list_copy_value({rendered_expr})"
+        return rendered_expr
+
     def _collect_name_reads(self, node: Any, out: set[str]) -> None:
         """式/文ノード内の Name 参照を抽出する。"""
         if isinstance(node, list):
@@ -1043,6 +1080,18 @@ class CppEmitter(
                                 ordered.append(self.any_to_str(arg_types.get(n)))
                     self.function_arg_types[fn_name] = ordered
                     self.function_return_types[fn_name] = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
+                    decorators = self.any_to_list(stmt.get("decorators"))
+                    for decorator in decorators:
+                        if not isinstance(decorator, str):
+                            continue
+                        head = decorator.strip()
+                        if head == "":
+                            continue
+                        if "(" in head:
+                            head = head.split("(", 1)[0].strip()
+                        if head.split(".")[-1] == "extern":
+                            self.extern_function_names.add(fn_name)
+                            break
 
         self.ref_classes = {name for name, hint in self.class_storage_hints.items() if hint == "ref"}
         changed = True

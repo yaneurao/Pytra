@@ -187,12 +187,8 @@ class CppStatementEmitter:
             (not ref_first_list_ann)
             and force_typed_list_ann
             and rendered_val != ""
-            and (
-                self._uses_pyobj_rc_list_expr(stmt.get("value"))
-                or self._call_expr_returns_known_pyobj_list_handle(stmt.get("value"))
-            )
         ):
-            rendered_val = f"rc_list_copy_value({rendered_val})"
+            rendered_val = self._render_pyobj_value_list_copy_adapter(rendered_val, stmt.get("value"), ann_t_norm)
         if ref_first_list_ann and rendered_val != "":
             rendered_val = self._render_pyobj_alias_list_value(rendered_val, stmt.get("value"), ann_t_norm)
         elif self.is_any_like_type(ann_t_str) and val_is_dict:
@@ -629,12 +625,8 @@ class CppStatementEmitter:
                 (not runtime_alias_target)
                 and self._is_pyobj_value_model_list_type(picked)
                 and rval != ""
-                and (
-                    self._uses_pyobj_rc_list_expr(value)
-                    or self._call_expr_returns_known_pyobj_list_handle(value)
-                )
             ):
-                rval = f"rc_list_copy_value({rval})"
+                rval = self._render_pyobj_value_list_copy_adapter(rval, value, picked)
             if runtime_alias_target and rval != "":
                 rval = self._render_pyobj_alias_list_value(rval, value, picked)
             elif self.is_any_like_type(picked):
@@ -689,12 +681,8 @@ class CppStatementEmitter:
             (not runtime_alias_target)
             and self._is_pyobj_value_model_list_type(t_target)
             and rval != ""
-            and (
-                self._uses_pyobj_rc_list_expr(value)
-                or self._call_expr_returns_known_pyobj_list_handle(value)
-            )
         ):
-            rval = f"rc_list_copy_value({rval})"
+            rval = self._render_pyobj_value_list_copy_adapter(rval, value, t_target)
         if runtime_alias_target and rval != "":
             rval = self._render_pyobj_alias_list_value(rval, value, t_target)
         elif self.is_any_like_type(t_target):

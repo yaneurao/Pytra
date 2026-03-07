@@ -405,8 +405,9 @@ class CppModuleEmitter:
                 arg_is_unknown = arg_t == "" or arg_t == "unknown"
                 arg_node = arg_nodes[i] if i < len(arg_nodes) else {}
                 arg_node_d = arg_node if isinstance(arg_node, dict) else {}
-                if self._uses_pyobj_ref_first_list_lvalue_expr(arg_node) and tt.startswith("list[") and tt.endswith("]"):
-                    a = f"rc_list_ref({a})"
+                list_arg_adapter = self._render_pyobj_value_list_arg_adapter(a, arg_node, tt)
+                if list_arg_adapter != a:
+                    a = list_arg_adapter
                 elif self.is_any_like_type(tt) and (arg_is_unknown or not self.is_any_like_type(arg_t)):
                     if not self.is_boxed_object_expr(a):
                         if len(arg_node_d) > 0:

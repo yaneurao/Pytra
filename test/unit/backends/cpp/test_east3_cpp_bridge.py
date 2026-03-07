@@ -537,6 +537,37 @@ class East3CppBridgeTest(unittest.TestCase):
         out = emitter._coerce_args_for_module_function("pkg.mod", "f", ["n"], [arg_node])
         self.assertEqual(out, ["make_object(n)"])
 
+    def test_coerce_args_for_module_function_uses_rc_list_ref_for_ref_first_field(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
+        emitter._module_fn_arg_type_cache["pkg.mod"] = {"f": ["list[int64]"]}
+        emitter.current_class_name = "Parser"
+        emitter.current_class_fields["tokens"] = "list[int64]"
+        arg_node = {
+            "kind": "Attribute",
+            "value": {"kind": "Name", "id": "self", "resolved_type": "Parser"},
+            "attr": "tokens",
+            "resolved_type": "list[int64]",
+        }
+        out = emitter._coerce_args_for_module_function("pkg.mod", "f", ["this->tokens"], [arg_node])
+        self.assertEqual(out, ["rc_list_ref(this->tokens)"])
+
+    def test_coerce_args_for_known_extern_function_copy_temporary_handle_for_value_list_target(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
+        emitter.function_arg_types["consume"] = ["list[int64]"]
+        emitter.function_return_types["make"] = "list[int64]"
+        emitter.extern_function_names.add("consume")
+        arg_node = {
+            "kind": "Call",
+            "func": {"kind": "Name", "id": "make", "resolved_type": "unknown"},
+            "args": [],
+            "keywords": [],
+            "resolved_type": "list[int64]",
+        }
+        out = emitter._coerce_args_for_known_function("consume", ["make()"], [arg_node])
+        self.assertEqual(out, ["rc_list_copy_value(make())"])
+
     def test_coerce_dict_key_expr_boxes_any_key_type(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         owner = {"kind": "Name", "id": "d", "resolved_type": "dict[Any, int64]"}

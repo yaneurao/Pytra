@@ -218,7 +218,7 @@
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S3-03] callsite / return / method dispatch / subscript / for/enumerate/reversed の描画を `rc<list<T>>` 正本へ切り替える。
 
 - [x] [ID: P0-CPP-LIST-REFFIRST-01-S4-01] `@extern` / `Any` / `object` 境界でだけ `list<T>` value adapter を挿入する規則を実装し、他経路から分離する。
-- [ ] [ID: P0-CPP-LIST-REFFIRST-01-S4-02] ABI adapter 用 helper を整理し、`list<T>` を backend 内部正本として扱う経路をなくす。
+- [x] [ID: P0-CPP-LIST-REFFIRST-01-S4-02] ABI adapter 用 helper を整理し、`list<T>` を backend 内部正本として扱う経路をなくす。
 
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S5-01] optimizer 側で「証明できた list だけ value 化する」責務境界を実装し、correctness と optimization を分離する。
 - [ ] [ID: P0-CPP-LIST-REFFIRST-01-S5-02] optimizer off / fail-closed 条件でも unit/parity が通ることを確認する。
@@ -248,3 +248,5 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-03` の検証として `test_py2cpp_codegen_issues.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_list_pyobj_model.py`, `test_cpp_type.py` を実行し通過した。`test_py2cpp_codegen_issues.py` には call-returned subscript / method dispatch / typed for / enumerate / reversed regression を追加し、sample13 の nested list access expectation も `py_at(py_at(...), ...)` 契約へ更新した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-01` として、ref-first list target 判定を plain `Name` alias から `Attribute` を含む lvalue へ広げ、class field の typed list を `rc<list<T>>` storage へ揃えた。これにより sample18 `Parser.tokens` / `Parser.expr_nodes` は handle-backed field となり、`this->tokens = tokens` / `this->expr_nodes = this->new_expr_nodes()` のように内部 assignment では `rc_list_copy_value(...)` を使わず、`self.tokens[i]` / `self.expr_nodes.append(...)` も `py_at(...)` / `py_append(...)` の ref-first helper を通るようになった。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-01` では plain local value path は維持した。sample13 `candidates` のような block-local typed list は runtime alias 集合へは昇格させず `list<...>` のまま残し、`rc_list_copy_value(...)` は `@extern` / `Any` / `object` 境界と、Phase 5 で optimizer 責務へ閉じ込める暫定 value-local 経路だけに寄せる方針を固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-02` として、ABI adapter helper を `ref-first handle -> value list copy` の `_render_pyobj_value_list_copy_adapter(...)` と `ref-first handle -> list<T> arg` の `_render_pyobj_value_list_arg_adapter(...)` へ整理した。`stmt.py` の value-local copy、`module.py` の runtime module arg、`type_bridge.py` の known-function arg はこの 2 helper を通る構成へ揃え、旧 alias-specific 条件分岐の重複を削減した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-02` として、known-function path には `extern_function_names` を導入し、`@extern` function のときだけ `list<T>` target を value ABI として扱うようにした。これにより internal function は引き続き ref-first signature を正本としつつ、`@extern` / runtime module 境界では lvalue handle を `rc_list_ref(...)`、temporary handle を `rc_list_copy_value(...)` へ落とせるようになった。
