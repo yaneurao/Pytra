@@ -1,6 +1,6 @@
 # P4: linked-program 後の非C++ backend 修復
 
-最終更新: 2026-03-07
+最終更新: 2026-03-08
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P4-NONCPP-BACKEND-RECOVERY-01`
@@ -98,8 +98,8 @@ health matrix の failure category:
 
 ## 分解
 
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-01] linked-program 後の non-C++ backend health matrix を作成し、各 target を failure category ごとに分類する。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-02] done 条件（static/smoke/transpile/parity/toolchain missing の扱い）と修復順序を spec/plan に固定する。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-01] linked-program 後の non-C++ backend health matrix を作成し、各 target を failure category ごとに分類する。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-02] done 条件（static/smoke/transpile/parity/toolchain missing の扱い）と修復順序を spec/plan に固定する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` / `py2x.py` / `ir2lang.py` の non-C++ 互換層を点検し、`SingleFileProgramWriter` 前提の backend 共通契約不足を埋める。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] non-C++ backend health checker を追加または既存 checker を統合し、family 単位の broken/green を 1 コマンドで見られるようにする。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1（`rs/cs/js/ts`）の static contract / smoke / transpile failure を解消し、compat route を安定化する。
@@ -109,7 +109,7 @@ health matrix の failure category:
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3（`ruby/lua/php/nim`）の static contract / smoke / transpile failure を解消する。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 の parity baseline を更新し、runtime 差分と backend bug を切り分ける。
 - [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `run_local_ci.py` または同等の回帰導線へ non-C++ backend health check を統合する。
-- [ ] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02] `docs/ja/spec` / `docs/en/spec` / `docs/ja/how-to-use.md` を更新し、linked-program 後の non-C++ backend 修復運用を固定して計画を閉じる。
+- [x] [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02] `docs/ja/spec` / `docs/en/spec` / `docs/ja/how-to-use.md` を更新し、linked-program 後の non-C++ backend 修復運用を固定して計画を閉じる。
 
 ## フェーズ詳細
 
@@ -204,3 +204,4 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3 の実 failure は 2 系統だった。`ruby` / `php` / `nim` は `runtime_symbol_index` を `src.*` import していたため backend spec load 時点で `ModuleNotFoundError` になっており、`kotlin` / `swift` と同じ修正で回復した。`lua` は emitter の出力が `_G.math.max` と truthiness-preserving ifexp closure に進化していた一方 smoke expectation が古いままだったため、test 側を現行 contract に同期して 33/33 へ戻した。これにより Wave 3 は smoke/transpile green となり、残る parity 計測だけを `S5-02` に分離した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 parity を target ごとに再測定した結果、`ruby` / `lua` / `php` / `nim` は sample parity 18 case 全件 `toolchain_missing` だった。Wave 3 でも backend bug と実行環境依存の infra baseline を分離できたので、残タスクは parity 測定ではなく運用導線への統合だけになった。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `tools/run_local_ci.py` に `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` を追加した。確認として `wave1` / `wave2` / `wave3` を個別に実行し、いずれも `status=green` を確認した。これで local CI は parity 非依存の non-C++ smoke/transpile gate を常時監視できる。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02] `docs/ja/spec/spec-tools.md` と `docs/en/spec/spec-tools.md` に local CI への non-C++ health gate 統合と health matrix 運用を反映し、`docs/ja/how-to-use.md` には日常の `--family all --skip-parity` コマンドを追記した。これにより linked-program 後の非C++ backend 修復運用は docs 上でも閉じた。

@@ -14,7 +14,7 @@ Its goals are:
 ## 1. Daily Operations
 
 - `tools/run_local_ci.py`
-  - Purpose: Run minimal local CI in one pass (version gates + runtime boundary guards + non-C++ emitter runtime-call guardrail + emitter forbidden runtime-implementation symbol guardrail + transpile regressions + unit tests + selfhost build + diff).
+  - Purpose: Run minimal local CI in one pass (version gates + runtime boundary guards + non-C++ emitter runtime-call guardrail + emitter forbidden runtime-implementation symbol guardrail + non-C++ backend health gate + transpile regressions + unit tests + selfhost build + diff).
 - `tools/check_py2cpp_transpile.py`
   - Purpose: Batch-transpile `test/fixtures/` with `py2x.py --target cpp` and detect failures.
 - `tools/check_py2scala_transpile.py`
@@ -74,6 +74,9 @@ Its goals are:
   - Note: Artifact parity requires all of `exists + size + CRC32` on the `output:` artifact path.
   - Note: Before each case run, stale artifacts with the same stem are purged from `sample/out`, `test/out`, and `out`.
   - Note: Timeout handling kills the whole process group so child runners (for example `*_swift.out`) cannot leak.
+- `tools/check_noncpp_backend_health.py`
+  - Purpose: Aggregate linked-program-era non-C++ backend health gates by family, and report `primary_failure`, `toolchain_missing`, and family broken/green state in one command.
+  - Main options: `--family`, `--targets`, `--skip-parity`, `--summary-json`
 - `tools/check_scala_parity.py`
   - Purpose: Run Scala3 parity in one command for all `sample` cases and the positive fixture manifest.
   - Main options: `--skip-fixture`, `--fixture-manifest`, `--east3-opt-level`, `--summary-dir`
@@ -83,10 +86,20 @@ Its goals are:
 - Keep shared smoke coverage (CLI success, `--east-stage 2` rejection, `load_east`, add-fixture transpile) in `test/unit/common/test_py2x_smoke_common.py`.
 - Keep per-language suites (`test/unit/backends/<lang>/test_py2*_smoke.py`) focused on language-specific emitter/runtime contracts only.
 - Require the responsibility-boundary comment (`Language-specific smoke suite...`) in each per-language smoke file, and enforce this via `tools/check_noncpp_east3_contract.py`.
+- Use `PYTHONPATH=src:.:test/unit` as the canonical smoke environment. Some smoke suites import helpers placed directly under `test/unit`, so dropping `test/unit` from `PYTHONPATH` is not allowed.
 - Recommended regression order:
-- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit/common -p 'test_py2x_smoke*.py'`
+- `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s test/unit/common -p 'test_py2x_smoke*.py'`
 - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
 - `python3 tools/check_py2<lang>_transpile.py` (for affected targets)
+
+### 3.2 non-C++ Backend Health Matrix (After linked-program)
+
+- Evaluate non-C++ backend recovery in the fixed order `static_contract -> common_smoke -> target_smoke -> transpile -> parity`.
+- Run `parity` only for targets that already passed every earlier gate. Do not classify earlier failures as parity failures.
+- Keep `toolchain_missing` as the raw skip result from `runtime_parity_check.py`, separate from `parity_fail`.
+- In the 2026-03-08 snapshot, Wave 1 keeps `js/ts` green and `rs/cs` at `toolchain_missing`, while every Wave 2 target (`go/java/kotlin/swift/scala`) and every Wave 3 target (`ruby/lua/php/nim`) also lands in `toolchain_missing` for all 18 sample parity cases.
+- Daily family-level health checks use commands such as `python3 tools/check_noncpp_backend_health.py --family wave1`, and a family is considered `green` when `broken_targets == 0`. `toolchain_missing` is reported separately and does not break the family.
+- `tools/run_local_ci.py` now includes `python3 tools/check_noncpp_backend_health.py --family all --skip-parity`, so the everyday CI route continuously watches the non-parity smoke/transpile gates.
 
 ## 4. Update Rules
 

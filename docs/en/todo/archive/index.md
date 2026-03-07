@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-06
+Last updated: 2026-03-08
 
 ## Policy
 
@@ -14,6 +14,8 @@ Last updated: 2026-03-06
 
 ## Date Links
 
+- [2026-03-08](20260308.md) (`pending`)
+- [2026-03-07](20260307.md) (`pending`)
 - [2026-03-06](20260306.md) (`pending`)
 - [2026-03-05](20260305.md) (`pending`)
 - [2026-03-04](20260304.md) (`pending`)

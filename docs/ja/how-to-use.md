@@ -101,6 +101,26 @@ python3 tools/runtime_parity_check.py \
   - `13-15`: `13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop`
   - `16-18`: `16_glass_sculpture_chaos 17_monte_carlo_pi 18_mini_language_interpreter`
 
+## linked-program 後の non-C++ backend health check
+
+- linked-program 導入後の non-C++ backend gate は `tools/check_noncpp_backend_health.py` を正本とします。
+- 日常の最小確認は次の 1 本です。`parity` は toolchain 依存なのでここでは回しません。
+
+```bash
+python3 tools/check_noncpp_backend_health.py --family all --skip-parity
+```
+
+- family を絞る場合は `wave1` / `wave2` / `wave3` を使います。
+
+```bash
+python3 tools/check_noncpp_backend_health.py --family wave1 --skip-parity
+python3 tools/check_noncpp_backend_health.py --family wave2 --skip-parity
+python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
+```
+
+- `toolchain_missing` は backend bug ではなく、parity 実行環境がないだけの baseline として扱います。
+- `tools/run_local_ci.py` には `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` が組み込まれているため、local CI を通せば non-C++ backend の smoke/transpile gate も同時に監視できます。
+
 ## Emitter変更時の必須ガード（Stop-Ship）
 
 - `src/backends/*/emitter/*.py` を変更した場合は、コミット前に次を必ず実行します。
