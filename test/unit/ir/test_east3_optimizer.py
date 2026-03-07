@@ -3,6 +3,9 @@ from __future__ import annotations
 import copy
 import unittest
 
+from src.toolchain.compiler.east_parts.east3_opt_passes import build_default_passes
+from src.toolchain.compiler.east_parts.east3_opt_passes import build_global_post_link_passes
+from src.toolchain.compiler.east_parts.east3_opt_passes import build_local_only_passes
 from src.toolchain.compiler.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
 from src.toolchain.compiler.east_parts.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
 from src.toolchain.compiler.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
@@ -88,6 +91,16 @@ class East3OptimizerTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid --east3-opt-pass token"):
             parse_east3_opt_pass_overrides("A")
 
+    def test_default_passes_are_local_only(self) -> None:
+        default_names = [str(pass_obj.name) for pass_obj in build_default_passes()]
+        local_names = [str(pass_obj.name) for pass_obj in build_local_only_passes()]
+        global_names = [str(pass_obj.name) for pass_obj in build_global_post_link_passes()]
+        self.assertEqual(default_names, local_names)
+        self.assertIn("LifetimeAnalysisPass", default_names)
+        self.assertNotIn("NonEscapeInterproceduralPass", default_names)
+        self.assertNotIn("CppListValueLocalHintPass", default_names)
+        self.assertEqual(global_names, ["NonEscapeInterproceduralPass", "CppListValueLocalHintPass"])
+
     def test_pass_manager_runs_and_collects_trace(self) -> None:
         doc = _module_doc()
         manager = PassManager([_TouchPass()])
@@ -169,7 +182,7 @@ class East3OptimizerTest(unittest.TestCase):
         out_doc, report = optimize_east3_document(
             doc,
             opt_level="1",
-            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-NonEscapeInterproceduralPass,-CppListValueLocalHintPass,-LifetimeAnalysisPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
+            opt_pass_spec="-NoOpCastCleanupPass,-LiteralCastFoldPass,-IdentityPyToElisionPass,-NumericCastChainReductionPass,-RangeForCanonicalizationPass,-ExpressionNormalizationPass,-EmptyInitShorthandPass,-SafeReserveHintPass,-TypedEnumerateNormalizationPass,-TypedRepeatMaterializationPass,-DictStrKeyNormalizationPass,-TupleTargetDirectExpansionPass,-LifetimeAnalysisPass,-LoopInvariantCastHoistPass,-UnusedLoopVarElisionPass,-LoopInvariantHoistLitePass,-StrengthReductionFloatLoopPass",
         )
         self.assertIs(out_doc, doc)
         trace = report.get("trace")
@@ -186,8 +199,8 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("TypedRepeatMaterializationPass", True))
         self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
         self.assertFalse(by_name.get("TupleTargetDirectExpansionPass", True))
-        self.assertFalse(by_name.get("NonEscapeInterproceduralPass", True))
-        self.assertFalse(by_name.get("CppListValueLocalHintPass", True))
+        self.assertNotIn("NonEscapeInterproceduralPass", by_name)
+        self.assertNotIn("CppListValueLocalHintPass", by_name)
         self.assertFalse(by_name.get("LifetimeAnalysisPass", True))
         self.assertFalse(by_name.get("LoopInvariantCastHoistPass", True))
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
@@ -205,8 +218,8 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("TypedRepeatMaterializationPass", trace_text)
         self.assertIn("DictStrKeyNormalizationPass", trace_text)
         self.assertIn("TupleTargetDirectExpansionPass", trace_text)
-        self.assertIn("NonEscapeInterproceduralPass", trace_text)
-        self.assertIn("CppListValueLocalHintPass", trace_text)
+        self.assertNotIn("NonEscapeInterproceduralPass", trace_text)
+        self.assertNotIn("CppListValueLocalHintPass", trace_text)
         self.assertIn("LifetimeAnalysisPass", trace_text)
         self.assertIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)

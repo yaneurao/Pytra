@@ -95,7 +95,7 @@
 - `O2`:
   - `O1` に加え、ループ系の保守的最適化を許可。
 
-## 8. v1 pass セット（実装同期: 2026-03-02）
+## 8. v1 pass セット（実装同期: 2026-03-07）
 
 | Pass | opt-level | 状態 | 代表変換 | 主なガード |
 | --- | --- | --- | --- | --- |
@@ -103,7 +103,6 @@
 | `LiteralCastFoldPass` | `O1` | 実装済み | `static_cast` なリテラル呼び出しを `Constant` へ畳み込み | リテラル + 無損失（同一型）変換のみ |
 | `RangeForCanonicalizationPass` | `O1` | 実装済み | `RuntimeIterForPlan(py_range)` -> `StaticRangeForPlan` | 現行は定数 int 引数（1〜3引数）かつ `step != 0` に限定 |
 | `ExpressionNormalizationPass` | `O1` | 実装済み | `BinOp/Compare` と `ForCore(StaticRange)` 条件式を `normalized_expr(_version)` へ構造化保持 | `normalized_expr_version=east3_expr_v1` を満たさない経路は backend 側で fallback/fail-closed |
-| `NonEscapeInterproceduralPass` | `O1` | 実装済み | 関数間 summary（`arg_escape`, `return_from_args`）を注釈 | 未解決 call は policy で fail-closed |
 | `LifetimeAnalysisPass` | `O1` | 実装済み | 関数内 `CFG + def-use + liveness + last_use` を注釈 | 動的名前解決（`locals/globals/vars/eval/exec`）検出時は `fail_closed` |
 | `UnusedLoopVarElisionPass` | `O1` | 実装済み | 未使用 `NameTarget` を `_` へ置換 | ループ本体/`orelse`/後続参照と動的名前解決（`locals` 等）を検出した場合は不適用 |
 | `LoopInvariantHoistLitePass` | `O2` | 実装済み | 非空 `StaticRangeForPlan` の先頭不変代入を preheader へ hoist | 非空ループの静的証明・副作用なし・再代入なしが条件 |
@@ -115,6 +114,8 @@
 
 - 現行実装は fail-closed を優先し、適用範囲を意図的に狭くしている。
 - `O0` は全 pass 無効、`O1` は上表 `O1` pass、`O2` は `O1 + O2` pass を実行する。
+- `NonEscapeInterproceduralPass` と `CppListValueLocalHintPass` は 2026-03-07 以降、`EAST3 local optimizer` の既定 pass 列から外し、`LinkedProgramOptimizer` 側の whole-program/global annotation pass として扱う。
+- `LifetimeAnalysisPass` は local-only pass として残し、linked program 段へ移さない。
 
 ### 8.1 `for ... in range(...)` 最適化の責務境界
 

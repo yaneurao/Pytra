@@ -185,6 +185,49 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             local_hints = linked_meta["container_ownership_hints_v1"]["cpp_value_list_locals_v1"]
             self.assertEqual(local_hints["pkg.main::main"]["locals"], ["xs"])
 
+    def test_optimizer_respects_opt_level_zero_for_global_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            program = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(main_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+                        "body": [
+                            _fn(
+                                "main",
+                                [
+                                    {
+                                        "kind": "AnnAssign",
+                                        "target": _name("xs"),
+                                        "annotation": "list[int]",
+                                        "value": {"kind": "List", "elements": []},
+                                    },
+                                    _expr(_call_attr("xs", "append", [_constant(1)])),
+                                    _ret(_call_name("len", [_name("xs")])),
+                                ],
+                            )
+                        ],
+                    }
+                },
+                target="cpp",
+                dispatch_mode="native",
+                options={"east3_opt_level": "0"},
+            )
+
+            result = optimize_linked_program(program)
+            self.assertEqual(result.link_output_doc["global"]["non_escape_summary"], {})
+            self.assertEqual(result.link_output_doc["global"]["container_ownership_hints_v1"], {})
+            linked_main = result.linked_program.modules[0].east_doc
+            self.assertNotIn("non_escape_summary", linked_main.get("meta", {}))
+            fn_meta = linked_main["body"][0].get("meta", {})
+            self.assertNotIn("escape_summary", fn_meta)
+            self.assertNotIn("cpp_value_list_locals_v1", fn_meta)
+
 
 if __name__ == "__main__":
     unittest.main()
