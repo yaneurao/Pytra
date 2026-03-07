@@ -68,6 +68,23 @@ Phase 1 snapshot:
 - scripting / mixed target 群は `ruby/lua/php/nim` が全件 `toolchain_missing`。
 - `runner_needs` は `src/toolchain/compiler/pytra_cli_profiles.py`、tool presence は `shutil.which(...)` 実測を正本とする。
 
+2026-03-08 bootstrap commands executed on current Debian 12 machine:
+
+- compiled target 群:
+  - `apt-get update`
+  - `apt-get install -y rustc mono-mcs golang-go openjdk-17-jdk kotlin scala nim`
+  - `apt-get install -y binutils-gold gcc git libcurl4-openssl-dev libedit-dev libpython3-dev libsqlite3-dev uuid-dev gnupg2`
+  - `curl -fL -o /opt/swift-6.2.2-RELEASE-debian12.tar.gz https://download.swift.org/swift-6.2.2-release/debian12/swift-6.2.2-RELEASE/swift-6.2.2-RELEASE-debian12.tar.gz`
+  - `tar -xf /opt/swift-6.2.2-RELEASE-debian12.tar.gz -C /opt`
+  - `ln -sfn /opt/swift-6.2.2-RELEASE-debian12/usr/bin/swift /usr/local/bin/swift`
+  - `ln -sfn /opt/swift-6.2.2-RELEASE-debian12/usr/bin/swiftc /usr/local/bin/swiftc`
+- scripting / mixed target 群:
+  - `apt-get install -y ruby lua5.4 php-cli`
+
+Post-bootstrap snapshot:
+- parity target 全体で `runner_needs` は解決済み。
+- `toolchain_missing` は current machine baseline から除去された。
+
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3`
@@ -81,8 +98,8 @@ Phase 1 snapshot:
 
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01] parity target 全体の `runner_needs` と current `toolchain_missing` を棚卸しし、target ごとの不足 toolchain を matrix 化する。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02] 「全target parity green」の done 条件、許容しない failure category、確認コマンドを spec/plan に固定する。
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01] baseline target（`cpp/js/ts`）の sample parity を再確認し、他 target 修復中も `18/18` を維持する。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の sample parity を green へ持ち上げる。
 - [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03] scripting / mixed target 群（`ruby/lua/php/nim`）の sample parity を green へ持ち上げる。
@@ -140,3 +157,5 @@ Phase 1 snapshot:
 - 2026-03-08: 既存 baseline では `cpp/js/ts` が green、その他は `toolchain_missing` である。したがって本計画の主対象は「backend bug 修正」よりまず「実行環境不足の解消」とする。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01]: `pytra_cli_profiles.list_parity_targets()` と `TargetProfile.runner_needs`、および current machine の `shutil.which(...)` 実測を突き合わせ、Phase 1 baseline を `cpp/js/ts` available、その他 11 target は `toolchain_missing` として matrix 化した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02]: full parity green は `runtime_parity_check.py` の category が `ok` のみである状態と定義し、canonical command を `--targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` に固定した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01]: compiled target 向けに `rustc`, `mono-mcs/mono`, `go`, `openjdk-17-jdk`, `kotlin`, `scala`, `nim` を apt で導入し、`swiftc` は official `swift-6.2.2-RELEASE-debian12` tarball を `/opt` へ展開して `/usr/local/bin/swiftc` へ symlink した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02]: scripting / mixed target 向けに `ruby`, `lua5.4`, `php-cli` を apt で導入し、導入後の `runner_needs` 実測で parity target 14 件すべてが `OK` になったことを確認した。

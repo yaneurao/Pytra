@@ -39,8 +39,8 @@
 1. [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01] parity target 全体について sample parity を `toolchain_missing` なしで完走できる状態にし、全target green の実行基準を固定する。
 2. [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-01] parity target 全体の `runner_needs` と current `toolchain_missing` を棚卸しし、target ごとの不足 toolchain を matrix 化する。
 3. [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02] 「全target parity green」の done 条件、許容しない failure category、確認コマンドを spec/plan に固定する。
-4. [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
-5. [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
+4. [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
+5. [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02] scripting / mixed target 群（`ruby/lua/php/nim`）の toolchain bootstrap 手順を整備し、`toolchain_missing` を解消する。
 6. [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01] baseline target（`cpp/js/ts`）の sample parity を再確認し、他 target 修復中も `18/18` を維持する。
 7. [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の sample parity を green へ持ち上げる。
 8. [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03] scripting / mixed target 群（`ruby/lua/php/nim`）の sample parity を green へ持ち上げる。
