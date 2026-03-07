@@ -18,7 +18,9 @@ if str(ROOT / "src") not in sys.path:
 from tools import gen_runtime_symbol_index as gen_mod
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import lookup_cpp_namespace_for_runtime_module
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_symbol_doc
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_compile_sources
 
@@ -58,6 +60,15 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         png_symbols = png_mod.get("symbols")
         self.assertIsInstance(png_symbols, dict)
         self.assertEqual(png_symbols.get("write_rgb_png", {}).get("kind"), "function")
+
+        math_mod = modules.get("pytra.std.math")
+        self.assertIsInstance(math_mod, dict)
+        math_symbols = math_mod.get("symbols")
+        self.assertIsInstance(math_symbols, dict)
+        self.assertEqual(math_symbols.get("pi", {}).get("kind"), "const")
+        self.assertEqual(math_symbols.get("pi", {}).get("semantic_tag"), "stdlib.symbol.pi")
+        self.assertEqual(math_symbols.get("e", {}).get("kind"), "const")
+        self.assertEqual(math_symbols.get("sqrt", {}).get("semantic_tag"), "stdlib.fn.sqrt")
 
         pathlib_mod = modules.get("pytra.std.pathlib")
         self.assertIsInstance(pathlib_mod, dict)
@@ -193,6 +204,79 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(
             lookup_target_module_compile_sources("cpp", "pytra.core.dict"),
             [],
+        )
+
+    def test_lookup_runtime_symbol_doc_supports_functions_and_constants(self) -> None:
+        self.assertEqual(
+            lookup_runtime_symbol_doc("math", "sqrt"),
+            {
+                "dispatch": "function",
+                "kind": "function",
+                "semantic_tag": "stdlib.fn.sqrt",
+            },
+        )
+        self.assertEqual(
+            lookup_runtime_symbol_doc("math", "pi"),
+            {
+                "dispatch": "value",
+                "kind": "const",
+                "semantic_tag": "stdlib.symbol.pi",
+            },
+        )
+        self.assertEqual(lookup_runtime_symbol_doc("math", "missing"), {})
+
+    def test_resolve_import_binding_doc_returns_canonical_runtime_metadata(self) -> None:
+        self.assertEqual(
+            resolve_import_binding_doc("math", "", "module"),
+            {
+                "source_module_id": "math",
+                "source_export_name": "",
+                "source_binding_kind": "module",
+                "runtime_module_id": "pytra.std.math",
+                "runtime_group": "std",
+                "resolved_binding_kind": "module",
+            },
+        )
+        self.assertEqual(
+            resolve_import_binding_doc("math", "sqrt", "symbol"),
+            {
+                "source_module_id": "math",
+                "source_export_name": "sqrt",
+                "source_binding_kind": "symbol",
+                "runtime_module_id": "pytra.std.math",
+                "runtime_group": "std",
+                "resolved_binding_kind": "symbol",
+                "runtime_symbol": "sqrt",
+                "runtime_symbol_kind": "function",
+                "runtime_symbol_dispatch": "function",
+                "runtime_semantic_tag": "stdlib.fn.sqrt",
+            },
+        )
+        self.assertEqual(
+            resolve_import_binding_doc("math", "pi", "symbol"),
+            {
+                "source_module_id": "math",
+                "source_export_name": "pi",
+                "source_binding_kind": "symbol",
+                "runtime_module_id": "pytra.std.math",
+                "runtime_group": "std",
+                "resolved_binding_kind": "symbol",
+                "runtime_symbol": "pi",
+                "runtime_symbol_kind": "const",
+                "runtime_symbol_dispatch": "value",
+                "runtime_semantic_tag": "stdlib.symbol.pi",
+            },
+        )
+        self.assertEqual(
+            resolve_import_binding_doc("pytra.std", "json", "symbol"),
+            {
+                "source_module_id": "pytra.std",
+                "source_export_name": "json",
+                "source_binding_kind": "symbol",
+                "runtime_module_id": "pytra.std.json",
+                "runtime_group": "std",
+                "resolved_binding_kind": "module",
+            },
         )
 
     def test_real_repo_cpp_core_layout_exposes_surface_and_ownership_lanes(self) -> None:

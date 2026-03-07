@@ -27,6 +27,7 @@ from toolchain.frontends.frontend_semantics import lookup_builtin_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
@@ -1892,6 +1893,19 @@ def _sh_append_import_binding(
             "source_line": source_line,
         }
     )
+
+
+def _import_resolution_binding(binding: dict[str, Any]) -> dict[str, Any]:
+    out = dict(binding)
+    resolution = resolve_import_binding_doc(
+        str(binding.get("module_id", "")),
+        str(binding.get("export_name", "")),
+        str(binding.get("binding_kind", "")),
+    )
+    for key, value in resolution.items():
+        if isinstance(value, str) and value != "":
+            out[key] = value
+    return out
 
 
 def _sh_is_host_only_alias(local_name: str) -> bool:
@@ -6898,7 +6912,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     import_module_bindings = {}
     import_symbol_bindings = {}
     qualified_symbol_refs: list[dict[str, str]] = []
+    import_resolution_bindings: list[dict[str, Any]] = []
     for binding in import_bindings:
+        import_resolution_bindings.append(_import_resolution_binding(binding))
         module_id_obj = binding.get("module_id")
         local_name_obj = binding.get("local_name")
         export_name_obj = binding.get("export_name")
@@ -6941,7 +6957,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     meta["parser_backend"] = "self_hosted"
     import_resolution: dict[str, Any] = {}
     import_resolution["schema_version"] = 1
-    import_resolution["bindings"] = import_bindings
+    import_resolution["bindings"] = import_resolution_bindings
     import_resolution["qualified_refs"] = qualified_symbol_refs
     meta["import_resolution"] = import_resolution
     meta["import_bindings"] = import_bindings
