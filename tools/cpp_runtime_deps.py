@@ -60,6 +60,13 @@ def runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
         rel = None
     if rel is not None:
         parts = rel.parts
+        if len(parts) >= 2 and header.suffix == ".h":
+            layout = parts[0]
+            if layout == "core":
+                tail_path = Path(*parts[1:])
+                stem_path = tail_path.with_suffix("")
+                out.extend(_runtime_cpp_candidates_from_core_tail(stem_path))
+                return out
         if len(parts) >= 3 and header.suffix == ".h":
             layout = parts[0]
             group = parts[1]
@@ -102,6 +109,36 @@ def _runtime_cpp_candidates_from_generated_tail(group: str, tail: Path) -> list[
 def _runtime_cpp_candidates_from_native_tail(group: str, tail: Path) -> list[Path]:
     out: list[Path] = []
     _append_unique_path(out, RUNTIME_ROOT / "native" / group / (tail.as_posix() + ".cpp"))
+    return out
+
+
+def _runtime_cpp_candidates_from_core_tail(tail: Path) -> list[Path]:
+    out: list[Path] = []
+    tail_txt = tail.as_posix()
+    base_tail = tail_txt
+    if base_tail.endswith(".ext"):
+        base_tail = base_tail[: -len(".ext")]
+    elif base_tail.endswith(".gen"):
+        base_tail = base_tail[: -len(".gen")]
+
+    for rel_tail in (
+        tail_txt + ".cpp",
+        base_tail + ".cpp",
+        base_tail + ".gen.cpp",
+    ):
+        _append_unique_path(out, RUNTIME_ROOT / "generated" / "core" / rel_tail)
+    for rel_tail in (
+        tail_txt + ".cpp",
+        base_tail + ".cpp",
+    ):
+        _append_unique_path(out, RUNTIME_ROOT / "native" / "core" / rel_tail)
+    for rel_tail in (
+        tail_txt + ".cpp",
+        base_tail + ".ext.cpp",
+        base_tail + ".cpp",
+        base_tail + ".gen.cpp",
+    ):
+        _append_unique_path(out, RUNTIME_ROOT / "core" / rel_tail)
     return out
 
 

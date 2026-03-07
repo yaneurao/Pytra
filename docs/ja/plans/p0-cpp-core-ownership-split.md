@@ -242,6 +242,15 @@ Phase 1 契約固定:
 - `docs/ja/spec/spec-abi.md` に、low-level core は `pytra/core` を増やさず `core/...` include root を維持したまま ownership を分離する方針を追記した。
 - `src/runtime/cpp/core/README.md` も「handwritten 実装専用」から「stable include surface。ownership split 後は forwarder へ縮退予定」という説明へ更新した。
 
+## Phase 2 実施結果
+
+- `tools/gen_runtime_symbol_index.py` に C++ core 専用 artifact 解決 helper を追加し、`core/*.ext.h` public header を維持したまま、compile source は `generated/core` / `native/core` / 現行 `core/*.ext.cpp` の順で探索できるよう更新した。
+- `tools/cpp_runtime_deps.py` は `runtime/cpp/core/*.ext.h` から future `generated/core/*.ext.cpp` / `native/core/*.ext.cpp` を候補導出できるよう更新し、現行 `core/*.ext.cpp` は fallback に残した。
+- representative unit には synthetic runtime tree を使う future-proof test を追加し、
+  - runtime symbol index 側で `core/dict.ext.h -> generated/core/dict.ext.cpp + native/core/dict.ext.cpp`
+  - build graph 側で `runtime_cpp_candidates_from_header(core/dict.ext.h)` が future core split 候補を返す
+  ことを確認した。
+
 ## 分解
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01] C++ low-level runtime (`core`) に `generated/core` + `native/core` を導入し、stable include 面を保ったまま generated/handwritten の物理混在を解消する。
@@ -249,7 +258,7 @@ Phase 1 契約固定:
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-01] `src/runtime/cpp/core/` の既存ファイルを `compat surface` / `native 正本` / `generated 候補` / `非対象` に分類し、移行マップを作る。
 - [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S1-02] `core/` を互換 include 面、`generated/core` を生成正本、`native/core` を手書き正本とする契約を plan/spec に固定し、`pytra/core` を導入しない理由を明記する。
 
-- [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
+- [x] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-01] `runtime_symbol_index` / `cpp_runtime_deps.py` / header 解決導線を `core` public header + `generated/native/core` compile source 前提へ拡張する。
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S2-02] `check_runtime_cpp_layout.py` と `check_runtime_core_gen_markers.py` を core split 前提へ更新し、`core/` 実装再侵入・marker 混在を fail-fast 化する。
 
 - [ ] [ID: P0-CPP-CORE-OWNERSHIP-SPLIT-01-S3-01] handwritten core source (`gc/io` など) を `native/core/` へ移し、build graph と compile source 収集を同期する。
@@ -269,3 +278,4 @@ Phase 1 契約固定:
 - 2026-03-07: `src/runtime/cpp/core/` の既存 13 files を棚卸しし、`README.md` を除く 12 files はすべて handwritten core と判断した。`generated/core` へそのまま移せる既存 artifact は 0 件で、lane 実証は `S4-01` に切り出す。
 - 2026-03-07: `core/` には `.cpp` 実体を残さず、`gc/io` の compile source は `native/core` へ移す。header は `core/*.ext.h` の互換 include 名を維持するため、最終的に forwarder として残す方針を固定した。
 - 2026-03-07: `S1-02` として `spec-runtime` / `spec-abi` / `core/README` を更新し、`core/` は stable include surface、`generated/core` は SoT 由来正本、`native/core` は handwritten 正本とする契約を固定した。`pytra/core` は public root を二重化して ownership を曖昧にするため導入しない。
+- 2026-03-07: `S2-01` として `runtime_symbol_index` / `cpp_runtime_deps` を future core split 対応に拡張した。`core/*.ext.h` は public header のまま維持し、compile source は `generated/core` / `native/core` / 現行 `core/*.ext.cpp` fallback の順で解決する。

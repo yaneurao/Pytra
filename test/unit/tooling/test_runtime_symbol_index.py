@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
@@ -165,6 +166,32 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn(
             "src/runtime/cpp/generated/utils/png.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),
+        )
+
+    def test_cpp_core_artifacts_support_future_generated_native_split(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            runtime_root = root / "src/runtime/cpp"
+            (runtime_root / "core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "generated/core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "native/core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "core/dict.ext.h").write_text("#pragma once\n", encoding="utf-8")
+            (runtime_root / "generated/core/dict.ext.cpp").write_text("// gen\n", encoding="utf-8")
+            (runtime_root / "native/core/dict.ext.cpp").write_text("// native\n", encoding="utf-8")
+
+            with patch.object(gen_mod, "ROOT", root):
+                art = gen_mod._target_cpp_core_artifacts("dict")
+
+        self.assertEqual(
+            art,
+            {
+                "public_headers": ["src/runtime/cpp/core/dict.ext.h"],
+                "compile_sources": [
+                    "src/runtime/cpp/generated/core/dict.ext.cpp",
+                    "src/runtime/cpp/native/core/dict.ext.cpp",
+                ],
+                "companions": ["generated", "native"],
+            },
         )
 
     def test_representative_std_modules_follow_generated_native_shim_contract(self) -> None:

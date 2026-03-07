@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
@@ -16,6 +17,7 @@ if str(ROOT) not in sys.path:
 BUILD_SCRIPT = ROOT / "tools" / "build_multi_cpp.py"
 MAKEFILE_SCRIPT = ROOT / "tools" / "gen_makefile_from_manifest.py"
 
+from tools import cpp_runtime_deps as deps_mod
 from tools.cpp_runtime_deps import runtime_cpp_candidates_from_header
 
 
@@ -108,3 +110,26 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertIn((ROOT / "src/runtime/cpp/native/std/time.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/time.gen.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/time.ext.cpp").as_posix(), paths)
+
+    def test_runtime_cpp_candidates_support_future_core_split_from_core_header(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            runtime_root = root / "src/runtime/cpp"
+            (runtime_root / "core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "generated/core").mkdir(parents=True, exist_ok=True)
+            (runtime_root / "native/core").mkdir(parents=True, exist_ok=True)
+            header = runtime_root / "core/dict.ext.h"
+            header.write_text("#pragma once\n", encoding="utf-8")
+
+            with patch.object(deps_mod, "ROOT", root), patch.object(
+                deps_mod, "RUNTIME_ROOT", runtime_root
+            ), patch.object(
+                deps_mod, "SRC_ROOT", root / "src"
+            ), patch.object(
+                deps_mod, "_HEADER_SOURCE_INDEX", None
+            ):
+                paths = [path.as_posix() for path in deps_mod.runtime_cpp_candidates_from_header(header)]
+
+        self.assertIn((runtime_root / "generated/core/dict.ext.cpp").as_posix(), paths)
+        self.assertIn((runtime_root / "native/core/dict.ext.cpp").as_posix(), paths)
+        self.assertIn((runtime_root / "core/dict.ext.cpp").as_posix(), paths)

@@ -126,7 +126,9 @@ def _modern_runtime_langs() -> list[str]:
 def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any] | None:
     if tail == "":
         return None
-    if lang == "cpp" and group != "core":
+    if lang == "cpp":
+        if group == "core":
+            return _target_cpp_core_artifacts(tail)
         return _target_cpp_module_artifacts(group, tail)
     base_dir = ROOT / "src" / "runtime" / lang / group
     if not base_dir.exists():
@@ -229,6 +231,103 @@ def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None
         companions.append("generated")
     if native_h is not None or native_cpp is not None:
         companions.append("native")
+
+    if len(public_headers) == 0 and len(compile_sources) == 0:
+        return None
+    return {
+        "public_headers": public_headers,
+        "compile_sources": compile_sources,
+        "companions": companions,
+    }
+
+
+def _pick_existing(paths: list[Path]) -> list[Path]:
+    out: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        if not path.exists():
+            continue
+        rel = _path_to_rel_txt(path)
+        if rel in seen:
+            continue
+        seen.add(rel)
+        out.append(path)
+    return out
+
+
+def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
+    runtime_root = ROOT / "src" / "runtime" / "cpp"
+    public_headers: list[str] = []
+    compile_sources: list[str] = []
+    companions: list[str] = []
+
+    public_header_candidates = _pick_existing(
+        [
+            runtime_root / "core" / (tail + ".ext.h"),
+            runtime_root / "core" / (tail + ".h"),
+            runtime_root / "core" / (tail + ".gen.h"),
+        ]
+    )
+    generated_candidates = _pick_existing(
+        [
+            runtime_root / "generated" / "core" / (tail + ".ext.h"),
+            runtime_root / "generated" / "core" / (tail + ".h"),
+            runtime_root / "generated" / "core" / (tail + ".gen.h"),
+            runtime_root / "generated" / "core" / (tail + ".ext.cpp"),
+            runtime_root / "generated" / "core" / (tail + ".cpp"),
+            runtime_root / "generated" / "core" / (tail + ".gen.cpp"),
+        ]
+    )
+    native_candidates = _pick_existing(
+        [
+            runtime_root / "native" / "core" / (tail + ".ext.h"),
+            runtime_root / "native" / "core" / (tail + ".h"),
+            runtime_root / "native" / "core" / (tail + ".ext.cpp"),
+            runtime_root / "native" / "core" / (tail + ".cpp"),
+        ]
+    )
+    legacy_candidates = _pick_existing(
+        [
+            runtime_root / "core" / (tail + ".ext.cpp"),
+            runtime_root / "core" / (tail + ".cpp"),
+            runtime_root / "core" / (tail + ".gen.cpp"),
+        ]
+    )
+
+    if public_header_candidates:
+        public_headers.append(_path_to_rel_txt(public_header_candidates[0]))
+    elif generated_candidates:
+        first_generated_header = next((p for p in generated_candidates if p.suffix == ".h"), None)
+        if first_generated_header is not None:
+            public_headers.append(_path_to_rel_txt(first_generated_header))
+    elif native_candidates:
+        first_native_header = next((p for p in native_candidates if p.suffix == ".h"), None)
+        if first_native_header is not None:
+            public_headers.append(_path_to_rel_txt(first_native_header))
+
+    def append_sources(paths: list[Path]) -> None:
+        seen_sources = set(compile_sources)
+        for path in paths:
+            if path.suffix != ".cpp":
+                continue
+            rel = _path_to_rel_txt(path)
+            if rel in seen_sources:
+                continue
+            seen_sources.add(rel)
+            compile_sources.append(rel)
+
+    append_sources(generated_candidates)
+    append_sources(native_candidates)
+    append_sources(legacy_candidates)
+
+    if any(path.suffix in {".h", ".cpp"} for path in generated_candidates):
+        companions.append("generated")
+    if any(path.suffix in {".h", ".cpp"} for path in native_candidates):
+        companions.append("native")
+    elif any(path.suffix == ".cpp" for path in legacy_candidates) or (
+        len(public_header_candidates) > 0 and public_header_candidates[0].name.endswith(".ext.h")
+    ):
+        companions.append("ext")
 
     if len(public_headers) == 0 and len(compile_sources) == 0:
         return None
