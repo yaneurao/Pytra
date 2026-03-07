@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+
 
 _NIM_KEYWORDS = {
     "addr", "and", "as", "asm",
@@ -157,6 +159,38 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     if resolved != "":
         return resolved, "resolved_runtime_call"
     return "", ""
+
+
+def _runtime_module_id(expr: dict[str, Any]) -> str:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        runtime_call, _ = _resolved_runtime_call(expr)
+        dot = runtime_call.find(".")
+        if dot >= 0:
+            runtime_module = runtime_call[:dot].strip()
+    return canonical_runtime_module_id(runtime_module)
+
+
+def _runtime_symbol_name(expr: dict[str, Any]) -> str:
+    runtime_symbol_any = expr.get("runtime_symbol")
+    if isinstance(runtime_symbol_any, str):
+        return runtime_symbol_any.strip()
+    runtime_call, _ = _resolved_runtime_call(expr)
+    dot = runtime_call.find(".")
+    if dot >= 0:
+        return runtime_call[dot + 1 :].strip()
+    return ""
+
+
+def _is_math_runtime(expr: dict[str, Any]) -> bool:
+    return _runtime_module_id(expr) == "pytra.std.math"
+
+
+def _is_math_constant(expr: dict[str, Any]) -> bool:
+    if not _is_math_runtime(expr):
+        return False
+    return _runtime_symbol_name(expr) in {"pi", "e"}
 
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
@@ -1307,14 +1341,6 @@ class NimNativeEmitter:
             value_node = expr.get("value")
             value = self._render_expr(value_node)
             attr = _safe_ident(expr.get("attr"))
-            if isinstance(value_node, dict) and value_node.get("kind") == "Name":
-                owner_any = value_node.get("id")
-                owner = owner_any if isinstance(owner_any, str) else ""
-                if owner == "math":
-                    if attr == "pi":
-                        return "PI"
-                    if attr == "e":
-                        return "E"
             semantic_tag_any = expr.get("semantic_tag")
             semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
             runtime_call, runtime_source = _resolved_runtime_call(expr)
@@ -1324,6 +1350,11 @@ class NimNativeEmitter:
             resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
             resolved_source_any = expr.get("resolved_runtime_source")
             resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
+            if _is_math_constant(expr):
+                if _runtime_symbol_name(expr) == "pi":
+                    return "PI"
+                if _runtime_symbol_name(expr) == "e":
+                    return "E"
             if resolved_source == "module_attr" and resolved_runtime != "" and "." not in resolved_runtime:
                 return _safe_ident(resolved_runtime)
             if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
@@ -1356,6 +1387,9 @@ class NimNativeEmitter:
         runtime_call, runtime_source = _resolved_runtime_call(expr)
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("nim native emitter: unresolved stdlib runtime call: " + semantic_tag)
+        if runtime_source == "resolved_runtime_call" and _is_math_runtime(expr):
+            if _runtime_symbol_name(expr) == "sqrt" and len(args) == 1:
+                return f"math.sqrt(float({args[0]}))"
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
             if name == "print":
@@ -1413,11 +1447,6 @@ class NimNativeEmitter:
             value_node = func.get("value")
             value = self._render_expr(value_node)
             attr = func.get("attr")
-            if isinstance(value_node, dict) and value_node.get("kind") == "Name":
-                owner_any = value_node.get("id")
-                owner = owner_any if isinstance(owner_any, str) else ""
-                if owner == "math" and attr == "sqrt" and len(args) == 1:
-                    return f"math.sqrt(float({args[0]}))"
             if attr == "append":
                  resolved = value_node.get("resolved_type")
                  if resolved == "bytearray":

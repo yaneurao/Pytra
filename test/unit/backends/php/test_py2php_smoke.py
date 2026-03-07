@@ -112,7 +112,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         sample = find_sample_case("05_mandelbrot_zoom")
         east = load_east(sample, parser_backend="self_hosted")
         php = transpile_to_php_native(east)
-        self.assertIn("__pytra_save_gif($out_path, $width, $height, $frames, grayscale_palette(), 5, 0);", php)
+        self.assertIn("save_gif($out_path, $width, $height, $frames, grayscale_palette(), 5, 0);", php)
 
     def test_transpile_save_gif_keyword_order_is_respected(self) -> None:
         src = (
@@ -126,8 +126,8 @@ class Py2PhpSmokeTest(unittest.TestCase):
             p.write_text(src, encoding="utf-8")
             east = load_east(p, parser_backend="self_hosted")
             php = transpile_to_php_native(east)
-        self.assertIn("__pytra_save_gif(\"x.gif\", 1, 1, $frames, grayscale_palette(), 4, 0);", php)
-        self.assertNotIn("__pytra_save_gif(\"x.gif\", 1, 1, $frames, grayscale_palette(), 0, 4);", php)
+        self.assertIn("save_gif(\"x.gif\", 1, 1, $frames, grayscale_palette(), 4, 0);", php)
+        self.assertNotIn("save_gif(\"x.gif\", 1, 1, $frames, grayscale_palette(), 0, 4);", php)
 
     def test_transpile_sample16_bitwise_ops_are_preserved(self) -> None:
         sample = find_sample_case("16_glass_sculpture_chaos")
@@ -136,6 +136,23 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("($i >> 5)", php)
         self.assertIn("($i & 3)", php)
         self.assertIn("(($rr >> 5) << 5)", php)
+
+    def test_php_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = json.loads(fixture.read_text(encoding="utf-8"))
+        php = transpile_to_php_native(east)
+        self.assertIn('$p = new Path("tmp/a.txt");', php)
+        self.assertIn("$q = $p->parent;", php)
+        self.assertIn("$n = $p->name;", php)
+        self.assertIn("$s = $p->stem;", php)
+        self.assertIn("$x = pyMathSin(pyMathPi());", php)
+
+    def test_php_emitter_source_has_no_pymath_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "php" / "emitter" / "php_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('runtime_symbol == "pyMathPi"', src)
+        self.assertNotIn('runtime_symbol == "pyMathE"', src)
+        self.assertNotIn("runtime_symbol == 'pyMathPi'", src)
+        self.assertNotIn("runtime_symbol == 'pyMathE'", src)
 
     def test_php_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
         east = {

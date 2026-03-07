@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+
 
 _RUBY_KEYWORDS = {
     "BEGIN",
@@ -221,6 +223,34 @@ def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
     if runtime_source == "runtime_call":
         return "__pytra_" + call
     return call
+
+
+def _runtime_module_id(expr: dict[str, Any]) -> str:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        runtime_call, _ = _resolved_runtime_call(expr)
+        dot = runtime_call.find(".")
+        if dot >= 0:
+            runtime_module = runtime_call[:dot].strip()
+    return canonical_runtime_module_id(runtime_module)
+
+
+def _runtime_symbol_name(expr: dict[str, Any]) -> str:
+    runtime_symbol_any = expr.get("runtime_symbol")
+    if isinstance(runtime_symbol_any, str):
+        return runtime_symbol_any.strip()
+    runtime_call, _ = _resolved_runtime_call(expr)
+    dot = runtime_call.find(".")
+    if dot >= 0:
+        return runtime_call[dot + 1 :].strip()
+    return ""
+
+
+def _is_math_constant(expr: dict[str, Any]) -> bool:
+    if _runtime_module_id(expr) != "pytra.std.math":
+        return False
+    return _runtime_symbol_name(expr) in {"pi", "e"}
 
 
 def _render_positional_call_args(args: list[Any]) -> list[str]:
@@ -514,7 +544,7 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         return _render_expr(expr.get("value")) + ".stem"
     runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
     if runtime_symbol != "":
-        if runtime_symbol in {"pyMathPi", "pyMathE"}:
+        if _is_math_constant(expr):
             return runtime_symbol + "()"
         return runtime_symbol
 

@@ -226,6 +226,21 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("save_gif(out_path, width, height, frames, grayscale_palette(), 5, 0)", ruby05)
         self.assertNotIn("__pytra_noop(out_path, width, height, frames, [])", ruby05)
 
+    def test_ruby_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = json.loads(fixture.read_text(encoding="utf-8"))
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn('p = Path.new("tmp/a.txt")', ruby)
+        self.assertIn("q = p.parent", ruby)
+        self.assertIn("n = p.name", ruby)
+        self.assertIn("s = p.stem", ruby)
+        self.assertIn("x = pyMathSin(pyMathPi())", ruby)
+
+    def test_ruby_emitter_source_has_no_pymath_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "ruby" / "emitter" / "ruby_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn("pyMathPi", src)
+        self.assertNotIn("pyMathE", src)
+
     def test_fixture_is_instance_uses_ruby_is_a_checks(self) -> None:
         fixture = find_fixture_case("is_instance")
         east = load_east(fixture, parser_backend="self_hosted")

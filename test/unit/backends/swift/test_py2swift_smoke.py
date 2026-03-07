@@ -118,6 +118,12 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "swift" / "emitter" / "swift_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        self.assertNotIn('runtime_symbol.startswith("pyMath")', src)
+        self.assertNotIn("runtime_symbol.startswith('pyMath')", src)
+        self.assertNotIn('runtime_symbol == "pyMathPi"', src)
+        self.assertNotIn('runtime_symbol == "pyMathE"', src)
+        self.assertNotIn('resolved_runtime.endswith(".pi")', src)
+        self.assertNotIn('resolved_runtime.endswith(".e")', src)
         banned_runtime_literals = [
             "write_rgb_png",
             "save_gif",

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+
 
 _SWIFT_KEYWORDS = {
     "associatedtype",
@@ -607,6 +609,38 @@ def _resolved_runtime_symbol(runtime_call: str) -> str:
     return "__pytra_" + name
 
 
+def _runtime_module_id(expr: dict[str, Any]) -> str:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        runtime_call, _ = _resolved_runtime_call(expr)
+        dot = runtime_call.find(".")
+        if dot >= 0:
+            runtime_module = runtime_call[:dot].strip()
+    return canonical_runtime_module_id(runtime_module)
+
+
+def _runtime_symbol_name(expr: dict[str, Any]) -> str:
+    runtime_symbol_any = expr.get("runtime_symbol")
+    if isinstance(runtime_symbol_any, str):
+        return runtime_symbol_any.strip()
+    runtime_call, _ = _resolved_runtime_call(expr)
+    dot = runtime_call.find(".")
+    if dot >= 0:
+        return runtime_call[dot + 1 :].strip()
+    return ""
+
+
+def _is_math_runtime(expr: dict[str, Any]) -> bool:
+    return _runtime_module_id(expr) == "pytra.std.math"
+
+
+def _is_math_constant(expr: dict[str, Any]) -> bool:
+    if not _is_math_runtime(expr):
+        return False
+    return _runtime_symbol_name(expr) in {"pi", "e"}
+
+
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
@@ -623,7 +657,7 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         if resolved_source == "module_attr":
             runtime_symbol = _resolved_runtime_symbol(resolved_runtime)
             if runtime_symbol != "":
-                if resolved_runtime.endswith(".pi") or resolved_runtime.endswith(".e"):
+                if _is_math_constant(expr):
                     return runtime_symbol + "()"
                 return runtime_symbol
             return resolved_runtime
@@ -716,6 +750,7 @@ def _render_call_via_runtime_call(
     runtime_source: str,
     semantic_tag: str,
     args: list[Any],
+    expr: dict[str, Any],
 ) -> str:
     if runtime_call.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
@@ -744,11 +779,11 @@ def _render_call_via_runtime_call(
         i = 0
         while i < len(args):
             rendered_arg = _render_expr(args[i])
-            if runtime_symbol.startswith("pyMath"):
+            if _is_math_runtime(expr):
                 rendered_arg = _to_float_expr(rendered_arg)
             rendered_call_args.append(rendered_arg)
             i += 1
-        if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
+        if _is_math_constant(expr):
             return "__pytra_float(" + runtime_symbol + "())"
         return runtime_symbol + "(" + ", ".join(rendered_call_args) + ")"
     rendered_runtime_args: list[str] = []
@@ -791,6 +826,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             runtime_source,
             semantic_tag,
             args,
+            expr,
         )
         if rendered_runtime != "":
             return rendered_runtime

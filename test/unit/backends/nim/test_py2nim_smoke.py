@@ -72,6 +72,21 @@ class Py2NimSmokeTest(unittest.TestCase):
         self.assertIn("proc sum_range_29", nim)
         self.assertIn("for i in 0 ..< n", nim)
 
+    def test_nim_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = json.loads(fixture.read_text(encoding="utf-8"))
+        nim = transpile_to_nim_native(east)
+        self.assertIn('var p = Path("tmp/a.txt")', nim)
+        self.assertIn("var q = p.parent", nim)
+        self.assertIn("n = p.name", nim)
+        self.assertIn("s = p.stem", nim)
+        self.assertIn("x = math.sin(PI)", nim)
+
+    def test_nim_emitter_source_has_no_owner_math_special_case(self) -> None:
+        src = (ROOT / "src" / "backends" / "nim" / "emitter" / "nim_native_emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn('owner == "math"', src)
+        self.assertNotIn("owner == 'math'", src)
+
     def test_nim_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
         east = {
             "kind": "Module",
