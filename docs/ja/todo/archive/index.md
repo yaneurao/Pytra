@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-08 / P1-RUNTIME-ABI-DECORATOR-01](../plans/archive/20260308-p1-runtime-abi-decorator-for-generated-helpers.md)
 - [2026-03-08 / P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01](../plans/archive/20260308-p0-backend-runtime-knowledge-leak-retirement.md)
 - [2026-03-07 / P0-LINKED-PROGRAM-OPT-01](../plans/archive/20260307-p0-linked-program-global-optimizer-and-program-writer.md)
 - [2026-03-07 / P0-CPP-LIST-REFFIRST-01](../plans/archive/20260307-p0-cpp-list-ref-first-completion.md)
@@ -38,7 +39,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（1 セクション）
+- [2026-03-08](20260308.md)（2 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）

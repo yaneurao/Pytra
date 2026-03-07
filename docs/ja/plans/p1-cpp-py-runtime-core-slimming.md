@@ -198,3 +198,4 @@
 - 2026-03-07: `py_runtime.h` を単に小さくするのではなく、「pure Python で書ける意味論を SoT / generated 側へ戻し、`native/core` を low-level glue へ縮退させる」ことを本計画の目的とした。
 - 2026-03-07: 優先順位としては、P0-LINKED-PROGRAM-OPT-01 と P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01 の後段で扱うのが安全と判断し、P1 へ積む方針を採用した。
 - 2026-03-07: `str.join` など `list[...]` helper を pure Python SoT へ戻すには、generated helper 側に fixed ABI override が必要と判断した。そのため P1-RUNTIME-ABI-DECORATOR-01 を本計画の先行依存に追加した。
+- 2026-03-08: runtime-abi decorator plan が完了し、`src/pytra/built_in/string_ops.py` の `py_join` は `@abi(args={"parts": "value_readonly"}, ret="value")` 付き pure Python SoT として generated C++ helper へ移行済みになった。`py_runtime` 縮退では同じ fixed-ABI helper lane を再利用できるため、`str.join` は blocker ではなく代表移行済みケースとして扱う。
