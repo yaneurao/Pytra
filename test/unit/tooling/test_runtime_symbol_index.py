@@ -61,6 +61,15 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIsInstance(png_symbols, dict)
         self.assertEqual(png_symbols.get("write_rgb_png", {}).get("kind"), "function")
 
+        gif_mod = modules.get("pytra.utils.gif")
+        self.assertIsInstance(gif_mod, dict)
+        gif_symbols = gif_mod.get("symbols")
+        self.assertIsInstance(gif_symbols, dict)
+        self.assertEqual(
+            gif_symbols.get("save_gif", {}).get("call_adapter_kind"),
+            "image.save_gif.keyword_defaults",
+        )
+
         math_mod = modules.get("pytra.std.math")
         self.assertIsInstance(math_mod, dict)
         math_symbols = math_mod.get("symbols")
@@ -265,6 +274,22 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "runtime_symbol_kind": "const",
                 "runtime_symbol_dispatch": "value",
                 "runtime_semantic_tag": "stdlib.symbol.pi",
+            },
+        )
+        self.assertEqual(
+            resolve_import_binding_doc("pytra.utils.gif", "save_gif", "symbol"),
+            {
+                "source_module_id": "pytra.utils.gif",
+                "source_export_name": "save_gif",
+                "source_binding_kind": "symbol",
+                "runtime_module_id": "pytra.utils.gif",
+                "runtime_group": "utils",
+                "resolved_binding_kind": "symbol",
+                "runtime_symbol": "save_gif",
+                "runtime_symbol_kind": "function",
+                "runtime_symbol_dispatch": "function",
+                "runtime_semantic_tag": "stdlib.fn.save_gif",
+                "runtime_call_adapter_kind": "image.save_gif.keyword_defaults",
             },
         )
         self.assertEqual(

@@ -71,6 +71,14 @@ def lookup_runtime_symbol_doc(module_id: str, symbol_name: str) -> dict[str, Any
     return symbol
 
 
+def lookup_runtime_call_adapter_kind(module_id: str, symbol_name: str) -> str:
+    symbol_doc = lookup_runtime_symbol_doc(module_id, symbol_name)
+    adapter_kind = symbol_doc.get("call_adapter_kind")
+    if isinstance(adapter_kind, str):
+        return adapter_kind
+    return ""
+
+
 def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: str) -> dict[str, Any]:
     source_module_id = module_id.strip()
     source_export_name = export_name.strip()
@@ -110,6 +118,9 @@ def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: s
     semantic_tag = symbol_doc.get("semantic_tag")
     if isinstance(semantic_tag, str) and semantic_tag != "":
         out["runtime_semantic_tag"] = semantic_tag
+    adapter_kind = symbol_doc.get("call_adapter_kind")
+    if isinstance(adapter_kind, str) and adapter_kind != "":
+        out["runtime_call_adapter_kind"] = adapter_kind
     return out
 
 

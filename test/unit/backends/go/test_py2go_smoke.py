@@ -129,6 +129,26 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("pyJsonDumps(v)", go)
         self.assertIn("pyJsonLoads(s)", go)
 
+    def test_go_native_emitter_save_gif_keyword_order_uses_adapter_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "gif_case.py"
+            src.write_text(
+                "from pytra.utils.gif import save_gif, grayscale_palette\n\n"
+                "def main(frames: list[bytes]) -> None:\n"
+                "    save_gif('x.gif', 1, 1, frames, grayscale_palette(), loop=0, delay_cs=4)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            go = transpile_to_go_native(east)
+        self.assertIn(
+            "pySaveGIF(\"x.gif\", int64(1), int64(1), frames, pyGrayscalePalette(), int64(4), int64(0))",
+            go,
+        )
+        self.assertNotIn(
+            "pySaveGIF(\"x.gif\", int64(1), int64(1), frames, pyGrayscalePalette(), int64(0), int64(4))",
+            go,
+        )
+
     def test_go_native_emitter_uses_runtime_path_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "path_case.py"

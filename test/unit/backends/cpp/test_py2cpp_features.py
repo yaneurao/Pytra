@@ -1886,6 +1886,10 @@ from pytra.utils.gif import save_gif
         self.assertEqual(by_local["save_gif"].get("runtime_symbol"), "save_gif")
         self.assertEqual(by_local["save_gif"].get("runtime_symbol_kind"), "function")
         self.assertEqual(by_local["save_gif"].get("runtime_semantic_tag"), "stdlib.fn.save_gif")
+        self.assertEqual(
+            by_local["save_gif"].get("runtime_call_adapter_kind"),
+            "image.save_gif.keyword_defaults",
+        )
         import_resolution_obj = meta.get("import_resolution")
         import_resolution = import_resolution_obj if isinstance(import_resolution_obj, dict) else {}
         self.assertEqual(import_resolution.get("schema_version"), 1)

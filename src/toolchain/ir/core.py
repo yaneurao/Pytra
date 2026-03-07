@@ -27,6 +27,7 @@ from toolchain.frontends.frontend_semantics import lookup_builtin_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
 
@@ -82,6 +83,9 @@ def _set_runtime_binding_fields(payload: dict[str, Any], module_id: str, runtime
         return
     payload["runtime_module_id"] = module_id
     payload["runtime_symbol"] = runtime_symbol
+    adapter_kind = lookup_runtime_call_adapter_kind(module_id, runtime_symbol)
+    if adapter_kind != "":
+        payload["runtime_call_adapter_kind"] = adapter_kind
 
 
 def _sh_set_parse_context(

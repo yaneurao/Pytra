@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 from backends.common.emitter.code_emitter import CodeEmitter
+from toolchain.frontends.runtime_call_adapters import normalize_rendered_runtime_args
 
 
 _GO_KEYWORDS = {
@@ -669,62 +670,38 @@ def _call_name(expr: dict[str, Any]) -> str:
 
 
 def _render_runtime_args(
-    semantic_tag: str,
+    adapter_kind: str,
     args: list[Any],
     keywords_any: Any,
 ) -> list[str]:
     keywords = keywords_any if isinstance(keywords_any, list) else []
-    if semantic_tag == "stdlib.symbol.save_gif":
-        if len(args) < 5 or len(args) > 7:
-            raise RuntimeError("go native emitter: save_gif expects 5-7 positional args")
-        rendered: list[str] = []
-        i = 0
-        while i < 5:
-            rendered.append(_render_expr(args[i]))
-            i += 1
-        delay_expr = _render_expr(args[5]) if len(args) >= 6 else "int64(4)"
-        loop_expr = _render_expr(args[6]) if len(args) >= 7 else "int64(0)"
-        i = 0
-        while i < len(keywords):
-            kw_any = keywords[i]
-            if not isinstance(kw_any, dict):
-                i += 1
-                continue
-            kw_name_any = kw_any.get("arg")
-            if not isinstance(kw_name_any, str):
-                raise RuntimeError("go native emitter: save_gif keyword must be a name")
-            kw_name = _safe_ident(kw_name_any, "")
-            kw_val = _render_expr(kw_any.get("value"))
-            if kw_name == "delay_cs":
-                if len(args) >= 6:
-                    raise RuntimeError("go native emitter: save_gif duplicate delay_cs argument")
-                delay_expr = kw_val
-            elif kw_name == "loop":
-                if len(args) >= 7:
-                    raise RuntimeError("go native emitter: save_gif duplicate loop argument")
-                loop_expr = kw_val
-            else:
-                raise RuntimeError("go native emitter: unsupported save_gif keyword: " + kw_name)
-            i += 1
-        rendered.append(delay_expr)
-        rendered.append(loop_expr)
-        return rendered
     rendered: list[str] = []
     i = 0
     while i < len(args):
         rendered.append(_render_expr(args[i]))
         i += 1
-    # Non-stdlib resolved runtime calls can still carry keyword args.
-    # Keep argument order stable by sorting keyword names.
     rendered_keywords: list[tuple[str, str]] = []
     i = 0
     while i < len(keywords):
         kw_any = keywords[i]
-        if isinstance(kw_any, dict):
-            kw_name_any = kw_any.get("arg")
-            if isinstance(kw_name_any, str):
-                rendered_keywords.append((_safe_ident(kw_name_any, ""), _render_expr(kw_any.get("value"))))
+        if not isinstance(kw_any, dict):
+            i += 1
+            continue
+        kw_name_any = kw_any.get("arg")
+        if not isinstance(kw_name_any, str):
+            raise RuntimeError("go native emitter: runtime keyword must be a name")
+        rendered_keywords.append((_safe_ident(kw_name_any, ""), _render_expr(kw_any.get("value"))))
         i += 1
+    if adapter_kind != "":
+        return normalize_rendered_runtime_args(
+            adapter_kind,
+            rendered,
+            rendered_keywords,
+            default_values={"delay_cs": "int64(4)", "loop": "int64(0)"},
+            error_prefix="go native emitter",
+        )
+    # Non-stdlib resolved runtime calls can still carry keyword args.
+    # Keep argument order stable by sorting keyword names.
     if len(rendered_keywords) > 1:
         rendered_keywords.sort(key=lambda item: item[0])
     i = 0
@@ -764,6 +741,7 @@ def _render_call_via_runtime_call(
     semantic_tag: str,
     args: list[Any],
     keywords_any: Any,
+    adapter_kind: str,
 ) -> str:
     if runtime_call.startswith("py_assert_"):
         rendered_assert_args: list[str] = []
@@ -775,7 +753,7 @@ def _render_call_via_runtime_call(
     if runtime_source == "runtime_call":
         if semantic_tag.startswith("stdlib.fn."):
             runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
-            rendered_std_args = _render_runtime_args(semantic_tag, args, keywords_any)
+            rendered_std_args = _render_runtime_args(adapter_kind, args, keywords_any)
             return runtime_symbol + "(" + ", ".join(rendered_std_args) + ")"
         return ""
     if runtime_source == "resolved_runtime_call":
@@ -784,7 +762,7 @@ def _render_call_via_runtime_call(
     runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
     if runtime_symbol == "":
         return ""
-    rendered_runtime_args = _render_runtime_args(semantic_tag, args, keywords_any)
+    rendered_runtime_args = _render_runtime_args(adapter_kind, args, keywords_any)
     if runtime_call.find(".") >= 0:
         if runtime_symbol == "pyMathPi" or runtime_symbol == "pyMathE":
             return "__pytra_float(" + runtime_symbol + "())"
@@ -816,6 +794,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    adapter_kind_any = expr.get("runtime_call_adapter_kind")
+    adapter_kind = adapter_kind_any if isinstance(adapter_kind_any, str) else ""
     if semantic_tag == "stdlib.symbol.Path":
         if len(args) == 0:
             return "NewPath(\"\")"
@@ -831,6 +811,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             semantic_tag,
             args,
             keywords_any,
+            adapter_kind,
         )
         if rendered_runtime != "":
             return rendered_runtime
