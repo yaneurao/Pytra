@@ -249,6 +249,108 @@ class Py2xCliTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(lower.call_args[0][1]["meta"]["module_id"], "app.case")
 
+    def test_dump_east3_dir_writes_link_input_bundle_without_backend_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            dump_dir = root / "dump"
+            main_py.write_text("import helper\nprint(1)\n", encoding="utf-8")
+            helper_py.write_text("x: int = 1\n", encoding="utf-8")
+
+            main_east = {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"dispatch_mode": "native", "module_id": "app.main"},
+                "body": [],
+            }
+            helper_east = {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"dispatch_mode": "native", "module_id": "app.helper"},
+                "body": [],
+            }
+
+            argv = [
+                "py2x.py",
+                str(main_py),
+                "--target",
+                "cpp",
+                "--dump-east3-dir",
+                str(dump_dir),
+            ]
+            with patch.object(py2x_mod.sys, "argv", argv):
+                with patch.object(
+                    py2x_mod,
+                    "build_module_east_map",
+                    return_value={
+                        str(helper_py.resolve()): dict(helper_east),
+                        str(main_py.resolve()): dict(main_east),
+                    },
+                ):
+                    with patch.object(py2x_mod, "_invoke_py2cpp_main", side_effect=AssertionError("unexpected compat route")):
+                        with patch.object(py2x_mod, "get_backend_spec", side_effect=AssertionError("unexpected backend dispatch")):
+                            rc = py2x_mod.main()
+
+            self.assertEqual(rc, 0)
+            link_input = dump_dir / "link-input.json"
+            self.assertTrue(link_input.exists())
+            self.assertTrue((dump_dir / "raw" / "app" / "main.east3.json").exists())
+            self.assertTrue((dump_dir / "raw" / "app" / "helper.east3.json").exists())
+
+    def test_link_only_writes_link_output_bundle_without_backend_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_dir = root / "linked"
+            main_py.write_text("import helper\nprint(1)\n", encoding="utf-8")
+            helper_py.write_text("x: int = 1\n", encoding="utf-8")
+
+            main_east = {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"dispatch_mode": "native", "module_id": "app.main"},
+                "body": [],
+            }
+            helper_east = {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"dispatch_mode": "native", "module_id": "app.helper"},
+                "body": [],
+            }
+
+            argv = [
+                "py2x.py",
+                str(main_py),
+                "--target",
+                "cpp",
+                "--link-only",
+                "--output-dir",
+                str(out_dir),
+            ]
+            with patch.object(py2x_mod.sys, "argv", argv):
+                with patch.object(
+                    py2x_mod,
+                    "build_module_east_map",
+                    return_value={
+                        str(helper_py.resolve()): dict(helper_east),
+                        str(main_py.resolve()): dict(main_east),
+                    },
+                ):
+                    with patch.object(py2x_mod, "_invoke_py2cpp_main", side_effect=AssertionError("unexpected compat route")):
+                        with patch.object(py2x_mod, "get_backend_spec", side_effect=AssertionError("unexpected backend dispatch")):
+                            rc = py2x_mod.main()
+
+            self.assertEqual(rc, 0)
+            self.assertTrue((out_dir / "link-output.json").exists())
+            self.assertTrue((out_dir / "linked" / "app" / "main.east3.json").exists())
+            self.assertTrue((out_dir / "linked" / "app" / "helper.east3.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

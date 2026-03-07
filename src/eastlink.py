@@ -12,7 +12,7 @@ from pytra.std import sys
 from toolchain.link import LINK_OUTPUT_SCHEMA
 from toolchain.link import load_linked_program
 from toolchain.link import optimize_linked_program
-from toolchain.link import save_manifest_doc
+from toolchain.link import write_link_output_bundle
 
 
 def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str:
@@ -27,42 +27,6 @@ def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str
 def _fatal(msg: str) -> int:
     sys.write_stderr("error: " + msg + "\n")
     return 1
-
-
-def _module_output_map(link_output_doc: dict[str, object]) -> dict[str, str]:
-    modules_any = link_output_doc.get("modules", [])
-    out: dict[str, str] = {}
-    if not isinstance(modules_any, list):
-        return out
-    for item in modules_any:
-        if not isinstance(item, dict):
-            continue
-        module_id = item.get("module_id")
-        output = item.get("output")
-        if isinstance(module_id, str) and module_id != "" and isinstance(output, str) and output != "":
-            out[module_id] = output
-    return out
-
-
-def _write_linked_output(output_dir: Path, link_output_doc: dict[str, object]) -> Path:
-    output_path = output_dir / "link-output.json"
-    save_manifest_doc(output_path, link_output_doc)
-    return output_path
-
-
-def _write_linked_modules(output_dir: Path, linked_modules: tuple[Any, ...], link_output_doc: dict[str, object]) -> list[Path]:
-    output_map = _module_output_map(link_output_doc)
-    written: list[Path] = []
-    for module in linked_modules:
-        module_id = getattr(module, "module_id", "")
-        east_doc = getattr(module, "east_doc", {})
-        if not isinstance(module_id, str) or module_id == "" or not isinstance(east_doc, dict):
-            continue
-        rel_path = output_map.get(module_id, "linked/" + module_id.replace(".", "/") + ".east3.json")
-        output_path = output_dir / rel_path
-        save_manifest_doc(output_path, east_doc)
-        written.append(output_path)
-    return written
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -87,9 +51,7 @@ def main(argv: list[str] | None = None) -> int:
         link_output_doc = result.link_output_doc
         if not isinstance(link_output_doc, dict) or link_output_doc.get("schema") != LINK_OUTPUT_SCHEMA:
             return _fatal("invalid linked optimizer output")
-        output_dir.mkdir(parents=True, exist_ok=True)
-        link_output_path = _write_linked_output(output_dir, link_output_doc)
-        linked_paths = _write_linked_modules(output_dir, result.linked_program.modules, link_output_doc)
+        link_output_path, linked_paths = write_link_output_bundle(output_dir, result)
     except Exception as ex:
         return _fatal(str(ex))
 

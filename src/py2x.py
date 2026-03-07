@@ -14,10 +14,15 @@ from toolchain.compiler.backend_registry import lower_ir
 from toolchain.compiler.backend_registry import optimize_ir
 from toolchain.compiler.backend_registry import resolve_layer_options
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document
+from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import LinkedProgram
+from toolchain.link import load_linked_program
 from toolchain.link import optimize_linked_program
+from toolchain.link import write_link_input_bundle
+from toolchain.link import write_link_output_bundle
 from pytra.std import argparse
+from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
@@ -42,7 +47,8 @@ def _print_help() -> None:
         "[-o OUTPUT] [--parser-backend self_hosted] [--east-stage 3] "
         "[--object-dispatch-mode {native,type_id}] [--east3-opt-level {0,1,2}] "
         "[--east3-opt-pass SPEC] [--dump-east3-before-opt PATH] "
-        "[--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] "
+        "[--dump-east3-after-opt PATH] [--dump-east3-opt-trace PATH] [--dump-east3-dir DIR] [--link-only] "
+        "[--output-dir DIR] "
         "[--lower-option key=value] [--optimizer-option key=value] [--emitter-option key=value]\n"
         "note: for --target cpp, py2cpp compatibility flags (e.g. --multi-file, --header-output, "
         "--emit-runtime-cpp, --dump-deps, --dump-options, -O*) are also accepted."
@@ -117,6 +123,34 @@ def _has_flag(argv: list[str], flag: str) -> bool:
         if tok.startswith(flag + "="):
             return True
         i += 1
+    return False
+
+
+def _load_json_root(path: Path) -> dict[str, object]:
+    try:
+        payload_any = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if isinstance(payload_any, dict):
+        out: dict[str, object] = {}
+        for key, value in payload_any.items():
+            if isinstance(key, str):
+                out[key] = value
+        return out
+    return {}
+
+
+def _write_generated_paths(paths: list[Path]) -> None:
+    for path in paths:
+        print("generated: " + str(path))
+
+
+def _use_linked_program_route(target_hint: str, argv: list[str]) -> bool:
+    if target_hint != "cpp":
+        return True
+    for flag in ("--dump-east3-dir", "--link-only"):
+        if _has_flag(argv, flag):
+            return True
     return False
 
 
@@ -252,6 +286,18 @@ def _build_linked_program_for_input(
             east_stage="3",
             object_dispatch_mode=object_dispatch_mode,
         )
+    elif input_txt.endswith(".json"):
+        root = _load_json_root(input_path)
+        if root.get("schema") == LINK_INPUT_SCHEMA:
+            return load_linked_program(input_path)
+        module_map = {
+            str(input_path.resolve()): _load_for_program(
+                input_path,
+                parser_backend=parser_backend,
+                east_stage="3",
+                object_dispatch_mode=object_dispatch_mode,
+            )
+        }
     else:
         module_map = {
             str(input_path.resolve()): _load_for_program(
@@ -291,7 +337,7 @@ def main() -> int:
 
     cleaned_argv, layer_option_items = _extract_layer_options(argv)
     target_hint = _peek_target(cleaned_argv)
-    if target_hint == "cpp":
+    if _use_linked_program_route(target_hint, cleaned_argv) is False:
         return _run_cpp_compat(cleaned_argv, layer_option_items=layer_option_items)
 
     parser = argparse.ArgumentParser(description="Pytra unified transpiler frontend")
@@ -302,6 +348,9 @@ def main() -> int:
     )
     parser.add_argument("--target", choices=list_backend_targets(), help="Target backend language")
     parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
+    parser.add_argument("--dump-east3-dir", help="Write raw EAST3 modules + link-input.json to DIR and exit")
+    parser.add_argument("--link-only", action="store_true", help="Write link-output.json + linked modules to --output-dir and exit")
+    parser.add_argument("--output-dir", help="Output directory for linked-program artifacts")
     args = parser.parse_args(cleaned_argv)
     if not isinstance(args, dict):
         raise RuntimeError("argparse result must be dict")
@@ -311,8 +360,12 @@ def main() -> int:
         _fatal("--target is required")
 
     input_path = Path(_arg_get_str(args, "input"))
+    dump_east3_dir = _arg_get_str(args, "dump_east3_dir")
+    link_only = bool(args.get("link_only", False))
+    output_dir_txt = _arg_get_str(args, "output_dir")
+    if dump_east3_dir != "" and link_only:
+        _fatal("--dump-east3-dir and --link-only cannot be combined")
     output_text = _arg_get_str(args, "output")
-    output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
 
     parser_backend = _arg_get_str(args, "parser_backend")
     if parser_backend == "":
@@ -335,7 +388,29 @@ def main() -> int:
     dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
     dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
     dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
+    target_lang = target
+    program = _build_linked_program_for_input(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang=target_lang,
+    )
+    if dump_east3_dir != "":
+        manifest_path, module_paths = write_link_input_bundle(Path(dump_east3_dir), program)
+        _write_generated_paths([manifest_path] + module_paths)
+        return 0
+    if link_only:
+        output_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out/linked")
+        link_output_path, linked_paths = write_link_output_bundle(output_dir, optimize_linked_program(program))
+        _write_generated_paths([link_output_path] + linked_paths)
+        return 0
 
+    output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
     spec = get_backend_spec(target)
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
@@ -350,18 +425,6 @@ def main() -> int:
     except Exception as ex:
         _fatal(str(ex))
 
-    target_lang = str(spec.get("target_lang", target))
-    program = _build_linked_program_for_input(
-        input_path,
-        parser_backend=parser_backend,
-        object_dispatch_mode=object_dispatch_mode,
-        east3_opt_level=east3_opt_level,
-        east3_opt_pass=east3_opt_pass,
-        dump_east3_before_opt=dump_east3_before_opt,
-        dump_east3_after_opt=dump_east3_after_opt,
-        dump_east3_opt_trace=dump_east3_opt_trace,
-        target_lang=target_lang,
-    )
     optimized_program = optimize_linked_program(program).linked_program
     east = _entry_module_east_doc(optimized_program)
     ir = lower_ir(spec, east, lower_options)
