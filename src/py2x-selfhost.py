@@ -6,8 +6,6 @@ This entrypoint keeps static backend imports by using backend_registry_static.
 
 from __future__ import annotations
 
-from typing import Any
-
 from toolchain.compiler.backend_registry_static import apply_runtime_hook
 from toolchain.compiler.backend_registry_static import default_output_path
 from toolchain.compiler.backend_registry_static import emit_source
@@ -17,7 +15,6 @@ from toolchain.compiler.backend_registry_static import lower_ir
 from toolchain.compiler.backend_registry_static import optimize_ir
 from toolchain.compiler.backend_registry_static import resolve_layer_options
 from toolchain.compiler.transpile_cli import load_east3_document
-from pytra.std.argparse import ArgumentParser
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
@@ -101,15 +98,6 @@ def _apply_runtime(spec: dict[str, object], output_path: Path) -> None:
     apply_runtime_hook(spec, output_path)
 
 
-def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str:
-    if key not in args:
-        return default_value
-    val = args[key]
-    if isinstance(val, str):
-        return val
-    return default_value
-
-
 def _fatal(msg: str) -> None:
     sys.write_stderr("error: " + msg + "\n")
     sys.exit(2)
@@ -126,7 +114,7 @@ def _print_help() -> None:
     print("".join(parts))
 
 
-def _extract_layer_options(argv: list[str]) -> object:
+def _extract_layer_options(argv: list[str]) -> tuple[list[str], dict[str, list[str]]]:
     cleaned: list[str] = []
     lower_items: list[str] = []
     optimizer_items: list[str] = []
@@ -170,59 +158,92 @@ def _parse_layer_option_items(items: list[str], label: str) -> dict[str, str]:
     return out
 
 
+def _take_option_value(argv: list[str], index: int, flag: str) -> tuple[str, int]:
+    if index + 1 >= len(argv):
+        _fatal("missing value for " + flag)
+    return argv[index + 1], index + 2
+
+
+def _require_choice(flag: str, value: str, choices: list[str]) -> str:
+    if value not in choices:
+        _fatal("invalid choice for " + flag + ": " + value)
+    return value
+
+
 def main() -> int:
-    argv = sys.argv[1:]
+    argv: list[str] = sys.argv[1:]
     for arg in argv:
         if arg == "-h" or arg == "--help":
             _print_help()
             return 0
 
-    parser = ArgumentParser(description="Pytra unified transpiler frontend (selfhost)")
-    parser.add_argument("input")
-    parser.add_argument("-o", "--output")
-    parser.add_argument("--parser-backend", "--parser-backend", choices=["self_hosted"], default="self_hosted")
-    parser.add_argument("--object-dispatch-mode", "--object-dispatch-mode", choices=["native", "type_id"], default="native")
-    parser.add_argument("--east3-opt-level", "--east3-opt-level", choices=["0", "1", "2"], default="1")
-    parser.add_argument("--east3-opt-pass", "--east3-opt-pass")
-    parser.add_argument("--dump-east3-before-opt", "--dump-east3-before-opt")
-    parser.add_argument("--dump-east3-after-opt", "--dump-east3-after-opt")
-    parser.add_argument("--dump-east3-opt-trace", "--dump-east3-opt-trace")
-    parser.add_argument("--target", "--target", choices=_list_targets(), default="")
-    parser.add_argument("--east-stage", "--east-stage", choices=["2", "3"], default="3")
     cleaned_argv, layer_option_items = _extract_layer_options(argv)
-    args = parser.parse_args(cleaned_argv)
-    if not isinstance(args, dict):
-        raise RuntimeError("argparse result must be dict")
+    input_text = ""
+    output_text = ""
+    parser_backend = "self_hosted"
+    object_dispatch_mode = "native"
+    east3_opt_level = "1"
+    east3_opt_pass = ""
+    dump_east3_before_opt = ""
+    dump_east3_after_opt = ""
+    dump_east3_opt_trace = ""
+    target = ""
+    east_stage = "3"
+    target_choices: list[str] = _list_targets()
+    i = 0
+    while i < len(cleaned_argv):
+        tok = cleaned_argv[i]
+        if tok == "-o" or tok == "--output":
+            output_text, i = _take_option_value(cleaned_argv, i, tok)
+            continue
+        if tok == "--parser-backend":
+            value, i = _take_option_value(cleaned_argv, i, tok)
+            parser_backend = _require_choice(tok, value, ["self_hosted"])
+            continue
+        if tok == "--object-dispatch-mode":
+            value, i = _take_option_value(cleaned_argv, i, tok)
+            object_dispatch_mode = _require_choice(tok, value, ["native", "type_id"])
+            continue
+        if tok == "--east3-opt-level":
+            value, i = _take_option_value(cleaned_argv, i, tok)
+            east3_opt_level = _require_choice(tok, value, ["0", "1", "2"])
+            continue
+        if tok == "--east3-opt-pass":
+            east3_opt_pass, i = _take_option_value(cleaned_argv, i, tok)
+            continue
+        if tok == "--dump-east3-before-opt":
+            dump_east3_before_opt, i = _take_option_value(cleaned_argv, i, tok)
+            continue
+        if tok == "--dump-east3-after-opt":
+            dump_east3_after_opt, i = _take_option_value(cleaned_argv, i, tok)
+            continue
+        if tok == "--dump-east3-opt-trace":
+            dump_east3_opt_trace, i = _take_option_value(cleaned_argv, i, tok)
+            continue
+        if tok == "--target":
+            value, i = _take_option_value(cleaned_argv, i, tok)
+            target = _require_choice(tok, value, target_choices)
+            continue
+        if tok == "--east-stage":
+            value, i = _take_option_value(cleaned_argv, i, tok)
+            east_stage = _require_choice(tok, value, ["2", "3"])
+            continue
+        if tok != "" and tok[0] == "-":
+            _fatal("unknown option: " + tok)
+        if input_text != "":
+            _fatal("unexpected extra argument: " + tok)
+        input_text = tok
+        i += 1
 
-    target = _arg_get_str(args, "target")
+    if input_text == "":
+        _fatal("missing required argument: input")
     if target == "":
         _fatal("--target is required")
 
-    input_path = Path(_arg_get_str(args, "input"))
-    output_text = _arg_get_str(args, "output")
+    input_path = Path(input_text)
     output_path = Path(output_text) if output_text != "" else _default_output(input_path, target)
-
-    parser_backend = _arg_get_str(args, "parser_backend")
-    if parser_backend == "":
-        parser_backend = "self_hosted"
-
-    east_stage = _arg_get_str(args, "east_stage")
-    if east_stage == "":
-        east_stage = "3"
     if east_stage == "2":
         _fatal("--east-stage 2 is no longer supported; use EAST3 (default).")
-
-    object_dispatch_mode = _arg_get_str(args, "object_dispatch_mode")
-    if object_dispatch_mode == "":
-        object_dispatch_mode = "native"
-
-    east3_opt_level = _arg_get_str(args, "east3_opt_level")
-    if east3_opt_level == "":
-        east3_opt_level = "1"
-    east3_opt_pass = _arg_get_str(args, "east3_opt_pass")
-    dump_east3_before_opt = _arg_get_str(args, "dump_east3_before_opt")
-    dump_east3_after_opt = _arg_get_str(args, "dump_east3_after_opt")
-    dump_east3_opt_trace = _arg_get_str(args, "dump_east3_opt_trace")
 
     spec = _get_spec(target)
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
