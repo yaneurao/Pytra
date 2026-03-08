@@ -1,0 +1,120 @@
+# P0: C++ `py_runtime.h` dynamic bridge 退役と decode-first 縮退
+
+最終更新: 2026-03-08
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01`
+
+関連:
+- [spec-runtime.md](../spec/spec-runtime.md)
+- [spec-dev.md](../spec/spec-dev.md)
+- [20260308-p0-cpp-dynamic-helper-first-wave-retirement.md](./archive/20260308-p0-cpp-dynamic-helper-first-wave-retirement.md)
+- [20260308-p1-jsonvalue-decode-first-contract.md](./archive/20260308-p1-jsonvalue-decode-first-contract.md)
+- [20260308-p2-jsonvalue-selfhost-decode-alignment.md](./archive/20260308-p2-jsonvalue-selfhost-decode-alignment.md)
+
+背景:
+- `P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01` で `sum(const object&)`, `zip(const object&, const object&)`, `py_dict_keys/items/values(const object&)` は `py_runtime.h` から落とした。
+- それでも `src/runtime/cpp/native/core/py_runtime.h` は依然として 3000 行超で、重い塊は主に次の 3 系統に残っている。
+  - `py_dict_get_default` / `dict_get_*` の object / optional / `std::any` overload 群
+  - `sum(const list<object>&)` と `optional<dict<str, object>>` compat lane
+  - selfhost 互換のために増えた `std::any` 比較 / 算術 / `begin/end` bridge
+- `JsonValue` / decode-first 契約が入った現在、これらの多くは permanent API ではなく compat debt とみなせる。
+- 分割（umbrella header 化）は後回しでよいが、その前に「不要な dynamic bridge 自体」を減らした方が `py_runtime.h` の意味論がきれいになる。
+
+目的:
+- `py_runtime.h` に残っている dynamic bridge / compat lane を、`JsonValue` decode-first と typed helper を正本にして段階的に退役させる。
+- `dict_get_*` と `py_dict_get_default` を JSON / dynamic compat と typed helper に整理し、object / `std::any` overload の増殖を止める。
+- `sum(const list<object>&)` と `optional<dict<str, object>>` lane を別 tranche として縮退し、`py_runtime.h` の high-level compat debt を減らす。
+- selfhost のために残っている `std::any` bridge を inventory して、不要な演算子 / iterator bridge を削れる状態へ持ち込む。
+
+対象:
+- `src/runtime/cpp/native/core/py_runtime.h` の以下
+  - `py_dict_get_default` / `dict_get_*` 群
+  - `sum(const list<object>&)`
+  - `py_dict_keys/items/values(const ::std::optional<dict<str, object>>& d)`
+  - `std::any` 比較 / 算術 / `begin/end` bridge
+- これに連動する representative test / guard / docs
+
+非対象:
+- `PyObj` / `object` / `make_object` / `py_to_*` / `type_id` の header 分割
+- `JsonValue` の full nominal carrier 化
+- `contains/reversed/enumerate(object)` の SoT 側 object helper 整理
+- `py_runtime.h` を umbrella header 化する作業
+
+受け入れ基準:
+- `dict_get_*` / `py_dict_get_default` の dynamic overload 群が縮退し、typed / JSON decode helper が正本として前面に出る。
+- `sum(const list<object>&)` と `optional<dict<str, object>>` compat lane の要否が整理され、不要分が削除される。
+- `std::any` bridge は inventory したうえで、不要な比較 / 算術 / iterator 互換を削る tranche まで進む。
+- representative C++ runtime tests と parity が維持される。
+- `py_runtime.h` の行数削減が「分割なしでも」確認できる。
+
+確認コマンド:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_runtime_cpp_layout.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -v`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -v`
+- `PYTHONPATH=src python3 test/unit/ir/test_east_core.py -v`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+
+## 1. 基本方針
+
+1. `py_runtime.h` を「何でも互換関数を足す場所」として扱わない。
+2. user-facing dynamic helper は引き続き compile error を正本にし、runtime fallback で救済しない。
+3. JSON 由来の動的データは `JsonValue` / `JsonObj` / `JsonArr` decode helper へ寄せ、`dict_get_*` 依存を減らす。
+4. `std::any` bridge は selfhost 互換の最小必要量だけに絞る。演算子互換を permanent API とみなさない。
+5. 分割は後回しにし、まず「意味論上いらない行」を減らす。
+
+## 2. 優先順
+
+### Phase 1: inventory と境界固定
+
+- `dict_get_*` / `py_dict_get_default` / `std::any` bridge の callsite を棚卸しする。
+- 「残す compat」「消せる debt」「JSON decode helper に置き換えるべき経路」を分ける。
+- `sum(list<object>)` と `optional<dict<str, object>>` lane を separate tranche として明文化する。
+
+### Phase 2: `dict_get_*` 縮退
+
+- `JsonObj.get_*()` と役割が重なる object / optional / `std::any` overload を洗い出す。
+- selfhost / host / runtime で必要な最小経路だけ残し、typed helper へ寄せられるものを消す。
+- representative regression を更新する。
+
+### Phase 3: compat lane の第2波削除
+
+- `sum(const list<object>&)` の callsite を棚卸しし、decode-first 前提に置き換えられるなら削除する。
+- `py_dict_keys/items/values(const ::std::optional<dict<str, object>>& d)` を JSON compat lane として残すか、`JsonObj` API へ寄せて削除するかを決める。
+
+### Phase 4: `std::any` bridge 縮退
+
+- `std::any` 比較 / 算術 / `begin/end` bridge を分類する。
+- selfhost generated artifact で本当に必要な subset だけ残す。
+- 不要な演算子と iterator 互換を削除する。
+
+### Phase 5: parity / archive
+
+- representative unit と fixture/sample parity を通す。
+- 行数差分と残 debt を決定ログへ記録して閉じる。
+
+## 3. 着手時の注意
+
+- `src/runtime/cpp/generated/std/json.cpp` / `json.h` に既存差分がある可能性がある。今回の P0 に直接関係しない変更は巻き込まない。
+- `unknown` は decode-first guard の reject 対象から外した直後なので、guard を再び強めるなら false positive を再発させない形で行う。
+- `dict_get_*` の object / optional 経路は JSON decode helper と selfhost loader がまだ併存している可能性があるため、削除前に callsite を必ず棚卸しする。
+
+## 4. タスク分解
+
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01] `py_runtime.h` に残る `dict_get_*` / compat lane / `std::any` bridge を縮退し、decode-first / typed helper を正本へ寄せる。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S1-01] `dict_get_*` / `py_dict_get_default` / `std::any` bridge / `sum(list<object>)` / `optional<dict<str, object>>` lane の callsite と debt 分類を棚卸しする。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S1-02] 削除順序と「残す compat lane」を docs / 決定ログへ固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-01] `dict_get_*` / `py_dict_get_default` の object / optional / `std::any` overload を first slice で整理し、`JsonObj.get_*` や typed helper に寄せる。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-02] representative tests を更新し、`dict_get_*` 縮退後の C++ runtime surface を固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S3-01] `sum(const list<object>&)` の callsite を置き換えまたは削除し、必要なら regression を追加する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S3-02] `py_dict_keys/items/values(const ::std::optional<dict<str, object>>& d)` compat lane を削除または最小化し、`JsonObj` 経路との境界を確定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-01] `std::any` 比較 / 算術 / `begin/end` bridge を縮退し、selfhost に必要な subset だけ残す。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-02] `std::any` bridge 再侵入防止の regression / guard を追加する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S5-01] representative unit / fixture parity / sample parity / 行数差分を確認し、決定ログへ残す。
+- [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S5-02] docs / archive / TODO 履歴を同期して本計画を閉じる。
+
+## 5. 決定ログ
+
+- 2026-03-08: 本計画では header 分割は行わず、`dict_get_*`・compat lane・`std::any` bridge そのものの削減を優先する。
