@@ -86,7 +86,11 @@ def extern(fn):
 ```
 
 - `@extern(...)` のような引数付きデコレータはサポートしない。
-- 変数に対する extern マーカーは `name = extern(expr)` 形式で表す。
+- 変数に対する extern マーカーは `name = extern(...)` 形式で表す。
+- `name: Any = extern()` は「同名 ambient global 変数宣言」として扱う。
+- `name: Any = extern("symbol")` は「別名 ambient global 変数宣言」として扱う。
+- `name: T = extern(expr)` は従来どおり host fallback / runtime hook 初期化として扱う。
+- ambient global 変数宣言は v1 では JS/TS backend 限定で許可し、他 backend では compile error とする。
 
 ### 3.2 意味
 
@@ -101,6 +105,17 @@ Pytra は `@extern` 関数に対し、次を決定する。
 
 Python 実行時互換のため、`@extern` 関数は Python で実行可能な本体（例: `return __m.sin(x)`) を持ってよい。  
 トランスパイラは `@extern` 関数の本体をターゲット実装としては採用せず、外部シンボル呼び出しへ lower する。
+
+変数 `extern(...)` は関数 `@extern` とは別に扱う。
+
+- `extern(expr)`:
+  - `expr` を Python 実行時 fallback / host-only 初期化式として保持する。
+- `extern()`:
+  - Python 実行時 fallback を持たず、変数名と同名の ambient global を宣言する。
+- `extern("symbol")`:
+  - Python 実行時 fallback を持たず、文字列で指定した ambient global symbol を宣言する。
+
+ambient global 変数宣言は JS/TS backend では import-free symbol として lower し、一般の `Any/object` 受信者緩和ではなく、ambient global marker が付いた binding に限って property access / method call / call expression の raw lowering を許可する。
 
 ### 3.3 host-only import (`as __name`) 規約
 
