@@ -17,6 +17,7 @@ from toolchain.compiler.backend_registry import (
     optimize_ir,
     resolve_layer_options,
 )
+from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link import LINK_OUTPUT_SCHEMA
@@ -263,19 +264,17 @@ def main(argv: list[str] | None = None) -> int:
     is_link_output = _is_link_output_doc(root)
     if is_link_output is False:
         east_doc = _validate_east3_module(_unwrap_east_module(root))
+        validate_ambient_global_target_support(east_doc, target=target)
 
-    spec = get_backend_spec(target)
+    skip_runtime_hook = _arg_get_bool(args, "no_runtime_hook")
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
-    try:
-        lower_options = resolve_layer_options(spec, "lower", lower_raw)
-        optimizer_options = resolve_layer_options(spec, "optimizer", optimizer_raw)
-        emitter_options = resolve_layer_options(spec, "emitter", emitter_raw)
-    except Exception as ex:
-        _fatal(str(ex))
 
-    skip_runtime_hook = _arg_get_bool(args, "no_runtime_hook")
+    spec: dict[str, object]
+    lower_options: dict[str, object]
+    optimizer_options: dict[str, object]
+    emitter_options: dict[str, object]
     if is_link_output:
         link_output_doc, linked_modules = load_linked_output_bundle(input_path)
         link_target = link_output_doc.get("target")
@@ -284,7 +283,15 @@ def main(argv: list[str] | None = None) -> int:
         for linked_module in linked_modules:
             linked_doc = getattr(linked_module, "east_doc", {})
             if isinstance(linked_doc, dict):
+                validate_ambient_global_target_support(linked_doc, target=target)
                 validate_runtime_abi_target_support(linked_doc, target=target)
+        spec = get_backend_spec(target)
+        try:
+            lower_options = resolve_layer_options(spec, "lower", lower_raw)
+            optimizer_options = resolve_layer_options(spec, "optimizer", optimizer_raw)
+            emitter_options = resolve_layer_options(spec, "emitter", emitter_raw)
+        except Exception as ex:
+            _fatal(str(ex))
         entry_modules_any = link_output_doc.get("entry_modules", [])
         entry_modules = list(entry_modules_any) if isinstance(entry_modules_any, (list, tuple)) else []
         if target == "cpp":
@@ -305,8 +312,16 @@ def main(argv: list[str] | None = None) -> int:
             output_path = default_restart_output
         east_doc = entry_east_doc
     else:
+        spec = get_backend_spec(target)
+        try:
+            lower_options = resolve_layer_options(spec, "lower", lower_raw)
+            optimizer_options = resolve_layer_options(spec, "optimizer", optimizer_raw)
+            emitter_options = resolve_layer_options(spec, "emitter", emitter_raw)
+        except Exception as ex:
+            _fatal(str(ex))
         output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
 
+    validate_ambient_global_target_support(east_doc, target=target)
     validate_runtime_abi_target_support(east_doc, target=target)
     ir = lower_ir(spec, east_doc, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)

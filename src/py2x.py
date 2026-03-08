@@ -16,6 +16,7 @@ from toolchain.compiler.backend_registry import lower_ir
 from toolchain.compiler.backend_registry import optimize_ir
 from toolchain.compiler.backend_registry import resolve_layer_options
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document
+from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import build_linked_program_from_module_map
@@ -433,6 +434,10 @@ def main() -> int:
         dump_east3_opt_trace=dump_east3_opt_trace,
         target_lang=target_lang,
     )
+    for linked_module in program.modules:
+        linked_doc = getattr(linked_module, "east_doc", {})
+        if isinstance(linked_doc, dict):
+            validate_ambient_global_target_support(linked_doc, target=target)
     if dump_east3_dir != "":
         manifest_path, module_paths = write_link_input_bundle(Path(dump_east3_dir), program)
         _write_generated_paths([manifest_path] + module_paths)
@@ -460,6 +465,7 @@ def main() -> int:
 
     optimized_program = optimize_linked_program(program).linked_program
     east = _entry_module_east_doc(optimized_program)
+    validate_ambient_global_target_support(east, target=target)
     validate_runtime_abi_target_support(east, target=target)
     ir = lower_ir(spec, east, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)

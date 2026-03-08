@@ -39,7 +39,7 @@
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-02] representative IR/unit test で same-name / alias case を固定する。
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-02] ambient global `Any` receiver の property/method/call raw lowering を追加する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-01] unsupported backend guard / representative smoke を更新する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-01] unsupported backend guard / representative smoke を更新する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-02] docs / archive を同期して本計画を閉じる。
 
 2. [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01] compiler/backend 内部の JSON raw-dict loader を `JsonValue` decode-first 契約へ揃える。
