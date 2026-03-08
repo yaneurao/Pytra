@@ -111,6 +111,40 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(static_artifact["modules"][0]["metadata"]["owner_module_id"], "pkg.main")
         self.assertEqual(static_artifact["modules"][1]["kind"], "user")
 
+    def test_collect_program_modules_flattens_helper_modules(self) -> None:
+        host_modules = host_registry.collect_program_modules(
+            {
+                "module_id": "pkg.main",
+                "kind": "user",
+                "text": "// main\n",
+                "helper_modules": [
+                    {
+                        "module_id": "__pytra_helper__.cpp.demo",
+                        "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
+                    }
+                ],
+            }
+        )
+        static_modules = static_registry.collect_program_modules(
+            {
+                "module_id": "pkg.main",
+                "kind": "user",
+                "text": "// main\n",
+                "helper_modules": [
+                    {
+                        "module_id": "__pytra_helper__.cpp.demo",
+                        "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
+                    }
+                ],
+            }
+        )
+
+        self.assertEqual(len(host_modules), 2)
+        self.assertEqual(host_modules[1]["kind"], "helper")
+        self.assertEqual(host_modules[1]["metadata"]["helper_id"], "cpp.demo")
+        self.assertEqual(len(static_modules), 2)
+        self.assertEqual(static_modules[1]["kind"], "helper")
+
     def test_emit_source_uses_emit_module_text_wrapper(self) -> None:
         spec = host_registry._normalize_backend_spec(
             {

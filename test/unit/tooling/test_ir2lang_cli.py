@@ -852,6 +852,76 @@ class Ir2langCliTest(unittest.TestCase):
             self.assertIn("__pytra_helper__.cpp.demo.py", module_map)
             self.assertEqual(module_map["__pytra_helper__.cpp.demo.py"]["meta"]["synthetic_helper_v1"]["helper_id"], "cpp.demo")
 
+    def test_ir2lang_flattens_helper_modules_into_program_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_json = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "body": [],
+                    "meta": {"module_id": "pkg.main"},
+                },
+            )
+            out_rs = root / "out.rs"
+
+            fake_spec = {
+                "target_lang": "rs",
+                "extension": ".rs",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+            writer_calls: list[dict[str, object]] = []
+
+            def _writer(program_artifact: dict[str, object], output_root: Path, _options: dict[str, object]) -> dict[str, object]:
+                writer_calls.append({"program_artifact": program_artifact, "output_root": output_root})
+                output_root.write_text("// main\n", encoding="utf-8")
+                return {"primary_output": str(output_root)}
+
+            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
+                with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(ir2lang_mod, "lower_ir", return_value={"kind": "LoweredModule"}):
+                            with patch.object(ir2lang_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                                with patch.object(
+                                    ir2lang_mod,
+                                    "emit_module",
+                                    return_value={
+                                        "module_id": "pkg.main",
+                                        "kind": "user",
+                                        "label": "main",
+                                        "extension": ".rs",
+                                        "text": "// main\n",
+                                        "is_entry": True,
+                                        "dependencies": [],
+                                        "metadata": {},
+                                        "helper_modules": [
+                                            {
+                                                "module_id": "__pytra_helper__.rs.demo",
+                                                "label": "demo_helper",
+                                                "extension": ".rs",
+                                                "text": "// helper\n",
+                                                "is_entry": False,
+                                                "dependencies": [],
+                                                "metadata": {"helper_id": "rs.demo", "owner_module_id": "pkg.main"},
+                                            }
+                                        ],
+                                    },
+                                ):
+                                    with patch.object(ir2lang_mod, "get_program_writer", return_value=_writer):
+                                        with patch.object(ir2lang_mod, "apply_runtime_hook", return_value=None):
+                                            rc = ir2lang_mod.main()
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(len(writer_calls), 1)
+        modules = writer_calls[0]["program_artifact"]["modules"]
+        self.assertEqual(len(modules), 2)
+        self.assertEqual(modules[0]["kind"], "user")
+        self.assertEqual(modules[1]["kind"], "helper")
+        self.assertEqual(modules[1]["metadata"]["helper_id"], "rs.demo")
+
 
 if __name__ == "__main__":
     unittest.main()

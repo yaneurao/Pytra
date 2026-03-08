@@ -14,6 +14,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.py2x as py2x_mod
+from src.toolchain.link.program_model import LinkedProgramModule
 
 
 class Py2xCliTest(unittest.TestCase):
@@ -334,6 +335,94 @@ class Py2xCliTest(unittest.TestCase):
         self.assertIn(str(fixture), forwarded)
         self.assertIn("--multi-file", forwarded)
         self.assertNotIn("--target", forwarded)
+
+    def test_py2x_flattens_helper_modules_into_program_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_py = root / "main.py"
+            src_py.write_text("print(1)\n", encoding="utf-8")
+            out_rs = root / "out.rs"
+
+            fake_spec = {
+                "target_lang": "rs",
+                "extension": ".rs",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+            writer_calls: list[dict[str, object]] = []
+
+            def _writer(program_artifact: dict[str, object], output_root: Path, _options: dict[str, object]) -> dict[str, object]:
+                writer_calls.append({"program_artifact": program_artifact, "output_root": output_root})
+                output_root.write_text("// main\n", encoding="utf-8")
+                return {"primary_output": str(output_root)}
+
+            with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(src_py), "--target", "rs", "-o", str(out_rs)]):
+                with patch.object(py2x_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(py2x_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(
+                            py2x_mod,
+                            "_build_linked_program_for_input",
+                            return_value=py2x_mod.LinkedProgram(
+                                schema="pytra.link_input.v1",
+                                manifest_path=None,
+                                target="rs",
+                                dispatch_mode="native",
+                                entry_modules=("pkg.main",),
+                                modules=(
+                                    LinkedProgramModule(
+                                        module_id="pkg.main",
+                                        source_path=str(src_py),
+                                        is_entry=True,
+                                        east_doc={
+                                            "kind": "Module",
+                                            "east_stage": 3,
+                                            "schema_version": 1,
+                                            "meta": {"module_id": "pkg.main"},
+                                            "body": [],
+                                        },
+                                    ),
+                                ),
+                                options={},
+                            ),
+                        ):
+                            with patch.object(py2x_mod, "lower_ir", return_value={"kind": "LoweredModule"}):
+                                with patch.object(py2x_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                                    with patch.object(
+                                        py2x_mod,
+                                        "emit_module",
+                                        return_value={
+                                            "module_id": "pkg.main",
+                                            "kind": "user",
+                                            "label": "main",
+                                            "extension": ".rs",
+                                            "text": "// main\n",
+                                            "is_entry": True,
+                                            "dependencies": [],
+                                            "metadata": {},
+                                            "helper_modules": [
+                                                {
+                                                    "module_id": "__pytra_helper__.rs.demo",
+                                                    "label": "demo_helper",
+                                                    "extension": ".rs",
+                                                    "text": "// helper\n",
+                                                    "is_entry": False,
+                                                    "dependencies": [],
+                                                    "metadata": {"helper_id": "rs.demo", "owner_module_id": "pkg.main"},
+                                                }
+                                            ],
+                                        },
+                                    ):
+                                        with patch.object(py2x_mod, "get_program_writer", return_value=_writer):
+                                            with patch.object(py2x_mod, "apply_runtime_hook", return_value=None):
+                                                rc = py2x_mod.main()
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(len(writer_calls), 1)
+        modules = writer_calls[0]["program_artifact"]["modules"]
+        self.assertEqual(len(modules), 2)
+        self.assertEqual(modules[0]["kind"], "user")
+        self.assertEqual(modules[1]["kind"], "helper")
+        self.assertEqual(modules[1]["metadata"]["owner_module_id"], "pkg.main")
 
     def test_cpp_target_maps_layer_options_to_cpp_flags(self) -> None:
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"

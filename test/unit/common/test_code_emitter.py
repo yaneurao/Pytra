@@ -246,6 +246,16 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(unpacked.get("kw_values"), ["v"])
         self.assertEqual(unpacked.get("kw_nodes"), [{"kind": "Constant", "value": 1}])
 
+    def test_helper_artifact_registry_keeps_helper_kind(self) -> None:
+        em = CodeEmitter({})
+        em.add_helper_artifact({"module_id": "__pytra_helper__.demo", "metadata": {"helper_id": "demo"}})
+        em.add_helper_artifact({"module_id": "__pytra_helper__.demo2", "kind": "helper", "metadata": {}})
+        helpers = em.finalize_helper_artifacts()
+        self.assertEqual(len(helpers), 2)
+        self.assertEqual(helpers[0]["kind"], "helper")
+        self.assertEqual(helpers[0]["metadata"]["helper_id"], "demo")
+        self.assertEqual(helpers[1]["kind"], "helper")
+
     def test_node_helpers(self) -> None:
         em = CodeEmitter({})
         self.assertTrue(em.is_name({"kind": "Name", "id": "x"}))

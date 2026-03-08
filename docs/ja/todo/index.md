@@ -43,7 +43,8 @@
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-02] `ir2lang` の `link-output` restart regression を追加し、`module_kind=helper` かつ `source_path=""` の helper entry が synthetic fallback path を使って C++ multi-file writer まで落ちずに渡ることを tooling test で固定した。
 - [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-01] backend 共通 program artifact に `kind=helper` を追加する。
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-01] host/static backend registry の `build_program_artifact()` と common/C++ program writer が module `kind` と helper metadata を保持し、single-file writer は helper module を primary 候補から除外することを contract test で固定した。
-- [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-02] `CodeEmitter` / `ir2lang.py` / backend registry を helper-aware にする。
+- [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-02] `CodeEmitter` / `ir2lang.py` / backend registry を helper-aware にする。
+- 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-02] `CodeEmitter` に helper artifact registry を追加し、host/static backend registry の `collect_program_modules()` と `py2x/ir2lang` が `emit_module()` の `helper_modules` を flatten して writer へ渡せることを CLI regression で固定した。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-01] C++ proof helper を synthetic helper module として materialize する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-02] C++ `ProgramWriter` で helper を別ファイル化し、fixture/sample parity を確認する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S5-01] representative single-file backend で helper fold 経路を確認する。

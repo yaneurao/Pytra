@@ -54,6 +54,7 @@ class CodeEmitter:
     dynamic_hooks_enabled: bool
     dep_keys: list[str]
     dep_seen: set[str]
+    helper_artifacts: list[dict[str, Any]]
 
     def __init__(
         self,
@@ -105,6 +106,7 @@ class CodeEmitter:
         self.dynamic_hooks_enabled = True
         self.dep_keys = []
         self.dep_seen = set()
+        self.helper_artifacts = []
 
     def _empty_lines(self) -> list[str]:
         """空の `list[str]` を返す。"""
@@ -144,6 +146,26 @@ class CodeEmitter:
         if stable_sort:
             return sorted(self.dep_keys)
         return list(self.dep_keys)
+
+    def add_helper_artifact(self, artifact: dict[str, Any]) -> None:
+        """helper artifact 候補を登録する。空や不正な dict は無視する。"""
+        if not isinstance(artifact, dict):
+            return
+        helper = dict(artifact)
+        kind_any = helper.get("kind", "helper")
+        if not isinstance(kind_any, str) or kind_any == "":
+            kind_any = "helper"
+        helper["kind"] = kind_any
+        metadata_any = helper.get("metadata", {})
+        helper["metadata"] = dict(metadata_any) if isinstance(metadata_any, dict) else {}
+        self.helper_artifacts.append(helper)
+
+    def finalize_helper_artifacts(self) -> list[dict[str, Any]]:
+        """登録済み helper artifact を shallow copy で返す。"""
+        out: list[dict[str, Any]] = []
+        for artifact in self.helper_artifacts:
+            out.append(dict(artifact))
+        return out
 
     @staticmethod
     def escape_string_for_literal(text: str) -> str:
