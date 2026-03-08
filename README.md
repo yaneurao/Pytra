@@ -34,14 +34,15 @@
 
 ## Latest News
 
-> **2026-03-06 | v0.8.0 Released**  
+> **2026-03-08 | v0.10.0 Released**<br>
+> Version 0.10.0 was released. `@template` is now available, and runtime support for each target language is currently being refined.
+
+> **2026-03-07 | v0.9.0 Released**<br>
+> Version 0.9.0 was released. The large-scale refactor is complete, and all target languages are usable again.<br>
+> `@extern` and `@abi` are now available, so transpiled code can now be called from other languages as well.
+
+> **2026-03-06 | v0.8.0 Released**<br>
 > Version 0.8.0 was released. The ABI boundary is being redefined, and a large-scale refactor is in progress. At the moment, backends other than the C++ transpiler are broken, so please use v0.7.0.
-
-> **2026-03-04 | v0.7.0 Released**  
-> Version 0.7.0 was released, adding PHP as a supported target language. Nim official support is in progress, followed by Julia and Dart.
-
-> **2026-03-02 | v0.6.0 Released**  
-> Version 0.6.0 was released, adding Scala as a supported target language.
 
 - Past News: [docs/en/news/index.md](docs/en/news/index.md)
 
