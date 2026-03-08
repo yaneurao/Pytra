@@ -1374,59 +1374,6 @@ static inline V py_dict_get(const ::std::optional<dict<str, V>>& d, const char* 
     return py_dict_get(dv, key);
 }
 
-// `dict.get(key)`（default 省略）相当。未キー時は Python の `None` 相当（object{}）を返す。
-template <class K, class V>
-static inline object py_dict_get_maybe(const dict<K, V>& d, const K& key) {
-    auto it = d.find(key);
-    if (it == d.end()) {
-        return object{};
-    }
-    return make_object(it->second);
-}
-
-template <class V>
-static inline object py_dict_get_maybe(const dict<str, V>& d, const char* key) {
-    return py_dict_get_maybe(d, str(key));
-}
-
-template <class V>
-static inline object py_dict_get_maybe(const dict<str, V>& d, const str& key) {
-    auto it = d.find(key);
-    if (it == d.end()) {
-        return object{};
-    }
-    return make_object(it->second);
-}
-
-template <class V>
-static inline object py_dict_get_maybe(const dict<str, V>& d, const ::std::string& key) {
-    return py_dict_get_maybe(d, str(key));
-}
-
-template <class K, class V>
-static inline object py_dict_get_maybe(const ::std::optional<dict<K, V>>& d, const K& key) {
-    if (!d.has_value()) {
-        return object{};
-    }
-    return py_dict_get_maybe(*d, key);
-}
-
-template <class V>
-static inline object py_dict_get_maybe(const ::std::optional<dict<str, V>>& d, const char* key) {
-    if (!d.has_value()) {
-        return object{};
-    }
-    return py_dict_get_maybe(*d, key);
-}
-
-template <class V>
-static inline object py_dict_get_maybe(const ::std::optional<dict<str, V>>& d, const str& key) {
-    if (!d.has_value()) {
-        return object{};
-    }
-    return py_dict_get_maybe(*d, key);
-}
-
 template <class K, class V>
 static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const V& defval) {
     auto it = d.find(key);

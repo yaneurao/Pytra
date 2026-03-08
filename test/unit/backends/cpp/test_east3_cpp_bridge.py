@@ -1062,7 +1062,10 @@ class East3CppBridgeTest(unittest.TestCase):
             "key": {"kind": "Name", "id": "k", "resolved_type": "str"},
             "resolved_type": "optional[int64]",
         }
-        self.assertEqual(emitter.render_expr(node), "py_dict_get_maybe(d, py_to_string(k))")
+        self.assertEqual(
+            emitter.render_expr(node),
+            "([&]() -> ::std::optional<int64> { auto&& __dict_1 = d; auto __dict_key_2 = py_to_string(k); return __dict_1.contains(__dict_key_2) ? ::std::optional<int64>(__dict_1.at(__dict_key_2)) : ::std::nullopt; }())",
+        )
 
     def test_builtin_runtime_dict_get_without_default_uses_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1080,7 +1083,10 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Name", "id": "k", "resolved_type": "str"}],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(get_expr), "py_dict_get_maybe(d, py_to_string(k))")
+        self.assertEqual(
+            emitter.render_expr(get_expr),
+            "([&]() -> ::std::optional<int64> { auto&& __dict_1 = d; auto __dict_key_2 = py_to_string(k); return __dict_1.contains(__dict_key_2) ? ::std::optional<int64>(__dict_1.at(__dict_key_2)) : ::std::nullopt; }())",
+        )
 
     def test_render_expr_supports_dict_get_default_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

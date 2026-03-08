@@ -2330,7 +2330,58 @@ class CppEmitter(
                             i += 1
                     if (not allows_nullopt) and (not self.is_any_like_type(val_t)):
                         default_expr = self._cpp_type_text(val_t) + "()"
-            return f"{owner_expr}.get({key_expr}, {default_expr})"
+        return f"{owner_expr}.get({key_expr}, {default_expr})"
+
+    def _dict_get_maybe_inner_type(self, resolved_t: str) -> str:
+        """`dict.get(key)` の戻り値型から optional 内側型を取り出す。"""
+        t = self.normalize_type_name(resolved_t)
+        if t.startswith("optional[") and t.endswith("]"):
+            return self.normalize_type_name(t[9:-1])
+        if self._contains_text(t, "|"):
+            parts = self.split_union(t)
+            non_none: list[str] = []
+            has_none = False
+            for part in parts:
+                p = self.normalize_type_name(part)
+                if p == "None":
+                    has_none = True
+                elif p != "":
+                    non_none.append(p)
+            if has_none and len(non_none) == 1:
+                return self.normalize_type_name(non_none[0])
+        return ""
+
+    def _render_dict_get_maybe_expr(
+        self,
+        owner_node: Any,
+        key_node: Any,
+        resolved_t: str,
+    ) -> str:
+        """`dict.get(key)` の default 省略経路を optional/value 式へ展開する。"""
+        owner_expr = self.render_expr(owner_node)
+        key_expr = self.render_expr(key_node)
+        key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+        owner_tmp = self.next_tmp("__dict")
+        key_tmp = self.next_tmp("__dict_key")
+        inner_t = self._dict_get_maybe_inner_type(resolved_t)
+        if inner_t != "":
+            cpp_inner_t = self._cpp_type_text(inner_t)
+            return (
+                f"([&]() -> ::std::optional<{cpp_inner_t}> {{ "
+                f"auto&& {owner_tmp} = {owner_expr}; "
+                f"auto {key_tmp} = {key_expr}; "
+                f"return {owner_tmp}.contains({key_tmp}) ? "
+                f"::std::optional<{cpp_inner_t}>({owner_tmp}.at({key_tmp})) : ::std::nullopt; "
+                f"}}())"
+            )
+        default_expr = self._none_default_expr_for_type(resolved_t)
+        return (
+            f"([&]() {{ "
+            f"auto&& {owner_tmp} = {owner_expr}; "
+            f"auto {key_tmp} = {key_expr}; "
+            f"return {owner_tmp}.contains({key_tmp}) ? {owner_tmp}.at({key_tmp}) : {default_expr}; "
+            f"}}())"
+        )
         if owner_optional_object_dict:
             boxed_default = self._box_any_target_value(default_expr, default_node)
             return f"py_dict_get_default({owner_expr}, {key_expr}, {boxed_default})"
@@ -3503,10 +3554,8 @@ class CppEmitter(
         if kind == "DictGetMaybe":
             owner_node = expr_d.get("owner")
             key_node = expr_d.get("key")
-            owner_expr = self.render_expr(owner_node)
-            key_expr = self.render_expr(key_node)
-            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-            return f"py_dict_get_maybe({owner_expr}, {key_expr})"
+            resolved_t = self.normalize_type_name(self.any_dict_get_str(expr_d, "resolved_type", ""))
+            return self._render_dict_get_maybe_expr(owner_node, key_node, resolved_t)
         if kind == "DictPopDefault":
             owner_node = expr_d.get("owner")
             key_node = expr_d.get("key")
