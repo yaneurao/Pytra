@@ -2817,13 +2817,6 @@ static inline list<object> py_dict_items(const dict<K, V>& d) {
     return out;
 }
 
-static inline list<object> py_dict_items(const ::std::optional<dict<str, object>>& d) {
-    if (!d.has_value()) {
-        return list<object>{};
-    }
-    return py_dict_items(d.value());
-}
-
 template <class K, class V>
 static inline list<K> py_dict_keys(const dict<K, V>& d) {
     list<K> out;
@@ -2832,26 +2825,12 @@ static inline list<K> py_dict_keys(const dict<K, V>& d) {
     return out;
 }
 
-static inline list<str> py_dict_keys(const ::std::optional<dict<str, object>>& d) {
-    if (!d.has_value()) {
-        return list<str>{};
-    }
-    return py_dict_keys(d.value());
-}
-
 template <class K, class V>
 static inline list<V> py_dict_values(const dict<K, V>& d) {
     list<V> out;
     out.reserve(d.size());
     for (const auto& kv : d) out.push_back(kv.second);
     return out;
-}
-
-static inline list<object> py_dict_values(const ::std::optional<dict<str, object>>& d) {
-    if (!d.has_value()) {
-        return list<object>{};
-    }
-    return py_dict_values(d.value());
 }
 
 static inline str py_at(const str& v, int64 idx) {
@@ -2883,14 +2862,6 @@ static inline list<T> sorted(const set<T>& values) {
     list<T> out(values.begin(), values.end());
     out.sort();
     return out;
-}
-
-static inline object sum(const list<object>& values) {
-    float64 acc = 0.0;
-    for (const auto& v : values) {
-        acc += py_to_float64(v);
-    }
-    return make_object(acc);
 }
 
 // `/` / `//` / `%` の Python 互換セマンティクス（とくに負数時の扱い）を提供する。
