@@ -2072,6 +2072,10 @@ class CppEmitter(
         expr_t0 = self.get_expr_type(stmt.get("value"))
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
         ret_abi_mode = self.any_to_str(getattr(self, "current_function_return_abi_mode", "default"))
+        if ret_abi_mode in {"value", "value_readonly", "value_mut"}:
+            list_ctor_return = self._render_value_return_list_ctor(value_node, ret_t)
+            if list_ctor_return != "":
+                rv = list_ctor_return
         if ret_abi_mode in {"value", "value_readonly"}:
             rv = self._render_pyobj_value_list_copy_adapter(rv, stmt.get("value"), ret_t)
         elif self._is_pyobj_ref_first_list_type(ret_t):
@@ -2092,6 +2096,32 @@ class CppEmitter(
                 {"value": rv},
             )
         )
+
+    def _render_value_return_list_ctor(self, value_node: dict[str, Any], ret_t: str) -> str:
+        """`@abi(ret="value")` の `return list(x)` を value-list 返却へ正規化する。"""
+        ret_norm = self.normalize_type_name(ret_t)
+        if not (ret_norm.startswith("list[") and ret_norm.endswith("]")):
+            return ""
+        if self._node_kind_from_dict(value_node) != "Call":
+            return ""
+        if self.any_dict_get_str(value_node, "lowered_kind", "") != "BuiltinCall":
+            return ""
+        if self.any_dict_get_str(value_node, "runtime_call", "") != "list_ctor":
+            return ""
+        args = self.any_to_list(value_node.get("args"))
+        value_cpp_t = self._cpp_list_value_model_type_text(ret_norm)
+        if len(args) == 0:
+            return f"{value_cpp_t}{{}}"
+        if len(args) != 1:
+            return ""
+        arg_node = self.any_to_dict_or_empty(args[0])
+        arg_txt = self.render_expr(arg_node)
+        if arg_txt == "":
+            return ""
+        arg_t = self.normalize_type_name(self.get_expr_type(arg_node))
+        if arg_t.startswith("list[") and not self._is_pyobj_ref_first_list_type(arg_t):
+            return arg_txt
+        return f"{value_cpp_t}({arg_txt})"
 
     def _emit_yield_stmt(self, stmt: dict[str, Any]) -> None:
         if not self.current_function_is_generator or self.current_function_yield_buffer == "":

@@ -257,6 +257,7 @@ def sin(x: float) -> float:
     def test_emit_runtime_cpp_json_header_adds_forward_decls_before_class_blocks(self) -> None:
         rel_src = Path("src/pytra/std/json.py")
         hdr_out = ROOT / "src/runtime/cpp/generated/std/json.h"
+        cpp_out = ROOT / "src/runtime/cpp/generated/std/json.cpp"
 
         cp = self._run_subprocess_with_timeout(
             [
@@ -291,6 +292,11 @@ def sin(x: float) -> float:
         self.assertLess(obj_decl, value_block)
         self.assertLess(arr_decl, value_block)
         self.assertLess(value_decl, value_block)
+        cpp_txt = cpp_out.read_text(encoding="utf-8")
+        self.assertNotIn("py_at(this->raw, py_to<int64>(index))", cpp_txt)
+        self.assertIn("list<object> _json_array_items(const object& raw)", cpp_txt)
+        self.assertIn("return list<object>(raw);", cpp_txt)
+        self.assertIn("py_at(_json_array_items(this->raw), py_to<int64>(index))", cpp_txt)
 
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

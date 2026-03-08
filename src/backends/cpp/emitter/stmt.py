@@ -576,6 +576,25 @@ class CppStatementEmitter:
             d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
             d1 = self.normalize_type_name(self.get_expr_type(target_obj))
             d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
+            value_node = self.any_to_dict_or_empty(stmt.get("value"))
+            value_ret_abi_mode = "default"
+            if self._node_kind_from_dict(value_node) == "Call":
+                fn_node = self.any_to_dict_or_empty(value_node.get("func"))
+                if self._node_kind_from_dict(fn_node) == "Name":
+                    fn_name = self.any_to_str(fn_node.get("id"))
+                    if fn_name != "":
+                        emitted_name = self.rename_if_reserved(
+                            fn_name,
+                            self.reserved_words,
+                            self.rename_prefix,
+                            self.renamed_symbols,
+                        )
+                        value_ret_abi_mode = self.any_to_str(
+                            self.function_return_abi_modes.get(
+                                emitted_name,
+                                self.function_return_abi_modes.get(fn_name, "default"),
+                            )
+                        )
             if d0 == "unknown":
                 d0 = ""
             if d1 == "unknown":
@@ -596,6 +615,12 @@ class CppStatementEmitter:
                 logical_picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
                 picked = logical_picked
                 dtype = self._cpp_pyobj_alias_list_handle_type_text(picked)
+            elif (
+                picked.startswith("list[")
+                and picked.endswith("]")
+                and value_ret_abi_mode in {"value", "value_mut", "value_readonly"}
+            ):
+                dtype = self.cpp_signature_type(picked, runtime_abi_mode=value_ret_abi_mode)
             else:
                 dtype = self._cpp_type_text(picked)
             self.declare_in_current_scope(texpr)
@@ -1884,6 +1909,12 @@ class CppStatementEmitter:
         is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
         yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
         ret_abi_mode = self._function_runtime_abi_ret_mode(stmt)
+        if ret_abi_mode == "default":
+            ret_abi_mode = self.any_to_str(
+                self.function_return_abi_modes.get(emitted_name, self.function_return_abi_modes.get(str(name), "default"))
+            )
+            if ret_abi_mode == "":
+                ret_abi_mode = "default"
         ret = self.cpp_signature_type(stmt.get("return_type"), runtime_abi_mode=ret_abi_mode)
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
@@ -1912,10 +1943,18 @@ class CppStatementEmitter:
                 if n in arg_types:
                     arg_names.append(n)
         mutated_params = self._collect_mutated_params(body_stmts, arg_names)
+        fallback_arg_abi_modes = self.function_arg_abi_modes.get(
+            emitted_name,
+            self.function_arg_abi_modes.get(str(name), []),
+        )
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
             skip_self = in_class and idx == 0 and n == "self"
             arg_abi_mode = self._function_runtime_abi_arg_mode(stmt, n)
+            if arg_abi_mode == "default" and idx < len(fallback_arg_abi_modes):
+                fallback_mode = self.any_to_str(fallback_arg_abi_modes[idx])
+                if fallback_mode != "":
+                    arg_abi_mode = fallback_mode
             ct = self.cpp_signature_type(t, runtime_abi_mode=arg_abi_mode)
             t_norm = self.normalize_type_name(t)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)

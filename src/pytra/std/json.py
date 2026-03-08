@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from pytra.std import abi
 
 
 _EMPTY: str = ""
@@ -62,6 +63,23 @@ def _hex4(code: int) -> str:
     return p0 + p1 + p2 + p3
 
 
+@abi(ret="value")
+def _json_array_items(raw: object) -> list[object]:
+    return list(raw)
+
+
+@abi(ret="value")
+def _json_new_array() -> list[object]:
+    return list()
+
+
+def _json_indent_value(indent: int | None) -> int:
+    if indent is None:
+        raise ValueError("json indent is required")
+    indent_i: int = indent
+    return indent_i
+
+
 class JsonObj:
     raw: dict[str, object]
 
@@ -111,39 +129,39 @@ class JsonArr:
         self.raw = raw
 
     def get(self, index: int) -> JsonValue | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index])
+        return JsonValue(_json_array_items(self.raw)[index])
 
     def get_obj(self, index: int) -> JsonObj | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index]).as_obj()
+        return JsonValue(_json_array_items(self.raw)[index]).as_obj()
 
     def get_arr(self, index: int) -> JsonArr | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index]).as_arr()
+        return JsonValue(_json_array_items(self.raw)[index]).as_arr()
 
     def get_str(self, index: int) -> str | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index]).as_str()
+        return JsonValue(_json_array_items(self.raw)[index]).as_str()
 
     def get_int(self, index: int) -> int | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index]).as_int()
+        return JsonValue(_json_array_items(self.raw)[index]).as_int()
 
     def get_float(self, index: int) -> float | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index]).as_float()
+        return JsonValue(_json_array_items(self.raw)[index]).as_float()
 
     def get_bool(self, index: int) -> bool | None:
-        if index < 0 or index >= len(self.raw):
+        if index < 0 or index >= len(_json_array_items(self.raw)):
             return None
-        return JsonValue(self.raw[index]).as_bool()
+        return JsonValue(_json_array_items(self.raw)[index]).as_bool()
 
 
 class JsonValue:
@@ -268,7 +286,7 @@ class _JsonParser:
                 raise ValueError("invalid json object separator")
 
     def _parse_array(self) -> list[object]:
-        out: list[object] = []
+        out = _json_new_array()
         self.i += 1
         self._skip_ws()
         if self.i < self.n and self.text[self.i] == "]":
@@ -445,7 +463,7 @@ def _dump_json_list(
             dumped_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
             dumped.append(dumped_txt)
         return "[" + _join_strs(dumped, item_sep) + "]"
-    indent_i: int = int(indent)
+    indent_i: int = _json_indent_value(indent)
     inner: list[str] = []
     for x in values:
         prefix: str = " " * (indent_i * (level + 1))
@@ -471,7 +489,7 @@ def _dump_json_dict(
             v_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
             parts.append(k_txt + key_sep + v_txt)
         return "{" + _join_strs(parts, item_sep) + "}"
-    indent_i: int = int(indent)
+    indent_i: int = _json_indent_value(indent)
     inner: list[str] = []
     for k, x in values.items():
         prefix: str = " " * (indent_i * (level + 1))

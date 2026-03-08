@@ -351,6 +351,10 @@ class CppTypeBridgeEmitter:
             if ttxt != "" and ttxt not in {"{}", "[]"}:
                 east_type_txt = ttxt
         east_type_txt = self.normalize_type_name(east_type_txt)
+        if runtime_abi_mode in {"value", "value_mut", "value_readonly"}:
+            list_inner = self.type_generic_args(east_type_txt, "list")
+            if len(list_inner) == 1:
+                return self._cpp_list_value_model_type_text(east_type_txt)
         use_ref_first_lists = runtime_abi_mode not in {"value", "value_mut", "value_readonly"}
         return self._cpp_type_text(east_type_txt, pyobj_ref_lists=use_ref_first_lists)
 

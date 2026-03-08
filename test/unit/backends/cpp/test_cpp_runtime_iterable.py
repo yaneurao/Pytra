@@ -329,6 +329,9 @@ int main() {
         self.assertNotIn("static inline void py_reverse(const object& v)", runtime_header)
         self.assertNotIn("static inline void py_sort(const object& v)", runtime_header)
         self.assertNotIn("static inline int64 py_index(const object& v, const object& item)", runtime_header)
+        self.assertNotIn("static inline object py_at(const object& v, int64 idx)", runtime_header)
+        self.assertNotIn("static inline object py_slice(const object& v, int64 lo, int64 up)", runtime_header)
+        self.assertNotIn("static inline object py_slice(const object& v, int64 lo, const object& up)", runtime_header)
         self.assertNotIn("static inline object dict_get_node(const object& obj, const char* key, const object& defval = object{})", runtime_header)
         self.assertNotIn(
             "static inline object dict_get_node(\n    const ::std::optional<dict<str, object>>& d, const char* key, const object& defval = object{})",

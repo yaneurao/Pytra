@@ -12,17 +12,17 @@ namespace pytra::std::json {
     str _EMPTY;
     str _COMMA_NL;
     str _HEX_DIGITS;
-    
+
     /* Pure Python JSON utilities for selfhost-friendly transpilation. */
-    
+
     bool _is_ws(const str& ch) {
         return (ch == " ") || (ch == "\t") || (ch == "\r") || (ch == "\n");
     }
-    
+
     bool _is_digit(const str& ch) {
         return (ch >= "0") && (ch <= "9");
     }
-    
+
     int64 _hex_value(const str& ch) {
         if ((ch >= "0") && (ch <= "9"))
             return py_to_int64(ch);
@@ -40,7 +40,7 @@ namespace pytra::std::json {
             return 15;
         throw ValueError("invalid json unicode escape");
     }
-    
+
     int64 _int_from_hex4(const str& hx) {
         if (py_len(hx) != 4)
             throw ValueError("invalid json unicode escape");
@@ -50,7 +50,7 @@ namespace pytra::std::json {
         int64 v3 = _hex_value(py_slice(hx, 3, 4));
         return v0 * 4096 + v1 * 256 + v2 * 16 + v3;
     }
-    
+
     str _hex4(int64 code) {
         int64 v = code % 65536;
         int64 d3 = v % 16;
@@ -66,7 +66,22 @@ namespace pytra::std::json {
         str p3 = py_to_string(py_slice(_HEX_DIGITS, d3, d3 + 1));
         return p0 + p1 + p2 + p3;
     }
-    
+
+    list<object> _json_array_items(const object& raw) {
+        return list<object>(raw);
+    }
+
+    list<object> _json_new_array() {
+        return list<object>{};
+    }
+
+    int64 _json_indent_value(const ::std::optional<int64>& indent) {
+        if (py_is_none(indent))
+            throw ValueError("json indent is required");
+        int64 indent_i = (indent).value();
+        return indent_i;
+    }
+
 
     JsonObj::JsonObj(const dict<str, object>& raw) {
             this->raw = raw;
@@ -113,54 +128,54 @@ namespace pytra::std::json {
                 return ::std::nullopt;
             return JsonValue(py_dict_get(this->raw, key)).as_bool();
     }
-    
+
 
     JsonArr::JsonArr(const object& raw) {
             this->raw = raw;
     }
 
     ::std::optional<JsonValue> JsonArr::get(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index)));
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index)));
     }
 
     ::std::optional<JsonObj> JsonArr::get_obj(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index))).as_obj();
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index))).as_obj();
     }
 
     ::std::optional<JsonArr> JsonArr::get_arr(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index))).as_arr();
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index))).as_arr();
     }
 
     ::std::optional<str> JsonArr::get_str(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index))).as_str();
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index))).as_str();
     }
 
     ::std::optional<int64> JsonArr::get_int(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index))).as_int();
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index))).as_int();
     }
 
     ::std::optional<float64> JsonArr::get_float(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index))).as_float();
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index))).as_float();
     }
 
     ::std::optional<bool> JsonArr::get_bool(int64 index) {
-            if ((index < 0) || (index >= py_len(this->raw)))
+            if ((index < 0) || (index >= py_len(_json_array_items(this->raw))))
                 return ::std::nullopt;
-            return JsonValue(py_at(this->raw, py_to<int64>(index))).as_bool();
+            return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index))).as_bool();
     }
-    
+
 
     JsonValue::JsonValue(const object& raw) {
             this->raw = make_object(raw);
@@ -219,7 +234,7 @@ namespace pytra::std::json {
             }
             return ::std::nullopt;
     }
-    
+
 
     _JsonParser::_JsonParser(const str& text) {
             this->text = text;
@@ -299,7 +314,7 @@ namespace pytra::std::json {
     }
 
     object _JsonParser::_parse_array() {
-            object out = make_object(list<object>{});
+            list<object> out = _json_new_array();
             this->i++;
             this->_skip_ws();
             if ((this->i < this->n) && (this->text[this->i] == "]")) {
@@ -418,11 +433,11 @@ namespace pytra::std::json {
             int64 num_i = py_to_int64(token);
             return make_object(num_i);
     }
-    
+
     object loads(const str& text) {
         return _JsonParser(text).parse();
     }
-    
+
     ::std::optional<JsonObj> loads_obj(const str& text) {
         object value = make_object(_JsonParser(text).parse());
         if (py_isinstance(value, PYTRA_TID_DICT)) {
@@ -431,7 +446,7 @@ namespace pytra::std::json {
         }
         return ::std::nullopt;
     }
-    
+
     ::std::optional<JsonArr> loads_arr(const str& text) {
         object value = make_object(_JsonParser(text).parse());
         if (py_isinstance(value, PYTRA_TID_LIST)) {
@@ -440,7 +455,7 @@ namespace pytra::std::json {
         }
         return ::std::nullopt;
     }
-    
+
     str _join_strs(const rc<list<str>>& parts, const str& sep) {
         if ((rc_list_ref(parts)).empty())
             return "";
@@ -452,7 +467,7 @@ namespace pytra::std::json {
         }
         return out;
     }
-    
+
     str _escape_str(const str& s, bool ensure_ascii) {
         rc<list<str>> out = rc_list_from_value(list<str>{"\""});
         for (str ch : s) {
@@ -480,7 +495,7 @@ namespace pytra::std::json {
         py_append(out, "\"");
         return _join_strs(out, _EMPTY);
     }
-    
+
     str _dump_json_list(const object& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_len(values) == 0)
             return "[]";
@@ -492,7 +507,7 @@ namespace pytra::std::json {
             }
             return "[" + _join_strs(dumped, item_sep) + "]";
         }
-        int64 indent_i = py_to_int64(indent);
+        int64 indent_i = _json_indent_value(indent);
         rc<list<str>> inner = rc_list_from_value(list<str>{});
         for (object x : py_dyn_range(values)) {
             str prefix = py_repeat(" ", indent_i * (level + 1));
@@ -501,7 +516,7 @@ namespace pytra::std::json {
         }
         return "[\n" + _join_strs(inner, _COMMA_NL) + "\n" + py_repeat(" ", indent_i * level) + "]";
     }
-    
+
     str _dump_json_dict(const dict<str, object>& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_len(values) == 0)
             return "{}";
@@ -516,7 +531,7 @@ namespace pytra::std::json {
             }
             return "{" + _join_strs(parts, item_sep) + "}";
         }
-        int64 indent_i = py_to_int64(indent);
+        int64 indent_i = _json_indent_value(indent);
         rc<list<str>> inner = rc_list_from_value(list<str>{});
         for (::std::tuple<str, object> __itobj_2 : values) {
             str k = py_to_string(py_at(__itobj_2, 0));
@@ -528,7 +543,7 @@ namespace pytra::std::json {
         }
         return "{\n" + _join_strs(inner, _COMMA_NL) + "\n" + py_repeat(" ", indent_i * level) + "}";
     }
-    
+
     str _dump_json_value(const object& v, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_is_none(v))
             return "null";
@@ -550,7 +565,7 @@ namespace pytra::std::json {
         }
         throw TypeError("json.dumps unsupported type");
     }
-    
+
     str dumps(const object& obj, bool ensure_ascii, const ::std::optional<int64>& indent, const ::std::optional<::std::tuple<str, str>>& separators) {
         str item_sep = ",";
         str key_sep = (py_is_none(indent) ? ":" : ": ");
@@ -561,7 +576,7 @@ namespace pytra::std::json {
         }
         return _dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0);
     }
-    
+
     static void __pytra_module_init() {
         static bool __initialized = false;
         if (__initialized) return;
@@ -570,12 +585,12 @@ namespace pytra::std::json {
         _COMMA_NL = ",\n";
         _HEX_DIGITS = "0123456789abcdef";
     }
-    
+
     namespace {
         struct __pytra_module_initializer {
             __pytra_module_initializer() { __pytra_module_init(); }
         };
         static const __pytra_module_initializer __pytra_module_initializer_instance{};
     }  // namespace
-    
+
 }  // namespace pytra::std::json
