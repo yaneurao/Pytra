@@ -83,6 +83,30 @@
 - `tools/` 配下の JSON loader
 - backend/runtime parity 補助スクリプト
 
+### 2.1 inventory（2026-03-08）
+
+- host / selfhost 共通の raw JSON artifact 境界
+  - `src/py2x.py`
+    - `_load_json_root()` が `json.loads() -> dict[str, object]` を前提に root copy を行う。
+    - linked-program restart (`--from-link-output`) と JSON input restart がこの lane を通る。
+  - `src/ir2lang.py`
+    - `_load_json_root()` が raw dict root を前提にし、`_unwrap_east_module()` が `{"ok": true, "east": {...}}` または `{"kind": "Module", ...}` を `isinstance(..., dict)` で手探り decode している。
+  - `src/toolchain/ir/east_io.py`
+    - `.json` 入力時に `json.loads()` 後の raw dict / wrapper payload を直接判定して `EAST Module` へ正規化している。
+- linked-program manifest / bundle lane
+  - `src/toolchain/link/program_loader.py`
+    - `_load_raw_east3()` が raw dict copy を行い、`build_linked_program_from_module_map()` も `dict[str, object]` 前提のまま module map を組み立てる。
+  - `src/toolchain/link/program_validator.py`
+    - `_require_dict/_require_str/_require_bool/_require_str_list()` が raw object tree 前提で manifest / linked output を検証している。
+  - `src/toolchain/link/link_manifest_io.py`
+    - `_load_json_doc()` が raw dict root を返してから validator へ渡す。
+  - `src/toolchain/link/materializer.py`
+    - `_load_json_doc()` / `_load_linked_east3_doc()` が raw dict root 前提で linked bundle を読む。
+- selfhost 導線の現状
+  - `src/py2x-selfhost.py` 自体は `json.loads()` を直接呼ばない。
+  - ただし `toolchain.compiler.transpile_cli.load_east3_document()` と linked-program restart 導線に依存するため、`py2x.py` / `ir2lang.py` / `east_io.py` / `toolchain/link/*` を `JsonValue` lane に揃えることが selfhost 整列の実体になる。
+  - `py2x-selfhost.py` 内の `dict[str, object]` は backend spec / layer option の内部 carrier であり、本計画の JSON artifact 境界とは別扱いにする。
+
 ## 3. 想定する decode 形
 
 避けたい形:
@@ -154,3 +178,4 @@ entry_modules = root.get_arr("entry_modules")
 - 2026-03-08: selfhost も `JsonValue` へ揃える。ただし backend 全体ではなく、まず JSON artifact を読む境界に限定する。
 - 2026-03-08: selfhost 側の v1 は `match` 前提にしない。`JsonValue` / `JsonObj` / `JsonArr` の decode helper method だけで進める。
 - 2026-03-08: `pytra.std.json` の public root は維持し、selfhost 対応のために `utils/json.py` へは移さない。
+- 2026-03-08: inventory の結果、priority は `program_loader/program_validator/link_manifest_io/materializer` と `py2x/ir2lang/east_io` の 2 群に分かれる。`py2x-selfhost.py` 本体は raw JSON parse を持たず、selfhost alignment は周辺 decode lane の整列で達成する。

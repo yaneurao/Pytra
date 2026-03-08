@@ -34,8 +34,10 @@
 
 1. [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01] `JsonValue` を使って selfhost/host の JSON artifact 境界を decode-first 契約へ揃える。
    文脈: [p2-jsonvalue-selfhost-decode-alignment.md](../plans/p2-jsonvalue-selfhost-decode-alignment.md)
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-01] selfhost/host の JSON loader で `dict[str, object]` / `list[object]` を直接前提にしている箇所を棚卸しする。
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-02] docs に「selfhost は `match` ではなく decode helper ベースで `JsonValue` を使う」契約を固定する。
+   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-01] selfhost/host の JSON loader で `dict[str, object]` / `list[object]` を直接前提にしている箇所を棚卸しする。
+     進捗メモ: `py2x` / `ir2lang` / `east_io` / `toolchain/link/*` が raw JSON artifact 境界で、`py2x-selfhost.py` 本体は間接依存だけを持つと整理した。
+   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-02] docs に「selfhost は `match` ではなく decode helper ベースで `JsonValue` を使う」契約を固定する。
+     進捗メモ: `spec-dev` に selfhost/host JSON artifact loader も `loads_obj` / `JsonValue.as_*` / `JsonObj.get_*` を正本とする契約を追記した。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-01] `pytra.std.json` に selfhost-ready な `loads_obj` / `loads_arr` / `JsonObj.get_*` 最小APIを定義する。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-02] `program_loader` / `program_validator` の JSON decode を `JsonValue` helper ベースへ移行する。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-01] `py2x.py` / `py2x-selfhost.py` / `ir2lang.py` の JSON artifact 境界を `JsonValue` decode lane へ揃える。
