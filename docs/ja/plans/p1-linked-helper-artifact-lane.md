@@ -269,7 +269,56 @@ single-file backend では別ファイル化は必須ではない。
 - `P1-LINKED-HELPER-ARTIFACT-01-S5-01`: representative single-file backend で helper fold 経路を確認する。
 - `P1-LINKED-HELPER-ARTIFACT-01-S5-02`: docs / guard / archive を更新する。
 
+## 10. S1-01 棚卸し結果
+
+### 10.1 helper の現状 escape hatch
+
+- `py_runtime.h`
+  - `src/runtime/cpp/native/core/py_runtime.h` は low-level core と helper convenience の両方を背負ってきた。
+  - 2026-03-09 時点で object/dict convenience のかなりの tranche は削ったが、helper を runtime へ事前配置する圧力が残っている。
+- checked-in/generated runtime module
+  - `src/runtime/cpp/generated/**` と `src/runtime/cpp/native/**` は、本来 optimizer/generated helper artifact として外へ出したい処理の受け皿を兼ねている。
+  - とくに `generated/built_in/*.h|cpp` は runtime helper と synthetic helper の境界が曖昧になりやすい。
+- emitter 側の special-op include
+  - `src/backends/cpp/emitter/module.py` の `_CPP_HELPER_INCLUDE_BY_SPECIAL_OP` は `RuntimeSpecialOp` / `PathRuntimeOp` を ad-hoc include へ解決している。
+  - これは helper を「linked-program から届く artifact」ではなく「emitter が必要に応じて header を足すもの」として扱っていることを示す。
+- emitter inline helper / backend-local sugar
+  - `src/backends/cpp/emitter/runtime_expr.py`、`builtin_runtime.py`、`call.py`、`stmt.py` には backend-local lowering helper が残っている。
+  - これらは IR の 1 node を local string helper で処理しており、optimizer-generated helper module を受け取る設計になっていない。
+
+### 10.2 linked-program 側の blocker
+
+- `LinkedProgramModule`
+  - `src/toolchain/link/program_model.py` の `LinkedProgramModule` は `module_id/source_path/is_entry/east_doc/artifact_path` しか持たず、`module_kind`, `helper_id`, `owner_module_id` を表せない。
+- `link-output.json`
+  - `src/toolchain/link/global_optimizer.py` の `module_entries` は `module_id/input/output/source_path/is_entry` のみで、helper module を区別する lane が無い。
+  - `_linked_output_path()` も常に `linked/<module>.east3.json` 固定で、helper 専用 prefix や metadata を持てない。
+- materializer / restart
+  - `src/toolchain/link/materializer.py` は `result.linked_program.modules` だけを書き出し、helper artifact 群を別 collection として持たない。
+  - `load_linked_output_bundle()` も `link-output.modules[]` を `LinkedProgramModule` へ戻すだけで、helper kind を復元できない。
+- validator
+  - `src/toolchain/link/program_validator.py` の `LinkOutputModuleEntry` 検証は通常 module しか想定していない。
+  - helper metadata を reject してはいないが、必須にもしていないため canonical lane にできない。
+
+### 10.3 backend / writer 側の blocker
+
+- common `ProgramWriter`
+  - `src/backends/common/program_writer.py` の single-file writer は `modules` がちょうど 1 件であることを要求する。
+  - helper module を canonical に流すなら、single-file backend 側で「fold 済み main artifact」と「raw helper module 群」を切り分ける契約が必要。
+- C++ `ProgramWriter`
+  - `src/backends/cpp/program_writer.py` は複数 module を別ファイルへ置けるが、module `kind` を見ていない。
+  - 現在は `label/header_text/source_text/is_entry` だけで manifest を作るので、helper module の owner/helper_id を保持できない。
+- 共通 emitter
+  - `src/backends/common/emitter/code_emitter.py` は module 単位描画と dependency 収集に寄っており、optimizer-generated helper artifact を first-class input として扱わない。
+
+### 10.4 S1-01 の結論
+
+- 問題の主因は「C++ に別ファイルの置き場が無い」ことではない。
+- 欠けているのは、`linked-program optimizer -> link-output -> backend program artifact` の全段で helper module を first-class に運ぶ canonical lane である。
+- S1-02 では、`module_kind=helper`, `helper_id`, `owner_module_id`, `generated_by=linked_optimizer` を最小契約として spec に固定する。
+
 ## 決定ログ
 
 - 2026-03-09: helper を `py_runtime.h` へ事前配置し続ける設計負債の主因は「C++ に別ファイルの置き場が無いこと」ではなく、「optimizer-generated helper artifact を中間表現として持てないこと」だと整理した。
 - 2026-03-09: canonical solution は synthetic helper module を linked-program 出力へ追加し、multi-file backend は別ファイル、single-file backend は fold で扱う方式だと決定した。
+- 2026-03-09: S1-01 棚卸しでは、helper の escape hatch が `py_runtime.h`、checked-in/generated runtime、emitter special-op include、backend-local inline helper に分散していること、blocker は `LinkedProgramModule` / `link-output.json` / materializer / validator / writer の全段で helper kind を持てないことだと確定した。

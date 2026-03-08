@@ -33,7 +33,8 @@
 ## 未完了タスク
 
 1. [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01] linked-program optimizer から helper artifact を正規出力できるようにする。
-- [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-01] 現状の helper 逃し先と blocker を棚卸しする。
+- [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-01] 現状の helper 逃し先と blocker を棚卸しする。
+- 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-01] helper の escape hatch は `py_runtime.h`、checked-in/generated runtime、C++ emitter の special-op include、backend-local inline helper に分散しており、blocker は `LinkedProgramModule` / `link-output.json` / materializer / validator / writer が helper kind を持てない点だと固定した。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-02] helper artifact schema / module kind / metadata 契約を spec に固定する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] linked-program model / validator / materializer を helper-aware にする。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-02] `link-output.json` / restart 導線へ helper module lane を追加する。
