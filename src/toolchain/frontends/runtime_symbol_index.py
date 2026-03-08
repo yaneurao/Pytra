@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
+from pytra.std import json
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -15,13 +15,14 @@ def _load_index() -> dict[str, Any]:
     if isinstance(_CACHE, dict):
         return _CACHE
     try:
-        obj = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
+        obj = json.loads_obj(INDEX_PATH.read_text(encoding="utf-8"))
     except Exception:
-        obj = {}
-    if not isinstance(obj, dict):
-        obj = {}
-    _CACHE = obj
-    return obj
+        obj = None
+    if obj is None:
+        _CACHE = {}
+        return _CACHE
+    _CACHE = dict(obj.raw)
+    return _CACHE
 
 
 def clear_runtime_symbol_index_cache() -> None:

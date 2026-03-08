@@ -183,14 +183,13 @@ class CodeEmitter:
         """JSON ファイルを辞書として読み込む。失敗時は空辞書。"""
         if not path.exists():
             return {}
-        raw_obj: object = None
         try:
             txt = path.read_text(encoding="utf-8")
-            raw_obj = json.loads(txt)
+            raw_obj = json.loads_obj(txt)
         except Exception:
             return {}
-        if isinstance(raw_obj, dict):
-            return dict(raw_obj)
+        if raw_obj is not None:
+            return dict(raw_obj.raw)
         return {}
 
     @staticmethod
