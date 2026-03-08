@@ -160,6 +160,11 @@ int main() {
         list_sum += obj_to_int64(v);
     }
     assert(list_sum == 6);
+    assert(sum(list<int64>{1, 2, 3}) == 6);
+    assert(py_min(int64(9), int64(3)) == 3);
+    assert(py_max(int64(9), int64(3)) == 9);
+    assert(py_min(int64(9), int64(3), int64(5)) == 3);
+    assert(py_max(int64(9), int64(3), int64(5)) == 9);
 
     dict<str, object> d{};
     d["a"] = make_object(1);
@@ -254,14 +259,19 @@ int main() {
         contains_header = (ROOT / "src/runtime/cpp/native/built_in/contains.h").read_text(encoding="utf-8")
         string_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.h").read_text(encoding="utf-8")
         string_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.cpp").read_text(encoding="utf-8")
+        numeric_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.h").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
+        self.assertIn('#include "runtime/cpp/generated/built_in/numeric_ops.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/predicates.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/native/built_in/sequence.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/sequence.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/native/built_in/iter_ops.h"', runtime_header)
         self.assertNotIn("static inline T& py_at(list<T>& v, int64 idx)", runtime_header)
         self.assertNotIn("static inline void py_set_at(list<T>& v, I idx, const U& item)", runtime_header)
+        self.assertNotIn("static inline T sum(const list<T>& values)", runtime_header)
+        self.assertNotIn("static inline auto py_min(const A& a, const B& b)", runtime_header)
+        self.assertNotIn("static inline auto py_max(const A& a, const B& b)", runtime_header)
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
         self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
@@ -278,6 +288,11 @@ int main() {
         self.assertIn("list<str> py_splitlines(const str& s) {", string_ops_cpp)
         self.assertIn("int64 py_count(const str& s, const str& needle) {", string_ops_cpp)
         self.assertNotIn("rc<list<str>>", string_ops_header)
+        self.assertIn("template <class T>", numeric_ops_header)
+        self.assertIn("T sum(const list<T>& values) {", numeric_ops_header)
+        self.assertIn("T py_min(const T& a, const T& b) {", numeric_ops_header)
+        self.assertIn("T py_max(const T& a, const T& b) {", numeric_ops_header)
+        self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp").exists())
 
 
 if __name__ == "__main__":

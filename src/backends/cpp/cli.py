@@ -7,6 +7,8 @@ It can also accept a Python source file and internally run src/toolchain/compile
 
 from __future__ import annotations
 
+import os as _host_os
+
 from typing import Any
 from toolchain.frontends.east1_build import East1BuildHelpers
 from toolchain.link import build_linked_program_from_module_map as _build_linked_program_from_module_map
@@ -123,6 +125,78 @@ def _build_cpp_public_header_forwarder(include_txts: list[str], source_path: Pat
         lines.append('#include "' + include_txt + '"')
     lines.append("")
     return join_str_list("\n", lines)
+
+
+def _header_guard_from_runtime_output_path(path: Path) -> str:
+    src = str(path).replace("\\", "/")
+    for prefix in ("src/runtime/cpp/core/", "src/runtime/cpp/", "runtime/cpp/core/", "runtime/cpp/"):
+        if src.startswith(prefix):
+            src = src[len(prefix) :]
+            break
+    src = "PYTRA_" + src.upper()
+    out_chars: list[str] = []
+    for ch in src:
+        if ("A" <= ch <= "Z") or ("0" <= ch <= "9"):
+            out_chars.append(ch)
+        else:
+            out_chars.append("_")
+    out = "".join(out_chars).lstrip("_")
+    if not out.endswith("_H"):
+        out += "_H"
+    return out
+
+
+def _module_has_header_only_runtime_templates(east_module: dict[str, Any]) -> bool:
+    saw_template = False
+    for stmt in east_module.get("body", []):
+        if not isinstance(stmt, dict):
+            continue
+        kind = dict_any_get_str(stmt, "kind")
+        if kind == "Expr":
+            value = stmt.get("value")
+            if isinstance(value, dict) and dict_any_get_str(value, "kind") == "Constant":
+                if dict_any_get_str(value, "resolved_type") == "str":
+                    continue
+        if kind in {"Import", "ImportFrom", "Pass"}:
+            continue
+        if kind != "FunctionDef":
+            return False
+        meta = stmt.get("meta")
+        template_meta = meta.get("template_v1") if isinstance(meta, dict) else None
+        if not isinstance(template_meta, dict):
+            return False
+        saw_template = True
+    return saw_template
+
+
+def _build_cpp_template_header_only_module(cpp_text: str, header_path: Path) -> str:
+    guard = _header_guard_from_runtime_output_path(header_path)
+    src_lines = cpp_text.splitlines()
+    prefix_lines: list[str] = []
+    body_lines: list[str] = []
+    in_prefix = True
+    for line in src_lines:
+        if in_prefix and (line.startswith("//") or line == ""):
+            prefix_lines.append(line)
+            continue
+        in_prefix = False
+        body_lines.append(line)
+    out_lines: list[str] = []
+    out_lines.extend(prefix_lines)
+    if len(out_lines) > 0 and out_lines[-1] != "":
+        out_lines.append("")
+    out_lines.append("#ifndef " + guard)
+    out_lines.append("#define " + guard)
+    out_lines.append("")
+    for line in body_lines:
+        if line.startswith('#include "runtime/cpp/generated/') and line.endswith('.h"'):
+            continue
+        out_lines.append(line)
+    if len(out_lines) > 0 and out_lines[-1] != "":
+        out_lines.append("")
+    out_lines.append("#endif  // " + guard)
+    out_lines.append("")
+    return join_str_list("\n", out_lines)
 
 
 def _runtime_public_forwarder_includes(module_tail: str) -> list[str]:
@@ -369,6 +443,8 @@ def load_east(
         target_lang="cpp",
     )
     east_doc: dict[str, Any] = east3_doc if isinstance(east3_doc, dict) else {}
+    if _is_runtime_emit_input_path(input_path):
+        return east_doc
     module_map = _optimize_cpp_module_east_map(
         input_path,
         {str(input_path.resolve()): east_doc},
@@ -1111,6 +1187,30 @@ def main(argv: list[str]) -> int:
             cpp_txt_runtime_for_header = split_cpp_inline_class_defs(cpp_txt_runtime, ns, True)
             cpp_txt_runtime = split_cpp_inline_class_defs(cpp_txt_runtime, ns, False)
             cpp_txt_runtime = strip_cpp_default_args_from_top_level_defs(cpp_txt_runtime, ns)
+            if _module_has_header_only_runtime_templates(east_module):
+                cpp_txt_runtime = _prepend_generated_cpp_banner(cpp_txt_runtime, input_path)
+                hdr_txt_runtime = _build_cpp_template_header_only_module(cpp_txt_runtime, hdr_out)
+                generated_lines_runtime = count_text_lines(hdr_txt_runtime)
+                check_guard_limit(
+                    "emit",
+                    "max_generated_lines",
+                    generated_lines_runtime,
+                    guard_limits,
+                    str(input_path),
+                )
+                write_text_file(hdr_out, hdr_txt_runtime)
+                if cpp_out.exists():
+                    _host_os.remove(str(cpp_out))
+                if str(public_hdr_out) != "":
+                    write_text_file(
+                        public_hdr_out,
+                        _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(module_tail), input_path),
+                    )
+                print("generated: " + str(hdr_out))
+                if str(public_hdr_out) != "":
+                    print("generated: " + str(public_hdr_out))
+                print("skipped: header-only runtime module (template definitions stay in header): " + str(cpp_out))
+                return 0
             own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
                 old_runtime_include = '#include "runtime/cpp/core/py_runtime.h"\n'

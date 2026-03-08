@@ -154,7 +154,7 @@
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02] `spec-template` / `spec-runtime` / `spec-east` / `spec-linker` に helper-limited `@template` の責務境界と specialization 契約を追記する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01] parser / EAST metadata / validator で `@template("T", ...)` を runtime helper 限定で受理する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01] `sum` / `min` / `max` を pure Python generic helper として SoT 側へ移し、C++ generated helper へ切り替える。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01] `sum` / `min` / `max` を pure Python generic helper として SoT 側へ移し、C++ generated helper へ切り替える。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02] `zip` / `sorted` のうち少なくとも 1 系統以上を同様に移し、`py_runtime.h` から hand-written helper を撤去する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01] runtime symbol index / build graph / representative backend/runtime tests を新 contract へ追従させる。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
@@ -173,6 +173,9 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01]: `validate_template_module(...)` を `core.py` / `east3.py` / `global_optimizer.py` に差し、optimized EAST3 と linked-program 経路でも canonical metadata を保つようにした。v1 の runtime helper provenance は `pytra.built_in.*` / `src/pytra/built_in/*` で最低限 enforce し、specialization collector 自体は `S2-02` に残す。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02]: linked-program optimizer の先頭で runtime helper template specialization collector を走らせ、`meta.template_v1` と callsite concrete type tuple から deterministic に monomorphization する最小実装を追加した。materialized clone は `FunctionDef.meta.template_specialization_v1` を持ち、program-wide summary は `link-output.global.runtime_template_specializations_v1` に集約する。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02]: first slice として same-module / imported-symbol 両方の specialization rewrite を `test_global_optimizer.py` で固定した。template 定義本体は linked module から除き、specialized function と import binding / ImportFrom rewrite だけを残す。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01]: `src/pytra/built_in/numeric_ops.py` を追加し、`sum(list[T])`, `py_min(T, T)`, `py_max(T, T)` を `@template` helper として SoT 側へ置いた。`sum` は `@abi(args={"values":"value"}, ret="value")` を併用して C++ generated header で `const list<T>&` 署名を維持する。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01]: C++ runtime emit は template helper module を header-only generated module として扱う。`src/backends/cpp/cli.py` に header-only 分岐を追加し、`numeric_ops.cpp` は生成せず `generated/built_in/numeric_ops.h` に template 定義を残すようにした。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01]: `src/runtime/cpp/native/core/py_runtime.h` から `sum(list<T>)` と 2-arg `py_min/py_max` の hand-written 実装を撤去し、`generated/built_in/numeric_ops.h` を include する形へ切り替えた。3 引数以上の `py_min/py_max` だけは variadic wrapper として残し、binary helper は generated template に委譲する。
 
 ## 7. `S1-01` 棚卸し結果
 

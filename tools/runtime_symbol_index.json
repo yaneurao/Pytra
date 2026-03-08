@@ -48,6 +48,27 @@
         }
       }
     },
+    "pytra.built_in.numeric_ops": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/numeric_ops.py",
+      "symbols": {
+        "py_max": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_max"
+        },
+        "py_min": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_min"
+        },
+        "sum": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.sum"
+        }
+      }
+    },
     "pytra.built_in.predicates": {
       "runtime_group": "built_in",
       "source_py": "src/pytra/built_in/predicates.py",
@@ -455,6 +476,11 @@
           "dispatch": "function",
           "kind": "function",
           "semantic_tag": "stdlib.fn.extern"
+        },
+        "template": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.template"
         }
       }
     },
@@ -909,6 +935,17 @@
         }
       }
     },
+    "pytra.std.template": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/template.py",
+      "symbols": {
+        "template": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.template"
+        }
+      }
+    },
     "pytra.std.time": {
       "runtime_group": "std",
       "source_py": "src/pytra/std/time.py",
@@ -1072,6 +1109,15 @@
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/built_in/iter_ops.h"
+          ]
+        },
+        "pytra.built_in.numeric_ops": {
+          "companions": [
+            "generated"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/pytra/built_in/numeric_ops.h"
           ]
         },
         "pytra.built_in.predicates": {

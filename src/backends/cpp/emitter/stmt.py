@@ -1860,6 +1860,14 @@ class CppStatementEmitter:
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
         """関数定義ノードを C++ 関数として出力する。"""
         name = self.any_dict_get_str(stmt, "name", "fn")
+        stmt_meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        template_meta = self.any_to_dict_or_empty(stmt_meta.get("template_v1"))
+        template_params: list[str] = []
+        if not in_class and len(template_meta) > 0:
+            for raw_param in self.any_to_list(template_meta.get("params")):
+                param_name = self.any_to_str(raw_param)
+                if param_name != "":
+                    template_params.append(param_name)
         function_symbol = str(name)
         if in_class and self.current_class_name is not None and function_symbol != "":
             function_symbol = str(self.current_class_name) + "." + function_symbol
@@ -1950,6 +1958,9 @@ class CppStatementEmitter:
         else:
             param_sep = ", "
             params_txt = param_sep.join(params)
+            if len(template_params) > 0:
+                template_parts = [f"class {param_name}" for param_name in template_params]
+                self.emit("template <" + ", ".join(template_parts) + ">")
             if self.current_class_name is not None and in_class:
                 func_prefix = ""
                 func_suffix = ""

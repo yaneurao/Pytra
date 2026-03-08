@@ -29,6 +29,7 @@
 #include "io.h"
 // `str` method delegates still live here, so string helper declarations remain a direct dependency.
 #include "runtime/cpp/generated/built_in/string_ops.h"
+#include "runtime/cpp/generated/built_in/numeric_ops.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
 
 template <class T>
@@ -3038,13 +3039,6 @@ static inline list<T> sorted(const set<T>& values) {
     return out;
 }
 
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline T sum(const list<T>& values) {
-    T acc = static_cast<T>(0);
-    for (const auto& v : values) acc += v;
-    return acc;
-}
-
 static inline object sum(const list<object>& values) {
     float64 acc = 0.0;
     for (const auto& v : values) {
@@ -3176,26 +3170,14 @@ static inline void py_runtime_write_stdout(const str& text) {
     ::std::exit(static_cast<int>(code));
 }
 
-template <class A, class B>
-static inline auto py_min(const A& a, const B& b) -> ::std::common_type_t<A, B> {
-    using R = ::std::common_type_t<A, B>;
-    return ::std::min<R>(static_cast<R>(a), static_cast<R>(b));
+template <class A, class B, class C, class... Rest>
+static inline auto py_min(const A& a, const B& b, const C& c, const Rest&... rest) -> ::std::common_type_t<A, B, C, Rest...> {
+    return py_min(py_min(a, b), c, rest...);
 }
 
-template <class A, class B, class... Rest>
-static inline auto py_min(const A& a, const B& b, const Rest&... rest) -> ::std::common_type_t<A, B, Rest...> {
-    return py_min(py_min(a, b), rest...);
-}
-
-template <class A, class B>
-static inline auto py_max(const A& a, const B& b) -> ::std::common_type_t<A, B> {
-    using R = ::std::common_type_t<A, B>;
-    return ::std::max<R>(static_cast<R>(a), static_cast<R>(b));
-}
-
-template <class A, class B, class... Rest>
-static inline auto py_max(const A& a, const B& b, const Rest&... rest) -> ::std::common_type_t<A, B, Rest...> {
-    return py_max(py_max(a, b), rest...);
+template <class A, class B, class C, class... Rest>
+static inline auto py_max(const A& a, const B& b, const C& c, const Rest&... rest) -> ::std::common_type_t<A, B, C, Rest...> {
+    return py_max(py_max(a, b), c, rest...);
 }
 
 #endif  // PYTRA_BUILT_IN_PY_RUNTIME_H

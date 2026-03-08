@@ -197,6 +197,35 @@ def sin(x: float) -> float:
             if public_hdr_out.exists():
                 public_hdr_out.unlink()
 
+    def test_emit_runtime_cpp_keeps_template_module_header_only(self) -> None:
+        rel_src = Path("src/pytra/built_in/numeric_ops.py")
+        hdr_out = ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.h"
+        cpp_out = ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp"
+        public_hdr_out = ROOT / "src/runtime/cpp/pytra/built_in/numeric_ops.h"
+
+        cp = self._run_subprocess_with_timeout(
+            [
+                "python3",
+                "src/py2x.py",
+                "--target",
+                "cpp",
+                str(rel_src),
+                "--emit-runtime-cpp",
+            ],
+            cwd=ROOT,
+            timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+            label="emit-runtime-cpp template header-only",
+        )
+        self.assertEqual(cp.returncode, 0, msg=cp.stderr)
+        self.assertIn("skipped: header-only runtime module (template definitions stay in header)", cp.stdout)
+        self.assertTrue(hdr_out.exists())
+        self.assertFalse(cpp_out.exists())
+        self.assertTrue(public_hdr_out.exists())
+        hdr_txt = hdr_out.read_text(encoding="utf-8")
+        self.assertIn("template <class T>", hdr_txt)
+        self.assertIn("T sum(const list<T>& values) {", hdr_txt)
+        self.assertIn("T py_min(const T& a, const T& b) {", hdr_txt)
+
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.set_dynamic_hooks_enabled(False)
