@@ -322,3 +322,4 @@ single-file backend では別ファイル化は必須ではない。
 - 2026-03-09: helper を `py_runtime.h` へ事前配置し続ける設計負債の主因は「C++ に別ファイルの置き場が無いこと」ではなく、「optimizer-generated helper artifact を中間表現として持てないこと」だと整理した。
 - 2026-03-09: canonical solution は synthetic helper module を linked-program 出力へ追加し、multi-file backend は別ファイル、single-file backend は fold で扱う方式だと決定した。
 - 2026-03-09: S1-01 棚卸しでは、helper の escape hatch が `py_runtime.h`、checked-in/generated runtime、emitter special-op include、backend-local inline helper に分散していること、blocker は `LinkedProgramModule` / `link-output.json` / materializer / validator / writer の全段で helper kind を持てないことだと確定した。
+- 2026-03-09: S1-02 では helper artifact の最小契約を `module_kind=helper`、`meta.synthetic_helper_v1`、`helper_id`、`owner_module_id`、`generated_by=linked_optimizer` に固定し、single-file backend が fold しても runtime や inline helper 再探索へ戻してはならないと明記した。

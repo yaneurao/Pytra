@@ -40,6 +40,7 @@
 - `link-input.v1`: `LinkedProgram` を構築するための入力 manifest。
 - `link-output.v1`: global summary と linked module 出力先を記録する出力 manifest。
 - `linked module`: linker / linked-program optimizer 後の `EAST3` 文書。`kind=Module` と `east_stage=3` は維持しつつ、`meta.linked_program_v1` を持つ。
+- `helper module`: linked-program optimizer が synthetic に生成する `linked module`。`meta.synthetic_helper_v1` を必須とし、`module_kind=helper` で program artifact へ渡す。
 
 ## 4. 基本パイプライン
 
@@ -90,6 +91,7 @@ linker / linked-program optimizer は raw `EAST3` 群を受け取り、次を確
 4. linked module への materialize
 - backend が module 単位で読めるよう、global summary の必要 slice を各 module `meta.linked_program_v1` へ materialize する。
 - function/call 単位の summary（例: `FunctionDef.meta.escape_summary`, `Call.meta.non_escape_callsite`）もこの段で最終化してよい。
+- optimizer-generated helper が必要な場合は、`kind=Module` / `east_stage=3` を維持した synthetic helper module を追加生成してよい。helper の canonical owner は linker とし、backend が helper を再発見・再生成してはならない。
 
 5. program manifest 出力
 - `link-output.v1` を正本として出力し、global table の canonical source とする。
@@ -198,6 +200,15 @@ linker が受理する raw `EAST3` 文書は少なくとも次を持つ。
 - `output`
 - `source_path`
 - `is_entry`
+- `module_kind`
+  - `user | runtime | helper`
+
+`modules[*]` の helper 専用必須キー:
+
+- `helper_id`
+- `owner_module_id`
+- `generated_by`
+  - v1 では固定値 `linked_optimizer`
 
 `global` の必須キー:
 
@@ -224,6 +235,8 @@ linker が受理する raw `EAST3` 文書は少なくとも次を持つ。
 1. `modules[*].output` は linked module（後述）の出力先を指す。
 2. `global` の各 table は空でもキー自体は必須とする。
 3. backend / `ProgramWriter` が参照する global table の canonical source は常に `link-output.v1` とする。
+4. `modules[*].module_kind=helper` の entry は synthetic helper module を表し、`helper_id` / `owner_module_id` / `generated_by` を必須とする。
+5. `modules[*].module_kind=user|runtime` の entry は `helper_id` / `owner_module_id` / `generated_by` を持ってはならない。
 
 ### 7.4 linked module schema
 
@@ -252,6 +265,28 @@ linked module の補足規則:
 3. `meta.linked_program_v1` は linked module では必須、raw `EAST3` では存在してはならない。
 4. runtime helper `@template` v1 を使う場合でも、function-level canonical metadata は `FunctionDef.meta.template_v1` のまま保持する。materialized specialization の seed/source-of-truth を raw decorator 側へ戻してはならない。
 5. implicit specialization を materialize した function clone には `FunctionDef.meta.template_specialization_v1` を付けてよく、program-wide summary は `link-output.global.runtime_template_specializations_v1` に集約してよい。
+
+### 7.5 synthetic helper module schema
+
+synthetic helper module も raw/linked module と同じく `kind=Module` / `east_stage=3` を維持する。追加される canonical meta は `meta.synthetic_helper_v1` である。
+
+`meta.synthetic_helper_v1` の必須キー:
+
+- `schema_version`
+  - 固定値 `1`
+- `helper_id`
+  - backend 共通の stable helper id
+- `owner_module_id`
+  - helper の論理所有元 module id
+- `generated_by`
+  - v1 では固定値 `linked_optimizer`
+
+synthetic helper module の規則:
+
+1. `module_kind=helper` の `link-output.modules[*]` entry は、対応する linked helper module を 1 件だけ指さなければならない。
+2. `meta.linked_program_v1.module_id` は helper module 自身の `module_id` を指し、`meta.synthetic_helper_v1.owner_module_id` と混同してはならない。
+3. helper module は user source file を持たないため、`source_path` は空文字を canonical としてよい。
+4. backend / ProgramWriter は `meta.synthetic_helper_v1` を正本として helper を扱い、runtime や inline helper を再探索してはならない。
 
 ## 8. CLI / 導線仕様（方針）
 

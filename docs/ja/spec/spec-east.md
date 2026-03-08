@@ -84,6 +84,7 @@
 - `meta.dispatch_mode` の意味論適用点は `EAST2 -> EAST3` の 1 回のみで、backend/hook で再判断しない。
 - 詳細契約は本書と `docs/ja/spec/spec-linker.md` を正本とする。
 - linked-program 後の `EAST3` は、引き続き `kind=Module` / `east_stage=3` を維持したまま、`meta.linked_program_v1` を追加で持ち得る。これは新しい EAST stage ではなく、`EAST3 -> linker -> linked EAST3` の materialization として扱う。
+- linked-program optimizer が helper を synthetic module として生成する場合も、`kind=Module` / `east_stage=3` を維持し、追加情報は `meta.synthetic_helper_v1` として保持する。helper 専用の別 EAST stage は増やさない。
 
 `ImportBinding` は次を持つ。
 
@@ -474,6 +475,8 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
 ### 17.1 linked module `meta` 契約
 
 linked-program 後の module は `kind=Module` / `east_stage=3` を維持しつつ、`meta.linked_program_v1` を持つ。
+
+linked-program optimizer が生成した synthetic helper module は、上記に加えて `meta.synthetic_helper_v1` を持ってよい。
 
 `meta.linked_program_v1` の必須キー:
 

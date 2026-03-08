@@ -70,6 +70,8 @@ linked module(EAST3)
 
 - `module_id`
   - canonical module id
+- `kind`
+  - `user | runtime | helper`
 - `label`
   - 出力名に使う安定ラベル
 - `extension`
@@ -88,6 +90,7 @@ linked module(EAST3)
 - `ModuleArtifact` は final output path を持たない。
 - `ModuleArtifact` は target ごとの build/layout 情報を埋め込まない。
 - 将来 payload 種別が増えても、互換上の最小契約は `text` を返せることとする。
+- `kind=helper` の場合、`metadata.helper_id`, `metadata.owner_module_id`, `metadata.generated_by` を必須とする。
 
 #### `ProgramArtifact` 最小契約
 
@@ -110,6 +113,7 @@ linked module(EAST3)
 - `ProgramArtifact` は linked-program 段で確定した module 集合をそのまま保持する。
 - `ProgramArtifact` は global semantics の canonical source を持ち込まない。global semantics の正本は `link-output.v1` と linked module 側にある。
 - `ProgramArtifact` は packaging / build の入力であり、language semantics の再判断点ではない。
+- `ProgramArtifact.modules` は `kind=helper` を含んでよい。single-file backend は helper module を main artifact へ fold してもよいが、optimizer/generated helper の canonical source を runtime や inline helper 再探索へ戻してはならない。
 
 #### `ProgramWriter`
 
