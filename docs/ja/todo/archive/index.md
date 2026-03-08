@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-str-default-final-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01](../plans/archive/20260309-p0-cpp-pyruntime-generic-dictdefault-final-retirement.md)
 - [2026-03-09 / P4-CPP-SELFHOST-FULLPARITY-01](../plans/archive/20260309-p4-cpp-selfhost-full-sample-parity.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-str-node-final-retirement.md)
