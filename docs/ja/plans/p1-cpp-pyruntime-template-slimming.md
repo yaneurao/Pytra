@@ -150,7 +150,7 @@
 ## 5. タスク分解
 
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01] `@template` を runtime helper 限定で実装し、generic helper を pure Python SoT 側へ戻すことで C++ `py_runtime.h` を縮退させる。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01] `py_runtime.h` に残る generic helper 候補を棚卸しし、第一波 / 第二波 / 保留へ分類する。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01] `py_runtime.h` に残る generic helper 候補を棚卸しし、第一波 / 第二波 / 保留へ分類する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02] `spec-template` / `spec-runtime` / `spec-east` / `spec-linker` に helper-limited `@template` の責務境界と specialization 契約を追記する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01] parser / EAST metadata / validator で `@template("T", ...)` を runtime helper 限定で受理する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
@@ -164,3 +164,57 @@
 - 2026-03-08: `@template("T", ...)` の syntax decision は完了済みとし、本計画は「syntax 決定」ではなく「実装して `py_runtime.h` を減らす」フェーズとして扱う。
 - 2026-03-08: `@abi` は helper 境界の補助として残るが、generic helper を戻す主手段にはしない。generic helper は linked-program ordinary call として specialization する。
 - 2026-03-08: 最初から全 helper を generic 化せず、`sum/min/max` を第一波、`zip/sorted` を第二波に分けて進める。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01]: `src/runtime/cpp/native/core/py_runtime.h` を棚卸しし、generic helper 候補の中で first-wave を `sum(list<T>)` / `py_min` / `py_max`、second-wave を `zip(list<A>, list<B>)` / `sorted(list<T>)` / `sorted(set<T>)` に固定した。これらはファイル末尾の高水準 algorithm helper 群としてまとまっており、`PyObj/object/rc<>/type_id` などの low-level glue と直接結びついていないため、`@template` lane へ戻す優先度が高い。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01]: 保留候補は `py_dict_keys` / `py_dict_values` / `py_dict_items` とした。理由は typed overload と `object` / `optional<dict<str, object>>` overload が同居しており、generic helper 化の前に「typed path だけを `@template` 化するか」「dynamic bridge を native/core に残すか」を `S1-02` で決める必要があるため。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01]: `py_len`, `py_at`, `py_append`, `py_extend`, `py_pop`, `py_dict_get*`, `py_div`, `py_floordiv`, `py_mod`, `py_to_*`, `py_runtime_*` は inventory 対象には含めたが、low-level container primitive / dynamic bridge / process glue と判断し、本計画の generic helper 縮退対象から外す。
+
+## 7. `S1-01` 棚卸し結果
+
+対象ファイル:
+- [py_runtime.h](../../../src/runtime/cpp/native/core/py_runtime.h)
+
+### 第一波
+
+- `sum(const list<T>& values)`
+- `py_min(const A& a, const B& b, ...)`
+- `py_max(const A& a, const B& b, ...)`
+
+理由:
+- 数値/比較ベースの単純 generic helper で、`@template` の最初の適用対象として分かりやすい。
+- `object` 直依存なのは `sum(const list<object>&)` / `sum(const object&)` の bridge 側だけで、本体 algorithm は SoT 側へ戻しやすい。
+- `sum/min/max` を移せれば、`@template` specialization collector と generated helper 生成の縦 slice を最小で検証できる。
+
+### 第二波
+
+- `zip(const list<A>& lhs, const list<B>& rhs)`
+- `sorted(const list<T>& values)`
+- `sorted(const set<T>& values)`
+
+理由:
+- collection builder / reorder helper として generic 化の価値が高い。
+- ただし `zip` は tuple specialization を伴い、`sorted` は ordering contract を含むため、第一波より collector / lowering / regression の確認範囲が広い。
+
+### 保留
+
+- `py_dict_keys`
+- `py_dict_values`
+- `py_dict_items`
+
+理由:
+- typed overload と dynamic/object overload が 1 つの family に同居している。
+- `dict[K, V] -> list[K]` / `list[V]` / `list<object>` のどこまでを `@template` lane へ出すかを先に決めないと、native/core 側の dynamic bridge と責務がぶつかる。
+
+### 本計画の対象外として固定
+
+- `py_len`
+- `py_at`
+- `py_append`
+- `py_extend`
+- `py_pop`
+- `py_dict_get*`
+- `py_div` / `py_floordiv` / `py_mod`
+- `py_to_*`
+- `py_runtime_*`
+
+理由:
+- いずれも low-level container primitive / dynamic bridge / process glue / scalar conversion であり、`py_runtime.h` から generic helper を減らす本計画の主対象ではない。
