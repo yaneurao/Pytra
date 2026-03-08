@@ -46,3 +46,5 @@
 ## 3. 決定ログ
 
 - 2026-03-08: 本計画は generic dict primitive の全廃ではなく、wrapper 重複の縮退に焦点を当てる。
+- 2026-03-08: checked-in production/backend callsite を棚卸しした結果、current C++ emitter は typed `dict.get(key, default)` を `owner_expr.get(key_expr, default_expr)` へ直接 lower しており、`py_dict_get_default(...)` generic wrapper を使っていなかった。checked-in で generic overload に依存していたのは selfhost artifact `selfhost/runtime/cpp/pytra-gen/compiler/east_parts/core.cpp` のみで、形は主に `(a) dict<int64, tuple<...>> + same-type default` と `(b) dict<str, str> + str key + const char* default` だった。
+- 2026-03-08: 上記棚卸しを受けて、残す primitive は `dict<K, V> + K + const V&` と `dict<str, V> + {const char*, str} + const V&`、および selfhost artifact 互換の最小 special-case として `dict<str, str> + {const char*, str} + const char*` に固定する。削除対象は `optional<dict<...>>` wrapper、`::std::string` key wrapper、`template<class D>` convertible default wrapper 一式とする。
