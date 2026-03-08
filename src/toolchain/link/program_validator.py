@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from pytra.std import json
 
 from toolchain.link.program_model import DISPATCH_MODES
 from toolchain.link.program_model import LINK_INPUT_SCHEMA
@@ -12,37 +12,56 @@ from toolchain.link.program_model import LinkOutputModuleEntry
 from toolchain.link.program_model import normalize_writer_options
 
 
-def _require_dict(doc: object, label: str) -> dict[str, object]:
+def _to_raw_dict(doc: json.JsonObj) -> dict[str, object]:
+    return dict(doc.raw)
+
+
+def _require_dict(doc: object, label: str) -> json.JsonObj:
+    if isinstance(doc, json.JsonObj):
+        return doc
     if not isinstance(doc, dict):
         raise RuntimeError(label + " must be an object")
     out: dict[str, object] = {}
     for key, value in doc.items():
         if isinstance(key, str):
             out[key] = value
-    return out
+    return json.JsonObj(out)
 
 
-def _require_str(doc: dict[str, object], key: str, label: str) -> str:
-    value = doc.get(key)
-    if not isinstance(value, str) or value.strip() == "":
+def _require_str(doc: json.JsonObj, key: str, label: str) -> str:
+    value = doc.get_str(key)
+    if value is None or value.strip() == "":
         raise RuntimeError(label + "." + key + " must be a non-empty string")
     return value.strip()
 
 
-def _require_bool(doc: dict[str, object], key: str, label: str) -> bool:
-    value = doc.get(key)
-    if not isinstance(value, bool):
+def _require_bool(doc: json.JsonObj, key: str, label: str) -> bool:
+    value = doc.get_bool(key)
+    if value is None:
         raise RuntimeError(label + "." + key + " must be a bool")
-    return bool(value)
+    return value
 
 
-def _require_str_list(doc: dict[str, object], key: str, label: str) -> tuple[str, ...]:
-    raw = doc.get(key)
-    if not isinstance(raw, list):
+def _require_obj_field(doc: json.JsonObj, key: str, label: str) -> json.JsonObj:
+    value = doc.get_obj(key)
+    if value is None:
+        raise RuntimeError(label + "." + key + " must be an object")
+    return value
+
+
+def _require_list_field(doc: json.JsonObj, key: str, label: str) -> json.JsonArr:
+    value = doc.get_arr(key)
+    if value is None:
         raise RuntimeError(label + "." + key + " must be a list")
+    return value
+
+
+def _require_str_list(doc: json.JsonObj, key: str, label: str) -> tuple[str, ...]:
+    raw = _require_list_field(doc, key, label)
     out: list[str] = []
-    for item in raw:
-        if not isinstance(item, str) or item.strip() == "":
+    for index in range(len(raw.raw)):
+        item = raw.get_str(index)
+        if item is None or item.strip() == "":
             raise RuntimeError(label + "." + key + " items must be non-empty strings")
         out.append(item.strip())
     return tuple(out)
@@ -63,15 +82,17 @@ def validate_link_input_doc(doc_any: object) -> dict[str, object]:
     if len(set(entry_modules)) != len(entry_modules):
         raise RuntimeError("link-input.entry_modules must be unique")
 
-    raw_modules = doc.get("modules")
-    if not isinstance(raw_modules, list) or len(raw_modules) == 0:
+    raw_modules = _require_list_field(doc, "modules", "link-input")
+    if len(raw_modules.raw) == 0:
         raise RuntimeError("link-input.modules must be a non-empty list")
 
     module_entries: list[LinkInputModuleEntry] = []
     seen_module_ids: set[str] = set()
-    for idx, item_any in enumerate(raw_modules):
+    for idx in range(len(raw_modules.raw)):
         label = "link-input.modules[" + str(idx) + "]"
-        item = _require_dict(item_any, label)
+        item = raw_modules.get_obj(idx)
+        if item is None:
+            raise RuntimeError(label + " must be an object")
         module_id = _require_str(item, "module_id", label)
         if module_id in seen_module_ids:
             raise RuntimeError("duplicate module_id: " + module_id)
@@ -99,7 +120,7 @@ def validate_link_input_doc(doc_any: object) -> dict[str, object]:
         "dispatch_mode": dispatch_mode,
         "entry_modules": tuple(sorted(entry_modules)),
         "modules": sorted(module_entries, key=lambda item: item.module_id),
-        "options": normalize_writer_options(doc.get("options")),
+        "options": normalize_writer_options(doc.get("options").raw if doc.get("options") is not None else None),
     }
 
 
@@ -110,29 +131,30 @@ def validate_raw_east3_doc(
     module_id: str,
 ) -> dict[str, object]:
     east = _require_dict(east_any, "raw EAST3")
-    if east.get("kind") != "Module":
+    if east.get_str("kind") != "Module":
         raise RuntimeError("raw EAST3 kind must be Module: " + module_id)
-    stage = east.get("east_stage")
-    if not isinstance(stage, int) or stage != 3:
+    stage = east.get_int("east_stage")
+    if stage != 3:
         raise RuntimeError("raw EAST3 east_stage must be 3: " + module_id)
-    body = east.get("body")
-    if not isinstance(body, list):
-        raise RuntimeError("raw EAST3 body must be a list: " + module_id)
-    schema_version = east.get("schema_version")
-    if schema_version is not None and (not isinstance(schema_version, int) or schema_version < 1):
+    _require_list_field(east, "body", "raw EAST3")
+    schema_version_value = east.get("schema_version")
+    schema_version = schema_version_value.as_int() if schema_version_value is not None else None
+    if schema_version_value is not None and (schema_version is None or schema_version < 1):
         raise RuntimeError("raw EAST3 schema_version must be int >= 1: " + module_id)
-    meta_any = east.get("meta", {})
-    meta = _require_dict(meta_any, "raw EAST3.meta")
-    dispatch_mode = meta.get("dispatch_mode")
-    if not isinstance(dispatch_mode, str) or dispatch_mode not in DISPATCH_MODES:
+    meta_value = east.get("meta")
+    meta = json.JsonObj({}) if meta_value is None else meta_value.as_obj()
+    if meta is None:
+        raise RuntimeError("raw EAST3.meta must be an object: " + module_id)
+    dispatch_mode = meta.get_str("dispatch_mode")
+    if dispatch_mode is None or dispatch_mode not in DISPATCH_MODES:
         raise RuntimeError("raw EAST3.meta.dispatch_mode must be native|type_id: " + module_id)
     if dispatch_mode != expected_dispatch_mode:
         raise RuntimeError(
             "dispatch_mode mismatch for " + module_id + ": " + dispatch_mode + " != " + expected_dispatch_mode
         )
-    if "linked_program_v1" in meta:
+    if meta.get("linked_program_v1") is not None:
         raise RuntimeError("raw EAST3 must not contain meta.linked_program_v1: " + module_id)
-    return east
+    return _to_raw_dict(east)
 
 
 def validate_link_output_doc(doc_any: object) -> dict[str, object]:
@@ -145,14 +167,14 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
     if dispatch_mode not in DISPATCH_MODES:
         raise RuntimeError("link-output.dispatch_mode must be one of: native, type_id")
     entry_modules = _require_str_list(doc, "entry_modules", "link-output")
-    modules_any = doc.get("modules")
-    if not isinstance(modules_any, list):
-        raise RuntimeError("link-output.modules must be a list")
+    modules_any = _require_list_field(doc, "modules", "link-output")
     module_entries: list[LinkOutputModuleEntry] = []
     seen_module_ids: set[str] = set()
-    for idx, item_any in enumerate(modules_any):
+    for idx in range(len(modules_any.raw)):
         label = "link-output.modules[" + str(idx) + "]"
-        item = _require_dict(item_any, label)
+        item = modules_any.get_obj(idx)
+        if item is None:
+            raise RuntimeError(label + " must be an object")
         module_id = _require_str(item, "module_id", label)
         if module_id in seen_module_ids:
             raise RuntimeError("duplicate link-output module_id: " + module_id)
@@ -173,8 +195,7 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
     for item in module_entries:
         if item.is_entry and item.module_id not in entry_modules:
             raise RuntimeError("link-output module marked is_entry but not present in entry_modules: " + item.module_id)
-    global_any = doc.get("global")
-    global_doc = _require_dict(global_any, "link-output.global")
+    global_doc = _require_obj_field(doc, "global", "link-output")
     for key in (
         "type_id_table",
         "call_graph",
@@ -182,19 +203,18 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
         "non_escape_summary",
         "container_ownership_hints_v1",
     ):
-        if key not in global_doc:
+        if global_doc.get(key) is None:
             raise RuntimeError("link-output.global." + key + " is required")
-    diagnostics_any = doc.get("diagnostics")
-    diagnostics = _require_dict(diagnostics_any, "link-output.diagnostics")
+    diagnostics = _require_obj_field(doc, "diagnostics", "link-output")
     for key in ("warnings", "errors"):
-        if not isinstance(diagnostics.get(key), list):
+        if diagnostics.get_arr(key) is None:
             raise RuntimeError("link-output.diagnostics." + key + " must be a list")
     return {
         "schema": schema,
-        "target": doc["target"],
+        "target": _require_str(doc, "target", "link-output"),
         "dispatch_mode": dispatch_mode,
         "entry_modules": entry_modules,
         "modules": sorted(module_entries, key=lambda item: item.module_id),
-        "global": global_doc,
-        "diagnostics": diagnostics,
+        "global": _to_raw_dict(global_doc),
+        "diagnostics": _to_raw_dict(diagnostics),
     }

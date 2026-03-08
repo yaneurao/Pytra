@@ -22,16 +22,12 @@ def _module_rel_path(module_id: str, *, prefix: str) -> str:
 
 def _load_json_doc(path: Path, label: str) -> dict[str, object]:
     try:
-        payload_any = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads_obj(path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise RuntimeError("failed to parse " + label + ": " + str(path) + ": " + str(exc)) from exc
-    if not isinstance(payload_any, dict):
+    if payload is None:
         raise RuntimeError(label + " root must be an object: " + str(path))
-    out: dict[str, object] = {}
-    for key, value in payload_any.items():
-        if isinstance(key, str):
-            out[key] = value
-    return out
+    return dict(payload.raw)
 
 
 def _load_linked_east3_doc(path: Path, *, module_id: str) -> dict[str, object]:

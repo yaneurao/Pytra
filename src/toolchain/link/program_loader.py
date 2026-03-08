@@ -15,16 +15,12 @@ from toolchain.link.program_validator import validate_raw_east3_doc
 
 def _load_raw_east3(path: Path) -> dict[str, object]:
     try:
-        payload_any = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads_obj(path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise RuntimeError("failed to parse raw EAST3: " + str(path) + ": " + str(exc)) from exc
-    if not isinstance(payload_any, dict):
+    if payload is None:
         raise RuntimeError("raw EAST3 root must be an object: " + str(path))
-    east_doc: dict[str, object] = {}
-    for key, value in payload_any.items():
-        if isinstance(key, str):
-            east_doc[key] = value
-    return east_doc
+    return dict(payload.raw)
 
 
 def _module_id_from_east_or_path(east_doc: dict[str, object], source_path: Path) -> str:
@@ -66,7 +62,9 @@ def build_linked_program_from_module_map(
             raise RuntimeError("module_east_map keys must be non-empty paths")
         module_path = Path(path_txt).resolve()
         east_doc: dict[str, object] = {}
-        if isinstance(east_any, dict):
+        if isinstance(east_any, json.JsonObj):
+            east_doc = dict(east_any.raw)
+        elif isinstance(east_any, dict):
             east_doc = dict(east_any)
         module_items.append((module_path, east_doc))
 

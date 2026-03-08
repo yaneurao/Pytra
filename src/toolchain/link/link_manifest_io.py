@@ -15,16 +15,12 @@ def _load_json_doc(path: Path, label: str) -> dict[str, object]:
     if path.exists() is False:
         raise RuntimeError(label + " not found: " + str(path))
     try:
-        payload_any = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads_obj(path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise RuntimeError("failed to parse " + label + ": " + str(exc)) from exc
-    if not isinstance(payload_any, dict):
+    if payload is None:
         raise RuntimeError(label + " root must be an object")
-    doc: dict[str, object] = {}
-    for key, value in payload_any.items():
-        if isinstance(key, str):
-            doc[key] = value
-    return doc
+    return dict(payload.raw)
 
 
 def load_link_input_doc(path: Path) -> dict[str, object]:
