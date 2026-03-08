@@ -125,7 +125,7 @@ console.log(title);
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-02] representative IR/unit test で same-name / alias case を固定する。
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-02] ambient global `Any` receiver の property/method/call raw lowering を追加する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-01] unsupported backend guard / representative smoke を更新する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-01] unsupported backend guard / representative smoke を更新する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-02] docs / archive を同期して本計画を閉じる。
 
 ## 5. 決定ログ
@@ -136,3 +136,4 @@ console.log(title);
 - 2026-03-08: `extern(expr)` は従来どおり host fallback / runtime hook 初期化として残し、ambient global とは分離する。v1 の variable ambient-global は `extern()` と `extern("symbol")` だけを特例として扱う。
 - 2026-03-08: parser/EAST の canonical marker は top-level `AnnAssign.meta.extern_var_v1` とし、shape は `schema_version`, `symbol`, `same_name` の 3 キーに固定する。v1 では plain `Assign` や non-`Any` 注釈へは広げない。
 - 2026-03-08: JS/TS emitter は top-level ambient global extern 宣言を `ambient_global_aliases` として先に収集し、対応する `AnnAssign` 自体は emit 対象から外す。Name / call の raw lowering はこの alias table にだけ反応し、一般の `Any` receiver 緩和には広げない。
+- 2026-03-08: unsupported backend guard は shared validator `toolchain.frontends.extern_var.validate_ambient_global_target_support(...)` に切り出し、`py2x.py` と `ir2lang.py` の両入口で early fail させる。single-module input と link-output restart の両方で backend dispatch 前に `RuntimeError` を返す。

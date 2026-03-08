@@ -66,6 +66,57 @@ class Py2xCliTest(unittest.TestCase):
                     _ = py2x_mod.main()
         self.assertEqual(cm.exception.code, 2)
 
+    def test_rejects_ambient_global_extern_for_unsupported_target_before_backend_dispatch(self) -> None:
+        fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
+        ambient_module = type(
+            "AmbientModule",
+            (),
+            {
+                "east_doc": {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {"module_id": "pkg.main"},
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "document"},
+                            "annotation": {"kind": "Name", "id": "Any"},
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "extern"},
+                                "args": [],
+                                "keywords": [],
+                            },
+                            "meta": {
+                                "extern_var_v1": {
+                                    "schema_version": 1,
+                                    "symbol": "document",
+                                    "same_name": 1,
+                                }
+                            },
+                        }
+                    ],
+                }
+            },
+        )()
+        fake_program = type("AmbientProgram", (), {"modules": (ambient_module,)})()
+        with patch.object(py2x_mod, "_build_linked_program_for_input", return_value=fake_program):
+            with patch.object(
+                py2x_mod,
+                "get_backend_spec",
+                side_effect=AssertionError("backend dispatch must not be called for unsupported ambient extern target"),
+            ):
+                with patch.object(
+                    py2x_mod.sys,
+                    "argv",
+                    ["py2x.py", str(fixture), "--target", "rs"],
+                ):
+                    with self.assertRaises(RuntimeError) as cm:
+                        _ = py2x_mod.main()
+        self.assertIn("ambient extern variables are not supported for target rs", str(cm.exception))
+        self.assertIn("pkg.main::document -> document", str(cm.exception))
+
     def test_dispatches_target_and_propagates_layer_options(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

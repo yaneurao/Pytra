@@ -177,6 +177,141 @@ class Ir2langCliTest(unittest.TestCase):
         self.assertIn("@abi is not supported for target rs", str(cm.exception))
         self.assertIn("pkg.main::py_join", str(cm.exception))
 
+    def test_rejects_ambient_global_extern_for_unsupported_target_before_backend_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_json = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {"module_id": "pkg.main"},
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "document"},
+                            "annotation": {"kind": "Name", "id": "Any"},
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "extern"},
+                                "args": [],
+                                "keywords": [],
+                            },
+                            "meta": {
+                                "extern_var_v1": {
+                                    "schema_version": 1,
+                                    "symbol": "document",
+                                    "same_name": 1,
+                                }
+                            },
+                        }
+                    ],
+                },
+            )
+            with patch.object(
+                ir2lang_mod,
+                "get_backend_spec",
+                side_effect=AssertionError("backend dispatch must not be called for unsupported ambient extern target"),
+            ):
+                with patch.object(
+                    ir2lang_mod.sys,
+                    "argv",
+                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                ):
+                    with self.assertRaises(RuntimeError) as cm:
+                        _ = ir2lang_mod.main()
+        self.assertIn("ambient extern variables are not supported for target rs", str(cm.exception))
+        self.assertIn("pkg.main::document -> document", str(cm.exception))
+
+    def test_rejects_link_output_ambient_global_extern_for_unsupported_target_before_backend_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            main_src = root / "main.py"
+            main_src.write_text("print(1)\n", encoding="utf-8")
+            linked_main = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {
+                        "dispatch_mode": "native",
+                        "module_id": "app.main",
+                        "linked_program_v1": {
+                            "program_id": "app.main",
+                            "module_id": "app.main",
+                            "entry_modules": ["app.main"],
+                            "type_id_resolved_v1": {},
+                            "non_escape_summary": {},
+                            "container_ownership_hints_v1": {},
+                        },
+                    },
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "document"},
+                            "annotation": {"kind": "Name", "id": "Any"},
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "extern"},
+                                "args": [],
+                                "keywords": [],
+                            },
+                            "meta": {
+                                "extern_var_v1": {
+                                    "schema_version": 1,
+                                    "symbol": "document",
+                                    "same_name": 1,
+                                }
+                            },
+                        }
+                    ],
+                },
+                name="linked/app/main.east3.json",
+            )
+            link_output = self._write_east_json(
+                root,
+                {
+                    "schema": "pytra.link_output.v1",
+                    "target": "rs",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": str(linked_main.relative_to(root)).replace("\\", "/"),
+                            "source_path": str(main_src),
+                            "is_entry": True,
+                        }
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {"warnings": [], "errors": []},
+                },
+                name="link-output.json",
+            )
+            with patch.object(
+                ir2lang_mod,
+                "get_backend_spec",
+                side_effect=AssertionError("backend dispatch must not be called for unsupported ambient extern target"),
+            ):
+                with patch.object(
+                    ir2lang_mod.sys,
+                    "argv",
+                    ["ir2lang.py", str(link_output), "--target", "rs"],
+                ):
+                    with self.assertRaises(RuntimeError) as cm:
+                        _ = ir2lang_mod.main()
+        self.assertIn("ambient extern variables are not supported for target rs", str(cm.exception))
+        self.assertIn("app.main::document -> document", str(cm.exception))
+
     def test_accepts_wrapped_east_json_root(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
