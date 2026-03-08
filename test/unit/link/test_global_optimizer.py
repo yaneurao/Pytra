@@ -16,6 +16,10 @@ def _constant(value: object) -> dict[str, object]:
     return {"kind": "Constant", "value": value}
 
 
+def _typed_name(id_text: str, resolved_type: str) -> dict[str, object]:
+    return {"kind": "Name", "id": id_text, "resolved_type": resolved_type}
+
+
 def _call_name(id_text: str, args: list[dict[str, object]] | None = None) -> dict[str, object]:
     return {"kind": "Call", "func": _name(id_text), "args": list(args or []), "keywords": []}
 
@@ -408,6 +412,164 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             fn_meta = linked_main["body"][0].get("meta", {})
             self.assertNotIn("escape_summary", fn_meta)
             self.assertNotIn("cpp_value_list_locals_v1", fn_meta)
+
+    def test_optimizer_specializes_runtime_template_within_same_module(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            helper_py = root / "template_ops.py"
+            program = build_linked_program_from_module_map(
+                helper_py,
+                {
+                    str(helper_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pytra.built_in.template_ops"},
+                        "body": [
+                            {
+                                "kind": "FunctionDef",
+                                "name": "py_echo",
+                                "arg_order": ["x"],
+                                "arg_types": {"x": "T"},
+                                "return_type": "T",
+                                "body": [_ret(_name("x"))],
+                                "meta": {
+                                    "template_v1": {
+                                        "schema_version": 1,
+                                        "params": ["T"],
+                                        "scope": "runtime_helper",
+                                        "instantiation_mode": "linked_implicit",
+                                    }
+                                },
+                            },
+                            {
+                                "kind": "FunctionDef",
+                                "name": "use_i64",
+                                "arg_order": ["x"],
+                                "arg_types": {"x": "int64"},
+                                "return_type": "int64",
+                                "body": [_ret(_call_name("py_echo", [_typed_name("x", "int64")]))],
+                            },
+                        ],
+                    }
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+
+            result = optimize_linked_program(program)
+            link_output = validate_link_output_doc(result.link_output_doc)
+
+            helper_doc = result.linked_program.modules[0].east_doc
+            fn_names = [item["name"] for item in helper_doc["body"] if item.get("kind") == "FunctionDef"]
+            self.assertEqual(fn_names, ["py_echo__pytra_tmpl__int64", "use_i64"])
+            specialized = helper_doc["body"][0]
+            self.assertEqual(specialized["arg_types"], {"x": "int64"})
+            self.assertEqual(specialized["return_type"], "int64")
+            self.assertEqual(
+                specialized["meta"]["template_specialization_v1"],
+                {
+                    "schema_version": 1,
+                    "origin_symbol": "pytra.built_in.template_ops::py_echo",
+                    "type_args": ["int64"],
+                },
+            )
+            call_node = helper_doc["body"][1]["body"][0]["value"]
+            self.assertEqual(call_node["func"]["id"], "py_echo__pytra_tmpl__int64")
+            self.assertEqual(call_node["resolved_type"], "int64")
+            summary = link_output["global"]["runtime_template_specializations_v1"]
+            self.assertEqual(
+                summary["pytra.built_in.template_ops::py_echo"],
+                [{"export_name": "py_echo__pytra_tmpl__int64", "type_args": ["int64"]}],
+            )
+
+    def test_optimizer_specializes_runtime_template_across_imported_module(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            helper_py = root / "template_ops.py"
+            program = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(main_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {
+                            "dispatch_mode": "native",
+                            "module_id": "pkg.main",
+                            "import_bindings": [
+                                {
+                                    "module_id": "pytra.built_in.template_ops",
+                                    "export_name": "py_echo",
+                                    "local_name": "py_echo",
+                                    "binding_kind": "symbol",
+                                }
+                            ],
+                        },
+                        "body": [
+                            {
+                                "kind": "ImportFrom",
+                                "module": "pytra.built_in.template_ops",
+                                "names": [{"name": "py_echo", "asname": None}],
+                            },
+                            {
+                                "kind": "FunctionDef",
+                                "name": "main",
+                                "arg_order": ["xs"],
+                                "arg_types": {"xs": "list[int64]"},
+                                "return_type": "list[int64]",
+                                "body": [_ret(_call_name("py_echo", [_typed_name("xs", "list[int64]")]))],
+                            },
+                        ],
+                    },
+                    str(helper_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pytra.built_in.template_ops"},
+                        "body": [
+                            {
+                                "kind": "FunctionDef",
+                                "name": "py_echo",
+                                "arg_order": ["xs"],
+                                "arg_types": {"xs": "list[T]"},
+                                "return_type": "list[T]",
+                                "body": [_ret(_name("xs"))],
+                                "meta": {
+                                    "template_v1": {
+                                        "schema_version": 1,
+                                        "params": ["T"],
+                                        "scope": "runtime_helper",
+                                        "instantiation_mode": "linked_implicit",
+                                    }
+                                },
+                            }
+                        ],
+                    },
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+
+            result = optimize_linked_program(program)
+            link_output = validate_link_output_doc(result.link_output_doc)
+
+            main_doc = next(item.east_doc for item in result.linked_program.modules if item.module_id == "pkg.main")
+            import_binding = main_doc["meta"]["import_bindings"][0]
+            self.assertEqual(import_binding["module_id"], "pytra.built_in.template_ops")
+            self.assertEqual(import_binding["export_name"], "py_echo__pytra_tmpl__int64")
+            self.assertEqual(import_binding["local_name"], "py_echo__pytra_tmpl__int64")
+            import_stmt = main_doc["body"][0]
+            self.assertEqual(import_stmt["names"], [{"name": "py_echo__pytra_tmpl__int64", "asname": None}])
+            call_node = main_doc["body"][1]["body"][0]["value"]
+            self.assertEqual(call_node["func"]["id"], "py_echo__pytra_tmpl__int64")
+            self.assertEqual(call_node["resolved_type"], "list[int64]")
+            summary = link_output["global"]["runtime_template_specializations_v1"]
+            self.assertEqual(
+                summary["pytra.built_in.template_ops::py_echo"],
+                [{"export_name": "py_echo__pytra_tmpl__int64", "type_args": ["int64"]}],
+            )
 
 
 if __name__ == "__main__":

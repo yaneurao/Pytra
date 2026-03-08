@@ -251,6 +251,7 @@ linked module の補足規則:
 2. function / call 単位の materialized summary は、既存 `meta` 契約を使って保持してよい。
 3. `meta.linked_program_v1` は linked module では必須、raw `EAST3` では存在してはならない。
 4. runtime helper `@template` v1 を使う場合でも、function-level canonical metadata は `FunctionDef.meta.template_v1` のまま保持する。materialized specialization の seed/source-of-truth を raw decorator 側へ戻してはならない。
+5. implicit specialization を materialize した function clone には `FunctionDef.meta.template_specialization_v1` を付けてよく、program-wide summary は `link-output.global.runtime_template_specializations_v1` に集約してよい。
 
 ## 8. CLI / 導線仕様（方針）
 

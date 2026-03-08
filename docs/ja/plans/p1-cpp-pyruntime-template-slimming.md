@@ -153,7 +153,7 @@
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01] `py_runtime.h` に残る generic helper 候補を棚卸しし、第一波 / 第二波 / 保留へ分類する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02] `spec-template` / `spec-runtime` / `spec-east` / `spec-linker` に helper-limited `@template` の責務境界と specialization 契約を追記する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01] parser / EAST metadata / validator で `@template("T", ...)` を runtime helper 限定で受理する。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01] `sum` / `min` / `max` を pure Python generic helper として SoT 側へ移し、C++ generated helper へ切り替える。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02] `zip` / `sorted` のうち少なくとも 1 系統以上を同様に移し、`py_runtime.h` から hand-written helper を撤去する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01] runtime symbol index / build graph / representative backend/runtime tests を新 contract へ追従させる。
@@ -171,6 +171,8 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02]: `sum/min/max/zip/sorted` の generic helper lane は `src/pytra/built_in/*.py` -> linked-program specialization -> `generated/built_in` と固定し、`native/core/py_runtime.h` に新しい hand-written template helper を足して延命しない方針を決めた。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01]: self-hosted parser に `@template("T", ...)` の最小受理を追加し、`FunctionDef.meta.template_v1 = {schema_version, params, scope=runtime_helper, instantiation_mode=linked_implicit}` を出すようにした。`@abi` と併用可能だが、class/method への適用、keyword form、重複 param は parser/validator で fail-fast する。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01]: `validate_template_module(...)` を `core.py` / `east3.py` / `global_optimizer.py` に差し、optimized EAST3 と linked-program 経路でも canonical metadata を保つようにした。v1 の runtime helper provenance は `pytra.built_in.*` / `src/pytra/built_in/*` で最低限 enforce し、specialization collector 自体は `S2-02` に残す。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02]: linked-program optimizer の先頭で runtime helper template specialization collector を走らせ、`meta.template_v1` と callsite concrete type tuple から deterministic に monomorphization する最小実装を追加した。materialized clone は `FunctionDef.meta.template_specialization_v1` を持ち、program-wide summary は `link-output.global.runtime_template_specializations_v1` に集約する。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02]: first slice として same-module / imported-symbol 両方の specialization rewrite を `test_global_optimizer.py` で固定した。template 定義本体は linked module から除き、specialized function と import binding / ImportFrom rewrite だけを残す。
 
 ## 7. `S1-01` 棚卸し結果
 

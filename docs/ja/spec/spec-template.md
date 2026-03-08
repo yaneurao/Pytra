@@ -51,6 +51,7 @@
 - v1 の specialization seed は「link-input/link-output が列挙した module 集合で実際に観測された concrete type tuple の決定的集合」に限定する。source module の import closure を linker 外で勝手に拡張してはならない。
 - parser / validator / backend は raw decorator の再解釈や独自の seed 発見を行わない。`@template` の syntax 面と specialization collector の境界は `FunctionDef.meta.template_v1` で固定する。
 - linked runtime helper v1 は runtime helper only とする。これは explicit instantiation なしでも collector の責任範囲と specialization 数を program 管理下に閉じ込めるためであり、user code 全般へ同じ implicit monomorphization を拡張する前提ではない。
+- materialized specialization は linked module 上で `FunctionDef.meta.template_specialization_v1 = {schema_version, origin_symbol, type_args}` を持ち、`link-output.global.runtime_template_specializations_v1` に module 横断 summary を出してよい。
 - future `@instantiate(...)` を導入しても、collector の入口 metadata は `meta.template_v1` を維持し、explicit seed は別 metadata として追加する。
 
 ## 1. 目的

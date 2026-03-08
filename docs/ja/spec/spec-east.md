@@ -133,6 +133,7 @@
 - `decorators`（raw decorator 文字列の列）
 - `meta.runtime_abi_v1`（任意。`@abi` の canonical metadata）
 - `meta.template_v1`（任意。`@template` の canonical metadata）
+- `meta.template_specialization_v1`（任意。linked-program が materialize した specialization metadata）
 
 `FunctionDef.meta.runtime_abi_v1` の規則:
 
@@ -158,6 +159,13 @@
 - `template_v1` は「宣言 metadata」であって、specialization seed や materialized helper 一覧を保持する場所ではない。これらは linked-program optimizer が callsite concrete type から決定する。
 - backend は raw decorator や surface syntax から template param を再抽出してはならず、linked module に残った `meta.template_v1` と linker が確定した summary だけを参照する。
 - `TypeVar` 注釈だけでは `meta.template_v1` を作らない
+
+`FunctionDef.meta.template_specialization_v1` の規則:
+
+- linked-program optimizer が implicit specialization を materialize した clone のみに付与してよい
+- canonical shape は `schema_version: 1`, `origin_symbol: <module_id::name>`, `type_args: [concrete_type, ...]`
+- `template_specialization_v1` は `template_v1` の代替ではなく、materialized clone の provenance を示す補助 metadata とする
+- backend / ProgramWriter は raw decorator ではなく、この metadata と linker summary を見て specialized helper を扱う
 
 ### 5.1 `leading_trivia` による C++ パススルー記法
 

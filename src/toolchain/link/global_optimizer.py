@@ -20,6 +20,7 @@ from toolchain.link.program_call_graph import build_linked_program_call_graph
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkedProgram
 from toolchain.link.program_model import LinkedProgramModule
+from toolchain.link.runtime_template_specializer import materialize_runtime_template_specializations
 
 
 _LINKED_META_KEY = "linked_program_v1"
@@ -338,20 +339,26 @@ def _input_label(module: LinkedProgramModule) -> str:
 def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimizationResult:
     for module in program.modules:
         doc = module.east_doc if isinstance(module.east_doc, dict) else {}
+        validate_template_module(doc)
+    linked_input_program = program
+    template_summary: dict[str, object] = {}
+    linked_input_program, template_summary = materialize_runtime_template_specializations(program)
+    for module in linked_input_program.modules:
+        doc = module.east_doc if isinstance(module.east_doc, dict) else {}
         validate_runtime_abi_module(doc)
         validate_template_module(doc)
         validate_runtime_abi_target_support(doc, target=program.target)
-    call_graph = build_linked_program_call_graph(program)
-    pass_config = _resolve_global_pass_config(program)
-    linked_modules: tuple[LinkedProgramModule, ...] = tuple(program.modules)
+    call_graph = build_linked_program_call_graph(linked_input_program)
+    pass_config = _resolve_global_pass_config(linked_input_program)
+    linked_modules: tuple[LinkedProgramModule, ...] = tuple(linked_input_program.modules)
     non_escape_summary: dict[str, object] = {}
     if _is_global_pass_enabled(pass_config, "NonEscapeInterproceduralPass"):
-        linked_modules, non_escape_summary = _run_program_non_escape(program)
+        linked_modules, non_escape_summary = _run_program_non_escape(linked_input_program)
     container_hints: dict[str, object] = {}
     if _is_global_pass_enabled(pass_config, "CppListValueLocalHintPass"):
         linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
-    type_id_table = _build_type_id_table(program)
-    program_id = _program_id(program)
+    type_id_table = _build_type_id_table(linked_input_program)
+    program_id = _program_id(linked_input_program)
 
     module_entries: list[dict[str, object]] = []
     final_modules: list[LinkedProgramModule] = []
@@ -409,19 +416,20 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
             "sccs": [list(component) for component in call_graph.sccs],
             "non_escape_summary": dict(non_escape_summary),
             "container_ownership_hints_v1": dict(container_hints),
+            **template_summary,
         },
         "diagnostics": {"warnings": [], "errors": []},
     }
 
     return LinkedProgramOptimizationResult(
         linked_program=LinkedProgram(
-            schema=program.schema,
-            manifest_path=program.manifest_path,
-            target=program.target,
-            dispatch_mode=program.dispatch_mode,
-            entry_modules=program.entry_modules,
+            schema=linked_input_program.schema,
+            manifest_path=linked_input_program.manifest_path,
+            target=linked_input_program.target,
+            dispatch_mode=linked_input_program.dispatch_mode,
+            entry_modules=linked_input_program.entry_modules,
             modules=tuple(final_modules),
-            options=dict(program.options),
+            options=dict(linked_input_program.options),
         ),
         link_output_doc=link_output_doc,
     )
