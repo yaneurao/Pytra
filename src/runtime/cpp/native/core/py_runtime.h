@@ -1409,32 +1409,6 @@ static inline str py_dict_get_default(const dict<str, str>& d, const str& key, c
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
-template <class D>
-static inline D py_dict_get_default(const dict<str, object>& d, const char* key, const D& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    if constexpr (::std::is_same_v<D, object>) {
-        return it->second;
-    } else if constexpr (::std::is_same_v<D, str>) {
-        return py_to_string(it->second);
-    } else {
-        if (auto q = py_object_try_cast<D>(it->second)) return *q;
-        return defval;
-    }
-}
-
-template <class D>
-static inline D py_dict_get_default(const dict<str, object>& d, const str& key, const D& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-template <class D>
-static inline D py_dict_get_default(const dict<str, object>& d, const ::std::string& key, const D& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
 static inline str dict_get_node(const dict<str, str>& d, const str& key, const str& defval = "") {
     auto it = d.find(key);
     if (it != d.end()) {

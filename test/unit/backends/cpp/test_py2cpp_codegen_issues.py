@@ -835,7 +835,9 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_dict_get_default(", cpp)
+        self.assertIn("py_object_try_cast<int64>(", cpp)
+        self.assertIn("return py_to<int64>(3);", cpp)
+        self.assertNotIn("py_dict_get_default(", cpp)
         self.assertNotIn("dict_get_int(", cpp)
 
     def test_dict_get_typed_none_default_uses_value_default(self) -> None:
@@ -862,7 +864,8 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_dict_get_default(", cpp)
+        self.assertIn("py_to<int64>(([&]() -> object {", cpp)
+        self.assertNotIn("py_dict_get_default(", cpp)
         self.assertNotIn("dict_get_node(", cpp)
         self.assertNotIn("dict_get_int(", cpp)
 
@@ -876,7 +879,8 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_dict_get_default(", cpp)
+        self.assertIn("return ([&]() -> object {", cpp)
+        self.assertNotIn("py_dict_get_default(", cpp)
         self.assertNotIn("dict_get_node(", cpp)
 
     def test_annassign_dict_object_value_is_not_reboxed(self) -> None:
@@ -904,7 +908,7 @@ def new_nodes() -> list[Node]:
             cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn("([&]() -> int64 {", cpp)
-        self.assertIn("return py_to<int64>(__dict_it_", cpp)
+        self.assertIn("py_object_try_cast<int64>(", cpp)
         self.assertNotIn("dict_get_int(", cpp)
         self.assertNotIn('return d.get("k", 3);', cpp)
 
@@ -919,7 +923,7 @@ def new_nodes() -> list[Node]:
             cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn("([&]() -> bool {", cpp)
-        self.assertIn("return py_to<bool>(__dict_it_", cpp)
+        self.assertIn("py_object_try_cast<bool>(", cpp)
         self.assertNotIn("dict_get_bool(", cpp)
         self.assertNotIn('return d.get("k", true);', cpp)
 
@@ -935,7 +939,7 @@ def new_nodes() -> list[Node]:
 
         self.assertIn("([&]() -> str {", cpp)
         self.assertIn('return str("x");', cpp)
-        self.assertIn("return py_to<str>(__dict_it_", cpp)
+        self.assertIn("return py_to_string(__dict_it_", cpp)
         self.assertNotIn("dict_get_str(", cpp)
 
     def test_optional_dict_object_get_float_uses_typed_wrapper(self) -> None:
@@ -949,7 +953,7 @@ def new_nodes() -> list[Node]:
             cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn("([&]() -> float64 {", cpp)
-        self.assertIn("return py_to<float64>(__dict_it_", cpp)
+        self.assertIn("py_object_try_cast<float64>(", cpp)
         self.assertNotIn("dict_get_float(", cpp)
 
     def test_optional_dict_object_get_list_uses_list_wrapper(self) -> None:

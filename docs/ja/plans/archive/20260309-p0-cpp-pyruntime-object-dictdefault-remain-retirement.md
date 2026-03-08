@@ -60,14 +60,19 @@
 
 ## タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01] 残存 `dict<str, object>` default lane を退役または最小化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-01] `py_dict_get_default(dict<str, object>, ...)` の checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-02] `JsonObj.get_*()` / explicit decode への置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-02] helper lane を削除または最小化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-01] representative test / parity を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-02] docs / archive を同期して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01] 残存 `dict<str, object>` default lane を退役または最小化する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-01] `py_dict_get_default(dict<str, object>, ...)` の checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-02] `JsonObj.get_*()` / explicit decode への置換方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-02] helper lane を削除または最小化する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-01] representative test / parity を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-02] docs / archive を同期して閉じる。
 
 ## 決定ログ
 
 - 2026-03-09: 起票時点で残っている `dict<str, object>` default lane は `template <class D>` の 3 overload のみで、plain object-dict default overload tranche とは別件とする。今回はこの generic fallback を対象にし、`dict<K, V>` 一般の typed default helper は非対象に固定する。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-01]: checked-in callsite は `src/runtime/cpp/native/compiler/backend_registry_static.cpp` の `target_lang` decode と、C++ emitter の `dict[str, object].get(key, default)` lowering に集約されていた。generated JSON runtime には helper の直接 callsite はなく、main debt は emitter shortcut だと確定した。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-02]: helper 除去後も semantics を変えないため、`str` は `py_to_string(...)` を維持し、それ以外の scalar / nominal type は `py_object_try_cast<T>(...)` で soft-fallback させる方針に固定した。`list[...]` だけは既存の `py_to<list<T>>` lane を維持する。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-01]: `CppEmitter._render_objectish_dict_get_default_expr()` の non-optional object-dict shortcut を削除し、すべて explicit `find + decode` lambda に統一した。`src/runtime/cpp/native/compiler/backend_registry_static.cpp` の `target_lang` 読み出しも `find + py_to_string` に置換した。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-02]: `src/runtime/cpp/native/core/py_runtime.h` から `template <class D> py_dict_get_default(const dict<str, object>&, const char*|str|string, const D&)` の 3 overload を削除した。`test_cpp_runtime_iterable.py` に template signature の inventory guard を追加した。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-01]: verification は targeted `test_py2cpp_codegen_issues` 7件、`test_cpp_runtime_iterable.py`、`test_pylib_json.py`、fixture parity `cases=3 pass=3 fail=0` を通した。full `test_py2cpp_codegen_issues.py` には `save_gif` keyword-order の既存別件 failure があるため、本 tranche では targeted suite を正本 gate にした。

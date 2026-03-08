@@ -2326,6 +2326,27 @@ class CppEmitter(
             return f"py_to<{self._cpp_type_text(eff_t)}>({value_expr})"
         return value_expr
 
+    def _render_objectish_dict_value_or_default_stmt(
+        self,
+        value_expr: str,
+        effective_t: str,
+        typed_default: str,
+    ) -> str:
+        """`dict[str, object]` の値取得を decode-first / soft fallback で描画する。"""
+        eff_t = self.normalize_type_name(effective_t)
+        if eff_t in {"", "unknown", "Any", "object"}:
+            return f"return {value_expr}; "
+        if eff_t == "str":
+            return f"return py_to_string({value_expr}); "
+        if eff_t.startswith("list["):
+            converted_expr = self._objectish_dict_get_value_expr(value_expr, eff_t)
+            return f"return {converted_expr}; "
+        cpp_t = self._cpp_type_text(eff_t)
+        return (
+            f"if (auto __dict_cast = py_object_try_cast<{cpp_t}>({value_expr})) return *__dict_cast; "
+            f"return {typed_default}; "
+        )
+
     def _render_objectish_dict_get_default_expr(
         self,
         owner_node: Any,
@@ -2342,14 +2363,12 @@ class CppEmitter(
         key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
         effective_t = self._objectish_dict_get_effective_type(out_t, default_t)
         typed_default = self._objectish_dict_get_default_expr_for_type(effective_t, default_expr, default_node)
-        if not owner_optional_object_dict and not effective_t.startswith("list["):
-            return f"py_dict_get_default({owner_expr}, {key_expr}, {typed_default})"
         owner_tmp = self.next_tmp("__dict")
         key_tmp = self.next_tmp("__dict_key")
         it_tmp = self.next_tmp("__dict_it")
         cpp_ret_t = "object" if self.is_any_like_type(effective_t) or effective_t == "object" else self._cpp_type_text(effective_t)
         owner_value_expr = owner_tmp if not owner_optional_object_dict else f"{owner_tmp}.value()"
-        value_expr = self._objectish_dict_get_value_expr(f"{it_tmp}->second", effective_t)
+        value_stmt = self._render_objectish_dict_value_or_default_stmt(f"{it_tmp}->second", effective_t, typed_default)
         guard = ""
         if owner_optional_object_dict:
             guard = f"if (!{owner_tmp}.has_value()) return {typed_default}; "
@@ -2360,7 +2379,7 @@ class CppEmitter(
             f"{guard}"
             f"auto {it_tmp} = {owner_value_expr}.find({key_tmp}); "
             f"if ({it_tmp} == {owner_value_expr}.end()) return {typed_default}; "
-            f"return {value_expr}; "
+            f"{value_stmt}"
             f"}}())"
         )
 
@@ -2461,10 +2480,6 @@ class CppEmitter(
             f"return {owner_tmp}.contains({key_tmp}) ? {owner_tmp}.at({key_tmp}) : {default_expr}; "
             f"}}())"
         )
-        if owner_optional_object_dict:
-            boxed_default = self._box_any_target_value(default_expr, default_node)
-            return f"py_dict_get_default({owner_expr}, {key_expr}, {boxed_default})"
-        return f"py_dict_get_default({owner_expr}, {key_expr}, {default_expr})"
 
     def _render_collection_constructor_call(
         self,

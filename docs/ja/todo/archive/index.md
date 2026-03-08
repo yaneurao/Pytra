@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-08
+最終更新: 2026-03-09
 
 ## 運用方針
 
@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01](../plans/archive/20260309-p0-cpp-pyruntime-object-dictdefault-remain-retirement.md)
 - [2026-03-08 / P4-CPP-SELFHOST-ROLLOUT-01](../plans/archive/20260308-p4-cpp-selfhost-rollout.md)
 - [2026-03-08 / P3-COMPILER-JSONVALUE-INTERNAL-01](../plans/archive/20260308-p3-compiler-jsonvalue-internal-alignment.md)
 - [2026-03-08 / P2-JS-AMBIENT-GLOBAL-EXTERN-01](../plans/archive/20260308-p2-js-ambient-global-extern.md)
@@ -68,6 +69,7 @@
 
 ## 日付別リンク
 
+- [2026-03-09](20260309.md)（1 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）

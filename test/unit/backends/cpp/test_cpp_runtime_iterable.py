@@ -346,6 +346,9 @@ int main() {
         self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const char* defval)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const object& defval)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline D py_dict_get_default(const dict<str, object>& d, const char* key, const D& defval)", runtime_header)
+        self.assertNotIn("static inline D py_dict_get_default(const dict<str, object>& d, const str& key, const D& defval)", runtime_header)
+        self.assertNotIn("static inline D py_dict_get_default(const dict<str, object>& d, const ::std::string& key, const D& defval)", runtime_header)
         self.assertNotIn(
             "static inline dict<str, object> py_dict_get_default(\n    const dict<str, object>& d, const char* key, const dict<str, object>& defval)",
             runtime_header,

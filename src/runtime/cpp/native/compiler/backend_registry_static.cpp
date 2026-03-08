@@ -172,7 +172,13 @@ str emit_source(
     const dict<str, object>& emitter_options
 ) {
     (void)emitter_options;
-    const str target = py_dict_get_default(spec, "target_lang", str(""));
+    const str target = [&]() -> str {
+        auto it = spec.find("target_lang");
+        if (it == spec.end()) {
+            return str("");
+        }
+        return py_to_string(it->second);
+    }();
     if (target != "cpp") {
         throw ::std::runtime_error(
             py_to_string("[not_implemented] selfhost backend_registry_static.emit_source only supports cpp: " + target)
