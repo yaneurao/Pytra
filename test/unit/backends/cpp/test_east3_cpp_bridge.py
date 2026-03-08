@@ -410,6 +410,49 @@ class East3CppBridgeTest(unittest.TestCase):
             "py_is_subtype(1001, 1000)",
         )
 
+    def test_cpp_helper_lane_materializes_object_iter_helper_artifact(self) -> None:
+        module_doc = {
+            "kind": "Module",
+            "meta": {"module_id": "pkg.main"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "ObjIterInit",
+                        "value": {"kind": "Name", "id": "xs", "resolved_type": "object"},
+                        "resolved_type": "object",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "ObjIterNext",
+                        "iter": {"kind": "Name", "id": "it", "resolved_type": "object"},
+                        "resolved_type": "object",
+                    },
+                },
+            ],
+        }
+        emitter = CppEmitter(module_doc, {})
+        emitter.enable_helper_artifact_lane = True
+
+        text = emitter.transpile()
+        helpers = emitter.finalize_helper_artifacts()
+
+        self.assertIn('#include "pkg_main_cpp_object_iter_helper.h"', text)
+        self.assertIn("pytra_multi_helper::object_iter_or_raise(xs)", text)
+        self.assertIn("pytra_multi_helper::object_iter_next_or_stop(it)", text)
+        self.assertNotIn("([&]() -> object", text)
+        self.assertNotIn("([&]() -> ::std::optional<object>", text)
+        self.assertEqual(len(helpers), 1)
+        helper = helpers[0]
+        self.assertEqual(helper["kind"], "helper")
+        self.assertEqual(helper["module_id"], "__pytra_helper__.cpp.pkg_main.object_iter")
+        self.assertEqual(helper["metadata"]["helper_id"], "cpp.object_iter")
+        self.assertEqual(helper["metadata"]["owner_module_id"], "pkg.main")
+        self.assertIn("object_iter_or_raise", helper["metadata"]["header_text"])
+        self.assertIn("object_iter_next_or_stop", helper["metadata"]["source_text"])
+
     def test_legacy_type_id_name_call_rejected_in_east3(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {"east_stage": "3"}}, {})
         call_expr = {

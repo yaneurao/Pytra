@@ -8,6 +8,9 @@ class CppRuntimeExprEmitter:
     """Runtime/path/type_id expression helpers extracted from CppEmitter."""
 
     def _render_object_iter_or_raise_expr(self, value_expr: str) -> str:
+        helper_call = self._render_cpp_helper_call("cpp.object_iter", "object_iter_or_raise", [value_expr])
+        if helper_call != "":
+            return helper_call
         return (
             "([&]() -> object { "
             f"object __obj = {value_expr}; "
@@ -17,6 +20,9 @@ class CppRuntimeExprEmitter:
         )
 
     def _render_object_iter_next_expr(self, iter_expr: str) -> str:
+        helper_call = self._render_cpp_helper_call("cpp.object_iter", "object_iter_next_or_stop", [iter_expr])
+        if helper_call != "":
+            return helper_call
         return (
             "([&]() -> ::std::optional<object> { "
             f"object __iter = {iter_expr}; "

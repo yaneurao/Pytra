@@ -258,6 +258,7 @@ class CppEmitter(
         self.current_function_return_abi_mode: str = "default"
         self.current_function_is_generator: bool = False
         self.current_function_yield_buffer: str = ""
+        self.enable_helper_artifact_lane = False
         self.current_function_yield_type: str = "unknown"
         self.current_function_symbol: str = ""
         self.current_function_non_escape_summary: dict[str, Any] = {}
@@ -989,8 +990,186 @@ class CppEmitter(
                 i += 1
         return out
 
+    def _cpp_helper_owner_module_id(self) -> str:
+        meta = dict_any_get_dict(self.doc, "meta")
+        module_id = self.any_dict_get_str(meta, "module_id", "")
+        if module_id != "":
+            return module_id
+        if self.top_namespace != "":
+            return self.top_namespace
+        return "__module__"
+
+    def _sanitize_cpp_helper_label(self, text: str) -> str:
+        out_parts: list[str] = []
+        last_sep = False
+        for ch in text:
+            if ch.isalnum():
+                out_parts.append(ch.lower())
+                last_sep = False
+                continue
+            if not last_sep:
+                out_parts.append("_")
+                last_sep = True
+        out = "".join(out_parts).strip("_")
+        if out == "":
+            return "module"
+        return out
+
+    def _cpp_object_iter_helper_label(self) -> str:
+        owner_id = self._cpp_helper_owner_module_id()
+        return self._sanitize_cpp_helper_label(owner_id) + "_cpp_object_iter_helper"
+
+    def _cpp_object_iter_helper_module_id(self) -> str:
+        owner_id = self._cpp_helper_owner_module_id()
+        return "__pytra_helper__.cpp." + self._sanitize_cpp_helper_label(owner_id) + ".object_iter"
+
+    def _cpp_object_iter_helper_header_include(self) -> str:
+        return self._cpp_object_iter_helper_label() + ".h"
+
+    def _cpp_helper_artifact_registered(self, helper_id: str) -> bool:
+        for artifact in self.helper_artifacts:
+            if not isinstance(artifact, dict):
+                continue
+            metadata = artifact.get("metadata")
+            if not isinstance(metadata, dict):
+                continue
+            if self.any_to_str(metadata.get("helper_id")) == helper_id:
+                return True
+        return False
+
+    def _render_cpp_helper_call(self, helper_id: str, fn_name: str, args: list[str]) -> str:
+        if not self.enable_helper_artifact_lane:
+            return ""
+        if not self._cpp_helper_artifact_registered(helper_id):
+            return ""
+        return "pytra_multi_helper::" + fn_name + "(" + join_str_list(", ", args) + ")"
+
+    def _cpp_helper_header_includes(self) -> list[str]:
+        includes: list[str] = []
+        seen: set[str] = set()
+        for artifact in self.helper_artifacts:
+            if not isinstance(artifact, dict):
+                continue
+            metadata = artifact.get("metadata")
+            if not isinstance(metadata, dict):
+                continue
+            inc = self.any_to_str(metadata.get("header_include"))
+            if inc == "" or inc in seen:
+                continue
+            seen.add(inc)
+            includes.append(inc)
+        includes.sort()
+        return includes
+
+    def _body_uses_cpp_object_iter_helper(self, body: list[dict[str, Any]]) -> bool:
+        found = False
+
+        def _scan(cur: Any) -> None:
+            nonlocal found
+            if found:
+                return
+            if isinstance(cur, list):
+                for item in cur:
+                    _scan(item)
+                return
+            node = self.any_to_dict_or_empty(cur)
+            if len(node) == 0:
+                return
+            kind = self._node_kind_from_dict(node)
+            if kind in {"ObjIterInit", "ObjIterNext"}:
+                found = True
+                return
+            if kind == "RuntimeSpecialOp":
+                op = self.any_dict_get_str(node, "op", "")
+                if op in {"iter_or_raise", "next_or_stop"}:
+                    found = True
+                    return
+            runtime_call = self.any_dict_get_str(node, "runtime_call", "")
+            if runtime_call in {"py_iter_or_raise", "py_next_or_stop"}:
+                found = True
+                return
+            if self.any_dict_get_str(node, "iter_mode", "") == "runtime_protocol":
+                found = True
+                return
+            if self.any_dict_get_str(node, "hint_mode", "") == "runtime_protocol":
+                found = True
+                return
+            for value in node.values():
+                if isinstance(value, dict) or isinstance(value, list):
+                    _scan(value)
+
+        _scan(body)
+        return found
+
+    def _cpp_object_iter_helper_header_text(self) -> str:
+        label = self._cpp_object_iter_helper_label()
+        guard = "PYTRA_MULTI_" + self._sanitize_cpp_helper_label(label).upper() + "_H"
+        return (
+            "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
+            "#ifndef " + guard + "\n"
+            "#define " + guard + "\n\n"
+            '#include "runtime/cpp/core/py_runtime.h"\n\n'
+            "namespace pytra_multi_helper {\n"
+            "object object_iter_or_raise(const object& value);\n"
+            "::std::optional<object> object_iter_next_or_stop(const object& iter_obj);\n"
+            "}  // namespace pytra_multi_helper\n\n"
+            "#endif  // " + guard + "\n"
+        )
+
+    def _cpp_object_iter_helper_source_text(self) -> str:
+        header_include = self._cpp_object_iter_helper_header_include()
+        return (
+            "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
+            '#include "pytra_multi_prelude.h"\n'
+            '#include "' + header_include + '"\n\n'
+            "namespace pytra_multi_helper {\n"
+            "object object_iter_or_raise(const object& value) {\n"
+            "    object __obj = value;\n"
+            '    if (!__obj) throw TypeError("NoneType is not iterable");\n'
+            "    return __obj->py_iter_or_raise();\n"
+            "}\n\n"
+            "::std::optional<object> object_iter_next_or_stop(const object& iter_obj) {\n"
+            "    object __iter = iter_obj;\n"
+            '    if (!__iter) throw TypeError("NoneType is not an iterator");\n'
+            "    return __iter->py_next_or_stop();\n"
+            "}\n"
+            "}  // namespace pytra_multi_helper\n"
+        )
+
+    def _ensure_cpp_object_iter_helper_artifact(self) -> None:
+        helper_id = "cpp.object_iter"
+        if self._cpp_helper_artifact_registered(helper_id):
+            return
+        owner_module_id = self._cpp_helper_owner_module_id()
+        header_text = self._cpp_object_iter_helper_header_text()
+        source_text = self._cpp_object_iter_helper_source_text()
+        self.add_helper_artifact(
+            {
+                "module_id": self._cpp_object_iter_helper_module_id(),
+                "kind": "helper",
+                "label": self._cpp_object_iter_helper_label(),
+                "extension": ".cpp",
+                "text": source_text,
+                "is_entry": False,
+                "dependencies": [],
+                "metadata": {
+                    "helper_id": helper_id,
+                    "owner_module_id": owner_module_id,
+                    "generated_by": "cpp_emitter",
+                    "header_text": header_text,
+                    "source_text": source_text,
+                    "header_include": self._cpp_object_iter_helper_header_include(),
+                },
+            }
+        )
+
+    def _register_cpp_helper_artifacts_from_body(self, body: list[dict[str, Any]]) -> None:
+        if self._body_uses_cpp_object_iter_helper(body):
+            self._ensure_cpp_object_iter_helper_artifact()
+
     def transpile(self) -> str:
         """EAST ドキュメント全体を C++ ソース文字列へ変換する。"""
+        self.helper_artifacts = []
         self._seed_import_maps_from_meta()
         meta: dict[str, Any] = dict_any_get_dict(self.doc, "meta")
         self._seed_non_escape_summary_from_meta(meta)
@@ -1000,6 +1179,8 @@ class CppEmitter(
             for s in raw_body:
                 if isinstance(s, dict):
                     body.append(s)
+        if self.enable_helper_artifact_lane:
+            self._register_cpp_helper_artifacts_from_body(body)
         for stmt in body:
             if self._node_kind_from_dict(stmt) == "ClassDef":
                 cls_name = self.any_dict_get_str(stmt, "name", "")
@@ -1168,6 +1349,10 @@ class CppEmitter(
             header_text = header_text[:-1]
         self.emit(header_text)
         extra_includes = self._collect_import_cpp_includes(body, meta)
+        helper_includes = self._cpp_helper_header_includes()
+        for inc in helper_includes:
+            if inc not in extra_includes:
+                extra_includes.append(inc)
         for inc in extra_includes:
             self.emit(f"#include \"{inc}\"")
         self.emit("")
