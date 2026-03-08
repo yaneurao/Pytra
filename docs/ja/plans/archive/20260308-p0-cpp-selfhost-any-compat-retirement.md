@@ -94,3 +94,4 @@
 - 2026-03-08: 本計画では後方互換性を前提にしない。旧 selfhost C++ を通すためだけの `std::any` lane は撤去対象とする。
 - 2026-03-08: checked-in callsite を棚卸しした結果、`std::any` lane の利用は runtime source 本体と representative runtime smoke に限られ、production codegen / sample checked-in C++ からの直接依存は見つからなかった。first slice では `py_runtime.h` / `str.h` / `iter_ops.h` の helper を削除し、inventory test を `NotIn` へ反転してよい。
 - 2026-03-08: `py_runtime.h` / `str.h` / `iter_ops.h` から `std::any` helper を全面撤去した。`header_builder.py` の `<any>` include 判定は非対象のため残すが、native runtime surface には `std::any` を持ち込まない。representative runtime smoke は `object` / typed path に書き換える。
+- 2026-03-08: regression と parity は `test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `runtime_parity_check.py --targets cpp --case-root fixture`, `runtime_parity_check.py --targets cpp --case-root sample --all-samples` を通過した。C++ runtime core から `std::any` compat lane は撤去完了とする。
