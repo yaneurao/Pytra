@@ -119,8 +119,8 @@ console.log(title);
 ## 4. タスク分解
 
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01] JS/TS 向け ambient global extern 変数を導入する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-01] `extern()` / `extern("symbol")` の variable ambient-global 契約を docs に固定する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-02] 既存 `extern(expr)` host fallback との切り分けを決定ログへ固定する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-01] `extern()` / `extern("symbol")` の variable ambient-global 契約を docs に固定する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-02] 既存 `extern(expr)` host fallback との切り分けを決定ログへ固定する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-01] parser / EAST metadata に ambient global variable marker を追加する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-02] representative IR/unit test で same-name / alias case を固定する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。
@@ -133,3 +133,4 @@ console.log(title);
 - 2026-03-08: DOM / browser nominal module を先に大きく設計するのではなく、まず JS/TS で ambient global variable を直接宣言できる最小機能を入れる。関数は `@extern`、変数は `name = extern(...)` の既存構文系を維持する。
 - 2026-03-08: `document: Any = extern()` は same-name ambient global、`doc: Any = extern("document")` は alias ambient global として扱う。`@extern` を変数へ付ける独自構文は導入しない。
 - 2026-03-08: ambient global `Any` receiver の raw lowering 緩和は JS/TS に限定し、一般 `Any/object` receiver 禁止ルールは維持する。
+- 2026-03-08: `extern(expr)` は従来どおり host fallback / runtime hook 初期化として残し、ambient global とは分離する。v1 の variable ambient-global は `extern()` と `extern("symbol")` だけを特例として扱う。

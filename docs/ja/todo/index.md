@@ -33,8 +33,8 @@
 ## 未完了タスク
 
 1. [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01] JS/TS 向け ambient global extern 変数を導入する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-01] `extern()` / `extern("symbol")` の variable ambient-global 契約を docs に固定する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-02] 既存 `extern(expr)` host fallback との切り分けを決定ログへ固定する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-01] `extern()` / `extern("symbol")` の variable ambient-global 契約を docs に固定する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-02] 既存 `extern(expr)` host fallback との切り分けを決定ログへ固定する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-01] parser / EAST metadata に ambient global variable marker を追加する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-02] representative IR/unit test で same-name / alias case を固定する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。

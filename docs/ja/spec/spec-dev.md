@@ -521,6 +521,8 @@ linked module(EAST3)
 - `src/py2js.py` は `src/backends/common/` に依存しない。
 - 言語固有差分は `src/backends/js/profiles/` と `src/backends/js/` に分離する。
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
+- `document: Any = extern()` / `doc: Any = extern("document")` のような ambient global 変数宣言は JS/TS 限定で許可し、import-free symbol として lower する。
+- ambient global marker が付いた `Any` binding に限り、property access / method call / call expression を raw identifier chain として lower してよい。一般の `Any/object` receiver 禁止ルールは緩めない。
 - 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 
