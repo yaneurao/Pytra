@@ -32,35 +32,28 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01] 汎用 `py_dict_get_default` を最終退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01-S1-02] explicit lookup 置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01-S2-02] helper を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01-S3-01] guard / docs / archive を更新する。
-
-2. [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01] `dict<str, str>` default sugar を最終整理する。
+1. [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01] `dict<str, str>` default sugar を最終整理する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01-S1-01] checked-in callsite を棚卸しする。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01-S1-02] 削除可否を決定ログへ固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01-S2-01] representative callsite を explicit lookup へ置換する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01-S2-02] helper を削除または残置理由を確定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01-S3-01] guard / docs / archive を更新する。
 
-3. [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01] `object`-`nullopt` 比較 compat を退役する。
+2. [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01] `object`-`nullopt` 比較 compat を退役する。
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S1-01] checked-in callsite を棚卸しする。
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S1-02] explicit null check 置換方針を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S2-01] representative callsite を置換する。
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S2-02] operator 群を削除する。
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S3-01] guard / docs / archive を更新する。
 
-4. [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01] `py_dict_items` sugar を退役する。
+3. [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01] `py_dict_items` sugar を退役する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S1-01] checked-in callsite を棚卸しする。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S1-02] explicit loop 置換方針を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S2-01] representative callsite を置換する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S2-02] helper を削除する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S3-01] guard / docs / archive を更新する。
 
-5. [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01] linked-program optimizer から helper artifact を正規出力できるようにする。
+4. [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01] linked-program optimizer から helper artifact を正規出力できるようにする。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-01] 現状の helper 逃し先と blocker を棚卸しする。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-02] helper artifact schema / module kind / metadata 契約を spec に固定する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] linked-program model / validator / materializer を helper-aware にする。
