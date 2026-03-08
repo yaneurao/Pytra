@@ -129,18 +129,14 @@ def _has_flag(argv: list[str], flag: str) -> bool:
     return False
 
 
-def _load_json_root(path: Path) -> dict[str, object]:
+def _load_json_root(path: Path) -> json.JsonObj:
     try:
-        payload_any = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads_obj(path.read_text(encoding="utf-8"))
     except Exception:
-        return {}
-    if isinstance(payload_any, dict):
-        out: dict[str, object] = {}
-        for key, value in payload_any.items():
-            if isinstance(key, str):
-                out[key] = value
-        return out
-    return {}
+        return json.JsonObj({})
+    if payload is None:
+        return json.JsonObj({})
+    return payload
 
 
 def _write_generated_paths(paths: list[Path]) -> None:
@@ -297,7 +293,7 @@ def _build_linked_program_for_input(
         )
     elif input_txt.endswith(".json"):
         root = _load_json_root(input_path)
-        if root.get("schema") == LINK_INPUT_SCHEMA:
+        if root.get_str("schema") == LINK_INPUT_SCHEMA:
             return load_linked_program(input_path)
         module_map = {
             str(input_path.resolve()): _load_for_program(

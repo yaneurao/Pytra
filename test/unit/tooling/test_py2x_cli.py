@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,32 @@ import src.py2x as py2x_mod
 
 
 class Py2xCliTest(unittest.TestCase):
+    def test_build_linked_program_for_json_link_input_uses_loader(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            link_input = root / "link-input.json"
+            link_input.write_text(json.dumps({"schema": "pytra.link_input.v1"}, ensure_ascii=False), encoding="utf-8")
+            sentinel = object()
+            with patch.object(py2x_mod, "load_linked_program", return_value=sentinel) as load_program:
+                with patch.object(
+                    py2x_mod,
+                    "load_east3_document",
+                    side_effect=AssertionError("raw EAST3 loader must not run for link-input restart"),
+                ):
+                    program = py2x_mod._build_linked_program_for_input(
+                        link_input,
+                        parser_backend="self_hosted",
+                        object_dispatch_mode="native",
+                        east3_opt_level="1",
+                        east3_opt_pass="",
+                        dump_east3_before_opt="",
+                        dump_east3_after_opt="",
+                        dump_east3_opt_trace="",
+                        target_lang="cpp",
+                    )
+        self.assertIs(program, sentinel)
+        load_program.assert_called_once_with(link_input)
+
     def test_missing_target_fails_fast(self) -> None:
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
         with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(fixture)]):
