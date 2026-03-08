@@ -1556,17 +1556,6 @@ static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
 }
 
-// dict.keys / dict.values の Python 互換。
-template <class K, class V>
-static inline list<object> py_dict_items(const dict<K, V>& d) {
-    list<object> out;
-    out.reserve(d.size());
-    for (const auto& kv : d) {
-        out.push_back(make_object(::std::tuple<K, V>{kv.first, kv.second}));
-    }
-    return out;
-}
-
 template <class K, class V>
 static inline list<K> py_dict_keys(const dict<K, V>& d) {
     list<K> out;

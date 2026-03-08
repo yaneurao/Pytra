@@ -32,14 +32,7 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01] `py_dict_items` sugar を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S1-02] explicit loop 置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S2-02] helper を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTITEMS-01-S3-01] guard / docs / archive を更新する。
-
-2. [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01] linked-program optimizer から helper artifact を正規出力できるようにする。
+1. [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01] linked-program optimizer から helper artifact を正規出力できるようにする。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-01] 現状の helper 逃し先と blocker を棚卸しする。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-02] helper artifact schema / module kind / metadata 契約を spec に固定する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] linked-program model / validator / materializer を helper-aware にする。
