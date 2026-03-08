@@ -18,11 +18,11 @@ def _load_json_dict(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        raw_obj = json.loads(path.read_text(encoding="utf-8"))
+        raw_obj = json.loads_obj(path.read_text(encoding="utf-8"))
     except Exception:
         return {}
-    if isinstance(raw_obj, dict):
-        return raw_obj
+    if raw_obj is not None:
+        return dict(raw_obj.raw)
     return {}
 
 

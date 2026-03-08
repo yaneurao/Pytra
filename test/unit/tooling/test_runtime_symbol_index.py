@@ -16,13 +16,16 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from tools import gen_runtime_symbol_index as gen_mod
+from toolchain.frontends import runtime_symbol_index as runtime_index_mod
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import clear_runtime_symbol_index_cache
 from toolchain.frontends.runtime_symbol_index import lookup_cpp_namespace_for_runtime_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_symbol_doc
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_compile_sources
+from toolchain.frontends.runtime_symbol_index import load_runtime_symbol_index
 
 
 class RuntimeSymbolIndexTest(unittest.TestCase):
@@ -291,6 +294,15 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_target_module_compile_sources("cpp", "pytra.built_in.zip_ops"),
             [],
         )
+
+    def test_runtime_symbol_index_loader_rejects_non_object_root(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "runtime_symbol_index.json"
+            out.write_text('["not-an-object"]', encoding="utf-8")
+            with patch.object(runtime_index_mod, "INDEX_PATH", out):
+                clear_runtime_symbol_index_cache()
+                self.assertEqual(load_runtime_symbol_index(), {})
+                clear_runtime_symbol_index_cache()
         self.assertIn(
             "src/runtime/cpp/generated/utils/png.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.utils.png"),

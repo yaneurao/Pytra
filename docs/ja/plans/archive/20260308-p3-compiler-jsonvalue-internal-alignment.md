@@ -105,10 +105,10 @@
 - [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S1-02] selfhost blocker と host-only 後回し対象を決定ログへ固定する。
 - [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S2-01] `transpile_cli.py` の JSON root loader を `loads_obj()` ベースへ移行する。
 - [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S2-02] `runtime_symbol_index.py` と `code_emitter.py` の JSON loader を `JsonValue` lane へ移行する。
-- [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S3-01] backend internal loader（`js_emitter.py` など）を `JsonValue` lane へそろえる。
-- [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S3-02] representative tests / selfhost-related regressions を更新する。
-- [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-01] raw `json.loads(...)` 再侵入 guard を追加する。
-- [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-02] docs / archive を同期して本計画を閉じる。
+- [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S3-01] backend internal loader（`js_emitter.py` など）を `JsonValue` lane へそろえる。
+- [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S3-02] representative tests / selfhost-related regressions を更新する。
+- [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-01] raw `json.loads(...)` 再侵入 guard を追加する。
+- [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-02] docs / archive を同期して本計画を閉じる。
 
 ## 5. 決定ログ
 
@@ -118,3 +118,5 @@
 - 2026-03-08: `backends/common/emitter/code_emitter.py` と `backends/js/emitter/js_emitter.py` は host-only follow-up として同じ P3 に残す。JS backend は C++ selfhost の blocker ではないが、common profile loader を `JsonObj` 化しておくと後続 backend へ横展開しやすい。
 - 2026-03-08: `transpile_cli.py` の `.json` root unwrap は `json.loads_obj(...)` + `JsonObj.get_bool/get_obj/get_str` に寄せ、`dict[str, object]` 化は wrapper/module 判定後の `east_obj.raw` / `payload.raw` に限定した。これで frontend entrypoint の raw `json.loads(...)` は 1 件減った。
 - 2026-03-08: `runtime_symbol_index.py` の cache loader と `CodeEmitter._load_json_dict()` は `json.loads_obj(...)` ベースへ移し、raw root 判定を `JsonObj` に統一した。内部保持は引き続き `dict[str, Any]` だが、parse 直後の raw `json.loads(...)` は消えた。
+- 2026-03-08: `js_emitter.py` の private profile loader も `json.loads_obj(...)` ベースへ揃え、`CodeEmitter` と同じ decode-first 境界にそろえた。JS smoke の `load_js_profile()` 回帰と、`CodeEmitter` / `runtime_symbol_index` の non-object root regression を追加して representative coverage を固定した。
+- 2026-03-08: `tools/check_jsonvalue_decode_boundaries.py` の対象へ `transpile_cli.py` / `runtime_symbol_index.py` / `code_emitter.py` / `js_emitter.py` を追加し、artifact 境界だけでなく compiler/backend 内部 JSON loader も raw `json.loads(...)` 再侵入禁止の対象に広げた。

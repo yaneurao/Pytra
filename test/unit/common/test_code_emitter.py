@@ -387,9 +387,23 @@ class CodeEmitterTest(unittest.TestCase):
                 "src/backends/x/profiles/profile.json",
                 anchor_file=fake_anchor,
             )
-            self.assertEqual(merged.get("types"), {"int64": "long"})
-            self.assertEqual(merged.get("operators"), {"binop": {"Add": "+"}})
-            self.assertEqual(merged.get("syntax"), {"expr_stmt": "{expr};"})
+        self.assertEqual(merged.get("types"), {"int64": "long"})
+        self.assertEqual(merged.get("operators"), {"binop": {"Add": "+"}})
+        self.assertEqual(merged.get("syntax"), {"expr_stmt": "{expr};"})
+
+    def test_load_profile_with_includes_rejects_non_object_root(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src = root / "src"
+            prof_dir = src / "backends" / "x" / "profiles"
+            prof_dir.mkdir(parents=True, exist_ok=True)
+            (prof_dir / "profile.json").write_text('["not-an-object"]', encoding="utf-8")
+            fake_anchor = str(src / "backends" / "x" / "emitter.py")
+            merged = CodeEmitter.load_profile_with_includes(
+                "src/backends/x/profiles/profile.json",
+                anchor_file=fake_anchor,
+            )
+        self.assertEqual(merged, {})
 
     def test_import_resolution_helpers(self) -> None:
         em = CodeEmitter(
