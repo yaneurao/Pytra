@@ -112,3 +112,6 @@
 ## 5. 決定ログ
 
 - 2026-03-08: 第1波は `py_runtime.h` の object overload 5 件だけを削除対象とする。`list<object>` と `optional<dict<str, object>>` は同時に触らない。
+- 2026-03-08 [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-01]: `py_runtime.h` object overload 5 件の repo 内参照を棚卸しした結果、実 callsite は runtime header 自身だけで、外部からの直接利用は representative inventory test に限られることを確認した。`test_cpp_runtime_iterable.py` は現在これらの signature が「存在すること」を確認しており、S2 以降ではこの assertion を「存在しないこと」へ反転すればよい。
+- 2026-03-08 [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-01]: `test_east_core.py` と `test_py2cpp_features.py` には `sum()` / `zip()` に `object/unknown` を渡すと compile error になる regression が既に入っている。したがって第1波の runtime 削除は frontend 契約と整合する。
+- 2026-03-08 [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-02]: 第1波の削除範囲は docs 上も object overload 5 件だけに固定し、`sum(const list<object>&)` と `py_dict_keys/items/values(const ::std::optional<dict<str, object>>& d)` は JSON/decode compat lane のため別 tranche に残す。`contains/reversed/enumerate(object)` も本計画の対象外とする。
