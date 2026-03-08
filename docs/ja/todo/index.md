@@ -32,12 +32,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01] `py_runtime.h` の typed-list-from-object helper を縮退する。
-  - 文脈: [p0-cpp-pyruntime-typed-list-from-object-retirement.md](../plans/p0-cpp-pyruntime-typed-list-from-object-retirement.md)
-  - 進捗メモ: `object -> typed list` convenience を JSON / selfhost の nominal lane へ寄せる。
-  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S1-01] 4 helper の checked-in callsite を棚卸しする。
-  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S1-02] 削除順序と暫定的に残す helper を決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S2-01] representative callsite を typed / nominal lane へ置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S2-02] regression / inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S3-01] 不要 helper を削除または private 相当に縮退する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S3-02] parity / docs / archive を更新して閉じる。
+- なし

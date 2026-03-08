@@ -66,3 +66,5 @@
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は汎用 convenience の縮退を扱い、`object` carrier 本体や `py_to<T>(object)` の core semantics は対象外とする。
+- 2026-03-09: checked-in callsite 棚卸しでは `py_to_typed_list_from_object` は `py_to<T>(object)` の list special-case からのみ使われ、`obj_to_rc_list_or_raise` の direct callsite は存在しなかった。`obj_to_rc_list` は `py_to<T>(object)` と `py_object_try_cast<D>` の rc-list branch で使われ、`py_copy_typed_list_from_object` はその core conversion として残す。
+- 2026-03-09: 第1 tranche は thin wrapper の `py_to_typed_list_from_object` と `obj_to_rc_list_or_raise` を削除し、`py_copy_typed_list_from_object` / `obj_to_rc_list` は internal core として当面維持する。`JsonArr` raw carrier の解消までは `py_to<T>(object)` の typed list branch 自体は non-goal とする。

@@ -35,9 +35,6 @@ using PyFile = pytra::runtime::cpp::base::PyFile;
 template <class T>
 static inline rc<list<T>> obj_to_rc_list(const object& v, const char* ctx = "obj_to_rc_list");
 
-template <class T>
-static inline rc<list<T>> obj_to_rc_list_or_raise(const object& v, const char* ctx = "obj_to_rc_list_or_raise");
-
 // type_id は target 非依存で stable な型判定キーとして扱う。
 // 予約領域（0-999）は runtime 組み込み型に割り当てる。
 static constexpr uint32 PYTRA_TID_NONE = 0;
@@ -815,7 +812,7 @@ struct py_is_list_type<rc<list<T>>> : ::std::true_type {
 };
 
 template <class T>
-static inline list<T> py_to_typed_list_from_object(const object& value, const char* ctx);
+static inline list<T> py_copy_typed_list_from_object(const object& value, const char* ctx);
 
 template <class T>
 static inline T py_to(const object& v) {
@@ -823,7 +820,7 @@ static inline T py_to(const object& v) {
         return v;
     } else if constexpr (py_is_list_type<T>::value && (!py_is_rc_list_handle<T>::value)) {
         using item_type = typename py_is_list_type<T>::item_type;
-        return py_to_typed_list_from_object<item_type>(v, "py_to<object-list>");
+        return py_copy_typed_list_from_object<item_type>(v, "py_to<object-list>");
     } else if constexpr (py_is_rc_list_handle<T>::value) {
         using item_type = typename py_is_rc_list_handle<T>::item_type;
         return obj_to_rc_list<item_type>(v);
@@ -1056,29 +1053,12 @@ static inline list<T> py_copy_typed_list_from_object(const object& value, const 
 }
 
 template <class T>
-static inline list<T> py_to_typed_list_from_object(
-    const object& value,
-    const char* ctx) {
-    return py_copy_typed_list_from_object<T>(value, ctx);
-}
-
-template <class T>
 static inline rc<list<T>> obj_to_rc_list(const object& value, const char* ctx) {
     const list<object>* src = obj_to_list_ptr(value);
     if (src == nullptr) {
         return rc<list<T>>{};
     }
     return rc_list_from_value(py_copy_typed_list_from_object<T>(value, ctx));
-}
-
-template <class T>
-static inline rc<list<T>> obj_to_rc_list_or_raise(const object& value, const char* ctx) {
-    auto out = obj_to_rc_list<T>(value, ctx);
-    if (out) {
-        return out;
-    }
-    const char* label = ctx != nullptr ? ctx : "obj_to_rc_list_or_raise";
-    throw ::std::runtime_error(::std::string(label) + ": object is not list");
 }
 
 #include "runtime/cpp/native/built_in/contains.h"
