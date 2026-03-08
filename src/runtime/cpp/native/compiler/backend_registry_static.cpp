@@ -1,10 +1,72 @@
 #include "runtime/cpp/generated/compiler/backend_registry_static.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <stdexcept>
+
+#include "pytra/std/json.h"
+
+#if defined(_WIN32)
+#include <process.h>
+#define PYTRA_GETPID _getpid
+#else
+#include <unistd.h>
+#define PYTRA_GETPID getpid
+#endif
 
 namespace pytra::compiler::backend_registry_static {
 
 namespace {
+
+::std::string _shell_quote(const ::std::string& raw) {
+    ::std::string out = "'";
+    for (char ch : raw) {
+        if (ch == '\'') {
+            out += "'\\''";
+        } else {
+            out.push_back(ch);
+        }
+    }
+    out.push_back('\'');
+    return out;
+}
+
+pytra::std::pathlib::Path _temp_path(const ::std::string& suffix) {
+    static int64 counter = 0;
+    const auto base = ::std::filesystem::temp_directory_path()
+        / ("pytra_selfhost_" + ::std::to_string(PYTRA_GETPID()) + "_" + ::std::to_string(++counter) + suffix);
+    return pytra::std::pathlib::Path(base.string());
+}
+
+void _remove_if_exists(const pytra::std::pathlib::Path& path) {
+    pytra::std::pathlib::Path path_copy = path;
+    if (path_copy.exists()) {
+        ::std::error_code ec;
+        ::std::filesystem::remove(::std::filesystem::path(py_to_string(path_copy.__str__())), ec);
+    }
+}
+
+str _read_file_or_empty(const pytra::std::pathlib::Path& path) {
+    pytra::std::pathlib::Path path_copy = path;
+    if (!path_copy.exists()) {
+        return "";
+    }
+    return path_copy.read_text();
+}
+
+void _run_host_python_command(const ::std::string& command, const str& error_prefix) {
+    pytra::std::pathlib::Path err_path = _temp_path(".stderr.txt");
+    ::std::string full = "(" + command + ") >" + _shell_quote(py_to_string(err_path.__str__())) + " 2>&1";
+    int rc = ::std::system(full.c_str());
+    if (rc != 0) {
+        str err = _read_file_or_empty(err_path);
+        _remove_if_exists(err_path);
+        throw ::std::runtime_error(
+            py_to_string(error_prefix + ": " + (err == "" ? str("host python command failed") : err))
+        );
+    }
+    _remove_if_exists(err_path);
+}
 
 str _target_extension(const str& target) {
     if (target == "cpp") return ".cpp";
@@ -109,13 +171,30 @@ str emit_source(
     const pytra::std::pathlib::Path& output_path,
     const dict<str, object>& emitter_options
 ) {
-    (void)spec;
-    (void)ir;
-    (void)output_path;
     (void)emitter_options;
-    throw ::std::runtime_error(
-        "[not_implemented] selfhost backend_registry_static.emit_source is not implemented yet"
-    );
+    const str target = py_dict_get_default(spec, "target_lang", str(""));
+    if (target != "cpp") {
+        throw ::std::runtime_error(
+            py_to_string("[not_implemented] selfhost backend_registry_static.emit_source only supports cpp: " + target)
+        );
+    }
+    pytra::std::pathlib::Path ir_path = _temp_path(".east3.json");
+    try {
+        ir_path.write_text(pytra::std::json::dumps(make_object(ir), true));
+        const ::std::string cmd =
+            "PYTHONPATH=src${PYTHONPATH:+:$PYTHONPATH} python3 src/ir2lang.py "
+            + _shell_quote(py_to_string(ir_path.__str__()))
+            + " --target cpp -o "
+            + _shell_quote(py_to_string(pytra::std::pathlib::Path(output_path).__str__()));
+        _run_host_python_command(cmd, "selfhost direct route failed to emit source");
+        pytra::std::pathlib::Path output_copy = output_path;
+        str out = output_copy.read_text();
+        _remove_if_exists(ir_path);
+        return out;
+    } catch (...) {
+        _remove_if_exists(ir_path);
+        throw;
+    }
 }
 
 void apply_runtime_hook(

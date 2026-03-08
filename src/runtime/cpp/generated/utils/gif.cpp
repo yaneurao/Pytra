@@ -84,11 +84,11 @@ namespace pytra::utils::gif {
         return bytes(rc_list_copy_value(p));
     }
     
-    void save_gif(const str& path, int64 width, int64 height, const rc<list<bytes>>& frames, const bytes& palette, int64 delay_cs, int64 loop) {
+    void save_gif(const str& path, int64 width, int64 height, const list<bytes>& frames, const bytes& palette, int64 delay_cs, int64 loop) {
         if (py_len(palette) != 256 * 3)
             throw ValueError("palette must be 256*3 bytes");
         rc<list<list<int64>>> frame_lists = rc_list_from_value(list<list<int64>>{});
-        for (bytes fr : rc_list_ref(frames)) {
+        for (bytes fr : frames) {
             rc<list<int64>> fr_list = rc_list_from_value(list<int64>{});
             for (uint8 v : fr) {
                 py_append(fr_list, int64(v));

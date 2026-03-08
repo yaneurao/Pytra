@@ -524,7 +524,8 @@ def _dump_json_value(
     if v is None:
         return "null"
     if isinstance(v, bool):
-        return "true" if v else "false"
+        raw_b: bool = bool(v)
+        return "true" if raw_b else "false"
     if isinstance(v, int):
         return str(v)
     if isinstance(v, float):

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pytra.std import abi
+
 
 def _gif_append_list(dst: list[int], src: list[int]) -> None:
     i = 0
@@ -76,6 +78,7 @@ def grayscale_palette() -> bytes:
     return bytes(p)
 
 
+@abi(args={"frames": "value"})
 def save_gif(
     path: str,
     width: int,

@@ -576,8 +576,10 @@ namespace pytra::std::json {
     str _dump_json_value(const object& v, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_is_none(v))
             return "null";
-        if (py_isinstance(v, PYTRA_TID_BOOL))
-            return (v ? "true" : "false");
+        if (py_isinstance(v, PYTRA_TID_BOOL)) {
+            bool raw_b = py_to<bool>(v);
+            return (raw_b ? "true" : "false");
+        }
         if (py_isinstance(v, PYTRA_TID_INT))
             return py_to_string(v);
         if (py_isinstance(v, PYTRA_TID_FLOAT))

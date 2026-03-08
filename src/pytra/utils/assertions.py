@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pytra.std import abi
+
 
 def _eq_any(actual: object, expected: object) -> bool:
     try:
@@ -29,6 +31,7 @@ def py_assert_eq(actual: object, expected: object, label: str = "") -> bool:
     return False
 
 
+@abi(args={"results": "value"})
 def py_assert_all(results: list[bool], label: str = "") -> bool:
     for v in results:
         if not v:
@@ -40,6 +43,7 @@ def py_assert_all(results: list[bool], label: str = "") -> bool:
     return True
 
 
+@abi(args={"expected_lines": "value"})
 def py_assert_stdout(expected_lines: list[str], fn: object) -> bool:
     # self_hosted parser / runtime 互換優先: stdout capture は未実装。
     return True
