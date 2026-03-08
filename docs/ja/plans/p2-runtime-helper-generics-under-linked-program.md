@@ -1,6 +1,6 @@
 # P2案: linked runtime 向け helper generics 導入
 
-最終更新: 2026-03-07
+最終更新: 2026-03-08
 
 関連:
 - [p2-runtime-sot-linked-program-integration.md](./p2-runtime-sot-linked-program-integration.md)
@@ -161,7 +161,7 @@ user module call sites
 
 長期的には `spec-template` と整合させる必要があるが、runtime helper 限定の最小案としては次のどちらかがよい。
 
-### 6.1 `@template("T")` 系
+### 6.1 `@template("T")` 系（canonical）
 
 ```python
 @template("T")
@@ -198,7 +198,7 @@ def py_head(xs: list[T]) -> T:
 - user-facing generic と runtime-only generic の線引きが曖昧になりやすい
 
 2026-03-08 時点では、この案は採らない。  
-理由は、runtime helper v1 で必要なのは「関数単位の型パラメータ宣言」を surface 上で明示することであり、`TypeVar` だけでは declaration site が曖昧になるためである。したがって linked runtime helper generics の canonical syntax は `@template("T", ...)` とする。
+理由は、runtime helper v1 で必要なのは「関数単位の型パラメータ宣言」を surface 上で明示することであり、`TypeVar` だけでは declaration site が曖昧になるためである。したがって linked runtime helper generics の canonical syntax は `@template("T", ...)` とする。future explicit instantiation を入れる場合も、同じ decorator family に `@instantiate(...)` を足す方向で拡張する。
 
 ## 7. linked-program で必要な仕組み
 
@@ -207,6 +207,7 @@ def py_head(xs: list[T]) -> T:
 - helper generic definition を見つける
 - callsite ごとの concrete type tuple を集める
 - deterministic order で specialization list を作る
+- collector の入口は raw decorator ではなく `FunctionDef.meta.template_v1` とし、linked runtime helper v1 plan で固定した `schema_version/params/scope/instantiation_mode` を正本にする
 
 ### 7.2 monomorphization rule
 

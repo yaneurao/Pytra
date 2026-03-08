@@ -221,6 +221,8 @@ import graph が膨らみやすいため、収集対象を
    - backend が runtime module 名を直に見ない形への整理
 3. `P1-RUNTIME-ABI-DECORATOR-01`
    - 移行期の helper ABI 固定手段
+4. `P2-LINKED-RUNTIME-TEMPLATE-01`
+   - linked runtime helper generics の v1 syntax / metadata / validation を `@template("T", ...)` 基準で先に固定する
 
 つまり、この案は本命ではあるが、実装順としては後段である。
 

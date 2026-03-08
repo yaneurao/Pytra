@@ -35,6 +35,21 @@
 - `runtime helper only` の enforcement は linked-program validator を正本とする。raw parse 時点では syntactically 正しい top-level function へ metadata を載せてもよいが、linked-program で runtime helper provenance を満たさない module は fail-closed で reject する。
 - `TypeVar` 注釈だけでは `meta.template_v1` を生成しない。
 
+### 0.2 future `@instantiate(...)` extension
+
+- v1 canonical syntax family は `@template("T", ...)` で開始し、future explicit instantiation は同じ decorator family に `@instantiate(...)` を足す形で拡張する。
+- future `@instantiate(...)` は少なくとも次の shape を候補とする。
+  - `@instantiate("symbol_name", type_arg1, type_arg2, ...)`
+- v1 では `@instantiate(...)` を parser / validator / linker / backend いずれも実装しない。
+- ただし surface の拡張方向は `TypeVar` / bracket syntax へ分岐させず、`@template` family を正本として伸ばす。
+
+### 0.3 specialization collector / monomorphization 接続
+
+- v1 の `FunctionDef.meta.template_v1` は syntax metadata であり、linked-program 後段の specialization collector が読む canonical source とする。
+- collector は raw `decorators` ではなく `meta.template_v1` と callsite の concrete type tuple を正本として specialization seed を決定する。
+- v1 では explicit instantiation を持たないため、`instantiation_mode: "linked_implicit"` は「linked-program collector が deterministic に concrete type tuple を収集して monomorphization を起動する」ことを意味する。
+- future `@instantiate(...)` を導入しても、collector の入口 metadata は `meta.template_v1` を維持し、explicit seed は別 metadata として追加する。
+
 ## 1. 目的
 
 - Python 側で generic な関数/クラスを定義し、C++ を含む複数言語へ安全に変換できるようにする。

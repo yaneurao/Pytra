@@ -61,10 +61,10 @@
 - [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02] runtime helper 限定・top-level function 限定・explicit instantiation なし、という v1 スコープを spec/plan に固定する。
 - [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-01] parser / EAST / linked metadata の canonical shape（例: `meta.template_v1`）を設計する。
 - [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-02] validation ルール（適用位置、パラメータ名、重複、runtime helper 限定）を設計する。
-- [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01] future `@instantiate(...)` と両立する surface 拡張方針を記録する。
-- [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-02] specialization collector / monomorphization の後続計画との接続点を整理する。
-- [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-01] docs / TODO / 関連 plan を同期して、generic v1 の前提を固定する。
-- [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-02] 完了時に archive へ移せる状態まで決定ログと受け入れ基準を整える。
+- [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01] future `@instantiate(...)` と両立する surface 拡張方針を記録する。
+- [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-02] specialization collector / monomorphization の後続計画との接続点を整理する。
+- [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-01] docs / TODO / 関連 plan を同期して、generic v1 の前提を固定する。
+- [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-02] 完了時に archive へ移せる状態まで決定ログと受け入れ基準を整える。
 
 ## フェーズ詳細
 
@@ -119,3 +119,7 @@
 - 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02]: v1 スコープは linked runtime helper の top-level function に限定する。class generic / method generic / user code 一般 / explicit instantiation は後段計画へ分離し、implicit monomorphization の blast radius を runtime helper 内へ閉じ込める。
 - 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-01]: canonical metadata は `FunctionDef.meta.template_v1` とし、`schema_version=1`, `params`, `scope=\"runtime_helper\"`, `instantiation_mode=\"linked_implicit\"` を持つ shape で固定する。raw `decorators` は保存用であり、backend / linker の正本には使わない。
 - 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-02]: validation は二段に分ける。parser/EAST build は decorator form・パラメータ名・重複・適用位置（top-level function only）を検証し、linked-program validator は runtime helper provenance を検証して `runtime helper only` を fail-closed で enforce する。
+- 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01]: future explicit instantiation は `@template` と同じ decorator family に `@instantiate("name", type_args...)` を足す方向で拡張する。v1 の canonical syntax family を途中で `TypeVar` や bracket syntax へ分岐させない。
+- 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-02]: specialization collector / monomorphization は raw decorator ではなく `FunctionDef.meta.template_v1` を入口にする。`instantiation_mode="linked_implicit"` は linked-program collector が callsite から deterministic に concrete type tuple を収集する契約として扱う。
+- 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-01]: `spec-template`、generic 関連 P2 メモ、runtime SoT linked-program 統合メモ、active TODO を同期し、linked runtime helper generics の v1 前提を `@template("T", ...)` / `template_v1` / collector 接続の 3 点で固定した。
+- 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-02]: 本計画は syntax / metadata / validation / future extension path の docs fixation を目的としており、実装本体の blocker は解消済みと判断する。archive 後の後続着手は `P2-RUNTIME-SOT-LINKED-PROGRAM-*` と `P2-RUNTIME-HELPER-GENERICS-*` 系で扱う。

@@ -41,7 +41,7 @@
 3. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02] runtime helper 限定・top-level function 限定・explicit instantiation なし、という v1 スコープを spec/plan に固定する。
 4. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-01] parser / EAST / linked metadata の canonical shape（例: `meta.template_v1`）を設計する。
 5. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-02] validation ルール（適用位置、パラメータ名、重複、runtime helper 限定）を設計する。
-6. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01] future `@instantiate(...)` と両立する surface 拡張方針を記録する。
-7. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-02] specialization collector / monomorphization の後続計画との接続点を整理する。
-8. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-01] docs / TODO / 関連 plan を同期して、generic v1 の前提を固定する。
-9. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-02] 完了時に archive へ移せる状態まで決定ログと受け入れ基準を整える。
+6. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01] future `@instantiate(...)` と両立する surface 拡張方針を記録する。
+7. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-02] specialization collector / monomorphization の後続計画との接続点を整理する。
+8. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-01] docs / TODO / 関連 plan を同期して、generic v1 の前提を固定する。
+9. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S4-02] 完了時に archive へ移せる状態まで決定ログと受け入れ基準を整える。
