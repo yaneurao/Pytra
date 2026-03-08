@@ -1351,18 +1351,6 @@ static inline const V& py_dict_get(const dict<str, V>& d, const ::std::string& k
     return py_dict_get(d, str(key));
 }
 
-static inline str py_dict_get_default(const dict<str, str>& d, const char* key, const char* defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return str(defval);
-    }
-    return it->second;
-}
-
-static inline str py_dict_get_default(const dict<str, str>& d, const str& key, const char* defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
 // Python の型判定（isinstance 的な分岐）で使う述語群。
 template <class T>
 static inline bool py_is_none(const ::std::optional<T>& v) {
