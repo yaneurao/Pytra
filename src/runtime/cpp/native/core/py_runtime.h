@@ -1351,29 +1351,6 @@ static inline const V& py_dict_get(const dict<str, V>& d, const ::std::string& k
     return py_dict_get(d, str(key));
 }
 
-template <class K, class V>
-static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const V& defval) {
-    auto it = d.find(key);
-    if (it == d.end()) {
-        return defval;
-    }
-    return it->second;
-}
-
-template <class V>
-static inline V py_dict_get_default(const dict<str, V>& d, const char* key, const V& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    return it->second;
-}
-
-template <class V>
-static inline V py_dict_get_default(const dict<str, V>& d, const str& key, const V& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
 static inline str py_dict_get_default(const dict<str, str>& d, const char* key, const char* defval) {
     auto it = d.find(str(key));
     if (it == d.end()) {
