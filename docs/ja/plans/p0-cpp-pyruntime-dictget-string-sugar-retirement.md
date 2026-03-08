@@ -65,3 +65,5 @@
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は key normalization convenience の撤去だけを扱い、missing-key behavior 変更や dict default helper の再設計は対象外とする。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S1-01]: checked-in callsite を棚卸しした結果、production で `const char*` / `std::string` key sugar に依存しているのは `src/runtime/cpp/generated/built_in/type_id.cpp` の `py_dict_get(_TYPE_STATE, "next_user_type_id")` と、`cpp_emitter.py` が dict subscript を `py_dict_get({val}, {idx})` と描画した先で `idx` が `char*` / `std::string` になる経路だった。JSON runtime や object-dict compat lane は既に別トラックで削除済みで、今回の対象は generic `dict<str, V>` sugar に限定できる。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S1-02]: 削除順序は `generated built_in/type_id.cpp` の literal key を `str("next_user_type_id")` へ正規化 -> C++ emitter の dict key coercion 結果を `str` に固定 -> regression / inventory guard 更新 -> sugar overload 削除、とする。`lowered_kind` 特例や generic `dict<K, V>` 本体は non-goal のまま維持する。
