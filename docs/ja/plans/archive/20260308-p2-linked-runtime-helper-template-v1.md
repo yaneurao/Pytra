@@ -3,12 +3,12 @@
 最終更新: 2026-03-08
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P2-LINKED-RUNTIME-TEMPLATE-01`
+- 完了済み。履歴は `docs/ja/todo/archive/20260308.md` の `ID: P2-LINKED-RUNTIME-TEMPLATE-01` を参照。
 
 関連:
-- [p2-runtime-sot-linked-program-integration.md](./p2-runtime-sot-linked-program-integration.md)
-- [p2-runtime-helper-generics-under-linked-program.md](./p2-runtime-helper-generics-under-linked-program.md)
-- [../spec/spec-template.md](../spec/spec-template.md)
+- [p2-runtime-sot-linked-program-integration.md](../p2-runtime-sot-linked-program-integration.md)
+- [p2-runtime-helper-generics-under-linked-program.md](../p2-runtime-helper-generics-under-linked-program.md)
+- [../spec/spec-template.md](../../spec/spec-template.md)
 
 背景:
 - linked runtime helper generics の長期案は既にあるが、syntax 候補が `TypeVar` と `@template("T")` の両論で止まっている。
