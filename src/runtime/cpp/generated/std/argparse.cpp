@@ -66,11 +66,11 @@ namespace pytra::std::argparse {
     }
 
     dict<str, object> ArgumentParser::parse_args(const object& argv) {
-            list<str> args;
+            rc<list<str>> args;
             if (py_is_none(argv))
-                args = py_to_str_list_from_object(py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())));
+                args = py_to<rc<list<str>>>(py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())));
             else
-                args = py_to_str_list_from_object(argv);
+                args = py_to<rc<list<str>>>(make_object(list<object>(argv)));
             rc<list<_ArgSpec>> specs_pos = rc_list_from_value(list<_ArgSpec>{});
             rc<list<_ArgSpec>> specs_opt = rc_list_from_value(list<_ArgSpec>{});
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
@@ -100,7 +100,7 @@ namespace pytra::std::argparse {
             int64 pos_i = 0;
             int64 i = 0;
             while (i < py_len(args)) {
-                str tok = args[i];
+                str tok = py_at(args, py_to<int64>(i));
                 if (py_startswith(tok, "-")) {
                     if (!py_contains(by_name, tok))
                         this->_fail("unknown option: " + tok);
@@ -113,7 +113,7 @@ namespace pytra::std::argparse {
                     }
                     if (i + 1 >= py_len(args))
                         this->_fail("missing value for option: " + tok);
-                    str val = args[i + 1];
+                    str val = py_at(args, py_to<int64>(i + 1));
                     if ((py_len(spec.choices) > 0) && (!py_contains(spec.choices, val)))
                         this->_fail("invalid choice for " + tok + ": " + val);
                     values[spec.dest] = make_object(val);

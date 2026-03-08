@@ -73,6 +73,30 @@ public:
         }
     }
 
+    template <class U, ::std::enable_if_t<::std::is_same_v<U, T>, int> = 0>
+    list(const rc<list<U>>& other) {
+        if (other) data_ = rc_list_ref(other);
+    }
+
+    template <class U, ::std::enable_if_t<!::std::is_same_v<U, T>, int> = 0>
+    list(const rc<list<U>>& other) {
+        if (!other) return;
+        const list<U>& ref = rc_list_ref(other);
+        reserve(ref.size());
+        for (const auto& v : ref) {
+            if constexpr (::std::is_same_v<U, object>) {
+                if constexpr (::std::is_constructible_v<T, object>) {
+                    data_.push_back(T(v));
+                } else {
+                    auto casted = py_object_try_cast<T>(v);
+                    if (casted.has_value()) data_.push_back(*casted);
+                }
+            } else {
+                data_.push_back(static_cast<T>(v));
+            }
+        }
+    }
+
     operator const ::std::vector<T>&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator ::std::vector<T>&() { return data_; }              // NOLINT(google-explicit-constructor)
     operator object() const { return make_object(*this); }      // NOLINT(google-explicit-constructor)

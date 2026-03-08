@@ -9,6 +9,10 @@
 
 namespace pytra::std::argparse {
 
+struct Namespace;
+struct _ArgSpec;
+struct ArgumentParser;
+
     struct Namespace {
         dict<str, object> values;
         

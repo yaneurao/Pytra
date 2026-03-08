@@ -450,6 +450,7 @@ int main() {
         self.assertNotIn("static inline list<object>::const_iterator end(const ::std::optional<object>& v)", runtime_header)
         self.assertNotIn("static inline list<object>::const_iterator begin(const RcHandle<PyObj>& v)", runtime_header)
         self.assertNotIn("static inline list<object>::const_iterator end(const RcHandle<PyObj>& v)", runtime_header)
+        self.assertNotIn("static inline list<str> py_to_str_list_from_object(const object& obj)", runtime_header)
         self.assertNotIn("namespace std {", runtime_header)
         self.assertNotIn("static inline list<::std::any>::iterator begin(::std::any& v)", runtime_header)
         self.assertNotIn("static inline list<::std::any>::iterator end(::std::any& v)", runtime_header)

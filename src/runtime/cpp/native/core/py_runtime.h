@@ -1815,15 +1815,6 @@ static inline void py_runtime_set_argv(const list<str>& values) {
     py_runtime_argv_storage() = values;
 }
 
-static inline list<str> py_to_str_list_from_object(const object& obj) {
-    list<str> out{};
-    const list<object>* p = obj_to_list_ptr(obj);
-    if (p == nullptr) return out;
-    out.reserve(p->size());
-    for (const object& v : *p) out.append(obj_to_str(v));
-    return out;
-}
-
 static inline void py_runtime_write_stderr(const str& text) {
     ::std::cerr << text;
 }
