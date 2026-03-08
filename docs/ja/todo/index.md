@@ -33,7 +33,7 @@
 ## 未完了タスク
 
 - [ ] [ID: P0-CPP-SELFHOST-ANY-COMPAT-01] C++ runtime に残る旧 selfhost `std::any` 互換 lane を撤去する。文脈: [p0-cpp-selfhost-any-compat-retirement.md](../plans/p0-cpp-selfhost-any-compat-retirement.md)
-- [ ] [ID: P0-CPP-SELFHOST-ANY-COMPAT-01-S1-01] `std::any` runtime helper の checked-in callsite を棚卸しする。文脈: [p0-cpp-selfhost-any-compat-retirement.md](../plans/p0-cpp-selfhost-any-compat-retirement.md)
+- [x] [ID: P0-CPP-SELFHOST-ANY-COMPAT-01-S1-01] `std::any` runtime helper の checked-in callsite を棚卸しする。文脈: [p0-cpp-selfhost-any-compat-retirement.md](../plans/p0-cpp-selfhost-any-compat-retirement.md)
 - [ ] [ID: P0-CPP-SELFHOST-ANY-COMPAT-01-S2-01] `py_runtime.h` / `str.h` の `std::any` helper を first slice で削除する。文脈: [p0-cpp-selfhost-any-compat-retirement.md](../plans/p0-cpp-selfhost-any-compat-retirement.md)
 - [ ] [ID: P0-CPP-SELFHOST-ANY-COMPAT-01-S2-02] `iter_ops.h` の `std::any` overload を削除し、tests を更新する。文脈: [p0-cpp-selfhost-any-compat-retirement.md](../plans/p0-cpp-selfhost-any-compat-retirement.md)
 - [ ] [ID: P0-CPP-SELFHOST-ANY-COMPAT-01-S3-01] `std::any` comparison / iterator compat を削除する。文脈: [p0-cpp-selfhost-any-compat-retirement.md](../plans/p0-cpp-selfhost-any-compat-retirement.md)

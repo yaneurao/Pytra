@@ -92,3 +92,4 @@
 ## 4. 決定ログ
 
 - 2026-03-08: 本計画では後方互換性を前提にしない。旧 selfhost C++ を通すためだけの `std::any` lane は撤去対象とする。
+- 2026-03-08: checked-in callsite を棚卸しした結果、`std::any` lane の利用は runtime source 本体と representative runtime smoke に限られ、production codegen / sample checked-in C++ からの直接依存は見つからなかった。first slice では `py_runtime.h` / `str.h` / `iter_ops.h` の helper を削除し、inventory test を `NotIn` へ反転してよい。
