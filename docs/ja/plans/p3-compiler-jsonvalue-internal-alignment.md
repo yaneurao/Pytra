@@ -104,7 +104,7 @@
 - [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S1-01] compiler/backend 内部で `json.loads(...)` を直接使う箇所を棚卸しする。
 - [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S1-02] selfhost blocker と host-only 後回し対象を決定ログへ固定する。
 - [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S2-01] `transpile_cli.py` の JSON root loader を `loads_obj()` ベースへ移行する。
-- [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S2-02] `runtime_symbol_index.py` と `code_emitter.py` の JSON loader を `JsonValue` lane へ移行する。
+- [x] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S2-02] `runtime_symbol_index.py` と `code_emitter.py` の JSON loader を `JsonValue` lane へ移行する。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S3-01] backend internal loader（`js_emitter.py` など）を `JsonValue` lane へそろえる。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S3-02] representative tests / selfhost-related regressions を更新する。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-01] raw `json.loads(...)` 再侵入 guard を追加する。
@@ -117,3 +117,4 @@
 - 2026-03-08: selfhost blocker は `transpile_cli.py` と `runtime_symbol_index.py` に固定する。どちらも frontend/common metadata path であり、host/selfhost の decode 契約差分が残ると selfhost 復旧時に raw-dict fallback が再侵入しやすい。
 - 2026-03-08: `backends/common/emitter/code_emitter.py` と `backends/js/emitter/js_emitter.py` は host-only follow-up として同じ P3 に残す。JS backend は C++ selfhost の blocker ではないが、common profile loader を `JsonObj` 化しておくと後続 backend へ横展開しやすい。
 - 2026-03-08: `transpile_cli.py` の `.json` root unwrap は `json.loads_obj(...)` + `JsonObj.get_bool/get_obj/get_str` に寄せ、`dict[str, object]` 化は wrapper/module 判定後の `east_obj.raw` / `payload.raw` に限定した。これで frontend entrypoint の raw `json.loads(...)` は 1 件減った。
+- 2026-03-08: `runtime_symbol_index.py` の cache loader と `CodeEmitter._load_json_dict()` は `json.loads_obj(...)` ベースへ移し、raw root 判定を `JsonObj` に統一した。内部保持は引き続き `dict[str, Any]` だが、parse 直後の raw `json.loads(...)` は消えた。
