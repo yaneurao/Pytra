@@ -2,121 +2,121 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-# Makefile Generation and One-Shot Build Specification (Decision)
+# Makefile Generation and One-Shot Build Specification
 
-This document defines the operational specification to consolidate the C++ build flow into the common `pytra` CLI instead of direct `py2cpp.py` invocation.
+This document defines the operational specification that routes C++ build flow through the shared `pytra` CLI instead of direct `py2cpp.py` invocation.
 
-## 2026-02-24 Alignment Notes
+## 2026-02-24 Alignment Note
 
-- `src/pytra-cli.py`, `tools/gen_makefile_from_manifest.py`, and `./pytra` are already implemented and provide the `--target cpp --build` flow through `./pytra`.
-- The `--multi-file` `manifest.json` contract and the `tools/build_multi_cpp.py` route remain part of the specification (`docs/en/spec/spec-dev.md` / `docs/en/spec/spec-tools.md`).
-- This document is operated as an implemented specification. Anything still in the future is split into separate follow-up tasks.
+- `src/pytra-cli.py`, `tools/gen_makefile_from_manifest.py`, and `./pytra` are already implemented and provide the `--target cpp --build` route through `./pytra`.
+- The `manifest.json` contract for `--multi-file` and the `tools/build_multi_cpp.py` route remain active specifications (`docs/en/spec/spec-dev.md` / `docs/en/spec/spec-tools.md`).
+- This document is operated as an implementation-aligned specification. Anything treated as a future idea is split out as a separate task.
 
 ## 1. Decisions
 
-- The user entry point is `./pytra` (extensionless launcher).
-- The main implementation entry point is `src/pytra-cli.py` (`python src/pytra-cli.py`).
-- `py2cpp.py` remains as the transpile backend and does not own build orchestration responsibility.
-- C++ build uses: canonical `manifest.json` + generated `Makefile` + `make` execution.
-- `manifest.json` is treated as a build manifest emitted by `CppProgramWriter` from `ProgramArtifact`; it is not written directly by `ModuleEmitter`.
-- Manual `PYTHONPATH` setup is unnecessary (`./pytra` sets it internally).
+- The user-facing entry point is `./pytra` (extensionless launcher).
+- The implementation body is `src/pytra-cli.py` (`python src/pytra-cli.py`).
+- `py2cpp.py` remains as the transpilation backend and must not own build orchestration.
+- C++ build is performed through `manifest.json` as the source of truth plus Makefile generation plus `make`.
+- `manifest.json` is not written directly by `ModuleEmitter`; it is treated as the build manifest emitted by `CppProgramWriter` from a `ProgramArtifact`.
+- Manual `PYTHONPATH` setup is unnecessary because `./pytra` sets it internally.
 
-## 2. Objectives
+## 2. Objective
 
-- Shorten manual commands and make transpile-to-build a single command.
-- Reuse existing multi-file output and `manifest.json` for reproducible build procedures.
-- Establish an entry point extensible to future multi-target CLI (`--target` switching).
+- Shorten the command line and make conversion through build a single command.
+- Reuse existing multi-file output and `manifest.json` to provide a reproducible build path.
+- Establish an entry point that can later grow into a unified multi-language CLI via `--target`.
 
-## 3. Non-goals
+## 3. Non-Goals
 
-- Implement full build execution for all languages immediately (v1 is `--target cpp` only).
-- Generate IDE-specific projects (Visual Studio/Xcode).
-- Auto-inferred build flow that bypasses `manifest.json`.
+- Implementing full build execution for every language at once. In v1, only `--target cpp` is in scope.
+- Generating IDE-specific projects such as Visual Studio or Xcode projects.
+- Automatic build inference without going through `manifest.json`.
 
 ## 4. Entry Point Specification
 
-### 4.1 `./pytra` launcher
+### 4.1 `./pytra` Launcher
 
-Place executable `pytra` (without extension) at repository root, and do the following:
+Place an extensionless executable `pytra` at the repository root and make it do the following:
 
-1. Add `ROOT/src` to `PYTHONPATH`.
-2. Execute `python3 src/pytra-cli.py "$@"`.
+1. add `ROOT/src` to `PYTHONPATH`
+2. execute `python3 src/pytra-cli.py "$@"`
 
 Intent:
 
-- Eliminate repeated manual `PYTHONPATH=src ...` usage.
-- Provide an executable form that avoids name conflicts with input-project-side `pytra.py`.
+- remove the need to type `PYTHONPATH=src ...` on every invocation
+- provide an executable form that does not collide with input-project files named `pytra.py`
 
-### 4.2 actual CLI
+### 4.2 Real CLI
 
-- Runtime entry implementation is `src/pytra-cli.py`.
-- Direct invocation form is `python3 src/pytra-cli.py ...`.
+- The real CLI is `src/pytra-cli.py`.
+- The direct form is `python3 src/pytra-cli.py ...`.
 
-## 5. Common CLI specification (v1)
+## 5. Shared CLI Specification (v1)
 
-### 5.1 Basic form
+### 5.1 Basic Form
 
 ```bash
 ./pytra INPUT.py --target cpp [OPTIONS]
 ```
 
-### 5.2 Required/supported arguments in v1
+### 5.2 Required / Supported Arguments in v1
 
 - `INPUT.py`
 - `--target cpp`
 - `--output-dir DIR` (default: `out`)
 - `--build` (run build only when specified)
 
-### 5.3 C++ build options when `--build` is specified
+### 5.3 C++ Build Options for `--build`
 
 - `--compiler CXX` (default: `g++`)
 - `--std STD` (default: `c++20`)
 - `--opt FLAG` (default: `-O2`)
 - `--exe NAME` (default: `app.out`)
-- `--run` (optional: execute after successful build)
+- `--run` (optional: execute after a successful build)
 
 Notes:
 
-- In this spec, `--opt` means C++ compiler flags.
-- Codegen optimization level (`py2cpp` `-O0..-O3`) may be separated as `--codegen-opt {0,1,2,3}` (default applies when omitted).
-- In `pytra-cli`, `--target cpp --codegen-opt 3` means the max Pytra codegen route, not just aggregate `-O3` passthrough. It selects backend emission through the linked-program optimizer.
-- `--target cpp --codegen-opt 0/1/2` keeps the legacy route and remains independent from compiler flags such as `--opt -O3`.
+- In this document, `--opt` means the C++ compiler flag.
+- The generated-code optimization level (`py2cpp` `-O0..-O3`) may be separated as `--codegen-opt {0,1,2,3}` and uses its default when omitted.
+- In `pytra-cli`, `--target cpp --codegen-opt 3` means the maximum Pytra codegen route, not a mere `-O3` pass-through. It selects backend emission through the linked-program optimizer.
+- `--target cpp --codegen-opt 0/1/2` keeps the existing route and is treated independently from compiler flags such as `--opt -O3`.
 
 ### 5.4 Constraints
 
 - `--build` is valid only with `--target cpp`.
-- `--compiler/--std/--opt/--exe/--run` are valid only when `--build` is specified.
-- If `--build` is specified with non-`cpp` target, exit with an error.
+- `--compiler`, `--std`, `--opt`, `--exe`, and `--run` are valid only when `--build` is present.
+- If `--build` is specified with a target other than `cpp`, exit with an error.
 
-## 6. C++ build flow
+## 6. C++ Build Flow
 
-Execution order for `./pytra ... --target cpp --build`:
+The processing order for `./pytra ... --target cpp --build` is:
 
-1. When `--codegen-opt 3` is selected, materialize raw `EAST3` modules and generate C++ multi-file output from linked modules after the linked-program optimizer.
-2. When `--codegen-opt 0/1/2` is selected, build `ProgramArtifact` through the legacy compatibility route.
+1. When `--codegen-opt 3` is selected, materialize raw `EAST3` modules, run the linked-program optimizer, and generate C++ multi-file output from the linked modules.
+2. When `--codegen-opt 0/1/2` is selected, build `ProgramArtifact` through the existing compatibility route.
 3. `CppProgramWriter` generates the output tree and `manifest.json`.
-4. Generate `Makefile` via `tools/gen_makefile_from_manifest.py`.
-5. Execute `make -f <Makefile>` to produce the binary.
-6. Only when `--run` is specified, execute `make -f <Makefile> run`.
+4. `tools/gen_makefile_from_manifest.py` generates the `Makefile`.
+5. Run `make -f <Makefile>` and produce the binary.
+6. If `--run` is specified, run `make -f <Makefile> run`.
 
 Notes:
 
 - In the current CLI implementation, `ProgramArtifact` is an internal concept, but `manifest.json` is treated as its concrete build artifact.
-- Non-C++ backends using `SingleFileProgramWriter` do not require a build manifest. This document only covers the manifest contract emitted by C++ `CppProgramWriter`.
+- Non-C++ backends using `SingleFileProgramWriter` do not require a build manifest. This document covers the manifest contract emitted by C++ `CppProgramWriter`.
 
-## 7. `manifest.json` input specification
+## 7. `manifest.json` Input Specification
 
-`manifest.json` must satisfy at least:
+`manifest.json` must satisfy at least the following:
 
-- `modules` is an array.
-- Each element is an object and `source` is a non-empty string.
-- `include_dir` is a string (if omitted, implementation may default to sibling `include` next to `manifest`).
+- `modules` is an array
+- each element is an object and `source` is a non-empty string
+- `include_dir` is a string; when omitted, sibling `include/` next to the manifest may be used as default
 
-Positioning in the linked-program era:
+Meaning during the linked-program period:
 
-- `manifest.json` is the C++ build serialization of `ProgramArtifact`.
-- `CppProgramWriter` owns manifest generation. `CppEmitter` / `ModuleEmitter` must not generate `manifest.json` directly.
-- `manifest.json` is the source of truth for build layout and runtime layout, not for language semantics.
+- `manifest.json` is the C++ build serialization of `ProgramArtifact`
+- generation is the responsibility of `CppProgramWriter`; `CppEmitter` / `ModuleEmitter` do not generate `manifest.json` directly
+- `manifest.json` is the source of truth for build layout and runtime layout, not for language semantics
 
 Example:
 
@@ -137,62 +137,62 @@ Example:
 }
 ```
 
-## 8. Makefile generation specification
+## 8. Makefile Generation Specification
 
-Use `tools/gen_makefile_from_manifest.py`, accepting:
+Use `tools/gen_makefile_from_manifest.py`, which accepts:
 
-- Positional argument
+- positional arguments
   - `manifest`
-- Options
+- options
   - `-o`, `--output`
   - `--exe`
   - `--compiler`
   - `--std`
   - `--opt`
 
-Generated `Makefile` must include at least:
+The generated `Makefile` must include at least:
 
-- Variables: `CXX`, `CXXFLAGS`, `INCLUDES`, `SRCS`, `OBJS`, `TARGET`
-- Targets: `all`, `$(TARGET)`, `%.o: %.cpp`, `run`, `clean`
+- variables: `CXX`, `CXXFLAGS`, `INCLUDES`, `SRCS`, `OBJS`, `TARGET`
+- targets: `all`, `$(TARGET)`, `%.o: %.cpp`, `run`, `clean`
 
-## 9. Error contract
+## 9. Error Contract
 
 Exit non-zero in the following cases:
 
-- `manifest` does not exist.
-- JSON parsing fails.
-- `modules` is not an array.
-- No valid `source` is found.
-- `--compiler/--std/--opt/--exe/--run` is specified without `--build`.
-- `--build` is specified with non-`cpp` target.
-- `make` is not available.
+- `manifest` does not exist
+- JSON parsing fails
+- `modules` is not an array
+- there is no valid `source`
+- `--compiler`, `--std`, `--opt`, `--exe`, or `--run` is specified without `--build`
+- `--build` is specified for a non-`cpp` target
+- `make` is not found
 
-## 10. Acceptance criteria
+## 10. Acceptance Criteria
 
-- `./pytra sample/py/01_mandelbrot.py --target cpp --output-dir out/mandelbrot` generates multi-file outputs.
-- `./pytra sample/py/01_mandelbrot.py --target cpp --build --output-dir out/mandelbrot` runs transpile, Makefile generation, and build continuously.
-- `./pytra sample/py/01_mandelbrot.py --target cpp --build --compiler g++ --std c++20 --opt -O3 --exe mandelbrot.out` reflects the specified values in generated `Makefile` and build.
-- `./pytra sample/py/01_mandelbrot.py --target cpp --codegen-opt 3 --build --output-dir out/mandelbrot` selects the C++ max-opt route through the linked-program optimizer.
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` stays green.
-- `./pytra sample/py/01_mandelbrot.py --target rs --build` exits with an error per spec.
-- Second run of `make -f out/mandelbrot/Makefile` is incremental (minimal relink/recompile).
+- `./pytra sample/py/01_mandelbrot.py --target cpp --output-dir out/mandelbrot` generates multi-file output.
+- `./pytra sample/py/01_mandelbrot.py --target cpp --build --output-dir out/mandelbrot` performs conversion, Makefile generation, and build in sequence.
+- `./pytra sample/py/01_mandelbrot.py --target cpp --build --compiler g++ --std c++20 --opt -O3 --exe mandelbrot.out` reflects the specified values into the Makefile and the build.
+- `./pytra sample/py/01_mandelbrot.py --target cpp --codegen-opt 3 --build --output-dir out/mandelbrot` selects the maximum-opt C++ route through the linked-program optimizer.
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` remains green.
+- `./pytra sample/py/01_mandelbrot.py --target rs --build` exits with an error as specified.
+- Running `make -f out/mandelbrot/Makefile` a second time results in an incremental build with minimal relink/recompile.
 
-## 11. Phased introduction
+## 11. Staged Rollout
 
-1. Phase 1: add `tools/gen_makefile_from_manifest.py`.
-2. Phase 2: add `src/pytra-cli.py` and implement `--target cpp --build`.
-3. Phase 3: add root launcher `./pytra` with built-in `PYTHONPATH` setup.
-4. Phase 4: add `--run`, `--codegen-opt`, and optionally `--jobs`.
+1. Phase 1: add `tools/gen_makefile_from_manifest.py`
+2. Phase 2: add `src/pytra-cli.py` and implement `--target cpp --build`
+3. Phase 3: add the root launcher `./pytra` and internalize `PYTHONPATH` setup
+4. Phase 4: add `--run`, `--codegen-opt`, and `--jobs` if needed
 
-## 12. Usage examples
+## 12. Practical Examples
 
-### 12.1 Transpile only
+### 12.1 Transpile Only
 
 ```bash
 ./pytra sample/py/01_mandelbrot.py --target cpp --output-dir out/mandelbrot
 ```
 
-### 12.2 One-shot build
+### 12.2 One-Shot Build
 
 ```bash
 ./pytra sample/py/01_mandelbrot.py \
@@ -201,7 +201,7 @@ Exit non-zero in the following cases:
   --output-dir out/mandelbrot
 ```
 
-### 12.3 One-shot build (explicit compiler settings)
+### 12.3 One-Shot Build with Explicit Compiler Settings
 
 ```bash
 ./pytra sample/py/01_mandelbrot.py \
@@ -214,7 +214,7 @@ Exit non-zero in the following cases:
   --exe mandelbrot.out
 ```
 
-### 12.4 Build + run
+### 12.4 Build + Run
 
 ```bash
 ./pytra sample/py/01_mandelbrot.py \
@@ -226,29 +226,29 @@ Exit non-zero in the following cases:
 
 ## 13. Notes
 
-- Operate `out/` as a local generated-artifact directory and do not version it.
-- Keep `py2cpp.py` as backend and invoke it through common CLI.
-- In future, `pip install -e .` + console script can allow migration from `./pytra` to direct `pytra ...` execution.
+- Operate `out/` as a local build-artifact directory and do not put it under Git.
+- Keep `py2cpp.py` as a backend and call it through the shared CLI.
+- In the future, `pip install -e .` plus a console script could replace `./pytra` so that `pytra ...` works directly.
 
-## 14. `pytra-cli` responsibility boundaries (P0 fixed contract)
+## 14. `pytra-cli` Responsibility Boundary (Fixed P0 Contract)
 
-`src/pytra-cli.py` must stay as the common entry controller and must not embed per-target build/run implementations.
+`src/pytra-cli.py` is restricted to shared control at the entry point and must not inline target-specific build or run implementations.
 
-- CLI core (`src/pytra-cli.py`)
-  - Role: argument normalization, input validation, profile resolution, and invoking the shared runner.
-  - Allowed: pass the target name to the `toolchain` profile layer.
-  - Forbidden: hard-code target-specific compiler/runtime/run commands.
+- CLI body (`src/pytra-cli.py`)
+  - Role: argument normalization, input validation, profile resolution, and calling a shared runner
+  - Allowed: passing the target name into the `toolchain` profile layer
+  - Forbidden: hard-coding target-specific compiler/runtime/execution commands
 - Backend profiles (`src/toolchain/compiler/*`)
-  - Role: declare target-specific transpile/build/run contracts (required tools, output naming, runtime companion files).
-  - Allowed: define target-specific command lines, filenames, and extensions.
-  - Forbidden: re-implement entrypoint concerns such as CLI parsing and stdout/stderr handling.
-- Execution runner (shared in CLI layer)
-  - Role: subprocess execution, stdout/stderr forwarding, return-code handling, timeout handling.
-  - Allowed: execute profile-provided `command/cwd/env` mechanically.
-  - Forbidden: inspect target names and rewrite commands with ad-hoc branching.
+  - Role: declare target-specific transpile/build/run contracts such as required tools, output naming, and auxiliary runtime files
+  - Allowed: defining target-specific commands, file names, and extensions
+  - Forbidden: reimplementing entry-point responsibilities such as CLI argument parsing or stdio control
+- Execution runner (shared CLI)
+  - Role: subprocess execution, stdout/stderr forwarding, exit-code handling, timeout management
+  - Allowed: mechanically executing the `command/cwd/env` returned by a profile
+  - Forbidden: branching on target names and rewriting commands there
 
-### 14.1 Forbidden patterns (CI guard target)
+### 14.1 Forbidden Items (Guarded in CI)
 
-- Do not add new `if/elif target == "...":` branches in `src/pytra-cli.py`.
-- Do not hard-code `<lang>` runtime file paths in `src/pytra-cli.py` (for example, `py_runtime.kt`, `png.java`).
-- Do not duplicate per-target build/run command definitions in tooling scripts such as `tools/runtime_parity_check.py`; route via `pytra-cli`.
+- Do not add new `if/elif target == "...":` branches to `src/pytra-cli.py`.
+- Do not hard-code `<lang>`-specific runtime file paths such as `py_runtime.kt` or `png.java` in `src/pytra-cli.py`.
+- Tools around the CLI, such as `tools/runtime_parity_check.py`, must not duplicate target-specific build or run commands. The route must be unified through `pytra-cli`.
