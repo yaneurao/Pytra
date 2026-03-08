@@ -47,6 +47,46 @@ def f(x: float) -> float:
         self.assertEqual(len(funcs), 1)
         self.assertEqual(funcs[0].get("decorators"), ["extern"])
 
+    def test_top_level_annassign_extern_same_name_sets_ambient_global_metadata(self) -> None:
+        src = """
+from pytra.std import extern
+
+document: Any = extern()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        ann_assigns = [
+            n for n in east.get("body", []) if isinstance(n, dict) and n.get("kind") == "AnnAssign"
+        ]
+        self.assertEqual(len(ann_assigns), 1)
+        self.assertEqual(
+            ann_assigns[0].get("meta", {}).get("extern_var_v1"),
+            {
+                "schema_version": 1,
+                "symbol": "document",
+                "same_name": 1,
+            },
+        )
+
+    def test_top_level_annassign_extern_alias_sets_ambient_global_metadata(self) -> None:
+        src = """
+from pytra.std import extern
+
+doc: Any = extern("document")
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        ann_assigns = [
+            n for n in east.get("body", []) if isinstance(n, dict) and n.get("kind") == "AnnAssign"
+        ]
+        self.assertEqual(len(ann_assigns), 1)
+        self.assertEqual(
+            ann_assigns[0].get("meta", {}).get("extern_var_v1"),
+            {
+                "schema_version": 1,
+                "symbol": "document",
+                "same_name": 0,
+            },
+        )
+
     def test_top_level_abi_decorator_sets_runtime_abi_metadata(self) -> None:
         src = """
 from pytra.std import abi

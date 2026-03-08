@@ -606,6 +606,90 @@ def _sh_is_template_decorator(
     return mod_name in {"pytra.std", "pytra.std.template"} and sym_name == "template"
 
 
+def _sh_expr_attr_chain(expr: Any) -> str:
+    """Name/Attribute 式から `a.b.c` 形式の head 文字列を抽出する。"""
+    if not isinstance(expr, dict):
+        return ""
+    kind = str(expr.get("kind", ""))
+    if kind == "Name":
+        return str(expr.get("id", ""))
+    if kind != "Attribute":
+        return ""
+    owner = _sh_expr_attr_chain(expr.get("value"))
+    attr = str(expr.get("attr", ""))
+    if owner == "" or attr == "":
+        return ""
+    return owner + "." + attr
+
+
+def _sh_is_extern_symbol_ref(
+    head: str,
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> bool:
+    """call head が `pytra.std.extern` を指すか判定する。"""
+    if head == "":
+        return False
+    ent = import_symbol_bindings.get(head)
+    if isinstance(ent, dict):
+        return str(ent.get("module", "")) == "pytra.std" and str(ent.get("name", "")) == "extern"
+    if head.endswith(".extern"):
+        owner = head[: -len(".extern")]
+        if owner == "pytra.std":
+            return True
+        mod_name = import_module_bindings.get(owner, "")
+        return mod_name == "pytra.std"
+    return False
+
+
+def _sh_collect_extern_var_metadata(
+    *,
+    target_name: str,
+    annotation: str,
+    value_expr: Any,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> dict[str, Any] | None:
+    """`name: Any = extern(...)` から ambient global metadata を抽出する。"""
+    if annotation != "Any":
+        return None
+    if not isinstance(value_expr, dict) or str(value_expr.get("kind", "")) != "Call":
+        return None
+    call_head = _sh_expr_attr_chain(value_expr.get("func"))
+    if not _sh_is_extern_symbol_ref(
+        call_head,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    ):
+        return None
+    args = value_expr.get("args")
+    keywords = value_expr.get("keywords")
+    if not isinstance(args, list) or not isinstance(keywords, list) or len(keywords) != 0:
+        return None
+    symbol = target_name
+    if len(args) == 0:
+        symbol = target_name
+    elif len(args) == 1:
+        arg0 = args[0]
+        if (
+            not isinstance(arg0, dict)
+            or str(arg0.get("kind", "")) != "Constant"
+            or str(arg0.get("resolved_type", "")) != "str"
+        ):
+            return None
+        symbol = str(arg0.get("value", "")).strip()
+        if symbol == "":
+            return None
+    else:
+        return None
+    return {
+        "schema_version": 1,
+        "symbol": symbol,
+        "same_name": 1 if symbol == target_name else 0,
+    }
+
+
 def _sh_parse_runtime_abi_string_literal(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
     raw = text.strip()
     if len(raw) >= 2 and raw[0] in {"'", '"'} and raw[-1] == raw[0]:
@@ -7342,24 +7426,35 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             expr_txt = top_default
             ann = _sh_ann_to_type(ann_txt)
             expr_col = ln.find(expr_txt)
+            value_expr = _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={})
+            ann_item: dict[str, Any] = {
+                "kind": "AnnAssign",
+                "source_span": _sh_span(i, ln.find(name), len(ln)),
+                "target": {
+                    "kind": "Name",
+                    "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
+                    "resolved_type": ann,
+                    "borrow_kind": "value",
+                    "casts": [],
+                    "repr": name,
+                    "id": name,
+                },
+                "annotation": ann,
+                "value": value_expr,
+                "declare": True,
+                "decl_type": ann,
+            }
+            extern_var_meta = _sh_collect_extern_var_metadata(
+                target_name=name,
+                annotation=ann,
+                value_expr=value_expr,
+                import_module_bindings=import_module_bindings,
+                import_symbol_bindings=import_symbol_bindings,
+            )
+            if extern_var_meta is not None:
+                ann_item["meta"] = {"extern_var_v1": extern_var_meta}
             body_items.append(
-                {
-                    "kind": "AnnAssign",
-                    "source_span": _sh_span(i, ln.find(name), len(ln)),
-                    "target": {
-                        "kind": "Name",
-                        "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
-                        "resolved_type": ann,
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": name,
-                        "id": name,
-                    },
-                    "annotation": ann,
-                    "value": _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={}),
-                    "declare": True,
-                    "decl_type": ann,
-                }
+                ann_item
             )
             i = logical_end + 1
             continue

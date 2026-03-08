@@ -135,6 +135,10 @@
 - `meta.template_v1`（任意。`@template` の canonical metadata）
 - `meta.template_specialization_v1`（任意。linked-program が materialize した specialization metadata）
 
+代入文ノード（`Assign`, `AnnAssign`）は以下を持ち得る。
+
+- `meta.extern_var_v1`（任意。ambient global extern variable の canonical metadata）
+
 `FunctionDef.meta.runtime_abi_v1` の規則:
 
 - `schema_version: 1`
@@ -166,6 +170,17 @@
 - canonical shape は `schema_version: 1`, `origin_symbol: <module_id::name>`, `type_args: [concrete_type, ...]`
 - `template_specialization_v1` は `template_v1` の代替ではなく、materialized clone の provenance を示す補助 metadata とする
 - backend / ProgramWriter は raw decorator ではなく、この metadata と linker summary を見て specialized helper を扱う
+
+`Assign` / `AnnAssign`.meta.extern_var_v1 の規則:
+
+- `schema_version: 1`
+- `symbol: str`
+- `same_name: 0 | 1`
+- v1 では top-level `name: Any = extern()` / `name: Any = extern("symbol")` にだけ付与してよい
+- `extern()` は `symbol == target_name` かつ `same_name == 1`
+- `extern("symbol")` は `symbol == <literal>`、`same_name` は target 名との一致で決まる
+- `extern(expr)` host fallback / runtime hook では付与してはならない
+- backend は raw initializer の `extern(...)` を再解釈せず、ambient-global 判定の正本として `meta.extern_var_v1` を使う
 
 ### 5.1 `leading_trivia` による C++ パススルー記法
 
