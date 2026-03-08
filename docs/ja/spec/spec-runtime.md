@@ -254,7 +254,9 @@ JSON 由来の動的境界は、`JsonValue` / `JsonObj` / `JsonArr` という JS
   - `Null`
   - `Bool`
   - `Int`
+    - payload 型は `int64`
   - `Float`
+    - payload 型は `float64`
   - `Str`
   - `Obj`
   - `Arr`
@@ -289,6 +291,11 @@ source surface の方針:
 
 - 上記の exact surface 名は実装時に微調整してよいが、思想は「JSON 専用 wrapper / decoder に閉じる」ことを優先する。
 - `match` による型分岐を後から導入してもよいが、それは `JsonValue` を decode しやすくする補助であって、dynamic helper 復活の理由にはならない。
+- JSON number の判定規則は次で固定する。
+  - 小数点と exponent を含まない number は `JsonValue.Int(int64)` として解釈する。
+  - 小数点または exponent を含む number は `JsonValue.Float(float64)` として解釈する。
+  - `int64` 範囲外の整数は parse error とする。
+  - `NaN` / `Infinity` / `-Infinity` は JSON として不正であり受理してはならない。
 
 backend lowering 方針:
 

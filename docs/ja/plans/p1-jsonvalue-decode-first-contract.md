@@ -186,3 +186,4 @@ JSON は実際には次の 7 分岐しか持たない。
 - 2026-03-08: `sum(object)` / `zip(object, object)` のような helper は permanent API にせず、compile error へ寄せる target design とする。
 - 2026-03-08: general-purpose `cast_or_raise` は JSON decode には採用しない。必要な decode は JSON module 専用 wrapper/decode API に寄せる。
 - 2026-03-08: 各 backend での carrier は target idiom に従うが、共通意味論は `JsonValue` という target 非依存ADTで先に固定する。
+- 2026-03-08: `JsonValue.Int` の payload は `int64`、`JsonValue.Float` の payload は `float64` とする。JSON number のうち小数点/exponent を含まないものは `Int(int64)`、含むものは `Float(float64)` として解釈し、`int64` 範囲外整数は parse error とする。
