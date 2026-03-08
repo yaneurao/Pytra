@@ -2,7 +2,6 @@
 #define PYTRA_BUILT_IN_PY_RUNTIME_H
 
 #include <algorithm>
-#include <any>
 #include <cctype>
 #include <cmath>
 #include <cstdint>
@@ -354,43 +353,6 @@ static inline object make_object(uint16 v) { return object_new<PyIntObj>(static_
 static inline object make_object(int8 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
 static inline object make_object(uint8 v) { return object_new<PyIntObj>(static_cast<int64>(v)); }
 
-static inline object make_object(const ::std::any& v) {
-    if (!v.has_value()) return object();
-    if (const auto* p = ::std::any_cast<object>(&v)) return *p;
-    if (const auto* p = ::std::any_cast<str>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<::std::string>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<const char*>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<bool>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<float64>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<float32>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<int64>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<uint64>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<int32>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<uint32>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<int16>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<uint16>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<int8>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<uint8>(&v)) return make_object(*p);
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&v)) {
-        list<object> out{};
-        out.reserve(p->size());
-        for (const auto& e : *p) out.append(make_object(e));
-        return object_new<PyListObj>(out);
-    }
-    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&v)) {
-        dict<str, object> out{};
-        for (const auto& kv : *p) out[kv.first] = make_object(kv.second);
-        return object_new<PyDictObj>(out);
-    }
-    if (const auto* p = ::std::any_cast<set<str>>(&v)) {
-        list<object> out{};
-        out.reserve(p->size());
-        for (const auto& e : *p) out.append(make_object(e));
-        return object_new<PySetObj>(out);
-    }
-    return object();
-}
-
 template <class... Ts>
 static inline object make_object(const ::std::tuple<Ts...>& values) {
     list<object> out{};
@@ -635,22 +597,6 @@ static inline int64 py_len(const char (&)[N]) {
     return N > 0 ? static_cast<int64>(N - 1) : 0;
 }
 
-static inline int64 py_len(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<str>(&v)) return static_cast<int64>(p->size());
-    if (const auto* p = ::std::any_cast<::std::string>(&v)) return static_cast<int64>(p->size());
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&v)) return static_cast<int64>(p->size());
-    if (const auto* p = ::std::any_cast<list<object>>(&v)) return static_cast<int64>(p->size());
-    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&v)) return static_cast<int64>(p->size());
-    if (const auto* p = ::std::any_cast<dict<str, object>>(&v)) return static_cast<int64>(p->size());
-    if (const auto* p = ::std::any_cast<object>(&v)) {
-        if (const auto* d = obj_to_dict_ptr(*p)) return static_cast<int64>(d->size());
-        if (const auto* lst = obj_to_list_ptr(*p)) return static_cast<int64>(lst->size());
-        if (const auto* st = obj_to_set_ptr(*p)) return static_cast<int64>(st->size());
-        return 0;
-    }
-    return 0;
-}
-
 // selfhost 段階で一時的に残る `len(x)` を受ける互換エイリアス。
 template <class T>
 static inline int64 len(const T& v) {
@@ -690,18 +636,6 @@ template <class T>
 static inline ::std::string py_to_string(const ::std::optional<T>& v) {
     if (!v.has_value()) return "None";
     return py_to_string(*v);
-}
-
-static inline ::std::string py_to_string(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_to_string(*p);
-    if (const auto* p = ::std::any_cast<str>(&v)) return *p;
-    if (const auto* p = ::std::any_cast<int64>(&v)) return ::std::to_string(*p);
-    if (const auto* p = ::std::any_cast<uint64>(&v)) return ::std::to_string(*p);
-    if (const auto* p = ::std::any_cast<int>(&v)) return ::std::to_string(*p);
-    if (const auto* p = ::std::any_cast<float64>(&v)) return ::std::to_string(*p);
-    if (const auto* p = ::std::any_cast<float32>(&v)) return ::std::to_string(*p);
-    if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? "True" : "False";
-    return "<any>";
 }
 
 static inline ::std::string py_to_string(const object& v) {
@@ -752,10 +686,7 @@ static inline ::std::string py_bool_to_string(bool v) {
 template <class T>
 static inline T py_to(const object& v);
 
-template <class T>
-static inline T py_to(const ::std::any& v);
-
-template <class T, ::std::enable_if_t<!::std::is_same_v<T, object> && !::std::is_same_v<T, ::std::any>, int> = 0>
+template <class T, ::std::enable_if_t<!::std::is_same_v<T, object>, int> = 0>
 static inline T py_to(const T& v);
 
 static inline int64 py_to_int64(const str& v) {
@@ -807,35 +738,6 @@ static inline bool py_to_bool(bool v) {
     return py_to<bool>(v);
 }
 
-static inline int64 py_to_int64(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<int64>(&v)) return *p;
-    if (const auto* p = ::std::any_cast<int>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<uint8>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<int8>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<uint16>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<int16>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<uint32>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<int32>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<uint64>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<float64>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<float32>(&v)) return static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? 1 : 0;
-    if (const auto* p = ::std::any_cast<str>(&v)) {
-        try {
-            return static_cast<int64>(::std::stoll(*p));
-        } catch (...) {
-            return 0;
-        }
-    }
-    return 0;
-}
-
-static inline int64 py_to_int64_base(const ::std::any& v, int64 base) {
-    if (const auto* p = ::std::any_cast<str>(&v)) return py_to_int64_base(*p, base);
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_to_int64_base(*p, base);
-    return py_to_int64(v);
-}
-
 static inline int64 py_ord(const str& ch) {
     const ::std::string& s = ch;
     if (s.empty()) return 0;
@@ -861,12 +763,6 @@ static inline int64 py_ord(const str& ch) {
 
 static inline int64 py_ord(const object& v) {
     return py_ord(obj_to_str(v));
-}
-
-static inline int64 py_ord(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<str>(&v)) return py_ord(*p);
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_ord(*p);
-    return 0;
 }
 
 static inline str py_chr(int64 codepoint) {
@@ -896,46 +792,7 @@ static inline str py_chr(const object& v) {
     return py_chr(obj_to_int64(v));
 }
 
-static inline str py_chr(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<int64>(&v)) return py_chr(*p);
-    if (const auto* p = ::std::any_cast<int>(&v)) return py_chr(static_cast<int64>(*p));
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_chr(*p);
-    return "";
-}
-
-static inline float64 py_to_float64(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<float64>(&v)) return *p;
-    if (const auto* p = ::std::any_cast<float32>(&v)) return static_cast<float64>(*p);
-    if (const auto* p = ::std::any_cast<int64>(&v)) return static_cast<float64>(*p);
-    if (const auto* p = ::std::any_cast<int>(&v)) return static_cast<float64>(*p);
-    if (const auto* p = ::std::any_cast<uint64>(&v)) return static_cast<float64>(*p);
-    if (const auto* p = ::std::any_cast<bool>(&v)) return *p ? 1.0 : 0.0;
-    if (const auto* p = ::std::any_cast<str>(&v)) {
-        try {
-            return ::std::stod(*p);
-        } catch (...) {
-            return 0.0;
-        }
-    }
-    if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_float64(*p);
-    return 0.0;
-}
-
-static inline bool py_to_bool(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<bool>(&v)) return *p;
-    if (const auto* p = ::std::any_cast<int64>(&v)) return *p != 0;
-    if (const auto* p = ::std::any_cast<int32>(&v)) return *p != 0;
-    if (const auto* p = ::std::any_cast<uint64>(&v)) return *p != 0;
-    if (const auto* p = ::std::any_cast<uint32>(&v)) return *p != 0;
-    if (const auto* p = ::std::any_cast<float64>(&v)) return *p != 0.0;
-    if (const auto* p = ::std::any_cast<float32>(&v)) return *p != 0.0f;
-    if (const auto* p = ::std::any_cast<str>(&v)) return !p->empty();
-    if (const auto* p = ::std::any_cast<::std::string>(&v)) return !p->empty();
-    if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_bool(*p);
-    return false;
-}
-
-template <class T, ::std::enable_if_t<!::std::is_same_v<T, object> && !::std::is_same_v<T, ::std::any>, int>>
+template <class T, ::std::enable_if_t<!::std::is_same_v<T, object>, int>>
 static inline T py_to(const T& v) {
     return v;
 }
@@ -979,44 +836,10 @@ static inline T py_to(const object& v) {
     }
 }
 
-template <class T>
-static inline T py_to(const ::std::any& v) {
-    if constexpr (::std::is_same_v<T, ::std::any>) {
-        return v;
-    } else if constexpr (py_is_rc_list_handle<T>::value) {
-        using item_type = typename py_is_rc_list_handle<T>::item_type;
-        if (const auto* p = ::std::any_cast<T>(&v)) return *p;
-        if (const auto* p = ::std::any_cast<list<item_type>>(&v)) return rc_list_from_value(*p);
-        if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_rc_list<item_type>(*p);
-        return T{};
-    } else if constexpr (::std::is_same_v<T, object>) {
-        if (const auto* p = ::std::any_cast<object>(&v)) return *p;
-        return make_object(v);
-    } else if constexpr (::std::is_same_v<T, str>) {
-        if (const auto* p = ::std::any_cast<str>(&v)) return *p;
-        if (const auto* p = ::std::any_cast<::std::string>(&v)) return str(*p);
-        if (const auto* p = ::std::any_cast<const char*>(&v)) return str(*p);
-        if (const auto* p = ::std::any_cast<object>(&v)) return obj_to_str(*p);
-        return str(py_to_string(v));
-    } else if constexpr (::std::is_same_v<T, bool>) {
-        return py_to_bool(v);
-    } else if constexpr (::std::is_integral_v<T> && !::std::is_same_v<T, bool>) {
-        return static_cast<T>(py_to_int64(v));
-    } else if constexpr (::std::is_floating_point_v<T>) {
-        return static_cast<T>(py_to_float64(v));
-    } else {
-        static_assert(!::std::is_same_v<T, T>, "py_to<T>(any): unsupported target type");
-    }
-}
-
 // Python の print 互換（bool 表記や複数引数の空白区切りを吸収）。
 template <class T>
 static inline void py_print(const T& v) {
     ::std::cout << v << ::std::endl;
-}
-
-static inline void py_print(const ::std::any& v) {
-    ::std::cout << py_to_string(v) << ::std::endl;
 }
 
 static inline void py_print(bool v) {
@@ -1047,9 +870,6 @@ inline _PyUrllibCompat urllib{};
 // list / str の添字・スライス互換ヘルパ。
 template <class T>
 static inline T py_list_item_cast(const object& item);
-
-template <class T>
-static inline T py_list_item_cast(const ::std::any& item);
 
 template <class T>
 static inline T py_list_item_cast(const char* item);
@@ -1162,10 +982,6 @@ static inline str py_slice(const str& v, int64 lo, int64 up) {
     return v.substr(static_cast<::std::size_t>(lo), static_cast<::std::size_t>(up - lo));
 }
 
-static inline str py_slice(const str& v, int64 lo, const ::std::any& up) {
-    return py_slice(v, lo, py_to_int64(up));
-}
-
 template <class T>
 static inline const T& py_at(const list<T>& v, int64 idx) {
     return py_list_at_ref(v, idx);
@@ -1183,11 +999,6 @@ static inline const T& py_at(const rc<list<T>>& v, int64 idx) {
 
 template <class T>
 static inline T py_list_item_cast(const object& item) {
-    return py_to<T>(item);
-}
-
-template <class T>
-static inline T py_list_item_cast(const ::std::any& item) {
     return py_to<T>(item);
 }
 
@@ -1272,11 +1083,6 @@ static inline K py_dict_key_cast(const object& key) {
 }
 
 template <class K>
-static inline K py_dict_key_cast(const ::std::any& key) {
-    return py_to<K>(key);
-}
-
-template <class K>
 static inline K py_dict_key_cast(const char* key) {
     if constexpr (::std::is_same_v<K, str>) {
         return str(key);
@@ -1312,17 +1118,6 @@ static inline V py_dict_value_cast(const object& value) {
     } else {
         return V(value);
     }
-}
-
-template <class V>
-static inline V py_dict_value_cast(const ::std::any& value) {
-    if (const auto* p = ::std::any_cast<V>(&value)) {
-        return *p;
-    }
-    if (const auto* p = ::std::any_cast<object>(&value)) {
-        return py_dict_value_cast<V>(*p);
-    }
-    return py_to<V>(value);
 }
 
 template <class V>
@@ -1388,10 +1183,6 @@ static inline object py_slice(const object& v, int64 lo, int64 up) {
 }
 
 static inline object py_slice(const object& v, int64 lo, const object& up) {
-    return py_slice(v, lo, py_to_int64(up));
-}
-
-static inline object py_slice(const object& v, int64 lo, const ::std::any& up) {
     return py_slice(v, lo, py_to_int64(up));
 }
 
@@ -2158,20 +1949,6 @@ static inline bool py_is_none(const object& v) {
     return !static_cast<bool>(v);
 }
 
-static inline bool py_is_none(const ::std::any& v) {
-    if (!v.has_value()) return true;
-    if (v.type() == typeid(::std::nullopt_t)) return true;
-    return false;
-}
-
-template <class T>
-static inline ::std::optional<T> py_any_to_optional(const ::std::any& v) {
-    if (!v.has_value()) return ::std::nullopt;
-    if (const auto* p = ::std::any_cast<T>(&v)) return *p;
-    if (const auto* p = ::std::any_cast<::std::optional<T>>(&v)) return *p;
-    return ::std::nullopt;
-}
-
 template <class T> static inline bool py_is_dict(const T&) { return false; }
 template <class T> static inline bool py_is_list(const T&) { return false; }
 template <class T> static inline bool py_is_set(const T&) { return false; }
@@ -2215,27 +1992,6 @@ template <class T> static inline bool py_is_bool(const ::std::optional<T>& v) {
     return py_is_bool(*v);
 }
 
-static inline bool py_is_dict(const ::std::any& v) {
-    if (v.type() == typeid(dict<str, ::std::any>) || v.type() == typeid(dict<str, object>)) return true;
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_is_dict(*p);
-    return false;
-}
-static inline bool py_is_list(const ::std::any& v) {
-    if (v.type() == typeid(list<::std::any>) || v.type() == typeid(list<object>)) return true;
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_is_list(*p);
-    return false;
-}
-static inline bool py_is_set(const ::std::any& v) { return v.type() == typeid(set<str>) || v.type() == typeid(set<::std::any>); }
-static inline bool py_is_str(const ::std::any& v) {
-    if (v.type() == typeid(str)) return true;
-    if (const auto* p = ::std::any_cast<object>(&v)) return py_is_str(*p);
-    return false;
-}
-static inline bool py_is_int(const ::std::any& v) {
-    return v.type() == typeid(int) || v.type() == typeid(int64) || v.type() == typeid(uint64);
-}
-static inline bool py_is_float(const ::std::any& v) { return v.type() == typeid(float32) || v.type() == typeid(float64); }
-static inline bool py_is_bool(const ::std::any& v) { return v.type() == typeid(bool); }
 
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/generated/built_in/type_id.h"
@@ -2471,17 +2227,6 @@ static inline bool operator!=(const object& lhs, const ::std::nullopt_t&) { retu
 static inline bool operator==(const ::std::nullopt_t&, const object& rhs) { return !rhs; }
 static inline bool operator!=(const ::std::nullopt_t&, const object& rhs) { return !!rhs; }
 
-// selfhost 由来の `std::any` 比較式をそのまま通すための演算子補助。
-static inline bool operator==(const ::std::any& lhs, const char* rhs) {
-    if (const auto* p = ::std::any_cast<str>(&lhs)) return *p == str(rhs);
-    if (const auto* p = ::std::any_cast<object>(&lhs)) return obj_to_str(*p) == str(rhs);
-    return false;
-}
-
-static inline bool operator!=(const ::std::any& lhs, const char* rhs) {
-    return !(lhs == rhs);
-}
-
 static inline bool operator==(const object& lhs, const char* rhs) {
     return obj_to_str(lhs) == str(rhs);
 }
@@ -2504,46 +2249,6 @@ static inline bool operator!=(const object& lhs, const char* rhs) {
 
 static inline bool operator!=(const char* lhs, const object& rhs) {
     return !(lhs == rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator<(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) < static_cast<float64>(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator>(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) > static_cast<float64>(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator<=(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) <= static_cast<float64>(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator>=(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) >= static_cast<float64>(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator<(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) < py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator>(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) > py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator<=(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) <= py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline bool operator>=(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) >= py_to_float64(rhs);
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
@@ -2635,31 +2340,6 @@ static inline object& operator/=(object& lhs, const T& rhs) {
     return lhs;
 }
 
-// `for x in any_value` を成立させるための begin/end ブリッジ。
-static inline list<::std::any>::iterator begin(::std::any& v) {
-    if (auto* p = ::std::any_cast<list<::std::any>>(&v)) return p->begin();
-    static list<::std::any> empty;
-    return empty.begin();
-}
-
-static inline list<::std::any>::iterator end(::std::any& v) {
-    if (auto* p = ::std::any_cast<list<::std::any>>(&v)) return p->end();
-    static list<::std::any> empty;
-    return empty.end();
-}
-
-static inline list<::std::any>::const_iterator begin(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&v)) return p->begin();
-    static const list<::std::any> empty;
-    return empty.begin();
-}
-
-static inline list<::std::any>::const_iterator end(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&v)) return p->end();
-    static const list<::std::any> empty;
-    return empty.end();
-}
-
 static inline list<object>::const_iterator begin(const object& v) {
     if (const auto* p = obj_to_list_ptr(v)) return p->begin();
     static const list<object> empty;
@@ -2699,31 +2379,6 @@ static inline list<object>::const_iterator end(const ::std::optional<object>& v)
     return ::end(*v);
 }
 
-// Selfhost-generated C++ can iterate ::std::any values that hold list<::std::any>.
-// Provide ::std::begin/::std::end overloads so range-for resolves them.
-namespace std {
-static inline ::list<::std::any>::iterator begin(::std::any& v) {
-    if (auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->begin();
-    static ::list<::std::any> empty;
-    return empty.begin();
-}
-static inline ::list<::std::any>::iterator end(::std::any& v) {
-    if (auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->end();
-    static ::list<::std::any> empty;
-    return empty.end();
-}
-static inline ::list<::std::any>::const_iterator begin(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->begin();
-    static const ::list<::std::any> empty;
-    return empty.begin();
-}
-static inline ::list<::std::any>::const_iterator end(const ::std::any& v) {
-    if (const auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->end();
-    static const ::list<::std::any> empty;
-    return empty.end();
-}
-}  // namespace std
-
 // dict.keys / dict.values の Python 互換。
 template <class K, class V>
 static inline list<object> py_dict_items(const dict<K, V>& d) {
@@ -2757,15 +2412,6 @@ static inline str py_at(const str& v, int64 idx) {
         throw ::std::out_of_range("string index out of range");
     }
     return str(1, static_cast<const ::std::string&>(v)[static_cast<::std::size_t>(idx)]);
-}
-
-static inline str py_slice(const ::std::any& v, int64 lo, int64 up) {
-    if (const auto* s = ::std::any_cast<str>(&v)) return py_slice(*s, lo, up);
-    return "";
-}
-
-static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) {
-    return py_slice(v, lo, py_to_int64(up));
 }
 
 template <class T>
@@ -2879,13 +2525,6 @@ static inline list<str> py_to_str_list_from_object(const object& obj) {
     out.reserve(p->size());
     for (const object& v : *p) out.append(obj_to_str(v));
     return out;
-}
-
-static inline list<str> py_to_str_list_from_any(const ::std::any& value) {
-    if (!value.has_value()) return {};
-    if (const auto* p = ::std::any_cast<list<str>>(&value)) return *p;
-    if (const auto* p = ::std::any_cast<object>(&value)) return py_to_str_list_from_object(*p);
-    return {};
 }
 
 static inline void py_runtime_write_stderr(const str& text) {
