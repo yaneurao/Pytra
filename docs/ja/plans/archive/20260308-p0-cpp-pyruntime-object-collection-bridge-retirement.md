@@ -1,4 +1,4 @@
-# P0: C++ `py_runtime.h` object collection bridge 退役
+# P0: C++ `py_runtime.h` object collection bridge 第1波退役
 
 最終更新: 2026-03-08
 
@@ -108,15 +108,15 @@
 
 ## 4. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01] `py_runtime.h` の mutation / lookup `object` collection bridge を撤去し、typed list/dict/string path を正本に寄せる。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01] `py_runtime.h` の mutation / lookup `object` collection bridge を撤去し、typed list/dict/string path を正本に寄せる。
 - [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S1-01] `py_at/py_slice/py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort/py_index` の checked-in callsite と compat 依存を棚卸しする。
 - [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S1-02] 削除順序と「残さない compat lane」を決定ログへ固定する。
 - [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S2-01] `py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort` の `object` lane を削除する。
 - [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S2-02] `py_index(const object&, const object&)` を削除し、inventory guard を更新する。
 - [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S3-01] `py_at(const object&, int64)` と `py_slice(const object&, ...)` を保留扱いへ固定し、read bridge 依存を次段へ送る。
 - [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S3-02] read bridge 保留後の representative regression / inventory 注記を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S4-01] representative unit / fixture / sample parity と行数差分を確認する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S4-02] docs / archive / TODO 履歴を同期して本計画を閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S4-01] representative unit / fixture / sample parity と行数差分を確認する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S4-02] docs / archive / TODO 履歴を同期して本計画を閉じる。
 
 ## 5. 決定ログ
 
@@ -125,3 +125,5 @@
 - 2026-03-08: `src/runtime/cpp/generated/std/json.cpp` の `JsonArr::get*()` は現在 `JsonArr.raw: object` と `py_at(this->raw, ...)` / `py_len(this->raw)` に依存している。`py_at(object)` / `py_slice(object, ...)` の read bridge は、JSON runtime lane を typed/nominal carrier へ寄せる tranche まで本計画では削除しない。
 - 2026-03-08: 第1削除順は mutation bridge (`py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort`) と `py_index(const object&, const object&)` に固定し、inventory guard で再侵入を防ぐ。read bridge (`py_at(object)`, `py_slice(object, ...)`) は本計画の TODO から外さず残すが、close 時点では保留扱いを明記して次 tranche へ送る。
 - 2026-03-08: object mutation smoke は bridge API ではなく `obj_to_list_obj(...)->value` と `py_list_*_mut` の low-level lane に寄せて維持した。iterator が mutation 後の要素を観測する regression 自体は残す。
+- 2026-03-08: representative verification は `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `check_runtime_std_sot_guard.py`, fixture parity `cases=3 pass=3 fail=0` を通した。sample parity は full run の `17/18` green に加えて、failure だった `18_mini_language_interpreter` を `cases=1 pass=1 fail=0` で再確認した。
+- 2026-03-08: `py_runtime.h` の行数は本計画起票時比で `2337 -> 2246` に縮退した。read bridge (`py_at(object)`, `py_slice(object, ...)`) は current `JsonArr.raw: object` 依存が解けるまで次 tranche に送る。

@@ -9,7 +9,7 @@
 /* Pure-Python source-of-truth for object-based iterator helpers. */
 
 object py_reversed_object(const object& values) {
-    object out = make_object(list<object>{});
+    list<object> out = list<object>{};
     int64 i = py_len(values) - 1;
     while (i >= 0) {
         py_append(out, make_object(py_at(values, py_to<int64>(i))));
@@ -19,7 +19,7 @@ object py_reversed_object(const object& values) {
 }
 
 object py_enumerate_object(const object& values, int64 start = 0) {
-    object out = make_object(list<object>{});
+    list<object> out = list<object>{};
     int64 i = 0;
     int64 n = py_len(values);
     while (i < n) {
