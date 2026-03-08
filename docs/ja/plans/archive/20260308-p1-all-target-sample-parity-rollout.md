@@ -104,7 +104,7 @@ Post-bootstrap snapshot:
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02] compiled target 群（`rs/cs/go/java/kotlin/swift/scala`）の sample parity を green へ持ち上げる。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03] scripting / mixed target 群（`ruby/lua/php/nim`）の sample parity を green へ持ち上げる。
 - [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01] 全 target parity 一括実行の scripts / docs / how-to-use を整備し、再実行手順を固定する。
-- [ ] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02] full parity 実行結果を記録し、計画を archive へ移して閉じる。
+- [x] [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02] full parity 実行結果を記録し、計画を archive へ移して閉じる。
 
 ## フェーズ詳細
 
@@ -166,3 +166,5 @@ Post-bootstrap snapshot:
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03]: `python3 tools/runtime_parity_check.py --targets ruby --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`、`--targets lua`、`--targets php`、`--targets nim` を個別実行し、scripting / mixed target 4 件すべてで `SUMMARY cases=18 pass=18 fail=0` を確認した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: full-target 再実行の canonical wrapper として `tools/check_all_target_sample_parity.py` を追加した。wrapper は `cpp` / `js_ts` / `compiled` / `scripting_mixed` の 4 group を順に実行し、`--summary-dir` 指定時に group JSON と merged `all-target-summary.json` を書く。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: `docs/ja/spec/spec-tools.md` と `docs/ja/how-to-use.md` は wrapper 前提の再実行手順へ更新した。`runtime_parity_check.py` 一括直叩きは定義レベルに残し、日常運用は group wrapper を正本とする。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: full parity 結果は canonical subgroup 実行の総和で記録した。baseline は `python3 tools/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` で `SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts`、compiled は `rs/cs/go/java/kotlin/swift/scala` の各 target 個別実行で全件 `18/18`、scripting / mixed は `ruby/lua/php/nim` の各 target 個別実行で全件 `18/18` を確認した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: `tools/check_all_target_sample_parity.py` は unit test と `cpp` group smoke 起動で検証した。full-target wrapper 自体は C++ sample compile が長いためこの時点では group-level verified state とし、完了判定は既に green の canonical subgroup 結果を正本とした。
