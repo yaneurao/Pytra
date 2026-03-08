@@ -58,13 +58,18 @@
 
 ## タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01] `dict<str, V>` への `object` key compat を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-01] `py_dict_get(..., object)` の checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-02] `str` key への置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-02] helper を削除し inventory guard を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S3-01] parity / docs / archive を同期する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01] `dict<str, V>` への `object` key compat を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-01] `py_dict_get(..., object)` の checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-02] `str` key への置換方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-02] helper を削除し inventory guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S3-01] parity / docs / archive を同期する。
 
 ## 決定ログ
 
 - 2026-03-09: 起票時点で `dict<str, V>` key の current canonical lane は `char*` / `str` / `std::string` であり、`object` key overload だけを compat lane とみなす。今回は key 側だけを対象にし、value decode や `dict_get_default` の generic fallback は別タスクへ分離する。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-01]: current source の checked-in callsite を洗うと、`src/runtime/cpp/generated/std/argparse.cpp` は `str tok` をそのまま使っており、C++ emitter も `dict[str, V]` では `_coerce_dict_key_expr(...)` により `py_to_string(...)` か verified `str` へ寄せていた。`py_dict_get(dict<str, V>, object)` の直接利用は `src/runtime/cpp/native/core/py_runtime.h` 自身だけで、compat lane は未使用と確定した。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-02]: `dict[str, V]` key の canonical lane は `char*` / `str` / `std::string` のまま維持し、非 verified key は emitter 側で必ず `py_to_string(...)` へ落とす方針に固定した。runtime 側で `object -> str` を吸う convenience は持たない。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-01]: representative replacement は emitter regression で固定した。`test_coerce_dict_key_expr_coerces_object_key_to_py_to_string` を追加し、`dict[str, V]` に `object` key が来ても callsite で `py_to_string(k)` へ正規化されることを確認した。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-02]: `src/runtime/cpp/native/core/py_runtime.h` から `template <class V> py_dict_get(const dict<str, V>&, const object&)` を削除し、`test_cpp_runtime_iterable.py` に inventory guard を追加した。current source で helper 直接 callsite が無いことを前提に削除している。
+- 2026-03-09 [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S3-01]: verification は `test_east3_cpp_bridge.py`、`test_cpp_runtime_iterable.py`、fixture parity `cases=3 pass=3 fail=0` を通した。full sample parity は本 tranche の受け入れ基準では要求せず、fixture gate を正本にした。

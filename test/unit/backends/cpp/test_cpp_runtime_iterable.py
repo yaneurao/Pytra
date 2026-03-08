@@ -326,6 +326,7 @@ int main() {
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const object& obj, const char* key)", runtime_header)
+        self.assertNotIn("static inline const V& py_dict_get(const dict<str, V>& d, const object& key)", runtime_header)
         self.assertNotIn("class py_dyn_range_iter", runtime_header)
         self.assertNotIn("class py_dyn_range_view", runtime_header)
         self.assertNotIn("static inline py_dyn_range_view py_dyn_range(const object& iterable)", runtime_header)

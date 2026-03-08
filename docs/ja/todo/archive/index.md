@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-KEY-01](../plans/archive/20260309-p0-cpp-pyruntime-object-key-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01](../plans/archive/20260309-p0-cpp-pyruntime-object-dictdefault-remain-retirement.md)
 - [2026-03-08 / P4-CPP-SELFHOST-ROLLOUT-01](../plans/archive/20260308-p4-cpp-selfhost-rollout.md)
 - [2026-03-08 / P3-COMPILER-JSONVALUE-INTERNAL-01](../plans/archive/20260308-p3-compiler-jsonvalue-internal-alignment.md)

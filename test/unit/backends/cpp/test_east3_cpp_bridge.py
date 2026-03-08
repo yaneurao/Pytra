@@ -595,6 +595,13 @@ class East3CppBridgeTest(unittest.TestCase):
         out = emitter._coerce_dict_key_expr(owner, "k", key_node)
         self.assertEqual(out, "k")
 
+    def test_coerce_dict_key_expr_coerces_object_key_to_py_to_string(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        owner = {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"}
+        key_node = {"kind": "Name", "id": "k", "resolved_type": "object"}
+        out = emitter._coerce_dict_key_expr(owner, "k", key_node)
+        self.assertEqual(out, "py_to_string(k)")
+
     def test_render_expr_subscript_dict_str_key_verified_skips_py_to_string(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         expr = {

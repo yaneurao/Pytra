@@ -1361,11 +1361,6 @@ static inline const V& py_dict_get(const dict<str, V>& d, const ::std::string& k
 }
 
 template <class V>
-static inline const V& py_dict_get(const dict<str, V>& d, const object& key) {
-    return py_dict_get(d, str(key));
-}
-
-template <class V>
 static inline V py_dict_get(const ::std::optional<dict<str, V>>& d, const char* key) {
     if (!d.has_value()) {
         throw ::std::out_of_range("dict key not found");
