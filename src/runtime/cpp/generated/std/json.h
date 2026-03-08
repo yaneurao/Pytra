@@ -19,7 +19,7 @@ struct _JsonParser;
 
     struct JsonObj {
         dict<str, object> raw;
-
+        
         JsonObj(const dict<str, object>& raw);
         ::std::optional<JsonValue> get(const str& key);
         ::std::optional<JsonObj> get_obj(const str& key);
@@ -32,7 +32,7 @@ struct _JsonParser;
 
     struct JsonArr {
         object raw;
-
+        
         JsonArr(const object& raw);
         ::std::optional<JsonValue> get(int64 index);
         ::std::optional<JsonObj> get_obj(int64 index);
@@ -45,7 +45,7 @@ struct _JsonParser;
 
     struct JsonValue {
         object raw;
-
+        
         JsonValue(const object& raw);
         ::std::optional<JsonObj> as_obj();
         ::std::optional<JsonArr> as_arr();
@@ -59,7 +59,7 @@ struct _JsonParser;
         str text;
         int64 n;
         int64 i;
-
+        
         _JsonParser(const str& text);
         object parse();
         void _skip_ws();
