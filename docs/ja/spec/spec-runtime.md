@@ -268,6 +268,8 @@ JSON 由来の動的境界は、`JsonValue` / `JsonObj` / `JsonArr` という JS
 source surface の方針:
 
 - `json.loads(...)` の長期正規形は一般 `object` ではなく `JsonValue` とする。
+- public module root は引き続き `pytra.std.json` とする。`json` が JSON 専用 nominal surface を持つようになっても、`utils/json.py` へ移してはならない。
+- 理由は、`json` は Pytra 固有 utility ではなく stdlib compatibility family に属するためである。Pytra 独自の decode-first 契約を持っても、公開 namespace は `std` に固定する。
 - user code は `JsonValue` / `JsonObj` / `JsonArr` の decode API を通して値を取り出す。
 - general-purpose `cast` を JSON だけのために language-wide 必須機能として先行導入しなくてよい。
 - 必要な narrowing は JSON module 専用 API に寄せる。

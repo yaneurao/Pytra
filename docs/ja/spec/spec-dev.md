@@ -172,6 +172,7 @@ linked module(EAST3)
   - メンバー: `parent`, `parents`, `name`, `suffix`, `stem`, `resolve`, `exists`, `mkdir`, `read_text`, `write_text`, `glob`, `cwd`
 - `pytra.std.json`
   - 関数: `loads`, `dumps`
+  - 注記: `JsonValue` / `JsonObj` / `JsonArr` のような Pytra 独自 decode surface を将来追加しても、公開 module root は `pytra.std.json` のまま維持し、`pytra.utils.json` へは移さない。
 - `pytra.std.sys`
   - 変数: `argv`, `path`, `stderr`, `stdout`
   - 関数: `exit`, `set_argv`, `set_path`, `write_stderr`, `write_stdout`

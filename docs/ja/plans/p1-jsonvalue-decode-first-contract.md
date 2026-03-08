@@ -187,3 +187,4 @@ JSON は実際には次の 7 分岐しか持たない。
 - 2026-03-08: general-purpose `cast_or_raise` は JSON decode には採用しない。必要な decode は JSON module 専用 wrapper/decode API に寄せる。
 - 2026-03-08: 各 backend での carrier は target idiom に従うが、共通意味論は `JsonValue` という target 非依存ADTで先に固定する。
 - 2026-03-08: `JsonValue.Int` の payload は `int64`、`JsonValue.Float` の payload は `float64` とする。JSON number のうち小数点/exponent を含まないものは `Int(int64)`、含むものは `Float(float64)` として解釈し、`int64` 範囲外整数は parse error とする。
+- 2026-03-08: `json` は stdlib compatibility family に属するため、decode-first 契約を持っても public module root は `pytra.std.json` のまま維持する。`pytra.utils.json` への移設は行わない。
