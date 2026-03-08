@@ -1436,33 +1436,11 @@ static inline D py_dict_get_default(const dict<str, object>& d, const ::std::str
 }
 
 static inline str dict_get_node(const dict<str, str>& d, const str& key, const str& defval = "") {
-    if (d.find(key) != d.end()) {
-        return py_dict_get(d, key);
+    auto it = d.find(key);
+    if (it != d.end()) {
+        return it->second;
     }
     return defval;
-}
-
-static inline str dict_get_node(const dict<str, str>& d, const str& key, const char* defval) {
-    if (d.find(key) != d.end()) {
-        return py_dict_get(d, key);
-    }
-    return str(defval);
-}
-
-static inline str dict_get_node(const dict<str, str>& d, const char* key, const str& defval = "") {
-    str k = str(key);
-    if (d.find(k) != d.end()) {
-        return py_dict_get(d, k);
-    }
-    return defval;
-}
-
-static inline str dict_get_node(const dict<str, str>& d, const char* key, const char* defval) {
-    str k = str(key);
-    if (d.find(k) != d.end()) {
-        return py_dict_get(d, k);
-    }
-    return str(defval);
 }
 
 // Python の型判定（isinstance 的な分岐）で使う述語群。

@@ -403,6 +403,13 @@ int main() {
         )
         self.assertNotIn("static inline D dict_get_node(const dict<str, object>& d, const char* key, const D& defval)", runtime_header)
         self.assertNotIn("static inline D dict_get_node(const dict<str, object>& d, const str& key, const D& defval)", runtime_header)
+        self.assertIn(
+            'static inline str dict_get_node(const dict<str, str>& d, const str& key, const str& defval = "")',
+            runtime_header,
+        )
+        self.assertNotIn("static inline str dict_get_node(const dict<str, str>& d, const str& key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline str dict_get_node(const dict<str, str>& d, const char* key, const str& defval = \"\")", runtime_header)
+        self.assertNotIn("static inline str dict_get_node(const dict<str, str>& d, const char* key, const char* defval)", runtime_header)
         self.assertNotIn("static inline bool operator<(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline bool operator>(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline bool operator<=(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
