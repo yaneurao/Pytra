@@ -32,17 +32,7 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01] JS/TS 向け ambient global extern 変数を導入する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-01] `extern()` / `extern("symbol")` の variable ambient-global 契約を docs に固定する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-02] 既存 `extern(expr)` host fallback との切り分けを決定ログへ固定する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-01] parser / EAST metadata に ambient global variable marker を追加する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-02] representative IR/unit test で same-name / alias case を固定する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-02] ambient global `Any` receiver の property/method/call raw lowering を追加する。
-- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-01] unsupported backend guard / representative smoke を更新する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-02] docs / archive を同期して本計画を閉じる。
-
-2. [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01] compiler/backend 内部の JSON raw-dict loader を `JsonValue` decode-first 契約へ揃える。
+1. [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01] compiler/backend 内部の JSON raw-dict loader を `JsonValue` decode-first 契約へ揃える。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S1-01] compiler/backend 内部で `json.loads(...)` を直接使う箇所を棚卸しする。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S1-02] selfhost blocker と host-only 後回し対象を決定ログへ固定する。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S2-01] `transpile_cli.py` の JSON root loader を `loads_obj()` ベースへ移行する。
@@ -52,7 +42,7 @@
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-01] raw `json.loads(...)` 再侵入 guard を追加する。
 - [ ] [ID: P3-COMPILER-JSONVALUE-INTERNAL-01-S4-02] docs / archive を同期して本計画を閉じる。
 
-3. [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01] C++ selfhost の stage1 build / direct route / diff / stage2 を current runtime/layout 契約に合わせて復旧する。
+2. [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01] C++ selfhost の stage1 build / direct route / diff / stage2 を current runtime/layout 契約に合わせて復旧する。
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-01] `tools/build_selfhost.py` 失敗点と missing artifact を棚卸しする。
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-02] selfhost 復旧の受け入れ順序と current source of truth を決定ログへ固定する。
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-01] stage1 build に必要な generated/static frontend artifact 供給を current layout に合わせて復旧する。
