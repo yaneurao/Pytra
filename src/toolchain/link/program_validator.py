@@ -9,6 +9,7 @@ from toolchain.link.program_model import LINK_INPUT_SCHEMA
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkInputModuleEntry
 from toolchain.link.program_model import LinkOutputModuleEntry
+from toolchain.link.program_model import MODULE_KINDS
 from toolchain.link.program_model import normalize_writer_options
 
 
@@ -46,6 +47,13 @@ def _require_obj_field(doc: json.JsonObj, key: str, label: str) -> json.JsonObj:
     value = doc.get_obj(key)
     if value is None:
         raise RuntimeError(label + "." + key + " must be an object")
+    return value
+
+
+def _str_or_empty(doc: json.JsonObj, key: str) -> str:
+    value = doc.get_str(key)
+    if value is None:
+        return ""
     return value
 
 
@@ -179,13 +187,37 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
         if module_id in seen_module_ids:
             raise RuntimeError("duplicate link-output module_id: " + module_id)
         seen_module_ids.add(module_id)
+        module_kind = _str_or_empty(item, "module_kind")
+        if module_kind == "":
+            module_kind = "user"
+        if module_kind not in MODULE_KINDS:
+            raise RuntimeError(label + ".module_kind must be one of: user, runtime, helper")
+        helper_id = _str_or_empty(item, "helper_id")
+        owner_module_id = _str_or_empty(item, "owner_module_id")
+        generated_by = _str_or_empty(item, "generated_by")
+        source_path = _str_or_empty(item, "source_path")
+        if module_kind == "helper":
+            if helper_id == "":
+                raise RuntimeError(label + ".helper_id is required for helper module")
+            if owner_module_id == "":
+                raise RuntimeError(label + ".owner_module_id is required for helper module")
+            if generated_by != "linked_optimizer":
+                raise RuntimeError(label + ".generated_by must be linked_optimizer for helper module")
+        else:
+            if helper_id != "" or owner_module_id != "" or generated_by != "":
+                raise RuntimeError(label + " must not carry helper metadata unless module_kind=helper")
+            source_path = _require_str(item, "source_path", label)
         module_entries.append(
             LinkOutputModuleEntry(
                 module_id=module_id,
                 input=_require_str(item, "input", label),
                 output=_require_str(item, "output", label),
-                source_path=_require_str(item, "source_path", label),
+                source_path=source_path,
                 is_entry=_require_bool(item, "is_entry", label),
+                module_kind=module_kind,
+                helper_id=helper_id,
+                owner_module_id=owner_module_id,
+                generated_by=generated_by,
             )
         )
     module_id_set = {item.module_id for item in module_entries}
