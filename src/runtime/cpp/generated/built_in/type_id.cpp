@@ -233,7 +233,7 @@ int64 py_tid_register_class_type(int64 base_type_id) {
     _ensure_builtins();
     int64 base_tid = _normalize_base_type_id(base_type_id);
     
-    auto tid = py_dict_get(_TYPE_STATE, "next_user_type_id");
+    auto tid = py_dict_get(_TYPE_STATE, str("next_user_type_id"));
     while (py_contains(_TYPE_BASE, tid)) {
         tid++;
     }

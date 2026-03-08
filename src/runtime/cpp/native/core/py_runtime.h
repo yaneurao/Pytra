@@ -1294,63 +1294,6 @@ static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
     return it->second;
 }
 
-template <class V>
-static inline const V& py_dict_get(const dict<str, V>& d, const char* key) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        if (::std::string(key) == "lowered_kind") {
-            static const V k_empty_value{};
-            return k_empty_value;
-        }
-        str keys_txt = "";
-        bool first = true;
-        for (const auto& kv : d) {
-            if (!first) keys_txt += ", ";
-            keys_txt += kv.first;
-            first = false;
-        }
-        throw ::std::out_of_range(
-            ::std::string("dict key not found: ")
-            + key
-            + " available_keys=["
-            + keys_txt.c_str()
-            + "] value_type="
-            + typeid(V).name());
-    }
-    return it->second;
-}
-
-template <class V>
-static inline const V& py_dict_get(const dict<str, V>& d, const str& key) {
-    auto it = d.find(key);
-    if (it == d.end()) {
-        if (key == str("lowered_kind")) {
-            static const V k_empty_value{};
-            return k_empty_value;
-        }
-        str keys_txt = "";
-        bool first = true;
-        for (const auto& kv : d) {
-            if (!first) keys_txt += ", ";
-            keys_txt += kv.first;
-            first = false;
-        }
-        throw ::std::out_of_range(
-            ::std::string("dict key not found: ")
-            + key.c_str()
-            + " available_keys=["
-            + keys_txt.c_str()
-            + "] value_type="
-            + typeid(V).name());
-    }
-    return it->second;
-}
-
-template <class V>
-static inline const V& py_dict_get(const dict<str, V>& d, const ::std::string& key) {
-    return py_dict_get(d, str(key));
-}
-
 // Python の型判定（isinstance 的な分岐）で使う述語群。
 template <class T>
 static inline bool py_is_none(const ::std::optional<T>& v) {

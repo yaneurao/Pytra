@@ -2436,7 +2436,7 @@ class CppEmitter(
             key_verified = bool(key_node_d.get("dict_key_verified", False))
             if key_verified:
                 return key_expr
-            return f"py_to_string({key_expr})"
+            return f"str({key_expr})"
         int_key_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
         float_key_types = {"float32", "float64"}
         if key_t in int_key_types or key_t in float_key_types or key_t == "bool":
