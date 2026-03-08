@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-STRLIST-01](../plans/archive/20260308-p0-cpp-pyruntime-object-strlist-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01](../plans/archive/20260308-p0-cpp-pyruntime-generic-dict-get-default-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01](../plans/archive/20260308-p0-cpp-pyruntime-object-begin-end-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-STRCMP-01](../plans/archive/20260308-p0-cpp-pyruntime-object-string-compare-retirement.md)
@@ -63,7 +64,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（26 セクション）
+- [2026-03-08](20260308.md)（27 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
