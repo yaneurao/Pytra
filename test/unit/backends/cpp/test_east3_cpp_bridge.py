@@ -97,7 +97,10 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("py_dyn_range(xs)", text)
+        self.assertIn("__obj = xs;", text)
+        self.assertIn("__obj->py_iter_or_raise()", text)
+        self.assertIn("__iter->py_next_or_stop()", text)
+        self.assertNotIn("py_dyn_range(xs)", text)
 
     def test_emit_stmt_forcore_runtime_protocol_typed_target_uses_unbox_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -117,8 +120,10 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("for (object __itobj", text)
+        self.assertIn("object __itobj", text)
+        self.assertIn("= *__next_", text)
         self.assertIn("int64 v = py_to<int64>(__itobj", text)
+        self.assertNotIn("py_dyn_range(xs)", text)
 
     def test_emit_stmt_forcore_runtime_name_target_typed_iter_uses_typed_loop_header(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -167,7 +172,9 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("for (object __itobj", text)
+        self.assertIn("object __iter_obj_", text)
+        self.assertIn("object __itobj", text)
+        self.assertIn("__iter->py_next_or_stop()", text)
         self.assertIn("int64 line_index = py_to<int64>(py_at(", text)
         self.assertIn("str source = py_to_string(py_at(", text)
 

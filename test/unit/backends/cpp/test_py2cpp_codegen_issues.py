@@ -1132,7 +1132,7 @@ def f(x: object) -> None:
         self.assertNotIn("for (int64 i = 0; i < 3; ++i) {", cpp)
         self.assertIn("total += i;", cpp)
 
-    def test_for_object_uses_runtime_protocol_py_dyn_range(self) -> None:
+    def test_for_object_uses_runtime_protocol_explicit_iter_next(self) -> None:
         src = """def f(x: object) -> int:
     s: int = 0
     for v in x:
@@ -1145,7 +1145,11 @@ def f(x: object) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("for (object v : py_dyn_range(x))", cpp)
+        self.assertIn("__obj = x;", cpp)
+        self.assertIn("__obj->py_iter_or_raise()", cpp)
+        self.assertIn("__iter->py_next_or_stop()", cpp)
+        self.assertIn("object v = *__next_", cpp)
+        self.assertNotIn("py_dyn_range(x)", cpp)
         self.assertNotIn("for (auto& v : x)", cpp)
 
     def test_for_list_keeps_static_fastpath(self) -> None:
@@ -1205,7 +1209,7 @@ def f(x: object) -> None:
 
         self.assertTrue(
             ("for (object v : xs)" in cpp)
-            or ("py_dyn_range(xs)" in cpp)
+            or ("__obj = xs;" in cpp and "__obj->py_iter_or_raise()" in cpp)
         )
 
     def test_isinstance_builtin_lowers_to_type_id_runtime_api(self) -> None:

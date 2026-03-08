@@ -1036,6 +1036,33 @@ class CppStatementEmitter:
         self.emit(f"auto {target_name} = {rhs};")
         self.declared_var_types[target_name] = "object"
 
+    def _runtime_iter_scope_names(self, scope_names: set[str], *tmp_names: str) -> set[str]:
+        out = set(scope_names)
+        for tmp_name in tmp_names:
+            if tmp_name != "":
+                out.add(tmp_name)
+        return out
+
+    def _emit_runtime_iter_loop_open(self, iter_expr_txt: str, scope_names: set[str]) -> tuple[str, str]:
+        iter_obj = self.next_tmp("__iter_obj")
+        next_tmp = self.next_tmp("__next")
+        self.emit(self.syntax_text("block_open", "{"))
+        self.indent += 1
+        self.scope_stack.append(self._runtime_iter_scope_names(scope_names, iter_obj, next_tmp))
+        self.emit(f"object {iter_obj} = {self._render_object_iter_or_raise_expr(iter_expr_txt)};")
+        self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": "true"}))
+        self.indent += 1
+        self.emit(f"::std::optional<object> {next_tmp} = {self._render_object_iter_next_expr(iter_obj)};")
+        self.emit(f"if (!{next_tmp}.has_value()) break;")
+        return iter_obj, next_tmp
+
+    def _emit_runtime_iter_loop_close(self) -> None:
+        self.indent -= 1
+        self.emit_block_close()
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit_block_close()
+
     def _emit_for_each_runtime(
         self,
         stmt: dict[str, Any],
@@ -1044,7 +1071,7 @@ class CppStatementEmitter:
         body_stmts: list[dict[str, Any]],
         omit_braces: bool,
     ) -> None:
-        """`For` を runtime iterable プロトコル（`py_dyn_range`）で出力する。"""
+        """`For` を runtime iterable プロトコル（explicit iter/next while）で出力する。"""
         t = self.render_expr(stmt.get("target"))
         it = self.render_expr(stmt.get("iter"))
         t0 = self.any_to_str(stmt.get("target_type"))
@@ -1053,32 +1080,23 @@ class CppStatementEmitter:
         unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
         target_names = self.target_bound_names(target)
         iter_tmp = ""
-        hdr = ""
         needs_tmp = unpack_tuple or self._node_kind_from_dict(target) != "Name" or not self.is_any_like_type(t_decl)
         if needs_tmp:
             iter_tmp = self.next_for_runtime_iter_name()
             target_names = self.scope_names_with_tmp(target_names, iter_tmp)
-            hdr = self.syntax_line(
-                "for_each_runtime_open",
-                "for (object {iter_tmp} : py_dyn_range({iter}))",
-                {"iter_tmp": iter_tmp, "iter": it},
-            )
-        else:
-            hdr = self.syntax_line(
-                "for_each_runtime_target_open",
-                "for (object {target} : py_dyn_range({iter}))",
-                {"target": t, "iter": it},
-            )
-            if t != "":
-                self.declared_var_types[t] = "object"
-
-        self._emit_for_body_open(hdr, target_names, omit_braces)
+        iter_obj, next_tmp = self._emit_runtime_iter_loop_open(it, target_names)
+        _ = iter_obj
+        if needs_tmp:
+            self.emit(f"object {iter_tmp} = *{next_tmp};")
+        elif t != "":
+            self.emit(f"object {t} = *{next_tmp};")
+            self.declared_var_types[t] = "object"
         if unpack_tuple:
             self._emit_target_unpack_runtime(target, iter_tmp, iter_expr)
         else:
             self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
-        self._emit_for_body_stmts(body_stmts, omit_braces)
-        self._emit_for_body_close(omit_braces)
+        self._emit_for_body_stmts(body_stmts, False)
+        self._emit_runtime_iter_loop_close()
 
     def _forcore_target_bound_names(self, target_plan: dict[str, Any]) -> set[str]:
         """ForCore `target_plan` から scope 登録すべき束縛名を抽出する。"""
@@ -1716,15 +1734,11 @@ class CppStatementEmitter:
                 if target_type in {"", "unknown"}:
                     target_type = iter_item_t if typed_iter else "object"
                 if self.is_any_like_type(target_type):
-                    hdr = self.syntax_line(
-                        "for_each_runtime_target_open",
-                        "for (object {target} : py_dyn_range({iter}))",
-                        {"target": target_id, "iter": iter_txt},
-                    )
+                    _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, {target_id})
+                    self.emit(f"object {target_id} = *{next_tmp};")
                     self.declared_var_types[target_id] = "object"
-                    self._emit_for_body_open(hdr, {target_id}, omit_braces)
-                    self._emit_for_body_stmts(body_stmts, omit_braces)
-                    self._emit_for_body_close(omit_braces)
+                    self._emit_for_body_stmts(body_stmts, False)
+                    self._emit_runtime_iter_loop_close()
                     return
                 if typed_iter:
                     typed_loop_type = self._cpp_type_text(target_type)
@@ -1741,12 +1755,8 @@ class CppStatementEmitter:
                     self._emit_for_body_close(omit_braces)
                     return
                 iter_tmp = self.next_for_runtime_iter_name()
-                hdr = self.syntax_line(
-                    "for_each_runtime_open",
-                    "for (object {iter_tmp} : py_dyn_range({iter}))",
-                    {"iter_tmp": iter_tmp, "iter": iter_txt},
-                )
-                self._emit_for_body_open(hdr, self.scope_names_with_tmp({target_id}, iter_tmp), omit_braces)
+                _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, self.scope_names_with_tmp({target_id}, iter_tmp))
+                self.emit(f"object {iter_tmp} = *{next_tmp};")
                 rhs = self.render_expr(
                     self._build_unbox_expr_node(
                         self._build_name_expr_node(iter_tmp, "object"),
@@ -1756,8 +1766,8 @@ class CppStatementEmitter:
                 )
                 self.emit(f"{self._cpp_type_text(target_type)} {target_id} = {rhs};")
                 self.declared_var_types[target_id] = target_type
-                self._emit_for_body_stmts(body_stmts, omit_braces)
-                self._emit_for_body_close(omit_braces)
+                self._emit_for_body_stmts(body_stmts, False)
+                self._emit_runtime_iter_loop_close()
                 return
             if target_kind == "TupleTarget":
                 iter_tmp = self.next_for_runtime_iter_name()
@@ -1819,15 +1829,17 @@ class CppStatementEmitter:
                         {"type": self._cpp_type_text(iter_item_t), "target": iter_tmp, "iter": typed_iter_expr},
                     )
                 else:
-                    hdr = self.syntax_line(
-                        "for_each_runtime_open",
-                        "for (object {iter_tmp} : py_dyn_range({iter}))",
-                        {"iter_tmp": iter_tmp, "iter": iter_txt},
-                    )
-                self._emit_for_body_open(hdr, scope_names, omit_braces)
+                    _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, scope_names)
+                    self.emit(f"object {iter_tmp} = *{next_tmp};")
+                    hdr = ""
+                if hdr != "":
+                    self._emit_for_body_open(hdr, scope_names, omit_braces)
                 self._emit_forcore_tuple_unpack_runtime(target_plan, iter_tmp, inherited_elem_types)
-                self._emit_for_body_stmts(body_stmts, omit_braces)
-                self._emit_for_body_close(omit_braces)
+                self._emit_for_body_stmts(body_stmts, False if hdr == "" else omit_braces)
+                if hdr == "":
+                    self._emit_runtime_iter_loop_close()
+                else:
+                    self._emit_for_body_close(omit_braces)
                 return
             raise RuntimeError("cpp emitter: invalid forcore runtime target")
 
