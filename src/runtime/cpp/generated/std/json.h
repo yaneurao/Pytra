@@ -81,6 +81,7 @@ int64 _int_from_hex4(const str& hx);
 str _hex4(int64 code);
 list<object> _json_array_items(const object& raw);
 list<object> _json_new_array();
+object _json_obj_require(const dict<str, object>& raw, const str& key);
 int64 _json_indent_value(const ::std::optional<int64>& indent);
 object loads(const str& text);
 ::std::optional<JsonObj> loads_obj(const str& text);

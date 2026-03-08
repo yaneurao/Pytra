@@ -75,6 +75,16 @@ namespace pytra::std::json {
         return list<object>{};
     }
 
+    object _json_obj_require(const dict<str, object>& raw, const str& key) {
+        for (::std::tuple<str, object> __itobj_1 : raw) {
+            str k = py_to_string(py_at(__itobj_1, 0));
+            auto value = py_at(__itobj_1, 1);
+            if (k == key)
+                return value;
+        }
+        throw ValueError("json object key not found: " + key);
+    }
+
     int64 _json_indent_value(const ::std::optional<int64>& indent) {
         if (py_is_none(indent))
             throw ValueError("json indent is required");
@@ -90,43 +100,50 @@ namespace pytra::std::json {
     ::std::optional<JsonValue> JsonObj::get(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key));
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value);
     }
 
     ::std::optional<JsonObj> JsonObj::get_obj(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key)).as_obj();
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value).as_obj();
     }
 
     ::std::optional<JsonArr> JsonObj::get_arr(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key)).as_arr();
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value).as_arr();
     }
 
     ::std::optional<str> JsonObj::get_str(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key)).as_str();
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value).as_str();
     }
 
     ::std::optional<int64> JsonObj::get_int(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key)).as_int();
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value).as_int();
     }
 
     ::std::optional<float64> JsonObj::get_float(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key)).as_float();
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value).as_float();
     }
 
     ::std::optional<bool> JsonObj::get_bool(const str& key) {
             if (!py_contains(this->raw, key))
                 return ::std::nullopt;
-            return JsonValue(py_dict_get(this->raw, key)).as_bool();
+            object value = make_object(_json_obj_require(this->raw, key));
+            return JsonValue(value).as_bool();
     }
 
 
@@ -522,9 +539,9 @@ namespace pytra::std::json {
             return "{}";
         if (py_is_none(indent)) {
             rc<list<str>> parts = rc_list_from_value(list<str>{});
-            for (::std::tuple<str, object> __itobj_1 : values) {
-                str k = py_to_string(py_at(__itobj_1, 0));
-                auto x = py_at(__itobj_1, 1);
+            for (::std::tuple<str, object> __itobj_2 : values) {
+                str k = py_to_string(py_at(__itobj_2, 0));
+                auto x = py_at(__itobj_2, 1);
                 str k_txt = _escape_str(k, ensure_ascii);
                 str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
                 py_append(parts, k_txt + key_sep + v_txt);
@@ -533,9 +550,9 @@ namespace pytra::std::json {
         }
         int64 indent_i = _json_indent_value(indent);
         rc<list<str>> inner = rc_list_from_value(list<str>{});
-        for (::std::tuple<str, object> __itobj_2 : values) {
-            str k = py_to_string(py_at(__itobj_2, 0));
-            auto x = py_at(__itobj_2, 1);
+        for (::std::tuple<str, object> __itobj_3 : values) {
+            str k = py_to_string(py_at(__itobj_3, 0));
+            auto x = py_at(__itobj_3, 1);
             str prefix = py_repeat(" ", indent_i * (level + 1));
             str k_txt = _escape_str(k, ensure_ascii);
             str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
@@ -570,9 +587,9 @@ namespace pytra::std::json {
         str item_sep = ",";
         str key_sep = (py_is_none(indent) ? ":" : ": ");
         if (!py_is_none(separators)) {
-            auto __tuple_3 = *(separators);
-            item_sep = ::std::get<0>(__tuple_3);
-            key_sep = ::std::get<1>(__tuple_3);
+            auto __tuple_4 = *(separators);
+            item_sep = ::std::get<0>(__tuple_4);
+            key_sep = ::std::get<1>(__tuple_4);
         }
         return _dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0);
     }

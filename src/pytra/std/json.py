@@ -73,6 +73,13 @@ def _json_new_array() -> list[object]:
     return list()
 
 
+def _json_obj_require(raw: dict[str, object], key: str) -> object:
+    for k, value in raw.items():
+        if k == key:
+            return value
+    raise ValueError("json object key not found: " + key)
+
+
 def _json_indent_value(indent: int | None) -> int:
     if indent is None:
         raise ValueError("json indent is required")
@@ -89,37 +96,44 @@ class JsonObj:
     def get(self, key: str) -> JsonValue | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key])
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value)
 
     def get_obj(self, key: str) -> JsonObj | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key]).as_obj()
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value).as_obj()
 
     def get_arr(self, key: str) -> JsonArr | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key]).as_arr()
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value).as_arr()
 
     def get_str(self, key: str) -> str | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key]).as_str()
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value).as_str()
 
     def get_int(self, key: str) -> int | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key]).as_int()
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value).as_int()
 
     def get_float(self, key: str) -> float | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key]).as_float()
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value).as_float()
 
     def get_bool(self, key: str) -> bool | None:
         if key not in self.raw:
             return None
-        return JsonValue(self.raw[key]).as_bool()
+        value = _json_obj_require(self.raw, key)
+        return JsonValue(value).as_bool()
 
 
 class JsonArr:

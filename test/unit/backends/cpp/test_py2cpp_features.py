@@ -295,8 +295,11 @@ def sin(x: float) -> float:
         cpp_txt = cpp_out.read_text(encoding="utf-8")
         self.assertNotIn("py_at(this->raw, py_to<int64>(index))", cpp_txt)
         self.assertIn("list<object> _json_array_items(const object& raw)", cpp_txt)
+        self.assertIn("object _json_obj_require(const dict<str, object>& raw, const str& key)", cpp_txt)
         self.assertIn("return list<object>(raw);", cpp_txt)
         self.assertIn("py_at(_json_array_items(this->raw), py_to<int64>(index))", cpp_txt)
+        self.assertIn("object value = make_object(_json_obj_require(this->raw, key));", cpp_txt)
+        self.assertNotIn("JsonValue(py_dict_get(this->raw, key))", cpp_txt)
 
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
