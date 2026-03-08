@@ -8,6 +8,7 @@ from typing import Any
 from toolchain.compiler.backend_registry import (
     apply_runtime_hook,
     build_program_artifact,
+    collect_program_modules,
     default_output_path,
     emit_module,
     get_program_writer,
@@ -336,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     program_artifact = build_program_artifact(
         spec,
-        [module_artifact],
+        collect_program_modules(module_artifact),
         program_id=module_id,
         entry_modules=[module_id],
         layout_mode="single_file",

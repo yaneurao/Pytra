@@ -657,6 +657,31 @@ def build_program_artifact(
     }
 
 
+def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
+    if not isinstance(module_artifact, dict):
+        return []
+    modules_out: list[dict[str, Any]] = []
+    primary = dict(module_artifact)
+    if "helper_modules" in primary:
+        del primary["helper_modules"]
+    modules_out.append(primary)
+    helper_any = module_artifact.get("helper_modules", [])
+    if not isinstance(helper_any, list):
+        return modules_out
+    for item in helper_any:
+        if not isinstance(item, dict):
+            continue
+        helper = dict(item)
+        kind_any = helper.get("kind", "helper")
+        if not isinstance(kind_any, str) or kind_any == "":
+            kind_any = "helper"
+        helper["kind"] = kind_any
+        metadata_any = helper.get("metadata", {})
+        helper["metadata"] = dict(metadata_any) if isinstance(metadata_any, dict) else {}
+        modules_out.append(helper)
+    return modules_out
+
+
 def get_program_writer(spec: BackendSpec) -> Any:
     return spec.get("program_writer")
 
