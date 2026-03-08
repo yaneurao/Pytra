@@ -2520,6 +2520,21 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(wrapped_meta, "dispatch_mode"), "native")
         self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
 
+    def test_json_dynamic_helper_sum_is_rejected_before_cpp_emit(self) -> None:
+        src = """
+from pytra.std import json
+
+def main(text: str) -> int:
+    value = json.loads(text)
+    return sum(value)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "json_dynamic_sum.py"
+            src_py.write_text(src, encoding="utf-8")
+            with self.assertRaises(RuntimeError) as cm:
+                load_east(src_py)
+        self.assertIn("sum() does not accept object/unknown values", str(cm.exception))
+
     def test_load_east1_document_sets_stage1_while_keeping_root_contract(self) -> None:
         from src.toolchain.compiler.transpile_cli import load_east1_document
 

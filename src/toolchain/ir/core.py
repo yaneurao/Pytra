@@ -2891,6 +2891,48 @@ class _ShExprParser:
             return any(p in {"object", "Any", "any"} for p in parts if p != "None")
         return False
 
+    def _is_forbidden_dynamic_helper_type(self, t: str) -> bool:
+        """decode-first helper に直接渡してはいけない動的型か判定する。"""
+        s = t.strip()
+        if s in {"object", "Any", "any", "unknown"}:
+            return True
+        if "|" in s:
+            parts = self._split_union_types(s)
+            return any(p in {"object", "Any", "any", "unknown"} for p in parts if p != "None")
+        return False
+
+    def _guard_dynamic_helper_receiver(self, helper_name: str, owner_t: str, source_span: dict[str, int]) -> None:
+        """dynamic helper の receiver が decode-first 契約に違反していないか検査する。"""
+        if not self._is_forbidden_dynamic_helper_type(owner_t):
+            return
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message=f"{helper_name}() does not accept object/unknown receivers under decode-first constraints",
+            source_span=source_span,
+            hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
+        )
+
+    def _guard_dynamic_helper_args(
+        self,
+        helper_name: str,
+        args: list[dict[str, Any]],
+        source_span: dict[str, int],
+    ) -> None:
+        """dynamic helper に object/unknown 引数が直接渡っていないか検査する。"""
+        for arg in args:
+            if not isinstance(arg, dict):
+                continue
+            arg_t = str(arg.get("resolved_type", "unknown")).strip()
+            if arg_t == "":
+                arg_t = "unknown"
+            if self._is_forbidden_dynamic_helper_type(arg_t):
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"{helper_name}() does not accept object/unknown values under decode-first constraints",
+                    source_span=source_span,
+                    hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
+                )
+
     def _subscript_result_type(self, container_type: str) -> str:
         """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
@@ -2966,6 +3008,12 @@ class _ShExprParser:
                 e = name_tok["e"]
                 attr_name = str(name_tok["v"])
                 owner_t = str(node.get("resolved_type", "unknown"))
+                if attr_name in {"keys", "items", "values"}:
+                    self._guard_dynamic_helper_receiver(
+                        helper_name=attr_name,
+                        owner_t=owner_t,
+                        source_span=self._node_span(s, e),
+                    )
                 if self._is_forbidden_object_receiver_type(owner_t):
                     raise _make_east_build_error(
                         kind="unsupported_syntax",
@@ -3062,6 +3110,12 @@ class _ShExprParser:
                 fn_name = ""
                 if isinstance(node, dict) and node.get("kind") == "Name":
                     fn_name = str(node.get("id", ""))
+                    if fn_name in {"sum", "zip", "sorted", "min", "max"}:
+                        self._guard_dynamic_helper_args(
+                            helper_name=fn_name,
+                            args=args,
+                            source_span=self._node_span(s, e),
+                        )
                     stdlib_imported_ret = (
                         lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
                         if fn_name != ""

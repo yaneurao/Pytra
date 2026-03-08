@@ -333,6 +333,43 @@ def py_join(parts: list[str]) -> str:
         self.assertIn("value parameter mutated", str(cm.exception))
         self.assertIn("parts", str(cm.exception))
 
+    def test_sum_on_json_object_is_rejected_by_decode_first_guard(self) -> None:
+        src = """
+from pytra.std import json
+
+def f(text: str) -> int:
+    value = json.loads(text)
+    return sum(value)
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("sum() does not accept object/unknown values", str(cm.exception))
+
+    def test_zip_on_json_values_is_rejected_by_decode_first_guard(self) -> None:
+        src = """
+from pytra.std import json
+
+def f(lhs_text: str, rhs_text: str) -> None:
+    lhs = json.loads(lhs_text)
+    rhs = json.loads(rhs_text)
+    _ = zip(lhs, rhs)
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("zip() does not accept object/unknown values", str(cm.exception))
+
+    def test_dict_keys_on_json_object_is_rejected_by_decode_first_guard(self) -> None:
+        src = """
+from pytra.std import json
+
+def f(text: str) -> None:
+    value = json.loads(text)
+    _ = value.keys()
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("keys() does not accept object/unknown receivers", str(cm.exception))
+
     def test_quoted_type_annotation_is_normalized(self) -> None:
         src = """
 def f(p: "Path", xs: "list[int]") -> "Path":
