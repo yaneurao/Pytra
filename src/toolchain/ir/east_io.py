@@ -97,23 +97,24 @@ def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
 def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     if input_path.suffix == ".json":
-        payload = json.loads(input_path.read_text(encoding="utf-8"))
-        if not isinstance(payload, dict):
+        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
+        if payload is None:
             raise UserFacingError(
                 category="input_invalid",
                 summary="Invalid EAST JSON format.",
                 details=["expected: dict-root JSON"],
             )
-        if payload.get("ok") is False:
+        if payload.get_bool("ok") is False:
             raise UserFacingError(
                 category="east_error",
                 summary="EAST JSON contains an error payload.",
-                details=[f"error: {payload.get('error')}"],
+                details=[f"error: {payload.get_str('error')}"],
             )
-        if payload.get("ok") is True and isinstance(payload.get("east"), dict):
-            return _normalize_east_root(payload["east"])
-        if payload.get("kind") == "Module":
-            return _normalize_east_root(payload)
+        east = payload.get_obj("east")
+        if payload.get_bool("ok") is True and east is not None:
+            return _normalize_east_root(dict(east.raw))
+        if payload.get_str("kind") == "Module":
+            return _normalize_east_root(dict(payload.raw))
         raise UserFacingError(
             category="input_invalid",
             summary="Invalid EAST JSON structure.",

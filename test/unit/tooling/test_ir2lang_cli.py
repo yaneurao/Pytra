@@ -177,6 +177,73 @@ class Ir2langCliTest(unittest.TestCase):
         self.assertIn("@abi is not supported for target rs", str(cm.exception))
         self.assertIn("pkg.main::py_join", str(cm.exception))
 
+    def test_accepts_wrapped_east_json_root(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_json = self._write_east_json(
+                root,
+                {
+                    "ok": True,
+                    "east": {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"module_id": "pkg.main"},
+                        "body": [],
+                    },
+                },
+            )
+            out_rs = root / "out.rs"
+
+            fake_spec = {
+                "target_lang": "rs",
+                "extension": ".rs",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+            lower_calls: list[dict[str, object]] = []
+
+            def _lower(spec: dict[str, object], east: dict[str, object], opts: dict[str, object]) -> dict[str, object]:
+                lower_calls.append({"spec": spec, "east": east, "opts": opts})
+                return {"kind": "LoweredModule"}
+
+            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
+                with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(ir2lang_mod, "lower_ir", side_effect=_lower):
+                            with patch.object(ir2lang_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                                with patch.object(
+                                    ir2lang_mod,
+                                    "emit_module",
+                                    return_value={
+                                        "module_id": "pkg.main",
+                                        "label": "out",
+                                        "extension": ".rs",
+                                        "text": "// wrapped east\n",
+                                        "is_entry": True,
+                                        "dependencies": [],
+                                        "metadata": {},
+                                    },
+                                ):
+                                    with patch.object(
+                                        ir2lang_mod,
+                                        "get_program_writer",
+                                        return_value=lambda program_artifact, output_root, _options: (
+                                            output_root.write_text(
+                                                program_artifact["modules"][0]["text"],
+                                                encoding="utf-8",
+                                            ),
+                                            {"primary_output": str(output_root)},
+                                        )[1],
+                                    ):
+                                        with patch.object(ir2lang_mod, "apply_runtime_hook", return_value=None):
+                                            rc = ir2lang_mod.main()
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(len(lower_calls), 1)
+        self.assertEqual(lower_calls[0]["east"]["kind"], "Module")
+        self.assertEqual(lower_calls[0]["east"]["meta"]["module_id"], "pkg.main")
+
     def test_dispatches_target_and_layer_options(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

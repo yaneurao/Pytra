@@ -42,7 +42,9 @@
      進捗メモ: `loads_arr`, `JsonValue.as_*`, `JsonObj.get/get_*`, `JsonArr.get/get_*` を追加し、checked-in C++ runtime と forward decl 回帰を同期した。
    - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-02] `program_loader` / `program_validator` の JSON decode を `JsonValue` helper ベースへ移行する。
      進捗メモ: `link` 系 loader/validator は `loads_obj` / `JsonObj.get_*` を内部 decode の正本にしつつ、外向け return contract は raw dict のまま維持した。
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-01] `py2x.py` / `py2x-selfhost.py` / `ir2lang.py` の JSON artifact 境界を `JsonValue` decode lane へ揃える。
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-02] representative selfhost / linked-program / CLI tests を `JsonValue` 経路で green にする。
+   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-01] `py2x.py` / `py2x-selfhost.py` / `ir2lang.py` の JSON artifact 境界を `JsonValue` decode lane へ揃える。
+     進捗メモ: `py2x` の link-input 判定、`ir2lang` の wrapped/root unwrap、`east_io` の `.json` 入口を `loads_obj` / `JsonObj.get_*` ベースへ揃え、`py2x-selfhost.py` 本体は indirect 依存だけを維持した。
+   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-02] representative selfhost / linked-program / CLI tests を `JsonValue` 経路で green にする。
+     進捗メモ: `test_py2x_cli` / `test_ir2lang_cli` / `test_pylib_json` / `test/unit/link/test_*.py` と `check_noncpp_east3_contract --skip-transpile` を `JsonValue` 経路で通した。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S4-01] raw object tree 依存の再侵入を防ぐ guard / regression を追加する。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。

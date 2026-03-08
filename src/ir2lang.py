@@ -100,28 +100,28 @@ def _parse_layer_option_items(items: list[str], label: str) -> dict[str, str]:
     return out
 
 
-def _load_json_root(input_path: Path) -> dict[str, Any]:
+def _load_json_root(input_path: Path) -> json.JsonObj:
     if str(input_path).endswith(".json") is False:
         _fatal("input must be a .json EAST3 document")
     if input_path.exists() is False:
         _fatal("input not found: " + str(input_path))
     try:
-        payload_any = json.loads(input_path.read_text(encoding="utf-8"))
+        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
     except Exception as ex:
         _fatal("failed to parse json: " + str(ex))
-    if isinstance(payload_any, dict):
-        return payload_any
+    if payload is not None:
+        return payload
     _fatal("invalid EAST JSON root: expected dict")
-    return {}
+    return json.JsonObj({})
 
 
-def _unwrap_east_module(root: dict[str, Any]) -> dict[str, Any]:
-    ok_any = root.get("ok")
-    east_any = root.get("east")
-    if isinstance(ok_any, bool) and bool(ok_any) and isinstance(east_any, dict):
-        return east_any
-    if root.get("kind") == "Module":
-        return root
+def _unwrap_east_module(root: json.JsonObj) -> dict[str, Any]:
+    ok_any = root.get_bool("ok")
+    east_any = root.get_obj("east")
+    if ok_any is True and east_any is not None:
+        return dict(east_any.raw)
+    if root.get_str("kind") == "Module":
+        return dict(root.raw)
     _fatal("invalid EAST JSON structure: expected {'ok': true, 'east': {...}} or {'kind': 'Module', ...}")
     return {}
 
@@ -161,8 +161,8 @@ def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
     return "module"
 
 
-def _is_link_output_doc(root: dict[str, Any]) -> bool:
-    return root.get("schema") == LINK_OUTPUT_SCHEMA
+def _is_link_output_doc(root: json.JsonObj) -> bool:
+    return root.get_str("schema") == LINK_OUTPUT_SCHEMA
 
 
 def _entry_linked_module(

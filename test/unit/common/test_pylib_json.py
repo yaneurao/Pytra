@@ -149,6 +149,17 @@ class PyLibJsonTest(unittest.TestCase):
             out = load_east_from_path(p)
             self.assertEqual(out.get("kind"), "Module")
 
+    def test_east_io_reads_wrapped_json_via_decode_helpers(self) -> None:
+        payload = {
+            "ok": True,
+            "east": {"kind": "Module", "body": [], "functions": [], "classes": []},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "wrapped.east.json"
+            p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            out = load_east_from_path(p)
+            self.assertEqual(out.get("kind"), "Module")
+
     def test_east_io_normalizes_root_schema_defaults(self) -> None:
         payload = {"kind": "Module", "body": []}
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -182,3 +182,5 @@ entry_modules = root.get_arr("entry_modules")
 - 2026-03-08: `S2-01` では `loads_obj` に加えて `loads_arr`, `JsonValue.as_*`, `JsonObj.get/get_*`, `JsonArr.get/get_*` を実装した。`loads()` 自体は互換のため raw `object` 戻り値を維持し、selfhost 境界は専用 helper を使って decode する。
 - 2026-03-08: `JsonObj` / `JsonArr` / `JsonValue` の相互参照を checked-in C++ runtime へ落とすため、`header_builder` は class block の前に forward declaration を出す形へ修正した。
 - 2026-03-08: `S2-02` では `program_loader` / `program_validator` / `link_manifest_io` / `materializer` の root decode を `json.loads_obj()` へ寄せ、validator の内部正規形を `JsonObj` / `JsonArr` に切り替えた。外向けの return contract は `dict[str, object]` / `Link*Entry` のまま維持し、call site を一度に壊さない形に留めた。
+- 2026-03-08: `S3-01` では `py2x.py` の link-input 判定を `JsonObj.get_str("schema")` ベースへ、`ir2lang.py` と `toolchain/ir/east_io.py` の wrapped/root unwrap を `loads_obj()` / `JsonObj.get_*` ベースへ切り替えた。`py2x-selfhost.py` 本体は raw JSON parse を持たないため変更不要と判断した。
+- 2026-03-08: `S3-02` の代表確認として `test_py2x_cli.py`, `test_ir2lang_cli.py`, `test_pylib_json.py`, `test/unit/link/test_*.py`, `check_noncpp_east3_contract.py --skip-transpile` を実行し、`JsonValue` decode lane で green を確認した。
