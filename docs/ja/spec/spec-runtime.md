@@ -274,7 +274,7 @@ source surface の方針:
 - general-purpose `cast` を JSON だけのために language-wide 必須機能として先行導入しなくてよい。
 - 必要な narrowing は JSON module 専用 API に寄せる。
 
-推奨 decode surface:
+v1 decode surface（exact API）:
 
 - `JsonValue.as_obj() -> JsonObj | None`
 - `JsonValue.as_arr() -> JsonArr | None`
@@ -288,10 +288,17 @@ source surface の方針:
 - `JsonObj.get_str(key: str) -> str | None`
 - `JsonObj.get_int(key: str) -> int | None`
 - `JsonArr.get(index: int) -> JsonValue | None`
+- `JsonArr.get_obj(index: int) -> JsonObj | None`
+- `JsonArr.get_arr(index: int) -> JsonArr | None`
+- `JsonArr.get_str(index: int) -> str | None`
+- `JsonArr.get_int(index: int) -> int | None`
+- `JsonArr.get_float(index: int) -> float | None`
+- `JsonArr.get_bool(index: int) -> bool | None`
 
 補足:
 
-- 上記の exact surface 名は実装時に微調整してよいが、思想は「JSON 専用 wrapper / decoder に閉じる」ことを優先する。
+- `loads`, `loads_obj`, `loads_arr`, `JsonValue.as_*`, `JsonObj.get_*`, `JsonArr.get_*` を v1 の canonical API 名とする。
+- v1 は general-purpose `cast` や `match` を前提にせず、上記 helper だけで decode できることを優先する。
 - `match` による型分岐を後から導入してもよいが、それは `JsonValue` を decode しやすくする補助であって、dynamic helper 復活の理由にはならない。
 - JSON number の判定規則は次で固定する。
   - 小数点と exponent を含まない number は `JsonValue.Int(int64)` として解釈する。
