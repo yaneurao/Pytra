@@ -298,6 +298,10 @@ class _TemplateMaterializer:
                     is_entry=module.is_entry,
                     east_doc=doc,
                     artifact_path=module.artifact_path,
+                    module_kind=module.module_kind,
+                    helper_id=module.helper_id,
+                    owner_module_id=module.owner_module_id,
+                    generated_by=module.generated_by,
                 )
             )
         linked_program = LinkedProgram(

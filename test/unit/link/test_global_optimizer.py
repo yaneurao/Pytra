@@ -3,6 +3,8 @@ import unittest
 
 from pytra.std.pathlib import Path
 
+from toolchain.link import LinkedProgram
+from toolchain.link import LinkedProgramModule
 from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import optimize_linked_program
 from toolchain.link import validate_link_output_doc
@@ -650,6 +652,57 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
                 summary["pytra.built_in.template_ops::py_echo"],
                 [{"export_name": "py_echo__pytra_tmpl__int64", "type_args": ["int64"]}],
             )
+
+    def test_optimizer_preserves_helper_module_metadata(self) -> None:
+        helper_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {
+                "dispatch_mode": "native",
+                "module_id": "__pytra_helper__.cpp.demo",
+                "synthetic_helper_v1": {
+                    "helper_id": "cpp.demo",
+                    "owner_module_id": "app.main",
+                    "generated_by": "linked_optimizer",
+                },
+            },
+            "body": [],
+        }
+        program = LinkedProgram(
+            schema="pytra.link_input.v1",
+            manifest_path=None,
+            target="cpp",
+            dispatch_mode="native",
+            entry_modules=("app.main",),
+            modules=(
+                LinkedProgramModule(
+                    module_id="__pytra_helper__.cpp.demo",
+                    source_path="",
+                    is_entry=False,
+                    east_doc=helper_doc,
+                    artifact_path=None,
+                    module_kind="helper",
+                    helper_id="cpp.demo",
+                    owner_module_id="app.main",
+                    generated_by="linked_optimizer",
+                ),
+            ),
+            options={},
+        )
+
+        result = optimize_linked_program(program)
+
+        module_entry = result.link_output_doc["modules"][0]
+        self.assertEqual(module_entry["module_kind"], "helper")
+        self.assertEqual(module_entry["helper_id"], "cpp.demo")
+        self.assertEqual(module_entry["owner_module_id"], "app.main")
+        self.assertEqual(module_entry["generated_by"], "linked_optimizer")
+        linked_module = result.linked_program.modules[0]
+        self.assertEqual(linked_module.module_kind, "helper")
+        self.assertEqual(linked_module.helper_id, "cpp.demo")
+        self.assertEqual(linked_module.owner_module_id, "app.main")
+        self.assertEqual(linked_module.generated_by, "linked_optimizer")
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ from pytra.std.pathlib import Path
 
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import LINK_OUTPUT_SCHEMA
+from toolchain.link import LinkedProgram
+from toolchain.link import LinkedProgramModule
 from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import load_linked_output_bundle
 from toolchain.link import load_link_input_doc
@@ -262,6 +264,90 @@ class LinkedProgramLoaderTests(unittest.TestCase):
             )
             doc = load_link_output_doc(manifest_path)
             self.assertEqual([item.module_id for item in doc["modules"]], ["app.helper", "app.main"])
+
+    def test_validate_link_output_doc_accepts_helper_module_entry(self) -> None:
+        doc = validate_link_output_doc(
+            {
+                "schema": LINK_OUTPUT_SCHEMA,
+                "target": "cpp",
+                "dispatch_mode": "native",
+                "entry_modules": ["app.main"],
+                "modules": [
+                    {
+                        "module_id": "__pytra_helper__.cpp.demo",
+                        "input": "generated://cpp.demo",
+                        "output": "linked/__pytra_helper__/cpp/demo.east3.json",
+                        "source_path": "",
+                        "is_entry": False,
+                        "module_kind": "helper",
+                        "helper_id": "cpp.demo",
+                        "owner_module_id": "app.main",
+                        "generated_by": "linked_optimizer",
+                    },
+                    {
+                        "module_id": "app.main",
+                        "input": "raw/app/main.east3.json",
+                        "output": "linked/app/main.east3.json",
+                        "source_path": "sample/py/main.py",
+                        "is_entry": True,
+                    },
+                ],
+                "global": {
+                    "type_id_table": {},
+                    "call_graph": {},
+                    "sccs": [],
+                    "non_escape_summary": {},
+                    "container_ownership_hints_v1": {},
+                },
+                "diagnostics": {"warnings": [], "errors": []},
+            }
+        )
+
+        helper_entry = doc["modules"][0]
+        self.assertEqual(helper_entry.module_id, "__pytra_helper__.cpp.demo")
+        self.assertEqual(helper_entry.module_kind, "helper")
+        self.assertEqual(helper_entry.helper_id, "cpp.demo")
+        self.assertEqual(helper_entry.owner_module_id, "app.main")
+        self.assertEqual(helper_entry.generated_by, "linked_optimizer")
+        self.assertEqual(helper_entry.source_path, "")
+
+    def test_validate_link_output_doc_rejects_helper_module_missing_metadata(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "helper_id is required"):
+            validate_link_output_doc(
+                {
+                    "schema": LINK_OUTPUT_SCHEMA,
+                    "target": "cpp",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "__pytra_helper__.cpp.demo",
+                            "input": "generated://cpp.demo",
+                            "output": "linked/__pytra_helper__/cpp/demo.east3.json",
+                            "source_path": "",
+                            "is_entry": False,
+                            "module_kind": "helper",
+                            "owner_module_id": "app.main",
+                            "generated_by": "linked_optimizer",
+                        },
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": "linked/app/main.east3.json",
+                            "source_path": "sample/py/main.py",
+                            "is_entry": True,
+                        },
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {"warnings": [], "errors": []},
+                }
+            )
 
     def test_load_link_output_doc_rejects_missing_linked_entry_module(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "missing link-output entry module"):
@@ -559,6 +645,135 @@ class LinkedProgramLoaderTests(unittest.TestCase):
             self.assertEqual([item.module_id for item in manifest_doc["modules"]], ["app.helper", "app.main"])
             self.assertEqual([item.module_id for item in modules], ["app.helper", "app.main"])
             self.assertEqual(str(modules[0].artifact_path), str(helper_path.resolve()))
+
+    def test_load_linked_output_bundle_preserves_helper_module_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            linked_dir = root / "linked" / "__pytra_helper__" / "cpp"
+            linked_dir.mkdir(parents=True, exist_ok=True)
+            helper_path = linked_dir / "demo.east3.json"
+            main_dir = root / "linked" / "app"
+            main_dir.mkdir(parents=True, exist_ok=True)
+            main_path = main_dir / "main.east3.json"
+            helper_doc = _east3_doc()
+            helper_doc["meta"] = {
+                "dispatch_mode": "native",
+                "module_id": "__pytra_helper__.cpp.demo",
+                "linked_program_v1": {
+                    "program_id": "app.main",
+                    "module_id": "__pytra_helper__.cpp.demo",
+                    "entry_modules": ["app.main"],
+                    "type_id_resolved_v1": {},
+                    "non_escape_summary": {},
+                    "container_ownership_hints_v1": {},
+                },
+                "synthetic_helper_v1": {
+                    "helper_id": "cpp.demo",
+                    "owner_module_id": "app.main",
+                    "generated_by": "linked_optimizer",
+                },
+            }
+            main_doc = _east3_doc()
+            main_doc["meta"] = {
+                "dispatch_mode": "native",
+                "module_id": "app.main",
+                "linked_program_v1": {
+                    "program_id": "app.main",
+                    "module_id": "app.main",
+                    "entry_modules": ["app.main"],
+                    "type_id_resolved_v1": {},
+                    "non_escape_summary": {},
+                    "container_ownership_hints_v1": {},
+                },
+            }
+            helper_path.write_text(json.dumps(helper_doc, ensure_ascii=False), encoding="utf-8")
+            main_path.write_text(json.dumps(main_doc, ensure_ascii=False), encoding="utf-8")
+            manifest_path = root / "link-output.json"
+            save_manifest_doc(
+                manifest_path,
+                {
+                    "schema": LINK_OUTPUT_SCHEMA,
+                    "target": "cpp",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": "linked/app/main.east3.json",
+                            "source_path": str(root / "main.py"),
+                            "is_entry": True,
+                        },
+                        {
+                            "module_id": "__pytra_helper__.cpp.demo",
+                            "input": "generated://cpp.demo",
+                            "output": "linked/__pytra_helper__/cpp/demo.east3.json",
+                            "source_path": "",
+                            "is_entry": False,
+                            "module_kind": "helper",
+                            "helper_id": "cpp.demo",
+                            "owner_module_id": "app.main",
+                            "generated_by": "linked_optimizer",
+                        }
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {"warnings": [], "errors": []},
+                },
+            )
+
+            _manifest_doc, modules = load_linked_output_bundle(manifest_path)
+
+            self.assertEqual([item.module_id for item in modules], ["__pytra_helper__.cpp.demo", "app.main"])
+            self.assertEqual(modules[0].module_kind, "helper")
+            self.assertEqual(modules[0].helper_id, "cpp.demo")
+            self.assertEqual(modules[0].owner_module_id, "app.main")
+            self.assertEqual(modules[0].generated_by, "linked_optimizer")
+            self.assertEqual(modules[0].source_path, "")
+            self.assertEqual(str(modules[0].artifact_path), str(helper_path.resolve()))
+
+    def test_build_link_input_doc_ignores_helper_metadata_on_raw_program_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            program = LinkedProgram(
+                schema=LINK_INPUT_SCHEMA,
+                manifest_path=None,
+                target="cpp",
+                dispatch_mode="native",
+                entry_modules=("app.main",),
+                modules=(
+                    LinkedProgramModule(
+                        module_id="app.main",
+                        source_path="sample/py/main.py",
+                        is_entry=True,
+                        east_doc=_east3_doc(),
+                        artifact_path=None,
+                    ),
+                    LinkedProgramModule(
+                        module_id="__pytra_helper__.cpp.demo",
+                        source_path="synthetic/__pytra_helper__/cpp/demo.py",
+                        is_entry=False,
+                        east_doc=_east3_doc(),
+                        artifact_path=None,
+                        module_kind="helper",
+                        helper_id="cpp.demo",
+                        owner_module_id="app.main",
+                        generated_by="linked_optimizer",
+                    ),
+                ),
+                options={},
+            )
+            dump_dir = root / "dump"
+            manifest_path, _raw_paths = write_link_input_bundle(dump_dir, program)
+            manifest_doc = load_link_input_doc(manifest_path)
+
+            self.assertEqual([item.module_id for item in manifest_doc["modules"]], ["__pytra_helper__.cpp.demo", "app.main"])
+            self.assertEqual(manifest_doc["modules"][0].source_path, "synthetic/__pytra_helper__/cpp/demo.py")
 
 
 if __name__ == "__main__":

@@ -158,6 +158,10 @@ def _run_program_non_escape(program: LinkedProgram) -> tuple[tuple[LinkedProgram
                 is_entry=module.is_entry,
                 east_doc=root_doc,
                 artifact_path=module.artifact_path,
+                module_kind=module.module_kind,
+                helper_id=module.helper_id,
+                owner_module_id=module.owner_module_id,
+                generated_by=module.generated_by,
             )
         )
 
@@ -213,6 +217,10 @@ def _materialize_container_hints(
                 is_entry=module.is_entry,
                 east_doc=doc,
                 artifact_path=module.artifact_path,
+                module_kind=module.module_kind,
+                helper_id=module.helper_id,
+                owner_module_id=module.owner_module_id,
+                generated_by=module.generated_by,
             )
         )
 
@@ -392,6 +400,10 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
                 is_entry=module.is_entry,
                 east_doc=doc,
                 artifact_path=module.artifact_path,
+                module_kind=module.module_kind,
+                helper_id=module.helper_id,
+                owner_module_id=module.owner_module_id,
+                generated_by=module.generated_by,
             )
         )
         module_entries.append(
@@ -401,6 +413,16 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
                 "output": _linked_output_path(module.module_id),
                 "source_path": module.source_path,
                 "is_entry": module.is_entry,
+                "module_kind": module.module_kind,
+                **(
+                    {
+                        "helper_id": module.helper_id,
+                        "owner_module_id": module.owner_module_id,
+                        "generated_by": module.generated_by,
+                    }
+                    if module.module_kind == "helper"
+                    else {}
+                ),
             }
         )
 

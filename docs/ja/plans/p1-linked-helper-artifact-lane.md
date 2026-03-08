@@ -323,3 +323,5 @@ single-file backend では別ファイル化は必須ではない。
 - 2026-03-09: canonical solution は synthetic helper module を linked-program 出力へ追加し、multi-file backend は別ファイル、single-file backend は fold で扱う方式だと決定した。
 - 2026-03-09: S1-01 棚卸しでは、helper の escape hatch が `py_runtime.h`、checked-in/generated runtime、emitter special-op include、backend-local inline helper に分散していること、blocker は `LinkedProgramModule` / `link-output.json` / materializer / validator / writer の全段で helper kind を持てないことだと確定した。
 - 2026-03-09: S1-02 では helper artifact の最小契約を `module_kind=helper`、`meta.synthetic_helper_v1`、`helper_id`、`owner_module_id`、`generated_by=linked_optimizer` に固定し、single-file backend が fold しても runtime や inline helper 再探索へ戻してはならないと明記した。
+- 2026-03-09: S2-01 では `LinkedProgramModule` / `LinkOutputModuleEntry` に `module_kind/helper_id/owner_module_id/generated_by` を追加し、validator は helper entry に `source_path=\"\"` と `generated_by=linked_optimizer` を要求する一方、raw `link-input` は helper metadata を持たないまま維持する形にした。
+- 2026-03-09: S2-01 では `load_linked_output_bundle()`、global non-escape、CPP value-list hint materialization、runtime template specialization が helper metadata を落とさず引き回すことを regression test で固定した。

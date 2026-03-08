@@ -37,7 +37,8 @@
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-01] helper の escape hatch は `py_runtime.h`、checked-in/generated runtime、C++ emitter の special-op include、backend-local inline helper に分散しており、blocker は `LinkedProgramModule` / `link-output.json` / materializer / validator / writer が helper kind を持てない点だと固定した。
 - [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-02] helper artifact schema / module kind / metadata 契約を spec に固定する。
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-02] `spec-linker` / `spec-dev` / `spec-east` に `module_kind=helper`、`meta.synthetic_helper_v1`、`helper_id/owner_module_id/generated_by`、single-file fold でも runtime 再探索へ戻さない契約を追加した。
-- [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] linked-program model / validator / materializer を helper-aware にする。
+- [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] linked-program model / validator / materializer を helper-aware にする。
+- 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] `LinkedProgramModule` / `LinkOutputModuleEntry` に `module_kind/helper_id/owner_module_id/generated_by` を追加し、validator・materializer・global pass・template specialization が helper metadata を保持したまま `link-output` / reload できることを link test で固定した。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-02] `link-output.json` / restart 導線へ helper module lane を追加する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-01] backend 共通 program artifact に `kind=helper` を追加する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-02] `CodeEmitter` / `ir2lang.py` / backend registry を helper-aware にする。
