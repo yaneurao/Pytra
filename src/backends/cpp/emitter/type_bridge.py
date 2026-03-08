@@ -186,8 +186,6 @@ class CppTypeBridgeEmitter:
         if t_norm.startswith("list[") and t_norm.endswith("]"):
             if self._is_pyobj_ref_first_list_type(t_norm):
                 return f"py_to<{self._cpp_type_text(t_norm, pyobj_ref_lists=True)}>({expr_txt})"
-            if t_norm == "list[str]":
-                return f"py_to_str_list_from_object({expr_txt})"
             list_inner = self.type_generic_args(t_norm, "list")
             if len(list_inner) == 1:
                 elem_t = self.normalize_type_name(list_inner[0])
@@ -276,14 +274,15 @@ class CppTypeBridgeEmitter:
         if not self._can_runtime_cast_target(target_t):
             return arg_txt
         if t_norm == "list[str]" and self._is_pyobj_runtime_list_type(at):
+            list_cpp_t = self._cpp_type_text(t_norm)
             if len(arg_node_dict) == 0:
-                return f"py_to_str_list_from_object({arg_txt})"
+                return f"{list_cpp_t}({arg_txt})"
             if self._node_kind_from_dict(arg_node_dict) == "Name":
                 arg_name = dict_any_get_str(arg_node_dict, "id", "")
                 if self._is_typed_list_str_name(arg_name):
                     return arg_txt
             if not self._expr_is_stack_list_local(arg_node_dict):
-                return f"py_to_str_list_from_object({arg_txt})"
+                return f"{list_cpp_t}({arg_txt})"
         if not self.is_any_like_type(at):
             return arg_txt
         if len(arg_node_dict) > 0:

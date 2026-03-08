@@ -94,7 +94,7 @@ class ArgumentParser:
         if argv is None:
             args = sys.argv[1:]
         else:
-            args = argv
+            args = list(argv)
 
         specs_pos: list[_ArgSpec] = []
         specs_opt: list[_ArgSpec] = []
