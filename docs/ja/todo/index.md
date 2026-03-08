@@ -33,8 +33,8 @@
 ## 未完了タスク
 
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01] `py_runtime.h` の `object` collection bridge を撤去し、typed list/dict/string path を正本に寄せる。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S1-01] `py_at/py_slice/py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort/py_index` の checked-in callsite と compat 依存を棚卸しする。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S1-02] 削除順序と「残さない compat lane」を決定ログへ固定する。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S1-01] `py_at/py_slice/py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort/py_index` の checked-in callsite と compat 依存を棚卸しする。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S1-02] 削除順序と「残さない compat lane」を決定ログへ固定する。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S2-01] `py_at(const object&, int64)` と `py_slice(const object&, ...)` を削除し、必要な callsite を typed lane へ寄せる。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S2-02] read bridge 削除後の representative regression を更新する。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01-S3-01] `py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort` の `object` lane を削除する。文脈: [p0-cpp-pyruntime-object-collection-bridge-retirement.md](../plans/p0-cpp-pyruntime-object-collection-bridge-retirement.md)

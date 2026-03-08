@@ -125,3 +125,6 @@
 ## 5. 決定ログ
 
 - 2026-03-08: 本計画では `begin/end(const object&)` や `py_iter_or_raise(const object&)` の dynamic iteration bridge は触らず、collection helper に限定して object lane を退役させる。
+- 2026-03-08: checked-in sample/cpp と runtime test の大半は typed list/string lane を使っており、`object` collection bridge の直接依存は `test_cpp_runtime_iterable.py` の object mutation smoke にほぼ限られる。
+- 2026-03-08: `src/runtime/cpp/generated/std/json.cpp` の `JsonArr::get*()` は現在 `JsonArr.raw: object` と `py_at(this->raw, ...)` / `py_len(this->raw)` に依存している。`py_at(object)` / `py_slice(object, ...)` の read bridge は、JSON runtime lane を typed/nominal carrier へ寄せる tranche まで本計画では削除しない。
+- 2026-03-08: 第1削除順は mutation bridge (`py_append/py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort`) と `py_index(const object&, const object&)` に固定し、inventory guard で再侵入を防ぐ。read bridge (`py_at(object)`, `py_slice(object, ...)`) は本計画の TODO から外さず残すが、close 時点では保留扱いを明記して次 tranche へ送る。
