@@ -613,28 +613,37 @@ rg "error:" selfhost/build.all.log
 コンパイル成功時の比較手順:
 
 ```bash
-# 2) selfhost 実行ファイルで sample/py/01 を変換
+# 2) selfhost 実行ファイルで sample/py/01 を .py 直入力から変換
 mkdir -p test/transpile/cpp2
-./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
+./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Python 版 C++ backend でも同じ入力を変換
-python src/py2x.py --target cpp sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
+python3 src/py2x-selfhost.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
 
-# 4) 生成差分を確認（ソース差分は許容、まずは確認用）
-diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.cpp || true
+# 4) direct route が sample 全件で -fsyntax-only まで通るか確認
+python3 tools/check_selfhost_direct_compile.py
 
-# 5) Python版とselfhost版の出力差分を代表ケースで一括確認
-python3 tools/check_selfhost_cpp_diff.py --show-diff
+# 5) Python版とselfhost版の出力差分を代表ケースで確認
+python3 tools/check_selfhost_cpp_diff.py --mode strict --show-diff
+
+# 6) representative e2e を確認
+python3 tools/verify_selfhost_end_to_end.py --skip-build \
+  --cases sample/py/05_mandelbrot_zoom.py sample/py/18_mini_language_interpreter.py test/fixtures/core/add.py
+
+# 7) stage2 binary を生成して差分確認
+python3 tools/build_selfhost_stage2.py
+python3 tools/check_selfhost_stage2_cpp_diff.py --mode strict
 ```
 
 補足:
-- 現時点の `selfhost/py2cpp.py` は `load_east()` をスタブ化しているため、`INPUT.py` 変換は未対応です。
-- 上記の 2) 以降は selfhost 入力パーサ復帰後に有効化する想定です。
+- `selfhost/py2cpp.out` の `.py` 直入力は current contract です。bridge 経路は調査用 fallback としてだけ扱います。
+- `tools/check_selfhost_cpp_diff.py` と `tools/check_selfhost_stage2_cpp_diff.py` は strict mode を正本にします。
+- `tools/check_selfhost_direct_compile.py` は `sample/py` 全件を selfhost で変換して `g++ -fsyntax-only` まで見る、最短の compile regression gate です。
 
 失敗時の確認ポイント:
 - `build.all.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
-- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/backends/cpp/cli.py` の記述が `Any` 混在を増やしていないか確認する。
-- `selfhost/py2cpp.py` が古い場合は、毎回 `python3 tools/prepare_selfhost_source.py` を先に実行して同期する。
+- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/backends/cpp/cli.py` や generated runtime (`src/runtime/cpp/generated/**`) の ABI が value/ref-first 契約を壊していないか確認する。
+- `sample/py/18_mini_language_interpreter.py` のような host/selfhost diff は、selfhost binary を rebuild せずに runtime serializer だけ直したときにも起こりうる。`src/pytra/std/json.py` や generated runtime を直したら `python3 tools/build_selfhost.py` を再実行する。
 
 ## CodeEmitter 作業時の変換チェック
 

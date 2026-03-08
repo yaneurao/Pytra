@@ -6,12 +6,12 @@
 - `docs/ja/todo/index.md` の `ID: P4-CPP-SELFHOST-ROLLOUT-01`
 
 関連:
-- [spec-dev.md](../spec/spec-dev.md)
-- [spec-tools.md](../spec/spec-tools.md)
-- [how-to-use.md](../how-to-use.md)
-- [p0-py2x-dual-entrypoints-host-selfhost.md](./p0-py2x-dual-entrypoints-host-selfhost.md)
-- [archive/20260308-p0-cpp-selfhost-any-compat-retirement.md](./archive/20260308-p0-cpp-selfhost-any-compat-retirement.md)
-- [archive/20260308-p2-jsonvalue-selfhost-decode-alignment.md](./archive/20260308-p2-jsonvalue-selfhost-decode-alignment.md)
+- [spec-dev.md](../../spec/spec-dev.md)
+- [spec-tools.md](../../spec/spec-tools.md)
+- [how-to-use.md](../../how-to-use.md)
+- [p0-py2x-dual-entrypoints-host-selfhost.md](../p0-py2x-dual-entrypoints-host-selfhost.md)
+- [20260308-p0-cpp-selfhost-any-compat-retirement.md](./20260308-p0-cpp-selfhost-any-compat-retirement.md)
+- [20260308-p2-jsonvalue-selfhost-decode-alignment.md](./20260308-p2-jsonvalue-selfhost-decode-alignment.md)
 
 背景:
 - C++ selfhost の検証導線自体は残っている。代表的には [tools/build_selfhost.py](../../tools/build_selfhost.py), [tools/check_selfhost_direct_compile.py](../../tools/check_selfhost_direct_compile.py), [tools/check_selfhost_cpp_diff.py](../../tools/check_selfhost_cpp_diff.py), [tools/verify_selfhost_end_to_end.py](../../tools/verify_selfhost_end_to_end.py) がある。
@@ -98,15 +98,15 @@
 
 ## 4. タスク分解
 
-- [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01] C++ selfhost の stage1 build / direct route / diff / stage2 を current runtime/layout 契約に合わせて復旧する。
+- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01] C++ selfhost の stage1 build / direct route / diff / stage2 を current runtime/layout 契約に合わせて復旧する。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-01] `tools/build_selfhost.py` 失敗点と missing artifact を棚卸しする。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-02] selfhost 復旧の受け入れ順序と current source of truth を決定ログへ固定する。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-01] stage1 build に必要な generated/static frontend artifact 供給を current layout に合わせて復旧する。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-02] `tools/build_selfhost.py` を green に戻し、`selfhost/py2cpp.out` を再生成する。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S3-01] direct `.py` route を復旧し、`tools/check_selfhost_direct_compile.py` を通す。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S3-02] host/selfhost diff と representative e2e を green に戻す。
-- [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S4-01] `tools/build_selfhost_stage2.py` を current contract に合わせて復旧する。
-- [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S4-02] docs / archive / local CI gate 方針を更新して本計画を閉じる。
+- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S4-01] `tools/build_selfhost_stage2.py` を current contract に合わせて復旧する。
+- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S4-02] docs / archive / local CI gate 方針を更新して本計画を閉じる。
 
 ## 5. 決定ログ
 
@@ -120,3 +120,5 @@
 - 2026-03-08: direct `.py` route は `src/runtime/cpp/native/compiler/transpile_cli.cpp` と `src/runtime/cpp/native/compiler/backend_registry_static.cpp` の bootstrap host-Python bridge で復旧した。前者は `.py` 入力を host Python の `toolchain.compiler.transpile_cli.load_east3_document(...)` へ委譲し、後者は temporary EAST3 JSON を host `src/ir2lang.py` へ渡して C++ source を返す。
 - 2026-03-08: `tools/check_selfhost_direct_compile.py` の compile failure は selfhost binary 固有ではなく、checked-in runtime helper ABI の不一致が原因だった。`src/pytra/utils/assertions.py` の `py_assert_all/py_assert_stdout`、`src/pytra/utils/gif.py` の `save_gif` を read-only value ABI へ寄せ、generated C++ runtime artifact を同期したことで full sample direct compile は `failures=0` になった。
 - 2026-03-08: representative diff で残っていた `sample/py/18_mini_language_interpreter.py` の host/selfhost mismatch は `src/pytra/std/json.py` の `json.dumps(bool)` lowering bug が原因だった。`bool(v)` を明示して generated C++ runtime を再生成し、`python3 tools/build_selfhost.py` で selfhost binary を rebuild 後、`tools/check_selfhost_cpp_diff.py --cases sample/py/01_mandelbrot.py sample/py/05_mandelbrot_zoom.py sample/py/18_mini_language_interpreter.py test/fixtures/core/add.py --mode strict` は `mismatches=0`、`tools/verify_selfhost_end_to_end.py --skip-build --cases sample/py/05_mandelbrot_zoom.py sample/py/18_mini_language_interpreter.py test/fixtures/core/add.py` は `failures=0` になった。
+- 2026-03-08: `python3 tools/build_selfhost_stage2.py` は current runtime/layout 契約で `selfhost/py2cpp_stage2.out` を生成できる状態まで復旧した。続けて `python3 tools/check_selfhost_stage2_cpp_diff.py --mode strict` も representative 8 case で `mismatches=0 known_diffs=0 skipped=0` を確認し、stage2 build は既知 debt から外れた。
+- 2026-03-08: `docs/ja/how-to-use.md` / `docs/ja/spec/spec-tools.md` は direct `.py` route と stage2 strict diff を正本コマンドとして更新し、`tools/run_local_ci.py` も `check_selfhost_cpp_diff.py --mode strict` / `check_selfhost_stage2_cpp_diff.py --mode strict` に戻した。これで selfhost は local CI 上も advisory ではなく strict gate へ復帰した。
