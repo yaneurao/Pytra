@@ -30,6 +30,7 @@
 // `str` method delegates still live here, so string helper declarations remain a direct dependency.
 #include "runtime/cpp/generated/built_in/string_ops.h"
 #include "runtime/cpp/generated/built_in/numeric_ops.h"
+#include "runtime/cpp/generated/built_in/zip_ops.h"
 using PyFile = pytra::runtime::cpp::base::PyFile;
 
 template <class T>
@@ -3003,17 +3004,6 @@ static inline str py_slice(const ::std::any& v, int64 lo, int64 up) {
 
 static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) {
     return py_slice(v, lo, py_to_int64(up));
-}
-
-template <class A, class B>
-static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {
-    list<::std::tuple<A, B>> out;
-    const ::std::size_t n = ::std::min(lhs.size(), rhs.size());
-    out.reserve(n);
-    for (::std::size_t i = 0; i < n; i++) {
-        out.append(::std::make_tuple(lhs[i], rhs[i]));
-    }
-    return out;
 }
 
 static inline list<::std::tuple<object, object>> zip(const object& lhs, const object& rhs) {

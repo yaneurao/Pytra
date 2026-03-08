@@ -38,6 +38,6 @@
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01] parser / EAST metadata / validator で `@template("T", ...)` を runtime helper 限定で受理する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01] `sum` / `min` / `max` を pure Python generic helper として SoT 側へ移し、C++ generated helper へ切り替える。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02] `zip` / `sorted` のうち少なくとも 1 系統以上を同様に移し、`py_runtime.h` から hand-written helper を撤去する。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02] `zip` / `sorted` のうち少なくとも 1 系統以上を同様に移し、`py_runtime.h` から hand-written helper を撤去する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01] runtime symbol index / build graph / representative backend/runtime tests を新 contract へ追従させる。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。

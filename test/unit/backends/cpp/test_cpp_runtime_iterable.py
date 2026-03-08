@@ -165,6 +165,16 @@ int main() {
     assert(py_max(int64(9), int64(3)) == 9);
     assert(py_min(int64(9), int64(3), int64(5)) == 3);
     assert(py_max(int64(9), int64(3), int64(5)) == 9);
+    list<::std::tuple<int64, str>> zipped = zip(list<int64>{1, 2, 3}, list<str>{"a", "b"});
+    assert(zipped.size() == 2);
+    assert(::std::get<0>(zipped[0]) == 1);
+    assert(::std::get<1>(zipped[0]) == "a");
+    object zipped_lhs = make_object(list<object>{make_object(int64(1)), make_object(int64(2))});
+    object zipped_rhs = make_object(list<object>{make_object(str("x")), make_object(str("y")), make_object(str("z"))});
+    auto zipped_from_obj = zip(zipped_lhs, zipped_rhs);
+    assert(zipped_from_obj.size() == 2);
+    assert(obj_to_int64(::std::get<0>(zipped_from_obj[1])) == 2);
+    assert(obj_to_str(::std::get<1>(zipped_from_obj[0])) == "x");
 
     dict<str, object> d{};
     d["a"] = make_object(1);
@@ -260,9 +270,11 @@ int main() {
         string_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.h").read_text(encoding="utf-8")
         string_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.cpp").read_text(encoding="utf-8")
         numeric_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.h").read_text(encoding="utf-8")
+        zip_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/zip_ops.h").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
         self.assertIn('#include "runtime/cpp/generated/built_in/numeric_ops.h"', runtime_header)
+        self.assertIn('#include "runtime/cpp/generated/built_in/zip_ops.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/predicates.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/native/built_in/sequence.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/sequence.h"', runtime_header)
@@ -272,6 +284,7 @@ int main() {
         self.assertNotIn("static inline T sum(const list<T>& values)", runtime_header)
         self.assertNotIn("static inline auto py_min(const A& a, const B& b)", runtime_header)
         self.assertNotIn("static inline auto py_max(const A& a, const B& b)", runtime_header)
+        self.assertNotIn("static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs)", runtime_header)
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
         self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
@@ -292,7 +305,10 @@ int main() {
         self.assertIn("T sum(const list<T>& values) {", numeric_ops_header)
         self.assertIn("T py_min(const T& a, const T& b) {", numeric_ops_header)
         self.assertIn("T py_max(const T& a, const T& b) {", numeric_ops_header)
+        self.assertIn("template <class A, class B>", zip_ops_header)
+        self.assertIn("list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {", zip_ops_header)
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp").exists())
+        self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/zip_ops.cpp").exists())
 
 
 if __name__ == "__main__":

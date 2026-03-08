@@ -176,6 +176,10 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01]: `src/pytra/built_in/numeric_ops.py` を追加し、`sum(list[T])`, `py_min(T, T)`, `py_max(T, T)` を `@template` helper として SoT 側へ置いた。`sum` は `@abi(args={"values":"value"}, ret="value")` を併用して C++ generated header で `const list<T>&` 署名を維持する。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01]: C++ runtime emit は template helper module を header-only generated module として扱う。`src/backends/cpp/cli.py` に header-only 分岐を追加し、`numeric_ops.cpp` は生成せず `generated/built_in/numeric_ops.h` に template 定義を残すようにした。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01]: `src/runtime/cpp/native/core/py_runtime.h` から `sum(list<T>)` と 2-arg `py_min/py_max` の hand-written 実装を撤去し、`generated/built_in/numeric_ops.h` を include する形へ切り替えた。3 引数以上の `py_min/py_max` だけは variadic wrapper として残し、binary helper は generated template に委譲する。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: `src/pytra/built_in/zip_ops.py` を追加し、`zip(list[A], list[B]) -> list[tuple[A, B]]` を `@template("A", "B")` + `@abi(args={"lhs":"value","rhs":"value"}, ret="value")` helper として SoT 側へ移した。C++ runtime emit は header-only generated module `generated/built_in/zip_ops.h` と public shim `pytra/built_in/zip_ops.h` を生成し、`zip_ops.cpp` は持たない。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: linked specialization で local typed temporary を安全に materialize できるよう、`runtime_template_specializer.py` の型置換を `annotation` フィールドまで広げた。これにより template helper 内の `AnnAssign` も concrete type へ正規化される。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: `src/runtime/cpp/native/core/py_runtime.h` から generic `zip(const list<A>&, const list<B>&)` を撤去し、generated `zip_ops.h` へ委譲した。`zip(const object&, const object&)` は dynamic bridge として残し、内部で generated template `zip(*l, *r)` を呼ぶ最小構成に留めた。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: 第二波の `sorted` family はこの tranche では見送った。builtin lowering が `zip` ほど明示されておらず、`zip` だけで第二の generic helper family と header-only generated module lane を成立できたため、残りは `S4` 以降の regression/guard 同期を優先する。
 
 ## 7. `S1-01` 棚卸し結果
 

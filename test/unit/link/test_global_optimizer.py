@@ -483,6 +483,86 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
                 [{"export_name": "py_echo__pytra_tmpl__int64", "type_args": ["int64"]}],
             )
 
+    def test_optimizer_specializes_runtime_template_annotations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            helper_py = root / "zip_ops.py"
+            program = build_linked_program_from_module_map(
+                helper_py,
+                {
+                    str(helper_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pytra.built_in.zip_ops"},
+                        "body": [
+                            {
+                                "kind": "FunctionDef",
+                                "name": "zip",
+                                "arg_order": ["lhs", "rhs"],
+                                "arg_types": {"lhs": "list[A]", "rhs": "list[B]"},
+                                "return_type": "list[tuple[A,B]]",
+                                "body": [
+                                    {
+                                        "kind": "AnnAssign",
+                                        "target": _name("out"),
+                                        "annotation": "list[tuple[A,B]]",
+                                        "value": {"kind": "List", "elements": [], "resolved_type": "list[tuple[A,B]]"},
+                                    },
+                                    _ret(_name("out")),
+                                ],
+                                "meta": {
+                                    "template_v1": {
+                                        "schema_version": 1,
+                                        "params": ["A", "B"],
+                                        "scope": "runtime_helper",
+                                        "instantiation_mode": "linked_implicit",
+                                    },
+                                    "runtime_abi_v1": {
+                                        "schema_version": 1,
+                                        "args": {"lhs": "value", "rhs": "value"},
+                                        "ret": "value",
+                                    },
+                                },
+                            },
+                            {
+                                "kind": "FunctionDef",
+                                "name": "use_pair",
+                                "arg_order": ["lhs", "rhs"],
+                                "arg_types": {"lhs": "list[int64]", "rhs": "list[str]"},
+                                "return_type": "list[tuple[int64,str]]",
+                                "body": [
+                                    _ret(
+                                        {
+                                            "kind": "Call",
+                                            "func": _name("zip"),
+                                            "args": [
+                                                _typed_name("lhs", "list[int64]"),
+                                                _typed_name("rhs", "list[str]"),
+                                            ],
+                                            "keywords": [],
+                                            "resolved_type": "list[tuple[int64,str]]",
+                                        }
+                                    )
+                                ],
+                            },
+                        ],
+                    }
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+
+            result = optimize_linked_program(program)
+            helper_doc = result.linked_program.modules[0].east_doc
+            specialized = helper_doc["body"][0]
+            self.assertEqual(specialized["name"], "zip__pytra_tmpl__int64__str")
+            self.assertEqual(specialized["arg_types"], {"lhs": "list[int64]", "rhs": "list[str]"})
+            self.assertEqual(specialized["return_type"], "list[tuple[int64,str]]")
+            ann_assign = specialized["body"][0]
+            self.assertEqual(ann_assign["annotation"], "list[tuple[int64,str]]")
+            self.assertEqual(ann_assign["value"]["resolved_type"], "list[tuple[int64,str]]")
+
     def test_optimizer_specializes_runtime_template_across_imported_module(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
