@@ -81,6 +81,28 @@ class Py2TsSmokeTest(unittest.TestCase):
         ts = transpile_to_typescript(east)
         self.assertIn('from "./pytra/std/time.js"', ts)
 
+    def test_ts_preview_ambient_global_extern_is_lowered_without_decl_or_import(self) -> None:
+        src = """
+from pytra.std import extern
+
+document: Any = extern()
+doc: Any = extern("document")
+
+def main() -> None:
+    title = document.title
+    node = doc.getElementById("app")
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "ts_ambient_global_extern.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            ts = transpile_to_typescript(east)
+        self.assertIn("let title = document.title;", ts)
+        self.assertIn('let node = document.getElementById("app");', ts)
+        self.assertNotIn("let document = ", ts)
+        self.assertNotIn("let doc = ", ts)
+        self.assertNotIn("import { document", ts)
+
     def test_cli_generates_pytra_runtime_shims(self) -> None:
         fixture = find_fixture_case("import_time_from")
         with tempfile.TemporaryDirectory() as td:

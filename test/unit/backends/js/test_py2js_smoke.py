@@ -457,6 +457,50 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertNotIn("import { document", js)
         self.assertNotIn("browser/widgets/dialog", js)
 
+    def test_ambient_global_extern_same_name_is_lowered_without_decl_or_import(self) -> None:
+        src = """
+from pytra.std import extern
+
+document: Any = extern()
+console: Any = extern()
+
+def main() -> None:
+    title = document.title
+    console.log(title)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "js_ambient_global_same_name.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+        self.assertIn("let title = document.title;", js)
+        self.assertIn("console.log(title);", js)
+        self.assertNotIn("let document = ", js)
+        self.assertNotIn("let console = ", js)
+        self.assertNotIn("import { document", js)
+        self.assertNotIn("import { console", js)
+
+    def test_ambient_global_extern_alias_lowers_name_and_call_raw(self) -> None:
+        src = """
+from pytra.std import extern
+
+doc: Any = extern("document")
+alert: Any = extern()
+
+def main() -> None:
+    node = doc.getElementById("app")
+    alert(node)
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "js_ambient_global_alias.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            js = transpile_to_js(east)
+        self.assertIn('let node = document.getElementById("app");', js)
+        self.assertIn("alert(node);", js)
+        self.assertNotIn("let doc = ", js)
+        self.assertNotIn("let alert = ", js)
+
     def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
         fixture = find_fixture_case("import_time_from")
         east = load_east(fixture, parser_backend="self_hosted")
