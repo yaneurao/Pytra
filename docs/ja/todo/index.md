@@ -32,4 +32,31 @@
 
 ## 未完了タスク
 
-- なし
+1. [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01] 残存 `dict<str, object>` default lane を退役または最小化する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-01] `py_dict_get_default(dict<str, object>, ...)` の checked-in callsite を棚卸しする。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S1-02] `JsonObj.get_*()` / explicit decode への置換方針を固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-01] representative callsite を置換する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S2-02] helper lane を削除または最小化する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-01] representative test / parity を更新する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01-S3-02] docs / archive を同期して閉じる。
+
+2. [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01] `dict<str, V>` への `object` key compat を退役する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-01] `py_dict_get(..., object)` の checked-in callsite を棚卸しする。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S1-02] `str` key への置換方針を固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-01] representative callsite を置換する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S2-02] helper を削除し inventory guard を更新する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-KEY-01-S3-01] parity / docs / archive を同期する。
+
+3. [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01] `optional<dict<...>>` `py_dict_get` compat を退役する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01-S1-01] optional dict `py_dict_get` の checked-in callsite を棚卸しする。
+- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01-S1-02] explicit unwrap 置換パターンを固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01-S2-01] representative callsite を置換する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01-S2-02] helper を削除する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01-S3-01] regression / parity / docs / archive を更新する。
+
+4. [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01] 残存 `dict_get_node(dict<str, str>)` を最終整理する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S1-01] checked-in callsite を棚卸しする。
+- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S1-02] 削除可否と残置条件を決定ログへ固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S2-01] representative callsite を explicit lookup へ置換する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S2-02] helper を削除または残置理由を確定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S3-01] guard / docs / archive を更新する。
