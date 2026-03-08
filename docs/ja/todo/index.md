@@ -32,4 +32,32 @@
 
 ## 未完了タスク
 
-- なし
+- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01] `py_runtime.h` の `py_dict_get(dict<str, V>)` string sugar を退役する。
+  - 文脈: [p0-cpp-pyruntime-dictget-string-sugar-retirement.md](../plans/p0-cpp-pyruntime-dictget-string-sugar-retirement.md)
+  - 進捗メモ: key normalization convenience を helper から外す。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S1-01] `const char*` / `std::string` key sugar の checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S1-02] key 正規化順序と non-goal を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S2-01] representative callsite を `str` 正規化へ置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S2-02] regression と inventory guard を更新する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S3-01] string sugar overload を削除する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S3-02] parity / docs / archive を更新して閉じる。
+
+- [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01] `py_runtime.h` の `py_dict_key_cast` を退役する。
+  - 文脈: [p0-cpp-pyruntime-dict-key-cast-retirement.md](../plans/p0-cpp-pyruntime-dict-key-cast-retirement.md)
+  - 進捗メモ: dict key の暗黙 cast policy を helper から除去する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S1-01] `py_dict_key_cast` の checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S1-02] key normalization の新ルールと non-goal を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S2-01] representative callsite を explicit key construction へ置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S2-02] regression / inventory guard を更新する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S3-01] `py_dict_key_cast` を削除する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S3-02] parity / docs / archive を更新して閉じる。
+
+- [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01] `py_runtime.h` の typed-list-from-object helper を縮退する。
+  - 文脈: [p0-cpp-pyruntime-typed-list-from-object-retirement.md](../plans/p0-cpp-pyruntime-typed-list-from-object-retirement.md)
+  - 進捗メモ: `object -> typed list` convenience を JSON / selfhost の nominal lane へ寄せる。
+  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S1-01] 4 helper の checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S1-02] 削除順序と暫定的に残す helper を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S2-01] representative callsite を typed / nominal lane へ置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S2-02] regression / inventory guard を更新する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S3-01] 不要 helper を削除または private 相当に縮退する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01-S3-02] parity / docs / archive を更新して閉じる。
