@@ -230,6 +230,84 @@ C++ では追加で次を守る。
   - build graph / runtime symbol index は public header から compile source を導出し、emitter が `generated/...` を直接選んではならない。
   - helper を移す判断は「pure Python で書けるか」だけでなく、「stable include 面を壊さないか」「ownership/ABI glue を新設しないか」で判定する。
 
+### 0.622 JSON dynamic boundary と `JsonValue` 共通ADT
+
+注記:
+
+- 本節は承認済みの次段 target design を定義する。
+- 2026-03-08 時点の現行実装では `json.loads()` が `object` を返す経路が残っていてよい。
+- ただし新規実装・新規 helper・新規 runtime では、本節の contract を正本とする。
+
+静的型付けを前提にする Pytra では、JSON の動的性を一般 `object` helper へ広げてはならない。
+JSON 由来の動的境界は、`JsonValue` / `JsonObj` / `JsonArr` という JSON 専用 surface に閉じ込める。
+
+必須ルール:
+
+- `sum(object)`、`zip(object, object)`、`sorted(object)`、object overload の `dict.keys/items/values` など、user-facing の dynamic built-in helper を JSON のために追加してはならない。
+- `object` 値に対して built-in / operator / collection helper を直接適用してはならない。user code は先に decode して concrete type へ落としてから使う。
+- JSON decode のために plain assignment の意味を変えて implicit cast を導入してはならない。
+- JSON の dynamic 性を理由に `native/core/py_runtime.h` へ hand-written fallback helper を増やしてはならない。
+
+共通ADT:
+
+- `JsonValue`
+  - `Null`
+  - `Bool`
+  - `Int`
+  - `Float`
+  - `Str`
+  - `Obj`
+  - `Arr`
+- `JsonObj`
+  - 意味論上は `dict[str, JsonValue]`
+- `JsonArr`
+  - 意味論上は `list[JsonValue]`
+
+source surface の方針:
+
+- `json.loads(...)` の長期正規形は一般 `object` ではなく `JsonValue` とする。
+- user code は `JsonValue` / `JsonObj` / `JsonArr` の decode API を通して値を取り出す。
+- general-purpose `cast` を JSON だけのために language-wide 必須機能として先行導入しなくてよい。
+- 必要な narrowing は JSON module 専用 API に寄せる。
+
+推奨 decode surface:
+
+- `JsonValue.as_obj() -> JsonObj | None`
+- `JsonValue.as_arr() -> JsonArr | None`
+- `JsonValue.as_str() -> str | None`
+- `JsonValue.as_int() -> int | None`
+- `JsonValue.as_float() -> float | None`
+- `JsonValue.as_bool() -> bool | None`
+- `JsonObj.get(key: str) -> JsonValue | None`
+- `JsonObj.get_obj(key: str) -> JsonObj | None`
+- `JsonObj.get_arr(key: str) -> JsonArr | None`
+- `JsonObj.get_str(key: str) -> str | None`
+- `JsonObj.get_int(key: str) -> int | None`
+- `JsonArr.get(index: int) -> JsonValue | None`
+
+補足:
+
+- 上記の exact surface 名は実装時に微調整してよいが、思想は「JSON 専用 wrapper / decoder に閉じる」ことを優先する。
+- `match` による型分岐を後から導入してもよいが、それは `JsonValue` を decode しやすくする補助であって、dynamic helper 復活の理由にはならない。
+
+backend lowering 方針:
+
+- `JsonValue` は target 非依存の共通ADTとして定義し、各 backend は自言語で自然な tagged union / enum / variant へ落とす。
+- 例:
+  - C++: `std::variant<null, bool, int64, float64, str, JsonObjRef, JsonArrRef>`
+  - Rust: `enum JsonValue`
+  - Swift: `indirect enum JsonValue`
+  - Nim: tagged union / `ref object`
+- 一時的に `object` や `dict[str, object]` / `list[object]` を内部 carrier に使う実装は許容してよいが、それは backend/runtime 内部 detail に限る。
+- user-facing surface は `JsonValue` 系 nominal type を正本とし、一般 `object` surface を露出してはならない。
+
+`py_runtime.h` との関係:
+
+- `sum(object)` / `zip(object, object)` / object overload の `dict.keys/items/values` は permanent API にしてはならない。
+- これらは legacy compatibility debt としてのみ一時残存を許容し、段階的に compile error へ寄せる。
+- `json.loads()` を使う user code は、dynamic helper ではなく `JsonValue` decode API を通る前提で書けるようにする。
+- `native/core/py_runtime.h` に残してよいのは JSON carrier と low-level bridge の最小実装だけとし、user-facing dynamic algorithm helper は残してはならない。
+
 誤りの例:
 
 - `std/math` の補完実装を `core/` に置く

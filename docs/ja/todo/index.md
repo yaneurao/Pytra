@@ -32,4 +32,13 @@
 
 ## 未完了タスク
 
-- なし
+1. [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01] JSON の動的境界を `JsonValue` 系へ閉じ込め、`object` 向け dynamic helper を user-facing surface から退役させる。
+   文脈: [p1-jsonvalue-decode-first-contract.md](../plans/p1-jsonvalue-decode-first-contract.md)
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S1-01] `json.loads()->object` と `sum/zip/sorted/keys/items/values(object)` の依存箇所を棚卸しする。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S1-02] `spec-runtime` / `spec-dev` に `JsonValue` 共通ADTと decode-first 契約を固定する。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S2-01] `JsonValue` / `JsonObj` / `JsonArr` の public surface と `loads_obj` / `loads_arr` の exact API を決める。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S2-02] `object` 型を built-in / collection helper へ直接渡したとき compile error とする validator/guard 方針を固定する。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-01] C++ / Rust / Swift / Nim の carrier 方針を具体化し、実装優先順を決める。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-02] `std/json` runtime と representative decode path を `JsonValue` surface へ寄せる最初の実装 slice を入れる。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-01] dynamic helper debt の guard と representative parity を固定する。
+   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。

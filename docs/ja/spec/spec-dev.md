@@ -385,6 +385,9 @@ linked module(EAST3)
 - 生成コードで使う補助関数は、各言語のランタイムモジュールへ集約し、生成コードへの重複定義を避けます。
 - `object` 型値（`Any` 由来を含む）への属性アクセス・メソッド呼び出しは、言語制約として未許可（禁止）とします。
   - EAST/emit 時に `object` レシーバのメソッド呼び出しを許容しない前提で実装すること。
+- `object` 型値を `sum` / `zip` / `sorted` / `min` / `max` / `keys` / `items` / `values` などの built-in / collection helper へ直接渡してはならない。
+  - compile error を正とし、dynamic helper fallback で救済してはならない。
+  - `json.loads()` などの動的データは、将来的に `JsonValue` 系 decode surface で concrete type へ落としてから使う。
 
 ### 3.2 関数引数の受け渡し方針
 

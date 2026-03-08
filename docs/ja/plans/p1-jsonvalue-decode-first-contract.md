@@ -1,0 +1,188 @@
+# P1: `JsonValue` decode-first 契約と dynamic helper 退役
+
+最終更新: 2026-03-08
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P1-JSONVALUE-DECODE-FIRST-01`
+
+関連:
+- [spec-runtime.md](../spec/spec-runtime.md)
+- [spec-dev.md](../spec/spec-dev.md)
+- [spec-linker.md](../spec/spec-linker.md)
+- [spec-template.md](../spec/spec-template.md)
+- [p2-runtime-sot-linked-program-integration.md](./p2-runtime-sot-linked-program-integration.md)
+- [p2-runtime-helper-generics-under-linked-program.md](./p2-runtime-helper-generics-under-linked-program.md)
+
+背景:
+- 2026-03-08 時点の `json.loads()` は実装上 `object` を返す経路が残っている。
+- その結果、`sum(object)` や `zip(object, object)` のような dynamic helper fallback を runtime に残す誘惑が生まれ、`native/core/py_runtime.h` の縮退を阻害する。
+- しかし Pytra は静的型付けを前提にしており、`object` 値のまま built-in や collection helper を適用できる必要は本質的にない。
+- JSON の動的性は一般 `object` 問題ではなく、`null/bool/int/float/str/object/array` という JSON 固有の代数的データ型の問題である。
+- したがって、`json` 由来の動的境界は `JsonValue` / `JsonObj` / `JsonArr` の専用 surface へ閉じ込め、user-facing dynamic helper を compile error へ寄せる方が設計として一貫する。
+
+目的:
+- `json.loads()` とその decode 経路を、一般 `object` ではなく `JsonValue` 系の共通ADTとして定義する。
+- `object` に対する dynamic built-in / collection helper fallback を user-facing surface から退役させる。
+- JSON の decode-first 契約を導入し、`py_runtime.h` の dynamic helper debt を縮退しやすくする。
+- C++ だけでなく、Rust / Swift / Nim など GC なし静的型付け target でも成立する carrier 設計を揃える。
+
+対象:
+- `src/pytra/std/json.py` の public surface 再設計
+- `JsonValue` / `JsonObj` / `JsonArr` の仕様
+- `object` 引数の built-in / collection helper 禁止規約
+- JSON decode helper / wrapper API
+- backend ごとの carrier 方針
+- representative runtime / parity / docs
+
+非対象:
+- general-purpose `cast` 機能の language-wide 導入
+- `cast_or_raise` のような例外ベース decode
+- Python pattern matching の全面実装
+- `object` runtime 自体の即時撤去
+- JSON 以外の dynamic data source 全般を 1 回で整理すること
+
+受け入れ基準:
+- `JsonValue` / `JsonObj` / `JsonArr` の canonical contract が docs/spec 上で固定される。
+- `json.loads()` 系の長期正規形が一般 `object` ではなく JSON 専用 surface であることが明文化される。
+- `sum(object)` / `zip(object, object)` / `sorted(object)` / object overload の `dict.keys/items/values` は user-facing compile error へ寄せる方針が固定される。
+- JSON decode は wrapper/decode API を通す前提になり、dynamic helper を増やす理由として扱わない。
+- backend lowering は「各言語で tagged union / enum / variant / wrapper に落とす」共通方針で整理される。
+
+依存関係:
+- `P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01` は完了済みとする。
+- `P2 runtime SoT linked-program integration` は将来の本命だが、本計画はそれに先行して JSON dynamic boundary の contract を固定してよい。
+- `@template` / linked-program specialization は JSON wrapper の generic helper へ将来流用できるが、本計画の必須前提ではない。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_runtime_cpp_layout.py`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_*json*.py'`
+
+## 1. 問題の本質
+
+問題は `json.loads()` が動的であることではなく、その動的性が一般 `object` helper へ漏れていることである。
+
+JSON は実際には次の 7 分岐しか持たない。
+
+- `null`
+- `bool`
+- `int`
+- `float`
+- `str`
+- `object`
+- `array`
+
+したがって必要なのは general dynamic helper ではなく、JSON 専用の decode surface である。
+
+## 2. 基本方針
+
+1. `json.loads()` の長期正規形は `JsonValue` とする。
+2. `JsonObj` は意味論上 `dict[str, JsonValue]`、`JsonArr` は意味論上 `list[JsonValue]` とする。
+3. user code は `JsonValue` 系 decode API を通して concrete type を得てから built-in / operator を使う。
+4. `object` 値を built-in / collection helper に直接渡す経路は compile error とし、dynamic helper fallback で救済しない。
+5. backend は `JsonValue` を target ごとに idiomatic な tagged union / enum / variant / wrapper へ lower する。
+6. 一時的に `object` を内部 carrier に使う実装は許容してよいが、user-facing surface には露出しない。
+
+## 3. 想定する public surface
+
+長期正規形:
+
+- `json.loads(text: str) -> JsonValue`
+- `json.loads_obj(text: str) -> JsonObj | None`
+- `json.loads_arr(text: str) -> JsonArr | None`
+
+`JsonValue`:
+
+- `as_obj() -> JsonObj | None`
+- `as_arr() -> JsonArr | None`
+- `as_str() -> str | None`
+- `as_int() -> int | None`
+- `as_float() -> float | None`
+- `as_bool() -> bool | None`
+
+`JsonObj`:
+
+- `get(key: str) -> JsonValue | None`
+- `get_obj(key: str) -> JsonObj | None`
+- `get_arr(key: str) -> JsonArr | None`
+- `get_str(key: str) -> str | None`
+- `get_int(key: str) -> int | None`
+- `get_float(key: str) -> float | None`
+- `get_bool(key: str) -> bool | None`
+
+`JsonArr`:
+
+- `get(index: int) -> JsonValue | None`
+- `get_obj(index: int) -> JsonObj | None`
+- `get_arr(index: int) -> JsonArr | None`
+- `get_str(index: int) -> str | None`
+- `get_int(index: int) -> int | None`
+
+補足:
+
+- exact API 名は実装時に微調整してよい。
+- 重要なのは `cast` 一般論ではなく、JSON 専用 wrapper/decode API に閉じること。
+
+## 4. backend carrier 方針
+
+- C++:
+  - `std::variant` または nominal wrapper
+- Rust:
+  - `enum JsonValue`
+- Swift:
+  - `indirect enum JsonValue`
+- Nim:
+  - tagged union / `ref object`
+
+共通ルール:
+
+- `JsonValue` は target 非依存の共通ADTとして先に定義する。
+- `object` は fallback carrier として内部で使ってよいが、public contract をそれに引きずらせてはならない。
+- JSON のためだけに `sum(object)` のような helper を backend/runtime へ追加してはならない。
+
+## 5. 段階導入
+
+### Phase 1: inventory と契約固定
+
+- `json.loads()->object` に依存している surface を棚卸しする。
+- `spec-runtime` / `spec-dev` に `JsonValue` と decode-first 契約を固定する。
+- dynamic helper compile error の対象を列挙する。
+
+### Phase 2: surface 設計
+
+- `JsonValue` / `JsonObj` / `JsonArr` の nominal type surface を決める。
+- `loads_obj` / `loads_arr` を含む decode API を固める。
+- `match` / narrowing / future cast の関係を整理する。
+
+### Phase 3: backend carrier / runtime 実装
+
+- C++ / Rust / Swift / Nim を優先に carrier を決める。
+- `std/json` runtime と parity suite を追従させる。
+- `object` fallback helper の削除または internal 化を進める。
+
+### Phase 4: cleanup と guard
+
+- `py_runtime.h` / runtime layout guard に dynamic helper 再侵入防止を追加する。
+- representative parity を固定する。
+- docs を同期して本計画を閉じる。
+
+## 6. タスク分解
+
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01] JSON の動的境界を `JsonValue` 系へ閉じ込め、`object` 向け dynamic helper を user-facing surface から退役させる。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S1-01] `json.loads()->object` と `sum/zip/sorted/keys/items/values(object)` の依存箇所を棚卸しする。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S1-02] `spec-runtime` / `spec-dev` に `JsonValue` 共通ADTと decode-first 契約を固定する。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S2-01] `JsonValue` / `JsonObj` / `JsonArr` の public surface と `loads_obj` / `loads_arr` の exact API を決める。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S2-02] `object` 型を built-in / collection helper へ直接渡したとき compile error とする validator/guard 方針を固定する。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-01] C++ / Rust / Swift / Nim の carrier 方針を具体化し、実装優先順を決める。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-02] `std/json` runtime と representative decode path を `JsonValue` surface へ寄せる最初の実装 slice を入れる。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-01] dynamic helper debt の guard と representative parity を固定する。
+- [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。
+
+## 7. 決定ログ
+
+- 2026-03-08: JSON のために language-wide dynamic helper を維持しない。動的性は `JsonValue` 系の専用 surface に閉じ込める方針を採る。
+- 2026-03-08: `sum(object)` / `zip(object, object)` のような helper は permanent API にせず、compile error へ寄せる target design とする。
+- 2026-03-08: general-purpose `cast_or_raise` は JSON decode には採用しない。必要な decode は JSON module 専用 wrapper/decode API に寄せる。
+- 2026-03-08: 各 backend での carrier は target idiom に従うが、共通意味論は `JsonValue` という target 非依存ADTで先に固定する。
