@@ -316,6 +316,16 @@ int main() {
         self.assertNotIn("static inline object py_dict_get_default(const object& obj, const char* key, const char* defval)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const object& defval)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const object& defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const object& defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const char* defval)", runtime_header)
+        self.assertNotIn(
+            "static inline dict<str, object> py_dict_get_default(\n    const dict<str, object>& d, const char* key, const dict<str, object>& defval)",
+            runtime_header,
+        )
+        self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const str& defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const str& defval)", runtime_header)
         self.assertNotIn("static inline bool dict_get_bool(const object& obj, const char* key, bool defval)", runtime_header)
         self.assertNotIn("static inline bool dict_get_bool(const ::std::optional<dict<str, object>>& d, const char* key, bool defval)", runtime_header)
         self.assertNotIn("static inline str dict_get_str(const object& obj, const char* key, const str& defval)", runtime_header)

@@ -1409,54 +1409,6 @@ static inline str py_dict_get_default(const dict<str, str>& d, const str& key, c
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
-static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const object& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    return it->second;
-}
-
-static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const char* defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return make_object(str(defval));
-    }
-    return it->second;
-}
-
-static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const object& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const char* defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-static inline dict<str, object> py_dict_get_default(
-    const dict<str, object>& d, const char* key, const dict<str, object>& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    if (const auto* p = obj_to_dict_ptr(it->second)) {
-        return *p;
-    }
-    return defval;
-}
-
-static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const str& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return make_object(defval);
-    }
-    return it->second;
-}
-
-static inline object py_dict_get_default(const dict<str, object>& d, const str& key, const str& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
 template <class D>
 static inline D py_dict_get_default(const dict<str, object>& d, const char* key, const D& defval) {
     auto it = d.find(str(key));
@@ -1484,27 +1436,46 @@ static inline D py_dict_get_default(const dict<str, object>& d, const ::std::str
 }
 
 static inline bool dict_get_bool(const dict<str, object>& d, const char* key, bool defval) {
-    return py_to_bool(py_dict_get_default(d, key, make_object(defval)));
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    return py_to_bool(it->second);
 }
 
 static inline str dict_get_str(const dict<str, object>& d, const char* key, const str& defval) {
-    return py_to_string(py_dict_get_default(d, key, make_object(defval)));
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    return py_to_string(it->second);
 }
 
 // object 系 dict.get で数値既定値を使うとき、object 経由の戻り値を
 // 直接数値へ落として py_dict_get_default 直呼び出しを避ける。
 static inline int64 dict_get_int(const dict<str, object>& d, const char* key, int64 defval) {
-    return py_to_int64(py_dict_get_default(d, key, make_object(defval)));
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    return py_to_int64(it->second);
 }
 
 static inline float64 dict_get_float(const dict<str, object>& d, const char* key, float64 defval) {
-    return py_to_float64(py_dict_get_default(d, key, make_object(defval)));
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    return py_to_float64(it->second);
 }
 
 static inline list<object> dict_get_list(
     const dict<str, object>& d, const char* key, const list<object>& defval = list<object>{}) {
-    object got = py_dict_get_default(d, key, make_object(defval));
-    if (const auto* p = obj_to_list_ptr(got)) return *p;
+    auto it = d.find(str(key));
+    if (it == d.end()) {
+        return defval;
+    }
+    if (const auto* p = obj_to_list_ptr(it->second)) return *p;
     return defval;
 }
 
