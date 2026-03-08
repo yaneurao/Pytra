@@ -1383,14 +1383,6 @@ static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const V& 
     return it->second;
 }
 
-template <class K, class V>
-static inline V py_dict_get_default(const ::std::optional<dict<K, V>>& d, const K& key, const V& defval) {
-    if (!d.has_value()) {
-        return defval;
-    }
-    return py_dict_get_default(*d, key, defval);
-}
-
 template <class V>
 static inline V py_dict_get_default(const dict<str, V>& d, const char* key, const V& defval) {
     auto it = d.find(str(key));
@@ -1405,56 +1397,16 @@ static inline V py_dict_get_default(const dict<str, V>& d, const str& key, const
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
-template <class V>
-static inline V py_dict_get_default(const dict<str, V>& d, const ::std::string& key, const V& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-template <class V>
-static inline V py_dict_get_default(const ::std::optional<dict<str, V>>& d, const char* key, const V& defval) {
-    if (!d.has_value()) {
-        return defval;
-    }
-    return py_dict_get_default(*d, key, defval);
-}
-
-template <class K, class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
-static inline V py_dict_get_default(const dict<K, V>& d, const K& key, const D& defval) {
-    auto it = d.find(key);
-    if (it == d.end()) {
-        return static_cast<V>(defval);
-    }
-    return it->second;
-}
-
-template <class K, class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
-static inline V py_dict_get_default(const ::std::optional<dict<K, V>>& d, const K& key, const D& defval) {
-    if (!d.has_value()) {
-        return static_cast<V>(defval);
-    }
-    return py_dict_get_default(*d, key, defval);
-}
-
-template <class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
-static inline V py_dict_get_default(const dict<str, V>& d, const char* key, const D& defval) {
+static inline str py_dict_get_default(const dict<str, str>& d, const char* key, const char* defval) {
     auto it = d.find(str(key));
     if (it == d.end()) {
-        return static_cast<V>(defval);
+        return str(defval);
     }
     return it->second;
 }
 
-template <class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
-static inline V py_dict_get_default(const dict<str, V>& d, const str& key, const D& defval) {
+static inline str py_dict_get_default(const dict<str, str>& d, const str& key, const char* defval) {
     return py_dict_get_default(d, key.c_str(), defval);
-}
-
-template <class V, class D, ::std::enable_if_t<::std::is_convertible_v<D, V>, int> = 0>
-static inline V py_dict_get_default(const ::std::optional<dict<str, V>>& d, const char* key, const D& defval) {
-    if (!d.has_value()) {
-        return static_cast<V>(defval);
-    }
-    return py_dict_get_default(*d, key, defval);
 }
 
 static inline object py_dict_get_default(const dict<str, object>& d, const char* key, const object& defval) {

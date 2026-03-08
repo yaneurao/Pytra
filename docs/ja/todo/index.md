@@ -35,8 +35,8 @@
 1. [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01] generic `py_dict_get_default` overload を縮退する。
 - [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S1-01] generic overload の checked-in callsite を棚卸しする。
 - [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S1-02] 残す primitive wrapper を決定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S2-01] redundant overload を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S2-02] codegen / runtime tests を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S2-01] redundant overload を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S2-02] codegen / runtime tests を更新する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S3-01] parity / docs / archive を同期する。
 
 2. [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-OBJECT-01] `dict<str, object>` 専用 `py_dict_get_default` を縮退する。
