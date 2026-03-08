@@ -1744,27 +1744,6 @@ static inline object py_dict_get(const object& obj, const char* key) {
     throw ::std::runtime_error("py_dict_get on non-dict object");
 }
 
-static inline ::std::any py_dict_get(const ::std::any& obj, const char* key) {
-    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&obj)) {
-        auto it = p->find(str(key));
-        if (it == p->end()) throw ::std::out_of_range("dict key not found");
-        return it->second;
-    }
-    if (const auto* p = ::std::any_cast<dict<str, object>>(&obj)) {
-        auto it = p->find(str(key));
-        if (it == p->end()) throw ::std::out_of_range(::std::string("dict key not found: ") + key);
-        return ::std::any(it->second);
-    }
-    if (const auto* p = ::std::any_cast<object>(&obj)) {
-        if (const auto* d = obj_to_dict_ptr(*p)) {
-            auto it = d->find(str(key));
-            if (it == d->end()) throw ::std::out_of_range(::std::string("dict key not found: ") + key);
-            return ::std::any(it->second);
-        }
-    }
-    throw ::std::runtime_error("py_dict_get on non-dict any");
-}
-
 // `dict.get(key)`（default 省略）相当。未キー時は Python の `None` 相当（object{}）を返す。
 template <class K, class V>
 static inline object py_dict_get_maybe(const dict<K, V>& d, const K& key) {
@@ -1828,18 +1807,6 @@ static inline object py_dict_get_maybe(const object& obj, const char* key) {
 static inline object py_dict_get_maybe(const object& obj, const str& key) {
     if (const auto* p = obj_to_dict_ptr(obj)) {
         return py_dict_get_maybe(*p, key);
-    }
-    return object{};
-}
-
-static inline object py_dict_get_maybe(const ::std::any& obj, const char* key) {
-    if (const auto* p = ::std::any_cast<dict<str, object>>(&obj)) {
-        return py_dict_get_maybe(*p, key);
-    }
-    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&obj)) {
-        auto it = p->find(str(key));
-        if (it == p->end()) return object{};
-        return make_object(it->second);
     }
     return object{};
 }
@@ -2053,87 +2020,6 @@ static inline D py_dict_get_default(const dict<str, object>& d, const str& key, 
 
 template <class D>
 static inline D py_dict_get_default(const dict<str, object>& d, const ::std::string& key, const D& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-template <class D>
-static inline D py_dict_get_default(const dict<str, ::std::any>& d, const char* key, const D& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    const D* p = ::std::any_cast<D>(&(it->second));
-    if (p == nullptr) {
-        return defval;
-    }
-    return *p;
-}
-
-template <class D>
-static inline D py_dict_get_default(const dict<str, ::std::any>& d, const str& key, const D& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-template <class D>
-static inline D py_dict_get_default(const ::std::any& obj, const char* key, const D& defval) {
-    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&obj)) {
-        return py_dict_get_default(*p, key, defval);
-    }
-    if (const auto* p = ::std::any_cast<dict<str, object>>(&obj)) {
-        auto it = p->find(str(key));
-        if (it == p->end()) return defval;
-        if (auto q = py_object_try_cast<D>(it->second)) return *q;
-        return defval;
-    }
-    if (const auto* p = ::std::any_cast<object>(&obj)) {
-        if (const auto* d = obj_to_dict_ptr(*p)) {
-            auto it = d->find(str(key));
-            if (it == d->end()) return defval;
-            if (auto q = py_object_try_cast<D>(it->second)) return *q;
-        }
-    }
-    return defval;
-}
-
-template <class D>
-static inline D py_dict_get_default(const ::std::any& obj, const str& key, const D& defval) {
-    return py_dict_get_default(obj, key.c_str(), defval);
-}
-
-static inline str py_dict_get_default(const ::std::any& obj, const char* key, const char* defval) {
-    if (const auto* p = ::std::any_cast<dict<str, ::std::any>>(&obj)) {
-        auto it = p->find(str(key));
-        if (it == p->end()) return str(defval);
-        if (const auto* s = ::std::any_cast<str>(&(it->second))) return *s;
-        return str(defval);
-    }
-    if (const auto* p = ::std::any_cast<dict<str, object>>(&obj)) {
-        auto it = p->find(str(key));
-        if (it == p->end()) return str(defval);
-        return py_to_string(it->second);
-    }
-    if (const auto* p = ::std::any_cast<object>(&obj)) {
-        if (const auto* d = obj_to_dict_ptr(*p)) {
-            auto it = d->find(str(key));
-            if (it == d->end()) return str(defval);
-            return py_to_string(it->second);
-        }
-    }
-    return str(defval);
-}
-
-static inline str py_dict_get_default(const ::std::any& obj, const str& key, const char* defval) {
-    return py_dict_get_default(obj, key.c_str(), defval);
-}
-
-static inline str py_dict_get_default(const dict<str, ::std::any>& d, const char* key, const char* defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) return str(defval);
-    if (const auto* s = ::std::any_cast<str>(&(it->second))) return *s;
-    return str(defval);
-}
-
-static inline str py_dict_get_default(const dict<str, ::std::any>& d, const str& key, const char* defval) {
     return py_dict_get_default(d, key.c_str(), defval);
 }
 

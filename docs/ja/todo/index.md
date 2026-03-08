@@ -34,11 +34,11 @@
 
 - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01] `py_runtime.h` に残る `dict_get_*` / compat lane / `std::any` bridge を縮退し、decode-first / typed helper を正本へ寄せる。
   - 文脈: [p0-cpp-pyruntime-dynamic-bridge-retirement.md](../plans/p0-cpp-pyruntime-dynamic-bridge-retirement.md)
-  - 進捗メモ: `dict_get_*` の checked-in callsite と compat debt を棚卸しし、削除順を固定した。
+  - 進捗メモ: `std::any` dict access の first slice を削除し、残る compat lane は `sum(list<object>)`・optional dict keys/items/values・演算子/iterator bridge に絞った。
   - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S1-01] `dict_get_*` / `py_dict_get_default` / `std::any` bridge / `sum(list<object>)` / `optional<dict<str, object>>` lane の callsite と debt 分類を棚卸しする。
   - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S1-02] 削除順序と「残す compat lane」を docs / 決定ログへ固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-01] `dict_get_*` / `py_dict_get_default` の object / optional / `std::any` overload を first slice で整理し、`JsonObj.get_*` や typed helper に寄せる。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-02] representative tests を更新し、`dict_get_*` 縮退後の C++ runtime surface を固定する。
+  - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-01] `dict_get_*` / `py_dict_get_default` の object / optional / `std::any` overload を first slice で整理し、`JsonObj.get_*` や typed helper に寄せる。
+  - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-02] representative tests を更新し、`dict_get_*` 縮退後の C++ runtime surface を固定する。
   - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S3-01] `sum(const list<object>&)` の callsite を置き換えまたは削除し、必要なら regression を追加する。
   - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S3-02] `py_dict_keys/items/values(const ::std::optional<dict<str, object>>& d)` compat lane を削除または最小化し、`JsonObj` 経路との境界を確定する。
   - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-01] `std::any` 比較 / 算術 / `begin/end` bridge を縮退し、selfhost に必要な subset だけ残す。
