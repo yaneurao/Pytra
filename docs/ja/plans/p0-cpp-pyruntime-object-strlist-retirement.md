@@ -1,0 +1,48 @@
+# P0: C++ `py_runtime.h` `py_to_str_list_from_object` 退役
+
+最終更新: 2026-03-08
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01`
+
+関連:
+- [spec-runtime.md](../spec/spec-runtime.md)
+- [spec-dev.md](../spec/spec-dev.md)
+
+背景:
+- `py_to_str_list_from_object` は `object` に入った list を `list<str>` に戻す convenience helper である。
+- argv / JSON / selfhost decode が typed lane に寄るほど、これは object bridge の小さな残骸になる。
+
+目的:
+- `py_to_str_list_from_object` を退役し、typed argv / decode helper を正本にする。
+
+非対象:
+- typed `py_runtime_argv`
+- generic `py_to<list<T>>(object)` 全体
+
+受け入れ基準:
+- `py_to_str_list_from_object` の checked-in callsite が消える。
+- helper 自体が削除または private 化される。
+
+確認コマンド:
+- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py' -v`
+
+## 1. 方針
+
+1. argv / selfhost decode の callsite を棚卸しする。
+2. typed `list<str>` lane に寄せる。
+3. generic conversion machinery には手を入れず、専用 convenience だけを落とす。
+
+## 2. タスク分解
+
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01] `py_to_str_list_from_object` を退役する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01-S1-01] callsite を棚卸しする。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01-S1-02] typed argv / decode 置換方針を固定する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01-S2-01] representative callsite を置換する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01-S2-02] helper を削除する。
+- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-STRLIST-01-S3-01] parity / docs / archive を更新する。
+
+## 3. 決定ログ
+
+- 2026-03-08: 専用 `str list` convenience は generic conversion machinery と切り分けて扱う。
