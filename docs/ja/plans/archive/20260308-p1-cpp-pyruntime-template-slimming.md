@@ -6,13 +6,13 @@
 - `docs/ja/todo/index.md` の `ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01`
 
 関連:
-- [archive/20260308-p1-cpp-py-runtime-core-slimming.md](./archive/20260308-p1-cpp-py-runtime-core-slimming.md)
-- [archive/20260308-p2-linked-runtime-helper-template-v1.md](./archive/20260308-p2-linked-runtime-helper-template-v1.md)
-- [p2-runtime-sot-linked-program-integration.md](./p2-runtime-sot-linked-program-integration.md)
-- [p2-runtime-helper-generics-under-linked-program.md](./p2-runtime-helper-generics-under-linked-program.md)
-- [../spec/spec-template.md](../spec/spec-template.md)
-- [../spec/spec-runtime.md](../spec/spec-runtime.md)
-- [../spec/spec-abi.md](../spec/spec-abi.md)
+- [20260308-p1-cpp-py-runtime-core-slimming.md](./20260308-p1-cpp-py-runtime-core-slimming.md)
+- [20260308-p2-linked-runtime-helper-template-v1.md](./20260308-p2-linked-runtime-helper-template-v1.md)
+- [p2-runtime-sot-linked-program-integration.md](../p2-runtime-sot-linked-program-integration.md)
+- [p2-runtime-helper-generics-under-linked-program.md](../p2-runtime-helper-generics-under-linked-program.md)
+- [spec-template.md](../../spec/spec-template.md)
+- [spec-runtime.md](../../spec/spec-runtime.md)
+- [spec-abi.md](../../spec/spec-abi.md)
 
 背景:
 - 2026-03-08 時点で `@template("T", ...)` は linked runtime helper 向け generic surface の canonical syntax として方針固定済みだが、実装はまだ入っていない。
@@ -149,15 +149,15 @@
 
 ## 5. タスク分解
 
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01] `@template` を runtime helper 限定で実装し、generic helper を pure Python SoT 側へ戻すことで C++ `py_runtime.h` を縮退させる。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01] `@template` を runtime helper 限定で実装し、generic helper を pure Python SoT 側へ戻すことで C++ `py_runtime.h` を縮退させる。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01] `py_runtime.h` に残る generic helper 候補を棚卸しし、第一波 / 第二波 / 保留へ分類する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02] `spec-template` / `spec-runtime` / `spec-east` / `spec-linker` に helper-limited `@template` の責務境界と specialization 契約を追記する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01] parser / EAST metadata / validator で `@template("T", ...)` を runtime helper 限定で受理する。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01] `sum` / `min` / `max` を pure Python generic helper として SoT 側へ移し、C++ generated helper へ切り替える。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02] `zip` / `sorted` のうち少なくとも 1 系統以上を同様に移し、`py_runtime.h` から hand-written helper を撤去する。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01] runtime symbol index / build graph / representative backend/runtime tests を新 contract へ追従させる。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02] `zip` / `sorted` のうち少なくとも 1 系統以上を同様に移し、`py_runtime.h` から hand-written helper を撤去する。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01] runtime symbol index / build graph / representative backend/runtime tests を新 contract へ追従させる。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02] fixture/sample parity・docs 同期・必要な guard 追加まで完了し、本計画を閉じる。
 
 ## 6. 決定ログ
 
@@ -182,11 +182,14 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: 第二波の `sorted` family はこの tranche では見送った。builtin lowering が `zip` ほど明示されておらず、`zip` だけで第二の generic helper family と header-only generated module lane を成立できたため、残りは `S4` 以降の regression/guard 同期を優先する。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01]: `test_runtime_symbol_index.py` に `pytra.built_in.numeric_ops` / `pytra.built_in.zip_ops` の header-only generated contract を追加し、`companions=["generated"]`, `public_headers=pytra/.../*.h`, `compile_sources=[]` を固定した。header-only template helper は runtime symbol index 上も `.cpp` を持たない canonical module として扱う。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01]: `test_cpp_runtime_build_graph.py` で `runtime/cpp/core/py_runtime.h` から collect される runtime source 集合に `generated/built_in/numeric_ops.cpp` / `zip_ops.cpp` が再侵入しないことを固定した。header-only generated helper は build graph 上でも phantom compile source を持たない。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `tools/check_runtime_cpp_layout.py` に `sum/min/max/zip` の hand-written template helper body が `native/core/py_runtime.h` へ再侵入したら fail する guard を追加し、`test_check_runtime_cpp_layout.py` で `zip(const list<A>& lhs, const list<B>& rhs)` の duplicate 検出を固定した。template helper lane を導入した後に core header へ逆流させないことを stop-ship にした。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `docs/ja/spec/spec-runtime.md` と `docs/ja/how-to-use.md` を同期し、`numeric_ops` / `zip_ops` は header-only generated module なので `compile_sources=[]` が canonical であり、空の `.cpp` を作らないことを明記した。runtime symbol index / build graph / C++ runtime docs の説明を同じ契約へ揃えた。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture` で `cases=3 pass=3 fail=0`、`python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` で `cases=18 pass=18 fail=0` を確認し、本計画を archive へ移した。
 
 ## 7. `S1-01` 棚卸し結果
 
 対象ファイル:
-- [py_runtime.h](../../../src/runtime/cpp/native/core/py_runtime.h)
+- [py_runtime.h](../../../../src/runtime/cpp/native/core/py_runtime.h)
 
 ### 第一波
 

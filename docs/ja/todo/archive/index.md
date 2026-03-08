@@ -20,6 +20,7 @@
 - [2026-03-08 / P0-RUNTIME-ABI-MODE-SIMPLIFY-01](../plans/archive/20260308-p0-runtime-abi-mode-simplify-value-value-mut.md)
 - [2026-03-08 / P4-NONCPP-BACKEND-RECOVERY-01](../plans/archive/20260308-p4-noncpp-backend-recovery-after-linked-program.md)
 - [2026-03-08 / P1-ALLTARGET-SAMPLE-PARITY-01](../plans/archive/20260308-p1-all-target-sample-parity-rollout.md)
+- [2026-03-08 / P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01](../plans/archive/20260308-p1-cpp-pyruntime-template-slimming.md)
 - [2026-03-08 / P1-CPP-PY-RUNTIME-SLIM-01](../plans/archive/20260308-p1-cpp-py-runtime-core-slimming.md)
 - [2026-03-08 / P1-RUNTIME-ABI-DECORATOR-01](../plans/archive/20260308-p1-runtime-abi-decorator-for-generated-helpers.md)
 - [2026-03-08 / P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01](../plans/archive/20260308-p0-backend-runtime-knowledge-leak-retirement.md)
@@ -45,7 +46,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（8 セクション）
+- [2026-03-08](20260308.md)（9 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）

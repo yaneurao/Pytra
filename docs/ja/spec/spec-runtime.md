@@ -217,6 +217,7 @@ C++ では追加で次を守る。
   - SoT は `src/pytra/built_in/*.py` に置く。
   - 役割は pure Python で表現可能な built_in semantics の checked-in C++ artifact 化であり、`str::split` / `splitlines` / `count` / `join`、object-specialized `zip` / `sorted` / `sum` / `min` / `max` のような helper を受ける。
   - generic helper は raw `@template` surface をそのまま backend へ見せず、linked-program specialization 後の specialized helper artifact として materialize する。backend は specialization collector を再実装してはならない。
+  - template-only module は header-only generated artifact を許容し、`compile_sources=[]` が canonical になりうる。`numeric_ops` / `zip_ops` のような helper のために空の `.cpp` をでっち上げてはならない。
   - `.h` は stable core header だけを include し、`runtime/cpp/native/core/...` を直接 include してはならない。
   - `.cpp` は `runtime/cpp/core/py_runtime.h` と sibling generated header を include してよいが、`native/core` 直 include や C++ 専用 handwritten glue を埋め込んではならない。
   - mutable container を helper 境界で value 受けしたい場合は、`@abi` などの明示契約を使う。backend 内部の ref-first 表現を stable helper ABI として露出してはならない。
