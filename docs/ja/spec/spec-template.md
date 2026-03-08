@@ -17,6 +17,24 @@
 - `typing.TypeVar` は引き続き注釈専用であり、function-scoped generic surface には使わない。
 - class generic / method generic / user code 全般への開放は v1 の非対象とする。
 
+### 0.1 metadata / validation（v1）
+
+- canonical metadata は `FunctionDef.meta.template_v1` とする。
+- v1 の canonical shape は次のとおり:
+  - `schema_version: 1`
+  - `params: [template_param_name, ...]`
+  - `scope: "runtime_helper"`
+  - `instantiation_mode: "linked_implicit"`
+- raw `decorators` は source surface の保存用であり、parser / linker / backend は `meta.template_v1` を正本として扱う。
+- syntactic validation は parser/EAST build で行い、少なくとも次を reject する。
+  - 空引数の `@template()`
+  - 文字列リテラル識別子以外を含む引数
+  - 重複する template parameter 名
+  - 同一関数上の複数 `@template`
+  - method / nested function / class への適用
+- `runtime helper only` の enforcement は linked-program validator を正本とする。raw parse 時点では syntactically 正しい top-level function へ metadata を載せてもよいが、linked-program で runtime helper provenance を満たさない module は fail-closed で reject する。
+- `TypeVar` 注釈だけでは `meta.template_v1` を生成しない。
+
 ## 1. 目的
 
 - Python 側で generic な関数/クラスを定義し、C++ を含む複数言語へ安全に変換できるようにする。

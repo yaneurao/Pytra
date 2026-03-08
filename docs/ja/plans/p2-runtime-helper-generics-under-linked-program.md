@@ -178,7 +178,7 @@ def py_head(xs: list[T]) -> T:
 
 - 今の runtime helper には少し重い
 
-### 6.2 `TypeVar` 注釈だけを限定採用
+### 6.2 `TypeVar` 注釈だけを限定採用（不採用）
 
 ```python
 T = TypeVar("T")
@@ -197,7 +197,8 @@ def py_head(xs: list[T]) -> T:
 - 現行 spec では `TypeVar` は注釈専用で template 機能未提供
 - user-facing generic と runtime-only generic の線引きが曖昧になりやすい
 
-現時点では、runtime helper 限定で始めるなら `TypeVar` 記法の方が実用的だが、全体設計としては `spec-template` との整合を要検討とする。
+2026-03-08 時点では、この案は採らない。  
+理由は、runtime helper v1 で必要なのは「関数単位の型パラメータ宣言」を surface 上で明示することであり、`TypeVar` だけでは declaration site が曖昧になるためである。したがって linked runtime helper generics の canonical syntax は `@template("T", ...)` とする。
 
 ## 7. linked-program で必要な仕組み
 
