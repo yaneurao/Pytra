@@ -30,7 +30,14 @@ def _load_json_doc(path: Path, label: str) -> dict[str, object]:
     return dict(payload.raw)
 
 
-def _load_linked_east3_doc(path: Path, *, module_id: str) -> dict[str, object]:
+def _load_linked_east3_doc(
+    path: Path,
+    *,
+    module_id: str,
+    module_kind: str = "user",
+    helper_id: str = "",
+    owner_module_id: str = "",
+) -> dict[str, object]:
     doc = _load_json_doc(path, "linked EAST3")
     if doc.get("kind") != "Module":
         raise RuntimeError("linked EAST3 kind must be Module: " + module_id)
@@ -49,6 +56,14 @@ def _load_linked_east3_doc(path: Path, *, module_id: str) -> dict[str, object]:
     linked_module_id = linked_any.get("module_id")
     if not isinstance(linked_module_id, str) or linked_module_id != module_id:
         raise RuntimeError("linked EAST3 module_id mismatch: " + module_id)
+    if module_kind == "helper":
+        synthetic_any = meta_any.get("synthetic_helper_v1")
+        if not isinstance(synthetic_any, dict):
+            raise RuntimeError("linked helper meta.synthetic_helper_v1 is required: " + module_id)
+        if synthetic_any.get("helper_id") != helper_id:
+            raise RuntimeError("linked helper helper_id mismatch: " + module_id)
+        if synthetic_any.get("owner_module_id") != owner_module_id:
+            raise RuntimeError("linked helper owner_module_id mismatch: " + module_id)
     return doc
 
 
@@ -148,7 +163,13 @@ def load_linked_output_bundle(
         if not isinstance(output, str) or output == "":
             raise RuntimeError("link-output.modules[" + str(index) + "].output must be non-empty string")
         artifact_path = (manifest_dir / output).resolve()
-        east_doc = _load_linked_east3_doc(artifact_path, module_id=module_id)
+        east_doc = _load_linked_east3_doc(
+            artifact_path,
+            module_id=module_id,
+            module_kind=item.module_kind,
+            helper_id=item.helper_id,
+            owner_module_id=item.owner_module_id,
+        )
         modules.append(
             LinkedProgramModule(
                 module_id=module_id,
@@ -156,6 +177,10 @@ def load_linked_output_bundle(
                 is_entry=is_entry,
                 east_doc=east_doc,
                 artifact_path=artifact_path,
+                module_kind=item.module_kind,
+                helper_id=item.helper_id,
+                owner_module_id=item.owner_module_id,
+                generated_by=item.generated_by,
             )
         )
     modules.sort(key=lambda item: item.module_id)

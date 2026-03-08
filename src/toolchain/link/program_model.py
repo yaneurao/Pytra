@@ -11,6 +11,7 @@ from pytra.std.pathlib import Path
 LINK_INPUT_SCHEMA = "pytra.link_input.v1"
 LINK_OUTPUT_SCHEMA = "pytra.link_output.v1"
 DISPATCH_MODES = ("native", "type_id")
+MODULE_KINDS = ("user", "runtime", "helper")
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,10 @@ class LinkOutputModuleEntry:
     output: str
     source_path: str
     is_entry: bool
+    module_kind: str = "user"
+    helper_id: str = ""
+    owner_module_id: str = ""
+    generated_by: str = ""
 
 
 @dataclass(frozen=True)
@@ -43,6 +48,10 @@ class LinkedProgramModule:
     is_entry: bool
     east_doc: dict[str, object]
     artifact_path: Path | None = None
+    module_kind: str = "user"
+    helper_id: str = ""
+    owner_module_id: str = ""
+    generated_by: str = ""
 
     @property
     def path(self) -> Path:
