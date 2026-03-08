@@ -14,6 +14,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.ir2lang as ir2lang_mod
+from src.backends.common.program_writer import write_single_file_program
 
 
 class Ir2langCliTest(unittest.TestCase):
@@ -921,6 +922,68 @@ class Ir2langCliTest(unittest.TestCase):
         self.assertEqual(modules[0]["kind"], "user")
         self.assertEqual(modules[1]["kind"], "helper")
         self.assertEqual(modules[1]["metadata"]["helper_id"], "rs.demo")
+
+    def test_ir2lang_single_file_writer_folds_helper_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src_json = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "body": [],
+                    "meta": {"module_id": "pkg.main"},
+                },
+            )
+            out_rs = root / "out.rs"
+
+            fake_spec = {
+                "target_lang": "rs",
+                "extension": ".rs",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+
+            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
+                with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(ir2lang_mod, "lower_ir", return_value={"kind": "LoweredModule"}):
+                            with patch.object(ir2lang_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                                with patch.object(
+                                    ir2lang_mod,
+                                    "emit_module",
+                                    return_value={
+                                        "module_id": "pkg.main",
+                                        "kind": "user",
+                                        "label": "main",
+                                        "extension": ".rs",
+                                        "text": "// main\n",
+                                        "is_entry": True,
+                                        "dependencies": [],
+                                        "metadata": {},
+                                        "helper_modules": [
+                                            {
+                                                "module_id": "__pytra_helper__.rs.demo",
+                                                "kind": "helper",
+                                                "label": "demo_helper",
+                                                "extension": ".rs",
+                                                "text": "// helper\n",
+                                                "is_entry": False,
+                                                "dependencies": [],
+                                                "metadata": {"helper_id": "rs.demo", "owner_module_id": "pkg.main"},
+                                            }
+                                        ],
+                                    },
+                                ):
+                                    with patch.object(ir2lang_mod, "get_program_writer", return_value=write_single_file_program):
+                                        with patch.object(ir2lang_mod, "apply_runtime_hook", return_value=None):
+                                            rc = ir2lang_mod.main()
+
+            self.assertEqual(rc, 0)
+            self.assertTrue(out_rs.exists())
+            self.assertEqual(out_rs.read_text(encoding="utf-8"), "// main\n")
+            self.assertFalse((root / "demo_helper.rs").exists())
 
 
 if __name__ == "__main__":
