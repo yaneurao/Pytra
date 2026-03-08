@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-str-node-final-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01](../plans/archive/20260309-p0-cpp-pyruntime-optional-dict-get-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-KEY-01](../plans/archive/20260309-p0-cpp-pyruntime-object-key-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01](../plans/archive/20260309-p0-cpp-pyruntime-object-dictdefault-remain-retirement.md)

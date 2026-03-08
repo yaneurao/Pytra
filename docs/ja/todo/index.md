@@ -32,14 +32,7 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01] 残存 `dict_get_node(dict<str, str>)` を最終整理する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S1-02] 削除可否と残置条件を決定ログへ固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S2-01] representative callsite を explicit lookup へ置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S2-02] helper を削除または残置理由を確定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01-S3-01] guard / docs / archive を更新する。
-
-2. [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01] `selfhost/py2cpp_stage2.out` を使った full sample parity を green にする。
+1. [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01] `selfhost/py2cpp_stage2.out` を使った full sample parity を green にする。
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-01] stage2 full sample parity の canonical command を固定する。
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-02] `verify_selfhost_end_to_end.py` 再利用か wrapper 新設かを決定する。
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S2-01] stage2 binary で sample 全件 parity を実行し、failure を分類する。
