@@ -32,16 +32,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01] `py_runtime.h` の `py_dict_get(dict<str, V>)` string sugar を退役する。
-  - 文脈: [p0-cpp-pyruntime-dictget-string-sugar-retirement.md](../plans/p0-cpp-pyruntime-dictget-string-sugar-retirement.md)
-  - 進捗メモ: key normalization convenience を helper から外す。
-  - [x] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S1-01] `const char*` / `std::string` key sugar の checked-in callsite を棚卸しする。
-  - [x] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S1-02] key 正規化順序と non-goal を決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S2-01] representative callsite を `str` 正規化へ置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S2-02] regression と inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S3-01] string sugar overload を削除する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01-S3-02] parity / docs / archive を更新して閉じる。
-
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01] `py_runtime.h` の `py_dict_key_cast` を退役する。
   - 文脈: [p0-cpp-pyruntime-dict-key-cast-retirement.md](../plans/p0-cpp-pyruntime-dict-key-cast-retirement.md)
   - 進捗メモ: dict key の暗黙 cast policy を helper から除去する。

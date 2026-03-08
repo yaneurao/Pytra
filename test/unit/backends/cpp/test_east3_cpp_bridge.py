@@ -638,12 +638,12 @@ class East3CppBridgeTest(unittest.TestCase):
         out = emitter._coerce_dict_key_expr(owner, "k", key_node)
         self.assertEqual(out, "k")
 
-    def test_coerce_dict_key_expr_coerces_object_key_to_py_to_string(self) -> None:
+    def test_coerce_dict_key_expr_coerces_object_key_to_str(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         owner = {"kind": "Name", "id": "d", "resolved_type": "dict[str, int64]"}
         key_node = {"kind": "Name", "id": "k", "resolved_type": "object"}
         out = emitter._coerce_dict_key_expr(owner, "k", key_node)
-        self.assertEqual(out, "py_to_string(k)")
+        self.assertEqual(out, "str(k)")
 
     def test_render_expr_subscript_dict_str_key_verified_skips_py_to_string(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1058,7 +1058,7 @@ class East3CppBridgeTest(unittest.TestCase):
             "key": {"kind": "Name", "id": "k", "resolved_type": "str"},
             "resolved_type": "int64",
         }
-        self.assertEqual(emitter.render_expr(node), "d.pop(py_to_string(k))")
+        self.assertEqual(emitter.render_expr(node), "d.pop(str(k))")
 
     def test_builtin_runtime_dict_pop_without_default_uses_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1076,7 +1076,7 @@ class East3CppBridgeTest(unittest.TestCase):
             "args": [{"kind": "Name", "id": "k", "resolved_type": "str"}],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(pop_expr), "d.pop(py_to_string(k))")
+        self.assertEqual(emitter.render_expr(pop_expr), "d.pop(str(k))")
 
     def test_render_expr_supports_dict_pop_default_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1090,7 +1090,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(node),
-            "(d.contains(py_to_string(k)) ? d.pop(py_to_string(k)) : 7)",
+            "(d.contains(str(k)) ? d.pop(str(k)) : 7)",
         )
 
     def test_builtin_runtime_dict_pop_with_default_uses_ir_node_path(self) -> None:
@@ -1114,7 +1114,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(pop_expr),
-            "(d.contains(py_to_string(k)) ? d.pop(py_to_string(k)) : 7)",
+            "(d.contains(str(k)) ? d.pop(str(k)) : 7)",
         )
 
     def test_render_expr_supports_dict_get_maybe_ir_node(self) -> None:
@@ -1127,7 +1127,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(node),
-            "([&]() -> ::std::optional<int64> { auto&& __dict_1 = d; auto __dict_key_2 = py_to_string(k); return __dict_1.contains(__dict_key_2) ? ::std::optional<int64>(__dict_1.at(__dict_key_2)) : ::std::nullopt; }())",
+            "([&]() -> ::std::optional<int64> { auto&& __dict_1 = d; auto __dict_key_2 = str(k); return __dict_1.contains(__dict_key_2) ? ::std::optional<int64>(__dict_1.at(__dict_key_2)) : ::std::nullopt; }())",
         )
 
     def test_builtin_runtime_dict_get_without_default_uses_ir_node_path(self) -> None:
@@ -1148,7 +1148,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(get_expr),
-            "([&]() -> ::std::optional<int64> { auto&& __dict_1 = d; auto __dict_key_2 = py_to_string(k); return __dict_1.contains(__dict_key_2) ? ::std::optional<int64>(__dict_1.at(__dict_key_2)) : ::std::nullopt; }())",
+            "([&]() -> ::std::optional<int64> { auto&& __dict_1 = d; auto __dict_key_2 = str(k); return __dict_1.contains(__dict_key_2) ? ::std::optional<int64>(__dict_1.at(__dict_key_2)) : ::std::nullopt; }())",
         )
 
     def test_render_expr_supports_dict_get_default_ir_node(self) -> None:
@@ -1165,7 +1165,7 @@ class East3CppBridgeTest(unittest.TestCase):
             "owner_optional_object_dict": False,
             "resolved_type": "int64",
         }
-        self.assertEqual(emitter.render_expr(node), "d.get(py_to_string(k), 7)")
+        self.assertEqual(emitter.render_expr(node), "d.get(str(k), 7)")
 
     def test_builtin_runtime_dict_get_with_default_uses_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1186,7 +1186,7 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(get_expr), "d.get(py_to_string(k), 7)")
+        self.assertEqual(emitter.render_expr(get_expr), "d.get(str(k), 7)")
 
     def test_render_expr_supports_str_strip_op_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
