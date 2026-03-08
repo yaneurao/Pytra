@@ -3451,12 +3451,12 @@ class CppEmitter(
     def _render_expr_kind_obj_iter_init(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         value_expr = self.render_expr(expr_d.get("value"))
-        return f"py_iter_or_raise({value_expr})"
+        return self._render_object_iter_or_raise_expr(value_expr)
 
     def _render_expr_kind_obj_iter_next(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         iter_expr = self.render_expr(expr_d.get("iter"))
-        return f"py_next_or_stop({iter_expr})"
+        return self._render_object_iter_next_expr(iter_expr)
 
     def _render_expr_kind_obj_type_id(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr

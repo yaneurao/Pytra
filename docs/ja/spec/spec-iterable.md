@@ -69,10 +69,10 @@
 
 ## 6.1 正規プロトコル
 
-意味論上の正規 API は `iter/next` 形式にする。
+意味論上の正規 API は `PyObj` の `iter/next` メソッドにする。
 
-- `py_iter_or_raise(obj) -> object`  
-- `py_next_or_stop(iter_obj) -> optional<object>`
+- `obj->py_iter_or_raise() -> object`
+- `iter_obj->py_next_or_stop() -> optional<object>`
 
 契約:
 
@@ -80,7 +80,7 @@
 - `py_next_or_stop` は要素があれば `object`、終端なら `nullopt`。
 - `__next__` 由来の `StopIteration` は `nullopt` へ正規化する。
 
-`py_iter_or_raise` の解決順序:
+`PyObj::py_iter_or_raise` の解決順序:
 
 1. まず `__iter__` を解決し、取得した iterator を返す。  
 2. `__iter__` が無い場合はシーケンスフォールバックを試す（`__getitem__(0), __getitem__(1), ...` を `IndexError` まで）。  
@@ -90,7 +90,7 @@
 
 `for` 生成を C++ 側で自然に扱うため、`object/Any` 経路には begin/end ブリッジを用意する。
 
-- `py_dyn_range(obj)` を導入し、`begin()` で `py_iter_or_raise`、`operator++` で `py_next_or_stop` を使う。
+- `py_dyn_range(obj)` を導入し、`begin()` で `obj->py_iter_or_raise()`、`operator++` で `iter_obj->py_next_or_stop()` を使う。
 - 生成コードは `for (object v : py_dyn_range(x))` を使える。
 - これは「begin/end で回す」表面 APIだが、意味論は `iter/next` に一致させる。
 

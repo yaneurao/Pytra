@@ -7,6 +7,24 @@ from toolchain.compiler.transpile_cli import join_str_list
 class CppRuntimeExprEmitter:
     """Runtime/path/type_id expression helpers extracted from CppEmitter."""
 
+    def _render_object_iter_or_raise_expr(self, value_expr: str) -> str:
+        return (
+            "([&]() -> object { "
+            f"object __obj = {value_expr}; "
+            'if (!__obj) throw TypeError("NoneType is not iterable"); '
+            "return __obj->py_iter_or_raise(); "
+            "}())"
+        )
+
+    def _render_object_iter_next_expr(self, iter_expr: str) -> str:
+        return (
+            "([&]() -> ::std::optional<object> { "
+            f"object __iter = {iter_expr}; "
+            'if (!__iter) throw TypeError("NoneType is not an iterator"); '
+            "return __iter->py_next_or_stop(); "
+            "}())"
+        )
+
     def _render_expr_kind_path_runtime_op(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         owner_expr = self.render_expr(expr_d.get("owner"))
@@ -79,10 +97,10 @@ class CppRuntimeExprEmitter:
             return ""
         if op == "iter_or_raise":
             value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_iter_or_raise({value_expr})"
+            return self._render_object_iter_or_raise_expr(value_expr)
         if op == "next_or_stop":
             value_expr = self.render_expr(expr_d.get("value"))
-            return f"py_next_or_stop({value_expr})"
+            return self._render_object_iter_next_expr(value_expr)
         if op == "reversed":
             value_expr = self.render_expr(expr_d.get("value"))
             return f"py_reversed({value_expr})"

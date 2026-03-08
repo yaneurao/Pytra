@@ -35,13 +35,16 @@
 
 ## 2. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNITER-01] dynamic iteration primitive を縮退する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S1-01] `py_iter_or_raise/object` callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S1-02] typed / nominal 置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S2-02] primitive bridge を削除または最小化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S3-01] parity / docs / archive を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNITER-01] dynamic iteration primitive を縮退する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S1-01] `py_iter_or_raise/object` callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S1-02] typed / nominal 置換方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S2-02] primitive bridge を削除または最小化する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNITER-01-S3-01] parity / docs / archive を更新する。
 
 ## 3. 決定ログ
 
 - 2026-03-08: 本計画では dynamic iteration primitive を対象にし、range-for wrapper は別計画へ切り分ける。
+- 2026-03-08: checked-in callsite は `CppEmitter` の `ObjIterInit` / `ObjIterNext` lowering と runtime smoke に限られていた。`py_dyn_range` / `begin/end(object)` は別 tranche のまま据え置き、primitive bridge だけ method call へ寄せる。
+- 2026-03-08: `ObjIterInit` / `ObjIterNext` は null guard 付き lambda から `PyObj::py_iter_or_raise()` / `PyObj::py_next_or_stop()` を直接呼ぶ形へ更新し、`py_runtime.h` の free helper `py_iter_or_raise(const object&)` / `py_next_or_stop(const object&)` は削除した。`py_dyn_range_view` の内部実装も同じ method call に合わせた。
+- 2026-03-08: representative verification は `test_east3_cpp_bridge.py`、`test_py2cpp_codegen_issues.py -k any_boundary_builtin_names`、`test_cpp_runtime_iterable.py`、fixture parity `cases=3 pass=3 fail=0`、sample parity `cases=18 pass=18 fail=0` を通した。

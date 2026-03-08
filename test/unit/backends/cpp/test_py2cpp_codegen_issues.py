@@ -1246,12 +1246,8 @@ def f_next(it: object) -> object:
         self.assertTrue(("return py_to_bool(x);" in cpp) or ("return py_to<bool>(x);" in cpp))
         self.assertIn("return py_len(x);", cpp)
         self.assertIn("return py_to_string(x);", cpp)
-        self.assertTrue(
-            ("return make_object(py_iter_or_raise(x));" in cpp) or ("return py_iter_or_raise(x);" in cpp)
-        )
-        self.assertTrue(
-            ("return make_object(py_next_or_stop(it));" in cpp) or ("return py_next_or_stop(it);" in cpp)
-        )
+        self.assertIn("__obj->py_iter_or_raise()", cpp)
+        self.assertIn("__iter->py_next_or_stop()", cpp)
         self.assertNotIn("return bool(x);", cpp)
 
     def test_isinstance_set_lowers_to_set_type_id_runtime_api(self) -> None:

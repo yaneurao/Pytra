@@ -375,8 +375,14 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(obj_len), "py_len(v)")
         self.assertEqual(emitter.render_expr(obj_bool), "py_to<bool>(v)")
         self.assertEqual(emitter.render_expr(obj_str), "py_to_string(v)")
-        self.assertEqual(emitter.render_expr(obj_iter), "py_iter_or_raise(v)")
-        self.assertEqual(emitter.render_expr(obj_next), "py_next_or_stop(v)")
+        self.assertEqual(
+            emitter.render_expr(obj_iter),
+            '([&]() -> object { object __obj = v; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }())',
+        )
+        self.assertEqual(
+            emitter.render_expr(obj_next),
+            '([&]() -> ::std::optional<object> { object __iter = v; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }())',
+        )
         self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_type_id(v)")
         self.assertEqual(emitter.render_expr(box_expr), "make_object(1)")
         self.assertEqual(emitter.render_expr(unbox_expr), "py_to<int64>(v)")
@@ -1834,8 +1840,14 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to<int64>(16))')
         self.assertEqual(emitter.render_expr(static_cast_node), 'py_to_int64("10")')
-        self.assertEqual(emitter.render_expr(iter_node), "py_iter_or_raise(xs)")
-        self.assertEqual(emitter.render_expr(next_node), "py_next_or_stop(it)")
+        self.assertEqual(
+            emitter.render_expr(iter_node),
+            '([&]() -> object { object __obj = xs; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }())',
+        )
+        self.assertEqual(
+            emitter.render_expr(next_node),
+            '([&]() -> ::std::optional<object> { object __iter = it; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }())',
+        )
         self.assertEqual(emitter.render_expr(reversed_node), "py_reversed(xs)")
         self.assertEqual(emitter.render_expr(enumerate_node), "py_enumerate(xs, py_to<int64>(1))")
         self.assertEqual(emitter.render_expr(any_node), "py_any(make_object(xs))")
@@ -2145,8 +2157,14 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to<int64>(16))')
-        self.assertEqual(emitter.render_expr(iter_expr), "py_iter_or_raise(xs)")
-        self.assertEqual(emitter.render_expr(next_expr), "py_next_or_stop(it)")
+        self.assertEqual(
+            emitter.render_expr(iter_expr),
+            '([&]() -> object { object __obj = xs; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }())',
+        )
+        self.assertEqual(
+            emitter.render_expr(next_expr),
+            '([&]() -> ::std::optional<object> { object __iter = it; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }())',
+        )
         self.assertEqual(emitter.render_expr(reversed_expr), "py_reversed(xs)")
         self.assertEqual(emitter.render_expr(enumerate_expr), "py_enumerate(xs, py_to<int64>(1))")
         self.assertEqual(emitter.render_expr(zip_expr), "zip(xs, ys)")

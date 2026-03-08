@@ -1665,25 +1665,6 @@ static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
     return py_is_subtype(py_runtime_type_id(value), expected_type_id);
 }
 
-static inline object py_iter_or_raise(const object& value) {
-    if (!value) {
-        throw TypeError("NoneType is not iterable");
-    }
-    return value->py_iter_or_raise();
-}
-
-template <class T>
-static inline object py_iter_or_raise(const T& value) {
-    return py_iter_or_raise(make_object(value));
-}
-
-static inline ::std::optional<object> py_next_or_stop(const object& iter_obj) {
-    if (!iter_obj) {
-        throw TypeError("NoneType is not an iterator");
-    }
-    return iter_obj->py_next_or_stop();
-}
-
 class py_dyn_range_iter {
 public:
     py_dyn_range_iter() : is_end_(true) {}
@@ -1712,7 +1693,7 @@ private:
         if (is_end_) {
             return;
         }
-        ::std::optional<object> nxt = py_next_or_stop(iter_obj_);
+        ::std::optional<object> nxt = iter_obj_->py_next_or_stop();
         if (!nxt.has_value()) {
             is_end_ = true;
             current_ = object();
@@ -1728,8 +1709,12 @@ private:
 
 class py_dyn_range_view {
 public:
-    explicit py_dyn_range_view(object iterable)
-        : iter_obj_(py_iter_or_raise(iterable)) {}
+    explicit py_dyn_range_view(object iterable) {
+        if (!iterable) {
+            throw TypeError("NoneType is not iterable");
+        }
+        iter_obj_ = iterable->py_iter_or_raise();
+    }
 
     py_dyn_range_iter begin() const {
         return py_dyn_range_iter(iter_obj_, false);

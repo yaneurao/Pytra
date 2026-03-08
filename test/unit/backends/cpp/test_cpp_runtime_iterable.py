@@ -46,26 +46,26 @@ class CppRuntimeIterableTest(unittest.TestCase):
 
 int main() {
     object list_obj = make_object(list<int64>{1, 2, 3});
-    object iter_obj = py_iter_or_raise(list_obj);
-    auto n0 = py_next_or_stop(iter_obj);
-    auto n1 = py_next_or_stop(iter_obj);
-    auto n2 = py_next_or_stop(iter_obj);
-    auto n3 = py_next_or_stop(iter_obj);
+    object iter_obj = list_obj->py_iter_or_raise();
+    auto n0 = iter_obj->py_next_or_stop();
+    auto n1 = iter_obj->py_next_or_stop();
+    auto n2 = iter_obj->py_next_or_stop();
+    auto n3 = iter_obj->py_next_or_stop();
     assert(n0.has_value() && obj_to_int64(*n0) == 1);
     assert(n1.has_value() && obj_to_int64(*n1) == 2);
     assert(n2.has_value() && obj_to_int64(*n2) == 3);
     assert(!n3.has_value());
 
     object mut_list_obj = make_object(list<int64>{10, 20});
-    object mut_iter_obj = py_iter_or_raise(mut_list_obj);
-    auto m0 = py_next_or_stop(mut_iter_obj);
+    object mut_iter_obj = mut_list_obj->py_iter_or_raise();
+    auto m0 = mut_iter_obj->py_next_or_stop();
     assert(m0.has_value() && obj_to_int64(*m0) == 10);
     rc<PyListObj> mut_list_handle = obj_to_list_obj(mut_list_obj);
     assert(mut_list_handle);
     py_list_append_mut(mut_list_handle->value, make_object(int64(30)));
-    auto m1 = py_next_or_stop(mut_iter_obj);
-    auto m2 = py_next_or_stop(mut_iter_obj);
-    auto m3 = py_next_or_stop(mut_iter_obj);
+    auto m1 = mut_iter_obj->py_next_or_stop();
+    auto m2 = mut_iter_obj->py_next_or_stop();
+    auto m3 = mut_iter_obj->py_next_or_stop();
     assert(m1.has_value() && obj_to_int64(*m1) == 20);
     assert(m2.has_value() && obj_to_int64(*m2) == 30);
     assert(!m3.has_value());
@@ -368,6 +368,8 @@ int main() {
         self.assertNotIn("static inline object py_at(const object& v, int64 idx)", runtime_header)
         self.assertNotIn("static inline object py_slice(const object& v, int64 lo, int64 up)", runtime_header)
         self.assertNotIn("static inline object py_slice(const object& v, int64 lo, const object& up)", runtime_header)
+        self.assertNotIn("static inline object py_iter_or_raise(const object& value)", runtime_header)
+        self.assertNotIn("static inline ::std::optional<object> py_next_or_stop(const object& iter_obj)", runtime_header)
         self.assertNotIn("static inline object dict_get_node(const object& obj, const char* key, const object& defval = object{})", runtime_header)
         self.assertNotIn(
             "static inline object dict_get_node(\n    const ::std::optional<dict<str, object>>& d, const char* key, const object& defval = object{})",
