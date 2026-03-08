@@ -37,13 +37,17 @@
 
 ## タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01] `object`-`nullopt` 比較 compat を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S1-02] explicit null check 置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S2-02] operator 群を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S3-01] guard / docs / archive を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01] `object`-`nullopt` 比較 compat を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S1-01] checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S1-02] explicit null check 置換方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S2-02] operator 群を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01-S3-01] guard / docs / archive を更新する。
 
 ## 決定ログ
 
 - 2026-03-09: `object` public convenience の整理を継続する tranche として、`nullopt` 比較 compat を個別に扱う。
+- 2026-03-09: checked-in source を棚卸しすると、`object == ::std::nullopt` / `!=` の direct callsite は helper 自身以外に見つからなかった。`test_py2cpp_codegen_issues.py` の `::std::nullopt` assertion は optional 初期化の回帰であり、本 operator 群には依存していない。
+- 2026-03-09: explicit null check への representative 置換対象は存在しないと判断し、`S2-01` は no-op 完了として扱う。
+- 2026-03-09: `src/runtime/cpp/native/core/py_runtime.h` から `object`-`nullopt` 比較 compat 4 本を削除し、`test_cpp_runtime_iterable.py` に inventory guard を追加した。
+- 2026-03-09: verification は `test_east3_cpp_bridge.py`、`test_cpp_runtime_iterable.py`、`check_todo_priority.py` を通した。
