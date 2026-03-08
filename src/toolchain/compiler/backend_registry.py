@@ -177,8 +177,12 @@ def _normalize_module_artifact(
     metadata_any = artifact.get("metadata", {})
     metadata_out = metadata_any if isinstance(metadata_any, dict) else {}
     is_entry_out = artifact.get("is_entry", is_entry)
+    kind_out = artifact.get("kind", "user")
+    if not isinstance(kind_out, str) or kind_out == "":
+        kind_out = "user"
     return {
         "module_id": module_id_out,
+        "kind": kind_out,
         "label": label,
         "extension": extension_out,
         "text": text if isinstance(text, str) else "",
@@ -686,7 +690,18 @@ def build_program_artifact(
     writer_options: dict[str, object] | None = None,
 ) -> dict[str, Any]:
     target = str(spec.get("target_lang", ""))
-    module_list = [dict(item) for item in modules if isinstance(item, dict)]
+    module_list: list[dict[str, Any]] = []
+    for item in modules:
+        if not isinstance(item, dict):
+            continue
+        module = dict(item)
+        kind_any = module.get("kind", "user")
+        if not isinstance(kind_any, str) or kind_any == "":
+            kind_any = "user"
+        module["kind"] = kind_any
+        metadata_any = module.get("metadata", {})
+        module["metadata"] = dict(metadata_any) if isinstance(metadata_any, dict) else {}
+        module_list.append(module)
     effective_program_id = program_id
     if effective_program_id == "" and len(module_list) > 0:
         first_module_id = module_list[0].get("module_id", "")

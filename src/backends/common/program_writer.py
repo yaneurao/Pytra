@@ -22,9 +22,16 @@ def _modules(program_artifact: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _select_primary_module(modules: list[dict[str, Any]]) -> dict[str, Any]:
-    if len(modules) != 1:
-        raise RuntimeError("SingleFileProgramWriter requires exactly one module artifact")
-    return modules[0]
+    primary_modules: list[dict[str, Any]] = []
+    for module in modules:
+        kind_any = module.get("kind", "user")
+        kind = kind_any if isinstance(kind_any, str) else "user"
+        if kind == "helper":
+            continue
+        primary_modules.append(module)
+    if len(primary_modules) != 1:
+        raise RuntimeError("SingleFileProgramWriter requires exactly one non-helper module artifact")
+    return primary_modules[0]
 
 
 def _resolve_output_path(output_root: Path, module_artifact: dict[str, Any]) -> Path:

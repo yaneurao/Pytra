@@ -69,6 +69,48 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertTrue(callable(static_spec.get("emit_module")))
         self.assertIn("program_writer", static_spec)
 
+    def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
+        fake_spec = {"target_lang": "cpp"}
+        helper_module = {
+            "module_id": "__pytra_helper__.cpp.demo",
+            "kind": "helper",
+            "label": "cpp_demo",
+            "extension": ".cpp",
+            "text": "// helper\n",
+            "is_entry": False,
+            "dependencies": [],
+            "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
+        }
+        user_module = {
+            "module_id": "pkg.main",
+            "label": "main",
+            "extension": ".cpp",
+            "text": "// main\n",
+            "is_entry": True,
+            "dependencies": [],
+            "metadata": {},
+        }
+
+        host_artifact = host_registry.build_program_artifact(
+            fake_spec,
+            [helper_module, user_module],
+            program_id="pkg.main",
+            entry_modules=["pkg.main"],
+        )
+        static_artifact = static_registry.build_program_artifact(
+            fake_spec,
+            [helper_module, user_module],
+            program_id="pkg.main",
+            entry_modules=["pkg.main"],
+        )
+
+        self.assertEqual(host_artifact["modules"][0]["kind"], "helper")
+        self.assertEqual(host_artifact["modules"][0]["metadata"]["helper_id"], "cpp.demo")
+        self.assertEqual(host_artifact["modules"][1]["kind"], "user")
+        self.assertEqual(static_artifact["modules"][0]["kind"], "helper")
+        self.assertEqual(static_artifact["modules"][0]["metadata"]["owner_module_id"], "pkg.main")
+        self.assertEqual(static_artifact["modules"][1]["kind"], "user")
+
     def test_emit_source_uses_emit_module_text_wrapper(self) -> None:
         spec = host_registry._normalize_backend_spec(
             {

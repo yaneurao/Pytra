@@ -84,6 +84,43 @@ class CppProgramWriterTest(unittest.TestCase):
             self.assertTrue(out_cpp.exists())
             self.assertEqual(out_cpp.read_text(encoding="utf-8"), "// demo\n")
 
+    def test_write_cpp_rendered_program_preserves_helper_manifest_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            out_dir = root / "out"
+            result = write_cpp_rendered_program(
+                out_dir,
+                [
+                    {
+                        "module": str(root / "main.py"),
+                        "kind": "user",
+                        "label": "main",
+                        "header_text": "// hdr main\n",
+                        "source_text": '#include "pytra_multi_prelude.h"\nvoid main_body() {}\n',
+                        "is_entry": True,
+                    },
+                    {
+                        "module": "__pytra_helper__.cpp.demo.py",
+                        "kind": "helper",
+                        "helper_id": "cpp.demo",
+                        "owner_module_id": "pkg.main",
+                        "label": "cpp_demo",
+                        "header_text": "// hdr helper\n",
+                        "source_text": '#include "pytra_multi_prelude.h"\nvoid helper_body() {}\n',
+                        "is_entry": False,
+                    },
+                ],
+                entry=str(root / "main.py"),
+                entry_modules=["pkg.main"],
+                program_id="pkg.main",
+            )
+
+            manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(result["modules"][1]["kind"], "helper")
+            self.assertEqual(result["modules"][1]["helper_id"], "cpp.demo")
+            self.assertEqual(manifest["modules"][1]["kind"], "helper")
+            self.assertEqual(manifest["modules"][1]["owner_module_id"], "pkg.main")
+
 
 if __name__ == "__main__":
     unittest.main()

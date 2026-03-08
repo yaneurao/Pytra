@@ -58,10 +58,13 @@ def _normalize_rendered_modules(rendered_modules: Any) -> list[dict[str, Any]]:
         out.append(
             {
                 "module": _text(item.get("module")),
+                "kind": _text(item.get("kind")) if _text(item.get("kind")) != "" else "user",
                 "label": label,
                 "header_text": header_text,
                 "source_text": source_text,
                 "is_entry": _bool(item.get("is_entry")),
+                "helper_id": _text(item.get("helper_id")),
+                "owner_module_id": _text(item.get("owner_module_id")),
             }
         )
     if len(out) == 0:
@@ -123,10 +126,13 @@ def write_cpp_rendered_program(
         manifest_modules.append(
             {
                 "module": module_key,
+                "kind": _text(item.get("kind")) if _text(item.get("kind")) != "" else "user",
                 "label": label,
                 "header": str(hdr_path),
                 "source": str(cpp_path),
                 "is_entry": is_entry,
+                "helper_id": _text(item.get("helper_id")),
+                "owner_module_id": _text(item.get("owner_module_id")),
             }
         )
 
@@ -180,10 +186,13 @@ def _rendered_modules_from_program_artifact(program_artifact: dict[str, Any]) ->
         rendered_modules.append(
             {
                 "module": module_key,
+                "kind": _text(module_artifact.get("kind")) if _text(module_artifact.get("kind")) != "" else "user",
                 "label": _text(module_artifact.get("label")),
                 "header_text": header_text,
                 "source_text": source_text,
                 "is_entry": _bool(module_artifact.get("is_entry")),
+                "helper_id": _text(metadata.get("helper_id")),
+                "owner_module_id": _text(metadata.get("owner_module_id")),
             }
         )
     return rendered_modules
