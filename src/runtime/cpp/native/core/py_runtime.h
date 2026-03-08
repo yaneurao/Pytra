@@ -2506,36 +2506,6 @@ static inline bool operator!=(const char* lhs, const object& rhs) {
     return !(lhs == rhs);
 }
 
-static inline bool operator>(const ::std::any& lhs, int rhs) {
-    if (const auto* p = ::std::any_cast<int64>(&lhs)) return *p > static_cast<int64>(rhs);
-    if (const auto* p = ::std::any_cast<int>(&lhs)) return *p > rhs;
-    if (const auto* p = ::std::any_cast<uint64>(&lhs)) return *p > static_cast<uint64>(rhs);
-    return false;
-}
-
-static inline bool operator<(int64 lhs, const ::std::any& rhs) {
-    if (const auto* p = ::std::any_cast<int64>(&rhs)) return lhs < *p;
-    if (const auto* p = ::std::any_cast<int>(&rhs)) return lhs < static_cast<int64>(*p);
-    if (const auto* p = ::std::any_cast<uint64>(&rhs)) return lhs < static_cast<int64>(*p);
-    return false;
-}
-
-static inline bool operator<(const ::std::any& lhs, const ::std::any& rhs) {
-    return py_to_float64(lhs) < py_to_float64(rhs);
-}
-
-static inline bool operator>(const ::std::any& lhs, const ::std::any& rhs) {
-    return py_to_float64(lhs) > py_to_float64(rhs);
-}
-
-static inline bool operator<=(const ::std::any& lhs, const ::std::any& rhs) {
-    return py_to_float64(lhs) <= py_to_float64(rhs);
-}
-
-static inline bool operator>=(const ::std::any& lhs, const ::std::any& rhs) {
-    return py_to_float64(lhs) >= py_to_float64(rhs);
-}
-
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline bool operator<(const ::std::any& lhs, T rhs) {
     return py_to_float64(lhs) < static_cast<float64>(rhs);
@@ -2576,10 +2546,6 @@ static inline bool operator>=(T lhs, const ::std::any& rhs) {
     return static_cast<float64>(lhs) >= py_to_float64(rhs);
 }
 
-static inline str operator+(const char* lhs, const ::std::any& rhs) {
-    return str(lhs) + py_to_string(rhs);
-}
-
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator+(T lhs, const object& rhs) {
     return static_cast<float64>(lhs) + py_to_float64(rhs);
@@ -2591,20 +2557,6 @@ static inline float64 operator+(const object& lhs, T rhs) {
 }
 
 static inline float64 operator+(const object& lhs, const object& rhs) {
-    return py_to_float64(lhs) + py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator+(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) + py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator+(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) + static_cast<float64>(rhs);
-}
-
-static inline float64 operator+(const ::std::any& lhs, const ::std::any& rhs) {
     return py_to_float64(lhs) + py_to_float64(rhs);
 }
 
@@ -2632,20 +2584,6 @@ static inline float64 operator-(const object& v) {
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator-(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) - py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator-(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) - static_cast<float64>(rhs);
-}
-
-static inline float64 operator-(const ::std::any& lhs, const ::std::any& rhs) {
-    return py_to_float64(lhs) - py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator*(T lhs, const object& rhs) {
     return static_cast<float64>(lhs) * py_to_float64(rhs);
 }
@@ -2660,20 +2598,6 @@ static inline float64 operator*(const object& lhs, const object& rhs) {
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator*(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) * py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator*(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) * static_cast<float64>(rhs);
-}
-
-static inline float64 operator*(const ::std::any& lhs, const ::std::any& rhs) {
-    return py_to_float64(lhs) * py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline float64 operator/(T lhs, const object& rhs) {
     return static_cast<float64>(lhs) / py_to_float64(rhs);
 }
@@ -2684,20 +2608,6 @@ static inline float64 operator/(const object& lhs, T rhs) {
 }
 
 static inline float64 operator/(const object& lhs, const object& rhs) {
-    return py_to_float64(lhs) / py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator/(T lhs, const ::std::any& rhs) {
-    return static_cast<float64>(lhs) / py_to_float64(rhs);
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 operator/(const ::std::any& lhs, T rhs) {
-    return py_to_float64(lhs) / static_cast<float64>(rhs);
-}
-
-static inline float64 operator/(const ::std::any& lhs, const ::std::any& rhs) {
     return py_to_float64(lhs) / py_to_float64(rhs);
 }
 
@@ -2793,16 +2703,24 @@ static inline list<object>::const_iterator end(const ::std::optional<object>& v)
 // Provide ::std::begin/::std::end overloads so range-for resolves them.
 namespace std {
 static inline ::list<::std::any>::iterator begin(::std::any& v) {
-    return ::begin(v);
+    if (auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->begin();
+    static ::list<::std::any> empty;
+    return empty.begin();
 }
 static inline ::list<::std::any>::iterator end(::std::any& v) {
-    return ::end(v);
+    if (auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->end();
+    static ::list<::std::any> empty;
+    return empty.end();
 }
 static inline ::list<::std::any>::const_iterator begin(const ::std::any& v) {
-    return ::begin(v);
+    if (const auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->begin();
+    static const ::list<::std::any> empty;
+    return empty.begin();
 }
 static inline ::list<::std::any>::const_iterator end(const ::std::any& v) {
-    return ::end(v);
+    if (const auto* p = ::std::any_cast<::list<::std::any>>(&v)) return p->end();
+    static const ::list<::std::any> empty;
+    return empty.end();
 }
 }  // namespace std
 

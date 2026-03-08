@@ -41,7 +41,7 @@
   - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S2-02] representative tests を更新し、`dict_get_*` 縮退後の C++ runtime surface を固定する。
   - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S3-01] `sum(const list<object>&)` の callsite を置き換えまたは削除し、必要なら regression を追加する。
   - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S3-02] `py_dict_keys/items/values(const ::std::optional<dict<str, object>>& d)` compat lane を削除または最小化し、`JsonObj` 経路との境界を確定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-01] `std::any` 比較 / 算術 / `begin/end` bridge を縮退し、selfhost に必要な subset だけ残す。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-02] `std::any` bridge 再侵入防止の regression / guard を追加する。
+  - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-01] `std::any` 比較 / 算術 / `begin/end` bridge を縮退し、selfhost に必要な subset だけ残す。
+  - [x] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S4-02] `std::any` bridge 再侵入防止の regression / guard を追加する。
   - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S5-01] representative unit / fixture parity / sample parity / 行数差分を確認し、決定ログへ残す。
   - [ ] [ID: P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01-S5-02] docs / archive / TODO 履歴を同期して本計画を閉じる。
