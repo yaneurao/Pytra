@@ -180,6 +180,8 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: linked specialization で local typed temporary を安全に materialize できるよう、`runtime_template_specializer.py` の型置換を `annotation` フィールドまで広げた。これにより template helper 内の `AnnAssign` も concrete type へ正規化される。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: `src/runtime/cpp/native/core/py_runtime.h` から generic `zip(const list<A>&, const list<B>&)` を撤去し、generated `zip_ops.h` へ委譲した。`zip(const object&, const object&)` は dynamic bridge として残し、内部で generated template `zip(*l, *r)` を呼ぶ最小構成に留めた。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: 第二波の `sorted` family はこの tranche では見送った。builtin lowering が `zip` ほど明示されておらず、`zip` だけで第二の generic helper family と header-only generated module lane を成立できたため、残りは `S4` 以降の regression/guard 同期を優先する。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01]: `test_runtime_symbol_index.py` に `pytra.built_in.numeric_ops` / `pytra.built_in.zip_ops` の header-only generated contract を追加し、`companions=["generated"]`, `public_headers=pytra/.../*.h`, `compile_sources=[]` を固定した。header-only template helper は runtime symbol index 上も `.cpp` を持たない canonical module として扱う。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01]: `test_cpp_runtime_build_graph.py` で `runtime/cpp/core/py_runtime.h` から collect される runtime source 集合に `generated/built_in/numeric_ops.cpp` / `zip_ops.cpp` が再侵入しないことを固定した。header-only generated helper は build graph 上でも phantom compile source を持たない。
 
 ## 7. `S1-01` 棚卸し結果
 

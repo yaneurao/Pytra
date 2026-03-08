@@ -191,6 +191,8 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             runtime_sources = collect_runtime_cpp_sources([str(src)], ROOT / "src")
 
         self.assertIn("src/runtime/cpp/generated/built_in/string_ops.cpp", runtime_sources)
+        self.assertNotIn("src/runtime/cpp/generated/built_in/numeric_ops.cpp", runtime_sources)
+        self.assertNotIn("src/runtime/cpp/generated/built_in/zip_ops.cpp", runtime_sources)
         self.assertNotIn("src/runtime/cpp/generated/built_in/predicates.cpp", runtime_sources)
         self.assertNotIn("src/runtime/cpp/generated/built_in/sequence.cpp", runtime_sources)
         self.assertNotIn("src/runtime/cpp/generated/built_in/iter_ops.cpp", runtime_sources)

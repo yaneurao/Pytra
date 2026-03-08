@@ -52,6 +52,20 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(string_symbols.get("py_splitlines", {}).get("kind"), "function")
         self.assertEqual(string_symbols.get("py_count", {}).get("kind"), "function")
 
+        numeric_ops = modules.get("pytra.built_in.numeric_ops")
+        self.assertIsInstance(numeric_ops, dict)
+        numeric_symbols = numeric_ops.get("symbols")
+        self.assertIsInstance(numeric_symbols, dict)
+        self.assertEqual(numeric_symbols.get("sum", {}).get("kind"), "function")
+        self.assertEqual(numeric_symbols.get("py_min", {}).get("kind"), "function")
+        self.assertEqual(numeric_symbols.get("py_max", {}).get("kind"), "function")
+
+        zip_ops = modules.get("pytra.built_in.zip_ops")
+        self.assertIsInstance(zip_ops, dict)
+        zip_symbols = zip_ops.get("symbols")
+        self.assertIsInstance(zip_symbols, dict)
+        self.assertEqual(zip_symbols.get("zip", {}).get("kind"), "function")
+
         sequence_mod = modules.get("pytra.built_in.sequence")
         self.assertIsInstance(sequence_mod, dict)
         sequence_symbols = sequence_mod.get("symbols")
@@ -133,6 +147,24 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             "src/runtime/cpp/generated/built_in/string_ops.cpp",
             string_ops.get("compile_sources", []),
         )
+
+        numeric_ops = cpp_modules.get("pytra.built_in.numeric_ops")
+        self.assertIsInstance(numeric_ops, dict)
+        self.assertEqual(numeric_ops.get("companions"), ["generated"])
+        self.assertIn(
+            "src/runtime/cpp/pytra/built_in/numeric_ops.h",
+            numeric_ops.get("public_headers", []),
+        )
+        self.assertEqual(numeric_ops.get("compile_sources"), [])
+
+        zip_ops = cpp_modules.get("pytra.built_in.zip_ops")
+        self.assertIsInstance(zip_ops, dict)
+        self.assertEqual(zip_ops.get("companions"), ["generated"])
+        self.assertIn(
+            "src/runtime/cpp/pytra/built_in/zip_ops.h",
+            zip_ops.get("public_headers", []),
+        )
+        self.assertEqual(zip_ops.get("compile_sources"), [])
 
         time_mod = cpp_modules.get("pytra.std.time")
         self.assertIsInstance(time_mod, dict)
@@ -218,6 +250,14 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             "src/runtime/cpp/pytra/built_in/iter_ops.h",
         )
         self.assertEqual(
+            lookup_target_module_primary_header("cpp", "pytra.built_in.numeric_ops"),
+            "src/runtime/cpp/pytra/built_in/numeric_ops.h",
+        )
+        self.assertEqual(
+            lookup_target_module_primary_header("cpp", "pytra.built_in.zip_ops"),
+            "src/runtime/cpp/pytra/built_in/zip_ops.h",
+        )
+        self.assertEqual(
             lookup_target_module_primary_header("cpp", "pytra.utils.png"),
             "src/runtime/cpp/pytra/utils/png.h",
         )
@@ -242,6 +282,14 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIn(
             "src/runtime/cpp/generated/built_in/string_ops.cpp",
             lookup_target_module_compile_sources("cpp", "pytra.built_in.string_ops"),
+        )
+        self.assertEqual(
+            lookup_target_module_compile_sources("cpp", "pytra.built_in.numeric_ops"),
+            [],
+        )
+        self.assertEqual(
+            lookup_target_module_compile_sources("cpp", "pytra.built_in.zip_ops"),
+            [],
         )
         self.assertIn(
             "src/runtime/cpp/generated/utils/png.cpp",
