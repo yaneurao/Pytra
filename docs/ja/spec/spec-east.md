@@ -155,6 +155,8 @@
 - raw `decorators` は Python surface の保存用であり、parser / linker / backend の正本は `meta.template_v1`
 - linked-program 後もこの function-level metadata は保持し、`meta.linked_program_v1` で置き換えない
 - v1 では `@instantiate(...)` を materialize しないため、実体化情報はここへ持たない
+- `template_v1` は「宣言 metadata」であって、specialization seed や materialized helper 一覧を保持する場所ではない。これらは linked-program optimizer が callsite concrete type から決定する。
+- backend は raw decorator や surface syntax から template param を再抽出してはならず、linked module に残った `meta.template_v1` と linker が確定した summary だけを参照する。
 - `TypeVar` 注釈だけでは `meta.template_v1` を作らない
 
 ### 5.1 `leading_trivia` による C++ パススルー記法

@@ -85,6 +85,7 @@ linker / linked-program optimizer は raw `EAST3` 群を受け取り、次を確
 - non-escape summary
 - container ownership hints
 を 1 箇所で確定する。
+- runtime helper `@template` v1 を実装する場合、specialization collector / monomorphization の canonical owner も linker とする。seed は `FunctionDef.meta.template_v1` と callsite concrete type tuple から決定し、raw decorator や backend 側の再解析へ逃がしてはならない。
 
 4. linked module への materialize
 - backend が module 単位で読めるよう、global summary の必要 slice を各 module `meta.linked_program_v1` へ materialize する。
@@ -98,6 +99,7 @@ backend 側の禁止事項:
 - `type_id` を再計算しない。
 - module 集合を勝手に再読込して whole-program summary を再構築しない。
 - raw `EAST3` に不足する global 情報を emitter / hook で補完しない。
+- runtime helper `@template` v1 の specialization を backend / ProgramWriter 側で再発見・再生成しない。
 
 ## 6. `type_id` 割り当て規則
 
@@ -248,6 +250,7 @@ linked module の補足規則:
 1. `meta.dispatch_mode` は raw `EAST3` と同じく必須であり、`meta.linked_program_v1` と矛盾してはならない。
 2. function / call 単位の materialized summary は、既存 `meta` 契約を使って保持してよい。
 3. `meta.linked_program_v1` は linked module では必須、raw `EAST3` では存在してはならない。
+4. runtime helper `@template` v1 を使う場合でも、function-level canonical metadata は `FunctionDef.meta.template_v1` のまま保持する。materialized specialization の seed/source-of-truth を raw decorator 側へ戻してはならない。
 
 ## 8. CLI / 導線仕様（方針）
 
@@ -267,6 +270,7 @@ linked module の補足規則:
 3. debug / restart 経路でも `link-input.v1` / `link-output.v1` を canonical source とする。
 4. global pass は `link-input.v1` / `link-output.v1` が列挙した module 群だけを入力として扱う。`source_path` を辿った追加読込や import 文の再解析で closure を拡張してはならない。
 5. `NonEscapeInterproceduralPass` が linked-program 経路で参照してよい closure は linker/materializer が埋めた `meta.non_escape_import_closure` のみであり、存在しない場合は fail-closed で unresolved 扱いにする。
+6. runtime helper `@template` v1 の implicit specialization もこの module 集合の中だけで完結しなければならない。specialization collector は call graph と resolved concrete type tuple から決定的に seed を作り、未列挙 module や user code 全体へ暗黙拡張してはならない。
 
 ## 9. 実装モード指針
 

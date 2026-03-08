@@ -48,6 +48,9 @@
 - v1 の `FunctionDef.meta.template_v1` は syntax metadata であり、linked-program 後段の specialization collector が読む canonical source とする。
 - collector は raw `decorators` ではなく `meta.template_v1` と callsite の concrete type tuple を正本として specialization seed を決定する。
 - v1 では explicit instantiation を持たないため、`instantiation_mode: "linked_implicit"` は「linked-program collector が deterministic に concrete type tuple を収集して monomorphization を起動する」ことを意味する。
+- v1 の specialization seed は「link-input/link-output が列挙した module 集合で実際に観測された concrete type tuple の決定的集合」に限定する。source module の import closure を linker 外で勝手に拡張してはならない。
+- parser / validator / backend は raw decorator の再解釈や独自の seed 発見を行わない。`@template` の syntax 面と specialization collector の境界は `FunctionDef.meta.template_v1` で固定する。
+- linked runtime helper v1 は runtime helper only とする。これは explicit instantiation なしでも collector の責任範囲と specialization 数を program 管理下に閉じ込めるためであり、user code 全般へ同じ implicit monomorphization を拡張する前提ではない。
 - future `@instantiate(...)` を導入しても、collector の入口 metadata は `meta.template_v1` を維持し、explicit seed は別 metadata として追加する。
 
 ## 1. 目的

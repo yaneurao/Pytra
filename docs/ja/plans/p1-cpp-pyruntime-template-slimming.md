@@ -151,7 +151,7 @@
 
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01] `@template` を runtime helper 限定で実装し、generic helper を pure Python SoT 側へ戻すことで C++ `py_runtime.h` を縮退させる。
 - [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01] `py_runtime.h` に残る generic helper 候補を棚卸しし、第一波 / 第二波 / 保留へ分類する。
-- [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02] `spec-template` / `spec-runtime` / `spec-east` / `spec-linker` に helper-limited `@template` の責務境界と specialization 契約を追記する。
+- [x] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02] `spec-template` / `spec-runtime` / `spec-east` / `spec-linker` に helper-limited `@template` の責務境界と specialization 契約を追記する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-01] parser / EAST metadata / validator で `@template("T", ...)` を runtime helper 限定で受理する。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S2-02] linked-program 側に specialization collector と monomorphization の最小実装を入れる。
 - [ ] [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-01] `sum` / `min` / `max` を pure Python generic helper として SoT 側へ移し、C++ generated helper へ切り替える。
@@ -167,6 +167,8 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01]: `src/runtime/cpp/native/core/py_runtime.h` を棚卸しし、generic helper 候補の中で first-wave を `sum(list<T>)` / `py_min` / `py_max`、second-wave を `zip(list<A>, list<B>)` / `sorted(list<T>)` / `sorted(set<T>)` に固定した。これらはファイル末尾の高水準 algorithm helper 群としてまとまっており、`PyObj/object/rc<>/type_id` などの low-level glue と直接結びついていないため、`@template` lane へ戻す優先度が高い。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01]: 保留候補は `py_dict_keys` / `py_dict_values` / `py_dict_items` とした。理由は typed overload と `object` / `optional<dict<str, object>>` overload が同居しており、generic helper 化の前に「typed path だけを `@template` 化するか」「dynamic bridge を native/core に残すか」を `S1-02` で決める必要があるため。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-01]: `py_len`, `py_at`, `py_append`, `py_extend`, `py_pop`, `py_dict_get*`, `py_div`, `py_floordiv`, `py_mod`, `py_to_*`, `py_runtime_*` は inventory 対象には含めたが、low-level container primitive / dynamic bridge / process glue と判断し、本計画の generic helper 縮退対象から外す。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02]: `spec-template` / `spec-east` / `spec-linker` / `spec-runtime` に、`@template` v1 は runtime helper 限定・linked implicit specialization 限定であり、specialization collector の canonical owner は linker であることを追記した。backend や ProgramWriter が raw decorator から template seed を再発見することは禁止する。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S1-02]: `sum/min/max/zip/sorted` の generic helper lane は `src/pytra/built_in/*.py` -> linked-program specialization -> `generated/built_in` と固定し、`native/core/py_runtime.h` に新しい hand-written template helper を足して延命しない方針を決めた。
 
 ## 7. `S1-01` 棚卸し結果
 
@@ -218,3 +220,19 @@
 
 理由:
 - いずれも low-level container primitive / dynamic bridge / process glue / scalar conversion であり、`py_runtime.h` から generic helper を減らす本計画の主対象ではない。
+
+## 8. `S1-02` 契約固定結果
+
+- `spec-template`
+  - `@template` v1 は runtime helper only の surface とし、implicit specialization の seed は `meta.template_v1` と linked-program 内で観測された concrete type tuple だけから決まる。
+  - explicit instantiation を持たない v1 では、scope を runtime helper に閉じることで collector の責任範囲と specialization 数を program 管理下に保つ。
+- `spec-east`
+  - `FunctionDef.meta.template_v1` は宣言 metadata だけを持ち、materialized specialization 一覧は入れない。
+  - backend は raw decorator を再解釈せず、linked module に残った canonical metadata を使う。
+- `spec-linker`
+  - specialization collector / monomorphization の canonical owner は linker。
+  - backend / ProgramWriter は runtime helper template specialization を再構築してはならない。
+  - implicit specialization は `link-input.v1` / `link-output.v1` が列挙した module 集合の中だけで完結する。
+- `spec-runtime`
+  - `sum/min/max/zip/sorted` は `@template` + linked specialization を primary lane として `generated/built_in` へ戻す。
+  - `native/core/py_runtime.h` に新しい hand-written template helper を足してこの系統を延命してはならない。

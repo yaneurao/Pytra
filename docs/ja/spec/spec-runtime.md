@@ -204,6 +204,7 @@ C++ では追加で次を守る。
 - `src/runtime/cpp/core/py_runtime.h` は stable include surface / aggregator であり、high-level built_in semantics の正本ではない。
 - `src/runtime/cpp/native/core/py_runtime.h` に残してよいのは、`PyObj` / `object` / `rc<>` / type_id / low-level container primitive / dynamic iteration / process I/O / C++ 標準ライブラリ・OS glue だけとする。
 - `str::split` / `splitlines` / `count` / `join`、`zip` / `sorted` / `sum` / `py_min` / `py_max` のような pure Python で表現可能な helper は `native/core/py_runtime.h` に permanent に残してはならず、`generated/built_in` または SoT 側へ戻す候補として扱う。
+- generic helper（`sum/min/max/zip/sorted` など）は、`@template("T", ...)` + linked-program specialization を primary lane とし、`native/core/py_runtime.h` に新しい hand-written template helper を足して延命してはならない。
 - `dict_get_*` / `py_dict_get_default` / `py_ord` / `py_chr` / `py_div` / `py_floordiv` / `py_mod` など、`object` / `std::any` / template specialization と密結合した helper は `generated/core` lane 設計前に性急に移してはならない。これらは保留分類を許容する。
 - `generated/core` は「low-level helper の新しい捨て先」ではない。`native/core` 直 include や target 固有 ownership を必要とする helper を押し込んではならない。
 - `check_runtime_cpp_layout.py` は、`native/core/py_runtime.h` が `predicates` / `sequence` / `iter_ops` の removed transitive include を再導入していないことも検証しなければならない。`string_ops` は `str` method delegate のため当面許容するが、他の built_in companion を集約器へ戻してはならない。
@@ -215,6 +216,7 @@ C++ では追加で次を守る。
 - `generated/built_in`
   - SoT は `src/pytra/built_in/*.py` に置く。
   - 役割は pure Python で表現可能な built_in semantics の checked-in C++ artifact 化であり、`str::split` / `splitlines` / `count` / `join`、object-specialized `zip` / `sorted` / `sum` / `min` / `max` のような helper を受ける。
+  - generic helper は raw `@template` surface をそのまま backend へ見せず、linked-program specialization 後の specialized helper artifact として materialize する。backend は specialization collector を再実装してはならない。
   - `.h` は stable core header だけを include し、`runtime/cpp/native/core/...` を直接 include してはならない。
   - `.cpp` は `runtime/cpp/core/py_runtime.h` と sibling generated header を include してよいが、`native/core` 直 include や C++ 専用 handwritten glue を埋め込んではならない。
   - mutable container を helper 境界で value 受けしたい場合は、`@abi` などの明示契約を使う。backend 内部の ref-first 表現を stable helper ABI として露出してはならない。
