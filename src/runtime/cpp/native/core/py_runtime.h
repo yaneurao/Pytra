@@ -2931,13 +2931,6 @@ static inline list<object> py_dict_items(const dict<K, V>& d) {
     return out;
 }
 
-static inline list<object> py_dict_items(const object& obj) {
-    if (const auto* d = obj_to_dict_ptr(obj)) {
-        return py_dict_items(*d);
-    }
-    throw ::std::runtime_error("py_dict_items on non-dict object");
-}
-
 static inline list<object> py_dict_items(const ::std::optional<dict<str, object>>& d) {
     if (!d.has_value()) {
         return list<object>{};
@@ -2953,13 +2946,6 @@ static inline list<K> py_dict_keys(const dict<K, V>& d) {
     return out;
 }
 
-static inline list<str> py_dict_keys(const object& obj) {
-    if (const auto* d = obj_to_dict_ptr(obj)) {
-        return py_dict_keys(*d);
-    }
-    throw ::std::runtime_error("py_dict_keys on non-dict object");
-}
-
 static inline list<str> py_dict_keys(const ::std::optional<dict<str, object>>& d) {
     if (!d.has_value()) {
         return list<str>{};
@@ -2973,13 +2959,6 @@ static inline list<V> py_dict_values(const dict<K, V>& d) {
     out.reserve(d.size());
     for (const auto& kv : d) out.push_back(kv.second);
     return out;
-}
-
-static inline list<object> py_dict_values(const object& obj) {
-    if (const auto* d = obj_to_dict_ptr(obj)) {
-        return py_dict_values(*d);
-    }
-    throw ::std::runtime_error("py_dict_values on non-dict object");
 }
 
 static inline list<object> py_dict_values(const ::std::optional<dict<str, object>>& d) {
@@ -3006,15 +2985,6 @@ static inline str py_slice(const ::std::any& v, int64 lo, const ::std::any& up) 
     return py_slice(v, lo, py_to_int64(up));
 }
 
-static inline list<::std::tuple<object, object>> zip(const object& lhs, const object& rhs) {
-    if (const auto* l = obj_to_list_ptr(lhs)) {
-        if (const auto* r = obj_to_list_ptr(rhs)) {
-            return zip(*l, *r);
-        }
-    }
-    return {};
-}
-
 template <class T>
 static inline list<T> sorted(const list<T>& values) {
     list<T> out = values;
@@ -3035,11 +3005,6 @@ static inline object sum(const list<object>& values) {
         acc += py_to_float64(v);
     }
     return make_object(acc);
-}
-
-static inline object sum(const object& values) {
-    if (const auto* lst = obj_to_list_ptr(values)) return sum(*lst);
-    return make_object(0);
 }
 
 // `/` / `//` / `%` の Python 互換セマンティクス（とくに負数時の扱い）を提供する。

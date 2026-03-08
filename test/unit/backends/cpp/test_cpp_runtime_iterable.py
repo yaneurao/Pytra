@@ -171,7 +171,7 @@ int main() {
     assert(::std::get<1>(zipped[0]) == "a");
     object zipped_lhs = make_object(list<object>{make_object(int64(1)), make_object(int64(2))});
     object zipped_rhs = make_object(list<object>{make_object(str("x")), make_object(str("y")), make_object(str("z"))});
-    auto zipped_from_obj = zip(zipped_lhs, zipped_rhs);
+    auto zipped_from_obj = zip(py_to<list<object>>(zipped_lhs), py_to<list<object>>(zipped_rhs));
     assert(zipped_from_obj.size() == 2);
     assert(obj_to_int64(::std::get<0>(zipped_from_obj[1])) == 2);
     assert(obj_to_str(::std::get<1>(zipped_from_obj[0])) == "x");
@@ -285,11 +285,15 @@ int main() {
         self.assertNotIn("static inline auto py_min(const A& a, const B& b)", runtime_header)
         self.assertNotIn("static inline auto py_max(const A& a, const B& b)", runtime_header)
         self.assertNotIn("static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs)", runtime_header)
-        self.assertIn("static inline list<str> py_dict_keys(const object& obj)", runtime_header)
-        self.assertIn("static inline list<object> py_dict_items(const object& obj)", runtime_header)
-        self.assertIn("static inline list<object> py_dict_values(const object& obj)", runtime_header)
-        self.assertIn("static inline list<::std::tuple<object, object>> zip(const object& lhs, const object& rhs)", runtime_header)
-        self.assertIn("static inline object sum(const object& values)", runtime_header)
+        self.assertNotIn("static inline list<str> py_dict_keys(const object& obj)", runtime_header)
+        self.assertNotIn("static inline list<object> py_dict_items(const object& obj)", runtime_header)
+        self.assertNotIn("static inline list<object> py_dict_values(const object& obj)", runtime_header)
+        self.assertNotIn("static inline list<::std::tuple<object, object>> zip(const object& lhs, const object& rhs)", runtime_header)
+        self.assertNotIn("static inline object sum(const object& values)", runtime_header)
+        self.assertIn("static inline list<str> py_dict_keys(const ::std::optional<dict<str, object>>& d)", runtime_header)
+        self.assertIn("static inline list<object> py_dict_items(const ::std::optional<dict<str, object>>& d)", runtime_header)
+        self.assertIn("static inline list<object> py_dict_values(const ::std::optional<dict<str, object>>& d)", runtime_header)
+        self.assertIn("static inline object sum(const list<object>& values)", runtime_header)
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
         self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
