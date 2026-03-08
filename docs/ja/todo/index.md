@@ -37,8 +37,8 @@
 文脈: [docs/ja/plans/p2-linked-runtime-helper-template-v1.md](../plans/p2-linked-runtime-helper-template-v1.md)
 
 1. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01] linked runtime helper 向け generic surface の v1 として `@template("T")` を採用し、runtime helper 限定・explicit instantiation なしの前提を固定する。
-2. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-01] `TypeVar` 案と `@template` 案の比較を閉じ、`@template("T")` を v1 canonical syntax として決定する。
-3. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02] runtime helper 限定・top-level function 限定・explicit instantiation なし、という v1 スコープを spec/plan に固定する。
+2. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-01] `TypeVar` 案と `@template` 案の比較を閉じ、`@template("T")` を v1 canonical syntax として決定する。
+3. [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02] runtime helper 限定・top-level function 限定・explicit instantiation なし、という v1 スコープを spec/plan に固定する。
 4. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-01] parser / EAST / linked metadata の canonical shape（例: `meta.template_v1`）を設計する。
 5. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-02] validation ルール（適用位置、パラメータ名、重複、runtime helper 限定）を設計する。
 6. [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01] future `@instantiate(...)` と両立する surface 拡張方針を記録する。

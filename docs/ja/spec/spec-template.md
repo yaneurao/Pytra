@@ -1,12 +1,21 @@
 # template 仕様（案）
 
 この文書は、Pytra における generic / template サポート方針を定義する。  
-特に、`.py` に直接書く **template 定義 + 明示インスタンス化** を正規手段として扱う。
+2026-03-08 時点の v1 は、linked runtime helper 限定で `.py` に直接書く `@template("T", ...)` を canonical syntax として扱う。
 
 > 2026-02-23 照合ステータス:
 > - 採用: `typing.TypeVar` は注釈専用（template 機能は未提供）として扱う。
-> - 保留: `@template` / `@instantiate`、compile-time branch、実体化エラー契約、生成量ガードなど template 本体仕様。
+> - 採用: linked runtime helper v1 の syntax は `@template("T", ...)` とし、`TypeVar` は使わない。
+> - 保留: `@instantiate`、compile-time branch、実体化エラー契約、生成量ガードなど template 本体仕様。
 > - 非採用: §16 の「採用記法」という断定表現（現時点では記法採用を確定していないため）。
+
+## 0. v1 スコープ（2026-03-08）
+
+- canonical syntax は `@template("T", ...)` とする。
+- v1 の対象は linked-program に載る runtime helper の top-level function のみとする。
+- v1 では `@instantiate(...)` を導入しない。specialization / monomorphization は linked-program 後段で扱う。
+- `typing.TypeVar` は引き続き注釈専用であり、function-scoped generic surface には使わない。
+- class generic / method generic / user code 全般への開放は v1 の非対象とする。
 
 ## 1. 目的
 
@@ -33,13 +42,13 @@
 - 実体化（instantiation）: 型引数を具体型に束縛して、実コードを生成すること。
 - 実体化シンボル: 実体化後に呼び出し/生成に使う具体型シンボル。
 
-## 5. `.py` での記法
+## 5. `.py` での記法（長期案）
 
 ### 5.1 基本API
 
-- `pytra.std.template` を追加し、次のデコレータを提供する。
-  - `@template("T", "U", ...)`
-  - `@instantiate("instantiated_name", type_arg1, type_arg2, ...)`
+- `pytra.std.template` を追加し、次のデコレータ family を提供する。
+  - v1: `@template("T", "U", ...)`
+  - future extension: `@instantiate("instantiated_name", type_arg1, type_arg2, ...)`
 - `@template` は「直後の 1 つの `def` / `class`」にのみ適用される。
   - 次の `def` / `class` まで有効ではない。
   - モジュール全体に波及しない。
@@ -73,11 +82,12 @@ class Vec2:
         self.y = y
 ```
 
-### 5.4 使用ルール
+### 5.4 使用ルール（長期案）
 
-- 呼び出し/生成に使うのは `@instantiate` で定義した実体化シンボルとする。
-- `add(...)` や `Vec2(...)` のような template 本体の直接利用は禁止する（`explicit` 方針）。
-- `@instantiate("name", ...)` の第1引数は、生成される実体化シンボル名として扱う。
+- v1 では template 本体の直接利用可否をまだ確定しない。
+- 長期案では、呼び出し/生成に使うのは `@instantiate` で定義した実体化シンボルとする。
+- 長期案では、`add(...)` や `Vec2(...)` のような template 本体の直接利用は禁止する（`explicit` 方針）。
+- 長期案では、`@instantiate("name", ...)` の第1引数は、生成される実体化シンボル名として扱う。
 
 ### 5.5 変換時分岐（compile-time branch）
 
@@ -202,9 +212,10 @@ template 関連の失敗は次を使用する。
 - self-hosted parser は template 専用構文/API 解釈を未実装。
 - 本仕様は、今後の template 実装に向けた設計基準として扱う。
 
-## 16. `.py` 記法（候補）
+## 16. `.py` 記法（v1 canonical / 長期拡張）
 
-候補記法は **デコレータ連記（識別子引数）** とする。
+v1 canonical syntax は **`@template("T", ...)`** とする。  
+`@instantiate(...)` は長期拡張の候補として保持する。
 
 ### 16.1 1型パラメータ関数の例
 
@@ -257,7 +268,11 @@ class Box:
 
 保留（草案維持）:
 - §1〜§14 の template 本体仕様（構文、解決、エラー契約、実体化上限、検証要件、段階導入）。
-- §16 の記法候補（デコレータ連記）は、実装方針候補として保持する。
+- `@instantiate(...)`、compile-time branch、class generic などの長期拡張。
+
+採用（2026-03-08 追加）:
+- linked runtime helper v1 の canonical syntax は `@template("T", ...)` とする。
+- v1 は runtime helper 限定・top-level function 限定・explicit instantiation なしとする。
 
 非採用（文言/状態の修正）:
 - 「`.py` 記法（採用）」という確定表現は現状実装と不整合なため非採用とし、「候補」へ変更。
