@@ -201,19 +201,15 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     input_txt = str(input_path)
     if input_txt.endswith(".json"):
-        payload_any = json.loads(input_path.read_text(encoding="utf-8"))
-        if isinstance(payload_any, dict):
-            payload_wrap: dict[str, object] = {"__payload__": payload_any}
-            payload = dict_any_get_dict(payload_wrap, "__payload__")
-            ok_obj = dict_any_get(payload, "ok")
-            east_obj = dict_any_get(payload, "east")
-            ok = isinstance(ok_obj, bool) and bool(ok_obj)
-            if ok and isinstance(east_obj, dict):
-                east_obj_dict = dict_any_get_dict(payload, "east")
-                east_doc = normalize_east_root_document(east_obj_dict)
+        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
+        if payload is not None:
+            ok = payload.get_bool("ok")
+            east_obj = payload.get_obj("east")
+            if ok is True and east_obj is not None:
+                east_doc = normalize_east_root_document(dict(east_obj.raw))
                 return normalize_east1_to_east2_document(east_doc)
-            if dict_any_kind(payload) == "Module":
-                payload_doc = normalize_east_root_document(payload)
+            if payload.get_str("kind") == "Module":
+                payload_doc = normalize_east_root_document(dict(payload.raw))
                 return normalize_east1_to_east2_document(payload_doc)
         raise make_user_error(
             "input_invalid",
