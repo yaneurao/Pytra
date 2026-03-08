@@ -1374,49 +1374,6 @@ static inline V py_dict_get(const ::std::optional<dict<str, V>>& d, const char* 
     return py_dict_get(dv, key);
 }
 
-static inline object py_dict_get(const dict<str, object>& d, const char* key) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        str kind = "";
-        auto kind_it = d.find(str("kind"));
-        if (kind_it != d.end()) {
-            kind = obj_to_str(kind_it->second);
-        }
-        str keys_txt = "";
-        bool first = true;
-        for (const auto& kv : d) {
-            if (!first) {
-                keys_txt += ", ";
-            }
-            keys_txt += kv.first;
-            first = false;
-        }
-        auto caller_addr0 = reinterpret_cast<::std::uintptr_t>(__builtin_return_address(0));
-        auto caller_addr1 = reinterpret_cast<::std::uintptr_t>(__builtin_return_address(1));
-        auto caller_addr2 = reinterpret_cast<::std::uintptr_t>(__builtin_return_address(2));
-        ::std::ostringstream caller_hex0;
-        caller_hex0 << ::std::hex << caller_addr0;
-        ::std::ostringstream caller_hex1;
-        caller_hex1 << ::std::hex << caller_addr1;
-        ::std::ostringstream caller_hex2;
-        caller_hex2 << ::std::hex << caller_addr2;
-        throw ::std::out_of_range(
-            ::std::string("dict key not found: ")
-            + key
-            + " kind=" + py_to_string(kind)
-            + " keys=[" + py_to_string(keys_txt) + "]"
-            + " caller0=0x" + caller_hex0.str()
-            + " caller1=0x" + caller_hex1.str()
-            + " caller2=0x" + caller_hex2.str()
-        );
-    }
-    return it->second;
-}
-
-static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key) {
-    return py_dict_get(d, key.c_str());
-}
-
 // `dict.get(key)`（default 省略）相当。未キー時は Python の `None` 相当（object{}）を返す。
 template <class K, class V>
 static inline object py_dict_get_maybe(const dict<K, V>& d, const K& key) {

@@ -16,6 +16,7 @@
 ## 完了 plan アーカイブ
 
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-READ-01](../plans/archive/20260308-p0-cpp-pyruntime-object-read-bridge-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-DICTGET-01](../plans/archive/20260308-p0-cpp-pyruntime-object-dict-get-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01](../plans/archive/20260308-p0-cpp-pyruntime-object-collection-bridge-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-LANE-01](../plans/archive/20260308-p0-cpp-pyruntime-object-lane-retirement.md)
 - [2026-03-08 / P0-CPP-SELFHOST-ANY-COMPAT-01](../plans/archive/20260308-p0-cpp-selfhost-any-compat-retirement.md)
