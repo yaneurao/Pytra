@@ -16,6 +16,7 @@
 ## 完了 plan アーカイブ
 
 - [2026-03-08 / P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01](../plans/archive/20260308-p0-cpp-pyruntime-generic-dict-get-default-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICTGET-CONVENIENCE-01](../plans/archive/20260308-p0-cpp-pyruntime-dict-get-convenience-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-DICTDEFAULT-OBJECT-01](../plans/archive/20260308-p0-cpp-pyruntime-object-dict-default-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-READ-01](../plans/archive/20260308-p0-cpp-pyruntime-object-read-bridge-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-DICTGET-01](../plans/archive/20260308-p0-cpp-pyruntime-object-dict-get-retirement.md)
@@ -58,7 +59,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（21 セクション）
+- [2026-03-08](20260308.md)（22 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）

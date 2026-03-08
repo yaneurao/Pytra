@@ -2267,6 +2267,103 @@ class CppEmitter(
 
     # builtin runtime_call dispatch helpers moved to backends.cpp.emitter.builtin_runtime.CppBuiltinRuntimeEmitter.
 
+    def _objectish_dict_get_effective_type(self, out_t: str, default_t: str) -> str:
+        """object-dict `get` の戻り値型を既定値込みで正規化する。"""
+        out_norm = self.normalize_type_name(out_t)
+        default_norm = self.normalize_type_name(default_t)
+        int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_out_types = {"float32", "float64"}
+        if out_norm == "bool" or out_norm == "str" or out_norm in int_out_types or out_norm in float_out_types:
+            return out_norm
+        if out_norm.startswith("list[") or out_norm.startswith("dict["):
+            return out_norm
+        if out_norm in {"", "unknown", "Any", "object"}:
+            if default_norm == "bool" or default_norm == "str":
+                return default_norm
+            if default_norm in int_out_types or default_norm in float_out_types:
+                return default_norm
+            if default_norm.startswith("list[") or default_norm.startswith("dict["):
+                return default_norm
+            return "object"
+        return out_norm
+
+    def _objectish_dict_get_default_expr_for_type(
+        self,
+        effective_t: str,
+        default_expr: str,
+        default_node: Any,
+    ) -> str:
+        """object-dict `get` の既定値を最終戻り値型に合わせて整形する。"""
+        eff_t = self.normalize_type_name(effective_t)
+        if default_expr in {"::std::nullopt", "std::nullopt"}:
+            if eff_t in {"", "unknown", "Any", "object"}:
+                return default_expr
+            return self._none_default_expr_for_type(eff_t)
+        if eff_t in {"", "unknown", "Any", "object"}:
+            return self._box_any_target_value(default_expr, default_node)
+        if eff_t == "str":
+            return f"str({default_expr})"
+        int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_out_types = {"float32", "float64"}
+        if eff_t in int_out_types or eff_t in float_out_types:
+            return f"py_to<{self._cpp_type_text(eff_t)}>({default_expr})"
+        return default_expr
+
+    def _objectish_dict_get_value_expr(self, value_expr: str, effective_t: str) -> str:
+        """object-dict `get` の取得値を型付き戻り値へ変換する。"""
+        eff_t = self.normalize_type_name(effective_t)
+        if eff_t in {"", "unknown", "Any", "object"}:
+            return value_expr
+        if eff_t == "dict[str, object]":
+            return f"obj_to_dict({value_expr})"
+        if eff_t == "str":
+            return f"py_to<str>({value_expr})"
+        if eff_t == "bool":
+            return f"py_to<bool>({value_expr})"
+        int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        float_out_types = {"float32", "float64"}
+        if eff_t in int_out_types or eff_t in float_out_types or eff_t.startswith("list["):
+            return f"py_to<{self._cpp_type_text(eff_t)}>({value_expr})"
+        return value_expr
+
+    def _render_objectish_dict_get_default_expr(
+        self,
+        owner_node: Any,
+        owner_expr: str,
+        key_node: Any,
+        key_expr: str,
+        default_node: Any,
+        default_expr: str,
+        out_t: str,
+        default_t: str,
+        owner_optional_object_dict: bool,
+    ) -> str:
+        """`dict[str, object]` / optional object-dict の `get(key, default)` を式展開する。"""
+        key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
+        effective_t = self._objectish_dict_get_effective_type(out_t, default_t)
+        typed_default = self._objectish_dict_get_default_expr_for_type(effective_t, default_expr, default_node)
+        if not owner_optional_object_dict and not effective_t.startswith("list["):
+            return f"py_dict_get_default({owner_expr}, {key_expr}, {typed_default})"
+        owner_tmp = self.next_tmp("__dict")
+        key_tmp = self.next_tmp("__dict_key")
+        it_tmp = self.next_tmp("__dict_it")
+        cpp_ret_t = "object" if self.is_any_like_type(effective_t) or effective_t == "object" else self._cpp_type_text(effective_t)
+        owner_value_expr = owner_tmp if not owner_optional_object_dict else f"{owner_tmp}.value()"
+        value_expr = self._objectish_dict_get_value_expr(f"{it_tmp}->second", effective_t)
+        guard = ""
+        if owner_optional_object_dict:
+            guard = f"if (!{owner_tmp}.has_value()) return {typed_default}; "
+        return (
+            f"([&]() -> {cpp_ret_t} {{ "
+            f"auto&& {owner_tmp} = {owner_expr}; "
+            f"auto {key_tmp} = {key_expr}; "
+            f"{guard}"
+            f"auto {it_tmp} = {owner_value_expr}.find({key_tmp}); "
+            f"if ({it_tmp} == {owner_value_expr}.end()) return {typed_default}; "
+            f"return {value_expr}; "
+            f"}}())"
+        )
+
     def _render_dict_get_default_expr(
         self,
         owner_node: Any,
@@ -2282,37 +2379,19 @@ class CppEmitter(
         owner_expr = self.render_expr(owner_node)
         key_expr = self.render_expr(key_node)
         default_expr = self.render_expr(default_node)
-        if not objectish_owner:
-            key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-        int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
-        float_out_types = {"float32", "float64"}
-        if objectish_owner and out_t == "bool":
-            return f"dict_get_bool({owner_expr}, {key_expr}, {default_expr})"
-        if objectish_owner and out_t == "str":
-            return f"dict_get_str({owner_expr}, {key_expr}, {default_expr})"
-        if objectish_owner and out_t in int_out_types:
-            cast_t = self._cpp_type_text(out_t)
-            return f"static_cast<{cast_t}>(dict_get_int({owner_expr}, {key_expr}, py_to<int64>({default_expr})))"
-        if objectish_owner and out_t in float_out_types:
-            cast_t = self._cpp_type_text(out_t)
-            return f"{cast_t}(dict_get_float({owner_expr}, {key_expr}, py_to<float64>({default_expr})))"
-        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "bool":
-            return f"dict_get_bool({owner_expr}, {key_expr}, {default_expr})"
-        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t == "str":
-            return f"dict_get_str({owner_expr}, {key_expr}, {default_expr})"
-        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in int_out_types:
-            return f"dict_get_int({owner_expr}, {key_expr}, py_to<int64>({default_expr}))"
-        if objectish_owner and out_t in {"", "unknown", "Any", "object"} and default_t in float_out_types:
-            return f"dict_get_float({owner_expr}, {key_expr}, py_to<float64>({default_expr}))"
-        if objectish_owner and out_t in {"", "unknown"} and default_t.startswith("list["):
-            return f"dict_get_list({owner_expr}, {key_expr}, {default_expr})"
-        if objectish_owner and out_t.startswith("list["):
-            return f"dict_get_list({owner_expr}, {key_expr}, {default_expr})"
-        if objectish_owner and (self.is_any_like_type(out_t) or out_t == "object"):
-            if owner_optional_object_dict:
-                boxed_default = self._box_any_target_value(default_expr, default_node)
-                return f"py_dict_get_default({owner_expr}, {key_expr}, {boxed_default})"
-            return f"dict_get_node({owner_expr}, {key_expr}, {default_expr})"
+        if objectish_owner:
+            return self._render_objectish_dict_get_default_expr(
+                owner_node,
+                owner_expr,
+                key_node,
+                key_expr,
+                default_node,
+                default_expr,
+                out_t,
+                default_t,
+                owner_optional_object_dict,
+            )
+        key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
         if not objectish_owner:
             if default_expr in {"::std::nullopt", "std::nullopt"}:
                 val_t = self.normalize_type_name(owner_value_t)

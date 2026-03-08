@@ -835,8 +835,8 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("dict_get_int(", cpp)
-        self.assertNotIn("py_dict_get_default(", cpp)
+        self.assertIn("py_dict_get_default(", cpp)
+        self.assertNotIn("dict_get_int(", cpp)
 
     def test_dict_get_typed_none_default_uses_value_default(self) -> None:
         src = """def f(d: dict[str, int]) -> int:
@@ -862,11 +862,9 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertTrue(
-            ('int64 x = dict_get_node(d, "k", 0);' in cpp)
-            or ('int64 x = py_to<int64>(dict_get_node(d, "k", ::std::nullopt));' in cpp)
-            or ('int64 x = int64(py_to<int64>(dict_get_node(d, "k", ::std::nullopt)));' in cpp)
-        )
+        self.assertIn("py_dict_get_default(", cpp)
+        self.assertNotIn("dict_get_node(", cpp)
+        self.assertNotIn("dict_get_int(", cpp)
 
     def test_dict_get_object_none_default_in_return_uses_typed_default(self) -> None:
         src = """def f(d: dict[str, object]) -> int:
@@ -878,8 +876,8 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('return dict_get_node(d, "k", 0);', cpp)
-        self.assertNotIn('return dict_get_node(d, "k", ::std::nullopt);', cpp)
+        self.assertIn("py_dict_get_default(", cpp)
+        self.assertNotIn("dict_get_node(", cpp)
 
     def test_annassign_dict_object_value_is_not_reboxed(self) -> None:
         src = """def f(x: object) -> dict[str, object]:
@@ -905,10 +903,9 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertTrue(
-            ('return dict_get_int(d, "k", py_to_int64(3));' in cpp)
-            or ('return dict_get_int(d, "k", py_to<int64>(3));' in cpp)
-        )
+        self.assertIn("([&]() -> int64 {", cpp)
+        self.assertIn("return py_to<int64>(__dict_it_", cpp)
+        self.assertNotIn("dict_get_int(", cpp)
         self.assertNotIn('return d.get("k", 3);', cpp)
 
     def test_optional_dict_object_get_bool_uses_typed_wrapper(self) -> None:
@@ -921,7 +918,9 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('return dict_get_bool(d, "k", true);', cpp)
+        self.assertIn("([&]() -> bool {", cpp)
+        self.assertIn("return py_to<bool>(__dict_it_", cpp)
+        self.assertNotIn("dict_get_bool(", cpp)
         self.assertNotIn('return d.get("k", true);', cpp)
 
     def test_optional_dict_object_get_str_uses_typed_wrapper(self) -> None:
@@ -934,8 +933,10 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('return dict_get_str(d, "k", "x");', cpp)
-        self.assertNotIn('return py_dict_get_default(d, "k", "x");', cpp)
+        self.assertIn("([&]() -> str {", cpp)
+        self.assertIn('return str("x");', cpp)
+        self.assertIn("return py_to<str>(__dict_it_", cpp)
+        self.assertNotIn("dict_get_str(", cpp)
 
     def test_optional_dict_object_get_float_uses_typed_wrapper(self) -> None:
         src = """def f(d: dict[str, object] | None) -> float:
@@ -947,11 +948,9 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertTrue(
-            ('return dict_get_float(d, "k", py_to_float64(1.25));' in cpp)
-            or ('return dict_get_float(d, "k", py_to<float64>(1.25));' in cpp)
-        )
-        self.assertNotIn('return py_dict_get_default(d, "k", 1.25);', cpp)
+        self.assertIn("([&]() -> float64 {", cpp)
+        self.assertIn("return py_to<float64>(__dict_it_", cpp)
+        self.assertNotIn("dict_get_float(", cpp)
 
     def test_optional_dict_object_get_list_uses_list_wrapper(self) -> None:
         src = """def f(d: dict[str, object] | None) -> list[int]:
@@ -963,8 +962,9 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('return dict_get_list(d, "k", list<int64>{1, 2});', cpp)
-        self.assertNotIn('return py_dict_get_default(d, "k", make_object(list<int64>{1, 2}));', cpp)
+        self.assertIn("([&]() -> list<int64> {", cpp)
+        self.assertIn("return py_to<list<int64>>(__dict_it_", cpp)
+        self.assertNotIn("dict_get_list(", cpp)
 
     def test_none_constant_for_any_like_uses_object_empty(self) -> None:
         src = """def f() -> object:

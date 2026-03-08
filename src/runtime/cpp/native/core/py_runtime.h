@@ -1435,60 +1435,6 @@ static inline D py_dict_get_default(const dict<str, object>& d, const ::std::str
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
-static inline bool dict_get_bool(const dict<str, object>& d, const char* key, bool defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    return py_to_bool(it->second);
-}
-
-static inline str dict_get_str(const dict<str, object>& d, const char* key, const str& defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    return py_to_string(it->second);
-}
-
-// object 系 dict.get で数値既定値を使うとき、object 経由の戻り値を
-// 直接数値へ落として py_dict_get_default 直呼び出しを避ける。
-static inline int64 dict_get_int(const dict<str, object>& d, const char* key, int64 defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    return py_to_int64(it->second);
-}
-
-static inline float64 dict_get_float(const dict<str, object>& d, const char* key, float64 defval) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    return py_to_float64(it->second);
-}
-
-static inline list<object> dict_get_list(
-    const dict<str, object>& d, const char* key, const list<object>& defval = list<object>{}) {
-    auto it = d.find(str(key));
-    if (it == d.end()) {
-        return defval;
-    }
-    if (const auto* p = obj_to_list_ptr(it->second)) return *p;
-    return defval;
-}
-
-template <class D>
-static inline D dict_get_node(const dict<str, object>& d, const char* key, const D& defval) {
-    return py_dict_get_default(d, key, defval);
-}
-
-template <class D>
-static inline D dict_get_node(const dict<str, object>& d, const str& key, const D& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
 static inline str dict_get_node(const dict<str, str>& d, const str& key, const str& defval = "") {
     if (d.find(key) != d.end()) {
         return py_dict_get(d, key);
