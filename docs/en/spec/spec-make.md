@@ -6,12 +6,19 @@
 
 This document defines the operational specification to consolidate the C++ build flow into the common `pytra` CLI instead of direct `py2cpp.py` invocation.
 
+## 2026-02-24 Alignment Notes
+
+- `src/pytra-cli.py`, `tools/gen_makefile_from_manifest.py`, and `./pytra` are already implemented and provide the `--target cpp --build` flow through `./pytra`.
+- The `--multi-file` `manifest.json` contract and the `tools/build_multi_cpp.py` route remain part of the specification (`docs/en/spec/spec-dev.md` / `docs/en/spec/spec-tools.md`).
+- This document is operated as an implemented specification. Anything still in the future is split into separate follow-up tasks.
+
 ## 1. Decisions
 
 - The user entry point is `./pytra` (extensionless launcher).
 - The main implementation entry point is `src/pytra-cli.py` (`python src/pytra-cli.py`).
 - `py2cpp.py` remains as the transpile backend and does not own build orchestration responsibility.
 - C++ build uses: canonical `manifest.json` + generated `Makefile` + `make` execution.
+- `manifest.json` is treated as a build manifest emitted by `CppProgramWriter` from `ProgramArtifact`; it is not written directly by `ModuleEmitter`.
 - Manual `PYTHONPATH` setup is unnecessary (`./pytra` sets it internally).
 
 ## 2. Objectives
@@ -72,6 +79,8 @@ Notes:
 
 - In this spec, `--opt` means C++ compiler flags.
 - Codegen optimization level (`py2cpp` `-O0..-O3`) may be separated as `--codegen-opt {0,1,2,3}` (default applies when omitted).
+- In `pytra-cli`, `--target cpp --codegen-opt 3` means the max Pytra codegen route, not just aggregate `-O3` passthrough. It selects backend emission through the linked-program optimizer.
+- `--target cpp --codegen-opt 0/1/2` keeps the legacy route and remains independent from compiler flags such as `--opt -O3`.
 
 ### 5.4 Constraints
 
@@ -83,10 +92,17 @@ Notes:
 
 Execution order for `./pytra ... --target cpp --build`:
 
-1. Execute `py2cpp.py --multi-file --output-dir <DIR>` to generate `manifest.json`.
-2. Generate `Makefile` via `tools/gen_makefile_from_manifest.py`.
-3. Execute `make -f <Makefile>` to produce binary.
-4. Only when `--run` is specified, execute `make -f <Makefile> run`.
+1. When `--codegen-opt 3` is selected, materialize raw `EAST3` modules and generate C++ multi-file output from linked modules after the linked-program optimizer.
+2. When `--codegen-opt 0/1/2` is selected, build `ProgramArtifact` through the legacy compatibility route.
+3. `CppProgramWriter` generates the output tree and `manifest.json`.
+4. Generate `Makefile` via `tools/gen_makefile_from_manifest.py`.
+5. Execute `make -f <Makefile>` to produce the binary.
+6. Only when `--run` is specified, execute `make -f <Makefile> run`.
+
+Notes:
+
+- In the current CLI implementation, `ProgramArtifact` is an internal concept, but `manifest.json` is treated as its concrete build artifact.
+- Non-C++ backends using `SingleFileProgramWriter` do not require a build manifest. This document only covers the manifest contract emitted by C++ `CppProgramWriter`.
 
 ## 7. `manifest.json` input specification
 
@@ -95,6 +111,12 @@ Execution order for `./pytra ... --target cpp --build`:
 - `modules` is an array.
 - Each element is an object and `source` is a non-empty string.
 - `include_dir` is a string (if omitted, implementation may default to sibling `include` next to `manifest`).
+
+Positioning in the linked-program era:
+
+- `manifest.json` is the C++ build serialization of `ProgramArtifact`.
+- `CppProgramWriter` owns manifest generation. `CppEmitter` / `ModuleEmitter` must not generate `manifest.json` directly.
+- `manifest.json` is the source of truth for build layout and runtime layout, not for language semantics.
 
 Example:
 
@@ -150,6 +172,8 @@ Exit non-zero in the following cases:
 - `./pytra sample/py/01_mandelbrot.py --target cpp --output-dir out/mandelbrot` generates multi-file outputs.
 - `./pytra sample/py/01_mandelbrot.py --target cpp --build --output-dir out/mandelbrot` runs transpile, Makefile generation, and build continuously.
 - `./pytra sample/py/01_mandelbrot.py --target cpp --build --compiler g++ --std c++20 --opt -O3 --exe mandelbrot.out` reflects the specified values in generated `Makefile` and build.
+- `./pytra sample/py/01_mandelbrot.py --target cpp --codegen-opt 3 --build --output-dir out/mandelbrot` selects the C++ max-opt route through the linked-program optimizer.
+- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` stays green.
 - `./pytra sample/py/01_mandelbrot.py --target rs --build` exits with an error per spec.
 - Second run of `make -f out/mandelbrot/Makefile` is incremental (minimal relink/recompile).
 

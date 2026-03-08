@@ -4,47 +4,92 @@
 
 # Template Specification (Draft)
 
-This document defines the generic/template support policy in Pytra.
-In particular, it treats **template definition + explicit instantiation** written directly in `.py` as the canonical workflow.
+This document defines Pytra's generic/template direction.
+As of 2026-03-08, v1 treats `@template("T", ...)` written directly in `.py` as the canonical syntax, limited to linked runtime helpers.
 
-## 1. Objectives
+> Status cross-check (2026-02-23):
+> - Adopted: `typing.TypeVar` remains annotation-only and does not provide template functionality.
+> - Adopted: linked runtime helper v1 uses `@template("T", ...)` and does not use `TypeVar`.
+> - Pending: `@instantiate`, compile-time branching, instantiation errors, generation limits, and the broader template body design.
+> - Rejected: wording that states the notation is already "adopted" in the implementation when it is still a staged design.
 
-- Enable defining generic functions/classes on the Python side and safely transpiling them to multiple languages including C++.
-- Reduce fallback to `object` and preserve static typing in generated code.
-- Generate concretized code even for languages with weak or constrained template support.
+## 0. v1 Scope (2026-03-08)
+
+- The canonical syntax is `@template("T", ...)`.
+- v1 is limited to top-level runtime helper functions that are included in linked-program processing.
+- v1 does not introduce `@instantiate(...)`; specialization/monomorphization is handled later in the linked-program pipeline.
+- `typing.TypeVar` remains annotation-only and is not used as the function-scoped generic surface.
+- Class generics, method generics, and general user-code exposure are out of scope for v1.
+
+### 0.1 Metadata / Validation (v1)
+
+- The canonical metadata is `FunctionDef.meta.template_v1`.
+- Canonical shape:
+  - `schema_version: 1`
+  - `params: [template_param_name, ...]`
+  - `scope: "runtime_helper"`
+  - `instantiation_mode: "linked_implicit"`
+- Raw `decorators` preserve source surface only. Parser/linker/backend must treat `meta.template_v1` as the source of truth.
+- Syntactic validation is performed in parser/EAST build and rejects at least:
+  - empty `@template()`
+  - non-string-literal identifiers
+  - duplicate parameter names
+  - multiple `@template` decorators on the same function
+  - method / nested function / class application
+- The `runtime helper only` restriction is enforced canonically by the linked-program validator. Raw parse may attach metadata to a syntactically valid top-level function, but linked-program validation must fail closed if the module is not a runtime-helper provenance module.
+- `TypeVar` annotations alone must not create `meta.template_v1`.
+
+### 0.2 Future `@instantiate(...)` Extension
+
+- The canonical syntax family begins with `@template("T", ...)`, and future explicit instantiation extends the same decorator family with `@instantiate(...)`.
+- The minimum future shape is:
+  - `@instantiate("symbol_name", type_arg1, type_arg2, ...)`
+- v1 does not implement `@instantiate(...)` in parser, validator, linker, or backend.
+- The surface must not fork into `TypeVar` or bracket syntax; `@template` remains the canonical family.
+
+### 0.3 Specialization Collector / Monomorphization Connection
+
+- `FunctionDef.meta.template_v1` is syntax metadata and is the canonical input read by the specialization collector after linked-program loading.
+- The collector decides specialization seeds from `meta.template_v1` plus concrete type tuples at call sites, not from raw `decorators`.
+- Because v1 has no explicit instantiation, `instantiation_mode: "linked_implicit"` means the linked-program collector deterministically gathers concrete type tuples and triggers monomorphization.
+- Even after `@instantiate(...)` is introduced, the collector entry remains `meta.template_v1`, with explicit seeds added via separate metadata.
+
+## 1. Objective
+
+- Allow generic functions/classes to be defined on the Python side and translated safely into C++ and other target languages.
+- Reduce fallback to `object` and preserve static types in generated code.
+- Enable template-incompatible or template-limited languages to generate specialized code via monomorphization.
 
 ## 2. Non-goals
 
-- Full reproduction of all Python typing-system (`typing`) features.
-- Full compatibility with higher-kinded types / partial specialization / metaprogramming.
-- Reproducing dynamic dispatch that depends on runtime type erasure.
+- Full reproduction of Python `typing`.
+- Full compatibility with higher-kinded types, partial specialization, or metaprogramming.
+- Reproducing runtime type-erasure-based dynamic dispatch.
 
-## 3. Core policy
+## 3. Basic Policy
 
-- Hold generic intermediate representation in EAST.
-- For languages with weak template support, use monomorphization (explicit instantiation).
-- Concretization follows "explicitly generate only the used types"; no implicit exhaustive search.
-- Calling template bodies directly is disallowed; call concretized symbols only.
+- Preserve generic/template information in EAST.
+- Use monomorphization (explicit instantiation) for languages whose native template support is weak.
+- Prefer explicitly enumerated instantiations rather than unbounded implicit exploration.
+- In the long-term design, callers use instantiated symbols rather than calling the template body directly.
 
 ## 4. Terms
 
-- Template definition: a function/class definition with type parameters.
-- Instantiation: binding concrete type arguments and generating concrete code.
-- Instantiated symbol: the concrete symbol used for calls/construction after instantiation.
+- template definition: a function/class definition with type parameters
+- instantiation: binding concrete type arguments and generating concrete code
+- instantiated symbol: the concrete symbol used after instantiation
 
-## 5. `.py` notation
+## 5. `.py` Notation (Long-Term Design)
 
 ### 5.1 Basic API
 
-- Add `pytra.std.template` and provide decorators:
-  - `@template("T", "U", ...)`
-  - `@instantiate("instantiated_name", type_arg1, type_arg2, ...)`
-- `@template` applies only to the immediately following single `def`/`class`.
-  - It does not continue until next `def`/`class`.
-  - It does not affect the whole module.
-- `@instantiate` is written in the same decorator block, directly above the target definition.
+- `pytra.std.template` provides the following decorator family:
+  - v1: `@template("T", "U", ...)`
+  - future extension: `@instantiate("instantiated_name", type_arg1, type_arg2, ...)`
+- `@template` applies only to the immediately following `def` or `class`.
+- `@instantiate` is stacked in the same decorator group immediately above the same definition.
 
-### 5.2 Template function definition
+### 5.2 Template Function Definition
 
 ```python
 from pytra.std.template import template, instantiate
@@ -56,7 +101,7 @@ def add(a: T, b: T) -> T:
     return a + b
 ```
 
-### 5.3 Template class definition
+### 5.3 Template Class Definition
 
 ```python
 from pytra.std.template import template, instantiate
@@ -72,15 +117,16 @@ class Vec2:
         self.y = y
 ```
 
-### 5.4 Usage rules
+### 5.4 Usage Rules (Long-Term Design)
 
-- Calls/construction must use symbols declared via `@instantiate`.
-- Direct template-body usage such as `add(...)` or `Vec2(...)` is forbidden (`explicit` policy).
-- First argument of `@instantiate("name", ...)` is treated as the generated instantiated symbol name.
+- v1 does not yet decide whether direct use of the template body is allowed.
+- In the long-term design, calls/construction use symbols declared by `@instantiate`.
+- In the long-term design, direct use such as `add(...)` or `Vec2(...)` is forbidden (`explicit` policy).
+- In the long-term design, the first argument of `@instantiate("name", ...)` is the generated instantiated symbol name.
 
-### 5.5 Compile-time branch directives
+### 5.5 Compile-Time Branches
 
-Inside template bodies, use these directives for compile-time branching:
+Inside a template body, compile-time branching may use:
 
 ```python
 # Pytra::if T == int64
@@ -92,56 +138,55 @@ Inside template bodies, use these directives for compile-time branching:
 # Pytra::endif
 ```
 
-- Use `# Pytra::if` / `# Pytra::elif` / `# Pytra::else` / `# Pytra::endif` as one block.
-- Left operand can be only template type parameters (`T`, `K`, `V`, etc.).
-- Allowed comparisons in v1: `==` / `!=` only.
-- Right operand uses type tokens (`int64`, `str`, `float64`, etc.).
-  - Quoted forms like `# Pytra::if T == "int64"` may be accepted for compatibility, but unquoted form is canonical.
-- Evaluate per `@instantiate` and keep only the selected branch.
+- `# Pytra::if` / `# Pytra::elif` / `# Pytra::else` / `# Pytra::endif` must be used as a set.
+- The left side may only be a template type parameter such as `T`, `K`, or `V`.
+- Only `==` / `!=` are allowed in v1.
+- The right side is a type token such as `int64`, `str`, or `float64`.
+- Quoted type names are acceptable only as compatibility input; the canonical form is unquoted.
+- Evaluation happens per instantiation, and only the selected block survives.
 
-## 6. Syntax constraints
+## 6. Syntax Constraints
 
-- `@template` / `@instantiate` are allowed only on module-top-level `def` / `class`.
+- `@template` / `@instantiate` are allowed only on top-level `def` / `class`.
 - `@template("...")` arguments must be string-literal identifiers.
-- First argument of `@instantiate("name", ...)` must be a string-literal identifier.
-- Number of `@instantiate` type arguments must match number of `@template` type parameters.
-- `# Pytra::if` directives are allowed only inside template bodies.
-- Nesting of `# Pytra::if` directives is disallowed in v1.
+- The first argument of `@instantiate("name", ...)` must be a string-literal identifier.
+- The number of type arguments in `@instantiate` must match the number of `@template` parameters.
+- `# Pytra::if`-family directives are allowed only inside template bodies.
+- v1 forbids nesting of compile-time branch directives.
 
-## 7. Resolution rules
+## 7. Resolution Rules
 
-- Instantiated symbol is fixed by `@instantiate("name", type_args...)`.
-- Duplicate `name` within a single template definition: `input_invalid(kind=symbol_collision)`.
-- Duplicate type-argument tuple within a single template definition: `input_invalid(kind=duplicate_instantiation)`.
-- Direct call to template body: `input_invalid(kind=missing_instantiation)`.
-- Resolve compile-time directives per instantiation into one block before regular transpilation.
+- Instantiated symbols are defined by `@instantiate("name", type_args...)`.
+- Duplicate instantiated names inside the same template definition raise `input_invalid(kind=symbol_collision)`.
+- Duplicate type-argument tuples inside the same template definition raise `input_invalid(kind=duplicate_instantiation)`.
+- Direct calls to the template body raise `input_invalid(kind=missing_instantiation)` in the explicit long-term model.
+- Compile-time branch directives are evaluated per instantiation before normal lowering.
 
-## 8. Name generation (mangling)
+## 8. Name Generation (Mangling)
 
-- Instantiated symbols are converted to unique names that include type arguments.
+- Instantiated symbols are converted into unique names including type arguments.
 - Recommended format:
   - `__pytra__<module>__<symbol>__<type1>__...`
-- Character encoding rule:
-  - Replace non-`[A-Za-z0-9_]` with `_xx` (two-digit hex).
-- Name collision: `input_invalid(kind=symbol_collision)`.
+- Characters outside `[A-Za-z0-9_]` are replaced with `_xx` (two-digit hex).
+- Name collisions raise `input_invalid(kind=symbol_collision)`.
 
-## 9. Target-language output policy
+## 9. Target-Language Output Policy
 
-- Languages with strong native templates (C++/Rust, etc.):
-  - support selectable `native` output or `explicit` output.
-- Languages without template support or with strong constraints:
-  - use `explicit` output as default.
-- In all languages, `.py`-side `@instantiate(...)` is canonical; do not depend on external definition files.
+- Languages with strong native templates, such as C++/Rust:
+  - may allow `native` output or `explicit` output
+- Languages without practical native templates:
+  - default to `explicit` output
+- In every language, the `.py`-side `@instantiate(...)` declarations are the source of truth, not external definition files
 
-## 10. Type constraints
+## 10. Type Constraints
 
 - Do not allow implicit degradation to `Any` / `object` inside template bodies.
-- Allowed type arguments are restricted to EAST canonical types (`int64`, `float64`, `str`, `list[T]`, etc.).
-- If unknown/unresolved types remain, stop with `inference_failure`.
+- Type arguments are limited to canonical EAST types such as `int64`, `float64`, `str`, and `list[T]`.
+- If unresolved or unknown types remain, stop with `inference_failure`.
 
-## 11. Error contract
+## 11. Error Contract
 
-Use the following for template-related failures:
+Template-related failures use:
 
 - `input_invalid(kind=missing_instantiation)`
 - `input_invalid(kind=duplicate_instantiation)`
@@ -151,57 +196,68 @@ Use the following for template-related failures:
 - `input_invalid(kind=invalid_compile_time_branch)`
 - `input_invalid(kind=unmatched_compile_time_branch)`
 - `input_invalid(kind=unbound_template_param)`
-- `unsupported_syntax` (unsupported notation)
+- `unsupported_syntax` for unsupported forms
 
 Error details must include at least `module`, `symbol`, `type_args`, and `source_span`.
 
-## 12. Generation-volume guard
+## 12. Generation Limit Guard
 
-To prevent instantiation explosion, provide:
+To prevent specialization explosion:
 
-- `--max-instantiations N` (with default)
-  - Upper bound for total instantiated symbols generated in one transpile run.
-  - Includes both directly specified and transitively generated instantiations.
-  - This is not a recursion-depth limit.
-- If total exceeds `N`, stop with `input_invalid(kind=instantiation_limit_exceeded)`.
+- `--max-instantiations N` limits the total number of instantiated symbols produced in one translation
+- the count includes indirectly triggered instantiations as well
+- the limit is on the total number of instantiations, not recursion depth
+- exceeding the limit raises `input_invalid(kind=instantiation_limit_exceeded)`
 
-## 13. Validation requirements
+## 13. Validation Requirements
 
-At minimum, pass:
+At minimum:
 
-- Normal cases:
-  - Only types specified in `.py` `@instantiate(...)` are generated.
-  - Generated code compiles/runs.
-- Error cases:
-  - Direct call without `@instantiate(...)` fails.
-  - Duplicate instantiation fails with `duplicate_instantiation`.
-  - Type mismatch fails with `unsupported_type_argument`.
-  - Compile-time directive mismatch (for example missing `endif`) fails.
-- Cross-language consistency:
-  - Same `.py` input yields identical resolution results across targets (template/type_args/instantiated_name).
+- when implementation starts, add template fixtures under `test/fixtures/template/`
+- use `ok_*` for normal cases and `ng_*` for invalid cases
+- add at least:
+  - successful function/class instantiation cases
+  - failure cases for `missing_instantiation`, `duplicate_instantiation`, and `unsupported_type_argument`
 
-## 14. Phased rollout
+Normal cases:
+
+- only the types named by `@instantiate(...)` are generated
+- generated code compiles and runs
+
+Error cases:
+
+- direct use without `@instantiate(...)` fails
+- duplicate instantiation fails with `duplicate_instantiation`
+- type mismatch fails with `unsupported_type_argument`
+- malformed `# Pytra::if` blocks fail
+
+Cross-language consistency:
+
+- the same `.py` input must resolve to the same `(template, type_args, instantiated_name)` set for all target languages
+
+## 14. Phased Rollout
 
 - Phase 1:
-  - Frontend can parse `.py` `@template` / `@instantiate` and `# Pytra::if`.
-  - Implement `explicit` output first.
+  - frontend can parse `@template` / `@instantiate` and compile-time branch directives
+  - implement `explicit` output first
 - Phase 2:
-  - Introduce direct template output in languages supporting `native` output.
-  - Add switching between `native` and `explicit`.
+  - add native-template output for languages that support it
+  - add switching between `native` and `explicit`
 - Phase 3:
-  - Add optional inference assistance (to reduce explicit-instantiation boilerplate) if needed.
+  - optionally add inference helpers that reduce instantiation boilerplate
 
-## 15. Gap against current implementation (as of 2026-02-22)
+## 15. Gap Against Current Implementation (as of 2026-02-22)
 
-- `typing.TypeVar` is annotation-only in current Pytra (no template-level semantics are provided yet).
-- The self-hosted parser does not yet implement template-specific syntax/API interpretation.
-- This specification is treated as the design baseline for upcoming template implementation.
+- `typing.TypeVar` is annotation-only and template functionality is not implemented.
+- The self-hosted parser does not yet interpret template-specific syntax/API.
+- This document is a design baseline for future template implementation.
 
-## 16. Adopted `.py` notation
+## 16. `.py` Notation (v1 Canonical / Long-Term Extension)
 
-Adopted form is **stacked decorators (identifier arguments)**.
+The v1 canonical syntax is **`@template("T", ...)`**.
+`@instantiate(...)` remains a long-term extension candidate.
 
-### 16.1 Single-type-parameter function example
+### 16.1 Single-Type-Parameter Function Example
 
 ```python
 @template("T")
@@ -211,7 +267,7 @@ def identity(x: T) -> T:
     return x
 ```
 
-### 16.2 Two-type-parameter function example
+### 16.2 Two-Type-Parameter Function Example
 
 ```python
 @template("K", "V")
@@ -221,7 +277,7 @@ def pair(key: K, value: V) -> tuple[K, V]:
     return (key, value)
 ```
 
-### 16.3 Class example
+### 16.3 Class Example
 
 ```python
 @template("T")
@@ -234,11 +290,32 @@ class Box:
         self.value = value
 ```
 
-- Advantages:
-  - Instantiation definitions stay close to the function/class definition, making missing instantiations easier to detect.
-  - No separate `as_name` argument; instantiated name is short and explicit as first argument.
-  - Type arguments are explicit in each instantiation line, making static validation easier to implement.
+- Strengths:
+  - instantiated definitions stay close to the source definition
+  - no extra `as_name` parameter is needed
+  - type arguments are explicit and easy to validate statically
 - Caveats:
-  - Functions with many instantiations become vertically long.
-  - Instantiated names are string literals, so IDE refactor support is weaker.
-  - Since decorators are parsed by Python runtime too, Pytra-specific no-op behavior and evaluation-order specification need to be fixed explicitly.
+  - many instantiations make the decorator block vertically long
+  - string-based names are weaker for IDE rename support
+  - if the decorator is ever evaluated at Python runtime, Pytra must define no-op behavior and fixed evaluation rules
+
+## 17. Adopted / Pending / Rejected (2026-02-23)
+
+Adopted:
+
+- `TypeVar` remains annotation-only rather than providing template functionality.
+  - moved to: `docs/ja/spec/spec-pylib-modules.md`
+
+Pending:
+
+- the main template-body specification in §§1-14
+- long-term extensions such as `@instantiate(...)`, compile-time branches, and class generics
+
+Adopted (2026-03-08 update):
+
+- linked runtime helper v1 uses `@template("T", ...)` as the canonical syntax
+- v1 is limited to runtime helpers, top-level functions, and no explicit instantiation
+
+Rejected:
+
+- wording that prematurely marks the notation as "adopted" in implementation rather than keeping it as a staged design

@@ -43,11 +43,45 @@ Root `./pytra` is a unified launcher that calls `python3 src/pytra-cli.py`.
 ```
 
 Notes:
-- At this point, `./pytra` supports `--target cpp` only.
+- `--target` supports `cpp` and `rs`.
+- `--build` supports `--target cpp` only (Rust is transpile-only).
 - Generated-code optimization level can be set via `--codegen-opt {0,1,2,3}`.
+- `--target cpp --codegen-opt 3` is the max Pytra codegen route for C++. Internally it runs raw `EAST3` -> linked-program optimizer -> backend restart.
+- `--opt -O3` is the C++ compiler flag used during build, and is separate from `--codegen-opt 3`.
+- `--target cpp --codegen-opt 3` assumes multi-file output. In transpile-only mode, use `--output-dir` instead of `--output`.
 - In `--build` mode, generated artifacts (`src/*.cpp`, `include/*.h`, `.obj/*.o`, executable) are written under `--output-dir` (default: `out/`).
 - `--exe` sets executable name/output path. Relative values (for example `add.out`) are generated under `--output-dir`.
-- For temporary outputs, prefer consolidating into `out/`. Example: `./pytra INPUT.py --build --output-dir /out/mycase --exe app.out`
+- When `--output` is omitted, Rust transpilation writes to `--output-dir/<input-stem>.rs` (for example `out/rs_case/add.rs`).
+- For temporary outputs, prefer consolidating into `out/`, and use `/tmp` only when shared temporary inspection is really needed.
+
+## C++ max-opt route
+
+- `./pytra ... --target cpp --codegen-opt 3` uses the linked-program optimizer route rather than the legacy C++ compat route.
+- With `--build`, Pytra continues from linked-program optimization into multi-file output, Makefile generation, and build.
+- Intermediate linked bundles are written under `--output-dir/.pytra_linked/`.
+- `--codegen-opt 0/1/2` keeps the legacy route.
+- Route changes must be guarded not only by representative CLI tests but also by sample parity.
+
+```bash
+./pytra sample/py/18_mini_language_interpreter.py \
+  --target cpp \
+  --codegen-opt 3 \
+  --build \
+  --output-dir out/sample18_maxopt \
+  --opt -O3 \
+  --exe sample18.out
+```
+
+Verification command:
+
+```bash
+python3 tools/runtime_parity_check.py \
+  --targets cpp \
+  --case-root sample \
+  --all-samples \
+  --cpp-codegen-opt 3 \
+  --east3-opt-level 2
+```
 
 ## Constraints To Check First
 
@@ -63,6 +97,20 @@ Notes:
 - See [Tools Guide](./spec/spec-tools.md) for helper script purposes.
 - For normative constraint definitions, see [User Specification](./spec/spec-user.md).
 
+## `@abi` in runtime helpers
+
+- `@abi` is an annotation for fixing the boundary ABI of runtime helpers. It is not intended as a general user-code feature.
+- Canonical modes are `default` / `value` / `value_mut` on the `args` side, and `default` / `value` on the `ret` side.
+- `value` on arguments means a read-only value ABI. The old `value_readonly` spelling is a migration alias and is normalized to `value` in metadata.
+
+```python
+from pytra.std import abi
+
+@abi(args={"parts": "value"}, ret="value")
+def py_join(sep: str, parts: list[str]) -> str:
+    ...
+```
+
 ## Runtime Measurement Protocol (sample)
 
 - For runtime measurements from `sample/py`, measure after fresh transpile.
@@ -75,14 +123,43 @@ Notes:
 - `tools/runtime_parity_check.py` validates not only stdout but also artifact `size` and `CRC32` from each `output:` path.
 - During parity runs, stale artifacts are purged per case from `sample/out`, `test/out`, `out`, and `test/transpile/<target>/<case>`.
 - Unstable timing lines such as `elapsed_sec` are excluded by default (`--ignore-unstable-stdout` is compatibility-only).
-- Full 14-target check:
+- Canonical wrapper for validating all 14 targets:
+
+```bash
+python3 tools/check_all_target_sample_parity.py \
+  --summary-dir work/logs/all_target_sample_parity
+```
+
+- Canonical lower-level groups when invoking `runtime_parity_check.py` directly:
 
 ```bash
 python3 tools/runtime_parity_check.py \
+  --targets cpp \
   --case-root sample \
-  --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim \
   --all-samples \
-  --summary-json work/logs/runtime_parity_sample_all_targets.json
+  --east3-opt-level 2 \
+  --cpp-codegen-opt 3
+
+python3 tools/runtime_parity_check.py \
+  --targets js,ts \
+  --case-root sample \
+  --all-samples \
+  --ignore-unstable-stdout \
+  --east3-opt-level 2
+
+python3 tools/runtime_parity_check.py \
+  --targets rs,cs,go,java,kotlin,swift,scala \
+  --case-root sample \
+  --all-samples \
+  --ignore-unstable-stdout \
+  --east3-opt-level 2
+
+python3 tools/runtime_parity_check.py \
+  --targets ruby,lua,php,nim \
+  --case-root sample \
+  --all-samples \
+  --ignore-unstable-stdout \
+  --east3-opt-level 2
 ```
 
 - Recommended split (faster iteration):
@@ -92,6 +169,26 @@ python3 tools/runtime_parity_check.py \
   - `10-12`: `10_plasma_effect 11_lissajous_particles 12_sort_visualizer`
   - `13-15`: `13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop`
   - `16-18`: `16_glass_sculpture_chaos 17_monte_carlo_pi 18_mini_language_interpreter`
+
+## non-C++ backend health check after linked-program
+
+- After linked-program rollout, `tools/check_noncpp_backend_health.py` is the canonical gate for non-C++ backends.
+- The everyday minimum check is this one command. `parity` is skipped here because it depends on installed toolchains.
+
+```bash
+python3 tools/check_noncpp_backend_health.py --family all --skip-parity
+```
+
+- To narrow the scope, use `wave1`, `wave2`, or `wave3`.
+
+```bash
+python3 tools/check_noncpp_backend_health.py --family wave1 --skip-parity
+python3 tools/check_noncpp_backend_health.py --family wave2 --skip-parity
+python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
+```
+
+- Treat `toolchain_missing` as an execution-environment baseline, not as a backend bug.
+- `tools/run_local_ci.py` already includes `python3 tools/check_noncpp_backend_health.py --family all --skip-parity`, so local CI also watches the non-C++ smoke/transpile gate.
 
 ## Mandatory Emitter Guardrails (Stop-Ship)
 
@@ -152,6 +249,35 @@ Notes:
 - `ir2lang.py` supports `--lower-option key=value`, `--optimizer-option key=value`, and `--emitter-option key=value`.
 - Remove `--no-runtime-hook` when you also want to verify runtime helper copy/emission behavior.
 
+## linked-program dump / link-only / restart
+
+- The canonical linked-program debug route is `py2x.py -> eastlink.py -> ir2lang.py`.
+- `py2x.py --dump-east3-dir DIR` writes raw `EAST3` documents plus `link-input.json` to `DIR` and stops.
+- `py2x.py --link-only --output-dir DIR` skips backend generation and writes only `link-output.json` plus linked modules to `DIR`.
+- `ir2lang.py` accepts `link-output.json` in addition to raw `EAST3(JSON)`. `py2x.py --from-link-output` is the wrapper for that restart path.
+
+```bash
+# 1) Emit raw EAST3 documents and link-input.json from .py
+python3 src/py2x.py sample/py/18_mini_language_interpreter.py --target cpp \
+  --dump-east3-dir out/linked_debug/raw
+
+# 2) Run only the linker to build link-output.json and linked modules
+python3 src/eastlink.py out/linked_debug/raw/link-input.json \
+  --output-dir out/linked_debug/linked
+
+# 3) Restart backend-only from linked output
+python3 src/ir2lang.py out/linked_debug/linked/link-output.json --target cpp \
+  --output-dir out/linked_debug/cpp
+
+# 4) Or restart through the py2x wrapper
+python3 src/py2x.py out/linked_debug/linked/link-output.json --target cpp \
+  --from-link-output --output-dir out/linked_debug/cpp_wrap
+```
+
+Notes:
+- In the linked-program route, global passes consume only the modules listed in the manifest. They do not widen the import closure by re-reading extra modules from `source_path`.
+- In the linked-program route, `NonEscapeInterproceduralPass` reads only the `meta.non_escape_import_closure` populated by the linker. Missing closure data becomes fail-closed unresolved state.
+
 ## Transpiler Usage
 
 Use only the target language section you need.
@@ -165,7 +291,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
   src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
   src/runtime/cpp/native/std/math.cpp src/runtime/cpp/native/std/time.cpp src/runtime/cpp/generated/std/pathlib.cpp \
   src/runtime/cpp/generated/built_in/type_id.cpp \
-  src/runtime/cpp/native/core/gc.ext.cpp src/runtime/cpp/native/core/io.ext.cpp \
+  src/runtime/cpp/native/core/gc.cpp src/runtime/cpp/native/core/io.cpp \
   -o test/transpile/obj/iterable.out
 ./test/transpile/obj/iterable.out
 ```
@@ -415,7 +541,7 @@ python src/py2x.py --target cpp test/transpile/east/01_mandelbrot.json -o test/t
 g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
   src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
   src/runtime/cpp/generated/built_in/type_id.cpp \
-  src/runtime/cpp/native/core/gc.ext.cpp src/runtime/cpp/native/core/io.ext.cpp \
+  src/runtime/cpp/native/core/gc.cpp src/runtime/cpp/native/core/io.cpp \
   -o test/transpile/obj/01_mandelbrot
 ./test/transpile/obj/01_mandelbrot
 ```

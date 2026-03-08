@@ -4,63 +4,69 @@
 
 # EAST3 Optimizer Specification
 
-This document defines the responsibilities, contracts, and rollout plan of the `EAST3` optimization layer (`EAST3 -> EAST3`).
+This document defines the responsibilities, contracts, and staged rollout of the `EAST3` optimization layer (`EAST3 -> EAST3`).
 
-## 1. Objectives
+## 1. Objective
 
-- Improve generated-code quality and runtime performance right before emitters.
-- Keep optimization logic out of emitters to reduce maintenance cost.
-- Separate reusable common optimizations from optional language-specific optimizations.
+- Optimize `EAST3` immediately before the emitter to improve generated-code quality and runtime performance.
+- Separate optimization logic from the emitter to improve maintainability.
+- Separate reusable cross-language optimizations from language-specific optimizations that are only needed in some targets.
 
-## 2. Non-goals
+## 2. Non-Goals
 
-- Replacing syntax/type-resolution logic before `EAST3`.
-- Replacing backend-specific final formatting responsibilities.
-- Direct lowering into backend syntax forms (for example, C++ `for (init; cond; inc)` generation).
-- Allowing semantics-changing optimizations.
+- Replacing syntax or type-resolution logic from `EAST2` and earlier.
+- Replacing backend-specific final formatting or syntax sugar responsibilities.
+- Lowering directly into backend syntax, for example generating C++ `for (init; cond; inc)` forms here.
+- Applying optimizations that change semantics and break strict compatibility.
 
-## 3. Pipeline Placement
+## 3. Position in the Pipeline
 
-The canonical order is:
+The canonical pipeline order is:
 
 1. `EAST2 -> EAST3` lowering (`east2_to_east3_lowering.py`)
-2. `EAST3 Optimizer` (common)
-3. `EAST3 Optimizer <lang>` (optional)
-4. target emitter
+2. `EAST3 Optimizer` (shared)
+3. `EAST3 Optimizer <lang>` (optional, per language)
+4. each emitter
 
-## 4. Input/Output Contract
+Notes:
+
+- The optimizer accepts only `EAST3` as input.
+- Do not distribute optimization logic into pre-`EAST3` (`EAST2`) stages.
+
+## 4. Input / Output Contract
 
 ### 4.1 Input
 
-- `EAST3` module document (`kind == "Module"`, `east_stage == 3`).
+- An `EAST3` document with `kind == "Module"`.
+- It must satisfy `east_stage == 3`.
 
 ### 4.2 Output
 
-- Output remains `EAST3` (`EAST3 -> EAST3`).
-- Must preserve:
-  - `east_stage == 3`
-  - schema compatibility
-  - `source_span` / `repr` / `resolved_type` / `borrow_kind` / `casts`
-  - `main_guard_body` split contract
+- The return value is also an `EAST3` document (`EAST3 -> EAST3`).
+- It must preserve the following invariants:
+  - `east_stage` stays `3`
+  - `schema_version` stays within the compatible range
+  - `source_span`, `repr`, `resolved_type`, `borrow_kind`, and `casts` are not corrupted
+  - the `main_guard_body` separation contract is preserved
 
-## 5. Safety Contract
+## 5. Safety Contract (Semantic Preservation)
 
-- Semantics preservation is mandatory.
+- Semantic preservation has top priority.
 - The optimizer must not change:
   - evaluation order
   - exception timing
-  - side-effect existence/count
-  - short-circuit behavior
-- Reordering across potentially side-effectful expressions is forbidden.
-- If proof is insufficient, skip transformation (fail-closed).
+  - the presence or number of side effects
+  - short-circuit conditions
+- Reordering across expressions that may have side effects is forbidden.
+- Uncertain transformations must be skipped rather than forced (fail-closed).
 
-## 6. Architecture (Pass Manager)
+## 6. Structure (Pass Manager)
 
-Use an ordered pass pipeline.
+`EAST3 Optimizer` is structured as a sequence of passes.
 
 - `PassContext`
   - `opt_level`
-  - `target_lang` (optional)
+  - `target_lang` (may be empty)
   - `debug_flags`
   - `non_escape_policy`
     - `unknown_call_escape` (treat unresolved calls as escape)
@@ -74,89 +80,155 @@ Use an ordered pass pipeline.
   - `warnings: list[str]`
   - `elapsed_ms: float`
 
-Execution rules:
+Execution contract:
 
-- deterministic passes only
-- stable output for same input/options
-- explicit pass-order dependency
+- Each pass must be deterministic.
+- The same input with the same options must always produce the same output.
+- Pass order is fixed, and any ordering dependency must be explicit.
 
 ## 7. Optimization Levels
 
-- `O0`: optimizer disabled
-- `O1` (default): conservative local transforms only
-- `O2`: `O1` plus conservative loop-focused transforms
+- `O0` (disabled):
+  - do not run the optimizer
+- `O1` (default):
+  - only local passes with strong semantic-preservation guarantees
+- `O2`:
+  - `O1` plus conservative loop-related optimizations
 
-## 8. v1 Pass Set (Implementation Synced: 2026-02-27)
+## 8. v1 Pass Set (Implementation-Aligned: 2026-03-07)
 
-| Pass | opt-level | Status | Example transform | Primary guard |
+| Pass | opt-level | status | representative transformation | main guard |
 | --- | --- | --- | --- | --- |
-| `NoOpCastCleanupPass` | `O1` | implemented | remove cast entries where `from == to` | only when static type equality is proven |
-| `LiteralCastFoldPass` | `O1` | implemented | fold literal `static_cast` call to `Constant` | literal + lossless (same-type) only |
-| `RangeForCanonicalizationPass` | `O1` | implemented | `RuntimeIterForPlan(py_range)` -> `StaticRangeForPlan` | currently limited to constant-int args (1..3) with `step != 0` |
-| `UnusedLoopVarElisionPass` | `O1` | implemented | rename provably unused loop var binding to `_` | skip on body/`orelse`/post-loop reads or dynamic name introspection (`locals`, etc.) |
-| `LoopInvariantHoistLitePass` | `O2` | implemented | hoist first invariant assignment of non-empty static-range loop to preheader | requires statically non-empty loop, side-effect-free expr, and no reassignment |
-| `StrengthReductionFloatLoopPass` | `O2` | implemented | rewrite `float` loop `x / C` into `x * (1/C)` | `C` must be finite, non-zero, and power-of-two absolute value |
-| `RedundantWrapperCtorPass` | - | planned | remove redundant `bytes(bytes_expr)` | safe ephemeral/alias-free only |
-| `DeadTempCleanupPass` | - | planned | remove dead temporary assignments | no side effects / references |
+| `NoOpCastCleanupPass` | `O1` | implemented | remove cast entries where `from == to` | only when type equality is proven statically |
+| `LiteralCastFoldPass` | `O1` | implemented | fold literal `static_cast` calls into `Constant` | literals only, and only lossless same-type conversion |
+| `RangeForCanonicalizationPass` | `O1` | implemented | `RuntimeIterForPlan(py_range)` -> `StaticRangeForPlan` | currently only constant integer arity 1..3 and `step != 0` |
+| `ExpressionNormalizationPass` | `O1` | implemented | structurally preserve `BinOp/Compare` and `ForCore(StaticRange)` condition expressions as `normalized_expr(_version)` | paths not satisfying `normalized_expr_version=east3_expr_v1` must fall back or fail closed in the backend |
+| `LifetimeAnalysisPass` | `O1` | implemented | annotate intra-function `CFG + def-use + liveness + last_use` | if dynamic name resolution (`locals/globals/vars/eval/exec`) is detected, mark `fail_closed` |
+| `UnusedLoopVarElisionPass` | `O1` | implemented | replace unused `NameTarget` with `_` | skip if referenced in loop body, `orelse`, later code, or dynamic-name access |
+| `LoopInvariantHoistLitePass` | `O2` | implemented | hoist invariant assignments from the first iteration of a non-empty `StaticRangeForPlan` into the preheader | requires proof of non-empty loop, no side effects, and no reassignment |
+| `StrengthReductionFloatLoopPass` | `O2` | implemented | convert float `x / C` into `x * (1/C)` | only when `C` is a finite non-zero constant whose absolute value is a power of two |
+| `RedundantWrapperCtorPass` | - | candidate, not implemented | remove redundant cases such as `bytes(bytes_expr)` | temporary value only and no alias risk |
+| `DeadTempCleanupPass` | - | candidate, not implemented | remove unused temporaries | no references and no side effects |
 
 Notes:
 
-- Current implementation intentionally prioritizes fail-closed behavior with conservative applicability.
-- `O0` disables all passes, `O1` runs `O1` passes, `O2` runs `O1 + O2` passes.
+- The current implementation intentionally keeps the application range narrow and prioritizes fail-closed behavior.
+- `O0` runs no passes, `O1` runs the `O1` passes above, and `O2` runs `O1 + O2`.
+- As of 2026-03-07, `NonEscapeInterproceduralPass` and `CppListValueLocalHintPass` have been removed from the default local `EAST3` pass list and are treated on the `LinkedProgramOptimizer` side as whole-program/global annotation passes.
+- `LifetimeAnalysisPass` remains a local-only pass and does not move into the linked-program stage.
 
-### 8.1 Responsibility Boundary for `for ... in range(...)`
+### 8.1 Responsibility Boundary for Optimizing `for ... in range(...)`
 
-- The common optimizer may normalize `for ... in range(...)` into a backend-agnostic counted-loop representation.
-- `for _ in range(5)` is an optimization candidate only when actual-use analysis proves the variable is unused; identifier naming (`_`) alone is not sufficient.
-- If safety cannot be proven, skip the transform (fail-closed), including cases such as:
-  - the loop variable is read in body/`else`/after-loop scope,
-  - closure capture can observe the variable,
-  - dynamic name-introspection paths (`locals`/`globals`/`vars`/`eval`) may observe it.
-- Backend syntax materialization (for example, C++ `for (i = 0; i < n; ++i)`) belongs to `EAST3 -> <lang>` lowering / emitter, not to the common optimizer.
+- The shared optimizer may convert `for ... in range(...)` into a backend-independent normalized representation.
+- Forms such as `for _ in range(5)` must not be optimized merely because the variable name is `_`; apply the optimization only when actual usage analysis proves the variable is unused.
+- Do not apply the transformation unless the following are statically proven safe:
+  - the loop variable is not referenced in the body, the `else`, or after the loop
+  - it cannot be observed through closure capture
+  - it cannot be observed through dynamic name resolution such as `locals`, `globals`, `vars`, or `eval`
+- Language-specific structural forms such as C++ `for (i = 0; i < n; ++i)` belong to `EAST3 -> <lang>` lowering or to the emitter, not to the shared optimizer.
 
-### 8.2 Responsibility Boundary for Expression Normalization (`EAST3` vs emitter)
+### 8.2 Responsibility Boundary for Expression Normalization (EAST3 vs emitter)
 
-- Expression normalizations that are semantically shared across backends (for example, identity-cast elimination, `StaticRange` trip-count/condition simplification, comparison-chain normalization) must be performed in `EAST3 -> EAST3`.
-- Normalization outputs must be kept as structured form (node or metadata) so emitters can consume them without re-deriving semantics.
-- Emitter responsibility is limited to target-language rendering:
-  - operator/token spelling, runtime/API symbol choice, and minimal precedence-safe parentheses;
-  - target-language surface constraints (for example, `Math.floor`-style mapping).
-- For expression categories with normalized data, emitters must not rebuild equivalent semantics by ad-hoc string construction.
-- If normalized data is missing/invalid, use fail-closed behavior and suppress the optimization output (no unsafe `reserve`/condition emission).
-- Policy: semantics are decided in `EAST3`; syntax is decided in emitters.
+- Expression normalization whose meaning is shared across backends, such as removing identity casts, simplifying `StaticRange` trip-count or condition expressions, and normalizing compare chains, should be performed in `EAST3 -> EAST3`.
+- The normalized result should be kept as a structured representation (node or metadata) so the emitter can reference it without recomputing it.
+- The emitter is restricted to mapping into target-language surface syntax.
+  - operator spelling
+  - standard-library / API names
+  - minimal precedence parentheses
+  - target-language constraints such as `Math.floor`-style forms
+- For expression categories that already carry normalized information, emitters must not rebuild equivalent expressions as strings.
+- If normalized information is missing or malformed, fail closed and suppress the optimized output path instead of allowing invalid `reserve` or conditional generation.
+- Policy: semantic decisions belong to EAST3, spelling decisions belong to the emitter.
 
-## 9. Language-specific Layer
+### 8.3 Structured Contract for `normalized_expr` (v1)
 
-- Optional `east3_optimizer_<lang>.py` runs after common layer.
-- It must keep the same safety contract.
-- Use it only for target-specific codegen constraints.
-- Backend syntax materialization may be handled in this layer or in the emitter.
+When EAST3 passes a normalized expression downstream, the recommended contract is:
 
-Suggested layout:
+- `normalized_expr_version: "east3_expr_v1"`
+- `normalized_expr: <EAST3 expression node>`
+  - allowed subset in v1: `Constant`, `Name`, `BinOp`, `Compare`, `IfExp`
+  - it preserves `resolved_type`, `borrow_kind`, and `casts`
+
+Operational rules:
+
+- Existing category-specific metadata such as `trip_count` and `reserve_hints[*].count_expr` must also satisfy `east3_expr_v1`.
+- If `normalized_expr_version` is unknown, or `normalized_expr` is missing or malformed, the emitter disables that normalized route (fail-closed).
+- Fail-closed handling must not generate semantically different code. Fall back to the old path or disable the optimization entirely.
+
+### 8.4 `lifetime_analysis` Annotation Contract (`east3_lifetime_v1`)
+
+`LifetimeAnalysisPass` annotates `FunctionDef` and methods inside `ClassDef` with:
+
+- `meta.lifetime_analysis.schema_version = "east3_lifetime_v1"`
+- `meta.lifetime_analysis.status`
+  - `ok`
+  - `fail_closed` (dynamic name resolution detected)
+- `meta.lifetime_analysis.reason`
+  - `dynamic_name_access` when `status=fail_closed`
+- `meta.lifetime_analysis.cfg`
+  - node array with `id`, `kind`, `defs`, `uses`, `succ`
+- `meta.lifetime_analysis.def_use`
+  - `defs: dict[name, node_id[]]`
+  - `uses: dict[name, node_id[]]`
+- `meta.lifetime_analysis.variables`
+  - `def_nodes`, `use_nodes`, `live_in_nodes`, `live_out_nodes`, `last_use_nodes`, `lifetime_class`
+
+Each statement node that corresponds to a CFG node also carries:
+
+- `meta.lifetime_node_id`
+- `meta.lifetime_defs`
+- `meta.lifetime_uses`
+- `meta.lifetime_live_in`
+- `meta.lifetime_live_out`
+- `meta.lifetime_last_use_vars`
+
+Rules for `lifetime_class` (v1):
+
+- Default: `local_non_escape_candidate`
+- Escalate to `escape_or_unknown` when any of the following holds:
+  - `status=fail_closed`
+  - the variable is used by `Return` or `Yield`
+  - the argument has `escape_summary.arg_escape[i] == true`
+
+Fail-closed rules:
+
+- Any function that calls `locals`, `globals`, `vars`, `eval`, or `exec` becomes `status=fail_closed`.
+- In a `fail_closed` function, do not produce lifetime optimization candidates. Downstream backends must treat them as `escape_or_unknown`.
+
+## 9. Language-Specific Optimization Layer
+
+- After the shared layer, `east3_optimizer_<lang>.py` may be added optionally.
+- The language-specific layer must follow:
+  - the same semantic-preservation contract as the shared layer
+  - restriction to target-specific codegen concerns
+  - language-structural lowering such as classical C++ `for` syntax belongs here or in the emitter
+  - do not duplicate in a language-specific layer an optimization that can be represented in the shared layer
+
+Recommended file layout:
 
 - `src/toolchain/compiler/east_parts/east3_optimizer.py`
 - `src/toolchain/compiler/east_parts/east3_optimizer_cpp.py`
 - `src/toolchain/compiler/east_parts/east3_opt_passes/*.py`
 
-## 10. CLI and Debug Contract
+## 10. CLI / Debug Contract
 
 Recommended options:
 
-- `--east3-opt-level {0,1,2}` (default: `1`)
-- `--east3-opt-pass +PASS,-PASS`
+- `--east3-opt-level {0,1,2}` (default `1`)
+- `--east3-opt-pass +PASS,-PASS` (per-pass enable/disable)
 - `--dump-east3-before-opt <path>`
 - `--dump-east3-after-opt <path>`
 - `--dump-east3-opt-trace <path>`
 
-Recommended trace payload:
+Recommended trace contents:
 
-- pass execution order
-- per-pass `changed/change_count/elapsed_ms`
-- final summary
+- executed pass order
+- `changed/change_count/elapsed_ms` per pass
+- final totals (total changes, total time)
 
-### 10.1 Operations (Trace and Isolation)
+### 10.1 Operational Procedure (Trace Inspection / Isolation)
 
-1. Start with default `O1`, and capture before/after EAST3 plus optimizer trace.
+1. First, dump EAST3 and the trace at default `O1`.
 
 ```bash
 python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
@@ -165,7 +237,7 @@ python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --dump-east3-opt-trace work/logs/east3_trace.txt
 ```
 
-2. If behavior regresses, isolate passes via `--east3-opt-pass` (example disables range-loop passes).
+2. If a problem appears, disable passes individually through `--east3-opt-pass` and isolate the responsible pass, for example `-RangeForCanonicalizationPass`.
 
 ```bash
 python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
@@ -173,7 +245,7 @@ python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
 ```
 
-3. Validate `O0/O1/O2` compatibility under the same runtime-parity procedure.
+3. Compare `O0/O1/O2` compatibility through `runtime_parity_check.py --east3-opt-level`.
 
 ```bash
 python tools/runtime_parity_check.py --case-root sample --all-samples \
@@ -191,31 +263,36 @@ python tools/runtime_parity_check.py --case-root sample --all-samples \
 
 Minimum requirements:
 
-- per-pass unit tests (`EAST3 in/out` diffs)
-- invariant tests (`east_stage`, schema compatibility, type fields)
-- regression tests on major `sample/` cases
-- parity checks for stdout/artifacts
+- pass-level unit tests (diffing input EAST3 against output EAST3)
+- syntax and type invariant tests (`east_stage`, `schema_version`, `resolved_type`, and similar)
+- regression tests over representative `sample/` cases
+- output consistency under existing parity tests (stdout and generated artifacts)
+
+Particular points to verify:
+
+- behavior stays stable when switching between `O0` and `O1/O2`
+- cases that should not be optimized are actually suppressed
 
 ## 12. Rollout Phases
 
 ### Phase 1
 
-- pass manager scaffold
-- `O0/O1` support + trace output
-- `NoOpCastCleanup` and `LiteralCastFold`
+- skeleton implementation of the Pass Manager
+- `O0/O1` and trace output
+- introduction of `NoOpCastCleanup` and `LiteralCastFold`
 
 ### Phase 2
 
-- loop-focused passes
-- language-specific optimizer entry points
+- loop-related optimization (`LoopInvariantHoistLite`, `StrengthReductionFloatLoop`)
+- add the entry point for language-specific optimizers
 
 ### Phase 3
 
-- profile-guided pass policy
-- baseline measurement + automatic regression detection
+- profile-driven pass enablement policy
+- baseline measurement for long-term operation and automatic regression detection
 
 ## 13. Compatibility Policy
 
-- Keep existing emitter API stable.
-- Default to `O1`, always provide `O0` for debugging.
-- New optimizer passes must preserve existing fixture/sample output parity.
+- Keep the existing emitter API.
+- Default to `O1`, but always provide `O0` for problem isolation.
+- When adding optimizer behavior, keeping existing fixture/sample outputs compatible is mandatory.

@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-06
+Last updated: 2026-03-08
 
 ## Context Operation Rules
 
@@ -27,70 +27,8 @@ Last updated: 2026-03-06
 
 - This file keeps unfinished tasks only.
 - Completed tasks are moved to history via `docs/ja/todo/archive/index.md`.
-- `docs/ja/todo/archive/index.md` stores only the index; history bodies are stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
-
+- `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
 
-### P0: Complete all PHP sample parity cases (stdout + artifact CRC32)
-
-Context: [docs/ja/plans/p0-php-sample-parity-complete.md](../plans/p0-php-sample-parity-complete.md)
-
-1. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01] Complete PHP `sample` parity (stdout + artifact size + CRC32) for all 18 cases.
-2. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] Re-run parity for all PHP `sample` cases and lock the latest baseline for the single target.
-3. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] Split and classify artifact diffs for the 8 failing cases (`05,06,08,10,11,12,14,16`).
-4. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-01] Align the PHP GIF runtime with the Python implementation and resolve GIF-related CRC mismatches.
-5. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-02] Re-verify the PHP PNG runtime and fix required diffs.
-6. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] Correct image output inputs in PHP lower/emitter (palette/frame/list/bytes paths).
-7. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] Verify whether stdout mismatch recurs in `sample/13`; if unresolved, apply a root fix.
-8. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] Re-run `--targets php --all-samples` and confirm `case_pass=18` / `case_fail=0`.
-9. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] Add regression tests corresponding to the fixes and lock recurrence prevention.
-10. [ ] [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-03] Record generated logs and decisions in the plan and make TODO completion criteria explicit.
-
-### P1: Reorganize `test/unit` layout and prune unused tests
-
-Context: [docs/ja/plans/p1-test-unit-layout-and-pruning.md](../plans/p1-test-unit-layout-and-pruning.md)
-
-1. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01] Reorganize `test/unit` into responsibility-based folders and prune unused tests with clear rationale.
-2. [x] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] Inventory current tests in `test/unit` by responsibility classification (common/backends/ir/tooling/selfhost) and finalize the move map.
-3. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-02] Define target directory conventions and finalize naming/placement rules.
-4. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-01] Move test files to new directories and bulk-update reference paths in `tools/` and `docs/`.
-5. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S2-02] Update CI/local scripts so `unittest discover` and individual execution flows work under the new structure.
-6. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-01] Extract unused-test candidates and write an audit memo that decides `remove/integrate/keep`.
-7. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S3-02] Remove or integrate judged-unused tests and add recurrence checks (new if needed).
-8. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-01] Run key unit/transpile/selfhost regressions and confirm non-regression after reorganization and pruning.
-9. [ ] [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S4-02] Reflect new test placement rules and operations in `docs/ja/spec` (and `docs/en/spec` if needed).
-- Progress memo: [ID: P1-TEST-UNIT-LAYOUT-PRUNE-01-S1-01] Inventoried 71 files in `test/unit` and finalized the move map as `backends/*:29, ir:10, tooling:5, selfhost:3, common:23`. Reorganize according to this classification in `S2-01`.
-
-### P1: Complete Nim sample parity (formal integration of runtime_parity_check)
-
-Context: [docs/ja/plans/p1-nim-sample-parity-complete.md](../plans/p1-nim-sample-parity-complete.md)
-
-1. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01] Formally integrate Nim into parity regression targets and complete stdout + artifact (size + CRC32) match for all 18 `sample` cases.
-2. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-01] Add Nim target support (transpile/run/toolchain detection) to `runtime_parity_check`.
-3. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-02] Add Nim to `regenerate_samples.py` and lock the regeneration path for `sample/nim`.
-4. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S1-03] Run parity for all Nim `sample` cases and lock failure categories.
-5. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-01] Implement Nim runtime PNG writer as Python-compatible binary output.
-6. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-02] Implement Nim runtime GIF writer (including `grayscale_palette`).
-7. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-03] Align image output paths and runtime contracts in Nim emitter/lower.
-8. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S2-04] Resolve remaining cases (for example `sample/18`) with minimal fixes.
-9. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-01] Confirm `case_pass=18` / `case_fail=0` with `--targets nim --all-samples`.
-10. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-02] Update regression tests for the Nim parity contract (CLI/smoke/transpile).
-11. [ ] [ID: P1-NIM-SAMPLE-PARITY-COMPLETE-01-S3-03] Record verification logs and operational steps in the plan and document close conditions explicitly.
-
-### P2: Multi-language runtime parity with C++ (redesign: strict SoT + generation-first)
-
-Context: [docs/en/plans/p2-runtime-parity-with-cpp.md](../plans/p2-runtime-parity-with-cpp.md)
-
-1. [ ] [ID: P2-RUNTIME-PARITY-CPP-02] Redesign multi-language runtime parity under strict SoT, generation-first, and boundary separation rules.
-2. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-01] Remove old P2 (`P2-RUNTIME-PARITY-CPP-01`) from the unfinished TODO list and replace it with the new P2.
-3. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-02] Document SoT/pytra-core/pytra-gen boundaries and prohibitions in `docs/ja/spec`.
-4. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S1-03] Create a classification table of target modules (`std/utils`) as `must-generate` vs `core-allowed`.
-5. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-01] Add a static check for `pytra-gen` naming rule violations (passthrough naming).
-6. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-02] Strengthen marker checks (`source/generated-by`) and placement checks (core/gen mix), then integrate into CI.
-7. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S2-03] Audit SoT re-implementation residues inside `pytra-core` and feed the findings into a migration plan to `pytra-gen`.
-8. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-01] Use Java as the first target and unify runtime API calls to the IR-resolved path (remove emitter hardcoding).
-9. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-02] Apply the same policy to non-C++ backends (`cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`).
-10. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S3-03] Lint emitter prohibitions (runtime/library hardcoded names) and fail-fast in PR/CI.
-11. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-01] Re-run sample parity for all target languages including artifact size + CRC32 and lock diffs.
-12. [ ] [ID: P2-RUNTIME-PARITY-CPP-02-S4-02] Reflect operation procedures (local/CI) in `docs/ja` and `docs/en`.
+- None

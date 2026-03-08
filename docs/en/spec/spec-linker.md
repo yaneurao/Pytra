@@ -1,175 +1,288 @@
-# Linker 仕様（EAST1/EAST2/EAST3 連結）
-
 <a href="../../ja/spec/spec-linker.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-この文書は、`EAST1` / `EAST2` / `EAST3` を中間ファイルとして扱う場合の
-`linker`（連結段）仕様を定義する。
+# Linked Program / Linker Specification
 
-主目的は次の 2 点:
+This document defines the linked-program stage that receives multiple raw `EAST3` modules, validates them as one program, materializes whole-program summaries, and hands linked `EAST3` modules plus `link-output.v1` to backends.
 
-1. 変換パイプラインの各段を独立に検証できるようにする。
-2. `type_id` など「全モジュールを見ないと確定できない情報」を 1 箇所で確定する。
+## 1. Background
 
-位置づけ:
-- 上位仕様は [spec-east.md](./spec-east.md) とし、本書はその連結段詳細を定義する下位仕様とする。
-- 仕様衝突時は `spec-east` を優先し、本書はそれに従って更新する。
+The single-module `EAST3` optimizer alone cannot decide program-wide facts such as:
 
-## 1. 背景
+- final `type_id` assignment
+- call graph / SCC
+- interprocedural non-escape summaries
+- container ownership hints
 
-- `EAST3` 導入後、backend は原則「命令写像」に専念する。
-- 一方、`type_id` の割り当てはモジュール横断情報を必要とする。
-- 単発変換では実行順依存 ID が発生しやすく、再現性と多段変換に不利。
+Therefore Pytra introduces a linked-program stage between raw `EAST3` and backend emission.
 
-そのため、`EAST3 -> linker -> backend` の責務分離を定義する。
+## 2. Non-goals
 
-## 2. 非目標
+- introducing a new EAST stage number beyond `east_stage=3`
+- making the linker render target-language syntax
+- letting backends reconstruct whole-program summaries on their own
 
-- ネイティブバイナリのリンカ（`ld`, `link.exe`）代替。
-- 最適化器（DCE, inlining, register allocation）の全面実装。
-- 既存の高速経路（メモリ内一気通貫）を廃止すること。
+## 3. Terms
 
-## 3. 用語
+- **link unit**
+  - one raw `EAST3` module document before linking
+- **LinkedProgram**
+  - validated in-memory model bundling multiple link units and program-wide options
+- **link-input.v1**
+  - input manifest used to build a `LinkedProgram`
+- **link-output.v1**
+  - output manifest containing global summaries and linked-module outputs
+- **linked module**
+  - `EAST3` after linker / linked-program optimization; it keeps `kind=Module` and `east_stage=3`, and adds `meta.linked_program_v1`
 
-- `EAST1`: parser 直後の loss-minimal IR。
-- `EAST2`: normalize 専任 IR。
-- `EAST3`: backend 入力の意味論 IR。
-- `link unit`: 1 モジュール分の `EAST3`。
-- `link manifest`: link 入力集合・設定・割当結果を保持するメタ情報。
+## 4. Core Pipeline
 
-## 4. 基本パイプライン
+### 4.1 Default (fast path)
 
-### 4.1 既定（高速）
+```text
+parser
+  -> EAST1
+  -> EAST2
+  -> EAST3 (raw module)
+  -> LinkedProgramLoader
+  -> LinkedProgramOptimizer
+  -> linked module (EAST3)
+  -> backend
+```
 
-- 既定は従来どおりメモリ内で処理する。
-- `parser -> EAST1 -> EAST2 -> EAST3 -> linker(in-memory) -> backend`
+### 4.2 Debug / Repro Mode
 
-### 4.2 デバッグ/再現モード
+Persist only when needed:
 
-- 必要時のみ中間ファイルを保存する。
-- 例: `test1.east1`, `test1.east2`, `test1.east3`（実体は JSON）
+1. raw `EAST3` module set
+2. `link-input.json`
+3. `link-output.json`
+4. linked modules
 
-推奨拡張子:
-- `*.east1.json`
-- `*.east2.json`
+Recommended flow:
+
+1. `py2x.py` writes raw `EAST3` modules plus `link-input.json`
+2. `eastlink.py` reads `link-input.json` and writes `link-output.json` plus linked modules
+3. `ir2lang.py` reads `link-output.json` and emits target code
+
+Recommended filenames:
+
 - `*.east3.json`
+- `link-input.json`
+- `link-output.json`
 
-## 5. linker の責務
+## 5. Linker Responsibilities
 
-linker は `EAST3` 群を受け取り、次を確定する。
+The linked-program stage receives raw `EAST3` modules and must finalize:
 
-1. モジュール ID 正規化
-- パス/モジュール名の揺れを正規化し、重複定義を検出する。
+1. **module-set validation**
+   - validate `kind=Module`, `east_stage=3`, `schema_version`, and `meta.dispatch_mode`
+   - fail fast on program-wide inconsistency
+2. **module-id normalization and deterministic order**
+   - normalize `module_id`
+   - detect duplicates
+   - construct the same `LinkedProgram` order for the same input set
+3. **global summary construction**
+   - program-wide call graph
+   - SCCs
+   - `type_id_table`
+   - non-escape summary
+   - container ownership hints
+4. **materialization into linked modules**
+   - copy each required slice into `meta.linked_program_v1`
+   - finalize function/call summaries such as `FunctionDef.meta.escape_summary` and `Call.meta.non_escape_callsite`
+5. **program-manifest output**
+   - write `link-output.v1` as the canonical output manifest
 
-2. グローバル型表の構築
-- FQCN（module + class）をキーに型定義を一意化する。
-- 継承グラフ（多重継承含む）を構築し、循環を検出する。
+Backends are forbidden from:
 
-3. `type_id` の確定
-- built-in は固定 ID を維持する（`spec-type_id`/runtime 契約）。
-- user class は linker が決定的規則で割り当てる。
-- backend は linker 確定値を使うだけにする。
+- recomputing `type_id`
+- reloading module sets to rebuild whole-program summaries
+- filling in missing global information ad hoc inside emitters or hooks
 
-4. dispatch 契約固定
-- `meta.dispatch_mode` を link 単位で整合チェックする。
-- 混在（hybrid）を禁止し、違反時は fail-fast。
+## 6. `type_id` Assignment Rules
 
-5. 連結済み IR 出力
-- backend が直接利用可能な linked `EAST3`（または等価 manifest）を出力する。
+### 6.1 Basics
 
-## 6. `type_id` 割り当て規則
+- built-in/runtime types keep their existing fixed IDs
+- user classes receive IDs from the linker via a deterministic rule
+- the backend only consumes the final linker result
 
-### 6.1 基本
+### 6.2 Determinism (mandatory)
 
-- built-in:
-  - runtime 既存値を固定採用する（例: `NONE=0`, `OBJECT=8`, `USER_BASE=1000`）。
-- user class:
-  - `USER_BASE` 以上を linker が割り当てる。
+- identical input module sets and options must produce identical `type_id_table`
+- order must not depend on filesystem traversal order or hash-map iteration order
 
-### 6.2 決定性（必須）
+### 6.3 Validation
 
-- 同一入力集合・同一オプションなら常に同一 `type_id` になること。
-- 割り当て順は次の優先順を推奨:
-1. 継承依存を満たすトポロジカル順
-2. 同順位は FQCN 辞書順
+- duplicate FQCN assignment is an error
+- missing referenced class IDs in linked output are an error
 
-### 6.3 検証
+## 7. Input / Output Contract
 
-- 未定義基底型、継承循環、同名衝突を検出したら `input_invalid` で停止する。
+### 7.1 Raw `EAST3` Document Requirements
 
-## 7. 入出力契約
+Each raw document accepted by the linker must contain at least:
 
-各 `EAST*` 文書は少なくとも次を持つ。
-
-- `east_stage`: `east1 | east2 | east3`
+- `kind = "Module"`
+- `east_stage = 3`
 - `schema_version`
-- `meta.dispatch_mode`: `native | type_id`
-- `meta.transpiler_version`
-- `meta.input_hash`（任意だが推奨）
+- `meta.dispatch_mode = "native" | "type_id"`
+- `meta.transpiler_version` (recommended)
 
-linker 出力は次のいずれか:
+### 7.2 `link-input.v1`
 
-1. `linked.east3.json`
-- `EAST3` 本体 + `type_table` + `module_table`
+`link-input.v1` is the input manifest used before constructing `LinkedProgram`.
 
-2. `link-manifest.json`
-- 入力 `EAST3` 一覧
-- 確定 `type_id` マップ（`FQCN -> int`）
-- 検証結果メタ（warnings/errors）
+Required top-level keys:
 
-## 8. CLI 仕様（追加方針）
+- `schema`
+  - fixed value: `pytra.link_input.v1`
+- `target`
+- `dispatch_mode`
+  - `native | type_id`
+- `entry_modules`
+- `modules`
 
-最低限次を定義する。
+Optional top-level key:
 
-- `--dump-east1 PATH`
-- `--dump-east2 PATH`
-- `--dump-east3 PATH`
-- `--from-east1 PATH`
-- `--from-east2 PATH`
-- `--from-east3 PATH`
-- `--link-manifest PATH`
-- `--link-only`
+- `options`
+  - target/optimizer-specific object; unknown keys may be preserved transparently
 
-挙動規則:
+Required keys in `modules[*]`:
 
-1. `--from-east3` 指定時は parser/normalize/lower をスキップして link 段から開始。
-2. `--link-only` は backend 生成を行わず、manifest/linked IR のみ出力。
-3. `--object-dispatch-mode` は linker 前段で確定済みであることを要求。
+- `module_id`
+- `path`
+- `source_path`
+- `is_entry`
 
-## 9. 実装モード指針
+Path contract:
 
-### 9.1 日常運用
+- `path` and `source_path` are canonically POSIX-relative to the manifest directory
+- loaders may accept absolute paths for compatibility, but generators output relative paths canonically
 
-- 既定は in-memory linker。
-- 中間ファイルを毎回書かない（速度優先）。
+Validation rules:
 
-### 9.2 デバッグ/CI
+1. `module_id` must be unique
+2. `entry_modules` must be a subset of `modules[*].module_id`
+3. every `path` must point to a raw `EAST3` document with `kind=Module` and `east_stage=3`
+4. raw `meta.dispatch_mode` must match manifest `dispatch_mode`
+5. validator normalizes module order by sorted `module_id` to ensure determinism
 
-- 失敗再現時のみ `--dump-east*` を使う。
-- 回帰テストでは `--from-east3` + `--link-only` を使い、link 規約だけを独立検証できるようにする。
+### 7.3 `link-output.v1`
 
-## 10. エラー契約
+`link-output.v1` is the canonical output manifest of linker / linked-program optimization.
 
-linker 失敗は `input_invalid(kind=..., stage=link, ...)` で統一する。
+Required top-level keys:
 
-推奨 `kind`:
-- `type_cycle`
-- `unknown_base_type`
-- `duplicate_type_symbol`
-- `dispatch_mode_mismatch`
-- `invalid_link_input`
+- `schema`
+  - fixed value: `pytra.link_output.v1`
+- `target`
+- `dispatch_mode`
+- `entry_modules`
+- `modules`
+- `global`
+- `diagnostics`
 
-## 11. 受け入れ基準
+Required keys in `modules[*]`:
 
-1. 同一入力で `type_id` 割り当てが決定的である。
-2. `EAST3` をファイル経由で再開しても、直列変換と同一結果になる。
-3. `dispatch_mode` 混在入力を linker が検出して停止する。
-4. backend は `type_id` を再計算せず、linker 確定値のみ参照する。
+- `module_id`
+- `input`
+- `output`
+- `source_path`
+- `is_entry`
 
-## 12. 関連
+Required keys in `global`:
 
-- `docs/ja/spec/spec-east.md`
-- `docs/ja/spec/spec-type_id.md`
-- `docs/ja/spec/spec-boxing.md`
-- `docs/ja/spec/spec-iterable.md`
+- `type_id_table`
+- `call_graph`
+- `sccs`
+- `non_escape_summary`
+- `container_ownership_hints_v1`
+
+Required keys in `diagnostics`:
+
+- `warnings`
+- `errors`
+
+Rules:
+
+1. `modules[*].output` points to linked-module output
+2. tables under `global` are required even when empty
+3. `link-output.v1` is the canonical source of global tables for backends and `ProgramWriter`
+
+### 7.4 Linked Module Schema
+
+A linked module still uses `kind=Module` and `east_stage=3`.
+The added canonical metadata is `meta.linked_program_v1`.
+
+Required keys in `meta.linked_program_v1`:
+
+- `program_id`
+- `module_id`
+- `entry_modules`
+- `type_id_resolved_v1`
+- `non_escape_summary`
+- `container_ownership_hints_v1`
+
+Supplemental rules:
+
+1. `meta.dispatch_mode` remains required and must not conflict with `meta.linked_program_v1`
+2. function/call-level materialized summaries may reuse existing `meta` contracts
+3. `meta.linked_program_v1` is required in linked modules and forbidden in raw `EAST3`
+
+## 8. CLI / Route Policy
+
+Canonical route:
+
+- `py2x.py`
+  - can output raw `EAST3` modules plus `link-input.json`
+- `eastlink.py`
+  - reads `link-input.json` and writes `link-output.json` plus linked modules
+- `ir2lang.py`
+  - accepts either a raw single `Module` or `link-output.json`
+
+Minimum behavior rules:
+
+1. `--link-only` writes only `link-output.json` plus linked modules
+2. `--object-dispatch-mode` is fixed before raw `EAST3`, and the linker only validates consistency
+3. debug/restart routes also treat `link-input.v1` / `link-output.v1` as canonical
+4. global passes may only use the modules enumerated in `link-input.v1` / `link-output.v1`; they must not extend closure by rereading `source_path` or import statements
+5. `NonEscapeInterproceduralPass` may only use closure information provided by linker/materializer metadata such as `meta.non_escape_import_closure`; if absent, treat it as unresolved fail-closed
+
+## 9. Implementation-Mode Guidance
+
+### 9.1 Daily operation
+
+- use in-memory `LinkedProgramLoader + LinkedProgramOptimizer`
+- do not write raw/linked artifacts on every run
+
+### 9.2 Debug / CI
+
+- materialize raw `EAST3`, `link-input.v1`, `link-output.v1`, and linked modules when reproducibility matters
+
+## 10. Error Contract
+
+Fail with an explicit error when:
+
+- `module_id` is duplicated
+- `dispatch_mode` is inconsistent
+- raw input is not `kind=Module` / `east_stage=3`
+- linked output is missing required global tables
+- unresolved whole-program requirements remain for backend consumption
+
+## 11. Acceptance Criteria
+
+- same input set yields the same `link-output.v1`
+- linked modules remain `east_stage=3`
+- global summaries live in `link-output.v1` and `meta.linked_program_v1`
+- backends can emit from linked modules without rebuilding whole-program state
+- restart/debug flow works through `py2x -> eastlink -> ir2lang`
+
+## 12. Related
+
+- [spec-east.md](./spec-east.md)
+- [spec-east3-optimizer.md](./spec-east3-optimizer.md)
+- [spec-make.md](./spec-make.md)
+- [spec-runtime.md](./spec-runtime.md)
