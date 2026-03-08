@@ -39,7 +39,7 @@
    - [x] [ID: P1-JSONVALUE-DECODE-FIRST-01-S2-01] `JsonValue` / `JsonObj` / `JsonArr` の public surface と `loads_obj` / `loads_arr` の exact API を決める。
    - [x] [ID: P1-JSONVALUE-DECODE-FIRST-01-S2-02] `object` 型を built-in / collection helper へ直接渡したとき compile error とする validator/guard 方針を固定する。
    - [x] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-01] C++ / Rust / Swift / Nim の carrier 方針を具体化し、実装優先順を決める。
-   - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-02] `std/json` runtime と representative decode path を `JsonValue` surface へ寄せる最初の実装 slice を入れる。
+   - [x] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-02] `std/json` runtime と representative decode path を `JsonValue` surface へ寄せる最初の実装 slice を入れる。
    - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-01] dynamic helper debt の guard と representative parity を固定する。
    - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。
 2. [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01] `JsonValue` を使って selfhost/host の JSON artifact 境界を decode-first 契約へ揃える。

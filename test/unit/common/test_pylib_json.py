@@ -49,6 +49,23 @@ class PyLibJsonTest(unittest.TestCase):
         back = json.loads(txt)
         self.assertEqual(back, src)
 
+    def test_loads_obj_decode_helpers(self) -> None:
+        obj = json.loads_obj('{"name":"alpha","meta":{"ok":true},"vals":[1,2.5,false]}')
+        self.assertIsNotNone(obj)
+        assert obj is not None
+        self.assertEqual(obj.get_str("name"), "alpha")
+        meta = obj.get_obj("meta")
+        self.assertIsNotNone(meta)
+        assert meta is not None
+        self.assertEqual(meta.get_bool("ok"), True)
+        vals = obj.get_arr("vals")
+        self.assertIsNotNone(vals)
+        assert vals is not None
+        self.assertEqual(vals, [1, 2.5, False])
+
+    def test_loads_obj_rejects_shape_mismatch(self) -> None:
+        self.assertIsNone(json.loads_obj("[1,2,3]"))
+
     def test_loads_rejects_invalid_inputs(self) -> None:
         bad_cases = [
             "",

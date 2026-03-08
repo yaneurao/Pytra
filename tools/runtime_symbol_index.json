@@ -557,6 +557,11 @@
       "runtime_group": "std",
       "source_py": "src/pytra/std/json.py",
       "symbols": {
+        "JsonObj": {
+          "dispatch": "ctor",
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.JsonObj"
+        },
         "_COMMA_NL": {
           "dispatch": "value",
           "kind": "const",
@@ -622,6 +627,11 @@
           "kind": "function",
           "semantic_tag": "stdlib.fn._is_ws"
         },
+        "_join_strs": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._join_strs"
+        },
         "dumps": {
           "dispatch": "function",
           "kind": "function",
@@ -631,6 +641,11 @@
           "dispatch": "function",
           "kind": "function",
           "semantic_tag": "stdlib.fn.loads"
+        },
+        "loads_obj": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.loads_obj"
         }
       }
     },

@@ -62,6 +62,68 @@ def _hex4(code: int) -> str:
     return p0 + p1 + p2 + p3
 
 
+class JsonObj:
+    raw: dict[str, object]
+
+    def __init__(self, raw: dict[str, object]) -> None:
+        self.raw = raw
+
+    def get_obj(self, key: str) -> JsonObj | None:
+        if key not in self.raw:
+            return None
+        raw = self.raw[key]
+        if isinstance(raw, dict):
+            raw_obj: dict[str, object] = dict(raw)
+            return JsonObj(raw_obj)
+        return None
+
+    def get_arr(self, key: str) -> list[object] | None:
+        if key not in self.raw:
+            return None
+        raw = self.raw[key]
+        if isinstance(raw, list):
+            raw_arr: list[object] = list(raw)
+            return raw_arr
+        return None
+
+    def get_str(self, key: str) -> str | None:
+        if key not in self.raw:
+            return None
+        raw = self.raw[key]
+        if isinstance(raw, str):
+            return raw
+        return None
+
+    def get_int(self, key: str) -> int | None:
+        if key not in self.raw:
+            return None
+        raw = self.raw[key]
+        if isinstance(raw, bool):
+            return None
+        if isinstance(raw, int):
+            raw_i: int = int(raw)
+            return raw_i
+        return None
+
+    def get_float(self, key: str) -> float | None:
+        if key not in self.raw:
+            return None
+        raw = self.raw[key]
+        if isinstance(raw, float):
+            raw_f: float = float(raw)
+            return raw_f
+        return None
+
+    def get_bool(self, key: str) -> bool | None:
+        if key not in self.raw:
+            return None
+        raw = self.raw[key]
+        if isinstance(raw, bool):
+            raw_b: bool = bool(raw)
+            return raw_b
+        return None
+
+
 class _JsonParser:
     text: str
     n: int64
@@ -162,7 +224,7 @@ class _JsonParser:
             ch = self.text[self.i]
             self.i += 1
             if ch == '"':
-                return _EMPTY.join(out_chars)
+                return _join_strs(out_chars, _EMPTY)
             if ch == "\\":
                 if self.i >= self.n:
                     raise ValueError("invalid json string escape")
@@ -242,6 +304,25 @@ def loads(text: str) -> object:
     return _JsonParser(text).parse()
 
 
+def loads_obj(text: str) -> JsonObj | None:
+    value = _JsonParser(text).parse()
+    if isinstance(value, dict):
+        raw_obj: dict[str, object] = dict(value)
+        return JsonObj(raw_obj)
+    return None
+
+
+def _join_strs(parts: list[str], sep: str) -> str:
+    if len(parts) == 0:
+        return ""
+    out: str = parts[0]
+    i = 1
+    while i < len(parts):
+        out = out + sep + parts[i]
+        i += 1
+    return out
+
+
 def _escape_str(s: str, ensure_ascii: bool) -> str:
     out: list[str] = ['"']
     for ch in s:
@@ -265,7 +346,7 @@ def _escape_str(s: str, ensure_ascii: bool) -> str:
         else:
             out.append(ch)
     out.append('"')
-    return _EMPTY.join(out)
+    return _join_strs(out, _EMPTY)
 
 
 def _dump_json_list(
@@ -283,14 +364,14 @@ def _dump_json_list(
         for x in values:
             dumped_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
             dumped.append(dumped_txt)
-        return "[" + item_sep.join(dumped) + "]"
+        return "[" + _join_strs(dumped, item_sep) + "]"
     indent_i: int = int(indent)
     inner: list[str] = []
     for x in values:
         prefix: str = " " * (indent_i * (level + 1))
         value_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1)
         inner.append(prefix + value_txt)
-    return "[\n" + _COMMA_NL.join(inner) + "\n" + (" " * (indent_i * level)) + "]"
+    return "[\n" + _join_strs(inner, _COMMA_NL) + "\n" + (" " * (indent_i * level)) + "]"
 
 
 def _dump_json_dict(
@@ -309,7 +390,7 @@ def _dump_json_dict(
             k_txt: str = _escape_str(str(k), ensure_ascii)
             v_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level)
             parts.append(k_txt + key_sep + v_txt)
-        return "{" + item_sep.join(parts) + "}"
+        return "{" + _join_strs(parts, item_sep) + "}"
     indent_i: int = int(indent)
     inner: list[str] = []
     for k, x in values.items():
@@ -317,7 +398,7 @@ def _dump_json_dict(
         k_txt: str = _escape_str(str(k), ensure_ascii)
         v_txt: str = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1)
         inner.append(prefix + k_txt + key_sep + v_txt)
-    return "{\n" + _COMMA_NL.join(inner) + "\n" + (" " * (indent_i * level)) + "}"
+    return "{\n" + _join_strs(inner, _COMMA_NL) + "\n" + (" " * (indent_i * level)) + "}"
 
 
 def _dump_json_value(

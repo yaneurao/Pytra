@@ -12,6 +12,18 @@
 
 namespace pytra::std::json {
 
+    struct JsonObj {
+        dict<str, object> raw;
+
+        JsonObj(const dict<str, object>& raw);
+        ::std::optional<JsonObj> get_obj(const str& key);
+        ::std::optional<object> get_arr(const str& key);
+        ::std::optional<str> get_str(const str& key);
+        ::std::optional<int64> get_int(const str& key);
+        ::std::optional<float64> get_float(const str& key);
+        ::std::optional<bool> get_bool(const str& key);
+    };
+
     struct _JsonParser {
         str text;
         int64 n;
@@ -37,6 +49,8 @@ int64 _hex_value(const str& ch);
 int64 _int_from_hex4(const str& hx);
 str _hex4(int64 code);
 object loads(const str& text);
+::std::optional<JsonObj> loads_obj(const str& text);
+str _join_strs(const rc<list<str>>& parts, const str& sep);
 str _escape_str(const str& s, bool ensure_ascii);
 str _dump_json_list(const list<object>& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level);
 str _dump_json_dict(const dict<str, object>& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level);
