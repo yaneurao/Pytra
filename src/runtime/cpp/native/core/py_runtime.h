@@ -1671,30 +1671,6 @@ static inline bool operator!=(const object& lhs, const ::std::nullopt_t&) { retu
 static inline bool operator==(const ::std::nullopt_t&, const object& rhs) { return !rhs; }
 static inline bool operator!=(const ::std::nullopt_t&, const object& rhs) { return !!rhs; }
 
-static inline bool operator==(const object& lhs, const char* rhs) {
-    return obj_to_str(lhs) == str(rhs);
-}
-
-static inline bool operator==(const char* lhs, const object& rhs) {
-    return str(lhs) == obj_to_str(rhs);
-}
-
-static inline bool operator==(const object& lhs, const str& rhs) {
-    return obj_to_str(lhs) == rhs;
-}
-
-static inline bool operator==(const str& lhs, const object& rhs) {
-    return lhs == obj_to_str(rhs);
-}
-
-static inline bool operator!=(const object& lhs, const char* rhs) {
-    return !(lhs == rhs);
-}
-
-static inline bool operator!=(const char* lhs, const object& rhs) {
-    return !(lhs == rhs);
-}
-
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
