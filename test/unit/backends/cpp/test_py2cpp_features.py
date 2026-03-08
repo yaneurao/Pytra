@@ -3276,6 +3276,63 @@ if __name__ == "__main__":
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertIn("1", rn.stdout)
 
+    def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
+        src_main = """def main() -> None:
+    xs: object = [1, 2, 3]
+    total: int = 0
+    for x in xs:
+        total = total + int(x)
+    print(total)
+
+if __name__ == "__main__":
+    main()
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            out_dir = root / "out"
+            main_py = root / "main.py"
+            exe = out_dir / "app.out"
+            main_py.write_text(src_main, encoding="utf-8")
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile multi-file helper artifact sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+            helper_modules = [
+                item for item in manifest.get("modules", [])
+                if isinstance(item, dict)
+                and item.get("kind") == "helper"
+                and item.get("helper_id") == "cpp.object_iter"
+            ]
+            self.assertEqual(len(helper_modules), 1)
+            helper = helper_modules[0]
+            helper_label = helper.get("label")
+            self.assertIsInstance(helper_label, str)
+            self.assertTrue((out_dir / "include" / f"{helper_label}.h").exists())
+            self.assertTrue((out_dir / "src" / f"{helper_label}.cpp").exists())
+            main_cpp = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
+            self.assertIn(f'#include "{helper_label}.h"', main_cpp)
+            self.assertIn("pytra_multi_helper::object_iter_or_raise(xs)", main_cpp)
+            self.assertIn("pytra_multi_helper::object_iter_next_or_stop(__iter_obj_", main_cpp)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build multi-file helper artifact sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run multi-file helper artifact sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("6", rn.stdout)
+
     def test_cli_reports_input_invalid_category(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             bad_json = Path(tmpdir) / "bad.json"

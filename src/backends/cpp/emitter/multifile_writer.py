@@ -72,6 +72,7 @@ def write_multi_file_cpp(
 
     type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
     rendered_modules: list[dict[str, Any]] = []
+    seen_helper_module_ids: set[str] = set()
 
     def _write_debug_text(path_txt: str, text: str) -> None:
         if path_txt == "":
@@ -140,9 +141,11 @@ def write_multi_file_cpp(
             "pytra_mod_" + label,
             emit_main if is_entry else False,
         )
+        type_emitter.enable_helper_artifact_lane = True
         if cpp_list_model in {"value", "pyobj"}:
             type_emitter.cpp_list_model = cpp_list_model
         cpp_txt = type_emitter.transpile()
+        helper_artifacts = type_emitter.finalize_helper_artifacts()
 
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
         cpp_txt = replace_first(
@@ -210,6 +213,31 @@ def write_multi_file_cpp(
                 "is_entry": is_entry,
             }
         )
+        for helper in helper_artifacts:
+            if not isinstance(helper, dict):
+                continue
+            helper_module_id = dict_any_get_str(helper, "module_id")
+            if helper_module_id == "" or helper_module_id in seen_helper_module_ids:
+                continue
+            helper_meta = dict_any_get_dict(helper, "metadata")
+            helper_label = dict_any_get_str(helper, "label")
+            helper_header = dict_any_get_str(helper_meta, "header_text")
+            helper_source = dict_any_get_str(helper_meta, "source_text")
+            if helper_label == "" or helper_header == "" or helper_source == "":
+                continue
+            seen_helper_module_ids.add(helper_module_id)
+            rendered_modules.append(
+                {
+                    "module": helper_module_id,
+                    "kind": dict_any_get_str(helper, "kind", "helper"),
+                    "helper_id": dict_any_get_str(helper_meta, "helper_id"),
+                    "owner_module_id": dict_any_get_str(helper_meta, "owner_module_id"),
+                    "label": helper_label,
+                    "header_text": helper_header,
+                    "source_text": helper_source,
+                    "is_entry": False,
+                }
+            )
     return write_cpp_rendered_program(
         output_dir,
         rendered_modules,

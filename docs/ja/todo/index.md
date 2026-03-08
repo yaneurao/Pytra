@@ -47,6 +47,7 @@
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-02] `CodeEmitter` に helper artifact registry を追加し、host/static backend registry の `collect_program_modules()` と `py2x/ir2lang` が `emit_module()` の `helper_modules` を flatten して writer へ渡せることを CLI regression で固定した。
 - [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-01] C++ proof helper を synthetic helper module として materialize する。
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-01] `CppEmitter` に helper artifact lane を追加し、object iteration inline lambda を `helper_id=cpp.object_iter` の synthetic helper module として登録、multi-file 向けに `#include "<owner>_cpp_object_iter_helper.h"` と `pytra_multi_helper::object_iter_*` 呼び出しへ切り替えられることを direct emitter test で固定した。
-- [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-02] C++ `ProgramWriter` で helper を別ファイル化し、fixture/sample parity を確認する。
+- [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-02] C++ `ProgramWriter` で helper を別ファイル化し、fixture/sample parity を確認する。
+- 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-02] `multifile_writer` が `CppEmitter` の helper artifact を rendered module として `ProgramWriter` へ流し、manifest に `kind=helper/helper_id/owner_module_id` を載せたまま `<owner>_cpp_object_iter_helper.{h,cpp}` を出力できるようにした。multi-file integration test と `runtime_parity_check --targets cpp --case-root fixture/sample` で `3/3`, `18/18` green を確認した。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S5-01] representative single-file backend で helper fold 経路を確認する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S5-02] docs / guard / archive を更新する。
