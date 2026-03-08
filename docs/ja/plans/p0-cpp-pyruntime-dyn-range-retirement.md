@@ -36,8 +36,8 @@
 ## 2. タスク分解
 
 - [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01] `py_dyn_range_*` compat wrapper を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S1-01] `py_dyn_range` callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S1-02] typed iterable への置換順序を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S1-01] `py_dyn_range` callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S1-02] typed iterable への置換順序を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S2-01] representative callsite を置換する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S2-02] `py_dyn_range_*` を削除または最小化する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S3-01] guard / parity / docs を更新する。
@@ -45,3 +45,5 @@
 ## 3. 決定ログ
 
 - 2026-03-08: dynamic range wrapper は typed iterable の代用品としてのみ残っている debt とみなす。
+- 2026-03-08: checked-in `py_dyn_range(...)` callsite は (a) generated runtime helper `contains/json/pathlib/re/png/gif/assertions`, (b) `CppEmitter.stmt` の object for-loop lowering, (c) runtime smoke / bridge regression の 3 群に分かれることを確認した。`py_runtime.h` 自身の `py_dyn_range(const object&)` / template wrapper は別扱いで、まず callsite 側を typed iterable へ寄せる。
+- 2026-03-08: 置換順序は `generated built_in helper (contains/json) -> generated std/utils helper (pathlib/re/png/gif/assertions) -> emitter stmt runtime-for lowering -> runtime smoke/inventory` とし、非 iterable fail-fast の確認は最後まで `py_dyn_range` 側へ残してよいと固定した。
