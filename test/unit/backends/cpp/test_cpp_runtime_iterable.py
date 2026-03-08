@@ -289,12 +289,40 @@ int main() {
         self.assertNotIn("static inline D py_dict_get_default(const dict<str, ::std::any>& d, const char* key, const D& defval)", runtime_header)
         self.assertNotIn("static inline D py_dict_get_default(const ::std::any& obj, const char* key, const D& defval)", runtime_header)
         self.assertNotIn("static inline str py_dict_get_default(const ::std::any& obj, const char* key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get(const object& obj, const char* key)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_maybe(const object& obj, const char* key)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_maybe(const object& obj, const str& key)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const object& obj, const char* key, const object& defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const object& obj, const char* key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const object& defval)", runtime_header)
+        self.assertNotIn("static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline bool dict_get_bool(const object& obj, const char* key, bool defval)", runtime_header)
+        self.assertNotIn("static inline bool dict_get_bool(const ::std::optional<dict<str, object>>& d, const char* key, bool defval)", runtime_header)
+        self.assertNotIn("static inline str dict_get_str(const object& obj, const char* key, const str& defval)", runtime_header)
+        self.assertNotIn("static inline str dict_get_str(const ::std::optional<dict<str, object>>& d, const char* key, const str& defval)", runtime_header)
+        self.assertNotIn("static inline int64 dict_get_int(const object& obj, const char* key, int64 defval)", runtime_header)
+        self.assertNotIn("static inline int64 dict_get_int(const ::std::optional<dict<str, object>>& d, const char* key, int64 defval)", runtime_header)
+        self.assertNotIn("static inline float64 dict_get_float(const object& obj, const char* key, float64 defval)", runtime_header)
+        self.assertNotIn("static inline float64 dict_get_float(const ::std::optional<dict<str, object>>& d, const char* key, float64 defval)", runtime_header)
+        self.assertNotIn(
+            "static inline list<object> dict_get_list(\n    const object& obj, const char* key, const list<object>& defval = list<object>{})",
+            runtime_header,
+        )
+        self.assertNotIn(
+            "static inline list<object> dict_get_list(\n    const ::std::optional<dict<str, object>>& d, const char* key, const list<object>& defval = list<object>{})",
+            runtime_header,
+        )
         self.assertNotIn("static inline list<::std::tuple<object, object>> zip(const object& lhs, const object& rhs)", runtime_header)
         self.assertNotIn("static inline object sum(const object& values)", runtime_header)
         self.assertNotIn("static inline list<str> py_dict_keys(const ::std::optional<dict<str, object>>& d)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_items(const ::std::optional<dict<str, object>>& d)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_values(const ::std::optional<dict<str, object>>& d)", runtime_header)
         self.assertNotIn("static inline object sum(const list<object>& values)", runtime_header)
+        self.assertNotIn("static inline object dict_get_node(const object& obj, const char* key, const object& defval = object{})", runtime_header)
+        self.assertNotIn(
+            "static inline object dict_get_node(\n    const ::std::optional<dict<str, object>>& d, const char* key, const object& defval = object{})",
+            runtime_header,
+        )
         self.assertNotIn("static inline bool operator<(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline bool operator>(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline bool operator<=(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)

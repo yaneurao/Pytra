@@ -1528,13 +1528,6 @@ static inline object py_dict_get(const dict<str, object>& d, const ::std::string
     return py_dict_get(d, key.c_str());
 }
 
-static inline object py_dict_get(const object& obj, const char* key) {
-    if (const auto* p = obj_to_dict_ptr(obj)) {
-        return py_dict_get(*p, key);
-    }
-    throw ::std::runtime_error("py_dict_get on non-dict object");
-}
-
 // `dict.get(key)`（default 省略）相当。未キー時は Python の `None` 相当（object{}）を返す。
 template <class K, class V>
 static inline object py_dict_get_maybe(const dict<K, V>& d, const K& key) {
@@ -1586,20 +1579,6 @@ static inline object py_dict_get_maybe(const ::std::optional<dict<str, V>>& d, c
         return object{};
     }
     return py_dict_get_maybe(*d, key);
-}
-
-static inline object py_dict_get_maybe(const object& obj, const char* key) {
-    if (const auto* p = obj_to_dict_ptr(obj)) {
-        return py_dict_get_maybe(*p, key);
-    }
-    return object{};
-}
-
-static inline object py_dict_get_maybe(const object& obj, const str& key) {
-    if (const auto* p = obj_to_dict_ptr(obj)) {
-        return py_dict_get_maybe(*p, key);
-    }
-    return object{};
 }
 
 template <class K, class V>
@@ -1733,61 +1712,6 @@ static inline object py_dict_get_default(const dict<str, object>& d, const str& 
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
-static inline object py_dict_get_default(const object& obj, const char* key, const object& defval) {
-    if (const auto* p = obj_to_dict_ptr(obj)) {
-        return py_dict_get_default(*p, key, defval);
-    }
-    return defval;
-}
-
-static inline object py_dict_get_default(const object& obj, const char* key, const char* defval) {
-    if (const auto* p = obj_to_dict_ptr(obj)) {
-        return py_dict_get_default(*p, key, defval);
-    }
-    return make_object(str(defval));
-}
-
-static inline object py_dict_get_default(const object& obj, const str& key, const object& defval) {
-    return py_dict_get_default(obj, key.c_str(), defval);
-}
-
-static inline object py_dict_get_default(const object& obj, const str& key, const char* defval) {
-    return py_dict_get_default(obj, key.c_str(), defval);
-}
-
-static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const object& defval) {
-    if (!d.has_value()) {
-        return defval;
-    }
-    return py_dict_get_default(*d, key, defval);
-}
-
-static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const char* defval) {
-    if (!d.has_value()) {
-        return make_object(str(defval));
-    }
-    return py_dict_get_default(*d, key, defval);
-}
-
-static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const char* key, const str& defval) {
-    if (!d.has_value()) {
-        return make_object(defval);
-    }
-    return py_dict_get_default(*d, key, defval);
-}
-
-static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const object& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const char* defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
-static inline object py_dict_get_default(const ::std::optional<dict<str, object>>& d, const str& key, const str& defval) {
-    return py_dict_get_default(d, key.c_str(), defval);
-}
-
 template <class D>
 static inline D py_dict_get_default(const dict<str, object>& d, const char* key, const D& defval) {
     auto it = d.find(str(key));
@@ -1814,61 +1738,22 @@ static inline D py_dict_get_default(const dict<str, object>& d, const ::std::str
     return py_dict_get_default(d, key.c_str(), defval);
 }
 
-static inline bool dict_get_bool(const object& obj, const char* key, bool defval) {
-    return py_to_bool(py_dict_get_default(obj, key, make_object(defval)));
-}
-
 static inline bool dict_get_bool(const dict<str, object>& d, const char* key, bool defval) {
     return py_to_bool(py_dict_get_default(d, key, make_object(defval)));
-}
-
-static inline bool dict_get_bool(const ::std::optional<dict<str, object>>& d, const char* key, bool defval) {
-    return py_to_bool(py_dict_get_default(d, key, make_object(defval)));
-}
-
-static inline str dict_get_str(const object& obj, const char* key, const str& defval) {
-    return py_to_string(py_dict_get_default(obj, key, make_object(defval)));
 }
 
 static inline str dict_get_str(const dict<str, object>& d, const char* key, const str& defval) {
     return py_to_string(py_dict_get_default(d, key, make_object(defval)));
 }
 
-static inline str dict_get_str(const ::std::optional<dict<str, object>>& d, const char* key, const str& defval) {
-    return py_to_string(py_dict_get_default(d, key, make_object(defval)));
-}
-
 // object 系 dict.get で数値既定値を使うとき、object 経由の戻り値を
 // 直接数値へ落として py_dict_get_default 直呼び出しを避ける。
-static inline int64 dict_get_int(const object& obj, const char* key, int64 defval) {
-    return py_to_int64(py_dict_get_default(obj, key, make_object(defval)));
-}
-
 static inline int64 dict_get_int(const dict<str, object>& d, const char* key, int64 defval) {
     return py_to_int64(py_dict_get_default(d, key, make_object(defval)));
 }
 
-static inline int64 dict_get_int(const ::std::optional<dict<str, object>>& d, const char* key, int64 defval) {
-    return py_to_int64(py_dict_get_default(d, key, make_object(defval)));
-}
-
-static inline float64 dict_get_float(const object& obj, const char* key, float64 defval) {
-    return py_to_float64(py_dict_get_default(obj, key, make_object(defval)));
-}
-
 static inline float64 dict_get_float(const dict<str, object>& d, const char* key, float64 defval) {
     return py_to_float64(py_dict_get_default(d, key, make_object(defval)));
-}
-
-static inline float64 dict_get_float(const ::std::optional<dict<str, object>>& d, const char* key, float64 defval) {
-    return py_to_float64(py_dict_get_default(d, key, make_object(defval)));
-}
-
-static inline list<object> dict_get_list(
-    const object& obj, const char* key, const list<object>& defval = list<object>{}) {
-    object got = py_dict_get_default(obj, key, make_object(defval));
-    if (const auto* p = obj_to_list_ptr(got)) return *p;
-    return defval;
 }
 
 static inline list<object> dict_get_list(
@@ -1876,22 +1761,6 @@ static inline list<object> dict_get_list(
     object got = py_dict_get_default(d, key, make_object(defval));
     if (const auto* p = obj_to_list_ptr(got)) return *p;
     return defval;
-}
-
-static inline list<object> dict_get_list(
-    const ::std::optional<dict<str, object>>& d, const char* key, const list<object>& defval = list<object>{}) {
-    object got = py_dict_get_default(d, key, make_object(defval));
-    if (const auto* p = obj_to_list_ptr(got)) return *p;
-    return defval;
-}
-
-static inline object dict_get_node(const object& obj, const char* key, const object& defval = object{}) {
-    return py_dict_get_default(obj, key, defval);
-}
-
-static inline object dict_get_node(
-    const ::std::optional<dict<str, object>>& d, const char* key, const object& defval = object{}) {
-    return py_dict_get_default(d, key, defval);
 }
 
 template <class D>
