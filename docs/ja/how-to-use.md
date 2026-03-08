@@ -195,6 +195,7 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
 
 - `toolchain_missing` は backend bug ではなく、parity 実行環境がないだけの baseline として扱います。
 - `tools/run_local_ci.py` には `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` が組み込まれているため、local CI を通せば non-C++ backend の smoke/transpile gate も同時に監視できます。
+- 同じく `python3 tools/check_jsonvalue_decode_boundaries.py` も組み込まれているため、`py2x` / `ir2lang` / `east_io` / `toolchain/link/*` の JSON artifact 境界で raw `json.loads(...)` が再侵入した場合は local CI で fail します。
 
 ## Emitter変更時の必須ガード（Stop-Ship）
 

@@ -32,19 +32,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01] `JsonValue` を使って selfhost/host の JSON artifact 境界を decode-first 契約へ揃える。
-   文脈: [p2-jsonvalue-selfhost-decode-alignment.md](../plans/p2-jsonvalue-selfhost-decode-alignment.md)
-   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-01] selfhost/host の JSON loader で `dict[str, object]` / `list[object]` を直接前提にしている箇所を棚卸しする。
-     進捗メモ: `py2x` / `ir2lang` / `east_io` / `toolchain/link/*` が raw JSON artifact 境界で、`py2x-selfhost.py` 本体は間接依存だけを持つと整理した。
-   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-02] docs に「selfhost は `match` ではなく decode helper ベースで `JsonValue` を使う」契約を固定する。
-     進捗メモ: `spec-dev` に selfhost/host JSON artifact loader も `loads_obj` / `JsonValue.as_*` / `JsonObj.get_*` を正本とする契約を追記した。
-   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-01] `pytra.std.json` に selfhost-ready な `loads_obj` / `loads_arr` / `JsonObj.get_*` 最小APIを定義する。
-     進捗メモ: `loads_arr`, `JsonValue.as_*`, `JsonObj.get/get_*`, `JsonArr.get/get_*` を追加し、checked-in C++ runtime と forward decl 回帰を同期した。
-   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-02] `program_loader` / `program_validator` の JSON decode を `JsonValue` helper ベースへ移行する。
-     進捗メモ: `link` 系 loader/validator は `loads_obj` / `JsonObj.get_*` を内部 decode の正本にしつつ、外向け return contract は raw dict のまま維持した。
-   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-01] `py2x.py` / `py2x-selfhost.py` / `ir2lang.py` の JSON artifact 境界を `JsonValue` decode lane へ揃える。
-     進捗メモ: `py2x` の link-input 判定、`ir2lang` の wrapped/root unwrap、`east_io` の `.json` 入口を `loads_obj` / `JsonObj.get_*` ベースへ揃え、`py2x-selfhost.py` 本体は indirect 依存だけを維持した。
-   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-02] representative selfhost / linked-program / CLI tests を `JsonValue` 経路で green にする。
-     進捗メモ: `test_py2x_cli` / `test_ir2lang_cli` / `test_pylib_json` / `test/unit/link/test_*.py` と `check_noncpp_east3_contract --skip-transpile` を `JsonValue` 経路で通した。
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S4-01] raw object tree 依存の再侵入を防ぐ guard / regression を追加する。
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。
+- なし

@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-08 / P2-JSONVALUE-SELFHOST-ALIGN-01](../plans/archive/20260308-p2-jsonvalue-selfhost-decode-alignment.md)
 - [2026-03-08 / P1-JSONVALUE-DECODE-FIRST-01](../plans/archive/20260308-p1-jsonvalue-decode-first-contract.md)
 - [2026-03-08 / P2-LINKED-RUNTIME-TEMPLATE-01](../plans/archive/20260308-p2-linked-runtime-helper-template-v1.md)
 - [2026-03-08 / P0-PYTRACLI-CPP-MAXOPT-LINKED-01](../plans/archive/20260308-p0-pytra-cli-cpp-maxopt-linked-build.md)
@@ -47,7 +48,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（10 セクション）
+- [2026-03-08](20260308.md)（11 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
