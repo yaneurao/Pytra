@@ -92,8 +92,8 @@
 ## 4. タスク分解
 
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01] `selfhost/py2cpp_stage2.out` を使った full sample parity を green にする。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-01] stage2 full sample parity の canonical command を固定する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-02] `verify_selfhost_end_to_end.py` 再利用か wrapper 新設かを決定する。
+- [x] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-01] stage2 full sample parity の canonical command を固定する。
+- [x] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-02] `verify_selfhost_end_to_end.py` 再利用か wrapper 新設かを決定する。
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S2-01] stage2 binary で sample 全件 parity を実行し、failure を分類する。
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S2-02] failure 一覧と再現コマンドを決定ログへ固定する。
 - [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S3-01] stage2 selfhost 固有 blocker を修正する。
@@ -104,3 +104,4 @@
 ## 5. 決定ログ
 
 - 2026-03-09: 起票時点では representative selfhost checks（direct compile / representative e2e / representative strict diff / stage2 strict diff）は green だが、`selfhost/py2cpp_stage2.out` を使った full sample parity の実行記録は無い。したがって本計画は stage2 binary に限定した full corpus parity を対象にする。
+- 2026-03-09: canonical command は `python3 tools/check_selfhost_stage2_sample_parity.py [--skip-build]` とし、実体は `verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out --cases sample/py/*.py` を呼ぶ thin wrapper で統一する。full sample 列挙と stage2 binary 固定だけを wrapper 側で持ち、e2e 実装は重複させない。
