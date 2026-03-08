@@ -124,20 +124,7 @@ int main() {
     auto typed_from_obj = py_to<rc<list<int64>>>(typed_obj);
     assert(py_len(typed_from_obj) == 3);
     assert(py_at(typed_from_obj, 1) == 8);
-    ::std::any typed_any = typed_obj;
-    auto typed_from_any = py_to<rc<list<int64>>>(typed_any);
-    assert(py_len(typed_from_any) == 3);
-    assert(py_at(typed_from_any, 2) == 9);
     assert(py_is_list(typed_iter));
-
-    ::std::any selfhost_name = make_object(str(""));
-    assert(selfhost_name == "");
-    assert(!(selfhost_name != ""));
-    ::std::any selfhost_pos = make_object(int64(2));
-    assert(selfhost_pos > 0);
-    assert(selfhost_pos >= 0);
-    assert(selfhost_pos < 3);
-    assert(0 < selfhost_pos);
 
     object nested_obj = make_object(list<list<int64>>{list<int64>{1, 2}, list<int64>{3, 4}});
     list<list<int64>> nested_plain = py_to<list<list<int64>>>(nested_obj);
@@ -322,18 +309,20 @@ int main() {
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
         self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
-        self.assertIn("static inline bool operator==(const ::std::any& lhs, const char* rhs)", runtime_header)
-        self.assertIn("static inline bool operator!=(const ::std::any& lhs, const char* rhs)", runtime_header)
-        self.assertIn("static inline bool operator<(const ::std::any& lhs, T rhs)", runtime_header)
-        self.assertIn("static inline bool operator>(const ::std::any& lhs, T rhs)", runtime_header)
-        self.assertIn("namespace std {", runtime_header)
-        self.assertIn("static inline list<::std::any>::iterator begin(::std::any& v)", runtime_header)
-        self.assertIn("static inline list<::std::any>::iterator end(::std::any& v)", runtime_header)
-        self.assertIn("static inline ::list<::std::any>::iterator begin(::std::any& v)", runtime_header)
-        self.assertIn("static inline ::list<::std::any>::const_iterator end(const ::std::any& v)", runtime_header)
+        self.assertNotIn("static inline bool operator==(const ::std::any& lhs, const char* rhs)", runtime_header)
+        self.assertNotIn("static inline bool operator!=(const ::std::any& lhs, const char* rhs)", runtime_header)
+        self.assertNotIn("static inline bool operator<(const ::std::any& lhs, T rhs)", runtime_header)
+        self.assertNotIn("static inline bool operator>(const ::std::any& lhs, T rhs)", runtime_header)
+        self.assertNotIn("namespace std {", runtime_header)
+        self.assertNotIn("static inline list<::std::any>::iterator begin(::std::any& v)", runtime_header)
+        self.assertNotIn("static inline list<::std::any>::iterator end(::std::any& v)", runtime_header)
+        self.assertNotIn("static inline ::list<::std::any>::iterator begin(::std::any& v)", runtime_header)
+        self.assertNotIn("static inline ::list<::std::any>::const_iterator end(const ::std::any& v)", runtime_header)
         self.assertIn("static inline bool py_contains(const list<T>& values, const Q& key)", contains_header)
         self.assertIn("static inline list<T> py_reversed(const list<T>& values)", iter_ops_header)
         self.assertIn("static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values)", iter_ops_header)
+        self.assertNotIn("static inline list<::std::any> py_reversed(const ::std::any& values)", iter_ops_header)
+        self.assertNotIn("static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values)", iter_ops_header)
         self.assertIn("static inline list<T> py_repeat(const list<T>& v, int64 n)", sequence_header)
         self.assertIn("str py_join(const str& sep, const list<str>& parts);", string_ops_header)
         self.assertIn("list<str> py_split(const str& s, const str& sep, int64 maxsplit);", string_ops_header)

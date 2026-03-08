@@ -96,21 +96,8 @@ int main() {
     assert(py_to<int64>(py_at(tuple_elem_obj, int64(0))) == 7);
     assert(py_to<int64>(py_at(tuple_elem_obj, int64(1))) == 8);
 
-    ::std::any any_num = str("21");
-    assert(py_to_int64(any_num) == 21);
-    assert(py_to<int64>(any_num) == 21);
-
-    ::std::any any_bad = str("oops");
-    assert(py_to_int64(any_bad) == 0);
-    assert(py_to<int64>(any_bad) == 0);
-
-    ::std::any any_obj = as_str_num;
-    assert(py_to_int64(any_obj) == 0);
-    assert(py_to<int64>(any_obj) == 0);
-    assert(py_to_int64_base(any_obj, 10) == 12);
-
     assert(py_to_int64_base(str("10"), 16) == 16);
-    assert(py_to_int64_base(any_num, 10) == 21);
+    assert(py_to_int64_base(as_str_num, 10) == 12);
 
     bool thrown = false;
     try {

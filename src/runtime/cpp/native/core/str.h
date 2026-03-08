@@ -20,33 +20,6 @@ public:
     str(::std::size_t count, char ch) : data_(count, ch) {}
     str(char c) : data_(1, c) {}
     str(const object& v) : data_(obj_to_str(v).std()) {}
-    str(const ::std::any& v) {
-        if (const auto* p = ::std::any_cast<str>(&v)) {
-            data_ = p->std();
-        } else if (const auto* p = ::std::any_cast<::std::string>(&v)) {
-            data_ = *p;
-        } else if (const auto* p = ::std::any_cast<const char*>(&v)) {
-            data_ = (*p == nullptr ? "" : *p);
-        } else if (const auto* p = ::std::any_cast<char>(&v)) {
-            data_ = ::std::string(1, *p);
-        } else if (const auto* p = ::std::any_cast<bool>(&v)) {
-            data_ = *p ? "True" : "False";
-        } else if (const auto* p = ::std::any_cast<int64>(&v)) {
-            data_ = ::std::to_string(*p);
-        } else if (const auto* p = ::std::any_cast<int32>(&v)) {
-            data_ = ::std::to_string(*p);
-        } else if (const auto* p = ::std::any_cast<uint64>(&v)) {
-            data_ = ::std::to_string(*p);
-        } else if (const auto* p = ::std::any_cast<uint32>(&v)) {
-            data_ = ::std::to_string(*p);
-        } else if (const auto* p = ::std::any_cast<float64>(&v)) {
-            data_ = ::std::to_string(*p);
-        } else if (const auto* p = ::std::any_cast<float32>(&v)) {
-            data_ = ::std::to_string(*p);
-        } else {
-            data_.clear();
-        }
-    }
 
     str& operator=(const char* s) {
         data_ = (s == nullptr ? "" : s);

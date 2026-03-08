@@ -24,11 +24,6 @@ static inline list<object> py_reversed(const object& values) {
     return list<object>(py_reversed_object(values));
 }
 
-static inline list<::std::any> py_reversed(const ::std::any& values) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_reversed(*p);
-    return {};
-}
-
 template <class T>
 static inline list<::std::tuple<int64, T>> py_enumerate_list_copy(const list<T>& values, int64 start) {
     list<::std::tuple<int64, T>> out;
@@ -100,18 +95,6 @@ static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& va
 template <class T>
 static inline list<::std::tuple<int64, T>> py_enumerate_list_as(const object& values) {
     return py_enumerate_list_as<T>(values, 0);
-}
-
-static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p);
-    if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p);
-    return {};
-}
-
-static inline list<::std::tuple<int64, ::std::any>> py_enumerate(const ::std::any& values, int64 start) {
-    if (const auto* p = ::std::any_cast<list<::std::any>>(&values)) return py_enumerate(*p, start);
-    if (const auto* p = ::std::any_cast<str>(&values)) return py_enumerate(*p, start);
-    return {};
 }
 
 #endif  // PYTRA_NATIVE_BUILT_IN_ITER_OPS_H
