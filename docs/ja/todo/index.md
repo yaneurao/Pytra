@@ -34,9 +34,9 @@
 
 - [ ] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01] `py_runtime.h` の object dynamic helper 第1波を撤去し、compile error 契約と runtime surface を一致させる。
   - 文脈: [p0-cpp-dynamic-helper-first-wave-retirement.md](../plans/p0-cpp-dynamic-helper-first-wave-retirement.md)
-  - 進捗メモ: object overload 5 件の撤去 tranche を追加した。
-  - [ ] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-01] object overload の callsite / guard / representative test を棚卸しし、第1波の削除対象を固定する。
-  - [ ] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-02] docs / 決定ログに「第1波は object overload のみ、`list<object>` と `optional<dict<str, object>>` は別 tranche」と明記する。
+  - 進捗メモ: callsite は inventory test だけと確認し、第1波の削除範囲を object overload 5 件に固定した。
+  - [x] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-01] object overload の callsite / guard / representative test を棚卸しし、第1波の削除対象を固定する。
+  - [x] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S1-02] docs / 決定ログに「第1波は object overload のみ、`list<object>` と `optional<dict<str, object>>` は別 tranche」と明記する。
   - [ ] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S2-01] `sum(const object&)` と `zip(const object&, const object&)` を `py_runtime.h` から削除し、representative test を更新する。
   - [ ] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S2-02] `py_dict_keys/items/values(const object&)` を `py_runtime.h` から削除し、typed emitter path と regression を更新する。
   - [ ] [ID: P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01-S3-01] object dynamic helper の再侵入防止 guard / inventory test を追加または強化する。
