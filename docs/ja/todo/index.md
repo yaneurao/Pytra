@@ -32,16 +32,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01] `py_runtime.h` の `py_dict_key_cast` を退役する。
-  - 文脈: [p0-cpp-pyruntime-dict-key-cast-retirement.md](../plans/p0-cpp-pyruntime-dict-key-cast-retirement.md)
-  - 進捗メモ: dict key の暗黙 cast policy を helper から除去する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S1-01] `py_dict_key_cast` の checked-in callsite を棚卸しする。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S1-02] key normalization の新ルールと non-goal を決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S2-01] representative callsite を explicit key construction へ置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S2-02] regression / inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S3-01] `py_dict_key_cast` を削除する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-DICTKEYCAST-01-S3-02] parity / docs / archive を更新して閉じる。
-
 - [ ] [ID: P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01] `py_runtime.h` の typed-list-from-object helper を縮退する。
   - 文脈: [p0-cpp-pyruntime-typed-list-from-object-retirement.md](../plans/p0-cpp-pyruntime-typed-list-from-object-retirement.md)
   - 進捗メモ: `object -> typed list` convenience を JSON / selfhost の nominal lane へ寄せる。

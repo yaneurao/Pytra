@@ -1081,33 +1081,6 @@ static inline rc<list<T>> obj_to_rc_list_or_raise(const object& value, const cha
     throw ::std::runtime_error(::std::string(label) + ": object is not list");
 }
 
-template <class K>
-static inline K py_dict_key_cast(const object& key) {
-    return py_to<K>(key);
-}
-
-template <class K>
-static inline K py_dict_key_cast(const char* key) {
-    if constexpr (::std::is_same_v<K, str>) {
-        return str(key);
-    } else if constexpr (::std::is_convertible_v<const char*, K>) {
-        return static_cast<K>(key);
-    } else {
-        return py_to<K>(make_object(str(key)));
-    }
-}
-
-template <class K, class Q>
-static inline K py_dict_key_cast(const Q& key) {
-    if constexpr (::std::is_same_v<K, Q>) {
-        return key;
-    } else if constexpr (::std::is_convertible_v<Q, K>) {
-        return static_cast<K>(key);
-    } else {
-        return K(key);
-    }
-}
-
 #include "runtime/cpp/native/built_in/contains.h"
 
 template <class V>
@@ -1148,7 +1121,7 @@ static inline V py_dict_value_cast(const U& value) {
 
 template <class K, class V, class Q>
 static inline V& py_at(dict<K, V>& d, const Q& key) {
-    const K k = py_dict_key_cast<K>(key);
+    const K k = py_dict_value_cast<K>(key);
     auto it = d.find(k);
     if (it == d.end()) {
         throw ::std::out_of_range("dict key not found");
@@ -1158,7 +1131,7 @@ static inline V& py_at(dict<K, V>& d, const Q& key) {
 
 template <class K, class V, class Q>
 static inline const V& py_at(const dict<K, V>& d, const Q& key) {
-    const K k = py_dict_key_cast<K>(key);
+    const K k = py_dict_value_cast<K>(key);
     auto it = d.find(k);
     if (it == d.end()) {
         throw ::std::out_of_range("dict key not found");
@@ -1173,7 +1146,7 @@ static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
 
 template <class K, class V, class Q, class U>
 static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
-    const K k = py_dict_key_cast<K>(key);
+    const K k = py_dict_value_cast<K>(key);
     d[k] = py_dict_value_cast<V>(item);
 }
 

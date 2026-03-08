@@ -10,7 +10,13 @@ static inline bool py_list_contains_ref(const list<T>& values, const Q& key) {
 
 template <class K, class V, class Q>
 static inline bool py_contains(const dict<K, V>& d, const Q& key) {
-    return d.find(py_dict_key_cast<K>(key)) != d.end();
+    if constexpr (::std::is_same_v<K, Q>) {
+        return d.find(key) != d.end();
+    } else if constexpr (::std::is_convertible_v<Q, K>) {
+        return d.find(static_cast<K>(key)) != d.end();
+    } else {
+        return d.find(K(key)) != d.end();
+    }
 }
 
 template <class V, class Q>

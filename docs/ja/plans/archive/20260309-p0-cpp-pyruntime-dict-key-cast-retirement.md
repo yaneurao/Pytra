@@ -64,3 +64,7 @@
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は dict key の暗黙 cast policy を helper から除去する。dict value cast や generic `py_to<T>(object)` は本計画の対象外とする。
+- 2026-03-09: `rg -n "py_dict_key_cast\\(" src test` の checked-in 棚卸しでは runtime 内部の `py_at(dict<K, V>&, ...)`, `py_set_at(dict<K, V>&, ...)`, `py_contains(const dict<K, V>&, ...)` だけが依存していた。external / generated callsite は無く、置換対象は runtime 内部 3 箇所に限定できる。
+- 2026-03-09: key normalization の canonical rule は「callsite で `str(...)` または target key type を明示構築してから dict helper を呼ぶ」とする。dict value cast と generic `py_to<T>(object)` の整理は本計画の非対象に維持する。
+- 2026-03-09: regression は `test_cpp_runtime_iterable.py` の inventory guard に `py_dict_key_cast` 3 signature の `NotIn` を追加して閉じる。
+- 2026-03-09: runtime 内部 3 箇所は `py_dict_value_cast<K>(key)` に置き換えた。これで dict key normalization は helper 名に依存せず、`py_runtime.h` から `py_dict_key_cast(const object&)`, `py_dict_key_cast(const char*)`, `py_dict_key_cast(const Q&)` を削除できる。
