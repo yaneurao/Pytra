@@ -37,14 +37,15 @@
 
 ## 2. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01] `py_dict_get_maybe` convenience を縮退する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-01] `py_dict_get_maybe` callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-02] `JsonObj` / explicit default への移行方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S2-02] `py_dict_get_maybe` overload を削減する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S3-01] guard / docs / parity を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01] `py_dict_get_maybe` convenience を縮退する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-01] `py_dict_get_maybe` callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-02] `JsonObj` / explicit default への移行方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S2-02] `py_dict_get_maybe` overload を削減する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S3-01] guard / docs / parity を更新する。
 
 ## 3. 決定ログ
 
 - 2026-03-08: `maybe` convenience は typed dict primitive ではなく decode helper の都合で残っている debt として扱う。
 - 2026-03-08: checked-in production callsite は見つからず、残っているのは `CppEmitter` の `DictGetMaybe` lowering と `test_east3_cpp_bridge.py` の expectation だけだった。typed `dict.get(key)` は runtime convenience ではなく、C++ 側で `contains/at + optional` の式展開へ寄せる。
+- 2026-03-08: `CppEmitter` の `DictGetMaybe` は `([&]() -> optional<T> { auto&& __dict = ...; auto __key = ...; return contains ? optional<T>(at) : nullopt; }())` へ置換し、`py_runtime.h` から `py_dict_get_maybe` block 全体を削除した。inventory guard は generic / `optional<dict<...>>` overload の再侵入を `NotIn` で固定する。

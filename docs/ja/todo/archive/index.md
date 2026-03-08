@@ -17,6 +17,7 @@
 
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-READ-01](../plans/archive/20260308-p0-cpp-pyruntime-object-read-bridge-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-DICTGET-01](../plans/archive/20260308-p0-cpp-pyruntime-object-dict-get-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICTGET-MAYBE-01](../plans/archive/20260308-p0-cpp-pyruntime-dict-get-maybe-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01](../plans/archive/20260308-p0-cpp-pyruntime-object-collection-bridge-retirement.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-LANE-01](../plans/archive/20260308-p0-cpp-pyruntime-object-lane-retirement.md)
 - [2026-03-08 / P0-CPP-SELFHOST-ANY-COMPAT-01](../plans/archive/20260308-p0-cpp-selfhost-any-compat-retirement.md)
@@ -55,7 +56,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（17 セクション）
+- [2026-03-08](20260308.md)（18 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）
