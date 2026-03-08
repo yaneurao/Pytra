@@ -413,6 +413,17 @@
         }
       }
     },
+    "pytra.built_in.zip_ops": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/zip_ops.py",
+      "symbols": {
+        "zip": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.zip"
+        }
+      }
+    },
     "pytra.core.dict": {
       "runtime_group": "core",
       "source_py": "",
@@ -1163,6 +1174,15 @@
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/built_in/type_id.h"
+          ]
+        },
+        "pytra.built_in.zip_ops": {
+          "companions": [
+            "generated"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/pytra/built_in/zip_ops.h"
           ]
         },
         "pytra.core.dict": {

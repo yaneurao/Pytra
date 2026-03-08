@@ -197,7 +197,7 @@ def _substitute_types_in_node(node: Any, bindings: dict[str, str]) -> None:
                     out_arg_types[arg_name] = arg_type_any
             node[key] = out_arg_types
             continue
-        if key in {"return_type", "resolved_type", "yield_value_type"} and isinstance(value, str):
+        if key in {"annotation", "return_type", "resolved_type", "yield_value_type"} and isinstance(value, str):
             node[key] = _substitute_type_text(value, bindings)
             continue
         _substitute_types_in_node(value, bindings)
